@@ -18,7 +18,7 @@ import 'package:motolii/workspace/dock/fonts/font_map.dart';
 import 'package:motolii/workspace/dock/fonts/font_roles.dart';
 import 'package:motolii/workspace/dock/fonts/font_tile.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
-import 'package:motolii/workspace/dock/map/shelf_map.dart';
+import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
@@ -123,11 +123,11 @@ class FontsShelf extends StatelessWidget {
                     String? usedBy(FontFile f) => setIn[f.path]?.name;
                     if (c.mem.mapped.contains('Fonts')) {
                       // Map view: each font is placed by how its letters look when drawn by ThorVG.
-                      final map = dockMap('Fonts'),
+                      final map = controller.map,
                           files = [for (final f in fonts) ?f.path];
                       controller.drawDots(m, files);
                       // Place fonts by how FontCLIP sees them once the model is available, otherwise by a small drawing of the sample.
-                      final clip = dockModel('fontclip_b32');
+                      final clip = likenessModel('fontclip_b32');
                       map.need(m, [for (final f in files) (f, f)], (
                         from,
                       ) async {
@@ -152,7 +152,7 @@ class FontsShelf extends StatelessWidget {
                         }
                         final kinds = [for (final f in from) fontKindOf(m, f)],
                             all = kinds.toSet().toList();
-                        return dockTogether(
+                        return joinFeatures(
                           [
                             look,
                             [
@@ -164,7 +164,7 @@ class FontsShelf extends StatelessWidget {
                         ); // The font style is blended in at half weight so fonts of the same style group together.
                       }, also: '${clip ?? ''} kinds');
                       final byPath = {for (final f in list) ?f.path: f};
-                      return DockMap(
+                      return ShelfMapView(
                         map,
                         [
                           for (final MapEntry(key: p, value: f)

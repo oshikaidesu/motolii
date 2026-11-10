@@ -17,6 +17,7 @@ import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/create/create_catalog.dart';
 import 'package:motolii/workspace/dock/create/create_shelf.dart';
+import 'package:motolii/workspace/dock/effects/effects_controller.dart';
 import 'package:motolii/workspace/dock/effects/effects_shelf.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart';
@@ -61,6 +62,8 @@ class _ShelfPaneState extends State<ShelfPane> {
   );
   ColorsController get _colors =>
       _kept('Colors.controller', ColorsController.new);
+  EffectsController get _effects =>
+      _kept('Effects.controller', EffectsController.new);
   FontsController get _fonts =>
       _kept('Fonts.controller', () => FontsController(_reads));
   late final TextEditingController _search =
@@ -195,7 +198,7 @@ class _ShelfPaneState extends State<ShelfPane> {
               ),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
-                // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (dock_map.dart).
+                // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (map/shelf_map.dart).
                 IconPress(
                   dockMark(AppGlyphs.grid),
                   key: ValueKey('ws-$name-rows'),
@@ -304,7 +307,7 @@ class _ShelfPaneState extends State<ShelfPane> {
             // A footer waiting for a second click opens once that click can no longer come (ShelfContext.foot).
             listenable: DockHover.secondMayCome,
             builder: (context, _) => switch (name) {
-              'Effects' => EffectsShelf(c),
+              'Effects' => EffectsShelf(c, _effects),
               'Fonts' => FontsShelf(c, _fonts),
               'Colors' => ColorsShelf(c, _colors),
               'Create' => CreateShelf(c),

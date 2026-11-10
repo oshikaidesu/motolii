@@ -14,7 +14,7 @@ import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
-/// A font's dot on the map, inked by where it lies on the [map] (see [dockPalette]).
+/// A font's dot on the map, inked by where it lies on the [map] (see [ShelfMap.paletteOf]).
 ///
 /// Unlike the effect thumbnails, a word is a single ink, so colour can tell which island of fonts it belongs to.
 /// FontMap colours fonts by category in the same way.
@@ -25,7 +25,7 @@ class FontDot extends StatefulWidget {
 
   /// What the shelf keeps between builds: the dots the engine drew and their images.
   final FontsController controller;
-  final DockMapPlaces? map;
+  final ShelfMap? map;
   @override
   State<FontDot> createState() => _FontDotState();
 }
@@ -72,7 +72,7 @@ class _FontDotState extends State<FontDot> {
             builder: (context, at, _) => RawImage(
               image: controller.dotImages[f.path],
               color: TextStyles.ink(
-                dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95),
+                dockInk(sel, map.paletteOf(at)[f.path] ?? Grey.g95),
               ),
               colorBlendMode: BlendMode.modulate,
               fit: BoxFit.contain,

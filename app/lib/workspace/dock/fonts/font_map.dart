@@ -6,7 +6,7 @@ import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
-import 'package:motolii/workspace/dock/map/shelf_map.dart';
+import 'package:motolii/workspace/dock/map/image_features.dart';
 
 /// Embeds each font with FontCLIP ([model]) from a specimen image drawn as FontMap draws it for FontCLIP.
 ///
@@ -30,7 +30,7 @@ Future<List<Float32List?>> byFontClip(
     }
   }
 
-  final out = [for (final f in files) dockLookKept(key(f))],
+  final out = [for (final f in files) featuresKept(key(f))],
       missing = [
         for (final (k, f) in files.indexed)
           if (out[k] == null && key(f).isNotEmpty) f,
@@ -72,7 +72,7 @@ Future<List<Float32List?>> byFontClip(
           ]);
     for (final (j, k) in drawn.indexed) {
       if (told?[j] case final t?) {
-        dockLookKeep(key(missing[k]), t);
+        keepFeatures(key(missing[k]), t);
         out[files.indexOf(missing[k])] = t;
       }
     }

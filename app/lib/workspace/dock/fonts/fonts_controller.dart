@@ -13,6 +13,7 @@ import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/dock/fonts/font_file.dart';
+import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -32,6 +33,9 @@ class FontsController {
 
   /// Goes up each time the fonts or their dots have been read: the shelf then looks again.
   final ValueNotifier<int> reads;
+
+  /// The shelf's map: where each font lies when the shelf is shown as a map.
+  final map = ShelfMap('Fonts');
 
   /// The font files of this machine and of the project folder that the engine can set text in.
   /// They are read once, in the background. A font is named after its file; a collection (.ttc) is one row

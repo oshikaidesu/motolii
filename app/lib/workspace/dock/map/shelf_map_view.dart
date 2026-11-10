@@ -10,24 +10,25 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
+import 'package:motolii/workspace/dock/map/spread.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-/// The map view: each shown item's tile at its position from [DockMapPlaces].
+/// The map view: each shown item's tile at its position from [ShelfMap].
 ///
 /// The tiles are drawn inside a circle so none covers another. The whole map is fitted to the viewport at one scale and
 /// zoomed as one, tiles included, as in FontMap (useMapRenderer: calculateMappingDimensions; useMapZoom). It starts
 /// framed at 0.92, never zooms out further, zooms in at most 10 times, and can only be moved within its canvas.
-/// Items not in [DockMap.shown] are left off, and a message is shown while the map is being laid out.
+/// Items not in [ShelfMapView.shown] are left off, and a message is shown while the map is being laid out.
 ///
 /// The map has no colour of its own because the images tell items apart. Font names, drawn in one ink, are coloured by
-/// position ([dockPalette]).
+/// position ([ShelfMap.paletteOf]).
 ///
 /// Picking an item leaves the map where the user put it, as picking in Figma leaves its canvas. Only Zoom to Selection
 /// moves it. Flying to the picked item dragged the view away from the user, who said it felt like being grabbed by the
-/// shoulders. A button in the top right corner sets how compact the layout is ([DockMapPlaces.squeeze], Obsidian's graph
+/// shoulders. A button in the top right corner sets how compact the layout is ([ShelfMap.squeeze], Obsidian's graph
 /// "Center force").
-class DockMap extends StatefulWidget {
-  const DockMap(
+class ShelfMapView extends StatefulWidget {
+  const ShelfMapView(
     this.places,
     this.shown, {
     super.key,
@@ -39,7 +40,7 @@ class DockMap extends StatefulWidget {
   });
 
   /// Where each item lies.
-  final DockMapPlaces places;
+  final ShelfMap places;
 
   /// The items to show, each an id and its tile.
   final List<(String, Widget)> shown;
@@ -59,10 +60,10 @@ class DockMap extends StatefulWidget {
   /// The name shown beside the item under the pointer, by id.
   final Map<String, String> names;
   @override
-  State<DockMap> createState() => _DockMapState();
+  State<ShelfMapView> createState() => _ShelfMapViewState();
 }
 
-class _DockMapState extends State<DockMap> {
+class _ShelfMapViewState extends State<ShelfMapView> {
   final _keys = FocusNode(debugLabel: 'ws-map');
 
   /// The item the similarity list is built from: the one pressed on the map, as in XO's Space.
@@ -90,7 +91,7 @@ class _DockMapState extends State<DockMap> {
   }
 
   @override
-  void didUpdateWidget(DockMap old) {
+  void didUpdateWidget(ShelfMapView old) {
     super.didUpdateWidget(old);
     if (widget.picked != old.picked) _saw(widget.picked);
   }
@@ -222,7 +223,7 @@ class _DockMapState extends State<DockMap> {
 
   Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
     // A tile's side is such that the tile fits inside its circle.
-    final r = dockSpreadRadius,
+    final r = mapTileRadius,
         a = widget.aspect,
         side = 2 * r / math.sqrt(1 + a * a);
     var box = Rect.fromCenter(center: at.values.first, width: 0, height: 0);
@@ -292,7 +293,7 @@ class _DockMapState extends State<DockMap> {
 
   /// The settings opened from the map's top right corner, like Obsidian's graph settings.
   ///
-  /// They hold its Center force, "how compact the graph is" ([DockMapPlaces.squeeze]), on the same slider the Create
+  /// They hold its Center force, "how compact the graph is" ([ShelfMap.squeeze]), on the same slider the Create
   /// shelf uses for the size of Colours.
   Widget _settings() => Column(
     crossAxisAlignment: CrossAxisAlignment.end,

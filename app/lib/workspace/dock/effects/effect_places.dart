@@ -22,12 +22,8 @@ import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
+/// The height of the list when it stands over the tiles. A double-click on its grip resets to this.
 const dockEffectListHeight = 176.0;
-
-/// Maps the drag data of a tile being dragged (its double-click callback, which is what the canvas takes) to the effect id.
-/// See DockHover's Draggable. Dropped on a deck, the effect goes into it, like a track on a Spotify playlist
-/// or an effect in a Premiere bin.
-final carriedEffect = Expando<String>();
 
 /// The list of places the Effects shelf looks in. See the file header.
 class EffectPlaces extends StatefulWidget {
@@ -40,6 +36,7 @@ class EffectPlaces extends StatefulWidget {
     required this.decks,
     required this.put,
     required this.known,
+    required this.carried,
     this.mapped = false,
     this.held = const [],
     this.covers = const {},
@@ -63,6 +60,9 @@ class EffectPlaces extends StatefulWidget {
 
   /// The ids of all effects the shelf knows. A pasted deck is checked against them.
   final Set<String> known;
+
+  /// The effect id of each tile being dragged, by its drag data. A row takes a dropped tile through it.
+  final Expando<String> carried;
 
   /// Whether the shelf shows the map. The whole map is shown, and the selected deck stays open under its row.
   final bool mapped;
@@ -408,9 +408,9 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// it is starred, like a track dropped on a Spotify playlist or on Liked Songs.
   Widget _into(EffectDeck? d, Widget Function(bool over) row) =>
       DragTarget<VoidCallback>(
-        onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
+        onWillAcceptWithDetails: (o) => widget.carried[o.data] != null,
         onAcceptWithDetails: (o) {
-          final id = carriedEffect[o.data]!;
+          final id = widget.carried[o.data]!;
           d != null
               ? widget.put(d, id)
               : widget.c.starred(id)

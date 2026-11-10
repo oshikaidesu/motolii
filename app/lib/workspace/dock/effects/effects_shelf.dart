@@ -2,12 +2,9 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
-import 'dart:typed_data';
-
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -21,8 +18,10 @@ import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/common/star_button.dart';
+import 'package:motolii/workspace/dock/effects/effect_drawings.dart';
 import 'package:motolii/workspace/dock/effects/effect_places.dart';
-import 'package:motolii/workspace/dock/map/shelf_map.dart';
+import 'package:motolii/workspace/dock/effects/effects_controller.dart';
+import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
@@ -46,9 +45,14 @@ typedef _EffectEntry = ({
   String said,
 });
 
+/// The Effects shelf: the list of places to look in, the tiles or the map of what is there, and the footer for the
+/// picked effect.
 class EffectsShelf extends StatefulWidget {
-  const EffectsShelf(this.c, {super.key});
+  const EffectsShelf(this.c, this.effects, {super.key});
   final ShelfContext c;
+
+  /// What the shelf keeps between builds: its map, and which effect a dragged tile carries.
+  final EffectsController effects;
 
   /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
   /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
@@ -107,7 +111,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         put();
       }
 
-      carriedEffect[go] = id;
+      widget.effects.carried[go] = id;
       return go;
     }
 
@@ -200,7 +204,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
           small: small,
           art: thing && i.picture.isEmpty
-              ? _painted(Draw((c, _) => _effectLook(c, name), name))
+              ? paintedArt(Draw((c, _) => drawEffectLook(c, name), name))
               : null, // Without an image, its small drawing.
           picked: c.sel == id,
           lit: lit,
@@ -256,7 +260,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           ShelfItem('empty:effect', 'Empty'),
           look,
           small: small,
-          art: _painted(const EmptyLook()),
+          art: paintedArt(const EmptyLook()),
           picked: c.sel == 'empty:effect',
           onTap: () => c.pick('empty:effect'),
           onApply: chosen(
@@ -538,6 +542,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     Widget list(bool narrow) => EffectPlaces(
       c,
       key: _places,
+      carried: widget.effects.carried,
       narrow: narrow,
       known: known,
       packs: Map.fromEntries(
@@ -627,9 +632,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
                         // Laid out by the tiles there are, and again once all are drawn; tiles drawn in between join then.
                         listenable: EffectTiles.progress,
                         builder: (context, _) {
-                          final map = dockMap('Effects'),
+                          final map = widget.effects.map,
                               drawing = EffectTiles.progress.value != null;
-                          final clip = dockModel('clip_b32'); // Placed by how CLIP sees each tile's frames once the model is made, else by tiny colours.
+                          final clip = likenessModel('clip_b32'); // Placed by how CLIP sees each tile's frames once the model is made, else by tiny colours.
                           final drawn = [
                             for (final e in every)
                               if (pic(e.id).isNotEmpty) e,
@@ -638,13 +643,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             map.need(
                               m,
                               [for (final e in drawn) (e.id, pic(e.id))],
-                              (from) => _effectNumbers(m, clip, [
+                              (from) => widget.effects.numbersOf(m, clip, [
                                 for (final e in drawn) e.label,
                               ], from),
                               also: '${clip ?? ''} kinds',
                             );
                           }
-                          return DockMap(
+                          return ShelfMapView(
                             map,
                             [for (final e in listed) (e.id, tile(e, true))],
                             picked: c.sel,
@@ -739,41 +744,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
   }
 }
 
-/// A tile's image drawn by the app where the engine has none: a layer effect gets its small drawing, Empty gets its plus.
-Widget Function(bool) _painted(CustomPainter p) =>
-    (_) => FittedBox(
-      child: CustomPaint(size: const Size(18, 16), painter: p),
-    );
-
-/// The Effects map's coordinates for the effects whose tile frames are read from [homes].
-/// An effect is placed by how it looks, from CLIP at three of its sixteen frames so motion counts (or tiny colours), and what it is for ([kinds], the engine's label, such as an ISF's CATEGORIES or its startImage, endImage and progress, see isf.cpp).
-/// The kind is weighted twice as much as the look: each kind becomes an island with similar effects near each other,
-/// as XO's Space keeps each drum type's colour together.
-Future<List<Float32List?>> _effectNumbers(
-  Motolii m,
-  String? clip,
-  List<String> kinds,
-  List<String> homes,
-) async {
-  final look = [
-    for (final f in homes)
-      await (clip == null
-          ? dockTiny
-          : (List<String> at) => dockSeen(m, clip, at))([
-        for (final k in const [0, 7, 15]) EffectTiles.frame(f, k),
-      ]),
-  ];
-  final all = kinds.toSet().toList();
-  return dockTogether(
-    [
-      look,
-      [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1],
-    ],
-    const [1, 2],
-    even: const {0},
-  );
-}
-
 /// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
 String _said(WorkspaceController ws, String name) {
   final m = ws.inside!,
@@ -783,36 +753,4 @@ String _said(WorkspaceController ws, String name) {
       ); // The selected layer's id, or null when none is selected.
   final now = t == null ? '' : m.word(t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';
-}
-
-/// Small drawings of what the engine's path effects do to a square, for effects the shelf has no image for:
-/// a half-drawn path, and a dot moving along one. An effect the app does not know has no drawing.
-void _effectLook(Canvas c, String name) {
-  const ink = Color(0xFFE0A35A), r = Rect.fromLTWH(4, 3, 10, 10);
-  switch (name) {
-    case 'Trim Paths':
-      c.drawArc(
-        Rect.fromCircle(center: r.center, radius: 5.5),
-        -1.6,
-        3.8,
-        false,
-        Paint()
-          ..color = ink
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8
-          ..strokeCap = StrokeCap.round,
-      );
-    case 'Move Along Path':
-      c.drawArc(
-        Rect.fromCircle(center: r.center, radius: 5.5),
-        -1.6,
-        3.8,
-        false,
-        Paint()
-          ..color = ink
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
-      c.drawCircle(r.center + const Offset(0, -5.5), 2, Paint()..color = ink);
-  }
 }
