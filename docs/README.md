@@ -14,6 +14,7 @@ Every document under `docs/`, and who it is for. The entrance to the repository 
 | [`app/DESIGN.md`](app/DESIGN.md) | People changing the app | The design system of the Timeline panel: colours, type, components, layout |
 | [`app/GESTURES.md`](app/GESTURES.md) | People changing the app | What a press, a drag, a wheel and each key mean on every control. Read it before making a panel |
 | [`app/skins/HANDOFF.md`](app/skins/HANDOFF.md) | People carrying on the app's look | The three layers that change the look, and where each is written |
+| [`engine/PACKAGING.md`](engine/PACKAGING.md) | People packaging the app | The libraries and programs a user needs, per system (Mac, Windows, Linux): what is decided, what is only read from the projects' documents, what is unconfirmed |
 | [`engine/WINDOWS.md`](engine/WINDOWS.md) | People changing the engine (C++) | What building the engine on Windows would take; nothing has been built there yet |
 | [`pictures/`](pictures/) | — | The pictures and films the README and the guides show |
 | [`design/`](design/) | Anyone changing the app or the engine | The notes that code comments cite for a decision: the Alight Motion handling the UI follows, the AviUtl2 converter, how the Create and Program shelves divide, the words that were renamed, test records. Most are in Japanese |

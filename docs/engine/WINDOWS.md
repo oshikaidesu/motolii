@@ -16,7 +16,7 @@ The engine is Filament on Dawn (WebGPU), ThorVG, GStreamer, SQLite and ffmpeg.
 | 3D files (gltfio) | A Filament component. `gltf_model.h` has no OS-specific lines. | `engine/stage/render/gltf_model.h` |
 | The project (SQLite), keyframes (GStreamer's controller) and the edit calls (`motolii.h`) | All plain C or C++. No OS-specific lines in `document.h` or `motolii.h`. | `engine/document/document.h`, `engine/entry/motolii.h` |
 | Reading video (GStreamer's `decodebin3`; cutting, speed, reverse) | Only GStreamer's own interface is used. On Windows GStreamer picks the D3D12 or D3D11 hardware decoder parts itself. | `engine/media/video_layer.cpp` |
-| Sound and export (ffmpeg) | The engine only runs the command. | `film` in `engine/stage/render/render_draw.h` |
+| Sound and export (ffmpeg) | The engine runs the command and picks the H.264 encoder from what that ffmpeg lists. Which ffmpeg to ship, and the libraries: [PACKAGING.md](PACKAGING.md). | `film` in `engine/stage/render/render_draw.h`, `engine/base/video_encoder.h` |
 
 ## What needs rewriting (Mac-only code)
 

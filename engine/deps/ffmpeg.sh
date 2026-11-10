@@ -20,10 +20,17 @@ if [ ! -d $SRC ]; then
     mkdir -p $SRC && tar -xf $tmp/ffmpeg.tar.xz -C $SRC --strip-components 1
     rm -rf $tmp
 fi
-# (--disable-autodetect: a library on this Mac is used only when named here, so the build is the same on another Mac)
+# (--disable-autodetect: a library on this machine is used only when named here, so the build is the same on another one)
 CONFIGURE=(--prefix=$OUT --disable-gpl --disable-nonfree --disable-autodetect --enable-shared --disable-static
-           --disable-doc --disable-debug --disable-ffplay --enable-zlib --enable-videotoolbox --enable-audiotoolbox)
+           --disable-doc --disable-debug --disable-ffplay --enable-zlib)
+case "$(uname -s)" in
+    Darwin) CONFIGURE+=(--enable-videotoolbox --enable-audiotoolbox); cpus=$(sysctl -n hw.ncpu) ;;
+    # (Linux: written from docs/engine/PACKAGING.md and NOT run: no Linux machine has built it. --enable-pic is what
+    # FFmpeg's platform page asks for a shared build; an encoder, h264_vaapi or h264_nvenc, is added once one can be tried.)
+    Linux)  CONFIGURE+=(--enable-pic); cpus=$(nproc) ;;
+    *) echo "ffmpeg: this script does not build on $(uname -s): see docs/engine/PACKAGING.md (Windows builds FFmpeg in MSYS2)"; exit 1 ;;
+esac
 if [ ! -x $OUT/bin/ffmpeg ]; then
-    (cd $SRC && ./configure $CONFIGURE > /dev/null && make -j$(sysctl -n hw.ncpu) > /dev/null && make install > /dev/null)
+    (cd $SRC && ./configure $CONFIGURE > /dev/null && make -j$cpus > /dev/null && make install > /dev/null)
     mkdir -p $OUT && print -r -- "./configure $CONFIGURE" > $OUT/CONFIGURE.txt
 fi
