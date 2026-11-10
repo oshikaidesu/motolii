@@ -1,22 +1,38 @@
 // script.h's adapter: the head read for parameters, QuickJS-ng behind each().
 #include "community/quickjs/script.h"
-#include "community/sites/adapter.h"
+
+#include <dlfcn.h>
+#include <sys/stat.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <mutex>
+#include <set>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
+#include <vector>
+
+#include <quickjs.h>
+
+#include "community/after_effects/ae_expr.h"
 #include "community/aviutl/aviutl.h"
+#include "community/p5/p5_mesh.h"
 #include "community/p5/p5_stand.h"
+#include "community/p5/p5_three.h"
+#include "community/quickjs/script_leva.h"
+#include "community/sites/adapter.h"
+#include "community/three/solid_three.h"
 #include "media/video_frames_for_scripts.h"
 #include "motion/easing_names.h"
-#include "community/after_effects/ae_expr.h"
-#include "community/quickjs/script_leva.h"
-#include "community/three/solid_three.h"
-#include <quickjs.h>
-#include <algorithm>
-#include <filesystem>
-#include <set>
-#include <cstdlib>
-#include <fstream>
-#include <mutex>
-#include <sstream>
-#include <sys/stat.h>
 
 static std::vector<std::string> split(const std::string& s, char by) {
     std::vector<std::string> out;
@@ -26,6 +42,41 @@ static std::vector<std::string> split(const std::string& s, char by) {
         out.push_back(a == std::string::npos ? "" : one.substr(a, b - a + 1));
     }
     return out;
+}
+
+std::string script_shelf_file(const std::string& file) {
+    std::error_code wrong;
+    if (file.find('/') == std::string::npos || std::filesystem::exists(file, wrong)) return file;
+    // For each shelf kind, a map from file name to full path. Filled on first use.
+    static std::map<std::string, std::map<std::string, std::string>> by;
+    for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
+        const std::string kind = p.filename().string();
+        if (kind != "effects" && kind != "create" && kind != "relations" && kind != "expressions" && kind != "solids" && kind != "looks" && kind != "recipes" && kind != "animators") continue;
+        // A project saved before the shelves were renamed names the old folders: recipes is now
+        // create and animators is now expressions.
+        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;
+        if (!by.count(now)) {
+            Dl_info lib{};
+            dladdr((const void*)&script_shelf_file, &lib);
+            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / now;
+            auto& names = by[now];
+            for (const auto& e : std::filesystem::recursive_directory_iterator(shelf, wrong)) names.emplace(e.path().filename().string(), e.path().string());
+        }
+        const auto at = by[now].find(std::filesystem::path(file).filename().string());
+        return at == by[now].end() ? file : at->second;
+    }
+    return file;
+}
+std::vector<std::string> script_files(const std::string& word) {
+    std::vector<std::string> all;
+    std::istringstream each(word);
+    const auto ends = [](const std::string& w) { if (w.find(".anm2") != std::string::npos || w.find(".obj2") != std::string::npos) return true; for (const char* e : {".wgsl", ".fs", ".js", ".mjs", ".json", ".am"}) if (w.size() >= strlen(e) && w.compare(w.size() - strlen(e), std::string::npos, e) == 0) return true; return false; };
+    for (std::string w; each >> w;) {
+        if (!all.empty() && all.back().find('/') != std::string::npos && !ends(all.back())) all.back() += " " + w;
+        else all.push_back(w);
+    }
+    for (std::string& f : all) f = script_shelf_file(f);
+    return all;
 }
 
 // (what stands in a string or a comment is not a call; a name after a dot is another canvas's, a createGraphics': image()

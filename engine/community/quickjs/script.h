@@ -1,3 +1,6 @@
+#ifndef MOTOLII_COMMUNITY_QUICKJS_SCRIPT_H_
+#define MOTOLII_COMMUNITY_QUICKJS_SCRIPT_H_
+
 // Declares Script, which runs a JavaScript file that places copies of a layer, and the helpers
 // that read a script's header and find shelf files.
 //
@@ -36,18 +39,12 @@
 //
 // A script may hold an After Effects expression as it was posted: AE.compile(`...`) once, then
 // AE.run(f, ...) in each(). The expression is compiled once, not every frame. See ae_expr.h.
-#pragma once
-#include <atomic>
+
+#include <cstdint>
 #include <map>
 #include <memory>
-#include <cstring>
-#include <dlfcn.h>
-#include <filesystem>
-#include <sstream>
 #include <string>
 #include <vector>
-
-#include "shelf/shelf_folders.h"
 
 // One parameter declared in a script's header.
 struct ScriptParameter {
@@ -76,46 +73,14 @@ struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x =
 // "/" and does not exist, this looks in the shelf of the same kind for a file with the same
 // name. The shelves/ folder is found beside engine/, as doc_folders finds it. Otherwise, or if
 // no such file exists, file is returned unchanged.
-inline std::string script_shelf_file(const std::string& file) {
-    std::error_code wrong;
-    if (file.find('/') == std::string::npos || std::filesystem::exists(file, wrong)) return file;
-    // For each shelf kind, a map from file name to full path. Filled on first use.
-    static std::map<std::string, std::map<std::string, std::string>> by;
-    for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
-        const std::string kind = p.filename().string();
-        if (kind != "effects" && kind != "create" && kind != "relations" && kind != "expressions" && kind != "solids" && kind != "looks" && kind != "recipes" && kind != "animators") continue;
-        // A project saved before the shelves were renamed names the old folders: recipes is now
-        // create and animators is now expressions.
-        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;
-        if (!by.count(now)) {
-            Dl_info lib{};
-            dladdr((const void*)&script_shelf_file, &lib);
-            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / now;
-            auto& names = by[now];
-            for (const auto& e : std::filesystem::recursive_directory_iterator(shelf, wrong)) names.emplace(e.path().filename().string(), e.path().string());
-        }
-        const auto at = by[now].find(std::filesystem::path(file).filename().string());
-        return at == by[now].end() ? file : at->second;
-    }
-    return file;
-}
+std::string script_shelf_file(const std::string& file);
 // Splits a space-separated list of files, such as an effect's list or the stage's. A word
 // containing "/" is a path and may itself contain spaces, as in "Application Support" or an ISF
 // effect's "Bad TV.fs". The path continues until a word ends in .wgsl, .fs, .js, .mjs, .json
 // (Filament's own settings), .am (Alight Motion's own motion file), or names an AviUtl2 script
 // (.anm2 or .obj2, with "#name" after an @ file's). Any other word stands alone. Each file goes
 // through script_shelf_file.
-inline std::vector<std::string> script_files(const std::string& word) {
-    std::vector<std::string> all;
-    std::istringstream each(word);
-    const auto ends = [](const std::string& w) { if (w.find(".anm2") != std::string::npos || w.find(".obj2") != std::string::npos) return true; for (const char* e : {".wgsl", ".fs", ".js", ".mjs", ".json", ".am"}) if (w.size() >= strlen(e) && w.compare(w.size() - strlen(e), std::string::npos, e) == 0) return true; return false; };
-    for (std::string w; each >> w;) {
-        if (!all.empty() && all.back().find('/') != std::string::npos && !ends(all.back())) all.back() += " " + w;
-        else all.push_back(w);
-    }
-    for (std::string& f : all) f = script_shelf_file(f);
-    return all;
-}
+std::vector<std::string> script_files(const std::string& word);
 
 // Returns true if src is a relation that pushes layers: it defines force() and has no draw().
 // See document/world.h.
@@ -212,3 +177,5 @@ private:
     struct Own;
     std::unique_ptr<Own> own;
 };
+
+#endif  // MOTOLII_COMMUNITY_QUICKJS_SCRIPT_H_
