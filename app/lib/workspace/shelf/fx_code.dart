@@ -1,5 +1,5 @@
 // The code editor on an effect's card, below its parameters, like the Script card's (slot: 'script').
-// It edits a .wgsl, an ISF .fs, or an expression (a .js with each() among its fx: document/expressions.h).
+// It edits a .wgsl, an ISF .fs, or an expression (a .js with each() among its fx: document/scripts/expressions.h).
 // Typing affects only this layer's effect. The shelf's file is never overwritten: the first edit copies it to a folder
 // of the user's own (programs/fx/<stamp>/) under the same file name, and the layer's fx points at the copy.
 // Keeping the file name keeps everything attached to it: the parameter names (js_<stem>_<param>, doc_screen_knob)
@@ -36,7 +36,7 @@ class FxCode extends StatefulWidget {
   @override
   State<FxCode> createState() => _FxCodeState();
 
-  // Drawn code, or an expression (a .js with each(), document/expressions.h).
+  // Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
   static final _code = RegExp(r'\.(wgsl|fs|js)$');
 
   /// Finds the code file behind a layer's effect card, or null if the card is not a code effect.
@@ -44,7 +44,7 @@ class FxCode extends StatefulWidget {
   /// The match uses the card's parameter [names], not the title alone, because two cards can share a title
   /// (ThorVG's Tint is called Duotone, as an ISF file may be).
   /// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
-  /// (`js_<stem>_<param>`, document/scripts.h doc_script_of), so the file is the one whose name they all begin with.
+  /// (`js_<stem>_<param>`, document/scripts/scripts.h doc_script_of), so the file is the one whose name they all begin with.
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
   /// If two files fit, the one whose title matches the card wins, then the longer name.
   /// A card with no parameters (the engine still gives it a card, doc_cards_of) is matched by title alone.

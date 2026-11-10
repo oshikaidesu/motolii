@@ -1,5 +1,5 @@
 // Puts an empty effect, or an empty expression, on the selected layer with its code open on its card. It gives the user
-// somewhere to paste code found on the net (an ISF effect, or a .js with each(), see engine/document/expressions.h).
+// somewhere to paste code found on the net (an ISF effect, or a .js with each(), see engine/document/scripts/expressions.h).
 // The file is written fresh on each press, in the user's programs folder where a layer's own copy lives (fx_code.dart),
 // so what is typed belongs to that layer alone.
 import 'dart:io';

@@ -1,6 +1,6 @@
 // Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/internal/reports/alight_motion/alight_ui.md).
 // AbsentMotion shows each effect from a table written beforehand (tools/effect_showcase.json). Here the effect file itself tells the tile what to
-// show, so a file the user puts in needs no table line and no developer. What is read from the file (engine/document/recipes.h, isf_tags):
+// show, so a file the user puts in needs no table line and no developer. What is read from the file (engine/document/scripts/recipes.h, isf_tags):
 // - A transition's progress goes from 0 to 1. An effect that runs by the clock, or keeps its previous frame, is left to run.
 // - Otherwise the sample stands still, so the parameter that stands for the effect goes between two values (see [tellingKnob]).
 // - If nothing shows on the whole photo, the effect goes on a card moving across AbsentMotion's grid (its "move" layout).
@@ -9,7 +9,7 @@
 // A tile is sixteen pictures a twelfth of a second apart, played forwards and back at 24 fps so nothing jumps where it loops. The sample is the
 // balloon photo that shelves/effects/sources/fx_tiles.sh draws on (fx_sample.jpg beside it). Tiles are drawn in a project of their own in another
 // isolate, as create_preview.dart does for presets, and the engine says where each goes (~/Library/Caches/Motolii/tiles: doc_tile in
-// engine/document/recipes.h). The effect is applied as fx_tiles.sh and engine/edit.sh do: a screen effect (.fs, .wgsl) on the whole picture,
+// engine/document/scripts/recipes.h). The effect is applied as fx_tiles.sh and engine/edit.sh do: a screen effect (.fs, .wgsl) on the whole picture,
 // anything else on the photo layer. Pictures are shrunk with sips (192 px); moving ones are JPEG from ffmpeg. They are compared with the sample's
 // own pictures using ffmpeg's psnr. If the effect changes nothing (over 40 dB: helpers of other scripts, PSD ones, scripts that stop on a call
 // not supported yet), the tile is marked `home.same` and the shelf says so.
@@ -70,7 +70,7 @@ abstract final class EffectTiles {
   /// How much moving each parameter of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code judged it.
   /// Read from app/assets/effect_parameter_weights.json by the shelf entry: the file path from the library folder, including an AviUtl2 script's #name.
   /// AbsentMotion's effect_showcase.json names by hand the parameter its tile moves; its heaviest agreed with this in 26 of 28 cases.
-  /// Keys are the engine's parameter names (doc_screen_knob in engine/document/scripts.h), and `_time` is how much letting the effect run shows it.
+  /// Keys are the engine's parameter names (doc_screen_knob in engine/document/scripts/scripts.h), and `_time` is how much letting the effect run shows it.
   /// Empty when the file was not weighed (the user's own).
   static Map<String, double> weighed(String dir, String file) => {
     for (final MapEntry(key: k, value: w) in _entry(dir, file).entries)
