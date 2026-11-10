@@ -48,7 +48,8 @@ class _CardMoreState extends State<CardMore> {
   @override
   Widget build(BuildContext context) => CompositedTransformTarget(
     link: _link,
-    child: OverlayPortal.targetsRootOverlay(
+    child: OverlayPortal(
+      overlayLocation: OverlayChildLocation.rootOverlay,
       controller: _portal,
       overlayChildBuilder: (_) => Align(
         alignment: Alignment.topLeft,

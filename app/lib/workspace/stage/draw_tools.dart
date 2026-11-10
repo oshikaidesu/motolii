@@ -7,8 +7,11 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import 'package:perfect_freehand/perfect_freehand.dart'
     show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
+// The package does not export getStrokeRadius (how wide the pressure makes a
+// point), so it is imported from src.
+// ignore: implementation_imports
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
-    show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
+    show getStrokeRadius;
 
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
