@@ -246,8 +246,11 @@ add_library(motolii_stage_canvas STATIC
   stage/canvas/canvas_cache.cpp
   stage/canvas/canvas_edge.cpp
   stage/canvas/canvas_flat.cpp
+  stage/canvas/canvas_ramp.cpp
   stage/canvas/canvas_renderables.cpp
-  stage/canvas/canvas_sketch.cpp)
+  stage/canvas/canvas_shape.cpp
+  stage/canvas/canvas_sketch.cpp
+  stage/canvas/canvas_type.cpp)
 target_link_libraries(motolii_stage_canvas PUBLIC motolii_flags motolii_community_absent_motion motolii_gpu motolii_shelf motolii_stage_render motolii_community_script_runner)
 target_sources(motolii_stage_canvas PRIVATE $<TARGET_OBJECTS:thorvg_path_operators> $<TARGET_OBJECTS:skia_path_operations>)
 target_link_libraries(motolii_stage_canvas PUBLIC ${THORVG}/build_dawn/src/libthorvg-1.a skia_libraries
