@@ -7,43 +7,30 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
+import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
-import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 
 class StagePane extends StatelessWidget {
   const StagePane({super.key});
   @override
   Widget build(BuildContext context) => const Panel(child: _Stage());
 }
-
-const stageTools = [
-  (Glyphs.select, 'Select', 'V'),
-  (Glyphs.move, 'Move', 'M'),
-  (Glyphs.rect, 'Rectangle', 'R'),
-  (Glyphs.ellipse, 'Ellipse', 'E'),
-  (Glyphs.pen, 'Pen', 'P'),
-  (Glyphs.text, 'Text', 'T'),
-  // Freehand path, as in Alight Motion. B is the brush key in Photoshop and After Effects.
-  (Glyphs.brush, 'Brush', 'B'),
-  // After Effects' Unified Camera tool: a drag orbits the camera, the wheel dollies it.
-  (Glyphs.camera, 'Camera', 'C'),
-];
 
 /// The tools as app commands (`tool.select`, `tool.text` ...). Their letters are in the keymap (keymap.dart).
 ///
@@ -328,96 +315,6 @@ class _StageState extends State<_Stage> {
       ),
     );
   }
-}
-
-// ---- header toggles ----------------------------------------------------------------------------------------------------
-
-enum StageIcon { safe, grid, snap, show }
-
-/// An on/off chip: raised with an accent mark when on, a quiet well when off.
-class Toggle extends StatelessWidget {
-  const Toggle({
-    super.key,
-    required this.label,
-    required this.on,
-    required this.onTap,
-    this.icon,
-    this.glyph,
-  });
-  final String label;
-  final bool on;
-  final VoidCallback onTap;
-  final StageIcon? icon;
-  final Glyphs? glyph;
-  @override
-  Widget build(BuildContext context) => Forms.worn.flag(
-    context,
-    FlagSpec(
-      label: label,
-      on: on,
-      onTap: onTap,
-      mark: (ink) {
-        if (glyph case final g?) return Glyph(g, size: Shape.z(14), color: ink);
-        return CustomPaint(
-          size: const Size.square(12),
-          painter: _IconPainter(icon!, ink),
-        );
-      },
-    ),
-  );
-}
-
-class _IconPainter extends CustomPainter {
-  const _IconPainter(this.icon, this.c);
-  final StageIcon icon;
-  final Color c;
-  @override
-  void paint(Canvas cv, Size s) {
-    // Use the skin's own icon if it provides one.
-    if (SkinParts.draw(cv, s, 'stage.${icon.name}', c)) return;
-    final p = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final r = (Offset.zero & s).deflate(1);
-    switch (icon) {
-      case StageIcon.safe:
-        cv.drawRect(r, p);
-        cv.drawRect(r.deflate(2.5), p);
-      case StageIcon.grid:
-        cv.drawRect(r, p);
-        for (final t in const [1 / 3, 2 / 3]) {
-          cv.drawLine(
-            Offset(r.left + r.width * t, r.top),
-            Offset(r.left + r.width * t, r.bottom),
-            p,
-          );
-          cv.drawLine(
-            Offset(r.left, r.top + r.height * t),
-            Offset(r.right, r.top + r.height * t),
-            p,
-          );
-        }
-      case StageIcon.snap: // A camera body and its lens.
-        cv.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom),
-            const Radius.circular(1.5),
-          ),
-          p,
-        );
-        cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
-      case StageIcon.show: // The image halved: then and now.
-        cv.drawRect(r, p);
-        cv.drawRect(
-          Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom),
-          p..style = PaintingStyle.fill,
-        );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_IconPainter o) => o.icon != icon || o.c != c;
 }
 
 /// A shape tool clicked twice adds a shape as large as the canvas at once, as in After Effects.

@@ -1,5 +1,21 @@
-// The stage's active tool and the options chosen for it.
+// The stage's tools: the list the tool column shows, and the active one with the options chosen for it.
 import 'package:flutter/foundation.dart' show immutable;
+
+import 'package:motolii/widgets/glyphs.dart';
+
+/// The tools of the stage's tool column, in order: each one's glyph, its name and the letter that selects it.
+const stageTools = [
+  (Glyphs.select, 'Select', 'V'),
+  (Glyphs.move, 'Move', 'M'),
+  (Glyphs.rect, 'Rectangle', 'R'),
+  (Glyphs.ellipse, 'Ellipse', 'E'),
+  (Glyphs.pen, 'Pen', 'P'),
+  (Glyphs.text, 'Text', 'T'),
+  // Freehand path, as in Alight Motion. B is the brush key in Photoshop and After Effects.
+  (Glyphs.brush, 'Brush', 'B'),
+  // After Effects' Unified Camera tool: a drag orbits the camera, the wheel dollies it.
+  (Glyphs.camera, 'Camera', 'C'),
+];
 
 /// The active tool of the stage, with the options chosen for it in the strip under the stage.
 @immutable

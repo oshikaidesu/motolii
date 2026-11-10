@@ -1,4 +1,4 @@
-// The stage's painter: guides, grid, boxes, handles and captions.
+// The stage's painters: the view (guides, grid, boxes, handles and captions), the rulers, and a path's points.
 import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
@@ -10,11 +10,16 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
-import 'package:motolii/workspace/stage/stage_view_relations.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+
+/// A stroke of [w] pixels in the colour [c].
+Paint linePaint(Color c, [double w = 1]) => Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = w
+  ..color = c;
 
 /// Draws a line that reads on any artwork: a dark under-stroke, then the colour.
 void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {
@@ -22,6 +27,12 @@ void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {
   c.drawPath(p, linePaint(col, w));
 }
 
+/// What one painter draws: everything (including the stand-in art), or one side of the engine's preview.
+/// With the preview in the composition, [under] is what lies beneath it (surround, captions), [over] what lies above (grid, guides, selection).
+enum ViewPart { all, under, over }
+
+/// Paints what the stage shows around and over the preview: the surround and captions under it; the grid, safe
+/// areas, guides, motion path, snap lines, camera gizmos and the selection with its handles over it.
 class ViewPainter extends CustomPainter {
   ViewPainter(
     this.scene,
@@ -465,8 +476,7 @@ class ViewPainter extends CustomPainter {
       !listEquals(o.crop, crop);
 }
 
-// ---- rulers -----------------------------------------------------------------------------------------------------------
-
+/// Paints the rulers along the top and the left of the stage, with the guides' markers and the pointer's position.
 class RulerPainter extends CustomPainter {
   RulerPainter(this.v, this.cursor, this.scene) : super(repaint: cursor);
   final StageViewport v;
@@ -586,4 +596,37 @@ class RulerPainter extends CustomPainter {
   @override
   bool shouldRepaint(RulerPainter o) =>
       o.v != v || o.cursor != cursor || o.scene != scene;
+}
+
+/// Paints a path's points as squares and its bezier handles as dots on a line to their point.
+class PointsPainter extends CustomPainter {
+  PointsPainter(this.at, this.handles);
+  final List<Offset> at;
+  final List<(Offset, Offset)> handles;
+  @override
+  void paint(Canvas c, Size _) {
+    final edge = linePaint(WindowTokens.accent),
+        inside = Paint()..color = const Color(0xFFFFFFFF);
+    for (final (h, o) in handles) {
+      if ((h - o).distance < 1) continue;
+      c
+        ..drawLine(o, h, edge)
+        ..drawCircle(h, 3, inside)
+        ..drawCircle(h, 3, edge);
+    }
+    for (final p in at) {
+      final r = Rect.fromCenter(
+        center: p,
+        width: Shape.z(6),
+        height: Shape.z(6),
+      );
+      c
+        ..drawRect(r, inside)
+        ..drawRect(r, edge);
+    }
+  }
+
+  @override
+  bool shouldRepaint(PointsPainter o) =>
+      !listEquals(o.at, at) || !listEquals(o.handles, handles);
 }

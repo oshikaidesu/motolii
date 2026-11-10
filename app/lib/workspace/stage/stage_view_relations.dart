@@ -1,7 +1,6 @@
 // What is picked together and the relation picked, over the stage.
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
@@ -15,8 +14,8 @@ import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
-import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/stage/view_painter.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -651,159 +650,4 @@ class _GlyphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GlyphPainter o) => o.what != what || o.ink != ink;
-}
-
-/// The pill at the bottom-left of the viewport: the zoom and the pointer position in composition pixels.
-class Hud extends StatelessWidget {
-  const Hud({super.key, required this.scale, required this.cursor});
-  final double scale;
-  final ValueNotifier<Offset?> cursor;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: StageTokens.hud,
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-    decoration: BoxDecoration(
-      color: WindowTokens.card,
-      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('${(scale * 100).round()}%', style: TextStyles.value(Grey.g95)),
-        Container(
-          width: 1,
-          height: Shape.z(10),
-          margin: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-          color: WindowTokens.line,
-        ),
-        ValueListenableBuilder<Offset?>(
-          valueListenable: cursor,
-          builder: (_, p, _) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final (l, n) in [('X ', p?.dx), ('Y ', p?.dy)]) ...[
-                Text(l, style: TextStyles.micro(Grey.g56)),
-                SizedBox(
-                  width: Shape.z(34),
-                  child: Text(
-                    n == null ? '—' : '${n.round()}',
-                    style: TextStyles.value(n == null ? Grey.g56 : Grey.g91),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-/// The navigator: the whole frame in miniature, the part the viewport shows outlined. Shown only when zoomed past fit.
-class StageNavigator extends StatelessWidget {
-  const StageNavigator({
-    super.key,
-    required this.scene,
-    required this.view,
-    this.texture,
-  });
-  final ArtScene scene;
-  final StageViewport view;
-
-  /// The engine's preview of the whole frame, drawn under the outline. It is the same texture the stage shows.
-  final int? texture;
-  @override
-  Widget build(BuildContext context) {
-    final h =
-        StageTokens.mapW * ArtGeometry.comp.height / ArtGeometry.comp.width;
-    return Container(
-      width: StageTokens.mapW + 8,
-      height: h + 8,
-      padding: EdgeInsets.all(Shape.s(4)),
-      color: WindowTokens.card,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (texture != null)
-            Texture(textureId: texture!, filterQuality: FilterQuality.medium),
-          CustomPaint(
-            painter: _MapPainter(
-              scene,
-              Rect.fromPoints(
-                view.toComposition(view.area.topLeft),
-                view.toComposition(view.area.bottomRight),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MapPainter extends CustomPainter {
-  _MapPainter(this.scene, this.shown);
-  final ArtScene scene;
-  final Rect shown;
-  @override
-  void paint(Canvas c, Size s) {
-    final k = s.width / ArtGeometry.comp.width;
-    c.save();
-    c.clipRect(Offset.zero & s);
-    c.scale(k);
-    c.restore();
-    final r = Rect.fromLTRB(
-      shown.left * k,
-      shown.top * k,
-      shown.right * k,
-      shown.bottom * k,
-    ).intersect(Offset.zero & s);
-    c.drawRect(r.deflate(.75), linePaint(WindowTokens.accent, 1.5));
-  }
-
-  @override
-  bool shouldRepaint(_MapPainter o) => o.scene != scene || o.shown != shown;
-}
-
-// ---- the preview and what sits on it ----------------------------------------------------------------------------------
-
-Paint linePaint(Color c, [double w = 1]) => Paint()
-  ..style = PaintingStyle.stroke
-  ..strokeWidth = w
-  ..color = c;
-
-/// What one painter draws: everything (including the stand-in art), or one side of the engine's preview.
-/// With the preview in the composition, [under] is what lies beneath it (surround, captions), [over] what lies above (grid, guides, selection).
-enum ViewPart { all, under, over }
-
-class PointsPainter extends CustomPainter {
-  PointsPainter(this.at, this.handles);
-  final List<Offset> at;
-  final List<(Offset, Offset)> handles;
-  @override
-  void paint(Canvas c, Size _) {
-    final edge = linePaint(WindowTokens.accent),
-        inside = Paint()..color = const Color(0xFFFFFFFF);
-    for (final (h, o) in handles) {
-      if ((h - o).distance < 1) continue;
-      c
-        ..drawLine(o, h, edge)
-        ..drawCircle(h, 3, inside)
-        ..drawCircle(h, 3, edge);
-    }
-    for (final p in at) {
-      final r = Rect.fromCenter(
-        center: p,
-        width: Shape.z(6),
-        height: Shape.z(6),
-      );
-      c
-        ..drawRect(r, inside)
-        ..drawRect(r, edge);
-    }
-  }
-
-  @override
-  bool shouldRepaint(PointsPainter o) =>
-      !listEquals(o.at, at) || !listEquals(o.handles, handles);
 }
