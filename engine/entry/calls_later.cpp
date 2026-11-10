@@ -1,5 +1,7 @@
 // calls_later.cpp: the calls of motolii.h for changes that are queued and
 // answered later, which are motolii_later and motolii_answer, and for undo.
+#include "entry/calls_later.h"
+
 #include <sqlite3.h>
 
 #include <cmath>
@@ -58,11 +60,11 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
   int ticket = 0;
   {
     std::lock_guard<std::mutex> hold(m->asked_lock);
-    ticket = ++m->tickets;
+    ticket = ++m->later.tickets;
     m->lastPosted.clear();
     m->asked.push_back([m, c, n, w, layer = layer, number, ticket]() mutable {
       // The layer that the last queued add or create made.
-      if (layer == -1) layer = m->last_added;
+      if (layer == -1) layer = m->later.last_added;
       const long rows = sqlite3_total_changes(m->d->file);
       int ok = 0;
       // A call that throws is refused with the text of the exception. That
@@ -80,7 +82,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
               m, (int)doc_set(
                      doc(m), layer, n.c_str(),
                      w == "last_added"
-                         ? m->last_added
+                         ? m->later.last_added
                          : doc_macro_own(doc(m), layer, n.c_str(),
                                          doc(m).stage ? doc(m).stage->now : 0.0,
                                          number)));
@@ -120,15 +122,15 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         }
         // name: the kind. word: the file. The result is the new layer.
         else if (c == "add")
-          ok = m->last_added =
+          ok = m->later.last_added =
               changes(m, doc_add(doc(m), n.c_str(), w.c_str()));
         // word: the create script. The result is the new layer.
         else if (c == "create")
-          ok = m->last_added = changes(m, doc_make(doc(m), w.c_str()));
+          ok = m->later.last_added = changes(m, doc_make(doc(m), w.c_str()));
         // word: code from the net. layer: the layer picked, or 0. The result is
         // the new layer.
         else if (c == "adapter")
-          ok = m->last_added = changes(m, doc_door(doc(m), w, layer));
+          ok = m->later.last_added = changes(m, doc_door(doc(m), w, layer));
         // word: the file of a program, which was saved.
         else if (c == "code") {
           const std::string why = doc_code_saved(doc(m), w);
@@ -141,10 +143,11 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         }
         // The result is the new layer.
         else if (c == "duplicate")
-          ok = m->last_added = changes(m, doc_copy_above(doc(m), layer));
+          ok = m->later.last_added = changes(m, doc_copy_above(doc(m), layer));
         // number: the time to split at. The result is the part after it.
         else if (c == "split")
-          ok = m->last_added = changes(m, doc_split(doc(m), layer, number));
+          ok = m->later.last_added =
+              changes(m, doc_split(doc(m), layer, number));
         // Take the work area out and close the gap.
         else if (c == "extract")
           ok = changes(m, (int)doc_extract(doc(m)));
@@ -190,11 +193,13 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           ok = changes(m, (int)doc_fit(doc(m), layer, w));
         // The result is the copy that is heard.
         else if (c == "extract_sound")
-          ok = m->last_added = changes(m, doc_extract_sound(doc(m), layer));
+          ok = m->later.last_added =
+              changes(m, doc_extract_sound(doc(m), layer));
         // word: the outline's points in image points, as x y for each. The
         // result is the new shape.
         else if (c == "freehand")
-          ok = m->last_added = changes(m, doc_freehand(doc(m), w.c_str()));
+          ok = m->later.last_added =
+              changes(m, doc_freehand(doc(m), w.c_str()));
         // Alight Motion's Convert to Outline: the shape becomes a path of the
         // outline it shows.
         else if (c == "outline")
@@ -202,18 +207,19 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // word: how far the curve may stray, in image points, then the points
         // of the stroke as x y for each. The result is the new path.
         else if (c == "curve")
-          ok = m->last_added = changes(m, doc_curve(doc(m), w.c_str()));
+          ok = m->later.last_added = changes(m, doc_curve(doc(m), w.c_str()));
         // word: the tool, how wide, then each point of the stroke in image
         // points as x y and its pressure. The tools are 0 pen, 1 brush, 2 fill
         // and 3 eraser. The result is the new shape, or the one erased from.
         else if (c == "brush")
-          ok = m->last_added = changes(m, doc_brush(doc(m), w.c_str(), layer));
+          ok = m->later.last_added =
+              changes(m, doc_brush(doc(m), w.c_str(), layer));
         // word: the file to save the whole layer in.
         else if (c == "copy")
           ok = (int)doc_preset_save(doc(m), layer, w.c_str(), true);
         // word: that file. number: when it begins. The result is the new layer.
         else if (c == "paste")
-          ok = m->last_added =
+          ok = m->later.last_added =
               changes(m, doc_preset_paste(doc(m), w.c_str(), number));
         // word: the file. name: only these properties, such as those of one
         // effect card. See document/edit/presets.h.
@@ -233,7 +239,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // word: the element's file. number: when it begins. The result is the
         // new layer.
         else if (c == "element")
-          ok = m->last_added =
+          ok = m->later.last_added =
               changes(m, doc_element_add(doc(m), w.c_str(), number));
         // Each element put in whose file was written since is made again as the
         // file is now.
@@ -247,11 +253,13 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // layer: the relation. word: the layer numbers put in it, as they show
         // now.
         else if (c == "relate")
-          ok = changes(m, (int)doc_relate(doc(m), layer, w.c_str(), m->now));
+          ok = changes(
+              m, (int)doc_relate(doc(m), layer, w.c_str(), m->playback.now));
         // word: an effect file. It is put at the end of the layer's effects, or
         // taken out. A transition runs from now.
         else if (c == "fx_file")
-          ok = changes(m, (int)doc_fx_file(doc(m), layer, w.c_str(), m->now));
+          ok = changes(
+              m, (int)doc_fx_file(doc(m), layer, w.c_str(), m->playback.now));
         // word: the title of an effect's card. The effect is taken off.
         else if (c == "fx_out")
           ok = changes(m, (int)doc_fx_out(doc(m), layer, w.c_str()));
@@ -267,17 +275,18 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // Make `number` the leader of the relation `layer`, with nothing
         // moving.
         else if (c == "lead")
-          ok = changes(m, (int)doc_lead(doc(m), layer, (int)number, m->now));
+          ok = changes(
+              m, (int)doc_lead(doc(m), layer, (int)number, m->playback.now));
         // Take the layer out of the relation `number`. It goes back to what is
         // under it, as when the relation is deleted. Only bake keeps where it
         // shows.
         else if (c == "free")
-          ok = changes(
-              m, (int)doc_free(doc(m), layer, (int)number, m->now, false));
+          ok = changes(m, (int)doc_free(doc(m), layer, (int)number,
+                                        m->playback.now, false));
         // Let go of the relation `layer`, each of its layers staying where it
         // shows now.
         else if (c == "release")
-          ok = changes(m, (int)doc_release(doc(m), layer, m->now));
+          ok = changes(m, (int)doc_release(doc(m), layer, m->playback.now));
         else if (c == "mark")
           ok = changes(m, (int)doc_mark(doc(m), number, w.c_str()));
         // number: the time of the mark. word: its color, 1 to 16, or 0 for
@@ -352,7 +361,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "pen") {
           double x = 0.0, y = 0.0, hx = 0.0, hy = 0.0;
           std::sscanf(w.c_str(), "%lf %lf %lf %lf", &x, &y, &hx, &hy);
-          ok = m->last_added = changes(m, doc_pen(doc(m), layer, x, y, hx, hy));
+          ok = m->later.last_added =
+              changes(m, doc_pen(doc(m), layer, x, y, hx, hy));
         }
         // Open the preview's live image. The result is 1 once it is open.
         else if (c == "live")
@@ -364,9 +374,9 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // word: the layer numbers whose moving values the app shows, separated
         // by spaces. Their values are in the next preview.
         else if (c == "watch") {
-          m->watched.clear();
+          m->window.watched.clear();
           std::istringstream in(w);
-          for (int t; in >> t;) m->watched.insert(t);
+          for (int t; in >> t;) m->window.watched.insert(t);
           // Get their values at once, not with the next preview.
           snapshot_time(m);
           ok = 1, m->changed = true;
@@ -383,7 +393,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         }
         // word: not empty when the Camera View tab is open.
         else if (c == "camera_view")
-          ok = 1, m->second = !w.empty(), m->changed = true;
+          ok = 1, m->window.second = !w.empty(), m->changed = true;
         // word: where the app's working camera stands, as in view_camera_is. An
         // empty word selects the project's camera.
         else if (c == "view_camera")
@@ -415,14 +425,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
       m->changed = true;
       {
         std::lock_guard<std::mutex> hold(m->asked_lock);
-        m->answers[ticket] = {ok,
-                              ok ? std::string() : std::string(motolii_why(m))};
+        m->later.answers[ticket] = {
+            ok, ok ? std::string() : std::string(motolii_why(m))};
       }
       // Notify the app that an answer is there, see motolii_add_listener, as
       // Thermion's registry is notified when a request is done.
       {
-        std::lock_guard<std::mutex> hold(m->snapshotLock);
-        m->snapshotPending |= 8;
+        std::lock_guard<std::mutex> hold(m->snapshots.lock);
+        m->snapshots.pending |= 8;
       }
     });
   }
@@ -434,15 +444,17 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
 // after a 0.
 int motolii_answer(Motolii* m, int ticket) {
   std::lock_guard<std::mutex> hold(m->asked_lock);
-  const auto found = m->answers.find(ticket);
-  if (found == m->answers.end()) return -1;
+  const auto found = m->later.answers.find(ticket);
+  if (found == m->later.answers.end()) return -1;
   const int ok = found->second.first;
-  m->answered_why = found->second.second;
-  m->answers.erase(found);
+  m->later.answered_why = found->second.second;
+  m->later.answers.erase(found);
   return ok;
 }
 // Returns the reason the change last answered by motolii_answer was refused.
-const char* motolii_answer_why(Motolii* m) { return m->answered_why.c_str(); }
+const char* motolii_answer_why(Motolii* m) {
+  return m->later.answered_why.c_str();
+}
 // Undoes the last undo step. Returns nonzero on success.
 int motolii_undo(Motolii* m) {
   return on_render_thread(m, [=] { return (int)(doc_undo(doc(m))); });

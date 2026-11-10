@@ -27,10 +27,13 @@
 // Thermion's frame scheduler, in engine/third_party/thermion_frame. It calls
 // back once per display refresh.
 #include "document/document.h"
+#include "entry/calls_later.h"
+#include "entry/calls_time.h"
 #include "entry/motolii.h"
+#include "entry/playback.h"
 #include "entry/snapshot.h"
-#include "media/sound_playback.h"
-#include "preview/playback_cache.h"
+#include "entry/timing.h"
+#include "entry/window.h"
 #include "rendering/FrameScheduler.hpp"
 #include "stage/live.h"
 #include "stage/render/render_stage.h"
@@ -55,15 +58,6 @@ struct Motolii {
   motolii::Stage* s = nullptr;
   motolii::Doc* d = nullptr;
   motolii::Live* live = nullptr;
-  // The layer selected in the window and the layer under the pointer. Both are
-  // marked in the preview.
-  int pick = 0, hover = 0;
-  // Layers whose changing values the window displays. Their values are included
-  // in the snapshot of the current time.
-  std::set<int> watched;
-  // The sound of each layer, keyed by pointer, while the live stage plays. See
-  // sound_playback.h.
-  std::map<const void*, motolii::Heard> heard;
   std::string error, listed;
   std::thread render_thread;
   // Where the render thread is in its loop. Printed to stderr if the loop
@@ -77,26 +71,14 @@ struct Motolii {
   // The number of beats received so far, and the beat the last frame was drawn
   // on. Both are guarded by asked_lock.
   uint64_t beats = 0, drew_at = 0;
-  // Counters reported by motolii_spent. In order: loop iterations that threw,
-  // beats a frame was drawn on, beats where the GPU had not finished the
-  // previous frame, beats with nothing new to draw, iterations that ran a
-  // change, iterations with more than one change on a single beat, and beats
-  // that arrived while the thread was busy. busy_at, still_at and seen_beat
-  // remember the last beat counted for each, so a beat is counted once.
-  // files_seen is the last file-change count checked. videos_ms and videos_most
-  // are the total and longest time spent putting videos at the current time.
-  // part_ms and part_most are the total and longest time of each part of one
-  // loop iteration: file checks, changes, notifications, GPU submission, work
-  // ahead, drawing, and the changes alone.
-  long rounds_threw = 0, beats_rendered = 0, beats_gpu_busy = 0,
-       beats_still = 0, writes_on_beat = 0, beats_two = 0, beats_unseen = 0;
+  // The number of loop iterations that ran a change since the last frame was
+  // drawn.
+  long writes_on_beat = 0;
+  // The last beat counted as one where the GPU was busy, as one with nothing
+  // new to draw, and as seen, so a beat is counted once.
   uint64_t busy_at = 0, still_at = 0, seen_beat = 0;
+  // The last file-change count checked.
   int files_seen = -1;
-  double videos_ms = 0, videos_most = 0, part_ms[7] = {}, part_most[7] = {};
-  // Set by motolii_finished. Called when a frame is finished so that Flutter
-  // can be notified.
-  std::atomic<void (*)(void*)> shown{nullptr};
-  std::atomic<void*> shown_with{nullptr};
   // Calls waiting to run on the render thread.
   std::deque<std::function<void()>> asked;
   // Posted calls that have not run yet, by kind. A newer call of the same kind
@@ -105,63 +87,21 @@ struct Motolii {
   // The kind of the last entry in the queue, if it was posted. Only that entry
   // may be replaced.
   std::string lastPosted;
-  // The last ticket handed out by motolii_later.
-  int tickets = 0;
-  // The result of each finished change, by ticket: whether it was done and, if
-  // not, why.
-  std::map<int, std::pair<int, std::string>> answers;
-  // The reason given with the last answer, reported to the app.
-  std::string answered_why;
   bool closing = false, changed = true;
-  std::atomic<bool> playing{false};
-  // True while the Camera View tab is open. See live_camera.
-  bool second = false;
   // The last time the render thread had work: a call arrived, playback ran, or
   // the document changed.
   std::chrono::steady_clock::time_point stirred{};
   // True while frames of videos are being cached ahead of time while the thread
   // is otherwise idle. See frames_ahead.
   bool ahead = false;
-  // True if playback goes round the work area. False if it stops at the end.
-  // Atomic so it can be read without the document lock.
-  std::atomic<bool> loop{true};
-  // A copy of the document's own flag, so it can be read on every frame without
-  // waiting for the document.
-  std::atomic<bool> keying{false};
   // True while the render thread evaluates the stage at a time and holds the
   // document. A reader that asked now would have to wait.
   std::atomic<bool> evaluating{false};
-  std::atomic<double> now{0.0};
-  // Count and total time of each call, by call name. For measurement.
-  std::map<std::string, std::pair<long, double>> by_call;
-  // The slowest single time of each call.
-  std::map<std::string, double> worst;
-  // The layer made by the last add or make call. A later call that passes layer
-  // -1 means this one.
-  int last_added = 0;
   // The number of times the document has changed. Can be read from any thread
   // without the document lock.
   std::atomic<long> revision{0};
   // The number of times the values held by an ongoing drag have changed.
   std::atomic<long> dragged{0};
-  // Set by motolii_watch. The window's thread must not wait on the render
-  // thread. Calls that did wait are recorded in broke, which keeps the last
-  // 200. Watching is on from the start.
-  std::atomic<bool> watching{true};
-  std::deque<std::string> broke;
-  // The number of entries added to broke since watching began.
-  std::atomic<long> broken{0};
-  // Calls made from the window's own thread, by name: the number of calls, the
-  // total time waited, the longest wait, and the total time taken. Shows what
-  // the window waits on.
-  std::map<std::string, std::array<double, 4>> window;
-  // Reads that waited for the document: the total wait, the longest wait, and
-  // the number of waits over 2 ms.
-  double read_waited = 0, read_waited_most = 0;
-  long read_waits = 0;
-  // Calls through the render thread, by name: the longest wait for the answer
-  // and the number of waits over 4 ms.
-  std::map<std::string, std::pair<double, long>> rounds;
   // Milliseconds the GPU may take for a live frame, out of the 16.7 that a
   // frame has at 60 fps. MOTOLII_BUDGET overrides the default.
   double budget = std::getenv("MOTOLII_BUDGET")
@@ -172,45 +112,25 @@ struct Motolii {
   double gpu_ms = 0.0, gpu_most = 0.0;
   // The scale at which the stage's views are drawn now. See stage_scale.
   double scale = 1.0;
-  // Frames of the stage cached on disk for playback. See
-  // preview/playback_cache.h.
-  motolii::StageCache cache;
-  // Seconds spent, and in the next member the number of calls, for: changes,
-  // reads, evaluating a time, and drawing.
-  double spent[4] = {0, 0, 0, 0};
-  long many[4] = {0, 0, 0, 0};
-  // The window's snapshots of the document (snapshot.h, docs/app/BRIDGE.md).
-  // The render thread writes them and readers use them under snapshotLock.
-  std::mutex snapshotLock;
-  // Each layer's part of the document snapshot and the version it was made at.
-  std::map<int, std::pair<long, std::string>> snapshotLayers;
-  // The number of the user's own easings when the document snapshot was last
-  // made. See doc_own_easings_made.
-  int snapshotEasings = -1;
-  // The SQLite total change count at the time the document snapshot was last
-  // made.
-  long snapshotRows = -1;
-  // The document snapshot's own part, and the snapshot of the current time.
-  std::string snapshotAll, timeSnapshot;
-  long snapshotVersion = 0, timeVersion = 0;
-  // Which snapshots are new since the window was last notified: 1 for the
-  // document's, 2 for the current time's.
-  int snapshotPending = 0;
-  // What of the cached frames the window was last told about.
-  long cacheNotified = 0;
-  // The window's single listener.
-  void (*listener)(int) = nullptr;
+
+  // What the window has selected and opened (window.h).
+  motolii::WindowState window;
+  // Playing the project in the preview (playback.h).
+  motolii::Playback playback;
+  // The changes queued by motolii_later and their answers (calls_later.h).
+  motolii::LaterCalls later;
+  // The watch on the app's main thread (calls_time.h).
+  motolii::MainThreadWatch watch;
+  // Where the engine spends its time (timing.h).
+  motolii::Timing timing;
+  // The window's snapshots of the document (snapshot.h).
+  motolii::Snapshots snapshots;
 };
 
 namespace motolii {
 
 // Length of one beat in milliseconds. A frame that takes longer misses a beat.
 inline constexpr double BEAT_MS = 1000.0 / 60.0;
-// Appends a line with the current wall-clock time and why to m->broke, which
-// keeps the last 200 lines. The caller must hold asked_lock. The time comes
-// first so the window can put the engine's events and its own in one order. The
-// window shows these as its red dot.
-void broke_one(Motolii* m, const char* why);
 // Draws the stage's frame for this beat. With the Camera View tab open, the
 // stage's own frame is the camera's, whichever camera the tool panel is using.
 // This is After Effects' Two Views: one composition seen through two cameras.
@@ -258,10 +178,11 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
       const double took =
           std::chrono::duration<double>(std::chrono::steady_clock::now() - t0)
               .count();
-      m->spent[changes ? 0 : 1] += took, m->many[changes ? 0 : 1]++;
-      auto& call = m->by_call[who];
+      m->timing.spent[changes ? 0 : 1] += took,
+          m->timing.many[changes ? 0 : 1]++;
+      auto& call = m->timing.by_call[who];
       call.first++, call.second += took,
-          m->worst[who] = std::max(m->worst[who], took);
+          m->timing.worst[who] = std::max(m->timing.worst[who], took);
     });
   }
   m->asked_now.notify_one();
@@ -274,9 +195,9 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
           .count();
   {
     std::lock_guard<std::mutex> hold(m->asked_lock);
-    auto& r = m->rounds[who];
+    auto& r = m->timing.rounds[who];
     r.first = std::max(r.first, round), r.second += round > 0.004;
-    if (pthread_main_np() && m->watching) {
+    if (pthread_main_np() && m->watch.watching) {
       char why[160];
       std::snprintf(why, sizeof why,
                     "%s waited %.1f ms for the hand (a change the window may "
@@ -285,7 +206,7 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
       broke_one(m, why);
     }
     if (pthread_main_np()) {
-      auto& w = m->window[who];
+      auto& w = m->timing.window[who];
       w[0]++, w[1] += round, w[2] = std::max(w[2], round), w[3] += round;
     }
   }
@@ -347,23 +268,23 @@ auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION())
   // A read waits while the render thread holds the document, evaluating a time
   // or making a change.
   const double waited = std::chrono::duration<double>(t0 - asked).count();
-  m->read_waited += waited,
-      m->read_waited_most = std::max(m->read_waited_most, waited),
-      m->read_waits += waited > 0.002;
+  m->timing.read_waited += waited,
+      m->timing.read_waited_most = std::max(m->timing.read_waited_most, waited),
+      m->timing.read_waits += waited > 0.002;
   auto out = does();
   why_asked = motolii_why(m);
   const double took =
       std::chrono::duration<double>(std::chrono::steady_clock::now() - t0)
           .count();
-  m->spent[1] += took, m->many[1]++;
-  auto& call = m->by_call[who];
+  m->timing.spent[1] += took, m->timing.many[1]++;
+  auto& call = m->timing.by_call[who];
   call.first++, call.second += took,
-      m->worst[who] = std::max(m->worst[who], took);
+      m->timing.worst[who] = std::max(m->timing.worst[who], took);
   if (pthread_main_np()) {
-    auto& w = m->window[who];
+    auto& w = m->timing.window[who];
     w[0]++, w[1] += waited, w[2] = std::max(w[2], waited), w[3] += took;
   }
-  if (pthread_main_np() && m->watching && waited > 0.002) {
+  if (pthread_main_np() && m->watch.watching && waited > 0.002) {
     char why[160];
     std::snprintf(why, sizeof why, "%s waited %.1f ms for the document", who,
                   1e3 * waited);

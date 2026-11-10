@@ -30,27 +30,10 @@ namespace math = filament::math;
 
 thread_local std::string why_asked;
 
-void broke_one(Motolii* m, const char* why) {
-  const auto now = std::chrono::system_clock::now();
-  const std::time_t at = std::chrono::system_clock::to_time_t(now);
-  std::tm tm{};
-  localtime_r(&at, &tm);
-  char line[240];
-  std::snprintf(line, sizeof line, "%02d:%02d:%02d.%03d %s", tm.tm_hour,
-                tm.tm_min, tm.tm_sec,
-                (int)(std::chrono::duration_cast<std::chrono::milliseconds>(
-                          now.time_since_epoch())
-                          .count() %
-                      1000),
-                why);
-  m->broke.push_back(line);
-  if (m->broke.size() > 200) m->broke.pop_front();
-  m->broken++;
-}
 void live_camera(Motolii* m) {
   Stage& s = *m->s;
   Doc& d = *m->d;
-  if (!m->second) return live_draw(s, m->live);
+  if (!m->window.second) return live_draw(s, m->live);
   const bool desk = m->live->desk && s.desk.w, camera = d.working_camera.on;
   if (desk) {
     live_draw(s, m->live);
@@ -60,11 +43,11 @@ void live_camera(Motolii* m) {
   }
   std::lock_guard<std::recursive_timed_mutex> holding(d.lock);
   const uint32_t w = s.desk.w;
-  if (camera) d.working_camera.asked = false, time_is(s, m->now);
+  if (camera) d.working_camera.asked = false, time_is(s, m->playback.now);
   s.desk.w = 0;
   live_draw(s, m->live);
   s.desk.w = w;
-  if (camera) d.working_camera.asked = true, time_is(s, m->now);
+  if (camera) d.working_camera.asked = true, time_is(s, m->playback.now);
 }
 void stage_scale(Motolii* m) {
   static const double fixed = std::getenv("MOTOLII_SCALE")
@@ -75,7 +58,7 @@ void stage_scale(Motolii* m) {
   // GPU time is proportional to the number of pixels drawn, so the pixel count
   // is cut by the factor by which the budget is exceeded. The linear scale is
   // the square root of that.
-  else if (m->playing && m->gpu_ms > 0.0)
+  else if (m->playback.playing && m->gpu_ms > 0.0)
     want = std::clamp(m->scale * std::sqrt(m->budget / m->gpu_ms), 0.5, 1.0);
   if (std::fabs(want - m->scale) < 0.05 && !(want == 1.0 && m->scale != 1.0))
     return;

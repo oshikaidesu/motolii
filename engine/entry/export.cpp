@@ -83,7 +83,7 @@ int motolii_export(Motolii* m, const char* mp4) {
     m->d->video_export.writing = false;
     m->d->video_export.written_from = 0.0;
     // Restore the time the preview was at before the export.
-    time_is(*m->s, m->now);
+    time_is(*m->s, m->playback.now);
     return ok;
   });
 }
@@ -117,23 +117,24 @@ const char* motolii_list(Motolii* m) {
 // The result is a JSON copy that the caller frees with free(). *version is set
 // to the version the snapshot is as of.
 char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
-  std::lock_guard<std::mutex> hold(m->snapshotLock);
+  std::lock_guard<std::mutex> hold(m->snapshots.lock);
   if (which == 2)
-    return *version = m->timeVersion, strdup(m->timeSnapshot.c_str());
+    return *version = m->snapshots.timeVersion,
+           strdup(m->snapshots.time.c_str());
   std::string all =
       "{\"document\":" +
-      (m->snapshotAll.empty() ? std::string("null") : m->snapshotAll) +
+      (m->snapshots.all.empty() ? std::string("null") : m->snapshots.all) +
       ",\"layer\":{";
   bool first = true;
-  for (const auto& [layer, part] : m->snapshotLayers)
+  for (const auto& [layer, part] : m->snapshots.layers)
     if (part.first > since)
       all +=
           (first ? "\"" : ",\"") + std::to_string(layer) + "\":" + part.second,
           first = false;
-  *version = m->snapshotVersion;
+  *version = m->snapshots.version;
   return strdup((all + "}}").c_str());
 }
 // Sets the app's one listener, which is called when new snapshots exist.
 void motolii_add_listener(Motolii* m, void (*listener)(int which)) {
-  m->listener = listener;
+  m->snapshots.listener = listener;
 }

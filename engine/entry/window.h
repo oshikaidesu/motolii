@@ -3,6 +3,8 @@
 // The window's side of the C API: opening and closing a document, the strings
 // calls answer with, and the live side of the window, which is the stage's
 // frame, the preview, selection, playback and the timing report.
+#include <atomic>
+#include <set>
 #include <string>
 
 #include "entry/motolii.h"
@@ -10,6 +12,25 @@
 namespace motolii {
 
 struct Doc;
+
+// What the window has selected, opened and asked to be told.
+struct WindowState {
+  // The layer selected in the window and the layer under the pointer. Both are
+  // marked in the preview.
+  int pick = 0, hover = 0;
+  // Layers whose changing values the window displays. Their values are included
+  // in the snapshot of the current time.
+  std::set<int> watched;
+  // True while the Camera View tab is open. See live_camera.
+  bool second = false;
+  // A copy of the document's own flag, so it can be read on every frame without
+  // waiting for the document.
+  std::atomic<bool> keying{false};
+  // Set by motolii_finished. Called when a frame is finished so that Flutter
+  // can be notified.
+  std::atomic<void (*)(void*)> shown{nullptr};
+  std::atomic<void*> shown_with{nullptr};
+};
 
 // A string a call answers with. It is kept until the same thread asks again, so
 // each caller has its own: the render thread, the window, and a question on

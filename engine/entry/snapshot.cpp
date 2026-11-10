@@ -199,7 +199,7 @@ void snapshot_update(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   std::set<int> again;
-  bool all = d.changes.layers_changed || m->snapshotLayers.empty();
+  bool all = d.changes.layers_changed || m->snapshots.layers.empty();
   std::string changes = d.changes.layers_changed ? "things\n" : "";
   for (const auto& [layer, name] : d.changes.changed) {
     changes += std::to_string(layer) + " " + name + "\n";
@@ -207,7 +207,7 @@ void snapshot_update(Motolii* m) {
     again.insert(layer);
   }
   d.changes.changed.clear(), d.changes.layers_changed = false;
-  m->snapshotRows = sqlite3_total_changes(d.file);
+  m->snapshots.rows = sqlite3_total_changes(d.file);
   int layers[1024];
   const int n = std::min(motolii_layers(m, layers, 1024), 1024);
   std::map<int, std::string> parts;
@@ -287,26 +287,26 @@ void snapshot_update(Motolii* m) {
   for (int i = 0; i < n; ++i) w.Int(layers[i]);
   w.EndArray();
   w.EndObject();
-  std::lock_guard<std::mutex> hold(m->snapshotLock);
+  std::lock_guard<std::mutex> hold(m->snapshots.lock);
   std::string own = {out.GetString(), out.GetSize()};
   // Nothing the app reads changed, so publish no new snapshot.
-  if (parts.empty() && own == m->snapshotAll) return;
-  const long v = ++m->snapshotVersion;
+  if (parts.empty() && own == m->snapshots.all) return;
+  const long v = ++m->snapshots.version;
   for (auto& [layer, part] : parts)
-    m->snapshotLayers[layer] = {v, std::move(part)};
+    m->snapshots.layers[layer] = {v, std::move(part)};
   std::set<int> are(layers, layers + n);
   are.insert(0);
   // Drop the parts of layers that no longer exist.
-  for (auto it = m->snapshotLayers.begin(); it != m->snapshotLayers.end();)
-    it = are.count(it->first) ? std::next(it) : m->snapshotLayers.erase(it);
-  m->snapshotAll = std::move(own);
-  m->snapshotPending |= 1;
+  for (auto it = m->snapshots.layers.begin(); it != m->snapshots.layers.end();)
+    it = are.count(it->first) ? std::next(it) : m->snapshots.layers.erase(it);
+  m->snapshots.all = std::move(own);
+  m->snapshots.pending |= 1;
 }
 
 void snapshot_time(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
-  const double at = m->now;
+  const double at = m->playback.now;
   rapidjson::StringBuffer out;
   SnapshotWriter w(out);
   w.StartObject();
@@ -341,7 +341,7 @@ void snapshot_time(Motolii* m) {
     w.EndObject();
     // The values that move at this time, for the selected layer and for layers
     // the app watches.
-    if (t == m->pick || m->watched.count(t)) {
+    if (t == m->window.pick || m->window.watched.count(t)) {
       w.Key("value"), w.StartObject();
       for (const std::string& name : snapshot_words(motolii_moving(m, t)))
         if (double v = 0; doc_value(d, t, name.c_str(), at, &v))
@@ -349,7 +349,7 @@ void snapshot_time(Motolii* m) {
               w.Double(v);
       w.EndObject();
     }
-    if (t == m->pick) {
+    if (t == m->window.pick) {
       double xy[512], of[512];
       const int p = std::min(doc_points(d, t, at, xy, 256), 256);
       w.Key("points"), w.StartArray();
@@ -367,22 +367,23 @@ void snapshot_time(Motolii* m) {
   }
   w.EndObject();
   w.EndObject();
-  std::lock_guard<std::mutex> hold(m->snapshotLock);
-  ++m->timeVersion;
-  m->timeSnapshot = {out.GetString(), out.GetSize()};
-  m->snapshotPending |= 2;
+  std::lock_guard<std::mutex> hold(m->snapshots.lock);
+  ++m->snapshots.timeVersion;
+  m->snapshots.time = {out.GetString(), out.GetSize()};
+  m->snapshots.pending |= 2;
 }
 
 void snapshot_notify(Motolii* m) {
   int pending;
   {
-    std::lock_guard<std::mutex> hold(m->snapshotLock);
-    pending = m->snapshotPending, m->snapshotPending = 0;
+    std::lock_guard<std::mutex> hold(m->snapshots.lock);
+    pending = m->snapshots.pending, m->snapshots.pending = 0;
   }
   // The set of stage frames cached on disk changed.
-  if (const long k = m->cache.told.load(); k != m->cacheNotified)
-    pending |= 4, m->cacheNotified = k;
-  if (pending && m->listener) m->listener(pending);
+  if (const long k = m->playback.cache.told.load();
+      k != m->snapshots.cacheNotified)
+    pending |= 4, m->snapshots.cacheNotified = k;
+  if (pending && m->snapshots.listener) m->snapshots.listener(pending);
 }
 
 }  // namespace motolii

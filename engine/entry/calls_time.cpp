@@ -4,8 +4,10 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -49,7 +51,7 @@ int motolii_at(Motolii* m, double seconds) {
     }
     // The preview's videos are updated in the render thread's loop after the
     // project lock is released, not here under the lock.
-    m->now = seconds;
+    m->playback.now = seconds;
     // Anything asked after this is drawn at this time, even if the render
     // thread is busy drawing other frames and its loop has not run yet.
     if (m->d->stage) m->d->stage->now = seconds;
@@ -65,6 +67,23 @@ bool ends(const char* name, const char* with) {
 bool placed(const char* name) {
   return std::filesystem::is_directory(
       std::filesystem::absolute(name).parent_path());
+}
+void broke_one(Motolii* m, const char* why) {
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t at = std::chrono::system_clock::to_time_t(now);
+  std::tm tm{};
+  localtime_r(&at, &tm);
+  char line[240];
+  std::snprintf(line, sizeof line, "%02d:%02d:%02d.%03d %s", tm.tm_hour,
+                tm.tm_min, tm.tm_sec,
+                (int)(std::chrono::duration_cast<std::chrono::milliseconds>(
+                          now.time_since_epoch())
+                          .count() %
+                      1000),
+                why);
+  m->watch.broke.push_back(line);
+  if (m->watch.broke.size() > 200) m->watch.broke.pop_front();
+  m->watch.broken++;
 }
 
 }  // namespace motolii
@@ -91,9 +110,9 @@ int motolii_poster(Motolii* m, const char* png) {
          ("motolii_poster_whole_" + std::to_string(getpid()) + ".png"))
             .string();
     const double at = doc_number(d, 0, "poster_at", 0, -1);
-    time_is(*m->s, at >= 0 ? at : (double)m->now);
+    time_is(*m->s, at >= 0 ? at : (double)m->playback.now);
     const bool shot = shoot(*m->s, whole.c_str());
-    time_is(*m->s, m->now);
+    time_is(*m->s, m->playback.now);
     const int wide =
         std::max(1, 256 * m->s->w / std::max({m->s->w, m->s->h, 1}));
     const bool small = shot && thumbnail_at(whole.c_str(), png, wide, 0.0);
@@ -167,7 +186,7 @@ int motolii_still(Motolii* m, const char* png) {
         !checked(m, placed(png), "there is no such folder"))
       return 0;
     const DocExact exact(doc(m));
-    time_is(*m->s, m->now);
+    time_is(*m->s, m->playback.now);
     return checked(m, shoot(*m->s, png), "the file could not be written");
   });
 }
@@ -181,17 +200,17 @@ int motolii_rate(Motolii*) { return RATE; }
 // records.
 void motolii_watch(Motolii* m, int on) {
   std::lock_guard<std::mutex> h(m->asked_lock);
-  if (on) m->broke.clear(), m->broken = 0;
-  m->watching = on != 0;
+  if (on) m->watch.broke.clear(), m->watch.broken = 0;
+  m->watch.watching = on != 0;
 }
 // Takes no lock, because the app may ask for this on every frame.
-long motolii_broken_count(Motolii* m) { return m->broken.load(); }
+long motolii_broken_count(Motolii* m) { return m->watch.broken.load(); }
 // Returns the records made while watching, one per line, or "" if none. Valid
 // until the next call.
 const char* motolii_broken(Motolii* m) {
   std::lock_guard<std::mutex> h(m->asked_lock);
   m->listed.clear();
-  for (const std::string& one : m->broke)
+  for (const std::string& one : m->watch.broke)
     m->listed += (m->listed.empty() ? "" : "\n") + one;
   return m->listed.c_str();
 }

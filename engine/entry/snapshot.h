@@ -13,9 +13,40 @@
 //   Time snapshot: rebuilt with each frame. It holds where each layer is and
 //   what moves, at the
 //     time that was drawn.
+#include <map>
+#include <mutex>
+#include <string>
+#include <utility>
+
 #include "entry/motolii.h"
 
 namespace motolii {
+
+// The window's snapshots of the document (docs/app/BRIDGE.md) and what the
+// window has been told of them. The render thread writes them and readers use
+// them under lock.
+struct Snapshots {
+  std::mutex lock;
+  // Each layer's part of the document snapshot and the version it was made at.
+  std::map<int, std::pair<long, std::string>> layers;
+  // The number of the user's own easings when the document snapshot was last
+  // made. See doc_own_easings_made.
+  int easings = -1;
+  // The SQLite total change count at the time the document snapshot was last
+  // made.
+  long rows = -1;
+  // The document snapshot's own part, and the snapshot of the current time.
+  std::string all, time;
+  // The version of the document snapshot and of the time snapshot.
+  long version = 0, timeVersion = 0;
+  // Which snapshots are new since the window was last notified: 1 for the
+  // document's, 2 for the current time's.
+  int pending = 0;
+  // What of the cached frames the window was last told about.
+  long cacheNotified = 0;
+  // The window's single listener.
+  void (*listener)(int) = nullptr;
+};
 
 // Rebuilds the parts of the document snapshot that changed. Runs on the render
 // thread while it holds the document.

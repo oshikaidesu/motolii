@@ -114,22 +114,22 @@ unsigned long long motolii_frames(Motolii* m) {
 // Sets the listener called, with the argument with, whenever a frame is
 // finished.
 void motolii_finished(Motolii* m, void (*listener)(void*), void* with) {
-  m->shown_with = with;
-  m->shown = listener;
+  m->window.shown_with = with;
+  m->window.shown = listener;
 }
 // Returns text describing the runs of frames cached on disk.
 const char* motolii_cache(Motolii* m) {
   // Each caller gets its own copy, because the render thread may change the
   // runs meanwhile.
   static thread_local std::string runs;
-  std::lock_guard<std::mutex> hold(m->cache.runsLock);
-  return (runs = m->cache.runs).c_str();
+  std::lock_guard<std::mutex> hold(m->playback.cache.runsLock);
+  return (runs = m->playback.cache.runs).c_str();
 }
 
 namespace motolii {
 
 int pick_is(Motolii* m, int layer, int hover) {
-  m->pick = layer, m->hover = hover, m->changed = true;
+  m->window.pick = layer, m->window.hover = hover, m->changed = true;
   return 1;
 }
 int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
@@ -156,7 +156,7 @@ int view_camera_is(Motolii* m, const char* word) {
       std::sscanf(word, "%lf %lf %lf", &d.working_camera.position[0],
                   &d.working_camera.position[1],
                   &d.working_camera.position[2]) == 3;
-  time_is(*m->s, m->now);
+  time_is(*m->s, m->playback.now);
   snapshot_time(m);
   m->changed = true;
   return 1;
@@ -176,9 +176,9 @@ unsigned long long motolii_desk_frames(Motolii* m) {
 // asks. The answer is given at once and not queued behind the render thread's
 // frame.
 int motolii_loop(Motolii* m, int on) {
-  if (on < 0) return (int)m->loop.load();
+  if (on < 0) return (int)m->playback.loop.load();
   // Takes effect at once. The render thread reads it as it goes round.
-  m->loop = on != 0;
+  m->playback.loop = on != 0;
   return on != 0;
 }
 // Returns the names of the layer properties that decide which cards the
@@ -200,32 +200,33 @@ const char* motolii_shaping(Motolii*) {
 const char* motolii_spent(Motolii* m) {
   return by_look(m, [=] {
     char line[400];
-    std::snprintf(line, sizeof line,
-                  "changes %ld %.0f ms, reads %ld %.0f ms, moments %ld %.0f "
-                  "ms, draws %ld %.0f ms (waiting for the GPU %.0f ms); beats "
-                  "drawn on %ld, the GPU not done at %ld, nothing new at %ld, "
-                  "two changes in one %ld, unseen %ld; films put %.0f ms (most "
-                  "%.1f); films' frames kept %ld, from disk %ld, drawn %ld",
-                  m->many[0], 1e3 * m->spent[0], m->many[1], 1e3 * m->spent[1],
-                  m->many[2], 1e3 * m->spent[2], m->many[3], 1e3 * m->spent[3],
-                  m->live ? 1e3 * m->live->waited : 0.0, m->beats_rendered,
-                  m->beats_gpu_busy, m->beats_still, m->beats_two,
-                  m->beats_unseen, m->videos_ms, m->videos_most,
-                  films_cached.load(), films_disk.load(),
-                  films_rendered.load());
+    std::snprintf(
+        line, sizeof line,
+        "changes %ld %.0f ms, reads %ld %.0f ms, moments %ld %.0f "
+        "ms, draws %ld %.0f ms (waiting for the GPU %.0f ms); beats "
+        "drawn on %ld, the GPU not done at %ld, nothing new at %ld, "
+        "two changes in one %ld, unseen %ld; films put %.0f ms (most "
+        "%.1f); films' frames kept %ld, from disk %ld, drawn %ld",
+        m->timing.many[0], 1e3 * m->timing.spent[0], m->timing.many[1],
+        1e3 * m->timing.spent[1], m->timing.many[2], 1e3 * m->timing.spent[2],
+        m->timing.many[3], 1e3 * m->timing.spent[3],
+        m->live ? 1e3 * m->live->waited : 0.0, m->timing.beats_rendered,
+        m->timing.beats_gpu_busy, m->timing.beats_still, m->timing.beats_two,
+        m->timing.beats_unseen, m->timing.videos_ms, m->timing.videos_most,
+        films_cached.load(), films_disk.load(), films_rendered.load());
     std::vector<std::pair<double, std::string>> calls;
-    for (const auto& [name, cost] : m->by_call) {
+    for (const auto& [name, cost] : m->timing.by_call) {
       char one[160];
       std::snprintf(one, sizeof one, "%s %ld %.0f ms (slowest %.1f)",
                     name.c_str(), cost.first, 1e3 * cost.second,
-                    1e3 * m->worst[name]);
+                    1e3 * m->timing.worst[name]);
       calls.push_back({cost.second, one});
     }
     std::sort(calls.rbegin(), calls.rend());
     said_word() = line;
-    if (m->rounds_threw)
+    if (m->timing.rounds_threw)
       said_word() += "; the hand's round threw " +
-                     std::to_string(m->rounds_threw) + " times";
+                     std::to_string(m->timing.rounds_threw) + " times";
     {
       char parts[300];
       std::snprintf(
@@ -233,26 +234,27 @@ const char* motolii_spent(Motolii* m) {
           "; the hand's round: files %.0f ms (most %.1f), changes %.0f (%.1f) "
           "of which done %.0f (%.1f), telling %.0f (%.1f), GPU asked %.0f "
           "(%.1f), ahead %.0f (%.1f), moment and draw %.0f (%.1f)",
-          m->part_ms[0], m->part_most[0], m->part_ms[1], m->part_most[1],
-          m->part_ms[6], m->part_most[6], m->part_ms[2], m->part_most[2],
-          m->part_ms[3], m->part_most[3], m->part_ms[4], m->part_most[4],
-          m->part_ms[5], m->part_most[5]);
+          m->timing.part_ms[0], m->timing.part_most[0], m->timing.part_ms[1],
+          m->timing.part_most[1], m->timing.part_ms[6], m->timing.part_most[6],
+          m->timing.part_ms[2], m->timing.part_most[2], m->timing.part_ms[3],
+          m->timing.part_most[3], m->timing.part_ms[4], m->timing.part_most[4],
+          m->timing.part_ms[5], m->timing.part_most[5]);
       said_word() += parts;
-      for (double& x : m->part_most) x = 0;
+      for (double& x : m->timing.part_most) x = 0;
     }
     char waits[260];
     std::snprintf(waits, sizeof waits,
                   "; reads waited for the document %.0f ms, the longest %.1f "
                   "ms, %ld over 2 ms; the GPU took %.1f ms a picture, at most "
                   "%.1f, of %.0f it may",
-                  1e3 * m->read_waited, 1e3 * m->read_waited_most,
-                  m->read_waits, m->gpu_ms, m->gpu_most, m->budget);
+                  1e3 * m->timing.read_waited, 1e3 * m->timing.read_waited_most,
+                  m->timing.read_waits, m->gpu_ms, m->gpu_most, m->budget);
     said_word() += waits;
     // What the window's own thread asked, with the most waited on first.
     {
       std::lock_guard<std::mutex> hold(m->asked_lock);
       std::vector<std::pair<std::string, std::array<double, 4>>> all(
-          m->window.begin(), m->window.end());
+          m->timing.window.begin(), m->timing.window.end());
       std::sort(all.begin(), all.end(), [](const auto& a, const auto& b) {
         return a.second[1] + a.second[3] > b.second[1] + b.second[3];
       });
@@ -268,7 +270,7 @@ const char* motolii_spent(Motolii* m) {
     }
     {
       std::lock_guard<std::mutex> hold(m->asked_lock);
-      for (const auto& [name, r] : m->rounds)
+      for (const auto& [name, r] : m->timing.rounds)
         if (r.second) {
           char one[160];
           std::snprintf(one, sizeof one,
@@ -285,7 +287,8 @@ const char* motolii_spent(Motolii* m) {
 }
 // Starts or stops playback. The call is queued and does not wait.
 int motolii_play(Motolii* m, int playing) {
-  return posted(m, "play", [m, playing] { m->playing = playing != 0; });
+  return posted(m, "play",
+                [m, playing] { m->playback.playing = playing != 0; });
 }
 // Returns the current time in seconds.
-double motolii_now(Motolii* m) { return m->now; }
+double motolii_now(Motolii* m) { return m->playback.now; }

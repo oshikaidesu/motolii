@@ -326,14 +326,15 @@ int motolii_path3(Motolii* m, int layer, int copy, double from, double to,
 // read answered at once, not queued behind the render thread's frame. Otherwise
 // it returns whether auto-keying is now on.
 int motolii_keying(Motolii* m, int on) {
-  if (on < 0) return (int)m->keying.load();
+  if (on < 0) return (int)m->window.keying.load();
   // Record the new state at once and let the render thread pick it up on its
   // next turn.
-  m->keying = on != 0;
+  m->window.keying = on != 0;
   return posted(m, "keying",
                 [m, on] {
-                  m->d->keying.on = on != 0, m->d->keying.from = m->now;
-                  m->keying = m->d->keying.on;
+                  m->d->keying.on = on != 0,
+                  m->d->keying.from = m->playback.now;
+                  m->window.keying = m->d->keying.on;
                 }),
          on != 0;
 }
