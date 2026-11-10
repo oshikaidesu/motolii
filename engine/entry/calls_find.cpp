@@ -1,12 +1,30 @@
-// calls_find.h: the search over the items of a shelf, motolii_find. RapidFuzz matches words typed
+// calls_find.cpp: the search over the items of a shelf, motolii_find. RapidFuzz matches words typed
 // wrongly or in part. Japanese WordNet and SQLite's FTS5 match Japanese words.
-//
-// Included by motolii.mm before calls.h; not self-contained.
+#include "entry/motolii.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <cstdio>
+#include <fstream>
+#include <functional>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include <sqlite3.h>
+#include "third_party/rapidfuzz/rapidfuzz_amalgamated.hpp"
+
+#include "shelf/shelf_folders.h"
+
+namespace {
 
 // Decodes UTF-8 into code points and lower-cases the ASCII letters, as RapidFuzz's
 // utils.default_process does. A continuation byte of the form 10xxxxxx belongs to the character
 // before it, as canvas_renderables.h splits a text.
-static std::u32string find_letters(const std::string& s) {
+std::u32string find_letters(const std::string& s) {
     std::u32string out;
     for (size_t i = 0; i < s.size();) {
         const unsigned char b = (unsigned char)s[i];
@@ -19,7 +37,7 @@ static std::u32string find_letters(const std::string& s) {
     return out;
 }
 // Encodes code points as UTF-8.
-static std::string find_utf8(const std::u32string& s) {
+std::string find_utf8(const std::u32string& s) {
     std::string out;
     for (const char32_t c : s) {
         if (c < 0x80) out += (char)c;
@@ -40,7 +58,7 @@ static std::string find_utf8(const std::u32string& s) {
 //
 // Returns one list of English words for each Japanese word found. The result is empty if the query
 // is not Japanese or no word of it is known.
-static std::vector<std::vector<std::string>> find_english(const std::string& query) {
+std::vector<std::vector<std::string>> find_english(const std::string& query) {
     static std::unordered_map<std::string, std::string> words;
     static size_t longest = 0;
     static bool read = false;
@@ -80,6 +98,9 @@ static std::vector<std::vector<std::string>> find_english(const std::string& que
     }
     return said;
 }
+
+}  // namespace
+
 // Searches the items of a shelf for the query and returns the best matches nearest first, one per
 // line as "id\tscore\n". `items` has one item per line as "id\tname and label\twhat it does". At
 // most `limit` results are returned, or 5 when `limit` is 0. Nothing of the project is read.
