@@ -40,6 +40,7 @@ import 'package:motolii/workspace/stage/stage_view.dart' show WsRelationStack;
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/top_bar/top_bar.dart';
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/workspace/shelf/fx_code.dart';

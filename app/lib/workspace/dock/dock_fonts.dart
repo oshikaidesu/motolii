@@ -9,7 +9,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
+import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;

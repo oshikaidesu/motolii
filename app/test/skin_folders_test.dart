@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/bridge/motolii.dart' show motoliiOwn, motoliiShelves;
+import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn, motoliiShelves;
 import 'package:motolii/skin/theme.dart';
 
 void main() {

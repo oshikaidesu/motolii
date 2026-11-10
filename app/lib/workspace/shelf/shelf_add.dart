@@ -11,7 +11,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show motoliiShelves;
+import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_make.dart' show createNames;

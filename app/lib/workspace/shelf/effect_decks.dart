@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart' show sha256;
 
-import 'package:motolii/bridge/motolii.dart' show motoliiShelves;
+import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/storage/kept_file.dart' show fileJson, fileKeep, fileList;
 

@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-import 'package:motolii/bridge/motolii.dart' show motoliiShelves;
+import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/inspector/controls/inspector_param_controls.dart' show DicePaint;
 import 'package:motolii/inspector/inspector_parts.dart' show Pop;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField, wordsPicked;

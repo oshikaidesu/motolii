@@ -22,6 +22,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles, ffmpeg;
 
 /// The cache path of a tile: [kind] and a hash of [key] under the tiles' cache folder.

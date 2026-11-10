@@ -1,3 +1,4 @@
+export 'bridge/engine_paths.dart'; // Where the engine, the shelves and the project to open are on disk
 export 'bridge/motolii.dart'; // What a panel is made of, in one import. This line: the document, read and written (docs/app/BRIDGE.md)
 export 'skin/tokens.dart'; // the look: T (text), Grey, Role, Shape (sizes), Mo (motion). A panel writes no number of its own
 export 'widgets/controls.dart'; // Hov (the one press), IconPress, Badge, Chip and ChipLook, Segmented

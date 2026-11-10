@@ -83,7 +83,7 @@ flowchart TB
 
 ## 棚を読む所
 
-`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
+`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/engine_paths.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
 
 | フォルダ | エンジン | アプリ（`app/lib/`） |
 |---|---|---|
