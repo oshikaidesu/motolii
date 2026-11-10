@@ -2,7 +2,7 @@
 
 [日本語](guide.ja.md)
 
-The long tour of Motolii: what it does, which formats it runs and how well, how to build and open it step by step, the screen, a first piece, adding an effect from the web, how it compares with other tools, and how it is built. The short version is the [README](../../README.md); each tab is shown in [The tabs](screen_tour.md); where each kind of file goes is in [`shelves/README.md`](../../shelves/README.md).
+The long tour of Motolii: what it does, how to build and open it step by step, the screen, a first piece, adding an effect from the web, how it compares with other tools, and how it is built. The short version is the [README](../../README.md); each tab is shown in [The tabs](screen_tour.md); where each kind of file goes is in [`shelves/README.md`](../../shelves/README.md).
 
 ## Effects and scripts
 
@@ -14,7 +14,7 @@ ISF, WGSL and AviUtl2 scripts are supported too. Add a file to the designated fo
 
 A preview is generated automatically for each newly added effect, so you can choose by how it actually looks as well as by its name.
 
-Note: not all code in a supported format runs correctly. The test results are further down.
+Note: not all code in a supported format runs correctly. The test results are in the [Specifications](specifications.md#supported-formats-and-how-they-run).
 
 ![Eight shared ISF effects on a photo and text](../pictures/effects.jpg)
 
@@ -42,50 +42,9 @@ A finished video can be written out as an MP4.
 
 *8 seconds made with Motolii. Once built, the calls in [`docs/using/make_intro_movie.md`](make_intro_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
 
-## Requirements
+## Requirements and formats
 
-Motolii is still in development and supports Macs with Apple Silicon.
-
-There is no packaged app yet, so trying it means building it from source.
-
-A Windows version is planned. The main parts, such as Filament, ThorVG, GStreamer and Flutter, support Windows, and only a small share of the code, such as handing over video and the picture on screen, is tied directly to the Mac. It has not been built or tested on Windows yet.
-
-How each format runs, known bugs and the build steps are below.
-
-## Supported formats and how they run
-
-| Format | What was checked |
-|---|---|
-| ISF | 318 of 327 |
-| Shadertoy | 261 of 300 drew and moved |
-| p5.js | 97 of 168 drew a picture |
-| AviUtl2 | 372 of 594 ran to the end |
-
-Each was checked at a different time under different conditions. A p5.js work that draws may not match the original. The detailed conditions and limits are in the [test record](../design/sketch_import_test_record.md) (Japanese).
-
-### Each format in detail
-
-| You can | With | State |
-|---|---|---|
-| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (the check that counted them was removed). 419 bundled |
-| Apply WebGPU shaders | WGSL (`.wgsl`, including screen effects ported from three.js and others) | Applied to the whole scene. 266 bundled |
-| Paste a p5.js sketch | p5.js (copy the code, press ⌘V in the app) | It becomes a layer and stays in the Program tab. You can keyframe it and change its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 1 November; checked by eye, about 16 of the first 42 looked like the original) |
-| Paste a Shadertoy shader | GLSL (copy the code, press ⌘V in the app) | A shader that draws by itself becomes a layer; one that reads `iChannel` is applied to the selected layer. Either way it stays in the Program tab. Of 300 picked at random from an API dump of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 failed to load. Time Remap is p5.js only so far |
-| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 172 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`docs/design/aviutl2_catalogue.md`](../design/aviutl2_catalogue.md)). Scripts that need a Windows DLL don't run yet |
-| Use looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from [Shader Lab](https://github.com/basementstudio/shader-lab) are in the effects list; the rest are converted to WGSL only |
-| Place video, photos, text, shapes, 3D models and point clouds | Video (GStreamer), text and shapes (ThorVG), glTF and `.ply` (Filament) | Works |
-| Place After Effects animations | Lottie `.json` (ThorVG) | Works |
-| Animate from MIDI | MIDI (`.mid`): a piano roll, or keyframes on values at each note | Works; MIDI isn't heard yet (a video's sound is) |
-| Make shapes, or give a layer an in/out animation | Your own scripts (`.js`) | Drop one in and it appears in the list. 101 recipes (ready-made animated pieces) and 13 in/out animations bundled |
-| Move many layers together (line up, follow, flock, spring, collide) | Relation scripts (`.js`) | Drop one into `relations/` and it appears in the Relations tab. 9 bundled, plus 5 built in |
-
-A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial licence, so ask the author before using one in paid work.
-
-Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export.
-
-**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this guide says, then the UI's analyzer (`flutter analyze`) runs (the build badge on the [README](../../README.md)). The app's tests and the format and analyzer checks run on every push (the checks badge); how to run them yourself is in [`docs/TESTING.md`](../TESTING.md).
-
-**Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 frames a second. Exporting the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
+Apple silicon Mac only, built from source. The formats that run (with the counts we took), what Motolii writes out, and how fast it is: [Specifications](specifications.md).
 
 ## Before you try
 
@@ -94,7 +53,7 @@ Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), re
 
 | | Where it stands |
 |---|---|
-| Works | Everything marked "Works" above, autosave and undo, playback (with a video's sound), MP4 export, the timeline, inspector and effects list |
+| Works | Everything marked "Works" in the [Specifications](specifications.md#each-format-in-detail), autosave and undo, playback (with a video's sound), MP4 export, the timeline, inspector and effects list |
 | Partly | AviUtl2 scripts; Alight Motion's features (counts under "How it compares") |
 | Known bug | Putting a screen effect (`.wgsl`) on a recipe layer made of copies (Iris, Weave, …) breaks the picture; on the whole scene it is fine |
 | Not yet | Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound |

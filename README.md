@@ -19,7 +19,7 @@ Motolii is still in development and supports Macs with Apple silicon only. There
 - **Partly**: AviUtl2 scripts; Alight Motion's features.
 - **Not yet**: Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound.
 
-How each format runs, with counts, and the known bug: [guide, "Supported formats and how they run"](docs/using/guide.md#supported-formats-and-how-they-run).
+How each format runs, with counts, and the known bug: [Specifications, "Supported formats and how they run"](docs/using/specifications.md#supported-formats-and-how-they-run).
 
 ## Build and run
 
@@ -71,7 +71,8 @@ See [`shelves/README.md`](shelves/README.md). Each kind of file has its own fold
 ## Documentation
 
 - [What sets Motolii apart](docs/using/highlights.md): what it does today that is hard to get elsewhere, and where each one stops.
-- [Guide](docs/using/guide.md): what Motolii does, the formats it runs, building step by step, a first piece, how it compares.
+- [Specifications](docs/using/specifications.md): the system it needs, the formats it runs with counts, what it exports, speed.
+- [Guide](docs/using/guide.md): what Motolii does, building step by step, a first piece, how it compares.
 - [The tabs](docs/using/screen_tour.md): each tab of the screen, with pictures and how to use it.
 - [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
 - [Testing](docs/TESTING.md): how to run each kind of test.

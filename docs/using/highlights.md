@@ -14,19 +14,25 @@ The shelf already holds 420 `.fs` and 266 `.wgsl` files. How to add your own: [s
 
 Where it stops: ISF is an open format that VJ tools read too. What is new here is that it sits inside an editor with a timeline and MP4 export. Not every file in a supported format runs correctly.
 
+## Every effect is a file
+
+Blur, Drop Shadow, Duotone and Gradient Map are shelf files like any other; nothing in the effects list is built into the app. A file you drop in is on the same footing as they are, and you can open any of them to see how it is made and copy it.
+
+Where it stops: a blur along one axis only, and the shadow's distance-and-angle setting, are gone. Projects saved before this change do not open with these four effects.
+
 ## Paste code from creative-coding sites and it becomes a layer
 
 Paste a sketch and Motolii works out which site's code it is. It reads Shadertoy, GLSL Sandbox, Hydra, three.js, Two.js, Turtletoy, Paper.js, canvas, Bonzomatic, twigl, Dwitter and tixy, and treats anything else as p5.js. p5.js runs without a browser, and the code stays editable on the layer.
 
 For p5.js, each drawing line also gets a strength slider from 0 to 1, which you can keyframe.
 
-Where it stops: a pasted work may run wrong, or not at all. The counts we took, and the known bug, are in [the guide](guide.md#supported-formats-and-how-they-run). Many of the works in the shelf are under non-commercial licences; check the licence of what you publish.
+Where it stops: a pasted work may run wrong, or not at all. The counts we took, and the known bug, are in [the specifications](specifications.md#supported-formats-and-how-they-run). Many of the works in the shelf are under non-commercial licences; check the licence of what you publish.
 
 ## AviUtl2 scripts on a Mac
 
 AviUtl2 is a Windows-only editor with a large body of community scripts. Motolii runs its Lua and HLSL scripts as they are, converting the HLSL to WGSL. The shelf has over 170 packages.
 
-Where it stops: scripts that need a Windows DLL do not run, and not every other script runs correctly. The count of those that do is in [the guide](guide.md#supported-formats-and-how-they-run).
+Where it stops: scripts that need a Windows DLL do not run, and not every other script runs correctly. The count of those that do is in [the specifications](specifications.md#supported-formats-and-how-they-run).
 
 ## Relations: one script moves a whole group of layers
 

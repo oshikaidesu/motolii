@@ -5,6 +5,7 @@ Every document under `docs/`, and who it is for. The entrance to the repository 
 | Document | For | What it is |
 |---|---|---|
 | [`using/highlights.md`](using/highlights.md) ([日本語](using/highlights.ja.md)) | People deciding whether to try the app | What Motolii does today that is hard to get elsewhere, where each one stops, and what is not ready |
+| [`using/specifications.md`](using/specifications.md) ([日本語](using/specifications.ja.md)) | People deciding whether it fits their system | The system it needs, the formats it runs with the counts we took, what it exports, speed |
 | [`using/guide.md`](using/guide.md) ([日本語](using/guide.ja.md)) | People using the app | The long tour: what Motolii does, the formats it runs, building step by step, a first piece, how it compares |
 | [`using/screen_tour.md`](using/screen_tour.md) ([日本語](using/screen_tour.ja.md)) | People using the app | Each tab of the screen, with pictures and how to use it |
 | [`using/make_intro_movie.md`](using/make_intro_movie.md) ([日本語](using/make_intro_movie.ja.md)) | People using the app | The calls that make the guide's 8-second example; pasted, they write `~/Movies/Motolii/mv.mp4` |

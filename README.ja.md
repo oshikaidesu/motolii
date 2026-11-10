@@ -19,7 +19,7 @@ Motolii は、MV やモーショングラフィックスを制作するための
 - **一部**：AviUtl2 のスクリプト、Alight Motion の機能。
 - **まだ**：Windows、配布できる `.app`（エンジンが Homebrew の部品を読むので、ビルドした Mac の外では動かない）、MIDI の音。
 
-形式ごとの動作状況と数、知っている不具合は[ガイドの「対応形式と動作状況」](docs/using/guide.ja.md#対応形式と動作状況)にあります。
+形式ごとの動作状況と数、知っている不具合は[仕様の「対応形式と動作状況」](docs/using/specifications.ja.md#対応形式と動作状況)にあります。
 
 ## ビルドして動かす
 
@@ -73,7 +73,8 @@ app/tool/live.sh
 ## 文書
 
 - [Motolii の特長](docs/using/highlights.ja.md)：いま他では手に入れにくいことと、それぞれの限界。
-- [ガイド](docs/using/guide.ja.md)：Motolii でできる事、動く形式、ビルドの手順、最初の 1 本、他のソフトとの違い。
+- [仕様](docs/using/specifications.ja.md)：必要な環境、動く形式と数えた結果、書き出せる形式、速さ。
+- [ガイド](docs/using/guide.ja.md)：Motolii でできる事、ビルドの手順、最初の 1 本、他のソフトとの違い。
 - [タブの紹介](docs/using/screen_tour.ja.md)：画面のタブごとの絵と使い方。
 - [作り](docs/ARCHITECTURE.md)：全体の作り：アプリ・エンジン・描画・動画のつながり（英語）。
 - [テスト](docs/TESTING.md)：テストの種類ごとの回し方（英語）。
