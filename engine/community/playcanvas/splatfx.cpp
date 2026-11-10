@@ -18,6 +18,8 @@
 #include <sstream>
 #include <system_error>
 
+namespace motolii {
+
 namespace {
 
 // Minimal stand-ins for the parts of the 'playcanvas' module that an effect
@@ -356,3 +358,5 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat,
       .write((const char*)bytes.data(), (std::streamsize)bytes.size());
   return bytes;
 }
+
+}  // namespace motolii

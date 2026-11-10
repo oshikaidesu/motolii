@@ -23,6 +23,8 @@ namespace utils {
 class JobSystem;
 }
 
+namespace motolii {
+
 // One loaded splat effect script: its GLSL, its parameters and its per-time
 // uniforms.
 class SplatEffect {
@@ -72,5 +74,7 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat,
                                        const std::string& glsl,
                                        utils::JobSystem& jobs,
                                        std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_PLAYCANVAS_SPLATFX_H_
