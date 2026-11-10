@@ -9,12 +9,10 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
-import 'package:motolii/workspace/stage/stage_view_camera.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
 
 extension StageViewDrag on StageViewState {
   /// The axis-aligned rectangle that contains the corners of [b].
@@ -143,30 +141,7 @@ extension StageViewDrag on StageViewState {
   /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
   /// a camera gizmo, a guide, a layer, and otherwise a lasso.
   void dragStart(StageViewport v, Offset local) {
-    if (widget.make == 'camera') {
-      // As with After Effects' Unified Camera tool, dragging orbits the camera around its point of interest.
-      final ws = WorkspaceScope.read(context),
-          m = ws.inside,
-          cam = cameraOf(ws);
-      if (m == null || cam == null) {
-        ws.notice = 'No camera: add one from Create › Layers';
-        return;
-      }
-      if (ws.freeEye) {
-        orbitFrom = (x: ws.eye[1], y: ws.eye[0]);
-        drag = (from: local, moved: false, by: 'orbit');
-        return;
-      }
-      final at = ws.frame / WorkspaceController.fps;
-      m.take(cam);
-      if (ws.playing) ws.playing = false;
-      orbitFrom = (
-        x: m.value(cam, 'rotate_x', at) ?? 0,
-        y: m.value(cam, 'rotate_y', at) ?? 0,
-      );
-      drag = (from: local, moved: false, by: 'orbit');
-      return;
-    }
+    if (widget.make == 'camera') return camera.orbitDragStart(local);
     if (widget.make == 'brush') {
       setState(() => brush = [local]);
       return;
@@ -240,18 +215,20 @@ extension StageViewDrag on StageViewState {
         final at = v.toComposition(local);
         m.dragUpdate('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
-        drag = (from: local, moved: false, by: by);
+        drag.held = (from: local, moved: false, by: by);
         if (grip != heldGrip) setState(() => heldGrip = grip);
         return;
       }
     }
-    if (m != null && gizmoDragStart(v, local, inside: false)) return;
+    if (m != null && camera.gizmoDragStart(v, local, inside: false)) return;
     // Guides come after the handles, which lie over everything else.
     if (_pull(v, local)) return;
     final id = m == null ? null : hitLocal(v, local),
         t = int.tryParse(id ?? '');
     // Layers are tested first, then the camera frames they lie in.
-    if (m != null && t == null && gizmoDragStart(v, local, inside: true)) {
+    if (m != null &&
+        t == null &&
+        camera.gizmoDragStart(v, local, inside: true)) {
       return;
     }
     if (m != null && t == null) {
@@ -265,19 +242,18 @@ extension StageViewDrag on StageViewState {
     ws.select(id);
     // Grabbing a layer stops playback.
     if (ws.playing) ws.playing = false;
-    drag = (from: local, moved: false, by: null);
+    drag.held = (from: local, moved: false, by: null);
     _snapFrom(id!);
   }
 
   /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
   void dragEnd({bool keep = true}) {
-    final h = drag,
+    final h = drag.held,
         ws = WorkspaceScope.read(context),
         m = ws.inside,
         free = h?.by == 'orbit' && ws.freeEye;
-    drag = null;
-    orbitFrom = null;
-    lensFrom = null;
+    drag.held = null;
+    camera.dragEnd();
     snapTo = null;
     if (heldGrip != null) setState(() => heldGrip = null);
     if (met != (null, null)) setState(() => met = (null, null));

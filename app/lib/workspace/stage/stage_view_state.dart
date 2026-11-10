@@ -21,8 +21,10 @@ import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/stage/camera_gestures.dart';
+import 'package:motolii/workspace/stage/stage_context.dart';
+import 'package:motolii/workspace/stage/stage_drag.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
-import 'package:motolii/workspace/stage/stage_view_camera.dart';
 import 'package:motolii/workspace/stage/stage_view_drag.dart';
 import 'package:motolii/workspace/stage/stage_view_draw.dart';
 import 'package:motolii/workspace/stage/stage_view_painter.dart';
@@ -33,7 +35,21 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-class StageViewState extends State<StageView> implements StageHandles {
+class StageViewState extends State<StageView>
+    implements StageHandles, StageContext {
+  @override
+  WorkspaceController get workspace => WorkspaceScope.read(context);
+  @override
+  ArtScene get scene => widget.scene;
+  @override
+  String? get selected => widget.selected;
+
+  /// The drag in progress, and the camera gestures that are carried on through it.
+  final drag = StageDrag();
+  late final CameraGestures camera;
+
+  void _rebuild() => setState(() {});
+
   Offset _pan = Offset.zero;
   String? _hover;
   StageViewport?
@@ -110,6 +126,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   @override
   void initState() {
     super.initState();
+    camera = CameraGestures(this, drag)..addListener(_rebuild);
     HardwareKeyboard.instance.addHandler(_enter);
   }
 
@@ -202,7 +219,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   @override
   void dispose() {
     _deskOf?.desk(0, 0, 0, 0, 0, 0); // Back to the engine's own stage view.
-    dollyRest?.cancel();
+    camera.dispose();
     _tapWait?.cancel();
     HardwareKeyboard.instance.removeHandler(_enter);
     super.dispose();
@@ -237,9 +254,6 @@ class StageViewState extends State<StageView> implements StageHandles {
     return id;
   }
 
-  // Dragging on the stage: the stage reports only how far the pointer moved, in canvas points. The engine decides what that
-  // means for the layer (at its own depth) and for the document.
-  ({Offset from, bool moved, String? by})? drag; // `by` names the handle (scale, turn or pivot); null means a plain move.
   String? heldGrip; // Handle being dragged; only it is shown, highlighted, during the drag (as in Alight Motion).
 
   // Snapping, as in After Effects: the left, middle and right edges (and top, middle, bottom) of the dragged layer stick to
@@ -316,54 +330,11 @@ class StageViewState extends State<StageView> implements StageHandles {
   // port by Adil Hanney), which also simulates pressure from speed. The engine keeps the stroke and builds its outline the
   // way Alight Motion's brush does. Each point's pressure is its radius here over half the brush size.
   List<Offset>? brush;
-  ({double x, double y})?
-  orbitFrom; // The camera's rotation when the drag started.
-  double? dollyAt; // Its distance while the wheel turns.
-  Timer? dollyRest;
-
-  double orbitRate = .25; // Degrees of rotation per pixel dragged.
-  ({double zoom, double reach, Offset middle})?
-  lensFrom; // The frame's zoom, reach and centre when the drag started.
 
   void _dragUpdate(StageViewport v, Offset local) {
-    final h = drag, ws = WorkspaceScope.read(context), m = ws.inside;
+    if (camera.dragUpdate(local)) return;
+    final h = drag.held, ws = WorkspaceScope.read(context), m = ws.inside;
     if (h == null || m == null) return;
-    if (h.by == 'gizmo orbit' && orbitFrom != null) {
-      final d = (local - h.from) * orbitRate, o = orbitFrom!;
-      m.dragUpdate('rotate_y', o.y + d.dx);
-      m.dragUpdate('rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
-      drag = (from: h.from, moved: true, by: h.by);
-      return;
-    }
-    if (h.by == 'gizmo lens' && lensFrom != null) {
-      // Compare the pointer's distance from the centre with where the drag began: further out is a larger frame, a wider lens.
-      final l = lensFrom!;
-      m.dragUpdate(
-        'zoom',
-        (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(
-          .01,
-          100.0,
-        ),
-      );
-      drag = (from: h.from, moved: true, by: h.by);
-      return;
-    }
-    if (h.by == 'orbit' && orbitFrom != null) {
-      // Sideways rotates around the layer, up and down rotates over it: a quarter of a degree per pixel.
-      final d = local - h.from, o = orbitFrom!;
-      if (ws.freeEye) {
-        return ws.setView('stage.eye', [
-          o.y - d.dx * .25,
-          (o.x - d.dy * .25).clamp(-89.0, 89.0),
-          ws.eye[2],
-        ]);
-      }
-      m.dragUpdate('rotate_y', o.y - d.dx * .25);
-      m.dragUpdate('rotate_x', (o.x - d.dy * .25).clamp(-89.0, 89.0));
-      drag = (from: h.from, moved: true, by: 'orbit');
-      setState(() {});
-      return;
-    }
     final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
     if (h.by case final way? when way.startsWith('crop ')) {
       // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
@@ -381,7 +352,7 @@ class StageViewState extends State<StageView> implements StageHandles {
           (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]),
         );
       }
-      drag = (from: h.from, moved: true, by: way);
+      drag.held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -405,7 +376,7 @@ class StageViewState extends State<StageView> implements StageHandles {
               .toDouble(),
         );
       }
-      drag = (from: h.from, moved: true, by: way);
+      drag.held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -429,7 +400,7 @@ class StageViewState extends State<StageView> implements StageHandles {
         gone.dx,
         gone.dy,
       );
-      drag = (from: h.from, moved: true, by: way);
+      drag.held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -443,7 +414,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       _ => all,
     }, v.scale);
     m.dragUpdate('place', by.dx, by.dy);
-    drag = (from: h.from, moved: true, by: null);
+    drag.held = (from: h.from, moved: true, by: null);
     setState(() {});
   }
 
@@ -505,7 +476,8 @@ class StageViewState extends State<StageView> implements StageHandles {
       return ContextMenu(
         key: _menu,
         child: TwoFingerGestures(
-          onWheel: (d) => widget.make == 'camera' ? dolly(d.dy) : _panBy(-d, v),
+          onWheel: (d) =>
+              widget.make == 'camera' ? camera.dolly(d.dy) : _panBy(-d, v),
           onPan: (by, _) => _panBy(by, v),
           child: MouseRegion(
             onHover: (e) {
@@ -732,7 +704,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                         ),
                       ),
                     ),
-                  if (drag
+                  if (drag.held
                       case final h? when h.moved && _last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
                     if (heldSays(h.by) case final says?)
                       Positioned(
