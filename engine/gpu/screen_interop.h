@@ -33,6 +33,7 @@ class Texture;
 class RenderTarget;
 }  // namespace filament
 
+namespace motolii {
 namespace interop {
 
 // Floats per mesh corner: x, y, z, w, r, g, b, a, u, v.
@@ -101,3 +102,4 @@ inline void draw(filament::Engine* e, Screen* s, filament::Texture* from,
 // Releases the Screen and its GPU objects.
 void drop(filament::Engine*, Screen*);
 }  // namespace interop
+}  // namespace motolii

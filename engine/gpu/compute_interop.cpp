@@ -12,6 +12,7 @@
 #include "details/BufferObject.h"
 #include "details/Engine.h"
 
+namespace motolii {
 namespace interop {
 using namespace filament;
 using namespace filament::backend;
@@ -131,3 +132,4 @@ void read(Engine* engine, Buffer* b, uint32_t at, uint32_t bytes, void* into) {
   engine->flushAndWait();
 }
 }  // namespace interop
+}  // namespace motolii

@@ -14,6 +14,7 @@ namespace filament {
 class Engine;
 }
 
+namespace motolii {
 namespace interop {
 // Returns the WGPUDevice Filament draws with, or null on another backend.
 void* device(filament::Engine*);
@@ -29,3 +30,4 @@ void on_driver(filament::Engine*, std::function<void()> work);
 // in Filament's encoder.
 void submit(filament::Engine*);
 }  // namespace interop
+}  // namespace motolii

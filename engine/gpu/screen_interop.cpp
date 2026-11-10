@@ -24,6 +24,7 @@
 #include "details/VertexBuffer.h"
 #include "gpu_interop.h"
 
+namespace motolii {
 namespace interop {
 using namespace filament;
 using namespace filament::backend;
@@ -403,3 +404,4 @@ void drop(Engine* engine, Screen* s) {
   delete s;
 }
 }  // namespace interop
+}  // namespace motolii

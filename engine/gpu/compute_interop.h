@@ -20,6 +20,7 @@ class Engine;
 class BufferObject;
 }  // namespace filament
 
+namespace motolii {
 namespace interop {
 struct Program;
 struct Buffer;
@@ -50,3 +51,4 @@ void run(filament::Engine*, Program*, Set*, uint32_t groupsX,
 // the GPU.
 void read(filament::Engine*, Buffer*, uint32_t at, uint32_t bytes, void* into);
 }  // namespace interop
+}  // namespace motolii

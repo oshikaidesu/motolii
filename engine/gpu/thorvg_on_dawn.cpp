@@ -11,8 +11,14 @@
 #include <cstdio>
 #include <vector>
 
+namespace motolii {
+
 // Number of uncaptured Dawn device errors seen so far.
 static int errors = 0;
+
+}  // namespace motolii
+
+using namespace motolii;
 
 int main() {
   const uint32_t W = 256, H = 256;
