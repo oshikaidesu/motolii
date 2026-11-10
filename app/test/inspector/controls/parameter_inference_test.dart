@@ -82,27 +82,24 @@ void main() {
         // On or off.
         ('on: bool,', [ParameterLook.toggle, 0, 1, '']),
         ('strength: f32, // @toggle', [ParameterLook.toggle, 0, 1, '']),
-        ('invert: u32,', [ParameterLook.toggle, 0, 1, '']),
+        ('invert: u32,', [ParameterLook.scrub, null, null, '']),
         ('invert: u32, // @range(0, 3)', [ParameterLook.stepper, 0, 3, '']),
-        ('invert: f32,', [ParameterLook.scrub, null, null, '']),
         // The type.
         ('tint: vec3f,', [ParameterLook.color, null, null, '']),
         ('glow: vec4f,', [ParameterLook.color, null, null, '']),
-        ('boxSize: vec2f,', [ParameterLook.size, 0, null, 'px']),
-        ('scale: vec2f,', [ParameterLook.size, 0, null, '']),
-        ('center: vec2f,', [ParameterLook.point, 0, 1, '']),
-        ('offset: vec2f,', [ParameterLook.point, -1, 1, '']),
+        ('boxSize: vec2f,', [ParameterLook.point, -1, 1, '']),
+        ('center: vec2f,', [ParameterLook.point, -1, 1, '']),
         ('offset: vec2f, // @range(-5, 5)', [ParameterLook.point, -5, 5, '']),
-        // The name and the unit.
-        // A seed has no top: 9999 was nobody's limit.
-        ('seed: f32,', [ParameterLook.seed, 0, null, '']),
-        ('angle: f32,', [ParameterLook.angle, -180, 180, '°']),
+        // The unit. A name decides nothing.
+        ('seed: f32,', [ParameterLook.scrub, null, null, '']),
+        ('seed: u32, // @ui(seed)', [ParameterLook.seed, null, null, '']),
+        ('angle: f32,', [ParameterLook.scrub, null, null, '']),
         (
           'turn: f32, // @unit(deg) @range(0, 90)',
           [ParameterLook.angle, 0, 90, '°'],
         ),
         ('phase: f32, // @unit(rad)', [ParameterLook.angle, -180, 180, '°']),
-        ('mix: f32, // @range(0, 1)', [ParameterLook.percent, 0, 100, '%']),
+        ('mix: f32, // @range(0, 1)', [ParameterLook.bar, 0, 1, '']),
         ('mix: f32, // @range(0, 2)', [ParameterLook.bar, 0, 2, '']),
         ('gain: f32, // @unit(%)', [ParameterLook.percent, 0, 100, '%']),
         (
@@ -111,14 +108,8 @@ void main() {
         ),
         ('count: i32, // @range(1, 8)', [ParameterLook.stepper, 1, 8, '']),
         ('count: i32, // @range(0, 100)', [ParameterLook.bar, 0, 100, '']),
-        (
-          'blurRadius: f32, // @range(0, 200)',
-          [ParameterLook.bar, 0, 200, 'px'],
-        ),
-        ('offsetY: f32,', [ParameterLook.vertical, null, null, 'px']),
-        ('drop: f32,', [ParameterLook.vertical, null, null, '']),
-        ('dx: f32,', [ParameterLook.horizontal, null, null, 'px']),
-        ('width: f32,', [ParameterLook.horizontal, null, null, 'px']),
+        ('blurRadius: f32, // @range(0, 200)', [ParameterLook.bar, 0, 200, '']),
+        ('width: f32,', [ParameterLook.scrub, null, null, '']),
         // The shape of the range.
         ('pan: f32, // @range(-1, 1)', [ParameterLook.bipolar, -1, 1, '']),
         ('pan: f32, // @range(-1, 10)', [ParameterLook.bar, -1, 10, '']),
@@ -128,11 +119,6 @@ void main() {
         final p = _infer(field);
         expect([p.look, p.min, p.max, p.unit], want, reason: field);
       }
-    });
-
-    test('a vertical amount that names a fall grows downwards', () {
-      expect(_infer('offsetY: f32,').upIncreases, isTrue);
-      expect(_infer('drop: f32,').upIncreases, isFalse);
     });
 
     test('a choice lists its options', () {
@@ -152,7 +138,7 @@ void main() {
       expect((two.def, two.defY), (.5, .25));
     });
 
-    test('radians are shown as degrees and a 0 to 1 share as a percentage, defaults included', () {
+    test('radians are shown as degrees and a share declared in % as a percentage, defaults included', () {
       final twist = _infer(
         'twist: f32, // @range(-3.14159, 3.14159) @default(1.5708)',
       );
@@ -163,8 +149,9 @@ void main() {
       expect(twist.min, closeTo(-180, .01));
       expect(twist.max, closeTo(180, .01));
       expect(twist.def, closeTo(90, .01));
-      final mix = _infer('mix: f32, // @range(0, 1) @default(0.5)');
-      expect(mix.def, closeTo(50, 1e-9));
+      final mix = _infer('mix: f32, // @unit(%) @range(0, 100) @default(50)');
+      expect(mix.look, ParameterLook.percent);
+      expect(mix.def, 50);
       expect(mix.dec, 0);
     });
 
@@ -176,7 +163,10 @@ void main() {
         ('gain: f32, // @step(1)', 0),
         ('gain: f32, // @unit(s)', 1),
         ('gain: f32, // @unit(×)', 1),
-        ('blurRadius: f32, // @range(0, 2)', 0), // A pixel amount known by its name has no decimals, however narrow its range.
+        (
+          'gain: f32, // @unit(px) @range(0, 2)',
+          0,
+        ), // A pixel amount has no decimals, however narrow its range.
         ('gain: f32, // @range(0, 1)', 2),
         ('gain: f32, // @range(0, 10)', 1),
         ('gain: f32, // @range(0, 100)', 0),

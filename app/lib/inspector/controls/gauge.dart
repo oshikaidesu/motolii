@@ -49,7 +49,6 @@ class _GaugePainter extends CustomPainter {
         c.drawArc(r, -math.pi / 2, 2 * math.pi * t.clamp(-1.0, 1.0), true, lit);
         if (t.abs() > 1) c.drawCircle(o, 8, line..color = Grey.g91);
       case ParameterLook.vertical:
-        final up = p.upIncreases;
         final box = Rect.fromCenter(
           center: o,
           width: Shape.z(8),
@@ -57,21 +56,16 @@ class _GaugePainter extends CustomPainter {
         );
         c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(2)), dim);
         final h = box.height * _t(v);
-        final fill = up
-            ? Rect.fromLTRB(box.left, box.bottom - h, box.right, box.bottom)
-            : Rect.fromLTRB(box.left, box.top, box.right, box.top + h);
+        final fill = Rect.fromLTRB(
+          box.left,
+          box.bottom - h,
+          box.right,
+          box.bottom,
+        );
         c.drawRRect(RRect.fromRectAndRadius(fill, Shape.r(2)), lit);
-        final tip = up ? box.top - 1 : box.bottom + 1;
-        c.drawLine(
-          Offset(o.dx - 2.5, tip + (up ? 2.5 : -2.5)),
-          Offset(o.dx, tip),
-          line,
-        );
-        c.drawLine(
-          Offset(o.dx + 2.5, tip + (up ? 2.5 : -2.5)),
-          Offset(o.dx, tip),
-          line,
-        );
+        final tip = box.top - 1;
+        c.drawLine(Offset(o.dx - 2.5, tip + 2.5), Offset(o.dx, tip), line);
+        c.drawLine(Offset(o.dx + 2.5, tip + 2.5), Offset(o.dx, tip), line);
       case ParameterLook.horizontal:
         final box = Rect.fromCenter(
           center: o,

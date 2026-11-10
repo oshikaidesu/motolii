@@ -1,5 +1,5 @@
-// Reads an effect's WGSL uniform struct and guesses, field by field, what kind of value each one is,
-// so a shader nobody has seen still gets a control that looks like what it moves. Pure Dart: no Flutter.
+// Reads an effect's WGSL uniform struct and says, field by field, what kind of value each one is, from what the field declares
+// (`@ui`, `@range`, `@unit`...), its type and the shape of its range. Pure Dart: no Flutter.
 import 'dart:math' as math;
 
 enum WgslType { f32, i32, u32, boolean, vec2, vec3, vec4 }
@@ -80,7 +80,6 @@ class Parameter {
     this.options = const [],
     this.advanced = false,
     this.fold,
-    this.upIncreases = true,
     this.open = false,
     this.validMin,
     this.validMax,
@@ -96,9 +95,6 @@ class Parameter {
 
   /// The name of the fold the field sits in, from `// @advanced(Name)`. Null means an unnamed fold, shown as Advanced.
   final String? fold;
-
-  /// For vertical looks: whether dragging up raises the value. False means dragging down does, as for a drop.
-  final bool upIncreases;
 
   /// Whether [min] and [max] limit only scrubbing. The user can still type a value outside them.
   final bool open;
@@ -276,61 +272,11 @@ bool angleLabel(String label) =>
     (_any(paramWords(label), _angleW) ||
         RegExp('角度|回転|色相|向き|方向').hasMatch(label)) &&
     !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
-const _shareW = {
-  'mix',
-  'amount',
-  'strength',
-  'opacity',
-  'intensity',
-  'blend',
-  'threshold',
-  'knee',
-  'falloff',
-  'softness',
-  'fade',
-  'progress',
-  'coverage',
-  'density',
-  'wet',
-  'dry',
-  'roughness',
-  'tint',
-  'feather',
-  'smoothness',
-};
-const _upW = {'height', 'rise', 'lift', 'up', 'top', 'vertical'};
-const _downW = {'drop', 'gravity', 'down', 'sink', 'fall', 'bottom'};
-const _xW = {'width', 'horizontal', 'left', 'right'};
-const _toggleW = {
-  'is',
-  'use',
-  'enable',
-  'enabled',
-  'invert',
-  'flip',
-  'clamp',
-  'additive',
-  'pin',
-  'mirror',
-  'loop',
-  'repeat',
-};
-const _sizeW = {'size', 'scale', 'aspect', 'extent', 'stretch'};
-const _pxW = {
-  'radius',
-  'size',
-  'width',
-  'height',
-  'distance',
-  'length',
-  'offset',
-  'spread',
-  'blur',
-};
 
 double? _num(String? s) => s == null ? null : double.tryParse(s);
 
-/// The guess for one field. Explicit attributes win; then the type; then the name; then the shape of the range.
+/// What one field is. Explicit attributes win; then the type; then the unit; then the shape of the range. A name decides nothing
+/// but the label.
 Parameter infer(FieldDeclaration d) {
   final w = paramWords(d.name), a = d.attrs;
   final range = a['range'];
@@ -360,7 +306,6 @@ Parameter infer(FieldDeclaration d) {
     double? lo,
     double? hi,
     double scale = 1,
-    bool up = true,
     String? u,
     List<String> opts = const [],
   }) {
@@ -385,7 +330,6 @@ Parameter infer(FieldDeclaration d) {
       validMin: _num(a['valid']?.elementAtOrNull(0)),
       validMax: _num(a['valid']?.elementAtOrNull(1)),
       fold: d.fold,
-      upIncreases: up,
       weight: _num(a['weight']?.firstOrNull),
     );
   }
@@ -397,27 +341,14 @@ Parameter infer(FieldDeclaration d) {
     final look = ParameterLook.values.where((l) => l.name == ui).firstOrNull;
     if (look != null) return p(look);
   }
-  if (d.type == WgslType.boolean ||
-      a.containsKey('toggle') ||
-      (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
+  if (d.type == WgslType.boolean || a.containsKey('toggle')) {
     return p(ParameterLook.toggle, lo: 0, hi: 1);
   }
   if (d.type == WgslType.vec3 || d.type == WgslType.vec4) {
     return p(ParameterLook.color);
   }
   if (d.type == WgslType.vec2) {
-    if (_any(w, _sizeW)) {
-      return p(
-        ParameterLook.size,
-        lo: min ?? 0,
-        u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null,
-      );
-    }
-    final uv = _any(w, {'center', 'centre', 'origin', 'focus', 'uv', 'pivot'});
-    return p(ParameterLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
-  }
-  if (_any(w, {'seed'})) {
-    return p(ParameterLook.seed, lo: min ?? 0);
+    return p(ParameterLook.point, lo: min ?? -1, hi: max ?? 1);
   }
   final rad =
       unit == 'rad' ||
@@ -425,7 +356,7 @@ Parameter infer(FieldDeclaration d) {
           max != null &&
           (max - math.pi).abs() < .01 &&
           (min + math.pi).abs() < .01);
-  if (unit == '°' || unit == 'deg' || rad || _any(w, _angleW)) {
+  if (unit == '°' || unit == 'deg' || rad) {
     final s = rad ? math.pi / 180 : 1.0;
     return p(
       ParameterLook.angle,
@@ -435,25 +366,12 @@ Parameter infer(FieldDeclaration d) {
       u: '°',
     );
   }
-  final unitShare = min == 0 && max == 1 && _any(w, _shareW);
-  if (unit == '%' || unitShare) {
-    return p(
-      ParameterLook.percent,
-      lo: unitShare ? 0 : (min ?? 0),
-      hi: unitShare ? 100 : (max ?? 100),
-      scale: unitShare ? .01 : 1,
-      u: '%',
-    );
+  if (unit == '%') {
+    return p(ParameterLook.percent, lo: min ?? 0, hi: max ?? 100);
   }
   if (whole && min != null && max != null && max - min <= 12) {
     return p(ParameterLook.stepper);
   }
-  if (unit.isEmpty && _any(w, _pxW)) unit = 'px';
-  final last = w.lastOrNull;
-  if (last == 'y' || _any(w, _upW) || _any(w, _downW)) {
-    return p(ParameterLook.vertical, up: !_any(w, _downW));
-  }
-  if (last == 'x' || _any(w, _xW)) return p(ParameterLook.horizontal);
   if (min != null && max != null) {
     if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) {
       return p(ParameterLook.bipolar);
