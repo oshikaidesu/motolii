@@ -222,6 +222,7 @@ add_library(motolii_media STATIC
   media/sound_level.cpp
   media/sound_playback.cpp
   media/video_datamosh.cpp
+  media/video_frame.cpp
   media/video_frames_for_scripts.cpp
   media/video_layer.cpp)
 target_link_libraries(motolii_media PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_stage_render)

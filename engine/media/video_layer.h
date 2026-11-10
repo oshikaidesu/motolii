@@ -169,6 +169,25 @@ void key_own(Video* v, bool always);
 // by then, judged by the video's own timestamps.
 void video_at(Stage& s, Video* v, float seconds);
 
+// The frame-showing part of the layer, used by video_layer.cpp and defined in
+// video_frame.cpp.
+// Number of decoder surfaces that are currently shared with Filament.
+extern long video_shared;
+// Releases a surface that was shared: Filament's two texture views are
+// destroyed first, then Dawn's end of the shared access is closed.
+void video_give_back(Stage& s, Video::Planes& planes);
+// Returns the CoreVideo pixel buffer behind a frame, or null if the frame is in
+// CPU memory.
+CVPixelBufferRef video_surface(GstSample* sample);
+// Computes the key of a video that is keyed by its own background color, from
+// the given frame. Falls back to pure green if the frame has no such color and
+// `own` is 2.
+void video_own_key(Video* v, GstSample* sample);
+// Puts the held frame on the quad for the frame that is drawn next. When the
+// stage is rendered frame by frame, this waits for a surface that is being
+// shared. When the stage is played in real time it does not wait.
+void video_put(Stage& s, Video* v);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_VIDEO_LAYER_H_
