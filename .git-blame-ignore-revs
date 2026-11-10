@@ -3,3 +3,6 @@
 
 # dart format over app/ at page_width 160
 e3fd916731f7a19e427bdf71e01dfdbac4ba1c5a
+
+# dart format over app/ at the default 80 columns, with dart fix (braces)
+0843176ea23b05ca9e16ad1ae238e4942dad765a
