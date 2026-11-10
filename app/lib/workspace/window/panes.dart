@@ -11,6 +11,7 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
+import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
 
 /// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.

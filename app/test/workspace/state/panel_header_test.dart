@@ -1,7 +1,7 @@
 // wsCols and wsCell: how many cells fit across a panel, and how wide each is. The expected values are what the code
 // gave when this was written, so a move that changes one fails here. Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/grid_columns.dart';
 
 void main() {
   test('wsCols counts the cells of a least width that fit, with the window gutter of 2 between them', () {

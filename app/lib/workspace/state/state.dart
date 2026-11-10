@@ -25,7 +25,6 @@ export '../../bridge/motolii.dart'
         MotoliiShelves,
         MotoliiWatch; // Extensions of Motolii, so anything holding Ws.inside can call the engine's reads.
 
-import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/window/panes.dart' show WsAt, WsPane;
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/workspace/state/beats.dart';
@@ -37,7 +36,6 @@ part 'window.dart';
 part 'effects.dart';
 part 'picked.dart';
 part 'scope.dart';
-part 'panel_header.dart';
 
 /// The kinds of layer the timeline distinguishes.
 enum WsKind { shape, text, image, camera, group, particles, audio }

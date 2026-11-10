@@ -9,6 +9,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/window/panes.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/grid_columns.dart';
+import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
 
 class WsToolPanel extends StatelessWidget {

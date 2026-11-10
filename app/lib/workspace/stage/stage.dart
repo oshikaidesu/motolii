@@ -18,6 +18,7 @@ import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart' show ToolStrip;
 import 'package:motolii/workspace/workspace.dart' show wsPlace;
+import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
 
 part 'stage_options.dart';
