@@ -64,7 +64,7 @@ Most files under `app/test/` pin what the code does today (their header comment 
 
 `engine/drawings_unchanged.sh <old-commit>` builds the engine at `<old-commit>` in a separate worktree, then draws every recipe of the Create shelf and every motion of the Effects shelf (applied to the text MOTOLII) with that engine and with this checkout's, on a fresh document at 0.0, 0.7 and 1.9 seconds. Each pair of PNGs is compared byte for byte with `cmp`. It reads and writes nothing of the user's own: it uses an empty `MOTOLII_OWN` folder and temporary documents.
 
-Use it after a change that can alter what is drawn (the engine, a shelf item, a shader). Do not use it after moving code. It is a build: it takes the machine's build lock (`engine/tools/build_lock.sh`) and takes minutes. `DRAWINGS_LIMIT=2` limits it to the first two of each kind, to see that it runs.
+Use it after a change that can alter what is drawn (the engine, a shelf item, a shader). Do not use it after moving code. It has three parts and only the build holds the machine's build lock (`engine/tools/build_lock.sh`): it builds each engine once, lets the lock go, calls the built `out/edit_wgpu` for every picture, then compares the PNGs. The old engine's pictures are kept in `engine/out/drawings/` per old commit, so a second run against the same commit draws only this checkout; `rm -rf engine/out/drawings` forgets them. `DRAWINGS_LIMIT=2` limits it to the first two of each kind, to see that it runs.
 
 Output ends with `N of M matched`, then a line for each pair that `differs:` and each item that exists on one side only (named, not compared). Exit codes:
 
