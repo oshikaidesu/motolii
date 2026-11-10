@@ -258,7 +258,7 @@ int motolii_create(Motolii* m, const char* script);
    "name\tpath\tlabel\timage\thome\tsame\tabout\ttags". tags are what is read from the effect's
    file (isf.h, isf_tags). label is what the file's "// --label:" line says. image is the
    effect's tile, "" if there is none yet. home is where a tile drawn for the effect goes. same is
-   "same" when the effect is seen to change nothing (document/recipes.h, doc_tile). Valid until
+   "same" when the effect is seen to change nothing (document/scripts/recipes.h, doc_tile). Valid until
    the next call. The preview's script is the paths of the effects on it, separated by spaces,
    with the first nearest the image. AviUtl2's scripts follow (aviutl_scripts/, to any depth; for
    an @ file, each "file#name"), each for a layer's fx. */

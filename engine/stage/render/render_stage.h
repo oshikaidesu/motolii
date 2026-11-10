@@ -32,7 +32,7 @@
 
 inline constexpr float TAU = 6.2831853f;
 
-// A shape that a p5.js sketch draws, in the form the sketch has it. See document/sketch.h.
+// A shape that a p5.js sketch draws, in the form the sketch has it. See document/evaluate/sketch.h.
 struct SketchShape { std::vector<filament::math::float3> pos, nrm; std::vector<filament::math::float2> uv; std::vector<uint32_t> idx, edges; };
 // A value that the sketch passes to its shader(), identified by name.
 struct SketchTold { std::string name, type; int count = 1, size = 1; };
@@ -226,7 +226,7 @@ std::string flat_laid(const char* lay, bool lit = false, const std::string& wear
 // made from it has its own material instance. Returns nullptr if there is no such file.
 filament::Material* material(Stage& s, const char* filamat);
 // Creates a placeholder mesh of one triangle for a sketch. It has no real shape yet, because
-// document/sketch.h makes it again each frame.
+// document/evaluate/sketch.h makes it again each frame.
 Mesh* sketch_mesh();
 // Puts mesh `m` on the stage once at each of `places`, with its triangles in parts, and returns the
 // material instance of each part. Returns an empty vector if the material file is missing.

@@ -6,7 +6,7 @@
 inline const char* const p5_three = R"(
 // A three.js scene with no WebGLRenderer: three.core.js makes everything else. What its renderer is told to draw is taken
 // mesh by mesh, each pair of a shape and a material one part, a solid of its own in the world, its meshes that solid's copies
-// (document/adapter.h). Seen as its camera sees it: the eye's view brought to the world's, so the sketch's camera moves its solids
+// (document/scripts/adapter.h). Seen as its camera sees it: the eye's view brought to the world's, so the sketch's camera moves its solids
 // and the world's own camera stays free.
 var __parts = [], __part_of = new Map(), __three = null;
 function __orbit(camera) {   // (what OrbitControls does to a camera it is given: it looks at the target, three.js's examples/jsm/controls; the hand on it is the world's camera here)
@@ -88,7 +88,7 @@ function __three_glb(w) {   // (a part's shape as a .glb, what a solid is read f
   all.set(new Uint8Array(pos.buffer), 28 + J), all.set(new Uint8Array(nrm.buffer), 28 + J + pos.byteLength), all.set(new Uint8Array(idx.buffer), 28 + J + pos.byteLength + nrm.byteLength);
   return globalThis.__bytes = all, all.length;
 }
-function __three_says(w) {   // (what a part is, for document/adapter.h)
+function __three_says(w) {   // (what a part is, for document/scripts/adapter.h)
   const q = __parts[__three_whole().first[w]], m = q.material, c = m.color || new THREE.Color(1, 1, 1);
   return [__whole.most[w], c.getHexString(), m.metalness === undefined ? 0 : m.metalness, m.roughness === undefined ? 1 : m.roughness].join(' ');
 }

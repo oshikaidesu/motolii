@@ -2,13 +2,13 @@
 #define MOTOLII_COMMUNITY_P5_P5_MESH_H_
 
 // JavaScript source, embedded as a string, that records what a p5.js sketch draws in WEBGL mode:
-// meshes, lights, shaders, textures and text. document/sketch.h consumes the result. It is
+// meshes, lights, shaders, textures and text. document/evaluate/sketch.h consumes the result. It is
 // run by p5_stand.h after p5_after. The comments inside the embedded script are not rewritten
 // here, because they are part of the string literal.
 
 inline const char* const p5_mesh = R"(
 // What WEBGL draws, as p5 has it: which of its shapes where its camera sees them, the triangles and lines it makes as it goes,
-// what it clears with. document/sketch.h stands them in the world, one mesh each frame. p5 makes a line's corners in triangles
+// what it clears with. document/evaluate/sketch.h stands them in the world, one mesh each frame. p5 makes a line's corners in triangles
 // for its line shader here too, 0.8 s a frame in the heaviest; nothing here reads them.
 const __mesh_new = (back, wiped) => ({ draws: [], tris: [], lines: [], back, wiped, rows: new Map(), sets: new Map(), groups: new Map() });
 var __mesh = __mesh_new(null, false), __meshes = [], __mesh_held = 0, __mesh_gone = 0, __shapes = [], __shape_of = new Map(), __lined = false;
@@ -27,7 +27,7 @@ function __seen(r, x, y, z) {   // (what its camera sees, what it draws at z 0 s
   for (let c = 0; c < 4; ++c) o[c * 4] *= v.x, o[c * 4 + 1] *= v.y, o[c * 4 + 2] = (o[c * 4 + 2] + v.back * o[c * 4 + 3]) * v.z, o[c * 4 + 3] += v.pull * o[c * 4 + 2];
   return o;
 }
-const __w = (e, x, y, z) => Math.max(e[3] * x + e[7] * y + e[11] * z + e[15], 0.1);   // (document/sketch.h too: what is past the world's eye's far end stays this side of it)
+const __w = (e, x, y, z) => Math.max(e[3] * x + e[7] * y + e[11] * z + e[15], 0.1);   // (document/evaluate/sketch.h too: what is past the world's eye's far end stays this side of it)
 const __fill_of = r => r._tex ? r._tint.map(v => v / 255) : r._useNormalMaterial ? [1, 1, 1, 1] : r.curFillColor;
 // What _setFillUniforms tells p5's lit shader, as it stands where this is drawn, in sketch.mat's table: a row of four for each way
 // of being lit (ambient material, specular material and shininess, emissive and metalness, how many lights and where), and
@@ -53,7 +53,7 @@ function __lit(r) {
   if (i === undefined) m.rows.set(key, i = m.rows.size);
   return 2 + i;
 }
-// shader() on what it draws: its own GLSL runs, as a Filament material built from it (document/sketch.h, by matc). What is drawn is
+// shader() on what it draws: its own GLSL runs, as a Filament material built from it (document/evaluate/sketch.h, by matc). What is drawn is
 // already where its camera sees it, so its matrices are nothing and aPosition is that place; what its vertex shader leaves there
 // stands in the world, moved or not. What it tells a shader goes with each draw: those told the same are drawn as one.
 var __shaders = [], __shader_of = new Map();
@@ -249,7 +249,7 @@ function __mesh_done() {
     for (const q of __tex) if (q.frames[__mesh_gone]) __mesh_held -= q.frames[__mesh_gone].byteLength, q.frames[__mesh_gone] = new Float64Array(0);
   }
 }
-function __mesh_at(f) {   // (all it has drawn since it last cleared, for document/sketch.h)
+function __mesh_at(f) {   // (all it has drawn since it last cleared, for document/evaluate/sketch.h)
   __to(f);
   let from = f, d = 0, t = 0, l = 0;
   while (from > 0 && !__meshes[from].wiped) --from;

@@ -43,7 +43,7 @@ int aviutl_getvalue(lua_State* L);
 // LuaScript.ja-jp.txt (routersys, MIT).
 //
 // Reads the project's sound at the current time: the audible videos (doc_sound_now in
-// document/place.h). The kind "pcm" gives the waveform scaled to 16 bits. The kind "spectrum" gives
+// document/evaluate/place.h). The kind "pcm" gives the waveform scaled to 16 bits. The kind "spectrum" gives
 // count bands (default 32, at most 512) with values from 0 to 32768. The kind "fourier" gives count
 // bands (default 1024) with values from 0 to 1. Motolii reads sound for ISF the same way
 // (sound_level.h): GStreamer's spectrum element presented like the Web's AnalyserNode, with 512

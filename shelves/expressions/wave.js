@@ -1,4 +1,4 @@
-// Wave: each copy moves, turns and swells in a wave, each a little behind the one before (the engine's own wave, engine/document/place.h, until 2026-11-10: its formula as it was there)
+// Wave: each copy moves, turns and swells in a wave, each a little behind the one before (the engine's own wave, engine/document/evaluate/place.h, until 2026-11-10: its formula as it was there)
 // (Cavalry's oscillator, as the engine's comment had it: so far across, up and towards the eye (units of the stage), so far
 // turned (degrees), so much larger (a share), so many times a second, each copy so far behind the one before (turns spread
 // over all). Towards the eye is a quarter round after up and down: with Up/down, round and round, a helix.

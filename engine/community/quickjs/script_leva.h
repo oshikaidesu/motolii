@@ -18,7 +18,7 @@
 // options a choice.
 //
 // min and max only set the range of the slider. They do not limit what the user may type
-// (see document/layer_edit.h). When they are not written, the range is the one of
+// (see document/edit/layer_edit.h). When they are not written, the range is the one of
 // Houdini's FloatParmTemplate: 0 to 10 with min_is_strict false. The range is widened to
 // include the current value, so that a parameter sitting at the end of its range can still
 // be dragged back to that value. This widening is Motolii's own.

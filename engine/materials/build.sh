@@ -33,7 +33,7 @@ for f in effected effected_world effected_solid thick_glass far_side far_look bu
         blend=$way; [ $way = transparent ] && blend=fade
         $MATC -a webgpu -a metal -p desktop -TBLENDING=$blend -TSHADE=lit -DLIT -DLAY_$way -o out/filament_webgpu/flat_lit_$way.filamat materials/flat.mat > out/filament_webgpu/flat_lit_$way.log 2>&1 || echo "no WebGPU material: flat_lit_$way"
     done
-    [ $f = flat ] && for wear in wear:lit:WEAR:fade cloth:cloth:CLOTH:fade subsurface:subsurface:SUBSURFACE:fade lacquer:lit:LACQUER:fade bubble:lit:BUBBLE:transparent glass:unlit:GLASS:transparent; do   # (a material a flat thing wears, its image its colour: document/material.h doc_material, stage/render/render_stage.h flat_laid)
+    [ $f = flat ] && for wear in wear:lit:WEAR:fade cloth:cloth:CLOTH:fade subsurface:subsurface:SUBSURFACE:fade lacquer:lit:LACQUER:fade bubble:lit:BUBBLE:transparent glass:unlit:GLASS:transparent; do   # (a material a flat thing wears, its image its colour: document/evaluate/material.h doc_material, stage/render/render_stage.h flat_laid)
         parts=(${(s.:.)wear})
         lit=-DLIT; [ $parts[2] = unlit ] && lit=
         $MATC -a webgpu -a metal -p desktop -TBLENDING=$parts[4] -TSHADE=$parts[2] $lit -D$parts[3] -o out/filament_webgpu/flat_$parts[1].filamat materials/flat.mat > out/filament_webgpu/flat_$parts[1].log 2>&1 || echo "no WebGPU material: flat_$parts[1] (out/filament_webgpu/flat_$parts[1].log)"

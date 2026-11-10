@@ -6,7 +6,7 @@
 #include <cstring>
 
 #include "document/undo.h"
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 
 double doc_seconds(Doc& d) {
     double all = 0.0;

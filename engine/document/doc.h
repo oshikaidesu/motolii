@@ -72,33 +72,33 @@
 // The properties a layer may have and how each is displayed.
 #include "document/values.h"
 // A layer's scripts, whose parameters become properties of the layer.
-#include "document/scripts.h"
+#include "document/scripts/scripts.h"
 // The cards that group a layer's properties.
 #include "document/card_table.h"
 // Reading a property at a time: its keyframes, easings, and the clock of an element or program.
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 // The material of a layer, and how its looks and drawn parts appear on the canvas.
-#include "document/material.h"
+#include "document/evaluate/material.h"
 // Behaviors, falloffs, relations and physics.
-#include "document/relations.h"
+#include "document/evaluate/relations.h"
 // Relations stored as files, and the world shared by the relations that push.
-#include "document/world.h"
+#include "document/evaluate/world.h"
 // A layer's expressions, which lay out its copies as many times as it has effects.
-#include "document/expressions.h"
+#include "document/scripts/expressions.h"
 // Where a layer and its copies are placed, and what connects them.
-#include "document/place.h"
+#include "document/evaluate/place.h"
 // Where a camera looks from, plus the canvas camera, light and backdrop the document defines.
-#include "document/camera.h"
+#include "document/evaluate/camera.h"
 // A layer's effects in the order they are applied, and how the effect stack runs them.
-#include "document/fx_list.h"
+#include "document/evaluate/fx_list.h"
 // Evaluating a layer that has effects of its own at a time.
-#include "document/moment_fx.h"
+#include "document/evaluate/moment_fx.h"
 // Godot Tween easing, used for the notes of a MIDI roll.
 #include "motion/easing_godot.h"
 // What a p5.js sketch draws in WEBGL: one mesh in the world.
-#include "document/sketch.h"
+#include "document/evaluate/sketch.h"
 // Evaluating the canvas at a time.
-#include "document/evaluate.h"
+#include "document/evaluate/evaluate.h"
 // Rebuilding the canvas from the document, and opening, changing and undoing the file.
 #include "document/match.h"
 // Project length, work area, markers, guides, window settings and canvas size.
@@ -106,37 +106,37 @@
 // Opening the document file, recording each change as one undo step, undo and redo.
 #include "document/undo.h"
 // Adding, recreating, freeing and removing layers, and setting properties.
-#include "document/layer_edit.h"
+#include "document/edit/layer_edit.h"
 // Putting a layer in a relation and taking it out, and starting and ending a relation drag.
-#include "document/relate.h"
+#include "document/edit/relate.h"
 // Putting keyframes on a property, and changing a property the way a drag does.
-#include "document/keys_put.h"
+#include "document/edit/keys_put.h"
 // Giving a layer a parent, what a group holds, and raising a layer in the stacking order.
-#include "document/parent.h"
+#include "document/edit/parent.h"
 // The form of a recipe, and the folders the shelves are read from.
-#include "document/folders.h"
+#include "document/scripts/folders.h"
 // Recipes.
-#include "document/recipes.h"
+#include "document/scripts/recipes.h"
 // A layer's properties as the app lists them: names, words, ranges and cards.
 #include "document/cards.h"
 // Putting effects on a layer, moving them in its list, and removing them.
-#include "document/fx_put.h"
+#include "document/edit/fx_put.h"
 // Removing a keyframe, and setting the easing from a keyframe to the next.
-#include "document/easings_put.h"
+#include "document/edit/easings_put.h"
 // What the app reads to draw its lists, and where a layer appears on the image.
-#include "document/shown.h"
+#include "document/evaluate/shown.h"
 // Code from the net, run through adapters.
-#include "document/adapter.h"
+#include "document/scripts/adapter.h"
 // Saving a layer's look and applying it to another layer.
-#include "document/presets.h"
+#include "document/edit/presets.h"
 // The plane and points of a path shape.
-#include "document/paths.h"
+#include "document/edit/paths.h"
 // Moving, aligning and fitting a layer on the image, and a property value as it arrives.
-#include "document/arrange.h"
+#include "document/edit/arrange.h"
 // Holding a layer with a drag, carrying it, and letting go.
-#include "document/hold.h"
+#include "document/edit/hold.h"
 // Editing a layer's time: moving, cutting, removing, sequencing and stretching keyframes, plus
 // reset and undo.
-#include "document/time_edit.h"
+#include "document/edit/time_edit.h"
 
 #endif  // MOTOLII_DOCUMENT_DOC_H_

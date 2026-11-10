@@ -16,8 +16,8 @@
 
 #include "document/kinds.h"
 #include "document/marks.h"
-#include "document/scripts.h"
-#include "document/value_at.h"
+#include "document/scripts/scripts.h"
+#include "document/evaluate/value_at.h"
 #include "entry/calls_files.h"
 #include "entry/motolii.h"
 #include "entry/render_thread.h"

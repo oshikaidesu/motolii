@@ -13,26 +13,26 @@
 
 #include <sqlite3.h>
 
-#include "document/adapter.h"
-#include "document/arrange.h"
+#include "document/scripts/adapter.h"
+#include "document/edit/arrange.h"
 #include "document/cards.h"
-#include "document/easings_put.h"
-#include "document/expressions.h"
-#include "document/fx_put.h"
-#include "document/hold.h"
-#include "document/keys_put.h"
+#include "document/edit/easings_put.h"
+#include "document/scripts/expressions.h"
+#include "document/edit/fx_put.h"
+#include "document/edit/hold.h"
+#include "document/edit/keys_put.h"
 #include "document/kinds.h"
-#include "document/layer_edit.h"
+#include "document/edit/layer_edit.h"
 #include "document/marks.h"
 #include "document/match.h"
-#include "document/parent.h"
-#include "document/paths.h"
-#include "document/presets.h"
-#include "document/recipes.h"
-#include "document/relate.h"
-#include "document/time_edit.h"
+#include "document/edit/parent.h"
+#include "document/edit/paths.h"
+#include "document/edit/presets.h"
+#include "document/scripts/recipes.h"
+#include "document/edit/relate.h"
+#include "document/edit/time_edit.h"
 #include "document/undo.h"
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 #include "entry/calls.h"
 #include "entry/calls_sound.h"
 #include "entry/render_thread.h"
@@ -160,7 +160,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name, con
             // word: that file. number: when it begins. The result is the new layer.
             else if (c == "paste") ok = m->last_added = changes(m, doc_preset_paste(doc(m), w.c_str(), number));
             // word: the file. name: only these properties, such as those of one effect card. See
-            // document/presets.h.
+            // document/edit/presets.h.
             else if (c == "copy_style") ok = (int)doc_preset_save(doc(m), layer, w.c_str(), false, n);
             // word: the preset's name on the shelf. name: only these properties, such as those of
             // one effect card.
@@ -225,7 +225,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name, con
             // name: the easing. word: its SQL expression.
             else if (c == "define") ok = define_is(m, n.c_str(), w.c_str());
             // Shows what the open undo step has made so far on the preview while a drag is still in
-            // progress, as document/paths.h does for a shape being placed. The step is not ended.
+            // progress, as document/edit/paths.h does for a shape being placed. The step is not ended.
             else if (c == "show") {
                 Doc& d = doc(m);
                 ok = 1;

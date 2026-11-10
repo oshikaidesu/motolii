@@ -184,7 +184,7 @@ struct Canvas2D {
     // Where each stroke ends, in points from its outside; w is how many. Used for the stairs of a
     // Step bevel. See deep.glsl.
     filament::math::float4 bands{0.f};
-    // True for flat_lit: the lighting of the surface is updated every frame by document/evaluate.h.
+    // True for flat_lit: the lighting of the surface is updated every frame by document/evaluate/evaluate.h.
     bool inLight = false;
     // How far the edge distances are known, in points.
     int edgeReach = 0;
@@ -193,9 +193,9 @@ struct Canvas2D {
     std::atomic<bool> stale{true};
     // The layer in the scene, moved like any other layer. See move in render.h.
     Mesh* sheet = nullptr;
-    // Half the box size across, up and through, when the layer has depth. See document/evaluate.h.
+    // Half the box size across, up and through, when the layer has depth. See document/evaluate/evaluate.h.
     filament::math::float3 boxed{0.f};
-    // True when the box is open. See document/evaluate.h.
+    // True when the box is open. See document/evaluate/evaluate.h.
     bool open = false;
     // The layer's material instance. Null if the layer is not shown.
     filament::MaterialInstance* look = nullptr;

@@ -17,25 +17,25 @@
 #include <math/mat4.h>
 #include <sqlite3.h>
 
-#include "document/arrange.h"
+#include "document/edit/arrange.h"
 #include "document/cards.h"
-#include "document/easings_put.h"
-#include "document/expressions.h"
-#include "document/fx_put.h"
-#include "document/hold.h"
-#include "document/keys_put.h"
+#include "document/edit/easings_put.h"
+#include "document/scripts/expressions.h"
+#include "document/edit/fx_put.h"
+#include "document/edit/hold.h"
+#include "document/edit/keys_put.h"
 #include "document/kinds.h"
-#include "document/layer_edit.h"
+#include "document/edit/layer_edit.h"
 #include "document/marks.h"
-#include "document/place.h"
-#include "document/presets.h"
-#include "document/recipes.h"
-#include "document/relate.h"
-#include "document/relations.h"
-#include "document/scripts.h"
-#include "document/shown.h"
+#include "document/evaluate/place.h"
+#include "document/edit/presets.h"
+#include "document/scripts/recipes.h"
+#include "document/edit/relate.h"
+#include "document/evaluate/relations.h"
+#include "document/scripts/scripts.h"
+#include "document/evaluate/shown.h"
 #include "document/undo.h"
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 #include "entry/motolii.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"
@@ -54,7 +54,7 @@ int motolii_add(Motolii* m, const char* kind, const char* file) { return on_rend
 int motolii_remove(Motolii* m, int layer) { return on_render_thread(m, [=] { return changes(m, (int)(doc_remove(doc(m), layer))); }); }
 // Sets property `name` of the layer to `number`. The number goes through doc_macro_own first, which
 // turns it into the property's own value when a macro drives the property; see
-// document/expressions.h. Returns nonzero on success.
+// document/scripts/expressions.h. Returns nonzero on success.
 int motolii_set(Motolii* m, int layer, const char* name, double number) { return on_render_thread(m, [=] { return changes(m, (int)(doc_set(doc(m), layer, name, doc_macro_own(doc(m), layer, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }
 // Sets the text property `name` of the layer to `word`. Returns nonzero on success.
 int motolii_say(Motolii* m, int layer, const char* name, const char* word) { return on_render_thread(m, [=] { return changes(m, (int)(doc_say(doc(m), layer, name, word))); }); }

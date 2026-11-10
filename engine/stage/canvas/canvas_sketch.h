@@ -43,7 +43,7 @@ Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run, const std::string
 // Creates an offscreen canvas that a WEBGL sketch draws with, which in p5.js is made by
 // createGraphics. It is the same kind of canvas at its own size `wide` by `high`, and `pic`
 // identifies it in the script. It is shown only where sketch.mat reads it, see
-// document/sketch.h. Returns null if the canvas cannot be placed.
+// document/evaluate/sketch.h. Returns null if the canvas cannot be placed.
 Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high);
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_SKETCH_H_

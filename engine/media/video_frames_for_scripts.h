@@ -22,7 +22,7 @@ struct FilmRead {
     // The frame read last, as RGBA. At the end of the video it stays as the last frame.
     std::vector<uint8_t> last;
     ~FilmRead() { if (reader) gst_element_set_state(reader, GST_STATE_NULL), gst_object_unref(reader); if (out) gst_object_unref(out); }
-    // The folder of the images that the script came with; see document/adapter.h.
+    // The folder of the images that the script came with; see document/scripts/adapter.h.
     std::string beside;
     // Opens `file` and reads its first frame. `wide` is the frame width in pixels, or 0 for the
     // size of the video. Returns false if the pipeline cannot be made or no frame arrives.

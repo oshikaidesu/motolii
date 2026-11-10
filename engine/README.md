@@ -40,7 +40,7 @@
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`leva/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`・`ymm4-luascript/` ほか）。`leva/`・`ymm4-luascript/` は、自前のヘッダーにそのまま貼った他人のコード（`community/quickjs/script_leva.h`・`community/aviutl/aviutl_fx.h`）のライセンス文書 |
 | `out/` | 組み立てと描いた物の出力（git の外） |
 
-**adapter と interop**：人のコードとの境目は 1 か所に閉じ込める。Filament の公開されていない内側に手を入れる interop は `gpu/*_interop.*` だけ、ネットのコードを形を変えずに動かす adapter は `community/sites/adapter*.h`・`community/p5/adapter_p5_shader.h` と `document/adapter.h` だけ。相手が変わったら、そこだけを直す。
+**adapter と interop**：人のコードとの境目は 1 か所に閉じ込める。Filament の公開されていない内側に手を入れる interop は `gpu/*_interop.*` だけ、ネットのコードを形を変えずに動かす adapter は `community/sites/adapter*.h`・`community/p5/adapter_p5_shader.h` と `document/scripts/adapter.h` だけ。相手が変わったら、そこだけを直す。
 
 ### `community/` の中
 

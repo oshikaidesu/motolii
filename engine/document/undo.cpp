@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
-#include "document/evaluate.h"
+#include "document/evaluate/evaluate.h"
 #include "document/match.h"
-#include "document/recipes.h"
-#include "document/value_at.h"
+#include "document/scripts/recipes.h"
+#include "document/evaluate/value_at.h"
 #include "motion/easing_curves.h"
 #include "shelf/shelf_folders.h"
 

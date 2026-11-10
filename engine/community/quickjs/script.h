@@ -19,7 +19,7 @@
 // are folded into Advanced, labeled "← Spread" after their names. The user can still set a
 // driven parameter by hand. The macro then adds (max - min) x (macro - default) to the
 // parameter's own value, just as an After Effects expression "value + ..." keeps the user's
-// value. See doc_macro_adds in document/expressions.h.
+// value. See doc_macro_adds in document/scripts/expressions.h.
 //
 // Instead of those header lines, the file may start with leva's object form, for example
 //   const knobs = { distance: 2, Advanced: folder({ ... }) }
@@ -35,7 +35,7 @@
 // each() may take a fifth argument: each(i, n, t, k, at). at.x, at.y and at.z are the position
 // the layer's script and the expressions before this one gave the copy, or 0 0 0 if there are
 // none. After Effects gives an expression the same thing as `value`. What each() returns is
-// added on top of that position. See document/expressions.h.
+// added on top of that position. See document/scripts/expressions.h.
 //
 // A script may hold an After Effects expression as it was posted: AE.compile(`...`) once, then
 // AE.run(f, ...) in each(). The expression is compiled once, not every frame. See ae_expr.h.
@@ -83,7 +83,7 @@ std::string script_shelf_file(const std::string& file);
 std::vector<std::string> script_files(const std::string& word);
 
 // Returns true if src is a relation that pushes layers: it defines force() and has no draw().
-// See document/world.h.
+// See document/evaluate/world.h.
 inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }
 // Returns true if src is a p5.js sketch, written with setup() and draw(), rather than one of
 // our scripts, whose code is each().

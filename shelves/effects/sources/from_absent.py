@@ -53,7 +53,7 @@ if 'sksl' not in d:
     open(os.path.splitext(out)[0] + '.am', 'w').write('\n'.join(head + knob_lines({p['id']: p['id'] for p in d.get('params', [])}, ('float', 'int', 'bool', 'switch', 'choice', 'angle'))) + '\n')
     sys.exit(0)
 s = d['sksl']
-reserved = ('origin_x', 'origin_y', 'turn', 'extent')   # (names the inside gives a thing's effect of its own accord, engine/document/moment_fx.h: an effect's own knob by one is renamed, its own still)
+reserved = ('origin_x', 'origin_y', 'turn', 'extent')   # (names the inside gives a thing's effect of its own accord, engine/document/evaluate/moment_fx.h: an effect's own knob by one is renamed, its own still)
 s = re.sub(r'\b(' + '|'.join(reserved) + r')\b', r'\1_', s)
 pictures = re.findall(r'^\s*uniform\s+shader\s+(\w+)\s*;', s, re.M)
 blur = next((p for p in pictures if p in ('blurred', 'bright')), None)
@@ -68,9 +68,9 @@ typed = r'^\s*(?:layout\(color\)\s+)?uniform\s+(float[234]?|half[234]?|int)\s+(\
 loose = re.findall(typed, s, re.M)
 s = re.sub(typed + r'\s*$', '', s, flags=re.M)
 s = re.sub(r'^\s*uniform\s+shader\s+(image|blurred|bright|backdrop|below)\s*;', '', s, flags=re.M)
-loose.append(('float4', 'layerRect'))   # (the layer's own rectangle on the picture, in its pixels: corner and size, engine/document/moment_fx.h; none said, the whole picture)
+loose.append(('float4', 'layerRect'))   # (the layer's own rectangle on the picture, in its pixels: corner and size, engine/document/evaluate/moment_fx.h; none said, the whole picture)
 if back:
-    loose.append(('float4', 'backdropBox'))   # (the layer's box on the stage: left, top, width, height, each a share of it: engine/document/moment_fx.h)
+    loose.append(('float4', 'backdropBox'))   # (the layer's box on the stage: left, top, width, height, each a share of it: engine/document/evaluate/moment_fx.h)
 if blur:
     for n in ('blur', 'threshold') if blur == 'bright' else ('blur',):
         if not any(m == n for _, m in loose): loose.append(('float', n))   # (what the blur is made by, a knob of the effect's own in AbsentMotion)

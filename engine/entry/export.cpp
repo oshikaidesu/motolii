@@ -12,8 +12,8 @@
 
 #include "document/kinds.h"
 #include "document/marks.h"
-#include "document/presets.h"
-#include "document/value_at.h"
+#include "document/edit/presets.h"
+#include "document/evaluate/value_at.h"
 #include "entry/calls_time.h"
 #include "entry/render_thread.h"
 #include "entry/window.h"

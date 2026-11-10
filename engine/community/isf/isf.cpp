@@ -140,7 +140,7 @@ std::string isf_wgsl(const std::string& text, const std::string& name, std::stri
     for (size_t k = 0; k < others.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + k)) + ") uniform texture2D isf_tex_" + others[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * (read.size() + k) + 1) + ") uniform sampler isf_smp_" + others[k] + ";\n";
     // The parameter struct also holds the values of the layer: clip_time is the seconds into the
-    // layer and clip_length is how long it lasts (engine/document/moment_fx.h). The frame has
+    // layer and clip_length is how long it lasts (engine/document/evaluate/moment_fx.h). The frame has
     // neither.
     glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Parameters {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";
     // On/off parameters. They are stored as int because WGSL keeps no bool in a uniform. Uses of

@@ -296,7 +296,7 @@ function __shaded_take(seconds) {   // (the shader that paints its stage and wha
   return JSON.stringify({ vert: __shaded._vertSrc, frag: __shaded._fragSrc, kind: __shaded_kind, width: globalThis.width, height: globalThis.height, density: pixelDensity(), told });
 }
 var __was = {};
-function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, document/relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; one that remembers is told it as near and weighs it itself, as MASH's Python node reads getFalloff)
+function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, document/evaluate/relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; one that remembers is told it as near and weighs it itself, as MASH's Python node reads getFalloff)
   const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [], solves = relate.length > 3, cached = __was[rel] = __was[rel] || [];
   const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3] }; names.forEach((n, j) => o[n] = v[j]); return o; });
   if (awake) ((solves ? relate(things, t, k, (frame && cached[frame - 1]) || null) : relate(things, t, k)) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
@@ -305,7 +305,7 @@ function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a
   all.forEach((v, i) => names.forEach((n, j) => { const is = by[i] && by[i][n], to = typeof is === 'number' && isFinite(is) ? is : v[j]; out[i * many + j] = solves ? to : v[j] + (to - v[j]) * v[many + 3]; }));
   return out;
 }
-function __forces(all, t, k, rel, frame, awake) {   // (a relation that pushes: its force() told its things as d3-force tells a force its nodes, each where it is and how fast; what it adds to their speed the world weighs and adds up, document/world.h. What else it writes on a thing it finds there the next frame, as a particle's attributes, not to be changed for what is cached)
+function __forces(all, t, k, rel, frame, awake) {   // (a relation that pushes: its force() told its things as d3-force tells a force its nodes, each where it is and how fast; what it adds to their speed the world weighs and adds up, document/evaluate/world.h. What else it writes on a thing it finds there the next frame, as a particle's attributes, not to be changed for what is cached)
   const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity', 'vx', 'vy', 'vz'], many = names.length, cached = __was[rel] = __was[rel] || [], had = frame && cached[frame - 1];
   const things = all.map((v, i) => { const o = Object.assign({}, had && had[i], { i, index: i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3], home: { x: v[many + 4], y: v[many + 5], z: v[many + 6] } }); names.forEach((n, j) => o[n] = v[j]); return o; });
   if (awake) force(things, t, k);
@@ -332,7 +332,7 @@ function __most() {   // (as many copies as its first seconds draw at once, a se
   for (let f = 1; f < 300 && __wall() - from < 1000; ++f) __to(f);
   return Math.max(...__frames.map(c => c.length / 11));
 }
-function __shape() {   // (only boxes, only balls or only rings, with no lines and no lights of its own: the world's own, as real as any. Any more: as it draws them, document/sketch.h)
+function __shape() {   // (only boxes, only balls or only rings, with no lines and no lights of its own: the world's own, as real as any. Any more: as it draws them, document/evaluate/sketch.h)
   __most();
   if (__parts.length || __three) return '';
   const builtin = { box: 'cube', ellipsoid: 'ball', torus: 'ring' }, kinds = Object.keys(__kinds);

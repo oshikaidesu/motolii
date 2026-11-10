@@ -8,7 +8,7 @@
 // After Effects file do (see community/after_effects/lottie_slots.h, whose rule for a range is
 // used when none is given). The current values are written back into the file's text, read by
 // Filament's JsonSerializer, and laid on the stage's view over the values the stage itself sets
-// (see doc_look in document/camera.h). A part the file does not mention keeps the stage's values.
+// (see doc_look in document/evaluate/camera.h). A part the file does not mention keeps the stage's values.
 // Words such as enum names (a tone mapping, a custom LUT) are not parameters; they stay as the
 // file says them.
 #include <cstddef>

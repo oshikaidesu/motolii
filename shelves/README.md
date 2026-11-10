@@ -1,37 +1,37 @@
-# shelves/ — 見つけた表現を置く所
+# shelves/ — where to put a look you found
 
-[English](README.en.md)
+[日本語](README.ja.md)
 
-Motolii に最初から入っている表現と、見つけた表現を置く場所です。ファイルを置く人は、まず次の「見つけたファイルはどれか」を読んでください。
+What Motolii has from the start, and where to put a look you found. If you are placing a file, read "Which kind is my file?" next.
 
-置くのは利用者のフォルダの中です（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可）。そこに下と同じ名前のフォルダを作ってファイルを置くと、再起動なしで同じ所に並びます。同じ名前のファイルなら、利用者の物が勝ちます。
+Put it in your own folder (`~/Library/Application Support/Motolii/` on a Mac, `%APPDATA%\Motolii\` on Windows, or `MOTOLII_OWN`): make a folder there of the same name as one below and put the file in it. It shows in the same place at once, no restart. A file of the same name there wins over the one here.
 
-## 見つけたファイルはどれか
+## Which kind is my file?
 
-上から見て、最初に当てはまる行のフォルダに置きます。フォルダは利用者のフォルダの中です（上のとおり）。
+Take the first row that fits. The folder goes inside your own folder (above).
 
-| 見つけた物 | 置く所 |
+| What you found | Where it goes |
 |---|---|
-| ISF のシェーダー（`.fs`）、WGSL（`.wgsl`） | `effects/`（中の分類フォルダはどれでもよい） |
-| 1 つの動きを、コピーや文字を 1 つずつ（`i` 番目に）決める JavaScript（`function each`） | `expressions/` |
-| 複数のレイヤーを、お互いの位置を見ながらまとめて動かす JavaScript（`function relate`・`function force`） | `relations/` |
-| 1 回で図形や絵を作る物（先頭に `// make` の行がある `.js`）、点を並べるスクリプト、p5.js のスケッチのファイル | `create/` |
-| 動きの緩急の式（`.way`） | `ease/` |
-| 値と効果のひとまとまり（`.motolii`） | `looks/` |
-| 3D の形（`export function solid` を持つ `.js`） | `solids/` |
-| アプリの見た目 | `skins/`（フォルダごと） |
-| AviUtl2 のパッケージ | `aviutl_scripts/`（フォルダごと） |
-| Shadertoy・GLSL Sandbox・twigl・Bonzomatic のシェーダー、p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra などのコード | **置かずに貼る**。コードをコピーして、アプリで ⌘V。Program タブに残ります（Hydra は先に `extensions/hydra/get.sh`） |
+| An ISF shader (`.fs`) or a WGSL shader (`.wgsl`) | `effects/` (any category folder inside) |
+| JavaScript that decides, for one copy or letter at a time (the `i`-th), where it is and how (`function each`) | `expressions/` |
+| JavaScript that moves several layers together, looking at where the others are (`function relate`, `function force`) | `relations/` |
+| Something that builds a picture or shape in one go (a `.js` with `// make` lines), a script that lays out points, a p5.js sketch as a file | `create/` |
+| An easing formula (`.way`) | `ease/` |
+| A saved set of values and effects (`.motolii`) | `looks/` |
+| A 3D shape (a `.js` with `export function solid`) | `solids/` |
+| The look of the app | `skins/` (the whole folder) |
+| An AviUtl2 package | `aviutl_scripts/` (the whole folder) |
+| A Shadertoy, GLSL Sandbox, twigl or Bonzomatic shader; p5.js, Dwitter, tixy, Turtletoy, Two.js, Paper.js or Hydra code | **Paste it, do not place it.** Copy the code and press ⌘V in the app. It stays in the Program tab. (Hydra first needs `extensions/hydra/get.sh`.) |
 
-ファイルは頭の数行で自分の名前とつまみを言います。下の「頭の書き方」を見てください。
+A file says its name and its sliders in its first lines. See "How a file's head is written" below.
 
-## `.js` の決まり
+## The contract of a `.js` file
 
-どの `.js` も、先頭の `//` の行（頭）に名前とつまみを書き、その後ろにコードを書きます。頭は、`//` で始まる行と空行が続く間です。コードの行が来たところで終わります。
+Every `.js` starts with `//` lines (the head) giving its name and sliders, then the code. The head is the run of `//` lines and blank lines at the top; it ends at the first line of code.
 
-### 動き：`expressions/`（`function each`）
+### A motion: `expressions/` (`function each`)
 
-コピー 1 つずつ、その位置と形を返します。
+It returns where one copy is and how.
 
 ```js
 // Rise: each copy lifts a little higher than the one before, and fades in
@@ -41,24 +41,24 @@ function each(i, n, t, k) {
 }
 ```
 
-| 項目 | 中身 |
+| Item | What it holds |
 |---|---|
-| 関数の名前 | `each`（普通のスクリプトとして走るので、`import` は使えません） |
-| `i` | このコピーの番号（0 から） |
-| `n` | コピーの数（文字を分けた文字なら、その数） |
-| `t` | レイヤーが始まってからの秒 |
-| `k` | 頭で宣言したつまみ。`--track` と `--check` は数（check は 0 か 1）、`--select` は選んだ言葉。ほかに `k.duration`（レイヤーの長さ・秒。0 以下は未設定）、`k.round`（プロジェクトの長さ・秒）、`k.px`（プロジェクトの 1 ピクセルのステージの単位） |
-| `at`（5 つ目。省略可） | `at.x`・`at.y`・`at.z`：このコピーが、このレイヤーのスクリプトと前の expression で、ここまでに置かれた場所（無ければ 0） |
-| 返す物 | オブジェクト。読む名前は `x`・`y`・`z`（ステージの単位）、`size`・`scale_x`・`scale_y`・`scale_z`（1 でそのまま）、`rotate`・`rotate_x`・`rotate_y`（度）、`opacity`（0〜1）、`colour`（立体のコピーの色）。書かなかった名前や数でない値は、そのままです |
-| ほかの expression と重なる時 | 位置と角度は足し、`size`・`scale_*`・`opacity` は掛けます。`colour` は最後に返した物 |
-| 使える関数 | `ease(名前, u)`（`u` は 0〜1。名前は `SlowIn` `SlowOut` `SlowInSlowOut` `VerySlowIn` `VerySlowOut` `SpringOut` `SmallSpringOut` `BounceOut` `Overshoot`。ほかの名前は `u` を返す）。`animate(i, n, t, k, a)`（Cavalry の Animator と同じ形。`a` は `{ what, from, to, way }`、ほかに `out`・`random`・`seed`。`k.length`・`k.delay` を読むので頭で宣言します。例：`expressions/fade_in.js`）。`cavalry.random(low, high, seed, sequence)`。After Effects の式は `AE.compile`・`AE.run`（例：`create/repeats/ae_stagger.js`） |
-| 使えない物 | p5.js の関数と定数（`sin`・`PI`・`random`・`noise`・`createVector` など）。`Math.sin` のように書きます |
+| Function name | `each`. The file runs as a plain script, so `import` is not available |
+| `i` | This copy's number, from 0 |
+| `n` | How many copies (for text split into letters: how many letters) |
+| `t` | Seconds since the layer began |
+| `k` | The sliders the head declares. `--track` and `--check` are numbers (a check is 0 or 1); `--select` is the chosen word. Also `k.duration` (how long the layer lasts, in seconds; 0 or less means not set), `k.round` (how long the project runs, in seconds), `k.px` (one pixel of the project, in stage units) |
+| `at` (fifth, optional) | `at.x`, `at.y`, `at.z`: where this layer's script and the expressions before this one have put the copy so far (0 if none) |
+| Returns | An object. The names read are `x`, `y`, `z` (stage units), `size`, `scale_x`, `scale_y`, `scale_z` (1 is unchanged), `rotate`, `rotate_x`, `rotate_y` (degrees), `opacity` (0 to 1), `colour` (a solid copy's own colour). A name you leave out, or a value that is not a number, stays as it was |
+| Several expressions on one layer | Positions and angles add. `size`, `scale_*` and `opacity` multiply. `colour` is the last one given |
+| Helper functions | `ease(name, u)` (`u` is 0 to 1; names `SlowIn`, `SlowOut`, `SlowInSlowOut`, `VerySlowIn`, `VerySlowOut`, `SpringOut`, `SmallSpringOut`, `BounceOut`, `Overshoot`; any other name returns `u`). `animate(i, n, t, k, a)`, shaped like a Cavalry Animator (`a` is `{ what, from, to, way }`, optionally `out`, `random`, `seed`; it reads `k.length` and `k.delay`, so declare them in the head; example: `expressions/fade_in.js`). `cavalry.random(low, high, seed, sequence)`. For After Effects expressions: `AE.compile` and `AE.run` (example: `create/repeats/ae_stagger.js`) |
+| Not available | p5.js functions and constants (`sin`, `PI`, `random`, `noise`, `createVector`, ...). Write `Math.sin` |
 
-### 関係：`relations/`（`function relate` か `function force`）
+### A relation: `relations/` (`function relate` or `function force`)
 
-たくさんのレイヤー（`things`）を一度に受け取ります。p5.js が走るので、`sin`・`TWO_PI`・`lerp`・`constrain`・`noise`・`createVector`・`ease` などが使えます。
+It receives all the layers (`things`) at once. p5.js runs it, so `sin`, `TWO_PI`, `lerp`, `constrain`, `noise`, `createVector`, `ease` and the rest are there.
 
-`relate` は新しい値を返します。
+`relate` returns new values.
 
 ```js
 // Wave: each goes up and down by where it stands along the row
@@ -69,15 +69,15 @@ function relate(things, t, k) {
 }
 ```
 
-| 項目 | 中身 |
+| Item | What it holds |
 |---|---|
-| `things` の 1 つ | `i`（番号）、`id`（レイヤーの番号）、`w`・`h`（今の幅と高さ、大きさを含む）、`near`（0〜1：関係の Falloff の形がどれだけ覆っているか。無ければ 1）、`x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`（今の値） |
-| `t`・`k` | 秒、つまみ（上と同じ） |
-| 返す物 | `{ i, 変えたい値… }` の配列。書いた値だけが変わり、書かない値はそのまま。何も返さなければ、`things` を直接書き換えた結果を使います |
-| 重み | 引数が 3 つの時、結果は `near` で薄められます |
-| 4 つ目の引数 | `relate(things, t, k, was)`：前のフレームで返した物（`i` で引く。最初のフレームは `null`）。この時は `near` で薄めません（`near` は自分で使います。例：`relations/stay.js`）。1 フレーム前が要るので、最初から 60 フレーム毎秒で順に走ります |
+| One of `things` | `i` (its number), `id` (the layer's number), `w` and `h` (width and height now, size included), `near` (0 to 1: how much the relation's Falloff shape covers it; 1 with no Falloff), and `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity` (its values now) |
+| `t`, `k` | Seconds; the sliders (as above) |
+| Returns | An array of `{ i, the values to change... }`. Only the values you give change. If it returns nothing, the `things` as you edited them in place are used |
+| Weight | With three arguments, the result is weakened by `near` |
+| Fourth argument | `relate(things, t, k, was)`: what you returned for the previous frame (looked up by `i`; `null` on the first frame). Then the result is not weakened by `near`; use `near` yourself (example: `relations/stay.js`). Because it needs the frame before, it runs from the start, in order, 60 frames a second |
 
-`force` は押します（d3-force と同じ形）。返す物は無く、`things` を書き換えます。
+`force` pushes (the shape d3-force uses). It returns nothing and edits `things` in place.
 
 ```js
 // Spring: each goes after where it would be left alone, past it and back
@@ -94,11 +94,11 @@ function force(things, t, k) {
 }
 ```
 
-`force` の `things` は、上の値のほかに `vx`・`vy`・`vz`（速さ）、`home`（`x`・`y`・`z`：この関係が無い時の場所）、`index` を持ちます。読み戻されるのは `x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`・`vx`・`vy`・`vz` です。自分で足した値は次のフレームも残ります。ファイルに `d3.` と書くと、d3-force-3d が使えます（例：`relations/collide.js`）。最初から 60 フレーム毎秒で順に走ります。
+In `force`, each thing also has `vx`, `vy`, `vz` (speed), `home` (`x`, `y`, `z`: where it would be without this relation) and `index`. Read back are `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity`, `vx`, `vy`, `vz`. Anything else you put on a thing is still there next frame. If the file says `d3.`, d3-force-3d is available (example: `relations/collide.js`). It runs from the start, in order, 60 frames a second.
 
-### レシピ：`create/`（`// make` の行）
+### A recipe: `create/` (`// make` lines)
 
-先頭の行に名前、その下の行に「命令」を 1 行ずつ書きます。レイヤーを作って値を入れる手順です。コードは無くても構いません。
+The first line gives the name; the lines under it are commands, one each, that make layers and set their values. The file may have no code.
 
 ```js
 // White Flash: the stage goes white for an instant where the playhead is, gone in 0.4 seconds
@@ -111,7 +111,7 @@ function force(things, t, k) {
 // key opacity 0.4 0
 ```
 
-動きを自分で持つ時は、頭の後ろに `each` を書きます。そのファイルが、最初のレイヤーのスクリプトになります。
+For a motion of its own, put `each` after the head. The file then becomes the script of the first layer.
 
 ```js
 // Bobbing Row: five dots that bob one after another
@@ -125,23 +125,23 @@ function each(i, n, t, k) {
 }
 ```
 
-| 命令 | 意味 |
+| Command | Meaning |
 |---|---|
-| `make 種類 中身` | 最初のレイヤーを作る。必ず最初の命令にします（そうでないファイルは一覧に出ません）。`make shape rect`（`rect` `circle` `polygon` `star` `line` `ring` `arc` `arrow` `squircle` `cog` `path` `spiral` `chamfer` `null`）、`make solid cube`（`ring` `gem` `cube` `ball` `sketch`）、`make picture ファイルの道` |
-| `then 種類 中身` | もう 1 つレイヤーを作る。以後の `set`・`say`・`key` はそのレイヤーに入る |
-| `set 値 数` | 数の値を入れる。数の代わりに `first`（このレシピの最初のレイヤー）、`before`（1 つ前に作ったレイヤー）、`behind`（最初のレイヤーのすぐ下の順）も書けます。値の名前は `engine/document/kinds.h` の表（`size`・`copies`・`opacity`・`duration` など）。スクリプトのつまみは `js_つまみの名前` |
-| `say 値 言葉` | 言葉の値を入れる（`fill ff3366`・`path M 0 0 …`・`copy_fill 色 色 …`）。`say script this` はこのファイルのコード、`say script Repeater` は名前で別のレシピ、`say script expressions/wave.js` は棚のファイル |
-| `here` | 今のプレイヘッドから始める（無ければプロジェクトの頭から、一緒に回る）。`key` の秒はここから数えます |
-| `fit fit` / `fit fill` / `fit stretch` | 絵に合わせる（収める・覆う・引き伸ばす） |
-| `key 値 秒 数` | その秒に値のキーを打つ |
+| `make kind what` | Makes the first layer. It must be the first command, or the file is not listed. `make shape rect` (`rect`, `circle`, `polygon`, `star`, `line`, `ring`, `arc`, `arrow`, `squircle`, `cog`, `path`, `spiral`, `chamfer`, `null`), `make solid cube` (`ring`, `gem`, `cube`, `ball`, `sketch`), `make picture path-to-file` |
+| `then kind what` | Makes another layer. The following `set`, `say` and `key` go to it |
+| `set value number` | Sets a number. Instead of a number you can write `first` (the recipe's first layer), `before` (the layer made just before) or `behind` (the order just under the first layer). Value names are in `engine/document/kinds.h` (`size`, `copies`, `opacity`, `duration`, ...). A slider of the script is `js_<slider name>` |
+| `say value words` | Sets a word value (`fill ff3366`, `path M 0 0 ...`, `copy_fill colour colour ...`). `say script this` is this file's code, `say script Repeater` is another recipe by name, `say script expressions/wave.js` is a shelf file |
+| `here` | Begins at the playhead (without it, at the start of the project, going round with it). The seconds of `key` count from here |
+| `fit fit` / `fit fill` / `fit stretch` | Fits it to the picture (inside, covering, stretched) |
+| `key value seconds number` | Puts a key on the value at that time |
 
-守ること：
+Watch out for:
 
-- `//` の行は、`--` で始まる物（つまみ。次の節）、`--label:`、命令のどれかです。最初の `//` の行から、コードの前までの `//` の行は、命令として読まれます。説明の文を書く時は、命令の言葉（`make`・`then`・`set`・`say`・`here`・`fit`・`key`）で始まらないようにします。ほかの言葉で始まる行は読み飛ばされます。
-- ファイルに `function each` がある物は、Create の Expression にも出ます。
-- 先頭に `// make` が無く、`function draw`・`function setup`・`createCanvas` がある p5.js のスケッチは、名前をファイル名にして、そのまま 1 つのレシピになります。
+- Every `//` line from the first one up to the code is read as a command. If you write a sentence there, do not start it with a command word (`make`, `then`, `set`, `say`, `here`, `fit`, `key`). A line starting with any other word is skipped.
+- A file with `function each` also shows under Expression in Create.
+- A p5.js sketch with no `// make` line, and with `function draw`, `function setup` or `createCanvas`, becomes one recipe as it is, named after the file.
 
-### p5.js のスケッチ
+### A p5.js sketch
 
 ```js
 function setup() { createCanvas(400, 400); }
@@ -151,121 +151,121 @@ function draw() {
 }
 ```
 
-- p5.js 1.11.13 がそのまま走ります（ブラウザは無し）。1 秒 60 フレームで、時間は前にだけ進みます。
-- 2D は絵になり、プロジェクトに合わせて置かれます。`WEBGL` で描いた `box`・`sphere`・`plane`・`ellipsoid`・`cylinder`・`cone`・`torus` は、3D の立体のコピーになります。
-- 描く行ごとに、その行の形の強さを決めるつまみ（`circle 3` のような名前）が 1 つできます。
-- `loadImage` の絵は、ファイルと同じ名前のフォルダ（`Fire.js` なら `Fire/`）から、ファイル名だけで読みます。
-- p5.sound は鳴りません。
+- p5.js 1.11.13 runs it as it is (no browser), at 60 frames a second, and time only goes forward.
+- A 2D sketch becomes a picture, fitted to the project. In `WEBGL`, `box`, `sphere`, `plane`, `ellipsoid`, `cylinder`, `cone` and `torus` become copies of a 3D solid.
+- Each line that draws gets one slider for how strong that line's shapes are (named like `circle 3`).
+- A picture loaded with `loadImage` is read, by its file name only, from a folder named like the file beside it (`Fire/` for `Fire.js`).
+- p5.sound is silent.
 
-### 緩急：`ease/`（`.way`）
+### An easing: `ease/` (`.way`)
 
-1 行目に名前、あとに式を書きます。
+The first line is the name, then the formula.
 
 ```
 // Snappy: fast away from the first key, a long soft landing on the next
 a + (b - a) * bezier(u, .2, 0, 0, 1)
 ```
 
-`a` は最初のキーの値、`b` は次のキーの値、`u` は間をどこまで来たか（0〜1）、`p1`〜`p4` は数です。`u` が 0 の時は `a`、1 の時は `b` になる式にします。`bezier(u, x1, y1, x2, y2)` と `way('名前', u)` が使えます。
+`a` is the first key's value, `b` the next key's, `u` is how far through (0 to 1), `p1` to `p4` are numbers. Write a formula that gives `a` at `u` = 0 and `b` at `u` = 1. `bezier(u, x1, y1, x2, y2)` and `way('Name', u)` can be used.
 
-### その他
+### The others
 
-- `solids/`：`export function solid(k)` が three.js の BufferGeometry を返します。`k` はつまみと、`k.w`・`k.h`（物の幅と高さ）です。見本：`solids/Box.js`。
-- `effects/` の `.wgsl`：頭の `--track@` でつまみを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で絵を返します。絵は `texture_2d<f32>`、つまみは 1 つの `var<uniform>` の構造体です。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があれば、ステージが入れます。見本：`effects/glitch/rgbshift.wgsl`。
-- `effects/` の `.fs`：ISF（Vidvox の形式）をそのまま置きます。
+- `solids/`: `export function solid(k)` returns a three.js BufferGeometry. `k` is the sliders plus `k.w` and `k.h` (the thing's width and height). Example: `solids/Box.js`.
+- `.wgsl` in `effects/`: declare sliders with `--track@` in the head, and return the picture from `fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f`. The picture is a `texture_2d<f32>`, the sliders one `var<uniform>` struct. If the struct has `time`, `frame`, `aspect`, `resolution`, `width` or `height`, the stage fills them in. Example: `effects/glitch/rgbshift.wgsl`.
+- `.fs` in `effects/`: ISF (Vidvox's format), placed as it is.
 
-## 頭の書き方
+## How a file's head is written
 
-頭の 1 行目は `// 名前: 説明`。名前は最初の `:` の前です。`.fs` 以外で 1 行目が無い物は、ファイル名が名前になります（`create/` の p5.js のスケッチも同じ）。
+The first line is `// Name: description`. The name is what comes before the first `:`. Where there is no such line (and for a `.fs`), the file name is the name; a p5.js sketch in `create/` is the same.
 
-つまみは 1 行に 1 つ、`// --種類@名前:ラベル,…` と書きます。名前はコードから `k.名前` で読む名前です。`@` と `:` のどちらも要ります。要らない行（説明）は読み飛ばされます。
+A slider is one line, `// --kind@name:Label,...`. The name is what the code reads as `k.name`. Both the `@` and the `:` are needed. Other lines (prose) are skipped.
 
-| 行 | 意味 |
+| Line | Meaning |
 |---|---|
-| `// --track@名前:ラベル,最小,最大,初めの値,刻み` | 数。刻みは省略できます |
-| `// --check@名前:ラベル,初めの値` | 入り切り（1 か 0） |
-| `// --select@名前:ラベル,言葉1,言葉2,…` | 言葉から 1 つ。最初の言葉が初めの値。`k.名前` は選んだ言葉 |
-| `// --picture@名前:ラベル` | 別のレイヤーの絵を読む（効果のみ） |
-| `// --group:名前` … `// --group` | 間のつまみを、その名前の畳める組にする |
-| `// --macro@名前:ラベル,初めの値 -> つまみ 最小 最大, …` | 0〜1 のつまみ 1 つで、ほかのつまみを動かす |
-| `// --label:言葉` | 一覧の分類の名前。`create/` では、閉じたパックの印 |
-| `// --about:言葉` | 効果の説明（効果の一覧で使う） |
+| `// --track@name:Label,lowest,highest,as it comes,step` | A number. The step may be left out |
+| `// --check@name:Label,as it comes` | On or off (1 or 0) |
+| `// --select@name:Label,word1,word2,...` | One of some words; the first is as it comes. `k.name` is the chosen word |
+| `// --picture@name:Label` | Reads another layer's picture (effects only) |
+| `// --group:Name` ... `// --group` | The sliders between become a folded group of that name |
+| `// --macro@name:Label,as it comes -> slider low high, ...` | One 0-to-1 slider that turns others |
+| `// --label:Word` | The category in the list. In `create/`, it marks a closed pack |
+| `// --about:Words` | An effect's description (used in the effects list) |
 
-つまみの代わりに、先頭の `const knobs = { distance: 2, … }`（leva の形）も読みます。
+Instead of slider lines, a `const knobs = { distance: 2, ... }` at the top (leva's form) is read too.
 
-## 置いたあと
+## After you place it
 
-保存すると、すぐに出ます（再起動は要りません）。同じファイルを保存し直すと、絵にもすぐ効きます。
+Save it and it shows at once (no restart). Save it again and the picture follows at once.
 
-- `effects/`：Effects タブにタイルが出ます。レイヤーを選び、タイルを押して **Add**。
-- `create/`：Create タブにタイルが出ます。押して **Create**。
-- `expressions/`：Create タブの Expression。レイヤーを選んでタイルを押し、**Put on**（そのレイヤーに 1 枚のカードとして付き、つまみはインスペクターに出ます）。何も選ばなければ、新しい物を作ります。
-- `relations/`：右下の Relations タブ。レイヤーを 2 つ以上選んで、関係を押します。
+- `effects/`: a tile in the Effects tab. Select a layer, press the tile, press **Add**.
+- `create/`: a tile in the Create tab. Press it, then **Create**.
+- `expressions/`: under Expression in the Create tab. Select a layer, press the tile, then **Put on** (it goes on that layer as a card of its own; its sliders show in the Inspector). With nothing selected it makes a new thing.
+- `relations/`: the Relations tab at the lower right. Select two or more layers and press the relation.
 
 
-## フォルダの一覧
+## The folders
 
-| フォルダ | アプリのどこに出るか | 置くファイル | 出る名前 |
+| Folder | Where it shows in the app | Files to put | Name shown |
 |---|---|---|---|
-| `effects/` | Effects タブのタイル（レイヤーの効果・画面全体の効果） | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament の設定） | 1 行目の `// 名前:`、無ければファイル名。`.fs` はファイル名そのまま |
-| `aviutl_scripts/` | Effects タブのタイル。パッケージ名がチップになる | AviUtl2 のパッケージ（`.anm2`・`.obj2`・`@` ファイル）をフォルダごと、手を入れずに | スクリプトの名前と `--label:`。パッケージ名はフォルダの `__` の後ろ |
-| `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックは Program タブに出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
-| `expressions/` | Create タブの Expression（文字やレイヤーの出入りの動き、コピーを順に揺らす波。Cavalry の Animators と oscillator） | `.js`（`function each`） | 1 行目の `// 名前:` |
-| `relations/` | プレビューの上と Relations タブのチップ（たくさんのレイヤーを一度に動かす） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
-| `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
-| `solids/` | レイヤーの効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、プロジェクトが名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
-| `ease/` | 下の Ease のタイル（キーとキーの間の動き方） | `.way`（式 1 行） | 1 行目の `// 名前:`、無ければファイル名 |
-| `skins/` | View › Skin の一覧（アプリの見た目の着せ替え） | フォルダごと（`theme.xml` と、あれば絵・書体）。作り方は [`skins/README.md`](skins/README.md) | フォルダ名 |
-| `extensions/` | 項目としては出ない。Hydra のコードを貼る前に 1 回だけ使う | `hydra/get.sh` | — |
+| `effects/` | Effects tab tiles (a layer's effect, or the whole screen's) | `.fs` (ISF), `.wgsl`, `.js` (three.js), `.mjs`, `.json` (Filament settings) | The first line's `// Name:`, else the file name. A `.fs`: its file name |
+| `aviutl_scripts/` | Effects tab tiles; the package name is a chip | An AviUtl2 package (`.anm2`, `.obj2`, `@` files), the folder as its author ships it | The script's name and `--label:`; the package name is what follows `__` in the folder name |
+| `create/` | Create tab, Recipes (a picture in one call). One with `function each` shows under Expression; closed packs (`--label:Cavalry`…) in the Program tab | `.js` | The first line's `// Name: what it makes`; a p5 sketch with no head: its file name |
+| `expressions/` | Create tab, Expression (letters or layers coming in and going out, a wave through a layer's copies; Cavalry's Animators and its oscillator) | `.js` (`function each`) | The first line's `// Name:` |
+| `relations/` | Chips on the preview and in the Relations tab (many layers moved at once) | `.js` | The first line's `// Name:`, else the file name |
+| `looks/` | Effects tab, look tiles (a layer's values, effects and keys saved under a name) | `.motolii` + its tile picture `.png` | The file name as it is (spaces and capitals kept) |
+| `solids/` | A 3D shape on a layer's effect card (Alight Motion's Box, Torus…). No tile yet; it shows when a project names it | `.js` (`export function solid` returning a three.js BufferGeometry) | The first line's `// Name:` |
+| `ease/` | Ease tiles, below (how a stretch between keys moves) | `.way` (one expression) | The first line's `// Name:`, else the file name |
+| `skins/` | View › Skin (the window's look) | A folder (`theme.xml`, and any pictures and fonts). How to make one: [`skins/README.md`](skins/README.md) (Japanese) | The folder's name |
+| `extensions/` | Not an item. Used once before pasting Hydra code | `hydra/get.sh` | — |
 
-前の名前（`recipes/`・`animators/`・`ways/`）のフォルダに置いた物も、そのまま読みます。
+What is in a folder of the old names (`recipes/`, `animators/`, `ways/`) is still read.
 
-## 下のフォルダ
+## The folders inside
 
-`effects/` と `create/` は、下のフォルダまで全部読みます。下のフォルダの名前は画面に出ず、置く人が場所を選ぶための物です。書類は効果やレシピをファイル名で探し直すので、下のフォルダを替えても書類は壊れません。
+`effects/` and `create/` are read down through every folder inside. Those folders' names are not shown in the app; they are for whoever puts a file there. A document finds an effect or a recipe again by its file name, so moving one to another folder inside does not break documents.
 
-`effects/` の下は、After Effects の Effects & Presets の分類の名前に合わせています（[Adobe の効果の一覧](https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effect-list.html)）。AE に無い物は、なぜ別にしたかを書きます。
+Inside `effects/`, the folders follow After Effects' Effects & Presets categories ([Adobe's effect list](https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effect-list.html)). Where AE has none, the row says why.
 
-| フォルダ | AE の分類 | 置く物 |
+| Folder | AE category | What goes in |
 |---|---|---|
-| `blur/` | Blur & Sharpen | ぼかし・シャープ |
-| `color/` | Color Correction | 色・明るさの補正 |
-| `distort/` | Distort | 絵を歪める |
-| `generate/` | Generate | 絵を作る（波形・模様・切り抜きの形） |
-| `stylize/` | Stylize | 絵の見た目を変える（網点・光・縁） |
-| `transition/` | Transition | 2 つの絵の切り替え |
-| `key/` | Keying と Matte | 色や明るさで抜く・マスク |
-| `utility/` | Utility | 見た目より道具の物（アルファ・カラーバー・時刻・タイムコード） |
-| `move/` | 無い | 物そのものを時間で動かす（揺れ・繰り返し・回転）。AE では効果でなく式（`wiggle()`・`loopOut()`）でやる事なので、AE の分類に入る先が無い |
-| `geometry/` | 無い | 形と 3D の立体・裏返し・回転。AE では Perspective と Generate に分かれる。名前は、ここにある ISF の効果自身が `CATEGORIES` に書く `Geometry Adjustment` から |
-| `glitch/` | 無い | 壊れた映像の見た目（データモッシュ・VHS・RGB のずれ）。AE では Stylize と Time に散る。名前は、ここにある ISF の効果自身が `CATEGORIES` に書く `Glitch` から |
-| `sources/` | 分類ではない | 効果の出どころ：各パックのライセンス、取り込んだ脚本、タイルを描く見本の写真、AviUtl の効果の対応表。棚の 257 本の効果の頭の出典の行がこの場所を出典として名指すので、名前は替えない |
+| `blur/` | Blur & Sharpen | Blurs and sharpens |
+| `color/` | Color Correction | Colour and brightness correction |
+| `distort/` | Distort | Bends the picture |
+| `generate/` | Generate | Makes a picture (waveforms, patterns, crop shapes) |
+| `stylize/` | Stylize | Changes how the picture looks (halftone, glow, edges) |
+| `transition/` | Transition | From one picture to another |
+| `key/` | Keying and Matte | Keys and masks by colour or brightness |
+| `utility/` | Utility | Tools more than looks (alpha, colour bars, clock, timecode) |
+| `move/` | none | Moves the thing itself over time (shake, repeat, spin). AE does this with expressions (`wiggle()`, `loopOut()`), not effects, so it has no category for it |
+| `geometry/` | none | Shapes, 3D solids, flips, rotation. AE splits these between Perspective and Generate. The name is the one the ISF effects here give themselves in `CATEGORIES`: `Geometry Adjustment` |
+| `glitch/` | none | The look of broken video (datamosh, VHS, RGB split). AE scatters these over Stylize and Time. The name is the one the ISF effects here give themselves in `CATEGORIES`: `Glitch` |
+| `sources/` | not a category | Where the effects came from: each pack's licence, the import scripts, the sample photo tiles are drawn on, the AviUtl effect map. The source line in the head of 257 effects on the shelf names this place as their source, so the name stays |
 
-`create/` の下は、利用者が手にする物の名前です。
+Inside `create/`, folders are named after what you get.
 
-| フォルダ | 置く物 |
+| Folder | What goes in |
 |---|---|
-| `shapes/` | 1 つの形（矢印・ハート・吹き出し…。AbsentMotion の形） |
-| `cavalry/` | 点を曲線や立体に並べる配置（Canvalry の Distribution をそのまま） |
-| `repeats/` | 1 つの物を何個も並べて、順に動かす模様（AE の Repeater、Cavalry の Duplicator） |
-| `over_footage/` | 映像の上に重ねる物（動く物を追う枠・白いフラッシュ・ポスター） |
+| `shapes/` | One shape (arrow, heart, callout…; AbsentMotion's shapes) |
+| `cavalry/` | Points laid along curves and solids (Canvalry's Distributions as they are) |
+| `repeats/` | One thing copied many times and moved in turn (AE's Repeater, Cavalry's Duplicator) |
+| `over_footage/` | Laid over a film (boxes that follow what moves, a white flash, a poster) |
 
-## 空に見えるフォルダ
+## Folders that look empty
 
-- `extensions/hydra/` は `get.sh` しかありません。Hydra（hydra-synth）は AGPL-3.0 なので、このリポジトリにも配る物にも入れません。`get.sh` を走らせると利用者のフォルダの `extensions/hydra/` に取って来て、Motolii はそちらを読みます。消せば元のままです。Hydra のコードを貼る人が取りに来る物なので、ここに置いています。
-- `ease/` は見本 1 つ（`snappy.way`）です。プリセットは利用者の持ち物なので、利用者のフォルダの `ease/` に置く物が本体です。
+- `extensions/hydra/` holds only `get.sh`. Hydra (hydra-synth) is AGPL-3.0, so it is in neither this repository nor what is handed out. `get.sh` fetches it into `extensions/hydra/` in your own folder, and Motolii reads it there. Delete that folder and Motolii is as it was. It is here because whoever pastes Hydra code comes here for it.
+- `ease/` holds one example (`snappy.way`). Presets are yours: what you put in `ease/` in your own folder is the shelf.
 
-## 名前の決まり
+## Naming
 
-ファイル名を直す前に、上の「出る名前」を見てください。書類は置いた物をファイル名で探すので、一度配ったファイルの名前は、出ない物でも替えません（`create/repeats/ae_grid.js` の `ae_` もそのまま）。
+Before renaming a file, look at "Name shown" above. A document finds what it uses by file name, so a file once handed out keeps its name even when the name is not shown (`create/repeats/ae_grid.js` keeps its `ae_`).
 
-- 1 行目に `// 名前:` がある物（`effects/` の `.js`・`.wgsl`、`create/`、`expressions/`、`relations/`、`solids/`、`ease/`）：ファイル名は出ないので、形は問いません。今あるのは出どころの名前のままです（`solids/` は Alight Motion の名前の空白を `_` にした物、`create/shapes/am_*` は AbsentMotion の形）。
-- ファイル名がそのまま出る物（`looks/`、`effects/` の `.fs`、頭の無い p5 のスケッチ `create/repeats/Cube Wave.js` など、`// 名前:` の無い `relations/`）：空白も大文字もそのまま書きます。ISF の `.fs` は配られた時の名前のままです。
-- `aviutl_scripts/`：`<作者>__<パッケージ>/` で、AviUtl2 のカタログの作者名とパッケージ名です。中は配られた形のまま、`LICENSE` と `SOURCE.txt` を添えます。
-- ここに置くのは 1 つで 1 項目になる物だけです。何かの部品（例：押し出した形の UV を作る `face_uv.js`）は、それを動かすコードの隣（`engine/community/three/`：棚の `solids/` を動かす `solid_three.cpp` の隣）に置きます。`face_uv.js` は Motolii が書いた部品で、持ち込んだ表現ではないので、棚ではなく `engine/` に置きます（AGENTS.md 構成の目標 3）。
+- Files with a first line `// Name:` (`effects/` `.js` and `.wgsl`, `create/`, `expressions/`, `relations/`, `solids/`, `ease/`): the file name is not shown, so any form will do. Those here keep their source's names (`solids/`: Alight Motion's names with `_` for spaces; `create/shapes/am_*`: AbsentMotion's shapes).
+- Files whose name is shown (`looks/`, `effects/` `.fs`, a p5 sketch with no head such as `create/repeats/Cube Wave.js`, a `relations/` file with no `// Name:`): write it with spaces and capitals as it should read. An ISF `.fs` keeps the name it was handed out with.
+- `aviutl_scripts/`: `<author>__<package>/`, the author and package names of the AviUtl2 catalogue. Inside, the package as it is handed out, with its `LICENSE` and a `SOURCE.txt`.
+- Only what is one item each goes here. A part of others (e.g. `face_uv.js`, the UVs of an extruded shape) goes beside the code that runs them (`engine/community/three/`, beside `solid_three.cpp`, which runs the `solids/` shelf). `face_uv.js` was written for Motolii, not brought in from someone else, so it lives under `engine/`, not on a shelf (AGENTS.md 構成の目標 3).
 
-## ここに無い物
+## Not here
 
-- 字が足りない時の代わりの書体（Noto Sans JP）と Fonts タブの見本の文、Effects の検索で日本語を英語に引く表（日本語 WordNet）は、置いて増やす物ではなく中身が読むデータなので、ライセンスと一緒に `engine/third_party/` にあります。利用者のフォルダの `fonts/`・`words/` に置いた物は足されます。
-- どのフォルダをどのコードが読むかは [`docs/ARCHITECTURE.md` の「棚を読む所」](../docs/ARCHITECTURE.md#棚を読む所)。
-- 中身を作る脚本（`effects/sources/`・`create/shapes/absent_shapes.sh`）は手で走らせる物で、組み立ては呼びません。
+- The font for letters a font lacks (Noto Sans JP), the Fonts tab's sample lines, and the table the Effects search reads Japanese into English with (Japanese WordNet) are data the engine reads, not things you add to, so they are in `engine/third_party/` with their licences. What you put in `fonts/` or `words/` of your own folder adds to them.
+- Which code reads which folder: [`docs/ARCHITECTURE.md`, 「棚を読む所」](../docs/ARCHITECTURE.md#棚を読む所).
+- The scripts that make these files (`effects/sources/`, `create/shapes/absent_shapes.sh`) are run by hand; the build never calls them.

@@ -98,7 +98,7 @@ struct AviutlRun {
     // stage's, and the object is the layer's own image placed where the layer is seen.
     bool wide = false;
     // This frame's answers to what the script asks about other layers, supplied by the
-    // document through doc_aviutl_asked in document/moment_fx.h.
+    // document through doc_aviutl_asked in document/evaluate/moment_fx.h.
     const ScreenNumbers* numbers = nullptr;
     // Callback that supplies the sound heard now for the layer (ScreenStack's sounds).
     const std::function<std::vector<float>(const std::string&, const std::string&, bool, int)>* sounds = nullptr;

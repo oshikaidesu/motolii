@@ -16,14 +16,14 @@
 #include <sqlite3.h>
 
 #include "base/json.h"
-#include "document/arrange.h"
+#include "document/edit/arrange.h"
 #include "document/card_table.h"
-#include "document/expressions.h"
+#include "document/scripts/expressions.h"
 #include "document/kinds.h"
-#include "document/paths.h"
-#include "document/shown.h"
+#include "document/edit/paths.h"
+#include "document/evaluate/shown.h"
 #include "document/undo.h"
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 #include "entry/render_thread.h"
 
 namespace {
@@ -86,7 +86,7 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
     // document's "usual", if its layer kind defines one.
     w.Key("value"), w.StartObject();
     // A parameter driven by a macro is written as the macro produces it (see
-    // document/expressions.h).
+    // document/scripts/expressions.h).
     for (const std::string& n : names) if (double v = 0; doc_value(*m->d, layer, n.c_str(), 0, &v)) doc_macro_over(*m->d, layer, n.c_str(), 0, &v), w.Key(n.c_str()), w.Double(v);
     w.EndObject();
     w.Key("range"), w.StartObject();

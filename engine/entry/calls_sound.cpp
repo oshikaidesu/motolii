@@ -9,13 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "document/keys_put.h"
+#include "document/edit/keys_put.h"
 #include "document/kinds.h"
-#include "document/layer_edit.h"
+#include "document/edit/layer_edit.h"
 #include "document/marks.h"
-#include "document/shown.h"
+#include "document/evaluate/shown.h"
 #include "document/undo.h"
-#include "document/value_at.h"
+#include "document/evaluate/value_at.h"
 #include "entry/motolii.h"
 #include "entry/render_thread.h"
 #include "entry/window.h"
