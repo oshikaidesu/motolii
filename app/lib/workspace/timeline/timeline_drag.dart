@@ -9,7 +9,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
-import 'package:motolii/workspace/timeline/timeline_slip.dart';
 
 extension TimelinePaneDrag on TimelinePaneState {
   // ---------------------------------------------------------------- input
@@ -113,7 +112,7 @@ extension TimelinePaneDrag on TimelinePaneState {
   }
 
   bool _onPale(WorkspaceController ws, Layer l, Offset p) {
-    final w = wholeOf(ws, l);
+    final w = slip.wholeOf(ws, l);
     final v = viewport.view;
     return w != null && p.dx >= v.x(w.$1) && p.dx <= v.x(w.$2);
   }
@@ -178,7 +177,7 @@ extension TimelinePaneDrag on TimelinePaneState {
     barIn = l.inF;
     barOut = l.outF;
     stops = ws.stops(skip: {l.id, ...ws.many})..add(ws.frame);
-    barWhole = wholeOf(ws, l);
+    slip.start(ws, l);
     if (off && (ws.frame < l.inF || ws.frame >= l.outF)) ws.frame = l.inF;
     bar = (
       id: l.id,

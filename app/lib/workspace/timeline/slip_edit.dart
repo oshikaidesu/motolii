@@ -5,17 +5,28 @@
 // This follows After Effects' slip edit and Premiere Pro's Slip tool.
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 
-// ignore_for_file: invalid_use_of_protected_member
+/// The slip edit of a video layer: where its whole source file lies along the row, and the drag that moves it.
+///
+/// It notifies its listeners each time a drag has slipped the layer.
+class SlipEdit extends ChangeNotifier {
+  /// Slip editing that reads the length of each source file from `media`.
+  SlipEdit({required this._media});
 
-extension TimelinePaneSlip on TimelinePaneState {
+  final TimelineMediaCache _media;
+
+  // The whole video's extent when the drag started.
+  (int, int)? _whole;
+
   /// The frame range the whole source file would cover at the layer's current trim, or null.
   ///
   /// It is null when the layer is not a video or the file's length has not been read yet.
@@ -24,7 +35,7 @@ extension TimelinePaneSlip on TimelinePaneState {
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
     final said = m.word(t, 'file'),
         file = said.startsWith('/') ? said : '${m.home}/$said';
-    final seconds = media.secondsOf(m, file);
+    final seconds = _media.secondsOf(m, file);
     if (seconds == null || seconds <= 0) return null;
     final rate = WorkspaceController.fps / _speedOf(m, t),
         from = l.inF - (m.value(t, 'begin', 0) ?? 0) * rate;
@@ -37,8 +48,22 @@ extension TimelinePaneSlip on TimelinePaneState {
         final s => s,
       };
 
-  void slip(WorkspaceController ws, int t, int by) {
-    final whole = barWhole, m = ws.inside!;
+  /// Remembers where the whole source of [l] lies as a drag of its bar starts.
+  void start(WorkspaceController ws, Layer l) {
+    _whole = wholeOf(ws, l);
+  }
+
+  /// Slips the layer [t] by [by] frames from where the drag started, as far as its source reaches.
+  ///
+  /// [barIn] and [barOut] are the layer's in and out frames when the drag started; they do not move.
+  void slipBy(
+    WorkspaceController ws,
+    int t,
+    int by, {
+    required int barIn,
+    required int barOut,
+  }) {
+    final whole = _whole, m = ws.inside!;
     if (whole == null) return;
     final to = by.clamp(
       math.min(0, barOut - whole.$2),
@@ -48,6 +73,6 @@ extension TimelinePaneSlip on TimelinePaneState {
       'begin',
       (barIn - whole.$1 - to) * _speedOf(m, t) / WorkspaceController.fps,
     );
-    setState(() {});
+    notifyListeners();
   }
 }

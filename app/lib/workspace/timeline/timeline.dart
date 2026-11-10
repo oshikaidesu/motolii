@@ -22,6 +22,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/ruler_marks.dart';
+import 'package:motolii/workspace/timeline/slip_edit.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
@@ -30,7 +31,6 @@ import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
-import 'package:motolii/workspace/timeline/timeline_slip.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
@@ -55,6 +55,9 @@ class TimelinePaneState extends State<TimelinePane>
 
   /// The beats, video frames, thumbnails and waveforms read for the rows.
   final media = TimelineMediaCache();
+
+  /// Where a trimmed video's whole source lies along its row, and the drag that slips it.
+  late final slip = SlipEdit(media: media);
 
   /// The work area and the markers on the ruler, and the drag in hand there.
   late final ruler = RulerMarks(
@@ -141,6 +144,7 @@ class TimelinePaneState extends State<TimelinePane>
     viewport.addListener(_rebuild);
     media.addListener(_rebuild);
     ruler.addListener(_rebuild);
+    slip.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     hearAsks();
   }
@@ -170,6 +174,7 @@ class TimelinePaneState extends State<TimelinePane>
     viewport.dispose();
     media.dispose();
     ruler.dispose();
+    slip.dispose();
     _focus.dispose();
     stopAsks();
     markWords.dispose();
@@ -239,8 +244,6 @@ class TimelinePaneState extends State<TimelinePane>
     return snapped?.by ?? by;
   }
 
-  // The whole video's extent when the drag started (timeline_slip.dart).
-  (int, int)? barWhole;
   // The dragged bar's in and out frames when the drag started.
   // A trim stops one frame short of an empty bar, because an empty bar cannot be seen, grabbed again or kept.
   // The project is as long as its longest layer.
@@ -314,7 +317,7 @@ class TimelinePaneState extends State<TimelinePane>
     var by = (viewport.view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
       bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
-      return slip(ws, int.parse(h.id), by);
+      return slip.slipBy(ws, int.parse(h.id), by, barIn: barIn, barOut: barOut);
     }
     by = _snapped(by, [
       if (h.part != 'tail') barIn,
@@ -430,7 +433,7 @@ class TimelinePaneState extends State<TimelinePane>
             outline: formOf(ws, l)?.$3 ?? false,
             tone: l.tone,
             mix: mixOf(ws, l.id),
-            whole: wholeOf(ws, l),
+            whole: slip.wholeOf(ws, l),
           ),
     ];
     return Focus(
