@@ -21,11 +21,10 @@ Motolii* motolii_open(const char* document, int wide, int high);
 int motolii_size_of(Motolii* m, int* wide, int* high);
 int motolii_fits(Motolii* m);
 /* The work area: the stretch played round and written as a video (not said: all of it); a change is a step. The marks:
-   moments with a name; motolii_mark with "" takes the one there away; motolii_marks: a line each, in time, "moment name"
+   moments with a name (motolii_later's "mark"; with "" the one there is taken away); motolii_marks: a line each, in time, "moment name"
    (until the next call). */
 int motolii_loop(Motolii* m, int on);   /* play goes round the work area (1, as a document is opened) or stops at its end (0); below 0: only asks */
 int motolii_work_of(Motolii* m, double* from, double* to);
-int motolii_mark(Motolii* m, double at, const char* word);
 /* A video's sound: its loudness (dB, 0 at full) 100 times a second of its own, as many as there are (room: how many db
    holds; 0: no sound, or not a video); and the moments of the document where it strikes (grows `rise` dB louder within
    30 ms), as many as there are, where its video shows them. Read once a file, as fast as it decodes. */
@@ -39,8 +38,7 @@ const char* motolii_settings(Motolii* m);   /* the window's choices kept with th
    first, the best `limit` (5 when 0): "id<TAB>score" a line, the score 0 to 100. RapidFuzz (MIT): typos, parts, abbreviations. */
 const char* motolii_find(Motolii* m, const char* query, const char* items, int limit);
 /* The guides: lines across the picture, x upright and y level, at so many points from its left or top; a change is a
-   step. motolii_guides: a line each, "x 150" (until the next call). */
-int motolii_guide(Motolii* m, const char* axis, double at, int on);
+   step (motolii_later's "guide"). motolii_guides: a line each, "x 150" (until the next call). */
 const char* motolii_guides(Motolii* m);
 void motolii_close(Motolii* m);
 int motolii_work_out(Motolii* m, const char* sum, double* is);     /* a sum typed in a number field (+ - * / and brackets), as After Effects', Figma's and Blender's take one, worked out by SQLite as the easings are; 0: it is not one */
@@ -64,7 +62,6 @@ int motolii_set(Motolii* m, int layer, const char* name, double number);        
 int motolii_say(Motolii* m, int layer, const char* name, const char* word);
 int motolii_key(Motolii* m, int layer, const char* name, double at, double number);   /* a key at a moment */
 int motolii_midi(Motolii* m, int layer, const char* name, const char* file, const char* kind, int channel, double bpm);   /* a MIDI file's notes as keys of a value, held, as om_midi keys them: kind velocity (0..1), pitch, count, on (1/0) or bool; channel -1: any; bpm: the file's beats played at it (0: the file's own) */
-double motolii_midi_bpm(const char* file);   /* the BPM a MIDI file says (120 if it says none: om_midi's BPM box at first) */
 /* The stretch from the key at a moment to the next key is itself defined: how the value goes there. An easing is a name
    and up to four numbers ("smooth", "hold", "wiggle 3 0.2"). An easing of one's own is an expression (SQLite's) in u (how
    far through the stretch, 0 to 1), t (seconds into it), d (its length), a and b (the two keys' values), p1 to p4
@@ -111,10 +108,9 @@ int motolii_drag_start(Motolii* m, int layer);
 int motolii_drag_update(Motolii* m, const char* by, double a, double b);
 double motolii_point(Motolii* m);                                  /* points of the picture to one unit of the stage, at z 0 */
 const char* motolii_reading(Motolii* m, int layer, const char* name);  /* how a hand reads a value: "times from" (shown = value x times + from) */
-/* What a hand does to a value at a moment, by the document's own rules. motolii_put: the value changed there (see
+/* What a hand does to a value at a moment, by the document's own rules: the value changed there (see
    motolii_keying for what that is to a value with keys and to one without). motolii_moving: the names of a layer's
    values that take keys, with spaces between (until the next call). */
-int motolii_put(Motolii* m, int layer, const char* name, double at, double number);
 int motolii_keying(Motolii* m, int on);                            /* on: every value a hand changes or carries gets a key at that moment, and its first key, if later than the moment this was turned on, leaves what it was as a key there, so it travels from there; off (as a document is opened): a value with keys gets a key where it is changed, one without stays as it is changed; below 0: only asks. Returns whether it is on now */
 const char* motolii_moving(Motolii* m, int layer);
 /* motolii_values: the names of all a layer's values, with spaces between (until the next call). motolii_range: a number

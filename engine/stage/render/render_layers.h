@@ -1,55 +1,5 @@
 // render_layers.h: part of render.h. Read only through render.h.
-// Letters as a solid, by the system's own solid text (SceneKit makes it, ModelIO hands over the mesh): `deep`
-// through, the edges cut off by `chamfer`; a capital is about 0.7 high. The letters' lower left is at the origin,
-// they run along x and stand up along y, the middle of their depth is at z = 0.
-static Mesh* letters(const char* text, float deep, float chamfer) {
-    const float size = 10.f;   // (SceneKit cuts curves by a fixed fineness: asked large, then made small)
-    SCNText* solid = [SCNText textWithString:@(text) extrusionDepth:deep * size];
-    solid.font = [NSFont fontWithName:@"Helvetica-Bold" size:size];
-    solid.chamferRadius = chamfer * size;
-    solid.flatness = 0.02;
-    MDLMesh* built = [MDLMesh meshWithSCNGeometry:solid];
-    MDLVertexAttributeData* ps = [built vertexAttributeDataForAttributeNamed:MDLVertexAttributePosition asFormat:MDLVertexFormatFloat3];
-    MDLVertexAttributeData* ns = [built vertexAttributeDataForAttributeNamed:MDLVertexAttributeNormal asFormat:MDLVertexFormatFloat3];
-    if (!built.vertexCount || !ps || !ns) return nullptr;
-    Mesh* m = new Mesh;
-    float3 low{1e9f};
-    for (NSUInteger i = 0; i < built.vertexCount; ++i) {
-        const float* p = (const float*)((const uint8_t*)ps.dataStart + i * ps.stride);
-        const float* n = (const float*)((const uint8_t*)ns.dataStart + i * ns.stride);
-        m->pos.push_back(float3{p[0], p[1], p[2]} / size);
-        m->nrm.push_back(normalize(float3{n[0], n[1], n[2]}));
-        m->uv.push_back({0, 0});
-        low = min(low, m->pos.back());
-    }
-    for (float3& p : m->pos) p = p - float3{low.x, low.y, 0.f};
-    for (MDLSubmesh* part in built.submeshes) {
-        if (part.geometryType != MDLGeometryTypeTriangles) continue;
-        const void* b = [part.indexBuffer map].bytes;
-        for (NSUInteger i = 0; i < part.indexCount; ++i)
-            m->idx.push_back(part.indexType == MDLIndexBitDepthUInt32 ? ((const uint32_t*)b)[i] : part.indexType == MDLIndexBitDepthUInt16 ? (uint32_t)((const uint16_t*)b)[i] : (uint32_t)((const uint8_t*)b)[i]);
-    }
-    return m->idx.empty() ? nullptr : m;
-}
 
-// A ball of radius 1.
-static Mesh* ball(int around = 20, int up = 12) {
-    Mesh* m = new Mesh;
-    for (int j = 0; j <= up; ++j)
-        for (int i = 0; i <= around; ++i) {
-            const float a = TAU * (float)i / around, b = 0.5f * TAU * ((float)j / up - 0.5f);
-            const float3 out{std::cos(a) * std::cos(b), std::sin(b), std::sin(a) * std::cos(b)};
-            m->pos.push_back(out);
-            m->nrm.push_back(out);
-            m->uv.push_back({(float)i / around, (float)j / up});
-        }
-    for (int j = 0; j < up; ++j)
-        for (int i = 0; i < around; ++i) {
-            const uint32_t p = (uint32_t)(j * (around + 1) + i), q = p + 1, r = p + (uint32_t)around + 1, t = r + 1;
-            m->idx.insert(m->idx.end(), {p, r, q, q, r, t});
-        }
-    return m;
-}
 
 // How deep a solid is as a rule: four times its volume over its surface (a ball: two thirds of its width; a bar: its
 // width; a sheet: twice its thickness). What the glasses below take their depth from, so that a scene gives none.
@@ -316,11 +266,6 @@ static void draw(Stage& s, std::vector<uint8_t>* pic = nullptr, bool wait = true
     if (wait) s.engine->flushAndWait();
 }
 
-// Whether the things made of mesh `m` are in the picture (they stay made, and are moved and played as before).
-static void seen(Stage& s, const Mesh* m, bool in) {
-    for (const Stage::Renderable& d : s.renderables)
-        if (d.of == m) { if (in) s.scene->addEntity(d.thing); else s.scene->remove(d.thing); }
-}
 
 // The things made of mesh `m` taken off the stage for good.
 static void take_off(Stage& s, const Mesh* m) {

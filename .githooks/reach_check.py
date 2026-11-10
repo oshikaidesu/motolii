@@ -19,66 +19,20 @@ WINDOW_FILES = ('.dart', '.swift', '.cc', '.cpp', '.h', '.mm', '.m')
 NOT_WINDOW = ('app/test/', 'app/integration_test/', BINDINGS)
 # Debt: what may stand unreached for now, each with why; the line goes when the reason does.
 OWED = {
-    # edit.sh's `effect` puts an effect on at the stage's moment (docs/using/make_intro_movie.md runs it); the window
-    # asks later('effect') with its own moment. It goes when edit.cpp asks the same way.
+    # edit.cpp (edit.sh, the command line) calls these itself; the window asks the same of later(), by name
+    # ('undo', 'drag_start', 'easing', 'effect') or with its own moment. They go when edit.cpp asks the same way.
     'motolii_now',
-    # The window asks later('undo') and later('drag_start'). edit.cpp calls these. The names go when the check reads that queue.
     'motolii_undo',
     'motolii_drag_start',
-    # The desk, the shelf lists, the film's pictures and loudness, and the likeness layout: nothing in the window asks.
-    'motolii_desk_front',
-    'motolii_desk_frames',
-    'motolii_export',
-    'motolii_sets',
-    'motolii_type_frame',
-    'motolii_likeness',
-    'motolii_map',
-    'motolii_grid',
-    'motolii_path',
-    'motolii_path3',
-    'motolii_shows',
-    'motolii_loudness',
-    'motolii_loudness_over',
-    'motolii_strikes',
-    'motolii_thumbnail_at',
-    'motolii_thumbnail_seconds',
-    'motolii_create_scripts',
-    'motolii_effects',
-    'motolii_presets',
-    'motolii_animators',
-    'motolii_relations',
-    'motolii_easing_numbers',
-    'motolii_find',
-    'motolii_files_changed',
-    'motolii_font_tags',
-    'motolii_midi',
-    'motolii_midi_bpm',
-    'motolii_loop',
-    # A film's length, a document's facts, the flash check, guides, marks, a recipe, and the watch counters: nothing asks.
-    'motolii_media_info',
-    'motolii_doc_properties',
-    'motolii_flashes',
-    'motolii_cache',
-    'motolii_list',
-    'motolii_spent',
-    'motolii_watch',
-    'motolii_broken',
-    'motolii_broken_count',
-    'motolii_guide',
-    'motolii_create',
-    'motolii_mark',
-    # A font's missing letters, and why the last call was refused: nothing in the window paints them.
-    'motolii_font_lacks',
-    'motolii_error',
-    # The window no longer takes a thing away.
-    'motolii_remove',
-    # The window queues these through later(); nothing calls the direct wrappers.
-    'motolii_say',
-    'motolii_key',
     'motolii_easing',
-    'motolii_put',
     'motolii_effect',
-    'motolii_together',
+    'motolii_midi',
+    'motolii_list',
+    # Nothing asks: the watch counters; a t-SNE map's pictures on a grid (third_party/scipy_lsap behind it); an ease
+    # kind's numbers, lowest and highest, which the window still keeps a list of its own of (tool_panel_ease_numbers.dart).
+    'motolii_spent',
+    'motolii_grid',
+    'motolii_easing_numbers',
 }
 SAY = 'nothing in the window reaches this; wire it to a menu/dock/card or delete it'
 IDENT = re.compile(r'[A-Za-z_$][\w$]*')

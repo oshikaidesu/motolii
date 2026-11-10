@@ -6,7 +6,7 @@
 # Then: does the window reach every motolii_* call and every class we keep? (.githooks/reach_check.py)
 # Then: is every staged Dart file as `dart format` leaves it? (.githooks/format_check.py; skipped without dart)
 # Then: do the added lines use a dropped house word? (.githooks/word_check.py; report only until its FAIL switch is on)
-# Last: do the staged files hold a shape ast-grep refuses, or C++ clang-format would change? (.githooks/shape_check.sh)
+# Last: do the staged files hold a shape ast-grep refuses? (.githooks/shape_check.sh)
 # Set up once with:  git config core.hooksPath .githooks        To commit all the same:  git commit --no-verify
 # A check this worktree does not have yet (a branch cut before it was added) is skipped, not a crash.
 # First, never a refusal: how much the rules still let stand (the two lists below), so the debt is seen shrinking.

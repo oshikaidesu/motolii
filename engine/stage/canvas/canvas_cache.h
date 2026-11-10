@@ -268,13 +268,6 @@ static void fx_at(Stage& s, Canvas2D* d, const Canvas2DFx& told) {
     });
 }
 
-// A font for the pictures put after it (an SVG names its fonts; ThorVG knows only the ones it is given).
-static void font(Stage& s, const char* path) {
-    interop::on_driver(s.engine, [path] {
-        tvg::Initializer::init(0);
-        tvg::Text::load(path);
-    });
-}
 
 // Kept frames on disk too (~/Library/Caches/Motolii/frames), so that a document opened again shows a film's frames drawn
 // before without drawing them: compressed by zstd (as Filament builds it), a file a frame, named by a hash of what made

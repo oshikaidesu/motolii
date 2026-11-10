@@ -309,7 +309,6 @@ static Canvas2D* layer_canvas(Stage& s, const char* file, uint32_t id, float pix
     }, mat4f{}, found.w * pixel, float3{-1.f}, true, nullptr);
 }
 
-static Canvas2D* layer_canvas(Stage& s, const char* file, const char* layer, float pixel, float4* box) { return layer_canvas(s, file, tvg::Accessor::id(layer), pixel, box); }
 
 // An After Effects picture's 3D layers (ThorVG says each layer's pose and whether it is 3D): from now on not drawn in
 // its own picture, each to be a sheet of its own where it is (layer_canvas). Their ids.

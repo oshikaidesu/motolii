@@ -57,7 +57,6 @@ static bool motion_flat(Motion& m, uint32_t id, tvg::Matrix* place, float* opaci
     return true;
 }
 
-static bool motion_flat(Motion& m, const char* layer, tvg::Matrix* place, float* opacity = nullptr) { return motion_flat(m, tvg::Accessor::id(layer), place, opacity); }
 
 // A flat place as a place in the one world; its depth is sized by the layer's size, so a cube stays a cube.
 static filament::math::mat4f motion_deep(const tvg::Matrix& f) {

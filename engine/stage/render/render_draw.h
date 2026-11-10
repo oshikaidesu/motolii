@@ -92,47 +92,6 @@ static bool film(Stage& s, const char* path, int frameCount, const std::function
     return pclose(to) == 0;
 }
 
-// The same film played without being kept, to see what a picture costs. Two measures.
-// Flat out, the GPU waited for after every fourth picture: pictures a second. Steady to a few hundredths on Metal, so
-// good for telling two versions apart there; NOT for comparing backends: how often one waits moves it by a
-// millisecond or two, and differently on each (waiting after every picture or every second one, WebGPU and Metal
-// read alike; after every fourth, WebGPU reads a millisecond or two dearer; seldom or never, both are held back).
-// (And at 60 a second the GPU slows its clock, so a picture's own time cannot be read off a paced run either.)
-static void clock(Stage& s, int frameCount, const std::function<void(float)>& pose) {
-    s.by_clock = true;
-    const auto from = std::chrono::steady_clock::now();
-    for (int i = 0; i < frameCount; ++i) {
-        time_is(s, (double)i / 60.0);
-        pose((float)i / (float)frameCount);
-        draw(s, nullptr, i % 4 == 3);
-    }
-    s.engine->flushAndWait();
-    const double took = std::chrono::duration<double>(std::chrono::steady_clock::now() - from).count();
-    std::printf("%.0f frames a second, %.2f ms each (%.1f times 60)\n", frameCount / took, 1000.0 * took / frameCount, frameCount / took / 60.0);
-    for (const auto& word : s.said_after) word();
-    // And by the clock, as a screen asks for them: on every tick Filament is asked once whether it will draw (it says
-    // no when it is behind), nothing is waited for. Pictures drawn and pictures left out, at 60, 120 and 240 a second.
-    for (int rate : {60, 120, 240}) {
-        int rendered = 0, left_out = 0, late = 0;   // (late: begun a whole tick after its time, the moment's own work too slow; Filament does not count those)
-        const auto start = std::chrono::steady_clock::now();
-        for (int i = 0; i < 2 * rate; ++i) {   // two seconds
-            const auto due = start + std::chrono::microseconds((long long)i * 1000000 / rate);
-            if (std::chrono::steady_clock::now() > due + std::chrono::microseconds(1000000 / rate)) ++late;
-            std::this_thread::sleep_until(due);
-            time_is(s, (double)i / (double)rate);
-            pose((float)(i % (frameCount * rate / 60)) / (float)(frameCount * rate / 60));
-            if (!begins(s)) { ++left_out; continue; }
-            textures_of(s);
-            s.renderer->endFrame();
-            ++rendered;
-        }
-        const auto asked = std::chrono::steady_clock::now();
-        s.engine->flushAndWait();
-        std::printf("at %d a second: %d rendered, %d left out, %d late; the last was done %.1f ms after it was asked for, the two seconds took %.2f\n", rate, rendered, left_out, late,
-                    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - asked).count(), std::chrono::duration<double>(asked - start).count());
-        for (const auto& word : s.said_after) word();
-    }
-}
 
 static bool shoot(Stage& s, const char* path) {
     std::vector<uint8_t> pic((size_t)s.w * s.h * 4);   // (its own: stages of other sizes shoot on other threads at once, the window's tiles; draw waits for the read)

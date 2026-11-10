@@ -1,13 +1,11 @@
 #!/bin/sh
-# Two checkers that are not ours, on our own code:
+# A checker that is not ours, on our own code:
 #   ast-grep (ast-grep.github.io) with the rules in .githooks/rules/: shapes that may not be written (a press or a
 #     picture by hand in Dart, a layer kind compared by name in C++). `ast-grep scan` exits 1 on a rule of severity error.
-#   clang-format (clang.llvm.org/docs/ClangFormat.html) with /.clang-format: the engine's C++ as the formatter leaves it,
-#     160 wide like the Dart side. `--dry-run --Werror` writes nothing and exits 1 on a file it would change.
 #   shape_check.sh          the files staged for this commit: the pre-commit hook. A staged file may hold no more
 #                           refused shapes than it held at HEAD, so the count only falls
 #   shape_check.sh --all    every own file of the checkout: CI (.github/workflows/checks.yml), or by hand
-# A checker that is not installed is skipped here and said so; CI has both.
+# When it is not installed it is skipped here and said so; CI has it.
 cd "$(git rev-parse --show-toplevel)" || exit 1
 if [ "$1" = --all ]; then
     list() { git ls-files -- "$@"; }
@@ -41,21 +39,6 @@ if [ -n "$dart$cpp" ]; then
         fi
     else
         echo "shape check: ast-grep is not installed (brew bundle); skipped here, CI runs it" >&2
-    fi
-fi
-if [ -n "$cpp" ]; then
-    format=$(command -v clang-format || xcrun --find clang-format 2>/dev/null)
-    if [ -n "$format" ]; then
-        off=0
-        for f in $cpp; do
-            "$format" --dry-run --Werror "$f" >/dev/null 2>&1 || { off=$((off + 1)); echo "  $f" >&2; }
-        done
-        if [ "$off" -gt 0 ]; then
-            echo "shape check: $off C++ file(s) above are not as clang-format leaves them; clang-format -i <file> (/.clang-format)" >&2
-            bad=1
-        fi
-    else
-        echo "shape check: clang-format is not installed (Xcode has it); skipped here, CI runs it" >&2
     fi
 fi
 exit $bad

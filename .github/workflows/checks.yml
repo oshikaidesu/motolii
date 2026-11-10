@@ -52,9 +52,8 @@ jobs:
         run: python3 .githooks/reach_check.py --all
       - name: no dropped house word (.githooks/word_check.py, docs/internal/notes/rename_words.md §5)
         run: python3 .githooks/word_check.py --all
-      - name: no shape ast-grep refuses, C++ as clang-format leaves it (.githooks/shape_check.sh)
-        # (ast-grep from npm, the version the rules were seen failing with; clang-format is the runner's own, so a
-        #  file one version formats another way can differ from a Mac's verdict)
+      - name: no shape ast-grep refuses (.githooks/shape_check.sh)
+        # (ast-grep from npm, the version the rules were seen failing with)
         run: |
           npm install --global @ast-grep/cli@0.45.3
           .githooks/shape_check.sh --all

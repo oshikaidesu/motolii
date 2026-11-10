@@ -23,7 +23,6 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file, cons
         return changes(m, (int)(doc_acted(d) && ok));
     });
 }
-double motolii_midi_bpm(const char* file) { return midi_bpm(file); }
 static int easing_is(Motolii* m, int layer, const char* name, double at, const char* easing) {   // (on the hand)
     Doc& d = doc(m);
     bool here = false;
@@ -118,10 +117,7 @@ int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether eve
 }
 int motolii_drag_start(Motolii* m, int layer) { return on_render_thread(m, [=] { return (int)doc_hold(doc(m), layer); }); }
 int motolii_drag_update(Motolii* m, const char* by, double a, double b) { return posted(m, std::string("carry ") + by, [m, by = std::string(by), a, b] { doc_carry(doc(m), by.c_str(), a, b); }); }   // (refused: said when it is let go)
-int motolii_put(Motolii* m, int layer, const char* name, double at, double number) { return on_render_thread(m, [=] { return changes(m, (int)doc_put(doc(m), layer, name, at, doc_macro_own(doc(m), layer, name, at, number))); }); }   // (as the hand sees it: doc_macro_own)
 int motolii_work_of(Motolii* m, double* from, double* to) { return by_look(m, [=] { return doc_work(*m->d, from, to), 1; }); }
-int motolii_mark(Motolii* m, double at, const char* word) { return on_render_thread(m, [=] { return changes(m, (int)doc_mark(doc(m), at, word)); }); }
-int motolii_guide(Motolii* m, const char* axis, double at, int on) { return on_render_thread(m, [=] { return changes(m, (int)doc_guide(doc(m), axis, at, on != 0)); }); }
 const char* motolii_guides(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_guides(*m->d)).c_str(); }); }
 const char* motolii_marks(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_marks(*m->d)).c_str(); }); }
 const char* motolii_mark_colours(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_mark_colours(*m->d)).c_str(); }); }

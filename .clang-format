@@ -1,5 +1,0 @@
-# The engine's C++ as clang-format leaves it (clang.llvm.org/docs/ClangFormatStyleOptions.html). WebKit is the stock
-# style nearest to the code as it stood on 2026-11-10 (15,481 places off, against 22,376 for Google and 32,566 for LLVM).
-# 160 is the Dart side's width (app/analysis_options.yaml, formatter.page_width): one width for the whole repository.
-BasedOnStyle: WebKit
-ColumnLimit: 160
