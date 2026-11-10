@@ -50,7 +50,7 @@ target_include_directories(thorvg_path_operators PRIVATE ${THORVG}/build_dawn ${
   ${THORVG}/src/renderer ${THORVG}/src/renderer/gpu_engine ${THORVG}/src/renderer/gpu_engine/wg ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES})
 
 # Skia's path operations (its Boolean).
-add_library(skia_path_operations OBJECT stage/canvas/skia_path_operations.cpp)
+add_library(skia_path_operations OBJECT stage/canvas/skia_path_operations.cpp stage/canvas/skia_svg_edit.cpp)
 target_compile_options(skia_path_operations PRIVATE -fno-rtti -fno-exceptions)
 target_compile_definitions(skia_path_operations PRIVATE NDEBUG)
 target_include_directories(skia_path_operations PRIVATE ${SKIA} ${THORVG}/inc)
