@@ -33,6 +33,8 @@
 
 #include "base/json.h"
 
+namespace motolii {
+
 namespace {
 
 // Source of the stand-in 'three' module: just enough of Vector2/3/4, Color and
@@ -287,3 +289,5 @@ std::string three_isf(const std::string& file, std::string& why) {
         "rgb); }\n";
   return "/*" + std::string(head.GetString()) + "*/\n" + defines + frag;
 }
+
+}  // namespace motolii

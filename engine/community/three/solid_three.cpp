@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 namespace {
 
 // Returns the whole contents of `file`, or an empty string if it cannot be
@@ -176,3 +178,5 @@ bool solid_three(const std::string& file,
   JS_FreeValue(cx, g);
   return why.empty();
 }
+
+}  // namespace motolii

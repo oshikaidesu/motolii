@@ -9,6 +9,9 @@
 #include <map>
 #include <string>
 #include <vector>
+
+namespace motolii {
+
 // Returns true if the file is a shape script: a .js file containing
 // `export function solid`.
 bool solid_is(const std::string& file);
@@ -37,5 +40,7 @@ bool solid_three(const std::string& file,
                  const std::map<std::string, std::string>& words, double wide,
                  double high, const std::vector<uint8_t>& cover, int coverW,
                  int coverH, SolidMesh& out, std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_THREE_SOLID_THREE_H_
