@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+namespace motolii {
+
 namespace {
 
 // Returns the contents of the file at `file`, or an empty string if it cannot
@@ -209,3 +211,5 @@ bool hydra_isf(const std::string& folder, const std::string& code,
   if (isf.empty() && why.empty()) why = "Hydra gave nothing";
   return !isf.empty();
 }
+
+}  // namespace motolii

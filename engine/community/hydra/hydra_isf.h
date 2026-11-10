@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // A parameter whose value changes over time. `keys` holds its value sampled
 // every HYDRA_STEP seconds, starting at time 0.
 struct HydraParameter {
@@ -26,5 +28,7 @@ inline constexpr double HYDRA_STEP = 0.1;
 bool hydra_isf(const std::string& folder, const std::string& code,
                double seconds, std::string& isf,
                std::vector<HydraParameter>& parameters, std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_HYDRA_HYDRA_ISF_H_
