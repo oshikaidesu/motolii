@@ -5,6 +5,8 @@
 // isf.cpp and cached on disk, so each file is converted only once per change.
 #include <string>
 
+namespace motolii {
+
 // Returns the .wgsl file to read for an effect file. A file that is not ISF is
 // returned as it is. For a .fs file, returns the converted .wgsl, or "" if the
 // conversion failed.
@@ -28,5 +30,7 @@ std::string isf_tags(const std::string& file);
 // because a parameter's name comes from its file (doc_screen_parameter). Any
 // other file is returned as it is.
 std::string fx_source(const std::string& f);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_ISF_ISF_H_

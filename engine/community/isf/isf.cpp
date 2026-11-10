@@ -48,6 +48,8 @@
 #include "src/tint/lang/wgsl/program/program.h"
 #include "src/tint/lang/wgsl/writer/writer.h"
 
+namespace motolii {
+
 namespace {
 
 // Converts the text of an ISF file into WGSL. `name` is used in the output
@@ -694,3 +696,5 @@ std::string isf_file(const std::string& asked) {
   std::filesystem::rename(out + ".part", out, e);
   return built[key] = isf_built(file, out);
 }
+
+}  // namespace motolii
