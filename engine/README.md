@@ -111,5 +111,9 @@ runs code from the net unchanged: only `community/sites/adapter*.h`, `community/
 - [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html), formatted with the root `.clang-format`.
 - Every header is self-contained, has an include guard named `MOTOLII_<PATH>_<NAME>_H_`
   (`MOTOLII_DOCUMENT_DOCUMENT_H_` for `document/document.h`), and has its source file beside it.
+- A module includes only the headers of the modules it links to, and theirs. `CMakeLists.txt` compiles each module with
+  a folder of links to exactly those headers (`out/cmake/views/<module>/`), so an include of a module it did not declare
+  stops with "file not found" (`./check_syntax.sh` shows it at once). To use another module, add it to the module's
+  `target_link_libraries`.
 - Functions of the document module start with `doc_`; the file names do not repeat it.
 - Tests are `<name>_test.cpp` beside the code, written with GoogleTest.

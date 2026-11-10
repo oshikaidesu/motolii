@@ -42,26 +42,26 @@ add_library(thorvg_path_operators OBJECT stage/canvas/thorvg_path_operators.cpp)
 set_target_properties(thorvg_path_operators PROPERTIES CXX_STANDARD 17)
 target_compile_options(thorvg_path_operators PRIVATE -fno-rtti -fno-exceptions)
 target_compile_definitions(thorvg_path_operators PRIVATE TVG_STATIC)
-target_include_directories(thorvg_path_operators PRIVATE ${ENGINE} ${THORVG}/build_dawn ${THORVG}/inc ${THORVG}/src/common
+target_include_directories(thorvg_path_operators PRIVATE ${THORVG}/build_dawn ${THORVG}/inc ${THORVG}/src/common
   ${THORVG}/src/renderer ${THORVG}/src/renderer/gpu_engine ${THORVG}/src/renderer/gpu_engine/wg ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES})
 
 # Skia's path operations (its Boolean).
 add_library(skia_path_operations OBJECT stage/canvas/skia_path_operations.cpp)
 target_compile_options(skia_path_operations PRIVATE -fno-rtti -fno-exceptions)
 target_compile_definitions(skia_path_operations PRIVATE NDEBUG)
-target_include_directories(skia_path_operations PRIVATE ${ENGINE} ${SKIA} ${THORVG}/inc)
+target_include_directories(skia_path_operations PRIVATE ${SKIA} ${THORVG}/inc)
 
 # AbsentMotion's own motion, scene, easing and text sources as they are, and our adapter to them.
 add_library(absent_motion OBJECT community/absent_motion/absent_drawing.cpp community/absent_motion/absent_ends.cpp community/absent_motion/absent_motion.cpp
   ${ABSENT_MOTION}/motion.cpp ${ABSENT_MOTION}/scene.cpp ${ABSENT_MOTION}/easing.cpp ${ABSENT_MOTION}/textanim.cpp)
 target_compile_options(absent_motion PRIVATE -fno-rtti -fvisibility=hidden)
 target_compile_definitions(absent_motion PRIVATE NDEBUG)
-target_include_directories(absent_motion PRIVATE ${ENGINE} ${SKIA} ${ABSENT_MOTION})
+target_include_directories(absent_motion PRIVATE ${SKIA} ${ABSENT_MOTION})
 
 # The flash check: EA's IRIS, in IRIS's own C++17 (its log lines pass runtime format strings, which C++20 refuses).
 add_library(video_flash_check OBJECT media/video_flash_check.cpp)
 set_target_properties(video_flash_check PROPERTIES CXX_STANDARD 17)
-target_include_directories(video_flash_check PRIVATE ${ENGINE} ${IRIS}/IRIS/include ${IRIS}/IRIS/utils/include
+target_include_directories(video_flash_check PRIVATE ${IRIS}/IRIS/include ${IRIS}/IRIS/utils/include
   ${IRIS}/spdlog/include ${IRIS}/json/single_include ${IRIS}/opencv_out/include/opencv4)
 
 # Shaders turned into WGSL by Filament's glslang and Dawn's Tint (ISF's GLSL, AviUtl2's HLSL).
@@ -70,7 +70,7 @@ add_library(aviutl_translation OBJECT community/aviutl/aviutl.cpp)
 target_compile_definitions(aviutl_translation PRIVATE ENABLE_HLSL)
 foreach(translation isf_translation aviutl_translation)
   target_compile_definitions(${translation} PRIVATE TINT_BUILD_SPV_READER=1 TINT_BUILD_WGSL_WRITER=1 TINT_BUILD_WGSL_READER=1)
-  target_include_directories(${translation} PRIVATE ${ENGINE}
+  target_include_directories(${translation} PRIVATE
   ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${HOMEBREW}/opt/sqlite/include
   ${FILAMENT}/third_party/glslang ${FILAMENT}/third_party/spirv-tools/include ${FILAMENT}/libs/filamat/src
   ${FILAMENT}/third_party/dawn ${FILAMENT}/third_party/dawn/include ${FILAMENT}/out/wgpu/third_party/dawn/gen)
@@ -98,7 +98,7 @@ add_library(motolii_flags INTERFACE)
 target_compile_options(motolii_flags INTERFACE -ffp-contract=off $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
 target_compile_definitions(motolii_flags INTERFACE SQLITE_ENABLE_SESSION SQLITE_ENABLE_PREUPDATE_HOOK
   JPH_CROSS_PLATFORM_DETERMINISTIC JPH_DEBUG_RENDERER JPH_OBJECT_LAYER_BITS=16 JPH_OBJECT_STREAM JPH_PROFILE_ENABLED)
-target_include_directories(motolii_flags INTERFACE ${ENGINE}
+target_include_directories(motolii_flags INTERFACE
   # Libraries Filament carries in its source tree, used under their own names: <rapidjson/...>, <zstd.h>,
   # <stb_truetype.h>, <cgltf.h>.
   ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${FILAMENT}/third_party/zstd/lib
@@ -343,6 +343,84 @@ target_link_directories(motolii_entry PUBLIC ${HOMEBREW}/opt/onnxruntime/lib)
 target_link_libraries(motolii_entry PUBLIC onnxruntime)
 target_link_options(motolii_entry PUBLIC -Wl,-rpath,${HOMEBREW}/opt/onnxruntime/lib)
 
+# ---- What each module can include. Headers are written by their path from this folder ("stage/render/render.h"), so
+# one include folder for everybody would let a module include any other. Instead each module is compiled with a folder
+# of its own, out/cmake/views/<module>/, that holds links to the headers of the module itself and of the modules it
+# links to (and theirs), and to nothing else. An include of a module it did not declare does not compile.
+
+set(VIEWS ${CMAKE_BINARY_DIR}/views)
+get_property(modules DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+list(FILTER modules INCLUDE REGEX "^motolii_")
+list(REMOVE_ITEM modules motolii_flags)
+
+# motolii_stage_render -> stage/render, motolii_community_isf -> community/isf, motolii_document -> document
+function(motolii_module_dir out module)
+  string(REGEX REPLACE "^motolii_(community|stage)_" "\\1/" dir ${module})
+  string(REGEX REPLACE "^motolii_" "" dir ${dir})
+  set(${out} ${dir} PARENT_SCOPE)
+endfunction()
+
+# The headers a module owns: those under its folder, less those under the folder of a module inside it (stage/ and
+# stage/render/).
+foreach(module IN LISTS modules)
+  motolii_module_dir(dir ${module})
+  set(modules_inside "")
+  foreach(other IN LISTS modules)
+    motolii_module_dir(other_dir ${other})
+    if(other_dir MATCHES "^${dir}/")
+      list(APPEND modules_inside ${other_dir})
+    endif()
+  endforeach()
+  file(GLOB_RECURSE headers CONFIGURE_DEPENDS RELATIVE ${ENGINE} ${ENGINE}/${dir}/*.h)
+  foreach(inside IN LISTS modules_inside)
+    list(FILTER headers EXCLUDE REGEX "^${inside}/")
+  endforeach()
+  set(headers_of_${module} ${headers})
+endforeach()
+
+foreach(module IN LISTS modules)
+  set(todo ${module})
+  set(reach "")
+  while(todo)
+    list(POP_FRONT todo next)
+    if(NOT next IN_LIST reach)
+      list(APPEND reach ${next})
+      get_target_property(links ${next} INTERFACE_LINK_LIBRARIES)
+      get_target_property(private_links ${next} LINK_LIBRARIES)
+      foreach(link IN LISTS links private_links)
+        if(link IN_LIST modules)
+          list(APPEND todo ${link})
+        endif()
+      endforeach()
+    endif()
+  endwhile()
+  set(view ${VIEWS}/${module})
+  file(REMOVE_RECURSE ${view})
+  file(MAKE_DIRECTORY ${view})
+  file(CREATE_LINK ${THIRD_PARTY} ${view}/third_party SYMBOLIC)
+  foreach(visible IN LISTS reach)
+    foreach(header IN LISTS headers_of_${visible})
+      get_filename_component(folder ${view}/${header} DIRECTORY)
+      file(MAKE_DIRECTORY ${folder})
+      file(CREATE_LINK ${ENGINE}/${header} ${view}/${header} SYMBOLIC)
+    endforeach()
+  endforeach()
+  get_target_property(kind ${module} TYPE)
+  if(NOT kind STREQUAL "INTERFACE_LIBRARY")
+    target_include_directories(${module} PRIVATE ${view})
+  endif()
+endforeach()
+
+# The sources that carry flags of their own are compiled for the module that links their objects.
+foreach(pair thorvg_path_operators:motolii_stage_canvas skia_path_operations:motolii_stage_canvas
+    absent_motion:motolii_community_absent_motion video_flash_check:motolii_media
+    isf_translation:motolii_community_isf aviutl_translation:motolii_community_aviutl)
+  string(REPLACE ":" ";" pair ${pair})
+  list(GET pair 0 objects)
+  list(GET pair 1 owner)
+  target_include_directories(${objects} PRIVATE ${VIEWS}/${owner})
+endforeach()
+
 # ---- The library the app loads: the entry module's objects (the C API). Every other module is a static library
 # reached through the dependencies the modules declare.
 
@@ -354,7 +432,7 @@ set_target_properties(motolii PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ENGINE}/out 
 # ---- The shell: a project edited by one call a line (edit.sh).
 
 add_executable(edit_wgpu entry/edit.cpp)
-target_include_directories(edit_wgpu PRIVATE ${ENGINE})
+target_include_directories(edit_wgpu PRIVATE ${VIEWS}/motolii_entry)
 target_link_libraries(edit_wgpu PRIVATE motolii)
 set_target_properties(edit_wgpu PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/out BUILD_RPATH "@executable_path")
 
@@ -373,6 +451,7 @@ if(BUILD_TESTING)
     if(tests)
       add_executable(${module}_test ${tests})
       target_link_libraries(${module}_test PRIVATE ${module} GTest::gtest_main)
+      target_include_directories(${module}_test PRIVATE ${VIEWS}/${module})
       # Beside the library in out/: the engine finds the shelves and its own parts from where its code is loaded.
       set_target_properties(${module}_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/out)
       gtest_discover_tests(${module}_test)
