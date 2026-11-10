@@ -55,6 +55,16 @@ class Layer {
 
   /// The layer's label colour.
   Color get tone => layerLabelColor(id);
+
+  /// The layers this one is inside: its parent, that layer's parent and so on, nearest first.
+  /// [byId] maps the id of every layer to the layer.
+  Iterable<Layer> ancestors(Map<String, Layer> byId) sync* {
+    var p = byId[parent];
+    for (var n = 0; p != null && n < 64; p = byId[p.parent], n++) {
+      // The limit of 64 matches the stage's own walk up a layer's parents.
+      yield p;
+    }
+  }
 }
 
 /// The stretch between two keyframes: its frames, its easing, and the easing curve (0 to 1) sampled at 17 points.

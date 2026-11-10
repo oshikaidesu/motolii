@@ -1,8 +1,6 @@
 // The workspace state that every panel reads (WorkspaceController): the document's layers as rows, the selection, the playhead and the view.
 // What is applied to the canvas is in effects.dart.
 import 'dart:developer' show Timeline, TimelineTask;
-import 'dart:io' show Platform;
-import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
@@ -17,10 +15,12 @@ import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
+import 'package:motolii/workspace/state/drawing_inks.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/notices.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/playhead.dart';
+import 'package:motolii/workspace/state/row_folds.dart';
 import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
@@ -66,7 +66,7 @@ class WorkspaceController extends ChangeNotifier {
     inside.listener = ({required document, required moment, required cache}) {
       // The engine has a new snapshot, see docs/app/BRIDGE.md.
       if (_gone) return;
-      if (cache) this.kept.value = inside.cache;
+      if (cache) kept.value = inside.cache;
       if (document) reread();
       if (moment) seen.value++;
     };
@@ -79,13 +79,8 @@ class WorkspaceController extends ChangeNotifier {
     moment.value = (inside.now * fps)
         .round(); // The playhead starts at the engine's time.
     reread();
-    final kept =
-        inside.settings; // Choices saved with the document: its inks and fonts.
-    _ink = kept['ink'] ?? '';
-    _edge = kept['edge'] ?? '';
-    _inkBlend = kept['ink_blend'] ?? '';
-    _titleFont = kept['title_font'] ?? '';
-    _bodyFont = kept['body_font'] ?? '';
+    // Choices saved with the document: its inks and fonts.
+    inks.restore(inside.settings);
   }
 
   /// The document's name.
@@ -102,30 +97,23 @@ class WorkspaceController extends ChangeNotifier {
   /// Where the next export is written. Set by the settings window; null means the window's default.
   String? renderTo;
 
-  /// The inks the drawing tools give a new layer: fill, stroke colour and gradient blend (gradient_blend).
-  /// An empty string means the document's own, or sRGB. Saved with the document but not undo steps, like a PowerPoint theme.
-  String _ink = '', _edge = '', _inkBlend = '';
-  String get ink => _ink;
-  set ink(String v) => _ink = _kept('ink', _ink, v);
-  String get edge => _edge;
-  set edge(String v) => _edge = _kept('edge', _edge, v);
-  String get inkBlend => _inkBlend;
-  set inkBlend(String v) => _inkBlend = _kept('ink_blend', _inkBlend, v);
-  String _kept(String name, String was, String now) {
-    if (now != was) _inside?.later('setting', name: name, word: now);
-    return now;
-  }
-
-  /// The fonts for a new title and a new body text, and which of the two the Fonts shelf sets ([fontRole]).
-  /// Modelled on PowerPoint's theme fonts and Canva's brand fonts. An empty string means the default font.
-  /// Saved with the document, like a PowerPoint theme.
-  String _titleFont = '', _bodyFont = '', fontRole = 'title';
-  String get titleFont => _titleFont;
-  set titleFont(String v) => _titleFont = _kept('title_font', _titleFont, v);
-  String get bodyFont => _bodyFont;
-  set bodyFont(String v) => _bodyFont = _kept('body_font', _bodyFont, v);
-  String get bodyFace => bodyFont.isEmpty ? defaultTextFont : bodyFont;
-  String get titleFace => titleFont.isEmpty ? bodyFace : titleFont;
+  /// The inks and fonts a new layer is given: fill, stroke colour and gradient blend, and the fonts for a new title and
+  /// a new body text. Saved with the document but not undo steps, like a PowerPoint theme.
+  late final inks = DrawingInks(engine: () => _inside);
+  String get ink => inks.ink;
+  set ink(String v) => inks.ink = v;
+  String get edge => inks.edge;
+  set edge(String v) => inks.edge = v;
+  String get inkBlend => inks.inkBlend;
+  set inkBlend(String v) => inks.inkBlend = v;
+  String get titleFont => inks.titleFont;
+  set titleFont(String v) => inks.titleFont = v;
+  String get bodyFont => inks.bodyFont;
+  set bodyFont(String v) => inks.bodyFont = v;
+  String get fontRole => inks.fontRole;
+  set fontRole(String role) => inks.fontRole = role;
+  String get bodyFace => inks.bodyFace;
+  String get titleFace => inks.titleFace;
 
   /// The one line the window tells the user, and what clicking it does.
   late final notices = Notices(onChanged: () => _tell(WorkspaceAspect.notice));
@@ -436,53 +424,22 @@ class WorkspaceController extends ChangeNotifier {
   List<(String, double)> get guides => _inside!.guides;
   set animating(bool on) {
     _inside?.keying(on);
-    if (!on) _lanesShut.clear();
+    if (!on) folds.forgetShut();
     _tell(WorkspaceAspect.animating);
   }
 
-  // Which layers show their keyframed properties in lanes under their rows. The user opens them (After Effects' twirl,
-  // Ableton's unfolded track). With Animate on, every layer is open and only the ones the user shut are tracked.
-  final _lanesOpen = <String>{}, _lanesShut = <String>{};
-  bool lanesOpen(String id) =>
-      animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
-  // Whether the user opened the lanes of what a relation aims at. Animate opens keyframe lanes only.
-  bool aimsOpen(String id) =>
-      _lanesOpen.contains(id) && !_lanesShut.contains(id);
-  void twirl(Iterable<String> ids) {
-    final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
-    open == animating ? s.addAll(ids) : s.removeAll(ids);
-    _tell(WorkspaceAspect.animating);
-  }
-
-  // The open groups. A closed group is one row, like a precomposed layer or Alight Motion's group (the triangle is
-  // Apple Motion's and Cavalry's). Only the rows fold; the document does not know and the file does not save it.
-  final _groupsOpen = <String>{};
-  bool groupOpen(String id) => _groupsOpen.contains(id);
-  void turnGroup(String id) {
-    if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
-    // The group's own keyframe lanes follow it: one triangle per row, as in Apple Motion.
-    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);
-    _tell(WorkspaceAspect.animating);
-  }
-
-  Iterable<Layer> _over(Layer l, Map<String, Layer> of) sync* {
-    var p = of[l.parent];
-    for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {
-      // The limit of 64 matches Group's walk up the parents in stage_view_2.dart.
-      yield p;
-    }
-  }
-
-  /// Each layer hidden by a closed group, mapped to the row standing for it: the outermost closed group above it (Cavalry marks that row).
-  Map<String, String> get foldedAway {
-    final of = {for (final l in layers) l.id: l}, away = <String, String>{};
-    for (final l in layers) {
-      for (final p in _over(l, of)) {
-        if (p.kind == LayerKind.group && !groupOpen(p.id)) away[l.id] = p.id;
-      }
-    }
-    return away;
-  }
+  /// Which rows of the timeline are open: the keyframe lanes under a layer, and the members of a group.
+  late final folds = RowFolds(
+    animating: () => animating,
+    layers: () => layers,
+    onChanged: () => _tell(WorkspaceAspect.animating),
+  );
+  bool lanesOpen(String id) => folds.lanesOpen(id);
+  bool aimsOpen(String id) => folds.aimsOpen(id);
+  void twirl(Iterable<String> ids) => folds.twirl(ids);
+  bool groupOpen(String id) => folds.groupOpen(id);
+  void turnGroup(String id) => folds.turnGroup(id);
+  Map<String, String> get foldedAway => folds.foldedAway;
 
   /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
   List<String> under(String id) {
@@ -490,14 +447,15 @@ class WorkspaceController extends ChangeNotifier {
     if (of[id]?.kind != LayerKind.group) return const [];
     return [
       for (final l in layers)
-        if (_over(l, of).any((p) => p.id == id)) l.id,
+        if (l.ancestors(of).any((p) => p.id == id)) l.id,
     ];
   }
 
   /// How many groups contain layer [l]. Its row is indented by that many levels.
-  int depth(Layer l) => _over(l, {
-    for (final x in layers) x.id: x,
-  }).where((p) => p.kind == LayerKind.group).length;
+  int depth(Layer l) => l
+      .ancestors({for (final x in layers) x.id: x})
+      .where((p) => p.kind == LayerKind.group)
+      .length;
 
   /// What the undo steps changed since the last read (null when unknown, as after a drag).
   /// A panel showing only some properties rebuilds only when they are among these.
@@ -544,51 +502,9 @@ class WorkspaceController extends ChangeNotifier {
 }
 
 /// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
-final defaultTextFont = Platform.isWindows
-    ? 'C:/Windows/Fonts/arial.ttf'
-    : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
+final defaultTextFont = DrawingInks.defaultTextFont;
 
 /// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.
 /// A text or a flat shape takes all the inks, because the preview draws only those. A line takes its colour only.
-void applyChosenInks(WorkspaceController ws, String kind, String shape) {
-  final m = ws.inside;
-  if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) {
-    return;
-  }
-  final line = shape == 'line';
-  if (ws.ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ws.ink);
-  // With no ink chosen, a shape gets a random colour as in Alight Motion (AbsentMotion's addShape, randomColor): any hue,
-  // saturation 0.3 to 0.8, value 0.55 to 1. It is written to the document so the Inspector and Colors shelf show it.
-  if (ws.ink.isEmpty && kind == 'shape') {
-    final r = math.Random(),
-        c = HSVColor.fromAHSV(
-          1,
-          r.nextDouble() * 360,
-          .3 + r.nextDouble() * .5,
-          .55 + r.nextDouble() * .45,
-        ).toColor();
-    m.later(
-      'say',
-      layer: -1,
-      name: 'fill',
-      word: [
-        c.r,
-        c.g,
-        c.b,
-      ].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join(),
-    );
-  }
-  if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
-    m.later(
-      'say',
-      layer: -1,
-      name: 'gradient_blend',
-      word: ws.inkBlend,
-    ); // A gradient ink is mixed as it was chosen.
-  }
-  if (ws.edge.isNotEmpty && !line) {
-    m
-      ..later('say', layer: -1, name: 'stroke', word: ws.edge)
-      ..later('set', layer: -1, name: 'stroke_width', number: 6);
-  }
-}
+void applyChosenInks(WorkspaceController ws, String kind, String shape) =>
+    ws.inks.applyToNewLayer(kind, shape);
