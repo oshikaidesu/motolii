@@ -10,6 +10,8 @@
 #include <map>
 #include <string>
 
+namespace motolii {
+
 const char* leva_prelude =
     "function folder(schema, settings) { return { __folder: true, schema: "
     "schema, settings: settings || {} }; }";
@@ -180,3 +182,5 @@ void leva_colours(JSContext* cx, JSValue k,
     JS_SetPropertyStr(cx, k, base.c_str(), JS_NewString(cx, hex));
   }
 }
+
+}  // namespace motolii

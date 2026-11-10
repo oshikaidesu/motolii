@@ -40,6 +40,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // One parameter declared in a script's header.
 struct ScriptParameter {
   // kind is one of track, check, select, sound or picture. A picture is an
@@ -145,5 +147,7 @@ void script_first(const std::string& file,
 // found, returns u and sets *trouble to the reason.
 double anime_ease(const std::string& bundle, const std::string& said, double u,
                   std::string* trouble);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_QUICKJS_SCRIPT_H_

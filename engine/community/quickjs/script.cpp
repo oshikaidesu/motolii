@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+namespace motolii {
+
 static std::vector<std::string> split(const std::string& s, char by) {
   std::vector<std::string> out;
   std::stringstream in(s);
@@ -369,3 +371,5 @@ double anime_ease(const std::string& bundle, const std::string& said, double u,
   JS_FreeValue(cx, out);
   return v;
 }
+
+}  // namespace motolii

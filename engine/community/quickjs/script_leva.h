@@ -38,6 +38,8 @@
 #include <map>
 #include <string>
 
+namespace motolii {
+
 // JavaScript source for leva's folder() (packages/leva/src/helpers/folder.ts).
 // It only marks the object as a folder. The script's runtime defines it as a
 // global as well.
@@ -55,5 +57,7 @@ std::string leva_head(const std::string& src, std::string* trouble = nullptr);
 void leva_colours(JSContext* cx, JSValue k,
                   const std::map<std::string, double>& numbers,
                   const std::map<std::string, std::string>& words);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_QUICKJS_SCRIPT_LEVA_H_
