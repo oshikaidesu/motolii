@@ -1,67 +1,12 @@
-// The font map: each family's sample word drawn by the engine, and where FontCLIP places it, as FontMap does.
-import 'dart:async';
+// Where a font goes on the Fonts shelf's map: by how FontCLIP sees its specimen, as FontMap does, or by its dot.
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show ValueNotifier;
-
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
-
-/// Goes up each time the fonts or their dots have been read: the shelf then looks again.
-final dockRead = ValueNotifier<int>(0);
-
-/// The size in pixels of a font's dot on the map.
-///
-/// The engine draws each family's sample word into [fontDotsDrawn], because not every font is loaded in Flutter.
-/// The embedding input is that image at half size, where each pixel averages four.
-const fontDotSize = (96, 32);
-final fontDotsDrawn = <String, Uint8List?>{};
-Future<void>? _drawing;
-Future<void> drawFontDots(Motolii m, List<String> files) =>
-    _drawing ??= Zone.root.run<Future<void>>(() async {
-      // Runs once, like fontsRead.
-      final byWord = <String, List<String>>{};
-      for (final f in files) {
-        (byWord[_wordOf(f, 0)] ??= []).add(f);
-      }
-      for (final MapEntry(key: w, value: some) in byWord.entries) {
-        final drawn = await m.typePictures(
-          some,
-          w,
-          fontDotSize.$1,
-          fontDotSize.$2,
-        );
-        for (final (i, f) in some.indexed) {
-          fontDotsDrawn[f] = drawn[i];
-        }
-      }
-      dockRead.value++;
-    });
-
-/// Sample text for fonts that cannot show Latin letters, keyed by file. Filled by fontsRead.
-var fontSamples = const <String, String>{};
-
-/// The sample text for a font: line 0 is for its dot on the map, and lines 1 and 2 are the two lines FontMap uses for FontCLIP.
-///
-/// A font that cannot show Latin letters uses its own sample text. Line 0 is its first word, and lines 1 and 2 are the
-/// two halves of its words. For a script with no spaces between words the halves are of its letters.
-String _wordOf(String path, int line) {
-  final own = fontSamples[path];
-  if (own == null) return const ['Motion', 'Hamburge', 'fonstiv'][line];
-  final words = own.split(' '), letters = own.runes.toList();
-  final some = words.length > 1
-          ? words
-          : [for (final r in letters) String.fromCharCode(r)],
-      half = (some.length / 2).ceil(),
-      by = words.length > 1 ? ' ' : '';
-  return switch (line) {
-    0 => words.length > 1 ? words.first : some.take(6).join(),
-    1 => some.take(half).join(by),
-    _ => some.skip(half).join(by),
-  };
-}
 
 /// Embeds each font with FontCLIP ([model]) from a specimen image drawn as FontMap draws it for FontCLIP.
 ///
@@ -69,15 +14,17 @@ String _wordOf(String path, int line) {
 /// "Hamburge" over "fonstiv" in a 224 pixel square with a 12 pixel margin. Each line fits in its half, at most 200 wide
 /// and 85 tall, is set at size 75 or smaller and is centred on its half. The text is black on white.
 /// Fonts are embedded 32 at a time, and an entry is null when the font could not be drawn.
+/// [wordOf] gives the sample text of a font: its lines 1 and 2 are the two lines of the specimen.
 Future<List<Float32List?>> byFontClip(
   Motolii m,
   String model,
   List<String> files,
+  String Function(String path, int line) wordOf,
 ) async {
   String key(String f) {
     // The cache key is the model, the font and its modification time, as for the effect thumbnails, so only a new font is embedded.
     try {
-      return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\n${_wordOf(f, 1)} ${_wordOf(f, 2)}';
+      return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\n${wordOf(f, 1)} ${wordOf(f, 2)}';
     } catch (_) {
       return '';
     }
@@ -95,7 +42,7 @@ Future<List<Float32List?>> byFontClip(
       ],
       byWords = <(String, String), List<int>>{};
   for (final (k, f) in missing.indexed) {
-    (byWords[(_wordOf(f, 1), _wordOf(f, 2))] ??= []).add(k);
+    (byWords[(wordOf(f, 1), wordOf(f, 2))] ??= []).add(k);
   }
   for (final MapEntry(key: (a, b), value: ks) in byWords.entries) {
     // A font with its own sample text uses its own two lines.
@@ -146,4 +93,39 @@ Uint8List _specimen(Uint8List top, Uint8List bottom) {
     }
   }
   return px;
+}
+
+/// A font's kind on the map. FontMap colours fonts by category: sans-serif, serif, handwriting, monospace and decorative.
+///
+/// The kind is the class CoreText gives the font (motolii_font_tags). Monospace is checked first, as Google files
+/// monospace fonts. Returns '' if no kind is known.
+String fontKindOf(Motolii m, String path) {
+  final t = m.fontTags(path);
+  return t.contains('mono')
+      ? 'mono'
+      : const [
+          'serif',
+          'sans',
+          'script',
+          'ornaments',
+          'symbols',
+        ].firstWhere(t.contains, orElse: () => '');
+}
+
+/// A font's dot at half size, each pixel the average of four, as numbers from 0 to 1: what the map compares when
+/// there is no FontCLIP model.
+Float32List halvedDot(Uint8List g) {
+  final (w, h) = (fontDotSize.$1 ~/ 2, fontDotSize.$2 ~/ 2);
+  final out = Float32List(w * h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      out[y * w + x] =
+          (g[2 * y * fontDotSize.$1 + 2 * x] +
+              g[2 * y * fontDotSize.$1 + 2 * x + 1] +
+              g[(2 * y + 1) * fontDotSize.$1 + 2 * x] +
+              g[(2 * y + 1) * fontDotSize.$1 + 2 * x + 1]) /
+          1020;
+    }
+  }
+  return out;
 }

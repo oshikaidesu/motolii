@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/shelf/create_preview.dart' show RecipeMotions;
-import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart'
+import 'package:motolii/workspace/dock/fonts/fonts_controller.dart'
     show fontRecentAt;
 import 'package:motolii/workspace/dock/colors/color_palette.dart' show colorsAt;
 import 'package:motolii/workspace/dock/map/shelf_map.dart' show dockMapsAt;

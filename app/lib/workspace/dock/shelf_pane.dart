@@ -16,7 +16,7 @@ import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/create/create_shelf.dart';
 import 'package:motolii/workspace/dock/effects/effects_shelf.dart';
-import 'package:motolii/workspace/dock/fonts/font_map.dart' show dockRead;
+import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/dock/media/media_shelf.dart';
@@ -57,6 +57,8 @@ class _ShelfPaneState extends State<ShelfPane> {
     'Media.controller',
     () => MediaController(WorkspaceScope.read(context), _reads),
   );
+  FontsController get _fonts =>
+      _kept('Fonts.controller', () => FontsController(_reads));
   late final TextEditingController _search =
       TextEditingController(
         text: WorkspaceScope.read(context)
@@ -219,15 +221,11 @@ class _ShelfPaneState extends State<ShelfPane> {
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: Shape.z(88)),
                 child: ListenableBuilder(
-                  listenable: Listenable.merge([
-                    _reads,
-                    dockRead,
-                    EffectTiles.progress,
-                  ]),
+                  listenable: Listenable.merge([_reads, EffectTiles.progress]),
                   builder: (context, _) => Text(
                     switch (name) {
                       // What the engine offers: its fonts and effects, the colors the document uses, and the tile drawing progress.
-                      'Fonts' => '${fontsOffered ?? '…'} fonts',
+                      'Fonts' => '${_fonts.offered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
                         null =>
@@ -303,7 +301,7 @@ class _ShelfPaneState extends State<ShelfPane> {
             listenable: DockHover.secondMayCome,
             builder: (context, _) => switch (name) {
               'Effects' => EffectsShelf(c),
-              'Fonts' => FontsShelf(c),
+              'Fonts' => FontsShelf(c, _fonts),
               'Colors' => ColorsShelf(c),
               'Create' => CreateShelf(c),
               'Program' => ProgramShelf(c),
