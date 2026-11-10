@@ -89,6 +89,26 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `absent_motion/` | AbsentMotion motion and text effects (`absent_motion.h`). |
 | `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. |
 
+## Layer order
+
+A module may include only the modules it links to, and theirs (see Conventions). So the modules fall into layers, lowest first. A module's layer is one above the highest module it links to, so modules in the same row never depend on each other. `community/` is not one layer: its adapters sit in rows 0 to 5, each above the adapters and the drawing it hands code to. `document` is above all of `stage/`, because it builds the stage to match the project.
+
+| Layer | Modules | What they are |
+|---|---|---|
+| 0 | `base`, `gpu`, `shelf`, `physics`, `community/quickjs`, `community/absent_motion`, `community/hydra` | Link to no other module. |
+| 1 | `community/after_effects`, `community/playcanvas`, `community/sites`, `community/three`, `motion` | Adapters and motion built on one layer-0 module. |
+| 2 | `community/isf`, `community/p5`, `stage/render` | The ISF and p5.js adapters; drawing with Filament. |
+| 3 | `media`, `stage/effects` | Video, sound and MIDI; effects over the whole screen. |
+| 4 | `community/aviutl`, `stage` | The AviUtl2 adapter; the frame handed to the app. |
+| 5 | `community/script_runner` | The shelves' JavaScript, above every adapter it hands code to. |
+| 6 | `stage/canvas` | 2D art, which runs its sketches through the script runner. |
+| 7 | `stage/layer_effects` | A layer's own effect stack. |
+| 8 | `document` | The project. |
+| 9 | `preview` | The playback cache. |
+| 10 | `entry` | The C API. |
+
+The rows come from the `target_link_libraries` lines in `CMakeLists.txt` and change when those lines do; `cmake --graphviz=out/modules.dot out/cmake` draws the exact graph.
+
 ## Third-party code
 
 - **Fetched libraries** (Filament, ThorVG, Skia, Jolt, libtess2, curve_fit_nd, IRIS, AbsentMotion and others): one script
