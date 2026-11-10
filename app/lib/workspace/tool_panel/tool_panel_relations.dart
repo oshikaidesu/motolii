@@ -250,7 +250,7 @@ class _RelationsToolState extends State<RelationsTool> {
                       child: CustomPaint(
                         size: box.biggest,
                         painter: _Map(view, ws.selected, {
-                          ws.selected!: ?_pathsOf(ws)[ws.selected],
+                          if (ws.selected case final id?) id: ?_pathsOf(ws)[id],
                         }, _stationsOf(ws)),
                       ),
                     ),
