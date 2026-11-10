@@ -36,9 +36,8 @@ void move(Stage& s, const Mesh* m,
 //   - alpha: keep transparency, so that nothing drawn is clear. The view is
 //   rendered
 //     translucent and the frames are converted from premultiplied alpha for
-//     ffmpeg. Kept by .png, .gif and .mov (HEVC with alpha through
-//     VideoToolbox, as QuickTime and Final Cut read it). .mp4 and .jpg have no
-//     alpha.
+//     ffmpeg. Kept by .png, .gif and .mov (ProRes 4444, which QuickTime and
+//     Final Cut read, on every system). .mp4 and .jpg have no alpha.
 struct FilmWay {
   int high = 0, rate = 0;
   double mbps = 0.0;
@@ -49,8 +48,8 @@ struct FilmWay {
 // them to `path` with ffmpeg. Returns true if ffmpeg succeeded. The format
 // follows the file extension:
 //   - .mp4: H.264 through the Mac's VideoToolbox encoder.
-//   - .mov: HEVC through the Mac's VideoToolbox encoder, tagged hvc1 so that
-//   QuickTime plays it.
+//   - .mov: ProRes 4444 when `alpha` is set; else HEVC through the Mac's
+//   VideoToolbox encoder, tagged hvc1 so that QuickTime plays it.
 //   - .gif: ffmpeg's palettegen and paletteuse at 15 frames per second, as
 //   Alight Motion
 //     writes a GIF.

@@ -131,12 +131,15 @@ bool film(Stage& s, const char* path, int frameCount,
                 quoted(
                     std::filesystem::path(path).replace_extension().string() +
                     "_%04d.jpg")
+      : ending == ".mov" && said.alpha
+          // Transparency in ProRes 4444, ffmpeg's own encoder: the same on every system, which HEVC with alpha is not
+          // (only Apple's VideoToolbox writes it). QuickTime and Final Cut read it; -vendor apl0 is how Apple's own
+          // files are marked. The file is larger than HEVC's.
+          ? sized + rate + " -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -vendor apl0 " + quoted(path)
       : ending == ".mov"
           ? sized + rate + " -c:v hevc_videotoolbox " +
                 (said.mbps > 0.0 ? "-b:v " + mbps : std::string("-q:v 65")) +
-                (said.alpha ? " -alpha_quality 0.75 -pix_fmt bgra"
-                            : " -pix_fmt yuv420p") +
-                " -tag:v hvc1 -movflags +faststart " + quoted(path)
+                " -pix_fmt yuv420p -tag:v hvc1 -movflags +faststart " + quoted(path)
           // H.264 by whichever encoder the LGPL-only ffmpeg has (base/video_encoder.h). On a Mac that is VideoToolbox,
           // whose -q:v 68 is within 1 VMAF point of libx264 -crf 17 (95.9 against 96.2 on 180 frames of a photo
           // moving, 95.8 against 96.7 on one standing still; 2 points are not told apart, ottverse.com's study of
