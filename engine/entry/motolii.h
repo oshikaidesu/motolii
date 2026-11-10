@@ -1,3 +1,5 @@
+#ifndef MOTOLII_ENTRY_MOTOLII_H_
+#define MOTOLII_ENTRY_MOTOLII_H_
 /* motolii.h: the engine's C API. It declares every call the app (Flutter, through dart:ffi) makes
    on the engine, and nothing else. The app holds no project. It holds a Motolii handle and layer
    numbers. Each call is one change and one undo step, and is stored in the project's file by the
@@ -10,8 +12,6 @@
 
    The names of a layer's properties are ThorVG's own where ThorVG has one (x, y, rotate, size,
    blend, text, fill, begin). doc.h lists them. */
-#ifndef MOTOLII_H
-#define MOTOLII_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -397,4 +397,4 @@ double motolii_now(Motolii* m);
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif  // MOTOLII_ENTRY_MOTOLII_H_
