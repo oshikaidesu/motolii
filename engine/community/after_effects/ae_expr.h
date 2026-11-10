@@ -46,6 +46,8 @@
 // wiggle and random do not reproduce After Effects' own random sequences, so
 // values that depend on the exact numbers will not match After Effects.
 
+namespace motolii {
+
 inline const char ae_prelude[] = R"AEJS(
 (function (G) {
   const val = (x) => (x !== null && typeof x === 'object' && !Array.isArray(x) && 'value' in x) ? x.value : x;
@@ -168,5 +170,7 @@ inline const char ae_prelude[] = R"AEJS(
   G.AE = { compile, run, comp: makeComp, name: (s) => String(s).replace(/\W+/g, '_'), H };
 })(globalThis);
 )AEJS";
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AFTER_EFFECTS_AE_EXPR_H_

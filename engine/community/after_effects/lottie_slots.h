@@ -21,6 +21,8 @@
 
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 // Reads the file's slots and returns one parameter per number in each slot.
 // Returns an empty list if the file cannot be parsed or has no slots. Each
 // parameter's "words" field is "lottie <sid> <index of the number in the slot>
@@ -34,5 +36,7 @@ std::vector<ScriptParameter> lottie_parameters(const std::string& file);
 // string if no slot was changed.
 std::string lottie_slots_json(const std::vector<ScriptParameter>& parameters,
                               const std::vector<double>& values);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AFTER_EFFECTS_LOTTIE_SLOTS_H_

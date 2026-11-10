@@ -11,6 +11,8 @@
 #include "base/json.h"
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 std::vector<ScriptParameter> lottie_parameters(const std::string& file) {
   std::vector<ScriptParameter> parameters;
   std::ifstream in(file);
@@ -105,3 +107,5 @@ std::string lottie_slots_json(const std::vector<ScriptParameter>& parameters,
   w.EndObject();
   return by.empty() ? std::string() : std::string(out.GetString());
 }
+
+}  // namespace motolii
