@@ -1,5 +1,6 @@
 // The Tool Panel, shown under the Inspector. It shows either the catalog of tools or a single tool.
 // A tool the user opens from the catalog stays pinned until the selection changes or the user unpins it.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/controls.dart' show Chip, Hov, IconPress;

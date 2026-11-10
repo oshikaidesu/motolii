@@ -1,4 +1,7 @@
 // The Colors shelf (pop palettes, a swatch field, saved gradients) and the Create shelf (tiles for every new layer, shape and copier).
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -11,7 +14,6 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/inspector/controls/inspector_param_controls.dart' show DicePaint;
-import 'package:motolii/inspector/inspector_parts.dart' show Pop;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField, wordsPicked;
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/skin/tokens.dart';

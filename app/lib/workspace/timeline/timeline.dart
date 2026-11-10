@@ -2,6 +2,8 @@
 //
 // It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
 // The project lives in Ws. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;

@@ -255,12 +255,10 @@ class _InspectorPanelState extends State<_InspectorPanel> {
 class _Cards extends StatelessWidget {
   const _Cards();
   @override
-  Widget build(BuildContext context) => Pop(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [for (final c in Ctx.of(context).doc.cards) ValuesCard(c)],
-    ),
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [for (final c in Ctx.of(context).doc.cards) ValuesCard(c)],
   );
 }
 

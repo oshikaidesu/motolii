@@ -1,6 +1,8 @@
 // The whole window: the top bar above the panes (panes.dart).
 // The panes are the media shelves, Stage over Timeline, and Inspector over Tool Panel. The user can rearrange them.
 // Each panel lives in its own file and reads the shared Ws.
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;

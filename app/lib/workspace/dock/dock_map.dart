@@ -5,6 +5,8 @@
 // map, a similarity list shows the items nearest the picked one (XO's Similarity List, Splice's Similar Sounds). The user
 // steps through it with its arrows or the left and right keys. The map is laid out again when the shelf's contents
 // change, and positions are cached in ~/Library/Caches/Motolii.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -25,7 +27,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep;
 import 'package:motolii/workspace/dock/dock_widgets.dart' show dockMark, IconPress;
-import 'package:motolii/workspace/state/state.dart' show WsT;
 part 'dock_map_view.dart';
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true

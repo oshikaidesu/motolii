@@ -3,6 +3,7 @@
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
 // Colors come from WsT, so both the light and dark shades apply.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 

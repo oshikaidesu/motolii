@@ -2,6 +2,7 @@
 // Each mode is drawn as two overlapping discs, and the overlap shows the resulting color.
 // Clicking a layer name selects it. Expanding a row shows every blend mode of that layer and the engine's Blending card (blend, clip).
 // The list of modes comes from the engine (motolii_words); this file only draws them.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
 
 import 'package:flutter/widgets.dart';

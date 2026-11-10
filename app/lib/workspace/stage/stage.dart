@@ -1,5 +1,7 @@
 // The Stage panel: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
 // The image is the work (stage_art.dart). The chrome around it stays grey, with the accent only on what is switched on.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';

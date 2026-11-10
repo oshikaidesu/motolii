@@ -1,5 +1,8 @@
 // The easing graph.
 
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show HardwareKeyboard;

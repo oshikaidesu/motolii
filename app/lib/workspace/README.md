@@ -68,7 +68,7 @@ $F/flutter analyze lib
 - アプリの文字は英語。会話と文書は日本語。
 
 ## トンマナ(Pop)
-- 値は `WsT`(アプリ)と `Pop`(Inspector、`lib/inspector/inspector_parts.dart`)と `Grey` / `T`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
+- 値は `WsT`(アプリ、`lib/skin/window_tokens.dart`)と `Pop`(Inspector、`lib/skin/inspector_tokens.dart`)と `Grey` / `T`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
 - 箱(パネル・カード)は四角く、隙間なく並べる(間は `WsT.gutter` の暗い線)。触る物と読む物(欄・チップ・ボタン)は丸い。
 - 色は平らで不透明。アクセントはライム 1 色(`#B3C66B`、上の文字は `#15170D`)。再生ヘッドもアクセント。
 - レイヤーの種類ごとに色を 1 つ(`wsTone`)。Timeline のバー、Dock、Stage で同じ色を使う。

@@ -1,3 +1,4 @@
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
@@ -128,6 +129,6 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ),
     );
     final floated = Overlay.maybeOf(context) == null ? Overlay.wrap(child: panel) : panel;
-    return Pop(child: floated);
+    return floated;
   }
 }

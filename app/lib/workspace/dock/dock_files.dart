@@ -1,6 +1,9 @@
 // The Media shelf, in the style of AEViewer 2: one browser for the project's files and media.
 // A folder tree (locations, then folders only) sits beside or above the open folder's contents, shown as thumbnails or a list.
 // Wide: tree | contents. Narrow: the tree band (its height set by dragging) over the contents.
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -9,7 +12,6 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
-import 'package:motolii/inspector/inspector_parts.dart' show Pop;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_resizable.dart';
 import 'package:motolii/workspace/dock/dock_glyphs.dart';

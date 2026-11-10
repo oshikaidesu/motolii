@@ -1,5 +1,7 @@
 // The workspace timeline's drawing: ruler, track rows, playhead, overview strip and the kind chip.
 // Every painter takes plain values and repaints only when one of them changes; nothing here ticks.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 

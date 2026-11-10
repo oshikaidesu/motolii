@@ -1,6 +1,9 @@
 // The stage's viewport: the composition centred on a dark surround, rulers and guides, overlays, the selection,
 // the zoom HUD and the navigator.
 // It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async' show Timer;
 import 'dart:io' show File;
 import 'dart:math' as math;

@@ -1,6 +1,7 @@
 // A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Program or Presets.
 // It has a header, a search field and a body. Each shelf is one tab of the window's panes.
 // Media is the one file browser, for the project and the disk (dock_files.dart).
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 

@@ -1,4 +1,6 @@
 // One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
+import 'package:motolii/skin/inspector_tokens.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';

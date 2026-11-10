@@ -1,5 +1,7 @@
 // The Fonts shelf: each font is shown set in its own face.
 // Effects are in dock_effects.dart, files and media in dock_files.dart.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

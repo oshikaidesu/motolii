@@ -1,5 +1,7 @@
 // The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:async' show scheduleMicrotask;
 import 'dart:math' as math;
 

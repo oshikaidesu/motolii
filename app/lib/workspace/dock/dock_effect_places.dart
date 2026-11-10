@@ -7,6 +7,7 @@
 // Over the tiles, where the shelf is narrow, the list folds to a single row that says where the shelf is looking.
 // Clicking a place there gives the shelf to its contents, and clicking the row brings the list back.
 // Alight Motion's browser moves between its categories and a category's effects in the same way (EffectBrowser.kt: 105, 197, 247).
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,7 +16,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
-import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/workspace/commands/context_menu.dart';
 
 const dockFxListHeight = 176.0;

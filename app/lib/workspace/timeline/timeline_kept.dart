@@ -1,11 +1,11 @@
 // Marks which frames are cached on disk for playback (see engine/stage/stage_cache.h).
 // A thin line under the ruler's work-area band shows each cached range, as After Effects marks its cached frames.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
-import 'package:motolii/workspace/state/state.dart';
 
 /// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
 class WtKeptPainter extends CustomPainter {

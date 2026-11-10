@@ -1,5 +1,6 @@
 // Small parts shared by the tool panel: a tool's sticker, the strip over a tool's body,
 // a readout, and helpers for drawing text and dashed lines in a painter.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/workspace/dock/dock_glyphs.dart';

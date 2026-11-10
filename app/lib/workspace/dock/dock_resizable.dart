@@ -1,9 +1,9 @@
 // A band of a shelf whose height the user sets by dragging its grip.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 
 /// A band whose height the user sets by dragging the grip on its lower edge.

@@ -1,11 +1,11 @@
 // Small interactive controls: press, icon button, badge, chip and segmented control.
 // In every control the value is the most prominent element, the surrounding chrome is grey,
 // and a family colour appears only on the things that belong to that family.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/state/state.dart' show WsT;
 
 /// The app's basic press target, built on naked_ui's [NakedButton].
 class Hov extends StatelessWidget {

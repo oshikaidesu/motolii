@@ -2,6 +2,8 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';

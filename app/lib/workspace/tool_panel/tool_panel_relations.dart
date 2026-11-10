@@ -2,6 +2,9 @@
 // It draws every layer where it is (including off camera), the camera's frame, and each relation as its shape:
 // a ring, a row, the reach of a push, or the threads of a follow.
 // The user views it from the front or top, or turns it by dragging. Tapping picks a layer or a relation, which the inspector shows.
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';

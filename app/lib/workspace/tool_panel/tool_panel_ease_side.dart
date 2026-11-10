@@ -1,5 +1,6 @@
 // The controls beside the Ease graph, laid out as in AbsentMotion's EasingPanel.kt (Apache-2.0): a left column with
 // reverse and a menu, and a narrow row of easing shapes without names. The layout and behavior are ported; the colors are this app's.
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/controls.dart' show Hov, IconPress;

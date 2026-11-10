@@ -2,6 +2,8 @@
 // Each layer is a slab at its Z position, drawn in the color of its kind.
 // The lens cone widens as the focal length shortens.
 // The user drags the focus line, together with its depth-of-field band, or clicks a slab to focus on that layer.
+import 'package:motolii/skin/window_tokens.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
