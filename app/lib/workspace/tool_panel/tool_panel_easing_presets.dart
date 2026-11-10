@@ -49,7 +49,7 @@ class EasingPresetTile extends StatelessWidget {
     builder: (_, h) => Center(
       child: Transform.translate(
         offset: Offset(0, h && carried ? -Shape.s(2) : 0),
-        child: CustomPaint(size: Size.square(side), painter: EaseIcon(ease, on ? WsT.accentInk : (h ? Grey.g95 : Grey.g76))),
+        child: CustomPaint(size: Size.square(side), painter: EaseIcon(ease, on ? WindowTokens.accentInk : (h ? Grey.g95 : Grey.g76))),
       ),
     ),
   );
@@ -68,7 +68,7 @@ Widget easeHeld(Widget card, double side) {
         child: Container(
           width: w,
           height: h,
-          decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WsT.radius)), boxShadow: easeShadow),
+          decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)), boxShadow: easeShadow),
           child: card,
         ),
       ),

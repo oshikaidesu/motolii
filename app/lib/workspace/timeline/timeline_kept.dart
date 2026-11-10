@@ -15,7 +15,7 @@ class WtKeptPainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    final ink = Paint()..color = WsT.accent;
+    final ink = Paint()..color = WindowTokens.accent;
     for (final (from, to) in kept.value) {
       c.drawRect(Rect.fromLTRB(view.x(from).clamp(0, s.width), WtM.band, view.x(to).clamp(0, s.width), WtM.band + Shape.z(3)), ink);
     }

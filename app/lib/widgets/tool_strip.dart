@@ -14,10 +14,10 @@ class ToolStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     height: height ?? Shape.z(26),
-    padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
     decoration: BoxDecoration(
-      color: color ?? WsT.card,
-      border: line ? Border(top: BorderSide(color: WsT.line)) : null,
+      color: color ?? WindowTokens.card,
+      border: line ? Border(top: BorderSide(color: WindowTokens.line)) : null,
     ),
     child: Row(
       children: [
@@ -28,7 +28,7 @@ class ToolStrip extends StatelessWidget {
             child: Row(children: left),
           ),
         ),
-        if (right.isNotEmpty) SizedBox(width: gap ?? WsT.gap),
+        if (right.isNotEmpty) SizedBox(width: gap ?? WindowTokens.gap),
         ...right,
       ],
     ),

@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:motolii/storage/window_settings.dart' show WindowFile;
 
 /// The window zoom factor.
-abstract final class WsZoom {
+abstract final class WindowZoom {
   /// The zoom a window opens at and a double-click returns to. At 100% the parts looked too large.
   static const usual = .88;
 

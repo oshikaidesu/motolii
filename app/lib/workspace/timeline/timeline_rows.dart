@@ -21,9 +21,9 @@ import 'package:motolii/workspace/timeline/timeline_labels.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-extension WsTimelineRows on WsTimelineState {
+extension TimelinePaneRows on TimelinePaneState {
   /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
-  List<Color>? mixOf(Ws ws, String id) {
+  List<Color>? mixOf(WorkspaceController ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
     if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !wsRelations.contains(m.word(t, 'file'))) return null;
     return [
@@ -33,17 +33,17 @@ extension WsTimelineRows on WsTimelineState {
   }
 
   /// The layer's row number and name, as After Effects' Parent column shows it. Several layers may share a name.
-  String _numbered(Ws ws, String id) {
+  String _numbered(WorkspaceController ws, String id) {
     final i = ws.layers.indexWhere((l) => l.id == id);
     return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
   }
 
   // Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas. It is one undo step.
   // This reads the last snapshot, so no engine call is made while a row is built.
-  bool isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
+  bool isHidden(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
 
   /// How many layers a row dragged by [by] rows moves past. A collapsed group counts as itself plus all its members.
-  int _places(Ws ws, WsLayer l, int by) {
+  int _places(WorkspaceController ws, Layer l, int by) {
     final away = ws.foldedAway,
         seen = [
           for (final o in order)
@@ -54,31 +54,31 @@ extension WsTimelineRows on WsTimelineState {
     return past.fold(0, (n, id) => n + 1 + away.values.where((g) => g == id).length);
   }
 
-  void _eye(Ws ws, String id) {
+  void _eye(WorkspaceController ws, String id) {
     ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: isHidden(ws, id) ? 1 : 0));
   }
 
   // Solo and lock are stored in the project, as in After Effects. While any layer is solo, only the solo layers are shown.
   // The engine refuses to change a locked layer and reports an error.
-  bool isSolo(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
+  bool isSolo(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
 
-  bool isLocked(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
+  bool isLocked(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
 
-  bool anySolo(Ws ws) => ws.layers.any((l) => isSolo(ws, l.id));
+  bool anySolo(WorkspaceController ws) => ws.layers.any((l) => isSolo(ws, l.id));
 
-  void _flag(Ws ws, String name, String id) {
+  void _flag(WorkspaceController ws, String name, String id) {
     final m = ws.inside!;
     ws.after(m.later('set', layer: int.parse(id), name: name, number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1));
   }
 
-  Widget labels(Ws ws, List<WtRow> rows) => Column(
+  Widget labels(WorkspaceController ws, List<WtRow> rows) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       TimelineLabelHeader(count: ws.layers.length, solo: anySolo(ws)),
       Expanded(
-        child: WsMenu(
+        child: ContextMenu(
           key: labelMenu,
-          child: WsTwoFingers(
+          child: TwoFingerGestures(
             onWheel: scrollBy,
             // The labels scroll vertically together with the track rows.
             onPan: (by, _) => scrollBy(Offset(0, -by.dy)),
@@ -162,12 +162,12 @@ extension WsTimelineRows on WsTimelineState {
                                 row: rows[i],
                                 hidden: isHidden(ws, l.id),
                                 solo: isSolo(ws, l.id),
-                                lanes: l.kind == WsKind.group
+                                lanes: l.kind == LayerKind.group
                                     ? ws.groupOpen(l.id)
                                     : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
                                     ? null
                                     : ws.lanesOpen(l.id),
-                                onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
+                                onLanes: () => l.kind == LayerKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
                                 onSelect: () => HardwareKeyboard.instance.isShiftPressed
                                     // Shift selects every row from the last picked one to this one, as in After Effects.
                                     ? wsPickRange(ws, l.id)

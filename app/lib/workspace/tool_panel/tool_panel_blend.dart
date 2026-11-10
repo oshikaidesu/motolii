@@ -22,9 +22,9 @@ class BlendTool extends StatelessWidget {
   const BlendTool({super.key});
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked});
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked});
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: WsT.gap, vertical: Shape.s(6)),
+      padding: EdgeInsets.symmetric(horizontal: WindowTokens.gap, vertical: Shape.s(6)),
       children: [for (final l in ws.layers) _Row(l, picked: l.id == ws.selected)],
     );
   }
@@ -33,7 +33,7 @@ class BlendTool extends StatelessWidget {
 /// One layer's row: name, current blend mode, and a button that expands the list of all modes.
 class _Row extends StatefulWidget {
   const _Row(this.l, {required this.picked});
-  final WsLayer l;
+  final Layer l;
   final bool picked;
   @override
   State<_Row> createState() => _RowState();
@@ -44,7 +44,7 @@ class _RowState extends State<_Row> {
   String? _hover;
   @override
   Widget build(BuildContext context) {
-    final l = widget.l, ws = WsScope.of(context, {WsAspect.document}), m = ws.inside, t = int.tryParse(l.id);
+    final l = widget.l, ws = WorkspaceScope.of(context, {WorkspaceAspect.document}), m = ws.inside, t = int.tryParse(l.id);
     final ways = m == null || t == null ? const <String>[] : m.words(t, 'blend');
     final now = ways.isEmpty ? '' : (m!.word(t!, 'blend').isEmpty ? ways.first : m.word(t, 'blend'));
     void say(String name, String word) {
@@ -54,7 +54,7 @@ class _RowState extends State<_Row> {
     final row = Container(
       height: Shape.z(34),
       padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-      decoration: BoxDecoration(color: widget.picked ? WsT.well : null, borderRadius: BorderRadius.all(Shape.r(5))),
+      decoration: BoxDecoration(color: widget.picked ? WindowTokens.well : null, borderRadius: BorderRadius.all(Shape.r(5))),
       child: Row(
         children: [
           Container(
@@ -85,7 +85,7 @@ class _RowState extends State<_Row> {
             SizedBox(width: Shape.s(4)),
             IconPress(
               paintInk((ink) => _Way(now, ink)),
-              rest: WsT.well,
+              rest: WindowTokens.well,
               ink: Grey.g76,
               key: ValueKey('blend.${l.id}'),
               size: Shape.z(24),
@@ -133,7 +133,7 @@ class _RowState extends State<_Row> {
                         onHoverChange: (over) => setState(() => _hover = over ? w : null),
                         child: IconPress(
                           paintInk((ink) => _Way(w, ink)),
-                          rest: WsT.well,
+                          rest: WindowTokens.well,
                           ink: Grey.g76,
                           key: ValueKey('blend.${l.id}.$w'),
                           size: Shape.z(26),

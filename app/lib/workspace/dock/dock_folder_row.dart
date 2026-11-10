@@ -52,7 +52,7 @@ Widget dockFolderRow({
       duration: Mo.dur,
       curve: Mo.ease,
       height: Shape.z(cover == null ? 22 : 34),
-      padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WsT.inset),
+      padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WindowTokens.inset),
       color: dockFill(here, h),
       child: Row(
         children: [
@@ -60,7 +60,7 @@ Widget dockFolderRow({
           if (cover != null)
             SizedBox.square(dimension: Shape.z(28), child: cover)
           else
-            Glyph(glyph, size: Shape.z(12), color: here ? WsT.onAccent : glyphInk ?? Grey.g63),
+            Glyph(glyph, size: Shape.z(12), color: here ? WindowTokens.onAccent : glyphInk ?? Grey.g63),
           SizedBox(width: Shape.s(6)),
           Expanded(
             child:

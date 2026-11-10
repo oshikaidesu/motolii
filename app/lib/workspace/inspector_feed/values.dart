@@ -27,7 +27,7 @@ double _unshown(Motolii m, int t, String n, double x) {
 }
 
 /// Maps an inspector id and shown number to the document's value name and value, or null when the id has no document value.
-(String, double)? _asDocument(Ws ws, int t, String id, double x) {
+(String, double)? _asDocument(WorkspaceController ws, int t, String id, double x) {
   if (id.startsWith('v_') && ws.inside!.shown(id.substring(2))?.look == 'thing') {
     // Another layer: None first, then the others by position.
     final others = wsOthers(ws, t).values.toList(), i = x.round();
@@ -47,11 +47,11 @@ double _unshown(Motolii m, int t, String n, double x) {
 /// The time of the frame on the canvas.
 /// The engine records what is read at that time while drawing, so the value is available
 /// without waiting for the engine to be told a time the playhead has just moved to.
-double wsDrawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
+double wsDrawn(WorkspaceController ws) => ws.inside?.now ?? ws.frame / WorkspaceController.fps;
 
 /// Only the position, scale and rotation of a layer, as the canvas readout shows them.
 /// [wsTransform] reads all of the cards' numbers instead.
-Map<String, double> wsPlace(Ws ws, String id) {
+Map<String, double> wsPlace(WorkspaceController ws, String id) {
   final m = ws.inside, t = int.tryParse(id);
   if (m == null || t == null) return const {};
   final at = wsDrawn(ws);
@@ -63,7 +63,7 @@ Map<String, double> wsPlace(Ws ws, String id) {
 }
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
-Map<String, double> wsTransform(Ws ws, String? id) {
+Map<String, double> wsTransform(WorkspaceController ws, String? id) {
   if (ws.inside case final m?) {
     // The document's own values, as the inspector counts them.
     final t = int.tryParse(id ?? '');
@@ -91,7 +91,7 @@ Map<String, double> wsTransform(Ws ws, String? id) {
 
 /// Writes values changed in the inspector. The engine has one form of change, a drag: drag_start, then drag_update with the numbers.
 /// While the user is dragging ([live]) the value is only displayed. On release it becomes the document's, by the document's rules.
-void wsWrite(Ws ws, String? id, Map<String, double> changed, {required bool live}) {
+void wsWrite(WorkspaceController ws, String? id, Map<String, double> changed, {required bool live}) {
   // With nothing selected the target is the stage's own layer 0.
   final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
   // A word chosen on one of the engine's own cards is written as that word, in one undo step.
@@ -122,13 +122,18 @@ void wsWrite(Ws ws, String? id, Map<String, double> changed, {required bool live
     changed = {...changed}..remove('v_speed');
     if (!live) {
       ws.after(
-        m.later('time_stretch', layer: t, number: speed, word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / Ws.fps}'),
+        m.later(
+          'time_stretch',
+          layer: t,
+          number: speed,
+          word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / WorkspaceController.fps}',
+        ),
         (done, why) => done ? ws.reread() : _told(ws, why),
       );
     }
     if (changed.isEmpty) return;
   }
-  final now = ws.frame / Ws.fps, dragged = _dragged == t;
+  final now = ws.frame / WorkspaceController.fps, dragged = _dragged == t;
   if (!dragged) {
     // The drag starts once. Later steps only update it.
     m.take(t);
@@ -172,7 +177,7 @@ void wsWrite(Ws ws, String? id, Map<String, double> changed, {required bool live
 final _found = <String, double>{};
 
 /// The other layers selected together with [t].
-List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
+List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains('$t')
     ? [
         for (final id in ws.many)
           if (int.tryParse(id) case final o? when o != t) o,
@@ -180,7 +185,7 @@ List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
     : const [];
 
 /// The selected layer's words in the inspector's ids, such as a text's content or how it blends with what is behind.
-Map<String, String> wsWords(Ws ws, String? id) {
+Map<String, String> wsWords(WorkspaceController ws, String? id) {
   // With nothing selected these are the stage's own cards.
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};
@@ -215,12 +220,12 @@ String _lacks(Motolii m, int t) {
 
 /// How the inspector is displayed, such as its folds and whether an effect's Advanced section is open.
 /// This is part of the app's view, not the document.
-Map<String, bool> wsFlags(Ws ws, String? id) => {
+Map<String, bool> wsFlags(WorkspaceController ws, String? id) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool) e.key.substring(10): e.value as bool,
 };
 
-bool wsFlag(Ws ws, String? id, Map<String, bool> changed) {
+bool wsFlag(WorkspaceController ws, String? id, Map<String, bool> changed) {
   // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (fx_code.dart).
   bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.code') || k.endsWith('.past') || k.startsWith('fold.');
   for (final e in changed.entries) {
@@ -234,7 +239,7 @@ bool wsFlag(Ws ws, String? id, Map<String, bool> changed) {
 }
 
 /// Writes words chosen in the inspector to the document. Returns false when no layer is selected.
-bool wsSay(Ws ws, String? id, Map<String, String> changed) {
+bool wsSay(WorkspaceController ws, String? id, Map<String, String> changed) {
   final m = ws.inside!, t = int.tryParse(id ?? '');
   if (t == null) return false;
   // One undo step, requested without waiting: the app carries on while the engine works, then reads the result.
@@ -254,7 +259,7 @@ bool wsSay(Ws ws, String? id, Map<String, String> changed) {
 }
 
 /// The other layers, keyed by their row number on the timeline and the name shown there.
-Map<String, int> wsOthers(Ws ws, int t) {
+Map<String, int> wsOthers(WorkspaceController ws, int t) {
   // Layers only, not relations or behaviours.
   final rows = ws.layers.where((l) => l.id != '$t' && ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour');
   // Like After Effects' parent list: the row number on the timeline, then the name.
@@ -264,7 +269,7 @@ Map<String, int> wsOthers(Ws ws, int t) {
 /// Shows a change the document refused in the top bar, using the engine's reason (its first clause).
 /// The reason must be read right when the change is refused, because every engine call forgets the last one.
 /// The next accepted change clears the message.
-void _told(Ws ws, String? why) {
+void _told(WorkspaceController ws, String? why) {
   if (why != null && why.isNotEmpty) {
     ws.notice = 'Not taken: ${why.split(':').first}';
   } else if (why == null && (ws.notice?.startsWith('Not taken') ?? false)) {
@@ -313,7 +318,7 @@ Map<String, String> _cardColors(Motolii m, int t, [double at = 0]) => {
 /// A value on the engine's own cards as the inspector counts it.
 /// Another layer is its position in the list (None first), a number is in the card's units,
 /// and a word is its position among the words it may take. This holds for the stage and for layers alike.
-double _onCard(Ws ws, Motolii m, int t, String n, double at) {
+double _onCard(WorkspaceController ws, Motolii m, int t, String n, double at) {
   // These values are read from the snapshot as the stage shows them (see snapshot.h).
   final seen = const {'x', 'y', 'z', 'rotate', 'scale_x', 'scale_y', 'opacity'}.contains(n) ? m.shows(t, n, at) : null;
   if (seen != null) {

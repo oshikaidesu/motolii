@@ -23,10 +23,10 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
-class WsStage extends StatelessWidget {
-  const WsStage({super.key});
+class StagePane extends StatelessWidget {
+  const StagePane({super.key});
   @override
-  Widget build(BuildContext context) => const WsPanel(child: _Stage());
+  Widget build(BuildContext context) => const Panel(child: _Stage());
 }
 
 const stageTools = [
@@ -46,7 +46,9 @@ const stageTools = [
 ///
 /// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
 /// Photoshop do, not only while the stage has focus.
-Map<String, VoidCallback> wsToolCommands(Ws ws) => {for (final (i, t) in stageTools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i)};
+Map<String, VoidCallback> wsToolCommands(WorkspaceController ws) => {
+  for (final (i, t) in stageTools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i),
+};
 
 class _Stage extends StatefulWidget {
   const _Stage();
@@ -56,7 +58,7 @@ class _Stage extends StatefulWidget {
 
 class _StageState extends State<_Stage> {
   // The stage's look is kept in the app's view state, so any panel can read it and a reopened app shows the same.
-  Ws get _ws => WsScope.read(context);
+  WorkspaceController get _ws => WorkspaceScope.read(context);
   int get _zoom => _ws.viewOf('stage.zoom', 0);
   set _zoom(int v) => _ws.setView('stage.zoom', v);
   int get _tool => _ws.viewOf('stage.tool', 0);
@@ -72,7 +74,7 @@ class _StageState extends State<_Stage> {
   /// Tells the engine which view camera the stage is seen through, when that has changed.
   ///
   /// A newly opened document starts with the world view.
-  void _tellEye(Ws ws) {
+  void _tellEye(WorkspaceController ws) {
     final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
     if (m == null || _eyeTold == (m, word)) return;
     _eyeTold = (m, word);
@@ -125,10 +127,10 @@ class _StageState extends State<_Stage> {
   @override
   Widget build(BuildContext context) {
     // The scene follows the playhead and the image being shown.
-    WsScope.frameOf(context);
-    WsScope.pictureOf(context);
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.stage, WsAspect.view}),
-        scene = Ws.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
+    WorkspaceScope.frameOf(context);
+    WorkspaceScope.pictureOf(context);
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked, WorkspaceAspect.stage, WorkspaceAspect.view}),
+        scene = WorkspaceController.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
     _tellEye(ws);
     return DragTarget<VoidCallback>(
       // A shelf tile dropped here does what its double click does, as dropping a device on a track does in Ableton.
@@ -141,28 +143,28 @@ class _StageState extends State<_Stage> {
       },
       builder: (context, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
+        decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2)),
         child: Focus(
           focusNode: _focus,
           child: Column(
             children: [
-              WsHeader(
+              PanelHeader(
                 '',
                 trailing: [
                   Forms.worn.segment(context, ChoiceSpec(labels: stageZooms, selected: _zoom, onSelect: (i) => setState(() => _zoom = i))),
                   SizedBox(width: Shape.s(6)),
                   Toggle(label: 'Safe', icon: StageIcon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
-                  SizedBox(width: WsT.gap),
+                  SizedBox(width: WindowTokens.gap),
                   Toggle(label: 'Grid', icon: StageIcon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
                   SizedBox(width: Shape.s(6)),
-                  if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[
+                  if (_camera || ws.layers.any((l) => l.kind == LayerKind.camera)) ...[
                     // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
                     Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
                     SizedBox(width: Shape.s(6)),
                   ],
                   Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: StageIcon.snap, on: false, onTap: _take),
                   if (_shot != null) ...[
-                    SizedBox(width: WsT.gap),
+                    SizedBox(width: WindowTokens.gap),
                     Listener(
                       // After Effects' Show Snapshot: the still is shown only while the button is held.
                       onPointerDown: (_) => setState(() => _showing = true),
@@ -182,7 +184,7 @@ class _StageState extends State<_Stage> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          WsTwoFingers(
+                          TwoFingerGestures(
                             onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)),
                             child: StageView(
                               key: _view,
@@ -285,7 +287,7 @@ class _IconPainter extends CustomPainter {
 }
 
 /// A shape tool clicked twice adds a shape as large as the canvas at once, as in After Effects.
-void _whole(Ws ws, String kind) {
+void _whole(WorkspaceController ws, String kind) {
   ws.whole(kind);
   ws.setView('stage.tool', 0);
 }
@@ -310,10 +312,10 @@ class _ToolColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: WsT.rail,
+    width: WindowTokens.rail,
     decoration: BoxDecoration(
-      color: WsT.body,
-      border: Border(right: BorderSide(color: WsT.line)),
+      color: WindowTokens.body,
+      border: Border(right: BorderSide(color: WindowTokens.line)),
     ),
     child: ClipRect(
       child: OverflowBox(
@@ -330,14 +332,14 @@ class _ToolColumn extends StatelessWidget {
                     width: Shape.z(20),
                     height: 1,
                     margin: EdgeInsets.symmetric(vertical: Shape.s(5)),
-                    color: WsT.line,
+                    color: WindowTokens.line,
                   ),
                 if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
                 IconPress(
                   (ink) => Glyph(stageTools[i].$1, size: Shape.z(16), color: ink),
                   key: ValueKey('ws-tool-$i'),
                   size: Shape.z(28),
-                  rest: WsT.body,
+                  rest: WindowTokens.body,
                   ink: Grey.g63,
                   on: i == active,
                   onTap: () => _press(i),
@@ -347,7 +349,7 @@ class _ToolColumn extends StatelessWidget {
                 width: Shape.z(20),
                 height: 1,
                 margin: EdgeInsets.symmetric(vertical: Shape.s(8)),
-                color: WsT.line,
+                color: WindowTokens.line,
               ),
               const _Swatches(),
             ],
@@ -367,8 +369,8 @@ class _Swatches extends StatelessWidget {
   const _Swatches();
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), p = paintOf(ws);
-    final fill = p.fill ?? WsT.body, stroke = p.stroke ?? WsT.line, edgeOn = ws.aim == 'stroke';
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), p = paintOf(ws);
+    final fill = p.fill ?? WindowTokens.body, stroke = p.stroke ?? WindowTokens.line, edgeOn = ws.aim == 'stroke';
     Widget box(String aim, BoxDecoration look) => Hov(
       key: ValueKey('ws-ink-$aim'),
       cursor: MouseCursor.defer,
@@ -381,8 +383,8 @@ class _Swatches extends StatelessWidget {
         height: Shape.z(16),
         foregroundDecoration: ws.aim == aim
             ? BoxDecoration(
-                borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
-                border: Border.all(color: WsT.accent),
+                borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+                border: Border.all(color: WindowTokens.accent),
               )
             : null,
         decoration: look,
@@ -394,8 +396,8 @@ class _Swatches extends StatelessWidget {
       child: box(
         'stroke',
         BoxDecoration(
-          color: WsT.body,
-          borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+          color: WindowTokens.body,
+          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
           border: Border.all(color: stroke, width: 3),
         ),
       ),
@@ -407,8 +409,8 @@ class _Swatches extends StatelessWidget {
         'fill',
         BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
-          border: Border.all(color: WsT.body),
+          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          border: Border.all(color: WindowTokens.body),
         ),
       ),
     );

@@ -46,17 +46,17 @@ class StageViewState extends State<StageView> implements StageHandles {
 
   @override
   Map<String, Offset> get handles {
-    final v = _shown, scene = widget.scene, b = WsArt.boxOf(scene, widget.selected), l = scene.layer(widget.selected);
+    final v = _shown, scene = widget.scene, b = ArtGeometry.boxOf(scene, widget.selected), l = scene.layer(widget.selected);
     if (v == null || b == null || l == null) return const {};
     final (form, round) = _formOf();
-    return selectionHandles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form, round: round, crop: _cropOf());
+    return selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form, round: round, crop: _cropOf());
   }
 
   static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
 
   /// The selected image's crop, as the share cut from each side, while it is being cropped; empty otherwise.
   List<double> _cropOf() {
-    final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     if (m == null || t == null || _cropping != widget.selected || !_photo(m, t)) return const [];
     return [for (final n in _crops) m.value(t, n, 0) ?? 0];
   }
@@ -85,7 +85,7 @@ class StageViewState extends State<StageView> implements StageHandles {
 
   /// The selected shape's kind and corner radius, for its handles.
   (String, double) _formOf() {
-    final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     if (m == null || t == null || m.word(t, 'kind') != 'shape') return ('', 0);
     return (m.word(t, 'shape'), m.value(t, 'round', 0) ?? 0);
   }
@@ -104,7 +104,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   Motolii? _deskOf;
   double? _toldDpr;
   void _deskTo(StageViewport v) {
-    final dpr = MediaQuery.devicePixelRatioOf(context), m = WsScope.read(context).inside;
+    final dpr = MediaQuery.devicePixelRatioOf(context), m = WorkspaceScope.read(context).inside;
     if (m != _deskOf) {
       // A different project was opened: forget the old engine view and send it again.
       _desk = null;
@@ -169,16 +169,16 @@ class StageViewState extends State<StageView> implements StageHandles {
     final area = Rect.fromLTRB(StageTokens.ruler, StageTokens.ruler, size.width, size.height);
     final fit = math.max(
       .02,
-      math.min((area.width - StageTokens.fitMargin * 2) / WsArt.comp.width, (area.height - StageTokens.fitMargin * 2) / WsArt.comp.height),
+      math.min((area.width - StageTokens.fitMargin * 2) / ArtGeometry.comp.width, (area.height - StageTokens.fitMargin * 2) / ArtGeometry.comp.height),
     );
     final s = widget.zoom == 0 ? fit : _fixed[widget.zoom];
-    final half = Offset(WsArt.comp.width * s, WsArt.comp.height * s) / 2;
+    final half = Offset(ArtGeometry.comp.width * s, ArtGeometry.comp.height * s) / 2;
     return StageViewport(area.center - half + _pan, s, area);
   }
 
   String? hitLocal(StageViewport v, Offset local) {
     // A layer off the canvas can still be grabbed by its frame and dragged back.
-    final d = v.toComp(local), id = WsArt.hit(widget.scene, d), m = WsScope.read(context).inside;
+    final d = v.toComp(local), id = ArtGeometry.hit(widget.scene, d), m = WorkspaceScope.read(context).inside;
     if (widget.group && m != null && id != null) {
       // Grouping: pick the outermost ancestor by following parents.
       var t = int.parse(id);
@@ -212,7 +212,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   // the layer at once. It is one undo step and the new layer is selected.
   Offset? drawFrom;
 
-  // A lasso drawn on empty stage with no tool: the layers whose centres are inside are selected together (Ws.many), and the
+  // A lasso drawn on empty stage with no tool: the layers whose centres are inside are selected together (WorkspaceController.many), and the
   // actions available for them are offered beside them (make_relation.dart).
   List<Offset>? lasso;
 
@@ -223,7 +223,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   List<Offset>? penWay; // Pointer path while the pen is down; a scribble rather than a handle becomes a path of its own.
 
   void _pen(StageViewport v, Offset down, Offset up) {
-    final ws = WsScope.read(context), m = ws.inside, way = penWay;
+    final ws = WorkspaceScope.read(context), m = ws.inside, way = penWay;
     drawFrom = null;
     penWay = null;
     setState(() {});
@@ -264,7 +264,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   ({double zoom, double reach, Offset middle})? lensFrom; // The frame's zoom, reach and centre when the drag started.
 
   void _dragUpdate(StageViewport v, Offset local) {
-    final h = drag, ws = WsScope.read(context), m = ws.inside;
+    final h = drag, ws = WorkspaceScope.read(context), m = ws.inside;
     if (h == null || m == null) return;
     if (h.by == 'gizmo orbit' && orbitFrom != null) {
       final d = (local - h.from) * orbitRate, o = orbitFrom!;
@@ -347,7 +347,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
   void _panBy(Offset by, StageViewport v) {
     if (widget.zoom == 0) return;
-    final lim = Offset(WsArt.comp.width * v.s / 2 + v.area.width / 2 - 60, WsArt.comp.height * v.s / 2 + v.area.height / 2 - 60);
+    final lim = Offset(ArtGeometry.comp.width * v.s / 2 + v.area.width / 2 - 60, ArtGeometry.comp.height * v.s / 2 + v.area.height / 2 - 60);
     final p = _pan + by;
     setState(() => _pan = Offset(p.dx.clamp(-lim.dx, lim.dx), p.dy.clamp(-lim.dy, lim.dy)));
   }
@@ -357,7 +357,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   // layer stays put.
   (Object?, List<Offset>?) _trail = (null, null);
   List<Offset>? _trailOf() {
-    final ws = WsScope.read(context), m = ws.inside, t = int.tryParse(widget.selected ?? '');
+    final ws = WorkspaceScope.read(context), m = ws.inside, t = int.tryParse(widget.selected ?? '');
     if (m == null || t == null || const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) return null;
     final key = (ws.rev, t);
     if (_trail.$1 != key) {
@@ -366,7 +366,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       if (end > start) {
         m.path(t, from: start, to: end, n: 90).then((p) {
           if (!mounted || _trail.$1 != key || p == null) return;
-          final c = WsArt.centre, pts = [for (var i = 0; i + 1 < p.length; i += 4) c + Offset(p[i], -p[i + 1]) * m.point];
+          final c = ArtGeometry.centre, pts = [for (var i = 0; i + 1 < p.length; i += 4) c + Offset(p[i], -p[i + 1]) * m.point];
           setState(() => _trail = (key, pts.any((q) => (q - pts.first).distance > 1) ? pts : null));
         });
       }
@@ -374,7 +374,7 @@ class StageViewState extends State<StageView> implements StageHandles {
     return _trail.$2;
   }
 
-  final _menu = GlobalKey<WsMenuState>();
+  final _menu = GlobalKey<ContextMenuState>();
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -382,9 +382,9 @@ class StageViewState extends State<StageView> implements StageHandles {
       final v = _shown = _view(box.biggest), scene = widget.scene, trail = _trailOf();
       _deskTo(v);
       _pickTo();
-      return WsMenu(
+      return ContextMenu(
         key: _menu,
-        child: WsTwoFingers(
+        child: TwoFingerGestures(
           onWheel: (d) => widget.make == 'camera' ? dolly(d.dy) : _panBy(-d, v),
           onPan: (by, _) => _panBy(by, v),
           child: MouseRegion(
@@ -402,7 +402,7 @@ class StageViewState extends State<StageView> implements StageHandles {
               supportedDevices: wsPressing,
               onSecondaryTapDown: (d) {
                 // Context menu for the layer under the pointer, same as on its bar.
-                final ws = WsScope.read(context), id = hitLocal(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
+                final ws = WorkspaceScope.read(context), id = hitLocal(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
                 if (l != null) _menu.currentState?.show(d.localPosition, wsThingMenu(context, ws, l));
               },
               onTapUp: (d) {
@@ -410,7 +410,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                 if (widget.make == 'pen') return _pen(v, d.localPosition, d.localPosition); // A click makes a corner point.
                 if (widget.make == 'brush') return; // A stroke is drawn, not clicked.
                 if (widget.make != null) return draw(v, drawFrom = d.localPosition); // A click creates one layer there.
-                final hit = hitLocal(v, d.localPosition), ws = WsScope.read(context), m = ws.inside;
+                final hit = hitLocal(v, d.localPosition), ws = WorkspaceScope.read(context), m = ws.inside;
                 if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) {
                   return hit == null ? null : wsPickAlso(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
                 }
@@ -509,13 +509,13 @@ class StageViewState extends State<StageView> implements StageHandles {
                       ),
                     ),
                   if (int.tryParse(widget.selected ?? '') case final picked?
-                      when WsScope.read(context).inside != null) // The selected path's own points, so they can be grabbed.
+                      when WorkspaceScope.read(context).inside != null) // The selected path's own points, so they can be grabbed.
                     IgnorePointer(
                       child: CustomPaint(
                         size: Size.infinite,
                         painter: PointsPainter(
-                          [for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(p)],
-                          [for (final (h, o) in WsScope.read(context).inside!.handles(picked)) (v.toScreen(h), v.toScreen(o))],
+                          [for (final p in WorkspaceScope.read(context).inside!.points(picked)) v.toScreen(p)],
+                          [for (final (h, o) in WorkspaceScope.read(context).inside!.handles(picked)) (v.toScreen(h), v.toScreen(o))],
                         ),
                       ),
                     ),
@@ -535,7 +535,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                       rect: Rect.fromPoints(from, _last!),
                       child: IgnorePointer(
                         child: DecoratedBox(
-                          decoration: BoxDecoration(border: Border.all(color: WsT.accent)),
+                          decoration: BoxDecoration(border: Border.all(color: WindowTokens.accent)),
                         ),
                       ),
                     ),
@@ -549,7 +549,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                           child: Container(
                             key: const ValueKey('ws-held-says'),
                             padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
-                            decoration: BoxDecoration(color: WsT.raised, borderRadius: BorderRadius.all(Shape.r(3))),
+                            decoration: BoxDecoration(color: WindowTokens.raised, borderRadius: BorderRadius.all(Shape.r(3))),
                             child: Text(says, style: T.micro(Grey.g95)),
                           ),
                         ),
@@ -610,7 +610,7 @@ class _BrushWay extends CustomPainter {
     PointMode.polygon,
     way,
     Paint()
-      ..color = WsT.accent
+      ..color = WindowTokens.accent
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round,
   );

@@ -61,13 +61,13 @@ class _DockSearchState extends State<DockSearch> {
         height: Shape.z(24),
         padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
         decoration: BoxDecoration(
-          color: WsT.well,
-          borderRadius: BorderRadius.all(Shape.r(WsT.radius)),
-          border: Border.all(color: _focus.hasFocus ? WsT.accentInk : WsT.well),
+          color: WindowTokens.well,
+          borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+          border: Border.all(color: _focus.hasFocus ? WindowTokens.accentInk : WindowTokens.well),
         ),
         child: Row(
           children: [
-            Glyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WsT.accentInk : Grey.g56),
+            Glyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56),
             SizedBox(width: Shape.s(6)),
             Expanded(
               child: Stack(
@@ -84,7 +84,7 @@ class _DockSearchState extends State<DockSearch> {
                       controller: c,
                       focusNode: _focus,
                       style: T.name(Grey.g95),
-                      cursorColor: WsT.accent,
+                      cursorColor: WindowTokens.accent,
                       backgroundCursorColor: Grey.g44,
                       selectionColor: Grey.g38,
                       cursorWidth: 1.5,
@@ -103,6 +103,6 @@ class _DockSearchState extends State<DockSearch> {
         ),
       ),
     );
-    return Padding(padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, Shape.s(4)), child: well);
+    return Padding(padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(6), WindowTokens.inset, Shape.s(4)), child: well);
   }
 }

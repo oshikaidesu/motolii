@@ -40,7 +40,7 @@ List<(String, String)> expressionRecipes() {
 }
 
 /// The tiles of the Expression group: scripts that are expressions, then the engine's motions, then the user's own.
-List<CreateTile> expressionsOf(Ws ws) => [
+List<CreateTile> expressionsOf(WorkspaceController ws) => [
   for (final (name, file) in expressionRecipes())
     CreateTile(name, DockG.copies, Pop.tonePlace, '', 'On the picked thing, a card of its own (nothing picked: makes its own thing)', file: file, made: true),
   for (final (name, file) in ws.inside?.animators ?? const <(String, String)>[])

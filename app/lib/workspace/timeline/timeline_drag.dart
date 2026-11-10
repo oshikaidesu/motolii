@@ -12,12 +12,12 @@ import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_slip.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-extension WsTimelineDrag on WsTimelineState {
+extension TimelinePaneDrag on TimelinePaneState {
   // ---------------------------------------------------------------- input
 
   /// The row at vertical position [y]: its index, its layer, and the property it shows.
   /// The property is null for the layer's own row.
-  ({int i, WsLayer l, String? value})? rowAt(double y) {
+  ({int i, Layer l, String? value})? rowAt(double y) {
     final i = ((y + vscroll) / WtM.row).floor();
     if (i < 0 || i >= order.length) return null;
     return (i: i, l: workspace!.layers[order[i].layer], value: order[i].value);
@@ -33,13 +33,13 @@ extension WsTimelineDrag on WsTimelineState {
     final t = int.parse(r.l.id), name = r.value!, row = laneRow(ws, r.l, name), pts = row.lane ?? const [];
     if (pts.isEmpty) return;
     for (final k in m.keyTimes(t, name)) {
-      if ((v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) return ws.after(m.later('unkey', layer: t, name: name, number: k));
+      if ((v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) return ws.after(m.later('unkey', layer: t, name: name, number: k));
     }
     final now = DateTime.now(), twice = lanePressed != null && now.difference(lanePressed!) < kDoubleTapTimeout && (p - laneAt).distance < kDoubleTapSlop;
     lanePressed = twice ? null : now;
     laneAt = p;
     final f = v.frameAt(p.dx);
-    if (twice) return ws.after(m.later('key_here', layer: t, name: name, number: f.round().clamp(0, Ws.duration) / Ws.fps));
+    if (twice) return ws.after(m.later('key_here', layer: t, name: name, number: f.round().clamp(0, WorkspaceController.duration) / WorkspaceController.fps));
     final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1, inside = from != null && pts.any((q) => q.$1 > f);
     inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
@@ -77,7 +77,7 @@ extension WsTimelineDrag on WsTimelineState {
     }
   }
 
-  bool _onPale(Ws ws, WsLayer l, Offset p) {
+  bool _onPale(WorkspaceController ws, Layer l, Offset p) {
     final w = wholeOf(ws, l);
     return w != null && p.dx >= view.x(w.$1) && p.dx <= view.x(w.$2);
   }
@@ -89,8 +89,8 @@ extension WsTimelineDrag on WsTimelineState {
     if (r.value case final n?) {
       // On a lane, a click on a keyframe deletes it.
       final t = int.parse(l.id);
-      final at = ws.inside!.keyTimes(t, n), f = v.frameAt(p.dx) / Ws.fps;
-      return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last)
+      final at = ws.inside!.keyTimes(t, n), f = v.frameAt(p.dx) / WorkspaceController.fps;
+      return at.any((k) => (v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last)
           ? SystemMouseCursors.click
           : SystemMouseCursors.precise;
     }

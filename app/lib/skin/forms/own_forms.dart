@@ -20,12 +20,12 @@ class OwnForms extends Forms {
     builder: (_, h) => SkinFrame(
       'render',
       hover: h,
-      usual: BoxDecoration(color: h ? WsT.accentHot : WsT.accent, borderRadius: BorderRadius.all(Shape.r(13))),
+      usual: BoxDecoration(color: h ? WindowTokens.accentHot : WindowTokens.accent, borderRadius: BorderRadius.all(Shape.r(13))),
       child: Container(
         height: Shape.z(26),
         padding: EdgeInsets.symmetric(horizontal: Shape.s(14)),
         alignment: Alignment.center,
-        child: Text(a.label, style: T.name(WsT.onAccent).copyWith(fontWeight: FontWeight.w800)),
+        child: Text(a.label, style: T.name(WindowTokens.onAccent).copyWith(fontWeight: FontWeight.w800)),
       ),
     ),
   );

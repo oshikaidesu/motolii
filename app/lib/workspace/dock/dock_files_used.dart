@@ -14,7 +14,7 @@ var _usedNow = <String, String>{};
 int? _usedRev;
 
 /// Maps each file the project uses, by whole path, to the layer that uses it. If several layers use a file, the front one wins.
-Map<String, String> filesUsed(Ws ws) {
+Map<String, String> filesUsed(WorkspaceController ws) {
   if (_usedRev == ws.rev) return _usedNow;
   final m = ws.inside!;
   _usedRev = ws.rev;
@@ -81,7 +81,7 @@ Future<void> placeFiles(DockCtx c, List<String> files) async {
 /// timesheet. Drawings numbered 1, 3, 5 are therefore held across the gaps, which After Effects users ask for on the
 /// forum and After Effects lacks. The timing can then be changed by moving the keyframes.
 void _placeLevel(DockCtx c, List<(int, String)> drawings) {
-  final m = c.ws.inside!, from = c.ws.frame / Ws.fps, first = drawings.first.$1;
+  final m = c.ws.inside!, from = c.ws.frame / WorkspaceController.fps, first = drawings.first.$1;
   m.later('together', number: 1);
   c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
     if (!done) c.set(() => c.mem.trouble[drawings.first.$2] = why);

@@ -23,8 +23,8 @@ import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-extension WsTimelineTracks on WsTimelineState {
-  Widget tracks(Ws ws, List<WtRow> rows) => LayoutBuilder(
+extension TimelinePaneTracks on TimelinePaneState {
+  Widget tracks(WorkspaceController ws, List<WtRow> rows) => LayoutBuilder(
     builder: (context, box) {
       trackW = box.maxWidth;
       rowsH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
@@ -36,7 +36,7 @@ extension WsTimelineTracks on WsTimelineState {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              WsMenu(
+              ContextMenu(
                 key: rulerMenu,
                 child: GestureDetector(
                   key: const ValueKey('ws-tl-ruler'),
@@ -55,7 +55,7 @@ extension WsTimelineTracks on WsTimelineState {
                     child: CustomPaint(
                       painter: WtRulerPainter(
                         view: v,
-                        fps: Ws.fps,
+                        fps: WorkspaceController.fps,
                         workIn: workIn,
                         workOut: workOut,
                         markers: marksOf(workspace!),
@@ -76,11 +76,11 @@ extension WsTimelineTracks on WsTimelineState {
                     final c = cursorAt(e.localPosition);
                     if (c != cursor) setState(() => cursor = c);
                   },
-                  child: WsTwoFingers(
+                  child: TwoFingerGestures(
                     onWheel: scrollBy,
                     onPan: fingers,
                     onPinch: pinch,
-                    child: WsMenu(
+                    child: ContextMenu(
                       key: trackMenu,
                       child: GestureDetector(
                         key: const ValueKey('ws-tl-tracks'),
@@ -97,7 +97,7 @@ extension WsTimelineTracks on WsTimelineState {
                         child: RepaintBoundary(
                           child: CustomPaint(
                             size: Size.infinite,
-                            painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: vscroll, restAt: restAt),
+                            painter: WtTracksPainter(rows: rows, view: v, fps: WorkspaceController.fps, vscroll: vscroll, restAt: restAt),
                           ),
                         ),
                       ),
@@ -137,8 +137,8 @@ extension WsTimelineTracks on WsTimelineState {
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: WsT.accent.withAlpha(36),
-                    border: Border.all(color: WsT.accent, width: 1),
+                    color: WindowTokens.accent.withAlpha(36),
+                    border: Border.all(color: WindowTokens.accent, width: 1),
                   ),
                 ),
               ),
@@ -146,13 +146,17 @@ extension WsTimelineTracks on WsTimelineState {
           // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
           if (naming case (final at, _)?)
             Positioned(
-              left: v.x((at * Ws.fps).round()).roundToDouble(),
+              left: v.x((at * WorkspaceController.fps).round()).roundToDouble(),
               top: WtM.band + 2,
               height: 12,
               child: ListenableBuilder(
                 listenable: markWords,
-                builder: (_, child) =>
-                    Container(width: wtFlagWidth('${markWords.text}  '), color: WsT.toneText, padding: const EdgeInsets.symmetric(horizontal: 4), child: child),
+                builder: (_, child) => Container(
+                  width: wtFlagWidth('${markWords.text}  '),
+                  color: WindowTokens.toneText,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: child,
+                ),
                 child: TextGestures(
                   key: const ValueKey('ws-tl-mark-name'),
                   field: (k) => EditableText(

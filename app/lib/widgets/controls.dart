@@ -26,7 +26,7 @@ class Hov extends StatelessWidget {
 ///
 /// By default it looks like the dock's header button: raised when [on], one step lighter on hover, no fill at rest, 20 wide,
 /// with a colour fade. When [rest] and [ink] are given it looks like a tool panel or stage tile instead:
-/// accent fill when [on], [rest] fill and [ink] at rest, WsT.radius corners, no margin and no fade.
+/// accent fill when [on], [rest] fill and [ink] at rest, WindowTokens.radius corners, no margin and no fade.
 class IconPress extends StatelessWidget {
   const IconPress(this.glyph, {super.key, this.onTap, this.on = false, this.lit = false, this.size, this.width, this.rest, this.ink});
 
@@ -56,10 +56,12 @@ class IconPress extends StatelessWidget {
         margin: tile ? null : EdgeInsets.only(left: Shape.s(2)),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: tile ? (on ? WsT.accent : (lit ? Grey.g26 : (h ? WsT.raised : rest))) : (on ? WsT.raised : (h ? WsT.card : null)),
-          borderRadius: BorderRadius.all(Shape.r(tile ? WsT.radius : WsT.chipRadius)),
+          color: tile
+              ? (on ? WindowTokens.accent : (lit ? Grey.g26 : (h ? WindowTokens.raised : rest)))
+              : (on ? WindowTokens.raised : (h ? WindowTokens.card : null)),
+          borderRadius: BorderRadius.all(Shape.r(tile ? WindowTokens.radius : WindowTokens.chipRadius)),
         ),
-        child: glyph(tile ? (on ? WsT.onAccent : (h || lit ? Grey.g95 : ink!)) : (on || h ? Grey.g95 : Grey.g63)),
+        child: glyph(tile ? (on ? WindowTokens.onAccent : (h || lit ? Grey.g95 : ink!)) : (on || h ? Grey.g95 : Grey.g63)),
       ),
     );
   }
@@ -90,7 +92,10 @@ class Badge extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.all(radius ?? (_round ? Radius.circular(size / 2) : Shape.r(WsT.chipRadius)))),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.all(radius ?? (_round ? Radius.circular(size / 2) : Shape.r(WindowTokens.chipRadius))),
+      ),
       child: child ?? CustomPaint(size: Size.square(size), painter: mark),
     );
     return onTap == null ? tile : Hov(cursor: SystemMouseCursors.basic, onTap: onTap, builder: (_, _) => tile);
@@ -137,12 +142,12 @@ class ChipLook {
   /// The tool panel's header chip: a well that lifts on hover and takes the accent when on.
   static ChipLook get tool => ChipLook(
     height: 18,
-    fill: WsT.well,
-    hoverFill: WsT.raised,
-    onFill: WsT.accent,
+    fill: WindowTokens.well,
+    hoverFill: WindowTokens.raised,
+    onFill: WindowTokens.accent,
     ink: Grey.g76,
     hoverInk: Grey.g95,
-    onInk: WsT.onAccent,
+    onInk: WindowTokens.onAccent,
     text: (c) => T.micro(c),
   );
 
@@ -153,7 +158,7 @@ class ChipLook {
     padX: 7,
     radius: radius,
     center: true,
-    fill: WsT.well,
+    fill: WindowTokens.well,
     ink: ink,
     press: false,
     text: (c) => mono ? T.value(c).copyWith(fontSize: T.px(size)) : T.micro(c).copyWith(fontWeight: FontWeight.w600),
@@ -164,7 +169,7 @@ class ChipLook {
     height: 16,
     center: true,
     fill: tone,
-    ink: WsT.onAccent,
+    ink: WindowTokens.onAccent,
     press: false,
     text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700),
   );
@@ -174,11 +179,11 @@ class ChipLook {
   static ChipLook tag(Color? hue, {bool edge = false}) => ChipLook(
     height: edge ? 16 : 14,
     padX: 4,
-    radius: WsT.chipRadius,
+    radius: WindowTokens.chipRadius,
     center: true,
-    fill: hue ?? WsT.raised,
-    ink: hue == null ? Grey.g76 : WsT.onAccent,
-    edge: edge ? WsT.onAccent : null,
+    fill: hue ?? WindowTokens.raised,
+    ink: hue == null ? Grey.g76 : WindowTokens.onAccent,
+    edge: edge ? WindowTokens.onAccent : null,
     edgeWidth: 1.5,
     press: false,
     text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
@@ -192,7 +197,7 @@ class ChipLook {
     padX: 8,
     padY: 5,
     radius: 12,
-    fill: WsT.body,
+    fill: WindowTokens.body,
     ink: Grey.g91,
     margin: EdgeInsets.only(right: Shape.s(6)),
     press: false,
@@ -205,11 +210,11 @@ class ChipLook {
     padX: 10,
     padY: 5,
     radius: 12,
-    fill: WsT.body,
-    onFill: WsT.accent,
-    ink: WsT.accent,
-    onInk: WsT.onAccent,
-    edge: WsT.accent,
+    fill: WindowTokens.body,
+    onFill: WindowTokens.accent,
+    ink: WindowTokens.accent,
+    onInk: WindowTokens.onAccent,
+    edge: WindowTokens.accent,
     cursor: SystemMouseCursors.basic,
     margin: EdgeInsets.only(right: Shape.s(4)),
     text: (c) => T.label(c),
@@ -254,7 +259,7 @@ class Chip extends StatelessWidget {
               Container(
                 width: Shape.z(6),
                 height: Shape.z(6),
-                decoration: BoxDecoration(color: on ? WsT.onAccent : dot, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: on ? WindowTokens.onAccent : dot, shape: BoxShape.circle),
               ),
               SizedBox(width: Shape.s(5)),
             ],

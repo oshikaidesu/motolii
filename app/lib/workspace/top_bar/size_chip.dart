@@ -16,7 +16,7 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
@@ -63,7 +63,7 @@ class _SizeChipState extends State<SizeChip> {
   }
 
   void _asked() {
-    if (!mounted || !wsAskSize.value || WsScope.read(context).onSize == null) return;
+    if (!mounted || !wsAskSize.value || WorkspaceScope.read(context).onSize == null) return;
     wsAskSize.value = false;
     _box.show();
   }
@@ -75,18 +75,18 @@ class _SizeChipState extends State<SizeChip> {
     super.dispose();
   }
 
-  void _commit(Ws ws, String? said) {
+  void _commit(WorkspaceController ws, String? said) {
     final nums = RegExp(r'\d+').allMatches(said ?? '').map((m) => int.parse(m.group(0)!)).toList();
     setState(() => _editing = false);
     if (nums.isEmpty || ws.onSize == null) return;
-    final w0 = WsArt.comp.width, h0 = WsArt.comp.height;
+    final w0 = ArtGeometry.comp.width, h0 = ArtGeometry.comp.height;
     final w = nums[0], h = nums.length > 1 ? nums[1] : (nums[0] * h0 / w0).round();
     if (w >= 16 && h >= 16 && w <= 16384 && h <= 16384 && (w != w0.round() || h != h0.round())) ws.onSize!(w, h);
   }
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document}), w0 = WsArt.comp.width, h0 = WsArt.comp.height;
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document}), w0 = ArtGeometry.comp.width, h0 = ArtGeometry.comp.height;
     final shownW = (_scrub ?? w0).round(), shownH = (shownW * h0 / w0).round();
     if (_editing) {
       return Container(
@@ -95,15 +95,15 @@ class _SizeChipState extends State<SizeChip> {
         padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
-          color: WsT.well,
-          borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
-          border: Border.all(color: WsT.accent),
+          color: WindowTokens.well,
+          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          border: Border.all(color: WindowTokens.accent),
         ),
         child: TypedField(
           text: '${w0.round()}x${h0.round()}',
           take: true,
           style: T.value(Grey.g95).copyWith(fontSize: T.px(10)),
-          cursor: WsT.accent,
+          cursor: WindowTokens.accent,
           onDone: (said) => _commit(ws, said),
         ),
       );
@@ -134,9 +134,9 @@ class _SizeChipState extends State<SizeChip> {
                   width: Shape.z(380),
                   padding: EdgeInsets.all(Shape.s(16)),
                   decoration: BoxDecoration(
-                    color: WsT.card,
+                    color: WindowTokens.card,
                     borderRadius: BorderRadius.all(Shape.r(8)),
-                    border: Border.all(color: WsT.line),
+                    border: Border.all(color: WindowTokens.line),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -182,7 +182,7 @@ class _SizeChipState extends State<SizeChip> {
                             Chip(
                               key: ValueKey('size-${r}fps'),
                               label: '$r',
-                              on: r == Ws.fps,
+                              on: r == WorkspaceController.fps,
                               onTap: ws.inside == null
                                   ? null
                                   : () => ws.after(
@@ -244,7 +244,7 @@ class _SizeChipState extends State<SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text('$shownW × $shownH  ·  ${Ws.fps} frames a second', style: T.value(Grey.g76)),
+                      Text('$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second', style: T.value(Grey.g76)),
                       if (ws.inside case final m?) ...[
                         // Alight Motion's Total Edit Time: how long the project has been worked on.
                         SizedBox(height: Shape.s(6)),
@@ -287,8 +287,8 @@ class _SizeChipState extends State<SizeChip> {
     );
   }
 
-  void _to(Ws ws, (int, int) size) {
+  void _to(WorkspaceController ws, (int, int) size) {
     _box.hide();
-    if (size != (WsArt.comp.width.round(), WsArt.comp.height.round())) ws.onSize?.call(size.$1, size.$2);
+    if (size != (ArtGeometry.comp.width.round(), ArtGeometry.comp.height.round())) ws.onSize?.call(size.$1, size.$2);
   }
 }

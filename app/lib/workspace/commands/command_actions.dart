@@ -14,7 +14,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 /// Live 42.20: Space plays from the start marker and stops back there. Shift+Space continues from where playback stopped.
 int? _playFrom;
 
-Map<String, void Function()> wsAbletonCommands(Ws ws) {
+Map<String, void Function()> wsAbletonCommands(WorkspaceController ws) {
   void step(int by) {
     ws.playing = false;
     ws.frame = ws.frame + by;
@@ -34,13 +34,15 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     if (m == null) return;
     if (ws.keys.isNotEmpty) {
       wsSlideKeys(ws, ws.keys.toList(), by);
-      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // The keyframes stay selected at their new frames.
+      ws.pickKeys([
+        for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, WorkspaceController.duration)),
+      ]); // The keyframes stay selected at their new frames.
       return;
     }
     final t = int.tryParse(ws.selected ?? '');
     if (t == null) return step(by);
     m.take(t);
-    m.dragUpdate('bar', by / Ws.fps);
+    m.dragUpdate('bar', by / WorkspaceController.fps);
     ws.after(m.later('drag_end', number: 1));
   }
 

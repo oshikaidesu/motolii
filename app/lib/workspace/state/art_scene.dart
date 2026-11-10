@@ -1,4 +1,4 @@
-// The stage's artwork: a poster frame drawn from Ws.layers at one frame, plus the geometry the stage needs to select it.
+// The stage's artwork: a poster frame drawn from WorkspaceController.layers at one frame, plus the geometry the stage needs to select it.
 // Everything here is a pure function of an [ArtScene]: no clock and no randomness at paint time, so a frame always looks the same.
 import 'dart:math' as math;
 
@@ -13,9 +13,9 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 /// One layer as the artwork needs it: an immutable copy, so a scene can be compared with the previous one.
 @immutable
 class ArtLayer {
-  ArtLayer(WsLayer l) : id = l.id, name = l.name, kind = l.kind, inF = l.inF, outF = l.outF, keys = List.unmodifiable([...l.keys]..sort());
+  ArtLayer(Layer l) : id = l.id, name = l.name, kind = l.kind, inF = l.inF, outF = l.outF, keys = List.unmodifiable([...l.keys]..sort());
   final String id, name;
-  final WsKind kind;
+  final LayerKind kind;
   final int inF, outF;
   final List<int> keys;
   bool live(int f) => f >= inF && f <= outF;
@@ -35,7 +35,7 @@ class ArtScene {
 
   /// The document's guides, in composition px.
   final List<double> guidesX, guidesY;
-  ArtScene.of(Ws ws, {required this.camera})
+  ArtScene.of(WorkspaceController ws, {required this.camera})
     : frame = ws.frame,
       // The document's own name.
       title = ws.document == null ? 'CODA_main' : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
@@ -53,7 +53,7 @@ class ArtScene {
       gizmos = {
         if (ws.freeEye)
           for (final l in ws.layers)
-            if (l.kind == WsKind.camera) l.id: ws.inside?.gizmo(int.parse(l.id)) ?? '',
+            if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(int.parse(l.id)) ?? '',
       },
       _inside = ws.inside;
 
@@ -130,9 +130,9 @@ class ArtBox {
 Offset _rot(Offset p, double a) => Offset(p.dx * math.cos(a) - p.dy * math.sin(a), p.dx * math.sin(a) + p.dy * math.cos(a));
 
 /// The stage's image in document px: its size, the layers' boxes, and which layer a point is on.
-abstract final class WsArt {
+abstract final class ArtGeometry {
   // The document's own size, kept by the window's state.
-  static Size get comp => Ws.comp;
+  static Size get comp => WorkspaceController.comp;
   static Offset get centre => comp.center(Offset.zero);
 
   /// The box the stage frames when [id] is selected, or null when the layer has no image at this frame.

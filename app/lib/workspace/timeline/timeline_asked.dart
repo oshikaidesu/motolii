@@ -20,9 +20,9 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-mixin TimelineAsked on State<WsTimeline> {
+mixin TimelineAsked on State<TimelinePane> {
   // The timeline state this mixin is part of: its zoom and scroll.
-  WsTimelineState get _t => this as WsTimelineState;
+  TimelinePaneState get _t => this as TimelinePaneState;
 
   // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
   (double, double)? _before;
@@ -63,9 +63,9 @@ mixin TimelineAsked on State<WsTimeline> {
                 if (ws.layer case final l?) ...[l.inF, l.outF],
               ];
         if (frames.isEmpty) return;
-        final a = frames.reduce((p, q) => p < q ? p : q), b = frames.reduce((p, q) => p > q ? p : q), span = (b - a).clamp(6, Ws.duration);
+        final a = frames.reduce((p, q) => p < q ? p : q), b = frames.reduce((p, q) => p > q ? p : q), span = (b - a).clamp(6, WorkspaceController.duration);
         _before ??= (t.zoom, t.scroll);
-        t.setZoom(Ws.duration / (span * 1.2), anchor: a);
+        t.setZoom(WorkspaceController.duration / (span * 1.2), anchor: a);
         setState(() => t.scroll = t.clampScroll(a - span * .1));
       case 'back':
         if (_before case (final z, final s)?) {
@@ -96,11 +96,11 @@ mixin TimelineAsked on State<WsTimeline> {
     final int f;
     if (t.flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
-      f = (flag.$1 * Ws.fps).round();
+      f = (flag.$1 * WorkspaceController.fps).round();
     } else {
       wsMarkPicked.value = null;
       if (p.dy <= WtM.band + 2) return;
-      f = t.view.frameAt(p.dx).round().clamp(0, Ws.duration);
+      f = t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration);
     }
     ws
       ..playing = false
@@ -133,28 +133,29 @@ mixin TimelineAsked on State<WsTimeline> {
     if (_t.flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
       return _t.rulerMenu.currentState?.show(p, [
-        WsMenuItem('Rename…', _rename, keys: '⌘R'),
-        WsMenuItem('Play from Here', () => _playAt((flag.$1 * Ws.fps).round())),
-        const WsMenuItem.rule(),
-        WsMenuItem('Delete', () {
+        ContextMenuItem('Rename…', _rename, keys: '⌘R'),
+        ContextMenuItem('Play from Here', () => _playAt((flag.$1 * WorkspaceController.fps).round())),
+        const ContextMenuItem.rule(),
+        ContextMenuItem('Delete', () {
           wsMarkPicked.value = null;
           ws.after(m.later('mark', number: flag.$1));
         }, keys: '⌫'),
-        const WsMenuItem.rule(),
+        const ContextMenuItem.rule(),
         // A marker has one of the label colours, as in Premiere Pro, DaVinci Resolve and CapCut.
-        WsMenuItem.colors(
+        ContextMenuItem.colors(
           [for (var k = 0; k < 16; k++) wsLabelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
           (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}')),
         ),
       ]);
     }
-    final at = _t.view.frameAt(p.dx).round().clamp(0, Ws.duration) / Ws.fps, taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / Ws.fps);
+    final at = _t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration) / WorkspaceController.fps,
+        taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / WorkspaceController.fps);
     _t.rulerMenu.currentState?.show(p, [
-      WsMenuItem('Add Marker', taken ? null : () => _addMark(at, named: false), why: 'One is here'),
-      WsMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
+      ContextMenuItem('Add Marker', taken ? null : () => _addMark(at, named: false), why: 'One is here'),
+      ContextMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
       if (ws.beats != null)
-        WsMenuItem(
+        ContextMenuItem(
           // Starts a bar here, as in Live.
           'Set 1.1.1 Here',
           () => ws.after(m.later('set', layer: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
@@ -174,7 +175,7 @@ mixin TimelineAsked on State<WsTimeline> {
   }
 
   /// The same menu, opened by a right-click on a row's name.
-  void labelRight(WsLayer l, Offset global) {
+  void labelRight(Layer l, Offset global) {
     final menu = _t.labelMenu.currentState, ws = _t.workspace;
     if (menu == null || ws == null) return;
     menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), wsThingMenu(context, ws, l));
@@ -186,11 +187,11 @@ mixin TimelineAsked on State<WsTimeline> {
   void setMark() {
     final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
-    if (ws.marks.where((k) => (k.$1 * Ws.fps).round() == ws.frame).firstOrNull case (final was, _)?) {
+    if (ws.marks.where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame).firstOrNull case (final was, _)?) {
       wsMarkPicked.value = null;
       return ws.after(m.later('mark', number: was));
     }
-    _addMark(ws.frame / Ws.fps, named: false);
+    _addMark(ws.frame / WorkspaceController.fps, named: false);
   }
 
   void _addMark(double at, {required bool named}) {

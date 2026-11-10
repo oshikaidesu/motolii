@@ -76,7 +76,7 @@ class EffectPlaces extends StatefulWidget {
 }
 
 class EffectPlacesState extends State<EffectPlaces> {
-  final _menu = GlobalKey<WsMenuState>();
+  final _menu = GlobalKey<ContextMenuState>();
   // The deck whose name, or search words, is being edited in its row, as with a Finder folder.
   EffectDeck? _naming;
   // _folded: whether the list was folded before naming began, so it can fold again afterwards.
@@ -158,7 +158,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     c.ws.notice = away > 0 ? 'Added ${d.name}: $away not on this machine' : 'Added ${d.name}';
   }
 
-  void _open(Offset at, List<WsMenuItem> items) {
+  void _open(Offset at, List<ContextMenuItem> items) {
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
   }
@@ -167,17 +167,17 @@ class EffectPlacesState extends State<EffectPlaces> {
   void _plus(BuildContext at) {
     final q = widget.c.query.trim();
     _open((at.findRenderObject() as RenderBox).localToGlobal(Offset.zero), [
-      WsMenuItem('New Deck', newDeck),
-      if (q.isNotEmpty) WsMenuItem('New Deck from “$q”', () => newDeck(words: q)),
-      WsMenuItem('Paste Deck Code', _paste),
+      ContextMenuItem('New Deck', newDeck),
+      if (q.isNotEmpty) ContextMenuItem('New Deck from “$q”', () => newDeck(words: q)),
+      ContextMenuItem('Paste Deck Code', _paste),
     ]);
   }
 
   /// The menu item that sets the deck an effect's right-click adds to. It is on the row's own context menu.
   /// Choosing it again returns the target to the Favorites. Lightroom Classic has the same Set as Target Collection
   /// item, on the Quick Collection too, and unchecking it works the same way.
-  WsMenuItem _aim(EffectDeck? d) =>
-      WsMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
+  ContextMenuItem _aim(EffectDeck? d) =>
+      ContextMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
 
   /// The context menu of the Favorites row, modeled on Lightroom Classic's menu on the Quick Collection:
   /// Set as Target Collection, Save Quick Collection… and Clear Quick Collection
@@ -197,8 +197,8 @@ class EffectPlacesState extends State<EffectPlaces> {
         ];
     _open(at, [
       _aim(null),
-      const WsMenuItem.rule(),
-      WsMenuItem(
+      const ContextMenuItem.rule(),
+      ContextMenuItem(
         'Save Favorites…',
         held.isEmpty
             ? null
@@ -215,7 +215,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                 naming(d);
               },
       ),
-      WsMenuItem('Clear Favorites', held.isEmpty ? null : () => c.unstar(held)),
+      ContextMenuItem('Clear Favorites', held.isEmpty ? null : () => c.unstar(held)),
     ]);
   }
 
@@ -224,15 +224,15 @@ class EffectPlacesState extends State<EffectPlaces> {
     final c = widget.c;
     _open(at, [
       _aim(d),
-      const WsMenuItem.rule(),
-      WsMenuItem('Rename…', () => naming(d)),
-      WsMenuItem('Edit Search…', () => naming(d, search: true)),
-      WsMenuItem('Copy Deck Code', () {
+      const ContextMenuItem.rule(),
+      ContextMenuItem('Rename…', () => naming(d)),
+      ContextMenuItem('Edit Search…', () => naming(d, search: true)),
+      ContextMenuItem('Copy Deck Code', () {
         Clipboard.setData(ClipboardData(text: deckCode(d)));
         c.ws.notice = 'Copied ${d.name}: Paste Deck Code on the + brings it back';
       }),
-      const WsMenuItem.rule(),
-      WsMenuItem(
+      const ContextMenuItem.rule(),
+      ContextMenuItem(
         'Delete',
         () => c.set(() {
           effectDecks().remove(d);
@@ -365,14 +365,14 @@ class EffectPlacesState extends State<EffectPlaces> {
   Widget _held(EffectDeck? d) => _into(
     d,
     (over) => ColoredBox(
-      color: over ? WsT.card : WsT.body,
+      color: over ? WindowTokens.card : WindowTokens.body,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: widget.held.isNotEmpty
             ? widget.held
             : [
                 Padding(
-                  padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WsT.inset, Shape.s(6)),
+                  padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WindowTokens.inset, Shape.s(6)),
                   child: Text(
                     effectTarget() == d ? 'Drag an effect here from the map, or right-click one' : 'Drag an effect here from the map',
                     style: T.label(Grey.g63),
@@ -386,10 +386,10 @@ class EffectPlacesState extends State<EffectPlaces> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c, open = c.mem.open.contains('fx:packs'), deck = _deckAt(c.mem.fxPlace);
-    return WsMenu(
+    return ContextMenu(
       key: _menu,
       child: ColoredBox(
-        color: WsT.body,
+        color: WindowTokens.body,
         child: widget.narrow && !c.mem.fxListOpen && widget.mapped && (deck != null || c.mem.fxPlace == '★')
             ? Column(
                 // Folded to the open deck on the map, with what it holds below, as the browser goes into a category and back.

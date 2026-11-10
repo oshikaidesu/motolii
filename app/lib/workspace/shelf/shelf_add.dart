@@ -59,7 +59,7 @@ String? _headName(String file) {
 
 /// The names already on the shelf that a new item goes to, from the library and the user.
 /// An effect goes to the Effects shelf (dock_effects.dart); an expression ([expression]) goes to Create (dock_make.dart).
-Set<String> shelfTaken(Ws ws, {required bool expression}) {
+Set<String> shelfTaken(WorkspaceController ws, {required bool expression}) {
   if (expression) return createNames(ws);
   final m = ws.inside;
   if (m == null) return const {};
@@ -80,7 +80,7 @@ String _whyNot(String name, Iterable<String> taken) {
 
 /// Adds [code] (the card's current code, read from [from]) to its shelf as [name].
 /// Returns why it could not be added, or '' on success. [taken] holds the names already on that shelf, from the library and the user.
-String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> taken) {
+String shelfAdd(WorkspaceController ws, String from, String code, String name, Iterable<String> taken) {
   name = name.trim();
   if (_whyNot(name, taken) case final why when why.isNotEmpty) return why;
   final ext = from.substring(from.lastIndexOf('.')), expression = shelfIsExpression(from);
@@ -133,7 +133,7 @@ void _beside(String from, String to, String dir) {
 
 /// Renames a file the user added to [to] by writing the name beside it. Returns why it failed, or '' on success.
 /// [taken] holds the shelf's names except this file's own.
-String shelfRename(Ws ws, String file, String to, Iterable<String> taken) {
+String shelfRename(WorkspaceController ws, String file, String to, Iterable<String> taken) {
   to = to.trim();
   if (!shelfAdded(file)) return 'Only what you added can be renamed';
   if (_whyNot(to, taken) case final why when why.isNotEmpty) return why;

@@ -1,4 +1,4 @@
-// The workspace state that every panel reads (Ws): the document's layers as rows, the selection, the playhead and the view.
+// The workspace state that every panel reads (WorkspaceController): the document's layers as rows, the selection, the playhead and the view.
 // What is applied to the canvas is in effects.dart.
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
@@ -28,16 +28,16 @@ bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
 /// Every panel listens to this and nothing else, and never keeps a copy of it.
 /// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
-class Ws extends ChangeNotifier {
+class WorkspaceController extends ChangeNotifier {
   /// One counter per aspect, so a listener of one aspect never hears the others.
-  late final on = {for (final a in WsAspect.values) a: ValueNotifier<int>(0)};
-  void _tell(WsAspect a) {
-    if (a == WsAspect.picked || a == WsAspect.document) _watch();
+  late final on = {for (final a in WorkspaceAspect.values) a: ValueNotifier<int>(0)};
+  void _tell(WorkspaceAspect a) {
+    if (a == WorkspaceAspect.picked || a == WorkspaceAspect.document) _watch();
     on[a]!.value++;
-    notifyListeners(); // WsScope passes the aspect on to the widgets below.
+    notifyListeners(); // WorkspaceScope passes the aspect on to the widgets below.
   }
 
-  final layers = <WsLayer>[];
+  final layers = <Layer>[];
 
   /// The composition's frame rate and length in frames. After [join] they come from the document.
   static int fps = 30, duration = 240;
@@ -129,7 +129,7 @@ class Ws extends ChangeNotifier {
     if (said != null && !said.endsWith('…')) {
       _noticeEnds = Timer(const Duration(seconds: 10), () => notice = null);
     }
-    _tell(WsAspect.notice);
+    _tell(WorkspaceAspect.notice);
   }
 
   /// How many times the document has been read again.
@@ -175,12 +175,12 @@ class Ws extends ChangeNotifier {
   void shown() {
     lastChange = null; // This is not an undo step, so what changed is unknown.
     rev++;
-    _tell(WsAspect.document);
+    _tell(WorkspaceAspect.document);
   }
 
   /// The document's tempo in beats per minute (0 for none), and its beat grid.
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
-  WsBeats? get beats => bpm > 0 ? WsBeats((_inside?.value(0, 'bpm_from', 0) ?? 0) * Ws.fps, 60 / bpm * Ws.fps) : null;
+  Beats? get beats => bpm > 0 ? Beats((_inside?.value(0, 'bpm_from', 0) ?? 0) * WorkspaceController.fps, 60 / bpm * WorkspaceController.fps) : null;
 
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
     > 0 && final r => r,
@@ -221,16 +221,16 @@ class Ws extends ChangeNotifier {
             final name = m.word(t, 'name');
             // A keyframe on any animatable property shows as a keyframe on the bar. The engine says which properties those are.
             final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort();
-            return WsLayer(
+            return Layer(
               '$t',
               name,
               switch (kind) {
-                'text' => WsKind.text,
-                'camera' => WsKind.camera,
-                'film' when wsSound(m, t) => WsKind.audio,
-                'film' || 'picture' => WsKind.image,
-                'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
-                _ => WsKind.shape,
+                'text' => LayerKind.text,
+                'camera' => LayerKind.camera,
+                'film' when wsSound(m, t) => LayerKind.audio,
+                'film' || 'picture' => LayerKind.image,
+                'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => LayerKind.group,
+                _ => LayerKind.shape,
               },
               from,
               _outF(from, lasts),
@@ -256,7 +256,7 @@ class Ws extends ChangeNotifier {
     _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)));
     if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);
     tl.finish();
-    _tell(WsAspect.document);
+    _tell(WorkspaceAspect.document);
   }
 
   /// The engine's preview as a Flutter texture id, when connected. Null means the stand-in artwork.
@@ -265,7 +265,7 @@ class Ws extends ChangeNotifier {
   set stageTexture(int? id) {
     if (id == _stageTexture) return;
     _stageTexture = id;
-    _tell(WsAspect.stage);
+    _tell(WorkspaceAspect.stage);
   }
 
   /// Tells the engine (Motolii.subscribe) which layers' changing values to report: the selected layers, the cameras for the
@@ -278,7 +278,7 @@ class Ws extends ChangeNotifier {
       ?sel,
       for (final id in many) ?int.tryParse(id),
       for (final l in layers)
-        if (l.kind == WsKind.camera) ?int.tryParse(l.id),
+        if (l.kind == LayerKind.camera) ?int.tryParse(l.id),
       for (final l in layers)
         if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
           t, // Relations: the Relations tool panel draws each from its parameters at the current time.
@@ -289,19 +289,19 @@ class Ws extends ChangeNotifier {
 
   String? _sel; // Nothing is selected when a document opens.
   String? get selected => _sel;
-  WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
+  Layer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
 
   /// The layers selected together, outlined in the preview. A relation is made of them. Selecting one layer clears them.
   /// [manyInOrder] is true when they were picked one by one, so the first leads; a box selection has no order.
   final many = <String>{};
   bool manyInOrder = false;
-  final _keys = <WsKey>{};
-  Set<WsKey> get keys => _keys;
+  final _keys = <SelectedKeyframe>{};
+  Set<SelectedKeyframe> get keys => _keys;
 
   /// The stretch selected by clicking its line, like Theatre.js's connector between two keyframes
   /// (BasicKeyframeConnector.tsx, Apache-2.0). It belongs to one property, whereas a keyframe covers every property at that time.
-  WsStretchPicked? _stretch;
-  WsStretchPicked? get stretch => _stretch;
+  StretchPicked? _stretch;
+  StretchPicked? get stretch => _stretch;
 
   /// Selects the layer [id], or clears the selection when null.
   void select(String? id) {
@@ -312,7 +312,7 @@ class Ws extends ChangeNotifier {
     _keys.clear();
     _stretch = null;
     toolPanelManual = null;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
   /// Selects several layers. With [inOrder] the first one leads.
@@ -321,28 +321,28 @@ class Ws extends ChangeNotifier {
       ..clear()
       ..addAll(ids);
     manyInOrder = inOrder;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
   /// Selects one keyframe, or adds it to the selection when [add] is true.
-  void pickKey(WsKey k, {bool add = false}) {
+  void pickKey(SelectedKeyframe k, {bool add = false}) {
     if (!add) _keys.clear();
     _keys.add(k);
     _stretch = null;
     _sel = k.layer;
     toolPanelManual = null;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
   /// Selects exactly these keyframes, for example after a box selection.
-  void pickKeys(Iterable<WsKey> ks) {
+  void pickKeys(Iterable<SelectedKeyframe> ks) {
     _keys
       ..clear()
       ..addAll(ks);
     _stretch = null;
     if (_keys.isNotEmpty) _sel = _keys.first.layer;
     toolPanelManual = null;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
   /// Deselects all keyframes and the selected stretch.
@@ -350,13 +350,13 @@ class Ws extends ChangeNotifier {
     if (_keys.isEmpty && _stretch == null) return;
     _keys.clear();
     _stretch = null;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
-  WsStretchPicked? _stretchOf(String layer, String name, int from) {
+  StretchPicked? _stretchOf(String layer, String name, int from) {
     final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyTimes(t, name) ?? const <double>[];
-    final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
-    return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
+    final i = at.indexWhere((s) => (s * WorkspaceController.fps).round() == from);
+    return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * WorkspaceController.fps).round());
   }
 
   /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
@@ -365,12 +365,12 @@ class Ws extends ChangeNotifier {
     _stretch = _stretchOf(layer, name, from);
     _sel = layer;
     toolPanelManual = null;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
     if (_stretch != null) front('Ease');
   }
 
   /// The playhead frame. It is a separate notifier, so only widgets that show the current time listen to it
-  /// ([WsScope.frameOf]) and the rest of the window is not rebuilt as it moves.
+  /// ([WorkspaceScope.frameOf]) and the rest of the window is not rebuilt as it moves.
   final moment = ValueNotifier<int>(112);
   int get frame => moment.value;
   set frame(int f) {
@@ -389,7 +389,7 @@ class Ws extends ChangeNotifier {
     _inside?.play(p); // The engine keeps the clock and the playhead follows it (see timeline.dart).
     // The clock can run ahead of a preview that is late with its frames, so on stop it returns to the playhead.
     if (!p) _inside?.at(frame / fps);
-    _tell(WsAspect.playing);
+    _tell(WorkspaceAspect.playing);
   }
 
   /// View state by name ('stage.tool', 'fold.Transform'): what a panel keeps of itself that is not part of the document.
@@ -398,11 +398,11 @@ class Ws extends ChangeNotifier {
   void setView(String name, Object? value) {
     if (view[name] == value) return;
     view[name] = value;
-    _tell(WsAspect.view);
+    _tell(WorkspaceAspect.view);
   }
 
   /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
-  bool get freeEye => !viewOf('stage.camera', false) && layers.any((l) => l.kind == WsKind.camera);
+  bool get freeEye => !viewOf('stage.camera', false) && layers.any((l) => l.kind == LayerKind.camera);
 
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
@@ -411,10 +411,10 @@ class Ws extends ChangeNotifier {
   String? toolPanelManual;
 
   /// Every tab in the window, set once by Workspace. The tool panel's catalog is the tabs that do not start in a strip.
-  List<WsPane> panes = const [];
-  List<WsPane> get tools => [
+  List<Pane> panes = const [];
+  List<Pane> get tools => [
     for (final p in panes)
-      if (p.at == WsAt.catalog) p,
+      if (p.at == PaneStrip.catalog) p,
   ];
   void openToolPanel(String? name) {
     toolPanelManual = name;
@@ -424,7 +424,7 @@ class Ws extends ChangeNotifier {
   /// Brings a panel to the front of its tabs (the panels follow, see panes.dart).
   void front(String pane) {
     fronted = (pane, (fronted?.$2 ?? 0) + 1);
-    _tell(WsAspect.fronted);
+    _tell(WorkspaceAspect.fronted);
   }
 
   (String, int)? fronted;
@@ -438,7 +438,7 @@ class Ws extends ChangeNotifier {
   set aim(String? to) {
     if (to == _aim) return;
     _aim = to;
-    _tell(WsAspect.picked);
+    _tell(WorkspaceAspect.picked);
   }
 
   /// Handles a link from another panel to a panel (fonts, colours, ease): the dock or tool panel shows it.
@@ -474,7 +474,7 @@ class Ws extends ChangeNotifier {
   set animating(bool on) {
     _inside?.keying(on);
     if (!on) _lanesShut.clear();
-    _tell(WsAspect.animating);
+    _tell(WorkspaceAspect.animating);
   }
 
   // Which layers show their keyframed properties in lanes under their rows. The user opens them (After Effects' twirl,
@@ -486,7 +486,7 @@ class Ws extends ChangeNotifier {
   void twirl(Iterable<String> ids) {
     final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
     open == animating ? s.addAll(ids) : s.removeAll(ids);
-    _tell(WsAspect.animating);
+    _tell(WorkspaceAspect.animating);
   }
 
   // The open groups. A closed group is one row, like a precomposed layer or Alight Motion's group (the triangle is
@@ -497,10 +497,10 @@ class Ws extends ChangeNotifier {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
     // The group's own keyframe lanes follow it: one triangle per row, as in Apple Motion.
     _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);
-    _tell(WsAspect.animating);
+    _tell(WorkspaceAspect.animating);
   }
 
-  Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
+  Iterable<Layer> _over(Layer l, Map<String, Layer> of) sync* {
     var p = of[l.parent];
     for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {
       // The limit of 64 matches Group's walk up the parents in stage_view_2.dart.
@@ -513,7 +513,7 @@ class Ws extends ChangeNotifier {
     final of = {for (final l in layers) l.id: l}, away = <String, String>{};
     for (final l in layers) {
       for (final p in _over(l, of)) {
-        if (p.kind == WsKind.group && !groupOpen(p.id)) away[l.id] = p.id;
+        if (p.kind == LayerKind.group && !groupOpen(p.id)) away[l.id] = p.id;
       }
     }
     return away;
@@ -522,7 +522,7 @@ class Ws extends ChangeNotifier {
   /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
   List<String> under(String id) {
     final of = {for (final l in layers) l.id: l};
-    if (of[id]?.kind != WsKind.group) return const [];
+    if (of[id]?.kind != LayerKind.group) return const [];
     return [
       for (final l in layers)
         if (_over(l, of).any((p) => p.id == id)) l.id,
@@ -530,7 +530,7 @@ class Ws extends ChangeNotifier {
   }
 
   /// How many groups contain layer [l]. Its row is indented by that many levels.
-  int depth(WsLayer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == WsKind.group).length;
+  int depth(Layer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == LayerKind.group).length;
 
   /// What the undo steps changed since the last read (null when unknown, as after a drag).
   /// A panel showing only some properties rebuilds only when they are among these.
@@ -579,7 +579,7 @@ final wsTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/
 
 /// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.
 /// A text or a flat shape takes all the inks, because the preview draws only those. A line takes its colour only.
-void wsInked(Ws ws, String kind, String shape) {
+void wsInked(WorkspaceController ws, String kind, String shape) {
   final m = ws.inside;
   if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
   final line = shape == 'line';

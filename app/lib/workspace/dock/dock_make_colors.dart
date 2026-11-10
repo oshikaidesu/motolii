@@ -84,7 +84,7 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
   return out;
 }
 
-final _boxMenu = GlobalKey<WsMenuState>();
+final _boxMenu = GlobalKey<ContextMenuState>();
 (String, List<(int, int, int, int)>)? _bentoLaid; // The last layout, keyed by what it was laid out for.
 
 /// The range of the box size slider. The size can be any value in it, not a few steps,
@@ -112,7 +112,7 @@ class Bento extends StatelessWidget {
       final laid = _bentoLaid?.$1 == key ? _bentoLaid!.$2 : _packed(all, cols, bentoDice), moved = _bentoLaid?.$1 != key;
       _bentoLaid = (key, laid);
       final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4)), gap = Shape.s(3);
-      return WsMenu(
+      return ContextMenu(
         key: _boxMenu,
         child: SizedBox(
           height: rows * unit,
@@ -152,14 +152,14 @@ class _ColorBox extends StatelessWidget {
       onMenu: (at) {
         final items = [
           if (own) ...[
-            WsMenuItem(
+            ContextMenuItem(
               'Replace with ${hexOfColor(wheelColor.toColor())}',
               () => c.set(() {
                 ownColors[b.i] = wheelColor.toColor();
                 colorsKeep();
               }),
             ),
-            WsMenuItem(
+            ContextMenuItem(
               'Delete',
               () => c.set(() {
                 ownColors.removeAt(b.i);
@@ -168,7 +168,7 @@ class _ColorBox extends StatelessWidget {
             ),
           ],
           if (pal != null && pal.saved)
-            WsMenuItem(
+            ContextMenuItem(
               'Delete this palette',
               () => c.set(() {
                 ownPalettes.remove(pal);
@@ -238,7 +238,7 @@ class _Grad extends StatelessWidget {
                 // The menu of the user's own gradient, which can be deleted like the user's own colors.
                 final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
                 _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-                  WsMenuItem(
+                  ContextMenuItem(
                     'Delete this gradient',
                     () => c.set(() {
                       ownGradients.remove(g);

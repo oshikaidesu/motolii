@@ -20,22 +20,23 @@ mixin EaseEnds on State<EaseTool> {
   String? trouble;
 
   // Each property keyed at both ends of the span, as (name, key frames, key values, index of the key at the dragged end).
-  Iterable<(String, List<int>, List<double>, int)> _ends(Ws ws, EaseSpan span, bool start) sync* {
+  Iterable<(String, List<int>, List<double>, int)> _ends(WorkspaceController ws, EaseSpan span, bool start) sync* {
     final m = ws.inside!, t = int.parse(span.layer.id);
     for (final name in m.moving(t)) {
       // When one property line is selected, only that property's ends are used.
       if (ws.stretch case final s? when s.name != name) continue;
-      final at = [for (final s in m.keyTimes(t, name)) (s * Ws.fps).round()], vs = m.keyValues(t, name);
+      final at = [for (final s in m.keyTimes(t, name)) (s * WorkspaceController.fps).round()], vs = m.keyValues(t, name);
       final i = at.indexOf(span.from), j = at.indexOf(span.to), k = start ? i : j;
       if (i < 0 || j < 0 || k >= vs.length || j >= vs.length) continue;
       yield (name, at, vs, k);
     }
   }
 
-  Map<String, (double, double, double)> _from(Ws ws, EaseSpan span) => (_endsFrom[ws] ??= {}).putIfAbsent('${spanId(span)}:${span.to}', () => {});
+  Map<String, (double, double, double)> _from(WorkspaceController ws, EaseSpan span) =>
+      (_endsFrom[ws] ??= {}).putIfAbsent('${spanId(span)}:${span.to}', () => {});
 
   // Where the two ends stand on their bars.
-  (double, double) endsOf(Ws ws, EaseSpan? span) {
+  (double, double) endsOf(WorkspaceController ws, EaseSpan? span) {
     if (ws.inside == null || span == null || _from(ws, span).isEmpty) return (0, 1);
     final from = _from(ws, span);
     for (final (name, at, vs, _) in _ends(ws, span, true)) {
@@ -49,12 +50,12 @@ mixin EaseEnds on State<EaseTool> {
   List<(String, List<int>, List<double>, int)>? _pull;
   double? _pullNext;
   bool _pullGoing = false, _pullDone = false;
-  double _toward(Motolii m, EaseSpan span, Ws ws, String name, double was, double by) {
+  double _toward(Motolii m, EaseSpan span, WorkspaceController ws, String name, double was, double by) {
     final shown = m.shown(name), lo = shown?.low ?? -double.infinity, hi = shown?.high ?? double.infinity;
     return (was + by * _from(ws, span)[name]!.$3).clamp(math.min(lo, was), math.max(hi, was));
   }
 
-  void toEnd(Ws ws, EaseSpan? span, bool start, double by, {bool done = false}) {
+  void toEnd(WorkspaceController ws, EaseSpan? span, bool start, double by, {bool done = false}) {
     final m = ws.inside;
     if (m == null || span == null) return;
     if (_pullGoing) {
@@ -75,12 +76,12 @@ mixin EaseEnds on State<EaseTool> {
       for (final (name, at, vs, k) in _pull!) {
         if (easeJump && outside >= 0 && !at.contains(outside)) {
           // With Jump on, add a key one frame outside the end that keeps the value from before the move.
-          m.later('key', layer: t, name: name, word: '${outside / Ws.fps}', number: vs[k]);
+          m.later('key', layer: t, name: name, word: '${outside / WorkspaceController.fps}', number: vs[k]);
         }
       }
     }
     for (final (name, _, vs, k) in _pull!) {
-      m.later('key', layer: t, name: name, word: '${key / Ws.fps}', number: _toward(m, span, ws, name, vs[k], by));
+      m.later('key', layer: t, name: name, word: '${key / WorkspaceController.fps}', number: _toward(m, span, ws, name, vs[k], by));
     }
     if (done) {
       final told = _pull!.length;
@@ -100,7 +101,7 @@ mixin EaseEnds on State<EaseTool> {
 
   // The text shown beside the dragged end: the first property keyed at both ends, with its value and unit as the inspector shows them.
   // After Effects' value graph also shows the value of the point being dragged.
-  String? endSays(Ws ws, EaseSpan? span, bool start, double by) {
+  String? endSays(WorkspaceController ws, EaseSpan? span, bool start, double by) {
     final m = ws.inside;
     if (m == null || span == null) return null;
     final t = int.parse(span.layer.id);

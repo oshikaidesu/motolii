@@ -16,7 +16,7 @@ import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov, 
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
@@ -24,14 +24,14 @@ import 'package:motolii/workspace/top_bar/size_chip.dart';
 import 'package:motolii/workspace/top_bar/timings.dart';
 import 'package:motolii/workspace/top_bar/zoom_readout.dart';
 
-class WsTopBar extends StatelessWidget {
-  const WsTopBar({super.key});
+class TopBar extends StatelessWidget {
+  const TopBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.animating, WsAspect.document, WsAspect.picked});
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.animating, WorkspaceAspect.document, WorkspaceAspect.picked});
     return Container(
-      color: WsT.body,
+      color: WindowTokens.body,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
       child: Row(
         children: [
@@ -55,16 +55,16 @@ class WsTopBar extends StatelessWidget {
           const SizeChip(),
           SizedBox(width: Shape.s(4)),
           Chip(
-            label: '${Ws.fps} fps',
+            label: '${WorkspaceController.fps} fps',
             look: ChipLook.readout(ink: Grey.g76),
           ),
           SizedBox(width: Shape.s(4)),
           Chip(
-            label: ws.timecode(Ws.duration),
+            label: ws.timecode(WorkspaceController.duration),
             look: ChipLook.readout(ink: Grey.g76),
           ),
           const Spacer(),
-          const WsZoomReadout(),
+          const ZoomReadout(),
           const _ShadeSwitch(),
           SizedBox(width: Shape.s(10)),
           const Waited(),
@@ -85,12 +85,12 @@ class _Wordmark extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       Badge(
-        WsT.accent,
+        WindowTokens.accent,
         size: Shape.z(22),
         radius: Radius.zero,
         child: Text(
           'M',
-          style: T.title(WsT.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1),
+          style: T.title(WindowTokens.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1),
         ),
       ),
       SizedBox(width: Shape.s(8)),
@@ -106,7 +106,7 @@ class _Wordmark extends StatelessWidget {
 /// the step, for example "Undo Change Warmth".
 ///
 /// It reads the layers and values that the reloaded project reports as changed.
-String wsStepSaid(Ws ws, String done) {
+String wsStepSaid(WorkspaceController ws, String done) {
   final c = ws.lastChange, m = ws.inside;
   if (c == null || m == null) return done;
   if (c.layers) return '$done: things added or taken away';
@@ -136,7 +136,7 @@ class _UndoRedo extends StatelessWidget {
           rest: const Color(0x00000000),
           ink: Grey.g63,
           onTap: () {
-            final ws = WsScope.read(context), m = ws.inside;
+            final ws = WorkspaceScope.read(context), m = ws.inside;
             if (m == null) return;
             ws.after(
               m.later(flip ? 'redo' : 'undo'),
@@ -209,7 +209,7 @@ void _drawShade(Canvas canvas, Size s, Color c) {
 }
 
 /// When the project file was last written. Every change is written as it is made.
-String _savedAt(Ws ws) {
+String _savedAt(WorkspaceController ws) {
   final f = File('${ws.documentFolder}/${ws.document}');
   if (ws.document == null || !f.existsSync()) return 'Saved';
   final t = f.lastModifiedSync();
@@ -220,7 +220,7 @@ class _Saved extends StatelessWidget {
   const _Saved();
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.notice}), go = ws.noticeGo;
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.notice}), go = ws.noticeGo;
     final said = Text(
       ws.notice ?? _savedAt(ws),
       maxLines: 1,
@@ -230,7 +230,7 @@ class _Saved extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Badge(WsT.accent, size: Shape.z(6), radius: Radius.circular(Shape.z(3))),
+        Badge(WindowTokens.accent, size: Shape.z(6), radius: Radius.circular(Shape.z(3))),
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),
@@ -279,7 +279,7 @@ class _RenderState extends State<_Render> {
 
   void _ask() {
     if (!mounted || _open.isShowing) return;
-    final ws = WsScope.read(context), doc = ws.document ?? 'film.motolii';
+    final ws = WorkspaceScope.read(context), doc = ws.document ?? 'film.motolii';
     _free = _room(ws.documentFolder);
     _name.text = '${doc.replaceFirst(RegExp(r'\.motolii$'), '')}.mp4';
     _open.show();
@@ -298,7 +298,7 @@ class _RenderState extends State<_Render> {
   void _as(String ending) =>
       setState(() => _name.text = '${_name.text.trim().replaceFirst(RegExp(r'\.(mp4|mov|gif|png|jpg)$', caseSensitive: false), '')}$ending');
 
-  void _go(Ws ws) {
+  void _go(WorkspaceController ws) {
     var name = _name.text.trim();
     if (name.isEmpty) return;
     if (!_formats.any((f) => name.toLowerCase().endsWith(f.$2))) name = '$name.mp4';
@@ -309,12 +309,12 @@ class _RenderState extends State<_Render> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document});
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document});
     return OverlayPortal(
       controller: _open,
       overlayChildBuilder: (_) {
         final (from, to) = ws.work;
-        final frames = ((to - from) * Ws.fps).round();
+        final frames = ((to - from) * WorkspaceController.fps).round();
         String t(double s) => '${s.toStringAsFixed(2)} s';
         Widget row(String k, Widget v) => Padding(
           padding: EdgeInsets.only(bottom: Shape.s(8)),
@@ -347,9 +347,9 @@ class _RenderState extends State<_Render> {
                   width: Shape.z(380),
                   padding: EdgeInsets.all(Shape.s(16)),
                   decoration: BoxDecoration(
-                    color: WsT.card,
+                    color: WindowTokens.card,
                     borderRadius: BorderRadius.all(Shape.r(8)),
-                    border: Border.all(color: WsT.line),
+                    border: Border.all(color: WindowTokens.line),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -363,7 +363,7 @@ class _RenderState extends State<_Render> {
                         'File',
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
-                          decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(4))),
+                          decoration: BoxDecoration(color: WindowTokens.well, borderRadius: BorderRadius.all(Shape.r(4))),
                           child: TextGestures(
                             field: (k) => EditableText(
                               key: k,
@@ -371,7 +371,7 @@ class _RenderState extends State<_Render> {
                               controller: _name,
                               focusNode: _focus,
                               style: T.value(Grey.g95),
-                              cursorColor: WsT.accent,
+                              cursorColor: WindowTokens.accent,
                               backgroundCursorColor: Grey.g38,
                               maxLines: 1,
                               onSubmitted: (_) => _go(ws),
@@ -389,7 +389,7 @@ class _RenderState extends State<_Render> {
                         ),
                       ),
                       row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
-                      row('Size', fact('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}')),
+                      row('Size', fact('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}')),
                       // Export settings, stored in the project as in Alight Motion. A value of 0 matches the preview.
                       for (final (label, name, choices) in [
                         (
@@ -398,16 +398,16 @@ class _RenderState extends State<_Render> {
                           [
                             (0, 'Full'),
                             for (final p in sizeResolutions)
-                              if (p < math.min(WsArt.comp.width, WsArt.comp.height)) (p, '${p}p'),
+                              if (p < math.min(ArtGeometry.comp.width, ArtGeometry.comp.height)) (p, '${p}p'),
                           ],
                         ),
                         (
                           'Rate',
                           'render_rate',
                           [
-                            (0, '${Ws.fps}'),
+                            (0, '${WorkspaceController.fps}'),
                             for (final r in const [30, 24, 15])
-                              if (r < Ws.fps) (r, '$r'),
+                              if (r < WorkspaceController.fps) (r, '$r'),
                           ],
                         ),
                         (

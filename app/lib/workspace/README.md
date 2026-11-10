@@ -7,7 +7,7 @@
 | 場所 | 中身 |
 |---|---|
 | `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く |
-| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `Ws`、`effects.dart` に掛かった効果（`WsFx`）、`workspace_scope.dart` に `WsScope`、`workspace_aspect.dart` 聞く面 `WsAspect`、`layer.dart` レイヤー `WsLayer` と種類の色 `wsTone`、`pane.dart` タブ `WsPane`、`art_scene.dart` Stage の絵の寸法と箱（`WsArt`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WsZoom` |
+| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `WorkspaceController`、`effects.dart` に掛かった効果（`WorkspaceEffects`）、`workspace_scope.dart` に `WorkspaceScope`、`workspace_aspect.dart` 聞く面 `WorkspaceAspect`、`layer.dart` レイヤー `Layer` と種類の色 `wsTone`、`pane.dart` タブ `Pane`、`art_scene.dart` Stage の絵の寸法と箱（`ArtGeometry`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WindowZoom` |
 | `easing/` | イージングそのもの：`ease.dart` `Ease` とプリセット、`ease_text.dart` 文書に書く文字の形、`ease_curve.dart` 重ねたカードの曲線と式 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`home.dart` プロジェクトを選ぶ最初の画面、`zoom.dart` 画面全体を拡大率で描く |
 | `top_bar/` | 上のバー：`top_bar.dart`、`size_chip.dart` 画面の大きさ、`zoom_readout.dart` 拡大率の表示、`timings.dart` エンジンにかかった時間 |
@@ -21,24 +21,24 @@
 | `tool_panel/` | Inspector の下のツールパネル（Ease、Align、Blend …） |
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`state/pane.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/workspace_state.dart`・`state/workspace_scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`Pane`（`state/pane.dart`。アイコンは `DockG` か null）、`WorkspaceController`・`WorkspaceScope`（`state/workspace_state.dart`・`state/workspace_scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
 ```dart
 Workspace(document: path, extra: [
-  WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)
+  Pane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)
 ])
 ```
 - 足したパネルは Inspector の横にタブで並ぶ。本家のファイルは 1 行も変えない。
-- パネルの中では `WsScope.of(context)` がアプリの状態（`Ws`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WsScope.of(context, {WsAspect.picked})`。再生ヘッドは `WsScope.frameOf(context)`）：`inside` がプロジェクト（`Motolii`）、`selected` が選ばれたレイヤー、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
+- パネルの中では `WorkspaceScope.of(context)` がアプリの状態（`WorkspaceController`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WorkspaceScope.of(context, {WorkspaceAspect.picked})`。再生ヘッドは `WorkspaceScope.frameOf(context)`）：`inside` がプロジェクト（`Motolii`）、`selected` が選ばれたレイヤー、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
 - レイヤーをプレビューの上で動かす（画素で）：`inside.take(t)`、`inside.dragUpdate('place', 10, 0)`、`inside.later('drag_end', number: 1)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyTimes(t, name).length`。
-- 気をつける 4 つ：選ばれたレイヤー `selected` は文字なので `int.parse` してからエンジンに渡す。今の秒は `frame / Ws.fps`。レイヤーの名前は `inside.word(t, 'name')`。プロジェクトを変えたら `ws.reread()`（アプリの他のパネルが読み直す）。
+- 気をつける 4 つ：選ばれたレイヤー `selected` は文字なので `int.parse` してからエンジンに渡す。今の秒は `frame / WorkspaceController.fps`。レイヤーの名前は `inside.word(t, 'name')`。プロジェクトを変えたら `ws.reread()`（アプリの他のパネルが読み直す）。
 
 ## 自分のツールパネルの道具を足す
 ```dart
 Workspace(document: path, extra: [
-  WsPane('Snap', null, MySnap.new, at: WsAt.catalog, tone: Color(0xFF55AA88), acts: 'Picked thing'),   // (名前、アイコン、中身、置き場所＝道具の棚、色、何に効くか)
+  Pane('Snap', null, MySnap.new, at: PaneStrip.catalog, tone: Color(0xFF55AA88), acts: 'Picked thing'),   // (名前、アイコン、中身、置き場所＝道具の棚、色、何に効くか)
 ])
 ```
-- アプリの道具の後ろに並び、選ぶとツールパネルがその `build` を出す。アイコンは頭文字。中では パネルと同じく `WsScope.of(context)`。
+- アプリの道具の後ろに並び、選ぶとツールパネルがその `build` を出す。アイコンは頭文字。中では パネルと同じく `WorkspaceScope.of(context)`。
 
 ## 自分のプリセット（Ease の動き方）を足す
 プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ease/` にファイルを 1 つ置くと、どのプロジェクトでも Ease のツールパネルにタイルで出る。Motolii が持って来る見本は `shelves/ease/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
@@ -69,8 +69,8 @@ $F/flutter analyze lib
 - アプリの文字は英語。会話と文書は日本語。
 
 ## トンマナ(Pop)
-- 値は `WsT`(アプリ、`lib/skin/window_tokens.dart`)と `Pop`(Inspector、`lib/skin/inspector_tokens.dart`)と `Grey` / `T`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
-- 箱(パネル・カード)は四角く、隙間なく並べる(間は `WsT.gutter` の暗い線)。触る物と読む物(欄・チップ・ボタン)は丸い。
+- 値は `WindowTokens`(アプリ、`lib/skin/window_tokens.dart`)と `Pop`(Inspector、`lib/skin/inspector_tokens.dart`)と `Grey` / `T`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
+- 箱(パネル・カード)は四角く、隙間なく並べる(間は `WindowTokens.gutter` の暗い線)。触る物と読む物(欄・チップ・ボタン)は丸い。
 - 色は平らで不透明。アクセントはライム 1 色(`#B3C66B`、上の文字は `#15170D`)。再生ヘッドもアクセント。
 - レイヤーの種類ごとに色を 1 つ(`wsTone`)。Timeline のバー、Dock、Stage で同じ色を使う。
 
@@ -78,14 +78,14 @@ $F/flutter analyze lib
 - 上のバーの半円ボタン(key `ws-shade`)で切り替える。`Grey.shade`(`ValueNotifier<Shade>`)を反転して `reassembleApplication()` でアプリ全体を建て直す。State は残るので編集中の内容は消えない。
 - **Workspace と Inspector(`lib/inspector/`)では灰色を `Grey.g07` などで取る。`N.g07` は使わない。** `N` は古い研究ページ用の暗い段で、テーマに追従しない(そのページは Dark のみ)。
 - `Grey` は `N` と同じ名前の段を持つ。役割(地・パネル・カード・欄・線・控えめな文字・文字)は両テーマで同じで、明るさだけが逆になる。Light ではカードが一番明るく、文字が一番暗い。
-- テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WsT.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
-- アクセントは塗りなら `WsT.accent` / `Pop.accent`。**線や文字として地の上に描くときは `accentInk`**(Light ではライムが白に溶けるので濃いオリーブ)。再生ヘッドの線は `accentInk`、頭の札は `accent`。
+- テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WindowTokens.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
+- アクセントは塗りなら `WindowTokens.accent` / `Pop.accent`。**線や文字として地の上に描くときは `accentInk`**(Light ではライムが白に溶けるので濃いオリーブ)。再生ヘッドの線は `accentInk`、頭の札は `accent`。
 - 種類の色(`tone*`)はテーマで変えない。
 - `T.name()` などの文字色の既定は `Grey` から取る。暗すぎる・薄すぎる文字の補正(`T._floor`)もテーマごとに向きが逆。
 
 ## 決まっていること(利用者の裁定)
 - **Media と Files は一つの棚(Media)。** AEViewer 2 型: 左(狭い時は上)に場所(Project / Home / Desktop / Downloads)とフォルダだけの木、右に開いているフォルダの中身をサムネイルかリストで。フォルダのタイルを押すとそのフォルダを開く。パンくずの各段も押せる。検索は今いる場所の中を全部探し、結果に入っているフォルダ名を添える。サムネイルの格子は捨てない。
-- **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。棚のタブを前に出すのは `Ws.front(name)`(`Ws.route` も同じ呼び出し)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
+- **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。棚のタブを前に出すのは `WorkspaceController.front(name)`(`WorkspaceController.route` も同じ呼び出し)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
 - **初期配置**: 棚のタブの列・Inspector・Timeline・Tool Panel は基準の px で始め、Stage が残りを取る。`multi_split_view` は size を weight に直して足し合わせるので、残りを取るペインには weight を付けない。
 - **ペインは広げたら得をする。** 列を固定して引き伸ばさない。
   - 格子は `wsCols(幅, セルの幅)` で列数を決め、`wsCell` でセルの幅を割り出す(Create のタイル、Colors の色見本、Tool Panel の道具)。
@@ -93,8 +93,8 @@ $F/flutter analyze lib
   - Fonts は 440px 以上で見本の大きいカード、狭いと行。Media は 440px 以上で木が左、狭いと上。
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
   - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
-- **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`LinkLine` → `Ws.route`)。
-- **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `WsArt.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
+- **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`LinkLine` → `WorkspaceController.route`)。
+- **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `ArtGeometry.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
 - **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。
 - **テキストは普通に**: 入力欄、その下にサイズ・太さ・色。
@@ -103,7 +103,7 @@ $F/flutter analyze lib
 - **フィルター帯は Motolii 本体の草案に合わせる**: グループ同士は AND、グループ内は OR。クリックで 1 つ、Cmd/Ctrl-クリックで追加・解除。残る件数を札に出し、0 件になる札は押せない。件数と Clear は帯の一番下。**帯の高さは利用者が決める**(下端のグリップを上下にドラッグ、ダブルクリックで 168px に戻る)。
 
 ## 変えるときの作法
-- パネルをまたぐ情報は `Ws` に足す。パネルどうしで import し合わない。Stage の絵の寸法と箱（`WsArt`・`ArtScene`）も `state/art_scene.dart` にあり、どのパネルからも読める。
+- パネルをまたぐ情報は `WorkspaceController` に足す。パネルどうしで import し合わない。Stage の絵の寸法と箱（`ArtGeometry`・`ArtScene`）も `state/art_scene.dart` にあり、どのパネルからも読める。
 - コメントは、コードから読めない制約だけを書く(`contract:` で始まる行がそれ)。
 - 区切りごとにコミットする(履歴が無いのが一番怖い、が利用者の方針)。
 

@@ -34,12 +34,12 @@ class RelationMarks extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([
-      WsScope.read(context).on[WsAspect.document],
-      WsScope.read(context).on[WsAspect.picked],
-      WsScope.read(context).seen,
+      WorkspaceScope.read(context).on[WorkspaceAspect.document],
+      WorkspaceScope.read(context).on[WorkspaceAspect.picked],
+      WorkspaceScope.read(context).seen,
     ]), // Where the layers are in the preview shown.
     builder: (context, _) {
-      final ws = WsScope.read(context), m = ws.inside;
+      final ws = WorkspaceScope.read(context), m = ws.inside;
       Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(scene.box(id)!.c);
       final picked = [
         for (final id in ws.many)
@@ -54,10 +54,10 @@ class RelationMarks extends StatelessWidget {
       ];
       final now = m?.now ?? 0;
       // Converts between a point in stage units and a point on the screen.
-      Offset screen(double x, double y) => v.toScreen(Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point));
+      Offset screen(double x, double y) => v.toScreen(Offset(ArtGeometry.comp.width / 2 + x * m!.point, ArtGeometry.comp.height / 2 - y * m.point));
       (double, double) units(Offset p) {
         final c = v.toComp(p);
-        return ((c.dx - WsArt.comp.width / 2) / m!.point, (WsArt.comp.height / 2 - c.dy) / m.point);
+        return ((c.dx - ArtGeometry.comp.width / 2) / m!.point, (ArtGeometry.comp.height / 2 - c.dy) / m.point);
       }
 
       final shape = <_Shape>[];
@@ -87,11 +87,11 @@ class RelationMarks extends StatelessWidget {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: WsT.onAccent,
+                color: WindowTokens.onAccent,
                 shape: BoxShape.circle,
-                border: Border.all(color: WsT.accent, width: 2),
+                border: Border.all(color: WindowTokens.accent, width: 2),
               ),
-              child: CustomPaint(painter: _GlyphPaint(key == 'centre' ? 'cross' : 'arrow', WsT.accent)),
+              child: CustomPaint(painter: _GlyphPaint(key == 'centre' ? 'cross' : 'arrow', WindowTokens.accent)),
             ),
           ),
         );
@@ -191,14 +191,14 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: p.dx + 12,
               top: p.dy - 24,
-              child: Badge.round(WsT.accent, onTap: () => wsFree(ws, id), key: ValueKey('ws-free-$id'), mark: _GlyphPaint('x', WsT.onAccent)),
+              child: Badge.round(WindowTokens.accent, onTap: () => wsFree(ws, id), key: ValueKey('ws-free-$id'), mark: _GlyphPaint('x', WindowTokens.onAccent)),
             ), // Removes this layer from the relation where it stands; the others stay.
             if ((kind == 'follow' || kind == 'push') && id != leader)
               Positioned(
                 left: p.dx - 24,
                 top: p.dy - 24,
                 child: Badge.round(
-                  WsT.body.withValues(alpha: .7),
+                  WindowTokens.body.withValues(alpha: .7),
                   onTap: () => wsLead(ws, id),
                   key: ValueKey('ws-lead-$id'),
                   mark: _GlyphPaint('crown', Grey.g63),
@@ -209,7 +209,7 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: l.dx - 24,
               top: l.dy - 24,
-              child: Badge.round(WsT.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPaint('crown', WsT.onAccent)),
+              child: Badge.round(WindowTokens.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPaint('crown', WindowTokens.onAccent)),
             ), // The leader.
           // The middle of a ring or a row may be a layer: show a faint crown on each other layer, and clicking one makes it the middle.
           if (isRelation && (kind == 'around' || kind == 'row'))
@@ -219,7 +219,7 @@ class RelationMarks extends StatelessWidget {
                   left: on(l.id)!.dx - 24,
                   top: on(l.id)!.dy - 24,
                   child: Badge.round(
-                    WsT.body.withValues(alpha: .7),
+                    WindowTokens.body.withValues(alpha: .7),
                     onTap: () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
                     key: ValueKey('ws-lead-${l.id}'),
                     mark: _GlyphPaint('crown', Grey.g63),
@@ -230,7 +230,12 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: on(ws.many.first)!.dx - 24,
               top: on(ws.many.first)!.dy - 24,
-              child: Badge.round(WsT.body.withValues(alpha: .7), onTap: () {}, key: const ValueKey('ws-leader-to-be'), mark: _GlyphPaint('crown', Grey.g63)),
+              child: Badge.round(
+                WindowTokens.body.withValues(alpha: .7),
+                onTap: () {},
+                key: const ValueKey('ws-leader-to-be'),
+                mark: _GlyphPaint('crown', Grey.g63),
+              ),
             ),
           // Tags for the relations the selected layer belongs to, the top one first. Clicking a tag selects that relation.
           if (sel != null && tags.isNotEmpty)
@@ -277,7 +282,7 @@ class RelationMarks extends StatelessWidget {
                             onTap: () => wsSwitch(ws),
                             glyph: (_) => Glyph(
                               (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff,
-                              color: WsT.onAccent,
+                              color: WindowTokens.onAccent,
                               size: Shape.z(12),
                               fade: true,
                             ),
@@ -332,13 +337,13 @@ class _MarksPainter extends CustomPainter {
   final List<_Shape> shape;
   @override
   void paint(Canvas c, Size s) {
-    final ink = linePaint(WsT.accent, 1.5);
+    final ink = linePaint(WindowTokens.accent, 1.5);
     if (lasso case final l? when l.length > 1) c.drawPath(Path()..addPolygon(l, false), ink);
     for (final p in at) {
       c.drawCircle(p, 14, ink);
     }
     for (final sh in shape) {
-      final thin = linePaint(WsT.accent.withValues(alpha: sh.off ? .25 : .8));
+      final thin = linePaint(WindowTokens.accent.withValues(alpha: sh.off ? .25 : .8));
       final path = sh.b == null
           ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r)))
           : (Path()
@@ -359,16 +364,16 @@ class _MarksPainter extends CustomPainter {
 /// The relations the selected layer belongs to, at the top of its inspector, the one in effect first (as Blender stacks constraints).
 /// Each row shows an on/off dot, the relation's kind and its leader, and an x that removes the layer from the relation.
 /// Clicking a row selects that relation.
-class WsRelationStack extends StatelessWidget {
-  const WsRelationStack({super.key});
+class RelationStack extends StatelessWidget {
+  const RelationStack({super.key});
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([WsScope.read(context).on[WsAspect.document], WsScope.read(context).on[WsAspect.picked]]),
+    listenable: Listenable.merge([WorkspaceScope.read(context).on[WorkspaceAspect.document], WorkspaceScope.read(context).on[WorkspaceAspect.picked]]),
     builder: (context, _) => _built(context),
   ); // Listens on its own so the inspector is not rebuilt when a value of another layer changes.
 
   Widget _built(BuildContext context) {
-    final ws = WsScope.read(context), m = ws.inside, t = ws.selected;
+    final ws = WorkspaceScope.read(context), m = ws.inside, t = ws.selected;
     if (m == null || t == null) return const SizedBox.shrink();
     final rels = wsRelationsOf(ws), top = wsWinner(ws);
     if (rels.isEmpty) return const SizedBox.shrink();
@@ -490,7 +495,7 @@ class Hud extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: StageTokens.hud,
     padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-    decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+    decoration: BoxDecoration(color: WindowTokens.card, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -499,7 +504,7 @@ class Hud extends StatelessWidget {
           width: 1,
           height: Shape.z(10),
           margin: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-          color: WsT.line,
+          color: WindowTokens.line,
         ),
         ValueListenableBuilder<Offset?>(
           valueListenable: cursor,
@@ -531,12 +536,12 @@ class StageNavigator extends StatelessWidget {
   final int? texture;
   @override
   Widget build(BuildContext context) {
-    final h = StageTokens.mapW * WsArt.comp.height / WsArt.comp.width;
+    final h = StageTokens.mapW * ArtGeometry.comp.height / ArtGeometry.comp.width;
     return Container(
       width: StageTokens.mapW + 8,
       height: h + 8,
       padding: EdgeInsets.all(Shape.s(4)),
-      color: WsT.card,
+      color: WindowTokens.card,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -554,13 +559,13 @@ class _MapPainter extends CustomPainter {
   final Rect shown;
   @override
   void paint(Canvas c, Size s) {
-    final k = s.width / WsArt.comp.width;
+    final k = s.width / ArtGeometry.comp.width;
     c.save();
     c.clipRect(Offset.zero & s);
     c.scale(k);
     c.restore();
     final r = Rect.fromLTRB(shown.left * k, shown.top * k, shown.right * k, shown.bottom * k).intersect(Offset.zero & s);
-    c.drawRect(r.deflate(.75), linePaint(WsT.accent, 1.5));
+    c.drawRect(r.deflate(.75), linePaint(WindowTokens.accent, 1.5));
   }
 
   @override
@@ -584,7 +589,7 @@ class PointsPainter extends CustomPainter {
   final List<(Offset, Offset)> handles;
   @override
   void paint(Canvas c, Size _) {
-    final edge = linePaint(WsT.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
+    final edge = linePaint(WindowTokens.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
       if ((h - o).distance < 1) continue;
       c

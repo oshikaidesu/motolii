@@ -2,7 +2,7 @@
 //
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
-// Colors come from WsT, so both the light and dark shades apply.
+// Colors come from WindowTokens, so both the light and dark shades apply.
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
@@ -16,32 +16,32 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
-class WsPanes extends StatefulWidget {
-  const WsPanes({super.key, required this.panes, required this.preset});
-  final List<WsPane> panes;
+class Panes extends StatefulWidget {
+  const Panes({super.key, required this.panes, required this.preset});
+  final List<Pane> panes;
 
   /// Builds the arrangement a new window starts with.
-  final DockingArea Function(DockingArea Function(WsAt at, {double? size}) strip) preset;
+  final DockingArea Function(DockingArea Function(PaneStrip at, {double? size}) strip) preset;
   @override
-  State<WsPanes> createState() => _WsPanesState();
+  State<Panes> createState() => _PanesState();
 }
 
-class _WsPanesState extends State<WsPanes> {
+class _PanesState extends State<Panes> {
   late final _layout = DockingLayout(root: widget.preset(_strip));
-  Ws? _ws;
+  WorkspaceController? _ws;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final ws = WsScope.read(context);
+    final ws = WorkspaceScope.read(context);
     if (ws == _ws) return;
-    _ws?.on[WsAspect.fronted]!.removeListener(_follow);
-    _ws = ws..on[WsAspect.fronted]!.addListener(_follow);
+    _ws?.on[WorkspaceAspect.fronted]!.removeListener(_follow);
+    _ws = ws..on[WorkspaceAspect.fronted]!.addListener(_follow);
   }
 
   @override
   void dispose() {
-    _ws?.on[WsAspect.fronted]!.removeListener(_follow);
+    _ws?.on[WorkspaceAspect.fronted]!.removeListener(_follow);
     super.dispose();
   }
 
@@ -64,7 +64,7 @@ class _WsPanesState extends State<WsPanes> {
   }
 
   /// The panes that start at [at], in list order: a single pane is returned as it is, several become a tab strip.
-  DockingArea _strip(WsAt at, {double? size}) {
+  DockingArea _strip(PaneStrip at, {double? size}) {
     final here = [
       for (final p in widget.panes)
         if (p.at == at) p,
@@ -72,7 +72,7 @@ class _WsPanesState extends State<WsPanes> {
     return here.length == 1 ? _item(here.single, size: size) : DockingTabs([for (final p in here) _item(p)], size: size);
   }
 
-  DockingItem _item(WsPane p, {double? size}) {
+  DockingItem _item(Pane p, {double? size}) {
     final name = p.name;
     return DockingItem(
       id: name,
@@ -91,7 +91,7 @@ class _WsPanesState extends State<WsPanes> {
           ),
         ),
       ),
-      widget: WsPanel(child: p.build()),
+      widget: Panel(child: p.build()),
       size: size,
       minimalSize: p.minSize,
       keepAlive: true,
@@ -106,8 +106,8 @@ class _WsPanesState extends State<WsPanes> {
     data: _tabs(),
     child: MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
-        dividerThickness: WsT.gutter * 2,
-        dividerPainter: DividerPainters.background(color: WsT.ground, highlightedColor: WsT.accentInk),
+        dividerThickness: WindowTokens.gutter * 2,
+        dividerPainter: DividerPainters.background(color: WindowTokens.ground, highlightedColor: WindowTokens.accentInk),
       ),
       child: Docking(layout: _layout, maximizableItem: false, maximizableTab: false, maximizableTabsArea: false),
     ),
@@ -120,12 +120,12 @@ TabbedViewThemeData _tabs() {
   final t = Grey.light ? TabbedViewThemeData.minimalist() : TabbedViewThemeData.dark();
   final plain = Forms.worn.plainTabs;
   t.tabsArea
-    ..color = WsT.ground
+    ..color = WindowTokens.ground
     ..border = null
     ..initialGap = 0
-    ..middleGap = plain ? Shape.s(2) : WsT.gutter
+    ..middleGap = plain ? Shape.s(2) : WindowTokens.gutter
     ..gapBottomBorder = BorderSide.none
-    ..dropColor = WsT.accent.withValues(alpha: .35)
+    ..dropColor = WindowTokens.accent.withValues(alpha: .35)
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91;
   t.tab
@@ -135,23 +135,23 @@ TabbedViewThemeData _tabs() {
     ..innerBottomBorder = null
     ..innerTopBorder = null
     ..textStyle = T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w600, letterSpacing: .6)
-    ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WsT.card)
-    ..draggingDecoration = BoxDecoration(color: plain ? WsT.body : WsT.raised)
+    ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WindowTokens.card)
+    ..draggingDecoration = BoxDecoration(color: plain ? WindowTokens.body : WindowTokens.raised)
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91
     ..selectedStatus = (TabStatusThemeData()
       ..decoration = plain
           ? const BoxDecoration()
           : BoxDecoration(
-              color: WsT.body,
-              border: Border(bottom: BorderSide(color: WsT.accentInk, width: 2)),
+              color: WindowTokens.body,
+              border: Border(bottom: BorderSide(color: WindowTokens.accentInk, width: 2)),
             )
       ..fontColor = Grey.g95)
     ..highlightedStatus = (TabStatusThemeData()
-      ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WsT.raised)
+      ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WindowTokens.raised)
       ..fontColor = Grey.g91);
   t.contentArea
-    ..decoration = BoxDecoration(color: WsT.body)
+    ..decoration = BoxDecoration(color: WindowTokens.body)
     ..padding = EdgeInsets.zero;
   return t;
 }

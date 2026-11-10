@@ -14,9 +14,9 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The span of time the easing shapes: from the first selected keyframe to the layer's next keyframe.
-typedef EaseSpan = ({WsLayer layer, int from, int to, int picked});
+typedef EaseSpan = ({Layer layer, int from, int to, int picked});
 
-EaseSpan? easeSpan(Ws ws) {
+EaseSpan? easeSpan(WorkspaceController ws) {
   if (ws.stretch case final s?) {
     if (ws.layers.where((l) => l.id == s.layer).firstOrNull case final l?) return (layer: l, from: s.from, to: s.to, picked: 1);
   }
@@ -54,7 +54,7 @@ class EaseTool extends StatefulWidget {
 }
 
 /// The properties of the span's layer that have a keyframe where the span begins, each with the time of that keyframe.
-Map<String, double> keysAt(Ws ws, EaseSpan span) {
+Map<String, double> keysAt(WorkspaceController ws, EaseSpan span) {
   final m = ws.inside!, t = int.parse(span.layer.id);
   // When a single property line is selected, only that property counts.
   if (ws.stretch case final s?) return {s.name: s.at};
@@ -70,7 +70,7 @@ Map<String, double> _keysAt(Motolii m, int t, EaseSpan span) {
   return {
     for (final name in m.moving(t))
       for (final s in m.keyTimes(t, name))
-        if ((s * Ws.fps).round() == span.from) name: s,
+        if ((s * WorkspaceController.fps).round() == span.from) name: s,
   };
 }
 
@@ -79,7 +79,7 @@ Map<String, double> _keysAt(Motolii m, int t, EaseSpan span) {
 ///
 /// The result is recomputed only when the document is read again, so a newly defined easing shows at once.
 final _untiledOf = Expando<(String, List<Ease>)>();
-List<Ease> easingsWithoutTile(Ws ws) {
+List<Ease> easingsWithoutTile(WorkspaceController ws) {
   final m = ws.inside;
   if (m == null) return const [];
   if (_untiledOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles;

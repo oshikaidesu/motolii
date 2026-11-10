@@ -12,7 +12,7 @@ abstract final class Usual {
   static Widget segment(BuildContext context, ChoiceSpec c) => Container(
     height: Shape.z(20),
     padding: EdgeInsets.all(Shape.s(2)),
-    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+    decoration: BoxDecoration(color: WindowTokens.well, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -24,10 +24,13 @@ abstract final class Usual {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: i == c.selected ? WsT.accent : (h ? WsT.raised : WsT.well),
-                borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+                color: i == c.selected ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.well),
+                borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
               ),
-              child: Text(c.labels[i], style: T.label(i == c.selected ? WsT.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600)),
+              child: Text(
+                c.labels[i],
+                style: T.label(i == c.selected ? WindowTokens.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
       ],
@@ -38,11 +41,14 @@ abstract final class Usual {
   static Widget flag(BuildContext context, FlagSpec f) => Hov(
     onTap: f.onTap,
     builder: (_, h) {
-      final ink = f.on ? WsT.accent : (h ? Grey.g91 : Grey.g56);
+      final ink = f.on ? WindowTokens.accent : (h ? Grey.g91 : Grey.g56);
       return Container(
         height: Shape.z(20),
         padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(8)),
-        decoration: BoxDecoration(color: f.on ? Grey.g26 : (h ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+        decoration: BoxDecoration(
+          color: f.on ? Grey.g26 : (h ? WindowTokens.raised : WindowTokens.well),
+          borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -63,7 +69,7 @@ abstract final class Usual {
     height: Shape.z(28),
     child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(2), WsT.inset, Shape.s(6)),
+      padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(2), WindowTokens.inset, Shape.s(6)),
       child: Row(
         children: [
           for (final (name, n) in c.chips) ...[
@@ -76,18 +82,24 @@ abstract final class Usual {
                   curve: Mo.ease,
                   height: Shape.z(20),
                   padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-                  decoration: BoxDecoration(color: on ? WsT.accent : (h ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+                  decoration: BoxDecoration(
+                    color: on ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.well),
+                    borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(name, style: T.micro(on ? WsT.onAccent : Grey.g91).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
-                      if (n != null) ...[SizedBox(width: Shape.s(4)), Text('$n', style: T.value(on ? WsT.onAccent : Grey.g56).copyWith(fontSize: T.px(10)))],
+                      Text(name, style: T.micro(on ? WindowTokens.onAccent : Grey.g91).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
+                      if (n != null) ...[
+                        SizedBox(width: Shape.s(4)),
+                        Text('$n', style: T.value(on ? WindowTokens.onAccent : Grey.g56).copyWith(fontSize: T.px(10))),
+                      ],
                     ],
                   ),
                 );
               },
             ),
-            SizedBox(width: WsT.gap),
+            SizedBox(width: WindowTokens.gap),
           ],
         ],
       ),
@@ -156,7 +168,7 @@ abstract final class Usual {
                       top: 0,
                       bottom: 0,
                       width: Shape.z(3),
-                      child: ColoredBox(color: WsT.accent),
+                      child: ColoredBox(color: WindowTokens.accent),
                     ),
                   row,
                 ],

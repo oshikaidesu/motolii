@@ -10,16 +10,16 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 
 /// Moves the keyframes [keys] (each a row and a frame) [by] frames later, or earlier when [by] is negative.
-void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
+void wsSlideKeys(WorkspaceController ws, Iterable<SelectedKeyframe> keys, int by) {
   final m = ws.inside;
   if (m == null || by == 0 || keys.isEmpty) return;
   final moves = <(int, String, double, double, double, String)>[]; // (layer, property, from, to, value, easing)
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
-    final at = k.frame / Ws.fps, to = (k.frame + by).clamp(0, Ws.duration) / Ws.fps;
+    final at = k.frame / WorkspaceController.fps, to = (k.frame + by).clamp(0, WorkspaceController.duration) / WorkspaceController.fps;
     for (final n in m.moving(t)) {
-      if (!m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) continue;
+      if (!m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) continue;
       moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
@@ -36,16 +36,16 @@ void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
 }
 
 /// Removes the selected keyframes, and those of the other properties of the layer at the same time, as one undo step.
-void wsRemoveKeys(Ws ws, Iterable<WsKey> keys) {
+void wsRemoveKeys(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
   final m = ws.inside;
   if (m == null || keys.isEmpty) return;
   m.later('together', number: 1);
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
-    final at = k.frame / Ws.fps;
+    final at = k.frame / WorkspaceController.fps;
     for (final n in m.moving(t)) {
-      if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) m.later('unkey', layer: t, name: n, number: at);
+      if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) m.later('unkey', layer: t, name: n, number: at);
     }
   }
   ws.clearKeys();
@@ -57,7 +57,7 @@ void wsRemoveKeys(Ws ws, Iterable<WsKey> keys) {
 List<(String, int, double, String)> wsKeysKept = const [];
 
 /// Copies the selected keyframes, as Copy and Paste of keyframes do in After Effects.
-void wsCopyKeys(Ws ws, Iterable<WsKey> keys) {
+void wsCopyKeys(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
   final m = ws.inside;
   if (m == null || keys.isEmpty) return;
   final first = keys.map((k) => k.frame).reduce((a, b) => a < b ? a : b);
@@ -65,18 +65,18 @@ void wsCopyKeys(Ws ws, Iterable<WsKey> keys) {
     for (final k in keys)
       if (int.tryParse(k.layer) case final t?)
         for (final n in m.moving(t))
-          if (m.keyTimes(t, n).any((s) => (s - k.frame / Ws.fps).abs() < .5 / Ws.fps))
-            (n, k.frame - first, m.value(t, n, k.frame / Ws.fps) ?? 0, m.easingOf(t, n, k.frame / Ws.fps)),
+          if (m.keyTimes(t, n).any((s) => (s - k.frame / WorkspaceController.fps).abs() < .5 / WorkspaceController.fps))
+            (n, k.frame - first, m.value(t, n, k.frame / WorkspaceController.fps) ?? 0, m.easingOf(t, n, k.frame / WorkspaceController.fps)),
   ];
 }
 
 /// Pastes the copied keyframes onto the selected layer as one undo step, the first at the playhead, and selects them.
-void wsPasteKeys(Ws ws) {
+void wsPasteKeys(WorkspaceController ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null || wsKeysKept.isEmpty) return;
   m.later('together', number: 1);
   for (final (n, after, v, way) in wsKeysKept) {
-    final at = (ws.frame + after) / Ws.fps;
+    final at = (ws.frame + after) / WorkspaceController.fps;
     m.later('key', layer: t, name: n, word: '$at', number: v);
     if (way.isNotEmpty) m.later('easing', layer: t, name: n, number: at, word: way);
   }

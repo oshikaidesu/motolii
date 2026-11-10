@@ -1,4 +1,4 @@
-// A layer of the composition as the window lists it (WsLayer): its kind and the kind's colour, its bar and its keyframes.
+// A layer of the composition as the window lists it (Layer): its kind and the kind's colour, its bar and its keyframes.
 // Also the records that name a keyframe, and a stretch between two keyframes, when the user selects one.
 import 'package:flutter/widgets.dart';
 
@@ -6,21 +6,21 @@ import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 /// The kinds of layer the timeline distinguishes.
-enum WsKind { shape, text, image, camera, group, particles, audio }
+enum LayerKind { shape, text, image, camera, group, particles, audio }
 
-Color wsTone(WsKind k) => switch (k) {
-  WsKind.shape => WsT.toneShape,
-  WsKind.text => WsT.toneText,
-  WsKind.image => WsT.toneImage,
-  WsKind.camera => WsT.toneCamera,
-  WsKind.group => WsT.toneGroup,
-  WsKind.particles => WsT.toneParticles,
-  WsKind.audio => WsT.toneAudio,
+Color wsTone(LayerKind k) => switch (k) {
+  LayerKind.shape => WindowTokens.toneShape,
+  LayerKind.text => WindowTokens.toneText,
+  LayerKind.image => WindowTokens.toneImage,
+  LayerKind.camera => WindowTokens.toneCamera,
+  LayerKind.group => WindowTokens.toneGroup,
+  LayerKind.particles => WindowTokens.toneParticles,
+  LayerKind.audio => WindowTokens.toneAudio,
 };
 
 /// One layer of the composition: when it is on, and where its keyframes are, in frames.
-class WsLayer {
-  WsLayer(
+class Layer {
+  Layer(
     this.id,
     this.name,
     this.kind,
@@ -36,12 +36,12 @@ class WsLayer {
     this.stretches = const [],
   });
   final String id, name;
-  final WsKind kind;
+  final LayerKind kind;
   int inF, outF;
   final List<int> keys;
 
   /// The easing between its keyframes, as the engine reports it. Drawn on the layer's bar.
-  final List<WsStretch> stretches;
+  final List<Stretch> stretches;
 
   /// The id of the parent layer, if any.
   final String? parent;
@@ -58,10 +58,10 @@ class WsLayer {
 }
 
 /// The stretch between two keyframes: its frames, its easing, and the easing curve (0 to 1) sampled at 17 points.
-typedef WsStretch = ({int from, int to, String way, List<double> shape});
+typedef Stretch = ({int from, int to, String way, List<double> shape});
 
 /// A keyframe the user selected: its layer and frame.
-typedef WsKey = ({String layer, int frame});
+typedef SelectedKeyframe = ({String layer, int frame});
 
 /// A stretch of one property selected by its line in the timeline, from the keyframe at [at] seconds to the next keyframe of that property.
-typedef WsStretchPicked = ({String layer, String name, double at, int from, int to});
+typedef StretchPicked = ({String layer, String name, double at, int from, int to});

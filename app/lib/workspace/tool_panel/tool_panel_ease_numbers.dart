@@ -91,7 +91,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
         children: [
           if (easeNumbersOpen)
             Container(
-              color: WsT.card,
+              color: WindowTokens.card,
               padding: EdgeInsets.all(Shape.s(3)),
               child: LayoutBuilder(
                 builder: (_, box) {
@@ -111,7 +111,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
                               key: ValueKey('ease-number-${n.name}'),
                               inline: true,
                               caption: n.name,
-                              accent: WsT.accent,
+                              accent: WindowTokens.accent,
                               value: () => n.many ? 1 / now[n.at] : now[n.at],
                               text: (v, _) => n.many ? v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2) : v.toStringAsFixed(2),
                               min: lo,

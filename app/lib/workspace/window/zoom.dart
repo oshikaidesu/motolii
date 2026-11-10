@@ -1,15 +1,15 @@
-// Draws the whole window at the window zoom (WsZoom), so every part scales alike.
+// Draws the whole window at the window zoom (WindowZoom), so every part scales alike.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/workspace/state/window_zoom.dart';
 
-/// [child] drawn at [WsZoom.value].
-class WsZoomed extends StatelessWidget {
-  const WsZoomed({super.key, required this.child});
+/// [child] drawn at [WindowZoom.value].
+class WindowZoomed extends StatelessWidget {
+  const WindowZoomed({super.key, required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<double>(
-    valueListenable: WsZoom.value,
+    valueListenable: WindowZoom.value,
     builder: (context, z, _) => LayoutBuilder(
       builder: (context, box) {
         final mq = MediaQuery.of(context), size = Size(box.maxWidth / z, box.maxHeight / z);

@@ -23,7 +23,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 extension StageViewDraw on StageViewState {
   /// Selects the layers whose centre lies inside the lasso.
   void lassoDragEnd(StageViewport v) {
-    final round = lasso, ws = WsScope.read(context);
+    final round = lasso, ws = WorkspaceScope.read(context);
     setState(() => lasso = null);
     if (round == null || round.length < 3) return;
     // A nearly straight drag selects the box between its ends, as in Figma and After Effects. Otherwise the drawn
@@ -40,11 +40,11 @@ extension StageViewDraw on StageViewState {
   /// Creates a layer of the active tool's kind from a drag that started at [drawFrom] and ended at [to].
   /// A drag shorter than 6 screen pixels creates the layer at its default size.
   void draw(StageViewport v, Offset to) {
-    final from = drawFrom, ws = WsScope.read(context), m = ws.inside, kind = widget.make;
+    final from = drawFrom, ws = WorkspaceScope.read(context), m = ws.inside, kind = widget.make;
     drawFrom = null;
     setState(() {});
     if (from == null || m == null || kind == null) return;
-    final a = v.toComp(from), b = v.toComp(to), p = m.point, c = WsArt.comp;
+    final a = v.toComp(from), b = v.toComp(to), p = m.point, c = ArtGeometry.comp;
     // Drawn out from its centre: twice the drag, centred on where the drag started.
     final centred = kind == 'circle' && widget.fromCentre;
     final mid = centred ? a : (a + b) / 2, d = centred ? (b - a) * 2 : b - a, tiny = d.distance < 6 / v.s;
@@ -104,7 +104,7 @@ extension StageViewDraw on StageViewState {
   /// result has ordinary pen anchors and handles that the user can move. A scribble that ends where it began becomes
   /// a closed, filled path. Otherwise it becomes an open stroke in the current ink.
   void fit(StageViewport v, List<Offset> way) {
-    final ws = WsScope.read(context), m = ws.inside!;
+    final ws = WorkspaceScope.read(context), m = ws.inside!;
     // The fitted path is complete, so the next pen click starts a new one.
     penning = false;
     final points = [for (final p in way) v.toComp(p)], error = (v.toComp(way.first + const Offset(8, 0)) - points.first).distance;
@@ -129,7 +129,7 @@ extension StageViewDraw on StageViewState {
 
   /// Turns the brush stroke into a drawing layer, or erases from the selected drawing with the eraser.
   void brushDragEnd(StageViewport v) {
-    final way = brush, ws = WsScope.read(context), m = ws.inside;
+    final way = brush, ws = WorkspaceScope.read(context), m = ws.inside;
     setState(() => brush = null);
     if (way == null || way.length < 2 || m == null) return;
     final options = StrokeOptions(size: widget.brushSize, simulatePressure: true, isComplete: true);

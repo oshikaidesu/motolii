@@ -28,7 +28,7 @@ import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
-String createFact(Ws ws) {
+String createFact(WorkspaceController ws) {
   // Scripts that are expressions have tiles in the Expression group, so they are counted with the expressions.
   final recipes = _recipesOf(ws).$2.length, expressions = expressionsOf(ws).length;
   // The shelf shows only these tiles.
@@ -36,7 +36,7 @@ String createFact(Ws ws) {
 }
 
 /// The engine's create scripts, each shown as a tile. A script builds a whole image in one call, as Cavalry's tutorials do.
-(String, List<CreateTile>) _recipesOf(Ws ws) {
+(String, List<CreateTile>) _recipesOf(WorkspaceController ws) {
   // Scripts that are expressions are left out: their tiles are in the Expression group.
   final expressions = {for (final (name, _) in expressionRecipes()) name};
   // Closed packs are left out too: they belong to the Program shelf (dock_program.dart).
@@ -53,7 +53,7 @@ String createFact(Ws ws) {
 /// Saved elements (Edit > Save to My Elements). Each is added at the playhead and stays linked to its file, as in
 /// Alight Motion (+ > Object / Element > Element) and AbsentMotion's ElementPicker
 /// (engine/third_party/AbsentMotion/app/src/main/kotlin/app/absentmotion/ui/editor/ElementUi.kt).
-(String, List<CreateTile>) _elementsOf(Ws ws) =>
+(String, List<CreateTile>) _elementsOf(WorkspaceController ws) =>
     ('Elements', [for (final (name, _) in ws.inside!.elements) CreateTile(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
 
 // ---------------------------------------------------------------- create
@@ -84,9 +84,9 @@ final _makes = <(String, List<CreateTile>)>[
   (
     'Layers',
     [
-      CreateTile('Text', DockG.text, WsT.toneText, 'T', 'Type layer'),
+      CreateTile('Text', DockG.text, WindowTokens.toneText, 'T', 'Type layer'),
       // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
-      CreateTile('Camera', DockG.camera, WsT.toneCamera, '⇧C', '3D camera, 45 mm'),
+      CreateTile('Camera', DockG.camera, WindowTokens.toneCamera, '⇧C', '3D camera, 45 mm'),
       CreateTile('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
       CreateTile('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],
@@ -94,11 +94,11 @@ final _makes = <(String, List<CreateTile>)>[
   (
     'Shapes',
     [
-      CreateTile('Rectangle', DockG.rect, WsT.toneShape, 'R', 'Rounded corners'),
-      CreateTile('Ellipse', DockG.ellipse, WsT.toneShape, 'E', 'Circle with ⇧'),
-      CreateTile('Polygon', DockG.polygon, WsT.toneShape, '', 'Sides · Roundness'),
-      CreateTile('Star', DockG.star, WsT.toneShape, '', 'Points · Inner radius'),
-      CreateTile('Line', DockG.line, WsT.toneShape, 'L', 'Open path'),
+      CreateTile('Rectangle', DockG.rect, WindowTokens.toneShape, 'R', 'Rounded corners'),
+      CreateTile('Ellipse', DockG.ellipse, WindowTokens.toneShape, 'E', 'Circle with ⇧'),
+      CreateTile('Polygon', DockG.polygon, WindowTokens.toneShape, '', 'Sides · Roundness'),
+      CreateTile('Star', DockG.star, WindowTokens.toneShape, '', 'Points · Inner radius'),
+      CreateTile('Line', DockG.line, WindowTokens.toneShape, 'L', 'Open path'),
     ],
   ),
   (
@@ -120,11 +120,11 @@ final _makes = <(String, List<CreateTile>)>[
 final _solids = (
   '3D',
   [
-    CreateTile('Ring', DockG.radial, WsT.toneShape, '', 'A solid ring'),
-    CreateTile('Gem', DockG.polygon, WsT.toneShape, '', 'A cut solid'),
-    CreateTile('Cube', DockG.rect, WsT.toneShape, '', 'A round-edged cube'),
-    CreateTile('Floor', DockG.rect, WsT.toneShape, '', 'A wide flat floor that takes shadows'),
-    CreateTile('Ball', DockG.ellipse, WsT.toneShape, '', 'A ball'),
+    CreateTile('Ring', DockG.radial, WindowTokens.toneShape, '', 'A solid ring'),
+    CreateTile('Gem', DockG.polygon, WindowTokens.toneShape, '', 'A cut solid'),
+    CreateTile('Cube', DockG.rect, WindowTokens.toneShape, '', 'A round-edged cube'),
+    CreateTile('Floor', DockG.rect, WindowTokens.toneShape, '', 'A wide flat floor that takes shadows'),
+    CreateTile('Ball', DockG.ellipse, WindowTokens.toneShape, '', 'A ball'),
   ],
 );
 
@@ -132,9 +132,9 @@ final _solids = (
 final _lights = (
   'Light',
   [
-    CreateTile('Sun', DockG.light, WsT.toneCamera, '', 'Light from one way, everywhere'),
-    CreateTile('Point', DockG.light, WsT.toneCamera, '', 'Light from a point, all round'),
-    CreateTile('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
+    CreateTile('Sun', DockG.light, WindowTokens.toneCamera, '', 'Light from one way, everywhere'),
+    CreateTile('Point', DockG.light, WindowTokens.toneCamera, '', 'Light from a point, all round'),
+    CreateTile('Spot', DockG.light, WindowTokens.toneCamera, '', 'A cone of light'),
   ],
 );
 
@@ -146,13 +146,13 @@ final _lights = (
 final _materials = (
   'Material',
   [
-    CreateTile('Lit', DockG.ellipse, WsT.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
-    CreateTile('Cloth', DockG.ellipse, WsT.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
-    CreateTile('Subsurface', DockG.ellipse, WsT.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
-    CreateTile('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
-    CreateTile('Filament glass', DockG.radial, WsT.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
-    CreateTile('Lacquer', DockG.ellipse, WsT.toneShape, '', 'Its colour under a hard clear coat'),
-    CreateTile('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
+    CreateTile('Lit', DockG.ellipse, WindowTokens.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
+    CreateTile('Cloth', DockG.ellipse, WindowTokens.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
+    CreateTile('Subsurface', DockG.ellipse, WindowTokens.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
+    CreateTile('Glass', DockG.radial, WindowTokens.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
+    CreateTile('Filament glass', DockG.radial, WindowTokens.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
+    CreateTile('Lacquer', DockG.ellipse, WindowTokens.toneShape, '', 'Its colour under a hard clear coat'),
+    CreateTile('Bubble', DockG.radial, WindowTokens.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
 // Tile name to the shading value it sets.
@@ -252,7 +252,7 @@ void _make(DockCtx c, CreateTile tile) {
     if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {
       // Added at the playhead, in the middle, and selected, as in AbsentMotion's addElement.
       c.ws.after(
-        m.later('element', word: e.$2, number: c.ws.frame / Ws.fps),
+        m.later('element', word: e.$2, number: c.ws.frame / WorkspaceController.fps),
         (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
         (made) => c.ws.select('$made'),
       );
@@ -327,7 +327,7 @@ class CreateShelf extends StatelessWidget {
                   children: [
                     for (final (g, items) in groups)
                       Padding(
-                        padding: EdgeInsets.only(bottom: WsT.gutter),
+                        padding: EdgeInsets.only(bottom: WindowTokens.gutter),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -339,7 +339,7 @@ class CreateShelf extends StatelessWidget {
                               onTap: () => c.set(() => c.mem.createFolded.contains(g) ? c.mem.createFolded.remove(g) : c.mem.createFolded.add(g)),
                             ),
                             if (!(c.query.isEmpty && c.mem.createFolded.contains(g))) ...[
-                              const SizedBox(height: WsT.gutter),
+                              const SizedBox(height: WindowTokens.gutter),
                               ShelfGrid(
                                 shelfLooks['Create']!,
                                 shrinkWrap: true,
@@ -405,7 +405,7 @@ Widget _makeTile(CreateTile m, DockCtx c, {Key? key, Widget? naming, ValueChange
 Widget _makeArt(CreateTile m, DockCtx c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
-    child: Glyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
+    child: Glyph(m.g, size: Shape.z(26), color: sel ? WindowTokens.onAccent : m.hue),
   );
   if (m.recipe && _isRecipe(c, m.name)) {
     // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.
@@ -457,7 +457,7 @@ void _expressionPut(DockCtx c, CreateTile tile) {
     // Created the same way as a script tile.
     return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made'));
   }
-  final first = t != null && !Ws.fxFiles(m.word(t, 'fx')).contains(file);
+  final first = t != null && !WorkspaceController.fxFiles(m.word(t, 'fx')).contains(file);
   fxPut(c.ws, file, expression: true, told: told);
   if (t == null) return;
   // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
@@ -474,7 +474,7 @@ void _expressionPut(DockCtx c, CreateTile tile) {
 }
 
 /// All names on Create, the library's and the user's. An expression cannot be added under one of them (shelf_add.dart).
-Set<String> createNames(Ws ws) => {
+Set<String> createNames(WorkspaceController ws) => {
   for (final (_, items) in [
     if (ws.inside != null) ...[_recipesOf(ws), _elementsOf(ws)],
     ..._makes,
@@ -497,7 +497,7 @@ class _OwnTile extends StatefulWidget {
 }
 
 class _OwnTileState extends State<_OwnTile> {
-  final _menu = GlobalKey<WsMenuState>();
+  final _menu = GlobalKey<ContextMenuState>();
   bool _naming = false;
 
   void _renamed(String? to) {
@@ -509,7 +509,7 @@ class _OwnTileState extends State<_OwnTile> {
   }
 
   @override
-  Widget build(BuildContext context) => WsMenu(
+  Widget build(BuildContext context) => ContextMenu(
     key: _menu,
     child: _makeTile(
       widget.m,
@@ -517,7 +517,7 @@ class _OwnTileState extends State<_OwnTile> {
       naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null,
       onMenu: (at) {
         final box = _menu.currentContext?.findRenderObject() as RenderBox?;
-        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [WsMenuItem('Rename…', () => setState(() => _naming = true))]);
+        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [ContextMenuItem('Rename…', () => setState(() => _naming = true))]);
       },
     ),
   );

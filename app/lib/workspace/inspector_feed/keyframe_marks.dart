@@ -6,7 +6,7 @@ import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The keyframe mark of every keyable value of a layer, plus one per property (the strongest mark of its values).
-Map<String, KeyS> wsKeyMarks(Ws ws, String? id) {
+Map<String, KeyS> wsKeyMarks(WorkspaceController ws, String? id) {
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};
   final at = wsDrawn(ws);
@@ -21,7 +21,7 @@ Map<String, KeyS> wsKeyMarks(Ws ws, String? id) {
 }
 
 /// The values on the cards that can take keyframes, mapping the inspector's id to the document's name.
-Map<String, String> _keyable(Ws ws, int t) {
+Map<String, String> _keyable(WorkspaceController ws, int t) {
   final m = ws.inside!, moving = m.moving(t).toSet();
   return {
     for (final (_, names) in m.cards(t))
@@ -31,10 +31,10 @@ Map<String, String> _keyable(Ws ws, int t) {
 }
 
 /// Applies a keyframe mark chosen in the inspector: a keyframe at the playhead, that keyframe removed, or no keyframes at all.
-void wsMark(Ws ws, String? id, String prop, KeyS mark) {
+void wsMark(WorkspaceController ws, String? id, String prop, KeyS mark) {
   final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
   if (t == null) return;
-  final at = ws.frame / Ws.fps, has = m.values(t).toSet();
+  final at = ws.frame / WorkspaceController.fps, has = m.values(t).toSet();
   // Only values the layer has are keyed. A flat layer has no scale_z, and asking for a key on it was refused,
   // which rolled back the whole undo step including the number just released.
   // With Animate on, that lost the first scale of a flat layer.

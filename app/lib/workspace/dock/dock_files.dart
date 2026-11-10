@@ -99,8 +99,8 @@ enum MediaType {
   final DockG glyph;
   Color get hue => switch (this) {
     video => Pop.toneTime,
-    image => WsT.toneImage,
+    image => WindowTokens.toneImage,
     hdr => Pop.toneTextAnim,
-    audio => WsT.toneAudio,
+    audio => WindowTokens.toneAudio,
   };
 }

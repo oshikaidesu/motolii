@@ -144,7 +144,7 @@ class ColorsShelf extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WsScope.of(context, {WsAspect.picked, WsAspect.document}); // Rebuilds when the target or the selection changes.
+    WorkspaceScope.of(context, {WorkspaceAspect.picked, WorkspaceAspect.document}); // Rebuilds when the target or the selection changes.
     colorsRead();
     final m = c.ws.inside!, usedCount = <Color, int>{};
     for (final col in usedColors(c.ws).values) {
@@ -197,7 +197,7 @@ class ColorsShelf extends StatelessWidget {
     // Two blocks. The top stays in place: the target, the paint type and the wheel. Only the saved colors below scroll,
     // so + and the dice stay within reach. Saved colors sit under the picker, as in Procreate's Color Panel and in Figma.
     final top = Padding(
-      padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, Shape.s(6)),
+      padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(6), WindowTokens.inset, Shape.s(6)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -288,7 +288,7 @@ class ColorsShelf extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: Shape.z(170)),
               child: AspectRatio(
                 aspectRatio: 1,
-                child: WsColorWheel(
+                child: ColorWheel(
                   key: const ValueKey('colour-square'),
                   color: wheelColor,
                   onChanged: to,
@@ -425,7 +425,7 @@ class ColorsShelf extends StatelessWidget {
       ),
     );
     final list = SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, WsT.inset),
+      padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(6), WindowTokens.inset, WindowTokens.inset),
       child: Bento([
         // The newest additions come first: the user's own colors, then the user's own gradients.
         // No other app does this: Procreate fills the next empty slot and Canva sorts by hue.
@@ -444,7 +444,7 @@ class ColorsShelf extends StatelessWidget {
     return Column(
       children: [
         top,
-        Container(height: 1, color: WsT.line),
+        Container(height: 1, color: WindowTokens.line),
         Expanded(child: list),
         ValueListenableBuilder<String?>(
           // Details of the palette under the pointer or pressed last: its photo, name and owner.
@@ -710,7 +710,7 @@ class _HexField extends StatelessWidget {
     standing: true,
     pickOnFocus: true,
     style: T.value(Grey.g91).copyWith(fontWeight: FontWeight.w600),
-    cursor: WsT.accent,
+    cursor: WindowTokens.accent,
     backgroundCursor: Grey.g44,
     selection: Grey.g38,
     cursorWidth: 1.5,
@@ -724,7 +724,7 @@ Widget _colourDice(VoidCallback onTap) => IconPress(
   key: const ValueKey('colour-dice'),
   onTap: onTap,
   size: Shape.z(22),
-  rest: WsT.well,
+  rest: WindowTokens.well,
   ink: Grey.g76,
 );
 

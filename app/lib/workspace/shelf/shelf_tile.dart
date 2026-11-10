@@ -85,7 +85,7 @@ const _square = ShelfLook(ShelfForm.under, cell: 84, sized: true, row: 22, rowAr
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
   'Program': _square,
-  'Media': ShelfLook(ShelfForm.under, cell: 76, min: 2, aspect: 16 / 9, top: WsT.gutter),
+  'Media': ShelfLook(ShelfForm.under, cell: 76, min: 2, aspect: 16 / 9, top: WindowTokens.gutter),
   'Create': ShelfLook(ShelfForm.over, cell: 74, min: 2, height: 70),
   'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
 };
@@ -192,7 +192,7 @@ class ShelfTile extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ColoredBox(color: WsT.card),
+            ColoredBox(color: WindowTokens.card),
             ?(art?.call(h) ?? _image(h)),
             ...?over?.call(h),
             // The border is drawn over everything but ignores presses, so the star under it can still be pressed.
@@ -200,7 +200,7 @@ class ShelfTile extends StatelessWidget {
               IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    border: Border.all(color: lit || picked ? WsT.accentInk : Grey.g76, width: lit || picked ? 2 : 1),
+                    border: Border.all(color: lit || picked ? WindowTokens.accentInk : Grey.g76, width: lit || picked ? 2 : 1),
                   ),
                 ),
               ),
@@ -212,7 +212,7 @@ class ShelfTile extends StatelessWidget {
           height: Shape.z(bar),
           padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
           alignment: Alignment.centerLeft,
-          color: dockFill(picked, h, WsT.card),
+          color: dockFill(picked, h, WindowTokens.card),
           // A name wider than its tile is drawn smaller, never cut.
           child:
               naming ??
@@ -226,7 +226,7 @@ class ShelfTile extends StatelessWidget {
 
   Widget _over(bool h) => _box(
     padding: EdgeInsets.all(Shape.s(7)),
-    color: picked ? WsT.accent : (h ? WsT.raised : WsT.card),
+    color: picked ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.card),
     child: Stack(
       children: [
         if (art case final a?) a(h) else if (_image(h) case final p?) Positioned.fill(child: p),
@@ -253,7 +253,7 @@ class ShelfTile extends StatelessWidget {
     final name = naming ?? Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(picked, ink)));
     return _box(
       height: Shape.z(look.row),
-      padding: EdgeInsets.only(left: Shape.s(4) + indent, right: WsT.inset),
+      padding: EdgeInsets.only(left: Shape.s(4) + indent, right: WindowTokens.inset),
       color: dockFill(picked, h),
       child: Row(
         children: [
@@ -262,7 +262,7 @@ class ShelfTile extends StatelessWidget {
             height: Shape.z(look.rowArt.height),
             child: Stack(
               fit: StackFit.expand,
-              children: [art?.call(h) ?? _image(h) ?? ColoredBox(color: WsT.card)],
+              children: [art?.call(h) ?? _image(h) ?? ColoredBox(color: WindowTokens.card)],
             ),
           ),
           SizedBox(width: Shape.s(look.rowGap)),
@@ -300,8 +300,8 @@ class ShelfTile extends StatelessWidget {
 
   Widget _wordsRow(bool h) => _box(
     height: Shape.z(look.row),
-    padding: EdgeInsets.only(left: WsT.inset, right: Shape.s(4)),
-    color: dockFill(picked, h, WsT.card),
+    padding: EdgeInsets.only(left: WindowTokens.inset, right: Shape.s(4)),
+    color: dockFill(picked, h, WindowTokens.card),
     child: Row(
       children: [
         Expanded(
@@ -326,8 +326,8 @@ class ShelfTile extends StatelessWidget {
       final x? => Shape.z(x),
       null => null,
     },
-    padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(8), Shape.s(4), Shape.s(8)),
-    color: dockFill(picked, h, WsT.card),
+    padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(8), Shape.s(4), Shape.s(8)),
+    color: dockFill(picked, h, WindowTokens.card),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -383,8 +383,8 @@ class ShelfGrid extends StatelessWidget {
             sliver: SliverGrid.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: across,
-                crossAxisSpacing: WsT.gutter,
-                mainAxisSpacing: WsT.gutter,
+                crossAxisSpacing: WindowTokens.gutter,
+                mainAxisSpacing: WindowTokens.gutter,
                 mainAxisExtent: list
                     ? Shape.z(look.row)
                     : switch (look.height) {

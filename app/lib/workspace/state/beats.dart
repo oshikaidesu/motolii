@@ -6,8 +6,8 @@ import 'package:motolii/skin/tokens.dart' show halfWidth;
 double? wsNumber(String said) => double.tryParse(halfWidth(said).trim());
 
 /// The beat grid of a document, in frames.
-class WsBeats {
-  const WsBeats(this.first, this.every);
+class Beats {
+  const Beats(this.first, this.every);
 
   /// The frame where a bar begins, and the number of frames from one beat to the next.
   final double first, every;

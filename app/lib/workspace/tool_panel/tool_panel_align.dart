@@ -11,7 +11,7 @@ import 'package:motolii/skin/tokens.dart';
 
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
@@ -25,7 +25,7 @@ class AlignTool extends StatelessWidget {
 
   /// The visible bounds of the selected layer: the upright box around its outline as the engine reports it.
   /// Null when no layer is selected or nothing is visible.
-  static Rect? _seen(Ws ws) {
+  static Rect? _seen(WorkspaceController ws) {
     final t = int.tryParse(ws.selected ?? '');
     return t == null ? null : ws.inside?.seen(t);
   }
@@ -34,10 +34,10 @@ class AlignTool extends StatelessWidget {
   ///
   /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
   /// so the second pass corrects the remaining offset.
-  static void align(Ws ws, int side, [int pass = 0]) {
+  static void align(WorkspaceController ws, int side, [int pass = 0]) {
     final m = ws.inside, t = int.tryParse(ws.selected ?? ''), r = t == null ? null : m?.seen(t);
     if (m == null || t == null || r == null) return;
-    final pic = WsArt.comp;
+    final pic = ArtGeometry.comp;
     final dx = switch (side) {
       0 => -r.left,
       1 => pic.width / 2 - r.center.dx,
@@ -59,7 +59,7 @@ class AlignTool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), r = _seen(ws), pic = WsArt.comp;
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), r = _seen(ws), pic = ArtGeometry.comp;
     bool at(int side) =>
         r != null &&
         switch (side) {
@@ -71,7 +71,7 @@ class AlignTool extends StatelessWidget {
           _ => (r.bottom - pic.height).abs() < .5,
         };
     return ListView(
-      padding: EdgeInsets.all(WsT.gap),
+      padding: EdgeInsets.all(WindowTokens.gap),
       children: [
         if (ws.layer case final l?)
           ToolStrip(
@@ -92,7 +92,7 @@ class AlignTool extends StatelessWidget {
                   for (final side in row) ...[
                     IconPress(
                       paintInk((ink) => _Side(side, ink)),
-                      rest: WsT.well,
+                      rest: WindowTokens.well,
                       ink: Grey.g76,
                       key: ValueKey('align.$side'),
                       size: Shape.z(36),

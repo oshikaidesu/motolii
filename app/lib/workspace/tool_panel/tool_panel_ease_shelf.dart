@@ -110,8 +110,8 @@ class EaseShelf extends StatelessWidget {
       onAcceptWithDetails: (d) => onKeep(d.data),
       builder: (_, hot, _) => DecoratedBox(
         decoration: BoxDecoration(
-          color: WsT.card,
-          border: hot.isEmpty ? Border(left: BorderSide(color: Grey.g38)) : Border.all(color: WsT.accent, width: 2),
+          color: WindowTokens.card,
+          border: hot.isEmpty ? Border(left: BorderSide(color: Grey.g38)) : Border.all(color: WindowTokens.accent, width: 2),
         ),
         child: CustomScrollView(
           slivers: [

@@ -25,7 +25,7 @@ extension StageViewDrag on StageViewState {
   /// Collects the lines that dragging layer [id] snaps to: the canvas, the guides and the other layers' bounds.
   /// Layers in the same parent chain as [id] are left out.
   void _snapFrom(String id) {
-    final boxes = widget.scene.boxes, m = WsScope.read(context).inside;
+    final boxes = widget.scene.boxes, m = WorkspaceScope.read(context).inside;
     final held = boxes[id];
     if (!widget.snap || held == null || m == null) return snapTo = null;
     int top(int t) {
@@ -35,7 +35,7 @@ extension StageViewDrag on StageViewState {
       return t;
     }
 
-    final mine = top(int.parse(id)), c = WsArt.comp;
+    final mine = top(int.parse(id)), c = ArtGeometry.comp;
     final xs = <(double, double)>[(0, c.width)], ys = <(double, double)>[(0, c.height)];
     for (final g in widget.scene.guidesX) {
       xs.add((g, g));
@@ -78,7 +78,7 @@ extension StageViewDrag on StageViewState {
 
   /// Starts pulling a guide, either out of a ruler or by grabbing an existing guide. Returns whether one was taken.
   bool _pull(StageViewport v, Offset local) {
-    final ws = WsScope.read(context), m = ws.inside;
+    final ws = WorkspaceScope.read(context), m = ws.inside;
     if (m == null) return false;
     final at = v.toComp(local), tol = 4 / v.s;
     if (local.dy < StageTokens.ruler || local.dx < StageTokens.ruler) {
@@ -95,7 +95,7 @@ extension StageViewDrag on StageViewState {
 
   /// Releases a pulled guide: removes the old one if it was moved, and adds a new one unless it was dropped on the ruler.
   void pullDragEnd(StageViewport v, Offset local) {
-    final p = pulling, ws = WsScope.read(context), m = ws.inside;
+    final p = pulling, ws = WorkspaceScope.read(context), m = ws.inside;
     pulling = null;
     if (p == null || m == null) return;
     final over = p.axis == 'y' ? local.dy < StageTokens.ruler : local.dx < StageTokens.ruler, at = v.toComp(local);
@@ -111,7 +111,7 @@ extension StageViewDrag on StageViewState {
   void dragStart(StageViewport v, Offset local) {
     if (widget.make == 'camera') {
       // As with After Effects' Unified Camera tool, dragging orbits the camera around its point of interest.
-      final ws = WsScope.read(context), m = ws.inside, cam = cameraOf(ws);
+      final ws = WorkspaceScope.read(context), m = ws.inside, cam = cameraOf(ws);
       if (m == null || cam == null) {
         ws.notice = 'No camera: add one from Create › Layers';
         return;
@@ -121,7 +121,7 @@ extension StageViewDrag on StageViewState {
         drag = (from: local, moved: false, by: 'orbit');
         return;
       }
-      final at = ws.frame / Ws.fps;
+      final at = ws.frame / WorkspaceController.fps;
       m.take(cam);
       if (ws.playing) ws.playing = false;
       orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
@@ -137,7 +137,7 @@ extension StageViewDrag on StageViewState {
       setState(() => drawFrom = local);
       return;
     }
-    final ws = WsScope.read(context), m = ws.inside;
+    final ws = WorkspaceScope.read(context), m = ws.inside;
     // Dragging a handle of the selected layer. The engine works out the change from where the drag started.
     final picked = int.tryParse(widget.selected ?? '');
     if (m != null && picked != null) {
@@ -210,7 +210,7 @@ extension StageViewDrag on StageViewState {
 
   /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
   void dragEnd({bool keep = true}) {
-    final h = drag, ws = WsScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
+    final h = drag, ws = WorkspaceScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
     drag = null;
     orbitFrom = null;
     lensFrom = null;
@@ -224,7 +224,7 @@ extension StageViewDrag on StageViewState {
 
   /// The id of the selected layer's parent, or null if it has none.
   String? parentOf() {
-    final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     final p = m == null || t == null ? 0 : (m.value(t, 'parent', 0) ?? 0).round();
     return p > 0 ? '$p' : null;
   }
@@ -232,7 +232,7 @@ extension StageViewDrag on StageViewState {
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
   /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
   String? heldSays(String? by) {
-    final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     final f = m == null || t == null ? null : m.bounds(t);
     if (f == null) return null;
     return switch (by) {

@@ -27,8 +27,8 @@ class DockSection extends StatelessWidget {
     onTap: onTap,
     builder: (context, h) => Container(
       height: Shape.z(24),
-      color: h && onTap != null ? WsT.raised : WsT.card,
-      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+      color: h && onTap != null ? WindowTokens.raised : WindowTokens.card,
+      padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
       child: Row(
         children: [
           if (folded != null) ...[
@@ -107,15 +107,15 @@ class DockFooter extends StatelessWidget {
   final bool done;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), l = fresh ? null : ws.layer;
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), l = fresh ? null : ws.layer;
     return Container(
       // At least 52 high and as tall as its content. A fixed 52 overflowed by a point (RenderFlex overflow) with two lines of text.
       constraints: BoxConstraints(minHeight: Shape.z(52)),
-      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+      padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
       decoration: BoxDecoration(
-        color: WsT.card,
+        color: WindowTokens.card,
         border: Border(
-          top: BorderSide(color: WsT.ground, width: WsT.gutter),
+          top: BorderSide(color: WindowTokens.ground, width: WindowTokens.gutter),
         ),
       ),
       child: Row(
@@ -177,11 +177,11 @@ class DockFooter extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: done ? WsT.raised : WsT.accent,
-                borderRadius: BorderRadius.all(Shape.r(WsT.radius)),
+                color: done ? WindowTokens.raised : WindowTokens.accent,
+                borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
                 border: Border.all(color: h && !done ? Grey.g95 : const Color(0x00000000)),
               ),
-              child: Text(done ? doneLabel : action, style: T.name(done ? Grey.g76 : WsT.onAccent).copyWith(fontWeight: FontWeight.w700)),
+              child: Text(done ? doneLabel : action, style: T.name(done ? Grey.g76 : WindowTokens.onAccent).copyWith(fontWeight: FontWeight.w700)),
             ),
           ),
         ],
@@ -233,7 +233,7 @@ class DockMasonry extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final (i, col) in cols.indexed) ...[
-                if (i > 0) const SizedBox(width: WsT.gutter),
+                if (i > 0) const SizedBox(width: WindowTokens.gutter),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: col),
                 ),

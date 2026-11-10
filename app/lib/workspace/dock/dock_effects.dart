@@ -53,7 +53,7 @@ class EffectsShelf extends StatefulWidget {
 }
 
 class _EffectsShelfState extends State<EffectsShelf> {
-  final _menu = GlobalKey<WsMenuState>(), _places = GlobalKey<EffectPlacesState>();
+  final _menu = GlobalKey<ContextMenuState>(), _places = GlobalKey<EffectPlacesState>();
   final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles'); // Once a tile is pressed, B goes to the tiles instead of the stage's brush.
   DockCtx get c => widget.c;
   String? _renaming; // The file the user added whose name is being edited in its tile (shelf_add.dart).
@@ -93,8 +93,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
 
     // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
-    // With no layer selected, a layer effect goes on a new layer (Ws.fxToggle).
-    // A screen effect on the stage is taken off by Remove, and a press adds another (Ws.screenPut).
+    // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
+    // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
     VoidCallback? off(_Fx e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final look = shelfLooks['Effects']!;
     // Overlays on a tile's image, none on a small tile.
@@ -106,7 +106,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             Positioned(
               left: 3,
               top: 3,
-              child: Chip(label: on, look: ChipLook.tag(WsT.accent, edge: true)),
+              child: Chip(label: on, look: ChipLook.tag(WindowTokens.accent, edge: true)),
             ),
           if (same != null && !small)
             Positioned(
@@ -158,7 +158,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           onTap: () => c.pick(id),
           onApply: apply,
           onMenu: menu,
-          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (Ws.tryOn).
+          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (WorkspaceController.tryOn).
           naming: screened && _renaming == id ? ShelfNameField(name, (to) => _renamed(id, name, to)) : null,
           over: marks(
             id,
@@ -350,14 +350,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
     void menuOn(_Fx e, Offset at) {
       final box = _menu.currentContext?.findRenderObject() as RenderBox?;
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-        if (off(e) case final o?) ...[WsMenuItem('Add Again', e.apply), WsMenuItem('Remove', o)] else WsMenuItem(e.on ? 'Remove' : 'Add', e.apply),
-        const WsMenuItem.rule(),
-        WsMenuItem('${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}', () => target(e), keys: 'B'),
-        WsMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
-        if (shelfAdded(e.id)) ...[const WsMenuItem.rule(), WsMenuItem('Rename…', () => setState(() => _renaming = e.id))],
+        if (off(e) case final o?) ...[
+          ContextMenuItem('Add Again', e.apply),
+          ContextMenuItem('Remove', o),
+        ] else
+          ContextMenuItem(e.on ? 'Remove' : 'Add', e.apply),
+        const ContextMenuItem.rule(),
+        ContextMenuItem('${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}', () => target(e), keys: 'B'),
+        ContextMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
+        if (shelfAdded(e.id)) ...[const ContextMenuItem.rule(), ContextMenuItem('Rename…', () => setState(() => _renaming = e.id))],
         if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[
-          const WsMenuItem.rule(),
-          WsMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p')),
+          const ContextMenuItem.rule(),
+          ContextMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p')),
         ],
       ]);
     }
@@ -447,7 +451,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             cols: 5,
             small: true,
             shrinkWrap: true,
-            pad: EdgeInsets.only(top: WsT.gutter, bottom: WsT.gutter),
+            pad: EdgeInsets.only(top: WindowTokens.gutter, bottom: WindowTokens.gutter),
             count: inSight.length,
             tile: (i) => tile(inSight[i], true),
           ), // Two rows as in Alight Motion's box, one row until a sixth effect: a single tile in a row looked empty over the shelf.
@@ -505,7 +509,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ),
       ],
     );
-    return WsMenu(
+    return ContextMenu(
       key: _menu,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -519,8 +523,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
                       children: [
                         SizedBox(width: Shape.z(160), child: list(false)),
                         ColoredBox(
-                          color: WsT.ground,
-                          child: SizedBox(width: WsT.gutter),
+                          color: WindowTokens.ground,
+                          child: SizedBox(width: WindowTokens.gutter),
                         ),
                         Expanded(child: tiles),
                       ],
@@ -599,7 +603,7 @@ Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kind
 }
 
 /// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
-String _said(Ws ws, String name) {
+String _said(WorkspaceController ws, String name) {
   final m = ws.inside!,
       v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
       t = int.tryParse(ws.selected ?? ''); // The selected layer's id, or null when none is selected.

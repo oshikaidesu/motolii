@@ -15,22 +15,22 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 
-extension WsTimelineMedia on WsTimelineState {
+extension TimelinePaneMedia on TimelinePaneState {
   /// Frames where the selected group's intro ends and its outro starts, for marking on the ruler.
   ///
   /// They are the End of intro and Start of outro values of the group's Element card (the engine's doc_element_clock).
-  List<int> retimedOf(Ws ws) {
+  List<int> retimedOf(WorkspaceController ws) {
     final m = ws.inside, t = int.tryParse(ws.selected ?? '');
     if (m == null || t == null) return const [];
     final start = m.value(t, 'start', 0) ?? 0;
     return [
       for (final n in const ['retime_in', 'retime_out'])
-        if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * Ws.fps).round(),
+        if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * WorkspaceController.fps).round(),
     ];
   }
 
   /// Frames of the audio beats of every layer that has them, requested from the engine once per read of the project.
-  List<int> beatsOf(Ws ws) {
+  List<int> beatsOf(WorkspaceController ws) {
     final m = ws.inside;
     if (m == null) return const [];
     if (beats case (final r, final b) when r == ws.reads) return b;
@@ -48,7 +48,7 @@ extension WsTimelineMedia on WsTimelineState {
                 reads,
                 ws.strikes = [
                   for (final s in all)
-                    for (final at in s) (at * Ws.fps).round(),
+                    for (final at in s) (at * WorkspaceController.fps).round(),
                 ],
               ),
             )
@@ -58,7 +58,7 @@ extension WsTimelineMedia on WsTimelineState {
   }
 
   /// A few frames to draw along a video layer's bar, or the thumbnail of an image layer; null if there are none.
-  List<ui.Image>? framesOf(Ws ws, WsLayer l) {
+  List<ui.Image>? framesOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
@@ -68,7 +68,7 @@ extension WsTimelineMedia on WsTimelineState {
     if (framesAsked[l.id] != key) {
       framesAsked[l.id] = key;
       const n = 6;
-      final lasts = (l.outF - l.inF) / Ws.fps;
+      final lasts = (l.outF - l.inF) / WorkspaceController.fps;
       final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
       Future.wait([for (final s in seconds) m.videoFrame(file, s)]).then((pngs) async {
         // No frames could be read: the file has sound only.
@@ -82,7 +82,7 @@ extension WsTimelineMedia on WsTimelineState {
 
   /// A shape's form name, colour and whether it is an outline, as stored in the project, for the small icon at the row's left.
   /// With no fill, the outline is drawn in the stroke colour.
-  (String, Color?, bool)? formOf(Ws ws, WsLayer l) {
+  (String, Color?, bool)? formOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
     Color? colour(String hex) => hex.length == 6 && int.tryParse(hex, radix: 16) != null ? Color(0xFF000000 | int.parse(hex, radix: 16)) : null;
@@ -109,7 +109,7 @@ extension WsTimelineMedia on WsTimelineState {
   }
 
   /// The loudness of a video layer's sound over its bar, or null while it is unknown or the layer has no sound.
-  List<double>? waveOf(Ws ws, WsLayer l) {
+  List<double>? waveOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
     final key = (ws.reads, l.inF, l.outF);
@@ -118,7 +118,7 @@ extension WsTimelineMedia on WsTimelineState {
     if (waveAsked[l.id] != key) {
       // The engine answers on another isolate; the waveform is drawn on the bar when the answer arrives.
       waveAsked[l.id] = key;
-      m.loudnessOver(t, l.inF / Ws.fps, l.outF / Ws.fps, l.outF - l.inF).then((w) {
+      m.loudnessOver(t, l.inF / WorkspaceController.fps, l.outF / WorkspaceController.fps, l.outF - l.inF).then((w) {
         if (!mounted) return;
         if (w == null) {
           if (asked.add(l.id)) m.loudness(t).then((_) => mounted ? setState(() => (waveAsked.remove(l.id), beats = null, beatsAsked = null)) : null);

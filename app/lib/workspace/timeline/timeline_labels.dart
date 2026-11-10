@@ -16,7 +16,7 @@ class TimelineLabelHeader extends StatelessWidget {
   final int count;
   final bool solo;
   @override
-  Widget build(BuildContext context) => WsHeader(
+  Widget build(BuildContext context) => PanelHeader(
     '',
     height: WtM.ruler,
     color: Grey.g10,
@@ -35,7 +35,7 @@ class TimelineLabelHeader extends StatelessWidget {
       for (final g in const [TpGlyph.eye, TpGlyph.solo, TpGlyph.lock])
         SizedBox(
           width: Shape.z(20),
-          child: Center(child: Glyph(g, size: 10, color: g == TpGlyph.solo && solo ? WsT.accent : Grey.g56)),
+          child: Center(child: Glyph(g, size: 10, color: g == TpGlyph.solo && solo ? WindowTokens.accent : Grey.g56)),
         ),
     ],
   );
@@ -123,8 +123,11 @@ class _Toggle extends StatelessWidget {
           width: Shape.z(17),
           height: Shape.z(17),
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: on ? WsT.accent : (strong ? Grey.g26 : null), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-          child: Glyph(g, size: 10, color: on ? WsT.onAccent : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38))),
+          decoration: BoxDecoration(
+            color: on ? WindowTokens.accent : (strong ? Grey.g26 : null),
+            borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          ),
+          child: Glyph(g, size: 10, color: on ? WindowTokens.onAccent : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38))),
         ),
       ),
     ),

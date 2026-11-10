@@ -241,7 +241,7 @@ class _DockMapState extends State<DockMap> {
         Container(
           key: ValueKey('ws-map-$_name-forces-open'),
           padding: EdgeInsets.all(Shape.s(6)),
-          color: WsT.card,
+          color: WindowTokens.card,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -278,7 +278,7 @@ class _DockMapState extends State<DockMap> {
             width: w,
             child: Container(
               padding: EdgeInsets.all(Shape.s(4)),
-              color: WsT.card,
+              color: WindowTokens.card,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,7 +308,7 @@ class _DockMapState extends State<DockMap> {
     return Container(
       key: ValueKey('ws-alike-$_name'),
       padding: EdgeInsets.symmetric(vertical: gap),
-      color: WsT.card,
+      color: WindowTokens.card,
       child: Row(
         children: [
           arrow('prev', -1),

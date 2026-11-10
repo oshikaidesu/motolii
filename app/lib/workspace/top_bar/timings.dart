@@ -67,7 +67,7 @@ class _WaitedState extends State<Waited> {
     GestureBinding.instance.pointerRouter.addGlobalRoute(_pointer);
     _look = Timer.periodic(const Duration(milliseconds: 500), (_) {
       // Read the engine's error count without waiting for it.
-      final ws = WsScope.read(context);
+      final ws = WorkspaceScope.read(context);
       _moved |= ws.playing;
       final n = ws.inside?.brokenCount ?? 0;
       if (!identical(ws.inside, _of)) {
@@ -104,7 +104,7 @@ class _WaitedState extends State<Waited> {
   /// end while playing or while the user is interacting, and not in the first 3 seconds after launch.
   void _timings(List<FrameTiming> timings) {
     if (!mounted) return;
-    final moved = _moved || WsScope.read(context).playing;
+    final moved = _moved || WorkspaceScope.read(context).playing;
     _moved = false;
     if (timings.isEmpty) return;
     final now = DateTime.now(), last = timings.last.timestampInMicroseconds(FramePhase.rasterFinish);
@@ -154,7 +154,10 @@ class _WaitedState extends State<Waited> {
     if (_count == 0 && !_open.isShowing) return const SizedBox.shrink();
     // The engine's and the app's lines, newest first. Each line starts with its clock time.
     final lines = _open.isShowing
-        ? ([...(WsScope.read(context).inside?.broken ?? '').split('\n').where((l) => l.isNotEmpty), ..._late]..sort((a, b) => b.compareTo(a))).take(40).toList()
+        ? ([
+            ...(WorkspaceScope.read(context).inside?.broken ?? '').split('\n').where((l) => l.isNotEmpty),
+            ..._late,
+          ]..sort((a, b) => b.compareTo(a))).take(40).toList()
         : const <String>[];
     return CompositedTransformTarget(
       link: _at,
@@ -180,7 +183,7 @@ class _WaitedState extends State<Waited> {
                   constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7), // Lines wrap rather than being cut, and a long list scrolls.
                   padding: EdgeInsets.all(Shape.s(10)),
                   decoration: BoxDecoration(
-                    color: WsT.card,
+                    color: WindowTokens.card,
                     borderRadius: BorderRadius.all(Shape.r(6)),
                     border: Border.all(color: Grey.g26),
                   ),

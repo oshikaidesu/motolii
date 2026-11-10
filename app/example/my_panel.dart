@@ -1,6 +1,6 @@
 // A panel of one's own, made of the standard alone (package:motolii/panel.dart): a value of the picked layer as a number,
 // its cards as the engine declares them, and a press. To see it in the window, hand it to the Workspace in lib/main.dart:
-//   Workspace(document: motoliiDoc, extra: const [WsPane('Mine', null, MyPanel.new)])
+//   Workspace(document: motoliiDoc, extra: const [Pane('Mine', null, MyPanel.new)])
 // dart analyze keeps this file true: when the standard changes, this stops compiling until it is brought along.
 import 'package:flutter/widgets.dart';
 import 'package:motolii/panel.dart';
@@ -10,12 +10,12 @@ class MyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context), m = ws.inside, layer = int.tryParse(ws.selected ?? '');
+    final ws = WorkspaceScope.of(context), m = ws.inside, layer = int.tryParse(ws.selected ?? '');
     if (m == null || layer == null) return Center(child: Text('Pick a layer', style: T.label(Grey.g56)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const WsHeader('Mine'),
+        const PanelHeader('Mine'),
         // A number of the document: read at the moment shown, carried while the hand drags, one step when it lets go.
         // The shown range (min, max) is for the bar: what is typed is not cut to it.
         NumberField(

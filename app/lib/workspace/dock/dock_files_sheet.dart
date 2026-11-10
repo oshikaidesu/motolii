@@ -91,7 +91,7 @@ Future<void> placeSheet(DockCtx c, String file) async {
     c.ws.notice = 'Not a timesheet: ${basename(file)}';
     return;
   }
-  final m = c.ws.inside!, from = c.ws.frame / Ws.fps, missing = <String>[], made = <Future<int>>[];
+  final m = c.ws.inside!, from = c.ws.frame / WorkspaceController.fps, missing = <String>[], made = <Future<int>>[];
   m.later('together', number: 1);
   for (final (name, keys) in sheet.columns) {
     if (_levelNamed(file, name) case final drawings?) {

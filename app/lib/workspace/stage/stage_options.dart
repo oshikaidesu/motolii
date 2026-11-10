@@ -33,7 +33,7 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
 /// What the selected layer is painted with and how it is set.
 ///
 /// With nothing selected, it is the fill and stroke the next drawn layer gets.
-({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) paintOf(Ws ws) {
+({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) paintOf(WorkspaceController ws) {
   final key = (ws.rev, ws.selected, ws.ink, ws.edge);
   if (_paintRead case (final k, final p) when k == key) return p;
   final p = _paintNow(ws);
@@ -41,7 +41,7 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
   return p;
 }
 
-({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintNow(Ws ws) {
+({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintNow(WorkspaceController ws) {
   final m = ws.inside!, t = int.tryParse(ws.selected ?? '');
   if (t == null) {
     return (fill: _colorOf(ws.ink), stroke: _colorOf(ws.edge), width: ws.edge.isEmpty ? 'None' : '6 px', round: '0%', font: '—', size: '—', align: 0);
@@ -64,12 +64,12 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
 /// The strip of the selected tool's options, with the selected layer's readout at its right.
 class OptionsStrip extends StatelessWidget {
   const OptionsStrip({super.key, required this.tool, required this.opts, required this.onOpt, required this.scene, required this.layer, required this.ws});
-  final Ws ws;
+  final WorkspaceController ws;
   final int tool;
   final Map<String, int> opts;
   final void Function(String, int) onOpt;
   final ArtScene scene;
-  final WsLayer? layer;
+  final Layer? layer;
 
   Widget _seg(BuildContext c, String key, List<String> items, {int initial = 0}) =>
       Forms.worn.segment(c, ChoiceSpec(labels: items, selected: opts[key] ?? initial, onSelect: (i) => onOpt(key, i)));
@@ -81,75 +81,78 @@ class OptionsStrip extends StatelessWidget {
   List<Widget> _items(BuildContext c) => _joined(c, ws, paintOf(ws));
 
   /// The tool's own settings (how it draws or moves) and the selected layer's values as the document has them.
-  List<Widget> _joined(BuildContext c, Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) =>
-      switch (tool) {
-        0 => [
-          _seg(c, 'sel.level', const ['Layer', 'Group']),
-          _flag('sel.snap', 'Snap', initial: true),
-          _flag('sel.pivot', 'Pivots'),
-        ],
-        1 => [
-          _seg(c, 'move.axis', const ['Free', 'X', 'Y']),
-          _flag('move.snap', 'Snap', initial: true),
-        ],
-        2 => [
-          _Field('Fill', swatch: p.fill ?? WsT.body),
-          _Field('Stroke', value: p.width),
-          _Field('Radius', value: p.round),
-          _seg(c, 'rect.mode', const ['Shape', 'Mask']),
-        ],
-        3 => [
-          _Field('Fill', swatch: p.fill ?? WsT.body),
-          _Field('Stroke', value: p.width),
-          _seg(c, 'ell.from', const ['Corner', 'Centre']),
-        ],
-        4 => [
-          _seg(c, 'pen.mode', const ['Path', 'Mask']),
-        ],
-        // What the user's drag and wheel do, named as After Effects names its camera tools.
-        7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],
-        6 => [
-          _Field('Fill', swatch: p.fill ?? WsT.body),
-          _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
-          _seg(c, 'brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
-        ], // Alight Motion's drawing tools: pen (width follows pressure), brush (constant width), fill, and eraser.
-        _ => [
-          _Field('Font', value: p.font),
-          _Field('Size', value: p.size),
-          Forms.worn.segment(
-            c,
-            ChoiceSpec(
-              labels: const ['L', 'C', 'R'],
-              selected: p.align,
-              onSelect: (i) {
-                // Aligns the selected text's lines this way, using the document's align property.
-                final t = int.tryParse(ws.selected ?? '');
-                final m = ws.inside;
-                if (t == null || m == null) return;
-                m
-                  ..later('together', number: 1)
-                  ..later('set', layer: t, name: 'align', number: i / 2)
-                  // Anchors the text where it stands, as After Effects' point text does.
-                  ..later('set', layer: t, name: 'anchor_x', number: i - 1.0);
-                // Does not wait for the result.
-                ws.after(m.later('together'));
-              },
-            ),
-          ),
-          // The colour sits in the same row, as in Alight Motion's text bar: align, font, size, colour.
-          _Field('Fill', swatch: p.fill ?? WsT.body),
-        ],
-      };
+  List<Widget> _joined(
+    BuildContext c,
+    WorkspaceController ws,
+    ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p,
+  ) => switch (tool) {
+    0 => [
+      _seg(c, 'sel.level', const ['Layer', 'Group']),
+      _flag('sel.snap', 'Snap', initial: true),
+      _flag('sel.pivot', 'Pivots'),
+    ],
+    1 => [
+      _seg(c, 'move.axis', const ['Free', 'X', 'Y']),
+      _flag('move.snap', 'Snap', initial: true),
+    ],
+    2 => [
+      _Field('Fill', swatch: p.fill ?? WindowTokens.body),
+      _Field('Stroke', value: p.width),
+      _Field('Radius', value: p.round),
+      _seg(c, 'rect.mode', const ['Shape', 'Mask']),
+    ],
+    3 => [
+      _Field('Fill', swatch: p.fill ?? WindowTokens.body),
+      _Field('Stroke', value: p.width),
+      _seg(c, 'ell.from', const ['Corner', 'Centre']),
+    ],
+    4 => [
+      _seg(c, 'pen.mode', const ['Path', 'Mask']),
+    ],
+    // What the user's drag and wheel do, named as After Effects names its camera tools.
+    7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],
+    6 => [
+      _Field('Fill', swatch: p.fill ?? WindowTokens.body),
+      _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
+      _seg(c, 'brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
+    ], // Alight Motion's drawing tools: pen (width follows pressure), brush (constant width), fill, and eraser.
+    _ => [
+      _Field('Font', value: p.font),
+      _Field('Size', value: p.size),
+      Forms.worn.segment(
+        c,
+        ChoiceSpec(
+          labels: const ['L', 'C', 'R'],
+          selected: p.align,
+          onSelect: (i) {
+            // Aligns the selected text's lines this way, using the document's align property.
+            final t = int.tryParse(ws.selected ?? '');
+            final m = ws.inside;
+            if (t == null || m == null) return;
+            m
+              ..later('together', number: 1)
+              ..later('set', layer: t, name: 'align', number: i / 2)
+              // Anchors the text where it stands, as After Effects' point text does.
+              ..later('set', layer: t, name: 'anchor_x', number: i - 1.0);
+            // Does not wait for the result.
+            ws.after(m.later('together'));
+          },
+        ),
+      ),
+      // The colour sits in the same row, as in Alight Motion's text bar: align, font, size, colour.
+      _Field('Fill', swatch: p.fill ?? WindowTokens.body),
+    ],
+  };
 
   @override
   Widget build(BuildContext context) {
     final items = _items(context);
     return LayoutBuilder(
       builder: (_, box) => ToolStrip(
-        height: WsT.header,
-        color: WsT.body,
+        height: WindowTokens.header,
+        color: WindowTokens.body,
         line: true,
-        gap: WsT.inset,
+        gap: WindowTokens.inset,
         left: [
           SizedBox(
             width: Shape.z(62),
@@ -161,7 +164,7 @@ class OptionsStrip extends StatelessWidget {
           ConstrainedBox(
             // As wide as it needs, with the tool options before it getting the rest. If it is wider than the whole
             // strip it is scaled down and never cut off, as the trailing part in dock_widgets.dart is.
-            constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
+            constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WindowTokens.inset).clamp(0, double.infinity)),
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
@@ -187,7 +190,7 @@ class _Field extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: Shape.z(20),
     padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+    decoration: BoxDecoration(color: WindowTokens.well, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -210,10 +213,10 @@ class _Field extends StatelessWidget {
 class _Readout extends StatelessWidget {
   const _Readout({required this.scene, required this.layer});
   final ArtScene scene;
-  final WsLayer? layer;
+  final Layer? layer;
   @override
   Widget build(BuildContext context) {
-    final l = layer, box = WsArt.boxOf(scene, l?.id), ws = WsScope.of(context, {WsAspect.document, WsAspect.picked});
+    final l = layer, box = ArtGeometry.boxOf(scene, l?.id), ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked});
     if (l == null || ws.many.length > 1) {
       return Text(
         ws.many.isEmpty ? 'Nothing selected' : '${ws.many.length} picked',
@@ -241,11 +244,11 @@ class _Readout extends StatelessWidget {
         // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
         if (box == null &&
             ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour' &&
-            !(l.kind == WsKind.camera && (scene.layer(l.id)?.live(scene.frame) ?? false)))
+            !(l.kind == LayerKind.camera && (scene.layer(l.id)?.live(scene.frame) ?? false)))
           Padding(
             padding: EdgeInsets.only(left: Shape.s(10)),
             child: Text(
-              l.kind == WsKind.audio
+              l.kind == LayerKind.audio
                   ? 'No picture'
                   : ws.freeEye && (scene.layer(l.id)?.live(scene.frame) ?? false)
                   ? 'In Camera View'
@@ -253,7 +256,7 @@ class _Readout extends StatelessWidget {
               style: T.label(Grey.g56),
             ), // A 2D layer shows only through the camera, as in After Effects' working views.
           )
-        else if (l.kind != WsKind.camera) ...[
+        else if (l.kind != LayerKind.camera) ...[
           // The same numbers as the inspector shows, which come from the document.
           if (wsPlace(ws, l.id) case final at) ...[
             pair('P', '${at['x']?.round()}, ${at['y']?.round()}'),

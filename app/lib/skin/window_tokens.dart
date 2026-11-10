@@ -4,7 +4,7 @@ import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// The window's own sizes and colours. A panel names one of these; it never types a number that is the window's business.
-abstract final class WsT {
+abstract final class WindowTokens {
   /// The gutter between panels: the dark you see between tiles.
   static const gutter = 2.0;
 

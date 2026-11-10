@@ -8,8 +8,8 @@ import 'package:motolii/skin/window_tokens.dart';
 ///
 /// [height], [color] and [padding] are for headers that need to be taller, darker or tighter.
 /// [child] replaces the whole row.
-class WsHeader extends StatelessWidget {
-  const WsHeader(this.title, {super.key, this.trailing = const [], this.leading, this.height, this.color, this.padding, this.child});
+class PanelHeader extends StatelessWidget {
+  const PanelHeader(this.title, {super.key, this.trailing = const [], this.leading, this.height, this.color, this.padding, this.child});
   final String title;
   final List<Widget> trailing;
   final Widget? leading, child;
@@ -18,11 +18,11 @@ class WsHeader extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   @override
   Widget build(BuildContext context) => Container(
-    height: height ?? WsT.header,
-    padding: padding ?? EdgeInsets.symmetric(horizontal: WsT.inset),
+    height: height ?? WindowTokens.header,
+    padding: padding ?? EdgeInsets.symmetric(horizontal: WindowTokens.inset),
     decoration: BoxDecoration(
-      color: color ?? WsT.body,
-      border: Border(bottom: BorderSide(color: WsT.line)),
+      color: color ?? WindowTokens.body,
+      border: Border(bottom: BorderSide(color: WindowTokens.line)),
     ),
     child:
         child ??
@@ -37,12 +37,12 @@ class WsHeader extends StatelessWidget {
   );
 }
 
-/// A panel: a square tile of [WsT.body] that clips what it holds.
-class WsPanel extends StatelessWidget {
-  const WsPanel({super.key, required this.child});
+/// A panel: a square tile of [WindowTokens.body] that clips what it holds.
+class Panel extends StatelessWidget {
+  const Panel({super.key, required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) => ClipRect(
-    child: ColoredBox(color: WsT.body, child: child),
+    child: ColoredBox(color: WindowTokens.body, child: child),
   );
 }

@@ -1,6 +1,6 @@
 // The whole window: the top bar above the panes (panes.dart).
 // The panes are the media shelves, Stage over Timeline, and Inspector over Tool Panel. The user can rearrange them.
-// Each panel lives in its own file and reads the shared Ws.
+// Each panel lives in its own file and reads the shared WorkspaceController.
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -53,15 +53,15 @@ class Workspace extends StatefulWidget {
 
   /// Extra panes that join the Inspector's tabs.
   ///
-  /// A pane reads and changes the project through [WsScope.of]: `inside` is the engine's project,
+  /// A pane reads and changes the project through [WorkspaceScope.of]: `inside` is the engine's project,
   /// `selected` the selected layer and `frame` the current time.
-  final List<WsPane> extra;
+  final List<Pane> extra;
   @override
   State<Workspace> createState() => WorkspaceState();
 }
 
 class WorkspaceState extends State<Workspace> {
-  late final ws = Ws()..panes = [..._panes, ...widget.extra];
+  late final ws = WorkspaceController()..panes = [..._panes, ...widget.extra];
   Motolii? engine;
   // Watches the user's own effects folder (effect_tiles.dart).
   StreamSubscription<FileSystemEvent>? _own;
@@ -187,7 +187,7 @@ class WorkspaceState extends State<Workspace> {
       [] => 'Flash check: no issues found · $name',
       _ => 'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
     };
-    if (fails case [(final from, _), ...]) ws.noticeGo = () => ws.frame = (from * Ws.fps).floor();
+    if (fails case [(final from, _), ...]) ws.noticeGo = () => ws.frame = (from * WorkspaceController.fps).floor();
   }
 
   /// Exports the listed projects.
@@ -310,10 +310,14 @@ class WorkspaceState extends State<Workspace> {
         // One widget instance, reused. Carrying a card or tab changes the overlay, and the whole window,
         // including every shelf's tiles, used to be rebuilt each time (18,358 widgets, 90 ms per pick-up or drop).
         const window = _Window();
-        if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
+        if (box.maxWidth >= WindowTokens.minWindow.width && box.maxHeight >= WindowTokens.minWindow.height) return window;
         return FittedBox(
           // Laid out at no less than the minimum window size and shrunk only as far as needed, so a zoomed window stays zoomed.
-          child: SizedBox(width: math.max(box.maxWidth, WsT.minWindow.width), height: math.max(box.maxHeight, WsT.minWindow.height), child: window),
+          child: SizedBox(
+            width: math.max(box.maxWidth, WindowTokens.minWindow.width),
+            height: math.max(box.maxHeight, WindowTokens.minWindow.height),
+            child: window,
+          ),
         );
       },
     ),
@@ -321,19 +325,19 @@ class WorkspaceState extends State<Workspace> {
 
   @override
   Widget build(BuildContext context) {
-    final window = WsScope(
+    final window = WorkspaceScope(
       ws: ws,
       child: Focus(
         focusNode: _windowFocus,
         autofocus: true,
         child: ColoredBox(
-          color: WsT.ground,
+          color: WindowTokens.ground,
           child: Stack(
             children: [
               Overlay(initialEntries: [_entry]),
               if (home && documentPath != null && ws.inside != null)
                 Positioned.fill(
-                  child: WsHome(
+                  child: HomeWindow(
                     folder: File(documentPath!).parent.path,
                     lib: ws.inside!.libPath,
                     open: documentPath!,
@@ -355,13 +359,13 @@ class WorkspaceState extends State<Workspace> {
       ),
     );
     // The project is still opening, so no panel is built yet.
-    if (ws.inside == null) return ColoredBox(color: WsT.ground);
+    if (ws.inside == null) return ColoredBox(color: WindowTokens.ground);
     return PlatformMenuBar(
       menus: menus(),
-      child: WsKeys(
+      child: KeymapShortcuts(
         keymap: keymap,
         commands: commands(),
-        child: WsZoomed(child: window),
+        child: WindowZoomed(child: window),
       ),
     );
   }
@@ -373,33 +377,33 @@ class _Window extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      SizedBox(height: WsT.topBar, child: WsTopBar()),
-      const SizedBox(height: WsT.gutter),
+      SizedBox(height: WindowTokens.topBar, child: TopBar()),
+      const SizedBox(height: WindowTokens.gutter),
       Expanded(
-        child: WsPanes(panes: WsScope.read(context).panes, preset: _preset),
+        child: Panes(panes: WorkspaceScope.read(context).panes, preset: _preset),
       ),
     ],
   );
 }
 
 final _panes = [
-  WsPane('Media', DockG.media, () => const WsShelf('Media', 'Search files and media'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Effects', DockG.effects, () => const WsShelf('Effects', 'Search effects and features'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Fonts', DockG.fonts, () => const WsShelf('Fonts', 'Search fonts'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Colors', DockG.colors, () => const WsShelf('Colors', 'Search palettes'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Create', DockG.create, () => const WsShelf('Create', 'Search layers and shapes'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Program', DockG.program, () => const WsShelf('Program', 'Search code'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Presets', DockG.files, () => const WsShelf('Presets', 'Search presets'), at: WsAt.shelves, minSize: 240, iconOnly: true),
-  WsPane('Stage', DockG.stage, () => const WsStage(), at: WsAt.stage, minSize: 320),
-  WsPane('Camera View', DockG.camera, () => const WsCameraView(), at: WsAt.stage, minSize: 240),
-  WsPane('Inspector', DockG.inspector, () => const WsInspector(), minSize: 200),
-  WsPane('Timeline', DockG.timeline, () => const WsTimeline(), at: WsAt.timeline, minSize: 160),
-  WsPane('Ease', DockG.time, () => const EaseTool(), at: WsAt.ease, minSize: 260),
-  WsPane('Camera', DockG.camera, () => const DepthTool(), at: WsAt.tools, minSize: WsT.lower),
-  WsPane('Tool Panel', DockG.toolPanel, () => const WsToolPanel(), at: WsAt.tools, minSize: WsT.lower),
-  WsPane('Relations', DockG.toolPanel, () => const RelationsTool(), at: WsAt.tools, minSize: WsT.lower),
-  WsPane('Blend', DockG.blend, BlendTool.new, at: WsAt.catalog, tone: Pop.toneBlend, acts: 'Layer stack'),
-  WsPane('Align', DockG.align, AlignTool.new, at: WsAt.catalog, tone: Pop.toneLayout, acts: 'Selection'),
+  Pane('Media', DockG.media, () => const ShelfPane('Media', 'Search files and media'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Effects', DockG.effects, () => const ShelfPane('Effects', 'Search effects and features'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Fonts', DockG.fonts, () => const ShelfPane('Fonts', 'Search fonts'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Colors', DockG.colors, () => const ShelfPane('Colors', 'Search palettes'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Create', DockG.create, () => const ShelfPane('Create', 'Search layers and shapes'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Program', DockG.program, () => const ShelfPane('Program', 'Search code'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Presets', DockG.files, () => const ShelfPane('Presets', 'Search presets'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
+  Pane('Stage', DockG.stage, () => const StagePane(), at: PaneStrip.stage, minSize: 320),
+  Pane('Camera View', DockG.camera, () => const CameraView(), at: PaneStrip.stage, minSize: 240),
+  Pane('Inspector', DockG.inspector, () => const InspectorPane(), minSize: 200),
+  Pane('Timeline', DockG.timeline, () => const TimelinePane(), at: PaneStrip.timeline, minSize: 160),
+  Pane('Ease', DockG.time, () => const EaseTool(), at: PaneStrip.ease, minSize: 260),
+  Pane('Camera', DockG.camera, () => const DepthTool(), at: PaneStrip.tools, minSize: WindowTokens.lower),
+  Pane('Tool Panel', DockG.toolPanel, () => const ToolPanel(), at: PaneStrip.tools, minSize: WindowTokens.lower),
+  Pane('Relations', DockG.toolPanel, () => const RelationsTool(), at: PaneStrip.tools, minSize: WindowTokens.lower),
+  Pane('Blend', DockG.blend, BlendTool.new, at: PaneStrip.catalog, tone: Pop.toneBlend, acts: 'Layer stack'),
+  Pane('Align', DockG.align, AlignTool.new, at: PaneStrip.catalog, tone: Pop.toneLayout, acts: 'Selection'),
 ];
 
 /// Height of a pane's tab strip, added to the reference heights so the panels keep theirs.
@@ -410,13 +414,13 @@ const _strip = 22.0;
 ///
 /// Side and lower panes start at their reference sizes in px. The panes without a size share what is left.
 /// The filling panes must be given no weight: `multi_split_view` turns sizes into weights and would scale them against any weight given.
-DockingArea _preset(DockingArea Function(WsAt at, {double? size}) strip) => DockingRow([
+DockingArea _preset(DockingArea Function(PaneStrip at, {double? size}) strip) => DockingRow([
   DockingColumn([
-    DockingRow([strip(WsAt.shelves, size: WsT.dock), strip(WsAt.stage)]),
+    DockingRow([strip(PaneStrip.shelves, size: WindowTokens.dock), strip(PaneStrip.stage)]),
     // Ease edits the easing between two keyframes, so it sits beside Timeline. It is never made shorter than 220,
     // the height at which its seven shapes and curve stay readable. This is docking's own minimum, as in VS Code's views.
-    DockingRow([strip(WsAt.timeline), strip(WsAt.ease, size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220),
+    DockingRow([strip(PaneStrip.timeline), strip(PaneStrip.ease, size: WindowTokens.inspector)], size: WindowTokens.lower + _strip, minimalSize: 220),
   ]),
   // The lower strip holds the Camera tool, whatever is selected.
-  DockingColumn([strip(WsAt.inspector), strip(WsAt.tools, size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),
+  DockingColumn([strip(PaneStrip.inspector), strip(PaneStrip.tools, size: WindowTokens.lower + _strip)], size: WindowTokens.inspector, minimalSize: 340),
 ]);

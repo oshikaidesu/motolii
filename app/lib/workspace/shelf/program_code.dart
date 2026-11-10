@@ -70,8 +70,8 @@ class _ProgramCodeState extends State<ProgramCode> {
       fontFamily: T.mono,
       fontHeight: 1.4,
       textColor: Grey.g91,
-      backgroundColor: WsT.well,
-      selectionColor: WsT.accent.withAlpha(90),
+      backgroundColor: WindowTokens.well,
+      selectionColor: WindowTokens.accent.withAlpha(90),
       cursorColor: Grey.g91,
       codeTheme: CodeHighlightTheme(
         languages: {widget.file.endsWith('.fs') ? 'glsl' : 'javascript': CodeHighlightThemeMode(mode: widget.file.endsWith('.fs') ? langGlsl : langJavascript)},

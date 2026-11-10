@@ -41,7 +41,7 @@ class _RelationsToolState extends State<RelationsTool> {
   /// These are the shapes the relation passes through, not the path between them.
   /// They are times other than the one the preview shows, so they are requested from the engine (another isolate) and shown when they arrive.
   (Object, Map<String, List<_P3>>)? _stations;
-  Map<String, List<_P3>> _stationsOf(Ws ws) {
+  Map<String, List<_P3>> _stationsOf(WorkspaceController ws) {
     final m = ws.inside, r = int.tryParse(ws.selected ?? '');
     final at = (ws.rev, ws.selected);
     if (_stations?.$1 == at || _stationsAsked == at || m == null) return _stations?.$2 ?? const {};
@@ -73,7 +73,7 @@ class _RelationsToolState extends State<RelationsTool> {
     return _stations?.$2 ?? const {};
   }
 
-  Map<String, List<_P3>> _pathsOf(Ws ws) {
+  Map<String, List<_P3>> _pathsOf(WorkspaceController ws) {
     final m = ws.inside;
     if (_paths?.$1 == ws.rev || _pathsAsked == ws.rev || m == null) return _paths?.$2 ?? const {};
     final rev = _pathsAsked = ws.rev;
@@ -86,7 +86,7 @@ class _RelationsToolState extends State<RelationsTool> {
         .shownAt([
           for (final t in things)
             for (var k = 0; k <= steps; k++)
-              for (final n in const ['x', 'y', 'z']) (t, n, k / steps * Ws.duration / Ws.fps),
+              for (final n in const ['x', 'y', 'z']) (t, n, k / steps * WorkspaceController.duration / WorkspaceController.fps),
         ])
         .then((v) {
           if (!mounted) return;
@@ -106,25 +106,25 @@ class _RelationsToolState extends State<RelationsTool> {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([
-      WsScope.read(context).on[WsAspect.document],
-      WsScope.read(context).on[WsAspect.picked],
+      WorkspaceScope.read(context).on[WorkspaceAspect.document],
+      WorkspaceScope.read(context).on[WorkspaceAspect.picked],
       // Changes with the frame the preview shows, which decides where the layers are.
-      WsScope.read(context).seen,
+      WorkspaceScope.read(context).seen,
     ]),
     builder: (context, _) {
-      final ws = WsScope.read(context), world = _World.of(ws), together = wsRelatable(ws).length, many = together > 1;
+      final ws = WorkspaceScope.read(context), world = _World.of(ws), together = wsRelatable(ws).length, many = together > 1;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ToolStrip(
-            left: [Chip(label: 'Relations · ${world.relations.length}', look: ChipLook.flat(WsT.toneGroup))],
+            left: [Chip(label: 'Relations · ${world.relations.length}', look: ChipLook.flat(WindowTokens.toneGroup))],
           ),
           ColoredBox(
             // The row names what the tab is for in the words that do it, as the top of the preview does.
             // Blender's Constraints tab also holds its own Add menu.
-            color: WsT.card,
+            color: WindowTokens.card,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(WsT.inset, 0, WsT.inset, Shape.s(5)),
+              padding: EdgeInsets.fromLTRB(WindowTokens.inset, 0, WindowTokens.inset, Shape.s(5)),
               child: Wrap(
                 spacing: Shape.s(4),
                 runSpacing: Shape.s(4),
@@ -136,22 +136,22 @@ class _RelationsToolState extends State<RelationsTool> {
                       key: ValueKey('ws-tab-relate-$k'),
                       onTap: many ? () => wsRelate(ws, k) : null,
                       child: IntrinsicWidth(
-                        child: Chip(label: wsRelationWord(k), look: ChipLook.flat(many ? WsT.accent : Grey.g38)),
+                        child: Chip(label: wsRelationWord(k), look: ChipLook.flat(many ? WindowTokens.accent : Grey.g38)),
                       ),
                     ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: WsT.gutter),
+          const SizedBox(height: WindowTokens.gutter),
           Expanded(
             child: ColoredBox(
-              color: WsT.card,
+              color: WindowTokens.card,
               child: LayoutBuilder(
                 builder: (context, box) {
                   final view = _View(world, box.biggest, _yaw, _pitch, paths: _pathsOf(ws), zoom: _zoom);
                   // Two fingers on a trackpad turn the view, as in Blender, through the drag handler below. A pinch zooms in.
-                  return WsTwoFingers(
+                  return TwoFingerGestures(
                     onWheel: (d) => setState(() => _zoom = (_zoom * math.exp(-d.dy / 300)).clamp(.3, 8.0)),
                     onPinch: (by, _) => setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
                     child: GestureDetector(
@@ -206,7 +206,7 @@ class _World {
   /// Half the camera's frame, in the canvas's units.
   final Size half;
 
-  static _World of(Ws ws) {
+  static _World of(WorkspaceController ws) {
     final m = ws.inside;
     if (m == null) return _World(const {}, null, const [], Size.zero);
     // The time of the frame the preview shows.
@@ -237,7 +237,7 @@ class _World {
       }
       things[l.id] = (at, l.tone, l.name); // The label colour, the same as its row's.
     }
-    return _World(things, camera, rels, Size(WsArt.comp.width / 2 / m.point, WsArt.comp.height / 2 / m.point));
+    return _World(things, camera, rels, Size(ArtGeometry.comp.width / 2 / m.point, ArtGeometry.comp.height / 2 / m.point));
   }
 }
 
@@ -367,9 +367,9 @@ class _Map extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     // The camera's frame and where the camera stands.
-    line.color = WsT.toneCamera;
+    line.color = WindowTokens.toneCamera;
     c.drawPath(Path()..addPolygon([for (final p in v._frame) v.on(p)], true), line);
-    if (v.world.camera case final cam?) c.drawCircle(v.on(cam), 5, Paint()..color = WsT.toneCamera);
+    if (v.world.camera case final cam?) c.drawCircle(v.on(cam), 5, Paint()..color = WindowTokens.toneCamera);
     // Each relation's shape and its threads to its layers, in its own colour.
     for (final r in v.world.relations) {
       final hue = wsLabel(r.id), picked = r.id == selected; // The same label colour as its row.
@@ -401,7 +401,7 @@ class _Map extends CustomPainter {
     // An easing shows as the dots bunching up and spreading out.
     for (final e in paths.entries) {
       // As in After Effects, only the picked layer's path, with a dot per step.
-      final hue = v.world.things[e.key]?.$2 ?? WsT.accent, pts = [for (final p in e.value) v.on(p)];
+      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent, pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
         Paint()
@@ -415,7 +415,7 @@ class _Map extends CustomPainter {
     }
     for (final e in stations.entries) {
       // For a picked relation: where each layer stands at each of its keyframes, joined by straight lines and ringed.
-      final hue = v.world.things[e.key]?.$2 ?? WsT.accent, pts = [for (final p in e.value) v.on(p)];
+      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent, pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
         Paint()
@@ -452,7 +452,7 @@ class _Map extends CustomPainter {
           at,
           8,
           Paint()
-            ..color = WsT.accent
+            ..color = WindowTokens.accent
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5,
         );

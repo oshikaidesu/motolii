@@ -51,8 +51,8 @@ const _filmMm = 12 / 0.2679491924311227;
 ///
 /// The focus is stored in canvas points measured from the eye. When the camera has no focus value, the focus is the eye distance.
 /// Returns null when the document has no camera.
-({int camera, double eye})? _lensOf(Ws ws, _Lens lens) {
-  final m = ws.inside, cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
+({int camera, double eye})? _lensOf(WorkspaceController ws, _Lens lens) {
+  final m = ws.inside, cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
   if (m == null || cam == null) return null;
   final t = int.parse(cam.id), at = m.now, p = m.point, eye = 6 * (m.value(t, 'distance', at) ?? 1) * p;
   final stop = m.value(t, 'aperture', at) ?? 0, focus = m.value(t, 'focus', at) ?? 0;
@@ -69,11 +69,11 @@ const _filmMm = 12 / 0.2679491924311227;
 typedef _Slab = ({String id, String name, Color tone, double x, double z, double w});
 
 /// Returns one slab per layer, except cameras: its horizontal position and its distance from the eye.
-List<_Slab> _slabsOf(Ws ws) {
+List<_Slab> _slabsOf(WorkspaceController ws) {
   final m = ws.inside!, eye = _lensOf(ws, _Lens())?.eye;
   return [
     for (final l in ws.layers)
-      if (eye != null && l.kind != WsKind.camera)
+      if (eye != null && l.kind != LayerKind.camera)
         (
           id: l.id,
           name: l.name,
@@ -96,8 +96,8 @@ class _DepthToolState extends State<DepthTool> {
   @override
   Widget build(BuildContext context) {
     // Rebuild when the displayed snapshot changes, so the lens matches it.
-    WsScope.pictureOf(context);
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
+    WorkspaceScope.pictureOf(context);
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
     // Sets one camera value and sends it to the engine as a drag, the same way a drag on the stage does.
     void edit(void Function() f, String name, double value) {
       setState(f);
@@ -108,7 +108,7 @@ class _DepthToolState extends State<DepthTool> {
       }
     }
 
-    final cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
+    final cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
     if (joined != null) {
       // With a document camera, the focused layer is the sharp layer nearest to the focus.
       final d = lens.dof,
@@ -122,7 +122,7 @@ class _DepthToolState extends State<DepthTool> {
       children: [
         ToolStrip(
           left: [
-            Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WsT.toneCamera)),
+            Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WindowTokens.toneCamera)),
             SizedBox(width: Shape.s(8)),
             Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
             SizedBox(width: Shape.s(8)),
@@ -132,14 +132,14 @@ class _DepthToolState extends State<DepthTool> {
           ],
           right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
         ),
-        const SizedBox(height: WsT.gutter),
+        const SizedBox(height: WindowTokens.gutter),
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
                 child: ColoredBox(
-                  color: WsT.card,
+                  color: WindowTokens.card,
                   child: _Diagram(
                     lens: lens,
                     onFocus: (z, id) => edit(
@@ -159,7 +159,7 @@ class _DepthToolState extends State<DepthTool> {
                   ),
                 ),
               ),
-              const SizedBox(width: WsT.gutter),
+              const SizedBox(width: WindowTokens.gutter),
               SizedBox(
                 width: Shape.z(128),
                 child: _LensNumbers(lens: lens, camera: joined == null ? null : cam?.id),
@@ -188,13 +188,13 @@ class _LensNumbers extends StatelessWidget {
       ],
     );
     return ColoredBox(
-      color: WsT.card,
+      color: WindowTokens.card,
       child: ListView(
-        padding: EdgeInsets.only(top: Shape.s(7), bottom: WsT.inset),
+        padding: EdgeInsets.only(top: Shape.s(7), bottom: WindowTokens.inset),
         children: [
           if (camera case final id?) LayerCards(layer: id, only: const ['Camera Options']),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+            padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -229,7 +229,7 @@ class _DiagramState extends State<_Diagram> {
 
   @override
   Widget build(BuildContext context) {
-    final slabs = _slabsOf(WsScope.of(context, {WsAspect.document}));
+    final slabs = _slabsOf(WorkspaceScope.of(context, {WorkspaceAspect.document}));
     return LayoutBuilder(
       builder: (context, box) {
         final m = _Map(box.biggest);
@@ -354,23 +354,23 @@ class _DepthPainter extends CustomPainter {
     c.drawPath(cone, line..color = Grey.g38);
     // A knob on the cone edge shows that dragging sideways changes the view.
     final knobZ = _zMax * .45, knob = m.at(knobZ * math.tan(half), knobZ);
-    c.drawCircle(knob, 6, Paint()..color = WsT.toneCamera);
+    c.drawCircle(knob, 6, Paint()..color = WindowTokens.toneCamera);
     c.drawCircle(
       knob,
       6,
       Paint()
-        ..color = WsT.card
+        ..color = WindowTokens.card
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
     c.restore();
     // The focus line and its tag.
     final y = m.at(0, focus).dy;
-    dashed(c, Offset(30, y), Offset(s.width - 50, y), WsT.accent, hot ? 2 : 1.5, 4, 3);
+    dashed(c, Offset(30, y), Offset(s.width - 50, y), WindowTokens.accent, hot ? 2 : 1.5, 4, 3);
     // Slabs: sharp ones in their full hue, soft ones sink toward the card.
     for (final sl in slabs) {
       final r = m.slab(sl.x, sl.z, sl.w), sharp = sl.z >= near && sl.z <= far, on = sl.id == target;
-      final col = sharp ? sl.tone : Color.lerp(sl.tone, WsT.card, .55)!;
+      final col = sharp ? sl.tone : Color.lerp(sl.tone, WindowTokens.card, .55)!;
       final rr = RRect.fromRectAndRadius(r, Shape.r(2));
       c.drawRRect(rr, fill..color = col);
       if (on) {
@@ -397,14 +397,14 @@ class _DepthPainter extends CustomPainter {
       np.dispose();
     }
     final tag = '${focus.round()}';
-    final tr = RRect.fromRectAndRadius(Rect.fromLTWH(s.width - 48, y - 8, 42, 16), Shape.r(WsT.chipRadius));
-    c.drawRRect(tr, fill..color = WsT.accent);
-    toolText(c, tag, tr.center, T.value(WsT.onAccent).copyWith(fontSize: T.px(10), fontWeight: FontWeight.w700), ax: .5, ay: .5);
+    final tr = RRect.fromRectAndRadius(Rect.fromLTWH(s.width - 48, y - 8, 42, 16), Shape.r(WindowTokens.chipRadius));
+    c.drawRRect(tr, fill..color = WindowTokens.accent);
+    toolText(c, tag, tr.center, T.value(WindowTokens.onAccent).copyWith(fontSize: T.px(10), fontWeight: FontWeight.w700), ax: .5, ay: .5);
     // The camera body at the cone's tip.
     final e = m.eye;
     c.drawRRect(
       RRect.fromRectAndRadius(Rect.fromCenter(center: e + const Offset(0, 9), width: Shape.z(18), height: Shape.z(12)), Shape.r(3)),
-      fill..color = WsT.toneCamera,
+      fill..color = WindowTokens.toneCamera,
     );
     c.drawPath(
       Path()
@@ -414,7 +414,7 @@ class _DepthPainter extends CustomPainter {
         ..close(),
       fill,
     );
-    c.drawCircle(e + const Offset(0, 9), 2.5, Paint()..color = WsT.onAccent);
+    c.drawCircle(e + const Offset(0, 9), 2.5, Paint()..color = WindowTokens.onAccent);
     toolText(c, 'CAM', e + const Offset(14, 9), T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1), ay: .5);
   }
 

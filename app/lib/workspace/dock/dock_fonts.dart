@@ -54,7 +54,7 @@ final _fontFile = RegExp(r'\.(ttf|otf|ttc|otc)$', caseSensitive: false);
 /// and only its first face is used, because ThorVG sets no other (see thorvg_ttc.patch).
 List<_Font>? _disk;
 Future<void>? _reading;
-List<_Font> _diskFonts(Ws ws) {
+List<_Font> _diskFonts(WorkspaceController ws) {
   fontsRead(ws);
   return _disk ?? const [];
 }
@@ -70,7 +70,7 @@ int fontsUnoffered = 0;
 /// A font that can set the shelf's sample line is offered with that line. A font with other letters is offered
 /// with a sample in its own script, as fonts.google.com does (samples.json, from Google Fonts' gflanguages),
 /// so the user never sees missing-glyph boxes. The bundled fonts and the user's own are offered as well.
-Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() async {
+Future<void> fontsRead(WorkspaceController ws) => _reading ??= Zone.root.run<Future<void>>(() async {
   final files = <String>[];
   for (final dir in [
     '/System/Library/Fonts',
@@ -190,7 +190,7 @@ class _Roles extends StatelessWidget {
           builder: (context, h) => Container(
             height: Shape.z(46),
             padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(4)),
-            color: dockFill(on, h, WsT.card),
+            color: dockFill(on, h, WindowTokens.card),
             child: Row(
               children: [
                 Expanded(
@@ -213,11 +213,11 @@ class _Roles extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.only(bottom: WsT.gutter),
+      padding: EdgeInsets.only(bottom: WindowTokens.gutter),
       child: Row(
         children: [
           role('title', 'Title', c.ws.titleFace),
-          SizedBox(width: WsT.gutter),
+          SizedBox(width: WindowTokens.gutter),
           role('body', 'Body', c.ws.bodyFace),
         ],
       ),
@@ -344,7 +344,7 @@ class FontsShelf extends StatelessWidget {
                         ? Padding(
                             // Explains why some fonts are missing instead of hiding them silently.
                             key: const ValueKey('ws-fonts-unoffered'),
-                            padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(8), WsT.inset, Shape.s(8)),
+                            padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(8), WindowTokens.inset, Shape.s(8)),
                             child: Text(
                               '$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them',
                               style: T.label(Grey.g56),
@@ -365,9 +365,9 @@ class FontsShelf extends StatelessWidget {
         if (sel != null)
           DockFooter(
             preview: Container(
-              color: WsT.toneText,
+              color: WindowTokens.toneText,
               alignment: Alignment.center,
-              child: Text('Aa', style: _face(sel, 15, WsT.onAccent)),
+              child: Text('Aa', style: _face(sel, 15, WindowTokens.onAccent)),
             ),
             title: sel.family,
             meta: c.mem.trouble[sel.family] ?? '${sel.path!.split('.').last.toUpperCase()} · ${File(sel.path!).parent.path.split('/').last}',
@@ -439,11 +439,11 @@ Widget _fontTile(_Font f, DockCtx c, {required bool list, String? usedBy}) {
     says: '${f.family}  ·  $tags',
     marks: [
       if (f.script != null) ...[SizedBox(width: Shape.s(6)), Chip(label: _noLatin, look: ChipLook.tag(null))],
-      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), Chip(label: u, look: ChipLook.tag(sel ? null : WsT.toneText))],
+      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), Chip(label: u, look: ChipLook.tag(sel ? null : WindowTokens.toneText))],
     ],
     after: (h) => [
       if (star || h || sel)
-        DockStar(on: star, ink: sel ? WsT.onAccent : null, onTap: () => c.star(f.family))
+        DockStar(on: star, ink: sel ? WindowTokens.onAccent : null, onTap: () => c.star(f.family))
       else
         SizedBox(width: list ? Shape.s(20) : null, height: list ? null : Shape.s(20)),
     ],
@@ -514,7 +514,7 @@ class _FontDotState extends State<_FontDot> {
       },
       onDoubleTap: () => _setFont(c, f),
       builder: (context, h) => Container(
-        color: dockFill(sel, h, WsT.card),
+        color: dockFill(sel, h, WindowTokens.card),
         child: switch (widget.map) {
           final map? => ValueListenableBuilder(
             valueListenable: map.places,

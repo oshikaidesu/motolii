@@ -18,7 +18,7 @@ import 'package:motolii/workspace/commands/command_actions.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/stage/stage.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/workspace.dart';
 
@@ -79,8 +79,8 @@ extension WorkspaceMenus on WorkspaceState {
         }
       }
       if (mask.isNotEmpty) m.later('say', layer: -1, name: 'group_mask', word: mask);
-      m.later('set', layer: -1, name: 'x', number: (c.dx - WsArt.centre.dx) / m.point);
-      m.later('set', layer: -1, name: 'y', number: (WsArt.centre.dy - c.dy) / m.point);
+      m.later('set', layer: -1, name: 'x', number: (c.dx - ArtGeometry.centre.dx) / m.point);
+      m.later('set', layer: -1, name: 'y', number: (ArtGeometry.centre.dy - c.dy) / m.point);
       for (final t in all) {
         m.later('set', layer: t, name: 'parent', word: 'last_added'); // Each layer follows the group and stays where it is.
       }
@@ -139,7 +139,7 @@ extension WorkspaceMenus on WorkspaceState {
         void own() => wsKeysKept.isNotEmpty
             ? wsPasteKeys(ws)
             : File(_clipboard('thing')).existsSync()
-            ? ws.after(m.later('paste', word: _clipboard('thing'), number: ws.frame / Ws.fps), null, (made) => ws.select('$made'))
+            ? ws.after(m.later('paste', word: _clipboard('thing'), number: ws.frame / WorkspaceController.fps), null, (made) => ws.select('$made'))
             : null;
         // Code copied from the web is run by the engine's adapter (adapter.h), whatever it is written for.
         // Whatever was copied last wins.
@@ -285,14 +285,14 @@ extension WorkspaceMenus on WorkspaceState {
             ];
         final (from, to) = bars.isEmpty
             ? (0.0, m.seconds)
-            : (bars.map((l) => l.inF).reduce(math.min) / Ws.fps, bars.map((l) => l.outF).reduce(math.max) / Ws.fps);
+            : (bars.map((l) => l.inF).reduce(math.min) / WorkspaceController.fps, bars.map((l) => l.outF).reduce(math.max) / WorkspaceController.fps);
         ws.after(m.later('work', number: from, word: '$to'));
       },
       'thing.split': () {
         final t = int.tryParse(ws.selected ?? '');
         if (t == null) return;
         // The part after the playhead becomes selected, as in Live.
-        ws.after(m.later('split', layer: t, number: ws.frame / Ws.fps), null, (made) => ws.select('$made'));
+        ws.after(m.later('split', layer: t, number: ws.frame / WorkspaceController.fps), null, (made) => ws.select('$made'));
       },
       for (final (_, how) in _aligns)
         'arrange.$how': () {
@@ -305,7 +305,7 @@ extension WorkspaceMenus on WorkspaceState {
         'time.$how': () {
           // Acts on the selected layers in the order they were selected (Alight Motion's timing).
           final all = pickedLayers();
-          if (all.isNotEmpty) ws.after(m.later('time_align', word: '$how ${all.join(' ')}', number: ws.frame / Ws.fps));
+          if (all.isNotEmpty) ws.after(m.later('time_align', word: '$how ${all.join(' ')}', number: ws.frame / WorkspaceController.fps));
         },
       'thing.forward': () => eachPicked((t) => m.later('raise', layer: t, number: 1)),
       'thing.backward': () => eachPicked((t) => m.later('raise', layer: t, number: -1)),
@@ -327,7 +327,7 @@ extension WorkspaceMenus on WorkspaceState {
       ...wsAbletonCommands(ws), // Ableton Live's keys: see command_actions.dart.
       ...wsToolCommands(ws), // The canvas tools: see stage.dart.
       'frame.first': () => step(-ws.frame),
-      'frame.last': () => step(Ws.duration - ws.frame),
+      'frame.last': () => step(WorkspaceController.duration - ws.frame),
     };
   }
 

@@ -33,7 +33,7 @@ class TimelineHeader extends StatelessWidget {
     required this.onZoom,
     required this.onMark,
   });
-  final Ws ws;
+  final WorkspaceController ws;
   final bool loop;
   final double zoom;
   final VoidCallback onToggle, onLoop, onMark;
@@ -44,7 +44,7 @@ class TimelineHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final big = T.value(Grey.g76).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
     final picked = ws.keys.length, layer = ws.layer;
-    return WsHeader(
+    return PanelHeader(
       '',
       height: WtM.header,
       child: LayoutBuilder(
@@ -62,13 +62,13 @@ class TimelineHeader extends StatelessWidget {
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
                 // Only the play button listens to playback, so the rest of the row is not rebuilt.
-                valueListenable: ws.on[WsAspect.playing]!,
+                valueListenable: ws.on[WorkspaceAspect.playing]!,
                 builder: (_, _, _) => _Btn(
                   ws.playing ? TpGlyph.pause : TpGlyph.play,
                   key: const ValueKey('ws-tl-play'),
                   width: Shape.z(34),
                   on: ws.playing,
-                  rest: WsT.accent,
+                  rest: WindowTokens.accent,
                   onTap: onToggle,
                 ),
               ),
@@ -81,7 +81,7 @@ class TimelineHeader extends StatelessWidget {
                 // Like the Set button in Ableton Live: adds a marker at the playhead, or removes the one already there.
                 valueListenable: ws.moment,
                 builder: (_, _, _) => _Btn(
-                  ws.marks.any((k) => (k.$1 * Ws.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
+                  ws.marks.any((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
                   key: const ValueKey('ws-tl-mark'),
                   width: Shape.z(66),
                   label: 'Marker',
@@ -99,18 +99,18 @@ class TimelineHeader extends StatelessWidget {
                   value: () => ws.frame.toDouble(),
                   text: (_, _) => ws.timecode(), // The whole text starts selected, so typing replaces it.
                   style: big.copyWith(color: Grey.g100),
-                  accent: WsT.accent,
+                  accent: WindowTokens.accent,
                   allow: null,
-                  parse: (said) => wtTimeOf(said, ws.frame, Ws.fps)?.toDouble(),
+                  parse: (said) => wtTimeOf(said, ws.frame, WorkspaceController.fps)?.toDouble(),
                   sayOnLeave: false,
-                  onType: (to) => onStep(to.round().clamp(0, Ws.duration) - ws.frame),
+                  onType: (to) => onStep(to.round().clamp(0, WorkspaceController.duration) - ws.frame),
                   paint: (_, shown, typing) =>
                       typing ? SizedBox(width: Shape.z(72), child: shown) : Text(ws.timecode(), style: big), // One colour and one weight for the whole time.
                 ),
               ),
               SizedBox(width: Shape.s(8)),
-              if (roomy) ...[Text('/ ${ws.timecode(Ws.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
-              Chip(label: '${Ws.fps} fps', look: _readout()),
+              if (roomy) ...[Text('/ ${ws.timecode(WorkspaceController.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
+              Chip(label: '${WorkspaceController.fps} fps', look: _readout()),
               SizedBox(width: Shape.s(4)),
               _Tempo(ws: ws),
               SizedBox(width: Shape.s(12)),
@@ -147,7 +147,7 @@ class TimelineHeader extends StatelessWidget {
                   step: .001,
                   height: 22,
                   groove: 6,
-                  well: WsT.well,
+                  well: WindowTokens.well,
                   fill: Grey.g44,
                   thumb: const Size.square(12),
                   thumbColor: Grey.g91,
@@ -231,7 +231,7 @@ class _Btn extends StatelessWidget {
 /// accurate value (see "Tapping the Tempo" in the Live manual). With no tempo set, no beats are shown.
 class _Tempo extends StatefulWidget {
   const _Tempo({required this.ws});
-  final Ws ws;
+  final WorkspaceController ws;
   @override
   State<_Tempo> createState() => _TempoState();
 }
@@ -307,8 +307,8 @@ class _TempoState extends State<_Tempo> {
             escapes: true,
             hold: () => _tapping,
             style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
-            cursor: WsT.accent,
-            selection: WsT.accent.withValues(alpha: .3),
+            cursor: WindowTokens.accent,
+            selection: WindowTokens.accent.withValues(alpha: .3),
             onDone: _left,
           ),
         ),
@@ -328,4 +328,4 @@ class _TempoState extends State<_Tempo> {
 }
 
 /// Chip style of the header's readouts: well background, Grey.g91 text, and the same corner radius as the buttons.
-ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WsT.radius, mono: mono);
+ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WindowTokens.radius, mono: mono);

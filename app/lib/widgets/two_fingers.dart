@@ -10,8 +10,8 @@ import 'package:flutter/widgets.dart';
 const wsPressing = {PointerDeviceKind.mouse, PointerDeviceKind.touch, PointerDeviceKind.stylus, PointerDeviceKind.invertedStylus, PointerDeviceKind.unknown};
 
 /// Reports a trackpad's two-finger gestures over [child].
-class WsTwoFingers extends StatefulWidget {
-  const WsTwoFingers({super.key, this.onPan, this.onPinch, this.onPinchStep, this.onWheel, required this.child});
+class TwoFingerGestures extends StatefulWidget {
+  const TwoFingerGestures({super.key, this.onPan, this.onPinch, this.onPinchStep, this.onWheel, required this.child});
 
   /// Called with a mouse wheel's scroll delta. This is the other way to move the view.
   final void Function(Offset by)? onWheel;
@@ -27,10 +27,10 @@ class WsTwoFingers extends StatefulWidget {
   final Widget child;
 
   @override
-  State<WsTwoFingers> createState() => _WsTwoFingersState();
+  State<TwoFingerGestures> createState() => _TwoFingerGesturesState();
 }
 
-class _WsTwoFingersState extends State<WsTwoFingers> {
+class _TwoFingerGesturesState extends State<TwoFingerGestures> {
   // Flutter's scale is relative to where the fingers touched down, so each change is converted to a ratio.
   // _spread accumulates that ratio until it triggers a pinch step.
   double _scale = 1, _spread = 1;

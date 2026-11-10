@@ -27,7 +27,7 @@ abstract final class StageTokens {
   static Color get rulerGround => Grey.g13;
   static Color get rulerSpan => Grey.g15;
   static Color get tick => Grey.g38;
-  static Color get guide => WsT.toneAudio;
+  static Color get guide => WindowTokens.toneAudio;
   static const overlay = Color(0x40FFFFFF), safe = Color(0x99F6EFDD);
 }
 
@@ -38,7 +38,7 @@ class StageViewport {
   final Offset o;
   final double s;
   final Rect area;
-  Rect get comp => o & WsArt.comp * s;
+  Rect get comp => o & ArtGeometry.comp * s;
   Offset toScreen(Offset p) => o + p * s;
   Offset toComp(Offset p) => (p - o) / s;
   @override

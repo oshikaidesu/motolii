@@ -77,7 +77,7 @@ class WtRow {
   });
 
   final (int, int)? whole; // The whole length of a video as it lies, cut or not: the pale slip-edit bar of After Effects.
-  final List<WsStretch> stretches; // The easing of each stretch between keyframes, drawn between them.
+  final List<Stretch> stretches; // The easing of each stretch between keyframes, drawn between them.
 
   /// A property's own lane in place of a bar, as Ableton's automation lane.
   ///
@@ -94,7 +94,7 @@ class WtRow {
   final String? form; // A shape's form as named by the engine (rect, circle, star...), drawn as a small icon at the row's left.
   final Color? fill;
   final bool outline; // True if the shape has no fill; [fill] is then the stroke colour.
-  final WsKind kind;
+  final LayerKind kind;
   final int inF, outF;
   final List<int> keys;
   final Set<int> picked;
@@ -169,14 +169,14 @@ class WtRulerPainter extends CustomPainter {
   final List<int> beats;
 
   /// The project's own beats: a tick each, taller where a bar begins.
-  final WsBeats? tempo;
+  final Beats? tempo;
 
   /// Frames of the selected element's end of intro and start of outro: small yellow marks at the ruler's top, as in Alight Motion.
   final List<int> retimed;
 
   @override
   void paint(Canvas c, Size s) {
-    final p = Paint(), end = view.x(Ws.duration);
+    final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = Grey.g10);
     c.drawRect(Rect.fromLTRB(0, 0, s.width, WtM.band), p..color = Grey.g07);
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, WtM.band, s.width, s.height), p..color = Grey.g07);
@@ -190,12 +190,12 @@ class WtRulerPainter extends CustomPainter {
     final mj = tpMajor(view.ppf, fps), fn = tpFine(view.ppf, fps, mj), bottom = s.height - 1;
     for (final f in beats) {
       final x = view.x(f).roundToDouble();
-      if (x >= 0 && x <= s.width) c.drawRect(Rect.fromLTWH(x, bottom - 7, 2, 7), p..color = WsT.toneAudio);
+      if (x >= 0 && x <= s.width) c.drawRect(Rect.fromLTWH(x, bottom - 7, 2, 7), p..color = WindowTokens.toneAudio);
     }
     if (tempo case final b?) {
       for (final (f, bar) in b.between(view.scroll, view.scroll + s.width / view.ppf)) {
         if (bar || b.every * view.ppf >= 8) {
-          c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), bottom - (bar ? 11 : 6), 1, bar ? 11 : 6), p..color = bar ? WsT.accent : Grey.g56);
+          c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), bottom - (bar ? 11 : 6), 1, bar ? 11 : 6), p..color = bar ? WindowTokens.accent : Grey.g56);
         }
       }
     }
@@ -208,7 +208,7 @@ class WtRulerPainter extends CustomPainter {
             ..lineTo(x + 4, 0)
             ..lineTo(x, 6)
             ..close(),
-          p..color = WsT.toneMark,
+          p..color = WindowTokens.toneMark,
         );
       }
     }
@@ -218,18 +218,18 @@ class WtRulerPainter extends CustomPainter {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
       final t = lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
-      flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WsT.toneText));
+      flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WindowTokens.toneText));
     }
     if (view.ppf >= 3) {
       final f0 = view.scroll.floor();
-      for (var f = math.max(0, f0); f <= Ws.duration; f++) {
+      for (var f = math.max(0, f0); f <= WorkspaceController.duration; f++) {
         final x = view.x(f).roundToDouble();
         if (x > s.width) break;
         if (f % fn != 0) c.drawRect(Rect.fromLTWH(x, bottom - 3, 1, 3), p..color = Grey.g26);
       }
     }
     final f0 = (view.scroll / fn).floor() * fn;
-    for (var f = math.max(0.0, f0); f <= Ws.duration; f += fn) {
+    for (var f = math.max(0.0, f0); f <= WorkspaceController.duration; f += fn) {
       final x = view.x(f).roundToDouble();
       if (x > s.width) break;
       final isMajor = f % mj == 0;
@@ -262,7 +262,7 @@ class WtRulerPainter extends CustomPainter {
       c.restore();
       t.dispose();
     }
-    c.drawRect(Rect.fromLTWH(0, bottom, s.width, 1), p..color = WsT.line);
+    c.drawRect(Rect.fromLTWH(0, bottom, s.width, 1), p..color = WindowTokens.line);
   }
 
   @override
@@ -291,14 +291,14 @@ class WtPlayheadPainter extends CustomPainter {
     final frame = moment?.value ?? this.frame;
     final x = view.x(frame).roundToDouble();
     if (x < -40 || x > s.width + 40) return;
-    final p = Paint()..color = WsT.playhead;
+    final p = Paint()..color = WindowTokens.playhead;
     // A small head with no number on it, like the playhead of Premiere Pro, After Effects, Ableton and Alight Motion.
     // The frame is shown in the header's time. A head that carried the frame number hid marker names under it.
     // Blender and Cavalry number their playheads, but they put markers on a row of their own.
     final w = Shape.z(9), cx = (x + .5).clamp(w / 2, s.width - w / 2);
     final pill = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(cx, headTop + 8), width: w, height: Shape.z(15)), Shape.r(4));
     c.drawRect(Rect.fromLTWH(x, headTop + 8, 1, s.height - headTop - 8), p);
-    p.color = WsT.accent;
+    p.color = WindowTokens.accent;
     c.drawRRect(pill, p);
     c.drawPath(
       Path()
@@ -326,11 +326,11 @@ class WtOverviewPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final p = Paint(), w = s.width - 8;
-    double x(double f) => 4 + f / Ws.duration * w;
-    c.drawRect(Offset.zero & s, p..color = WsT.body);
+    double x(double f) => 4 + f / WorkspaceController.duration * w;
+    c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
     c.drawRRect(RRect.fromLTRBR(4, 3, s.width - 4, s.height - 3, Shape.r(3)), p..color = Grey.g13);
     c.drawRRect(RRect.fromLTRBR(x(from), 3, math.max(x(to), x(from) + 12), s.height - 3, Shape.r(3)), p..color = hot ? Grey.g44 : Grey.g26);
-    c.drawRect(Rect.fromLTWH(x(frame.toDouble()).roundToDouble(), 2, 2, s.height - 4), p..color = WsT.playhead);
+    c.drawRect(Rect.fromLTWH(x(frame.toDouble()).roundToDouble(), 2, 2, s.height - 4), p..color = WindowTokens.playhead);
   }
 
   @override
@@ -359,7 +359,7 @@ class WtThumb extends StatelessWidget {
         ),
       );
     }
-    if (r.form case final form? when r.kind == WsKind.shape && form != 'null') {
+    if (r.form case final form? when r.kind == LayerKind.shape && form != 'null') {
       return Container(
         width: WtM.chip,
         height: WtM.chip,
@@ -415,12 +415,12 @@ class _FormPainter extends CustomPainter {
 }
 
 /// A layer's kind: a small square of its colour with the kind's mark drawn in dark ink.
-Widget wtKindChip(WsKind kind, {bool dim = false, Color? tone}) =>
-    Badge(dim ? Grey.g26 : tone ?? wsTone(kind), size: WtM.chip, radius: Shape.r(3), mark: _KindPainter(kind, dim ? Grey.g56 : WsT.onAccent));
+Widget wtKindChip(LayerKind kind, {bool dim = false, Color? tone}) =>
+    Badge(dim ? Grey.g26 : tone ?? wsTone(kind), size: WtM.chip, radius: Shape.r(3), mark: _KindPainter(kind, dim ? Grey.g56 : WindowTokens.onAccent));
 
 class _KindPainter extends CustomPainter {
   const _KindPainter(this.kind, this.ink);
-  final WsKind kind;
+  final LayerKind kind;
   final Color ink;
   @override
   void paint(Canvas c, Size s) {
@@ -433,12 +433,12 @@ class _KindPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round;
     Offset o(double x, double y) => Offset(x * w, y * w);
     switch (kind) {
-      case WsKind.shape:
+      case LayerKind.shape:
         c.drawCircle(o(.5, .5), w * .27, f);
-      case WsKind.text:
+      case LayerKind.text:
         c.drawRect(Rect.fromLTRB(w * .24, w * .22, w * .76, w * .34), f);
         c.drawRect(Rect.fromLTRB(w * .43, w * .22, w * .57, w * .8), f);
-      case WsKind.image:
+      case LayerKind.image:
         c.drawPath(
           Path()
             ..moveTo(w * .18, w * .76)
@@ -450,7 +450,7 @@ class _KindPainter extends CustomPainter {
           f,
         );
         c.drawCircle(o(.68, .28), w * .09, f);
-      case WsKind.camera:
+      case LayerKind.camera:
         c.drawRRect(RRect.fromLTRBR(w * .16, w * .32, w * .64, w * .7, Shape.r(1.5)), f);
         c.drawPath(
           Path()
@@ -460,14 +460,14 @@ class _KindPainter extends CustomPainter {
             ..close(),
           f,
         );
-      case WsKind.group:
+      case LayerKind.group:
         c.drawRect(Rect.fromLTRB(w * .2, w * .2, w * .62, w * .62), st);
         c.drawRect(Rect.fromLTRB(w * .4, w * .4, w * .8, w * .8), f);
-      case WsKind.particles:
+      case LayerKind.particles:
         for (final (x, y, r) in const [(.3, .32, .1), (.68, .3, .07), (.5, .56, .12), (.26, .74, .07), (.74, .72, .09)]) {
           c.drawCircle(o(x, y), w * r, f);
         }
-      case WsKind.audio:
+      case LayerKind.audio:
         for (final (x, h) in const [(.24, .2), (.38, .4), (.52, .28), (.66, .44), (.8, .16)]) {
           c.drawLine(o(x, .5 - h / 2 - .04), o(x, .5 + h / 2 + .04), st);
         }

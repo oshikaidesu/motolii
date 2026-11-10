@@ -9,7 +9,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-extension WsTimelineSnap on WsTimelineState {
+extension TimelinePaneSnap on TimelinePaneState {
   int? restOn(int f) {
     if (HardwareKeyboard.instance.isMetaPressed) return null;
     int? best;

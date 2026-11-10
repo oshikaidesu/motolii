@@ -6,10 +6,10 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/workspace/state/workspace_state.dart';
 
-extension WsFx on Ws {
-  // Forwarders to the statics on Ws, so the extension can use the same names.
-  static List<String> fxFiles(String fx) => Ws.fxFiles(fx);
-  static int get fps => Ws.fps;
+extension WorkspaceEffects on WorkspaceController {
+  // Forwarders to the statics on WorkspaceController, so the extension can use the same names.
+  static List<String> fxFiles(String fx) => WorkspaceController.fxFiles(fx);
+  static int get fps => WorkspaceController.fps;
 
   /// The effects on the selected layer, like After Effects' effects on a layer, in the order the engine applies them.
   /// Effects always belong to a layer. A whole-canvas effect is an adjustment layer showing what is behind it.
@@ -37,8 +37,8 @@ extension WsFx on Ws {
     var made = 0;
     after(m.later('add', name: 'shape', word: kind), null, (t) => made = t);
     m
-      ..later('set', layer: -1, name: 'size', number: Ws.comp.height / m.point)
-      ..later('set', layer: -1, name: 'wide', number: Ws.comp.width / Ws.comp.height);
+      ..later('set', layer: -1, name: 'size', number: WorkspaceController.comp.height / m.point)
+      ..later('set', layer: -1, name: 'wide', number: WorkspaceController.comp.width / WorkspaceController.comp.height);
     wsInked(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {

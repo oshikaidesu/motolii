@@ -21,7 +21,7 @@ import 'package:motolii/workspace/shelf/program_code.dart';
 
 class FxCode extends StatefulWidget {
   const FxCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});
-  final Ws ws;
+  final WorkspaceController ws;
   final int thing;
 
   /// The file as the layer's slot names it.
@@ -48,7 +48,7 @@ class FxCode extends StatefulWidget {
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
   /// If two files fit, the one whose title matches the card wins, then the longer name.
   /// A card with no parameters (the engine still gives it a card, doc_cards_of) is matched by title alone.
-  static FxCode? of(Ws ws, int thing, String title, List<String> names) {
+  static FxCode? of(WorkspaceController ws, int thing, String title, List<String> names) {
     final word = fileOf(ws.inside!.word(thing, 'fx'), title, names);
     return word == null ? null : FxCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
   }
@@ -56,7 +56,7 @@ class FxCode extends StatefulWidget {
   /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
   static String? fileOf(String fx, String title, List<String> names) {
     (String, int)? best;
-    for (final w in Ws.fxFiles(fx)) {
+    for (final w in WorkspaceController.fxFiles(fx)) {
       if (!_code.hasMatch(w)) continue;
       final file = source(w), stem = EffectTiles.knobStem(w), titled = titleOf(w) == title;
       // A three.js effect is run as a scene once saved (doc_three_saved).
@@ -147,7 +147,7 @@ class _FxCodeState extends State<FxCode> {
     final m = widget.ws.inside!, file = FxCode.source(word);
     if (!file.startsWith(_own)) return false;
     for (final t in m.layers) {
-      for (final w in Ws.fxFiles(m.word(t, widget.slot))) {
+      for (final w in WorkspaceController.fxFiles(m.word(t, widget.slot))) {
         if (!(t == widget.thing && w == word) && FxCode.source(w) == file) return false;
       }
     }
@@ -175,7 +175,7 @@ class _FxCodeState extends State<FxCode> {
     _making = true;
     _typed = text;
     // Joined the way doc_fx_join does.
-    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, widget.slot))) w == word ? said : w].join(' ');
+    final fx = [for (final w in WorkspaceController.fxFiles(m.word(widget.thing, widget.slot))) w == word ? said : w].join(' ');
     m.later('say', layer: widget.thing, name: widget.slot, word: fx);
     ws.after(m.later('code', word: to), (_, _) {
       _making = false;

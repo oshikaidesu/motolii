@@ -1,4 +1,4 @@
-// Relations between layers selected together (Ws.many).
+// Relations between layers selected together (WorkspaceController.many).
 //
 // Making a relation adds a behaviour layer of the chosen kind (the engine's around, row, follow or push) and puts the
 // selected layers in it as they look now: their order, the middle and size, a leader, and what each was in before.
@@ -15,7 +15,7 @@ const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 
 /// The relation kinds the user can choose: the kinds the engine knows, then each one written as a file in relations/*.js.
 /// The files come from the library and from the user, so a file added there shows up here.
-List<String> wsRelationChoices(Ws ws) => [
+List<String> wsRelationChoices(WorkspaceController ws) => [
   for (final k in wsRelations)
     if (k != 'relate') k,
   for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2,
@@ -31,17 +31,21 @@ String wsRelationWord(String kind) {
 String wsRelationOf(Motolii m, int t) => m.word(t, 'file') == 'relate' ? m.word(t, 'script') : m.word(t, 'file');
 
 /// The selected layers a relation can hold. A relation that is selected with them, as Select All does, is left out.
-List<String> wsRelatable(Ws ws) => [
+List<String> wsRelatable(WorkspaceController ws) => [
   for (final id in ws.many)
     if (int.tryParse(id) case final t? when ws.inside?.word(t, 'kind') != 'behaviour') id,
 ];
 
 /// Makes a relation of [kind] from the layers selected together.
-void wsRelate(Ws ws, String kind) {
+void wsRelate(WorkspaceController ws, String kind) {
   final m = ws.inside, who = wsRelatable(ws);
   if (m == null || who.length < 2) return;
   if (kind == 'group') {
-    return wsMakeMove(ws, who, (ws.frame / Ws.fps * 10).round() / 10); // A group is a move: it comes in at the playhead from where the group says.
+    return wsMakeMove(
+      ws,
+      who,
+      (ws.frame / WorkspaceController.fps * 10).round() / 10,
+    ); // A group is a move: it comes in at the playhead from where the group says.
   }
   m.later('together', number: 1); // One undo step, queued without waiting; the behaviour is the layer that add creates.
   final file = kind.endsWith('.js');
@@ -63,7 +67,7 @@ void wsRelate(Ws ws, String kind) {
 ///
 /// A layer counts when any of its properties is connected to the relation. It is read from the app's snapshot of the
 /// document, which asks the engine again only after a change.
-Set<String> wsMembersOf(Ws ws) {
+Set<String> wsMembersOf(WorkspaceController ws) {
   final m = ws.inside, sel = int.tryParse(ws.selected ?? '');
   if (m == null || sel == null || m.word(sel, 'kind') != 'behaviour' || !wsRelations.contains(m.word(sel, 'file'))) return const {};
   return {
@@ -77,7 +81,7 @@ Set<String> wsMembersOf(Ws ws) {
 /// These are the layers named by its properties (Parent, Leader, Join, Into and so on), and the layers of a relation.
 /// Cavalry shows a connection at both ends. Here it shows only at the end that names the target, in the row's own
 /// lanes, like the Parent & Link column of After Effects.
-List<(String, String)> wsTargets(Ws ws, String id) {
+List<(String, String)> wsTargets(WorkspaceController ws, String id) {
   final m = ws.inside, t = int.tryParse(id);
   if (m == null || t == null) return const [];
   return [
@@ -91,14 +95,14 @@ List<(String, String)> wsTargets(Ws ws, String id) {
 }
 
 /// Makes the layer [id] the leader of the selected relation without moving anything. The old leader stays among the relation's layers.
-void wsLead(Ws ws, String id) {
+void wsLead(WorkspaceController ws, String id) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? ''), t = int.tryParse(id);
   if (m == null || by == null || t == null) return;
   ws.after(m.later('lead', layer: by, number: t.toDouble()), (_, _) => ws.reread());
 }
 
 /// Adds [id] to the layers selected together (Shift or Cmd with a click). A layer that was selected alone joins it.
-void wsPickAlso(Ws ws, String id) {
+void wsPickAlso(WorkspaceController ws, String id) {
   if (ws.many.contains(id)) return ws.pickMany({...ws.many}..remove(id), inOrder: true); // Already selected, so it is removed.
   ws.pickMany({
     ...ws.many,
@@ -108,7 +112,7 @@ void wsPickAlso(Ws ws, String id) {
 }
 
 /// Selects the layers from the one selected last to [id], in row order (Shift on a row, as in After Effects).
-void wsPickRange(Ws ws, String id) {
+void wsPickRange(WorkspaceController ws, String id) {
   final ids = [for (final l in ws.layers) l.id], from = ws.many.isNotEmpty ? ws.many.last : ws.selected;
   final a = from == null ? -1 : ids.indexOf(from), b = ids.indexOf(id);
   if (a < 0 || b < 0) return wsPickAlso(ws, id);
@@ -116,14 +120,14 @@ void wsPickRange(Ws ws, String id) {
 }
 
 /// Takes the layer [id] out of the selected relation, leaving it where it shows now. The other layers stay in.
-void wsFree(Ws ws, String id) {
+void wsFree(WorkspaceController ws, String id) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? ''), t = int.tryParse(id);
   if (m == null || by == null || t == null) return;
   ws.after(m.later('free', layer: t, number: by.toDouble()), (done, _) => done ? ws.reread() : null);
 }
 
 /// Releases the selected relation: each of its layers stays where it shows now and the relation is deleted.
-void wsRelease(Ws ws) {
+void wsRelease(WorkspaceController ws) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? '');
   if (m == null || by == null) return;
   ws.after(m.later('release', layer: by), (done, _) {
@@ -134,7 +138,7 @@ void wsRelease(Ws ws) {
 }
 
 /// The relation that takes effect for the selected layer: the uppermost one whose visibility is on, or null.
-String? wsWinner(Ws ws) {
+String? wsWinner(WorkspaceController ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null) return null;
   for (var r = (m.value(t, 'x_by', 0) ?? 0).round(), n = 0; r > 0 && n < 8 && wsRelations.contains(m.word(r, 'file')); n++) {
@@ -147,7 +151,7 @@ String? wsWinner(Ws ws) {
 
 /// The relations the selected layer is in, the topmost first: first those it leads, then the chain its position is
 /// connected to. They are shown beside the layer, and a click selects one.
-List<String> wsRelationsOf(Ws ws) {
+List<String> wsRelationsOf(WorkspaceController ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null || m.word(t, 'kind') == 'behaviour') return const [];
   final all = <String>[
@@ -164,7 +168,7 @@ List<String> wsRelationsOf(Ws ws) {
 
 /// Turns the selected relation on or off by setting its strength to 1 or 0. When it is off, what lies under it shows,
 /// like the switch on an expression in After Effects. No layer is released.
-void wsSwitch(Ws ws) {
+void wsSwitch(WorkspaceController ws) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? '');
   if (m == null || by == null) return;
   final on = (m.value(by, 'visible', 0) ?? 1) > .5; // Its visibility, as for any row, which holds the strength it had.

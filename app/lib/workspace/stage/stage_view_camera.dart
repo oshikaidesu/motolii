@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 
 extension StageViewCamera on StageViewState {
   /// The camera the Camera tool acts on: the selected one, else the project's first.
-  int? cameraOf(Ws ws) {
+  int? cameraOf(WorkspaceController ws) {
     final m = ws.inside, picked = int.tryParse(widget.selected ?? '');
     if (m == null) return null;
     if (picked != null && m.word(picked, 'kind') == 'camera') return picked;
@@ -28,7 +28,7 @@ extension StageViewCamera on StageViewState {
   /// Moves the camera nearer to or further from its point of interest, like the wheel of After Effects' Unified Camera
   /// tool. All wheel turns until the wheel rests for 300 ms form one undo step.
   void dolly(double by) {
-    final ws = WsScope.read(context), m = ws.inside, cam = cameraOf(ws);
+    final ws = WorkspaceScope.read(context), m = ws.inside, cam = cameraOf(ws);
     if (m == null || cam == null) return;
     if (ws.freeEye) {
       // As in After Effects' custom views, the tool moves the view, not the camera layer.
@@ -36,7 +36,7 @@ extension StageViewCamera on StageViewState {
     }
     if (dollyAt == null) {
       m.take(cam);
-      dollyAt = m.value(cam, 'distance', ws.frame / Ws.fps) ?? 1;
+      dollyAt = m.value(cam, 'distance', ws.frame / WorkspaceController.fps) ?? 1;
     }
     dollyAt = (dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
     m.dragUpdate('distance', dollyAt!);
@@ -55,7 +55,7 @@ extension StageViewCamera on StageViewState {
   ///
   /// [inside] makes any point in the frame count as a hit, not only its handles.
   bool gizmoDragStart(StageViewport v, Offset local, {required bool inside}) {
-    final ws = WsScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / Ws.fps;
+    final ws = WorkspaceScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / WorkspaceController.fps;
     for (final id in scene.gizmos.keys) {
       final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], cam = int.parse(id);
       if (g.length < 6) continue;

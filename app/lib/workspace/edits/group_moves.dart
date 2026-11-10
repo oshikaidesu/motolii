@@ -14,7 +14,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
-String wsMoveName(Ws ws, Iterable<String> who, bool coming) {
+String wsMoveName(WorkspaceController ws, Iterable<String> who, bool coming) {
   final names = [for (final id in who) ws.layers.where((l) => l.id == id).firstOrNull?.name ?? id];
   final all = names.length > 4 ? '${names.take(3).join(' ')} +${names.length - 3}' : names.join(' ');
   return '${coming ? 'in' : 'out'} · $all';
@@ -25,7 +25,7 @@ String wsMoveName(Ws ws, Iterable<String> who, bool coming) {
 /// The layers come in at [start] from a little below, transparent, each a little later than the one before.
 /// Layers that already come in through another move go out through this one instead.
 /// A move made later in the video leaves the earlier part alone.
-void wsMakeMove(Ws ws, List<String> who, double start) {
+void wsMakeMove(WorkspaceController ws, List<String> who, double start) {
   final m = ws.inside;
   if (m == null || who.isEmpty) return;
   final held = {

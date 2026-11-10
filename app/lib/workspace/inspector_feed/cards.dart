@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.
 /// Nothing about the individual values is hard-coded here.
-List<Fx>? wsValueCards(Ws ws, String? id) {
+List<Fx>? wsValueCards(WorkspaceController ws, String? id) {
   // With nothing selected the cards belong to the stage itself, layer 0.
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return null;
@@ -32,11 +32,11 @@ List<Fx>? wsValueCards(Ws ws, String? id) {
 
 final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
-List<Fx> _makeCards(Ws ws, Motolii m, int t) {
+List<Fx> _makeCards(WorkspaceController ws, Motolii m, int t) {
   // The time of the frame on screen.
   final at = wsDrawn(ws);
   // How much each parameter of the layer's effects moves its result, as the effect tiles show it.
-  final weights = {for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f)};
+  final weights = {for (final f in WorkspaceController.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f)};
   String field(String n) {
     final sh = m.shown(n),
         label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';

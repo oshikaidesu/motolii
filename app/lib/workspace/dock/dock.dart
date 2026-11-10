@@ -30,31 +30,31 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/state/effects.dart';
 
 /// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
-class WsShelf extends StatefulWidget {
-  const WsShelf(this.name, this.hint, {super.key});
+class ShelfPane extends StatefulWidget {
+  const ShelfPane(this.name, this.hint, {super.key});
   final String name, hint;
   @override
-  State<WsShelf> createState() => _WsShelfState();
+  State<ShelfPane> createState() => _ShelfPaneState();
 }
 
-class _WsShelfState extends State<WsShelf> {
+class _ShelfPaneState extends State<ShelfPane> {
   // What the shelf remembers of itself (selection, folds, search). It lives in the window's view,
   // so the shelf looks the same when it is opened again.
-  DockMem get _mem => WsScope.read(context).view.putIfAbsent('dock.${widget.name}', DockMem.new) as DockMem;
-  late final TextEditingController _search = TextEditingController(text: WsScope.read(context).viewOf('dock.${widget.name}.search', ''))
-    ..addListener(() => setState(() => WsScope.read(context).view['dock.${widget.name}.search'] = _search.text));
+  DockMem get _mem => WorkspaceScope.read(context).view.putIfAbsent('dock.${widget.name}', DockMem.new) as DockMem;
+  late final TextEditingController _search = TextEditingController(text: WorkspaceScope.read(context).viewOf('dock.${widget.name}.search', ''))
+    ..addListener(() => setState(() => WorkspaceScope.read(context).view['dock.${widget.name}.search'] = _search.text));
 
   // The shelf follows the document one frame after the render thread. After a change, the inspector and the canvas
   // build in that frame and the shelf in the next, once for all the changes since. Building them together
   // was half of each frame's work.
-  Ws? _ws;
+  WorkspaceController? _ws;
   bool _due = false;
   Object? _seen;
   // A new revision of the document is checked for the part this shelf shows. For example, a number
   // the user has finished dragging changes no effects, motion or layers, so the shelf is not rebuilt for it.
   int? _rev;
   Object? _shows;
-  Object _showing(Ws ws) => switch (widget.name) {
+  Object _showing(WorkspaceController ws) => switch (widget.name) {
     'Effects' => (ws.screenFx.join(' '), ws.motion, ws.fxOf(ws.selected).join(' ')),
     'Create' => ws.layers.map((l) => '${l.id} ${l.name}').join(' '),
     _ => ws.rev,
@@ -86,9 +86,9 @@ class _WsShelfState extends State<WsShelf> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final ws = WsScope.read(context);
+    final ws = WorkspaceScope.read(context);
     if (ws != _ws) {
-      for (final a in const [WsAspect.document, WsAspect.picked]) {
+      for (final a in const [WorkspaceAspect.document, WorkspaceAspect.picked]) {
         _ws?.on[a]!.removeListener(_later);
         ws.on[a]!.addListener(_later);
       }
@@ -98,7 +98,7 @@ class _WsShelfState extends State<WsShelf> {
 
   @override
   void dispose() {
-    for (final a in const [WsAspect.document, WsAspect.picked]) {
+    for (final a in const [WorkspaceAspect.document, WorkspaceAspect.picked]) {
       _ws?.on[a]!.removeListener(_later);
     }
     _search.dispose();
@@ -107,12 +107,12 @@ class _WsShelfState extends State<WsShelf> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.read(context), name = widget.name;
+    final ws = WorkspaceScope.read(context), name = widget.name;
     final c = DockCtx(name, _mem, _search.text.trim(), ws, setState, _search.clear);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        WsHeader(
+        PanelHeader(
           name,
           trailing: [
             if (name == 'Media') ...[
@@ -191,7 +191,7 @@ class _WsShelfState extends State<WsShelf> {
             final done = DockTags.completing(name, _search.text);
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
-              padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: Shape.s(3)),
+              padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset, vertical: Shape.s(3)),
               child: SingleChildScrollView(
                 // All of them in one line that scrolls sideways, as the chips row does (Usual.chips).
                 scrollDirection: Axis.horizontal,
@@ -209,7 +209,10 @@ class _WsShelfState extends State<WsShelf> {
                         },
                         builder: (context, h) => Container(
                           padding: EdgeInsets.symmetric(horizontal: Shape.s(7), vertical: Shape.s(2)),
-                          decoration: BoxDecoration(color: h ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
+                          decoration: BoxDecoration(
+                            color: h ? WindowTokens.raised : WindowTokens.well,
+                            borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+                          ),
                           child: Text(t, style: T.micro(Grey.g91)),
                         ),
                       ),

@@ -141,7 +141,7 @@ class _Art extends StatelessWidget {
     if (n.disk && (n.g == DockG.video || n.g == DockG.image)) {
       // A video shows a thumbnail made by the engine and a photo is read by Flutter. Other files get a flat tile.
       final flat = Container(
-        color: WsT.well,
+        color: WindowTokens.well,
         alignment: Alignment.center,
         child: dockBadge(n.g, Grey.g63, size: Shape.z(26)),
       );
@@ -151,7 +151,7 @@ class _Art extends StatelessWidget {
           builder: (context, made) => made.data == null
               ? flat
               : ColoredBox(
-                  color: WsT.well,
+                  color: WindowTokens.well,
                   child: Image.file(File(made.data!), fit: BoxFit.contain, gaplessPlayback: true),
                 ),
         );
@@ -159,29 +159,29 @@ class _Art extends StatelessWidget {
       final photo = RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id);
       return photo
           ? ColoredBox(
-              color: WsT.well,
+              color: WindowTokens.well,
               child: Image.file(File(n.id), fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, _, _) => flat),
             )
           : flat;
     }
     return switch (n.g) {
       DockG.font => Container(
-        color: WsT.toneText,
+        color: WindowTokens.toneText,
         alignment: Alignment.center,
         child: Text(
           'Aa',
-          style: T.title(WsT.onAccent).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700),
+          style: T.title(WindowTokens.onAccent).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700),
         ),
       ),
       DockG.folder => Container(
-        color: WsT.well,
+        color: WindowTokens.well,
         alignment: Alignment.center,
-        child: Glyph(DockG.folder, size: Shape.z(26), color: WsT.accentInk),
+        child: Glyph(DockG.folder, size: Shape.z(26), color: WindowTokens.accentInk),
       ),
       _ => Container(
-        color: WsT.well,
+        color: WindowTokens.well,
         alignment: Alignment.center,
-        child: dockBadge(n.g, n.g == DockG.comp ? WsT.accent : Grey.g63, size: Shape.z(26)),
+        child: dockBadge(n.g, n.g == DockG.comp ? WindowTokens.accent : Grey.g63, size: Shape.z(26)),
       ),
     };
   }
@@ -291,10 +291,10 @@ class _TileState extends State<_Tile> {
             bottom: 3,
             child: Text('${n.kids.length}', style: T.value(Grey.g63).copyWith(fontSize: T.px(10))),
           ),
-        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(DockG.link, WsT.accent, size: Shape.z(14))),
+        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(DockG.link, WindowTokens.accent, size: Shape.z(14))),
       ],
       after: (_) => [
-        if (_inUse(n, c)) ...[dockBadge(DockG.link, WsT.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
+        if (_inUse(n, c)) ...[dockBadge(DockG.link, WindowTokens.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
       ],
     );
   }
@@ -385,8 +385,8 @@ class _Footer extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: WsT.raised,
-                    borderRadius: BorderRadius.all(Shape.r(WsT.radius)),
+                    color: WindowTokens.raised,
+                    borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
                     border: Border.all(color: h ? Grey.g95 : const Color(0x00000000)),
                   ),
                   child: Text('All ${all.length}', style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
@@ -470,7 +470,7 @@ class _FilmRange extends StatelessWidget {
             gap: .01,
             height: 10,
             groove: 4,
-            fill: WsT.accent,
+            fill: WindowTokens.accent,
             thumb: const Size(3, 10),
             thumbRadius: 1,
             inset: 0,

@@ -30,7 +30,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // a document with enough tracks that the timeline has something to scroll
-    final ws = WsScope.read(tester.element(find.byType(WsTimeline)));
+    final ws = WorkspaceScope.read(tester.element(find.byType(TimelinePane)));
     for (var i = 0; i < 40; i++) {
       ws.inside!.add('shape', i.isEven ? 'rect' : 'circle');
     }
@@ -39,7 +39,7 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1))); // (what the window reads as it opens finishes before the hand moves)
 
     final wheel = TestPointer(1, PointerDeviceKind.mouse);
-    await tester.sendEventToBinding(wheel.hover(tester.getCenter(find.byType(WsTimeline))));
+    await tester.sendEventToBinding(wheel.hover(tester.getCenter(find.byType(TimelinePane))));
     await binding.traceAction(() async {
       for (var i = 0; i < 120; i++) {
         // down, up, and sideways: one wheel notch a frame, about two seconds

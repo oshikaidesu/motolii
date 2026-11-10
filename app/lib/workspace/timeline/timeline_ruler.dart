@@ -8,13 +8,13 @@ import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-extension WsTimelineRuler on WsTimelineState {
+extension TimelinePaneRuler on TimelinePaneState {
   /// The mark whose flag is under the pointer [p], if any.
   (double, String)? flagAt(Offset p) {
     if (p.dy < WtM.band + 1 || p.dy > WtM.band + 15) return null;
-    final xs = [for (final m in workspace!.marks) view.x((m.$1 * Ws.fps).round()).roundToDouble()];
+    final xs = [for (final m in workspace!.marks) view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble()];
     for (final m in workspace!.marks.reversed) {
-      final x = view.x((m.$1 * Ws.fps).round()).roundToDouble();
+      final x = view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble();
       if (p.dx >= x - 2 && p.dx <= x + wtFlagRoom(m.$2, x, xs)) return m;
     }
     return null;
@@ -25,8 +25,8 @@ extension WsTimelineRuler on WsTimelineState {
     workDrag = null;
     if (flagAt(p) case final flag?) {
       markHeld = flag;
-      markTo = (flag.$1 * Ws.fps).round();
-      markGrab = f - flag.$1 * Ws.fps;
+      markTo = (flag.$1 * WorkspaceController.fps).round();
+      markGrab = f - flag.$1 * WorkspaceController.fps;
       markOff = false;
       return;
     }
@@ -45,11 +45,11 @@ extension WsTimelineRuler on WsTimelineState {
   }
 
   /// The marks on the ruler, as frame and name. These are the project's named times.
-  List<(int, String)> marksOf(Ws ws) {
+  List<(int, String)> marksOf(WorkspaceController ws) {
     return [
       for (final (at, name) in workspace!.marks)
         if ((at, name) != markHeld)
-          ((at * Ws.fps).round(), name)
+          ((at * WorkspaceController.fps).round(), name)
         else if (!markOff)
           // The mark being dragged is drawn where the pointer holds it, and disappears when dragged off the ruler.
           (markTo, name),
@@ -57,7 +57,8 @@ extension WsTimelineRuler on WsTimelineState {
   }
 
   /// The marks' colours by frame. The mark being dragged uses the frame where the pointer holds it.
-  Map<int, Color> markColorsOf(Ws ws) => {
-    for (final MapEntry(key: at, value: k) in ws.markColors.entries) (markHeld?.$1 == at ? markTo : (at * Ws.fps).round()): wsLabelColor(k - 1),
+  Map<int, Color> markColorsOf(WorkspaceController ws) => {
+    for (final MapEntry(key: at, value: k) in ws.markColors.entries)
+      (markHeld?.$1 == at ? markTo : (at * WorkspaceController.fps).round()): wsLabelColor(k - 1),
   };
 }

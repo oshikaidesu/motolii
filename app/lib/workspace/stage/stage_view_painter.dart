@@ -91,7 +91,7 @@ class ViewPainter extends CustomPainter {
     _guides(c);
     if (trail case final w? when w.length > 1) {
       // A thin line with an arrowhead at intervals along the direction of motion.
-      final line = linePaint(WsT.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) v.toScreen(q)];
+      final line = linePaint(WindowTokens.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) v.toScreen(q)];
       c.drawPoints(PointMode.polygon, pts, line);
       for (var i = 6; i + 1 < pts.length; i += 12) {
         final d = pts[i + 1] - pts[i];
@@ -107,10 +107,10 @@ class ViewPainter extends CustomPainter {
       }
     }
     if (met.$1 case final x?) {
-      c.drawLine(Offset(v.toScreen(Offset(x, 0)).dx, v.area.top), Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom), linePaint(WsT.accent));
+      c.drawLine(Offset(v.toScreen(Offset(x, 0)).dx, v.area.top), Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom), linePaint(WindowTokens.accent));
     }
     if (met.$2 case final y?) {
-      c.drawLine(Offset(v.area.left, v.toScreen(Offset(0, y)).dy), Offset(v.area.right, v.toScreen(Offset(0, y)).dy), linePaint(WsT.accent));
+      c.drawLine(Offset(v.area.left, v.toScreen(Offset(0, y)).dy), Offset(v.area.right, v.toScreen(Offset(0, y)).dy), linePaint(WindowTokens.accent));
     }
     if (pivots) {
       for (final MapEntry(:key, :value) in scene.boxes.entries) {
@@ -121,27 +121,27 @@ class ViewPainter extends CustomPainter {
       }
     }
     // The selected layer's parent frame, in grey.
-    if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), linePaint(Grey.g63, 1));
+    if (ArtGeometry.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), linePaint(Grey.g63, 1));
     for (final id in scene.gizmos.keys) {
       _gizmo(c, id);
     }
     if (marked) {
       // The engine marks the frame, corners, sides, rotate knob and anchor. Only the layer's own handles are drawn here.
-      if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
-        _own(c, selectionHandles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+      if ((ArtGeometry.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
+        _own(c, selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
       }
       return c.restore();
     }
     // The hovered layer's outline uses its label colour, like its row in the layer list.
-    if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);
-    if (WsArt.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
+    if (ArtGeometry.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);
+    if (ArtGeometry.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
     c.restore();
   }
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
     final l = lineText(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
-        d = lineText('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}  ·  ${Ws.fps} fps', T.micro(Grey.g56));
+        d = lineText('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps', T.micro(Grey.g56));
     final y = comp.top - 6 - l.height;
     l.paint(c, Offset(comp.left, y));
     d.paint(c, Offset(comp.left + l.width + 8, y));
@@ -197,7 +197,7 @@ class ViewPainter extends CustomPainter {
   void _gizmo(Canvas c, String id) {
     final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], picked = id == sel;
     if (g.length < 6) return;
-    final ink = picked ? WsT.accent : Grey.g76, frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(), eye = g[5];
+    final ink = picked ? WindowTokens.accent : Grey.g76, frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(), eye = g[5];
     if (frame.length == 4) {
       _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1);
       c.drawLine(frame[0], frame[2], linePaint(ink.withValues(alpha: .35), 1));
@@ -229,18 +229,18 @@ class ViewPainter extends CustomPainter {
   }
 
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
-    final h = selectionHandles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
+    final h = selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
         pts = [for (var i = 0; i < 4; i++) h['corner $i']!];
-    _legible(c, Path()..addPolygon(pts, true), WsT.accent);
+    _legible(c, Path()..addPolygon(pts, true), WindowTokens.accent);
     final top = v.toScreen(b.top);
-    final lit = WsT.accent.withValues(alpha: 1), seen = (String k) => grip == null || grip == k;
+    final lit = WindowTokens.accent.withValues(alpha: 1), seen = (String k) => grip == null || grip == k;
     if (h['turn'] case final knob? when seen('turn')) {
       _legible(
         c,
         Path()
           ..moveTo(top.dx, top.dy)
           ..lineTo(knob.dx, knob.dy),
-        WsT.accent,
+        WindowTokens.accent,
         1,
       );
       final big = grip == 'turn' ? 2.0 : 1.0;
@@ -269,13 +269,13 @@ class ViewPainter extends CustomPainter {
       }
     }
     final bounds = pts.skip(1).fold(Rect.fromPoints(pts[0], pts[0]), (r, p) => r.expandToInclude(Rect.fromPoints(p, p)));
-    _tag(c, bounds.topLeft, l.name, WsT.accent, WsT.onAccent, wsTone(l.kind));
+    _tag(c, bounds.topLeft, l.name, WindowTokens.accent, WindowTokens.onAccent, wsTone(l.kind));
   }
 
   /// Draws the selected layer's own handles (roundness, points, crop), besides the frame handles that the engine marks
   /// too (see desk_marks in live.h).
   void _own(Canvas c, Map<String, Offset> h) {
-    final lit = WsT.accent.withValues(alpha: 1);
+    final lit = WindowTokens.accent.withValues(alpha: 1);
     bool seen(String k) => grip == null || grip == k;
     if (h['round'] case final r? when seen('round')) {
       // Corner roundness: a ring inside the first corner.
@@ -309,7 +309,7 @@ class ViewPainter extends CustomPainter {
       o.dx.clamp(v.area.left + 4, math.max(v.area.left + 4, v.area.right - w - 4)),
       o.dy.clamp(v.area.top + 4, math.max(v.area.top + 4, v.area.bottom - StageTokens.tagH - 4)),
     );
-    final r = RRect.fromRectAndRadius(Rect.fromLTWH(o.dx, o.dy, w, StageTokens.tagH), Shape.r(WsT.chipRadius));
+    final r = RRect.fromRectAndRadius(Rect.fromLTWH(o.dx, o.dy, w, StageTokens.tagH), Shape.r(WindowTokens.chipRadius));
     c.drawRRect(r.inflate(1), Paint()..color = Grey.g00);
     c.drawRRect(r, Paint()..color = fill);
     var x = o.dx + 6;
@@ -363,7 +363,7 @@ class RulerPainter extends CustomPainter {
     c.drawRect(Rect.fromLTWH(0, 0, r, size.height), bg);
     c.drawRect(Rect.fromLTRB(math.max(comp.left, r), 0, math.min(comp.right, size.width), r), span);
     c.drawRect(Rect.fromLTRB(0, math.max(comp.top, r), r, math.min(comp.bottom, size.height)), span);
-    final edge = linePaint(WsT.line);
+    final edge = linePaint(WindowTokens.line);
     c.drawLine(Offset(0, r - .5), Offset(size.width, r - .5), edge);
     c.drawLine(Offset(r - .5, 0), Offset(r - .5, size.height), edge);
     final step = _step(v.s), minor = step / 5, tick = Paint()..color = StageTokens.tick;
@@ -408,7 +408,7 @@ class RulerPainter extends CustomPainter {
     if (cursor.value case final p?) {
       final s = v.toScreen(p),
           hot = Paint()
-            ..color = WsT.accent
+            ..color = WindowTokens.accent
             ..strokeWidth = 1;
       if (s.dx > r) c.drawLine(Offset(s.dx, 0), Offset(s.dx, r), hot);
       if (s.dy > r) c.drawLine(Offset(0, s.dy), Offset(r, s.dy), hot);

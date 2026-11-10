@@ -14,12 +14,12 @@ import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
-class WsToolPanel extends StatelessWidget {
-  const WsToolPanel({super.key});
+class ToolPanel extends StatelessWidget {
+  const ToolPanel({super.key});
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), name = ws.toolPanel;
-    return WsPanel(
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.fronted, WorkspaceAspect.picked}), name = ws.toolPanel;
+    return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -42,22 +42,22 @@ class _ToolHeader extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), pinned = ws.toolPanelManual != null;
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.fronted, WorkspaceAspect.picked}), pinned = ws.toolPanelManual != null;
     return LayoutBuilder(
       builder: (context, box) {
         final wide = box.maxWidth >= 340;
-        return WsHeader(
+        return PanelHeader(
           name,
           leading: ToolSticker(name),
           trailing: [
             if (pinned)
               Chip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openToolPanel(null))
             else
-              Chip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
-            SizedBox(width: WsT.gap),
+              Chip(label: wide ? 'Follows selection' : 'Follows', dot: WindowTokens.accent),
+            SizedBox(width: WindowTokens.gap),
             IconPress(
               (ink) => Glyph(DockG.tools, size: 20, color: ink),
-              rest: WsT.well,
+              rest: WindowTokens.well,
               ink: Grey.g76,
               size: 20,
               on: name == 'Tools',
@@ -79,20 +79,20 @@ class _Catalog extends StatelessWidget {
   static const _cell = 104.0, _minTile = 62.0, _maxTile = 92.0;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.read(context);
+    final ws = WorkspaceScope.read(context);
     return LayoutBuilder(
       builder: (context, box) {
-        final w = box.maxWidth - WsT.gap * 2, h = box.maxHeight - WsT.gap * 2;
-        final cols = wsCols(w, _cell, gap: WsT.gap, min: 2), rows = (WsScope.read(context).tools.length / cols).ceil();
-        final tile = ((h - WsT.gap * (rows - 1)) / rows).clamp(_minTile, _maxTile), cw = wsCell(w, cols, gap: WsT.gap);
+        final w = box.maxWidth - WindowTokens.gap * 2, h = box.maxHeight - WindowTokens.gap * 2;
+        final cols = wsCols(w, _cell, gap: WindowTokens.gap, min: 2), rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
+        final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(_minTile, _maxTile), cw = wsCell(w, cols, gap: WindowTokens.gap);
         return ListView(
-          padding: EdgeInsets.all(WsT.gap),
+          padding: EdgeInsets.all(WindowTokens.gap),
           children: [
             Wrap(
-              spacing: WsT.gap,
-              runSpacing: WsT.gap,
+              spacing: WindowTokens.gap,
+              runSpacing: WindowTokens.gap,
               children: [
-                for (final t in WsScope.read(context).tools)
+                for (final t in WorkspaceScope.read(context).tools)
                   SizedBox(
                     width: cw,
                     height: tile,
@@ -109,14 +109,14 @@ class _Catalog extends StatelessWidget {
 
 class _ToolTile extends StatelessWidget {
   const _ToolTile(this.tool, {required this.onTap});
-  final WsPane tool;
+  final Pane tool;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Hov(
     onTap: onTap,
     builder: (_, h) => Container(
       padding: EdgeInsets.fromLTRB(Shape.s(7), Shape.s(7), Shape.s(6), Shape.s(7)),
-      decoration: BoxDecoration(color: h ? WsT.raised : WsT.card, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+      decoration: BoxDecoration(color: h ? WindowTokens.raised : WindowTokens.card, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
       child: LayoutBuilder(
         builder: (context, box) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,

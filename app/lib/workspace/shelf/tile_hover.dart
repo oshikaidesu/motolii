@@ -114,7 +114,7 @@ class _DockHoverState extends State<DockHover> {
             child: Container(
               width: Shape.z(22),
               height: Shape.z(22),
-              decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(4))),
+              decoration: BoxDecoration(color: WindowTokens.accent, borderRadius: BorderRadius.all(Shape.r(4))),
             ),
           ),
           child: tile,

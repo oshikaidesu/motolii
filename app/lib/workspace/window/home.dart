@@ -33,8 +33,8 @@ class HomeDoc {
   String get name => path.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
 }
 
-class WsHome extends StatefulWidget {
-  const WsHome({
+class HomeWindow extends StatefulWidget {
+  const HomeWindow({
     super.key,
     required this.folder,
     required this.lib,
@@ -57,10 +57,10 @@ class WsHome extends StatefulWidget {
   final void Function(List<String> docs) onExport;
   final VoidCallback onNew, onClose;
   @override
-  State<WsHome> createState() => _WsHomeState();
+  State<HomeWindow> createState() => _HomeWindowState();
 }
 
-class _WsHomeState extends State<WsHome> {
+class _HomeWindowState extends State<HomeWindow> {
   // The last sort order chosen, kept like AbsentMotion's sortBy.
   static var byName = false;
   List<HomeDoc> _docs = const [];
@@ -167,7 +167,7 @@ class _WsHomeState extends State<WsHome> {
     }
     return ColoredBox(
       key: const ValueKey('ws-home'),
-      color: WsT.ground,
+      color: WindowTokens.ground,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
         child: Column(
@@ -184,9 +184,9 @@ class _WsHomeState extends State<WsHome> {
                 height: 120,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: WsT.card,
+                  color: WindowTokens.card,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: WsT.raised),
+                  border: Border.all(color: WindowTokens.raised),
                 ),
                 child: Text('+  New Project', style: T.title(Grey.g91)),
               ),
@@ -199,8 +199,8 @@ class _WsHomeState extends State<WsHome> {
                 SizedBox(
                   width: 180,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: 4),
-                    decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.circular(6)),
+                    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset, vertical: 4),
+                    decoration: BoxDecoration(color: WindowTokens.card, borderRadius: BorderRadius.circular(6)),
                     child: TextGestures(
                       key: const ValueKey('home-find'),
                       field: (k) => EditableText(
@@ -209,7 +209,7 @@ class _WsHomeState extends State<WsHome> {
                         controller: _findText,
                         focusNode: _findFocus,
                         style: T.label(Grey.g91),
-                        cursorColor: WsT.accent,
+                        cursorColor: WindowTokens.accent,
                         backgroundCursorColor: Grey.g63,
                         onChanged: (v) => setState(() => _find = v),
                       ),
@@ -244,7 +244,16 @@ class _WsHomeState extends State<WsHome> {
       label: text,
       on: on,
       onTap: tap,
-      look: ChipLook(fill: WsT.card, onFill: WsT.accent, ink: Grey.g91, onInk: WsT.onAccent, padX: 8, padY: 4, radius: 6, text: (c) => T.label(c)),
+      look: ChipLook(
+        fill: WindowTokens.card,
+        onFill: WindowTokens.accent,
+        ink: Grey.g91,
+        onInk: WindowTokens.onAccent,
+        padX: 8,
+        padY: 4,
+        radius: 6,
+        text: (c) => T.label(c),
+      ),
     ),
   );
   // A square thumbnail above the name, as in CapCut's desktop grid.
@@ -268,9 +277,9 @@ class _WsHomeState extends State<WsHome> {
             Container(
               height: _tile,
               decoration: BoxDecoration(
-                color: WsT.card,
+                color: WindowTokens.card,
                 borderRadius: BorderRadius.circular(8),
-                border: open ? Border.all(color: WsT.accent, width: 2) : null,
+                border: open ? Border.all(color: WindowTokens.accent, width: 2) : null,
               ),
               clipBehavior: Clip.antiAlias,
               child: Stack(
@@ -285,8 +294,8 @@ class _WsHomeState extends State<WsHome> {
                         key: ValueKey('home-picked:${d.path}'),
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.circular(4)),
-                        child: Text('✓', style: T.label(WsT.onAccent)),
+                        decoration: BoxDecoration(color: WindowTokens.accent, borderRadius: BorderRadius.circular(4)),
+                        child: Text('✓', style: T.label(WindowTokens.onAccent)),
                       ),
                     ),
                   Positioned(
@@ -299,7 +308,7 @@ class _WsHomeState extends State<WsHome> {
                       child: Container(
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: WsT.ground, borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: WindowTokens.ground, borderRadius: BorderRadius.circular(4)),
                         child: Text('•••', style: T.label(Grey.g76)),
                       ),
                     ),

@@ -11,7 +11,7 @@ import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// What the dock remembers per shelf while the user switches between shelves (selection, chip, folds).
-/// It lives in the dock's state, never in [Ws].
+/// It lives in the dock's state, never in [WorkspaceController].
 class DockMem {
   final sel = <String, String>{'Media': 'coda_intro', 'Effects': 'Glow', 'Fonts': 'Avenir Next', 'Colors': 'pop-2', 'Create': 'Shape'};
   final chip = <String, String>{};
@@ -61,7 +61,7 @@ class DockCtx {
   final String shelf;
   final DockMem mem;
   final String query;
-  final Ws ws;
+  final WorkspaceController ws;
   final void Function(VoidCallback) set;
   final VoidCallback clearSearch;
 

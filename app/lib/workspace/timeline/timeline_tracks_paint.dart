@@ -32,7 +32,7 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
   p.lineTo(xa + wide * to / n, y(way[to]));
 }
 
-void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
+void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, Beats? beats}) {
   final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
   if (beats != null) {
     // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
@@ -42,7 +42,7 @@ void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {
     return;
   }
   final f0 = (v.scroll / fn).floor() * fn;
-  for (var f = f0; f <= Ws.duration; f += fn) {
+  for (var f = f0; f <= WorkspaceController.duration; f += fn) {
     final x = v.x(f).roundToDouble();
     if (x > w) break;
     if (x < 0) continue;
@@ -63,22 +63,22 @@ class WtTracksPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     c.clipRect(Offset.zero & s);
-    final p = Paint(), end = view.x(Ws.duration);
-    c.drawRect(Offset.zero & s, p..color = WsT.body);
+    final p = Paint(), end = view.x(WorkspaceController.duration);
+    c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
     for (var i = 0; i < rows.length; i++) {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
       c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = Forms.worn.trackBand(i, rows[i].selected));
       c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
     }
-    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);
+    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WindowTokens.body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);
     for (var i = 0; i < rows.length; i++) {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
       _row(c, s, rows[i], top + WtM.row / 2 - .5);
     }
-    if (restAt case final f?) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height), p..color = WsT.accent);
+    if (restAt case final f?) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height), p..color = WindowTokens.accent);
   }
 
   void _row(Canvas c, Size s, WtRow r, double cy) {
@@ -90,7 +90,7 @@ class WtTracksPainter extends CustomPainter {
     }
     if (x1 < 0 || x0 > s.width) return;
     final bar = Rect.fromLTRB(x0, cy - h / 2, x1, cy + h / 2), rr = RRect.fromRectAndRadius(bar, Radius.circular(Forms.worn.trackRadius));
-    final fill = wtBarFill(r), ink = r.dim ? Grey.g56 : WsT.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
+    final fill = wtBarFill(r), ink = r.dim ? Grey.g56 : WindowTokens.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
     final mix = r.mix;
     if (mix != null && mix.length > 1 && !r.dim) {
       // A behaviour bar blends the colours of the layers it affects.
@@ -213,17 +213,17 @@ class WtTracksPainter extends CustomPainter {
         ..lineTo(x - rad, cy)
         ..close();
       if (on) {
-        c.drawPath(d, p..color = WsT.keyDot);
+        c.drawPath(d, p..color = WindowTokens.keyDot);
         c.drawPath(
           d,
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5
             ..strokeJoin = StrokeJoin.miter
-            ..color = WsT.onAccent,
+            ..color = WindowTokens.onAccent,
         );
       } else {
-        c.drawPath(d, p..color = r.dim ? Grey.g44 : WsT.onAccent);
+        c.drawPath(d, p..color = r.dim ? Grey.g44 : WindowTokens.onAccent);
         c.drawPath(
           d,
           Paint()
@@ -255,7 +255,7 @@ class WtTracksPainter extends CustomPainter {
     if (r.laneOn case final i? when i + 1 < pts.length) {
       c.drawRect(
         Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2),
-        Paint()..color = WsT.accent.withValues(alpha: .18),
+        Paint()..color = WindowTokens.accent.withValues(alpha: .18),
       ); // Highlights the segment open in the curve editor, like Theatre.js's connector.
     }
     c.drawPath(

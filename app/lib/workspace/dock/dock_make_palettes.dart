@@ -159,7 +159,7 @@ String hexOfColor(Color c) {
 }
 
 /// The colors that layers are filled with, keyed by layer name. A gradient counts as its first color.
-Map<String, Color> usedColors(Ws ws) {
+Map<String, Color> usedColors(WorkspaceController ws) {
   final m = ws.inside;
   if (m == null) return const {};
   return {

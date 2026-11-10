@@ -63,7 +63,7 @@ class EaseShapes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: WsT.card,
+    color: WindowTokens.card,
     child: LayoutBuilder(
       builder: (_, box) => ListView(
         scrollDirection: across ? Axis.horizontal : Axis.vertical,
@@ -96,7 +96,7 @@ class EaseLeft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: WsT.card,
+    color: WindowTokens.card,
     child: Column(
       children: [
         const Spacer(flex: 2),
@@ -152,7 +152,7 @@ class EaseStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = span, ws = WsScope.of(context, {WsAspect.document});
+    final s = span, ws = WorkspaceScope.of(context, {WorkspaceAspect.document});
     final keys = s == null ? const <int>[] : ([...s.layer.keys]..sort());
     final to = s == null
         ? null
@@ -163,7 +163,7 @@ class EaseStep extends StatelessWidget {
         ? const SizedBox.shrink()
         : IconPress(
             paintInk((ink) => Draw((cv, s) => drawEaseChevron(cv, s, ink, back), (ink, back))),
-            rest: WsT.well,
+            rest: WindowTokens.well,
             ink: Grey.g76,
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
             size: Shape.z(18),

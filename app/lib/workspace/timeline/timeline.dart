@@ -1,7 +1,7 @@
 // The workspace's Timeline panel.
 //
 // It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
-// The project lives in Ws. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
+// The project lives in WorkspaceController. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -32,19 +32,19 @@ import 'package:motolii/workspace/timeline/timeline_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-class WsTimeline extends StatefulWidget {
-  const WsTimeline({super.key});
+class TimelinePane extends StatefulWidget {
+  const TimelinePane({super.key});
   @override
-  State<WsTimeline> createState() => WsTimelineState();
+  State<TimelinePane> createState() => TimelinePaneState();
 }
 
-class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMixin, TimelineAsked {
+class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderStateMixin, TimelineAsked {
   late final Ticker ticker = createTicker(tick);
   // One closure, used for both adding and removing the listener.
   // Tearing off an extension method gives a new closure each time, so removeListener would never match.
   late final VoidCallback _listener = changed;
   final _focus = FocusNode(debugLabel: 'timeline');
-  Ws? workspace;
+  WorkspaceController? workspace;
   double zoom = 1, scroll = 0, vscroll = 0, trackW = 1000, rowsH = 200;
   int workIn = 12, workOut = 228;
   int lastFrame = -1;
@@ -56,7 +56,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
 
   // The properties of [l] that have keyframes, in the layer's own order.
   // Ableton does the same with "Show Automated Parameters Only". With Animate on, every property counts as moving, so its keyframes decide.
-  List<String> _moving(Ws ws, WsLayer l) {
+  List<String> _moving(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null) return const [];
     final moving = m.moving(t).toSet();
@@ -67,13 +67,13 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
   }
 
   // The title of the inspector card that holds a property: an effect, or Transform and the like.
-  String? laneCard(Ws ws, WsLayer l, String name) => [
+  String? laneCard(WorkspaceController ws, Layer l, String name) => [
     for (final (title, names) in ws.inside!.cards(int.parse(l.id)))
       if (names.contains(name)) title,
   ].firstOrNull;
 
   // The lane for one property: its keyframe times and values, read from the project snapshot without asking the engine.
-  WtRow laneRow(Ws ws, WsLayer l, String name) {
+  WtRow laneRow(WorkspaceController ws, Layer l, String name) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyTimes(t, name), vs = m.keyValues(t, name);
     final n = math.min(at.length, vs.length);
     final lo = vs.take(n).fold(double.infinity, math.min), hi = vs.take(n).fold(-double.infinity, math.max);
@@ -82,22 +82,22 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
       kind: l.kind,
       inF: l.inF,
       outF: l.outF,
-      keys: [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()],
+      keys: [for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round()],
       picked: const {},
       tone: l.tone,
       dim: isHidden(ws, l.id) || (anySolo(ws) && !isSolo(ws, l.id)),
       locked: isLocked(ws, l.id),
-      lane: [for (var i = 0; i < n; i++) ((at[i] * Ws.fps).round(), hi > lo ? (vs[i] - lo) / (hi - lo) : .5)],
+      lane: [for (var i = 0; i < n; i++) ((at[i] * WorkspaceController.fps).round(), hi > lo ? (vs[i] - lo) / (hi - lo) : .5)],
       laneWays: [for (var i = 0; i + 1 < n; i++) _wayShape(ws, m.easingOf(t, name, at[i]))],
       laneOn: switch (ws.stretch) {
-        final s? when s.layer == l.id && s.name == name => [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(s.from),
+        final s? when s.layer == l.id && s.name == name => [for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round()].indexOf(s.from),
         _ => null,
       },
     );
   }
 
   // An easing's curve from 0 to 1, as drawn between keyframes.
-  List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
+  List<double> _wayShape(WorkspaceController ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
 
   @override
   void initState() {
@@ -109,11 +109,11 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final ws = WsScope.read(context);
+    final ws = WorkspaceScope.read(context);
     if (ws != workspace) {
-      workspace?.on[WsAspect.playing]!.removeListener(_listener);
+      workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
       workspace?.moment.removeListener(_listener);
-      workspace = ws..on[WsAspect.playing]!.addListener(_listener);
+      workspace = ws..on[WorkspaceAspect.playing]!.addListener(_listener);
       ws.moment.addListener(_listener);
       if (ws.playing) SchedulerBinding.instance.addPostFrameCallback((_) => mounted ? changed() : null);
     }
@@ -121,7 +121,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
 
   @override
   void dispose() {
-    workspace?.on[WsAspect.playing]!.removeListener(_listener);
+    workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     workspace?.moment.removeListener(_listener);
     ticker.dispose();
     _focus.dispose();
@@ -151,7 +151,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
   /// A two-finger trackpad slide scrolls the tracks like a wheel, in the opposite direction, so the content follows the fingers.
   /// A pinch zooms around the frame under the fingers, as in Final Cut, Cavalry and Theatre.js.
   void fingers(Offset by, Offset _) => scrollBy(-by);
-  void pinch(double by, Offset at) => setZoom(zoom * by, anchor: view.frameAt(at.dx).round().clamp(0, Ws.duration));
+  void pinch(double by, Offset at) => setZoom(zoom * by, anchor: view.frameAt(at.dx).round().clamp(0, WorkspaceController.duration));
 
   void scrollBy(Offset d) {
     final sideways = HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
@@ -184,7 +184,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
   MouseCursor cursor = MouseCursor.defer;
 
   // The keyframe being dragged, together with the other selected keyframes. They slide in time while the playhead shows the position.
-  ({List<WsKey> keys, int grab, int by})? slide;
+  ({List<SelectedKeyframe> keys, int grab, int by})? slide;
   // When and where a lane was last clicked, to detect a double-click.
   DateTime? lanePressed;
   Offset laneAt = Offset.zero;
@@ -204,7 +204,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     final ws = workspace!, v = view, r = Rect.fromPoints(b.$1, b.$2);
     // A click, not a box: the tap handler has already dealt with it.
     if (r.width < 4 && r.height < 4) return;
-    final keys = <WsKey>[], things = <String>[];
+    final keys = <SelectedKeyframe>[], things = <String>[];
     for (var i = 0; i < order.length; i++) {
       // A box does not select points on a lane.
       if (order[i].value != null) continue;
@@ -228,7 +228,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     if (slide case final s?) {
       final by = rested(view.frameAt(p.dx).round() - s.grab, [s.grab]);
       setState(() => slide = (keys: s.keys, grab: s.grab, by: by));
-      workspace!.frame = (s.grab + by).clamp(0, Ws.duration);
+      workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
     }
     final h = bar, ws = workspace!, m = ws.inside;
@@ -242,7 +242,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     by = rested(by, [if (h.part != 'tail') barIn, if (h.part != 'head') barOut]);
     if (h.part == 'tail') by = math.max(by, barIn + 1 - barOut);
     if (h.part == 'head') by = math.min(by, barOut - 1 - barIn);
-    m.dragUpdate(h.part, by / Ws.fps);
+    m.dragUpdate(h.part, by / WorkspaceController.fps);
     bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
     ws.respan(h.id);
   }
@@ -277,10 +277,10 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
   // It is kept during the drag, as Live does for locators (6.4) and as workGrab does for the work area.
   // Without it the marker jumped to the pointer, and one grabbed by the end of its name moved 0.47 s.
   double markGrab = 0;
-  final rulerMenu = GlobalKey<WsMenuState>();
+  final rulerMenu = GlobalKey<ContextMenuState>();
   // The context menu of a bar (see trackRight in timeline_asked.dart).
-  final trackMenu = GlobalKey<WsMenuState>();
-  final labelMenu = GlobalKey<WsMenuState>();
+  final trackMenu = GlobalKey<ContextMenuState>();
+  final labelMenu = GlobalKey<ContextMenuState>();
   bool markOff = false;
   (double, String)? naming;
   final markWords = TextEditingController();
@@ -298,7 +298,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     final f = view.frameAt(p.dx).round();
     if (markHeld != null) {
       return setState(() {
-        markTo = (view.frameAt(p.dx) - markGrab).round().clamp(0, Ws.duration);
+        markTo = (view.frameAt(p.dx) - markGrab).round().clamp(0, WorkspaceController.duration);
         // Dragged off the ruler: the marker is deleted on release.
         markOff = p.dy < -WtM.ruler * .6 || p.dy > WtM.ruler * 1.6;
       });
@@ -306,11 +306,11 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     switch (workDrag) {
       case 0:
         // The work area is at least half a second long, so it cannot be dragged out of sight.
-        setState(() => workIn = f.clamp(0, workOut - Ws.fps ~/ 2));
+        setState(() => workIn = f.clamp(0, workOut - WorkspaceController.fps ~/ 2));
       case 1:
-        setState(() => workOut = f.clamp(workIn + Ws.fps ~/ 2, Ws.duration));
+        setState(() => workOut = f.clamp(workIn + WorkspaceController.fps ~/ 2, WorkspaceController.duration));
       case 2:
-        final len = workOut - workIn, a = (view.frameAt(p.dx) - workGrab).round().clamp(0, Ws.duration - len);
+        final len = workOut - workIn, a = (view.frameAt(p.dx) - workGrab).round().clamp(0, WorkspaceController.duration - len);
         setState(() {
           workIn = a;
           workOut = a + len;
@@ -328,10 +328,10 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     final m = workspace?.inside;
     if (markHeld case (final at, final name)?) {
       markHeld = null;
-      final to = markTo / Ws.fps;
+      final to = markTo / WorkspaceController.fps;
       if (markOff) {
         workspace!.after(m!.later('mark', number: at));
-      } else if ((to - at).abs() >= 0.5 / Ws.fps) {
+      } else if ((to - at).abs() >= 0.5 / WorkspaceController.fps) {
         // Moved: one undo step, and the name is kept.
         m!.later('together', number: 1);
         m.later('mark', number: at);
@@ -349,12 +349,12 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
       setState(() {});
       return;
     }
-    if (workDrag != null) workspace!.after(m!.later('work', number: workIn / Ws.fps, word: '${workOut / Ws.fps}'));
+    if (workDrag != null) workspace!.after(m!.later('work', number: workIn / WorkspaceController.fps, word: '${workOut / WorkspaceController.fps}'));
     workDrag = null;
   }
 
   void overview(Offset p, double w) {
-    final f = (p.dx - 4) / (w - 8) * Ws.duration;
+    final f = (p.dx - 4) / (w - 8) * WorkspaceController.duration;
     setState(() => scroll = clampScroll(f - visible / 2));
   }
 
@@ -380,10 +380,10 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
     if (workDrag == null) {
       // Takes the project's work area.
       final (from, to) = workspace!.work;
-      workIn = (from * Ws.fps).round();
-      workOut = (to * Ws.fps).round();
+      workIn = (from * WorkspaceController.fps).round();
+      workOut = (to * WorkspaceController.fps).round();
     }
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.animating});
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked, WorkspaceAspect.animating});
     final away = ws.foldedAway;
     final sel = ws.selected,
         picks = ws.keys,
@@ -439,7 +439,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
       child: TapRegion(
         onTapInside: (_) => _focus.requestFocus(),
         child: ColoredBox(
-          color: WsT.body,
+          color: WindowTokens.body,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -460,7 +460,7 @@ class WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMi
                     SizedBox(width: WtM.label, child: labels(ws, rows)),
                     SizedBox(
                       width: WtM.divider,
-                      child: ColoredBox(color: WsT.ground),
+                      child: ColoredBox(color: WindowTokens.ground),
                     ),
                     Expanded(child: tracks(ws, rows)),
                   ],

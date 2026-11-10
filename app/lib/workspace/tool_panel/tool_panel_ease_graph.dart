@@ -208,7 +208,7 @@ class _EaseGraphState extends State<EaseGraph> {
               CustomPaint(
                 size: box.biggest,
                 painter: _GraphPainter(
-                  ghosts: _ghosts(WsScope.of(context, {WsAspect.document}), widget.span),
+                  ghosts: _ghosts(WorkspaceScope.of(context, {WorkspaceAspect.document}), widget.span),
                   ease: widget.ease,
                   from: widget.span?.from,
                   to: widget.span?.to,
@@ -249,10 +249,10 @@ class _EaseGraphState extends State<EaseGraph> {
 /// Copies of a behaviour's curve, one per member layer after the first, each delayed by its lag times its position.
 ///
 /// They are drawn in the layer's own colour and cannot be edited, as Blender shows curves it will not let the user change.
-List<(double, Color)> _ghosts(Ws ws, EaseSpan? span) {
+List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
   final m = ws.inside, t = int.tryParse(span?.layer.id ?? '');
   if (m == null || t == null || span == null || span.to <= span.from || m.word(t, 'kind') != 'behaviour') return const [];
-  final lag = (m.value(t, 'lag', 0) ?? 0) * Ws.fps / (span.to - span.from);
+  final lag = (m.value(t, 'lag', 0) ?? 0) * WorkspaceController.fps / (span.to - span.from);
   final members = [
     for (final s in m.word(t, 'members').split(' '))
       if (s.isNotEmpty && s != '_') s,
@@ -371,7 +371,7 @@ class _GraphPainter extends CustomPainter {
     Offset handle(double x, double y) => px(Offset(x, y0 + (y1 - y0) * y));
     for (final h in handles) {
       if (h.fromX == null || h.fromY == null) continue;
-      final o = handle(h.fromX!, h.fromY!), ink = h.param ? WsT.keyDot : Grey.g95;
+      final o = handle(h.fromX!, h.fromY!), ink = h.param ? WindowTokens.keyDot : Grey.g95;
       if (h.dashed) {
         dashed(c, o, handle(h.x, 0), ink, 1, 2.5, 2.5);
       } else {
@@ -401,7 +401,7 @@ class _GraphPainter extends CustomPainter {
         ..strokeWidth = 3
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = WsT.accentInk,
+        ..color = WindowTokens.accentInk,
     );
     // The timeline position: the playhead in its own color, where the easing is now, and the frame numbers.
     final numbers = T.micro(Grey.g56);
@@ -416,15 +416,22 @@ class _GraphPainter extends CustomPainter {
             x = g.left + g.width * u,
             y = y0 + (y1 - y0) * (onion ?? ease).at(u),
             line = Paint()
-              ..color = WsT.playhead
+              ..color = WindowTokens.playhead
               ..strokeWidth = 1.5;
         c.drawLine(Offset(x, top - 8), Offset(x, bottom + 4), line);
-        c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WsT.playhead);
-        if (frame != from && frame != to) toolText(c, '$frame', Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WindowTokens.playhead);
+        if (frame != from && frame != to)
+          toolText(c, '$frame', Offset(x, bottom + 6), T.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       } else if (g.width > Shape.z(80)) {
         // The frame is outside this span: show which side it lies on.
         final before = frame < from!;
-        toolText(c, before ? '‹ $frame' : '$frame ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        toolText(
+          c,
+          before ? '‹ $frame' : '$frame ›',
+          Offset(g.center.dx, bottom + 6),
+          T.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700),
+          ax: .5,
+        );
       }
     }
     // A previewed easing: where it has reached on its curve, and a ball on the bar moving as a value would.
@@ -434,11 +441,11 @@ class _GraphPainter extends CustomPainter {
         Offset(at.dx, top - 8),
         Offset(at.dx, bottom + 4),
         Paint()
-          ..color = WsT.playhead
+          ..color = WindowTokens.playhead
           ..strokeWidth = 1.5,
       );
-      c.drawCircle(at, 4.5, Paint()..color = WsT.playhead);
-      c.drawCircle(Offset(g.right + easeBarOut, at.dy), 6, Paint()..color = WsT.playhead);
+      c.drawCircle(at, 4.5, Paint()..color = WindowTokens.playhead);
+      c.drawCircle(Offset(g.right + easeBarOut, at.dy), 6, Paint()..color = WindowTokens.playhead);
     }
     // The jump at the dragged end: from where the value was (the key the jump leaves outside) to where it is now.
     if (pulled != null && jump) {
@@ -448,7 +455,7 @@ class _GraphPainter extends CustomPainter {
     }
     // The handles: large ones are the user's. Yellow marks the preset's parameters, white the rest.
     for (final (i, h) in handles.indexed) {
-      final o = handle(h.x, h.y), on = active == i, ink = h.param ? WsT.keyDot : Grey.g95;
+      final o = handle(h.x, h.y), on = active == i, ink = h.param ? WindowTokens.keyDot : Grey.g95;
       c.drawCircle(o, on ? 7 : 6, Paint()..color = ink);
       if (dragging && on && !h.param) {
         toolText(
@@ -466,7 +473,7 @@ class _GraphPainter extends CustomPainter {
     for (final (i, (x, k, inward)) in [(g.left - rail, a, 1.0), (g.right + rail, b, -1.0)].indexed) {
       final on = active == end + i, cap = rail * .35;
       final bar = Paint()
-        ..color = on ? WsT.accentInk : Grey.g63
+        ..color = on ? WindowTokens.accentInk : Grey.g63
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round;
       c.drawLine(Offset(x, math.min(top, k.dy)), Offset(x, math.max(bottom, k.dy)), bar);
@@ -481,7 +488,7 @@ class _GraphPainter extends CustomPainter {
       );
       c.drawRRect(
         RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x, k.dy), width: on ? 11 : 9, height: on ? 18 : 14), const Radius.circular(3)),
-        Paint()..color = WsT.accentInk,
+        Paint()..color = WindowTokens.accentInk,
       );
     }
   }

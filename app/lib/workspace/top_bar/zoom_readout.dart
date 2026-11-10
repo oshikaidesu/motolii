@@ -7,33 +7,33 @@ import 'package:motolii/workspace/state/window_zoom.dart';
 
 /// The zoom readout in the top bar.
 ///
-/// Dragging sideways changes the zoom by 1% per 3 px and saves it when the drag ends. Double-clicking resets it to [WsZoom.usual].
-class WsZoomReadout extends StatefulWidget {
-  const WsZoomReadout({super.key});
+/// Dragging sideways changes the zoom by 1% per 3 px and saves it when the drag ends. Double-clicking resets it to [WindowZoom.usual].
+class ZoomReadout extends StatefulWidget {
+  const ZoomReadout({super.key});
   @override
-  State<WsZoomReadout> createState() => _WsZoomReadoutState();
+  State<ZoomReadout> createState() => _ZoomReadoutState();
 }
 
-class _WsZoomReadoutState extends State<WsZoomReadout> {
+class _ZoomReadoutState extends State<ZoomReadout> {
   // True while the user is dragging. The zoom is saved once, when the drag ends.
   bool _held = false;
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<double>(
-    valueListenable: WsZoom.value,
+    valueListenable: WindowZoom.value,
     builder: (context, z, _) => NumberField(
       key: const ValueKey('ws-zoom'),
-      value: () => WsZoom.value.value * 100,
+      value: () => WindowZoom.value.value * 100,
       text: (v, _) => '${v.round()}%',
-      style: T.micro(z == WsZoom.usual ? Grey.g56 : Grey.g91),
+      style: T.micro(z == WindowZoom.usual ? Grey.g56 : Grey.g91),
       perPx: 1 / 3,
       typeOnTap: false,
       onGrab: () => _held = true,
-      onChange: (v) => WsZoom.set(v / 100, keep: !_held),
+      onChange: (v) => WindowZoom.set(v / 100, keep: !_held),
       onDrop: () {
         _held = false;
-        WsZoom.set(WsZoom.value.value);
+        WindowZoom.set(WindowZoom.value.value);
       },
-      onReset: () => WsZoom.set(WsZoom.usual),
+      onReset: () => WindowZoom.set(WindowZoom.usual),
       paint: (_, shown, _) => Padding(
         padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(4)),
         child: shown,

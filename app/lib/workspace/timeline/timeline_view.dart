@@ -7,7 +7,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
-extension WsTimelineView on WsTimelineState {
+extension TimelinePaneView on TimelinePaneState {
   // ---------------------------------------------------------------- play
 
   void changed() {
@@ -15,7 +15,7 @@ extension WsTimelineView on WsTimelineState {
     if (ws.playing && !ticker.isActive) {
       ticker.start();
       lastFrame = -1;
-      if (ws.frame >= Ws.duration) ws.frame = 0;
+      if (ws.frame >= WorkspaceController.duration) ws.frame = 0;
     } else if (!ws.playing && ticker.isActive) {
       ticker.stop();
     }
@@ -28,7 +28,7 @@ extension WsTimelineView on WsTimelineState {
   void _tickNow(Duration e) {
     final ws = workspace!;
     // The engine keeps the clock. The playhead shows the time of the last frame it drew.
-    lastFrame = (ws.inside!.now * Ws.fps).round().clamp(0, Ws.duration);
+    lastFrame = (ws.inside!.now * WorkspaceController.fps).round().clamp(0, WorkspaceController.duration);
     ws.frame = lastFrame;
   }
 
@@ -45,13 +45,13 @@ extension WsTimelineView on WsTimelineState {
 
   // ---------------------------------------------------------------- view
 
-  double get fit => math.max(.1, (trackW - WtM.padL - WtM.padR) / Ws.duration);
+  double get fit => math.max(.1, (trackW - WtM.padL - WtM.padR) / WorkspaceController.duration);
 
   WtView get view => WtView(fit * zoom, scroll);
 
-  double get visible => Ws.duration / zoom;
+  double get visible => WorkspaceController.duration / zoom;
 
-  double clampScroll(double s) => s.clamp(0.0, math.max(0.0, Ws.duration - visible)).toDouble();
+  double clampScroll(double s) => s.clamp(0.0, math.max(0.0, WorkspaceController.duration - visible)).toDouble();
 
   double clampV(int rows) => vscroll.clamp(0.0, math.max(0.0, rows * WtM.row - rowsH)).toDouble();
 }

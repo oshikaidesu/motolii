@@ -4,11 +4,11 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/float_shut.dart';
-import 'package:motolii/widgets/menu.dart' show WsMenuItem, WsMenuList;
+import 'package:motolii/widgets/menu.dart' show ContextMenuItem, ContextMenuList;
 
 /// A short menu at the pointer position, kept inside the window. It is the right-click menu of a number.
 ///
-/// It shows a [WsMenuList]. Each row has the id `name-key:of`.
+/// It shows a [ContextMenuList]. Each row has the id `name-key:of`.
 class TinyMenuAt extends StatelessWidget {
   const TinyMenuAt({super.key, required this.at, required this.name, required this.of, required this.items, required this.hide, this.keep});
 
@@ -40,8 +40,8 @@ class TinyMenuAt extends StatelessWidget {
           child: FloatShut(
             shut: hide,
             keep: keep,
-            child: WsMenuList(
-              items: [for (final (k, l, f) in items) WsMenuItem(l, f, id: '$name-$k:$of')],
+            child: ContextMenuList(
+              items: [for (final (k, l, f) in items) ContextMenuItem(l, f, id: '$name-$k:$of')],
               close: hide,
               max: room.height * .5,
               width: wide,

@@ -121,7 +121,7 @@ class EaseCards extends StatelessWidget {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.all(Shape.r(5)),
-          border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2),
+          border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2),
         ),
         child: child,
       ),
@@ -152,7 +152,7 @@ class EaseCards extends StatelessWidget {
       ),
     };
     return ColoredBox(
-      color: WsT.card,
+      color: WindowTokens.card,
       child: Flex(
         direction: axis,
         children: [
@@ -181,7 +181,7 @@ class EaseCards extends StatelessWidget {
                     builder: (_, h) => EaseSlot(
                       side: this.side,
                       ink: adding
-                          ? WsT.accent
+                          ? WindowTokens.accent
                           : h
                           ? Grey.g76
                           : Grey.g38,

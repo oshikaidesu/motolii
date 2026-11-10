@@ -48,8 +48,8 @@ class MediaShelf extends StatelessWidget {
             children: [
               SizedBox(width: Shape.z(160), child: _Tree(c)),
               ColoredBox(
-                color: WsT.ground,
-                child: SizedBox(width: WsT.gutter),
+                color: WindowTokens.ground,
+                child: SizedBox(width: WindowTokens.gutter),
               ),
               Expanded(child: FolderContents(c)),
             ],
@@ -143,7 +143,7 @@ class _Tree extends StatelessWidget {
           key: ValueKey('browser:folder:${n.id}'),
           here: c.mem.folder == n.id,
           glyph: DockG.folder,
-          glyphInk: depth == 0 ? WsT.accentInk : Grey.g63,
+          glyphInk: depth == 0 ? WindowTokens.accentInk : Grey.g63,
           rest: depth == 0 ? Grey.g95 : null,
           bold: depth == 0,
           depth: depth,
@@ -165,7 +165,7 @@ class _Tree extends StatelessWidget {
       walk(r, 0);
     }
     return ColoredBox(
-      color: WsT.body,
+      color: WindowTokens.body,
       child: ListView(
         padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
         children: rows,
@@ -183,8 +183,8 @@ class FolderCrumbs extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     height: Shape.z(24),
-    color: WsT.card,
-    padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+    color: WindowTokens.card,
+    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
     child: Row(
       children: [
         if (searching)

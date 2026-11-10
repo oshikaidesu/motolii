@@ -60,7 +60,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   bool _overLocked = false;
 
   // With no keyframe picked, the segment follows the playhead. The panel rebuilds when it enters another segment, not every frame.
-  Ws? _ws;
+  WorkspaceController? _ws;
   String _spanAt = '';
   void _moved() {
     final id = spanId(easeSpan(_ws!));
@@ -70,7 +70,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final ws = WsScope.read(context);
+    final ws = WorkspaceScope.read(context);
     if (ws == _ws) return;
     _ws?.moment.removeListener(_moved);
     _ws = ws..moment.addListener(_moved);
@@ -85,7 +85,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
 
   // The segments of every picked keyframe, on any layer, one for each property keyed there.
   // A last keyframe has no segment after it, so the segment ending at it is used.
-  List<(int, String, double)> _stretches(Ws ws) => [
+  List<(int, String, double)> _stretches(WorkspaceController ws) => [
     if (ws.stretch case final s?)
       (int.parse(s.layer), s.name, s.at)
     else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
@@ -103,7 +103,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   ];
 
   // Sends the newest ease while the pointer is down. The first call opens the undo step.
-  void _live(Ws ws, Ease e) {
+  void _live(WorkspaceController ws, Ease e) {
     final m = ws.inside!;
     if (_going) {
       _waiting = e;
@@ -133,7 +133,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   }
 
   // Abandons a preview: the undo step it opened is removed whole.
-  void _giveUp(Ws ws) {
+  void _giveUp(WorkspaceController ws) {
     _waiting = null;
     if (!_open) {
       _base = null;
@@ -149,7 +149,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     }
   }
 
-  void _settle(Ws ws, EaseSpan? span) {
+  void _settle(WorkspaceController ws, EaseSpan? span) {
     final e = _pending;
     _pending = null;
     _waiting = null;
@@ -190,7 +190,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   }
 
   // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
-  void _onEveryKey(Ws ws, Ease e) {
+  void _onEveryKey(WorkspaceController ws, Ease e) {
     final m = ws.inside!,
         layers = ws.keys.isNotEmpty
             ? {for (final k in ws.keys) k.layer}
@@ -210,7 +210,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
       final inDocument = at.isEmpty ? easingPreset('Linear') : heard(m.easingOf(int.parse(span.layer.id), at.keys.first, at.values.first));
@@ -244,7 +244,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   }
 
   // Lays out the panel as AbsentMotion's EasingPanel.kt does: the left column, the graph and the preset thumbnails.
-  Widget _body(Ws ws, EaseSpan? span, Ease ease, ValueChanged<Ease> set) {
+  Widget _body(WorkspaceController ws, EaseSpan? span, Ease ease, ValueChanged<Ease> set) {
     final cards = easeIsLaid(said(ease)) ? [for (final c in easeCards(said(ease))) easeCard(c, ws.inside)] : [ease];
     // Over plain Linear there is nothing to layer onto, so the new easing replaces it.
     Ease laidOn(Ease e) => said(ease) == 'Linear' ? e : easeLaid([...cards, for (final c in easeCards(said(e))) easeCard(c, ws.inside)]);
@@ -398,14 +398,14 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
           },
           builder: (_, hot, _) => DecoratedBox(
             position: DecorationPosition.foreground,
-            decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
+            decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2)),
             child: Flex(
               direction: tall ? Axis.vertical : Axis.horizontal,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: ColoredBox(
-                    color: WsT.well,
+                    color: WindowTokens.well,
                     child: Stack(
                       children: [
                         Positioned.fill(

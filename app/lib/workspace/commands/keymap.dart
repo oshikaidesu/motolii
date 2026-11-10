@@ -165,8 +165,8 @@ class CommandIntent extends Intent {
 }
 
 /// Installs the shortcuts of [keymap] over [child]. [commands] maps each command name to what it does.
-class WsKeys extends StatelessWidget {
-  const WsKeys({super.key, required this.keymap, required this.commands, required this.child});
+class KeymapShortcuts extends StatelessWidget {
+  const KeymapShortcuts({super.key, required this.keymap, required this.commands, required this.child});
   final Keymap keymap;
   final Map<String, VoidCallback> commands;
   final Widget child;

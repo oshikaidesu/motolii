@@ -38,7 +38,7 @@ function each(i, n, t, k) { return {}; }
 /// Puts an empty effect on the selected layer, or an empty expression if [expression], with its code open.
 /// With no layer selected it goes on a new layer, as the shelf's other effects do. [told] receives the reason it
 /// was refused, or '' once it was taken.
-void emptyPut(Ws ws, {required bool expression, void Function(String why)? told}) {
+void emptyPut(WorkspaceController ws, {required bool expression, void Function(String why)? told}) {
   if (ws.inside == null) return;
   final dir = '${EffectTiles.own}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
       file = '$dir/${expression ? 'empty.js' : 'Empty.fs'}';
@@ -50,7 +50,7 @@ void emptyPut(Ws ws, {required bool expression, void Function(String why)? told}
 /// Puts an effect file (an expression file if [expression]) on the selected layer. [open] opens its code on the card.
 /// With no layer selected, an effect goes on a new adjustment layer and an expression on a new layer of its own.
 /// [told] receives the reason it was refused, or '' once it was taken.
-void fxPut(Ws ws, String file, {required bool expression, void Function(String why)? told, bool open = false}) {
+void fxPut(WorkspaceController ws, String file, {required bool expression, void Function(String why)? told, bool open = false}) {
   final m = ws.inside;
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
@@ -71,7 +71,7 @@ void fxPut(Ws ws, String file, {required bool expression, void Function(String w
 /// (doc_fx_eye), and fx_file would otherwise remove the existing effect of the same name.
 (String, String) _said(String fx, String file) {
   final title = FxCode.titleOf(file), stem = EffectTiles.knobStem(file).toLowerCase();
-  final stems = {for (final w in Ws.fxFiles(fx)) EffectTiles.knobStem(w).toLowerCase()};
+  final stems = {for (final w in WorkspaceController.fxFiles(fx)) EffectTiles.knobStem(w).toLowerCase()};
   if (!stems.contains(stem)) return (file, title);
   var n = 2;
   while (stems.contains('${stem}_$n')) {

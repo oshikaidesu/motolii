@@ -131,7 +131,7 @@ class ProgramShelf extends StatefulWidget {
 class _ProgramShelfState extends State<ProgramShelf> {
   DockCtx get c => widget.c;
   void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
-  final _menu = GlobalKey<WsMenuState>();
+  final _menu = GlobalKey<ContextMenuState>();
 
   /// The file whose name is being edited, if any.
   String? _renaming;
@@ -174,10 +174,10 @@ class _ProgramShelfState extends State<ProgramShelf> {
     c.pick(p.file);
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-      WsMenuItem('Create', () => _put(p)),
-      if (p.recipe == null) WsMenuItem('Rename…', () => _rename(p)),
-      const WsMenuItem.rule(),
-      WsMenuItem(
+      ContextMenuItem('Create', () => _put(p)),
+      if (p.recipe == null) ContextMenuItem('Rename…', () => _rename(p)),
+      const ContextMenuItem.rule(),
+      ContextMenuItem(
         Platform.isWindows ? 'Show in Explorer' : 'Show in Finder',
         () => Platform.isWindows ? Process.run('explorer', ['/select,${p.file.replaceAll('/', r'\')}']) : Process.run('open', ['-R', p.file]),
       ),
@@ -229,7 +229,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
       final r? => CopiesTiles.of(p.file, make: r),
       _ => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '',
     };
-    return WsMenu(
+    return ContextMenu(
       key: _menu,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -276,7 +276,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
           if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
           if (sel != null)
             DockFooter(
-              preview: dockBadge(DockG.program, WsT.toneText, size: Shape.z(34)),
+              preview: dockBadge(DockG.program, WindowTokens.toneText, size: Shape.z(34)),
               title: sel.name,
               meta: c.mem.trouble[sel.file]?.replaceAll('the script ${sel.file}: ', '') ?? sel.first,
               action: 'Create',

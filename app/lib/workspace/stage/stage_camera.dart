@@ -10,13 +10,13 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The Camera View tab: shows what the camera layer sees.
-class WsCameraView extends StatefulWidget {
-  const WsCameraView({super.key});
+class CameraView extends StatefulWidget {
+  const CameraView({super.key});
   @override
-  State<WsCameraView> createState() => _WsCameraViewState();
+  State<CameraView> createState() => _CameraViewState();
 }
 
-class _WsCameraViewState extends State<WsCameraView> {
+class _CameraViewState extends State<CameraView> {
   (Motolii?, bool) _told = (null, false);
 
   @override
@@ -31,7 +31,7 @@ class _WsCameraViewState extends State<WsCameraView> {
   /// nobody looks at costs no second image.
   void _look(Duration _) {
     if (!mounted) return;
-    final m = WsScope.read(context).inside, seen = context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
+    final m = WorkspaceScope.read(context).inside, seen = context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
     if (_told != (m, seen)) {
       // A newly opened document starts with the tab not announced.
       _told = (m, seen);
@@ -48,14 +48,14 @@ class _WsCameraViewState extends State<WsCameraView> {
 
   @override
   Widget build(BuildContext context) {
-    final id = WsScope.of(context, {WsAspect.document, WsAspect.stage}).stageTexture;
+    final id = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.stage}).stageTexture;
     return ColoredBox(
       color: Grey.g10,
       child: id == null
           ? null
           : Center(
               child: AspectRatio(
-                aspectRatio: WsArt.comp.aspectRatio,
+                aspectRatio: ArtGeometry.comp.aspectRatio,
                 child: Texture(textureId: id, filterQuality: FilterQuality.medium),
               ),
             ),

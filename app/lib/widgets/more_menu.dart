@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;
 import 'package:motolii/widgets/float_shut.dart';
-import 'package:motolii/widgets/menu.dart' show WsMenuItem, WsMenuList;
+import 'package:motolii/widgets/menu.dart' show ContextMenuItem, ContextMenuList;
 
 /// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
 ///
@@ -55,8 +55,8 @@ class _CardMoreState extends State<CardMore> {
           child: FloatShut(
             shut: _portal.hide,
             group: _link,
-            child: WsMenuList(
-              items: [for (final (k, l, f) in widget.items) WsMenuItem(l, f, id: 'card-$k:${widget.name}')],
+            child: ContextMenuList(
+              items: [for (final (k, l, f) in widget.items) ContextMenuItem(l, f, id: 'card-$k:${widget.name}')],
               close: _portal.hide,
               max: MediaQuery.sizeOf(context).height * .5,
               width: Shape.z(150),
