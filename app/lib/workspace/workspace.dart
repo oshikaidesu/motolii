@@ -14,7 +14,7 @@ import 'package:docking/docking.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
 import 'package:motolii/workspace/window/zoom.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';

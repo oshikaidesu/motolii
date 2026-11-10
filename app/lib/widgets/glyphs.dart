@@ -2,7 +2,7 @@
 // Glyphs use g63 when idle and g95 when active, so every tool and tile has a real mark instead of an empty placeholder.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/media.dart' show glyph;
 

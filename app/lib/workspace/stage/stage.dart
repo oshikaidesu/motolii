@@ -7,7 +7,7 @@ import 'dart:io' show Directory, File;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/skin/skin_parts.dart';
 
 import 'package:motolii/widgets/controls.dart' show Badge, Hov, IconPress;
 import 'package:motolii/widgets/glyphs.dart';

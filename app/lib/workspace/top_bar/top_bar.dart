@@ -14,7 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/workspace/window/zoom.dart';
 
 import 'package:motolii/skin/theme.dart';
