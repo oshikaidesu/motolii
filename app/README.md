@@ -73,13 +73,11 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/workspace/window/` | The window frame: `panes.dart` (pane layout), `home.dart` (project chooser), `zoom.dart`. |
 | `test/` | Unit and widget tests, laid out like `lib/` (`inspector/`, `skin/`, `widgets/`, `workspace/`), plus `skin_folders_test.dart` and `accessibility_guidelines_test.dart`. They pin what the code returns now, so a change of value fails them. |
 | `integration_test/` | `frame_timing_test.dart`: scrolls the timeline on a real Mac and checks each frame fits about 16 ms. |
-| `test_driver/` | The driver that runs `integration_test/` with `flutter drive`. |
+| `test_driver/` | The driver that runs `integration_test/` with `flutter drive`. Test output goes to `build/test_output/`. |
 | `tool/` | `live.sh` (run with hot reload) and `flicker.py` (finds one-frame flicker in a screen recording; needs ffmpeg). |
 | `example/` | `my_panel.dart`: a panel built from the standard alone. The analyzer compiles it, so it breaks when the standard changes. |
 | `assets/` | `effect_parameter_weights.json`: how strongly each effect parameter acts. It is read from the repository with `File`, and is not listed in `pubspec.yaml`. |
 | `macos/` | The Flutter macOS runner project. |
-
-Test output goes to `build/test_output/`; the rest of `build/` is Flutter's work area.
 
 ## Dependency direction
 
