@@ -1,5 +1,25 @@
-// Included by motolii.mm; not self-contained. Implements export, packing, listing and the
-// snapshot calls of motolii.h.
+// Implements export, packing, listing and the snapshot calls of motolii.h.
+#include "entry/motolii.h"
+
+#include <cmath>
+#include <cstring>
+#include <deque>
+#include <functional>
+#include <mutex>
+#include <string>
+
+#include <sqlite3.h>
+
+#include "document/kinds.h"
+#include "document/marks.h"
+#include "document/presets.h"
+#include "document/value_at.h"
+#include "entry/calls_time.h"
+#include "entry/render_thread.h"
+#include "entry/window.h"
+#include "stage/render/render_draw.h"
+#include "stage/render/render_layers.h"
+#include "stage/render/render_stage.h"
 
 // Writes the work area of the project to a video file: .mp4, .mov (HEVC), .gif, or .png / .jpg
 // with one image per frame. Calls from other threads are answered while it runs, but they only
@@ -51,8 +71,6 @@ const char* motolii_list(Motolii* m) {
     return m->listed.c_str();
     });
 }
-
-#include "entry/snapshot.h"
 // Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read without the project
 // lock. which 1 is the project's snapshot: its own part, and the part of each layer newer than
 // `since`. which 2 is the time snapshot. The result is a JSON copy that the caller frees with
