@@ -1,30 +1,41 @@
+#ifndef MOTOLII_ENTRY_RENDER_THREAD_H_
+#define MOTOLII_ENTRY_RENDER_THREAD_H_
 // Defines Motolii, the state of the render thread, and the helpers that run work on it:
-// on_render_thread, by_look and posted. Included by motolii.mm; not self-contained. The thread's
-// loop is in render_thread_loop.h and the window's calls are in window.h.
-#include <CoreText/CoreText.h>
-#include "stage/render/render.h"
-#include "document/doc.h"
-#include "stage/live.h"
-#include "preview/playback_cache.h"
-#include "media/sound_playback.h"
-#include "media/sound_level.h"
-#include "media/midi_notes.h"
-#include <CoreText/CoreText.h>
-#include "entry/motolii.h"
+// on_render_thread, by_look and posted. The thread's loop is in render_thread_loop.h and the
+// window's calls are in window.h.
+#include <pthread.h>
+
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <deque>
+#include <functional>
+#include <future>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <thread>
+#include <utility>
+
+#include <sqlite3.h>
 // Thermion's frame scheduler, in engine/third_party/thermion_frame. It calls back once per display
 // refresh.
 #include "rendering/FrameScheduler.hpp"
-#include <set>
-#include <sstream>
-#include <atomic>
-#include <condition_variable>
-#include <deque>
-#include <future>
-#include <mutex>
-#include <thread>
-#include <pthread.h>
-#include <sys/qos.h>
-#include <unistd.h>
+
+#include "document/kinds.h"
+#include "entry/motolii.h"
+#include "entry/snapshot.h"
+#include "media/sound_playback.h"
+#include "preview/playback_cache.h"
+#include "stage/live.h"
+#include "stage/render/render_stage.h"
 
 // The state of the render thread. That thread does everything that touches the engine: it opens the
 // stage, runs each queued call as it arrives while the caller waits for the result, and, when the
@@ -32,7 +43,7 @@
 // belongs to the engine. The app is notified when a frame is finished and never asks for one to be
 // drawn.
 // Frames per second. This is also the frame rate of an exported video.
-static const int RATE = 60;
+inline constexpr int RATE = 60;
 struct Motolii {
     Stage* s = nullptr;
     Doc* d = nullptr;
@@ -166,75 +177,31 @@ struct Motolii {
     void (*listener)(int) = nullptr;
 };
 // Length of one beat in milliseconds. A frame that takes longer misses a beat.
-static constexpr double BEAT_MS = 1000.0 / 60.0;
+inline constexpr double BEAT_MS = 1000.0 / 60.0;
 // Appends a line with the current wall-clock time and why to m->broke, which keeps the last 200
 // lines. The caller must hold asked_lock. The time comes first so the window can put the engine's
 // events and its own in one order. The window shows these as its red dot.
-static void broke_one(Motolii* m, const char* why) {
-    const auto now = std::chrono::system_clock::now();
-    const std::time_t at = std::chrono::system_clock::to_time_t(now);
-    std::tm tm{};
-    localtime_r(&at, &tm);
-    char line[240];
-    std::snprintf(line, sizeof line, "%02d:%02d:%02d.%03d %s", tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000), why);
-    m->broke.push_back(line);
-    if (m->broke.size() > 200) m->broke.pop_front();
-    m->broken++;
-}
+void broke_one(Motolii* m, const char* why);
 // Draws the stage's frame for this beat. With the Camera View tab open, the stage's own frame is
 // the camera's, whichever camera the tool panel is using. This is After Effects' Two Views: one
 // composition seen through two cameras. The stage is evaluated at the current time through that
 // camera and drawn again.
-static void live_camera(Motolii* m) {
-    Stage& s = *m->s;
-    Doc& d = *m->d;
-    if (!m->second) return live_draw(s, m->live);
-    const bool desk = m->live->desk && s.desk.w, camera = d.working;
-    if (desk) {
-        live_draw(s, m->live);
-        // The stage's own frame is already the camera's.
-        if (!camera && (s.over || !s.before.empty())) return;
-        s.engine->destroy(m->live->pending), m->live->pending = nullptr;
-    }
-    std::lock_guard<std::recursive_timed_mutex> holding(d.lock);
-    const uint32_t w = s.desk.w;
-    if (camera) d.viewCameraAsked = false, time_is(s, m->now);
-    s.desk.w = 0;
-    live_draw(s, m->live);
-    s.desk.w = w;
-    if (camera) d.viewCameraAsked = true, time_is(s, m->now);
-}
-static void snapshot_update(Motolii* m);
-static void snapshot_time(Motolii* m);
-static void snapshot_notify(Motolii* m);
-
+void live_camera(Motolii* m);
 // Sets the resolution scale of the stage's views. While playing, if the GPU takes longer than the
 // budget, the views are drawn smaller and scaled up again, as Filament's dynamic resolution does.
 // Filament's own estimate needs timer queries that the Dawn backend lacks, so the scale is computed
 // here from the measured frame times. At rest the scale is 1 so the user can look closely.
 // MOTOLII_SCALE fixes the scale, for measurement.
-static void stage_scale(Motolii* m) {
-    static const double fixed = std::getenv("MOTOLII_SCALE") ? std::atof(std::getenv("MOTOLII_SCALE")) : 0.0;
-    double want = 1.0;
-    if (fixed > 0.0) want = fixed;
-    // GPU time is proportional to the number of pixels drawn, so the pixel count is cut by the
-    // factor by which the budget is exceeded. The linear scale is the square root of that.
-    else if (m->playing && m->gpu_ms > 0.0) want = std::clamp(m->scale * std::sqrt(m->budget / m->gpu_ms), 0.5, 1.0);
-    if (std::fabs(want - m->scale) < 0.05 && !(want == 1.0 && m->scale != 1.0)) return;
-    m->scale = want;
-    View::DynamicResolutionOptions o;
-    o.enabled = want < 1.0, o.minScale = o.maxScale = math::float2{(float)want}, o.quality = QualityLevel::MEDIUM;
-    m->s->view->setDynamicResolutionOptions(o);
-}
+void stage_scale(Motolii* m);
 // The reason the calling thread's last call was not done. It is thread-local, like errno in POSIX,
 // so what the render thread does next for another caller never overwrites it.
-static thread_local std::string why_asked;
-// Returns the current error text. Defined in window.h.
-static const char* motolii_why(Motolii* m);
+extern thread_local std::string why_asked;
+// Returns the error text: the engine's if it has one, otherwise the document's.
+inline const char* motolii_why(Motolii* m) { return m->error.empty() ? m->d->error.c_str() : m->error.c_str(); }
 // Runs does() on the render thread and returns its result. The calling thread waits. changes says
 // whether the call may change what is seen, in which case the stage is drawn again afterwards. who
 // names the call in the timing statistics.
-template <class Does> static auto asked(Motolii* m, Does does, bool changes, const char* who) -> decltype(does()) {
+template <class Does> auto asked(Motolii* m, Does does, bool changes, const char* who) -> decltype(does()) {
     std::string why;
     // Copy the error text before the result becomes ready. After that the caller may continue and
     // this stack frame may be gone. See C++ [futures.state].
@@ -271,7 +238,7 @@ template <class Does> static auto asked(Motolii* m, Does does, bool changes, con
 // Runs does() on the render thread. Use on_render_thread for calls that may change what is seen:
 // the stage is drawn again afterwards. Use by_look for calls that only read: nothing is drawn
 // again, so an app that reads its cards a hundred times per frame never waits on a hundred frames.
-template <class Does> static auto on_render_thread(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
+template <class Does> auto on_render_thread(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
     // Count the document revision before the caller gets its answer, so a copy the caller keeps is
     // never read stale.
     return asked(m, [m, does] {
@@ -297,33 +264,14 @@ template <class Does> static auto on_render_thread(Motolii* m, Does does, const 
 // order. Chromium's input queue coalesces in the same way, with its back entry only
 // (MainThreadEventQueue). Posted calls must state absolute values, such as where the pointer is,
 // not how far it moved.
-static int posted(Motolii* m, const std::string& kind, std::function<void()> does) {
-    {
-        std::lock_guard<std::mutex> hold(m->asked_lock);
-        auto& waiting = m->latest[kind];
-        if (waiting && m->lastPosted == kind) *waiting = std::move(does);
-        else {
-            auto mine = std::make_shared<std::function<void()>>(std::move(does));
-            waiting = mine;
-            m->asked.push_back([m, kind, mine] {
-                std::function<void()> now;
-                { std::lock_guard<std::mutex> hold(m->asked_lock); now = std::move(*mine); if (m->latest[kind] == mine) m->latest.erase(kind); }
-                now();
-                m->changed = true;
-            });
-            m->lastPosted = kind;
-        }
-    }
-    m->asked_now.notify_one();
-    return 1;
-}
+int posted(Motolii* m, const std::string& kind, std::function<void()> does);
 // Runs does() on the caller's own thread while it holds the document lock, instead of queuing it
 // behind the render thread. The render thread holds the lock only while it changes the document or
 // evaluates a time, never while a frame is drawn, so the hundreds of reads an app makes during a
 // build never wait on a frame. Used by the render thread itself to make the window's snapshots
 // (snapshot.h), by questions asked on another isolate, and by checks. The window's thread asks
 // none. See docs/app/BRIDGE.md.
-template <class Does> static auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
+template <class Does> auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
     const auto asked = std::chrono::steady_clock::now();
     std::unique_lock<std::recursive_timed_mutex> hold(m->d->lock);
     const auto t0 = std::chrono::steady_clock::now();
@@ -342,3 +290,4 @@ template <class Does> static auto by_look(Motolii* m, Does does, const char* who
     return out;
 }
 
+#endif  // MOTOLII_ENTRY_RENDER_THREAD_H_
