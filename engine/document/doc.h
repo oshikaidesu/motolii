@@ -1,3 +1,6 @@
+#ifndef MOTOLII_DOCUMENT_DOC_H_
+#define MOTOLII_DOCUMENT_DOC_H_
+
 // doc.h: the project document and the calls that edit it.
 //
 // The document is a table of keyframes: the value of a layer's named property at a time, as
@@ -126,11 +129,6 @@
 #include "document/adapter.h"
 // Saving a layer's look and applying it to another layer.
 #include "document/presets.h"
-extern "C" {
-// Fits cubic Bezier curves to points; used by doc_curve to convert a drag path. See
-// curve_fit_nd.sh.
-#include "curve_fit_nd.h"
-}
 // The plane and points of a path shape.
 #include "document/paths.h"
 // Moving, aligning and fitting a layer on the image, and a property value as it arrives.
@@ -140,3 +138,5 @@ extern "C" {
 // Editing a layer's time: moving, cutting, removing, sequencing and stretching keyframes, plus
 // reset and undo.
 #include "document/time_edit.h"
+
+#endif  // MOTOLII_DOCUMENT_DOC_H_
