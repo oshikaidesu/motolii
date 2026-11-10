@@ -60,10 +60,19 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::LightManager;
+using filament::Material;
+using filament::MaterialInstance;
+using filament::RenderableManager;
+using filament::TextureSampler;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4;
+using filament::math::mat4f;
+namespace math = filament::math;
 
 namespace {
 
@@ -612,8 +621,8 @@ bool doc_match(Doc& d) {
           shade.shadowBulbRadius =
               type == LightManager::Type::SUN ? 0.05f * soft : 0.5f * soft;
         LightManager::Builder(type)
-            .color(Color::toLinear<ACCURATE>(
-                sRGBColor{fill.empty() ? float3{1.f} : colour}))
+            .color(filament::Color::toLinear<filament::ACCURATE>(
+                filament::sRGBColor{fill.empty() ? float3{1.f} : colour}))
             .falloff((float)doc_number(d, layer, "falloff", 0, 10))
             .castShadows(doc_number(d, layer, "shadows", 0, 0) > 0.5)
             .shadowOptions(shade)
