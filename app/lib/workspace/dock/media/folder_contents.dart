@@ -1,4 +1,5 @@
 // The contents of the open folder in the Media shelf: what is listed, narrowed by the search and the chips.
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/workspace/dock/common/empty_shelf.dart';

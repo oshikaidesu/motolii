@@ -13,6 +13,9 @@
 //   and shows the file in Finder or Explorer (4.7.7).
 //
 // The code arrives through engine/community/sites/adapter.h.
+import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
+
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';

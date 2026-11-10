@@ -1,4 +1,6 @@
 // One file or folder in the Media shelf's contents: its picture and its tile.
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;

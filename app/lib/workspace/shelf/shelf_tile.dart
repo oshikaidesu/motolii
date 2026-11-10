@@ -2,107 +2,20 @@
 // ShelfTile draws one shelf item (ShelfItem, as the engine's shelf line describes it) in the form that the shelf's entry
 // in shelfLooks names. ShelfGrid lays tiles out as a grid, or as the same grid one column wide, which is the list.
 // Presses are handled by the dock's DockHover.
+import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/skin/window_tokens.dart';
-
-import 'dart:async';
-import 'dart:io';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show ShelfItem;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/grid_columns.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 // Re-exported so that whoever builds a tile gets the type it takes.
 export '../../bridge/motolii.dart' show ShelfItem;
-
-/// The three forms a tile can take.
-///
-/// - [under]: the name in a bar under the image (Effects, Program, Media).
-/// - [over]: the name laid over the image (Create).
-/// - [words]: the art is text set in a typeface (Fonts).
-enum ShelfForm { under, over, words }
-
-/// How one shelf's tiles look: an entry of [shelfLooks].
-///
-/// Sizes are in logical pixels and scale with the skin's size (Shape.z) where drawn; [cell] scales only when [sized].
-class ShelfLook {
-  const ShelfLook(
-    this.form, {
-    required this.cell,
-    this.sized = false,
-    this.min = 1,
-    this.aspect = 1,
-    this.height,
-    this.row = 34,
-    this.rowArt = const Size(40, 28),
-    this.rowGap = 8,
-    this.top = 0,
-    this.eased = true,
-  });
-
-  /// How the tile is laid out.
-  final ShelfForm form;
-
-  /// The minimum width of a cell. At least [min] cells fit across (gridColumns).
-  final double cell;
-
-  /// Whether [cell] scales with the skin's size.
-  final bool sized;
-
-  /// The least number of cells across.
-  final int min;
-
-  /// The image's width over its height for [ShelfForm.under]. Ignored where [height] fixes the whole tile's height.
-  final double aspect;
-
-  /// The fixed height of the whole tile, or null to derive it from [aspect].
-  final double? height;
-
-  /// In list form, the row's height.
-  final double row;
-
-  /// In list form, the image's size.
-  final Size rowArt;
-
-  /// In list form, the gap between the image and the name.
-  final double rowGap;
-
-  /// The space above the first tiles.
-  final double top;
-
-  /// Whether the fill animates to its next colour over [Motion.dur] instead of changing at once.
-  final bool eased;
-}
-
-const _square = ShelfLook(
-  ShelfForm.under,
-  cell: 84,
-  sized: true,
-  row: 22,
-  rowArt: Size(18, 18),
-  rowGap: 6,
-  eased: false,
-);
-
-/// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
-const shelfLooks = <String, ShelfLook>{
-  'Effects': _square,
-  'Program': _square,
-  'Media': ShelfLook(
-    ShelfForm.under,
-    cell: 76,
-    min: 2,
-    aspect: 16 / 9,
-    top: WindowTokens.gutter,
-  ),
-  'Create': ShelfLook(ShelfForm.over, cell: 74, min: 2, height: 70),
-  'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
-};
 
 /// One item of a shelf, drawn as its shelf's [look] says, or as a row when [list] is true.
 ///
@@ -497,104 +410,5 @@ class ShelfGrid extends StatelessWidget {
         ],
       );
     },
-  );
-}
-
-/// A tile's image. An animated one plays forward and back at 24 frames a second while [playing], so it neither steps
-/// nor jumps where it loops (effect_tiles.dart). Otherwise, or when no animation sits beside the file, the still is shown.
-///
-/// It is keyed by the file's modification time, so a widget given the same file keeps its image. An equal image
-/// provider is not resolved again.
-class TileMoving extends StatefulWidget {
-  const TileMoving(this.file, {super.key, required this.playing});
-  final String file;
-  final bool playing;
-  @override
-  State<TileMoving> createState() => TileMovingState();
-}
-
-class TileMovingState extends State<TileMoving> {
-  static final _way = [
-    for (var k = 0; k < EffectTiles.moments.length; k++) k,
-    for (var k = EffectTiles.moments.length - 2; k > 0; k--) k,
-  ];
-  int? _step;
-  Timer? _clock;
-  // False while its tab or page is hidden, via TickerMode as an AnimationController does.
-  bool _awake = true;
-
-  void _follow() {
-    final go =
-        widget.playing &&
-        _awake &&
-        // Check the last frame: a tile drawn with fewer frames stays as it is until it is drawn again.
-        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1))
-            .existsSync();
-    if (go == (_clock != null)) return;
-    _clock?.cancel();
-    _clock = go
-        ? Timer.periodic(
-            const Duration(microseconds: 41667),
-            (_) => mounted && _inSight()
-                ? setState(
-                    () => _step =
-                        ((_step ?? EffectTiles.still) + 1) % _way.length,
-                  )
-                : null,
-          )
-        : null;
-    if (!go) _step = null;
-  }
-
-  /// Whether any part of it is visible, within both the shelf it scrolls in and the window. Tiles of a long shelf outside them stay still.
-  bool _inSight() {
-    final box = context.findRenderObject();
-    if (box is! RenderBox || !box.attached || !box.hasSize) return false;
-    var r = box.localToGlobal(Offset.zero) & box.size;
-    if (Scrollable.maybeOf(context)?.context.findRenderObject()
-        case final RenderBox view when view.attached && view.hasSize) {
-      r = r.intersect(view.localToGlobal(Offset.zero) & view.size);
-    }
-    r = r.intersect(Offset.zero & MediaQuery.sizeOf(context));
-    return r.width > 0 && r.height > 0;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _follow();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _awake = TickerMode.valuesOf(context).enabled;
-    _follow();
-  }
-
-  @override
-  void didUpdateWidget(TileMoving oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _follow();
-  }
-
-  @override
-  void dispose() {
-    _clock?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Image.file(
-    key: ValueKey(FileStat.statSync(widget.file).modified),
-    File(
-      _step == null
-          ? widget.file
-          : EffectTiles.frame(widget.file, _way[_step!]),
-    ),
-    fit: BoxFit.cover,
-    cacheWidth: EffectTiles.readWide,
-    gaplessPlayback: true,
-    errorBuilder: (_, _, _) => const SizedBox(),
   );
 }

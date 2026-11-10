@@ -1,5 +1,8 @@
 // The Create shelf: its tiles in groups (layers, shapes, expressions, solids, materials, lights), and the footer for
 // the picked tile.
+import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
+
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';

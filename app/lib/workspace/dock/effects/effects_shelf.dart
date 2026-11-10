@@ -2,6 +2,8 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
+import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/services.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';

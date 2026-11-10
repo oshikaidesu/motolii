@@ -1,4 +1,6 @@
 // The Fonts shelf: each font is shown set in its own face.
+import 'package:motolii/workspace/shelf/shelf_looks.dart';
+
 import 'dart:io';
 import 'dart:typed_data';
 
