@@ -17,6 +17,7 @@ import os, re, sys
 from collections import Counter, defaultdict
 
 from function_census import OUTSIDE, ROOT, census, own_files, scan
+from ledger import settle
 
 LEDGER = 'tools/check_headers_ledger.txt'
 RULES = ('guard', 'static-function', 'definition', 'using-namespace', 'mutable-static', 'prototype')
@@ -43,22 +44,11 @@ for item in items:
             'prototype' if not header and item.kind == 'declaration' and not set(item.name.split(',')) & defined[item.file] else None)
     if rule: found.append((rule, item.file, item.line, item.name))
 
-now = Counter(f[:2] for f in found)
-lines = open(LEDGER).read().splitlines() if os.path.exists(LEDGER) else []
-ledger = {(rule, f): int(n) for n, rule, f in (line.split('\t') for line in lines if line and not line.startswith('#'))}
-if '--write' in sys.argv[1:]:
-    ledger = {key: min(n, now[key]) for key, n in ledger.items() if now[key]} if ledger else dict(now)
-    open(LEDGER, 'w').write('\n'.join([line for line in lines if line.startswith('#')] +
-                                      [f'{n}\t{rule}\t{f}' for (rule, f), n in sorted(ledger.items(), key=lambda e: (RULES.index(e[0][0]), e[0][1]))]) + '\n')
+ledger, over, lower = settle(LEDGER, Counter(f[:2] for f in found), '--write' in sys.argv[1:], 'check_headers.py')
 for rule in RULES:
-    print(f'{rule}: {sum(n for key, n in now.items() if key[0] == rule)} in {sum(key[0] == rule for key in now)} files')
-bad = []
-for (rule, f), n in sorted(now.items()):
-    if n > ledger.get((rule, f), 0):
-        bad.append(f'{f}: {rule} {n}, the ledger allows {ledger.get((rule, f), 0)}: ' + ', '.join(f'{name} (line {line})' for r, g, line, name in sorted(found) if (r, g) == (rule, f)))
+    print(f'{rule}: {sum(f[0] == rule for f in found)} in {len({f[1] for f in found if f[0] == rule})} files')
+bad = [f'{f}: {rule} {sum(g[:2] == (rule, f) for g in found)}, the ledger allows {ledger.get((rule, f), 0)}: ' +
+       ', '.join(f'{name} (line {line})' for r, g, line, name in sorted(found) if (r, g) == (rule, f)) for rule, f in over]
 if bad:
     bad.append(f'What each rule is for: the head of engine/tools/check_headers.py. A file that only moved: change its path in engine/{LEDGER} by hand.')
-lower = [f'{f}: {rule} {now[(rule, f)]}, the ledger still says {n}' for (rule, f), n in sorted(ledger.items()) if now[(rule, f)] < n]
-if lower:
-    bad += lower + [f'Lower the ledger so the count cannot come back: python3 engine/tools/check_headers.py --write, and commit engine/{LEDGER}.']
-sys.exit('\n'.join(bad) if bad else print('ok'))
+sys.exit('\n'.join(bad + lower) if bad or lower else print('ok'))

@@ -1,0 +1,12 @@
+# The includes that break engine/layers.txt on 2026-11-10, counted for each pair of modules by tools/check_layers.py.
+# Tab-separated: count, the module that includes, the module included. A count may be lowered and a line removed
+# (python3 engine/tools/check_layers.py --write does both); none may be raised or added.
+1	community/quickjs	community/after_effects
+1	community/quickjs	community/aviutl/aviutl.h
+1	community/quickjs	community/p5
+1	community/quickjs	community/sites
+1	community/quickjs	community/three
+1	media	community/quickjs
+1	media	entry
+1	media	gpu
+1	stage/effects	community/aviutl
