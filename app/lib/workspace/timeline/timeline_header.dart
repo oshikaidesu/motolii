@@ -299,9 +299,17 @@ class _RoundButton extends StatelessWidget {
         Glyph(g, size: 11, color: ink),
         if (label case final l?) ...[
           SizedBox(width: Shape.s(4)),
-          Text(
-            l,
-            style: TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700),
+          // The button has a fixed width: a label wider than it is cut short
+          // instead of overflowing the row.
+          Flexible(
+            child: Text(
+              l,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyles.micro(ink)
+                  .copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ],
