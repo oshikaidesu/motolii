@@ -1,26 +1,47 @@
-// Part of dock_make.dart: the Create shelf. It holds the tiles (shapes, solids, lights, materials, copies), what each
+// The Create shelf. It holds the tiles (shapes, solids, lights, materials, copies), what each
 // one makes, and how many are ready.
-part of 'dock_make.dart';
+import 'dart:io';
+
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/workspace/dock/dock_folder_row.dart';
+import 'package:motolii/workspace/dock/dock_make_expressions.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/shelf/copies_tiles.dart';
+import 'package:motolii/workspace/shelf/create_preview.dart';
+import 'package:motolii/workspace/shelf/empty_fx.dart';
+import 'package:motolii/workspace/shelf/material_tiles.dart';
+import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
 String createFact(Ws ws) {
   // Scripts that are expressions have tiles in the Expression group, so they are counted with the expressions.
-  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length;
+  final recipes = _recipesOf(ws).$2.length, expressions = expressionsOf(ws).length;
   // The shelf shows only these tiles.
   return '${_asked.length + _worn.length + recipes + expressions} ready';
 }
 
 /// The engine's create scripts, each shown as a tile. A script builds a whole image in one call, as Cavalry's tutorials do.
-(String, List<_Make>) _recipesOf(Ws ws) {
+(String, List<CreateTile>) _recipesOf(Ws ws) {
   // Scripts that are expressions are left out: their tiles are in the Expression group.
-  final expressions = {for (final (name, _) in _expressionRecipes()) name};
+  final expressions = {for (final (name, _) in expressionRecipes()) name};
   // Closed packs are left out too: they belong to the Program shelf (dock_program.dart).
   final packs = {for (final (name, _) in ws.inside!.packs) name};
   return (
     'Recipes',
     [
       for (final (name, what) in ws.inside!.createScripts)
-        if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true),
+        if (!expressions.contains(name) && !packs.contains(name)) CreateTile(name, DockG.copies, Pop.tonePlace, '', what, recipe: true),
     ],
   );
 }
@@ -28,14 +49,14 @@ String createFact(Ws ws) {
 /// Saved elements (Edit > Save to My Elements). Each is added at the playhead and stays linked to its file, as in
 /// Alight Motion (+ > Object / Element > Element) and AbsentMotion's ElementPicker
 /// (engine/third_party/AbsentMotion/app/src/main/kotlin/app/absentmotion/ui/editor/ElementUi.kt).
-(String, List<_Make>) _elementsOf(Ws ws) =>
-    ('Elements', [for (final (name, _) in ws.inside!.elements) _Make(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
+(String, List<CreateTile>) _elementsOf(Ws ws) =>
+    ('Elements', [for (final (name, _) in ws.inside!.elements) CreateTile(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
 
 // ---------------------------------------------------------------- create
 
 /// One tile of the Create shelf. [key] is the keyboard shortcut shown on the tile and [what] the line shown in the footer.
-class _Make {
-  const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
+class CreateTile {
+  const CreateTile(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
   final String name, key, what;
   final DockG g;
   final Color hue;
@@ -55,32 +76,32 @@ class _Make {
   bool get onPicked => file != null || _onPicked.contains(name);
 }
 
-final _makes = <(String, List<_Make>)>[
+final _makes = <(String, List<CreateTile>)>[
   (
     'Layers',
     [
-      _Make('Text', DockG.text, WsT.toneText, 'T', 'Type layer'),
+      CreateTile('Text', DockG.text, WsT.toneText, 'T', 'Type layer'),
       // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
-      _Make('Camera', DockG.camera, WsT.toneCamera, '⇧C', '3D camera, 45 mm'),
-      _Make('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
-      _Make('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
+      CreateTile('Camera', DockG.camera, WsT.toneCamera, '⇧C', '3D camera, 45 mm'),
+      CreateTile('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
+      CreateTile('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],
   ),
   (
     'Shapes',
     [
-      _Make('Rectangle', DockG.rect, WsT.toneShape, 'R', 'Rounded corners'),
-      _Make('Ellipse', DockG.ellipse, WsT.toneShape, 'E', 'Circle with ⇧'),
-      _Make('Polygon', DockG.polygon, WsT.toneShape, '', 'Sides · Roundness'),
-      _Make('Star', DockG.star, WsT.toneShape, '', 'Points · Inner radius'),
-      _Make('Line', DockG.line, WsT.toneShape, 'L', 'Open path'),
+      CreateTile('Rectangle', DockG.rect, WsT.toneShape, 'R', 'Rounded corners'),
+      CreateTile('Ellipse', DockG.ellipse, WsT.toneShape, 'E', 'Circle with ⇧'),
+      CreateTile('Polygon', DockG.polygon, WsT.toneShape, '', 'Sides · Roundness'),
+      CreateTile('Star', DockG.star, WsT.toneShape, '', 'Points · Inner radius'),
+      CreateTile('Line', DockG.line, WsT.toneShape, 'L', 'Open path'),
     ],
   ),
   (
-    // Every JS file that goes on a layer and moves its values comes after Empty (dock_make_expressions.dart _expressionsOf).
+    // Every JS file that goes on a layer and moves its values comes after Empty (dock_make_expressions.dart expressionsOf).
     'Expression',
     [
-      _Make(
+      CreateTile(
         'Empty',
         DockG.plus,
         Pop.tonePlace,
@@ -95,11 +116,11 @@ final _makes = <(String, List<_Make>)>[
 final _solids = (
   '3D',
   [
-    _Make('Ring', DockG.radial, WsT.toneShape, '', 'A solid ring'),
-    _Make('Gem', DockG.polygon, WsT.toneShape, '', 'A cut solid'),
-    _Make('Cube', DockG.rect, WsT.toneShape, '', 'A round-edged cube'),
-    _Make('Floor', DockG.rect, WsT.toneShape, '', 'A wide flat floor that takes shadows'),
-    _Make('Ball', DockG.ellipse, WsT.toneShape, '', 'A ball'),
+    CreateTile('Ring', DockG.radial, WsT.toneShape, '', 'A solid ring'),
+    CreateTile('Gem', DockG.polygon, WsT.toneShape, '', 'A cut solid'),
+    CreateTile('Cube', DockG.rect, WsT.toneShape, '', 'A round-edged cube'),
+    CreateTile('Floor', DockG.rect, WsT.toneShape, '', 'A wide flat floor that takes shadows'),
+    CreateTile('Ball', DockG.ellipse, WsT.toneShape, '', 'A ball'),
   ],
 );
 
@@ -107,9 +128,9 @@ final _solids = (
 final _lights = (
   'Light',
   [
-    _Make('Sun', DockG.light, WsT.toneCamera, '', 'Light from one way, everywhere'),
-    _Make('Point', DockG.light, WsT.toneCamera, '', 'Light from a point, all round'),
-    _Make('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
+    CreateTile('Sun', DockG.light, WsT.toneCamera, '', 'Light from one way, everywhere'),
+    CreateTile('Point', DockG.light, WsT.toneCamera, '', 'Light from a point, all round'),
+    CreateTile('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
   ],
 );
 
@@ -121,13 +142,13 @@ final _lights = (
 final _materials = (
   'Material',
   [
-    _Make('Lit', DockG.ellipse, WsT.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
-    _Make('Cloth', DockG.ellipse, WsT.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
-    _Make('Subsurface', DockG.ellipse, WsT.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
-    _Make('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
-    _Make('Filament glass', DockG.radial, WsT.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
-    _Make('Lacquer', DockG.ellipse, WsT.toneShape, '', 'Its colour under a hard clear coat'),
-    _Make('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
+    CreateTile('Lit', DockG.ellipse, WsT.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
+    CreateTile('Cloth', DockG.ellipse, WsT.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
+    CreateTile('Subsurface', DockG.ellipse, WsT.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
+    CreateTile('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
+    CreateTile('Filament glass', DockG.radial, WsT.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
+    CreateTile('Lacquer', DockG.ellipse, WsT.toneShape, '', 'Its colour under a hard clear coat'),
+    CreateTile('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
 // Tile name to the shading value it sets.
@@ -187,7 +208,7 @@ const _laid = <String, Map<String, double>>{
 
 /// Runs a tile: it creates a new layer and selects it. A tile of copies lays out the picked layer instead, and a material changes it.
 /// On failure the reason is stored under the tile's name, and the footer shows it.
-void _make(DockCtx c, _Make tile) {
+void _make(DockCtx c, CreateTile tile) {
   final m = c.ws.inside!, name = tile.name;
   if (tile.recipe) {
     // A create script: one undo step, and the new layer is selected. It does not wait for the result.
@@ -261,7 +282,7 @@ class CreateShelf extends StatelessWidget {
       _recipesOf(c.ws),
       _makes.first,
       _elementsOf(c.ws),
-      for (final (g, items) in _makes.skip(1)) g == 'Expression' ? (g, [...items, ..._expressionsOf(c.ws)]) : (g, items),
+      for (final (g, items) in _makes.skip(1)) g == 'Expression' ? (g, [...items, ...expressionsOf(c.ws)]) : (g, items),
       _solids,
       _materials,
       _lights,
@@ -348,7 +369,7 @@ class CreateShelf extends StatelessWidget {
 }
 
 /// One Create tile in the shelf's look. [naming] replaces the name while it is being renamed; [onMenu] is called with the position of a right click.
-Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
+Widget _makeTile(CreateTile m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
   final sel = c.sel == m.id, inside = c.ws.inside;
   final makes =
       inside != null &&
@@ -377,7 +398,7 @@ Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Off
 }
 
 /// A tile's art: a script's motion, an expression's copies, a material's ball, or otherwise its mark.
-Widget _makeArt(_Make m, DockCtx c, bool sel) {
+Widget _makeArt(CreateTile m, DockCtx c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
     child: Glyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
@@ -411,4 +432,89 @@ Widget _makeArt(_Make m, DockCtx c, bool sel) {
     );
   }
   return mark();
+}
+
+// ---- A script's motion preview: the engine is asked for it once (create_preview.dart), on a project of its own.
+
+/// True if [name] is one of the engine's create scripts. It also starts asking for the motions of all the scripts.
+bool _isRecipe(DockCtx c, String name) {
+  final m = c.ws.inside;
+  if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
+  RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.createScripts) r.$1]);
+  return true;
+}
+
+/// Puts an expression on the picked layer, or on a new layer when none is picked.
+void _expressionPut(DockCtx c, CreateTile tile) {
+  final m = c.ws.inside!, name = tile.name, file = tile.file!, t = int.tryParse(c.ws.selected ?? '');
+  void told(String why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
+  c.set(() => c.mem.trouble.remove(name));
+  if (t == null && tile.made) {
+    // Created the same way as a script tile.
+    return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made'));
+  }
+  final first = t != null && !Ws.fxFiles(m.word(t, 'fx')).contains(file);
+  fxPut(c.ws, file, expression: true, told: told);
+  if (t == null) return;
+  // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
+  // The first time the Repeater is added, its starting parameters are also set from _laid.
+  final head = File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'));
+  if (head.map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1]).nonNulls.firstOrNull case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
+    m.later('set', layer: t, name: 'copies', number: double.parse(n));
+  }
+  if (first) {
+    for (final e in (_laid[name] ?? const <String, double>{}).entries) {
+      m.later('set', layer: t, name: e.key, number: e.value);
+    }
+  }
+}
+
+/// All names on Create, the library's and the user's. An expression cannot be added under one of them (shelf_add.dart).
+Set<String> createNames(Ws ws) => {
+  for (final (_, items) in [
+    if (ws.inside != null) ...[_recipesOf(ws), _elementsOf(ws)],
+    ..._makes,
+    _solids,
+    _materials,
+    _lights,
+  ])
+    ...items.map((m) => m.name),
+  for (final m in expressionsOf(ws)) m.name,
+};
+
+/// A tile for an item the user added, with Rename… on its menu (library tiles have none).
+/// The new name is stored beside the file and never changes the file (shelf_add.dart shelfRename).
+class _OwnTile extends StatefulWidget {
+  const _OwnTile(this.m, this.c, {super.key});
+  final CreateTile m;
+  final DockCtx c;
+  @override
+  State<_OwnTile> createState() => _OwnTileState();
+}
+
+class _OwnTileState extends State<_OwnTile> {
+  final _menu = GlobalKey<WsMenuState>();
+  bool _naming = false;
+
+  void _renamed(String? to) {
+    setState(() => _naming = false);
+    final m = widget.m, ws = widget.c.ws;
+    if (to == null || to.trim() == m.name) return;
+    final why = shelfRename(ws, m.file!, to, createNames(ws).difference({m.name}));
+    if (why.isNotEmpty) ws.notice = 'Not renamed: $why';
+  }
+
+  @override
+  Widget build(BuildContext context) => WsMenu(
+    key: _menu,
+    child: _makeTile(
+      widget.m,
+      widget.c,
+      naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null,
+      onMenu: (at) {
+        final box = _menu.currentContext?.findRenderObject() as RenderBox?;
+        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [WsMenuItem('Rename…', () => setState(() => _naming = true))]);
+      },
+    ),
+  );
 }
