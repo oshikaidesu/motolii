@@ -2,10 +2,28 @@
 //
 // setState is called from an extension on the State itself, which the analyzer only allows in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
-part of '../workspace.dart';
+import 'dart:io';
+import 'dart:math' as math;
 
-extension _WorkspaceMenus on _WorkspaceState {
-  static String _clipboard(String what) => _WorkspaceState._clipboard(what); // The class's own method, under the name the commands use.
+import 'package:flutter/services.dart' show Clipboard;
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/engine_paths.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/workspace/commands/command_actions.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/stage/stage.dart';
+import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/workspace.dart';
+
+extension WorkspaceMenus on WorkspaceState {
+  static String _clipboard(String what) => WorkspaceState.clipboard(what); // The class's own method, under the name the commands use.
 
   static const _times = [
     ('Align Starts', 'start'),
@@ -27,15 +45,15 @@ extension _WorkspaceMenus on _WorkspaceState {
     ('Spread Down', 'down'),
   ];
 
-  Map<String, VoidCallback> _commands() {
-    final m = _inside!, ws = _ws;
+  Map<String, VoidCallback> commands() {
+    final m = engine!, ws = this.ws;
     // Groups the selected layers under a new null layer placed at their centre, as one undo step.
     // Like Figma's group, it is not a container of its own.
     // [mask] is 'mask' or 'exclude' (Alight Motion's Group and Mask, Group and Exclude): the top layer's shape
-    // then shows the others inside it, or cuts them out. The engine side is group_mask in document/evaluate.h.
+    // then shows the others inside it, or cuts them out. The engine side is group_mask in document/evaluate/evaluate.h.
     // See docs/internal/reports/alight_motion/alight_ui.md.
     void group(String mask) {
-      final m = _inside, all = _picked();
+      final m = engine, all = pickedLayers();
       final frames = [for (final t in all) ?m?.bounds(t)];
       if (m == null || frames.isEmpty) return;
       final c = Offset(frames.map((f) => f[0]).reduce((a, b) => a + b) / frames.length, frames.map((f) => f[1]).reduce((a, b) => a + b) / frames.length);
@@ -76,30 +94,30 @@ extension _WorkspaceMenus on _WorkspaceState {
 
     return {
       'file.new': () {
-        _open(_fresh());
+        open(fresh());
         wsAskSize.value = true; // Ask for its shape and resolution first, as Alight Motion's new-project box does.
       },
       'file.render': () => wsAskRender.value++, // Opens the render settings window first.
-      'file.exportFrame': _exportFrame,
+      'file.exportFrame': exportFrame,
       'file.home': () => setState(() {
         // Save the current project's picture first, so its card shows it as it is.
-        _keepPoster();
-        _home = true;
+        keepPoster();
+        home = true;
       }),
       'file.poster': () {
         // The frame the project picture is drawn at from now on (Alight Motion's Set Project Thumbnail).
         // The playhead frame is divided by 60 because the preview runs at sixty frames a second.
-        if (m.set(0, 'poster_at', ws.frame / 60)) _ws.notice = 'Project picture: ${ws.frame}';
+        if (m.set(0, 'poster_at', ws.frame / 60)) ws.notice = 'Project picture: ${ws.frame}';
       },
-      'file.package': _package,
-      'edit.undo': () => _typed(const UndoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('undo')),
-      'edit.redo': () => _typed(const RedoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('redo')),
+      'file.package': package,
+      'edit.undo': () => typed(const UndoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('undo')),
+      'edit.redo': () => typed(const RedoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('redo')),
       'edit.cut': () {
         // Unless the user is typing text, copy the selected layer and then remove it, as one undo step each, as Live does.
-        if (_typed(const CopySelectionTextIntent.cut(SelectionChangedCause.keyboard))) return;
+        if (typed(const CopySelectionTextIntent.cut(SelectionChangedCause.keyboard))) return;
         final t = int.tryParse(ws.selected ?? '');
         if (t == null) return;
-        Clipboard.getData(Clipboard.kTextPlain).then((said) => _textWhenCopied = said?.text);
+        Clipboard.getData(Clipboard.kTextPlain).then((said) => textWhenCopied = said?.text);
         m.later('copy', layer: t, word: _clipboard('thing'));
         m.later('together', number: 1);
         for (final held in ws.under('$t')) {
@@ -110,12 +128,12 @@ extension _WorkspaceMenus on _WorkspaceState {
         ws.select(null);
       },
       'edit.copy': () {
-        if (_typed(CopySelectionTextIntent.copy)) return;
+        if (typed(CopySelectionTextIntent.copy)) return;
         wsKeysKept = const [];
-        ws.keys.isEmpty ? _copy('copy', 'thing') : wsCopyKeys(ws, ws.keys);
+        ws.keys.isEmpty ? copy('copy', 'thing') : wsCopyKeys(ws, ws.keys);
       },
       'edit.paste': () {
-        if (_typed(const PasteTextIntent(SelectionChangedCause.keyboard))) return;
+        if (typed(const PasteTextIntent(SelectionChangedCause.keyboard))) return;
         // Pastes the app's own clipboard: the copied keyframes, else the copied layer at the playhead (Live's paste at the insert marker).
         // The pasted layer is selected.
         void own() => wsKeysKept.isNotEmpty
@@ -127,31 +145,31 @@ extension _WorkspaceMenus on _WorkspaceState {
         // Whatever was copied last wins.
         Clipboard.getData(Clipboard.kTextPlain).then((said) {
           final code = said?.text ?? '';
-          if (code.trim().isEmpty || code == _textWhenCopied) return own();
+          if (code.trim().isEmpty || code == textWhenCopied) return own();
           ws.after(m.later('adapter', layer: int.tryParse(ws.selected ?? '') ?? 0, word: code), (done, why) {
             if (done) return;
             why.contains('not code') ? own() : ws.notice = 'Not taken: $why';
           }, (made) => made > 0 ? ws.select('$made') : null);
         });
       },
-      'edit.copyStyle': () => _copy('copy_style', 'style'),
+      'edit.copyStyle': () => copy('copy_style', 'style'),
       'thing.saveLook': () {
         // Saves the layer as a preset on the Effects shelf, named after the layer (Alight Motion's Save as Preset).
-        final m = _inside, l = _ws.layer;
+        final m = engine, l = ws.layer;
         if (m == null || l == null) return;
         ws.after(m.later('keep_preset', layer: int.parse(l.id), word: l.name), (done, why) {
           m.forgetFolders();
-          _ws.notice = done ? 'Look kept: ${l.name}' : 'Not kept: $why';
+          ws.notice = done ? 'Look kept: ${l.name}' : 'Not kept: $why';
           ws.reread();
         });
       },
       'thing.saveElement': () {
         // Saves the layer with its contents among the elements on the Create shelf (Alight Motion's Save to My Elements).
-        final m = _inside, l = _ws.layer;
+        final m = engine, l = ws.layer;
         if (m == null || l == null) return;
         ws.after(m.later('keep_element', layer: int.parse(l.id), word: l.name), (done, why) {
           m.forgetFolders();
-          _ws.notice = done ? 'Saved to My Elements: ${l.name}' : 'Not saved: $why';
+          ws.notice = done ? 'Saved to My Elements: ${l.name}' : 'Not saved: $why';
           ws.reread();
         });
       },
@@ -163,7 +181,7 @@ extension _WorkspaceMenus on _WorkspaceState {
           if (int.tryParse(id) case final t?) ws.after(m.later('paste_style', layer: t, word: _clipboard('style')));
         }
       },
-      'edit.selectAll': () => _typed(const SelectAllTextIntent(SelectionChangedCause.keyboard))
+      'edit.selectAll': () => typed(const SelectAllTextIntent(SelectionChangedCause.keyboard))
           ? null
           : ws.pickMany([for (final l in ws.layers) l.id]), // Unless the user is typing: all layers, as Ableton's Cmd+A in the arrangement.
       // Selects nothing, as a click below the rows does (After Effects and Premiere Pro: Edit > Deselect All).
@@ -205,7 +223,7 @@ extension _WorkspaceMenus on _WorkspaceState {
         ws.select(null); // Nothing stays selected, so a second Delete removes nothing else.
       },
       'thing.duplicate': () {
-        final all = _picked(), made = <String>[];
+        final all = pickedLayers(), made = <String>[];
         if (all.isEmpty) return;
         m.later('together', number: 1);
         for (final t in all) {
@@ -235,7 +253,7 @@ extension _WorkspaceMenus on _WorkspaceState {
       'thing.groupExclude': () => group('exclude'),
       'thing.ungroup': () {
         // Releases the layers of the selected group where they are and removes the null, as one undo step.
-        final m = _inside, g = int.tryParse(ws.selected ?? '');
+        final m = engine, g = int.tryParse(ws.selected ?? '');
         if (m == null || g == null || m.word(g, 'shape') != 'null') return;
         final kids = [
           for (final t in m.layers)
@@ -251,7 +269,7 @@ extension _WorkspaceMenus on _WorkspaceState {
       },
       'thing.unlinkElement': () {
         // The element becomes a plain group and no longer follows its file (AbsentMotion's Unlink from Asset, ElementUi.kt).
-        final m = _inside, g = int.tryParse(ws.selected ?? '');
+        final m = engine, g = int.tryParse(ws.selected ?? '');
         if (m == null || g == null || m.word(g, 'element').isEmpty) return;
         ws.after(m.later('say', layer: g, name: 'element', word: ''), (_, _) => ws.reread());
       },
@@ -260,7 +278,7 @@ extension _WorkspaceMenus on _WorkspaceState {
       // After Effects' Cmd+Opt+B: "set work area to duration of selected layers or, if no layers are selected, set
       // work area to composition duration". It brings back the whole project after Extract Work Area, which otherwise takes two drags.
       'edit.workToPicked': () {
-        final picked = {for (final t in _picked()) '$t'},
+        final picked = {for (final t in pickedLayers()) '$t'},
             bars = [
               for (final l in ws.layers)
                 if (picked.contains(l.id)) l,
@@ -279,24 +297,24 @@ extension _WorkspaceMenus on _WorkspaceState {
       for (final (_, how) in _aligns)
         'arrange.$how': () {
           // One selected layer aligns to the canvas, several align to their combined box.
-          final all = _picked();
+          final all = pickedLayers();
           if (all.isNotEmpty) ws.after(m.later('align', word: '$how ${all.join(' ')}'));
         },
-      for (final how in const ['fit', 'fill', 'stretch']) 'arrange.$how': () => _eachPicked((t) => m.later('fit', layer: t, word: how)),
+      for (final how in const ['fit', 'fill', 'stretch']) 'arrange.$how': () => eachPicked((t) => m.later('fit', layer: t, word: how)),
       for (final (_, how) in _times)
         'time.$how': () {
           // Acts on the selected layers in the order they were selected (Alight Motion's timing).
-          final all = _picked();
+          final all = pickedLayers();
           if (all.isNotEmpty) ws.after(m.later('time_align', word: '$how ${all.join(' ')}', number: ws.frame / Ws.fps));
         },
-      'thing.forward': () => _eachPicked((t) => m.later('raise', layer: t, number: 1)),
-      'thing.backward': () => _eachPicked((t) => m.later('raise', layer: t, number: -1)),
-      'arrange.flipX': () => _eachPicked((t) => m.later('flip', layer: t, word: 'x')),
-      'arrange.flipY': () => _eachPicked((t) => m.later('flip', layer: t, word: 'y')),
+      'thing.forward': () => eachPicked((t) => m.later('raise', layer: t, number: 1)),
+      'thing.backward': () => eachPicked((t) => m.later('raise', layer: t, number: -1)),
+      'arrange.flipX': () => eachPicked((t) => m.later('flip', layer: t, word: 'x')),
+      'arrange.flipY': () => eachPicked((t) => m.later('flip', layer: t, word: 'y')),
       'layers.sequence': () => ws.after(m.later('sequence')),
       'sound.duck': () async {
         // Audacity's Auto Duck: lowers each selected video under the sound of all the other layers, whose loudness is read first.
-        final m = _inside, all = _picked();
+        final m = engine, all = pickedLayers();
         if (m == null || all.isEmpty) return;
         for (final t in m.layers) {
           if (!all.contains(t)) await m.loudness(t);
@@ -315,9 +333,9 @@ extension _WorkspaceMenus on _WorkspaceState {
 
   void _wear(String? skin) => setState(() => ColorTheme.wear(skin)); // Also rebuilds the menus, because the skin in use is the one not offered.
 
-  List<PlatformMenuItem> _menus() {
-    final does = _commands();
-    PlatformMenuItem item(String label, String command) => PlatformMenuItem(label: label, shortcut: _keymap.keyOf(command), onSelected: does[command]);
+  List<PlatformMenuItem> menus() {
+    final does = commands();
+    PlatformMenuItem item(String label, String command) => PlatformMenuItem(label: label, shortcut: keymap.keyOf(command), onSelected: does[command]);
     return [
       PlatformMenu(
         label: 'Motolii',
@@ -334,7 +352,7 @@ extension _WorkspaceMenus on _WorkspaceState {
               item('Projects…', 'file.home'),
               PlatformMenu(
                 label: 'Open',
-                menus: [for (final f in _beside) PlatformMenuItem(label: f.split('/').last, onSelected: f == _doc ? null : () => _open(f))],
+                menus: [for (final f in beside) PlatformMenuItem(label: f.split('/').last, onSelected: f == documentPath ? null : () => open(f))],
               ),
             ],
           ),

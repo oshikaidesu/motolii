@@ -1,60 +1,47 @@
 // The whole window: the top bar above the panes (panes.dart).
 // The panes are the media shelves, Stage over Timeline, and Inspector over Tool Panel. The user can rearrange them.
 // Each panel lives in its own file and reads the shared Ws.
-import 'package:motolii/skin/inspector_tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
-
-import 'dart:developer' show Timeline;
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:docking/docking.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
+import 'package:docking/docking.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/skin_parts.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
-import 'package:motolii/workspace/window/zoom.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/commands/command_actions.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart';
-
-import 'package:motolii/inspector/inspector_parts_insp_host.dart';
-
-import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/theme.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_depth.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_blend.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_align.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_relations.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/dock/dock.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/workspace/window/home.dart';
-import 'package:motolii/workspace/window/panes.dart';
-import 'package:motolii/workspace/state/pane.dart';
-import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
+import 'package:motolii/workspace/commands/menu_bar.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/dock/dock.dart';
+import 'package:motolii/workspace/inspector_feed/panel.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/stage/stage.dart';
 import 'package:motolii/workspace/stage/stage_camera.dart';
-import 'package:motolii/workspace/stage/stage_view_relations.dart' show WsRelationStack;
-import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/top_bar/top_bar.dart';
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/engine_paths.dart';
-import 'package:motolii/workspace/edits/make_relation.dart';
-import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/shelf/fx_code.dart';
-part 'inspector_feed/panel.dart';
-part 'inspector_feed/cards.dart';
-part 'inspector_feed/values.dart';
-part 'inspector_feed/keyframe_marks.dart';
-part 'commands/menu_bar.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_align.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_blend.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_depth.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_relations.dart';
+import 'package:motolii/workspace/top_bar/top_bar.dart';
+import 'package:motolii/workspace/window/home.dart';
+import 'package:motolii/workspace/window/panes.dart';
+import 'package:motolii/workspace/window/zoom.dart';
 
 /// The app's main window: top bar, shelves, Stage, Timeline, Inspector and tool panels.
 class Workspace extends StatefulWidget {
@@ -70,17 +57,17 @@ class Workspace extends StatefulWidget {
   /// `selected` the selected layer and `frame` the current time.
   final List<WsPane> extra;
   @override
-  State<Workspace> createState() => _WorkspaceState();
+  State<Workspace> createState() => WorkspaceState();
 }
 
-class _WorkspaceState extends State<Workspace> {
-  late final _ws = Ws()..panes = [..._panes, ...widget.extra];
-  Motolii? _inside;
+class WorkspaceState extends State<Workspace> {
+  late final ws = Ws()..panes = [..._panes, ...widget.extra];
+  Motolii? engine;
   // Watches the user's own effects folder (effect_tiles.dart).
   StreamSubscription<FileSystemEvent>? _own;
 
   /// The path of the open project: the one passed in, or one created or opened from the menu.
-  String? _doc;
+  String? documentPath;
 
   @override
   void initState() {
@@ -95,10 +82,10 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// Opens another project in place of the current one, creating it if it does not exist.
-  Future<void> _open(String doc) {
-    _ws.stageTexture = null;
-    _inside?.close();
-    _inside = null;
+  Future<void> open(String doc) {
+    ws.stageTexture = null;
+    engine?.close();
+    engine = null;
     return _join(doc);
   }
 
@@ -107,64 +94,64 @@ class _WorkspaceState extends State<Workspace> {
   /// AbsentMotion does the same when its editor closes (MainActivity.kt saveThumbnail).
   /// The thumbnail is taken at the playhead, or at the time set by file.poster.
   /// It is not saved when another project is opened in place of this one, because its last requests would go unanswered.
-  void _keepPoster() => _inside?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
+  void keepPoster() => engine?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
 
   /// Whether the project list is shown over the window (AbsentMotion's home screen; see home.dart).
-  bool _home = false;
+  bool home = false;
 
   /// The projects in the open project's folder, read when a project is opened.
-  List<String> _beside = const [];
+  List<String> beside = const [];
   List<String> _documents() {
-    final here = Directory(File(_doc!).parent.path);
+    final here = Directory(File(documentPath!).parent.path);
     return [
       for (final f in here.listSync().whereType<File>())
         if (f.path.endsWith('.motolii')) f.path,
     ]..sort();
   }
 
-  /// The file where a copied layer or preset is kept between windows (the engine's own format: document/presets.h).
-  static String _clipboard(String what) {
+  /// The file where a copied layer or preset is kept between windows (the engine's own format: document/edit/presets.h).
+  static String clipboard(String what) {
     final dir = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii')..createSync(recursive: true);
     return '${dir.path}/clipboard_$what.motolii';
   }
 
   /// The selected layers: all of the multi-selection if there is one, otherwise the single selected layer.
-  List<int> _picked() => [
-    for (final id in _ws.many.isNotEmpty ? _ws.many : {?_ws.selected}) ?int.tryParse(id),
+  List<int> pickedLayers() => [
+    for (final id in ws.many.isNotEmpty ? ws.many : {?ws.selected}) ?int.tryParse(id),
   ];
 
   /// Applies [tell] to each selected layer, as a single undo step.
-  void _eachPicked(int Function(int) tell) {
-    final m = _inside, all = _picked();
+  void eachPicked(int Function(int) tell) {
+    final m = engine, all = pickedLayers();
     if (m == null || all.isEmpty) return;
     m.later('together', number: 1);
     for (final t in all) {
       tell(t);
     }
-    _ws.after(m.later('together'));
+    ws.after(m.later('together'));
   }
 
   /// The text on the system clipboard when something was last copied here.
   /// It lets a paste tell whether the clipboard still holds this app's copy, so that what was copied last is what gets pasted.
-  String? _textWhenCopied;
+  String? textWhenCopied;
 
-  void _copy(String call, String what) {
-    Clipboard.getData(Clipboard.kTextPlain).then((said) => _textWhenCopied = said?.text);
-    final t = int.tryParse(_ws.selected ?? '');
-    if (_inside != null && t != null) _inside!.later(call, layer: t, word: _clipboard(what));
+  void copy(String call, String what) {
+    Clipboard.getData(Clipboard.kTextPlain).then((said) => textWhenCopied = said?.text);
+    final t = int.tryParse(ws.selected ?? '');
+    if (engine != null && t != null) engine!.later(call, layer: t, word: clipboard(what));
   }
 
   /// Runs [act] on the focused text field if it handles that intent, so the field keeps its own keys.
   /// Returns true if the field handled it. This uses Flutter's text actions.
-  bool _typed<T extends Intent>(T act) {
+  bool typed<T extends Intent>(T act) {
     final box = primaryFocus?.context;
     if (box == null || Actions.maybeFind<T>(box, intent: act) == null) return false;
     Actions.maybeInvoke(box, act);
     return true;
   }
 
-  String _fresh() {
-    final here = File(_doc!).parent.path;
+  String fresh() {
+    final here = File(documentPath!).parent.path;
     for (var n = 1; ; n++) {
       if (!File('$here/untitled_$n.motolii').existsSync()) return '$here/untitled_$n.motolii';
     }
@@ -172,13 +159,13 @@ class _WorkspaceState extends State<Workspace> {
 
   /// Exports the project as a video file beside it. The top bar shows how it went.
   Future<bool> _render() async {
-    final m = _inside, doc = _doc;
+    final m = engine, doc = documentPath;
     if (m == null || doc == null) return false;
-    final mp4 = _ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
-    _ws.renderTo = null;
-    _ws.notice = 'Writing ${mp4.split('/').last} …';
+    final mp4 = ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
+    ws.renderTo = null;
+    ws.notice = 'Writing ${mp4.split('/').last} …';
     final done = await m.exportVideo(mp4);
-    if (mounted) _ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.error}';
+    if (mounted) ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.error}';
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) unawaited(_checkFlashes(m, mp4));
     return done;
   }
@@ -188,19 +175,19 @@ class _WorkspaceState extends State<Workspace> {
   /// YouTube Studio's Checks do the same while a video uploads (EA's IRIS: flashesOf).
   Future<void> _checkFlashes(Motolii m, String film) async {
     final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
-    _ws.notice = checking;
+    ws.notice = checking;
     final fails = await flashesOf(m.libPath, film);
     // If the notice changed in the meantime, the newer notice stays.
-    if (!mounted || _ws.notice != checking) return;
+    if (!mounted || ws.notice != checking) return;
     String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
     // The result comes first and the name after, because the bar cuts off its end (NN/g: F-shaped reading).
     final name = film.split('/').last;
-    _ws.notice = switch (fails) {
+    ws.notice = switch (fails) {
       null => written,
       [] => 'Flash check: no issues found · $name',
       _ => 'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
     };
-    if (fails case [(final from, _), ...]) _ws.noticeGo = () => _ws.frame = (from * Ws.fps).floor();
+    if (fails case [(final from, _), ...]) ws.noticeGo = () => ws.frame = (from * Ws.fps).floor();
   }
 
   /// Exports the listed projects.
@@ -209,38 +196,38 @@ class _WorkspaceState extends State<Workspace> {
   /// Several are each exported beside themselves with their own settings, one after another, opening each in turn,
   /// as DaVinci Resolve's Render Queue does. The project that was open is reopened at the end.
   Future<void> _exportFrom(List<String> docs) async {
-    setState(() => _home = false);
+    setState(() => home = false);
     if (docs.length == 1) {
-      if (docs.first != _doc) await _open(docs.first);
+      if (docs.first != documentPath) await open(docs.first);
       wsAskRender.value++;
       return;
     }
-    final back = _doc;
+    final back = documentPath;
     var written = 0;
     for (final d in docs) {
-      if (d != _doc) await _open(d);
-      if (mounted && _doc == d && await _render()) written++;
+      if (d != documentPath) await open(d);
+      if (mounted && documentPath == d && await _render()) written++;
     }
-    if (back != null && back != _doc) await _open(back);
-    if (mounted) _ws.notice = 'Written: $written of ${docs.length} films, each beside its document';
+    if (back != null && back != documentPath) await open(back);
+    if (mounted) ws.notice = 'Written: $written of ${docs.length} films, each beside its document';
   }
 
   /// Gathers the project and its media into `<name> package` beside it, so it can be moved elsewhere whole
   /// (Alight Motion's project package, After Effects' Collect Files). The top bar shows the result.
-  void _package() {
-    final m = _inside, doc = _doc;
+  void package() {
+    final m = engine, doc = documentPath;
     if (m == null || doc == null) return;
     final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''), folder = '${File(doc).parent.path}/$name package';
     final n = m.pack(folder, name);
-    _ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
+    ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
   /// Exports the frame at the playhead as a PNG beside the project (Premiere Pro's Export Frame). The top bar shows the result.
-  void _exportFrame() {
-    final m = _inside, doc = _doc;
+  void exportFrame() {
+    final m = engine, doc = documentPath;
     if (m == null || doc == null) return;
-    final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${_ws.frame}.png';
-    _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
+    final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${ws.frame}.png';
+    ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
   }
 
   /// Holds the focus when nothing else in the window does (a field was left or a pane closed), so the window's keys still work.
@@ -262,42 +249,42 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// The window's commands by name, with the keys bound to them: the defaults and the user's own file (keymap.dart).
-  late final _keymap = Keymap.load();
+  late final keymap = Keymap.load();
   Future<void> _join(String doc) async {
     final inside = Motolii.open(doc);
     if (inside == null) return;
-    _inside = inside;
+    engine = inside;
     _own = EffectTiles.watch(
       inside,
       () {
         // A file put in the user's effects folder shows on the shelves at once. An element file that is overwritten is followed wherever it is used.
-        if (mounted) _ws.after(inside.later('follow_elements'), (_, _) => _ws.reread());
+        if (mounted) ws.after(inside.later('follow_elements'), (_, _) => ws.reread());
       },
       program: (file) {
-        if (mounted) _ws.after(inside.later('code', word: file), (_, _) => _ws.reread());
+        if (mounted) ws.after(inside.later('code', word: file), (_, _) => ws.reread());
       },
     );
     // Follow the elements when the project opens, as AbsentMotion does when a project loads.
-    _ws.after(inside.later('follow_elements'));
-    _doc = doc;
-    _beside = _documents();
+    ws.after(inside.later('follow_elements'));
+    documentPath = doc;
+    beside = _documents();
     final id = await inside.texture();
     if (!mounted) return;
-    if (id >= 0) _ws.stageTexture = id;
-    _ws
+    if (id >= 0) ws.stageTexture = id;
+    ws
       ..document = doc.split('/').last
       ..documentFolder = File(doc).parent.path
       ..notice = null
       ..onRender = _render
       ..onSize = (wide, high) {
         // Not awaited: the project's image then reports that it does not fit, and the project is reopened.
-        _ws.after(inside.later('size', word: '$wide $high'));
+        ws.after(inside.later('size', word: '$wide $high'));
       }
       ..refit = () {
         // The stage was opened at a new size: close the project and reopen it at the current time.
         final at = inside.now;
-        _open(doc);
-        _inside?.at(at);
+        open(doc);
+        engine?.at(at);
       }
       ..join(inside);
     // The menus belong to the open project.
@@ -306,12 +293,12 @@ class _WorkspaceState extends State<Workspace> {
 
   @override
   void dispose() {
-    _keepPoster();
+    keepPoster();
     FocusManager.instance.removeListener(_keepKeys);
     _windowFocus.dispose();
     _own?.cancel();
-    _inside?.close();
-    _ws.dispose();
+    engine?.close();
+    ws.dispose();
     super.dispose();
   }
 
@@ -335,7 +322,7 @@ class _WorkspaceState extends State<Workspace> {
   @override
   Widget build(BuildContext context) {
     final window = WsScope(
-      ws: _ws,
+      ws: ws,
       child: Focus(
         focusNode: _windowFocus,
         autofocus: true,
@@ -344,22 +331,22 @@ class _WorkspaceState extends State<Workspace> {
           child: Stack(
             children: [
               Overlay(initialEntries: [_entry]),
-              if (_home && _doc != null && _ws.inside != null)
+              if (home && documentPath != null && ws.inside != null)
                 Positioned.fill(
                   child: WsHome(
-                    folder: File(_doc!).parent.path,
-                    lib: _ws.inside!.libPath,
-                    open: _doc!,
+                    folder: File(documentPath!).parent.path,
+                    lib: ws.inside!.libPath,
+                    open: documentPath!,
                     onOpen: (d) {
-                      setState(() => _home = false);
-                      if (d != _doc) _open(d);
+                      setState(() => home = false);
+                      if (d != documentPath) open(d);
                     },
                     onExport: _exportFrom,
                     onNew: () {
-                      setState(() => _home = false);
-                      _commands()['file.new']!();
+                      setState(() => home = false);
+                      commands()['file.new']!();
                     },
-                    onClose: () => setState(() => _home = false),
+                    onClose: () => setState(() => home = false),
                   ),
                 ),
             ],
@@ -368,12 +355,12 @@ class _WorkspaceState extends State<Workspace> {
       ),
     );
     // The project is still opening, so no panel is built yet.
-    if (_ws.inside == null) return ColoredBox(color: WsT.ground);
+    if (ws.inside == null) return ColoredBox(color: WsT.ground);
     return PlatformMenuBar(
-      menus: _menus(),
+      menus: menus(),
       child: WsKeys(
-        keymap: _keymap,
-        commands: _commands(),
+        keymap: keymap,
+        commands: commands(),
         child: WsZoomed(child: window),
       ),
     );
@@ -405,7 +392,7 @@ final _panes = [
   WsPane('Presets', DockG.files, () => const WsShelf('Presets', 'Search presets'), at: WsAt.shelves, minSize: 240, iconOnly: true),
   WsPane('Stage', DockG.stage, () => const WsStage(), at: WsAt.stage, minSize: 320),
   WsPane('Camera View', DockG.camera, () => const WsCameraView(), at: WsAt.stage, minSize: 240),
-  WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
+  WsPane('Inspector', DockG.inspector, () => const WsInspector(), minSize: 200),
   WsPane('Timeline', DockG.timeline, () => const WsTimeline(), at: WsAt.timeline, minSize: 160),
   WsPane('Ease', DockG.time, () => const EaseTool(), at: WsAt.ease, minSize: 260),
   WsPane('Camera', DockG.camera, () => const DepthTool(), at: WsAt.tools, minSize: WsT.lower),

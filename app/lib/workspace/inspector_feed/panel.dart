@@ -1,16 +1,38 @@
 // panel.dart: the inspector's panel in the window: what it listens to, and when it builds again or only tells the fields their numbers.
-part of '../workspace.dart';
+import 'dart:async';
+import 'dart:developer' show Timeline;
+import 'dart:io';
+
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_parts_insp_host.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/inspector_feed/cards.dart';
+import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
+import 'package:motolii/workspace/inspector_feed/values.dart';
+import 'package:motolii/workspace/shelf/fx_code.dart';
+import 'package:motolii/workspace/stage/stage_view_relations.dart' show WsRelationStack;
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/workspace.dart';
 
 /// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the tool panel.
-class _InspectorPanel extends StatefulWidget {
-  const _InspectorPanel({super.key, this.layer, this.only}); // (no layer: the Inspector; a layer and the titles of its cards: LayerCards)
+class WsInspector extends StatefulWidget {
+  const WsInspector({super.key, this.layer, this.only}); // (no layer: the Inspector; a layer and the titles of its cards: LayerCards)
   final String? layer;
   final List<String>? only;
   @override
-  State<_InspectorPanel> createState() => _InspectorPanelState();
+  State<WsInspector> createState() => _InspectorPanelState();
 }
 
-class _InspectorPanelState extends State<_InspectorPanel> {
+class _InspectorPanelState extends State<WsInspector> {
   // (the inspector follows only what it shows: the document, what is picked, Animate, and the moment only while what is
   //  picked has keys; played, a thing with no keys shows the same numbers, so it is not built again each picture)
   Ws? _ws;
@@ -62,14 +84,14 @@ class _InspectorPanelState extends State<_InspectorPanel> {
       _seen = now;
       _frame = ws.frame;
       if (was is (int, String?, bool) && was.$2 == _id(ws) && was.$3 == ws.animating && _onlyNumbers(ws)) {
-        _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => _keyMarks(ws, _layerOf(ws)?.id)));
+        _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)));
         return;
       }
       if (mounted) setState(() {});
     } else if (ws.frame != _frame) {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
-      _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => _keyMarks(ws, _layerOf(ws)?.id)));
+      _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)));
       _settle?.cancel();
       _settle = Timer(
         const Duration(milliseconds: 150),
@@ -85,7 +107,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   void _seenNow() {
     final ws = _ws!;
     if (_now(ws) != _seen || _id(ws) == null || ws.playing) return; // (played: the moment's own reading above)
-    _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => _keyMarks(ws, _layerOf(ws)?.id)));
+    _live.value = (Ws.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)), Ws.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)));
   }
 
   // (the panel itself, made once a size: a new one each build would build its whole tree again, whatever changed)
@@ -135,7 +157,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
       key: ValueKey(k),
       kind: k,
       kindWord: _kindWord(ws, l?.id),
-      cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
+      cards: Ws.timed('value cards', () => wsValueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
       title: l?.name,
       onRoute: ws.route,
       onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
@@ -211,24 +233,24 @@ class _InspectorPanelState extends State<_InspectorPanel> {
               'copy_style',
               layer: int.parse(l!.id),
               name: names.join(' '),
-              word: _WorkspaceState._clipboard('card'),
+              word: WorkspaceState.clipboard('card'),
             ), // (that card's values alone: Alight Motion's copy of one effect)
       onCardPaste: !own || int.tryParse(l?.id ?? '') == null
           ? null
-          : () => File(_WorkspaceState._clipboard('card')).existsSync()
-                ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: _WorkspaceState._clipboard('card')), (_, _) => ws.reread())
+          : () => File(WorkspaceState.clipboard('card')).existsSync()
+                ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: WorkspaceState.clipboard('card')), (_, _) => ws.reread())
                 : null,
       values: Ws.timed('transform', () => wsTransform(ws, l?.id)),
-      strs: Ws.timed('words', () => _words(ws, l?.id)),
-      onWords: (changed) => _say(ws, l?.id, changed),
+      strs: Ws.timed('words', () => wsWords(ws, l?.id)),
+      onWords: (changed) => wsSay(ws, l?.id, changed),
       onAnimateAll: (on) => ws.animating = on,
       animating: ws.animating,
-      flags: own ? Ws.timed('flags', () => _flags(ws, l?.id)) : const {},
-      onFlags: own ? (changed) => _flag(ws, l?.id, changed) : null,
-      keyMarks: Ws.timed('key marks', () => _keyMarks(ws, l?.id)),
-      onValues: (changed, {required live}) => _write(ws, l?.id, changed, live: live),
+      flags: own ? Ws.timed('flags', () => wsFlags(ws, l?.id)) : const {},
+      onFlags: own ? (changed) => wsFlag(ws, l?.id, changed) : null,
+      keyMarks: Ws.timed('key marks', () => wsKeyMarks(ws, l?.id)),
+      onValues: (changed, {required live}) => wsWrite(ws, l?.id, changed, live: live),
       onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
-      onKey: (prop, mark) => _mark(ws, l?.id, prop, mark),
+      onKey: (prop, mark) => wsMark(ws, l?.id, prop, mark),
       together: (tells) {
         // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
         m.later('together', number: 1);
@@ -268,5 +290,21 @@ class LayerCards extends StatelessWidget {
   final String layer;
   final List<String> only;
   @override
-  Widget build(BuildContext context) => _InspectorPanel(key: ValueKey(layer), layer: layer, only: only);
+  Widget build(BuildContext context) => WsInspector(key: ValueKey(layer), layer: layer, only: only);
 }
+
+/// The document's name for a layer's kind, for kinds the inspector's own [Kind] has no entry for (video, image, solid).
+String? _kindWord(Ws ws, String? id) {
+  final t = int.tryParse(id ?? ''), w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
+  if (w == 'behaviour') return wsRelations.contains(ws.inside?.word(t!, 'file')) ? 'Relation' : 'Behaviour';
+  if (w == 'film' && wsSound(ws.inside!, t!)) return 'Sound';
+  return const {'film', 'picture', 'solid', 'light'}.contains(w) ? w.replaceRange(0, 1, w[0].toUpperCase()) : null;
+}
+
+Kind _kindOf(WsLayer? l) => switch (l?.kind) {
+  null => Kind.none,
+  WsKind.text => Kind.text,
+  WsKind.camera => Kind.camera,
+  WsKind.group => Kind.group,
+  _ => Kind.shape,
+};

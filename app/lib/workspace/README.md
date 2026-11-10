@@ -6,14 +6,14 @@
 
 | 場所 | 中身 |
 |---|---|
-| `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
-| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `Ws`（その部品（part）が `picked.dart` 選ばれた物、`effects.dart` 掛かった効果）、`workspace_scope.dart` に `WsScope`、`workspace_aspect.dart` 聞く面 `WsAspect`、`layer.dart` レイヤー `WsLayer` と種類の色 `wsTone`、`pane.dart` タブ `WsPane`、`art_scene.dart` Stage の絵の寸法と箱（`WsArt`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WsZoom` |
+| `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く |
+| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `Ws`、`effects.dart` に掛かった効果（`WsFx`）、`workspace_scope.dart` に `WsScope`、`workspace_aspect.dart` 聞く面 `WsAspect`、`layer.dart` レイヤー `WsLayer` と種類の色 `wsTone`、`pane.dart` タブ `WsPane`、`art_scene.dart` Stage の絵の寸法と箱（`WsArt`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WsZoom` |
 | `easing/` | イージングそのもの：`ease.dart` `Ease` とプリセット、`ease_text.dart` 文書に書く文字の形、`ease_curve.dart` 重ねたカードの曲線と式 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`home.dart` プロジェクトを選ぶ最初の画面、`zoom.dart` 画面全体を拡大率で描く |
 | `top_bar/` | 上のバー：`top_bar.dart`、`size_chip.dart` 画面の大きさ、`zoom_readout.dart` 拡大率の表示、`timings.dart` エンジンにかかった時間 |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`panel_requests.dart` パネルがほかのパネルに頼む合図（タイムライン・名前の変更・書き出し・大きさ・検索）、`menu_bar.dart` メニューバー、`layer_menu.dart` 右クリックの項目（メニューの部品は `widgets/menu.dart`） |
 | `edits/` | 選んだ複数のレイヤーにまとめて掛ける編集：`make_relation.dart` 関係を作る、`group_moves.dart` グループの動き、`keyframe_edits.dart` キーフレームの移動・削除・コピー |
-| `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
+| `inspector_feed/` | プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 | `dock/` | 左の棚（Create・Effects・Media・Fonts・Colors …）のパネル |
 | `shelf/` | 棚のタイル（効果・スクリプト・素材） |
 | `stage/` | プレビュー（Filament が描いた絵と、その上のドラッグ） |
@@ -56,7 +56,7 @@ Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\
 - `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`expressions/*.js`：物に付ける動き（Create の Expression）。
 - `ease/*.way`：Ease のプリセット（上）。
 - `skins/<名前>/`：アプリのスキン（`shelves/skins/README.md`）。
-- 前の名前のフォルダ（`recipes/`・`animators/`・`ways/`）も、そのまま読む（`engine/document/folders.h`）。
+- 前の名前のフォルダ（`recipes/`・`animators/`・`ways/`）も、そのまま読む（`engine/document/scripts/folders.h`）。
 - どれも本家のファイルは 1 行も変えない。カードの名前を自分で付ける（例：Wobble）のはまだできない（Script と出る）。
 
 ## 開き方・確かめ方
