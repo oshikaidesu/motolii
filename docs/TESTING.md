@@ -37,6 +37,12 @@ engine/build.sh test
 
 Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test, written with GoogleTest; CMake finds them by name (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). There are four today: `engine/motion/easing_curves_test.cpp`, `engine/motion/easing_godot_test.cpp`, `engine/community/quickjs/script_header_test.cpp` and `engine/document/scripts/shelf_recipe_files_test.cpp`.
 
+Each module has its own test program, `motolii_<module>_test`, linked with that module and the modules it declares. To build and run one module's tests alone, from `engine/`:
+
+```
+cmake --build out/cmake --target motolii_motion_test && ctest --test-dir out/cmake -R '^Easing'
+```
+
 ### Picture comparison
 
 See below. It is a build.

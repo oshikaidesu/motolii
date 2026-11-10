@@ -31,6 +31,9 @@ Builds if needed, opens the project and reads one command per line from standard
 - `./build.sh test` builds, then runs the C++ tests with ctest. A test is a `<name>_test.cpp` file beside the code it
   tests, written with GoogleTest; CMake finds it by name. Today there are four: the easing curves and the Godot easing
   (`motion/`), the script header parser (`community/quickjs/`) and the files shelf recipes name (`document/scripts/`).
+  Each module has its own test program, `motolii_<module>_test`, linked with that module and the modules it declares,
+  so one module is judged without building the rest:
+  `cmake --build out/cmake --target motolii_motion_test && ctest --test-dir out/cmake -R '^Easing'`.
 - `./drawings_unchanged.sh <old-commit>` draws every shelf recipe and motion with the engine at that commit and with this
   one, and compares the pictures byte by byte. How tests are run, and what counts as passing, is in
   [`../docs/TESTING.md`](../docs/TESTING.md).
