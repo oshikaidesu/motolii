@@ -185,6 +185,8 @@ target_link_libraries(motolii_stage_render PUBLIC filament_libraries)
 # Screen effects.
 add_library(motolii_stage_effects STATIC
   stage/effects/screen_fx.cpp
+  stage/effects/screen_read.cpp
+  stage/effects/screen_resources.cpp
   stage/effects/viewer_settings.cpp)
 target_link_libraries(motolii_stage_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_community_isf motolii_stage_render)
 

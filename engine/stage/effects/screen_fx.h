@@ -282,6 +282,22 @@ bool screen_moved(const ScreenStack& st);
 void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
                     ScreenNumbers numbers);
 
+// The parts of an effect that its passes read and write, set up for
+// screen_fx.cpp (defined in screen_resources.cpp).
+// Builds the input textures of an effect for the current frame: image files
+// once, audio inputs again each frame.
+void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx);
+// Fills the parameter uniform struct of `fx` for one pass and uploads it. `pass`
+// is the pass index. pw and ph give the size of the image drawn into in pixels,
+// or 0 for the stage size.
+void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
+                       int pass = 0, double pw = 0, double ph = 0);
+// Makes or drops the textures of the effect's targets. If `drop` is true the
+// textures are destroyed and not recreated. pw and ph give the size of the image
+// drawn into, or 0 for the stage size.
+void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t pw = 0,
+                    uint32_t ph = 0);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_STAGE_EFFECTS_SCREEN_FX_H_
