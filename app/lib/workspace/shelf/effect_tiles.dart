@@ -32,7 +32,7 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
-import 'package:motolii/workspace/state/workspace_state.dart' show wsTextFont;
+import 'package:motolii/workspace/state/workspace_state.dart' show defaultTextFont;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;
 import 'package:motolii/workspace/shelf/effect_tiles_knob.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
@@ -289,7 +289,7 @@ abstract final class EffectTiles {
     var heard = false; // Whether the sound was read once, aside (sound_level.h sound_of). Until then it is silent.
     final words = m.add(
       'text',
-      wsTextFont,
+      defaultTextFont,
     ); // For effects that work on text: white words over the grid, as AbsentMotion's effect_thumbs.py lays its "text" layout.
     m
       ..say(words, 'fill', 'ffffff')

@@ -3,7 +3,7 @@
 import 'package:motolii/skin/tokens.dart' show halfWidth;
 
 /// Parses a typed number, ignoring full-width characters and surrounding spaces. Returns null if it is not a number.
-double? wsNumber(String said) => double.tryParse(halfWidth(said).trim());
+double? parseNumber(String said) => double.tryParse(halfWidth(said).trim());
 
 /// The beat grid of a document, in frames.
 class Beats {

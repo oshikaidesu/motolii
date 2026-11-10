@@ -97,7 +97,7 @@ class NumberFieldState extends State<NumberField> {
     }
     // Pressed and released in place: start typing.
     if (widget.typeOnTap && (e.position - _down).distance < kTouchSlop) return _startEdit();
-    final now = DateTime.now(), dbl = _lastUp != null && now.difference(_lastUp!) < dblParts;
+    final now = DateTime.now(), dbl = _lastUp != null && now.difference(_lastUp!) < doubleClickTime;
     _lastUp = dbl ? null : now;
     if (dbl) widget.onReset?.call();
   }

@@ -123,13 +123,13 @@ List<Program> programsAndPacks(Motolii? m) {
 
 class ProgramShelf extends StatefulWidget {
   const ProgramShelf(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
   @override
   State<ProgramShelf> createState() => _ProgramShelfState();
 }
 
 class _ProgramShelfState extends State<ProgramShelf> {
-  DockCtx get c => widget.c;
+  ShelfContext get c => widget.c;
   void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
   final _menu = GlobalKey<ContextMenuState>();
 

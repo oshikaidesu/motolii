@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 int? _dragged;
 
 /// Converts a document value to the number shown in the inspector (see Motolii.reading).
-double wsShown(Motolii m, int t, String n, double v) {
+double shownNumber(Motolii m, int t, String n, double v) {
   final (k, f) = m.reading(t, n);
   return v * k + f;
 }
@@ -30,14 +30,14 @@ double _unshown(Motolii m, int t, String n, double x) {
 (String, double)? _asDocument(WorkspaceController ws, int t, String id, double x) {
   if (id.startsWith('v_') && ws.inside!.shown(id.substring(2))?.look == 'thing') {
     // Another layer: None first, then the others by position.
-    final others = wsOthers(ws, t).values.toList(), i = x.round();
+    final others = otherLayers(ws, t).values.toList(), i = x.round();
     return (id.substring(2), i >= 1 && i <= others.length ? others[i - 1].toDouble() : 0);
   }
   final m = ws.inside!, n = id.substring(2);
-  final seen = id.startsWith('v_') && (n == 'x' || n == 'y') ? m.shows(t, n, wsDrawn(ws)) : null;
+  final seen = id.startsWith('v_') && (n == 'x' || n == 'y') ? m.shows(t, n, drawnTime(ws)) : null;
   if (seen != null && seen.$2) {
     // The value is displayed somewhere other than where it is stored, so the stored value moves by as much as the user moved the display.
-    return (n, _unshown(m, t, n, x) - (seen.$1 - (m.value(t, n, wsDrawn(ws)) ?? seen.$1)));
+    return (n, _unshown(m, t, n, x) - (seen.$1 - (m.value(t, n, drawnTime(ws)) ?? seen.$1)));
   }
   // A value on the engine's own cards: the value of that name in the document's units.
   if (id.startsWith('v_')) return (n, _unshown(m, t, n, x));
@@ -47,36 +47,36 @@ double _unshown(Motolii m, int t, String n, double x) {
 /// The time of the frame on the canvas.
 /// The engine records what is read at that time while drawing, so the value is available
 /// without waiting for the engine to be told a time the playhead has just moved to.
-double wsDrawn(WorkspaceController ws) => ws.inside?.now ?? ws.frame / WorkspaceController.fps;
+double drawnTime(WorkspaceController ws) => ws.inside?.now ?? ws.frame / WorkspaceController.fps;
 
 /// Only the position, scale and rotation of a layer, as the canvas readout shows them.
-/// [wsTransform] reads all of the cards' numbers instead.
-Map<String, double> wsPlace(WorkspaceController ws, String id) {
+/// [layerTransform] reads all of the cards' numbers instead.
+Map<String, double> layerPlacement(WorkspaceController ws, String id) {
   final m = ws.inside, t = int.tryParse(id);
   if (m == null || t == null) return const {};
-  final at = wsDrawn(ws);
+  final at = drawnTime(ws);
   double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
   return {
     for (final n in const ['x', 'y', 'scale_y', 'rotate'])
-      n: r1(wsShown(m, t, n, (n == 'x' || n == 'y' ? m.shows(t, n, at)?.$1 : null) ?? m.value(t, n, at) ?? (n == 'scale_y' ? 1 : 0))),
+      n: r1(shownNumber(m, t, n, (n == 'x' || n == 'y' ? m.shows(t, n, at)?.$1 : null) ?? m.value(t, n, at) ?? (n == 'scale_y' ? 1 : 0))),
   };
 }
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
-Map<String, double> wsTransform(WorkspaceController ws, String? id) {
+Map<String, double> layerTransform(WorkspaceController ws, String? id) {
   if (ws.inside case final m?) {
     // The document's own values, as the inspector counts them.
     final t = int.tryParse(id ?? '');
     if (id == null) {
       // With nothing selected these are the stage's own cards, layer 0.
-      final at = wsDrawn(ws);
+      final at = drawnTime(ws);
       return {
         for (final (_, names) in m.cards(0))
           for (final n in names) 'v_$n': _onCard(ws, m, 0, n, at),
       };
     }
     if (t == null) return const {};
-    final at = wsDrawn(ws);
+    final at = drawnTime(ws);
     // Adding 0 turns -0.0 into 0.0.
     double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
     return {
@@ -91,7 +91,7 @@ Map<String, double> wsTransform(WorkspaceController ws, String? id) {
 
 /// Writes values changed in the inspector. The engine has one form of change, a drag: drag_start, then drag_update with the numbers.
 /// While the user is dragging ([live]) the value is only displayed. On release it becomes the document's, by the document's rules.
-void wsWrite(WorkspaceController ws, String? id, Map<String, double> changed, {required bool live}) {
+void writeNumbers(WorkspaceController ws, String? id, Map<String, double> changed, {required bool live}) {
   // With nothing selected the target is the stage's own layer 0.
   final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
   // A word chosen on one of the engine's own cards is written as that word, in one undo step.
@@ -185,12 +185,12 @@ List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains('$t')
     : const [];
 
 /// The selected layer's words in the inspector's ids, such as a text's content or how it blends with what is behind.
-Map<String, String> wsWords(WorkspaceController ws, String? id) {
+Map<String, String> layerWords(WorkspaceController ws, String? id) {
   // With nothing selected these are the stage's own cards.
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};
   return {
-    ..._cardColors(m, t, wsDrawn(ws)),
+    ..._cardColors(m, t, drawnTime(ws)),
     // Which light it is (sun, point, spot). The Light card draws it that way.
     if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'),
     // Letters the font lacks, which are drawn in another font. Shown under the text.
@@ -199,7 +199,7 @@ Map<String, String> wsWords(WorkspaceController ws, String? id) {
       for (final n in names)
         if (m.shown(n)?.look == 'thing')
           // Another layer, by its name.
-          'v_$n': wsOthers(ws, t).entries.where((e) => e.value == (m.value(t, n, 0) ?? 0)).firstOrNull?.key ?? 'None'
+          'v_$n': otherLayers(ws, t).entries.where((e) => e.value == (m.value(t, n, 0) ?? 0)).firstOrNull?.key ?? 'None'
         else if (m.words(t, n).isNotEmpty)
           // One of its words. If none is set, the first.
           'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n),
@@ -220,12 +220,12 @@ String _lacks(Motolii m, int t) {
 
 /// How the inspector is displayed, such as its folds and whether an effect's Advanced section is open.
 /// This is part of the app's view, not the document.
-Map<String, bool> wsFlags(WorkspaceController ws, String? id) => {
+Map<String, bool> layerFlags(WorkspaceController ws, String? id) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool) e.key.substring(10): e.value as bool,
 };
 
-bool wsFlag(WorkspaceController ws, String? id, Map<String, bool> changed) {
+bool writeFlags(WorkspaceController ws, String? id, Map<String, bool> changed) {
   // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (fx_code.dart).
   bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.code') || k.endsWith('.past') || k.startsWith('fold.');
   for (final e in changed.entries) {
@@ -239,7 +239,7 @@ bool wsFlag(WorkspaceController ws, String? id, Map<String, bool> changed) {
 }
 
 /// Writes words chosen in the inspector to the document. Returns false when no layer is selected.
-bool wsSay(WorkspaceController ws, String? id, Map<String, String> changed) {
+bool writeWords(WorkspaceController ws, String? id, Map<String, String> changed) {
   final m = ws.inside!, t = int.tryParse(id ?? '');
   if (t == null) return false;
   // One undo step, requested without waiting: the app carries on while the engine works, then reads the result.
@@ -250,7 +250,7 @@ bool wsSay(WorkspaceController ws, String? id, Map<String, String> changed) {
     final n = e.key.substring(2);
     m.shown(n)?.look == 'thing'
         // Another layer, chosen by name: the value follows that layer.
-        ? m.later('set', layer: t, name: n, number: (wsOthers(ws, t)[e.value] ?? 0).toDouble())
+        ? m.later('set', layer: t, name: n, number: (otherLayers(ws, t)[e.value] ?? 0).toDouble())
         // A card's value of that name.
         : m.later('say', layer: t, name: n, word: e.value);
   }
@@ -259,7 +259,7 @@ bool wsSay(WorkspaceController ws, String? id, Map<String, String> changed) {
 }
 
 /// The other layers, keyed by their row number on the timeline and the name shown there.
-Map<String, int> wsOthers(WorkspaceController ws, int t) {
+Map<String, int> otherLayers(WorkspaceController ws, int t) {
   // Layers only, not relations or behaviours.
   final rows = ws.layers.where((l) => l.id != '$t' && ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour');
   // Like After Effects' parent list: the row number on the timeline, then the name.
@@ -323,11 +323,11 @@ double _onCard(WorkspaceController ws, Motolii m, int t, String n, double at) {
   final seen = const {'x', 'y', 'z', 'rotate', 'scale_x', 'scale_y', 'opacity'}.contains(n) ? m.shows(t, n, at) : null;
   if (seen != null) {
     // Use the displayed value, which includes a drag in progress or a relation moving it, as After Effects shows a value driven by an expression.
-    return wsShown(m, t, n, seen.$1);
+    return shownNumber(m, t, n, seen.$1);
   }
   return m.shown(n)?.look == 'thing'
-      ? (wsOthers(ws, t).values.toList().indexOf((m.value(t, n, 0) ?? 0).round()) + 1).toDouble()
+      ? (otherLayers(ws, t).values.toList().indexOf((m.value(t, n, 0) ?? 0).round()) + 1).toDouble()
       : m.words(t, n).isEmpty
-      ? wsShown(m, t, n, m.value(t, n, at) ?? 0)
+      ? shownNumber(m, t, n, m.value(t, n, at) ?? 0)
       : math.max(0, m.words(t, n).indexOf(m.word(t, n))).toDouble();
 }

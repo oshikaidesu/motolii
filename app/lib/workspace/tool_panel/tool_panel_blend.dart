@@ -60,7 +60,7 @@ class _RowState extends State<_Row> {
           Container(
             width: Shape.z(4),
             height: Shape.z(18),
-            decoration: BoxDecoration(color: wsTone(l.kind), borderRadius: BorderRadius.all(Shape.r(2))),
+            decoration: BoxDecoration(color: layerKindColor(l.kind), borderRadius: BorderRadius.all(Shape.r(2))),
           ),
           SizedBox(width: Shape.s(8)),
           Expanded(

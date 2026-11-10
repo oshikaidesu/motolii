@@ -314,7 +314,7 @@ class _HeightsState extends State<_Heights> {
 
           // Only vertical drags are claimed, so the panel can still scroll. A tap also sets a bar.
           return GestureDetector(
-            supportedDevices: wsPressing,
+            supportedDevices: pressingDevices,
             behavior: HitTestBehavior.opaque,
             onVerticalDragStart: (d) => start(d.localPosition),
             onVerticalDragUpdate: (d) => _at(d.localPosition, size),

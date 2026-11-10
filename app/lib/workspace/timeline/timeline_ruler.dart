@@ -58,7 +58,6 @@ extension TimelinePaneRuler on TimelinePaneState {
 
   /// The marks' colours by frame. The mark being dragged uses the frame where the pointer holds it.
   Map<int, Color> markColorsOf(WorkspaceController ws) => {
-    for (final MapEntry(key: at, value: k) in ws.markColors.entries)
-      (markHeld?.$1 == at ? markTo : (at * WorkspaceController.fps).round()): wsLabelColor(k - 1),
+    for (final MapEntry(key: at, value: k) in ws.markColors.entries) (markHeld?.$1 == at ? markTo : (at * WorkspaceController.fps).round()): labelColor(k - 1),
   };
 }

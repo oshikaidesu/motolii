@@ -27,7 +27,7 @@ final _home = Platform.environment['HOME'] ?? '/';
 
 class MediaShelf extends StatelessWidget {
   const MediaShelf(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(valueListenable: dockRead, builder: (context, _, _) => _shelf(context));
@@ -75,7 +75,7 @@ class MediaShelf extends StatelessWidget {
 }
 
 /// The locations in the tree: the project's own files and the folders they are in, then the disk.
-List<FileNode> _rootsOf(DockCtx c) {
+List<FileNode> _rootsOf(ShelfContext c) {
   final kindOf = c.ws.inside!.kindOf;
   kindOfFile = (f) =>
       // CLIP STUDIO's and OpenToonz's timesheet is not a layer kind in the engine, but its columns are.
@@ -99,7 +99,7 @@ List<FileNode> _rootsOf(DockCtx c) {
 }
 
 /// The folders from the root down to [id], root first.
-List<FileNode> folderPathOf(DockCtx c, String id) {
+List<FileNode> folderPathOf(ShelfContext c, String id) {
   final roots = _rootsOf(c);
   if (!id.startsWith('/')) return [roots.first];
   final out = <FileNode>[];
@@ -109,7 +109,7 @@ List<FileNode> folderPathOf(DockCtx c, String id) {
   }
 }
 
-void _go(DockCtx c, String id) => c.set(() {
+void _go(ShelfContext c, String id) => c.set(() {
   if (id.startsWith('/')) readFolder(id); // A folder on disk is read again each time it is opened.
   c.mem.folder = id;
   // Only that folder opens: the same folder is listed under more than one location,
@@ -117,7 +117,7 @@ void _go(DockCtx c, String id) => c.set(() {
   c.mem.open.add(id);
 });
 
-void openNode(FileNode n, DockCtx c) {
+void openNode(FileNode n, ShelfContext c) {
   if (n.folder) return _go(c, n.id);
   if (DockHover.cmdAtPress && kindOfFile(n.id).isNotEmpty) {
     // Cmd adds or removes one file from the selection, as in Finder.
@@ -131,7 +131,7 @@ void openNode(FileNode n, DockCtx c) {
 
 class _Tree extends StatelessWidget {
   const _Tree(this.c);
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final rows = <Widget>[];
@@ -178,7 +178,7 @@ class _Tree extends StatelessWidget {
 class FolderCrumbs extends StatelessWidget {
   const FolderCrumbs(this.path, this.c, {super.key, required this.searching});
   final List<FileNode> path;
-  final DockCtx c;
+  final ShelfContext c;
   final bool searching;
   @override
   Widget build(BuildContext context) => Container(

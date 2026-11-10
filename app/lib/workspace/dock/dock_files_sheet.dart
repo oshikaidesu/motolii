@@ -85,7 +85,7 @@ List<(int, String)>? _levelNamed(String sheet, String name) {
 /// the sheet. Each change gets a hold keyframe on the level's Drawing property at 24 frames per second, as DiTiS reads
 /// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
 /// Missing drawings and unsupported values are reported in the notice.
-Future<void> placeSheet(DockCtx c, String file) async {
+Future<void> placeSheet(ShelfContext c, String file) async {
   final sheet = _sheetOf(await File(file).readAsString().catchError((_) => ''));
   if (sheet == null) {
     c.ws.notice = 'Not a timesheet: ${basename(file)}';

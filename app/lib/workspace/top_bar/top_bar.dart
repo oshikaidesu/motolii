@@ -106,7 +106,7 @@ class _Wordmark extends StatelessWidget {
 /// the step, for example "Undo Change Warmth".
 ///
 /// It reads the layers and values that the reloaded project reports as changed.
-String wsStepSaid(WorkspaceController ws, String done) {
+String undoStepName(WorkspaceController ws, String done) {
   final c = ws.lastChange, m = ws.inside;
   if (c == null || m == null) return done;
   if (c.layers) return '$done: things added or taken away';
@@ -140,7 +140,7 @@ class _UndoRedo extends StatelessWidget {
             if (m == null) return;
             ws.after(
               m.later(flip ? 'redo' : 'undo'),
-              (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why,
+              (done, why) => ws.notice = done ? undoStepName(ws, flip ? 'Redone' : 'Undone') : why,
             ); // The app does not wait for the step to finish.
           },
         ),
@@ -253,12 +253,12 @@ class _RenderState extends State<_Render> {
   @override
   void initState() {
     super.initState();
-    wsAskRender.addListener(_ask);
+    renderRequested.addListener(_ask);
   }
 
   @override
   void dispose() {
-    wsAskRender.removeListener(_ask);
+    renderRequested.removeListener(_ask);
     _name.dispose();
     _focus.dispose();
     super.dispose();

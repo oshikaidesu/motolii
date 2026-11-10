@@ -1,104 +1,131 @@
-# app — Motolii のアプリ
+# Motolii app
 
-*Motolii's app (Flutter, macOS). It draws nothing and holds no project: it calls the engine (`../engine/`) and shows what comes back. Open it with `tool/live.sh`; build it with `flutter build macos --profile`. The table below names every folder, down into `lib/`. Which folder of `lib/` may import which is the second table (「import の向き」), checked by `tool/check_layers.py`.*
+The Flutter (macOS) user interface of Motolii. It draws nothing itself and holds no project. Every action is a call into the engine ([`../engine/`](../engine/), built as `libmotolii.dylib`) through `dart:ffi`, and the app shows what comes back.
 
-Flutter で書いたアプリ。描くのもプロジェクトを持つのもエンジン（[`../engine/`](../engine/)）で、アプリはそれを呼んで見せて操るだけ。開くのは `tool/live.sh`（保存すると開いたアプリにすぐ出る）、組むのは `flutter build macos --profile`。
+## Prerequisites
 
-| 場所 | 中身 |
+- macOS on Apple silicon.
+- Flutter 3.47.2 (pinned in [`.fvmrc`](.fvmrc) and in CI).
+- The engine, built first: `../engine/build.sh`. See [`../engine/README.md`](../engine/README.md).
+
+## Run
+
+```
+cd app
+tool/live.sh
+```
+
+`tool/live.sh` opens the app with `flutter run -d macos` and sends a hot reload each time a `.dart` file under `lib/` is saved, so the open window updates with its state kept. The engine's own files (effect `.wgsl`, script `.js`) reload by themselves. The script ends when the window is closed. It takes the machine's build lock (`../engine/tools/build_lock.sh`) until the window is open.
+
+It opens `~/Movies/Motolii/Untitled.motolii`. Set `MOTOLII_DOC=/path/to.motolii` to open another project, and `MOTOLII_DIR` to point at another engine folder.
+
+To build the app without running it: `flutter build macos --profile`.
+
+## Test and check
+
+Run these in `app/`. The full procedure is in [`../docs/TESTING.md`](../docs/TESTING.md).
+
+```
+dart format --output=none --set-exit-if-changed .
+flutter analyze --no-fatal-infos
+flutter test
+```
+
+`dart analyze lib` is the quick static check. Most tests need no engine; `test/accessibility_guidelines_test.dart` opens the real app and is skipped when `../engine/out/libmotolii.dylib` is missing.
+
+Frame timing needs a window:
+
+```
+FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos \
+  --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
+```
+
+CI runs the first three commands on every push (`../.github/workflows/checks.yml`).
+
+## Layout
+
+"Shelf" is the name of the tabs on the left (Create, Effects, Media, Fonts, Colors). "Skin" is a theme folder that changes colors, sizes, pictures and control shapes.
+
+| Path | What it holds |
 |---|---|
-| `lib/main.dart` | 起動したらアプリのウィンドウを開く |
-| `lib/bridge/` | アプリとエンジンの境目（[`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)）。エンジン（`libmotolii.dylib`）を呼ぶ口：プロジェクト、棚、問い合わせ、書き込み |
-| `lib/workspace/` | アプリの画面そのもの。`state/` 画面の状態、`window/` ウィンドウの枠、`top_bar/` 上のバー、`commands/` キーとメニュー、`edits/` まとめて掛ける編集、`inspector_feed/` Inspector へ渡す物、`dock/` 左の棚、`stage/` プレビュー、`timeline/` タイムライン、`tool_panel/` 下のツールパネル、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
-| `lib/inspector/` | 右の Inspector。カードは全部エンジンの宣言（`engine/document/card_table.h` → `lib/workspace/inspector_feed/` の cards が WGSL の構造体に）で、効果もそれ以外も `inspector_card.dart` の `ValuesCard` 1 つが描く。カードごとの Dart は置かない。`controls/` 値の種類ごとの操作部品（数・角度・色・文字・リンク）、`rows/` 行とカードの枠 |
-| `lib/widgets/` | **規格**：パネルを組む部品。仕組み 1 つにつき部品 1 つで、ここを直せば全パネルが直る。押し・アイコンボタン・バッジ・チップ（`controls.dart`：`Pressable`・`IconPress`・`Badge`・`Chip`）、数の欄（`number_field.dart`：`NumberField`）、打ち込む欄（`text_gestures.dart`：`TypedField`）、スライダーと関数で描く絵（`media.dart`：`MiniSlider`・`glyph`）、名前の印（`glyphs.dart`：`Glyph`）、トラックパッドの 2 本指（`two_fingers.dart`）、タイムラインの印（`timeline_painters.dart`）。押し・認識・手描きを自前で書いてよいのはここだけ（`.githooks/rules/`） |
-| `lib/panel.dart` | 規格の入口。`import 'package:motolii/panel.dart';` の 1 行で、規格の部品・見た目の値（`skin/tokens.dart`）・画面の状態（`WorkspaceController`）・エンジンの読み書き（`bridge/`）・タブ（`Pane`）・エンジンが宣言したカード（`LayerCards`）が全部手に入る |
-| `example/` | 見本（pub の置き場）。`my_panel.dart`：規格だけで組んだ自作のパネル。`dart analyze` が一緒に確かめるので、規格を変えて見本が組めなくなれば赤になる |
-| `lib/storage/` | アプリが手元に残す小さいファイル。`kept_file.dart` ファイルの書き込みと JSON・リストの読み込み、`window_settings.dart` `~/.motolii/window.xml`（倍率と着ているスキン）、`free_name.dart` 空いている名前（コピーに番号を付ける） |
-| `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`skin_parts.dart` スキンの `parts/*.svg`（theme.xml の `<Parts>`）、`forms/` 部品の組み立て方（theme.xml の `<Forms Value="poster"/>` が `poster_forms.dart` を選ぶ。名前の無いスキンは `own_forms.dart`、どのフォームも書かなかった部品は `base_controls.dart`） |
-| `assets/` | アプリが読むデータ。`effect_parameter_weights.json`：効果のパラメーターごとの効き（Effects 棚のタイルが読む）。pubspec の `assets:` には載せない：棚と同じく repo の中から `File` で同期に読む（`lib/workspace/shelf/effect_tiles.dart` の `_entry`） |
-| `test/` | 試験（`flutter test`）。直下の 2 枚は本物の物を見る：`accessibility_guidelines_test.dart` は本物のアプリの画面が Flutter のアクセシビリティの指針を満たすか（エンジンが要る）、`skin_folders_test.dart` は棚のスキンが View › Skin に並ぶか。`inspector/`・`skin/`・`widgets/`・`workspace/` は `lib/` と同じ並びで、エンジンの要らない関数と状態（Inspector の `InspectorValues`、画面の `WorkspaceController`）が今返す値を留める：コードを移したり分けたりして値が変わると落ちる |
-| `integration_test/`、`test_driver/` | 実機の Mac でアプリを動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
-| `build/test_output/` | 試験が書く物（タイムライン、ドライバーの記録）。`build/` の残りは Flutter の作業場 |
-| `tool/live.sh` | アプリを開き、`lib/` の .dart を保存するたびホットリロードを送る（`flutter run` ＋ SIGUSR1）。開くプロジェクトは `MOTOLII_DOC` |
-| `tool/flicker.py` | 手で使う道具。画面の録画（`--record 5 rec.mov`）から、前後と違う 1 コマ（ちらつき）を探して png に書く。要 ffmpeg |
-| `tool/check_layers.py` | `lib/` の import が、下の「import の向き」の表どおりかを確かめる（`python3 tool/check_layers.py`）。今まだ表を破っている import の帳簿が `tool/layer_debt.txt` |
+| `lib/main.dart` | Starts the app and opens the `Workspace` window. |
+| `lib/panel.dart` | The one import for writing a panel (`package:motolii/panel.dart`). It only re-exports the parts of the folders below. |
+| `lib/bridge/` | The border to the engine: calls into `libmotolii.dylib` for the project, shelves, questions and writes. `motolii.dart` holds `Motolii`; `motolii_bindings.dart` is generated. See [`../docs/app/BRIDGE.md`](../docs/app/BRIDGE.md). |
+| `lib/storage/` | Small files the app keeps: `kept_file.dart` (write files, read JSON and lists), `window_settings.dart` (`~/.motolii/window.xml`: zoom and the chosen skin). |
+| `lib/skin/` | Look: `tokens.dart` (grays, sizes), `window_tokens.dart`, `inspector_tokens.dart`, `theme.dart` (colors from a skin's `theme.xml`), `skin_parts.dart` (a skin's `parts/*.svg`). |
+| `lib/skin/forms/` | How controls are built per skin: `poster_forms.dart`, `sheet_forms.dart`, `lighttable_forms.dart`, `own_forms.dart`, and `base_controls.dart` for controls a skin does not define. |
+| `lib/widgets/` | The standard parts every panel is built from: `controls.dart` (`Pressable`, `Chip`), `number_field.dart` (`NumberField`), `text_gestures.dart` (`TypedField`), `media.dart` (`MiniSlider`), `glyphs.dart` (`Glyph`), `timeline_painters.dart`. |
+| `lib/inspector/` | The Inspector on the right. Cards come from the engine's declarations (`../engine/document/card_table.h`), and `inspector_card.dart` (`ValuesCard`) draws every one of them. |
+| `lib/inspector/controls/` | Controls per kind of value: number, angle, color, text, link. |
+| `lib/inspector/rows/` | Rows and the frame of a card. |
+| `lib/workspace/` | The window itself and its panels. `workspace.dart` holds `Workspace`. See [`lib/workspace/README.md`](lib/workspace/README.md). |
+| `lib/workspace/state/` | State every panel reads: `workspace_state.dart` (`WorkspaceController`), `workspace_scope.dart` (`WorkspaceScope`), `pane.dart` (`Pane`). |
+| `lib/workspace/easing/` | Easing: `ease.dart` (`Ease` and presets), `ease_text.dart` (the text written into a project). |
+| `lib/workspace/edits/` | Edits applied to several selected layers: `make_relation.dart`, `keyframe_edits.dart`. |
+| `lib/workspace/commands/` | Named commands with their keys and menus: `keymap.dart`, `menu_bar.dart`. |
+| `lib/workspace/inspector_feed/` | What the project hands to the Inspector: `cards.dart`, `values.dart`. |
+| `lib/workspace/shelf/` | Tiles shown in shelves (effects, scripts, materials): `shelf_tile.dart`, `effect_tiles.dart`. |
+| `lib/workspace/dock/` | The shelf panels on the left. |
+| `lib/workspace/stage/` | The preview: the engine's picture and the drags on top of it. |
+| `lib/workspace/timeline/` | The timeline. |
+| `lib/workspace/tool_panel/` | The tool panel under the Inspector (Ease, Align, Blend, Depth, Relations). |
+| `lib/workspace/top_bar/` | The bar at the top: size, zoom readout, engine timings. |
+| `lib/workspace/window/` | The window frame: `panes.dart` (pane layout), `home.dart` (project chooser), `zoom.dart`. |
+| `test/` | Unit and widget tests, laid out like `lib/` (`inspector/`, `skin/`, `widgets/`, `workspace/`), plus `skin_folders_test.dart` and `accessibility_guidelines_test.dart`. They pin what the code returns now, so a change of value fails them. |
+| `integration_test/` | `frame_timing_test.dart`: scrolls the timeline on a real Mac and checks each frame fits about 16 ms. |
+| `test_driver/` | The driver that runs `integration_test/` with `flutter drive`. |
+| `tool/` | `live.sh` (run with hot reload) and `flicker.py` (finds one-frame flicker in a screen recording; needs ffmpeg). |
+| `example/` | `my_panel.dart`: a panel built from the standard alone. The analyzer compiles it, so it breaks when the standard changes. |
+| `assets/` | `effect_parameter_weights.json`: how strongly each effect parameter acts. It is read from the repository with `File`, and is not listed in `pubspec.yaml`. |
+| `macos/` | The Flutter macOS runner project. |
 
-## import の向き
+Test output goes to `build/test_output/`; the rest of `build/` is Flutter's work area.
 
-`lib/` の中で、どのフォルダがどのフォルダを import してよいかの表。依存は一方向：画面のパネルから下へ、エンジンを呼ぶ口（`bridge/`）まで。下の物は上の物を知らない。
+## Dependency direction
 
-- 自分のフォルダの中は、いつも import してよい。
-- `export` も import と同じに数える。
-- 行はサブフォルダも含む。ただし `skin/` は `skin/forms/` を含まず、`workspace/` 直下の .dart はその下のフォルダを含まない（どちらも別の行）。
+Dependencies run one way: from the panels down to the border to the engine (`bridge/`). A folder does not import one above it.
 
-| フォルダ（`lib/` から） | import してよい物 |
+- A folder may always import itself.
+- `export` counts as an import.
+- A row includes its subfolders, except that `skin/` does not include `skin/forms/`, and the `.dart` files directly in `workspace/` do not include the folders below them.
+
+| Folder (under `lib/`) | May import |
 |---|---|
-| `bridge/` | 自前の物は何も |
-| `storage/` | 自前の物は何も |
-| `skin/`（`forms/` を除く） | `bridge/engine_paths.dart`、`storage/` |
+| `bridge/`, `storage/` | Nothing else in the app. |
+| `skin/` (not `forms/`) | `bridge/engine_paths.dart`, `storage/` |
 | `widgets/` | `skin/` |
-| `skin/forms/` | `skin/`、`widgets/` |
-| `inspector/` | `skin/`、`skin/forms/`、`widgets/`。`bridge/` も `workspace/` も読まない |
+| `skin/forms/` | `skin/`, `widgets/` |
+| `inspector/` | `skin/`, `skin/forms/`, `widgets/`. Never `bridge/` or `workspace/`. |
 | `workspace/easing/` | `bridge/` |
-| `workspace/state/` | `bridge/`、`storage/`、`skin/`、`widgets/glyphs.dart`、`workspace/easing/` |
-| `workspace/edits/` | `workspace/state/` と、それが import してよい物 |
-| `workspace/commands/` | `workspace/edits/` と、それが import してよい物、`widgets/` |
-| `workspace/shelf/` | `workspace/commands/` と、それが import してよい物、`skin/forms/`。`inspector/` は読まない |
-| `workspace/inspector_feed/` | `workspace/shelf/` と、それが import してよい物、`inspector/` |
-| `workspace/dock/`、`stage/`、`timeline/`、`tool_panel/`、`top_bar/`、`window/` | `workspace/inspector_feed/` と、それが import してよい物。この 6 つは互いを読まない |
-| `workspace/` 直下の .dart（画面の全体） | 何でも |
-| `panel.dart` | 何でも。書くのは `export` の行だけ |
-| `main.dart` | `workspace/` 直下の .dart と `bridge/` |
+| `workspace/state/` | `bridge/`, `storage/`, `skin/`, `widgets/glyphs.dart`, `workspace/easing/` |
+| `workspace/edits/` | `workspace/state/` and what it may import |
+| `workspace/commands/` | `workspace/edits/` and what it may import, `widgets/` |
+| `workspace/shelf/` | `workspace/commands/` and what it may import, `skin/forms/`. Never `inspector/`. |
+| `workspace/inspector_feed/` | `workspace/shelf/` and what it may import, `inspector/` |
+| `workspace/dock/`, `stage/`, `timeline/`, `tool_panel/`, `top_bar/`, `window/` | `workspace/inspector_feed/` and what it may import. These six do not import each other. |
+| `workspace/*.dart` (the whole window) | Anything |
+| `panel.dart` | Anything; it contains only `export` lines. |
+| `main.dart` | `workspace/*.dart` and `bridge/` |
 
-どのフォルダにも掛かる決まりが 3 つ：`part` を使わない。`export` を書くのは `panel.dart` だけ。自前のファイルは `package:motolii/…` で import する。
+Three rules apply everywhere: do not use `part`; write `export` only in `panel.dart`; import app files as `package:motolii/...` (`always_use_package_imports` in `analysis_options.yaml` enforces this last one).
 
-表は向かう先で、今のコードはまだ途中にある。
+## Making a panel
 
-- 表を破っている import は [`tool/layer_debt.txt`](tool/layer_debt.txt) に 1 行ずつ載っている。この帳簿は減るだけ。
-- 2 つの決まりを破る物（`part`、`panel.dart` の外の `export`）もまだ残っている。`check_layers.py` はこの 2 つを測らない。相対の import は無くなり、`analysis_options.yaml` の `always_use_package_imports` が見張る。
+1. Write one Dart file. Two imports are enough: `package:flutter/widgets.dart` and `package:motolii/panel.dart`. [`example/my_panel.dart`](example/my_panel.dart) is a working model.
+2. To show values only, no Dart is needed: `LayerCards(layer: ..., only: ['Transform'])` draws the cards the engine declares (`../engine/document/card_table.h`). Write your own drawing or controls only where you need them, using the standard parts (`NumberField`, `MiniSlider`, `Chip`, `IconPress`, `Glyph`).
+3. Add one line to the `Workspace` in `lib/main.dart`: `Workspace(document: motoliiDoc, extra: const [Pane('Mine', null, MyPanel.new)])`. A `null` mark shows the first letter of the name; pass a `GlyphKind` for your own mark (a skin's SVG of the same name wins).
+4. Inside a panel, use the parts in `lib/widgets/` instead of writing your own press handlers (`GestureDetector`), text fields (`EditableText`) or painters (`CustomPainter`). If a part is missing, add it to `lib/widgets/` so every panel can use it.
 
-確かめ方（`app/` で）：
+Example skins are in [`../shelves/skins/`](../shelves/skins/), with how to make one. In the app, `lib/skin/theme.dart` reads colors and sizes from `theme.xml`, `lib/skin/skin_parts.dart` reads `<Parts>` pictures, and `lib/skin/forms/` builds controls for `<Forms>`.
 
-```bash
-python3 tool/check_layers.py            # 表と帳簿に照らす：帳簿に無い import と、もう無い import の行を言う
-python3 tool/check_layers.py --write    # import を切った後に、帳簿を書き直す
+Longer documents are in [`../docs/app/`](../docs/app/): `BRIDGE.md` (calls into the engine), `DESIGN.md` (the sources of the values in `tokens.dart`) and `GESTURES.md` (what presses, drags and keys mean; read it before making a panel).
+
+## Bindings
+
+`lib/bridge/motolii_bindings.dart` is generated by `ffigen` from the engine's C header, `../engine/entry/motolii.h`. Do not edit it by hand. After the header changes, regenerate it in `app/`:
+
+```
+dart run ffigen --config ffigen.yaml
 ```
 
-`lib/` にフォルダを足したら、この表と `tool/check_layers.py` の `MAY_IMPORT` に 1 行ずつ足す（どの行にも入らないフォルダは断られる）。
-
-## 自作のパネルを作る
-
-1. Dart のファイルを 1 枚書く。`import 'package:flutter/widgets.dart';` と `import 'package:motolii/panel.dart';` の 2 行だけで足りる（見本：[`example/my_panel.dart`](example/my_panel.dart)）。
-2. 値を並べるだけなら Dart は要らない：`LayerCards(layer: ..., only: ['Transform'])` が、エンジンの宣言（`engine/document/card_table.h`）どおりのカードを出す。自前の絵や操作を持つ所だけ、規格の部品（`NumberField`・`MiniSlider`・`Chip`・`IconPress`・`Glyph` …）で書く。
-3. `lib/main.dart` の `Workspace` に 1 行足す：`Workspace(document: motoliiDoc, extra: const [Pane('Mine', null, MyPanel.new)])`。印は `null` なら頭文字、`GlyphKind` を渡せば自前の印（スキンに同じ名前の SVG があればそれが勝つ）。
-4. パネルの中で、押し（`GestureDetector`・`NakedButton` …）・打ち込み欄（`EditableText`）・手描き（`CustomPainter`）は自分で書かない。足りない部品は規格（`lib/widgets/`）に足す：そうすれば全パネルが同じ物を使える。
-
-
-見本のスキンは [`../shelves/skins/`](../shelves/skins/)（作り方も同じ所）。アプリの側で、theme.xml の色・寸法は `lib/skin/theme.dart`、`<Parts>` の絵は `lib/skin/skin_parts.dart`、`<Forms>` の組み立て方は `lib/skin/forms/<名前>_forms.dart` が読む。
-
-試験の走らせ方（どれも `app/` で）：
-
-```bash
-flutter test --no-pub test/
-```
-
-```bash
-flutter test --no-pub test/inspector test/skin test/widgets test/workspace   # エンジンの要らない試験だけ
-```
-
-```bash
-FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
-```
-
-## 長い文書（[`docs/app/`](../docs/app/)）
-
-| 文書 | 中身 |
-|---|---|
-| [`BRIDGE.md`](../docs/app/BRIDGE.md) | アプリとエンジンの境目の決まり（アプリがエンジンを呼ぶ所） |
-| [`DESIGN.md`](../docs/app/DESIGN.md) | 見た目の決まり（値に出所の印つき。`lib/skin/tokens.dart` の値はここから） |
-| [`GESTURES.md`](../docs/app/GESTURES.md) | 操作の決まり（押し・ドラッグ・キーが、同じ種類の部品のどこでも同じ意味と同じ数で働く。出所の印つき。数は `lib/widgets/gestures.dart` の `Gestures`、立っている例外は理由つき）。パネルを作る前に読む |
-| [`skins/HANDOFF.md`](../docs/app/skins/HANDOFF.md) | スキンの続き（フォーム）を作る人向け。スキンの作り方は [`shelves/skins/README.md`](../shelves/skins/README.md) |
-
-## 作り方の決まり
-- 新しく作る前に、リポジトリとネットで既存を探す。見つからない時だけ作る。
-- 値は `lib/skin/tokens.dart`（`DESIGN.md` から）。部品は数値を直書きしない。
+[`ffigen.yaml`](ffigen.yaml) takes every function named `motolii_*`, marks `motolii_broken_count` as a leaf call, and reads `libclang` from the Xcode toolchain.

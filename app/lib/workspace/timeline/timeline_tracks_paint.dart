@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
-Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
+Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(r.tone ?? layerKindColor(r.kind), dim: r.dim, selected: r.selected);
 
 /// Adds an easing curve to [p] from x [xa] to [xb], sampled finely enough for the pixels on screen.
 ///

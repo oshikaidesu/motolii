@@ -8,7 +8,7 @@ import 'package:motolii/skin/window_tokens.dart';
 /// The kinds of layer the timeline distinguishes.
 enum LayerKind { shape, text, image, camera, group, particles, audio }
 
-Color wsTone(LayerKind k) => switch (k) {
+Color layerKindColor(LayerKind k) => switch (k) {
   LayerKind.shape => WindowTokens.toneShape,
   LayerKind.text => WindowTokens.toneText,
   LayerKind.image => WindowTokens.toneImage,
@@ -54,7 +54,7 @@ class Layer {
   final bool hidden, solo, locked, clipped;
 
   /// The layer's label colour.
-  Color get tone => wsLabel(id);
+  Color get tone => layerLabelColor(id);
 }
 
 /// The stretch between two keyframes: its frames, its easing, and the easing curve (0 to 1) sampled at 17 points.

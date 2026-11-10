@@ -136,7 +136,7 @@ void _used(String family) {
 }
 
 /// Sets the font on the selected text layer. With no text layer selected, adds a new text layer in that font.
-void _setFont(DockCtx c, _Font f) {
+void _setFont(ShelfContext c, _Font f) {
   _used(f.family);
   final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? '');
   void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why);
@@ -144,13 +144,13 @@ void _setFont(DockCtx c, _Font f) {
   // The new text layer and its colors form one undo step.
   m.later('together', number: 1);
   c.ws.after(m.later('add', name: 'text', word: f.path!), null, (made) => c.ws.select('$made'));
-  wsInked(c.ws, 'text', '');
+  applyChosenInks(c.ws, 'text', '');
   c.ws.after(m.later('together'), told);
 }
 
 /// With no text layer selected, a click on a font sets the font of the current role, like a color click on the
 /// Colors shelf. With a text layer selected nothing happens here: its font is set by a double-click or Apply.
-void _toRole(DockCtx c, _Font f) {
+void _toRole(ShelfContext c, _Font f) {
   final m = c.ws.inside, t = int.tryParse(c.ws.selected ?? '');
   if (m == null || f.path == null || (t != null && m.word(t, 'kind') == 'text')) return;
   _used(f.family);
@@ -159,12 +159,12 @@ void _toRole(DockCtx c, _Font f) {
 
 /// Adds a text layer in the given font at the playhead, with the current colors, and selects it.
 /// Like Canva's "Add a heading" and "Add a little bit of body text".
-void _addIn(DockCtx c, String font) {
+void _addIn(ShelfContext c, String font) {
   final m = c.ws.inside!;
   // The new text layer and its colors form one undo step.
   m.later('together', number: 1);
   c.ws.after(m.later('add', name: 'text', word: font), null, (made) => c.ws.select('$made'));
-  wsInked(c.ws, 'text', '');
+  applyChosenInks(c.ws, 'text', '');
   c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove('role') : c.mem.trouble['role'] = why));
 }
 
@@ -175,7 +175,7 @@ void _addIn(DockCtx c, String font) {
 /// With a text layer selected, clicking a role applies that role's font to it. The + button adds a new text in that font.
 class _Roles extends StatelessWidget {
   const _Roles(this.c, this.fonts);
-  final DockCtx c;
+  final ShelfContext c;
   final List<_Font> fonts;
   @override
   Widget build(BuildContext context) {
@@ -235,7 +235,7 @@ const _noLatin = 'NO LATIN';
 /// The Fonts shelf: a grid, list or map of the available fonts, with the title and body roles above.
 class FontsShelf extends StatelessWidget {
   const FontsShelf(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(valueListenable: dockRead, builder: (context, _, _) => _shelf(context));
 
@@ -413,7 +413,7 @@ TextStyle _face(_Font f, double size, Color c) => TextStyle(
 );
 
 /// One font as a tile of the Fonts shelf: a row (narrow) or a card (wide), its sample set in its own face.
-Widget _fontTile(_Font f, DockCtx c, {required bool list, String? usedBy}) {
+Widget _fontTile(_Font f, ShelfContext c, {required bool list, String? usedBy}) {
   final sel = c.sel == f.family, star = c.starred(f.family);
   final tags =
       f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ');
@@ -484,7 +484,7 @@ final _seen = <String, ui.Image>{}, _making = <String>{};
 class _FontDot extends StatefulWidget {
   const _FontDot(this.f, this.c, {this.map});
   final _Font f;
-  final DockCtx c;
+  final ShelfContext c;
   final DockMapPlaces? map;
   @override
   State<_FontDot> createState() => _FontDotState();

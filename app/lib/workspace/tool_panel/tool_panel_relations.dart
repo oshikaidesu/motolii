@@ -33,15 +33,15 @@ class _RelationsToolState extends State<RelationsTool> {
   // Yaw and pitch of the view; 0, 0 looks from the front, in the camera's own direction. Scrolling zooms in.
   double _yaw = 0, _pitch = 0, _zoom = 1;
   // Each layer's path over the whole duration for one document revision. Requested again when the revision changes.
-  (int, Map<String, List<_P3>>)? _paths;
+  (int, Map<String, List<_Point3>>)? _paths;
   int? _pathsAsked;
   Object? _stationsAsked;
 
   /// A picked relation's layers at the time of each of its keyframes, in time order.
   /// These are the shapes the relation passes through, not the path between them.
   /// They are times other than the one the preview shows, so they are requested from the engine (another isolate) and shown when they arrive.
-  (Object, Map<String, List<_P3>>)? _stations;
-  Map<String, List<_P3>> _stationsOf(WorkspaceController ws) {
+  (Object, Map<String, List<_Point3>>)? _stations;
+  Map<String, List<_Point3>> _stationsOf(WorkspaceController ws) {
     final m = ws.inside, r = int.tryParse(ws.selected ?? '');
     final at = (ws.rev, ws.selected);
     if (_stations?.$1 == at || _stationsAsked == at || m == null) return _stations?.$2 ?? const {};
@@ -73,7 +73,7 @@ class _RelationsToolState extends State<RelationsTool> {
     return _stations?.$2 ?? const {};
   }
 
-  Map<String, List<_P3>> _pathsOf(WorkspaceController ws) {
+  Map<String, List<_Point3>> _pathsOf(WorkspaceController ws) {
     final m = ws.inside;
     if (_paths?.$1 == ws.rev || _pathsAsked == ws.rev || m == null) return _paths?.$2 ?? const {};
     final rev = _pathsAsked = ws.rev;
@@ -92,7 +92,7 @@ class _RelationsToolState extends State<RelationsTool> {
           if (!mounted) return;
           var i = 0;
           double next() => v[i++] ?? 0;
-          final out = <String, List<_P3>>{};
+          final out = <String, List<_Point3>>{};
           for (final t in things) {
             final way = [for (var k = 0; k <= steps; k++) (x: next(), y: next(), z: next())];
             // Keep only the layers that move.
@@ -112,7 +112,7 @@ class _RelationsToolState extends State<RelationsTool> {
       WorkspaceScope.read(context).seen,
     ]),
     builder: (context, _) {
-      final ws = WorkspaceScope.read(context), world = _World.of(ws), together = wsRelatable(ws).length, many = together > 1;
+      final ws = WorkspaceScope.read(context), world = _World.of(ws), together = relatableLayers(ws).length, many = together > 1;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -131,12 +131,12 @@ class _RelationsToolState extends State<RelationsTool> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(many ? '$together picked' : 'Pick two or more', style: TextStyles.micro(Grey.g63)),
-                  for (final k in wsRelationChoices(ws))
+                  for (final k in relationChoices(ws))
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
-                      onTap: many ? () => wsRelate(ws, k) : null,
+                      onTap: many ? () => makeRelation(ws, k) : null,
                       child: IntrinsicWidth(
-                        child: Chip(label: wsRelationWord(k), look: ChipLook.flat(many ? WindowTokens.accent : Grey.g38)),
+                        child: Chip(label: relationLabel(k), look: ChipLook.flat(many ? WindowTokens.accent : Grey.g38)),
                       ),
                     ),
                 ],
@@ -192,15 +192,15 @@ class _RelationsToolState extends State<RelationsTool> {
   );
 }
 
-typedef _P3 = ({double x, double y, double z});
+typedef _Point3 = ({double x, double y, double z});
 
 /// What the map draws, read from the engine: the layers, the camera and the relations.
 class _World {
   _World(this.things, this.camera, this.relations, this.half);
 
   /// Layers by id: position, colour and name.
-  final Map<String, (_P3, Color, String)> things;
-  final _P3? camera;
+  final Map<String, (_Point3, Color, String)> things;
+  final _Point3? camera;
   final List<_Relation> relations;
 
   /// Half the camera's frame, in the canvas's units.
@@ -210,8 +210,8 @@ class _World {
     final m = ws.inside;
     if (m == null) return _World(const {}, null, const [], Size.zero);
     // The time of the frame the preview shows.
-    final now = m.now, things = <String, (_P3, Color, String)>{};
-    _P3? camera;
+    final now = m.now, things = <String, (_Point3, Color, String)>{};
+    _Point3? camera;
     // Prefer the position where the layer is shown, since a relation moves depth too.
     double v(int t, String n) => (n == 'x' || n == 'y' || n == 'z' ? m.shows(t, n, now)?.$1 : null) ?? m.value(t, n, now) ?? 0;
     final rels = <_Relation>[];
@@ -220,7 +220,7 @@ class _World {
       if (t == null) continue;
       final kind = m.word(t, 'kind');
       if (kind == 'behaviour') {
-        if (wsRelations.contains(m.word(t, 'file'))) {
+        if (relationKinds.contains(m.word(t, 'file'))) {
           rels.add(
             _Relation(l.id, m.word(t, 'file'), [
               for (final s in m.word(t, 'members').split(' '))
@@ -252,12 +252,12 @@ class _Relation {
   final String id, kind, leader;
   final List<String> members;
   final double radius, gap, tilt;
-  final _P3 centre;
+  final _Point3 centre;
 }
 
 /// The world rotated and fitted to the map.
 class _View {
-  _View(this.world, this.size, double yaw, double pitch, {Map<String, List<_P3>> paths = const {}, double zoom = 1})
+  _View(this.world, this.size, double yaw, double pitch, {Map<String, List<_Point3>> paths = const {}, double zoom = 1})
     : _cy = math.cos(yaw),
       _sy = math.sin(yaw),
       _cp = math.cos(pitch),
@@ -282,17 +282,17 @@ class _View {
   late final Rect _fit;
   late final double _scale;
 
-  List<_P3> get _frame => [
+  List<_Point3> get _frame => [
     for (final (sx, sy) in const [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]) (x: sx * world.half.width, y: sy * world.half.height, z: 0.0),
   ];
 
-  Offset _turn(_P3 p) {
+  Offset _turn(_Point3 p) {
     // Rotated about the up axis, then tilted: x to the right, y up on the map.
     final x = p.x * _cy + p.z * _sy, z = -p.x * _sy + p.z * _cy;
     return Offset(x, p.y * _cp - z * _sp);
   }
 
-  Offset on(_P3 p) {
+  Offset on(_Point3 p) {
     final q = _turn(p);
     return Offset(size.width / 2 + (q.dx - _fit.center.dx) * _scale, size.height / 2 - (q.dy - _fit.center.dy) * _scale);
   }
@@ -328,7 +328,7 @@ class _View {
   }
 
   /// Points along a relation's shape, in the world.
-  List<_P3> shape(_Relation r) {
+  List<_Point3> shape(_Relation r) {
     final lead = world.things[r.leader]?.$1;
     final c = (x: r.centre.x + (lead?.x ?? 0), y: r.centre.y + (lead?.y ?? 0), z: lead?.z ?? 0.0);
     switch (r.kind) {
@@ -359,7 +359,7 @@ class _Map extends CustomPainter {
   final _View v;
   final String? selected;
   // paths: the picked layer's path. stations: a picked relation's shapes at its keyframes.
-  final Map<String, List<_P3>> paths, stations;
+  final Map<String, List<_Point3>> paths, stations;
 
   @override
   void paint(Canvas c, Size s) {
@@ -372,7 +372,7 @@ class _Map extends CustomPainter {
     if (v.world.camera case final cam?) c.drawCircle(v.on(cam), 5, Paint()..color = WindowTokens.toneCamera);
     // Each relation's shape and its threads to its layers, in its own colour.
     for (final r in v.world.relations) {
-      final hue = wsLabel(r.id), picked = r.id == selected; // The same label colour as its row.
+      final hue = layerLabelColor(r.id), picked = r.id == selected; // The same label colour as its row.
       line
         ..color = hue.withValues(alpha: picked ? 1 : .7)
         ..strokeWidth = picked ? 2 : 1;
@@ -381,7 +381,8 @@ class _Map extends CustomPainter {
         // The shape is drawn as separate segments, so it reads as a relation and not a layer.
         // Each stretch takes the colour of the layer it carries, as the bar in its row does.
         if (r.members.isNotEmpty) {
-          line.color = wsLabel(r.members[(k * r.members.length / pts.length).floor().clamp(0, r.members.length - 1)]).withValues(alpha: picked ? 1 : .8);
+          line.color = layerLabelColor(r.members[(k * r.members.length / pts.length).floor().clamp(0, r.members.length - 1)])
+              .withValues(alpha: picked ? 1 : .8);
         }
         c.drawLine(pts[k], pts[k + 1], line);
       }

@@ -95,9 +95,9 @@ extension WorkspaceMenus on WorkspaceState {
     return {
       'file.new': () {
         open(fresh());
-        wsAskSize.value = true; // Ask for its shape and resolution first, as Alight Motion's new-project box does.
+        sizeBoxRequested.value = true; // Ask for its shape and resolution first, as Alight Motion's new-project box does.
       },
-      'file.render': () => wsAskRender.value++, // Opens the render settings window first.
+      'file.render': () => renderRequested.value++, // Opens the render settings window first.
       'file.exportFrame': exportFrame,
       'file.home': () => setState(() {
         // Save the current project's picture first, so its card shows it as it is.
@@ -129,15 +129,15 @@ extension WorkspaceMenus on WorkspaceState {
       },
       'edit.copy': () {
         if (typed(CopySelectionTextIntent.copy)) return;
-        wsKeysKept = const [];
-        ws.keys.isEmpty ? copy('copy', 'thing') : wsCopyKeys(ws, ws.keys);
+        copiedKeyframes = const [];
+        ws.keys.isEmpty ? copy('copy', 'thing') : copyKeyframes(ws, ws.keys);
       },
       'edit.paste': () {
         if (typed(const PasteTextIntent(SelectionChangedCause.keyboard))) return;
         // Pastes the app's own clipboard: the copied keyframes, else the copied layer at the playhead (Live's paste at the insert marker).
         // The pasted layer is selected.
-        void own() => wsKeysKept.isNotEmpty
-            ? wsPasteKeys(ws)
+        void own() => copiedKeyframes.isNotEmpty
+            ? pasteKeyframes(ws)
             : File(_clipboard('thing')).existsSync()
             ? ws.after(m.later('paste', word: _clipboard('thing'), number: ws.frame / WorkspaceController.fps), null, (made) => ws.select('$made'))
             : null;
@@ -196,9 +196,9 @@ extension WorkspaceMenus on WorkspaceState {
         ws.after(m.later('set', layer: t, name: 'visible', number: hidden ? 1 : 0));
       },
       'thing.remove': () {
-        if (wsMarkPicked.value case (final at, _)?) {
+        if (selectedMarker.value case (final at, _)?) {
           // A selected marker is deleted first, as Live deletes a locator like a clip.
-          wsMarkPicked.value = null;
+          selectedMarker.value = null;
           return ws.after(m.later('mark', number: at));
         }
         if (ws.stretch case final s?) {
@@ -206,7 +206,7 @@ extension WorkspaceMenus on WorkspaceState {
           return ws.after(m.later('easing', layer: int.parse(s.layer), name: s.name, number: s.at, word: 'Linear'), (_, _) => ws.reread());
         }
         // Selected keyframes are removed instead of the layer.
-        if (ws.keys.isNotEmpty) return wsRemoveKeys(ws, ws.keys.toList());
+        if (ws.keys.isNotEmpty) return removeKeyframes(ws, ws.keys.toList());
         // All selected layers are removed in one undo step.
         final all = ws.many.isNotEmpty ? ws.many.toList() : [if (ws.selected != null) ws.selected!];
         // A group is removed together with the layers it holds, as copying does.
@@ -324,8 +324,8 @@ extension WorkspaceMenus on WorkspaceState {
         }
       },
       'play.toggle': () => ws.playing = !ws.playing,
-      ...wsAbletonCommands(ws), // Ableton Live's keys: see command_actions.dart.
-      ...wsToolCommands(ws), // The canvas tools: see stage.dart.
+      ...abletonCommands(ws), // Ableton Live's keys: see command_actions.dart.
+      ...stageToolCommands(ws), // The canvas tools: see stage.dart.
       'frame.first': () => step(-ws.frame),
       'frame.last': () => step(WorkspaceController.duration - ws.frame),
     };

@@ -41,7 +41,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                 child: GestureDetector(
                   key: const ValueKey('ws-tl-ruler'),
                   behavior: HitTestBehavior.opaque,
-                  supportedDevices: wsPressing,
+                  supportedDevices: pressingDevices,
                   onTapUp: (d) => rulerTap(d.localPosition), // Like Ableton Live's scrub area.
                   onDoubleTapDown: (d) => rulerDouble(d.localPosition),
                   onDoubleTap: () {},
@@ -85,7 +85,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                       child: GestureDetector(
                         key: const ValueKey('ws-tl-tracks'),
                         behavior: HitTestBehavior.opaque,
-                        supportedDevices: wsPressing,
+                        supportedDevices: pressingDevices,
                         dragStartBehavior: DragStartBehavior.down,
                         onTapDown: (d) => trackDown(d.localPosition),
                         onSecondaryTapDown: (d) => trackRight(d.localPosition),

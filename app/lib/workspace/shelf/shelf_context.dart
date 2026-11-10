@@ -1,4 +1,4 @@
-// What a shelf body is given by the dock for one build: DockMem (what each shelf remembers) and DockCtx (the memory,
+// What a shelf body is given by the dock for one build: ShelfMemory (what each shelf remembers) and ShelfContext (the memory,
 // the search text, the project and a way to change local state), and the file that stores which items are starred.
 import 'dart:convert';
 import 'dart:io';
@@ -12,7 +12,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// What the dock remembers per shelf while the user switches between shelves (selection, chip, folds).
 /// It lives in the dock's state, never in [WorkspaceController].
-class DockMem {
+class ShelfMemory {
   final sel = <String, String>{'Media': 'coda_intro', 'Effects': 'Glow', 'Fonts': 'Avenir Next', 'Colors': 'pop-2', 'Create': 'Shape'};
   final chip = <String, String>{};
   final folded = <String>{'Time'};
@@ -24,7 +24,7 @@ class DockMem {
   /// Why the last request to the engine for an entry failed, by the entry's id.
   final trouble = <String, String>{};
 
-  /// Whether the shelf's footer is open (see [DockCtx.foot]).
+  /// Whether the shelf's footer is open (see [ShelfContext.foot]).
   bool footOpen = false;
   bool mediaList = false;
 
@@ -56,10 +56,10 @@ class DockMem {
 }
 
 /// What a shelf body needs from the dock for one build: the memory, the search text, the project, and a way to change local state.
-class DockCtx {
-  DockCtx(this.shelf, this.mem, this.query, this.ws, this.set, this.clearSearch);
+class ShelfContext {
+  ShelfContext(this.shelf, this.mem, this.query, this.ws, this.set, this.clearSearch);
   final String shelf;
-  final DockMem mem;
+  final ShelfMemory mem;
   final String query;
   final WorkspaceController ws;
   final void Function(VoidCallback) set;

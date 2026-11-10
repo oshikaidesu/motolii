@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 // - scripts with each(): the Repeater, After Effects expressions, Maze, Sunflower and others
 // - motions: Cavalry's Animators, in expressions/
 // - the user's own, added with Add to shelf (shelf_add.dart)
-// Each is added to the picked layer as a card of its own, as many times as wanted (fx_file, empty_fx.dart fxPut).
+// Each is added to the picked layer as a card of its own, as many times as wanted (fx_file, empty_fx.dart putEffectFile).
 // With nothing picked, a script creates its own layer as its head says, and the others go on a new layer.
 
 /// The create scripts that are expressions, as (name from the file's head, file path).

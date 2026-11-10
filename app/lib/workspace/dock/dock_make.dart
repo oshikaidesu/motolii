@@ -37,7 +37,7 @@ String wheelFrom = '';
 /// The range of letters selected in the selected text layer, as letter indexes, or null.
 /// It is null unless the selection still matches the layer's text and the text is a single line,
 /// because splitting a text into letters works on one line only. Indexes count characters, not bytes.
-(int, int)? _lettersPicked(DockCtx c, int? t) {
+(int, int)? _lettersPicked(ShelfContext c, int? t) {
   final m = c.ws.inside, p = wordsPicked.value;
   if (m == null || t == null || p == null || m.word(t, 'kind') != 'text' || m.word(t, 'text') != p.text || p.text.contains('\n')) return null;
   return (p.text.substring(0, p.start).runes.length, p.text.substring(0, p.end).runes.length);
@@ -47,7 +47,7 @@ String wheelFrom = '';
 /// and After Effects' Character panel do for selected characters.
 /// The engine does it by splitting the text into letters and giving each one a color in turn with copy_fill
 /// (each copy's wash is the color itself, see engine/materials/flat.mat).
-void _fillLetters(DockCtx c, int t, (int, int) at, String word) {
+void _fillLetters(ShelfContext c, int t, (int, int) at, String word) {
   final m = c.ws.inside!, n = m.word(t, 'text').runes.length;
   final had = m.word(t, 'copy_fill').split(' ').where((w) => w.isNotEmpty).toList();
   final base = m.word(t, 'fill').split(' ').first.split('@').first;
@@ -67,7 +67,7 @@ void _fillLetters(DockCtx c, int t, (int, int) at, String word) {
 }
 
 /// Sets the fill of the selected layer to [word] (six hex digits or a material name). On failure the shelf footer shows why.
-void _fill(DockCtx c, String word) {
+void _fill(ShelfContext c, String word) {
   final m = c.ws.inside!, t = _colored(c);
   if ((c.ws.aim == null || c.ws.aim == 'fill') && RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(word)) {
     if (_lettersPicked(c, t) case final at?) return _fillLetters(c, t!, at, word.toLowerCase());
@@ -91,7 +91,7 @@ void _fill(DockCtx c, String word) {
   if (c.ws.aim case final aim?) {
     // The target is a card's color link: set that property of the selected layer, or of the stage.
     // A stroke colored while it has no width gets width 6, as Alight Motion does when it adds a border
-    // and as the drawing tools do (wsInked). All of it is one undo step.
+    // and as the drawing tools do (applyChosenInks). All of it is one undo step.
     final edged = aim == 'stroke' && t != null && word != 'none' && (m.value(t, 'stroke_width', 0) ?? 0) <= 0;
     if (edged) m.later('together', number: 1);
     final said = m.later('say', layer: t ?? 0, name: aim, word: word);
@@ -134,7 +134,7 @@ Timer? _tileKept;
 /// - the gradients as small tiles.
 class ColorsShelf extends StatelessWidget {
   const ColorsShelf(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
 
   /// The layer a color goes to and the name of the property. The layer is null for the next layer drawn.
   (int?, String) _target() {
@@ -486,14 +486,14 @@ class ColorsShelf extends StatelessWidget {
 }
 
 /// The layer the shelf colors: the selected one. A sound has nothing to color, so it counts as no selection (the next layer drawn).
-int? _colored(DockCtx c) => switch (int.tryParse(c.ws.selected ?? '')) {
-  final t? when wsSound(c.ws.inside!, t) => null,
+int? _colored(ShelfContext c) => switch (int.tryParse(c.ws.selected ?? '')) {
+  final t? when isSoundLayer(c.ws.inside!, t) => null,
   final t => t,
 };
 
 /// The current value of the target: the selected layer's property (its fill, unless a link or the tool strip chose another),
 /// else the stage's, else the ink or edge of the next layer drawn.
-String _paintNow(DockCtx c) {
+String _paintNow(ShelfContext c) {
   final t = _colored(c), aim = c.ws.aim ?? 'fill', m = c.ws.inside!;
   if (t != null) return m.word(t, aim);
   if (aim == 'fill' || aim == 'stroke') return aim == 'stroke' ? c.ws.edge : c.ws.ink;
@@ -502,7 +502,7 @@ String _paintNow(DockCtx c) {
 
 /// Applies a color from a swatch or the eyedropper to the target, or to the selected stop while the target is a gradient.
 /// Figma and Canva swatches also color the stop being edited.
-void takeColor(DockCtx c, Color col) {
+void takeColor(ShelfContext c, Color col) {
   final stops = _stopsIn(_paintNow(c));
   if (stops.length < 2) return _fill(c, hexOfColor(col).substring(1).toLowerCase());
   final next = [...stops];
@@ -513,7 +513,7 @@ void takeColor(DockCtx c, Color col) {
 
 /// The Mac's eyedropper (NSColorSampler, used in MainFlutterWindow.swift). The sampled color is applied to the target at once,
 /// as Keynote's eyedropper does.
-Future<void> _sample(DockCtx c) async {
+Future<void> _sample(ShelfContext c) async {
   final hex = await const MethodChannel('motolii/sampler').invokeMethod<String>('sample');
   if (hex == null || int.tryParse(hex, radix: 16) == null) return;
   c.set(() => wheelColor = HSVColor.fromColor(Color(0xFF000000 | int.parse(hex, radix: 16))));
@@ -522,7 +522,7 @@ Future<void> _sample(DockCtx c) async {
 
 /// Puts a gradient on what is being colored: its colors, and how they are mixed. That is the picked layer's gradient_blend,
 /// or the ink's for the next layer drawn. It is one undo step.
-void putGradient(DockCtx c, List<Color> cs, String blend, [List<double>? at]) {
+void putGradient(ShelfContext c, List<Color> cs, String blend, [List<double>? at]) {
   final m = c.ws.inside!, t = _colored(c);
   final word = at != null && at.length == cs.length
       ? _wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])])
@@ -540,14 +540,14 @@ void putGradient(DockCtx c, List<Color> cs, String blend, [List<double>? at]) {
 const _blends = {'rgb': 'RGB', 'oklab': 'OKLab', 'hue': 'Hue', 'steps': 'Steps'};
 
 /// How the gradient being edited is mixed: the picked layer's gradient_blend, or the ink's. Unset means 'rgb'.
-String _blendNow(DockCtx c) {
+String _blendNow(ShelfContext c) {
   final t = _colored(c), w = t != null && (c.ws.aim ?? 'fill') == 'fill' ? c.ws.inside!.word(t, 'gradient_blend') : c.ws.inkBlend;
   return w.isEmpty ? 'rgb' : w;
 }
 
 /// Saves the current color as the user's own, like Add Color in CLIP STUDIO PAINT's color set.
 /// If the target is a gradient, the whole gradient is saved with its stop positions and blend.
-void _keepNow(DockCtx c) {
+void _keepNow(ShelfContext c) {
   final stops = _stopsIn(_paintNow(c));
   stops.length > 1
       ? ownGradients.insert(
@@ -762,7 +762,7 @@ Future<ColorPalette?> _paletteFrom(String path) async {
 
 /// The photo picked on the Media shelf, if it is an image file on disk that Flutter can read.
 /// It reads Media's own selection, because each shelf keeps its selection apart (dock.dart _mem).
-String? _pickedPhoto(DockCtx c) {
-  final id = (c.ws.view['dock.Media'] as DockMem?)?.sel['Media'];
+String? _pickedPhoto(ShelfContext c) {
+  final id = (c.ws.view['dock.Media'] as ShelfMemory?)?.sel['Media'];
   return id != null && id.startsWith('/') && RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(id) ? id : null;
 }

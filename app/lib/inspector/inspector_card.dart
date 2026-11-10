@@ -155,7 +155,7 @@ class ValuesCard extends StatelessWidget {
                     key: ValueKey('card-drag:${card.name}'),
                     data: card.name,
                     axis: Axis.vertical,
-                    feedback: FxDragGhost(card),
+                    feedback: EffectDragGhost(card),
                     child: MouseRegion(
                       cursor: SystemMouseCursors.grab,
                       child: SizedBox(
@@ -265,8 +265,8 @@ void _drawBin(Canvas c, Size s, Color color) {
 }
 
 /// The folded card head that follows the pointer while an effect is dragged.
-class FxDragGhost extends StatelessWidget {
-  const FxDragGhost(this.fx, {super.key});
+class EffectDragGhost extends StatelessWidget {
+  const EffectDragGhost(this.fx, {super.key});
   final CardDeclaration fx;
   @override
   Widget build(BuildContext context) => Container(

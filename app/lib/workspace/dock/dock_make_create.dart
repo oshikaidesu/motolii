@@ -172,7 +172,7 @@ const _onPicked = {'Empty'};
 
 // Tile name to the (kind, shape) of the layer it creates.
 final _asked = {
-  'Text': ('text', wsTextFont),
+  'Text': ('text', defaultTextFont),
   // A flat color as large as the preview; the engine builds it that size.
   'Solid': ('shape', 'solid'),
   'Rectangle': ('shape', 'rect'),
@@ -212,7 +212,7 @@ const _laid = <String, Map<String, double>>{
 
 /// Runs a tile: it creates a new layer and selects it. A tile of copies lays out the picked layer instead, and a material changes it.
 /// On failure the reason is stored under the tile's name, and the footer shows it.
-void _make(DockCtx c, CreateTile tile) {
+void _make(ShelfContext c, CreateTile tile) {
   final m = c.ws.inside!, name = tile.name;
   if (tile.recipe) {
     // A create script: one undo step, and the new layer is selected. It does not wait for the result.
@@ -243,7 +243,7 @@ void _make(DockCtx c, CreateTile tile) {
     // One undo step covers the ball and its material.
     m.later('together', number: 1);
     c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
-    wsInked(c.ws, 'solid', 'ball');
+    applyChosenInks(c.ws, 'solid', 'ball');
     m.later('say', layer: -1, name: 'shading', word: wears);
     c.ws.after(m.later('together'), told);
     return;
@@ -264,7 +264,7 @@ void _make(DockCtx c, CreateTile tile) {
   m.later('together', number: 1);
   // Does not wait: the new layer is selected once it exists. A text layer uses the body font.
   c.ws.after(m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2), null, (made) => c.ws.select('$made'));
-  wsInked(c.ws, asked.$1, asked.$2);
+  applyChosenInks(c.ws, asked.$1, asked.$2);
   for (final e in (_starts[name] ?? const <String, double>{}).entries) {
     m.later('set', layer: -1, name: e.key, number: e.value);
   }
@@ -279,7 +279,7 @@ void _make(DockCtx c, CreateTile tile) {
 /// The Create shelf: filter chips above grouped tiles, and a footer for the selected tile.
 class CreateShelf extends StatelessWidget {
   const CreateShelf(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final makes = [
@@ -373,7 +373,7 @@ class CreateShelf extends StatelessWidget {
 }
 
 /// One Create tile in the shelf's look. [naming] replaces the name while it is being renamed; [onMenu] is called with the position of a right click.
-Widget _makeTile(CreateTile m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
+Widget _makeTile(CreateTile m, ShelfContext c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
   final sel = c.sel == m.id, inside = c.ws.inside;
   final makes =
       inside != null &&
@@ -402,7 +402,7 @@ Widget _makeTile(CreateTile m, DockCtx c, {Key? key, Widget? naming, ValueChange
 }
 
 /// A tile's art: a script's motion, an expression's copies, a material's ball, or otherwise its mark.
-Widget _makeArt(CreateTile m, DockCtx c, bool sel) {
+Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
     child: Glyph(m.g, size: Shape.z(26), color: sel ? WindowTokens.onAccent : m.hue),
@@ -441,7 +441,7 @@ Widget _makeArt(CreateTile m, DockCtx c, bool sel) {
 // ---- A script's motion preview: the engine is asked for it once (create_preview.dart), on a project of its own.
 
 /// True if [name] is one of the engine's create scripts. It also starts asking for the motions of all the scripts.
-bool _isRecipe(DockCtx c, String name) {
+bool _isRecipe(ShelfContext c, String name) {
   final m = c.ws.inside;
   if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
   RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.createScripts) r.$1]);
@@ -449,7 +449,7 @@ bool _isRecipe(DockCtx c, String name) {
 }
 
 /// Puts an expression on the picked layer, or on a new layer when none is picked.
-void _expressionPut(DockCtx c, CreateTile tile) {
+void _expressionPut(ShelfContext c, CreateTile tile) {
   final m = c.ws.inside!, name = tile.name, file = tile.file!, t = int.tryParse(c.ws.selected ?? '');
   void told(String why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
   c.set(() => c.mem.trouble.remove(name));
@@ -458,7 +458,7 @@ void _expressionPut(DockCtx c, CreateTile tile) {
     return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made'));
   }
   final first = t != null && !WorkspaceController.fxFiles(m.word(t, 'fx')).contains(file);
-  fxPut(c.ws, file, expression: true, told: told);
+  putEffectFile(c.ws, file, expression: true, told: told);
   if (t == null) return;
   // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
   // The first time the Repeater is added, its starting parameters are also set from _laid.
@@ -491,7 +491,7 @@ Set<String> createNames(WorkspaceController ws) => {
 class _OwnTile extends StatefulWidget {
   const _OwnTile(this.m, this.c, {super.key});
   final CreateTile m;
-  final DockCtx c;
+  final ShelfContext c;
   @override
   State<_OwnTile> createState() => _OwnTileState();
 }

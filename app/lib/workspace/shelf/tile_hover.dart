@@ -15,7 +15,7 @@ class DockHover extends StatefulWidget {
   /// Whether Cmd was held when the last tile was pressed.
   static bool cmdAtPress = false;
 
-  /// True after a tile with a double-click action was pressed, while a second press may still come (see [DockCtx.foot]).
+  /// True after a tile with a double-click action was pressed, while a second press may still come (see [ShelfContext.foot]).
   static final secondMayCome = ValueNotifier(false);
   static Timer? _past;
   final Widget Function(BuildContext context, bool hover) builder;

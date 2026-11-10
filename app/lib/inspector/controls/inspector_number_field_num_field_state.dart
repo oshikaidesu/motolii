@@ -105,7 +105,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
         'copy',
         'Copy',
         () {
-          if (doc.get(id) case final v?) Clipboard.setData(ClipboardData(text: fmt(v, _p.dec)));
+          if (doc.get(id) case final v?) Clipboard.setData(ClipboardData(text: formatNumber(v, _p.dec)));
         },
       ),
       (
@@ -218,8 +218,9 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
     return NumberField(
       value: () => _x.doc.get(widget.id),
-      text: (v, w) => fmt(v, _p.dec, tight: w < wTight),
-      unit: (v, w) => w < wUnit ? '' : (_turns && v.abs() >= 360 && w >= 120 ? '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}' : _p.unit),
+      text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
+      unit: (v, w) =>
+          w < unitMinWidth ? '' : (_turns && v.abs() >= 360 && w >= 120 ? '° ${(v / 360).truncate()}x ${formatNumber(v.remainder(360), 0)}' : _p.unit),
       keys: true,
       typeOnTap: false,
       perPx: _p.perPx,

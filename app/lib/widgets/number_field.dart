@@ -14,7 +14,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/number_field_state.dart';
 
 /// Two clicks within this time count as a double-click.
-const dblParts = Duration(milliseconds: 320);
+const doubleClickTime = Duration(milliseconds: 320);
 
 /// Inverts a number's colours (light for dark) to mark a value outside the range the caller has a source for.
 /// Implemented as a color inversion with Flutter's ColorFilter.matrix.

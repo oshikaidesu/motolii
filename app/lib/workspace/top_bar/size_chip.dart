@@ -57,20 +57,20 @@ class _SizeChipState extends State<SizeChip> {
   @override
   void initState() {
     super.initState();
-    wsAskSize.addListener(_asked);
+    sizeBoxRequested.addListener(_asked);
     // The request may have been made while the window was still opening the new project.
     WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
   }
 
   void _asked() {
-    if (!mounted || !wsAskSize.value || WorkspaceScope.read(context).onSize == null) return;
-    wsAskSize.value = false;
+    if (!mounted || !sizeBoxRequested.value || WorkspaceScope.read(context).onSize == null) return;
+    sizeBoxRequested.value = false;
     _box.show();
   }
 
   @override
   void dispose() {
-    wsAskSize.removeListener(_asked);
+    sizeBoxRequested.removeListener(_asked);
     _boxKeys.dispose();
     super.dispose();
   }
@@ -270,7 +270,7 @@ class _SizeChipState extends State<SizeChip> {
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeLeftRight,
         child: GestureDetector(
-          supportedDevices: wsPressing,
+          supportedDevices: pressingDevices,
           key: const ValueKey('ws-top-size'),
           behavior: HitTestBehavior.opaque,
           onTap: ws.onSize == null ? null : _box.show,

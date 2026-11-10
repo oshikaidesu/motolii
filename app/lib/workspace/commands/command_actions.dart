@@ -14,7 +14,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 /// Live 42.20: Space plays from the start marker and stops back there. Shift+Space continues from where playback stopped.
 int? _playFrom;
 
-Map<String, void Function()> wsAbletonCommands(WorkspaceController ws) {
+Map<String, void Function()> abletonCommands(WorkspaceController ws) {
   void step(int by) {
     ws.playing = false;
     ws.frame = ws.frame + by;
@@ -33,7 +33,7 @@ Map<String, void Function()> wsAbletonCommands(WorkspaceController ws) {
     final m = ws.inside;
     if (m == null) return;
     if (ws.keys.isNotEmpty) {
-      wsSlideKeys(ws, ws.keys.toList(), by);
+      slideKeyframes(ws, ws.keys.toList(), by);
       ws.pickKeys([
         for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, WorkspaceController.duration)),
       ]); // The keyframes stay selected at their new frames.
@@ -76,7 +76,7 @@ Map<String, void Function()> wsAbletonCommands(WorkspaceController ws) {
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
     // Live 42.5 and 42.19 Cmd+R: renames the selected track, or the selected locator.
-    'thing.rename': () => ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++,
+    'thing.rename': () => ws.selected == null && selectedMarker.value == null ? null : renameRequested.value++,
     'thing.solo': () {
       // Live 42.15 and 42.19 S: solo the selected tracks.
       final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
@@ -90,12 +90,12 @@ Map<String, void Function()> wsAbletonCommands(WorkspaceController ws) {
     },
     // Apple Motion's A (Mark > Record Animation). The top bar's Animate and the inspector's Animate All do the same.
     'mark.animate': () => ws.animating = !ws.animating,
-    'loop.toggle': () => wsAskTimeline('loop'), // Live 42.16 Cmd+L: toggle the loop brace.
-    'zoom.in': () => wsAskTimeline('in'), // Live 42.9 +: zoom in on the time ruler.
-    'zoom.out': () => wsAskTimeline('out'), // Live 42.9 -.
-    'zoom.selection': () => wsAskTimeline('selection'), // Live 42.16 Z: zoom to the time selection.
-    'zoom.back': () => wsAskTimeline('back'), // Live 42.16 X: zoom back.
-    'zoom.width': () => wsAskTimeline('fit'), // Live 42.16 W: fit the whole width.
+    'loop.toggle': () => requestTimeline('loop'), // Live 42.16 Cmd+L: toggle the loop brace.
+    'zoom.in': () => requestTimeline('in'), // Live 42.9 +: zoom in on the time ruler.
+    'zoom.out': () => requestTimeline('out'), // Live 42.9 -.
+    'zoom.selection': () => requestTimeline('selection'), // Live 42.16 Z: zoom to the time selection.
+    'zoom.back': () => requestTimeline('back'), // Live 42.16 X: zoom back.
+    'zoom.width': () => requestTimeline('fit'), // Live 42.16 W: fit the whole width.
     // Live has no frame step. These are the Rive and Jitter keys, comma and period.
     'frame.previous': () => step(-1),
     'frame.next': () => step(1),

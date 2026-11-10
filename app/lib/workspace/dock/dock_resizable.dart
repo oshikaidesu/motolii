@@ -51,7 +51,7 @@ class _DockResizableState extends State<DockResizable> {
           onEnter: (_) => setState(() => _hover = true),
           onExit: (_) => setState(() => _hover = false),
           child: GestureDetector(
-            supportedDevices: wsPressing,
+            supportedDevices: pressingDevices,
             key: widget.gripKey,
             behavior: HitTestBehavior.opaque,
             dragStartBehavior: DragStartBehavior.down,

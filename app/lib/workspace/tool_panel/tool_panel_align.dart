@@ -75,7 +75,7 @@ class AlignTool extends StatelessWidget {
       children: [
         if (ws.layer case final l?)
           ToolStrip(
-            left: [Chip(label: l.name, look: ChipLook.flat(wsTone(l.kind)))],
+            left: [Chip(label: l.name, look: ChipLook.flat(layerKindColor(l.kind)))],
           ),
         SizedBox(height: Shape.s(8)),
         for (final row in const [

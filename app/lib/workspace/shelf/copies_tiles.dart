@@ -208,7 +208,7 @@ abstract final class CopiesTiles {
     }
     // A line is thickened so it reads at 192 px.
     if (shape == 'line') m.set(t, 'tall', (_head(f, 'tall') ?? 1) * 4);
-    // Apply the file, then check that the engine accepts it as code. A SyntaxError fails (FxCode: "does not compile").
+    // Apply the file, then check that the engine accepts it as code. A SyntaxError fails (EffectCode: "does not compile").
     return _answered(m, m.later('fx_file', layer: t, word: f)) && _answered(m, m.later('code', word: f));
   }
 

@@ -1,17 +1,17 @@
-// wsNumber and Beats: a typed number, and the beat grid the timeline snaps to. The expected values are what the code
+// parseNumber and Beats: a typed number, and the beat grid the timeline snaps to. The expected values are what the code
 // gave when this was written, so a move that changes one fails here. Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/state/beats.dart';
 
 void main() {
-  test('wsNumber reads a typed number, full-width digits and spaces around it included', () {
-    expect(wsNumber('12.5'), 12.5);
-    expect(wsNumber(' １２．５ '), 12.5);
-    expect(wsNumber('-3'), -3);
-    expect(wsNumber('1e3'), 1000);
-    expect(wsNumber(''), isNull);
-    expect(wsNumber('abc'), isNull);
-    expect(wsNumber('１２８：３０'), isNull);
+  test('parseNumber reads a typed number, full-width digits and spaces around it included', () {
+    expect(parseNumber('12.5'), 12.5);
+    expect(parseNumber(' １２．５ '), 12.5);
+    expect(parseNumber('-3'), -3);
+    expect(parseNumber('1e3'), 1000);
+    expect(parseNumber(''), isNull);
+    expect(parseNumber('abc'), isNull);
+    expect(parseNumber('１２８：３０'), isNull);
   });
 
   test('between gives each beat from one frame to another, ends included, and whether a bar begins there', () {

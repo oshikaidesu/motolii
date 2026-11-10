@@ -9,7 +9,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 ///
 /// It follows Ableton Live's clip menu (Rename, Duplicate, Split, Deactivate, Delete) and Figma's right-click on a layer.
 /// Each row runs the same command as the menu bar and the keys. The layer is selected first, so the commands act on it.
-List<ContextMenuItem> wsThingMenu(BuildContext context, WorkspaceController ws, Layer l) {
+List<ContextMenuItem> layerContextMenu(BuildContext context, WorkspaceController ws, Layer l) {
   ws.select(l.id);
   void say(String c) => Actions.maybeInvoke(context, CommandIntent(c, false));
   return [

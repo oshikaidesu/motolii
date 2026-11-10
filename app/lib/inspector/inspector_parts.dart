@@ -18,8 +18,8 @@ export 'inspector_state.dart';
 export 'controls/param_infer.dart';
 
 // Width thresholds shared by the whole panel.
-// A cell narrower than wUnit drops its unit. A cell narrower than wTight drops decimals, but never rounds to a false 0.
-const wUnit = 72.0, wTight = 60.0;
+// A cell narrower than unitMinWidth drops its unit. A cell narrower than decimalsMinWidth drops decimals, but never rounds to a false 0.
+const unitMinWidth = 72.0, decimalsMinWidth = 60.0;
 
 /// Gives the Inspector's widgets the current document and a rebuild tick.
 class InspectorScope extends InheritedWidget {

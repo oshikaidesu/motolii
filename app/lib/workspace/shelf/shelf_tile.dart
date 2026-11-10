@@ -48,7 +48,7 @@ class ShelfLook {
   /// How the tile is laid out.
   final ShelfForm form;
 
-  /// The minimum width of a cell. At least [min] cells fit across (wsCols).
+  /// The minimum width of a cell. At least [min] cells fit across (gridColumns).
   final double cell;
 
   /// Whether [cell] scales with the skin's size.
@@ -81,7 +81,7 @@ class ShelfLook {
 
 const _square = ShelfLook(ShelfForm.under, cell: 84, sized: true, row: 22, rowArt: Size(18, 18), rowGap: 6, eased: false);
 
-/// The look of every shelf, keyed by the shelf's name (DockCtx.shelf).
+/// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
   'Program': _square,
@@ -345,7 +345,7 @@ class ShelfTile extends StatelessWidget {
   );
 }
 
-/// The shelves' shared layout: [count] tiles, as many across as fit (wsCols, wsCell) or [cols], then [footer].
+/// The shelves' shared layout: [count] tiles, as many across as fit (gridColumns, gridCellWidth) or [cols], then [footer].
 ///
 /// Only the tiles in view are built, using Flutter's lazy grid. A Wrap built all 1,293 effects each time the shelf opened.
 /// - [list]: the same grid one column wide, each row as high as the look's row.
@@ -377,7 +377,7 @@ class ShelfGrid extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       final round = pad ?? EdgeInsets.only(top: look.top), wide = box.maxWidth - round.horizontal;
-      final across = list ? 1 : cols ?? wsCols(wide, look.sized ? Shape.z(look.cell) : look.cell, min: look.min);
+      final across = list ? 1 : cols ?? gridColumns(wide, look.sized ? Shape.z(look.cell) : look.cell, min: look.min);
       return CustomScrollView(
         shrinkWrap: shrinkWrap,
         physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
@@ -394,7 +394,7 @@ class ShelfGrid extends StatelessWidget {
                     : switch (look.height) {
                         final x? => Shape.z(x),
                         // A tile is its image plus its name bar.
-                        null => wsCell(wide, across) / look.aspect + (small ? 0 : Shape.z(ShelfTile.bar)),
+                        null => gridCellWidth(wide, across) / look.aspect + (small ? 0 : Shape.z(ShelfTile.bar)),
                       },
               ),
               itemCount: count,

@@ -99,7 +99,7 @@ double bentoTile = 52;
 class Bento extends StatelessWidget {
   const Bento(this.boxes, this.c, {super.key});
   final List<BentoBox> boxes;
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
@@ -127,7 +127,7 @@ class Bento extends StatelessWidget {
                   top: laid[k].$2 * unit,
                   width: laid[k].$3 * unit - gap,
                   height: laid[k].$4 * unit - gap,
-                  child: b.grad != null ? _Grad('grad-${b.i}', b.grad!, c) : _ColorBox(b, c),
+                  child: b.grad != null ? _GradientTile('grad-${b.i}', b.grad!, c) : _ColorBox(b, c),
                 ),
             ],
           ),
@@ -143,7 +143,7 @@ class Bento extends StatelessWidget {
 class _ColorBox extends StatelessWidget {
   const _ColorBox(this.b, this.c);
   final BentoBox b;
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final col = b.colour!, own = b.group == 'mine', pal = colorPalettes.where((p) => p.id == b.group).firstOrNull;
@@ -219,11 +219,11 @@ class _ColorBox extends StatelessWidget {
 
 /// A gradient as a small tile. Its name shows only on hover, like a swatch's,
 /// because the user looks for the colors and the tiles stay a compact block however many are saved.
-class _Grad extends StatelessWidget {
-  const _Grad(this.id, this.g, this.c);
+class _GradientTile extends StatelessWidget {
+  const _GradientTile(this.id, this.g, this.c);
   final String id;
   final ShelfGradient g;
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final word = [for (final k in g.colors) hexOfColor(k).substring(1).toLowerCase()].join(' ');

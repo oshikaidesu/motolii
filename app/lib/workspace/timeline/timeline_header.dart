@@ -247,7 +247,7 @@ class _TempoState extends State<_Tempo> {
   // Called when editing ends. [said] is the typed text, or null if the user cancelled with Esc.
   void _left(String? said) {
     setState(() => _typing = false);
-    final bpm = wsNumber(said ?? '') ?? 0; // An empty field means no tempo.
+    final bpm = parseNumber(said ?? '') ?? 0; // An empty field means no tempo.
     if (said != null && bpm != widget.ws.bpm) _set(bpm);
   }
 

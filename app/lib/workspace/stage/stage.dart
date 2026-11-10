@@ -46,7 +46,7 @@ const stageTools = [
 ///
 /// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
 /// Photoshop do, not only while the stage has focus.
-Map<String, VoidCallback> wsToolCommands(WorkspaceController ws) => {
+Map<String, VoidCallback> stageToolCommands(WorkspaceController ws) => {
   for (final (i, t) in stageTools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i),
 };
 

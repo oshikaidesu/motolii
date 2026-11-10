@@ -190,7 +190,7 @@ class _EaseGraphState extends State<EaseGraph> {
           if (_hot != null) setState(() => _hot = null);
         },
         child: GestureDetector(
-          supportedDevices: wsPressing,
+          supportedDevices: pressingDevices,
           behavior: HitTestBehavior.opaque,
           onPanDown: (d) {
             _take(_near(g, d.localPosition), d.localPosition);
@@ -260,7 +260,7 @@ List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
   if (lag <= 0 || members.length < 2) return const [];
   return [
     for (final (i, id) in members.indexed)
-      if (i > 0) (lag * i, wsLabel(id)),
+      if (i > 0) (lag * i, layerLabelColor(id)),
   ];
 }
 

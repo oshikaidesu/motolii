@@ -199,7 +199,7 @@ class WorkspaceState extends State<Workspace> {
     setState(() => home = false);
     if (docs.length == 1) {
       if (docs.first != documentPath) await open(docs.first);
-      wsAskRender.value++;
+      renderRequested.value++;
       return;
     }
     final back = documentPath;

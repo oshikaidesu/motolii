@@ -240,7 +240,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       (t) => made = t,
     ); // On the first point a closed selected path gains or loses a point; otherwise a new path begins.
     if (first) {
-      wsInked(ws, 'shape', 'path');
+      applyChosenInks(ws, 'shape', 'path');
       ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
     }
   }
@@ -399,11 +399,11 @@ class StageViewState extends State<StageView> implements StageHandles {
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              supportedDevices: wsPressing,
+              supportedDevices: pressingDevices,
               onSecondaryTapDown: (d) {
                 // Context menu for the layer under the pointer, same as on its bar.
                 final ws = WorkspaceScope.read(context), id = hitLocal(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
-                if (l != null) _menu.currentState?.show(d.localPosition, wsThingMenu(context, ws, l));
+                if (l != null) _menu.currentState?.show(d.localPosition, layerContextMenu(context, ws, l));
               },
               onTapUp: (d) {
                 widget.onPoke?.call();
@@ -412,7 +412,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                 if (widget.make != null) return draw(v, drawFrom = d.localPosition); // A click creates one layer there.
                 final hit = hitLocal(v, d.localPosition), ws = WorkspaceScope.read(context), m = ws.inside;
                 if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) {
-                  return hit == null ? null : wsPickAlso(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
+                  return hit == null ? null : selectAlso(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
                 }
                 final twice = hit != null && hit == _tapped;
                 _tapWait?.cancel();

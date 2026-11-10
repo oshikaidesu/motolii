@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/fx_code.dart' show FxCode;
+import 'package:motolii/workspace/shelf/fx_code.dart' show EffectCode;
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -44,13 +44,13 @@ void emptyPut(WorkspaceController ws, {required bool expression, void Function(S
       file = '$dir/${expression ? 'empty.js' : 'Empty.fs'}';
   Directory(dir).createSync(recursive: true);
   File(file).writeAsStringSync(expression ? _js : _isf);
-  fxPut(ws, file, expression: expression, told: told, open: true);
+  putEffectFile(ws, file, expression: expression, told: told, open: true);
 }
 
 /// Puts an effect file (an expression file if [expression]) on the selected layer. [open] opens its code on the card.
 /// With no layer selected, an effect goes on a new adjustment layer and an expression on a new layer of its own.
 /// [told] receives the reason it was refused, or '' once it was taken.
-void fxPut(WorkspaceController ws, String file, {required bool expression, void Function(String why)? told, bool open = false}) {
+void putEffectFile(WorkspaceController ws, String file, {required bool expression, void Function(String why)? told, bool open = false}) {
   final m = ws.inside;
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
@@ -70,7 +70,7 @@ void fxPut(WorkspaceController ws, String file, {required bool expression, void 
 /// both titled Empty. Its values and title are then its own, because the engine finds a card by its title
 /// (doc_fx_eye), and fx_file would otherwise remove the existing effect of the same name.
 (String, String) _said(String fx, String file) {
-  final title = FxCode.titleOf(file), stem = EffectTiles.knobStem(file).toLowerCase();
+  final title = EffectCode.titleOf(file), stem = EffectTiles.knobStem(file).toLowerCase();
   final stems = {for (final w in WorkspaceController.fxFiles(fx)) EffectTiles.knobStem(w).toLowerCase()};
   if (!stems.contains(stem)) return (file, title);
   var n = 2;

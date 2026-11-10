@@ -25,10 +25,10 @@ extension TimelinePaneRows on TimelinePaneState {
   /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
   List<Color>? mixOf(WorkspaceController ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
-    if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !wsRelations.contains(m.word(t, 'file'))) return null;
+    if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !relationKinds.contains(m.word(t, 'file'))) return null;
     return [
       for (final s in m.word(t, 'members').split(' '))
-        if (s.isNotEmpty && s != '_') wsLabel(s),
+        if (s.isNotEmpty && s != '_') layerLabelColor(s),
     ];
   }
 
@@ -143,7 +143,7 @@ extension TimelinePaneRows on TimelinePaneState {
                             height: TimelineMetrics.row,
                             // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
-                              supportedDevices: wsPressing,
+                              supportedDevices: pressingDevices,
                               onSecondaryTapDown: (d) => labelRight(l, d.globalPosition),
                               // Count the whole drag from the pointer-down position.
                               dragStartBehavior: DragStartBehavior.down,
@@ -164,15 +164,15 @@ extension TimelinePaneRows on TimelinePaneState {
                                 solo: isSolo(ws, l.id),
                                 lanes: l.kind == LayerKind.group
                                     ? ws.groupOpen(l.id)
-                                    : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
+                                    : l.keys.isEmpty && linkTargets(ws, l.id).isEmpty && !l.lined
                                     ? null
                                     : ws.lanesOpen(l.id),
                                 onLanes: () => l.kind == LayerKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
                                 onSelect: () => HardwareKeyboard.instance.isShiftPressed
                                     // Shift selects every row from the last picked one to this one, as in After Effects.
-                                    ? wsPickRange(ws, l.id)
+                                    ? selectRange(ws, l.id)
                                     : HardwareKeyboard.instance.isMetaPressed
-                                    ? wsPickAlso(ws, l.id)
+                                    ? selectAlso(ws, l.id)
                                     // Cmd adds this layer to the selection, or removes it.
                                     : ws.select(l.id),
                                 onEye: () => _eye(ws, l.id),

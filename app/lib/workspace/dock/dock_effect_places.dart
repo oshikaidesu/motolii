@@ -21,7 +21,7 @@ import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-const dockFxListHeight = 176.0;
+const dockEffectListHeight = 176.0;
 
 /// Maps the drag data of a tile being dragged (its double-click callback, which is what the canvas takes) to the effect id.
 /// See DockHover's Draggable. Dropped on a deck, the effect goes into it, like a track on a Spotify playlist
@@ -43,7 +43,7 @@ class EffectPlaces extends StatefulWidget {
     this.held = const [],
     this.covers = const {},
   });
-  final DockCtx c;
+  final ShelfContext c;
 
   /// Whether the list is laid over the tiles rather than beside them.
   final bool narrow;

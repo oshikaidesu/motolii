@@ -40,7 +40,7 @@ var stillSeconds = 2.0;
 /// end of the project. A still image lasts as long as chosen under it, and End stacks the stills together.
 /// If every file has a length, the layers are laid one after another in the order selected with the engine's
 /// Stagger, as Alight Motion does when adding several files.
-Future<void> placeFiles(DockCtx c, List<String> files) async {
+Future<void> placeFiles(ShelfContext c, List<String> files) async {
   if (levelOf(files) case final drawings?) return _placeLevel(c, drawings);
   final m = c.ws.inside!;
   final lengths = [
@@ -80,7 +80,7 @@ Future<void> placeFiles(DockCtx c, List<String> files) async {
 /// OpenToonz's xdtsio.cpp). Each keyframe sits at 24 frames per second from the lowest number, as DiTiS reads a
 /// timesheet. Drawings numbered 1, 3, 5 are therefore held across the gaps, which After Effects users ask for on the
 /// forum and After Effects lacks. The timing can then be changed by moving the keyframes.
-void _placeLevel(DockCtx c, List<(int, String)> drawings) {
+void _placeLevel(ShelfContext c, List<(int, String)> drawings) {
   final m = c.ws.inside!, from = c.ws.frame / WorkspaceController.fps, first = drawings.first.$1;
   m.later('together', number: 1);
   c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
@@ -106,7 +106,7 @@ bool _fitted(String file) =>
 final _placing = <String>{};
 
 /// Places the file [n] on the canvas as a new layer and selects it. If it fails, the footer of the shelf says why.
-void placeFile(DockCtx c, FileNode n) {
+void placeFile(ShelfContext c, FileNode n) {
   if (kindOfFile(n.id) == 'timesheet') return unawaited(placeSheet(c, n.id));
   if (!_placing.add(n.id)) {
     // Reading a song takes the engine a moment, so a second click in that moment counts as the same click.

@@ -11,7 +11,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
+import 'package:motolii/workspace/commands/panel_requests.dart' show timelineRequest, renameRequested, requestTimeline, selectedMarker;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
@@ -32,13 +32,13 @@ mixin TimelineRequests on State<TimelinePane> {
   late final FocusNode _renameFocus = FocusNode()..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
   void hearAsks() {
-    wsTimelineAsk.addListener(_heard);
-    wsAskRename.addListener(_rename);
+    timelineRequest.addListener(_heard);
+    renameRequested.addListener(_rename);
   }
 
   void stopAsks() {
-    wsTimelineAsk.removeListener(_heard);
-    wsAskRename.removeListener(_rename);
+    timelineRequest.removeListener(_heard);
+    renameRequested.removeListener(_rename);
     _renameWords.dispose();
     _renameFocus.dispose();
   }
@@ -46,7 +46,7 @@ mixin TimelineRequests on State<TimelinePane> {
   void _heard() {
     final t = _t, ws = t.workspace, m = ws?.inside;
     if (!mounted || ws == null || m == null) return;
-    switch (wsTimelineAsk.value.$1) {
+    switch (timelineRequest.value.$1) {
       case 'loop':
         setState(() => m.looping = !m.looping);
       case 'in':
@@ -95,10 +95,10 @@ mixin TimelineRequests on State<TimelinePane> {
     if (ws == null) return;
     final int f;
     if (t.flagAt(p) case final flag?) {
-      wsMarkPicked.value = flag;
+      selectedMarker.value = flag;
       f = (flag.$1 * WorkspaceController.fps).round();
     } else {
-      wsMarkPicked.value = null;
+      selectedMarker.value = null;
       if (p.dy <= TimelineMetrics.band + 2) return;
       f = t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration);
     }
@@ -114,11 +114,11 @@ mixin TimelineRequests on State<TimelinePane> {
   /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
   void rulerDouble(Offset p) {
     if (_t.flagAt(p) case final flag?) {
-      wsMarkPicked.value = flag;
+      selectedMarker.value = flag;
       return _rename();
     }
     final ws = _t.workspace;
-    if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) return wsAskTimeline('selection');
+    if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) return requestTimeline('selection');
     _t.setZoom(1);
   }
 
@@ -131,19 +131,19 @@ mixin TimelineRequests on State<TimelinePane> {
     final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
     if (_t.flagAt(p) case final flag?) {
-      wsMarkPicked.value = flag;
+      selectedMarker.value = flag;
       return _t.rulerMenu.currentState?.show(p, [
         ContextMenuItem('Rename…', _rename, keys: '⌘R'),
         ContextMenuItem('Play from Here', () => _playAt((flag.$1 * WorkspaceController.fps).round())),
         const ContextMenuItem.rule(),
         ContextMenuItem('Delete', () {
-          wsMarkPicked.value = null;
+          selectedMarker.value = null;
           ws.after(m.later('mark', number: flag.$1));
         }, keys: '⌫'),
         const ContextMenuItem.rule(),
         // A marker has one of the label colours, as in Premiere Pro, DaVinci Resolve and CapCut.
         ContextMenuItem.colors(
-          [for (var k = 0; k < 16; k++) wsLabelColor(k)],
+          [for (var k = 0; k < 16; k++) labelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
           (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}')),
         ),
@@ -171,14 +171,14 @@ mixin TimelineRequests on State<TimelinePane> {
     final l = r.l, f = t.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;
-    t.trackMenu.currentState?.show(p, wsThingMenu(context, ws, l));
+    t.trackMenu.currentState?.show(p, layerContextMenu(context, ws, l));
   }
 
   /// The same menu, opened by a right-click on a row's name.
   void labelRight(Layer l, Offset global) {
     final menu = _t.labelMenu.currentState, ws = _t.workspace;
     if (menu == null || ws == null) return;
-    menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), wsThingMenu(context, ws, l));
+    menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), layerContextMenu(context, ws, l));
   }
 
   /// The Marker button, as Set Locator in Live (6.4).
@@ -188,7 +188,7 @@ mixin TimelineRequests on State<TimelinePane> {
     final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
     if (ws.marks.where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame).firstOrNull case (final was, _)?) {
-      wsMarkPicked.value = null;
+      selectedMarker.value = null;
       return ws.after(m.later('mark', number: was));
     }
     _addMark(ws.frame / WorkspaceController.fps, named: false);
@@ -202,7 +202,7 @@ mixin TimelineRequests on State<TimelinePane> {
     }
     ws.after(ws.inside!.later('mark', number: at, word: 'M$n'), (done, _) {
       if (!done || !mounted) return;
-      wsMarkPicked.value = (at, 'M$n');
+      selectedMarker.value = (at, 'M$n');
       if (named) _rename();
     });
   }
@@ -210,7 +210,7 @@ mixin TimelineRequests on State<TimelinePane> {
   void _rename() {
     final ws = _t.workspace;
     if (!mounted || ws == null) return;
-    if (wsMarkPicked.value case final flag?) {
+    if (selectedMarker.value case final flag?) {
       // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
       setState(() => _t.naming = flag);
       _t.markWords

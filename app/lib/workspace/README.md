@@ -7,7 +7,7 @@
 | 場所 | 中身 |
 |---|---|
 | `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く |
-| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `WorkspaceController`、`effects.dart` に掛かった効果（`WorkspaceEffects`）、`workspace_scope.dart` に `WorkspaceScope`、`workspace_aspect.dart` 聞く面 `WorkspaceAspect`、`layer.dart` レイヤー `Layer` と種類の色 `wsTone`、`pane.dart` タブ `Pane`、`art_scene.dart` Stage の絵の寸法と箱（`ArtGeometry`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WindowZoom` |
+| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `WorkspaceController`、`effects.dart` に掛かった効果（`WorkspaceEffects`）、`workspace_scope.dart` に `WorkspaceScope`、`workspace_aspect.dart` 聞く面 `WorkspaceAspect`、`layer.dart` レイヤー `Layer` と種類の色 `layerKindColor`、`pane.dart` タブ `Pane`、`art_scene.dart` Stage の絵の寸法と箱（`ArtGeometry`・`ArtScene`）、`beats.dart` テンポの格子、`window_zoom.dart` 画面全体の拡大率 `WindowZoom` |
 | `easing/` | イージングそのもの：`ease.dart` `Ease` とプリセット、`ease_text.dart` 文書に書く文字の形、`ease_curve.dart` 重ねたカードの曲線と式 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`home.dart` プロジェクトを選ぶ最初の画面、`zoom.dart` 画面全体を拡大率で描く |
 | `top_bar/` | 上のバー：`top_bar.dart`、`size_chip.dart` 画面の大きさ、`zoom_readout.dart` 拡大率の表示、`timings.dart` エンジンにかかった時間 |
@@ -72,7 +72,7 @@ $F/flutter analyze lib
 - 値は `WindowTokens`(アプリ、`lib/skin/window_tokens.dart`)と `InspectorSkin`(Inspector、`lib/skin/inspector_tokens.dart`)と `Grey` / `TextStyles`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
 - 箱(パネル・カード)は四角く、隙間なく並べる(間は `WindowTokens.gutter` の暗い線)。触る物と読む物(欄・チップ・ボタン)は丸い。
 - 色は平らで不透明。アクセントはライム 1 色(`#B3C66B`、上の文字は `#15170D`)。再生ヘッドもアクセント。
-- レイヤーの種類ごとに色を 1 つ(`wsTone`)。Timeline のバー、Dock、Stage で同じ色を使う。
+- レイヤーの種類ごとに色を 1 つ(`layerKindColor`)。Timeline のバー、Dock、Stage で同じ色を使う。
 
 ## カラーテーマ(Dark / Light)
 - 上のバーの半円ボタン(key `ws-shade`)で切り替える。`Grey.shade`(`ValueNotifier<Shade>`)を反転して `reassembleApplication()` でアプリ全体を建て直す。State は残るので編集中の内容は消えない。
@@ -88,7 +88,7 @@ $F/flutter analyze lib
 - **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。棚のタブを前に出すのは `WorkspaceController.front(name)`(`WorkspaceController.route` も同じ呼び出し)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
 - **初期配置**: 棚のタブの列・Inspector・Timeline・Tool Panel は基準の px で始め、Stage が残りを取る。`multi_split_view` は size を weight に直して足し合わせるので、残りを取るペインには weight を付けない。
 - **ペインは広げたら得をする。** 列を固定して引き伸ばさない。
-  - 格子は `wsCols(幅, セルの幅)` で列数を決め、`wsCell` でセルの幅を割り出す(Create のタイル、Colors の色見本、Tool Panel の道具)。
+  - 格子は `gridColumns(幅, セルの幅)` で列数を決め、`gridCellWidth` でセルの幅を割り出す(Create のタイル、Colors の色見本、Tool Panel の道具)。
   - 一覧の区切り(Create の群、Colors の Used / Palettes / Gradients / Swatches、Effects の族)は `DockMasonry` のカードにする。1 列は 260〜300px 以上、最大 4 列、短い列から詰める。
   - Fonts は 440px 以上で見本の大きいカード、狭いと行。Media は 440px 以上で木が左、狭いと上。
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。

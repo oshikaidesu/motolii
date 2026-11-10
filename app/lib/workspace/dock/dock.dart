@@ -40,7 +40,7 @@ class ShelfPane extends StatefulWidget {
 class _ShelfPaneState extends State<ShelfPane> {
   // What the shelf remembers of itself (selection, folds, search). It lives in the window's view,
   // so the shelf looks the same when it is opened again.
-  DockMem get _mem => WorkspaceScope.read(context).view.putIfAbsent('dock.${widget.name}', DockMem.new) as DockMem;
+  ShelfMemory get _mem => WorkspaceScope.read(context).view.putIfAbsent('dock.${widget.name}', ShelfMemory.new) as ShelfMemory;
   late final TextEditingController _search = TextEditingController(text: WorkspaceScope.read(context).viewOf('dock.${widget.name}.search', ''))
     ..addListener(() => setState(() => WorkspaceScope.read(context).view['dock.${widget.name}.search'] = _search.text));
 
@@ -108,7 +108,7 @@ class _ShelfPaneState extends State<ShelfPane> {
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.read(context), name = widget.name;
-    final c = DockCtx(name, _mem, _search.text.trim(), ws, setState, _search.clear);
+    final c = ShelfContext(name, _mem, _search.text.trim(), ws, setState, _search.clear);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -225,7 +225,7 @@ class _ShelfPaneState extends State<ShelfPane> {
         ),
         Expanded(
           child: ListenableBuilder(
-            // A footer waiting for a second click opens once that click can no longer come (DockCtx.foot).
+            // A footer waiting for a second click opens once that click can no longer come (ShelfContext.foot).
             listenable: DockHover.secondMayCome,
             builder: (context, _) => switch (name) {
               'Effects' => EffectsShelf(c),

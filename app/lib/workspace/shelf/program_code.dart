@@ -15,13 +15,13 @@ import 'package:motolii/skin/window_tokens.dart';
 /// An editor for a program's code.
 ///
 /// Typed text is passed to [write] shortly after the last key. The shelf writes it over the program's file. A layer's
-/// script on its card writes it to the layer's own copy instead (FxCode).
+/// script on its card writes it to the layer's own copy instead (EffectCode).
 class ProgramCode extends StatefulWidget {
   const ProgramCode(this.file, this.write, {super.key, this.keep = false});
   final String file;
   final void Function(String text) write;
 
-  /// Whether the typed text is kept as it is, without reading the file back. FxCode uses this while a script is being made.
+  /// Whether the typed text is kept as it is, without reading the file back. EffectCode uses this while a script is being made.
   final bool keep;
   @override
   State<ProgramCode> createState() => _ProgramCodeState();

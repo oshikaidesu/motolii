@@ -23,7 +23,7 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
 /// Like Alight Motion's audio layer (docs/design/alight_motion_ui.md).
-bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
+bool isSoundLayer(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
 /// Every panel listens to this and nothing else, and never keeps a copy of it.
@@ -108,7 +108,7 @@ class WorkspaceController extends ChangeNotifier {
   set titleFont(String v) => _titleFont = _kept('title_font', _titleFont, v);
   String get bodyFont => _bodyFont;
   set bodyFont(String v) => _bodyFont = _kept('body_font', _bodyFont, v);
-  String get bodyFace => bodyFont.isEmpty ? wsTextFont : bodyFont;
+  String get bodyFace => bodyFont.isEmpty ? defaultTextFont : bodyFont;
   String get titleFace => titleFont.isEmpty ? bodyFace : titleFont;
 
   String? _notice;
@@ -204,7 +204,7 @@ class WorkspaceController extends ChangeNotifier {
     rev++;
     reads++;
     duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
-    wsChosenLabels
+    chosenLabelColors
       ..clear()
       ..addAll({
         for (final t in m.layers)
@@ -227,7 +227,7 @@ class WorkspaceController extends ChangeNotifier {
               switch (kind) {
                 'text' => LayerKind.text,
                 'camera' => LayerKind.camera,
-                'film' when wsSound(m, t) => LayerKind.audio,
+                'film' when isSoundLayer(m, t) => LayerKind.audio,
                 'film' || 'picture' => LayerKind.image,
                 'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => LayerKind.group,
                 _ => LayerKind.shape,
@@ -575,11 +575,11 @@ class WorkspaceController extends ChangeNotifier {
 }
 
 /// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
-final wsTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
+final defaultTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
 
 /// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.
 /// A text or a flat shape takes all the inks, because the preview draws only those. A line takes its colour only.
-void wsInked(WorkspaceController ws, String kind, String shape) {
+void applyChosenInks(WorkspaceController ws, String kind, String shape) {
   final m = ws.inside;
   if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
   final line = shape == 'line';

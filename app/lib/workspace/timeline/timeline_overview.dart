@@ -21,7 +21,7 @@ class _OverviewState extends State<TimelineOverview> {
     onEnter: (_) => setState(() => _h = true),
     onExit: (_) => setState(() => _h = false),
     child: GestureDetector(
-      supportedDevices: wsPressing,
+      supportedDevices: pressingDevices,
       behavior: HitTestBehavior.opaque,
       onPanDown: (d) => widget.onDrag(d.localPosition),
       onPanUpdate: (d) => widget.onDrag(d.localPosition),

@@ -17,7 +17,7 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/workspace/inspector_feed/values.dart' show wsPlace;
+import 'package:motolii/workspace/inspector_feed/values.dart' show layerPlacement;
 
 /// A document colour (six hex digits) as a Flutter [Color], or null when there is none.
 ///
@@ -258,7 +258,7 @@ class _Readout extends StatelessWidget {
           )
         else if (l.kind != LayerKind.camera) ...[
           // The same numbers as the inspector shows, which come from the document.
-          if (wsPlace(ws, l.id) case final at) ...[
+          if (layerPlacement(ws, l.id) case final at) ...[
             pair('P', '${at['x']?.round()}, ${at['y']?.round()}'),
             pair('S', '${at['scale_y']?.round()}%'),
             pair('R', '${at['rotate']?.round()}°'),

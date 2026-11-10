@@ -39,7 +39,7 @@ extension WorkspaceEffects on WorkspaceController {
     m
       ..later('set', layer: -1, name: 'size', number: WorkspaceController.comp.height / m.point)
       ..later('set', layer: -1, name: 'wide', number: WorkspaceController.comp.width / WorkspaceController.comp.height);
-    wsInked(this, 'shape', kind);
+    applyChosenInks(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {
       if (done && made > 0) select('$made');

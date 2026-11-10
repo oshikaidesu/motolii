@@ -13,7 +13,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/menu.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart' show wsMarkPicked;
+import 'package:motolii/workspace/commands/panel_requests.dart' show selectedMarker;
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
@@ -51,7 +51,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
 
   // The rows as laid out: each layer's own row, then, while it is expanded, a lane for each of its animated properties.
   // This follows Ableton's automation lanes (Live 12 manual 25.5), where Cmd shows every automated envelope in its own lane.
-  // `value` is the property a lane shows. `aim` is a row naming the layer's target (wsTargets), with an empty value and no keyframes.
+  // `value` is the property a lane shows. `aim` is a row naming the layer's target (linkTargets), with an empty value and no keyframes.
   List<({int layer, String? value, (String, String)? aim})> order = const [];
 
   // The properties of [l] that have keyframes, in the layer's own order.
@@ -252,7 +252,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
     if (selectionBox != null) return keep ? _boxUp() : setState(() => selectionBox = null);
     if (slide case final s?) {
       slide = null;
-      if (keep) wsSlideKeys(workspace!, s.keys, s.by);
+      if (keep) slideKeyframes(workspace!, s.keys, s.by);
       return;
     }
     final h = bar, ws = workspace!, m = ws.inside;
@@ -341,7 +341,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
         workspace!.after(m.later('together'));
       } else {
         // Released where it was grabbed, so a small shake is not a drag. Treated as a click, like rulerTap.
-        wsMarkPicked.value = (at, name);
+        selectedMarker.value = (at, name);
         workspace!
           ..playing = false
           ..frame = markTo;
@@ -389,7 +389,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
         picks = ws.keys,
         lit = {
           ...ws.many,
-          ...wsMembersOf(ws),
+          ...relationMembers(ws),
           for (final p in [?sel, ...ws.many]) ?away[p],
         };
     // The lit layers are those selected together, those moved by the selected relation, and the closed group a selected layer is in.
@@ -399,7 +399,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
         if (!away.containsKey(l.id)) ...[
           (layer: i, value: null, aim: null),
           if (ws.aimsOpen(l.id))
-            for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
+            for (final a in linkTargets(ws, l.id)) (layer: i, value: '', aim: a),
           if (ws.lanesOpen(l.id))
             for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
         ],

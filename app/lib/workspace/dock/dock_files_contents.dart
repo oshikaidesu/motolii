@@ -26,7 +26,7 @@ import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 class FolderContents extends StatelessWidget {
   const FolderContents(this.c, {super.key});
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final path = folderPathOf(c, c.mem.folder), here = path.last;
@@ -125,9 +125,9 @@ String _metaOf(FileNode n) {
 }
 
 /// The id of the layer that uses [n], or null.
-String? _layerOf(FileNode n, DockCtx c) => filesUsed(c.ws)[n.id];
+String? _layerOf(FileNode n, ShelfContext c) => filesUsed(c.ws)[n.id];
 
-bool _inUse(FileNode n, DockCtx c) => _layerOf(n, c) != null;
+bool _inUse(FileNode n, ShelfContext c) => _layerOf(n, c) != null;
 
 /// A file's thumbnail if it is media, otherwise a flat tile with its kind's mark.
 class _Art extends StatelessWidget {
@@ -190,7 +190,7 @@ class _Art extends StatelessWidget {
 class _Tile extends StatefulWidget {
   const _Tile(this.n, this.c, {this.list = false, this.where});
   final FileNode n;
-  final DockCtx c;
+  final ShelfContext c;
   final bool list;
 
   /// The folder a search result sits in.
@@ -311,7 +311,7 @@ List<(int, String)> _showing(Motolii m, String file) => [
 ///
 /// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
 /// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
-void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
+void _replaceAll(ShelfContext c, List<(int, String)> all, String file) {
   final m = c.ws.inside!;
   m.later('together', number: 1);
   for (final (t, w) in all) {
@@ -326,7 +326,7 @@ void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
 class _Footer extends StatelessWidget {
   const _Footer(this.n, this.c);
   final FileNode n;
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     // A file the engine can show can be placed any number of times, each as a new layer starting at the current time.
@@ -416,7 +416,7 @@ class _Footer extends StatelessWidget {
 /// The default is 2 seconds, and End lasts to the end of the project. The choice is remembered for the next still image.
 class _StillSeconds extends StatelessWidget {
   const _StillSeconds(this.c);
-  final DockCtx c;
+  final ShelfContext c;
   @override
   Widget build(BuildContext context) {
     final at = _stillSteps.indexOf(stillSeconds), s = stillSeconds;
@@ -444,7 +444,7 @@ class _StillSeconds extends StatelessWidget {
 /// The label shows the range in minutes and seconds. It is remembered for that file while the shelf is open.
 class _FilmRange extends StatelessWidget {
   const _FilmRange(this.c, this.file, this.seconds);
-  final DockCtx c;
+  final ShelfContext c;
   final String file;
   final Future<double> seconds;
   @override

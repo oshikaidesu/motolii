@@ -133,7 +133,7 @@ class ViewPainter extends CustomPainter {
       return c.restore();
     }
     // The hovered layer's outline uses its label colour, like its row in the layer list.
-    if (ArtGeometry.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);
+    if (ArtGeometry.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), layerLabelColor(hover!), 1);
     if (ArtGeometry.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
     c.restore();
   }
@@ -269,7 +269,7 @@ class ViewPainter extends CustomPainter {
       }
     }
     final bounds = pts.skip(1).fold(Rect.fromPoints(pts[0], pts[0]), (r, p) => r.expandToInclude(Rect.fromPoints(p, p)));
-    _tag(c, bounds.topLeft, l.name, WindowTokens.accent, WindowTokens.onAccent, wsTone(l.kind));
+    _tag(c, bounds.topLeft, l.name, WindowTokens.accent, WindowTokens.onAccent, layerKindColor(l.kind));
   }
 
   /// Draws the selected layer's own handles (roundness, points, crop), besides the frame handles that the engine marks

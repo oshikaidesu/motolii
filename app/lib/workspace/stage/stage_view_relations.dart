@@ -45,11 +45,11 @@ class RelationMarks extends StatelessWidget {
         for (final id in ws.many)
           if (on(id) case final p?) p,
       ];
-      final together = wsRelatable(ws);
+      final together = relatableLayers(ws);
       final rel = int.tryParse(ws.selected ?? ''), kind = rel == null || m == null ? '' : m.word(rel, 'file');
-      final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && wsRelations.contains(kind);
+      final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && relationKinds.contains(kind);
       final members = [
-        for (final id in wsMembersOf(ws))
+        for (final id in relationMembers(ws))
           if (on(id) case final p?) (id, p),
       ];
       final now = m?.now ?? 0;
@@ -75,7 +75,7 @@ class RelationMarks extends StatelessWidget {
           left: at.dx - 7,
           top: at.dy - 7,
           child: GestureDetector(
-            supportedDevices: wsPressing,
+            supportedDevices: pressingDevices,
             key: ValueKey('ws-relation-$key'),
             onPanStart: (_) => m.take(rel),
             onPanUpdate: (d) {
@@ -152,7 +152,7 @@ class RelationMarks extends StatelessWidget {
           );
         }
       }
-      final tags = wsRelationsOf(ws), sel = ws.selected == null ? null : on(ws.selected!);
+      final tags = relationsOfSelected(ws), sel = ws.selected == null ? null : on(ws.selected!);
       // A layer is selected: draw the shape of each relation it belongs to, including its leader's ring while it is dragged.
       if (sel != null && m != null && !isRelation)
         for (final r in tags.map(int.parse)) {
@@ -191,7 +191,12 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: p.dx + 12,
               top: p.dy - 24,
-              child: Badge.round(WindowTokens.accent, onTap: () => wsFree(ws, id), key: ValueKey('ws-free-$id'), mark: _GlyphPaint('x', WindowTokens.onAccent)),
+              child: Badge.round(
+                WindowTokens.accent,
+                onTap: () => freeFromRelation(ws, id),
+                key: ValueKey('ws-free-$id'),
+                mark: _GlyphPaint('x', WindowTokens.onAccent),
+              ),
             ), // Removes this layer from the relation where it stands; the others stay.
             if ((kind == 'follow' || kind == 'push') && id != leader)
               Positioned(
@@ -199,7 +204,7 @@ class RelationMarks extends StatelessWidget {
                 top: p.dy - 24,
                 child: Badge.round(
                   WindowTokens.body.withValues(alpha: .7),
-                  onTap: () => wsLead(ws, id),
+                  onTap: () => makeRelationLeader(ws, id),
                   key: ValueKey('ws-lead-$id'),
                   mark: _GlyphPaint('crown', Grey.g63),
                 ),
@@ -246,9 +251,9 @@ class RelationMarks extends StatelessWidget {
                 children: [
                   for (final r in tags)
                     Chip(
-                      label: wsRelationWord(wsRelationOf(m!, int.parse(r))),
+                      label: relationLabel(relationKindOf(m!, int.parse(r))),
                       look: ChipLook.relate,
-                      on: r == wsWinner(ws),
+                      on: r == relationInEffect(ws),
                       onTap: () => ws.select(r),
                       key: ValueKey('ws-in-$r'),
                     ),
@@ -270,16 +275,16 @@ class RelationMarks extends StatelessWidget {
                   children: together.length > 1
                       ? [
                           Chip(label: '${together.length} picked', look: ChipLook.said),
-                          for (final k in wsRelationChoices(ws))
-                            Chip(label: wsRelationWord(k), look: ChipLook.relate, on: true, onTap: () => wsRelate(ws, k), key: ValueKey('ws-relate-$k')),
+                          for (final k in relationChoices(ws))
+                            Chip(label: relationLabel(k), look: ChipLook.relate, on: true, onTap: () => makeRelation(ws, k), key: ValueKey('ws-relate-$k')),
                         ]
                       : [
-                          Chip(label: '${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}', look: ChipLook.said),
+                          Chip(label: '${relationLabel(relationKindOf(m!, rel!))} · ${relationMembers(ws).length}', look: ChipLook.said),
                           Chip(
-                            label: wsRelationWord('eye'),
+                            label: relationLabel('eye'),
                             look: ChipLook.relate,
                             on: true,
-                            onTap: () => wsSwitch(ws),
+                            onTap: () => toggleRelation(ws),
                             glyph: (_) => Glyph(
                               (m.value(rel, 'visible', 0) ?? 1) > .5 ? TimelineGlyphs.eye : TimelineGlyphs.eyeOff,
                               color: WindowTokens.onAccent,
@@ -289,14 +294,14 @@ class RelationMarks extends StatelessWidget {
                             key: const ValueKey('ws-relation-switch'),
                           ), // The eye, as on the relation's row: when shut, what lies beneath shows.
                           Chip(
-                            label: wsRelationWord('bake'),
+                            label: relationLabel('bake'),
                             look: ChipLook.relate,
                             on: true,
-                            onTap: () => wsRelease(ws),
+                            onTap: () => releaseRelation(ws),
                             key: const ValueKey('ws-relate-release'),
                           ),
                           Chip(
-                            label: wsRelationWord('delete'),
+                            label: relationLabel('delete'),
                             look: ChipLook.relate,
                             on: true,
                             onTap: () => ws.after(
@@ -375,7 +380,7 @@ class RelationStack extends StatelessWidget {
   Widget _built(BuildContext context) {
     final ws = WorkspaceScope.read(context), m = ws.inside, t = ws.selected;
     if (m == null || t == null) return const SizedBox.shrink();
-    final rels = wsRelationsOf(ws), top = wsWinner(ws);
+    final rels = relationsOfSelected(ws), top = relationInEffect(ws);
     if (rels.isEmpty) return const SizedBox.shrink();
     String nameOf(int i) => '${ws.layers.indexWhere((l) => l.id == '$i') + 1}. ${ws.layers.where((l) => l.id == '$i').firstOrNull?.name ?? ''}';
     return Container(

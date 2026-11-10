@@ -143,7 +143,7 @@ class DockFooter extends StatelessWidget {
                       Container(
                         width: Shape.z(6),
                         height: Shape.z(6),
-                        decoration: BoxDecoration(color: wsTone(l.kind), borderRadius: BorderRadius.all(Shape.r(1))),
+                        decoration: BoxDecoration(color: layerKindColor(l.kind), borderRadius: BorderRadius.all(Shape.r(1))),
                       ),
                       SizedBox(width: Shape.s(4)),
                       Flexible(
@@ -215,7 +215,7 @@ class DockMasonry extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final n = wsCols(box.maxWidth, 300, max: 4);
+      final n = gridColumns(box.maxWidth, 300, max: 4);
       if (n == 1) return ListView(padding: EdgeInsets.zero, children: children);
       final cols = List.generate(n, (_) => <Widget>[]), h = List.filled(n, 0.0);
       for (final (i, w) in children.indexed) {

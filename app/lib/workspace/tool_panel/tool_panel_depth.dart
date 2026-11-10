@@ -77,7 +77,7 @@ List<_Slab> _slabsOf(WorkspaceController ws) {
         (
           id: l.id,
           name: l.name,
-          tone: wsTone(l.kind),
+          tone: layerKindColor(l.kind),
           x: (m.value(int.parse(l.id), 'x', 0) ?? 0) * m.point,
           z: eye - (m.value(int.parse(l.id), 'z', 0) ?? 0) * m.point,
           w: m.bounds(int.parse(l.id))?[2] ?? 200,
@@ -130,7 +130,7 @@ class _DepthToolState extends State<DepthTool> {
             SizedBox(width: Shape.s(8)),
             Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: TextStyles.label(Grey.g56)),
           ],
-          right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
+          right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : layerKindColor(target.kind))],
         ),
         const SizedBox(height: WindowTokens.gutter),
         Expanded(
@@ -253,7 +253,7 @@ class _DiagramState extends State<_Diagram> {
             if (_hot) setState(() => _hot = false);
           },
           child: GestureDetector(
-            supportedDevices: wsPressing,
+            supportedDevices: pressingDevices,
             behavior: HitTestBehavior.opaque,
             onTapUp: (e) {
               final id = hit(e.localPosition);

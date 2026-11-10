@@ -60,7 +60,7 @@ extension StageViewDraw on StageViewState {
       ..later('set', layer: -1, name: 'x', number: x)
       ..later('set', layer: -1, name: 'y', number: y);
     // Apply the current drawing colours.
-    wsInked(ws, kind == 'text' ? 'text' : 'shape', kind);
+    applyChosenInks(ws, kind == 'text' ? 'text' : 'shape', kind);
     if (kind == 'text') {
       // The text starts where the drag started, as point text does in After Effects, Figma and Illustrator.
       m.later('set', layer: -1, name: 'anchor_x', number: -1);
@@ -117,7 +117,7 @@ extension StageViewDraw on StageViewState {
       (t) => made = t,
     );
     if (closed) {
-      wsInked(ws, 'shape', 'path');
+      applyChosenInks(ws, 'shape', 'path');
     } else {
       m
         ..later('say', layer: -1, name: 'fill', word: 'none')

@@ -89,8 +89,8 @@ class _InspectorPanelState extends State<InspectorPane> {
       _frame = ws.frame;
       if (was is (int, String?, bool) && was.$2 == _id(ws) && was.$3 == ws.animating && _onlyNumbers(ws)) {
         _live.value = (
-          WorkspaceController.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)),
-          WorkspaceController.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)),
+          WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
+          WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
         );
         return;
       }
@@ -99,8 +99,8 @@ class _InspectorPanelState extends State<InspectorPane> {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
       _live.value = (
-        WorkspaceController.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)),
-        WorkspaceController.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)),
+        WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
+        WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
       );
       _settle?.cancel();
       _settle = Timer(
@@ -118,8 +118,8 @@ class _InspectorPanelState extends State<InspectorPane> {
     final ws = _ws!;
     if (_now(ws) != _seen || _id(ws) == null || ws.playing) return; // (played: the moment's own reading above)
     _live.value = (
-      WorkspaceController.timed('transform', () => wsTransform(ws, _layerOf(ws)?.id)),
-      WorkspaceController.timed('key marks', () => wsKeyMarks(ws, _layerOf(ws)?.id)),
+      WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
+      WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
     );
   }
 
@@ -170,7 +170,7 @@ class _InspectorPanelState extends State<InspectorPane> {
       key: ValueKey(k),
       kind: k,
       kindWord: _kindWord(ws, l?.id),
-      cards: WorkspaceController.timed('value cards', () => wsValueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
+      cards: WorkspaceController.timed('value cards', () => valueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
       title: l?.name,
       onRoute: ws.route,
       onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
@@ -208,9 +208,9 @@ class _InspectorPanelState extends State<InspectorPane> {
           ? null
           : (title, names) => title == 'Script'
                 ? (m.word(int.parse(l!.id), 'script').endsWith('.js')
-                      ? FxCode(ws, int.parse(l.id), m.word(int.parse(l.id), 'script'), slot: 'script', shelf: false, key: ValueKey('script-code-${l.id}'))
+                      ? EffectCode(ws, int.parse(l.id), m.word(int.parse(l.id), 'script'), slot: 'script', shelf: false, key: ValueKey('script-code-${l.id}'))
                       : null)
-                : FxCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: fx_code.dart)
+                : EffectCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: fx_code.dart)
       onCardEye: int.tryParse(l?.id ?? '') == null
           ? null
           : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),
@@ -253,17 +253,17 @@ class _InspectorPanelState extends State<InspectorPane> {
           : () => File(WorkspaceState.clipboard('card')).existsSync()
                 ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: WorkspaceState.clipboard('card')), (_, _) => ws.reread())
                 : null,
-      values: WorkspaceController.timed('transform', () => wsTransform(ws, l?.id)),
-      strs: WorkspaceController.timed('words', () => wsWords(ws, l?.id)),
-      onWords: (changed) => wsSay(ws, l?.id, changed),
+      values: WorkspaceController.timed('transform', () => layerTransform(ws, l?.id)),
+      strs: WorkspaceController.timed('words', () => layerWords(ws, l?.id)),
+      onWords: (changed) => writeWords(ws, l?.id, changed),
       onAnimateAll: (on) => ws.animating = on,
       animating: ws.animating,
-      flags: own ? WorkspaceController.timed('flags', () => wsFlags(ws, l?.id)) : const {},
-      onFlags: own ? (changed) => wsFlag(ws, l?.id, changed) : null,
-      keyMarks: WorkspaceController.timed('key marks', () => wsKeyMarks(ws, l?.id)),
-      onValues: (changed, {required live}) => wsWrite(ws, l?.id, changed, live: live),
+      flags: own ? WorkspaceController.timed('flags', () => layerFlags(ws, l?.id)) : const {},
+      onFlags: own ? (changed) => writeFlags(ws, l?.id, changed) : null,
+      keyMarks: WorkspaceController.timed('key marks', () => keyframeMarks(ws, l?.id)),
+      onValues: (changed, {required live}) => writeNumbers(ws, l?.id, changed, live: live),
       onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
-      onKey: (prop, mark) => wsMark(ws, l?.id, prop, mark),
+      onKey: (prop, mark) => applyKeyframeMark(ws, l?.id, prop, mark),
       together: (tells) {
         // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
         m.later('together', number: 1);
@@ -309,8 +309,8 @@ class LayerCards extends StatelessWidget {
 /// The document's name for a layer's kind, for kinds the inspector's own [Kind] has no entry for (video, image, solid).
 String? _kindWord(WorkspaceController ws, String? id) {
   final t = int.tryParse(id ?? ''), w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
-  if (w == 'behaviour') return wsRelations.contains(ws.inside?.word(t!, 'file')) ? 'Relation' : 'Behaviour';
-  if (w == 'film' && wsSound(ws.inside!, t!)) return 'Sound';
+  if (w == 'behaviour') return relationKinds.contains(ws.inside?.word(t!, 'file')) ? 'Relation' : 'Behaviour';
+  if (w == 'film' && isSoundLayer(ws.inside!, t!)) return 'Sound';
   return const {'film', 'picture', 'solid', 'light'}.contains(w) ? w.replaceRange(0, 1, w[0].toUpperCase()) : null;
 }
 

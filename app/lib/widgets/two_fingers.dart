@@ -7,7 +7,13 @@ import 'package:flutter/widgets.dart';
 
 /// The pointer kinds that press and drag: mouse (including a trackpad's click and drag), touch and stylus.
 /// It excludes a trackpad's two-finger gesture, which a drag recognizer would otherwise treat as a drag (see GestureDetector.supportedDevices).
-const wsPressing = {PointerDeviceKind.mouse, PointerDeviceKind.touch, PointerDeviceKind.stylus, PointerDeviceKind.invertedStylus, PointerDeviceKind.unknown};
+const pressingDevices = {
+  PointerDeviceKind.mouse,
+  PointerDeviceKind.touch,
+  PointerDeviceKind.stylus,
+  PointerDeviceKind.invertedStylus,
+  PointerDeviceKind.unknown,
+};
 
 /// Reports a trackpad's two-finger gestures over [child].
 class TwoFingerGestures extends StatefulWidget {

@@ -83,8 +83,8 @@ class _Catalog extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth - WindowTokens.gap * 2, h = box.maxHeight - WindowTokens.gap * 2;
-        final cols = wsCols(w, _cell, gap: WindowTokens.gap, min: 2), rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
-        final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(_minTile, _maxTile), cw = wsCell(w, cols, gap: WindowTokens.gap);
+        final cols = gridColumns(w, _cell, gap: WindowTokens.gap, min: 2), rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
+        final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(_minTile, _maxTile), cw = gridCellWidth(w, cols, gap: WindowTokens.gap);
         return ListView(
           padding: EdgeInsets.all(WindowTokens.gap),
           children: [

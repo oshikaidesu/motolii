@@ -365,7 +365,7 @@ class TimelineThumbnail extends StatelessWidget {
         height: TimelineMetrics.chip,
         decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
         child: CustomPaint(
-          painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline),
+          painter: _FormPainter(form, (r.fill ?? layerKindColor(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline),
         ),
       );
     }
@@ -416,7 +416,7 @@ class _FormPainter extends CustomPainter {
 
 /// A layer's kind: a small square of its colour with the kind's mark drawn in dark ink.
 Widget layerKindChip(LayerKind kind, {bool dim = false, Color? tone}) => Badge(
-  dim ? Grey.g26 : tone ?? wsTone(kind),
+  dim ? Grey.g26 : tone ?? layerKindColor(kind),
   size: TimelineMetrics.chip,
   radius: Shape.r(3),
   mark: _KindPainter(kind, dim ? Grey.g56 : WindowTokens.onAccent),

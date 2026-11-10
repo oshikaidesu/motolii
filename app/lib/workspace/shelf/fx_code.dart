@@ -19,8 +19,8 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/program_code.dart';
 
-class FxCode extends StatefulWidget {
-  const FxCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});
+class EffectCode extends StatefulWidget {
+  const EffectCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});
   final WorkspaceController ws;
   final int thing;
 
@@ -34,7 +34,7 @@ class FxCode extends StatefulWidget {
   /// Whether to show "Add to shelf" under the editor: for an effect, not for a script.
   final bool shelf;
   @override
-  State<FxCode> createState() => _FxCodeState();
+  State<EffectCode> createState() => _EffectCodeState();
 
   // Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
   static final _code = RegExp(r'\.(wgsl|fs|js)$');
@@ -48,9 +48,9 @@ class FxCode extends StatefulWidget {
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
   /// If two files fit, the one whose title matches the card wins, then the longer name.
   /// A card with no parameters (the engine still gives it a card, doc_cards_of) is matched by title alone.
-  static FxCode? of(WorkspaceController ws, int thing, String title, List<String> names) {
+  static EffectCode? of(WorkspaceController ws, int thing, String title, List<String> names) {
     final word = fileOf(ws.inside!.word(thing, 'fx'), title, names);
-    return word == null ? null : FxCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
+    return word == null ? null : EffectCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
   }
 
   /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
@@ -125,7 +125,7 @@ class FxCode extends StatefulWidget {
   static String source(String w) => File(w).existsSync() ? w : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
 }
 
-class _FxCodeState extends State<FxCode> {
+class _EffectCodeState extends State<EffectCode> {
   // The copy's path, kept until the engine reports it as the layer's file.
   String? _mine;
   // Why the current code was rejected, shown on the card. Empty when it was accepted.
@@ -144,11 +144,11 @@ class _FxCodeState extends State<FxCode> {
 
   /// Whether the file belongs to this card alone: one of its own copies, used by no other card on any layer.
   bool _alone(String word) {
-    final m = widget.ws.inside!, file = FxCode.source(word);
+    final m = widget.ws.inside!, file = EffectCode.source(word);
     if (!file.startsWith(_own)) return false;
     for (final t in m.layers) {
       for (final w in WorkspaceController.fxFiles(m.word(t, widget.slot))) {
-        if (!(t == widget.thing && w == word) && FxCode.source(w) == file) return false;
+        if (!(t == widget.thing && w == word) && EffectCode.source(w) == file) return false;
       }
     }
     return true;
@@ -162,7 +162,7 @@ class _FxCodeState extends State<FxCode> {
       _typed = text;
       return;
     }
-    final ws = widget.ws, m = ws.inside!, word = _mine ?? widget.word, file = FxCode.source(word);
+    final ws = widget.ws, m = ws.inside!, word = _mine ?? widget.word, file = EffectCode.source(word);
     if (_alone(word)) {
       File(file).writeAsStringSync(text);
       return _saved(file);
@@ -218,7 +218,7 @@ class _FxCodeState extends State<FxCode> {
   void _add(String? name) {
     setState(() => _adding = null);
     if (name == null) return;
-    final word = _mine ?? widget.word, file = FxCode.source(word), expression = shelfIsExpression(file);
+    final word = _mine ?? widget.word, file = EffectCode.source(word), expression = shelfIsExpression(file);
     final why = _why.isNotEmpty
         ? 'It does not compile: fix it first'
         : shelfAdd(widget.ws, file, _typed ?? File(file).readAsStringSync(), name, shelfTaken(widget.ws, expression: expression));
@@ -234,7 +234,7 @@ class _FxCodeState extends State<FxCode> {
       children: [
         NakedButton(
           onPressed: () => setState(() {
-            _adding = FxCode.titleOf(_mine ?? widget.word);
+            _adding = EffectCode.titleOf(_mine ?? widget.word);
             _added = '';
           }),
           enableFeedback: false,
@@ -266,7 +266,7 @@ class _FxCodeState extends State<FxCode> {
               style: TextStyles.label(Role.error),
             ),
           ),
-        Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
+        Expanded(child: ProgramCode(EffectCode.source(_mine ?? widget.word), _write, keep: _making)),
         if (widget.shelf)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),
