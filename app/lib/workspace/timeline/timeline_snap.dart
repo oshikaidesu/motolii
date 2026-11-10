@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneSnap on TimelinePaneState {
   int? restOn(int f) {
@@ -16,7 +15,7 @@ extension TimelinePaneSnap on TimelinePaneState {
     for (final s in stops.followedBy([
       if (workspace!.beats case final b?) b.nearest(f),
     ])) {
-      if ((s - f).abs() * view.ppf <= Shape.z(8) &&
+      if ((s - f).abs() * viewport.view.pixelsPerFrame <= Shape.z(8) &&
           (best == null || (s - f).abs() < (best - f).abs())) {
         best = s;
       }

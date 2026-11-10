@@ -7,10 +7,9 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_slip.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneDrag on TimelinePaneState {
   // ---------------------------------------------------------------- input
@@ -18,7 +17,7 @@ extension TimelinePaneDrag on TimelinePaneState {
   /// The row at vertical position [y]: its index, its layer, and the property it shows.
   /// The property is null for the layer's own row.
   ({int i, Layer l, String? value})? rowAt(double y) {
-    final i = ((y + vscroll) / TimelineMetrics.row).floor();
+    final i = ((y + viewport.verticalScroll) / TimelineMetrics.row).floor();
     if (i < 0 || i >= order.length) return null;
     return (i: i, l: workspace!.layers[order[i].layer], value: order[i].value);
   }
@@ -28,7 +27,7 @@ extension TimelinePaneDrag on TimelinePaneState {
   // - Between two keyframes it selects that span, as Theatre.js does. Live cannot select a span.
   // - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
   void laneTap(Offset p) {
-    final ws = workspace!, m = ws.inside, r = rowAt(p.dy), v = view;
+    final ws = workspace!, m = ws.inside, r = rowAt(p.dy), v = viewport.view;
     if (m == null || r == null || r.value == null || isLocked(ws, r.l.id)) {
       return;
     }
@@ -69,7 +68,7 @@ extension TimelinePaneDrag on TimelinePaneState {
   }
 
   void trackDown(Offset p) {
-    final ws = workspace!, v = view;
+    final ws = workspace!, v = viewport.view;
     final r = rowAt(p.dy);
     if (r == null) {
       // Below the rows nothing is selected, as in After Effects. The inspector then shows the whole project.
@@ -80,7 +79,10 @@ extension TimelinePaneDrag on TimelinePaneState {
     // A lane handles its own click, on pointer up.
     if (r.value != null) return;
     final i = r.i, l = r.l;
-    final cy = i * TimelineMetrics.row - vscroll + TimelineMetrics.row / 2;
+    final cy =
+        i * TimelineMetrics.row -
+        viewport.verticalScroll +
+        TimelineMetrics.row / 2;
     if (!isLocked(ws, l.id) &&
         (p.dy - cy).abs() <= TimelineMetrics.bar / 2 + 2) {
       int? best;
@@ -109,11 +111,12 @@ extension TimelinePaneDrag on TimelinePaneState {
 
   bool _onPale(WorkspaceController ws, Layer l, Offset p) {
     final w = wholeOf(ws, l);
-    return w != null && p.dx >= view.x(w.$1) && p.dx <= view.x(w.$2);
+    final v = viewport.view;
+    return w != null && p.dx >= v.x(w.$1) && p.dx <= v.x(w.$2);
   }
 
   MouseCursor cursorAt(Offset p) {
-    final ws = workspace!, v = view, r = rowAt(p.dy);
+    final ws = workspace!, v = viewport.view, r = rowAt(p.dy);
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
@@ -146,7 +149,7 @@ extension TimelinePaneDrag on TimelinePaneState {
   }
 
   bool grab(Offset p) {
-    final ws = workspace!, v = view, m = ws.inside;
+    final ws = workspace!, v = viewport.view, m = ws.inside;
     final r = rowAt(p.dy);
     if (m == null || r == null) return false;
     // A lane has nothing to drag and starts no selection box.

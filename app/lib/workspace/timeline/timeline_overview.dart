@@ -2,6 +2,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/two_finger_gestures.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The overview strip. [onDrag] receives the pointer position within the strip.

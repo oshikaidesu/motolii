@@ -5,8 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneRuler on TimelinePaneState {
   /// The mark whose flag is under the pointer [p], if any.
@@ -14,6 +14,7 @@ extension TimelinePaneRuler on TimelinePaneState {
     if (p.dy < TimelineMetrics.band + 1 || p.dy > TimelineMetrics.band + 15) {
       return null;
     }
+    final view = viewport.view;
     final xs = [
       for (final m in workspace!.marks)
         view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble(),
@@ -28,7 +29,7 @@ extension TimelinePaneRuler on TimelinePaneState {
   }
 
   void rulerDown(Offset p) {
-    final v = view, f = v.frameAt(p.dx);
+    final v = viewport.view, f = v.frameAt(p.dx);
     workDrag = null;
     if (flagAt(p) case final flag?) {
       markHeld = flag;

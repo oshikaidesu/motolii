@@ -17,9 +17,8 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
-import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_ruler.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 mixin TimelineRequests on State<TimelinePane> {
   // The timeline state this mixin is part of: its zoom and scroll.
@@ -52,9 +51,9 @@ mixin TimelineRequests on State<TimelinePane> {
       case 'loop':
         setState(() => m.looping = !m.looping);
       case 'in':
-        t.setZoom(t.zoom * 1.5);
+        t.setZoom(t.viewport.zoom * 1.5);
       case 'out':
-        t.setZoom(t.zoom / 1.5);
+        t.setZoom(t.viewport.zoom / 1.5);
       case 'fit':
         t.setZoom(1);
       // Zooms to fill the view with the selected keyframes, else the selected layer's bar, as Z does in Live.
@@ -68,14 +67,14 @@ mixin TimelineRequests on State<TimelinePane> {
         final a = frames.reduce((p, q) => p < q ? p : q),
             b = frames.reduce((p, q) => p > q ? p : q),
             span = (b - a).clamp(6, WorkspaceController.duration);
-        _before ??= (t.zoom, t.scroll);
+        _before ??= (t.viewport.zoom, t.viewport.scroll);
         t.setZoom(WorkspaceController.duration / (span * 1.2), anchor: a);
-        setState(() => t.scroll = t.clampScroll(a - span * .1));
+        t.viewport.scrollTo(a - span * .1);
       case 'back':
         if (_before case (final z, final s)?) {
           _before = null;
           t.setZoom(z);
-          setState(() => t.scroll = t.clampScroll(s));
+          t.viewport.scrollTo(s);
         }
     }
   }
@@ -104,7 +103,10 @@ mixin TimelineRequests on State<TimelinePane> {
     } else {
       selectedMarker.value = null;
       if (p.dy <= TimelineMetrics.band + 2) return;
-      f = t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration);
+      f = t.viewport.view
+          .frameAt(p.dx)
+          .round()
+          .clamp(0, WorkspaceController.duration);
     }
     ws
       ..playing = false
@@ -161,7 +163,7 @@ mixin TimelineRequests on State<TimelinePane> {
       ]);
     }
     final at =
-            _t.view
+            _t.viewport.view
                 .frameAt(p.dx)
                 .round()
                 .clamp(0, WorkspaceController.duration) /
@@ -197,7 +199,7 @@ mixin TimelineRequests on State<TimelinePane> {
     final t = _t, ws = t.workspace, r = t.rowAt(p.dy);
     // Below the rows, or on a property lane, there is no bar.
     if (ws == null || r == null || r.value != null) return;
-    final l = r.l, f = t.view.frameAt(p.dx);
+    final l = r.l, f = t.viewport.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;
     t.trackMenu.currentState?.show(p, layerContextMenu(context, ws, l));

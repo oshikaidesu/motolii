@@ -13,7 +13,9 @@ import 'package:motolii/widgets/timeline_painters.dart'
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
 Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(
@@ -56,13 +58,16 @@ void _vLines(
   required Color fine,
   Beats? beats,
 }) {
-  final mj = majorTickSpacing(v.ppf, fps),
-      fn = fineTickSpacing(v.ppf, fps, mj),
+  final mj = majorTickSpacing(v.pixelsPerFrame, fps),
+      fn = fineTickSpacing(v.pixelsPerFrame, fps, mj),
       p = Paint();
   if (beats != null) {
     // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
-    for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
-      if (bar || beats.every * v.ppf >= 8) {
+    for (final (f, bar) in beats.between(
+      v.scroll,
+      v.scroll + w / v.pixelsPerFrame,
+    )) {
+      if (bar || beats.every * v.pixelsPerFrame >= 8) {
         c.drawRect(
           Rect.fromLTWH(v.x(f).roundToDouble(), top, 1, bottom - top),
           p..color = bar ? major : fine,

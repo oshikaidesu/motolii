@@ -1,11 +1,9 @@
-// The timeline's clock and view: advancing, playing and stepping the playhead, and how much of the project is shown (fit, zoom, scroll).
+// The timeline's clock: advancing, playing and stepping the playhead.
 import 'dart:developer' show Timeline;
-import 'dart:math' as math;
 
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 extension TimelinePaneView on TimelinePaneState {
   // ---------------------------------------------------------------- play
@@ -45,24 +43,4 @@ extension TimelinePaneView on TimelinePaneState {
     ws.playing = false;
     ws.frame = ws.frame + d;
   }
-
-  // ---------------------------------------------------------------- view
-
-  double get fit => math.max(
-    .1,
-    (trackW - TimelineMetrics.padL - TimelineMetrics.padR) /
-        WorkspaceController.duration,
-  );
-
-  TimelineView get view => TimelineView(fit * zoom, scroll);
-
-  double get visible => WorkspaceController.duration / zoom;
-
-  double clampScroll(double s) => s
-      .clamp(0.0, math.max(0.0, WorkspaceController.duration - visible))
-      .toDouble();
-
-  double clampV(int rows) => vscroll
-      .clamp(0.0, math.max(0.0, rows * TimelineMetrics.row - rowsH))
-      .toDouble();
 }

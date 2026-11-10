@@ -22,16 +22,18 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_slip.dart';
 import 'package:motolii/workspace/timeline/timeline_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
+import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 class TimelinePane extends StatefulWidget {
   const TimelinePane({super.key});
@@ -47,7 +49,9 @@ class TimelinePaneState extends State<TimelinePane>
   late final VoidCallback _listener = changed;
   final _focus = FocusNode(debugLabel: 'timeline');
   WorkspaceController? workspace;
-  double zoom = 1, scroll = 0, vscroll = 0, trackW = 1000, rowsH = 200;
+
+  /// The zoom, the scroll and the size of the track area.
+  final viewport = TimelineViewport(() => WorkspaceController.duration);
   int workIn = 12, workOut = 228;
   int lastFrame = -1;
 
@@ -124,6 +128,7 @@ class TimelinePaneState extends State<TimelinePane>
   @override
   void initState() {
     super.initState();
+    viewport.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     hearAsks();
   }
@@ -150,6 +155,7 @@ class TimelinePaneState extends State<TimelinePane>
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     workspace?.moment.removeListener(_listener);
     ticker.dispose();
+    viewport.dispose();
     _focus.dispose();
     stopAsks();
     markWords.dispose();
@@ -157,29 +163,27 @@ class TimelinePaneState extends State<TimelinePane>
     super.dispose();
   }
 
-  void setZoom(double z, {int? anchor}) {
-    final nz = z.clamp(1.0, TimelineMetrics.maxZoom);
-    final a = anchor ?? workspace!.frame, ax = view.x(a);
-    setState(() {
-      zoom = nz;
-      scroll = clampScroll(a - (ax - TimelineMetrics.padL) / (fit * nz));
-    });
-  }
+  // Draws the timeline again after one of the objects it owns has changed.
+  void _rebuild() => setState(() {});
+
+  void setZoom(double z, {int? anchor}) =>
+      viewport.setZoom(z, anchor: anchor ?? workspace!.frame);
 
   /// Keeps the playhead in view when zoomed in: the view pages along as play or a scrub carries it off the edge.
   void follow(int f) {
-    if (zoom <= 1 || !mounted) return;
-    final v = view, x = v.x(f);
-    if (x >= 0 && x <= trackW - TimelineMetrics.padR) return;
-    setState(() => scroll = clampScroll(f - visible * .1));
+    if (!mounted) return;
+    viewport.follow(f);
   }
 
   /// A two-finger trackpad slide scrolls the tracks like a wheel, in the opposite direction, so the content follows the fingers.
   /// A pinch zooms around the frame under the fingers, as in Final Cut, Cavalry and Theatre.js.
   void fingers(Offset by, Offset _) => scrollBy(-by);
   void pinch(double by, Offset at) => setZoom(
-    zoom * by,
-    anchor: view.frameAt(at.dx).round().clamp(0, WorkspaceController.duration),
+    viewport.zoom * by,
+    anchor: viewport.view
+        .frameAt(at.dx)
+        .round()
+        .clamp(0, WorkspaceController.duration),
   );
 
   void scrollBy(Offset d) {
@@ -187,15 +191,11 @@ class TimelinePaneState extends State<TimelinePane>
         HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
     if (HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed) {
-      setZoom(zoom * math.pow(1.0015, -d.dy));
+      setZoom(viewport.zoom * math.pow(1.0015, -d.dy));
     } else if (sideways) {
-      setState(
-        () => scroll = clampScroll(
-          scroll + (d.dx.abs() > d.dy.abs() ? d.dx : d.dy) / view.ppf,
-        ),
-      );
+      viewport.scrollBy(d.dx.abs() > d.dy.abs() ? d.dx : d.dy);
     } else {
-      setState(() => vscroll = vscroll + d.dy);
+      viewport.scrollRowsBy(d.dy);
     }
   }
 
@@ -236,7 +236,7 @@ class TimelinePaneState extends State<TimelinePane>
     final b = selectionBox;
     setState(() => selectionBox = null);
     if (b == null) return;
-    final ws = workspace!, v = view, r = Rect.fromPoints(b.$1, b.$2);
+    final ws = workspace!, v = viewport.view, r = Rect.fromPoints(b.$1, b.$2);
     // A click, not a box: the tap handler has already dealt with it.
     if (r.width < 4 && r.height < 4) return;
     final keys = <SelectedKeyframe>[], things = <String>[];
@@ -244,7 +244,7 @@ class TimelinePaneState extends State<TimelinePane>
       // A box does not select points on a lane.
       if (order[i].value != null) continue;
       final l = ws.layers[order[i].layer],
-          top = i * TimelineMetrics.row - vscroll;
+          top = i * TimelineMetrics.row - viewport.verticalScroll;
       if (top + TimelineMetrics.row < r.top ||
           top > r.bottom ||
           isLocked(ws, l.id)) {
@@ -270,7 +270,7 @@ class TimelinePaneState extends State<TimelinePane>
       return setState(() => selectionBox = (from, p));
     }
     if (slide case final s?) {
-      final by = rested(view.frameAt(p.dx).round() - s.grab, [s.grab]);
+      final by = rested(viewport.view.frameAt(p.dx).round() - s.grab, [s.grab]);
       setState(() => slide = (keys: s.keys, grab: s.grab, by: by));
       workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
@@ -278,7 +278,7 @@ class TimelinePaneState extends State<TimelinePane>
     final h = bar, ws = workspace!, m = ws.inside;
     if (h == null || m == null) return;
     // Moves by whole frames.
-    var by = (view.frameAt(p.dx) - h.grab).round();
+    var by = (viewport.view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
       bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
       return slip(ws, int.parse(h.id), by);
@@ -347,10 +347,10 @@ class TimelinePaneState extends State<TimelinePane>
   }
 
   void rulerMove(Offset p) {
-    final f = view.frameAt(p.dx).round();
+    final f = viewport.view.frameAt(p.dx).round();
     if (markHeld != null) {
       return setState(() {
-        markTo = (view.frameAt(p.dx) - markGrab).round().clamp(
+        markTo = (viewport.view.frameAt(p.dx) - markGrab).round().clamp(
           0,
           WorkspaceController.duration,
         );
@@ -375,7 +375,7 @@ class TimelinePaneState extends State<TimelinePane>
         );
       case 2:
         final len = workOut - workIn,
-            a = (view.frameAt(p.dx) - workGrab).round().clamp(
+            a = (viewport.view.frameAt(p.dx) - workGrab).round().clamp(
               0,
               WorkspaceController.duration - len,
             );
@@ -433,7 +433,7 @@ class TimelinePaneState extends State<TimelinePane>
 
   void overview(Offset p, double w) {
     final f = (p.dx - 4) / (w - 8) * WorkspaceController.duration;
-    setState(() => scroll = clampScroll(f - visible / 2));
+    viewport.scrollTo(f - viewport.visible / 2);
   }
 
   // ---------------------------------------------------------------- build
@@ -529,7 +529,7 @@ class TimelinePaneState extends State<TimelinePane>
               TimelineHeader(
                 ws: ws,
                 loop: ws.inside!.looping,
-                zoom: zoom,
+                zoom: viewport.zoom,
                 onToggle: toggle,
                 onStep: step,
                 onLoop: () =>

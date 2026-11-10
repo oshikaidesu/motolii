@@ -8,6 +8,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// Header of the name column: layer count and the visibility, solo and lock icons.

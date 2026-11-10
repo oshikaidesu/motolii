@@ -14,14 +14,14 @@ import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_cache_painter.dart';
+import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_overview.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneTracks on TimelinePaneState {
   Widget tracks(
@@ -29,14 +29,15 @@ extension TimelinePaneTracks on TimelinePaneState {
     List<TimelineRow> rows,
   ) => LayoutBuilder(
     builder: (context, box) {
-      trackW = box.maxWidth;
-      rowsH = math.max(
-        0,
-        box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
+      viewport.layout(
+        trackWidth: box.maxWidth,
+        rowsHeight: math.max(
+          0,
+          box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
+        ),
+        rows: rows.length,
       );
-      scroll = clampScroll(scroll);
-      vscroll = clampV(rows.length);
-      final v = view;
+      final v = viewport.view;
       return Stack(
         children: [
           Column(
@@ -112,7 +113,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                               rows: rows,
                               view: v,
                               fps: WorkspaceController.fps,
-                              vscroll: vscroll,
+                              vscroll: viewport.verticalScroll,
                               restAt: restAt,
                             ),
                           ),
@@ -125,8 +126,8 @@ extension TimelinePaneTracks on TimelinePaneState {
               ValueListenableBuilder<int>(
                 valueListenable: ws.moment,
                 builder: (_, frame, _) => TimelineOverview(
-                  from: scroll,
-                  to: scroll + visible,
+                  from: viewport.scroll,
+                  to: viewport.scroll + viewport.visible,
                   frame: frame,
                   onDrag: (p) => overview(p, box.maxWidth),
                 ),

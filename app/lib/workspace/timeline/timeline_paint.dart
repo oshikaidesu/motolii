@@ -16,40 +16,8 @@ import 'package:motolii/widgets/timeline_painters.dart'
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-
-/// The timeline panel's own sizes.
-abstract final class TimelineMetrics {
-  static const divider = 1.0;
-  static double get header => Shape.z(32.0);
-  static double get label => Shape.z(200.0);
-  static double get ruler => Shape.z(30.0);
-  static double get row => Shape.z(24.0);
-  static double get overview => Shape.z(12.0);
-
-  /// The work-area band on top of the ruler, and the room left of frame 0 / right of the last frame.
-  static double get band => Shape.z(12.0);
-  static double get padL => Shape.s(10.0);
-  static double get padR => Shape.s(14.0);
-  static double get bar => Shape.z(18.0);
-  static double get key => Shape.z(4.5);
-  static double get keyPicked => Shape.z(6.0);
-  static double get chip => Shape.z(14.0);
-  static const maxZoom = 16.0;
-}
-
-/// Where frames land on the track area: x = padL + (frame - scroll) * ppf.
-@immutable
-class TimelineView {
-  const TimelineView(this.ppf, this.scroll);
-  final double ppf, scroll;
-  double x(num f) => TimelineMetrics.padL + (f - scroll) * ppf;
-  double frameAt(double x) => (x - TimelineMetrics.padL) / ppf + scroll;
-  @override
-  bool operator ==(Object other) =>
-      other is TimelineView && other.ppf == ppf && other.scroll == scroll;
-  @override
-  int get hashCode => Object.hash(ppf, scroll);
-}
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
+import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// One row as drawn: a snapshot of the layer plus how the panel shows it.
 @immutable
@@ -229,8 +197,8 @@ class TimelineRulerPainter extends CustomPainter {
       );
     }
 
-    final mj = majorTickSpacing(view.ppf, fps),
-        fn = fineTickSpacing(view.ppf, fps, mj),
+    final mj = majorTickSpacing(view.pixelsPerFrame, fps),
+        fn = fineTickSpacing(view.pixelsPerFrame, fps, mj),
         bottom = s.height - 1;
     for (final f in beats) {
       final x = view.x(f).roundToDouble();
@@ -244,9 +212,9 @@ class TimelineRulerPainter extends CustomPainter {
     if (tempo case final b?) {
       for (final (f, bar) in b.between(
         view.scroll,
-        view.scroll + s.width / view.ppf,
+        view.scroll + s.width / view.pixelsPerFrame,
       )) {
-        if (bar || b.every * view.ppf >= 8) {
+        if (bar || b.every * view.pixelsPerFrame >= 8) {
           c.drawRect(
             Rect.fromLTWH(
               view.x(f).roundToDouble(),
@@ -292,7 +260,7 @@ class TimelineRulerPainter extends CustomPainter {
         markColors[f] ?? WindowTokens.toneText,
       ));
     }
-    if (view.ppf >= 3) {
+    if (view.pixelsPerFrame >= 3) {
       final f0 = view.scroll.floor();
       for (var f = math.max(0, f0); f <= WorkspaceController.duration; f++) {
         final x = view.x(f).roundToDouble();

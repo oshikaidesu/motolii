@@ -18,8 +18,8 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_labels.dart';
+import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneRows on TimelinePaneState {
   /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
@@ -113,7 +113,7 @@ extension TimelinePaneRows on TimelinePaneState {
             child: ClipRect(
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final top = clampV(rows.length);
+                  final top = viewport.clampVerticalScroll(rows.length);
                   return Stack(
                     children: [
                       for (var i = 0; i < rows.length; i++)
