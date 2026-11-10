@@ -68,13 +68,13 @@ app/tool/live.sh
 | [`shelves/`](shelves/README.ja.md) | アプリが動く時に読む、同梱のコミュニティの作品（エフェクト・スクリプト・イージング・スキン） |
 | [`docs/`](docs/README.md) | 文書 |
 
-`app/README.md` と `engine/README.md` は日本語で、頭に英語の要約があります。
+`app/README.md` と `engine/README.md` は英語です。
 
 ## 文書
 
 - [ガイド](docs/using/guide.ja.md)：Motolii でできる事、動く形式、ビルドの手順、最初の 1 本、他のソフトとの違い。
 - [タブの紹介](docs/using/screen_tour.ja.md)：画面のタブごとの絵と使い方。
-- [作り](docs/ARCHITECTURE.md)：全体の作り（日本語。頭に英語の要約があります）。
+- [作り](docs/ARCHITECTURE.md)：全体の作り：アプリ・エンジン・描画・動画のつながり（英語）。
 - [テスト](docs/TESTING.md)：テストの種類ごとの回し方（英語）。
 - [関わり方](.github/CONTRIBUTING.ja.md)：ビルド、決まり、手を付けやすい所。
 

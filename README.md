@@ -68,13 +68,11 @@ See [`shelves/README.md`](shelves/README.md). Each kind of file has its own fold
 | [`shelves/`](shelves/README.md) | The bundled community content the app reads at run time: effects, scripts, eases, skins |
 | [`docs/`](docs/README.md) | Documents |
 
-`app/README.md` and `engine/README.md` are in Japanese, with an English summary at the top.
-
 ## Documentation
 
 - [Guide](docs/using/guide.md): what Motolii does, the formats it runs, building step by step, a first piece, how it compares.
 - [The tabs](docs/using/screen_tour.md): each tab of the screen, with pictures and how to use it.
-- [Architecture](docs/ARCHITECTURE.md): the whole design (in Japanese, with an English summary at the top).
+- [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
 - [Testing](docs/TESTING.md): how to run each kind of test.
 - [Contributing](.github/CONTRIBUTING.md): building, the rules, good first tasks.
 

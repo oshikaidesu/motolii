@@ -215,7 +215,7 @@ Save it and it shows at once (no restart). Save it again and the picture follows
 | `looks/` | Effects tab, look tiles (a layer's values, effects and keys saved under a name) | `.motolii` + its tile picture `.png` | The file name as it is (spaces and capitals kept) |
 | `solids/` | A 3D shape on a layer's effect card (Alight Motion's Box, Torus…). No tile yet; it shows when a project names it | `.js` (`export function solid` returning a three.js BufferGeometry) | The first line's `// Name:` |
 | `ease/` | Ease tiles, below (how a stretch between keys moves) | `.way` (one expression) | The first line's `// Name:`, else the file name |
-| `skins/` | View › Skin (the window's look) | A folder (`theme.xml`, and any pictures and fonts). How to make one: [`skins/README.md`](skins/README.md) (Japanese) | The folder's name |
+| `skins/` | View › Skin (the window's look) | A folder (`theme.xml`, and any pictures and fonts). How to make one: [`skins/README.md`](skins/README.md) | The folder's name |
 | `extensions/` | Not an item. Used once before pasting Hydra code | `hydra/get.sh` | — |
 
 What is in a folder of the old names (`recipes/`, `animators/`, `ways/`) is still read.
