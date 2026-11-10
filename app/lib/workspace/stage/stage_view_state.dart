@@ -495,7 +495,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                   else if (_drawFrom case final from?
                       when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
                     IgnorePointer(
-                      child: CustomPaint(size: Size.infinite, painter: _HandlePainter(from, _last!)),
+                      child: CustomPaint(size: Size.infinite, painter: _PointsPainter([from], [(_last!, from), (from * 2 - _last!, from)])),
                     )
                   else if (_drawFrom case final from? when _last != null) // (what is being drawn: its box)
                     Positioned.fromRect(

@@ -586,23 +586,3 @@ class _PointsPainter extends CustomPainter {
   @override
   bool shouldRepaint(_PointsPainter o) => !listEquals(o.at, at) || !listEquals(o.handles, handles);
 }
-
-class _HandlePainter extends CustomPainter {
-  _HandlePainter(this.at, this.out);
-  final Offset at, out;
-  @override
-  void paint(Canvas c, Size _) {
-    final line = Paint()
-          ..color = WsT.accent
-          ..strokeWidth = 1,
-        dot = Paint()..color = WsT.accent;
-    c.drawLine(at * 2 - out, out, line);
-    for (final p in [at * 2 - out, out]) {
-      c.drawCircle(p, 3, dot);
-    }
-    c.drawRect(Rect.fromCenter(center: at, width: Shape.z(6), height: Shape.z(6)), dot);
-  }
-
-  @override
-  bool shouldRepaint(_HandlePainter o) => o.at != at || o.out != out;
-}
