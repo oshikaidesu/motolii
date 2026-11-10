@@ -29,6 +29,8 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Rebuilds the effect chain of a layer from `files`, the effect files in order.
 // Does nothing if st.files already equals `files`. Fills st.fx with the GPU
 // effects and st.aviutl with the AviUtl2 script runners, reusing a runner
@@ -194,5 +196,7 @@ void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame);
 // later frame; the shape is built from the result then. Samples every so many
 // pixels, at most `cells` along the longer side.
 void thing_fx_cover(Stage& s, ThingFx& e, int cells);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_LAYER_EFFECTS_LAYER_FX_H_

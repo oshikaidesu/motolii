@@ -32,6 +32,8 @@
 #include "gpu/screen_interop.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Returns the current value of a parameter, given the effect's file, the
 // parameter's name, and its default value. The file is part of the key because
 // two effects may each have a parameter of the same name.
@@ -285,5 +287,7 @@ bool screen_moved(const ScreenStack& st);
 // Does nothing if `files` is unchanged.
 void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
                     ScreenNumbers numbers);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_EFFECTS_SCREEN_FX_H_

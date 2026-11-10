@@ -21,6 +21,8 @@
 
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 // Returns true if the file is a viewer settings file.
 bool viewer_is(const std::string& file);
 
@@ -34,5 +36,7 @@ std::vector<ScriptParameter> viewer_parameters(const std::string& file);
 std::string viewer_said(const std::string& file,
                         const std::vector<ScriptParameter>& parameters,
                         const std::function<double(size_t)>& now);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_EFFECTS_VIEWER_SETTINGS_H_

@@ -22,6 +22,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // The set of shared buffers that the stage draws into, and the state of the
 // frame in flight.
 struct Live {
@@ -82,5 +84,7 @@ bool live_ready(Stage& s, Live* l);
 // Returns the last finished frame as a retained CVPixelBufferRef, or null if
 // there is none yet. The caller must release it. Safe to call from any thread.
 void* live_front(Live* l);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_LIVE_H_

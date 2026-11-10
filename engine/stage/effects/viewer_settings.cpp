@@ -13,6 +13,8 @@
 #include "community/quickjs/script.h"
 #include "shelf/shelf_folders.h"
 
+namespace motolii {
+
 namespace {
 // Returns the text of the settings file. It is read again only after the window
 // reports that a file changed (see files_changed).
@@ -156,3 +158,5 @@ std::string viewer_said(const std::string& file,
   doc.Accept(write);
   return out.GetString();
 }
+
+}  // namespace motolii

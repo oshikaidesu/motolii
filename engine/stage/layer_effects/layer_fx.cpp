@@ -49,6 +49,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   if (st.files == files) return;
   st.files = files;
@@ -566,3 +568,5 @@ void thing_fx_cover(Stage& s, ThingFx& e, int cells) {
             delete pixels;
           }));
 }
+
+}  // namespace motolii

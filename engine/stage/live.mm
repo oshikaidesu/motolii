@@ -26,6 +26,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Draws the editing overlay on top of the frame in buffer i of the editing window's Live.
@@ -328,3 +330,5 @@ void* live_front(Live* l) {
   const int i = l->front;
   return i < 0 ? nullptr : (void*)CVPixelBufferRetain(l->buffer[i]);
 }
+
+}  // namespace motolii

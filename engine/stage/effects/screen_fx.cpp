@@ -34,6 +34,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 std::filesystem::file_time_type screen_stamp(const std::string& file) {
   std::error_code wrong;
   return std::filesystem::last_write_time(fx_source(file), wrong);
@@ -854,3 +856,5 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
     }
   };
 }
+
+}  // namespace motolii
