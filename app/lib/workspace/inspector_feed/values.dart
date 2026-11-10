@@ -355,17 +355,32 @@ void _told(WorkspaceController ws, String? why) {
   }
 }
 
+/// The name of the colour whose first number is [n], or null. The engine stores an ISF colour as three numbers
+/// (`base_x`, `base_y`, `base_z`, labelled `… r`, `… g`, `… b` by the shelf); the cards show them as one colour.
+/// This is the one place that says which numbers those are.
+String? colourBase(Motolii m, String n, List<String> names) {
+  if (!n.endsWith('_x') || !(m.shown(n)?.label ?? '').endsWith(' r')) {
+    return null;
+  }
+  final base = n.substring(0, n.length - 2);
+  return names.contains('${base}_y') && names.contains('${base}_z')
+      ? base
+      : null;
+}
+
+/// Whether [n] is one of the three numbers of a colour (see [colourBase]); the panel does not rebuild its cards for those alone.
+bool isColourPart(Motolii m, String n) =>
+    RegExp(r'_[xyz]$').hasMatch(n) &&
+    RegExp(r' [rgb]$').hasMatch(m.shown(n)?.label ?? '');
+
 /// The text of each value on the engine's own cards, as the inspector writes it. A value with no text shows a dash.
 Map<String, String> _cardColors(Motolii m, int t, [double at = 0]) => {
   // First an effect's colour: three numbers shown as one colour (see _makeCards), read at the time drawn like the card's numbers.
   for (final (_, names) in m.cards(t))
     for (final n in names)
-      if (n.endsWith('_x') &&
-          names.contains('${n.substring(0, n.length - 2)}_y') &&
-          names.contains('${n.substring(0, n.length - 2)}_z') &&
-          (m.shown(n)?.label ?? '').endsWith(' r'))
-        'v_${n.substring(0, n.length - 2)}':
-            '#${[for (final c in 'xyz'.split('')) ((m.value(t, '${n.substring(0, n.length - 2)}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0')].join().toUpperCase()}',
+      if (colourBase(m, n, names) case final base?)
+        'v_$base':
+            '#${[for (final c in 'xyz'.split('')) ((m.value(t, '${base}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0')].join().toUpperCase()}',
   for (final (_, names) in m.cards(t))
     for (final n in names)
       if (m.words(t, n).isEmpty && m.range(t, n) == null)

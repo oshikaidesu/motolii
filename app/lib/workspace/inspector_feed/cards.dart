@@ -15,7 +15,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.
-/// Nothing about the individual values is hard-coded here.
+/// The values named in code are the exceptions in values.dart (`_onCard`, `writeNumbers`): position, scale, rotation and
+/// opacity as the stage shows them, `speed`, and the other layer a value may point at.
 List<CardDeclaration>? valueCards(WorkspaceController ws, String? id) {
   // With nothing selected the cards belong to the stage itself, layer 0.
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
@@ -103,13 +104,6 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
   // It is shown as one colour on the card, as the effect colour is in After Effects and Alight Motion,
   // and choosing from the Colors shelf sets all three numbers.
   // Without this, a white colour took three number fields.
-  String? colorOf(String n, List<String> names) =>
-      n.endsWith('_x') &&
-          names.contains('${n.substring(0, n.length - 2)}_y') &&
-          names.contains('${n.substring(0, n.length - 2)}_z') &&
-          (m.shown(n)?.label ?? '').endsWith(' r')
-      ? n.substring(0, n.length - 2)
-      : null;
   String colour(String base) =>
       '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
@@ -122,9 +116,9 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
           'struct Params {\n${[
             for (final n in names)
               if (m.shown(n)?.fold == null)
-                if (colorOf(n, names) case final base?) colour(base) else if (!{
+                if (colourBase(m, n, names) case final base?) colour(base) else if (!{
                   for (final x in names)
-                    if (colorOf(x, names) case final b?) ...['${b}_y', '${b}_z'],
+                    if (colourBase(m, x, names) case final b?) ...['${b}_y', '${b}_z'],
                 }.contains(n)) field(n),
             for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
               if (m.shown(n)?.fold == fold) field(n)],

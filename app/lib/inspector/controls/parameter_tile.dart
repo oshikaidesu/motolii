@@ -309,9 +309,10 @@ class _PadGlyphState extends State<_PadGlyph> {
   Widget build(BuildContext context) {
     final x = InspectorScope.of(context), doc = x.doc, p = widget.p;
     final ix = '${widget.id}.x', iy = '${widget.id}.y';
-    final lo = p.min ?? double.negativeInfinity, hi = p.max ?? double.infinity;
     double step(double v, double d) => double.parse(
-      (v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)),
+      p
+          .scrubbed(v + d * p.perPx, v, past: goingPast(context, doc))
+          .toStringAsFixed(math.max(p.dec, 2)),
     );
     return MouseRegion(
       cursor: SystemMouseCursors.move,

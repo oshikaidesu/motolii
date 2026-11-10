@@ -135,28 +135,23 @@ class Steps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = InspectorScope.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
-    Widget btn(String s, double by) {
-      final ok = by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9);
-      return Pressable(
-        onTap: ok
-            ? () => doc.set(id, (v + by).clamp(p.min ?? -1e9, p.max ?? 1e9))
-            : null,
-        builder: (_, h) => Container(
-          width: InspectorSkin.glyph,
-          height: (InspectorSkin.tile - 2 - 8 - 2) / 2,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: h && ok ? Grey.g38 : Grey.g20,
-            borderRadius: BorderRadius.all(Shape.r(4)),
-          ),
-          child: Text(
-            s,
-            style: TextStyles.label(ok ? Grey.g91 : Grey.g44)
-                .copyWith(fontWeight: FontWeight.w700, height: 1),
-          ),
+    Widget btn(String s, double by) => Pressable(
+      onTap: () => doc.set(id, p.typed(v + by)),
+      builder: (_, h) => Container(
+        width: InspectorSkin.glyph,
+        height: (InspectorSkin.tile - 2 - 8 - 2) / 2,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: h ? Grey.g38 : Grey.g20,
+          borderRadius: BorderRadius.all(Shape.r(4)),
         ),
-      );
-    }
+        child: Text(
+          s,
+          style: TextStyles.label(Grey.g91)
+              .copyWith(fontWeight: FontWeight.w700, height: 1),
+        ),
+      ),
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -179,7 +174,8 @@ class Dice extends StatelessWidget {
     final x = InspectorScope.of(context), doc = x.doc;
     return Pressable(
       onTap: () {
-        final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
+        // With no declared top, a roll stays where a 32-bit float still holds every whole number (IEEE 754 binary32, 2^24).
+        final v = doc.get(id) ?? 0, hi = p.max ?? 16777216, lo = p.min ?? 0;
         doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());
       },
       builder: (_, h) => CustomPaint(

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -68,6 +67,13 @@ class PastRange extends InheritedWidget {
   bool updateShouldNotify(PastRange o) => o.flag != flag;
 }
 
+/// Whether a drag under [c] may go past the slider's ends: the card allows it (see [PastRange]), or Option is held.
+bool goingPast(BuildContext c, InspectorValues doc) {
+  final flag = PastRange.of(c);
+  return (flag != null && (doc.flags[flag] ?? false)) ||
+      HardwareKeyboard.instance.isAltPressed;
+}
+
 // Width thresholds shared by the whole panel.
 // A cell narrower than unitMinWidth drops its unit. A cell narrower than decimalsMinWidth drops decimals, but never rounds to a false 0.
 const unitMinWidth = 72.0, decimalsMinWidth = 60.0;
@@ -120,43 +126,17 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     super.dispose();
   }
 
-  // Limits a value to its range.
-  // With Parameter.open, min and max only bound dragging, and a typed number may go past them. The one limit kept is a min of 0 or more.
-  // Otherwise validMin and validMax bound typed numbers. They follow After Effects' PF_FloatSliderDef, whose valid_min and
-  // valid_max are separate from its slider_min and slider_max, which correspond to min and max here.
-  double _clamp(double v) => math.min(
-    _p.open ? double.infinity : _p.validMax ?? _p.max ?? double.infinity,
-    math.max(
-      _p.open && (_p.min ?? 0) < 0
-          ? double.negativeInfinity
-          : _p.validMin ?? _p.min ?? double.negativeInfinity,
-      v,
-    ),
-  );
   // Whether the card allows values past the slider's ends. See [PastRange].
   bool get _pastCard => switch (PastRange.of(context)) {
     final f? => _x.doc.flags[f] ?? false,
     _ => false,
   };
 
-  // Holding Option also allows going past the ends.
-  bool get _going => _pastCard || HardwareKeyboard.instance.isAltPressed;
-
-  // A drag stops at the slider's ends, or at the current value if a typed number already lies beyond them.
-  // An angle drags as far as a typed one may go, as in After Effects, and so does a drag that is allowed past the ends.
-  double _scrubbed(double v, double start) =>
-      _turns ||
-          _going ||
-          (!_p.open && _p.validMin == null && _p.validMax == null)
-      ? _clamp(v)
-      : math.min(
-          math.max(_p.max ?? double.infinity, start),
-          math.max(math.min(_p.min ?? double.negativeInfinity, start), v),
-        );
+  bool get _going => goingPast(context, _x.doc);
 
   // With several fields selected, typing sets them all to the value, while a drag or nudge moves them all by the same amount.
   void _apply(double v, {bool same = false}) {
-    final c = _clamp(v);
+    final c = _p.typed(v);
     final doc = _x.doc;
     if (doc.fields.isPicked(widget.id)) {
       final d = c - (doc.get(widget.id) ?? c);
@@ -345,8 +325,8 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       typeOnTap: false,
       perPx: _p.perPx,
       step: _p.dec > 0 ? _p.step * 10 : 1,
-      // Both limits come from _clamp's ends, following After Effects' PF_FloatSliderDef.
-      reach: (to, from) => from == null ? _clamp(to) : _scrubbed(to, from),
+      reach: (to, from) =>
+          from == null ? _p.typed(to) : _p.scrubbed(to, from, past: _going),
       parse: _typed,
       onGrab: () => _x.doc.beginGesture(),
       onChange: _apply,

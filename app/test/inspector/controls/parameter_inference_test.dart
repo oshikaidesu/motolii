@@ -94,7 +94,8 @@ void main() {
         ('offset: vec2f,', [ParameterLook.point, -1, 1, '']),
         ('offset: vec2f, // @range(-5, 5)', [ParameterLook.point, -5, 5, '']),
         // The name and the unit.
-        ('seed: f32,', [ParameterLook.seed, 0, 9999, '']),
+        // A seed has no top: 9999 was nobody's limit.
+        ('seed: f32,', [ParameterLook.seed, 0, null, '']),
         ('angle: f32,', [ParameterLook.angle, -180, 180, '°']),
         (
           'turn: f32, // @unit(deg) @range(0, 90)',

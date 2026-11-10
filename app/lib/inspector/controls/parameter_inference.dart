@@ -110,6 +110,28 @@ class Parameter {
   /// They correspond to valid_min and valid_max of After Effects' PF_FloatSliderDef.
   final double? validMin, validMax;
 
+  /// Where a typed, stepped or turned number may go, after After Effects' PF_FloatSliderDef (valid_min and valid_max, apart
+  /// from the slider's ends) and Houdini's non-strict range (`@open`: free, except below a minimum of zero or more).
+  /// Every control that sets this parameter ends here, so none keeps a limit of its own.
+  double get typedMin => open && (min ?? 0) < 0
+      ? double.negativeInfinity
+      : validMin ?? min ?? double.negativeInfinity;
+  double get typedMax =>
+      open ? double.infinity : validMax ?? max ?? double.infinity;
+  double typed(double v) => math.min(typedMax, math.max(typedMin, v));
+
+  /// A dragged number: it stops at the slider's ends, or where it already is when it lies beyond them. [past] (the card's
+  /// "go past range ends", or Option held) and an angle drag as far as a typed number may go.
+  double scrubbed(double v, double start, {required bool past}) =>
+      look == ParameterLook.angle ||
+          past ||
+          (!open && validMin == null && validMax == null)
+      ? typed(v)
+      : math.min(
+          math.max(max ?? double.infinity, start),
+          math.max(math.min(min ?? double.negativeInfinity, start), v),
+        );
+
   bool get bounded => min != null && max != null;
   double get step => dec == 0 ? 1 : math.pow(10, -dec).toDouble();
   double get perPx =>
@@ -395,7 +417,7 @@ Parameter infer(FieldDeclaration d) {
     return p(ParameterLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
   }
   if (_any(w, {'seed'})) {
-    return p(ParameterLook.seed, lo: min ?? 0, hi: max ?? 9999);
+    return p(ParameterLook.seed, lo: min ?? 0);
   }
   final rad =
       unit == 'rad' ||

@@ -102,11 +102,7 @@ class _InspectorPanelState extends State<InspectorPane> {
         return false; // (another thing: shown by its name, a word) // (a name changed anywhere: things are named on cards; a word: it is not watched)
       }
       // (nor is an effect's colour, three numbers shown as one swatch as a word is (cards.dart): golf_noise.md (84))
-      if (thing == t &&
-          RegExp(r'_[xyz]$').hasMatch(name) &&
-          RegExp(r' [rgb]$').hasMatch(m.shown(name)?.label ?? '')) {
-        return false;
-      }
+      if (thing == t && isColourPart(m, name)) return false;
     }
     return true;
   }
