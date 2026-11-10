@@ -20,7 +20,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart' show ea
 import 'package:motolii/workspace/shelf/effect_decks.dart' show effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
-import 'package:motolii/workspace/window/zoom.dart' show WsZoom;
+import 'package:motolii/workspace/state/window_zoom.dart' show WsZoom;
 
 final _built = File('$motoliiDir/out/libmotolii.dylib').existsSync();
 

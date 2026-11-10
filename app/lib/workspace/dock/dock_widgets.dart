@@ -22,6 +22,7 @@ export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/widgets/grid_columns.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart' show dockSearchAsked, dockSearchAwaited;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';

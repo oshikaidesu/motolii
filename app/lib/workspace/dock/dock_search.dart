@@ -1,20 +1,6 @@
 // Part of dock_widgets.dart: the shelf's search field, and a way for other panels to focus it.
 part of 'dock_widgets.dart';
 
-/// Bumped when another panel (the Inspector's Add Effect) asks for the search field to take focus.
-///
-/// The search field on screen takes focus. If there is none yet, the next one to be built does.
-final _searchAsked = ValueNotifier(0);
-
-/// Whether a request is still waiting for a search field to be built.
-bool _searchAwaited = false;
-
-/// Asks the shelf's search field to take focus and select its text.
-void askDockSearch() {
-  _searchAwaited = true;
-  _searchAsked.value++;
-}
-
 /// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
 class DockSearch extends StatefulWidget {
   const DockSearch({super.key, required this.controller, required this.hint});
@@ -30,15 +16,15 @@ class _DockSearchState extends State<DockSearch> {
   void initState() {
     super.initState();
     _focus.addListener(_r);
-    _searchAsked.addListener(_asked);
-    if (_searchAwaited) WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
+    dockSearchAsked.addListener(_asked);
+    if (dockSearchAwaited) WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
   }
 
   void _r() => setState(() {});
 
   void _asked() {
     if (!mounted) return;
-    _searchAwaited = false;
+    dockSearchAwaited = false;
     _focus.requestFocus();
     // The press that asked gives the keys back to the panel it came from one frame later (see inspector_panel.dart),
     // so ask again after that frame.
@@ -49,7 +35,7 @@ class _DockSearchState extends State<DockSearch> {
 
   @override
   void dispose() {
-    _searchAsked.removeListener(_asked);
+    dockSearchAsked.removeListener(_asked);
     _focus.dispose();
     super.dispose();
   }

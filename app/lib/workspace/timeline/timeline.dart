@@ -24,7 +24,7 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/two_fingers.dart';
-import 'package:motolii/workspace/commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
+import 'package:motolii/workspace/commands/panel_requests.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
 import 'package:motolii/skin/tokens.dart';

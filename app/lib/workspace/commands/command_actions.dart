@@ -4,25 +4,10 @@
 // Each command names the manual section it comes from. Where Live has no such key, the app that does is named.
 // This file defines what each command does to the workspace state. keymap.dart maps keys to commands,
 // and the user's keybindings.json can override that mapping.
-import 'package:flutter/foundation.dart' show ValueNotifier;
-
+import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/bridge/motolii.dart';
-
-/// A request to the timeline about its own view: zoom or loop. The timeline keeps that state itself.
-///
-/// The string names the request and the int counts requests so that repeating one still notifies listeners.
-final wsTimelineAsk = ValueNotifier<(String, int)>(('', 0));
-void wsAskTimeline(String what) => wsTimelineAsk.value = (what, wsTimelineAsk.value.$2 + 1);
-
-/// Asks the selected layer's row to start renaming (Live 42.5 and 42.19: Cmd+R renames).
-final wsAskRename = ValueNotifier<int>(0);
-
-/// The marker (locator) selected by a click on its flag, as its time and name.
-///
-/// Cmd+R renames it and Delete removes it (Live 6.4: a locator is selected, then renamed or deleted like anything else).
-final wsMarkPicked = ValueNotifier<(double, String)?>(null);
 
 /// The frame where playback started.
 ///

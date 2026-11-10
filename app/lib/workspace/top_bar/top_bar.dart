@@ -15,7 +15,8 @@ import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
-import 'package:motolii/workspace/window/zoom.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/top_bar/zoom_readout.dart';
 
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -254,9 +255,6 @@ class _Render extends StatefulWidget {
   @override
   State<_Render> createState() => _RenderState();
 }
-
-/// Cmd+R and the Render button both open the export settings before a video is written.
-final wsAskRender = ValueNotifier<int>(0);
 
 class _RenderState extends State<_Render> {
   final _open = OverlayPortalController(), _name = TextEditingController(), _focus = FocusNode();

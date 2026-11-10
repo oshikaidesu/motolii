@@ -7,4 +7,3 @@ workspace/shelf/shelf_tile.dart -> workspace/dock/dock_widgets.dart
 workspace/stage/stage.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_blend.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_depth.dart -> workspace/workspace.dart
-workspace/top_bar/top_bar.dart -> workspace/window/zoom.dart

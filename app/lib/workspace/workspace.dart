@@ -3,7 +3,6 @@
 // Each panel lives in its own file and reads the shared Ws.
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;
 import 'dart:async';
@@ -19,6 +18,7 @@ import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
 import 'package:motolii/workspace/window/zoom.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/commands/command_actions.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
 
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 

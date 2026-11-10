@@ -27,10 +27,6 @@ const sizeResolutions = [2160, 1440, 1080, 720, 540, 360, 270];
   return a >= b ? (even(p * a / b), p) : (p, even(p * b / a));
 }
 
-/// Set to true to open the size box once the window shows a new project, as Alight Motion's new-project box comes first.
-/// The chip resets it to false when it opens the box.
-final wsAskSize = ValueNotifier<bool>(false);
-
 class _SizeChipState extends State<_SizeChip> {
   final _box = OverlayPortalController(), _boxKeys = FocusNode(debugLabel: 'document box');
   bool _editing = false;
