@@ -7,15 +7,19 @@
 // tvg_edge turns the outline of a shape into triangles the way ThorVG's WebGPU engine strokes it.
 //
 // This file is separate from the rest of the canvas code because ThorVG's internal headers
-// declare many names that would clash with ours. Only the two functions declared in canvas.h
-// are visible to the rest of the engine.
+// declare many names that would clash with ours. Only the two functions declared in
+// path_operations.h are visible to the rest of the engine.
 #include "stage/canvas/path_operations.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 #include "tvgLottieModifier.h"
 #include "tvgGpuCommon.h"
 #include "tvgWgTessellator.h"
-#include <cmath>
-#include <vector>
 
 // Appends the path to `into` using cubic curves only, as an After Effects path does. A line
 // becomes a straight cubic and a closed path ends back at its start. These are the only forms

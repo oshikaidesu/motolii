@@ -10,11 +10,19 @@
 //   - Hit testing against a path.
 //
 // This file is separate from the rest of the canvas code because Skia's headers declare many
-// names that would clash with ours. Only the functions declared in canvas.h are visible to the
-// rest of the engine. Built by skia.sh.
+// names that would clash with ours. Only the functions declared in path_operations.h are visible
+// to the rest of the engine. Built by skia.sh.
 #include "stage/canvas/path_operations.h"
 
-#include "thorvg.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <thorvg.h>
 #include "include/core/SkPath.h"
 #include "include/core/SkPathBuilder.h"
 #include "include/pathops/SkPathOps.h"
@@ -25,7 +33,6 @@
 #include "include/core/SkRegion.h"
 #include "include/core/SkMatrix.h"
 #include "include/effects/SkDiscretePathEffect.h"
-#include <vector>
 
 static SkPath sk_of(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts) {
     SkPathBuilder b;
