@@ -1,14 +1,13 @@
 // The values the panel's cards edit (InspectorValues). The caller supplies them; this file holds none of its own.
-import 'dart:math' as math;
-
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart'
+    show ChangeNotifier, ValueListenable, ValueNotifier;
 
 import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/controls/inspector_parameter_controls.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
-import 'package:motolii/inspector/inspector_card.dart';
+import 'package:motolii/inspector/field_selection.dart';
 import 'package:motolii/inspector/inspected_layer.dart';
+import 'package:motolii/inspector/inspector_card.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
 /// The values of the selected layer as the inspector edits them: numbers, strings and switches.
@@ -164,52 +163,12 @@ class InspectorValues extends ChangeNotifier {
 
   void poke() => notifyListeners();
 
-  /// The fields selected together.
-  /// Shift-click selects a rectangle of [_grid], one row per card with its fields in order, like a spreadsheet.
-  final Set<String> picked = {};
-  String? _pickFrom;
-  bool isPicked(String id) => picked.length > 1 && picked.contains(id);
-
-  void pick(String id, {bool span = false}) {
-    final from = _pickFrom,
-        a = from == null ? null : _cell(from),
-        b = _cell(id),
-        shown = picked.length > 1;
-    picked.clear();
-    if (span && a != null && b != null) {
-      for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {
-        final row = _grid[r];
-        for (
-          var c = math.min(a.$2, b.$2);
-          c <= math.max(a.$2, b.$2) && c < row.length;
-          c++
-        ) {
-          picked.add(row[c]);
-        }
-      }
-    } else {
-      picked.add(id);
-      _pickFrom = id;
-    }
-    // Selecting one field shows nothing, because [isPicked] needs several. Notify only when the selection was or becomes visible,
-    // otherwise pressing a parameter control rebuilt the whole inspector for no change.
-    if (shown || picked.length > 1) notifyListeners();
-  }
-
-  void unpick() {
-    if (picked.isEmpty) return;
-    picked.clear();
-    notifyListeners();
-  }
-
-  late final _grid = [
-    for (final f in cards) [for (final p in f.params) ...paramDefaults(p).keys],
-  ];
-  (int, int)? _cell(String id) {
-    for (var r = 0; r < _grid.length; r++) {
-      final c = _grid[r].indexOf(id);
-      if (c >= 0) return (r, c);
-    }
-    return null;
-  }
+  /// The fields selected together, so that an edit of one changes them all. A change of it notifies this object's listeners.
+  late final FieldSelection fields = FieldSelection(
+    rows: () => [
+      for (final f in cards)
+        [for (final p in f.params) ...paramDefaults(p).keys],
+    ],
+    onChanged: notifyListeners,
+  );
 }

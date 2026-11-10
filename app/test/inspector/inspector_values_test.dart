@@ -55,7 +55,7 @@ void main() {
     expect(doc.s2, {'v_tint': '#FF8000', 'v_mode': 'Med'});
     expect(doc.keys, isEmpty);
     expect(doc.b, isEmpty);
-    expect(doc.picked, isEmpty);
+    expect(doc.fields.picked, isEmpty);
     expect(doc.inGesture, isFalse);
   });
 
@@ -194,35 +194,45 @@ void main() {
       final doc = _doc();
       var told = 0;
       doc.addListener(() => told++);
-      doc.pick('v_amount');
-      expect(doc.picked, {'v_amount'});
-      expect((doc.isPicked('v_amount'), told), (false, 0));
+      doc.fields.pick('v_amount');
+      expect(doc.fields.picked, {'v_amount'});
+      expect((doc.fields.isPicked('v_amount'), told), (false, 0));
     });
 
     test('a span picks the rectangle from the field picked first to this one, one row per card', () {
       final doc = _doc();
       var told = 0;
       doc.addListener(() => told++);
-      doc.pick('v_amount');
-      doc.pick('v_mode', span: true);
-      expect(doc.picked, {'v_amount', 'v_center.x', 'v_center.y', 'v_mode'});
+      doc.fields.pick('v_amount');
+      doc.fields.pick('v_mode', span: true);
+      expect(doc.fields.picked, {
+        'v_amount',
+        'v_center.x',
+        'v_center.y',
+        'v_mode',
+      });
       expect(
-        (doc.isPicked('v_mode'), doc.isPicked('v_x'), told),
+        (doc.fields.isPicked('v_mode'), doc.fields.isPicked('v_x'), told),
         (true, false, 1),
       );
-      doc.pick(
+      doc.fields.pick(
         'v_angle',
         span: true,
       ); // Still from v_amount: the first two fields of both cards.
-      expect(doc.picked, {'v_amount', 'v_center.x', 'v_radius', 'v_angle'});
+      expect(doc.fields.picked, {
+        'v_amount',
+        'v_center.x',
+        'v_radius',
+        'v_angle',
+      });
       expect(told, 2);
     });
 
     test('a span across cards stops at the end of a shorter row', () {
       final doc = _doc();
-      doc.pick('v_x');
-      doc.pick('v_radius', span: true);
-      expect(doc.picked, {
+      doc.fields.pick('v_x');
+      doc.fields.pick('v_radius', span: true);
+      expect(doc.fields.picked, {
         'v_amount',
         'v_center.x',
         'v_center.y',
@@ -237,33 +247,33 @@ void main() {
       final doc = _doc();
       var told = 0;
       doc.addListener(() => told++);
-      doc.pick('v_mode', span: true);
-      expect(doc.picked, {'v_mode'});
-      doc.pick('v_elsewhere', span: true);
-      expect(doc.picked, {'v_elsewhere'});
+      doc.fields.pick('v_mode', span: true);
+      expect(doc.fields.picked, {'v_mode'});
+      doc.fields.pick('v_elsewhere', span: true);
+      expect(doc.fields.picked, {'v_elsewhere'});
       expect(told, 0);
     });
 
     test('picking one field after several notifies, because a selection was showing', () {
       final doc = _doc();
-      doc.pick('v_amount');
-      doc.pick('v_mode', span: true);
+      doc.fields.pick('v_amount');
+      doc.fields.pick('v_mode', span: true);
       var told = 0;
       doc.addListener(() => told++);
-      doc.pick('v_x');
-      expect(doc.picked, {'v_x'});
-      expect((doc.isPicked('v_x'), told), (false, 1));
+      doc.fields.pick('v_x');
+      expect(doc.fields.picked, {'v_x'});
+      expect((doc.fields.isPicked('v_x'), told), (false, 1));
     });
 
     test('unpick clears and notifies, unless nothing was picked', () {
       final doc = _doc();
       var told = 0;
       doc.addListener(() => told++);
-      doc.unpick();
+      doc.fields.unpick();
       expect(told, 0);
-      doc.pick('v_amount');
-      doc.unpick();
-      expect(doc.picked, isEmpty);
+      doc.fields.pick('v_amount');
+      doc.fields.unpick();
+      expect(doc.fields.picked, isEmpty);
       expect(told, 1);
     });
   });

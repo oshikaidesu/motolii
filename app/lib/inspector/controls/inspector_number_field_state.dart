@@ -99,10 +99,10 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   void _apply(double v, {bool same = false}) {
     final c = _clamp(v);
     final doc = _x.doc;
-    if (doc.isPicked(widget.id)) {
+    if (doc.fields.isPicked(widget.id)) {
       final d = c - (doc.get(widget.id) ?? c);
       doc.setMany({
-        for (final id in doc.picked)
+        for (final id in doc.fields.picked)
           id: id == widget.id || same ? c : (doc.get(id) ?? 0) + d,
       });
       return;
@@ -227,19 +227,19 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     }
     final doc = _x.doc;
     if (HardwareKeyboard.instance.isShiftPressed) {
-      doc.pick(widget.id, span: true);
+      doc.fields.pick(widget.id, span: true);
       return false;
     }
-    if (!doc.isPicked(widget.id)) doc.pick(widget.id);
+    if (!doc.fields.isPicked(widget.id)) doc.fields.pick(widget.id);
     return null;
   }
 
   KeyEventResult _key(KeyEvent e) {
     if (e.logicalKey != LogicalKeyboardKey.escape ||
-        _x.doc.picked.length <= 1) {
+        _x.doc.fields.picked.length <= 1) {
       return KeyEventResult.ignored;
     }
-    _x.doc.unpick();
+    _x.doc.fields.unpick();
     return KeyEventResult.handled;
   }
 
@@ -314,7 +314,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
                       ? InspectorSkin.keyDot.withValues(alpha: .5)
                       : Grey.g56)),
       keyEmpty: ks == KeyframeState.off,
-      picked: x.doc.isPicked(widget.id),
+      picked: x.doc.fields.isPicked(widget.id),
       height: InspectorSkin.tile,
       pad: InspectorSkin.tilePad,
     );
