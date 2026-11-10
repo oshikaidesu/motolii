@@ -1,7 +1,43 @@
-// calls_later.h: the calls of motolii.h for changes that are queued and answered later, which are
+// calls_later.cpp: the calls of motolii.h for changes that are queued and answered later, which are
 // motolii_later and motolii_answer, and for undo.
-//
-// Included by motolii.mm; not self-contained.
+#include "entry/motolii.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include <sqlite3.h>
+
+#include "document/adapter.h"
+#include "document/arrange.h"
+#include "document/cards.h"
+#include "document/easings_put.h"
+#include "document/expressions.h"
+#include "document/fx_put.h"
+#include "document/hold.h"
+#include "document/keys_put.h"
+#include "document/kinds.h"
+#include "document/layer_edit.h"
+#include "document/marks.h"
+#include "document/match.h"
+#include "document/parent.h"
+#include "document/paths.h"
+#include "document/presets.h"
+#include "document/recipes.h"
+#include "document/relate.h"
+#include "document/time_edit.h"
+#include "document/undo.h"
+#include "document/value_at.h"
+#include "entry/calls.h"
+#include "entry/calls_sound.h"
+#include "entry/render_thread.h"
+#include "entry/snapshot.h"
+#include "entry/window.h"
 
 // Queues a change behind every other change on the render thread and returns a ticket at once, so
 // that the app's UI thread never waits for the render thread. motolii_answer returns the result for
@@ -268,4 +304,3 @@ int motolii_answer(Motolii* m, int ticket) {
 const char* motolii_answer_why(Motolii* m) { return m->answered_why.c_str(); }
 // Undoes the last undo step. Returns nonzero on success.
 int motolii_undo(Motolii* m) { return on_render_thread(m, [=] { return (int)(doc_undo(doc(m))); }); }
-
