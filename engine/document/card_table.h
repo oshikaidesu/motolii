@@ -1,5 +1,10 @@
-// card_table.h: the cards a layer's properties are grouped in. Included by doc.h; not
-// self-contained.
+#ifndef MOTOLII_DOCUMENT_CARD_TABLE_H_
+#define MOTOLII_DOCUMENT_CARD_TABLE_H_
+// card_table.h: the cards a layer's properties are grouped in.
+
+#include <string>
+
+#include "document/kinds.h"
 
 // Each entry is a card with a title and the space separated properties it shows. The cards that
 // apply to a layer are chosen by the next two fields: a property and the value it must have, where
@@ -11,7 +16,7 @@
 // Effects' Properties panel keeps Layer Transform at the top for all layer types. Then Alight
 // Motion's Opacity and Blending, which is how the layer lies on what is under it. Then the cards of
 // each kind of layer, such as Text and Paragraph or Shape Properties.
-static const DocCard doc_cards[] = {
+inline const DocCard doc_cards[] = {
     // After Effects' Transform group: where the layer is, how large, how turned and how visible.
     // Each is a property of its own.
     { "Transform", "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z rotate_x rotate_y rotate opacity", "kind",
@@ -159,4 +164,5 @@ static const DocCard doc_cards[] = {
     { "Gradient Map", "tritone tritone_shadow tritone_midtone tritone_highlight", "tritone", "+" },
 };
 // Returns true if `one` is a whole word of the space separated list `words`.
-static bool doc_among(const std::string& words, const std::string& one) { return (" " + words + " ").find(" " + one + " ") != std::string::npos; }
+inline bool doc_among(const std::string& words, const std::string& one) { return (" " + words + " ").find(" " + one + " ") != std::string::npos; }
+#endif  // MOTOLII_DOCUMENT_CARD_TABLE_H_

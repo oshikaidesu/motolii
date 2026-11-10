@@ -1,11 +1,14 @@
+#ifndef MOTOLII_DOCUMENT_VALUES_H_
+#define MOTOLII_DOCUMENT_VALUES_H_
 // Lists every property a layer may have and how the inspector shows it.
-// Included by doc.h; not self-contained.
+
+#include "document/kinds.h"
 
 // One entry per property. The fields of DocShown are: property name, kind of control, unit,
 // label shown to the user, lowest and highest value of the slider, and the name of the fold
 // the property is grouped under (nullptr for none). The slider range is for display only;
 // typed values may go beyond it.
-static const DocShown doc_shown[] = {
+inline const DocShown doc_shown[] = {
     { "text", "words", "", "Text", 0, 0, nullptr },
     { "file", "file", "", "Font", 0, 0, nullptr },
     // An image that fills a shape, as in Alight Motion's Fill > Media. It is chosen from the Fill
@@ -260,3 +263,4 @@ static const DocShown doc_shown[] = {
     { "behind", "", "", "Behind", 0, 0, nullptr },
     { "background", "colour", "", "Colour", 0, 0, nullptr },
 };
+#endif  // MOTOLII_DOCUMENT_VALUES_H_
