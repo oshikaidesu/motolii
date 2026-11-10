@@ -7,6 +7,7 @@
 #include <thorvg.h>
 #include <thorvg_lottie.h>
 #include <webgpu/webgpu.h>
+#include <zstd.h>
 
 #include <algorithm>
 #include <array>
@@ -33,7 +34,6 @@
 #include "stage/canvas/canvas_sketch.h"
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
-#include "third_party/filament_src/third_party/zstd/lib/zstd.h"
 
 namespace motolii {
 

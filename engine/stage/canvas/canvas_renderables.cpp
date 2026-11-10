@@ -35,13 +35,14 @@
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 // Used by type_lacks() to find which characters a font has.
+#include <stb_truetype.h>
+
 #include "gpu/gpu_interop.h"
 #include "shelf/shelf_folders.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
-#include "third_party/filament_src/third_party/stb/stb_truetype.h"
 
 namespace motolii {
 

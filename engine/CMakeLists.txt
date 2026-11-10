@@ -80,6 +80,10 @@ target_compile_options(motolii_flags INTERFACE -ffp-contract=off $<$<COMPILE_LAN
 target_compile_definitions(motolii_flags INTERFACE SQLITE_ENABLE_SESSION SQLITE_ENABLE_PREUPDATE_HOOK
   JPH_CROSS_PLATFORM_DETERMINISTIC JPH_DEBUG_RENDERER JPH_OBJECT_LAYER_BITS=16 JPH_OBJECT_STREAM JPH_PROFILE_ENABLED)
 target_include_directories(motolii_flags INTERFACE ${ENGINE}
+  # Libraries Filament carries in its source tree, used under their own names: <rapidjson/...>, <zstd.h>,
+  # <stb_truetype.h>, <cgltf.h>.
+  ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${FILAMENT}/third_party/zstd/lib
+  ${FILAMENT}/third_party/stb ${FILAMENT}/third_party/cgltf
   ${FILAMENT_SDK}/include ${THORVG}/inc ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES}
   ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
   ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap ${JOLT}
@@ -233,6 +237,7 @@ add_library(motolii_document OBJECT
   document/edit/time_edit.cpp
   document/evaluate/camera.cpp
   document/evaluate/evaluate.cpp
+  document/evaluate/evaluate_camera.cpp
   document/evaluate/evaluate_clipping.cpp
   document/evaluate/evaluate_lights.cpp
   document/evaluate/fx_list.cpp

@@ -5,9 +5,9 @@
 // so there is a single copy (the one Filament's assimp ships) and no file
 // depends on another having included it first.
 
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/pointer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"
+#include <rapidjson/document.h>
+#include <rapidjson/pointer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #endif  // MOTOLII_BASE_JSON_H_

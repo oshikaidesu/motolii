@@ -29,8 +29,9 @@
 #include <vector>
 // cgltf is the glTF parser that gltfio is built on. It is already part of
 // Filament's library.
+#include <cgltf.h>
+
 #include "stage/render/render_stage.h"
-#include "third_party/filament_src/third_party/cgltf/cgltf.h"
 
 namespace motolii {
 
