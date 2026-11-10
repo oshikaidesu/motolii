@@ -2,7 +2,7 @@
 # Canvalry's distributions (MIT, Phill T, github.com/phillip-motion/Canvalry-scripts) made recipes as they are: the
 # file whole, run by script.cpp's Cavalry stand-ins, with head lines added: a circle copied up to 1000 times, colours,
 # each knob (nK, its label from the file's own comment, its default from its code) a track or a check; a 3D one turns
-# round once in eight seconds, a phase goes round. Labelled Cavalry: a closed pack, on the Program shelf (docs/internal/notes/CREATE_PROGRAM.md).
+# round once in eight seconds, a phase goes round. Labelled Cavalry: a closed pack, on the Program shelf (docs/design/create_and_program_shelves.md).
 # usage: from_canvalry.py <Canvalry src/distributions> <recipes folder>
 import os, re, sys
 

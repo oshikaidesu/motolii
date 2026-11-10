@@ -94,4 +94,4 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 
 <!-- /files_in_build.sh -->
 
-本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。アプリから届かない C 関数・部品・スクリプトは、切る前の main をタグ `noise-archive-2026-11-09` に残して外しました（一覧は [`../docs/internal/notes/noise_cut.md`](../docs/internal/notes/noise_cut.md)）。
+本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。アプリから届かない C 関数・部品・スクリプトは、切る前の main をタグ `noise-archive-2026-11-09` に残して外しました（一覧は [`../docs/design/removed_code_2026-11-09.md`](../docs/design/removed_code_2026-11-09.md)）。

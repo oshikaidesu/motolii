@@ -55,8 +55,8 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | What | Where to start | Difficulty |
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/internal/reports/aviutl/aviutl2/converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/internal/reports/effects/tsl_collection.md` | Medium |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/design/aviutl2_converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
+| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/design/tsl_collection.md` | Medium |
 
 ## Known gaps
 

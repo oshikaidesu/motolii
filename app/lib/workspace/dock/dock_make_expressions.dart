@@ -10,7 +10,7 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
-// ---- The Expression group: every JS file that goes on a layer and moves its values (docs/internal/notes/CREATE_PROGRAM.md).
+// ---- The Expression group: every JS file that goes on a layer and moves its values (docs/design/create_and_program_shelves.md).
 // It gathers three kinds in one place:
 // - scripts with each(): the Repeater, After Effects expressions, Maze, Sunflower and others
 // - motions: Cavalry's Animators, in expressions/

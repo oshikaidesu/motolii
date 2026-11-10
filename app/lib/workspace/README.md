@@ -108,4 +108,4 @@ $F/flutter analyze lib
 - 区切りごとにコミットする(履歴が無いのが一番怖い、が利用者の方針)。
 
 ## まだ無いもの
-- 見本とエンジンの二股（`inside == null`）が残っている（[`docs/internal/notes/TASKS.md`](../../../docs/internal/notes/TASKS.md) 24 番）。
+- 見本とエンジンの二股（`inside == null`）が残っている。

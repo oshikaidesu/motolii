@@ -137,7 +137,7 @@ int doc_add(Doc& d, const char* kind, const char* file) {
     if (!*kind) kind = doc_kind_of(file);
     if (!*kind) return d.error = std::string("no kind of layer is made from ") + file, 0;
     // A sound is added as a hidden video that is heard. Alight Motion's audio layer has no image,
-    // only its wave on the timeline (docs/internal/reports/alight_motion/alight_ui.md line 177),
+    // only its wave on the timeline (docs/design/alight_motion_ui.md line 177),
     // and Extract Sound's copy (doc_extract_sound) is likewise a hidden video that is heard. Its
     // visibility switch shows its wave (video_layer.h).
     const bool sound = !strcmp(kind, "sound");
@@ -218,7 +218,7 @@ bool doc_say(Doc& d, int layer, const char* name, const char* word) {
         if (const std::string file = doc_recipe_code_path(word); !file.empty()) return doc_say(d, layer, name, file.c_str());
     }
     // An expression is put among the layer's effects after those it has, as many as it is given
-    // (docs/internal/notes/CREATE_PROGRAM.md). If it is already there, it stays as it is.
+    // (docs/design/create_and_program_shelves.md). If it is already there, it stays as it is.
     if (!strcmp(name, "script") && word && layer != 0 && doc_among("image text shape solid", doc_word(d, layer, "kind")) && doc_expression(d, word)) {
         std::vector<std::string> list = doc_fx_list(d, layer, true);
         if (std::find(list.begin(), list.end(), word) != list.end()) return true;

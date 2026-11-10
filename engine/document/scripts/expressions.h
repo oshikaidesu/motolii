@@ -5,7 +5,7 @@
 // An expression is a .js file that defines each(i, n, t, k). For copy i of n it returns where the
 // copy lies, how it is rotated, how large it is and how opaque. This is the Repeater of After
 // Effects, its Grid, Ring and Stagger, and the Animators of Cavalry. See
-// docs/internal/notes/CREATE_PROGRAM.md.
+// docs/design/create_and_program_shelves.md.
 //
 // A layer holds any number of expressions in its effect list and treats them like effects: they
 // can be added, turned off, reordered and removed the same way. They run in list order after the

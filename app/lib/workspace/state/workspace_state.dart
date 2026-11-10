@@ -22,7 +22,7 @@ import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
-/// Like Alight Motion's audio layer (docs/internal/reports/alight_motion/alight_ui.md).
+/// Like Alight Motion's audio layer (docs/design/alight_motion_ui.md).
 bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.

@@ -373,7 +373,7 @@ inline const DocValue doc_values[] = {
     // edge, in points of the screen.
     // A group made to mask: its top layer is the shape that the others in it are seen through, or
     // cut out by. Alight Motion's Group and Mask and Group and Exclude, see
-    // docs/internal/reports/alight_motion/alight_ui.md.
+    // docs/design/alight_motion_ui.md.
     {"group_mask", "shape", 0, 0, false, "none mask exclude"},
     // A solid is cut by a box, not a matte.
     {"clip_matte", "video image text shape", 0, 0, false, "alpha luma"}, {"clip_invert", "video image text shape", 0, 1, false, nullptr}, {"clip_feather", "video image text shape", 0, 500, false, nullptr},

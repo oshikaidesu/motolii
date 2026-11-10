@@ -62,7 +62,7 @@ namespace {
 // Scatter Repeat is Alight Motion's own effect, which AbsentMotion has not converted. Its
 // docs/ALIGHT_COMPATIBILITY.md says "Not converted yet", and no other implementation was found.
 // It is therefore written here from what Alight Motion 6.2.60 shows of it, recorded in
-// docs/internal/reports/alight_motion/alight_checklist.md:
+// docs/design/alight_motion_checklist.md:
 //   - The layer itself stays, and Count copies of it lie in a disc of Radius around its place.
 //   - Each copy has its own position, derived from its index and Seed. A copy keeps its place
 //     when Count grows, and it moves smoothly as Evolution changes.

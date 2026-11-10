@@ -92,7 +92,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   return [
     for (final (title, names) in m.cards(t))
       // A sound layer has a volume and nothing to place on the canvas, as in Alight Motion's audio layer
-      // (docs/internal/reports/alight_motion/alight_ui.md).
+      // (docs/design/alight_motion_ui.md).
       if (title == 'Sound' || !wsSound(m, t))
         Fx(
           title,

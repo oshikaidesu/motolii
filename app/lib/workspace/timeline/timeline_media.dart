@@ -91,7 +91,7 @@ extension WsTimelineMedia on WsTimelineState {
   }
 
   /// The image of an image layer, decoded once at a small height and repeated along the bar as in Alight Motion
-  /// (see docs/internal/reports/alight_motion/alight_ui.md). Null if Flutter cannot decode the file.
+  /// (see docs/design/alight_motion_ui.md). Null if Flutter cannot decode the file.
   List<ui.Image>? _stillOf(String file, String id) {
     if (frames[id] case (final k, final f) when k == file) return f;
     if (framesAsked[id] != file) {

@@ -1,0 +1,298 @@
+# Alight Motion を実機で開いて見た記録（10/25）
+
+Alight Motion 6.2.60（Android）を、エミュレーターで 1 画面ずつ開いて記録した。画面ごとに「何がある・UI の形・良い所・悪い所・Motolii ではどうか」を書き、スクショは `alight_ui/` に入れた（git には入れていない）（110 枚）。Alight Motion は**下限**で、ゴールではない。
+
+- 見た所：Android Studio のエミュレーター（Pixel Tablet、Android 15）と BlueStacks Air（スマホ）。adb で画面の部品を文字で読み、絵を撮った。
+- **見られなかった所**：有料の機能の一部（無料体験でイーズと親は見た）（カメラは「まず試す」で見た）、書き出しの実行、クラウド、iPad の横の並べ方。
+- **横の並べ方は iPad だけ**：Android 版はタブレットでも縦に固定（`SCREEN_ORIENTATION_PORTRAIT`）。Android 15 の縦横比の決まりで無理に横にすると、スマホの並べ方を横に引き伸ばしただけになる（10_editor (`docs/internal/reports/alight_motion/alight_ui/10_editor.jpg`, not in the repository)）。Mac の App Store にも無い（対応機種 130 に Mac が無い）。
+- 公式ガイドの効果は 169、**アプリの中の効果は 184**（12 分類）。ガイドだけにあるのは Precise Box Blur の 1 つ、アプリだけにあるのは 16（下の「効果の選び画面」）。
+
+## 操作体系の全体（良い所・悪い所）
+
+**良い所**
+1. **どの値も同じ形で触る**：パネルを開くと、左の縦の列に「戻る・キーを打つ／消す・イーズ・⋯」が必ず同じ場所にある（21 (`docs/internal/reports/alight_motion/alight_ui/21_color_fill.jpg`, not in the repository)、28 (`docs/internal/reports/alight_motion/alight_ui/28_move_location.jpg`, not in the repository)、76 (`docs/internal/reports/alight_motion/alight_ui/76_effect_card.jpg`, not in the repository)）。色でも位置でも効果のつまみでも、キーの打ち方が 1 つ。
+2. **数字はこする目盛り**：細かい刻みの目盛りを横にこすり、右に数字（30 (`docs/internal/reports/alight_motion/alight_ui/30_move_scale.jpg`, not in the repository)、76 (`docs/internal/reports/alight_motion/alight_ui/76_effect_card.jpg`, not in the repository)）。指で大きく動かしても値は少しずつ動く。
+3. **指で隠れない「こする帯」**：位置と点は、ステージを直接触る代わりに、下の大きな帯をこすって動かせる（「Swipe here to move layer」28 (`docs/internal/reports/alight_motion/alight_ui/28_move_location.jpg`, not in the repository)、「Swipe to move point」32 (`docs/internal/reports/alight_motion/alight_ui/32_edit_points.jpg`, not in the repository)）。
+4. **押す前に結果が見える**：ブレンドは見本の写真に掛けた絵（27 (`docs/internal/reports/alight_motion/alight_ui/27_blend.jpg`, not in the repository)）、効果は動く絵（71 (`docs/internal/reports/alight_motion/alight_ui/71_effect_category.jpg`, not in the repository)）と大きな動く見本（72 (`docs/internal/reports/alight_motion/alight_ui/72_effect_preview.jpg`, not in the repository)）。
+5. **初めての所で吹き出しが指す**：カメラを置くと「この見え方のパネルで Active Camera View を入れる」と、押す場所を指して教える（61 (`docs/internal/reports/alight_motion/alight_ui/61_camera_hint.jpg`, not in the repository)）。
+6. **選んだ数で上の帯が変わる**：複数選ぶと上の帯が緑になり「3 layers selected」と、グループ・マスク・抜く・消す・揃えが出る（50 (`docs/internal/reports/alight_motion/alight_ui/50_multiselect.jpg`, not in the repository)）。
+7. **入れ子にパンくず**：グループに入ると「New Project › Group 1」（52 (`docs/internal/reports/alight_motion/alight_ui/52_group_inside.jpg`, not in the repository)）。
+
+**悪い所**
+1. **有料の壁が操作の途中に出る**：プロジェクトを作る・閉じるたびに課金の画面と広告。カメラ・親・イーズの弾み系・一部の効果は TRY／鍵（60 (`docs/internal/reports/alight_motion/alight_ui/60_pro_gate.jpg`, not in the repository)）。試験用の広告は閉じるボタンが無く、アプリを止めるしかなかった。
+2. **横に並べ直していない**：Android のタブレットでも縦固定。無理に横にすると、効果の見本の「足す」ボタンが画面の外に出て押せない（73 (`docs/internal/reports/alight_motion/alight_ui/73_effect_preview_cut.jpg`, not in the repository)）。
+3. **深い**：値を変えるのに「レイヤーを選ぶ → パネル → タブ → 値」と 3〜4 段。同時に見られる値は 1 パネル分だけ。
+4. **隠れた操作がある**：複数選ぶ・帯をずらす・アンカーポイント・Element の印は長押しの中にあり、案内が無い（下の「隠れた操作」）。
+5. **キーボード・右クリック・メニューバーが無い**：全部タップ。
+
+## 画面ごと
+
+### 新しいプロジェクト（01 (`docs/internal/reports/alight_motion/alight_ui/01_new_project.jpg`, not in the repository)）
+- **ある**：PROJECT か ELEMENT、名前、縦横比 6 種（16:9・9:16・4:5・1:1・4:3・自由で幅・高さ・つなぎ）、解像度 7 段（2160p〜270p、大きさも表示）、fps 10 段（12・15・18・20・24・25・30・48・50・60）、背景 5 色。
+- **UI**：1 枚の小さな箱に全部。縦横比は形の絵で選ぶ。
+- **良い**：作る前に全部決まる。縦横比が絵。
+- **悪い**：長さを決める欄が無い（レイヤーで決まる）。背景は 5 色だけ。
+- **Motolii**：New は untitled を作るだけ。大きさは後で上の帯、**fps と長さはどこからも変えられない**（screens.md）。→ この箱を借りる形が近い。
+
+### プロジェクトの設定（02 (`docs/internal/reports/alight_motion/alight_ui/02_project_settings.jpg`, not in the repository)）
+- **ある**：縦横比・解像度・fps・背景を後から変える、**Total Edit Time**（編集した時間）。
+- **良い**：作ったときと同じ箱がそのまま後から開く。
+- **Motolii**：文書の設定の欄はあるが隠してある。
+
+### 書き出し（03 (`docs/internal/reports/alight_motion/alight_ui/03_export.jpg`, not in the repository)、04 (`docs/internal/reports/alight_motion/alight_ui/04_export_video.jpg`, not in the repository)、05 (`docs/internal/reports/alight_motion/alight_ui/05_export_sequence.jpg`, not in the repository)）
+- **ある**：空き容量と大きさの見積もり。Video（MP4、解像度、H.264 / H.265、fps LOW・REDUCED・FULL、画質 Mbps のつまみ）、Upload to Cloud、Project Package（元の素材ごと、リンクで共有、5MB を超えると有料）、今のコマを PNG、Image Sequence（PNG / JPEG、解像度、fps、画質）、「テンプレートとしても書き出す」。
+- **良い**：形式ごとに 1 行、右の矢印で細かい設定。空き容量と見積もりが上に常に出る。
+- **悪い**：GIF は一覧の下にあり、こすらないと見えない（320×180・15fps が既定、141 (`docs/internal/reports/alight_motion/alight_ui/141_export_gif.jpg`, not in the repository)）。透明（アルファ）の動画の選択肢が無い。範囲の指定が無い。
+- **Motolii**：外の ffmpeg を決め打ち（60fps・CRF 17）、形式・画質は表示だけ（export_map.md）。
+
+### プロジェクト一覧（06 (`docs/internal/reports/alight_motion/alight_ui/06_projects_list.jpg`, not in the repository)、07 (`docs/internal/reports/alight_motion/alight_ui/07_project_menu.jpg`, not in the repository)）
+- **ある**：タブ Projects・Your Templates・Elements・Cloud、Upload XML file、並べ替え（名前・日付）、日付ごとの見出し、カードに長さ・縦横比・解像度・大きさ・fps、⋯ で Select・Export・Duplicate・Upload to Cloud・Delete。
+- **良い**：カードに作品の仕様が全部出る。
+- **Motolii**：開くは同じフォルダの .motolii だけ。一覧の画面が無い。
+
+### 設定（80 (`docs/internal/reports/alight_motion/alight_ui/80_settings_menu.jpg`, not in the repository)）
+- **ある**：Low Quality Preview、Demo Mode、Default Layer Duration（2s）、Audio Resampling（LOW・HIGH・ULTRA）、About・プライバシー・オープンソース・サポート。
+- **Motolii**：環境設定の画面が無い。
+
+### 編集画面（10 (`docs/internal/reports/alight_motion/alight_ui/10_editor.jpg`, not in the repository)）
+- **ある**：上に戻る・名前・設定・書き出し。中段に取り消し・やり直し・頭へ・再生・終わりへ・コピー貼り付け・見え方。下にタイムライン（目・選ぶ丸・帯・右端の ≡ で並べ替え）、右下に＋。
+- **良い**：取り消しが常に画面にある。
+- **悪い**：タイムラインは 1 行に 1 レイヤーで、キーは選んだレイヤーの帯の上にしか出ない。
+- **Motolii**：Ableton どおりのタイムライン（ableton_map.md）。
+
+### コピー・貼り付け（11 (`docs/internal/reports/alight_motion/alight_ui/11_copy_paste.jpg`, not in the repository)）
+- **ある**：Select All Layers、Duplicate、Save Preset、Copy（見た目ごと）、Paste Layer、**Paste Style**（見た目だけ、矢印で何を貼るか選ぶ）。
+- **良い**：「見た目だけ貼る」がある。
+- **Motolii**：レイヤーとキーのコピー貼り付けが無い（screens.md）。
+
+### 見え方（12 (`docs/internal/reports/alight_motion/alight_ui/12_view_options.jpg`, not in the repository)）
+- **ある**：Pixel・Grid・Solo・Camera（カメラ越しに見る）、拡大・縮小と %。
+- **Motolii**：Fit・50%・100%・Safe・Grid・Camera/Free（近い）。Pixel（拡大で点を見る）は無い。
+
+### ＋で足す（13 (`docs/internal/reports/alight_motion/alight_ui/13_add_shape.jpg`, not in the repository)、14 (`docs/internal/reports/alight_motion/alight_ui/14_add_shape_p2.jpg`, not in the repository)、15 (`docs/internal/reports/alight_motion/alight_ui/15_add_object.jpg`, not in the repository)）
+- **ある**：Shape（図形 54：円・角丸四角・十字・円弧・三角・吹き出し・しずく・雪・盾・扇・六角・花・矢印・台形・三日月・雲・再生・渦・四角・星・線・L・切手・ハート・稲妻・パズル・チェック・旗・いいね・紙飛行機・家・麦・ヨット・虫眼鏡・鍵・四芒星・しおり・指・炎・リボン・月桂樹・太陽・人・ロケット・画鋲・ひし形・飛行機・傘・帯・爆弾・封筒・女の人・車）、Media、Audio、Object / Element（Camera・Null・Empty Group・Element/Project）、Template、Freehand Drawing、Vector Drawing、Text。
+- **良い**：足せる物が 1 枚に全部。図形は絵で選ぶ。
+- **Motolii**：作るの棚に Text・Camera・Null、図形 5、3D 4、光 3、Repeater、レシピ 45。図形の種類は値の shape で 16。**手描きが無い**。
+
+### レイヤーの ⋯（20 (`docs/internal/reports/alight_motion/alight_ui/20_layer_menu.jpg`, not in the repository)）
+- **ある**：Save to My Elements、左右反転、上下反転、画面に合わせる（Fit・Fill・Stretch）、Create Clipping Mask、ラベルの色 7。
+- **Motolii**：反転・画面に合わせる・ラベルの色が無い。
+
+### 色と塗り（21 (`docs/internal/reports/alight_motion/alight_ui/21_color_fill.jpg`, not in the repository)、22 (`docs/internal/reports/alight_motion/alight_ui/22_gradient.jpg`, not in the repository)、23 (`docs/internal/reports/alight_motion/alight_ui/23_palette.jpg`, not in the repository)）
+- **ある**：なし・単色・グラデーション（線・円・もう 1 種、2 色）・**メディアで塗る**。見本 14 色、自分の色を足す、スポイト、小さいピッカー、パレット（色相環・RGB、彩度・明るさ・アルファ）。
+- **良い**：塗りの種類が 4 つのタブで一目。
+- **悪い**：グラデーションは 2 色だけ。
+- **Motolii**：色の棚に見本 60・CAM16 のグラデーション（8 点まで）・写真から色。メディアで塗るのは無い。
+
+### 縁と影（24 (`docs/internal/reports/alight_motion/alight_ui/24_stroke.jpg`, not in the repository)、25 (`docs/internal/reports/alight_motion/alight_ui/25_stroke_heads.jpg`, not in the repository)、26 (`docs/internal/reports/alight_motion/alight_ui/26_shadow.jpg`, not in the repository)）
+- **ある**：線（色・太さ・端 3・角 3・**始点と終点の形 10 種と大きさ**）、Border（何重にも足す）、影（色・大きさ・アルファ・位置 X・Y）。
+- **良い**：矢じりを絵で選ぶ。縁を何重にも。
+- **Motolii**：stroke・cap・join・heads・dash・shadow はある。縁を何重にもは無い。
+
+### 重ね方と不透明度（27 (`docs/internal/reports/alight_motion/alight_ui/27_blend.jpg`, not in the repository)）
+- **ある**：不透明度、重ね方 28（Normal／Darken 5／Lighten 5／Contrast 7／Difference 4／Color 4／Mask 2）。
+- **UI**：7 分類を畳んで開く、各モードは見本の写真に掛けた絵。
+- **良い**：押す前に結果が見える。選んだ名前が見出しに出る。
+- **Motolii**：blend 25 と clip。選び方は名前の一覧。
+
+### 移動と変形（28 (`docs/internal/reports/alight_motion/alight_ui/28_move_location.jpg`, not in the repository)〜31 (`docs/internal/reports/alight_motion/alight_ui/31_move_skew.jpg`, not in the repository)）
+- **ある**：位置 X・Y・Z（こする帯）、回転（丸いダイヤル）、大きさ（幅・高さ・つなぎ、目盛り）、傾き X・Y、⋯ で Reset Skew・Reset Transform。
+- **良い**：回転がダイヤル。
+- **悪い**：X・Y の回転（3D）がここに無い（効果の Flip Layer）。
+- **Motolii**：インスペクタの数字の欄（Ableton どおり）。
+
+### 点の編集（32 (`docs/internal/reports/alight_motion/alight_ui/32_edit_points.jpg`, not in the repository)）
+- **ある**：点を選ぶ細い列（右）、こすって点を動かす帯、閉じる・開く、曲線の種類、点を足す・消す、キーの編集と点の編集の切り替え。
+- **良い**：指で隠れない。点を順に送って選べる。
+- **Motolii**：ペンで点を足す。点を順に送るのは無い。
+
+### プリセット（33 (`docs/internal/reports/alight_motion/alight_ui/33_presets.jpg`, not in the repository)）
+- **ある**：レイヤーの値とキーをプリセットとして保存、人のを読み込む、Discover Presets。効果ごとのプリセット（Standard Settings）もある。
+- **Motolii**：プリセットの棚は「No presets yet」だけ。
+
+### イーズ（34 (`docs/internal/reports/alight_motion/alight_ui/34_ease.jpg`, not in the repository)、35 (`docs/internal/reports/alight_motion/alight_ui/35_ease_menu.jpg`, not in the repository)）
+- **ある**：ベジェ・弾み系・段々系（TRY）、反転、前・次のカーブへ、Copy Curve・Paste Curve・**Paste Curve to All Keyframes**・Enable Overshoot。
+- **悪い**：キーが 2 つ無いと「Keyframes Required」の警告だけで開かない。
+- **Motolii**：同じ 9 種（Alight Motion を手本に作った）。カーブのコピー貼り付けは無い。
+
+### 速さ（36 (`docs/internal/reports/alight_motion/alight_ui/36_speed.jpg`, not in the repository)）
+- **ある**：亀とウサギのつまみ（1.00x）、速さを変えるときにどちらの端を止めるかの 4 つ。
+- **Motolii**：speed の値はあるが、端を止める選択は無い。
+
+### 文字（40 (`docs/internal/reports/alight_motion/alight_ui/40_text_edit.jpg`, not in the repository)、41 (`docs/internal/reports/alight_motion/alight_ui/41_fonts.jpg`, not in the repository)、42 (`docs/internal/reports/alight_motion/alight_ui/42_font_filters.jpg`, not in the repository)）
+- **ある**：揃え・フォント・大きさ・色・決定。フォントは最近使ったもの、View All Fonts（太さごと、星）、絞り込み（Serif・Sans Serif・Display・Handwriting・Monospace・Favorite）、並べ替え（Popular…）、言語、Import Fonts。字送り・行送り・文字ごとの動きは効果（Text Spacing・Text Transform…）。
+- **良い**：フォントの分類と言語で絞れる。
+- **Motolii**：字体の棚に全部・使用中・星・タグ。言語での絞り込みは無い。
+
+### 手描き（43 (`docs/internal/reports/alight_motion/alight_ui/43_freehand.jpg`, not in the repository)）
+- **ある**：ペン・ブラシ・塗りつぶし・消しゴム、太さ、色。
+- **Motolii**：無い。
+
+### 複数選んだとき（50 (`docs/internal/reports/alight_motion/alight_ui/50_multiselect.jpg`, not in the repository)、51 (`docs/internal/reports/alight_motion/alight_ui/51_multiselect_align.jpg`, not in the repository)）
+- **ある**：グループにする、**グループにしてマスク**、**グループにして抜く**、消す。時間の揃え（始まりを伸ばす・再生位置へ寄せる・左揃え・ずらして並べる・右揃え）。画面の揃え（左・中・右・上・中・下・縦に等間隔・横に等間隔）。
+- **良い**：マスクがグループの 1 手。時間を「ずらして並べる」が 1 手。
+- **Motolii**：Sequence Layers（ずらして並べる）はある。揃えとグループは無い。
+
+### グループ（52 (`docs/internal/reports/alight_motion/alight_ui/52_group_inside.jpg`, not in the repository)、53 (`docs/internal/reports/alight_motion/alight_ui/53_group_settings.jpg`, not in the repository)）
+- **ある**：中に入って編集（パンくず）、設定に幅・高さ・背景・Precompose（Dynamic / Fixed Resolution）・Re-timing（Freeze・Stretch・Loop・Loop & Stretch・Blank）。
+- **良い**：長さを変えたときの伸び方を選べる（Elements と同じ）。
+- **Motolii**：関係の group（並びだけ）。入れ子・伸び方は無い。
+
+### カメラ（60 (`docs/internal/reports/alight_motion/alight_ui/60_pro_gate.jpg`, not in the repository)〜64 (`docs/internal/reports/alight_motion/alight_ui/64_camera_fog.jpg`, not in the repository)）
+- **ある**：Camera View（遠近・画角 60°・ズーム 1662）、Focus Blur（焦点の距離・被写界深度・ぼけの強さ）、Fog（色・近い所・遠い所）。初めての吹き出し。有料。
+- **Motolii**：distance・zoom・focus・aperture・段の fog。
+
+### 効果の選び画面（70 (`docs/internal/reports/alight_motion/alight_ui/70_effect_browser.jpg`, not in the repository)〜77 (`docs/internal/reports/alight_motion/alight_ui/77_effect_menu.jpg`, not in the repository)）
+- **ある**：検索（**説明文の中まで探す**）、おすすめ 6、分類 12、分類の中は動く絵の並び（有料に鍵）、押すと大きな動く見本・名前・説明・タグ・Guide・効果ごとのプリセット・お気に入り。掛けた効果は畳める札（名前・⋮・消す）、⋮ で Effect Details・Reset to Defaults・Duplicate・Copy Effect。
+- **分類と数**：Color & Light 29、Drawing & Edge 17、Blur 18、Distortion/Warp 27、Procedural 23、3D 19、Move/Transform 12、Repeat 7、Matte/Mask/Key 11、Opacity/Visibility 7、Text 6、Other 8（重なりを除いて 184）。
+- **アプリだけにある 16**：Advanced Chroma Key、Chromatic Zoom Blur、Color Balance、Energy Beam、Grunge、Key Spill Cleaner、Luma Stamper、Matte Fringe、Page Curl、Parenting Helper、Raster Transform、Ring、Scale Assist、Scatter Field、Streak Strips、Warp Blur。
+- **良い**：動く絵・説明文での検索・効果ごとのプリセット。
+- **悪い**：横にすると「足す」が画面の外。
+- **Motolii**：効果の棚（目的の札、ダブルクリックで付け外し）。絵は止まっている。説明文での検索・効果ごとのプリセットは無い。
+
+### 写真・動画を足す（16 (`docs/internal/reports/alight_motion/alight_ui/16_media_tab.jpg`, not in the repository)、17 (`docs/internal/reports/alight_motion/alight_ui/17_media_picker.jpg`, not in the repository)、18 (`docs/internal/reports/alight_motion/alight_ui/18_video_picker.jpg`, not in the repository)）
+- **ある**：Media のタブに端末の写真・動画と、アプリが持つ見本の素材（Sample Media、48 枚）が混ざって並ぶ。全部を見る画面は、上に大きな見本、アルバムの切り替え（All・Pictures・Movies・Sample Media と数）、複数選ぶ、＋。**写真は足す前に長さを決める目盛り**（既定 2 秒）、**動画は足す前に使う範囲を切る帯**（左右の取っ手、再生できる）。
+- **良い**：置く前に長さと範囲が決まる。見本の素材がすぐ使える。
+- **悪い**：ファイル名が見えない（大きな見本の上の 1 行だけ）。フォルダの木が無い。
+- **Motolii**：メディアの棚（フォルダの木、ダブルクリック・落とすで置く、動画は乗ると流し見）。置く前に範囲を切る形は無い。見本の素材は無い。
+
+### 写真のレイヤー（44 (`docs/internal/reports/alight_motion/alight_ui/44_image_layer.jpg`, not in the repository)、45 (`docs/internal/reports/alight_motion/alight_ui/45_image_edit_shape.jpg`, not in the repository)、46 (`docs/internal/reports/alight_motion/alight_ui/46_image_crop_handles.jpg`, not in the repository)）
+- **ある**：図形と同じ並び（色と塗り・縁と影・重ね方・移動と変形・プリセット・効果）で、点の編集の代わりに **Edit Shape**。写真は「写真で塗った四角」として扱われ、Edit Shape で四角の大きさ（X・Y）を変えて切り抜く。上の 2 つで取っ手を角か辺かに切り替え、キャンバスに切り抜きの取っ手。
+- **良い**：写真も図形と同じ仕組み（塗り・縁・影がそのまま効く）。切り抜きの大きさにもキーが打てる。
+- **悪い**：丸や星で切り抜くのは、ここではなくクリッピングマスクか Convert to Outline。
+- **Motolii**：picture。切り抜きは clip（下の物で切る）。
+
+### 動画のレイヤー（47 (`docs/internal/reports/alight_motion/alight_ui/47_video_layer.jpg`, not in the repository)、48 (`docs/internal/reports/alight_motion/alight_ui/48_video_volume.jpg`, not in the repository)、49 (`docs/internal/reports/alight_motion/alight_ui/49_video_menu.jpg`, not in the repository)、54 (`docs/internal/reports/alight_motion/alight_ui/54_media_info.jpg`, not in the repository)）
+- **ある**：写真と同じ並び。帯にコマの絵。音のボタンで音量（つまみと数字、キー・イーズ付き）。⋯ に共通のものと **Convert to Outline**・**Extract Audio**（音を別のレイヤーに）・**Media Info**（名前・大きさ・fps・長さ・形式・ファイルの大きさ）。
+- **良い**：音量にキーが打てる。音を取り出すのが 1 手。
+- **悪い**：Media Info がこの動画で fps「0.60」・形式「null」と壊れた値を出した。逆再生のボタンが見当たらない。
+- **Motolii**：film（GStreamer、どの形式でも、切り出し・速さ・速さを負にして逆再生・拍）。**音量の値が無い**。音を別のレイヤーに取り出すのは無い。
+
+### 数字のキーパッド（37 (`docs/internal/reports/alight_motion/alight_ui/37_number_keypad.jpg`, not in the repository)）
+- **ある**：数字の欄を押すと、アプリ自前のキーパッド（0〜9・小数点・＋/−・消す・Done）。
+- **良い**：「こする」と「打つ」の両方。＋/− で向きを一発で変える。
+- **Motolii**：数字の欄は Ableton どおり（数字を打つと打ち始める）。
+
+### 音を足す・音のレイヤー（55 (`docs/internal/reports/alight_motion/alight_ui/55_audio_tab.jpg`, not in the repository)〜59 (`docs/internal/reports/alight_motion/alight_ui/59_audio_menu.jpg`, not in the repository)）
+- **ある**：Audio のタブに音のカード（波形の絵・長さ・＋）と View All。View All は端末の音楽の棚（Songs・Albums・Artists・Genres、曲ごとに試しに鳴らす・足す）。音のレイヤーは紫の帯に波形、触れるのは速さ・詰める・切る・音量・プリセットだけ。⋯ は Save to My Elements・Media Info。
+- **良い**：帯に波形。足す前に試しに鳴らせる。
+- **悪い**：**音に掛ける効果が無い**（EQ・リバーブ・フェードの札が無い。フェードは音量のキーで作る）。古い WAV（MS ADPCM）は「この端末では読めない」で足せなかった。音の形で動かす仕組み（拍・音量で値を動かす）が見当たらない。
+- **Motolii**：音は動画と同じ film。拍（sound.h の level）で値を動かせる。音量の値・音の効果は無い。
+
+### 効果のつまみ（76 (`docs/internal/reports/alight_motion/alight_ui/76_effect_card.jpg`, not in the repository)、78 (`docs/internal/reports/alight_motion/alight_ui/78_effect_list.jpg`, not in the repository)、79 (`docs/internal/reports/alight_motion/alight_ui/79_effect_groups.jpg`, not in the repository)）
+- **形**：どの効果も「名前を選ぶ → 目盛りをこする → 数字」の繰り返しと、畳んだ小見出し（Glass の Light Source・Material など）。凝った作りは無いので、184 個すべては開いていない（4 個を機械で読んだ）。
+- **効果が 2 つ以上**：畳んだ札の一覧になり、札ごとに見える目（入り切り）と ≡（並べ替え）。鍵つきの効果も足せて、札に鍵の印が付き、畳んだまま入る。
+- **効果ごとのプリセット**：Standard Settings のほかに、Brightness / Contrast は「Brighten」、Lens Flare は「Vertical Slide」（動きつき）。
+- **最初の値**：多くは足した瞬間に掛かって見える値（Gaussian Blur の Strength 0.150、Glass の Radius 50・光の角度 45°・屈折 0.25、Lens Flare の明るさ 3.0・光 6 本・Screen で重ねる）。ただし Brightness / Contrast は +0% で何も変わらず、その代わりにプリセット「Brighten」がある。
+- **Motolii**：効果の既定値は効果ごとのファイル（ISF・WGSL の頭のつまみ）任せ。「掛かって見える既定値」を決まりにはしていない。効果ごとのプリセットは無い。
+- **タイムラインの絵**：Alight Motion は写真・動画の帯にコマの絵、音の帯に波形（44 (`docs/internal/reports/alight_motion/alight_ui/44_image_layer.jpg`, not in the repository)、47 (`docs/internal/reports/alight_motion/alight_ui/47_video_layer.jpg`, not in the repository)、58 (`docs/internal/reports/alight_motion/alight_ui/58_audio_layer.jpg`, not in the repository)）。Motolii のタイムラインには絵も波形も無い（絵はメディアの棚だけ）。→（10/30 朝）動画の帯はコマの絵 6 つ・音の帯は波形（前から）、写真の帯もその写真を帯に沿って並べる（ユーザー「タイムラインのサムネイルがないのが違和感」）。行の左の小さな絵も Alight Motion どおり（95・106）：写真・動画はその絵、図形は形をその塗りの色で（塗り無しは線の色で輪郭）、カメラ・文字・音・Null は種類の印のまま（文字の行の見本は無いので印のまま）。
+
+### 隠れた操作（長押し）とタイムライン・キー（90 (`docs/internal/reports/alight_motion/alight_ui/90_hidden_multiselect.jpg`, not in the repository)〜95 (`docs/internal/reports/alight_motion/alight_ui/95_hidden_drag_layer_time.jpg`, not in the repository)）
+長押しで出る操作は、画面のどこにも案内が無い。**隠れている操作は「無い」ものとして扱う**（見つけられない操作は、使えないのと同じ）。Alight Motion の悪い所として一律に記録する。
+
+| どこを | どうする | 何が起きる | 案内 |
+|---|---|---|---|
+| タイムラインの左の小さな絵 | 長押し | 複数選ぶモード（「1 layer selected」、ほかの行を足していく、グループ・マスク・抜く・消す・揃え） | 無い |
+| タイムラインの帯 | 長押しして横にずらす | レイヤーの時間が動く | 無い |
+| 時刻の表示 | 長押し | Set thumbnail frame（プロジェクトの絵にするコマ）。Element の中では Mark end of intro・Mark start of outro も | 無い |
+| 移動と変形の右の「移動」のタブ | 長押し | 帯が「Swipe here to move pivot point」になり、アンカーポイントを動かす | 無い |
+| 移動と変形の Z の数字 | 押す | 帯が「Swipe here to adjust Z position」になる | 押せば分かる |
+| 帯・ルーラー・再生のボタン・空き | 長押し | 何も起きない（ルーラーの長押しは複数選ぶモードのまま） | — |
+
+- **キー**：帯の上に小さなひし形で出る（レイヤーの画面では小さく薄く 106 (`docs/internal/reports/alight_motion/alight_ui/106_keys_layer_view.jpg`, not in the repository)、値のパネルを開くと大きく 94 (`docs/internal/reports/alight_motion/alight_ui/94_keys_on_band.jpg`, not in the repository)）。帯の上のキーを押すと、キーが選ばれるのではなくレイヤーの選択が外れる。最初のキーを打った後は、値を動かすだけで次のキーが自動で入る。パネルを開いたまま帯を押すとパネルが閉じ、キーを選んだりずらしたりする操作はまだ見つけていない。
+- **書き出しの鍵**：有料の機能（カメラ・鍵の効果）を使うと、上の書き出しのボタンが鍵の印に変わる（100 (`docs/internal/reports/alight_motion/alight_ui/100_export_locked.jpg`, not in the repository)）。
+- **Motolii**：Ableton どおり、帯はドラッグで時間が動く・キーはタイムラインに常に出る・右クリックとキーで操作が見える。アンカーポイントの値（anchor_x・y・z）はインスペクタにそのまま並ぶ。
+
+### Element（96 (`docs/internal/reports/alight_motion/alight_ui/96_element_marks_menu.jpg`, not in the repository)〜99 (`docs/internal/reports/alight_motion/alight_ui/99_element_retiming.jpg`, not in the repository)）
+- **作る**：新しいプロジェクトの箱で ELEMENT を選ぶ（CREATE ELEMENT、背景は既定で透明）。
+- **伸ばし方の印**：Element の中で時刻を長押し → Mark end of intro・Mark start of outro。ルーラーの上に黄色い小さな印。
+- **設定**：縦横比・解像度・fps・背景・Precompose（Dynamic / Fixed Resolution）・Re-timing（Freeze・Stretch・Loop・Loop & Stretch・Blank）、編集した時間。
+- **良い**：長さを変えたときにイントロとアウトロは守り、真ん中だけ止める・伸ばす・繰り返すを選べる。
+- **悪い**：印の打ち方が長押しに隠れている。
+- **Motolii**：部品（使い回しと元とのつながり）と伸ばし方は無い。AE のファイル（Lottie）のマーカーごとに繰り返す仕組みはある。
+
+### キャンバスで物を動かす（101 (`docs/internal/reports/alight_motion/alight_ui/101_canvas_selected.jpg`, not in the repository)〜106 (`docs/internal/reports/alight_motion/alight_ui/106_keys_layer_view.jpg`, not in the repository)）
+| 操作 | 何が起きる |
+|---|---|
+| 押して選ぶ | 四隅と辺の真ん中に取っ手 8 つ、真ん中に小さな点（中心）。**回す取っ手は無い**（回すのは移動と変形のダイヤル） |
+| 押したまま動かす | 取っ手が消え、物だけが見える。**数字・ガイドの線は出ない**。指を離した所にそのまま止まる（画面の真ん中に 6 点の所で離しても**吸い付かない**） |
+| 四隅の取っ手 | 掴んだ取っ手だけが緑に光り、ほかは消える。**真ん中を中心に**縦横そろって大きくなる |
+| 辺の取っ手 | 反対の辺を止めず、**真ん中を中心に左右そろって**伸びる |
+| キーのある値を動かす | キャンバスで動かしても**キーは増えない**（左のひし形で打つ）。キーの無い時刻で動かすと、動きごとずれた |
+| 動きの道筋 | 位置のキーが違う値なら、選んだ物を通る**細い灰色の線と向きの矢印**で描かれる（139 (`docs/internal/reports/alight_motion/alight_ui/139_parent_outline_and_path.jpg`, not in the repository)）。取っ手は無い（最初の試しはキーが同じ位置で、線が出なかった） |
+| 切る（Split） | 再生位置で、後ろ半分が別のレイヤーになる（105 (`docs/internal/reports/alight_motion/alight_ui/105_split_result.jpg`, not in the repository)） |
+| 2 本指（回す・つまむ） | adb から 1 本指しか送れず、試せていない |
+
+- **良い**：掴んだ取っ手だけ光り、ほかが消えるので、何を動かしているかが分かる。
+- **悪い**：吸い付き・ガイドの線・動かしている最中の数字が無い。道筋は細い線だけで、曲げる取っ手が無い。真ん中を中心に大きくなるだけで、反対側を止めて伸ばす形が無い。
+- **Motolii**：取っ手、投げ縄、定規からのガイド、Snap、Pivots、⇧ ⌘ の押し方（screens.md）。道筋（motion path）の表示は無い。
+
+### マスク（110 (`docs/internal/reports/alight_motion/alight_ui/110_mask_before.jpg`, not in the repository)〜120 (`docs/internal/reports/alight_motion/alight_ui/120_group_exclude_three.jpg`, not in the repository)）
+写真（light_path.png）と六角形（Polygon 1）で試した。
+
+**クリッピングマスク（レイヤーの ⋯ → Create Clipping Mask）**
+- **押せる条件**：切られるレイヤーの**すぐ下**に、型になるレイヤーがあるとき。一番上の六角形や、すぐ下が音やカメラの写真では灰色で押せない（111 (`docs/internal/reports/alight_motion/alight_ui/111_clip_menu_enabled.jpg`, not in the repository) は押せる状態）。並べ替えは右端の ≡ をドラッグ。
+- **効き方**：写真は**すぐ下の六角形の形の中だけ**に見える。六角形の塗り（緑）は消えて、型としてだけ働く（113 (`docs/internal/reports/alight_motion/alight_ui/113_clip_result.jpg`, not in the repository)）。選んでいる間は、型の外も薄く見える（112 (`docs/internal/reports/alight_motion/alight_ui/112_clip_result_selected.jpg`, not in the repository)）。
+- **印**：タイムラインの切られる側の行に「↘」。型の行は普通のレイヤーのまま。
+- **型を動かす**：六角形を動かすと切り抜く場所も動き、写真は止まったまま（114 (`docs/internal/reports/alight_motion/alight_ui/114_clip_mask_moved.jpg`, not in the repository)）。
+- **外す**：同じ場所が「Release Clipping Mask」に変わる（115 (`docs/internal/reports/alight_motion/alight_ui/115_clip_release_menu.jpg`, not in the repository)）。
+
+**グループにしてマスク（複数選ぶ → 上の帯の 2 つ目）**
+- 「Group and Mask 1」というグループ（プリコンポーズ。自分の大きさ・背景・Precompose・伸ばし方を持つ）ができる。
+- **グループの一番上のレイヤーが型**になり、その不透明な所でその下のレイヤーを切り抜く。一番上のレイヤー自体は見えない。重ね方の値は Normal のままで、重ね方ではなく**グループの種類**で決まる（116 (`docs/internal/reports/alight_motion/alight_ui/116_group_mask_result.jpg`, not in the repository)、117 (`docs/internal/reports/alight_motion/alight_ui/117_group_mask_inside.jpg`, not in the repository)）。
+- 型（写真）をずらすと、六角形の型の中にある半分だけが見える（118 (`docs/internal/reports/alight_motion/alight_ui/118_group_mask_half.jpg`, not in the repository)）。
+
+**グループにして抜く（上の帯の 3 つ目）**
+- 名前は同じ「Group and Mask 1」だが、帯の色が違う（マスクは桃色、抜くは橙色）。
+- **一番上のレイヤーと重なる所が抜かれ**、外に出た所だけ見える（120 (`docs/internal/reports/alight_motion/alight_ui/120_group_exclude_three.jpg`, not in the repository)：全部重なる／半分／外）。
+
+**解く**：グループの ⋯ → Ungroup（119 (`docs/internal/reports/alight_motion/alight_ui/119_ungroup_menu.jpg`, not in the repository)）。
+
+**そのほか**
+- グループを作った後にプロジェクトを閉じて開き直すと、**取り消しの履歴が消えていた**（グループを作る前に戻れない）。
+- 六角形には、角の数と角の丸みを変える小さな取っ手が 2 つ、キャンバスに出る。
+
+**Motolii**：clip（下の物で切る、alpha・luma、反転、ぼかし）はある。グループを型にするマスク・抜く、グループの種類で決まる型、Release、行の「↘」の印は無い。
+
+### 有料の中身（無料体験で解放、130 (`docs/internal/reports/alight_motion/alight_ui/130_ease_bezier.jpg`, not in the repository)〜140 (`docs/internal/reports/alight_motion/alight_ui/140_parent_moves_child.jpg`, not in the repository)）
+エミュレーターで無料体験を申し込むと、書き出しのボタンの鍵と TRY の印が消え、親のボタンに会員の印が付いた（課金はエミュレーターでも通った）。
+
+**イーズ**（キーが 2 つあり、再生位置がその間にあるときに開く）
+- 右の縦のタブ 3 つ：ベジェ／弾み系／段々系。弾み系の中に Bounce・Elastic・Cyclic・Random、段々系の中に Steps・Elastic Steps（右の 2 列目で選ぶ）。
+- ベジェ：曲線に白い取っ手 2 つ、右に 4 つのプリセット（直線・加速・減速・加速して減速）、再生位置の点線。下に種類の名前（CUBIC BEZIER EASING）。
+- 弾み系・段々系：黄色の取っ手（形を変える）と白い取っ手（始めと終わりの値）を曲線の上で直接動かす。
+
+| 種類 | Alight Motion の既定（131 (`docs/internal/reports/alight_motion/alight_ui/131_ease_bounce.jpg`, not in the repository)〜136 (`docs/internal/reports/alight_motion/alight_ui/136_ease_elastic_steps.jpg`, not in the repository)） | Motolii の interp.h の既定と比べて（137 (`docs/internal/reports/alight_motion/alight_ui/137_ease_vs_motolii.jpg`, not in the repository)） |
+|---|---|---|
+| Bounce | 1 に向かって 5 回跳ね、最後は平ら。黄色 1 つ | 型は同じ。回数と谷の深さが少し違う |
+| Elastic | 一度ゆるく行き過ぎて、すぐ落ち着く。黄色 2 つ（上の線・下の点） | **大きく違う**（Motolii は 1.6 倍近く行き過ぎ、何度も揺れる） |
+| Cyclic | 3.5 回の波、山で終わる。白 2・黄 2 | ほぼ同じ |
+| Random | 揺れが大きく 0〜1 の外にもはみ出し、1 に向かう。黄 4・白 1 | **違う**（Motolii はおとなしい） |
+| Steps | 4 段、最後に 1 へ跳ぶ。白 1・黄 1 | **違う**（Motolii は 6 段） |
+| Elastic Steps | 5 段、段の間を少し行き過ぎてつなぐ | 型は近い。段の位置と行き過ぎ方が違う |
+
+Motolii の 9 種は名前と型は同じだが、既定の数字と取っ手の働きは前の倉庫で決めた物で、Alight Motion の物ではない。**まねるなら、既定の数字と取っ手を Alight Motion に合わせ直す**（数字の取り方：取っ手を動かした曲線を撮って合わせるか、Alight Motion のプロジェクトの XML を読む）。
+
+**親（Layer Parent）**
+- 上の親のボタン → 一覧（None・自分は灰色・ほかのレイヤーがアイコン付き。音のレイヤーは出ない、138 (`docs/internal/reports/alight_motion/alight_ui/138_parent_menu.jpg`, not in the repository)）。
+- 付けると、子を選んだときに**親の外枠が灰色の四角**で出る（139 (`docs/internal/reports/alight_motion/alight_ui/139_parent_outline_and_path.jpg`, not in the repository)）。
+- 親を動かすと子が付いてくる（140 (`docs/internal/reports/alight_motion/alight_ui/140_parent_moves_child.jpg`, not in the repository)）。タイムラインには親子の印が出ない。
+
+**そのほか**
+- 編集画面で何も選んでいないときに戻るキーを押すと、確認なしでプロジェクトの外に出る。
+
+## デザイン（見た目）の良い所・悪い所
+
+**良い**
+- 暗い地に、選んだ物だけ緑。選んだタブ・つまみの線・選んだつまみの名前が全部同じ緑で、今どこを触っているかが一目。
+- レイヤーの種類ごとに帯の色が違う（図形は青、手描きは紫、文字は橙、カメラは赤、グループは朱）。
+- アイコンの下に必ず文字。NEW・TRY の小さな札で、新しい物と有料の物が分かる。
+
+**悪い**
+- NEW・TRY・鍵の札が多く、どれが今使えるのかが散らかる。
+- ホーム・一覧は明るい地、編集は暗い地で、行き来すると眩しい。
+
+## 次に見る所
+
+- iPad の横の並べ方（App Store の iPad 用スクショ、公式の動画）
+- 有料の機能の中身（親、イーズの弾み系、鍵の効果）

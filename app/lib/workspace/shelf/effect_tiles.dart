@@ -1,4 +1,4 @@
-// Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/internal/reports/alight_motion/alight_ui.md).
+// Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/design/alight_motion_ui.md).
 // AbsentMotion shows each effect from a table written beforehand (tools/effect_showcase.json). Here the effect file itself tells the tile what to
 // show, so a file the user puts in needs no table line and no developer. What is read from the file (engine/document/scripts/recipes.h, isf_tags):
 // - A transition's progress goes from 0 to 1. An effect that runs by the clock, or keeps its previous frame, is left to run.

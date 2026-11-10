@@ -103,7 +103,7 @@ std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines
 std::vector<ScriptParameter> script_parameters(const std::string& file);
 // Sets default values for an effect's parameters where its own defaults show nothing on the
 // image. Alight Motion's rule is that an effect is seen as it is first put on a layer; see the
-// section on first values in docs/internal/reports/alight_motion/alight_ui.md. This reads
+// section on first values in docs/design/alight_motion_ui.md. This reads
 // first.tsv beside file, with one line per value: file, parameter and value separated by tabs.
 // The table is measured by fx_first.sh. Its values replace the parameters' defaults (usual).
 // The author's file is not changed.

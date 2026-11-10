@@ -51,7 +51,7 @@ extension WorkspaceMenus on WorkspaceState {
     // Like Figma's group, it is not a container of its own.
     // [mask] is 'mask' or 'exclude' (Alight Motion's Group and Mask, Group and Exclude): the top layer's shape
     // then shows the others inside it, or cuts them out. The engine side is group_mask in document/evaluate/evaluate.h.
-    // See docs/internal/reports/alight_motion/alight_ui.md.
+    // See docs/design/alight_motion_ui.md.
     void group(String mask) {
       final m = engine, all = pickedLayers();
       final frames = [for (final t in all) ?m?.bounds(t)];

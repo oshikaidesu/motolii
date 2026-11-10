@@ -1,2 +1,0 @@
-led.json: 9.9 microseconds a moment (ThorVG working out all layers, three read)
-all as worked out by hand

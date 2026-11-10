@@ -340,7 +340,7 @@ class WtOverviewPainter extends CustomPainter {
 // ---------------------------------------------------------------- kind chip
 
 /// A row's small thumbnail, as Alight Motion shows at the left of each row
-/// (docs/internal/reports/alight_motion/alight_ui/95_hidden_drag_layer_time.jpg and 106_keys_layer_view.jpg).
+/// (screenshots 95 and 106 in docs/design/alight_motion_ui.md).
 ///
 /// An image or video layer shows its image, a shape shows its form in its own fill, and other kinds show the mark of
 /// their kind. Alight Motion's camera and audio are marks too. Its screenshots show no text thumbnail, so text keeps its mark.

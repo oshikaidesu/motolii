@@ -15,7 +15,7 @@ Every document under `docs/`, and who it is for. The entrance to the repository 
 | [`app/skins/HANDOFF.md`](app/skins/HANDOFF.md) | People carrying on the app's look | The three layers that change the look, and where each is written (Japanese) |
 | [`engine/WINDOWS.md`](engine/WINDOWS.md) | People changing the engine (C++) | What building the engine on Windows would take; nothing has been built there yet (Japanese) |
 | [`pictures/`](pictures/) | — | The pictures and films the README and the guides show |
-| [`internal/`](internal/) | The author | The author's working notes; nothing there is needed to use, extend or build Motolii |
+| [`design/`](design/) | Anyone changing the app or the engine | The notes that code comments cite for a decision: the Alight Motion handling the UI follows, the AviUtl2 converter, how the Create and Program shelves divide, the words that were renamed, test records. Most are in Japanese |
 
 Documents are in English; the pages a user opens first also have a Japanese translation beside them, named `X.ja.md`. The documents marked (Japanese) above are not in English yet; each starts with an English summary.
 

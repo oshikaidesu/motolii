@@ -120,14 +120,14 @@ int main(int argc, char** argv) {
             }
             std::printf("%s", motolii_find(m, rest(1).c_str(), items.c_str(), 10));
             // Then search the record of what Motolii already has, in
-            // docs/internal/reports/effects/golf_noise.md, so that a feature that exists is found
+            // docs/design/golf_noise.md, so that a feature that exists is found
             // before anyone says it is missing. Lines that contain the words as typed come first,
             // as the shelf's plain hits, followed by the nearest matches from motolii_find.
             std::string words = rest(1), lower = words, lines, said;
             std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return (char)std::tolower(c); });
             int plain = 0;
             // The path is relative to out/filament_webgpu, where edit.sh runs this program.
-            for (const char* book : {"../../../docs/internal/reports/effects/golf_noise.md"}) {
+            for (const char* book : {"../../../docs/design/golf_noise.md"}) {
                 std::ifstream in(book);
                 int n = 0;
                 for (std::string l; std::getline(in, l);) {

@@ -44,7 +44,7 @@ inline const struct { const char* name; int numbers; const char* names; double u
     // Random: the defaults match AbsentMotion's.
     {"Random", 6, "a b c d e f", {0.5, 0.5, 0.5, 0.5, 0.5, 0}, {0, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1}},
     // Steps: the default length of 0.25 gives four steps, the last reaching 1 at the end, as in
-    // docs/internal/reports/alight_motion/alight_ui/135_ease_steps.jpg. The earlier
+    // Alight Motion (screenshot 135 in docs/design/alight_motion_ui.md). The earlier
     // implementation's 0.178 gave six steps.
     {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},
     // ElasticSteps: the defaults match AbsentMotion's.

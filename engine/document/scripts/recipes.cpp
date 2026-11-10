@@ -108,7 +108,7 @@ std::vector<DocRecipe> doc_recipes_read() {
         // layer.
         if (text.str().find("\n// make ") == std::string::npos && script_is_sketch(told)) {
             // The sketch makes its own layers and motion, see
-            // docs/internal/notes/CREATE_PROGRAM.md. The code flag is set for a WEBGL sketch.
+            // docs/design/create_and_program_shelves.md. The code flag is set for a WEBGL sketch.
             r.name = f.stem().string(), r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net", r.code = told.find("WEBGL") != std::string::npos, r.program = adapter_name(form);
             // In 3D the sketch's solids stand in the world. In 2D what it paints becomes an image
             // layer.

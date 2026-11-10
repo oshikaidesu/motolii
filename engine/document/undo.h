@@ -12,7 +12,7 @@
 #include "stage/render/render_stage.h"
 
 // Upgrades the database `schema` of `file` from the old table names to the current ones (layer,
-// keyframe, easing, undo_step), as described in section 3 of docs/internal/notes/rename_words.md.
+// keyframe, easing, undo_step), as described in section 3 of docs/design/renamed_words.md.
 // It uses SQLite's ALTER TABLE ... RENAME (https://sqlite.org/lang_altertable.html) and records the
 // version in the file header with PRAGMA user_version
 // (https://sqlite.org/pragma.html#pragma_user_version).

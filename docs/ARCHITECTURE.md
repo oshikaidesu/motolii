@@ -2,7 +2,7 @@
 
 *How Motolii is built, for someone about to read or change the code. A Flutter app drives a C++ engine through a small C API (`engine/entry/motolii.h`). One render thread owns the project (SQLite) and the GPU: Filament, built from source with its WebGPU (Dawn) backend and a few patches, draws the 3D scene and composites; ThorVG's WebGPU engine draws 2D and text on the same Dawn device; GStreamer reads videos and ffmpeg writes them. Shared effects are compiled to WGSL with the toolchain Filament already ships (glslang → SPIR-V → Tint). The finished frame reaches the app without a copy through IOSurface-backed CVPixelBuffers.*
 
-コードの名前は After Effects・Filament・Flutter・Blender の言葉に揃えている途中。古い名前がまだ残るコードの読み替えは [`rename_words.md` の §1](internal/notes/rename_words.md)。
+コードの名前は After Effects・Filament・Flutter・Blender の言葉に揃えている途中。古い名前がまだ残るコードの読み替えは [`rename_words.md` の §1](design/renamed_words.md)。
 
 ## 全体
 
