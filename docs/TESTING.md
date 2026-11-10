@@ -10,7 +10,7 @@ Run these from the repository root unless a command says otherwise.
 
 - Dart: `cd app && dart analyze lib`. A pass prints no errors.
 - C++: `./engine/check_syntax.sh` runs `clang++ -fsyntax-only` on `entry/motolii.mm` with the flags the library is built with, and writes nothing. A pass ends without errors. Pass another unit as the argument to check it instead, for example `./engine/check_syntax.sh community/aviutl/aviutl.cpp`.
-- Repository layout and paths: `python3 .githooks/path_check.py --all` prints every path a Markdown file names that does not exist. A pass prints nothing. See [.githooks/README.md](../.githooks/README.md) for the other commit checks.
+- Paths: `python3 .githooks/path_check.py --all` prints every path a shelf file or a Markdown file names that does not exist. A pass prints nothing.
 
 ### Flutter tests (`app/test/`)
 
@@ -42,7 +42,7 @@ See below. It is a build.
 | Kind | Where | What it checks |
 |---|---|---|
 | Unit and widget | `app/test/skin`, `app/test/widgets`, `app/test/inspector`, `app/test/workspace` | Number and colour formatting, theme tokens, inspector state and parameter inference, key bindings, timeline painters, tool-panel easing, settings files, workspace state |
-| Skin folders | `app/test/skin_folders_test.dart` | The skins in `shelves/skins` and the maker's own folder all appear in View > Skin |
+| Skin folders | `app/test/skin_folders_test.dart` | The skins in `shelves/skins` and the user's own folder all appear in View > Skin |
 | Accessibility | `app/test/accessibility_guidelines_test.dart` | Flutter's tap-target size and label guidelines, text contrast, and that opening the app raises no layout exception |
 | Frame timing | `app/integration_test/`, `app/test_driver/` | Timeline scrolling stays inside the frame budget |
 | Pictures | `engine/drawings_unchanged.sh` | Every shelf recipe and motion draws the same as at an older commit |
@@ -52,7 +52,7 @@ Most files under `app/test/` pin what the code does today (their header comment 
 
 ## Picture comparison
 
-`engine/drawings_unchanged.sh <old-commit>` builds the engine at `<old-commit>` in a separate worktree, then draws every recipe of the Create shelf and every motion of the Effects shelf (applied to the text MOTOLII) with that engine and with this checkout's, on a fresh document at 0.0, 0.7 and 1.9 seconds. Each pair of PNGs is compared byte for byte with `cmp`. It reads and writes nothing of the maker's own: it uses an empty `MOTOLII_OWN` folder and temporary documents.
+`engine/drawings_unchanged.sh <old-commit>` builds the engine at `<old-commit>` in a separate worktree, then draws every recipe of the Create shelf and every motion of the Effects shelf (applied to the text MOTOLII) with that engine and with this checkout's, on a fresh document at 0.0, 0.7 and 1.9 seconds. Each pair of PNGs is compared byte for byte with `cmp`. It reads and writes nothing of the user's own: it uses an empty `MOTOLII_OWN` folder and temporary documents.
 
 Use it after a change that can alter what is drawn (the engine, a shelf item, a shader). Do not use it after moving code. It is a build: it takes the machine's build lock (`engine/tools/build_lock.sh`) and takes minutes. `DRAWINGS_LIMIT=2` limits it to the first two of each kind, to see that it runs.
 
@@ -85,7 +85,7 @@ Reference only (no test runs these yet): the glTF-Validator and glTF Sample Asse
 - Dart: add `<name>_test.dart` under the matching folder of `app/test/` (widget and unit tests), or under `app/integration_test/` with a driver in `app/test_driver/` (tests that need a real window). Files a test writes go under `app/build/test_output/`.
 - C++: add `<name>_test.cpp` beside the code it tests, in one of the folders listed in `engine/CMakeLists.txt`. CMake finds it by name; it needs GoogleTest.
 - Pictures: no file to add; a new recipe or motion on a shelf is compared automatically.
-- Follow the rule below, and the folder limits in [AGENTS.md](../AGENTS.md).
+- Follow the rule below.
 
 ## The rule for tests
 
