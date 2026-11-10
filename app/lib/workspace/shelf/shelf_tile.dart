@@ -573,8 +573,8 @@ class TileMovingState extends State<TileMoving> {
   }
 
   @override
-  void didUpdateWidget(TileMoving old) {
-    super.didUpdateWidget(old);
+  void didUpdateWidget(TileMoving oldWidget) {
+    super.didUpdateWidget(oldWidget);
     _follow();
   }
 
