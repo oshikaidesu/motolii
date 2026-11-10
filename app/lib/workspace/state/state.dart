@@ -11,7 +11,6 @@ import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart';
@@ -23,7 +22,6 @@ import 'package:motolii/workspace/state/beats.dart';
 part 'window.dart';
 part 'effects.dart';
 part 'picked.dart';
-part 'scope.dart';
 
 /// The kinds of layer the timeline distinguishes.
 enum WsKind { shape, text, image, camera, group, particles, audio }

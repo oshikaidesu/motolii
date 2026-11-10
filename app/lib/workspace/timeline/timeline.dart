@@ -34,6 +34,7 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';

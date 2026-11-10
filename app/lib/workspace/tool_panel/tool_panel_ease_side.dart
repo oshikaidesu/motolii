@@ -14,6 +14,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The easing shapes shown in one row, one click each.
 /// They are Alight Motion's, in the order of AbsentMotion's EasingCatalog.families, with the four Beziers first.

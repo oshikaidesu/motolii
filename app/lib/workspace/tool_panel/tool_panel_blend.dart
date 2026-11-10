@@ -11,6 +11,7 @@ import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/workspace.dart' show LayerCards;
 

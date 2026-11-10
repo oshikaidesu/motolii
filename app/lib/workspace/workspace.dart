@@ -46,6 +46,7 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/shelf/fx_code.dart';
 part 'inspector_feed/panel.dart';
 part 'inspector_feed/cards.dart';

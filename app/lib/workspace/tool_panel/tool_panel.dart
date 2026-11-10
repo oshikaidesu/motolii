@@ -12,6 +12,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/widgets/grid_columns.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 
 class WsToolPanel extends StatelessWidget {
   const WsToolPanel({super.key});

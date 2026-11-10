@@ -20,6 +20,7 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/workspace.dart' show wsPlace;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 
 part 'stage_options.dart';

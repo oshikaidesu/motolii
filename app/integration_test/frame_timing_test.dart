@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/workspace.dart' show Workspace;
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 
 void main() {

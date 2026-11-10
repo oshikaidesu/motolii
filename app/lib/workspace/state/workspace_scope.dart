@@ -1,6 +1,9 @@
 // How the window's widgets reach the Ws. A WsScope above them is an InheritedModel, so each widget rebuilds only for the
 // aspects it asked for. The snapshot counter and the playhead are separate notifiers.
-part of 'state.dart';
+import 'package:flutter/foundation.dart' show mapEquals;
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/workspace/state/state.dart';
 
 /// Gives the widgets below access to the window's [Ws].
 ///

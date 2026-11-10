@@ -32,6 +32,7 @@ import 'package:motolii/workspace/shelf/empty_fx.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 part 'dock_make_colors.dart';
 part 'dock_make_create.dart';
