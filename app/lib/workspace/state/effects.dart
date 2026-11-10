@@ -33,8 +33,8 @@ extension WsFx on Ws {
     var made = 0;
     after(m.later('add', name: 'shape', word: kind), null, (t) => made = t);
     m
-      ..later('set', layer: -1, name: 'size', number: WsArt.comp.height / m.point)
-      ..later('set', layer: -1, name: 'wide', number: WsArt.comp.width / WsArt.comp.height);
+      ..later('set', layer: -1, name: 'size', number: Ws.comp.height / m.point)
+      ..later('set', layer: -1, name: 'wide', number: Ws.comp.width / Ws.comp.height);
     wsInked(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {

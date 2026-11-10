@@ -22,6 +22,9 @@ class Ws extends ChangeNotifier {
   /// The composition's frame rate and length in frames. After [join] they come from the document.
   static int fps = 30, duration = 240;
 
+  /// The composition's size in pixels. After [join] it is the document's own size.
+  static Size comp = const Size(1920, 1080);
+
   /// The engine this window is connected to (see motolii.dart), or null for the sample document.
   /// When connected, the layers are the document's layers, a change is a call to the engine, and the playhead is its time.
   Motolii? _inside;
@@ -38,7 +41,7 @@ class Ws extends ChangeNotifier {
       if (moment) seen.value++;
     };
     fps = _fpsOf(inside); // The timeline counts frames at the document's rate, as the exported video does.
-    WsArt.comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
+    comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
     moment.value = (inside.now * fps).round(); // The playhead starts at the engine's time.
     reread();
     final kept = inside.settings; // Choices saved with the document: its inks and fonts.

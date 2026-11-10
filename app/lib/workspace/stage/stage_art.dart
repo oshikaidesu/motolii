@@ -129,8 +129,8 @@ Offset _rot(Offset p, double a) => Offset(p.dx * math.cos(a) - p.dy * math.sin(a
 
 /// The stage's image in document px: its size, the layers' boxes, and which layer a point is on.
 abstract final class WsArt {
-  // The document's own size.
-  static Size comp = const Size(1920, 1080);
+  // The document's own size, kept by the window's state.
+  static Size get comp => Ws.comp;
   static Offset get centre => comp.center(Offset.zero);
 
   /// The box the stage frames when [id] is selected, or null when the layer has no image at this frame.

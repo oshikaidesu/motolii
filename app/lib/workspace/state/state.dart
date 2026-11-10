@@ -28,7 +28,6 @@ export '../../bridge/motolii.dart'
 import 'package:motolii/workspace/window/panes.dart' show WsAt, WsPane;
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/workspace/state/beats.dart';
-import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
 
 export 'beats.dart';
 
