@@ -23,12 +23,6 @@ class InspectorValues extends ChangeNotifier {
         if (p.look == ParameterLook.color) {
           strings.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
         }
-        if (p.look == ParameterLook.choice) {
-          strings.putIfAbsent(
-            'v_${p.id}',
-            () => p.options[p.def.round().clamp(0, p.options.length - 1)],
-          );
-        }
       }
     }
   }

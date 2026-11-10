@@ -239,19 +239,6 @@ Map<String, String> layerWords(WorkspaceController ws, String? id) {
     if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'),
     // Letters the font lacks, which are drawn in another font. Shown under the text.
     if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t),
-    for (final (_, names) in m.cards(t))
-      for (final n in names)
-        if (m.shown(n)?.look == 'thing')
-          // Another layer, by its name.
-          'v_$n':
-              otherLayers(ws, t).entries
-                  .where((e) => e.value == (m.value(t, n, 0) ?? 0))
-                  .firstOrNull
-                  ?.key ??
-              'None'
-        else if (m.words(t, n).isNotEmpty)
-          // One of its words. If none is set, the first.
-          'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n),
   };
 }
 
@@ -315,16 +302,7 @@ bool writeWords(
   for (final e in changed.entries) {
     if (!e.key.startsWith('v_')) continue;
     final n = e.key.substring(2);
-    m.shown(n)?.look == 'thing'
-        // Another layer, chosen by name: the value follows that layer.
-        ? m.later(
-            'set',
-            layer: t,
-            name: n,
-            number: (otherLayers(ws, t)[e.value] ?? 0).toDouble(),
-          )
-        // A card's value of that name.
-        : m.later('say', layer: t, name: n, word: e.value);
+    m.later('say', layer: t, name: n, word: e.value);
   }
   ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
   return true;

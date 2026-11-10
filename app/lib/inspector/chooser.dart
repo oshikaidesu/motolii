@@ -4,13 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 
-/// A dropdown for choosing one of [options], stored as a string under [id].
+/// A dropdown for choosing one of [options]. The value under [id] is the option's index, kept once, in numbers,
+/// as a segmented control keeps it; the words are only what [options] says that index is.
 ///
 /// A short list belongs in a segmented control and a long one opens a searchable list. It never cycles with previous and next buttons.
 class Chooser extends StatefulWidget {
@@ -44,6 +46,9 @@ class ChooserState extends State<Chooser> {
   }
 
   List<String> get _hits => widget.options;
+
+  int _index(InspectorValues doc) =>
+      (doc.get(widget.id) ?? 0).round().clamp(0, widget.options.length - 1);
 
   void _go(int to) {
     final n = _hits.length;
@@ -132,10 +137,7 @@ class ChooserState extends State<Chooser> {
     setState(() => _open = open);
     open ? _portal.show() : _portal.hide();
     if (open) {
-      _at = widget.options.indexOf(
-        InspectorScope.read(context).doc.strings[widget.id] ??
-            widget.options.first,
-      );
+      _at = _index(InspectorScope.read(context).doc);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _node.requestFocus();
@@ -225,10 +227,9 @@ class ChooserState extends State<Chooser> {
 
   @override
   Widget build(BuildContext context) {
-    final x = InspectorScope.of(context),
-        cur = x.doc.strings[widget.id] ?? widget.options.first;
+    final x = InspectorScope.of(context), cur = widget.options[_index(x.doc)];
     void pick(String o) {
-      x.doc.str(widget.id, o);
+      x.doc.set(widget.id, widget.options.indexOf(o).toDouble());
       _set(false);
     }
 

@@ -12,7 +12,7 @@ import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_sync.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
-// One card. Its fields: v_amount (default 4), v_mode (default 1, shown as the word Med) and v_x (default 0).
+// One card. Its fields: v_amount (default 4), v_mode (default 1) and v_x (default 0).
 const _card = '''
 struct First {
   amount: f32, // @range(0, 10) @default(4)
@@ -101,7 +101,8 @@ void main() {
         ),
       );
       expect(doc.numbers, {'v_amount': 7, 'v_mode': 1, 'v_x': 0, 'v_y': 3});
-      expect(doc.strings, {'v_mode': 'Med', 'name': 'Blob'});
+      // A choice is its index in numbers, so it has no word here.
+      expect(doc.strings, {'name': 'Blob'});
       expect(doc.flags, {'clip': true});
       expect(doc.keys, {'v_position': _anim});
       expect(doc.animateAll, isTrue);
@@ -279,18 +280,20 @@ void main() {
     });
 
     test('a string the owner refuses goes back to the one it had, or away if it had none', () {
-      final (doc, _, owner) = _started();
+      final (doc, _, owner) = _started(
+        snapshot: const InspectorSnapshot(words: {'name': 'Blob'}),
+      );
       owner.takesWords = false;
-      doc.str('v_mode', 'Low');
+      doc.str('name', 'Low');
       expect(owner.take(), [
         '{',
         [
           'words',
-          {'v_mode': 'Low'},
+          {'name': 'Low'},
         ],
         '}',
       ]);
-      expect(doc.strings['v_mode'], 'Med');
+      expect(doc.strings['name'], 'Blob');
       doc.str('fresh', 'x');
       expect(owner.take(), [
         '{',

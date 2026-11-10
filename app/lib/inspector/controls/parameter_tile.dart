@@ -198,7 +198,7 @@ class ParameterTile extends StatelessWidget {
                     index: (v ?? 0).round().clamp(0, p.options.length - 1),
                     onChanged: (i) => doc.set(id, i.toDouble()),
                   )
-                : _ChoiceField(id: id, options: p.options),
+                : Chooser(id: id, options: p.options),
           ),
         );
       case ParameterLook.color when p.unit == 'words':
@@ -460,40 +460,4 @@ class _BarsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BarsPainter o) => o.v != v || o.top != top;
-}
-
-/// A long list of options for an effect, shown in the shared floating chooser. The stored value is the option's index.
-class _ChoiceField extends StatelessWidget {
-  const _ChoiceField({required this.id, required this.options});
-  final String id;
-  final List<String> options;
-  @override
-  Widget build(BuildContext context) => _ChoiceSync(
-    id: id,
-    options: options,
-    child: Chooser(id: id, options: options),
-  );
-}
-
-/// Keeps the chooser's picked name and the numeric index the shader reads in sync.
-class _ChoiceSync extends StatelessWidget {
-  const _ChoiceSync({
-    required this.id,
-    required this.options,
-    required this.child,
-  });
-  final String id;
-  final List<String> options;
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final doc = InspectorScope.of(context).doc;
-    final i = options.indexOf(doc.strings[id] ?? options.first);
-    if (i >= 0 && doc.get(id) != i) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => doc.set(id, i.toDouble()),
-      );
-    }
-    return child;
-  }
 }

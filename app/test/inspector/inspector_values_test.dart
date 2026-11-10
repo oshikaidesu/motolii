@@ -53,7 +53,8 @@ void main() {
       'v_angle': 0,
     });
     expect(doc.numberDefaults, doc.numbers);
-    expect(doc.strings, {'v_tint': '#FF8000', 'v_mode': 'Med'});
+    // A choice is its index in numbers, and has no word of its own.
+    expect(doc.strings, {'v_tint': '#FF8000'});
     expect(doc.keys, isEmpty);
     expect(doc.flags, isEmpty);
     expect(doc.fields.picked, isEmpty);
