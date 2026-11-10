@@ -38,6 +38,7 @@ import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_overview.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_ruler_painter.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
