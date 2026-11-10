@@ -10,10 +10,12 @@
 #include <functional>
 #include <string>
 
-#include "document/document.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
+
+struct Doc;
+struct DocShownLayer;
 
 // Returns the material a layer wears. In the Material group of the Create tab
 // any layer can wear one, one at a time, and the shading property names it.
@@ -35,16 +37,16 @@ int doc_blend_way(const std::string& word);
 // a sheet, the ones of a built-in shape (as many as it is drawn by), and every
 // face of a 3D file.
 void doc_material_instances(
-    Stage& s, const Doc::Shown& t,
+    Stage& s, const DocShownLayer& t,
     const std::function<void(filament::MaterialInstance*)>& each);
 // Calls `each` with each part of a layer that is drawn, as Filament
 // renderables.
-void doc_entities(Stage& s, const Doc::Shown& t,
+void doc_entities(Stage& s, const DocShownLayer& t,
                   const std::function<void(utils::Entity)>& each);
 // Calls `each` with the renderable manager and the instance of each drawn part
 // of a layer.
 void doc_parts(
-    Stage& s, const Doc::Shown& t,
+    Stage& s, const DocShownLayer& t,
     const std::function<void(filament::RenderableManager&,
                              filament::RenderableManager::Instance)>& each);
 

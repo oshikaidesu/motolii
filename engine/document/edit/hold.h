@@ -46,9 +46,22 @@
 //   it appears. A property name
 //             Drag that number. a is its new value.
 
+#include <map>
+#include <string>
+
 namespace motolii {
 
 struct Doc;
+
+// A layer being dragged (see doc_hold). What is carried shows at once but is
+// not yet in the project. layer is -1 when nothing is held; 0 is the stage,
+// which a caller can hold through a value of its own. said holds a carried
+// word or the moved points of a path.
+struct DocHeld {
+  int layer = -1;
+  std::map<std::string, double> from, tried;
+  std::map<std::string, std::string> said;
+};
 
 // Starts a drag on `layer`. Returns false if the layer does not exist, or if
 // the project is being exported, because nothing can be dragged until the

@@ -32,17 +32,19 @@ bool doc_rows(Doc& d, char* ask,
 
 void doc_forget(Doc& d) {
   // The physics world is rebuilt only if its inputs changed; see doc_physics.
-  d.phys_stale = true, d.scripted.clear();
-  d.moving.clear(), d.literals.clear(), d.words.clear(), d.keyed.clear(),
-      d.halves.clear(), d.heardWords.clear(), d.talls.clear(),
-      d.placing.clear();
-  d.named.clear(), d.tracks.clear(), d.drivers.clear(), d.connects.clear(),
-      d.relationsOf.clear();
-  d.laid.clear();
+  d.physics.stale = true, d.place_cache.scripted.clear();
+  d.value_cache.moving.clear(), d.value_cache.literals.clear(),
+      d.value_cache.words.clear(), d.value_cache.keyed.clear(),
+      d.place_cache.halves.clear(), d.value_cache.heardWords.clear(),
+      d.place_cache.talls.clear(), d.place_cache.placing.clear();
+  d.value_cache.named.clear(), d.place_cache.tracks.clear(),
+      d.relations.drivers.clear(), d.relations.connects.clear(),
+      d.relations.relationsOf.clear();
+  d.value_cache.laid.clear();
 }
 
 const std::vector<int>& doc_laid(Doc& d) {
-  if (d.laid.empty())
+  if (d.value_cache.laid.empty())
     doc_rows(
         d,
         sqlite3_mprintf(
@@ -50,14 +52,14 @@ const std::vector<int>& doc_laid(Doc& d) {
             "coalesce((select o.value from keyframe o where o.layer = f.layer "
             "and o.name = 'order' and o.at = 0), f.layer), f.layer"),
         [&](sqlite3_stmt* row) {
-          d.laid.push_back(sqlite3_column_int(row, 0));
+          d.value_cache.laid.push_back(sqlite3_column_int(row, 0));
         });
-  return d.laid;
+  return d.value_cache.laid;
 }
 
 sqlite3_stmt* doc_expression_statement(Doc& d, const std::string& expression) {
-  auto ready = d.expression_statements.find(expression);
-  if (ready != d.expression_statements.end()) return ready->second;
+  auto ready = d.value_cache.expression_statements.find(expression);
+  if (ready != d.value_cache.expression_statements.end()) return ready->second;
   sqlite3_stmt* made = nullptr;
   char* asked = sqlite3_mprintf(
       "with v(u, t, d, a, b, p1, p2, p3, p4) as (select ?, ?, ?, ?, ?, ?, ?, "
@@ -66,7 +68,8 @@ sqlite3_stmt* doc_expression_statement(Doc& d, const std::string& expression) {
   if (sqlite3_prepare_v2(d.file, asked, -1, &made, nullptr) != SQLITE_OK)
     d.error = sqlite3_errmsg(d.file), made = nullptr;
   sqlite3_free(asked);
-  return made ? d.expression_statements[expression] = made : nullptr;
+  return made ? d.value_cache.expression_statements[expression] = made
+              : nullptr;
 }
 
 double doc_went(sqlite3_stmt* statement, double u, double t, double length,
@@ -81,8 +84,8 @@ double doc_went(sqlite3_stmt* statement, double u, double t, double length,
 }
 
 sqlite3_stmt* doc_easing_named(Doc& d, const std::string& name) {
-  auto known = d.named.find(name);
-  if (known != d.named.end()) return known->second;
+  auto known = d.value_cache.named.find(name);
+  if (known != d.value_cache.named.end()) return known->second;
   sqlite3_stmt* statement = nullptr;
   doc_rows(d,
            sqlite3_mprintf("select expression from easing where name = %Q",
@@ -97,7 +100,7 @@ sqlite3_stmt* doc_easing_named(Doc& d, const std::string& name) {
       if (name == one.name)
         statement = doc_expression_statement(
             d, std::string("a + (b - a) * (") + one.goes + ")");
-  return d.named[name] = statement;
+  return d.value_cache.named[name] = statement;
 }
 
 double doc_went_by(Doc& d, const std::string& own, double u, double t,
@@ -116,9 +119,9 @@ namespace {
 // doc_element_add), or 0 if there is none.
 int doc_element_above(Doc& d, int layer) {
   for (int p = layer, n = 0; p && n < 64; ++n) {
-    const Doc::Keys& up = doc_keys_of(d, p, "parent");
+    const DocKeys& up = doc_keys_of(d, p, "parent");
     p = up.value.empty() ? 0 : (int)up.value.front();
-    if (const Doc::Keys& was = doc_keys_of(d, p, "element_length");
+    if (const DocKeys& was = doc_keys_of(d, p, "element_length");
         p && !was.value.empty() && was.value.front() > 0.0)
       return p;
   }
@@ -179,12 +182,12 @@ double doc_element_now(Doc& d, int layer, double at) {
   return el ? doc_element_clock(d, el, at) : at;
 }
 
-double doc_stepped(Doc& d, int layer, const Doc::Keys& k, double at) {
+double doc_stepped(Doc& d, int layer, const DocKeys& k, double at) {
   if (k.at.size() < 2 || !layer) return at;
   at = doc_element_now(d, layer, at);
-  const Doc::Keys& rate = doc_keys_of(d, layer, "frame_rate");
+  const DocKeys& rate = doc_keys_of(d, layer, "frame_rate");
   if (rate.value.empty() || !(rate.value.front() > 0.0)) return at;
-  const Doc::Keys& from = doc_keys_of(d, layer, "start");
+  const DocKeys& from = doc_keys_of(d, layer, "start");
   const double start = from.value.empty() ? 0.0 : from.value.front(),
                r = rate.value.front();
   return at <= start ? at : start + std::floor((at - start) * r + 1e-9) / r;
@@ -195,24 +198,24 @@ double doc_number(Doc& d, int layer, const char* name, double at,
   if (d.held.layer == layer)
     if (const auto tried = d.held.tried.find(name); tried != d.held.tried.end())
       return tried->second;
-  const Doc::Keys& k = doc_keys_of(d, layer, name);
+  const DocKeys& k = doc_keys_of(d, layer, name);
   return doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
 }
 
 double doc_cel(Doc& d, int layer, double at) {
-  const Doc::Keys& k = doc_keys_of(d, layer, "cel");
+  const DocKeys& k = doc_keys_of(d, layer, "cel");
   double held = k.value.empty() ? 1.0 : k.value.front();
   for (size_t i = 0; i < k.at.size() && k.at[i] <= at + 1e-9; ++i)
     held = k.value[i];
   return (double)std::llround(held);
 }
 
-const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name) {
-  if (d.reading) d.reading->insert(layer);
-  auto& of = d.moving[layer];
+const DocKeys& doc_keys_of(Doc& d, int layer, const char* name) {
+  if (d.solver.reading) d.solver.reading->insert(layer);
+  auto& of = d.value_cache.moving[layer];
   auto found = of.find(std::string_view(name));
   if (found == of.end()) {
-    Doc::Keys keys;
+    DocKeys keys;
     doc_rows(
         d,
         sqlite3_mprintf("select at, value, coalesce(easing, '') from keyframe "
@@ -234,12 +237,14 @@ const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name) {
     // see doc_keys_at.
     if (keys.at.size() > 1)
       keys.loop = doc_word(d, layer, (std::string(name) + "_loop").c_str());
-    found = d.moving[layer].emplace(std::string(name), std::move(keys)).first;
+    found = d.value_cache.moving[layer]
+                .emplace(std::string(name), std::move(keys))
+                .first;
   }
   return found->second;
 }
 
-double doc_keys_at(Doc& d, const Doc::Keys& k, double at, double otherwise) {
+double doc_keys_at(Doc& d, const DocKeys& k, double at, double otherwise) {
   if (k.at.empty()) return otherwise;
   if (k.at.size() == 1 || at <= k.at.front()) return k.value.front();
   // Past the last keyframe the keys can repeat, as in After Effects' loopOut:
@@ -279,8 +284,8 @@ std::string doc_word(Doc& d, int layer, const char* name) {
       return said->second;
   // The same property is read many times between changes, so the database is
   // queried once.
-  const auto known = d.words.find({layer, name});
-  if (known != d.words.end()) return known->second;
+  const auto known = d.value_cache.words.find({layer, name});
+  if (known != d.value_cache.words.end()) return known->second;
   std::string is;
   doc_rows(d,
            sqlite3_mprintf(
@@ -289,7 +294,7 @@ std::string doc_word(Doc& d, int layer, const char* name) {
            [&](sqlite3_stmt* row) {
              is = (const char*)sqlite3_column_text(row, 0);
            });
-  d.words.emplace(std::make_pair(layer, std::string(name)), is);
+  d.value_cache.words.emplace(std::make_pair(layer, std::string(name)), is);
   return is;
 }
 

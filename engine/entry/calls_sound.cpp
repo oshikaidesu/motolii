@@ -160,7 +160,7 @@ bool duck(Motolii* m, int layer) {
           doc_key(d, layer, "volume", a, low) &&
           doc_key(d, layer, "volume", b, low) &&
           doc_key(d, layer, "volume", std::min(to, b + 0.5), was)))
-      d.act_ok = false;
+      d.act.ok = false;
   return doc_acted(d);
 }
 

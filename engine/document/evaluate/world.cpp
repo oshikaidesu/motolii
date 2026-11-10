@@ -37,18 +37,19 @@ namespace {
 // export, cached images and Bake never yield and wait for the whole solve (see
 // DocExact).
 bool doc_spent(const Doc& d) {
-  return d.live && !d.exact && !d.writing &&
-         std::chrono::steady_clock::now() - d.slice >
+  return d.solver.live && !d.solver.exact && !d.video_export.writing &&
+         std::chrono::steady_clock::now() - d.solver.slice >
              std::chrono::milliseconds(5);
 }
-// While alive, copies the layers that a cached solve read into d.reading, so
-// that the caller's own dependency tracking sees them even when the cached
-// result is returned.
+// While alive, copies the layers that a cached solve read into
+// d.solver.reading, so that the caller's own dependency tracking sees them even
+// when the cached result is returned.
 struct DocKeptTells {
   Doc& d;
-  Doc::RelatedKept& k;
+  DocSolver::RelatedKept& k;
   ~DocKeptTells() {
-    if (d.reading) d.reading->insert(k.reads.begin(), k.reads.end());
+    if (d.solver.reading)
+      d.solver.reading->insert(k.reads.begin(), k.reads.end());
   }
 };
 // Returns true if the cache `k` is still valid for time `t`. An undo step that
@@ -58,19 +59,21 @@ struct DocKeptTells {
 // change invalidates the cache only from the first frame whose input differs,
 // as GGPO's rollback returns to the first differing input and runs forward from
 // there.
-bool doc_kept_stands(Doc& d, Doc::RelatedKept& k, double t) {
+bool doc_kept_stands(Doc& d, DocSolver::RelatedKept& k, double t) {
   const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
   const bool same = k.changes == changes && k.made == doc_scripts_made(d) &&
-                    k.seen == d.touched.size();
+                    k.seen == d.changes.touched.size();
   if (k.at == t && same && d.held.layer < 0 && (!k.behind || doc_spent(d))) {
-    d.behind = d.behind || k.behind;
+    d.solver.behind = d.solver.behind || k.behind;
     return true;
   }
   if (k.made != doc_scripts_made(d))
     k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;
   if (!same) k.solves = -1;
-  for (; k.seen < d.touched.size(); ++k.seen)
-    if (d.touched[k.seen] < 0 || k.reads.count(d.touched[k.seen])) k.sure = 0;
+  for (; k.seen < d.changes.touched.size(); ++k.seen)
+    if (d.changes.touched[k.seen] < 0 ||
+        k.reads.count(d.changes.touched[k.seen]))
+      k.sure = 0;
   k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.behind = false;
   return false;
 }
@@ -80,12 +83,12 @@ bool doc_kept_stands(Doc& d, Doc::RelatedKept& k, double t) {
 // frame and is called only when the input differs from the cached one. Returns
 // false if no frame can be shown.
 template <class Tell, class Make>
-bool doc_kept_walk(Doc& d, Doc::RelatedKept& k, double t, Tell tell,
+bool doc_kept_walk(Doc& d, DocSolver::RelatedKept& k, double t, Tell tell,
                    Make make) {
   const size_t frame = (size_t)std::max(0.0, std::round(t * 60.0));
   while (k.sure <= frame) {
     if (doc_spent(d)) {
-      k.behind = d.behind = true;
+      k.behind = d.solver.behind = true;
       break;
     }
     const std::string js = tell(k.sure);
@@ -131,7 +134,7 @@ std::string doc_relate_parameters(Doc& d, int by, const DocScript& sc,
 }  // namespace
 
 const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
-  Doc::RelatedKept& k = d.relatedKept[by];
+  DocSolver::RelatedKept& k = d.solver.relatedKept[by];
   DocKeptTells tells{d, k};
   if (doc_kept_stands(d, k, t)) return k.values;
   k.values.clear();
@@ -142,7 +145,7 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
         sc->run->numbers("Float64Array.of(relate.length)");
     k.solves = !takes.empty() && takes[0] > 3;
   }
-  const Doc::Relation& rel = doc_relation_of(d, by);
+  const DocRelation& rel = doc_relation_of(d, by);
   constexpr size_t many = std::size(doc_relate_names);
   const auto tell = [&](double at, size_t frame) {
     std::ostringstream js;
@@ -180,10 +183,10 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
   // Builds the input as `tell` does. On the first frame it also records which
   // layers are read.
   const auto told = [&](double at, size_t frame) {
-    std::set<int>* const outer = d.reading;
-    if (!frame) k.reads.clear(), d.reading = &k.reads;
+    std::set<int>* const outer = d.solver.reading;
+    if (!frame) k.reads.clear(), d.solver.reading = &k.reads;
     const std::string js = tell(at, frame);
-    d.reading = outer;
+    d.solver.reading = outer;
     return js;
   };
   if (k.solves &&
@@ -247,10 +250,10 @@ namespace {
 // position where it would be left alone.
 constexpr size_t doc_world_told = 11, doc_world_at = 8, doc_world_speed = 11,
                  doc_world_home = 14, doc_world_kept = 17;
-// Rebuilds d.world: the layers that pushing relations act on and the relations
-// themselves.
+// Rebuilds d.solver.world: the layers that pushing relations act on and the
+// relations themselves.
 void doc_world_made(Doc& d) {
-  Doc::World w;
+  DocSolver::World w;
   std::vector<int> files;
   doc_rows(d,
            sqlite3_mprintf("select layer from keyframe where name = 'file' and "
@@ -259,20 +262,20 @@ void doc_world_made(Doc& d) {
   for (const int by : files) {
     if (!doc_pushes(d, by)) continue;
     w.forces.push_back(by);
-    const Doc::Relation& rel = doc_relation_of(d, by);
+    const DocRelation& rel = doc_relation_of(d, by);
     for (size_t i = 0; i < rel.members.size(); ++i)
       if (const int t = rel.members[i];
           t && w.slot.emplace(t, w.layers.size()).second)
         w.layers.push_back(t),
             w.below.push_back(rel.under.empty() ? 0 : rel.under[i]);
   }
-  d.world = std::move(w);
+  d.solver.world = std::move(w);
 }
 // Returns the cached values of the shared world at time `t`, doc_world_kept
 // doubles per layer, solving any frames not yet cached. Returns nullptr if
 // nothing can be shown yet.
 const std::vector<double>* doc_world(Doc& d, double t) {
-  Doc::RelatedKept& k = d.relatedKept[0];
+  DocSolver::RelatedKept& k = d.solver.relatedKept[0];
   DocKeptTells tells{d, k};
   const auto known = [&]() -> const std::vector<double>* {
     return k.frames.empty()
@@ -280,21 +283,21 @@ const std::vector<double>* doc_world(Doc& d, double t) {
                : &k.frames[std::min((size_t)std::max(0.0, std::round(t * 60.0)),
                                     k.frames.size() - 1)];
   };
-  if (d.walking || doc_kept_stands(d, k, t)) return known();
+  if (d.solver.walking || doc_kept_stands(d, k, t)) return known();
   if (k.solves < 0) {
-    const std::vector<int> was = d.world.layers;
+    const std::vector<int> was = d.solver.world.layers;
     doc_world_made(d), k.solves = 1;
     // Cached frames were laid out for different layers, so they are no longer
     // valid.
-    if (d.world.layers != was)
+    if (d.solver.world.layers != was)
       k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;
   }
   struct Walking {
     Doc& d;
-    explicit Walking(Doc& d) : d(d) { d.walking = true; }
-    ~Walking() { d.walking = false; }
+    explicit Walking(Doc& d) : d(d) { d.solver.walking = true; }
+    ~Walking() { d.solver.walking = false; }
   } walking(d);
-  const Doc::World& w = d.world;
+  const DocSolver::World& w = d.solver.world;
   const size_t many = std::size(doc_relate_names), n = w.layers.size();
   // One script call. `on` lists, for each layer the call covers, its slot in
   // the world and the weight of the call for it.
@@ -307,8 +310,8 @@ const std::vector<double>* doc_world(Doc& d, double t) {
   std::vector<double> now, home;
   const auto tell = [&](size_t f) {
     const double at = (double)f / 60.0;
-    std::set<int>* const outer = d.reading;
-    if (!f) k.reads.clear(), d.reading = &k.reads;
+    std::set<int>* const outer = d.solver.reading;
+    if (!f) k.reads.clear(), d.solver.reading = &k.reads;
     const double* const was = f ? k.frames[f - 1].data() : nullptr;
     now.assign(n * doc_world_told, 0.0), home.assign(n * (many + 2), 0.0);
     for (size_t s = 0; s < n; ++s) {
@@ -341,7 +344,7 @@ const std::vector<double>* doc_world(Doc& d, double t) {
     for (const int by : w.forces) {
       DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
       if (!sc || !sc->run) continue;
-      const Doc::Relation& rel = doc_relation_of(d, by);
+      const DocRelation& rel = doc_relation_of(d, by);
       // The weight is 0 at the first frame, where every layer starts at its
       // home position.
       const double strength = doc_number(d, by, "strength", at, 1),
@@ -379,7 +382,7 @@ const std::vector<double>* doc_world(Doc& d, double t) {
       all += call.js;
       calls.push_back(std::move(call));
     }
-    d.reading = outer;
+    d.solver.reading = outer;
     return all;
   };
   const auto make = [&](const std::string&, size_t f) {
@@ -426,8 +429,8 @@ const std::vector<double>* doc_world(Doc& d, double t) {
 double doc_world_value(Doc& d, int layer, size_t name, double t,
                        double otherwise) {
   const std::vector<double>* const all = doc_world(d, t);
-  const auto at = d.world.slot.find(layer);
-  return !all || at == d.world.slot.end() ||
+  const auto at = d.solver.world.slot.find(layer);
+  return !all || at == d.solver.world.slot.end() ||
                  (at->second + 1) * doc_world_kept > all->size()
              ? otherwise
              : (*all)[at->second * doc_world_kept + name];

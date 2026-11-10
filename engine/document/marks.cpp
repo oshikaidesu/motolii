@@ -8,12 +8,14 @@
 #include "document/document.h"
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"
+#include "media/video_layer.h"
+#include "stage/render/gltf_model.h"
 
 namespace motolii {
 
 double doc_seconds(Doc& d) {
   double all = 0.0;
-  for (const auto& [layer, t] : d.shown) {
+  for (const auto& [layer, t] : d.on_stage.shown) {
     const double own = t.video ? (double)t.video->seconds
                        : t.drawn
                            ? (t.drawn->sketch ? 0.0 : (double)t.drawn->seconds)

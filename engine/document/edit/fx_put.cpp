@@ -130,14 +130,14 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
   else
     list.push_back(file);
   doc_act(d);
-  if (!doc_fx_say(d, layer, list)) d.act_ok = false;
+  if (!doc_fx_say(d, layer, list)) d.act.ok = false;
   if (const DocScript* sc = out ? doc_script_of(d, file) : nullptr)
     for (const std::string& n : sc->names)
       if (!doc_change(d,
                       sqlite3_mprintf(
                           "delete from keyframe where layer = %d and name = %Q",
                           layer, n.c_str())))
-        d.act_ok = false;
+        d.act.ok = false;
   // A transition put on at the layer's own start comes in instead of going out:
   // its progress runs from 1 to 0, and what is under the layer gives way to it.
   // Premiere Pro does the same: a transition on the head edge of a clip brings
@@ -157,7 +157,7 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
             !(doc_key(d, layer, sc->names[i].c_str(), now, in ? 1.0 : 0.0) &&
               doc_key(d, layer, sc->names[i].c_str(), now + 1.0,
                       in ? 0.0 : 1.0)))
-          d.act_ok = false;
+          d.act.ok = false;
   return doc_acted(d);
 }
 
@@ -177,7 +177,7 @@ bool doc_fx_move(Doc& d, int layer, const char* name, int by) {
   list.erase(list.begin() + from);
   list.insert(list.begin() + to, one);
   doc_act(d);
-  if (!doc_fx_say(d, layer, list)) d.act_ok = false;
+  if (!doc_fx_say(d, layer, list)) d.act.ok = false;
   return doc_acted(d);
 }
 
@@ -247,7 +247,7 @@ bool doc_effect(Doc& d, int layer, const char* name, double at) {
       if (!on) list.push_back(e.value);
       ok = doc_fx_say(d, layer, list);
     }
-    if (!ok) d.act_ok = false;
+    if (!ok) d.act.ok = false;
     return doc_acted(d);
   }
   d.error = std::string("no effect is called ") + name;

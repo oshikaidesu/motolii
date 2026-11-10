@@ -4,16 +4,80 @@
 // the stage, and the lines that join copies.
 
 #include <math/mat4.h>
+#include <math/vec2.h>
+#include <math/vec3.h>
 
 #include <functional>
+#include <map>
 #include <string>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
+#include "community/absent_motion/absent_motion.h"
+#include "community/quickjs/script.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
 
 struct Doc;
+struct DocScript;
+
+// The copy doc_place is placing now. What a behavior gives is for that copy.
+struct DocCopyContext {
+  // Which copy, out of n copies.
+  int copy = 0, n = 1;
+  // Where that copy lies on the stage once laid out, valid when has_at is
+  // true. A behavior's falloff weighs it.
+  bool has_at = false;
+  filament::math::double3 at{0.0};
+};
+
+// What placing the layers has worked out and keeps: some of it for one time
+// only, some until the project changes.
+struct DocPlaceCache {
+  // Copies laid out by a layer's script, per layer. from: the files that laid
+  // them out, see doc_expressions_said.
+  struct Scripted {
+    double at = -1, own = -1;
+    int made = -1;
+    std::string from;
+    std::vector<ScriptCopy> copies;
+  };
+  // Each layer's copies as its script placed them at one time. Worked out once
+  // per frame.
+  std::map<int, Scripted> scripted;
+  // A layer's copy_tall as numbers.
+  std::unordered_map<int, std::vector<double>> talls;
+  struct Placing {
+    bool laid = false;
+    std::vector<DocScript*> scs;
+    std::string from;
+    double absentAt = -1e300;
+    std::vector<AbsentEffect> absent;
+  };
+  // What doc_place asks of a layer's effects, which is the same for each of its
+  // copies. Asked once per layer while a time is being evaluated, as for talls.
+  std::unordered_map<int, Placing> placing;
+  // True while one time is being evaluated (doc_evaluate). placing is kept
+  // only then.
+  bool evaluating = false;
+  // A layer's half size and depth (doc_half). Worked out once per time, because
+  // all its copies ask for it.
+  std::map<int, std::pair<filament::math::float2, float>> halves;
+  // A layer's copies laid along another layer's outline: where, worked out once
+  // per time.
+  struct Along {
+    double at = -1.0, key = 0.0;
+    const void* of = nullptr;
+    std::vector<float> each;
+  };
+  std::map<int, Along> along;
+  // Where a layer was at a tick of a trail's own grid. Worked out once and
+  // cleared at every change.
+  std::map<std::tuple<int, double, long long>, filament::math::double3> tracks;
+};
 
 // Returns the matrix that places `layer` on the stage at time `now`. `deeper`
 // is nonzero when the result is wanted before the layer's space (2D, 2.5D or

@@ -205,14 +205,14 @@ std::string doc_recipe_names() {
 }
 
 bool doc_files_moved(Doc& d) {
-  bool moved = screen_moved(d.screen);
+  bool moved = screen_moved(d.effects.screen);
   // Each layer checks its script file's modification time and rereads the file
   // if it changed.
   for (int t : doc_laid(d)) doc_scripts_on(d, t);
   // Scripts reread since the last check also count as moved. The app may have
   // reread them first, when it asked for the layer cards.
   if (DocScripts& kept = doc_scripts_kept(d); kept.made != kept.told)
-    kept.told = kept.made, moved = true, d.scripted.clear();
+    kept.told = kept.made, moved = true, d.place_cache.scripted.clear();
   return moved;
 }
 

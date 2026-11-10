@@ -10,13 +10,43 @@
 // where the solid lies. The layer's own sheet is not shown. See
 // engine/stage/layer_effects/layer_fx.h.
 
+#include <map>
 #include <utility>
 #include <vector>
 
-#include "document/document.h"
+#include "stage/effects/screen_fx.h"
 #include "stage/layer_effects/layer_fx.h"
 
+namespace filament {
+class RenderTarget;
+class Texture;
+}  // namespace filament
+
 namespace motolii {
+
+struct Doc;
+struct DocShownLayer;
+
+// The effects of the project as they are on the stage.
+struct DocEffects {
+  // The layers that have effects of their own (layer_fx.h). Each is drawn alone
+  // with its effects applied and is laid where the layer lies.
+  std::map<int, ThingFx> layerFx;
+  // A layer that reads what is under it: seen is its image of what is below,
+  // into is the target that image is drawn to.
+  struct Read {
+    filament::Texture* seen = nullptr;
+    filament::RenderTarget* into = nullptr;
+  };
+  // The layers that read what is under them, each with its image of it (see
+  // doc_layers_read).
+  std::map<int, Read> reads;
+  // Which layer each of the stage's `before` entries belongs to.
+  std::vector<int> beforeOf;
+  // The stage's whole-screen effects: its script .wgsl files, one over another
+  // (screen_fx.h).
+  ScreenStack screen;
+};
 
 // Returns whether the layer is a group (a Null layer) with effects of its own,
 // including ThorVG effects. The layers in the group are drawn together into one
@@ -59,7 +89,7 @@ void doc_layers_fx(Doc& d);
 // the same view as the glass, and Filament's layer masks leave the rest out of
 // that one image.
 void doc_layers_read(Doc& d,
-                     const std::vector<std::pair<int, Doc::Shown*>>& laid);
+                     const std::vector<std::pair<int, DocShownLayer*>>& laid);
 
 }  // namespace motolii
 

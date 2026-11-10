@@ -106,13 +106,13 @@ std::string doc_screen_parameter(const std::string& file,
 // cannot be read. When `runs` is false the code is not compiled. The file is
 // checked for changes only once for each value of files_changed().
 DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = true);
-// Sets d.exact for the lifetime of the object and restores the previous value
-// afterwards.
+// Sets d.solver.exact for the lifetime of the object and restores the previous
+// value afterwards.
 struct DocExact {
   Doc& d;
   bool was;
-  explicit DocExact(Doc& d) : d(d), was(std::exchange(d.exact, true)) {}
-  ~DocExact() { d.exact = was; }
+  explicit DocExact(Doc& d) : d(d), was(std::exchange(d.solver.exact, true)) {}
+  ~DocExact() { d.solver.exact = was; }
 };
 // Returns the scripts on a layer, in order. For a layer these are the file in
 // its "script" value, which is one path and may contain spaces, then the files

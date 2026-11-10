@@ -315,7 +315,7 @@ auto on_render_thread(Motolii* m, Does does,
           m->revision.fetch_add(1, std::memory_order_release);
           // Inside a motolii_together act, the snapshots are made once when the
           // act ends, as the stage is.
-          if (!m->d->act) snapshot_update(m), snapshot_time(m);
+          if (!m->d->act.depth) snapshot_update(m), snapshot_time(m);
         }
         return out;
       },

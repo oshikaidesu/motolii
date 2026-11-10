@@ -27,6 +27,7 @@
 #include "community/three/solid_three.h"
 #include "document/document.h"
 #include "document/edit/arrange.h"
+#include "document/evaluate/evaluate.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"
 #include "document/evaluate/place.h"
@@ -79,8 +80,8 @@ void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
 // true). When on is false, puts back the faces' original materials. Does
 // nothing if the layer is not shown or is already in the requested state.
 void doc_layer_shell(Doc& d, int layer, ThingFx& e, bool on) {
-  const auto t = d.shown.find(layer);
-  if (t == d.shown.end() || on != e.looks.empty()) return;
+  const auto t = d.on_stage.shown.find(layer);
+  if (t == d.on_stage.shown.end() || on != e.looks.empty()) return;
   size_t n = 0;
   doc_parts(*d.stage, t->second,
             [&](RenderableManager& faces, RenderableManager::Instance one) {
@@ -138,8 +139,8 @@ void doc_layer_stand(Doc& d, int layer, ThingFx& e) {
     std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
     place = doc_shown_at(d, layer, d.stage->now), doc_half(d, layer, &half);
     const math::double2 a = doc_seen(d, place[3].xyz),
-                        b = doc_seen(d,
-                                     place[3].xyz + normalize(d.facing[0].xyz));
+                        b = doc_seen(d, place[3].xyz +
+                                            normalize(d.camera.facing[0].xyz));
     // Length in stage points of one layer unit where the layer lies, across the
     // camera's line of sight.
     seen = length(b - a);
@@ -239,7 +240,7 @@ double doc_aviutl_asked(Doc& d, int layer, const double* box,
 // with what is behind it (behind), and the image of what lies under it
 // (picture). It is set on every material of the layer that has a blendWay
 // parameter.
-void doc_reading(Stage& s, Doc::Shown& t, float way, float behind,
+void doc_reading(Stage& s, DocShownLayer& t, float way, float behind,
                  Texture* picture) {
   const Camera& eye = s.view->getCamera();
   const mat4f seen = mat4f(eye.getProjectionMatrix() * eye.getViewMatrix());
@@ -261,8 +262,8 @@ void doc_reading(Stage& s, Doc::Shown& t, float way, float behind,
 // the stage is its sheet, so its blend mode is applied after its effects, as in
 // After Effects, where a layer's blending mode comes after its effects.
 void doc_sheet_reads(Doc& d, int layer, float way, Texture* picture) {
-  const auto own = d.layerFx.find(layer);
-  if (own == d.layerFx.end() || !own->second.look ||
+  const auto own = d.effects.layerFx.find(layer);
+  if (own == d.effects.layerFx.end() || !own->second.look ||
       !own->second.look->getMaterial()->hasParameter("blendWay"))
     return;
   own->second.look->setParameter("blendWay", way);
@@ -292,10 +293,10 @@ bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
     return false;
   for (const std::string& w : doc_fx_list(d, layer))
     if (solid_is(w)) return false;
-  const auto shown = d.shown.find(layer);
+  const auto shown = d.on_stage.shown.find(layer);
   float2 half{0.f};
   float deep = 0.f;
-  return shown != d.shown.end() && !shown->second.solid &&
+  return shown != d.on_stage.shown.end() && !shown->second.solid &&
          doc_members(d, layer) == 1 && doc_half(d, layer, &half, &deep) &&
          deep == 0.f;
 }
@@ -303,10 +304,10 @@ bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
   thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, layer)));
   for (const std::string& w : doc_fx_list(d, layer))
     if (solid_is(w)) return false;
-  const auto shown = d.shown.find(layer);
+  const auto shown = d.on_stage.shown.find(layer);
   float2 half{0.f};
   float deep = 0.f;
-  return shown != d.shown.end() && shown->second.space != 2 &&
+  return shown != d.on_stage.shown.end() && shown->second.space != 2 &&
          !e.st.readsBehind && !e.st.wide && e.st.aviutl.empty() &&
          (shown->second.solid ||
           (doc_half(d, layer, &half, &deep) && deep > 0.f));
@@ -314,11 +315,11 @@ bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
 
 void doc_layers_fx(Doc& d) {
   Stage& s = *d.stage;
-  s.before.clear(), s.aim.clear(), s.after.clear(), d.beforeOf.clear();
+  s.before.clear(), s.aim.clear(), s.after.clear(), d.effects.beforeOf.clear();
   // Pairs of negative depth and layer. Sorting them puts the deepest layers
   // first, so a layer's image is made before that of the group it lies in.
   std::vector<std::pair<int, int>> order;
-  for (const auto& [layer, e] : d.layerFx) {
+  for (const auto& [layer, e] : d.effects.layerFx) {
     int deep = 0;
     for (int up = (int)doc_number(d, layer, "parent", 0, 0);
          up > 0 && deep < 64; up = (int)doc_number(d, up, "parent", 0, 0))
@@ -331,7 +332,7 @@ void doc_layers_fx(Doc& d) {
   // Each layer is drawn alone into an image and its effects run on that image,
   // before the stage's own view. See engine/stage/layer_effects/layer_fx.h.
   for (const auto& [deep, layer] : order) {
-    ThingFx& e = d.layerFx.at(layer);
+    ThingFx& e = d.effects.layerFx.at(layer);
     thing_effects(s, e.st, doc_fx_join(doc_fx_steps(d, layer)));
     e.solidFile.clear();
     // If the fx names a solid's shape, the layer's image is laid on that solid.
@@ -473,8 +474,8 @@ void doc_layers_fx(Doc& d) {
       std::string why;
       doc_fx(d, layer, d.stage->now, false, 1.0, fx, why, true);
       double frame[8];
-      const auto t = d.shown.find(layer);
-      if (t != d.shown.end() && t->second.drawn &&
+      const auto t = d.on_stage.shown.find(layer);
+      if (t != d.on_stage.shown.end() && t->second.drawn &&
           t->second.drawn->fx.overHigh > 0.f &&
           doc_fx_frame(d, layer, e, frame)) {
         const float k = (float)(frame[3] / (t->second.units *
@@ -550,9 +551,10 @@ void doc_layers_fx(Doc& d) {
       }
       // The background color as hex RRGGBB, or -1 if there is none. An effect
       // that reads the frame sees it where nothing is drawn.
-      e.st.ground = d.backdropIs.size() == 6
-                        ? (int)std::strtol(d.backdropIs.c_str(), nullptr, 16)
-                        : -1;
+      e.st.ground =
+          d.look.backdropIs.size() == 6
+              ? (int)std::strtol(d.look.backdropIs.c_str(), nullptr, 16)
+              : -1;
       if (e.world)
         doc_layer_stand(d, layer, e);
       else
@@ -578,7 +580,7 @@ void doc_layers_fx(Doc& d) {
                                                  d.stage->now, 1)));
       }
     });
-    d.beforeOf.push_back(layer);
+    d.effects.beforeOf.push_back(layer);
     // In the frame: draws the layer alone and runs its effects.
     s.before.push_back([&d, layer = layer, &e = e, numbers, thorFx] {
       if (!e.solidFile.empty())
@@ -592,7 +594,7 @@ void doc_layers_fx(Doc& d) {
   }
 }
 void doc_layers_read(Doc& d,
-                     const std::vector<std::pair<int, Doc::Shown*>>& laid) {
+                     const std::vector<std::pair<int, DocShownLayer*>>& laid) {
   Stage& s = *d.stage;
   // A flat layer of glass sees what is behind it through itself (see
   // engine/materials/flat.mat).
@@ -602,16 +604,17 @@ void doc_layers_read(Doc& d,
            doc_sheet_material(d, layer) == "glass";
   };
   // Release the backdrop of layers that no longer read or that are gone.
-  for (auto r = d.reads.begin(); r != d.reads.end();) {
-    if (d.shown.count(r->first) && reads(r->first)) {
+  for (auto r = d.effects.reads.begin(); r != d.effects.reads.end();) {
+    if (d.on_stage.shown.count(r->first) && reads(r->first)) {
       ++r;
       continue;
     }
-    if (const auto t = d.shown.find(r->first); t != d.shown.end())
+    if (const auto t = d.on_stage.shown.find(r->first);
+        t != d.on_stage.shown.end())
       doc_reading(s, t->second, 0.f, 0.f, white_point(s));
     doc_sheet_reads(d, r->first, 0.f, white_point(s));
     s.engine->destroy(r->second.into), s.engine->destroy(r->second.seen),
-        r = d.reads.erase(r);
+        r = d.effects.reads.erase(r);
   }
   if (std::none_of(laid.begin(), laid.end(),
                    [&](const auto& l) { return reads(l.first); }))
@@ -624,14 +627,15 @@ void doc_layers_read(Doc& d,
     from[i] = parts.size();
     doc_entities(s, *laid[i].second,
                  [&](utils::Entity e) { parts.push_back(e); });
-    if (const auto own = d.layerFx.find(laid[i].first); own != d.layerFx.end())
+    if (const auto own = d.effects.layerFx.find(laid[i].first);
+        own != d.effects.layerFx.end())
       for (const Stage::Renderable& made : s.renderables)
         if (made.of == own->second.sheet) parts.push_back(made.thing);
   }
   for (size_t i = 0; i < laid.size(); ++i) {
     const int layer = laid[i].first;
     if (reads(layer)) {
-      Doc::Read& r = d.reads[layer];
+      DocEffects::Read& r = d.effects.reads[layer];
       if (!r.seen) {
         r.seen = Texture::Builder()
                      .width((uint32_t)s.w)
@@ -648,7 +652,8 @@ void doc_layers_read(Doc& d,
                 .build(*s.engine);
       }
       const float way = (float)doc_blend_way(doc_word(d, layer, "blend"));
-      doc_reading(s, *laid[i].second, d.layerFx.count(layer) ? 0.f : way,
+      doc_reading(s, *laid[i].second,
+                  d.effects.layerFx.count(layer) ? 0.f : way,
                   doc_word(d, layer, "fill") == "behind" ? 1.f : 0.f, r.seen);
       doc_sheet_reads(d, layer, way, r.seen);
       s.before.push_back([&s,
@@ -668,8 +673,8 @@ void doc_layers_read(Doc& d,
           faces.setLayerMask(faces.getInstance(over[k]), 0xFF, masks[k]);
       });
     }
-    for (size_t k = 0; k < fx.size() && k < d.beforeOf.size(); ++k)
-      if (d.beforeOf[k] == layer) s.before.push_back(std::move(fx[k]));
+    for (size_t k = 0; k < fx.size() && k < d.effects.beforeOf.size(); ++k)
+      if (d.effects.beforeOf[k] == layer) s.before.push_back(std::move(fx[k]));
   }
 }
 

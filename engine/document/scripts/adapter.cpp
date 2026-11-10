@@ -126,8 +126,8 @@ std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
     if (doc_word(d, t, "script") == file.string())
       stood[(int)doc_number(d, t, "parent", 0, 0)].push_back(t);
   doc_act(d);
-  const bool together = d.act_together;
-  d.act_together = true;
+  const bool together = d.act.together;
+  d.act.together = true;
   for (const auto& [group, layers] : stood) {
     std::map<int, int> part;
     for (const int t : layers) part[(int)doc_number(d, t, "js_part", 0, 0)] = t;
@@ -140,7 +140,7 @@ std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
     for (const auto& [_, t] : part) gone.push_back(t);
   }
   for (const int t : gone) doc_remove(d, t);
-  d.act_together = together;
+  d.act.together = together;
   doc_acted(d);
   return "";
 }
@@ -330,14 +330,14 @@ int doc_door(Doc& d, const std::string& said, int picked) {
                (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const int parts = std::atoi(run.said("__three_parts()").c_str());
     if (!run.ok())
-      return d.error = run.trouble(), d.act_ok = false, doc_acted(d), 0;
+      return d.error = run.trouble(), d.act.ok = false, doc_acted(d), 0;
     if (!parts)
-      return d.error = "this three.js scene drew no meshes", d.act_ok = false,
+      return d.error = "this three.js scene drew no meshes", d.act.ok = false,
              doc_acted(d), 0;
-    const bool together = d.act_together;
+    const bool together = d.act.together;
     // Rebuild the canvas (doc_match) once at the end. Otherwise each part is an
     // undo step of its own and each one rebuilds all the parts.
-    d.act_together = true;
+    d.act.together = true;
     if (parts > 1 && (layer = doc_add(d, "shape", "null")))
       doc_say(d, layer, "name", name.c_str());
     for (int p = 0; p < parts; ++p) {
@@ -347,7 +347,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
       doc_say(d, solid, "name", (name + " " + std::to_string(p + 1)).c_str());
       if (parts > 1) doc_set(d, solid, "parent", layer);
     }
-    d.act_together = together;
+    d.act.together = together;
     // A p5.js sketch in WEBGL mode becomes a cube solid that runs the script.
   } else if (told.find("WEBGL") != std::string::npos) {
     if ((layer = doc_add(d, "solid", "cube")))
@@ -357,7 +357,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     // what the sketch drew.
     if (DocScript* sc = layer ? doc_script_of(d, file.string()) : nullptr;
         sc && sc->run && !sc->run->ok())
-      return d.error = sc->run->trouble(), d.act_ok = false, doc_acted(d), 0;
+      return d.error = sc->run->trouble(), d.act.ok = false, doc_acted(d), 0;
     // Any other p5.js sketch becomes an image layer fitted to the canvas.
   } else if ((layer = doc_add(d, "image", file.string().c_str())))
     doc_say(d, layer, "name", name.c_str()), doc_fit(d, layer, "fit");

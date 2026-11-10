@@ -240,7 +240,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           t - m->stirred > std::chrono::milliseconds(300)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         int begun = 0;
-        for (auto& [layer, shown] : m->d->shown)
+        for (auto& [layer, shown] : m->d->on_stage.shown)
           if (shown.drawn) begun += frames_ahead(*m->s, shown.drawn, 2);
         if (begun) m->s->engine->flush();
         m->ahead = begun > 0;
@@ -332,7 +332,8 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         m->evaluating = true;
-        m->d->live = true, m->d->slice = std::chrono::steady_clock::now();
+        m->d->solver.live = true,
+        m->d->solver.slice = std::chrono::steady_clock::now();
         m->s->later = &videos;
         time_is(*m->s, m->now);
         m->s->later = nullptr;
@@ -348,7 +349,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         // The window's snapshot of this time.
         snapshot_time(m);
         m->evaluating = false;
-        behind = std::exchange(m->d->behind, false);
+        behind = std::exchange(m->d->solver.behind, false);
         // Where each sound should be, read from the document.
         sounds = heard_told(*m->s);
       }
@@ -383,7 +384,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       // While playing, a cached frame is put on the stage instead of being
       // drawn, when one exists. Cached frames cover only the camera's view and
       // the preview's.
-      if (!m->playing || m->d->viewCameraAsked || m->second ||
+      if (!m->playing || m->d->working_camera.asked || m->second ||
           !stage_cache_show(m->cache, *m->s, m->live, m->now, RATE))
         live_camera(m);
       const auto rendered = std::chrono::steady_clock::now();

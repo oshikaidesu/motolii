@@ -149,13 +149,13 @@ bool doc_extract(Doc& d) {
                   "update keyframe set at = at - 1e7 where layer = 0 and name "
                   "in ('mark', 'mark_colour') and at >= 5e6",
                   in - 1e-9, out - 1e-9, 1e7 - gap, out - 1e-9));
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d);
 }
 
 bool doc_let_go(Doc& d, bool keep) {
-  const Doc::Held h = d.held;
-  d.held = Doc::Held{};
+  const DocHeld h = d.held;
+  d.held = DocHeld{};
   if (h.layer < 0) return d.error = "nothing is held", false;
   // Rebuild the stage from the project so that it shows the unchanged values.
   if (!keep || (h.tried.empty() && h.said.empty()))
@@ -228,7 +228,7 @@ bool doc_sequence(Doc& d, double overlap, double rate) {
       ok = ok && doc_set(d, t, "start", at) && doc_keys_by(d, t, at - was);
     at = std::max(at, frame(at + lasts - overlap));
   }
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 
@@ -291,7 +291,7 @@ bool doc_time_align(Doc& d, const std::vector<int>& layers,
     if (std::fabs(to - was) > 1e-9)
       ok = doc_set(d, t, "start", to) && doc_keys_by(d, t, to - was);
   }
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 
@@ -330,7 +330,7 @@ bool doc_time_stretch(Doc& d, int layer, double speed, const std::string& hold,
                      "update keyframe set at = at - 1e7 where layer = %d and "
                      "at >= 5e6",
                      at, at, f, layer, layer, layer));
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 
@@ -345,7 +345,7 @@ bool doc_reset(Doc& d, int layer, const std::string& names) {
             d, sqlite3_mprintf(
                    "delete from keyframe where layer = %d and name in (%Q, %Q)",
                    layer, n.c_str(), (n + "_loop").c_str()));
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 

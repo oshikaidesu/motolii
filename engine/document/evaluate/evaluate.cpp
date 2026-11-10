@@ -33,6 +33,7 @@
 
 #include "community/absent_motion/absent_motion.h"
 #include "community/after_effects/lottie_slots.h"
+#include "community/playcanvas/splatfx.h"
 #include "community/quickjs/script.h"
 #include "document/card_table.h"
 #include "document/document.h"
@@ -74,23 +75,23 @@ void doc_evaluate(Doc& d, double now) {
   Stage& s = *d.stage;
   // Cleared and rebuilt on demand. A flat layer's sheet is now as large as its
   // canvas.
-  d.halves.clear(), d.talls.clear();
+  d.place_cache.halves.clear(), d.place_cache.talls.clear();
   // Nothing in the document changes during an evaluation, so what each copy of
-  // a layer asks for is computed once and cached in d.placing until the
-  // evaluation ends.
-  d.placing.clear(), d.evaluating = true;
+  // a layer asks for is computed once and cached in d.place_cache.placing until
+  // the evaluation ends.
+  d.place_cache.placing.clear(), d.place_cache.evaluating = true;
   // Clears the evaluating state on every exit path, including the early returns
   // below.
   struct Told {
     Doc& d;
-    ~Told() { d.evaluating = false, d.placing.clear(); }
+    ~Told() { d.place_cache.evaluating = false, d.place_cache.placing.clear(); }
   } told{d};
   // A text layer whose words change with time, such as the Timecode and Count
   // Up text effects of AbsentMotion, is updated in place with words_at. If the
   // new words no longer fit the canvas, or the update fails, only that layer is
   // rebuilt with doc_match and evaluation stops.
   if (now == s.now)
-    for (auto& [layer, t] : d.shown)
+    for (auto& [layer, t] : d.on_stage.shown)
       if (t.wordsMove)
         if (const std::string w = doc_text_shown(d, layer, now);
             w != t.words || (t.drawn && t.drawn->outgrown)) {
@@ -102,7 +103,7 @@ void doc_evaluate(Doc& d, double now) {
   // A cel layer whose keyframes now select a different drawing is rebuilt on
   // its own with doc_match.
   if (now == s.now)
-    for (auto& [layer, t] : d.shown)
+    for (auto& [layer, t] : d.on_stage.shown)
       if (t.celMove && doc_cel(d, layer, now) != t.cel)
         return (void)doc_match(d);
   const std::vector<int> lie = doc_laid(d);
@@ -112,7 +113,7 @@ void doc_evaluate(Doc& d, double now) {
   // layer started. `open` says whether its 3D box is open.
   struct Lies {
     int layer;
-    Doc::Shown* shown;
+    DocShownLayer* shown;
     bool on, solid;
     double since;
     bool open;
@@ -133,8 +134,8 @@ void doc_evaluate(Doc& d, double now) {
     return false;
   };
   for (int layer : lie) {
-    const auto found = d.shown.find(layer);
-    if (found == d.shown.end() || found->second.camera) continue;
+    const auto found = d.on_stage.shown.find(layer);
+    if (found == d.on_stage.shown.end() || found->second.camera) continue;
     // `since` is the time since the layer started, as an element placed inside
     // it sees it. `lasts` is the layer's duration, negative for unlimited.
     const double since = doc_element_now(d, layer, now) -
@@ -164,7 +165,7 @@ void doc_evaluate(Doc& d, double now) {
   {
     int camera = 0;
     for (int layer : lie)
-      if (d.shown.count(layer) && d.shown[layer].camera) {
+      if (d.on_stage.shown.count(layer) && d.on_stage.shown[layer].camera) {
         const double since = now - doc_number(d, layer, "start", 0, 0),
                      lasts = doc_number(d, layer, "duration", 0, -1);
         if (since >= 0.0 && (lasts < 0.0 || since < lasts) &&
@@ -174,11 +175,12 @@ void doc_evaluate(Doc& d, double now) {
     // The working view shows the user's view camera instead of the document
     // camera. It needs a camera layer in the document and no export in
     // progress.
-    d.working = d.viewCameraAsked && camera && !d.writing;
-    god_view(s, d.working);
+    d.working_camera.on =
+        d.working_camera.asked && camera && !d.video_export.writing;
+    god_view(s, d.working_camera.on);
     // The camera layer whose fog settings apply, read by doc_look. 0 in the
     // working view.
-    d.looking = d.working ? 0 : camera;
+    d.camera.looking = d.working_camera.on ? 0 : camera;
     const DocViewCamera seen = doc_view_camera_of(d, camera, now);
     const math::double3 eye = seen.eye, look = seen.look, up = seen.up;
     const double far = seen.far, fov = seen.fov;
@@ -200,8 +202,8 @@ void doc_evaluate(Doc& d, double now) {
                : math::double2{0.0});
     // Transform from the stage's own camera, six units back along z, to this
     // camera.
-    d.rig = s.film->getModelMatrix() *
-            math::mat4::translation(math::double3{0, 0, -6});
+    d.camera.rig = s.film->getModelMatrix() *
+                   math::mat4::translation(math::double3{0, 0, -6});
     // Depth of field uses Filament's own lens model: sharp at the focus
     // distance and blurred away from it as the f-number says. The shutter speed
     // follows the f-number, so the image keeps the brightness of the stage's
@@ -209,7 +211,7 @@ void doc_evaluate(Doc& d, double now) {
     const double said =
                      camera ? doc_number(d, camera, "aperture", now, 0) : 0.0,
                  focus = camera ? doc_number(d, camera, "focus", now, 0) : 0.0;
-    d.blurred = !d.working && said > 0.0;
+    d.camera.blurred = !d.working_camera.on && said > 0.0;
     // Filament's widest aperture is f/0.5.
     const double stop = std::max(said, 0.5);
     View::DepthOfFieldOptions lens = s.view->getDepthOfFieldOptions();
@@ -218,35 +220,41 @@ void doc_evaluate(Doc& d, double now) {
         lens.cocScale != (float)doc_number(d, camera, "blur_level", now, 1))
       lens.cocScale = (float)doc_number(d, camera, "blur_level", now, 1),
       s.view->setDepthOfFieldOptions(lens);
-    s.film->setExposure(
-        d.blurred ? (float)stop : 16.f,
-        d.blurred ? (float)(stop * stop / (16.0 * 16.0 * 125.0)) : 1.f / 125.f,
-        100.f);
+    s.film->setExposure(d.camera.blurred ? (float)stop : 16.f,
+                        d.camera.blurred
+                            ? (float)(stop * stop / (16.0 * 16.0 * 125.0))
+                            : 1.f / 125.f,
+                        100.f);
     // The focus distance is the focus property, or the distance to the look-at
     // point when it is 0.
     s.film->setFocusDistance((float)(focus > 0.0 ? focus : length(eye - look)));
-    // The rotation part of d.rig.
-    d.facing = math::mat4(d.rig.upperLeft());
+    // The rotation part of d.camera.rig.
+    d.camera.facing = math::mat4(d.camera.rig.upperLeft());
     // In the working view the document camera stays where it is and the stage's
     // own camera orbits the origin at the angles and distance in
-    // d.viewCameraIs. A 2D layer belongs to the camera's image and to no 3D
-    // world, as in the working 3D views of Adobe applications, so it is hidden.
-    if (d.working) {
+    // d.working_camera.position. A 2D layer belongs to the camera's image and
+    // to no 3D world, as in the working 3D views of Adobe applications, so it
+    // is hidden.
+    if (d.working_camera.on) {
       const math::mat4 about =
-          math::mat4::rotation(d.viewCameraIs[0] * (double)TAU / 360.0,
-                               math::double3{0, 1, 0}) *
-          math::mat4::rotation(d.viewCameraIs[1] * (double)TAU / 360.0,
-                               math::double3{1, 0, 0});
+          math::mat4::rotation(
+              d.working_camera.position[0] * (double)TAU / 360.0,
+              math::double3{0, 1, 0}) *
+          math::mat4::rotation(
+              d.working_camera.position[1] * (double)TAU / 360.0,
+              math::double3{1, 0, 0});
       s.camera->lookAt(
-          (about * math::double4{0, 0, 6.0 * d.viewCameraIs[2], 0}).xyz,
+          (about * math::double4{0, 0, 6.0 * d.working_camera.position[2], 0})
+              .xyz,
           math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
-      s.camera->setProjection(30.0, double(s.w) / double(s.h), 0.05,
-                              60.0 * std::max(1.0, d.viewCameraIs[2]));
+      s.camera->setProjection(
+          30.0, double(s.w) / double(s.h), 0.05,
+          60.0 * std::max(1.0, d.working_camera.position[2]));
       for (Lies& l : lies) l.on = l.on && l.shown->space != 2;
     }
   }
   doc_look(d);
-  d.round = doc_seconds(d);
+  d.on_stage.round = doc_seconds(d);
   // Depth ordering. Flat layers take no part in depth and are ordered by
   // stacking order alone. Solid layers that follow one another sort depth among
   // themselves. Each run of one sort lies wholly over the run before it. All
@@ -274,11 +282,11 @@ void doc_evaluate(Doc& d, double now) {
   const auto made = [&](int layer, bool shows) -> ThingFx& {
     const std::string laid = doc_word(d, layer, "blend");
     return thing_fx_built(
-        s, d.layerFx[layer],
+        s, d.effects.layerFx[layer],
         shows                                                     ? ""
         : laid == "add" || laid == "multiply" || laid == "screen" ? laid
                                                                   : "",
-        !shows && doc_layer_stands(d, layer, d.layerFx[layer]), shows);
+        !shows && doc_layer_stands(d, layer, d.effects.layerFx[layer]), shows);
   };
   // Returns the scene a layer is drawn in. That is the scene of the nearest
   // ancestor group that has effects of its own and is on now, or the stage's
@@ -298,14 +306,14 @@ void doc_evaluate(Doc& d, double now) {
   for (size_t i = 0; i < lies.size(); ++i) {
     if (runOf[i] < 0) continue;
     const int run = runOf[i];
-    Doc::Shown& t = *lies[i].shown;
+    DocShownLayer& t = *lies[i].shown;
     // A layer with effects of its own is drawn alone and its image is laid in
     // the scene above it; see engine/stage/layer_effects/layer_fx.h.
     const bool own = doc_own_fx(d, lies[i].layer);
     // A solid that shows its own image stays in the stage's scene. It is also
     // filmed by its effects view, together with the stage's lights.
-    const bool shows =
-        own && doc_layer_shows(d, lies[i].layer, d.layerFx[lies[i].layer]);
+    const bool shows = own && doc_layer_shows(d, lies[i].layer,
+                                              d.effects.layerFx[lies[i].layer]);
     Scene* const above = holder(lies[i].layer);
     Scene* into = own ? made(lies[i].layer, shows).view->getScene() : above;
     // Copy the stage's lights and this layer's entities into the effects view,
@@ -357,19 +365,19 @@ void doc_evaluate(Doc& d, double now) {
     // blend order, in the scene of the group the layer is in.
     if (own) {
       auto& faces = s.engine->getRenderableManager();
-      thing_fx_into(s, d.layerFx[lies[i].layer], above);
+      thing_fx_into(s, d.effects.layerFx[lies[i].layer], above);
       // `stood` means the sheet stands in the 3D world. A solid layer's sheet
       // is then depth sorted by distance like any solid. A 2D layer's sheet is
       // ordered by stacking order.
-      const bool stood = d.layerFx[lies[i].layer].world,
+      const bool stood = d.effects.layerFx[lies[i].layer].world,
                  deep = stood && lies[i].solid;
       if (stood)
-        d.layerFx[lies[i].layer].look->setDepthCulling(deep),
-            d.layerFx[lies[i].layer].look->setDepthWrite(deep);
+        d.effects.layerFx[lies[i].layer].look->setDepthCulling(deep),
+            d.effects.layerFx[lies[i].layer].look->setDepthWrite(deep);
       for (const Stage::Renderable& made : s.renderables)
-        if (made.of == d.layerFx[lies[i].layer].sheet ||
-            (d.layerFx[lies[i].layer].solid &&
-             made.of == d.layerFx[lies[i].layer].solid)) {
+        if (made.of == d.effects.layerFx[lies[i].layer].sheet ||
+            (d.effects.layerFx[lies[i].layer].solid &&
+             made.of == d.effects.layerFx[lies[i].layer].solid)) {
           const auto one = faces.getInstance(made.thing);
           // The sheet's vertices are the screen corners, so it is never culled.
           faces.setCulling(one, false),
@@ -381,7 +389,7 @@ void doc_evaluate(Doc& d, double now) {
   }
   // Release the effects state of layers that no longer have effects of their
   // own or are gone.
-  for (auto e = d.layerFx.begin(); e != d.layerFx.end();) {
+  for (auto e = d.effects.layerFx.begin(); e != d.effects.layerFx.end();) {
     const auto at = std::find_if(lies.begin(), lies.end(), [&](const auto& l) {
       return l.layer == e->first;
     });
@@ -395,15 +403,15 @@ void doc_evaluate(Doc& d, double now) {
       // holds every layer the group contained and every sheet laid in it, so
       // those are detached too.
       Scene* const gone = e->second.view ? e->second.view->getScene() : nullptr;
-      for (auto& [layer, t] : d.shown)
+      for (auto& [layer, t] : d.on_stage.shown)
         if (gone && t.scene == gone) {
           if (t.in)
             doc_entities(s, t, [&](utils::Entity x) { gone->remove(x); });
           t.scene = nullptr, t.in = false;
         }
-      for (auto& [layer, other] : d.layerFx)
+      for (auto& [layer, other] : d.effects.layerFx)
         if (gone && other.in == gone) thing_fx_into(s, other, s.scene);
-      thing_fx_off(s, e->second), e = d.layerFx.erase(e);
+      thing_fx_off(s, e->second), e = d.effects.layerFx.erase(e);
     } else
       ++e;
   }
@@ -411,7 +419,7 @@ void doc_evaluate(Doc& d, double now) {
   // moment_fx.h.
   doc_layers_fx(d);
   {
-    std::vector<std::pair<int, Doc::Shown*>> laid;
+    std::vector<std::pair<int, DocShownLayer*>> laid;
     for (size_t i = 0; i < lies.size(); ++i)
       if (runOf[i] >= 0) laid.emplace_back(lies[i].layer, lies[i].shown);
     doc_layers_read(d, laid);
@@ -437,11 +445,11 @@ void doc_evaluate(Doc& d, double now) {
   // in it.
   View::DepthOfFieldOptions lens = s.view->getDepthOfFieldOptions();
   if (lens.enabled !=
-      (d.blurred && (base == 1 || (!sorts.empty() && sorts[0]))))
+      (d.camera.blurred && (base == 1 || (!sorts.empty() && sorts[0]))))
     lens.enabled = !lens.enabled, s.view->setDepthOfFieldOptions(lens);
   for (size_t i = 0; i < lies.size(); ++i) {
     const int layer = lies[i].layer;
-    Doc::Shown& t = *lies[i].shown;
+    DocShownLayer& t = *lies[i].shown;
     const bool in = lies[i].on;
     const Mesh* m = t.video   ? t.video->sheet
                     : t.drawn ? t.drawn->sheet
@@ -562,8 +570,8 @@ void doc_evaluate(Doc& d, double now) {
           t.drawn->look->setDepthCulling(lies[i].solid),
           t.drawn->look->setDepthWrite(lies[i].solid);
       for (const Stage::Renderable& made : s.renderables)
-        if (const auto own = d.copyLooks.find(made.thing.getId());
-            made.of == t.drawn->sheet && own != d.copyLooks.end())
+        if (const auto own = d.copy_materials.looks.find(made.thing.getId());
+            made.of == t.drawn->sheet && own != d.copy_materials.looks.end())
           own->second->setParameter("deep", box),
               own->second->setDepthCulling(lies[i].solid),
               own->second->setDepthWrite(lies[i].solid);
@@ -594,8 +602,8 @@ void doc_evaluate(Doc& d, double now) {
       drawn.look->setParameter("deepBevel", cut),
           drawn.look->setParameter("deepSteps", stairs);
       for (const Stage::Renderable& made : s.renderables)
-        if (const auto own = d.copyLooks.find(made.thing.getId());
-            made.of == drawn.sheet && own != d.copyLooks.end())
+        if (const auto own = d.copy_materials.looks.find(made.thing.getId());
+            made.of == drawn.sheet && own != d.copy_materials.looks.end())
           own->second->setParameter("deepBevel", cut),
               own->second->setParameter("deepSteps", stairs);
       const int reach =
@@ -612,8 +620,8 @@ void doc_evaluate(Doc& d, double now) {
           (float)doc_number(d, layer, "reflectance", now, 0.5)};
       t.drawn->look->setParameter("surface", surface);
       for (const Stage::Renderable& made : s.renderables)
-        if (const auto own = d.copyLooks.find(made.thing.getId());
-            made.of == t.drawn->sheet && own != d.copyLooks.end())
+        if (const auto own = d.copy_materials.looks.find(made.thing.getId());
+            made.of == t.drawn->sheet && own != d.copy_materials.looks.end())
           own->second->setParameter("surface", surface);
     }
     // The material the layer's sheet is given, with its parameters as they are
@@ -676,8 +684,8 @@ void doc_evaluate(Doc& d, double now) {
       t.drawn->look->setParameter("partColour", colour, 3),
           t.drawn->look->setParameter("partSurface", surface, 3);
       for (const Stage::Renderable& made : s.renderables)
-        if (const auto own = d.copyLooks.find(made.thing.getId());
-            made.of == t.drawn->sheet && own != d.copyLooks.end())
+        if (const auto own = d.copy_materials.looks.find(made.thing.getId());
+            made.of == t.drawn->sheet && own != d.copy_materials.looks.end())
           own->second->setParameter("partColour", colour, 3),
               own->second->setParameter("partSurface", surface, 3);
     }
@@ -735,13 +743,14 @@ void doc_evaluate(Doc& d, double now) {
             // A behaviour with a region weighs points of the shape, not whole
             // copies.
             if (const int f = (int)doc_number(d, by, "region", 0, 0);
-                f && d.shown.count(f) && d.shown[f].drawn) {
+                f && d.on_stage.shown.count(f) && d.on_stage.shown[f].drawn) {
               const math::mat4 there = doc_place(d, f, now, 0, 0, false);
               const math::double4 middle = there * math::double4{0, 0, 0, 1};
               const double r = length(
                                (there *
-                                math::double4{0.5 * d.shown[f].drawn->sheetHigh,
-                                              0, 0, 0})
+                                math::double4{
+                                    0.5 * d.on_stage.shown[f].drawn->sheetHigh,
+                                    0, 0, 0})
                                    .xyz),
                            soft = doc_number(d, by, "falloff_soft", now, 0);
               region =
@@ -793,9 +802,9 @@ void doc_evaluate(Doc& d, double now) {
       // other layer is included.
       const auto other = [&](int with, bool all) {
         Canvas2D::Other o;
-        const auto found = d.shown.find(with);
-        if (with == layer || found == d.shown.end() || !found->second.drawn ||
-            !found->second.drawn->cut)
+        const auto found = d.on_stage.shown.find(with);
+        if (with == layer || found == d.on_stage.shown.end() ||
+            !found->second.drawn || !found->second.drawn->cut)
           return o;
         const Canvas2D* a = t.drawn;
         const Canvas2D* b = found->second.drawn;
@@ -850,24 +859,24 @@ void doc_evaluate(Doc& d, double now) {
       // and is expressed in this layer's path units.
       Canvas2D::Other trace;
       if (const int with = (int)doc_number(d, layer, "trail", 0, 0);
-          with && with != layer && d.shown.count(with)) {
+          with && with != layer && d.on_stage.shown.count(with)) {
         const math::mat4 back = inverse(doc_place(d, layer, now));
         const double length =
             std::max(1e-3, doc_number(d, layer, "trail_length", now, 1));
         const Canvas2D* a = t.drawn;
         // The track is sampled on a grid of 64 ticks over its length, fixed in
-        // time. A tick is computed once and cached in d.tracks, so each
-        // evaluation computes only the ticks that are new. The two ends are
-        // where the other layer was at the start of the window and where it is
-        // now.
+        // time. A tick is computed once and cached in d.place_cache.tracks, so
+        // each evaluation computes only the ticks that are new. The two ends
+        // are where the other layer was at the start of the window and where it
+        // is now.
         const double step = length / 64.0, last = std::floor(now / step);
-        if (d.tracks.size() > 200000) d.tracks.clear();
+        if (d.place_cache.tracks.size() > 200000) d.place_cache.tracks.clear();
         const auto was = [&](double t, long long tick) {
           if (tick < 0)
             return (doc_shown_at(d, with, t) * math::double4{0, 0, 0, 1}).xyz;
-          auto found = d.tracks.find({with, step, tick});
-          if (found == d.tracks.end())
-            found = d.tracks
+          auto found = d.place_cache.tracks.find({with, step, tick});
+          if (found == d.place_cache.tracks.end())
+            found = d.place_cache.tracks
                         .emplace(std::make_tuple(with, step, tick),
                                  (doc_shown_at(d, with, t) *
                                   math::double4{0, 0, 0, 1})
@@ -905,7 +914,7 @@ void doc_evaluate(Doc& d, double now) {
         for (const AbsentEffect& e : on)
           for (const auto& [name, v] : e.params)
             for (const float one : v) key += " " + std::to_string(one);
-        auto& kept = d.drawingKept[layer];
+        auto& kept = d.on_stage.drawingKept[layer];
         if (!on.empty() && kept.first != key) {
           kept = {key,
                   absent_drawing(drawn, on, layer, 0.0, 1000.0, 0.0, false)};
@@ -944,20 +953,22 @@ void doc_evaluate(Doc& d, double now) {
           bendsOf(std::max(0, made.nth), members, own, &where);
           if (own[4].z == 0.f) own[4] = bends[4];
           const auto one = faces.getInstance(made.thing);
-          MaterialInstance*& look = d.copyLooks[made.thing.getId()];
+          MaterialInstance*& look = d.copy_materials.looks[made.thing.getId()];
           if (!look)
             look = MaterialInstance::duplicate(t.drawn->look),
             faces.setMaterialInstanceAt(one, 0, look);
           look->setParameter("bends", own, 8);
           if (t.drawn->edgeLook && faces.getPrimitiveCount(one) > 1) {
-            MaterialInstance*& edge = d.copyEdges[made.thing.getId()];
+            MaterialInstance*& edge =
+                d.copy_materials.edges[made.thing.getId()];
             if (!edge)
               edge = MaterialInstance::duplicate(t.drawn->edgeLook),
               faces.setMaterialInstanceAt(one, 1, edge);
             edge->setParameter("bends", own, 8);
           }
-        } else if (const auto own = d.copyLooks.find(made.thing.getId());
-                   own != d.copyLooks.end())
+        } else if (const auto own =
+                       d.copy_materials.looks.find(made.thing.getId());
+                   own != d.copy_materials.looks.end())
           own->second->setParameter("bends", bends, 8);
       }
     }
@@ -1077,15 +1088,16 @@ void doc_evaluate(Doc& d, double now) {
     }
     // A solid whose sketch gives each copy a colour: each such copy gets a
     // material of its own.
-    if (const auto told = d.scripted.find(layer);
-        told != d.scripted.end() && t.look && !t.drawn && !t.video) {
+    if (const auto told = d.place_cache.scripted.find(layer);
+        told != d.place_cache.scripted.end() && t.look && !t.drawn &&
+        !t.video) {
       auto& faces = s.engine->getRenderableManager();
       for (const Stage::Renderable& made : s.renderables) {
         if (made.of != m || made.matte || made.nth < 0 ||
             (size_t)made.nth >= told->second.copies.size() ||
             told->second.copies[(size_t)made.nth].colour < 0.0)
           continue;
-        MaterialInstance*& own = d.copyLooks[made.thing.getId()];
+        MaterialInstance*& own = d.copy_materials.looks[made.thing.getId()];
         if (!own)
           own = MaterialInstance::duplicate(t.look),
           faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, own);
@@ -1104,12 +1116,12 @@ void doc_evaluate(Doc& d, double now) {
     const double whole = doc_number(d, layer, "opacity", now, 1) *
                          doc_absent_opacity(d, layer, now) *
                          doc_group_opacity(d, layer, now);
-    const auto fxOf = d.layerFx.find(layer);
+    const auto fxOf = d.effects.layerFx.find(layer);
     // With effects of its own, opacity is applied after the effects, on the
     // effects sheet. After Effects renders a layer's masks, effects and then
     // transform in that order.
     const bool sheetClear =
-        fxOf != d.layerFx.end() && fxOf->second.look &&
+        fxOf != d.effects.layerFx.end() && fxOf->second.look &&
         fxOf->second.look->getMaterial()->hasParameter("opacity");
     if (sheetClear) fxOf->second.look->setParameter("opacity", (float)whole);
     const double ownClear = sheetClear ? 1.0 : whole;
@@ -1139,12 +1151,12 @@ void doc_evaluate(Doc& d, double now) {
       const std::vector<float2>& letters =
           t.drawn ? t.drawn->letters : std::vector<float2>{};
       // A script can give each copy its own opacity.
-      const auto scripted = d.scripted.find(layer);
+      const auto scripted = d.place_cache.scripted.find(layer);
       // AbsentMotion's repeat gives each copy its own opacity, for example the
       // far copies of a scatter field.
       const std::vector<AbsentCopy>& absent = doc_absent_copies(d, layer, now);
       const bool clears =
-          (scripted != d.scripted.end() &&
+          (scripted != d.place_cache.scripted.end() &&
            std::any_of(scripted->second.copies.begin(),
                        scripted->second.copies.end(),
                        [](const ScriptCopy& c) { return c.opacity != 1.0; })) ||
@@ -1172,7 +1184,7 @@ void doc_evaluate(Doc& d, double now) {
         const int n = doc_members(d, layer);
         for (const Stage::Renderable& made : s.renderables) {
           if (made.of != m || made.matte) continue;
-          MaterialInstance*& own = d.copyLooks[made.thing.getId()];
+          MaterialInstance*& own = d.copy_materials.looks[made.thing.getId()];
           if (!own)
             own = MaterialInstance::duplicate(main),
             faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, own);
@@ -1233,7 +1245,7 @@ void doc_evaluate(Doc& d, double now) {
                               float4{letters[(size_t)made.nth].x,
                                      letters[(size_t)made.nth].y, 1.f, 0.f});
           const double clear =
-              (scripted != d.scripted.end() &&
+              (scripted != d.place_cache.scripted.end() &&
                        (size_t)made.nth < scripted->second.copies.size()
                    ? scripted->second.copies[(size_t)made.nth].opacity
                    : 1.0) *
@@ -1272,7 +1284,8 @@ void doc_evaluate(Doc& d, double now) {
           if (t.drawn && t.drawn->edgeLook && !made.many) {
             const auto one = faces.getInstance(made.thing);
             if (faces.getPrimitiveCount(one) > 1) {
-              MaterialInstance*& edge = d.copyEdges[made.thing.getId()];
+              MaterialInstance*& edge =
+                  d.copy_materials.edges[made.thing.getId()];
               if (!edge)
                 edge = MaterialInstance::duplicate(t.drawn->edgeLook),
                 faces.setMaterialInstanceAt(one, 1, edge);
@@ -1320,7 +1333,7 @@ void doc_evaluate(Doc& d, double now) {
     std::vector<Scene*> all{s.scene};
     // Also the effects scenes of groups with effects of their own, so their
     // layers are lit as on the stage.
-    for (const auto& [layer, e] : d.layerFx)
+    for (const auto& [layer, e] : d.effects.layerFx)
       if (e.view && doc_holds_fx(d, layer)) all.push_back(e.view->getScene());
     for (Scene* sc : all)
       one.on ? (sc->hasEntity(e) ? void() : sc->addEntity(e)) : sc->remove(e);
@@ -1370,9 +1383,9 @@ void doc_evaluate(Doc& d, double now) {
         tops[g] = layer;
   int before = 0;
   for (int layer : lie) {
-    const auto found = d.shown.find(layer);
-    if (found == d.shown.end()) continue;
-    Doc::Shown& t = found->second;
+    const auto found = d.on_stage.shown.find(layer);
+    if (found == d.on_stage.shown.end()) continue;
+    DocShownLayer& t = found->second;
     double box[4] = {0, 0, 0, 0};
     const int group = (int)std::lround(doc_number(d, layer, "parent", 0, 0));
     const auto top = tops.find(group);
@@ -1397,18 +1410,18 @@ void doc_evaluate(Doc& d, double now) {
     // When the clipping layer is a flat layer drawn by ThorVG, the layer is cut
     // by that layer's own image, like an After Effects alpha matte. Otherwise
     // it is cut by the upright box of what the clipping layer covers.
-    const Doc::Shown* const a = clipped ? &d.shown[by] : nullptr;
+    const DocShownLayer* const a = clipped ? &d.on_stage.shown[by] : nullptr;
     // A solid can be cut too, through its own material.
     const bool shaped = a && a->drawn && (t.drawn || t.video || t.look);
-    Doc::Cut& cut = d.cuts[layer];
+    DocOnStage::Cut& cut = d.on_stage.cuts[layer];
     MaterialInstance* const base = t.video   ? t.video->look
                                    : t.drawn ? t.drawn->look
                                              : t.look;
     // With effects of its own, the sheet they made is cut after them, as After
     // Effects cuts a layer by its matte once its effects are applied.
-    const auto fx = d.layerFx.find(layer);
+    const auto fx = d.effects.layerFx.find(layer);
     MaterialInstance* const own =
-        fx != d.layerFx.end() && fx->second.look && !fx->second.solid
+        fx != d.effects.layerFx.end() && fx->second.look && !fx->second.solid
             ? fx->second.look
             : base;
     // Stops a material from being cut. With `there` true the material still
@@ -1494,7 +1507,7 @@ void doc_evaluate(Doc& d, double now) {
   // placed at the time the composition is at, where its pose puts it over the
   // composition's sheet as the stage has it now. The composition's corner is at
   // the sheet's top left and one pixel is a share of the sheet's height.
-  for (auto& [layer, t] : d.shown) {
+  for (auto& [layer, t] : d.on_stage.shown) {
     if (t.deep.empty() || !t.drawn || !t.motion) continue;
     const double since = now - doc_number(d, layer, "start", 0, 0);
     const float sec =

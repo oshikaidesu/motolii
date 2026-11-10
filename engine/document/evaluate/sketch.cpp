@@ -30,6 +30,7 @@
 
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
+#include "document/evaluate/evaluate.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
@@ -154,7 +155,7 @@ void doc_sketch_told(MaterialInstance* look, const SketchTold& one,
 
 }  // namespace
 
-void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
+void doc_sketch_mesh(Doc& d, int layer, DocShownLayer& t, double now) {
   // Layout of the float array returned by __mesh_at(frame) in p5_mesh.h:
   // - Header, HEAD floats: the number of draws, of triangle corners and of line
   // segments; the

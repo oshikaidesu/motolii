@@ -199,14 +199,14 @@ void snapshot_update(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   std::set<int> again;
-  bool all = d.layers_changed || m->snapshotLayers.empty();
-  std::string changes = d.layers_changed ? "things\n" : "";
-  for (const auto& [layer, name] : d.changed) {
+  bool all = d.changes.layers_changed || m->snapshotLayers.empty();
+  std::string changes = d.changes.layers_changed ? "things\n" : "";
+  for (const auto& [layer, name] : d.changes.changed) {
     changes += std::to_string(layer) + " " + name + "\n";
     if (name == "name") all = true;
     again.insert(layer);
   }
-  d.changed.clear(), d.layers_changed = false;
+  d.changes.changed.clear(), d.changes.layers_changed = false;
   m->snapshotRows = sqlite3_total_changes(d.file);
   int layers[1024];
   const int n = std::min(motolii_layers(m, layers, 1024), 1024);

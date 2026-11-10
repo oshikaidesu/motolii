@@ -12,9 +12,12 @@
 #include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/camera.h"
+#include "document/evaluate/evaluate.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/value_at.h"
+#include "media/video_layer.h"
+#include "stage/render/gltf_model.h"
 #include "stage/render/render_stage.h"
 
 using namespace filament;
@@ -26,9 +29,9 @@ namespace {
 
 // Computes what doc_half caches.
 bool doc_half_now(Doc& d, int layer, float2* half, float* deep) {
-  const auto shown = d.shown.find(layer);
-  if (shown == d.shown.end()) return false;
-  const Doc::Shown& t = shown->second;
+  const auto shown = d.on_stage.shown.find(layer);
+  if (shown == d.on_stage.shown.end()) return false;
+  const DocShownLayer& t = shown->second;
   if (t.solid) {
     const Aabb box = t.solid->asset->getBoundingBox();
     const float tall = std::max(box.max.y - box.min.y, 1e-6f);
@@ -55,9 +58,9 @@ double doc_lasts(Doc& d, int layer) {
 std::vector<double> doc_key_times(Doc& d, int layer, const char* name) {
   // This is asked for again and again between changes, so the document is asked
   // only once.
-  const auto known = d.keyed.find({layer, name});
-  if (known != d.keyed.end()) return known->second;
-  std::vector<double>& at = d.keyed[{layer, name}];
+  const auto known = d.value_cache.keyed.find({layer, name});
+  if (known != d.value_cache.keyed.end()) return known->second;
+  std::vector<double>& at = d.value_cache.keyed[{layer, name}];
   doc_rows(
       d,
       sqlite3_mprintf("select at from keyframe where layer = %d and name = %Q "
@@ -68,12 +71,13 @@ std::vector<double> doc_key_times(Doc& d, int layer, const char* name) {
 }
 
 bool doc_half(Doc& d, int layer, float2* half, float* deep) {
-  if (const auto kept = d.halves.find(layer); kept != d.halves.end())
+  if (const auto kept = d.place_cache.halves.find(layer);
+      kept != d.place_cache.halves.end())
     return *half = kept->second.first, deep ? *deep = kept->second.second : 0.f,
            true;
   float far = 0.f;
   if (!doc_half_now(d, layer, half, &far)) return false;
-  d.halves[layer] = {*half, far};
+  d.place_cache.halves[layer] = {*half, far};
   if (deep) *deep = far;
   return true;
 }
@@ -90,7 +94,7 @@ math::double2 doc_seen(Doc& d, math::double3 p) {
 }
 
 std::string doc_gizmo(Doc& d, int layer, double now) {
-  if (!d.working || doc_word(d, layer, "kind") != "camera") return "";
+  if (!d.working_camera.on || doc_word(d, layer, "kind") != "camera") return "";
   Stage& s = *d.stage;
   const DocViewCamera e = doc_view_camera_of(d, layer, now);
   const double high = 6.0 * e.far * std::tan(0.5 * e.fov),
@@ -130,7 +134,8 @@ bool doc_frame(Doc& d, int layer, double now, double* frame) {
   float deep = 0.f;
   // A layer that is not on, or is set aside, has no bounds, because the user
   // cannot grab what is not seen.
-  if (!doc_half(d, layer, &half, &deep) || !d.shown[layer].in) return false;
+  if (!doc_half(d, layer, &half, &deep) || !d.on_stage.shown[layer].in)
+    return false;
   const double size = doc_number(d, layer, "size", now, 1),
                point = doc_point(d, layer, now);
   // The layer's own middle, wherever its anchor is.

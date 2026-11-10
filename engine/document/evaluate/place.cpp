@@ -66,16 +66,17 @@ struct DocLaid {
 // Returns the expressions that place the copies of `layer`. Returns an empty
 // list for a sketch, whose mesh has no copies to place (see sketch.h). The
 // result is the same for every copy, so while the document is being evaluated
-// at one time (d.evaluating, and the document cannot change meanwhile) it is
-// computed once per layer and cached in d.placing, like the copy_tall values.
+// at one time (d.place_cache.evaluating, and the document cannot change
+// meanwhile) it is computed once per layer and cached in d.place_cache.placing,
+// like the copy_tall values.
 std::vector<DocScript*> doc_placing_scs(Doc& d, int layer) {
   const auto ask = [&] {
     return doc_literal_word(d, layer, "shape") != "sketch"
                ? doc_expressions_on(d, layer)
                : std::vector<DocScript*>{};
   };
-  if (!d.evaluating) return ask();
-  Doc::Placing& kept = d.placing[layer];
+  if (!d.place_cache.evaluating) return ask();
+  DocPlaceCache::Placing& kept = d.place_cache.placing[layer];
   if (!kept.laid)
     kept.laid = true, kept.scs = ask(),
     kept.from = kept.scs.empty() ? "" : doc_expressions_said(d, layer);
@@ -84,8 +85,8 @@ std::vector<DocScript*> doc_placing_scs(Doc& d, int layer) {
 // Returns the AbsentEffect motions on `layer` at time `said`, cached per layer
 // while the document is being evaluated, like doc_placing_scs.
 std::vector<AbsentEffect> doc_placing_absent(Doc& d, int layer, double said) {
-  if (!d.evaluating) return doc_absent_on(d, layer, said);
-  Doc::Placing& kept = d.placing[layer];
+  if (!d.place_cache.evaluating) return doc_absent_on(d, layer, said);
+  DocPlaceCache::Placing& kept = d.place_cache.placing[layer];
   if (kept.absentAt != said)
     kept.absentAt = said, kept.absent = doc_absent_on(d, layer, said);
   return kept.absent;
@@ -100,7 +101,7 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
   // each copy, on top of what the copy's own values say.
   if (const std::string notes = doc_literal_word(d, layer, "script");
       std::filesystem::path(notes).extension() == ".mid") {
-    Doc::Scripted& kept = d.scripted[layer];
+    DocPlaceCache::Scripted& kept = d.place_cache.scripted[layer];
     // Recompute only when the time or the number of copies changed. The speed
     // scales the file's beats like the playback speed of a video.
     if (kept.at != said || (int)kept.copies.size() != n) {
@@ -127,15 +128,16 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     out.c = c, out.by = 1;
   } else if (const std::vector<DocScript*> scs = doc_placing_scs(d, layer);
              !scs.empty()) {
-    Doc::Scripted& kept = d.scripted[layer];
+    DocPlaceCache::Scripted& kept = d.place_cache.scripted[layer];
     // `clock` is the layer's own time. A part after a cut continues from where
     // it was before the cut; see doc_own_clock.
     const double gone = doc_literal(d, layer, "begin", 0, 0),
                  begins = doc_literal(d, layer, "start", 0, 0) - gone,
                  clock = doc_own_time(d, layer, said, said - begins);
     // Recompute all copies at once, so that the parameters are read once.
-    if (const std::string from = d.evaluating ? d.placing[layer].from
-                                              : doc_expressions_said(d, layer);
+    if (const std::string from = d.place_cache.evaluating
+                                     ? d.place_cache.placing[layer].from
+                                     : doc_expressions_said(d, layer);
         kept.at != said || kept.own != clock ||
         kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n ||
         kept.from != from) {
@@ -163,12 +165,15 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     bool hasAt;
     math::double3 at;
     ~Placing() {
-      d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at;
+      d.copy_context.copy = copy, d.copy_context.n = n,
+      d.copy_context.has_at = hasAt, d.copy_context.at = at;
     }
-  } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};
+  } was{d, d.copy_context.copy, d.copy_context.n, d.copy_context.has_at,
+        d.copy_context.at};
   {
     const int many = member ? doc_members(d, layer) : 1;
-    d.ctxCopy = member ? copy : 0, d.ctxN = many, d.ctxHasAt = false;
+    d.copy_context.copy = member ? copy : 0, d.copy_context.n = many,
+    d.copy_context.has_at = false;
   }
   // A copy is shown with its delay: the layer as it was that much earlier.
   if (member) now -= doc_delay(d, layer, copy);
@@ -196,15 +201,15 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     shift += math::double3{laid.c.x, laid.c.y, laid.c.z};
     // Record the copy's position on the stage as the script places it. A
     // falloff weighs copies by this position. It is recorded only for a
-    // connected layer; otherwise ctxHasAt stays false.
+    // connected layer; otherwise has_at stays false.
     if (doc_connects(d, layer)) {
-      d.ctxAt =
+      d.copy_context.at =
           (doc_above(d, layer, now, deeper) *
            math::double4{doc_number(d, layer, "x", now, 0) + shift.x,
                          doc_number(d, layer, "y", now, 0) + shift.y,
                          doc_number(d, layer, "z", now, 0) + shift.z, 1.0})
               .xyz;
-      d.ctxHasAt = true;
+      d.copy_context.has_at = true;
     }
   }
   // A MIDI file shown as a piano roll scrolls past. At the layer's start time
@@ -279,14 +284,14 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   // entry in copy_tall.
   double tall = doc_literal(d, layer, "tall", now, 1);
   if (member) {
-    auto found = d.talls.find(layer);
-    // Parse copy_tall once per time step and cache it in d.talls.
-    if (found == d.talls.end()) {
+    auto found = d.place_cache.talls.find(layer);
+    // Parse copy_tall once per time step and cache it in d.place_cache.talls.
+    if (found == d.place_cache.talls.end()) {
       std::istringstream said(doc_literal_word(d, layer, "copy_tall"));
       std::vector<double> all;
       for (std::string one; said >> one && one != "none";)
         all.push_back(std::atof(one.c_str()));
-      found = d.talls.emplace(layer, std::move(all)).first;
+      found = d.place_cache.talls.emplace(layer, std::move(all)).first;
     }
     const std::vector<double>& each = found->second;
     if (!each.empty()) tall *= each[(size_t)copy % each.size()];
@@ -300,7 +305,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
             math::mat4::translation(math::double3{-middle, 0, 0});
   // A layer under physics simulation, or a letter of one: use the position and
   // rotation that the physics world gives, then return.
-  if (!d.phys_keyed && !deeper) {
+  if (!d.physics.keyed && !deeper) {
     PhysPose pose;
     if (doc_physics(d, layer, now, &pose, member ? copy : -1)) {
       const math::quat q{pose.turn[3], pose.turn[0], pose.turn[1],
@@ -324,16 +329,16 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   if (member)
     if (const int on = (int)doc_literal(d, layer, "copy_on", 0, 0);
         on && on != layer && doc_number(d, on, "copy_on", 0, 0) == 0.0) {
-      const auto found = d.shown.find(on);
+      const auto found = d.on_stage.shown.find(on);
       const Canvas2D* b =
-          found == d.shown.end() ? nullptr : found->second.drawn;
+          found == d.on_stage.shown.end() ? nullptr : found->second.drawn;
       if (b && b->cut && b->outline) {
         const tvg::PathCommand* cmds;
         const tvg::Point* pts;
         uint32_t cmdsCnt = 0, ptsCnt = 0;
         b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
         const double from = doc_literal(d, layer, "copy_on_offset", said, 0);
-        Doc::Along& kept = d.along[layer];
+        DocPlaceCache::Along& kept = d.place_cache.along[layer];
         const double key =
             (double)ptsCnt +
             (ptsCnt ? pts[0].x * 1e-3 + pts[ptsCnt - 1].y * 1e-6 : 0.0) +
@@ -480,20 +485,20 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   // Space set by the user: 2D sticks to the camera; 2.5D stays in the world and
   // is smaller when far, but keeps the angle it was given on the screen; 3D,
   // and a solid, is filmed as it is.
-  const auto shown = d.shown.find(layer);
-  if (deeper || shown == d.shown.end() || shown->second.space == 3)
+  const auto shown = d.on_stage.shown.find(layer);
+  if (deeper || shown == d.on_stage.shown.end() || shown->second.space == 3)
     return place;
-  if (shown->second.space == 2) return d.rig * place;
+  if (shown->second.space == 2) return d.camera.rig * place;
   const math::double3 at = (place * math::double4{anchor, 1.0}).xyz;
-  return math::mat4::translation(at) * d.facing * math::mat4::translation(-at) *
-         place;
+  return math::mat4::translation(at) * d.camera.facing *
+         math::mat4::translation(-at) * place;
 }
 
 std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
   const int one = (int)doc_number(d, layer, "connect", 0, 0),
             two = (int)doc_number(d, layer, "connect_to", 0, 0);
-  if (!one || one == layer || !d.shown.count(one) ||
-      (two && (two == layer || !d.shown.count(two))))
+  if (!one || one == layer || !d.on_stage.shown.count(one) ||
+      (two && (two == layer || !d.on_stage.shown.count(two))))
     return {};
   // Returns the position of the middle of each copy of `other`, before the
   // space is applied.
@@ -521,8 +526,8 @@ std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
   float2 half{0.5f};
   float deep = 0.f;
   doc_half(d, layer, &half, &deep);
-  const auto shown = d.shown.find(layer);
-  const int space = shown == d.shown.end() ? 3 : shown->second.space;
+  const auto shown = d.on_stage.shown.find(layer);
+  const int space = shown == d.on_stage.shown.end() ? 3 : shown->second.space;
   std::vector<math::mat4> lines;
   for (size_t k = 0; k < pairs.size() && k < most; ++k) {
     const math::double3 from = a[pairs[k].first], to = b[pairs[k].second],
@@ -545,7 +550,7 @@ std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
     line[1] = math::double4{-across * wide, 0.0};
     line[2] = math::double4{up, 0.0};
     line[3] = math::double4{mid, 1.0};
-    lines.push_back(space == 2 ? d.rig * line : line);
+    lines.push_back(space == 2 ? d.camera.rig * line : line);
   }
   return lines;
 }

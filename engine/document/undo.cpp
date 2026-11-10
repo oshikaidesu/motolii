@@ -1,5 +1,7 @@
 #include "document/undo.h"
 
+#include <sqlite3.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -12,6 +14,7 @@
 #include "document/match.h"
 #include "document/scripts/recipes.h"
 #include "motion/easing_curves.h"
+#include "physics/physics.h"
 #include "shelf/shelf_folders.h"
 
 namespace motolii {
@@ -19,10 +22,10 @@ namespace motolii {
 namespace {
 
 // Records what an undo step changed, so that the app can be told. Each property
-// (layer, name) that the changeset touches goes in d.changed, and each touched
-// layer goes in d.touched. d.layers_changed is set when a layer came or went,
-// that is when its kind was written or removed. The changeset is SQLite's own
-// record of the step, so no change is missed.
+// (layer, name) that the changeset touches goes in d.changes.changed, and each
+// touched layer goes in d.changes.touched. d.changes.layers_changed is set when
+// a layer came or went, that is when its kind was written or removed. The
+// changeset is SQLite's own record of the step, so no change is missed.
 void doc_note(Doc& d, int size, void* changeset) {
   sqlite3_changeset_iter* it = nullptr;
   if (sqlite3changeset_start(&it, size, changeset) != SQLITE_OK) return;
@@ -35,8 +38,8 @@ void doc_note(Doc& d, int size, void* changeset) {
     // to the easing table can alter any layer, so -1 is recorded, which means
     // every layer.
     if (!table || strcmp(table, "keyframe")) {
-      d.layers_changed = true;
-      if (table && !strcmp(table, "easing")) d.touched.push_back(-1);
+      d.changes.layers_changed = true;
+      if (table && !strcmp(table, "easing")) d.changes.touched.push_back(-1);
       continue;
     }
     // Columns 0 and 1 of a keyframe row are the layer and the name. An insert
@@ -48,11 +51,11 @@ void doc_note(Doc& d, int size, void* changeset) {
                                                                         &name);
     if (!layer || !name) continue;
     const std::string n = (const char*)sqlite3_value_text(name);
-    d.changed.insert({sqlite3_value_int(layer), n});
+    d.changes.changed.insert({sqlite3_value_int(layer), n});
     if (sqlite3_value_int(layer) != last)
-      d.touched.push_back(last = sqlite3_value_int(layer));
+      d.changes.touched.push_back(last = sqlite3_value_int(layer));
     // A kind written or removed means that a layer came or went.
-    if (n == "kind" && op != SQLITE_UPDATE) d.layers_changed = true;
+    if (n == "kind" && op != SQLITE_UPDATE) d.changes.layers_changed = true;
   }
   sqlite3changeset_finalize(it);
 }
@@ -336,33 +339,33 @@ Doc* doc_open(Stage& s, const char* path) {
 }
 
 void doc_act(Doc& d) {
-  if (d.act++) return;
+  if (d.act.depth++) return;
   sqlite3_exec(d.file, "begin", nullptr, nullptr, nullptr);
-  sqlite3session_create(d.file, "main", &d.acting);
-  sqlite3session_attach(d.acting, "keyframe");
-  sqlite3session_attach(d.acting, "easing");
-  d.act_ok = true;
+  sqlite3session_create(d.file, "main", &d.act.session);
+  sqlite3session_attach(d.act.session, "keyframe");
+  sqlite3session_attach(d.act.session, "easing");
+  d.act.ok = true;
 }
 bool doc_acted(Doc& d) {
   // Show the changes that were put off on the stage once, all together. If the
   // stage cannot show them, none of them is made.
-  if (d.act == 1 && d.act_unmatched) {
-    d.act_unmatched = false;
+  if (d.act.depth == 1 && d.act.unmatched) {
+    d.act.unmatched = false;
     doc_forget(d);
-    if (d.act_ok && !doc_match(d)) d.act_ok = false;
+    if (d.act.ok && !doc_match(d)) d.act.ok = false;
   }
-  if (--d.act) return d.act_ok;
+  if (--d.act.depth) return d.act.ok;
   int size = 0;
   void* changed = nullptr;
-  sqlite3session_changeset(d.acting, &size, &changed);
-  sqlite3session_delete(d.acting);
-  d.acting = nullptr;
+  sqlite3session_changeset(d.act.session, &size, &changed);
+  sqlite3session_delete(d.act.session);
+  d.act.session = nullptr;
   // Record the touched properties even for a step that is given up, because the
   // stage showed them changed and must now show them as they were.
   if (size) doc_note(d, size, changed);
   // A new step discards the steps that were undone and not redone, so history
   // stays a single line.
-  if (d.act_ok && size) {
+  if (d.act.ok && size) {
     sqlite3_exec(d.file, "delete from undo_step where undone", nullptr, nullptr,
                  nullptr);
     sqlite3_stmt* keep = nullptr;
@@ -377,24 +380,24 @@ bool doc_acted(Doc& d) {
     sqlite3_finalize(keep);
   }
   sqlite3_free(changed);
-  sqlite3_exec(d.file, d.act_ok ? "commit" : "rollback", nullptr, nullptr,
+  sqlite3_exec(d.file, d.act.ok ? "commit" : "rollback", nullptr, nullptr,
                nullptr);
   // After a rollback, rebuild the stage from the restored project and keep the
   // error.
-  if (!d.act_ok) {
+  if (!d.act.ok) {
     doc_forget(d);
     const std::string why = d.error;
     doc_match(d);
     d.error = why;
   }
-  return d.act_ok;
+  return d.act.ok;
 }
 bool doc_change(Doc& d, char* change, bool later) {
   doc_act(d);
   // If an earlier change in this step was refused, d.error still says why.
-  bool ok = d.act_ok;
+  bool ok = d.act.ok;
   // The project cannot be changed while it is being exported.
-  if (ok && d.writing)
+  if (ok && d.video_export.writing)
     ok = false, d.error =
                     "the document is being written as a film: it is not "
                     "changed until that is done";
@@ -405,13 +408,13 @@ bool doc_change(Doc& d, char* change, bool later) {
   // Within a larger step, rebuild the stage once when the step ends instead of
   // after each change if `later` is set, as for one key of a thousand, or if
   // the step was started by motolii_together.
-  if (ok && (later || d.act_together) && d.act > 1)
-    d.act_unmatched = true;
+  if (ok && (later || d.act.together) && d.act.depth > 1)
+    d.act.unmatched = true;
   else if (ok) {
     doc_forget(d);
     ok = doc_match(d);
   }
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 

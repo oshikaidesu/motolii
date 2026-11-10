@@ -53,7 +53,7 @@ bool doc_free(Doc& d, int layer, int by, double now, bool stay,
               const std::vector<std::pair<std::string, double>>* told) {
   const DocExact exact(d);
   // A copy, because the calls below discard the original.
-  const Doc::Relation rel = doc_relation_of(d, by);
+  const DocRelation rel = doc_relation_of(d, by);
   const auto at = std::find(rel.members.begin(), rel.members.end(), layer);
   if (at == rel.members.end())
     return d.error = "it is not in that relation", false;
@@ -91,7 +91,7 @@ bool doc_free(Doc& d, int layer, int by, double now, bool stay,
                     change, layer, n.c_str());
   // A relation that started from this layer for it now starts from the one
   // before.
-  for (const auto& [r, other] : d.relationsOf)
+  for (const auto& [r, other] : d.relations.relationsOf)
     if (r != by) {
       const auto there =
           std::find(other.members.begin(), other.members.end(), layer);
@@ -144,14 +144,14 @@ bool doc_relate(Doc& d, int by, const char* ids, double now) {
       layers.push_back(t);
   if (layers.empty()) return d.error = "no layers to put in it", false;
   // Where each layer settles, with the effect of follow and push left out
-  // (d.settled).
+  // (d.relations.settled).
   std::map<int, std::pair<double, double>> at;
-  d.settled = true;
+  d.relations.settled = true;
   doc_forget(d);
   for (const int t : layers)
     at[t] = {doc_literal(d, t, "x", now, 0.0),
              doc_literal(d, t, "y", now, 0.0)};
-  d.settled = false;
+  d.relations.settled = false;
   doc_forget(d);
   const auto has = [&](const char* name) {
     bool any = false;
@@ -285,7 +285,7 @@ bool doc_lead(Doc& d, int by, int leader, double now) {
   for (const int t : touched)
     shown[t] = {doc_literal(d, t, "x", now, 0.0),
                 doc_literal(d, t, "y", now, 0.0)};
-  d.settled = true;
+  d.relations.settled = true;
   doc_forget(d);
   const std::pair<double, double> settles = {
       doc_literal(d, leader, "x", now, 0.0),
@@ -294,7 +294,7 @@ bool doc_lead(Doc& d, int by, int leader, double now) {
       was ? std::make_pair(doc_literal(d, was, "x", now, 0.0),
                            doc_literal(d, was, "y", now, 0.0))
           : settles;
-  d.settled = false;
+  d.relations.settled = false;
   doc_forget(d);
   doc_act(d);
   const std::vector<int>& in = doc_members_of(d, by);

@@ -141,7 +141,7 @@ int easing_is(Motolii* m, int layer, const char* name, double at,
   doc_act(d);
   if (!doc_define(d, easing, own->second.c_str()) ||
       !doc_easing(d, layer, name, at, easing))
-    d.act_ok = false;
+    d.act.ok = false;
   return changes(m, (int)doc_acted(d));
 }
 
@@ -169,13 +169,13 @@ int define_is(Motolii* m, const char* easing, const char* expression) {
         d,
         sqlite3_mprintf("select 1 from easing where name = %Q", name.c_str()),
         [&](sqlite3_stmt*) { here = true; });
-    if (!here && !doc_define(d, name.c_str(), own.c_str())) d.act_ok = false;
+    if (!here && !doc_define(d, name.c_str(), own.c_str())) d.act.ok = false;
   }
-  if (!doc_define(d, easing, expression)) d.act_ok = false;
+  if (!doc_define(d, easing, expression)) d.act.ok = false;
   // Delete the easings that were composed or reversed, named with × or starting
   // with Reverse:, and that no keyframe uses and no other easing refers to any
   // more. The app makes one at each step of a drag.
-  if (d.act_ok &&
+  if (d.act.ok &&
       !doc_change(
           d, sqlite3_mprintf(
                  "delete from easing where (name glob '*×*' or name glob "
@@ -184,7 +184,7 @@ int define_is(Motolii* m, const char* easing, const char* expression) {
                  "(select 1 from easing o where o.name <> easing.name and "
                  "o.expression like '%%''' || easing.name || '%%')",
                  easing)))
-    d.act_ok = false;
+    d.act.ok = false;
   return changes(m, (int)doc_acted(d));
 }
 
@@ -330,8 +330,8 @@ int motolii_keying(Motolii* m, int on) {
   m->keying = on != 0;
   return posted(m, "keying",
                 [m, on] {
-                  m->d->keying = on != 0, m->d->keying_from = m->now;
-                  m->keying = m->d->keying;
+                  m->d->keying.on = on != 0, m->d->keying.from = m->now;
+                  m->keying = m->d->keying.on;
                 }),
          on != 0;
 }
@@ -601,9 +601,9 @@ double motolii_easing_at(Motolii* m, const char* easing, double u) {
 // were held back while the group was open are made once when it ends.
 int motolii_together(Motolii* m, int on) {
   return on_render_thread(m, [=] {
-    if (on) return doc_act(*m->d), m->d->act_together = true, 1;
-    const int done = m->d->act ? (int)doc_acted(*m->d) : 0;
-    if (!m->d->act) m->d->act_together = false;
+    if (on) return doc_act(*m->d), m->d->act.together = true, 1;
+    const int done = m->d->act.depth ? (int)doc_acted(*m->d) : 0;
+    if (!m->d->act.depth) m->d->act.together = false;
     // Make the previews that were held back while the group was open.
     snapshot_update(m), snapshot_time(m);
     return done;

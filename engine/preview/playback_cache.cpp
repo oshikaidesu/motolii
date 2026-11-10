@@ -164,7 +164,7 @@ bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate,
                      double budget_ms) {
   // The frames in view are the camera's, which are not drawn from the editing
   // viewpoint.
-  if (d.viewCameraAsked) return false;
+  if (d.working_camera.asked) return false;
   double from = 0.0, to = 0.0;
   doc_work(d, &from, &to);
   int at = -1;

@@ -54,7 +54,7 @@ bool doc_move_seen(Doc& d, int layer, double dx, double dy, double now) {
 
 bool doc_seen_box(Doc& d, int layer, double now, double* box) {
   double around[128], cover[4];
-  if (!d.shown[layer].in) return false;
+  if (!d.on_stage.shown[layer].in) return false;
   const int n = doc_outline(d, layer, now, around);
   if (n > 2) {
     box[0] = box[2] = around[0], box[1] = box[3] = around[1];
@@ -154,7 +154,7 @@ bool doc_align(Doc& d, const std::vector<int>& layers, const std::string& how) {
   bool ok = true;
   for (size_t i = 0; i < layers.size() && ok; ++i)
     ok = doc_move_seen(d, layers[i], by[i].first, by[i].second, now);
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 
@@ -164,18 +164,18 @@ bool doc_fit(Doc& d, int layer, const std::string& how) {
   // Inside a larger undo step, first show what has been made so far, as the end
   // of a step does (doc_acted). This lets an image that is placed and fitted in
   // one step be measured correctly.
-  if (d.act && d.act_unmatched) {
-    d.act_unmatched = false;
+  if (d.act.depth && d.act.unmatched) {
+    d.act.unmatched = false;
     doc_forget(d);
-    if (d.act_ok && !doc_match(d)) d.act_ok = false;
+    if (d.act.ok && !doc_match(d)) d.act.ok = false;
   }
   // While measuring, the layer is fitted to the canvas whichever camera the
   // window looks through, as After Effects' Fit to Comp does. The camera is
   // switched off here and restored by `back`.
-  const bool viewCamera = d.viewCameraAsked;
-  if (viewCamera) d.viewCameraAsked = false, doc_evaluate(d, now);
+  const bool viewCamera = d.working_camera.asked;
+  if (viewCamera) d.working_camera.asked = false, doc_evaluate(d, now);
   const auto back = [&](bool ok) {
-    if (viewCamera) d.viewCameraAsked = true, doc_evaluate(d, now);
+    if (viewCamera) d.working_camera.asked = true, doc_evaluate(d, now);
     return ok;
   };
   if (!doc_seen_box(d, layer, now, b) || b[2] - b[0] < 1e-6 ||
@@ -199,7 +199,7 @@ bool doc_fit(Doc& d, int layer, const std::string& how) {
          doc_move_seen(d, layer, d.stage->w / 2.0 - (b[0] + b[2]) / 2,
                        d.stage->h / 2.0 - (b[1] + b[3]) / 2, now);
   }
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return back(doc_acted(d) && ok);
 }
 
@@ -225,12 +225,14 @@ bool doc_covers(Doc& d, int layer, double now, double* box) {
 int doc_outline(Doc& d, int layer, double now, double* xy) {
   float2 half{0.f};
   float deep = 0.f;
-  if (!doc_half(d, layer, &half, &deep) || !d.shown[layer].in) return 0;
+  if (!doc_half(d, layer, &half, &deep) || !d.on_stage.shown[layer].in)
+    return 0;
   const math::mat4 place = doc_shown_at(d, layer, now);
   std::vector<math::double2> p;
   // Use the mesh vertices when they are available, taking about 600 of them at
   // most.
-  if (const Mesh* shape = d.shown[layer].shape; shape && !shape->pos.empty()) {
+  if (const Mesh* shape = d.on_stage.shown[layer].shape;
+      shape && !shape->pos.empty()) {
     const size_t step = std::max<size_t>(1, shape->pos.size() / 600);
     for (size_t i = 0; i < shape->pos.size(); i += step)
       p.push_back(doc_seen(

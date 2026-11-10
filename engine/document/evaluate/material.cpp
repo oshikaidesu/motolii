@@ -10,7 +10,7 @@
 #include <string>
 
 #include "document/card_table.h"
-#include "document/document.h"
+#include "document/evaluate/evaluate.h"
 #include "document/evaluate/value_at.h"
 #include "media/video_layer.h"
 #include "stage/canvas/canvas_cache.h"
@@ -54,7 +54,7 @@ int doc_blend_way(const std::string& word) {
 }
 
 void doc_material_instances(
-    Stage& s, const Doc::Shown& t,
+    Stage& s, const DocShownLayer& t,
     const std::function<void(MaterialInstance*)>& each) {
   auto& faces = s.engine->getRenderableManager();
   if (t.video) each(t.video->look);
@@ -70,7 +70,7 @@ void doc_material_instances(
     }
 }
 
-void doc_entities(Stage& s, const Doc::Shown& t,
+void doc_entities(Stage& s, const DocShownLayer& t,
                   const std::function<void(utils::Entity)>& each) {
   const Mesh* m = t.video ? t.video->sheet : t.drawn ? t.drawn->sheet : t.shape;
   for (const Stage::Renderable& made : s.renderables)
@@ -79,7 +79,7 @@ void doc_entities(Stage& s, const Doc::Shown& t,
     for (const utils::Entity e : t.solid->parts) each(e);
 }
 
-void doc_parts(Stage& s, const Doc::Shown& t,
+void doc_parts(Stage& s, const DocShownLayer& t,
                const std::function<void(RenderableManager&,
                                         RenderableManager::Instance)>& each) {
   auto& faces = s.engine->getRenderableManager();

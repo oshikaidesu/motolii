@@ -55,7 +55,7 @@ bool doc_key_many(Doc& d, int layer, const char* name, int n, const double* at,
                         layer, name),
         true);
   sqlite3_stmt* put = nullptr;
-  bool ok = d.act_ok &&
+  bool ok = d.act.ok &&
             sqlite3_prepare_v2(
                 d.file,
                 "insert into keyframe(layer, name, at, value, easing) "
@@ -75,10 +75,10 @@ bool doc_key_many(Doc& d, int layer, const char* name, int n, const double* at,
       sqlite3_bind_null(put, 5);
     ok = sqlite3_step(put) == SQLITE_DONE;
   }
-  if (!ok) d.error = sqlite3_errmsg(d.file), d.act_ok = false;
+  if (!ok) d.error = sqlite3_errmsg(d.file), d.act.ok = false;
   sqlite3_finalize(put);
   // The stage is rebuilt once, when the act ends.
-  d.act_unmatched = true;
+  d.act.unmatched = true;
   return doc_acted(d) && ok;
 }
 int doc_keys(Doc& d, int layer, const char* name, double at) {
@@ -100,9 +100,9 @@ bool doc_put(Doc& d, int layer, const char* name, double at, double is) {
   // property changed while every change is keyed, at or before the time keying
   // began. After Effects' Auto-keyframe keys a property at the current time,
   // and so does the diamond of Alight Motion at the playhead.
-  if (doc_keys(d, layer, name) > 0 || (d.keying && at <= d.keying_from))
+  if (doc_keys(d, layer, name) > 0 || (d.keying.on && at <= d.keying.from))
     return doc_key(d, layer, name, at, is);
-  if (!d.keying) return doc_set(d, layer, name, is);
+  if (!d.keying.on) return doc_set(d, layer, name, is);
   // This is the first change after keying began and it is later than the start.
   // The old value stays as a keyframe at the start, so that the property goes
   // from there to here in one step. Jitter does the same: an animation goes
@@ -110,9 +110,9 @@ bool doc_put(Doc& d, int layer, const char* name, double at, double is) {
   // Help Center, "Understand operations vs keyframes". A bar runs forward only,
   // so a change earlier than the start was handled above and keys only itself.
   const double was =
-      doc_number(d, layer, name, d.keying_from, doc_usual_on(d, layer, name));
+      doc_number(d, layer, name, d.keying.from, doc_usual_on(d, layer, name));
   doc_act(d);
-  doc_key(d, layer, name, d.keying_from, was);
+  doc_key(d, layer, name, d.keying.from, was);
   doc_key(d, layer, name, at, is);
   return doc_acted(d);
 }

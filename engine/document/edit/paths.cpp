@@ -81,7 +81,7 @@ int doc_pen(Doc& d, int layer, double x, double y, double hx, double hy) {
     if (plane.seen &&
         sk_svg_edit(was.c_str(), (float)p.x, (float)p.y,
                     (float)(8.0 / std::max(1e-9, length(plane.ex))), edited)) {
-      if (!doc_say(d, layer, "path", edited.c_str())) d.act_ok = false;
+      if (!doc_say(d, layer, "path", edited.c_str())) d.act.ok = false;
       return doc_acted(d) ? layer : 0;
     }
     layer = 0;
@@ -128,7 +128,7 @@ int doc_pen(Doc& d, int layer, double x, double y, double hx, double hy) {
                     p.y);
     if (!doc_say(d, layer, "path", (path + said).c_str())) layer = 0;
   }
-  if (!layer) d.act_ok = false;
+  if (!layer) d.act.ok = false;
   return doc_acted(d) ? layer : 0;
 }
 
@@ -169,7 +169,7 @@ int doc_freehand(Doc& d, const char* points) {
     }
     if (!doc_say(d, layer, "path", (path + " Z").c_str())) layer = 0;
   }
-  if (!layer) d.act_ok = false;
+  if (!layer) d.act.ok = false;
   return doc_acted(d) ? layer : 0;
 }
 
@@ -224,7 +224,7 @@ int doc_curve(Doc& d, const char* said) {
     if (!doc_say(d, layer, "path", path.c_str())) layer = 0;
   }
   free(cubic), free(orig), free(corners);
-  if (!layer) d.act_ok = false;
+  if (!layer) d.act.ok = false;
   return doc_acted(d) ? layer : 0;
 }
 
@@ -264,7 +264,7 @@ int doc_brush(Doc& d, const char* said, int into) {
         !doc_say(d, layer, "path", outline.c_str()))
       layer = 0;
   }
-  if (!layer) d.act_ok = false;
+  if (!layer) d.act.ok = false;
   return doc_acted(d) ? layer : 0;
 }
 
@@ -351,7 +351,7 @@ bool doc_to_path(Doc& d, int layer) {
   for (const char* name : {"round", "bloat", "zigzag", "offset"})
     if (ok && doc_number(d, layer, name, 0, 0) != 0.0)
       ok = doc_set(d, layer, name, 0.0);
-  if (!ok) d.act_ok = false;
+  if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
 }
 

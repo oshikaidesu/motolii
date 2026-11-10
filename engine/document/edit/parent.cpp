@@ -41,7 +41,7 @@ bool doc_parent(Doc& d, int layer, double to) {
   // it, walking up from `up`.
   const auto chain = [&](int up, double* turn, double* size) {
     *turn = 0.0, *size = 1.0;
-    for (int n = 0; up && n < 64 && d.shown.count(up);
+    for (int n = 0; up && n < 64 && d.on_stage.shown.count(up);
          up = (int)doc_number(d, up, "parent", 0, 0), ++n)
       *turn += doc_number(d, up, "rotate", now, 0),
           *size *= doc_number(d, up, "size", now, 1);
@@ -119,7 +119,7 @@ bool doc_key_here(Doc& d, int layer, const char* name, double at) {
                     doc_key(d, layer, name, start + lasts, gone + lasts) &&
                     (at <= start || at >= start + lasts ||
                      doc_key(d, layer, name, at, gone + at - start));
-    if (!ok) d.act_ok = false;
+    if (!ok) d.act.ok = false;
     return doc_acted(d) && ok;
   }
   return doc_keys(d, layer, name, at) && doc_keys(d, layer, name)

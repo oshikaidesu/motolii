@@ -49,7 +49,7 @@ void live_camera(Motolii* m) {
   Stage& s = *m->s;
   Doc& d = *m->d;
   if (!m->second) return live_draw(s, m->live);
-  const bool desk = m->live->desk && s.desk.w, camera = d.working;
+  const bool desk = m->live->desk && s.desk.w, camera = d.working_camera.on;
   if (desk) {
     live_draw(s, m->live);
     // The stage's own frame is already the camera's.
@@ -58,11 +58,11 @@ void live_camera(Motolii* m) {
   }
   std::lock_guard<std::recursive_timed_mutex> holding(d.lock);
   const uint32_t w = s.desk.w;
-  if (camera) d.viewCameraAsked = false, time_is(s, m->now);
+  if (camera) d.working_camera.asked = false, time_is(s, m->now);
   s.desk.w = 0;
   live_draw(s, m->live);
   s.desk.w = w;
-  if (camera) d.viewCameraAsked = true, time_is(s, m->now);
+  if (camera) d.working_camera.asked = true, time_is(s, m->now);
 }
 void stage_scale(Motolii* m) {
   static const double fixed = std::getenv("MOTOLII_SCALE")

@@ -92,7 +92,7 @@ Doc& doc(Motolii* m) {
   return *m->d;
 }
 int changes(Motolii* m, int done) {
-  if (!done && m->d->act) m->d->act_ok = false;
+  if (!done && m->d->act.depth) m->d->act.ok = false;
   return done;
 }
 
@@ -152,8 +152,10 @@ int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
 }
 int view_camera_is(Motolii* m, const char* word) {
   Doc& d = doc(m);
-  d.viewCameraAsked = std::sscanf(word, "%lf %lf %lf", &d.viewCameraIs[0],
-                                  &d.viewCameraIs[1], &d.viewCameraIs[2]) == 3;
+  d.working_camera.asked =
+      std::sscanf(word, "%lf %lf %lf", &d.working_camera.position[0],
+                  &d.working_camera.position[1],
+                  &d.working_camera.position[2]) == 3;
   time_is(*m->s, m->now);
   snapshot_time(m);
   m->changed = true;

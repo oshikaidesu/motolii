@@ -13,6 +13,16 @@ namespace motolii {
 
 struct Doc;
 
+// The app's animate-all mode.
+struct DocKeying {
+  // When true, every value a caller changes gets a keyframe at the current
+  // time.
+  bool on = false;
+  // The stage time at which the mode was turned on. The first keyframe of a
+  // value that is later than this time interpolates from this time.
+  double from = 0.0;
+};
+
 // Sets a keyframe of a property at time `at` to the value `is`. Returns false
 // and sets d.error if `at` is out of range or the property rejects the value.
 bool doc_key(Doc& d, int layer, const char* name, double at, double is);
@@ -33,8 +43,8 @@ int doc_keys(Doc& d, int layer, const char* name, double at = -1.0);
 
 // The operations the app calls to change a property at a time, following the
 // document's own rules so that the app does not work them out.
-//   put      Change the value there. If every change is being keyed, d.keying,
-//   add a keyframe
+//   put      Change the value there. If every change is being keyed,
+//   d.keying.on, add a keyframe
 //            there, as the Auto-keyframe mode of After Effects does. If it is
 //            the property's first keyframe and later than the time when keying
 //            began, the old value is also kept as a keyframe at that earlier

@@ -2,19 +2,87 @@
 #define MOTOLII_DOCUMENT_EVALUATE_RELATIONS_H_
 // Behaviours, falloffs, relations, copy placement and physics for layers.
 
-#include <filament/MaterialInstance.h>
 #include <math/mat4.h>
 #include <math/vec3.h>
 
+#include <map>
+#include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "community/absent_motion/absent_motion.h"
-#include "document/document.h"
-#include "physics/physics.h"
-#include "stage/render/render_stage.h"
+
+namespace filament {
+class MaterialInstance;
+}  // namespace filament
 
 namespace motolii {
+
+struct Doc;
+struct Mesh;
+struct PhysPose;
+class PhysWorld;
+
+// One relation's layers. members: the layers in order, with 0 where one was
+// removed. under: for each member, the relation it was in before; that
+// relation's result is this member's start. from: for each member, where it
+// showed when it joined, as x and y.
+struct DocRelation {
+  std::vector<int> members, under;
+  std::vector<double> from;
+};
+
+// What is known of the behaviors and relations of the project. Found once and
+// cleared at every change, unless said otherwise.
+struct DocRelations {
+  // Each value's behavior (`<name>_by`), by layer and name. Found once and
+  // cleared at every change.
+  std::map<std::pair<int, std::string>, int> drivers;
+  // Whether a layer has any value connected to a behavior. Computed on first
+  // use and cleared at every change.
+  std::unordered_map<int, bool> connects;
+  // Relation data by layer. Found once and cleared at every change.
+  std::unordered_map<int, DocRelation> relationsOf;
+  // Set while working out where layers settle. Relations that change with time,
+  // follow and push, give nothing then, so a relation made while one is pushing
+  // does not keep the push.
+  bool settled = false;
+  // Copies laid out by AbsentMotion effects.
+  struct AbsentKept {
+    double at = -1;
+    long changes = -1;
+    int seen = -1;
+    std::vector<AbsentCopy> copies;
+  };
+  // Each layer's copies as AbsentMotion's repeat effects lay them at the time
+  // last asked, see doc_absent_copies.
+  std::map<int, AbsentKept> absentKept;
+};
+
+// The layers that fall and collide (Jolt).
+struct DocPhysics {
+  // The world they are in. Built on first use and rebuilt when what it is
+  // built from changes.
+  std::unique_ptr<PhysWorld> world;
+  // Which layer each of its bodies belongs to.
+  std::vector<int> of;
+  // Which copy each body belongs to, for example a letter of split text. -1
+  // means the layer as a whole.
+  std::vector<int> copy;
+  // Until what time each body is driven by its keyframes.
+  std::vector<double> until;
+  // stale: the project changed since the world was last examined.
+  // any: some layer has physics.
+  bool stale = true, any = false;
+  // Everything the world was built from, as the project described it then. The
+  // world is rebuilt only when this changes.
+  std::string made;
+  // When true, positions are read from the layers' keyframes rather than from
+  // the physics world.
+  bool keyed = false;
+};
 
 // Returns the value that behaviour layer `by` gives to copy number `copy` of
 // `n` copies at time `t`. The behaviour type is the layer's "file" value:
@@ -59,7 +127,7 @@ void doc_copy_looks_off(Doc& d, const Mesh* m,
 // the relation it was in before. `from` has two numbers per member, x and y,
 // saying where the layer appeared when it joined. Each is empty unless it
 // matches the number of members. The result is cached.
-const Doc::Relation& doc_relation_of(Doc& d, int by);
+const DocRelation& doc_relation_of(Doc& d, int by);
 // Returns the member layers of relation `by`, in order.
 inline const std::vector<int>& doc_members_of(Doc& d, int by) {
   return doc_relation_of(d, by).members;

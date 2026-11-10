@@ -142,7 +142,7 @@ void doc_look(Doc& d) {
   // key.
   if (theirs)
     for (const std::string& t : told) key += t;
-  if (d.graded != key) {
+  if (d.look.graded != key) {
     static LinearToneMapper linear;
     static ACESToneMapper aces;
     static FilmicToneMapper filmic;
@@ -181,7 +181,7 @@ void doc_look(Doc& d) {
                 .build(*s.engine);
     s.view->setColorGrading(now);
     if (was) s.engine->destroy(was);
-    d.graded = key;
+    d.look.graded = key;
   }
   View::BloomOptions glow = s.view->getBloomOptions();
   glow.enabled = doc_number(d, 0, "bloom", 0, 0) > 0.0,
@@ -219,11 +219,14 @@ void doc_look(Doc& d) {
   // if that camera sets a fog of its own, as Alight Motion's camera Fog does.
   // Otherwise it is the canvas.
   const int fogBy =
-      d.looking && doc_number(d, d.looking, "fog", 0, 0) > 0.0 ? d.looking : 0;
+      d.camera.looking && doc_number(d, d.camera.looking, "fog", 0, 0) > 0.0
+          ? d.camera.looking
+          : 0;
   const std::string fogColour = doc_word(d, fogBy, "fog_color");
   // Fog is uniform in height: the height is far below the canvas and the height
   // falloff is 0.
-  haze.enabled = !d.working && doc_number(d, fogBy, "fog", 0, 0) > 0.0,
+  haze.enabled =
+      !d.working_camera.on && doc_number(d, fogBy, "fog", 0, 0) > 0.0,
   haze.density = 0.5f * (float)doc_number(d, fogBy, "fog", 0, 0),
   haze.distance = (float)doc_number(d, fogBy, "fog_near", 0, 2),
   haze.height = -1e3f, haze.heightFalloff = 0.f,
@@ -275,30 +278,30 @@ void doc_look(Doc& d) {
             in.view.screenSpaceReflections);
   }
   // Remember the intensity of the light that the canvas was opened with.
-  if (d.roomLight <= 0.f && s.scene->getIndirectLight())
-    d.roomLight = s.scene->getIndirectLight()->getIntensity();
+  if (d.look.roomLight <= 0.f && s.scene->getIndirectLight())
+    d.look.roomLight = s.scene->getIndirectLight()->getIntensity();
   std::string which = doc_word(d, 0, "room");
   // The room that the canvas was opened with.
   if (which.empty()) which = "small_studio";
   // Another room: its light is made once from its file and then reused. Every
   // image laid over the canvas is lit by it too.
-  if (which != d.roomIs) {
+  if (which != d.look.roomIs) {
     static std::map<std::string, IndirectLight*> made;
     // The first time, register the light in use under the current room name, so
     // that the canvas can switch back to it.
-    if (!d.roomIs.empty() || made.empty())
-      made.emplace(d.roomIs.empty() ? "small_studio" : d.roomIs,
+    if (!d.look.roomIs.empty() || made.empty())
+      made.emplace(d.look.roomIs.empty() ? "small_studio" : d.look.roomIs,
                    s.scene->getIndirectLight());
     const auto found = made.find(which);
     if (found != made.end())
       s.scene->setIndirectLight(found->second);
     else if (room(s, ("out/" + which + "/" + which + "_ibl.ktx").c_str(),
-                  d.roomLight))
+                  d.look.roomLight))
       made[which] = s.scene->getIndirectLight();
-    d.roomIs = which;
+    d.look.roomIs = which;
   }
   if (IndirectLight* room = s.scene->getIndirectLight()) {
-    room->setIntensity(d.roomLight *
+    room->setIntensity(d.look.roomLight *
                        (float)doc_number(d, 0, "environment", 0, 1));
     room->setRotation(math::mat3f::rotation(
         (float)(doc_number(d, 0, "environment_rotate", 0, 0) * (double)TAU /
@@ -306,13 +309,13 @@ void doc_look(Doc& d) {
         math::float3{0, 1, 0}));
   }
   // Gives the canvas effects access to the analysis of a sound file.
-  d.screen.sounds = [&d](const std::string& file, const std::string& name,
-                         bool fft, int wide) {
+  d.effects.screen.sounds = [&d](const std::string& file,
+                                 const std::string& name, bool fft, int wide) {
     return doc_sound_now(d, 0, file, name, fft, wide);
   };
   // Supplies the parameter values of the canvas effects.
   screen_effects(
-      s, d.screen, doc_word(d, 0, "script"),
+      s, d.effects.screen, doc_word(d, 0, "script"),
       [&d](const std::string& file, const std::string& name, double usual) {
         // Called while the frame is drawn, when the render thread does not hold
         // the lock.
@@ -350,12 +353,13 @@ void doc_look(Doc& d) {
   // canvas. Its sky image is made once for each room.
   if (doc_word(d, 0, "behind") == "room") {
     static std::map<std::string, Skybox*> shown;
-    Skybox*& sky = shown[d.roomIs];
+    Skybox*& sky = shown[d.look.roomIs];
     if (!sky) {
       // The sky image refers to this memory, so it must stay alive.
       static std::vector<std::vector<uint8_t>> kept;
       kept.push_back(load_file(
-          ("out/" + d.roomIs + "/" + d.roomIs + "_skybox.ktx").c_str()));
+          ("out/" + d.look.roomIs + "/" + d.look.roomIs + "_skybox.ktx")
+              .c_str()));
       if (!kept.back().empty())
         if (Texture* tex = ktxreader::Ktx1Reader::createTexture(
                 s.engine,
@@ -366,7 +370,7 @@ void doc_look(Doc& d) {
           // takes the brightness of the sky when it is made.
           sky = Skybox::Builder()
                     .environment(tex)
-                    .intensity(d.roomLight)
+                    .intensity(d.look.roomLight)
                     .showSun(true)
                     .build(*s.engine);
     }
@@ -382,30 +386,32 @@ void doc_look(Doc& d) {
   // all solid layers whatever their priority, so a blended backdrop was painted
   // over the solids. There is no color when the room is the background.
   const std::string colour = doc_word(d, 0, "behind") == "room" ? "" : behind;
-  if (colour != d.backdropIs) {
-    if (d.backdrop) canvas_off(s, d.backdrop), d.backdrop = nullptr;
+  if (colour != d.look.backdropIs) {
+    if (d.look.backdrop)
+      canvas_off(s, d.look.backdrop), d.look.backdrop = nullptr;
     if (!colour.empty()) {
       const math::double4 up = s.camera->getProjectionMatrix() *
                                s.camera->getViewMatrix() *
                                math::double4{0, 1, 0, 1};
       // Opaque, so that Filament draws it with the solid layers, first by its
       // priority, and not over them with the blended sheets.
-      if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{},
-                             (float)(2.0 * up.w / up.y),
-                             hex("background", float3{0.f}), "opaque"))) {
+      if ((d.look.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{},
+                                  (float)(2.0 * up.w / up.y),
+                                  hex("background", float3{0.f}), "opaque"))) {
         auto& faces = s.engine->getRenderableManager();
         for (const Stage::Renderable& made : s.renderables)
-          if (made.of == d.backdrop->sheet)
+          if (made.of == d.look.backdrop->sheet)
             faces.setPriority(faces.getInstance(made.thing), 0),
                 faces.setChannel(faces.getInstance(made.thing), 0);
-        d.backdrop->look->setDepthWrite(false),
-            d.backdrop->look->setDepthCulling(false);
+        d.look.backdrop->look->setDepthWrite(false),
+            d.look.backdrop->look->setDepthCulling(false);
       }
     }
-    d.backdropIs = colour;
+    d.look.backdropIs = colour;
   }
-  if (d.backdrop)
-    move(s, d.backdrop->sheet, [&](int, const mat4f&) { return mat4f(d.rig); });
+  if (d.look.backdrop)
+    move(s, d.look.backdrop->sheet,
+         [&](int, const mat4f&) { return mat4f(d.camera.rig); });
 }
 
 }  // namespace motolii

@@ -109,14 +109,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           // previews are made again as they were.
           ok =
               number < 0.0
-                  ? (m->d->act
-                         ? (m->d->act_ok = false, (void)doc_acted(*m->d),
+                  ? (m->d->act.depth
+                         ? (m->d->act.ok = false, (void)doc_acted(*m->d),
                             m->revision.fetch_add(1, std::memory_order_release),
                             snapshot_update(m), snapshot_time(m), 1)
                          : 0)
-              : number != 0.0 ? (doc_act(*m->d), m->d->act_together = true, 1)
-                              : (m->d->act ? (int)doc_acted(*m->d) : 0);
-          if (!m->d->act) m->d->act_together = false;
+              : number != 0.0 ? (doc_act(*m->d), m->d->act.together = true, 1)
+                              : (m->d->act.depth ? (int)doc_acted(*m->d) : 0);
+          if (!m->d->act.depth) m->d->act.together = false;
         }
         // name: the kind. word: the file. The result is the new layer.
         else if (c == "add")
@@ -133,7 +133,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "code") {
           const std::string why = doc_code_saved(doc(m), w);
           // Its parameters may be others now.
-          ok = why.empty(), m->changed = true, doc(m).layers_changed = true;
+          ok = why.empty(), m->changed = true,
+          doc(m).changes.layers_changed = true;
           if (!ok) m->error = why;
           m->revision.fetch_add(1, std::memory_order_release),
               snapshot_update(m), snapshot_time(m);
@@ -335,14 +336,15 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "show") {
           Doc& d = doc(m);
           ok = 1;
-          if (d.act && d.act_unmatched)
-            d.act_unmatched = false, doc_forget(d),
+          if (d.act.depth && d.act.unmatched)
+            d.act.unmatched = false, doc_forget(d),
             ok = changes(m, (int)doc_match(d));
           // Also update the app's previews of that layer. What changed is known
           // only when the step ends, so the bars and numbers follow the drag as
           // well.
-          if (d.act)
-            d.changed.insert({layer, ""}), snapshot_update(m), snapshot_time(m);
+          if (d.act.depth)
+            d.changes.changed.insert({layer, ""}), snapshot_update(m),
+                snapshot_time(m);
         } else if (c == "effect")
           ok = changes(m, (int)doc_effect(doc(m), layer, n.c_str(), number));
         // word: where the pointer is and its handle as "x y hx hy", in image

@@ -33,12 +33,12 @@ namespace motolii {
 
 bool doc_hold(Doc& d, int layer) {
   if (!doc_knows(d, layer)) return false;
-  if (d.writing)
+  if (d.video_export.writing)
     return d.error =
                "the document is being written as a film: nothing is held until "
                "that is done",
            false;
-  if (d.held.layer != layer) d.held = Doc::Held{}, d.held.layer = layer;
+  if (d.held.layer != layer) d.held = DocHeld{}, d.held.layer = layer;
   return true;
 }
 
@@ -49,7 +49,7 @@ double doc_own_clock(Doc& d, int t, double by) {
 }
 
 bool doc_carry(Doc& d, const char* by, double a, double b) {
-  Doc::Held& h = d.held;
+  DocHeld& h = d.held;
   // The "even_" modes keep the ratio of width to height, or turn in steps of 15
   // degrees, as Shift does in Figma: it "temporarily locks" the aspect ratio
   // and will "snap rotation values to increments of 15". A corner follows the
@@ -94,7 +94,7 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
     // When the user works through a view camera, the pointer's travel is along
     // that camera's axes, as the working views of After Effects move a 3D
     // layer.
-    const math::mat3 ways = d.working
+    const math::mat3 ways = d.working_camera.on
                                 ? d.stage->camera->getModelMatrix().upperLeft()
                                 : math::mat3{};
     // Saved with the drag: how many canvas points one stage unit is where the
@@ -106,18 +106,19 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
                          doc_number(d, h.layer, "y", now, 0),
                          doc_number(d, h.layer, "z", now, 0), 1.0})
               .xyz;
-      h.from[" point"] = d.working
+      h.from[" point"] = d.working_camera.on
                              ? doc_seen(d, at + ways[0]).x - doc_seen(d, at).x
                              : doc_point(d, h.layer, now);
     }
-    const double x = was("x"), y = was("y"), z = d.working ? was("z") : 0.0,
+    const double x = was("x"), y = was("y"),
+                 z = d.working_camera.on ? was("z") : 0.0,
                  point = h.from[" point"];
     // The pointer's travel is in stage space. A layer that moves with another
     // layer, its parent, is moved in the parent's rotated and scaled space.
     const math::double3 by = inverse(doc_above(d, h.layer, now).upperLeft()) *
                              (ways * math::double3{a / point, -b / point, 0.0});
     ok = tries("x", x + by.x) && tries("y", y + by.y) &&
-         (!d.working || tries("z", z + by.z));
+         (!d.working_camera.on || tries("z", z + by.z));
   } else if (!strcmp(by, "grip")) {
     // Records where on the canvas the pointer took hold, in points from the top
     // left. Scale, turn and pivot measure from it. frame[] is the layer's box
@@ -312,7 +313,7 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
 }
 
 bool doc_carry_effect(Doc& d, const char* file) {
-  Doc::Held& h = d.held;
+  DocHeld& h = d.held;
   if (h.layer < 0) return d.error = "nothing is held", false;
   // Same rule as doc_fx_say.
   if (doc_word(d, h.layer, "kind") == "camera" &&

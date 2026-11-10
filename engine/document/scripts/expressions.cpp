@@ -129,7 +129,7 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
         (doc_literal(d, layer, "duration", 0, -1) > 0.0 ? gone : 0.0);
     // How long the project runs, so that a flow goes round a whole number of
     // times in it.
-    numbers["round"] = d.round;
+    numbers["round"] = d.on_stage.round;
     // The fourth argument is the size of one project pixel in stage units at
     // the layer's depth. The last argument is the copies laid by the earlier
     // scripts, the fifth argument of each(); see script_runner.h.

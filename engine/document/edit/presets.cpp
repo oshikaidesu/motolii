@@ -264,7 +264,7 @@ bool doc_preset_save(Doc& d, int layer, const char* path, bool whole,
 
 bool doc_preset_put(Doc& d, int layer, const char* path) {
   // SQLite cannot attach a database inside a transaction.
-  if (d.act)
+  if (d.act.depth)
     return d.error = "a preset is given by itself, not within another act",
            false;
   const auto roots = doc_preset_roots();
@@ -308,7 +308,7 @@ bool doc_preset_put(Doc& d, int layer, const char* path) {
 int doc_preset_paste(Doc& d, const char* path, double now, const char* also,
                      int into, const char* before) {
   // SQLite cannot attach a database inside a transaction.
-  if (d.act)
+  if (d.act.depth)
     return d.error = "a copy is pasted by itself, not within another act", 0;
   const auto roots = doc_preset_roots();
   if (!doc_preset_attach(d, path, true)) return 0;

@@ -30,6 +30,7 @@
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
 #include "stage/effects/thorvg_effect_names.h"
+#include "stage/render/gltf_model.h"
 
 namespace motolii {
 
@@ -61,8 +62,8 @@ std::string doc_words(Doc& d, int layer, const char* name) {
   if (!strcmp(name, "animation") && kind == "solid") {
     // The animations of the solid's file, as gltfio reads them.
     std::string all;
-    if (const auto t = d.shown.find(layer);
-        t != d.shown.end() && t->second.solid)
+    if (const auto t = d.on_stage.shown.find(layer);
+        t != d.on_stage.shown.end() && t->second.solid)
       for (const std::string& m : t->second.solid->moves)
         all += (all.empty() ? "" : " ") + m;
     return all;
@@ -71,8 +72,8 @@ std::string doc_words(Doc& d, int layer, const char* name) {
     // The named segments of the image's file, as ThorVG reads them. "all" plays
     // the whole file.
     std::string all = "all";
-    if (const auto t = d.shown.find(layer);
-        t != d.shown.end() && t->second.drawn)
+    if (const auto t = d.on_stage.shown.find(layer);
+        t != d.on_stage.shown.end() && t->second.drawn)
       for (const std::string& m : t->second.drawn->markers) all += " " + m;
     return all;
   }

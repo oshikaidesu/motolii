@@ -4,15 +4,50 @@
 // Opens a project file, upgrades older files, and records each change to the
 // project as one undo step that can be undone and redone.
 
-#include <sqlite3.h>
-
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "stage/render/render_stage.h"
+struct sqlite3;
+struct sqlite3_session;
 
 namespace motolii {
 
 struct Doc;
+struct Stage;
+
+// The open act. An act groups changes: the changes made from its beginning to
+// its end are one undo step, and if one of them is refused none is applied.
+// Acts can nest, and the outermost one is the undo step.
+struct DocAct {
+  // How many acts are open, nested one within another.
+  int depth = 0;
+  // True while no change of the open act has been refused.
+  bool ok = true;
+  // A change inside a larger act has not been shown yet. The stage is matched
+  // to the project once, when the act ends.
+  bool unmatched = false;
+  // True when the outermost act is motolii_together's. Every change inside it
+  // is matched once, when it ends, as a keyframe is.
+  bool together = false;
+  // SQLite's own record of what the open act changes.
+  sqlite3_session* session = nullptr;
+};
+
+// What the undo steps changed, kept for the app and for the relations that
+// cache their results. Filled from each undo step's changeset.
+struct DocChanges {
+  // The values changed since the app last asked (motolii_changes), as (layer,
+  // name) pairs taken from each undo step's changeset.
+  std::set<std::pair<int, std::string>> changed;
+  // Every layer changed by an undo step, in order. -1 means that any layer may
+  // have changed. A relation that caches its result checks this to see whether
+  // a layer it reads has changed.
+  std::vector<int> touched;
+  // Whether a layer was added or removed since the app last asked.
+  bool layers_changed = false;
+};
 
 // Upgrades the database `schema` of `file` from the old table names to the
 // current ones (layer, keyframe, easing, undo_step), as described in section 3

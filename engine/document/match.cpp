@@ -305,7 +305,7 @@ bool doc_match(Doc& d) {
                  (from->second != 0.0) != (is != 0.0))
           held->second += " " + name + "~" + (is != 0.0 ? "on" : "off");
       }
-  for (auto it = d.shown.begin(); it != d.shown.end();) {
+  for (auto it = d.on_stage.shown.begin(); it != d.on_stage.shown.end();) {
     const auto still = told.find(it->first);
     // A text whose words came out wider than its image is always rebuilt.
     if (still != told.end() && still->second == it->second.of &&
@@ -346,12 +346,12 @@ bool doc_match(Doc& d) {
     // The sorting of a point cloud is dropped with it.
     if (it->second.shape)
       s.playing.erase(it->second.shape), take_off(s, it->second.shape);
-    it = d.shown.erase(it);
+    it = d.on_stage.shown.erase(it);
   }
   bool all = true;
   for (const auto& [layer, of] : told) {
-    if (d.shown.count(layer)) continue;
-    Doc::Shown made{of};
+    if (d.on_stage.shown.count(layer)) continue;
+    DocShownLayer made{of};
     const std::string kind = doc_word(d, layer, "kind"),
                       file = doc_word(d, layer, "file"),
                       laid = doc_word(d, layer, "blend"),
@@ -655,8 +655,8 @@ bool doc_match(Doc& d) {
       // A sound already playing at that point is heard from that far into it.
       if (made.video && made.video->sound)
         s.sounding[made.video] = [&d, layer, v = made.video, file] {
-          const double on =
-                           doc_number(d, layer, "start", 0, 0) - d.written_from,
+          const double on = doc_number(d, layer, "start", 0, 0) -
+                            d.video_export.written_from,
                        lasts = doc_number(d, layer, "duration", 0, -1),
                        late = std::max(0.0, -on);
           Stage::Sound a{file,
@@ -670,20 +670,22 @@ bool doc_match(Doc& d) {
           // With keyframes on volume, sample Alight Motion's Volume with its
           // keyframes and easing every 1/30 s, as the document reads it.
           if (doc_keys_of(d, layer, "volume").at.size() > 1)
-            for (double t = 0.0,
-                        end = a.lasts >= 0.0
-                                  ? a.lasts
-                                  : doc_seconds(d) - d.written_from - a.on;
+            for (double t = 0.0, end = a.lasts >= 0.0
+                                           ? a.lasts
+                                           : doc_seconds(d) -
+                                                 d.video_export.written_from -
+                                                 a.on;
                  t <= end + 1e-9 && a.loud.size() < 30 * 3600; t += 1.0 / 30.0)
-              a.loud.push_back((float)doc_number(d, layer, "volume",
-                                                 d.written_from + a.on + t, 1));
+              a.loud.push_back(
+                  (float)doc_number(d, layer, "volume",
+                                    d.video_export.written_from + a.on + t, 1));
           return a;
         };
     } else if (kind == "image") {
       std::string shown = file;
       // A level: show the drawing that its keyframes name now, held until the
       // next, as a timesheet holds it.
-      if (const Doc::Keys& cels = doc_keys_of(d, layer, "cel");
+      if (const DocKeys& cels = doc_keys_of(d, layer, "cel");
           !cels.at.empty()) {
         made.cel = doc_cel(d, layer, s.now), made.celMove = cels.at.size() > 1;
         shown = doc_cel_file(file, made.cel);
@@ -1042,13 +1044,13 @@ bool doc_match(Doc& d) {
       all = false;
       continue;
     }
-    d.shown[layer] = made;
+    d.on_stage.shown[layer] = made;
     // A solid layer casts shadows from lights that throw them, and receives
     // them. The grains of a point cloud are their own light.
     if ((made.solid || made.shape) && !made.grains) {
       const int group = (int)doc_number(d, layer, "light_group", 0, 0);
       doc_parts(
-          s, d.shown[layer],
+          s, d.on_stage.shown[layer],
           [group](RenderableManager& faces, RenderableManager::Instance one) {
             // Filament draws contact shadows only where the light asks for them
             // as well.

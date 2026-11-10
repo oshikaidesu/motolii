@@ -35,14 +35,14 @@ int motolii_export(Motolii* m, const char* mp4) {
                  "a film is written as an .mp4, .mov (HEVC), .gif, .png or "
                  ".jpg (a picture each)") ||
         !checked(m, placed(mp4), "there is no such folder") ||
-        !checked(m, !m->d->writing, "it is being written already"))
+        !checked(m, !m->d->video_export.writing, "it is being written already"))
       return 0;
     double from = 0.0, to = 0.0;
     // Only the work area is written.
     doc_work(*m->d, &from, &to);
     const int frames = (int)std::lround((to - from) * RATE);
-    m->d->writing = true;
-    m->d->written_from = from;
+    m->d->video_export.writing = true;
+    m->d->video_export.written_from = from;
     // The render thread that handled this call holds the project lock. Release
     // it while each frame is drawn, as in live playback. Between frames the
     // render thread runs the calls that were asked in the meantime, so an app
@@ -80,8 +80,8 @@ int motolii_export(Motolii* m, const char* mp4) {
                     doc_number(*m->d, 0, "render_alpha", 0, 0) > 0.5}),
         "the file could not be written");
     m->d->lock.lock();
-    m->d->writing = false;
-    m->d->written_from = 0.0;
+    m->d->video_export.writing = false;
+    m->d->video_export.written_from = 0.0;
     // Restore the time the preview was at before the export.
     time_is(*m->s, m->now);
     return ok;

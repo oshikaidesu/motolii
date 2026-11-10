@@ -3,16 +3,76 @@
 // Reads a property's value at a time: its keyframes and easings, plus the
 // clocks of a nested element and of a script.
 
-#include <sqlite3.h>
-
 #include <algorithm>
+#include <cstddef>
 #include <functional>
+#include <map>
 #include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include "document/document.h"
+#include "motion/easing_curves.h"
+
+struct sqlite3_stmt;
 
 namespace motolii {
+
+struct Doc;
+
+// The keyframes of one value. at, value and interp: the time, value and
+// easing of each keyframe. own: an easing defined in the project, used where
+// the segment is not one of the nine built-in kinds. loop: how the keys are
+// gone through again past the last.
+struct DocKeys {
+  std::vector<double> at, value;
+  std::vector<Interp> interp;
+  std::vector<std::string> own;
+  std::string loop;
+};
+
+// What was read from the project's keyframes, kept until the project changes
+// (doc_forget).
+struct DocValueCache {
+  // The layers in stacking order, the one furthest back first. Read on first
+  // use and cleared at every change.
+  std::vector<int> laid;
+  // Hash that lets a map be searched with a std::string_view without building a
+  // std::string.
+  struct NameHash {
+    using is_transparent = void;
+    size_t operator()(std::string_view n) const {
+      return std::hash<std::string_view>{}(n);
+    }
+  };
+  // Each value's keyframes and the easing of the segment after each, by layer
+  // and name. Read from the keyframes on first use and cleared at every change.
+  std::unordered_map<
+      int, std::unordered_map<std::string, DocKeys, NameHash, std::equal_to<>>>
+      moving;
+  struct HeardWordHash {
+    size_t operator()(const std::pair<int, const char*>& k) const {
+      return std::hash<int>{}(k.first) * 31u ^
+             std::hash<const void*>{}(k.second);
+    }
+  };
+  // Words of values, cached the same way as moving.
+  std::unordered_map<std::pair<int, const char*>, std::string, HeardWordHash>
+      heardWords;
+  // Where doc_place's own values have their keyframes, by layer and the place
+  // of the name in the program. A literal never names another value. Found once
+  // and cleared at every change.
+  std::unordered_map<std::pair<int, const char*>, const DocKeys*, HeardWordHash>
+      literals;
+  // Each value's word, cached the same way as moving.
+  std::map<std::pair<int, std::string>, std::string> words;
+  // The times of each value's keyframes, cached the same way as moving.
+  std::map<std::pair<int, std::string>, std::vector<double>> keyed;
+  // Prepared SQLite statements for an easing by its name and by its expression.
+  // Each is prepared once and then evaluated by SQLite.
+  std::map<std::string, sqlite3_stmt*> named, expression_statements;
+};
 
 // SQL condition for whether a value is keyed. See doc_key.
 #define DOC_KEYED                                                         \
@@ -57,10 +117,10 @@ double doc_went_by(Doc& d, const std::string& own, double u, double t,
 // no keyframes. Before the first keyframe and after the last, the end values
 // are held. Between two keyframes the segment's easing applies; Linear when
 // none is set. This is the calculation behind doc_number.
-double doc_keys_at(Doc& d, const Doc::Keys& k, double at, double otherwise);
+double doc_keys_at(Doc& d, const DocKeys& k, double at, double otherwise);
 // Returns the keyframes of one property of a layer. They are read from the
 // database once and cached until the document changes.
-const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name);
+const DocKeys& doc_keys_of(Doc& d, int layer, const char* name);
 // Returns the text value of a property, or an empty string if it is not set.
 // A value being dragged by the user overrides the stored one.
 std::string doc_word(Doc& d, int layer, const char* name);
@@ -74,7 +134,7 @@ double doc_element_now(Doc& d, int layer, double at);
 // a frame_rate the time is as smooth as the stage. Inside a nested element the
 // time is first mapped by doc_element_now. Returns the time to read the
 // keyframes `k` at.
-double doc_stepped(Doc& d, int layer, const Doc::Keys& k, double at);
+double doc_stepped(Doc& d, int layer, const DocKeys& k, double at);
 // Returns the numeric property `name` of `layer` at time `at`, or `otherwise`
 // if it is not set. A value being dragged by the user overrides the stored one.
 double doc_number(Doc& d, int layer, const char* name, double at,
