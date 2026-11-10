@@ -25,8 +25,8 @@ void move(Stage& s, const Mesh* m,
 //   - rate: frames per second (ffmpeg -r). Some of the 60 rendered frames per
 //   second are
 //     dropped.
-//   - mbps: bit rate in megabits per second (-b:v), instead of x264 -crf 17 or
-//     VideoToolbox -q:v 65.
+//   - mbps: bit rate in megabits per second (-b:v), instead of VideoToolbox
+//     -q:v 68 (.mp4) or -q:v 65 (.mov).
 //   - blur: number of samples drawn for each frame and averaged, as After
 //   Effects and
 //     Blender motion blur does. The samples span a 180 degree shutter around
@@ -48,7 +48,7 @@ struct FilmWay {
 // Renders `frameCount` frames of the stage at 60 frames per second and writes
 // them to `path` with ffmpeg. Returns true if ffmpeg succeeded. The format
 // follows the file extension:
-//   - .mp4: H.264.
+//   - .mp4: H.264 through the Mac's VideoToolbox encoder.
 //   - .mov: HEVC through the Mac's VideoToolbox encoder, tagged hvc1 so that
 //   QuickTime plays it.
 //   - .gif: ffmpeg's palettegen and paletteuse at 15 frames per second, as

@@ -29,6 +29,20 @@ inline std::string path_with(const std::string& path,
   return out;
 }
 
+// `dir` placed first in the PATH value `path`, so a program in `dir` is found before one of the same name further on.
+// Unchanged if `dir` is already first; an empty `path` gives just `dir` (never a trailing ':').
+inline std::string path_first(const std::string& path, const std::string& dir) {
+  if (path.empty()) return dir;
+  if (path == dir || path.compare(0, dir.size() + 1, dir + ":") == 0) return path;
+  return dir + ":" + path;
+}
+
+// Sets PATH to path_first(its present value, dir). An unset PATH counts as empty.
+inline void add_first_to_path(const std::string& dir) {
+  const char* now = std::getenv("PATH");
+  setenv("PATH", path_first(now ? now : "", dir).c_str(), 1);
+}
+
 // Sets PATH to path_with(its present value, more). An unset PATH counts as empty.
 inline void add_to_path(const std::vector<std::string>& more = {
                             "/opt/homebrew/bin", "/usr/local/bin"}) {

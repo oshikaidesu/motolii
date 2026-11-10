@@ -93,7 +93,7 @@ std::string mosh_file(const std::string& film, double at,
         "ffmpeg -nostdin -hide_banner -loglevel error -y -i both.avi -c copy "
         "-bsf:v \"noise=drop='key*gt(n\\,0)'\" moshed.avi; "
         "ffmpeg -nostdin -hide_banner -loglevel error -y -i moshed.avi -c:v "
-        "libx264 -pix_fmt yuv420p -crf 16 out.mp4; "
+        "h264_videotoolbox -pix_fmt yuv420p -q:v 70 out.mp4; "
         "mv out.mp4 " +
         mosh_quoted(out);
     const bool ok =

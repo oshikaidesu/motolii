@@ -86,5 +86,40 @@ TEST_F(AddToPathTest, CalledTwiceChangesNothingTheSecondTime) {
   EXPECT_EQ("/usr/bin:/bin:/x:/y", Path());
 }
 
+TEST(PathFirst, EmptyPathGivesJustTheDirectory) {
+  EXPECT_EQ("/x/bin", path_first("", "/x/bin"));
+}
+
+TEST(PathFirst, FinderLikePathGetsTheDirectoryFirst) {
+  EXPECT_EQ("/x/bin:/usr/bin:/bin", path_first("/usr/bin:/bin", "/x/bin"));
+}
+
+TEST(PathFirst, DirectoryAlreadyFirstLeavesPathUnchanged) {
+  EXPECT_EQ("/x/bin:/usr/bin", path_first("/x/bin:/usr/bin", "/x/bin"));
+}
+
+TEST(PathFirst, DirectoryFoundLaterIsPlacedFirstAndTheLaterOneKept) {
+  EXPECT_EQ("/x/bin:/a:/x/bin", path_first("/a:/x/bin", "/x/bin"));
+}
+
+TEST_F(AddToPathTest, AddFirstToUnsetPathCountsAsEmpty) {
+  ::unsetenv("PATH");
+  add_first_to_path("/x/bin");
+  EXPECT_EQ("/x/bin", Path());
+}
+
+TEST_F(AddToPathTest, AddFirstToSetPathPlacesItFirst) {
+  ::setenv("PATH", "/usr/bin:/bin", 1);
+  add_first_to_path("/x/bin");
+  EXPECT_EQ("/x/bin:/usr/bin:/bin", Path());
+}
+
+TEST_F(AddToPathTest, AddFirstCalledTwiceChangesNothingTheSecondTime) {
+  ::setenv("PATH", "/usr/bin:/bin", 1);
+  add_first_to_path("/x/bin");
+  add_first_to_path("/x/bin");
+  EXPECT_EQ("/x/bin:/usr/bin:/bin", Path());
+}
+
 }  // namespace
 }  // namespace motolii
