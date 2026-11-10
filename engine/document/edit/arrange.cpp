@@ -285,13 +285,10 @@ double doc_usual(Doc& d, const char* name) {
              "parent_rotate parent_size scale_x scale_y scale_z size speed "
              "volume opacity wide tall visible distance zoom copies "
              "blur_levelletter_spacing line_spacing environment "
-             "gradient_scale strength spread",
+             "gradient_scale strength",
              name)
              ? 1.0
          : !strcmp(name, "duration") ? -1.0
-         // Defaults of the group behaviours.
-         : !strcmp(name, "radius") ? 0.5
-         : !strcmp(name, "gap")    ? 0.2
          // Defaults of a solid's material and of the sun.
          : !strcmp(name, "metallic") ||
                  doc_among("bevel_metallic side_metallic back_metallic", name)

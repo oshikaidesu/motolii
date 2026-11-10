@@ -90,9 +90,8 @@ inline const char* const doc_kinds =
     "video image text solid shape camera light";
 // The kinds of layer that are seen.
 inline const char* const doc_visible_kinds = "video image text solid shape";
-// The kinds of relation. A group is the plainest: layers in an order and
-// nothing else.
-inline const char* const doc_relations = "around row follow push group relate";
+// The kinds of relation: a script file.
+inline const char* const doc_relations = "relate";
 // The built-in shapes a solid can have.
 inline const char* const doc_shapes = "ring gem cube ball sketch";
 // A named value that a layer can have: its name, the kinds of layer that have
@@ -564,7 +563,6 @@ inline const DocValue doc_values[] = {
     {"maximum", "behaviour", -1e6, 1e6, true, nullptr},
     {"frequency", "behaviour", 0, 1000, true, nullptr},
     {"offset", "behaviour", -1e6, 1e6, true, nullptr},
-    {"tilt", "behaviour", -1e6, 1e6, true, nullptr},
     {"stagger", "behaviour", -1e6, 1e6, true, nullptr},
     {"seed", "behaviour", 0, 1e9, false, nullptr},
     // What it gives is rounded to this many: 90 turns a quarter at a time. 0
@@ -581,32 +579,11 @@ inline const DocValue doc_values[] = {
     {"falloff_soft", "behaviour", 0, 1e4, true, nullptr},
     {"falloff_invert", "behaviour", 0, 1, false, nullptr},
     // A relation is a behavior that sets its layers in relation to each other
-    // or to one of them:
-    // around a middle, in a row, following a leader, or pushed away by a leader
-    // within radius. A
-    // follower is so many seconds later each, with its own value as a step from
-    // the leader's, and
-    // is handed over to leader_b as hand goes from 0 to 1. strength is how much
-    // of the relation
-    // works: 0 is as if it were not there, so a relation can be put on and
-    // taken off over time
-    // without a jump.
+    // or to one of them. It is a script file in shelves/relations/ whose own
+    // parameters are values of its layer (js_ plus the name). strength is how
+    // much of the relation works: 0 is as if it were not there, so a relation
+    // can be put on and taken off over time without a jump.
     {"strength", "behaviour", 0, 1, true, nullptr},
-    {"radius", "behaviour", 0, 1e4, true, nullptr},
-    {"gap", "behaviour", -1e4, 1e4, true, nullptr},
-    {"centre_x", "behaviour", -1e6, 1e6, true, nullptr},
-    {"centre_y", "behaviour", -1e6, 1e6, true, nullptr},
-    {"leader", "behaviour", 0, 1e9, false, nullptr},
-    {"leader_b", "behaviour", 0, 1e9, false, nullptr},
-    {"hand", "behaviour", 0, 1, true, nullptr},
-    {"lag", "behaviour", 0, 60, true, nullptr},
-    // A group's: its layers sit this many times as far from their middle as
-    // they were put. 0 puts
-    // all at the middle, 2 twice as far out.
-    {"spread", "behaviour", -10, 10, true, nullptr},
-    // A group's: each layer is moved this far away in its own fixed way, as a
-    // seed scatters.
-    {"scatter", "behaviour", -10, 10, true, nullptr},
     // A relation's layers in their order, by number, with "_" where one was
     // removed. Its place is
     // kept so that no other layer moves.
@@ -615,10 +592,9 @@ inline const DocValue doc_values[] = {
     // relation starts from
     // what that one gives.
     {"under", "behaviour", 0, 0, false, ""},
-    // For each member, x and y where it showed when it joined. An around or a
-    // row adds only the
-    // step from there to its place. A follow adds only how far its leader has
-    // gone since.
+    // For each member, x and y where it showed when it joined. A relation's
+    // script is told it as `from`, so it can add only the step from there to
+    // its place.
     {"from", "behaviour", 0, 0, false, ""},
     // Turned into another shape by this much, like Cavalry's Morph: 0 is
     // itself, 1 is the other

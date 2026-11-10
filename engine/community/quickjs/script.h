@@ -45,7 +45,8 @@ namespace motolii {
 // One parameter declared in a script's header.
 struct ScriptParameter {
   // kind is one of track, check, select, sound or picture. A picture is an
-  // effect's image read from another layer.
+  // effect's image read from another layer; on a relation it is a layer
+  // picked on the card, given to the script as its number (0 for none).
   std::string name, label, kind;
   // Range, default and step of a track or check. usual is the default.
   double low = 0, high = 1, usual = 0, step = 0;

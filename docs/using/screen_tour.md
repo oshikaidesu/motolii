@@ -37,4 +37,4 @@ Switch with the small icons at the top left (left to right, as in the picture). 
 |---|---|---|
 | **Camera** | The camera seen from above, with the lens (Focal, Aperture) and focus (Dist) on the right. When the project has a camera layer, the layers are shown at their depth | Drag the focus line up or down. Press a layer's bar to focus on it |
 | **Desk** | A list of tools (Blend: how layers stack, Align: put the selected layer against the frame's edges or centre) | Press a tile to open that tool |
-| **Relations** | Relations (Around, Row, Follow, Spring, …). The lower half of the tab is the scene seen from outside the camera: Around, Row and Push are drawn as shapes, Follow as lines | Select two or more layers and press a relation; they move together |
+| **Relations** | Relations (Around, Row, Follow, Spring, …). The lower half of the tab is the scene seen from outside the camera: a relation with a leader is drawn as lines from the leader to its layers | Select two or more layers and press a relation; they move together |

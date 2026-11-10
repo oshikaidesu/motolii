@@ -6,12 +6,14 @@
 #include <quickjs.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <sstream>
 #include <string>
@@ -121,7 +123,25 @@ static JSValue image_read(
                     JS_NewArrayBufferCopy(cx, f.last.data(), f.last.size()));
   return o;
 }
+// layerValue(id, name, t, otherwise): what the owner of the Script answers for
+// another layer's value at time t (Script::reads); `data` holds the address of
+// that reader. NaN when no reader is set.
+static JSValue layer_value(JSContext* cx, JSValueConst, int argc,
+                           JSValueConst* a, int, JSValueConst* data) {
+  int64_t at = 0;
+  JS_ToInt64(cx, &at, data[0]);
+  const auto* reads = (const Script::LayerReader*)at;
+  double layer = 0, t = 0, otherwise = 0;
+  const char* name = argc >= 3 ? JS_ToCString(cx, a[1]) : nullptr;
+  if (argc >= 3) JS_ToFloat64(cx, &layer, a[0]), JS_ToFloat64(cx, &t, a[2]);
+  if (argc >= 4) JS_ToFloat64(cx, &otherwise, a[3]);
+  const double v =
+      name && *reads ? (*reads)((int)layer, name, t, otherwise) : std::nan("");
+  if (name) JS_FreeCString(cx, name);
+  return JS_NewFloat64(cx, v);
+}
 struct Script::Own {
+  Script::LayerReader reads;  // what layerValue() asks
   JSRuntime* rt = nullptr;
   JSContext* cx = nullptr;
   JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
@@ -256,6 +276,11 @@ Script::Script(const std::string& file, const std::string& p5,
                       JS_NewCFunction(own->cx, image_read, "__image_read", 1));
     JS_SetPropertyStr(own->cx, g, "__jobs",
                       JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
+    JSValue reader = JS_NewInt64(own->cx, (int64_t)(intptr_t)&own->reads);
+    JS_SetPropertyStr(
+        own->cx, g, "layerValue",
+        JS_NewCFunctionData(own->cx, layer_value, 3, 0, 1, &reader));
+    JS_FreeValue(own->cx, reader);
     JS_FreeValue(own->cx, g);
   }
   std::string body = src;
@@ -305,6 +330,7 @@ Script::~Script() {
   JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
 bool Script::ok() const { return own->trouble.empty(); }
+void Script::reads(LayerReader read) { own->reads = std::move(read); }
 bool Script::sketch() const { return own->sketch; }
 bool Script::lays() const { return own->cx && !own->whole && !own->sketch; }
 static std::string script_said(JSContext* cx, const char* js) {

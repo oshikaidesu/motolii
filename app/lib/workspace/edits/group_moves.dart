@@ -1,15 +1,16 @@
-// Moves of a group behaviour: layers animate in or out together.
+// Moves of the Move in relation (relations/Group.js): layers animate in or out together.
 //
 // A move is defined by:
 // - which layers it moves, in order;
 // - when it runs: two keyframes on the group's strength, with each layer starting one lag after the previous one;
-// - where it goes: the group's own x, y, spread, scatter, size, opacity and rotation are one end, the layers' own
+// - where it goes: the relation's own x, y, spread, scatter, size, opacity and rotation are one end, the layers' own
 //   positions the other;
 // - the easing between the two keyframes.
 //
 // The move is read from the document and queued on the engine without waiting. The position of a layer at the other
 // end is asked of the engine (where it shows at full strength) and is never computed here.
 import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -35,28 +36,34 @@ String groupMoveName(
 /// Layers that already come in through another move go out through this one instead.
 /// A move made later in the video leaves the earlier part alone.
 void makeGroupMove(WorkspaceController ws, List<String> who, double start) {
-  final m = ws.inside;
-  if (m == null || who.isEmpty) return;
+  final m = ws.inside,
+      file = m?.relations
+          .map((r) => r.$2)
+          .where((f) => f.endsWith('Group.js'))
+          .firstOrNull;
+  if (m == null || file == null || who.isEmpty) return;
   final held = {
     for (final l in ws.layers)
       if (int.tryParse(l.id) case final b?
-          when m.word(b, 'kind') == 'behaviour' && m.word(b, 'file') == 'group')
+          when m.word(b, 'kind') == 'behaviour' &&
+              m.word(b, 'script').endsWith('Group.js'))
         for (final w in m.word(b, 'members').split(' '))
           if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
   };
   final coming = !who.any(held.contains);
   m.later('together', number: 1);
   ws.after(
-    m.later('add', name: 'behaviour', word: 'group'),
+    m.later('add', name: 'behaviour', word: 'relate'),
     null,
     (b) => ws.select('$b'),
   );
+  m.later('say', layer: -1, name: 'script', word: file);
   m.later('set', layer: -1, name: 'strength', number: 1);
   m.later('say', layer: -1, name: 'name', word: groupMoveName(ws, who, coming));
   m.later('relate', layer: -1, word: who.join(' '));
-  m.later('set', layer: -1, name: 'lag', number: .08);
-  m.later('set', layer: -1, name: 'y', number: -.15);
-  m.later('set', layer: -1, name: 'opacity', number: 0);
+  m.later('set', layer: -1, name: 'js_lag', number: .08);
+  m.later('set', layer: -1, name: 'js_y', number: -.15);
+  m.later('set', layer: -1, name: 'js_opacity', number: 0);
   m.later(
     'key',
     layer: -1,

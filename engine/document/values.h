@@ -101,24 +101,11 @@ inline const DocShown doc_shown[] = {
     {"field_radius", "stage", "px", "Size", 0, 4, nullptr},
     // How much of a relation's effect applies.
     {"strength", "share", "%", "Strength", 0, 1, nullptr},
-    {"radius", "stage", "px", "Radius", 0, 2, nullptr},
-    // Tilt of the ring of an "around" arrangement: 0 faces the camera and 90
-    // lies flat.
-    {"tilt", "angle", "°", "Tilt", -90, 90, nullptr},
-    {"gap", "stage", "px", "Gap", -1, 1, nullptr},
-    {"centre_x", "stage", "px", "Centre X", -2, 2, nullptr},
-    {"centre_y", "down", "px", "Centre Y", -2, 2, nullptr},
-    {"leader", "thing", "", "Leader", 0, 0, nullptr},
-    {"leader_b", "thing", "", "Hand to", 0, 0, nullptr},
     // The shape inside which a behaviour or a relation works, like Cavalry's
     // Falloff.
     {"region", "thing", "", "Falloff", 0, 0, nullptr},
     {"falloff_soft", "stage", "px", "Soft", 0, 2, nullptr},
     {"falloff_invert", "onoff", "", "Invert", 0, 1, nullptr},
-    {"hand", "share", "%", "Handed", 0, 1, nullptr},
-    {"lag", "", "s", "Lag", 0, 1, nullptr},
-    {"spread", "share", "%", "Spread", 0, 3, nullptr},
-    {"scatter", "stage", "px", "Scatter", 0, 2, nullptr},
     {"field_size", "share", "%", "Grow", -1, 5, nullptr},
     {"field_push", "stage", "px", "Push", -2, 2, nullptr},
     {"field_band", "stage", "px", "Ring", 0, 2, nullptr},

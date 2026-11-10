@@ -45,9 +45,10 @@ struct DocRelations {
   std::unordered_map<int, bool> connects;
   // Relation data by layer. Found once and cleared at every change.
   std::unordered_map<int, DocRelation> relationsOf;
-  // Set while working out where layers settle. Relations that change with time,
-  // follow and push, give nothing then, so a relation made while one is pushing
-  // does not keep the push.
+  // Set while working out where layers settle. Relations give nothing then,
+  // because what a relation written as a file gives may change with time, so a
+  // relation made while another is moving its layers does not keep that
+  // movement.
   bool settled = false;
   // Copies laid out by AbsentMotion effects.
   struct AbsentKept {
@@ -140,12 +141,11 @@ inline const char* const doc_relate_names[] = {
 // Returns the value that relation `by` gives to property `name` of `layer` at
 // time `t`. `own` is the layer's own value, and the result is blended with it
 // by the relation's strength. The result starts from the value that the
-// relation the layer was in before gives, or from `own` when there is none. An
-// "around" or "row" relation that knows where the layer appeared when it joined
-// adds only the step from there to the new place, so a layer that the user
-// drags stays where it is dragged. A "follow" relation that knows adds how far
-// its leader has moved since. Without that knowledge each relation puts the
-// layer at its computed place, or at its leader's.
+// relation the layer was in before gives, or from `own` when there is none. The
+// script gets where each layer appeared when it joined (`from`), so it can add
+// only the step from there to the new place, and a layer that the user drags
+// stays where it is dragged. If the script has a track called `lag`, member n's
+// strength is read n times that many seconds late.
 double doc_related(Doc& d, int by, int layer, const char* name, double t,
                    double own);
 // Returns the value of property `literal` of the layer at time `at`, or

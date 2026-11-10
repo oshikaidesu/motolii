@@ -305,7 +305,7 @@ List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
     return const [];
   }
   final lag =
-      (m.value(t, 'lag', 0) ?? 0) *
+      (m.value(t, 'js_lag', 0) ?? 0) *
       WorkspaceController.fps /
       (span.to - span.from);
   final members = [

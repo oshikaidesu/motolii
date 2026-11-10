@@ -131,9 +131,18 @@ bool doc_free(Doc& d, int layer, int by, double now, bool stay,
   }
   return doc_acted(d) && ok;
 }
+bool doc_picks(Doc& d, int by, int layer) {
+  const DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
+  if (sc)
+    for (size_t i = 0; i < sc->parameters.size(); ++i)
+      if (sc->parameters[i].kind == "picture" &&
+          (int)doc_number(d, by, sc->names[i].c_str(), 0, 0) == layer)
+        return true;
+  return false;
+}
 bool doc_relate(Doc& d, int by, const char* ids, double now) {
-  const std::string type = doc_word(d, by, "file");
-  if (doc_word(d, by, "kind") != "behaviour" || !doc_among(doc_relations, type))
+  if (doc_word(d, by, "kind") != "behaviour" ||
+      !doc_among(doc_relations, doc_word(d, by, "file")))
     return d.error = "that is no relation", false;
   std::vector<int> layers;
   std::istringstream said(ids);
@@ -143,7 +152,7 @@ bool doc_relate(Doc& d, int by, const char* ids, double now) {
         std::find(layers.begin(), layers.end(), t) == layers.end())
       layers.push_back(t);
   if (layers.empty()) return d.error = "no layers to put in it", false;
-  // Where each layer settles, with the effect of follow and push left out
+  // Where each layer settles, with the effect of relations left out
   // (d.relations.settled).
   std::map<int, std::pair<double, double>> at;
   d.relations.settled = true;
@@ -153,82 +162,12 @@ bool doc_relate(Doc& d, int by, const char* ids, double now) {
              doc_literal(d, t, "y", now, 0.0)};
   d.relations.settled = false;
   doc_forget(d);
-  const auto has = [&](const char* name) {
-    bool any = false;
-    doc_rows(
-        d,
-        sqlite3_mprintf(
-            "select 1 from keyframe where layer = %d and name = %Q limit 1", by,
-            name),
-        [&](sqlite3_stmt*) { any = true; });
-    return any;
-  };
   doc_act(d);
-  bool ok = true;
-  int leader = (int)doc_number(d, by, "leader", 0, 0);
-  if (!leader && (type == "follow" || type == "push") && layers.size() > 1) {
-    leader = *std::min_element(layers.begin(), layers.end(), [&](int a, int b) {
-      return type == "follow" ? at[a].first < at[b].first
-                              : doc_number(d, a, "size", now, 1) >
-                                    doc_number(d, b, "size", now, 1);
-    });
-    ok = ok && doc_set(d, by, "leader", leader);
-  }
-  // Write the value so the relation's card shows it: each member follows a
-  // tenth of a second later.
-  if (type == "follow" && !has("lag")) ok = ok && doc_set(d, by, "lag", 0.1);
-  if (type == "push" && !has("radius"))
-    ok = ok && doc_set(d, by, "radius", 0.5);
+  // The leader the script picks, if it is already set, is not a member.
+  const int leader = (int)doc_number(d, by, "js_leader", 0, 0);
   std::vector<int> members;
   for (const int t : layers)
     if (t != leader) members.push_back(t);
-  double cx = 0, cy = 0;
-  for (const int t : members)
-    cx += at[t].first / members.size(), cy += at[t].second / members.size();
-  // Group members are in reading order: the top line first, each line from the
-  // left.
-  if (type == "group")
-    std::sort(members.begin(), members.end(), [&](int a, int b) {
-      return std::round(at[a].second * 10) != std::round(at[b].second * 10)
-                 ? at[a].second > at[b].second
-                 : at[a].first < at[b].first;
-    });
-  if (type == "around" || type == "row") {
-    if (has("centre_x"))
-      cx = doc_number(d, by, "centre_x", now, 0),
-      cy = doc_number(d, by, "centre_y", now, 0);
-    // Put the middle where the layers stand.
-    else
-      ok = ok && doc_set(d, by, "centre_x", cx) &&
-           doc_set(d, by, "centre_y", cy);
-    std::sort(members.begin(), members.end(), [&](int a, int b) {
-      return type == "around"
-                 ? std::atan2(at[a].first - cx, at[a].second - cy) <
-                       std::atan2(at[b].first - cx, at[b].second - cy)
-                 : at[a].first < at[b].first;
-    });
-    if (type == "around" && !has("radius")) {
-      double r = 0;
-      for (const int t : members)
-        r += std::hypot(at[t].first - cx, at[t].second - cy) / members.size();
-      ok = ok && doc_set(d, by, "radius", std::max(r, 0.2));
-    }
-    // Place them as far apart as they stand, but never less than 1.6 times the
-    // widest layer.
-    if (type == "row" && !has("gap") && members.size() > 1) {
-      double wide = 0;
-      for (const int t : members)
-        wide =
-            std::max(wide, doc_number(d, t, "size", now, 1) *
-                               std::max(1.0, doc_number(d, t, "wide", now, 1)));
-      ok = ok &&
-           doc_set(
-               d, by, "gap",
-               std::max((at[members.back()].first - at[members.front()].first) /
-                            (members.size() - 1),
-                        wide * 1.6));
-    }
-  }
   std::string order, under, from;
   for (const int t : members) {
     const int before = doc_driven_by(d, t, "x");
@@ -236,29 +175,21 @@ bool doc_relate(Doc& d, int by, const char* ids, double now) {
         before && doc_among(doc_relations, doc_word(d, before, "file"));
     order += (order.empty() ? "" : " ") + std::to_string(t);
     under += (under.empty() ? "" : " ") + std::to_string(related ? before : 0);
-    const std::pair<double, double> came =
-        type == "follow" ? std::make_pair(doc_literal(d, leader, "x", now, 0.0),
-                                          doc_literal(d, leader, "y", now, 0.0))
-                         : at[t];
     char buf[64];
-    std::snprintf(buf, sizeof buf, "%.17g %.17g", came.first, came.second);
+    std::snprintf(buf, sizeof buf, "%.17g %.17g", at[t].first, at[t].second);
     from += (from.empty() ? "" : " ") + std::string(buf);
   }
-  ok = ok && doc_say(d, by, "members", order.c_str()) &&
-       doc_say(d, by, "under", under.c_str()) &&
-       doc_say(d, by, "from", from.c_str());
+  bool ok = doc_say(d, by, "members", order.c_str()) &&
+            doc_say(d, by, "under", under.c_str()) &&
+            doc_say(d, by, "from", from.c_str());
   for (const int t : members) {
-    // Also connect depth if the layer has one, for a ring tipped back or a
-    // leader in depth.
+    // Also connect depth if the layer has one, and rotation, size and opacity,
+    // which a relation written as a file may set.
     ok = ok && doc_set(d, t, "x_by", by) && doc_set(d, t, "y_by", by) &&
          (!doc_knows(d, t, "z") || doc_set(d, t, "z_by", by));
-    // Also connect rotation, size and opacity for these relation types.
-    if (type == "around" || type == "row" || type == "group" ||
-        type == "relate")
-      for (const char* n :
-           {"rotate", "rotate_x", "rotate_y", "size", "opacity"})
-        ok = ok && (!doc_knows(d, t, n) ||
-                    doc_set(d, t, (std::string(n) + "_by").c_str(), by));
+    for (const char* n : {"rotate", "rotate_x", "rotate_y", "size", "opacity"})
+      ok = ok && (!doc_knows(d, t, n) ||
+                  doc_set(d, t, (std::string(n) + "_by").c_str(), by));
   }
   return doc_acted(d) && ok;
 }
@@ -268,82 +199,32 @@ bool doc_lead(Doc& d, int by, int leader, double now) {
     Leading() { doc_leading = true; }
     ~Leading() { doc_leading = false; }
   } leading;
-  const std::string type = doc_word(d, by, "file");
-  if (doc_word(d, by, "kind") != "behaviour" || !doc_among(doc_relations, type))
+  if (doc_word(d, by, "kind") != "behaviour" ||
+      !doc_among(doc_relations, doc_word(d, by, "file")))
     return d.error = "that is no relation", false;
   if (!doc_knows(d, leader) || leader == by)
     return d.error = "a leader is a layer that is there", false;
-  const int was = (int)doc_number(d, by, "leader", 0, 0);
+  const int was = (int)doc_number(d, by, "js_leader", 0, 0);
   if (was == leader) return true;
   std::vector<int> touched;
   for (const int t : doc_members_of(d, by))
     if (t) touched.push_back(t);
-  for (const int t : {was, leader})
-    if (t && std::find(touched.begin(), touched.end(), t) == touched.end())
-      touched.push_back(t);
+  if (std::find(touched.begin(), touched.end(), leader) == touched.end())
+    touched.push_back(leader);
   std::map<int, std::pair<double, double>> shown;
   for (const int t : touched)
     shown[t] = {doc_literal(d, t, "x", now, 0.0),
                 doc_literal(d, t, "y", now, 0.0)};
-  d.relations.settled = true;
-  doc_forget(d);
-  const std::pair<double, double> settles = {
-      doc_literal(d, leader, "x", now, 0.0),
-      doc_literal(d, leader, "y", now, 0.0)};
-  const std::pair<double, double> wasAt =
-      was ? std::make_pair(doc_literal(d, was, "x", now, 0.0),
-                           doc_literal(d, was, "y", now, 0.0))
-          : settles;
-  d.relations.settled = false;
-  doc_forget(d);
   doc_act(d);
   const std::vector<int>& in = doc_members_of(d, by);
   // The leader is not a member the relation moves.
   bool ok = std::find(in.begin(), in.end(), leader) == in.end() ||
             doc_free(d, leader, by, now, true);
-  // The middle of a ring or a row is its leader, so the members go around it
-  // like planets around a sun.
-  if ((type == "around" || type == "row") && ok)
-    ok = doc_set(d, by, "centre_x", 0) && doc_set(d, by, "centre_y", 0);
-  ok = ok && doc_set(d, by, "leader", leader);
-  // The old leader joins the members where it shows. A ring's or row's old
-  // middle stays out.
-  if (ok && was && type != "around" && type != "row") {
-    const int under = doc_driven_by(d, was, "x");
-    char add[96];
-    std::snprintf(add, sizeof add, " %.17g %.17g",
-                  type == "follow" ? settles.first : wasAt.first,
-                  type == "follow" ? settles.second : wasAt.second);
-    ok =
-        doc_say(
-            d, by, "members",
-            (doc_word(d, by, "members") + " " + std::to_string(was)).c_str()) &&
-        doc_say(d, by, "under",
-                (doc_word(d, by, "under") + " " +
-                 std::to_string(under && doc_among(doc_relations,
-                                                   doc_word(d, under, "file"))
-                                    ? under
-                                    : 0))
-                    .c_str()) &&
-        doc_say(d, by, "from", (doc_word(d, by, "from") + add).c_str()) &&
-        doc_set(d, was, "x_by", by) && doc_set(d, was, "y_by", by) &&
-        (!doc_knows(d, was, "z") || doc_set(d, was, "z_by", by));
-  }
-  // Each member starts from where the new leader settles.
-  if (ok && type == "follow") {
-    std::string from;
-    char one[64];
-    for (size_t k = 0, n = doc_members_of(d, by).size(); k < n; ++k)
-      std::snprintf(one, sizeof one, "%s%.17g %.17g", k ? " " : "",
-                    settles.first, settles.second),
-          from += one;
-    ok = doc_say(d, by, "from", from.c_str());
-  }
+  ok = ok && doc_set(d, by, "js_leader", leader);
   doc_forget(d);
-  // Move each layer by the amount it would otherwise jump. A ring or a row goes
-  // to its new middle.
+  // Move each layer by the amount it would otherwise jump.
   for (const auto& [t, at] : shown) {
-    if (!ok || type == "around" || type == "row") break;
+    if (!ok) break;
     const double ox = at.first - doc_literal(d, t, "x", now, 0.0),
                  oy = at.second - doc_literal(d, t, "y", now, 0.0);
     for (const auto& [name, off] :

@@ -186,21 +186,6 @@ inline const DocCard doc_cards[] = {
     {"Projection", "projection shift_x shift_y"},
     {"Room", "room environment environment_rotate behind background"},
     {"Physics", "physics bounce friction gravity", nullptr, nullptr, true},
-    // Group behaviours. Around: the layers are arranged round a center or round
-    // a leader, each
-    // turned in turn and lag apart.
-    {"Around",
-     "strength radius offset tilt leader centre_x centre_y rotate rotate_y lag",
-     "file", "around"},
-    {"Row", "strength gap centre_x centre_y rotate rotate_y lag", "file",
-     "row"},
-    {"Follow", "strength leader lag leader_b hand", "file", "follow"},
-    {"Push", "strength leader radius", "file", "push"},
-    // Layers in an order and nothing else: each moves away by its own move,
-    // rotation, size and
-    // opacity, in turn.
-    {"Group", "strength lag x y spread scatter rotate rotate_y size opacity",
-     "file", "group"},
     // A behaviour written as a file: its own parameters come under it, as a
     // script's do.
     {"Relation", "strength", "file", "relate"},

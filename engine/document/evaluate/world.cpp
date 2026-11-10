@@ -12,6 +12,7 @@
 #include <functional>
 #include <iterator>
 #include <map>
+#include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
@@ -135,6 +136,16 @@ std::string doc_relate_parameters(Doc& d, int by, const DocScript& sc,
 
 const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
   DocSolver::RelatedKept& k = d.solver.relatedKept[by];
+  // A relation asked for while it is being worked out, because its script read
+  // a layer that one of its own layers leads to, gives nothing: those layers
+  // show what is under it.
+  static std::set<int> working;
+  if (working.count(by)) return k.values;
+  struct Working {
+    int by;
+    explicit Working(int by) : by(by) { working.insert(by); }
+    ~Working() { working.erase(by); }
+  } work(by);
   DocKeptTells tells{d, k};
   if (doc_kept_stands(d, k, t)) return k.values;
   k.values.clear();
@@ -147,6 +158,25 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
   }
   const DocRelation& rel = doc_relation_of(d, by);
   constexpr size_t many = std::size(doc_relate_names);
+  // layerValue(id, name, t, otherwise) in the script: what layer `id` shows for
+  // `name`, one of doc_relate_names, at time t, with any relations it is in.
+  // `otherwise` is given when the layer has no keyframes for it. The script
+  // runs on this thread inside the call that holds the project, so reading is
+  // safe; the lock is taken as well, as the render callback does. Limits how
+  // deeply layers read each other, so that a cycle of them terminates.
+  sc->run->reads(
+      [&d](int layer, const std::string& name, double at, double otherwise) {
+        static int depth = 0;
+        for (const char* known : doc_relate_names) {
+          if (name != known || depth >= 4) continue;
+          std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+          ++depth;
+          const double v = doc_literal(d, layer, known, at, otherwise);
+          --depth;
+          return v;
+        }
+        return std::nan("");
+      });
   const auto tell = [&](double at, size_t frame) {
     std::ostringstream js;
     js.precision(12);
@@ -171,7 +201,18 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
       float2 half{0.f};
       doc_half(d, layer, &half);
       js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << layer
-         << ',' << doc_falloff_at(d, by, place, at) << "],";
+         << ',' << doc_falloff_at(d, by, place, at) << ',';
+      // Where it showed when it joined, x and y, or NaN where that is not
+      // known.
+      for (size_t axis = 0; axis < 2; ++axis) {
+        const double came =
+            rel.from.empty() ? std::nan("") : rel.from[2 * i + axis];
+        if (std::isnan(came))
+          js << "NaN,";
+        else
+          js << came << ',';
+      }
+      js << "],";
     }
     js << "]," << at << ',' << doc_relate_parameters(d, by, *sc, at) << ','
        << by << ',' << frame << ','

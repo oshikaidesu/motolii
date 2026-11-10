@@ -1,7 +1,8 @@
 // Relations between layers selected together (WorkspaceController.many).
 //
-// Making a relation adds a behaviour layer of the chosen kind (the engine's around, row, follow or push) and puts the
-// selected layers in it as they look now: their order, the middle and size, a leader, and what each was in before.
+// Making a relation adds a behaviour layer written as a file in relations/*.js and puts the selected layers in it as
+// they look now: their order, and what each was in before. A file that has a Leader makes the first layer selected its
+// leader, when the layers were selected one by one.
 // It is one undo step, and the new behaviour is selected once it exists.
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
@@ -11,23 +12,26 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-const relationKinds = ['around', 'row', 'follow', 'push', 'group', 'relate'];
+/// What the engine calls a relation's file: every relation is written as a file in relations/*.js.
+const relationKinds = ['relate'];
 
-/// The relation kinds the user can choose: the kinds the engine knows, then each one written as a file in relations/*.js.
+/// The relations the user can choose: each file in relations/*.js.
 /// The files come from the library and from the user, so a file added there shows up here.
 List<String> relationChoices(WorkspaceController ws) => [
-  for (final k in relationKinds)
-    if (k != 'relate') k,
   for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2,
 ];
 
-/// The label of a relation kind in the menu.
+/// The label of a relation file in the menu.
 String relationLabel(String kind) {
-  final name = kind == 'group'
+  final name = kind.endsWith('Group.js')
       ? 'Move in'
       : kind.split('/').last.replaceAll('.js', '');
   return name[0].toUpperCase() + name.substring(1);
 }
+
+/// The layer a relation leads from: the layer its Leader names, or 0 for none.
+int relationLeader(Motolii m, int t) =>
+    (m.value(t, 'js_leader', 0) ?? 0).round();
 
 /// The kind of a relation, or the script file it is written as.
 String relationKindOf(Motolii m, int t) =>
@@ -41,11 +45,11 @@ List<String> relatableLayers(WorkspaceController ws) => [
       id,
 ];
 
-/// Makes a relation of [kind] from the layers selected together.
+/// Makes a relation of [kind], a file in relations/*.js, from the layers selected together.
 void makeRelation(WorkspaceController ws, String kind) {
-  final m = ws.inside, who = relatableLayers(ws);
+  final m = ws.inside, who = relatableLayers(ws), ordered = ws.manyInOrder;
   if (m == null || who.length < 2) return;
-  if (kind == 'group') {
+  if (kind.endsWith('Group.js')) {
     return makeGroupMove(
       ws,
       who,
@@ -53,41 +57,39 @@ void makeRelation(WorkspaceController ws, String kind) {
     ); // A group is a move: it comes in at the playhead from where the group says.
   }
   m.later('together', number: 1); // One undo step, queued without waiting; the behaviour is the layer that add creates.
-  final file = kind.endsWith('.js');
+  int? made;
   // Selected as soon as it exists, which shows its card and its row.
-  ws.after(
-    m.later('add', name: 'behaviour', word: file ? 'relate' : kind),
-    null,
-    (b) => ws.select('$b'),
-  );
-  if (file) {
-    m.later('say', layer: -1, name: 'script', word: kind);
-    m.later(
-      'say',
-      layer: -1,
-      name: 'name',
-      word: relationLabel(kind),
-    ); // The row and the card show which relation it is.
-  }
+  ws.after(m.later('add', name: 'behaviour', word: 'relate'), null, (b) {
+    made = b;
+    ws.select('$b');
+  });
+  m.later('say', layer: -1, name: 'script', word: kind);
+  m.later(
+    'say',
+    layer: -1,
+    name: 'name',
+    word: relationLabel(kind),
+  ); // The row and the card show which relation it is.
   m.later(
     'set',
     layer: -1,
     name: 'strength',
     number: 1,
   ); // Set explicitly so the card shows it as it works.
-  if ((kind == 'follow' || kind == 'push') && ws.manyInOrder) {
-    m.later(
-      'set',
-      layer: -1,
-      name: 'leader',
-      number: double.parse(who.first),
-    ); // The layers were selected one by one, so the first one selected leads.
-  }
   m.later('relate', layer: -1, word: who.join(' '));
-  ws.after(
-    m.later('together'),
-    (_, _) => ws.reread(),
-  ); // Whether or not it was made, the app shows what the document holds.
+  ws.after(m.later('together'), (_, _) {
+    ws.reread(); // Whether or not it was made, the app shows what the document holds.
+    // The layers were selected one by one, so the first one selected leads, if the file has a leader.
+    final b = made;
+    if (ordered &&
+        b != null &&
+        ws.inside?.values(b).contains('js_leader') == true) {
+      ws.after(
+        m.later('lead', layer: b, number: double.parse(who.first)),
+        (_, _) => ws.reread(),
+      );
+    }
+  });
 }
 
 /// The layers a relation moves, when the selected layer is a relation; otherwise none.
@@ -225,7 +227,7 @@ List<String> relationsOfSelected(WorkspaceController ws) {
     for (final r in m.layers) // The relations it leads.
       if (m.word(r, 'kind') == 'behaviour' &&
           relationKinds.contains(m.word(r, 'file')) &&
-          (m.value(r, 'leader', 0) ?? 0).round() == t)
+          relationLeader(m, r) == t)
         '$r',
   ];
   for (

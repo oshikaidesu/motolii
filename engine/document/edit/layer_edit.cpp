@@ -250,12 +250,10 @@ int doc_add(Doc& d, const char* kind, const char* file) {
                std::string("a layer is one of: ") + doc_kinds + " behaviour",
            0;
   if (!strcmp(kind, "behaviour") &&
-      !doc_among(
-          "stagger oscillator noise random around row follow push group relate",
-          file))
+      !doc_among("stagger oscillator noise random relate", file))
     return d.error =
                "a behaviour is a stagger, an oscillator, a noise, a random, or "
-               "a relation: around, row, follow, push",
+               "a relation written as a script file (relate)",
            0;
   if (!strcmp(kind, "light") && !doc_among("sun point spot", file))
     return d.error = "a light is a sun, a point or a spot", 0;
@@ -338,8 +336,7 @@ bool doc_remove(Doc& d, int layer) {
     for (const int r : doc_layers(d))
       if (doc_word(d, r, "kind") == "behaviour" &&
           doc_among(doc_relations, doc_word(d, r, "file")) &&
-          ((int)doc_number(d, r, "leader", 0, 0) == layer ||
-           (int)doc_number(d, r, "leader_b", 0, 0) == layer))
+          doc_picks(d, r, layer))
         led.push_back(r);
     if (!led.empty()) {
       doc_act(d);
@@ -378,7 +375,7 @@ bool doc_set(Doc& d, int layer, const char* name, double is) {
   if (!strcmp(name, "parent")) return doc_parent(d, layer, is);
   // A relation's leader changed by any caller goes through doc_lead, so that
   // nothing jumps.
-  if (!strcmp(name, "leader") && !doc_leading && is >= 1 &&
+  if (!strcmp(name, "js_leader") && !doc_leading && is >= 1 &&
       doc_word(d, layer, "kind") == "behaviour" &&
       doc_among(doc_relations, doc_word(d, layer, "file")) &&
       !doc_word(d, layer, "members").empty())

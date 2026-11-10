@@ -304,7 +304,7 @@ function __shaded_take(seconds) {   // (the shader that paints its stage and wha
 var __was = {};
 function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, document/evaluate/relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; one that remembers is told it as near and weighs it itself, as MASH's Python node reads getFalloff)
   const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [], solves = relate.length > 3, cached = __was[rel] = __was[rel] || [];
-  const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3] }; names.forEach((n, j) => o[n] = v[j]); return o; });
+  const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3], from: { x: v[many + 4], y: v[many + 5] } }; names.forEach((n, j) => o[n] = v[j]); return o; });   // (from: x and y where it showed when it joined, NaN where that is not known)
   if (awake) ((solves ? relate(things, t, k, (frame && cached[frame - 1]) || null) : relate(things, t, k)) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
   if (solves) cached[frame] = awake ? by : null;
   const out = new Float64Array(many * all.length);

@@ -71,8 +71,10 @@ function relate(things, t, k) {
 
 | Item | What it holds |
 |---|---|
-| One of `things` | `i` (its number), `id` (the layer's number), `w` and `h` (width and height now, size included), `near` (0 to 1: how much the relation's Falloff shape covers it; 1 with no Falloff), and `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity` (its values now) |
-| `t`, `k` | Seconds; the sliders (as above) |
+| One of `things` | `i` (its number), `id` (the layer's number), `w` and `h` (width and height now, size included), `near` (0 to 1: how much the relation's Falloff shape covers it; 1 with no Falloff), `from` (`x` and `y`: where it showed when it joined, `NaN` where that is not known; `a.x + place - a.from.x` adds only the step from there to `place`, so a layer the user moved stays moved; example: `relations/Row.js`), and `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity` (its values now) |
+| `t`, `k` | Seconds; the sliders (as above). A `// --picture@leader:Leader` line is a layer picked on the card: `k.leader` is its number, 0 for none |
+| `layerValue(id, name, t, otherwise)` | What layer `id` shows for `name` (`x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y` or `opacity`) at second `t`, relations included. `otherwise` is given where the layer has no keyframes for it (example: `relations/Follow.js`). `NaN` for any other name |
+| A track called `lag` | Each layer's Strength is read that many seconds later than the one before's, so a Strength that rises over time reaches them one after another (example: `relations/Group.js`). Use `k.lag` for the rest |
 | Returns | An array of `{ i, the values to change... }`. Only the values you give change. If it returns nothing, the `things` as you edited them in place are used |
 | Weight | With three arguments, the result is weakened by `near` |
 | Fourth argument | `relate(things, t, k, was)`: what you returned for the previous frame (looked up by `i`; `null` on the first frame). Then the result is not weakened by `near`; use `near` yourself (example: `relations/stay.js`). Because it needs the frame before, it runs from the start, in order, 60 frames a second |

@@ -28,6 +28,7 @@
 // compiled once, not every frame. See ae_expr.h.
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -82,6 +83,12 @@ class Script {
   // the result of
   // __paints in p5_stand.h.
   std::vector<double> paints(int frame, int had, int pic = -1);
+  // Lets the sketch read the value of another layer: layerValue(id, name, t,
+  // otherwise) in its code gives what `read` answers, or NaN while none is set.
+  // Only a relation written as a file uses it, see document/evaluate/world.h.
+  using LayerReader = std::function<double(int layer, const std::string& name,
+                                           double t, double otherwise)>;
+  void reads(LayerReader read);
   // Returns the source lines of the sketch that draw, as sketch_marked reports
   // them.
   std::vector<int> lines() const;

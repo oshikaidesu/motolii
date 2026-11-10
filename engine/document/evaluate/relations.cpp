@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
@@ -278,202 +279,48 @@ double doc_related(Doc& d, int by, int layer, const char* name, double t,
     ~Deeper() { --depth; }
   } deeper;
   if (depth > 6) return own;
-  const std::string type = doc_word(d, by, "file"), n = name;
   const DocRelation& rel = doc_relation_of(d, by);
   const auto found = std::find(rel.members.begin(), rel.members.end(), layer);
   if (found == rel.members.end()) return own;
   const size_t i = (size_t)(found - rel.members.begin());
-  const int many = std::max(1, (int)rel.members.size()),
-            was = rel.under.empty() ? 0 : rel.under[i];
-  // The value before this relation: what the previous relation gives, or
-  // `mine`.
-  const auto start = [&](const char* what, double mine) {
-    return was ? doc_related(d, was, layer, what, t, mine) : mine;
-  };
-  // The time for this member. Each member lags the one before by "lag" seconds,
-  // as in Cavalry's stagger. A follow relation uses the plain time here,
-  // because its lag is applied to the leader instead.
-  const double ti =
-      type == "follow" ? t : t - doc_number(d, by, "lag", t, 0) * (double)i;
+  const int was = rel.under.empty() ? 0 : rel.under[i];
+  // The value before this relation: what the previous relation gives, or `own`.
+  const double base = was ? doc_related(d, was, layer, name, t, own) : own;
+  // Each member's strength is read later than the one before by the script's
+  // `lag` seconds, as in Cavalry's stagger, so that a strength that rises over
+  // time reaches the members one after another. A script without a `lag`
+  // parameter has no delay.
+  double lag = 0;
+  if (const DocScript* sc = doc_script_of(d, doc_word(d, by, "script")))
+    for (size_t j = 0; j < sc->parameters.size(); ++j)
+      if (sc->parameters[j].kind == "track" && sc->parameters[j].name == "lag")
+        lag =
+            doc_number(d, by, sc->names[j].c_str(), t, sc->parameters[j].usual);
   // The strength may go below 0 and above 1 so that an easing that overshoots,
   // such as Back or Elastic, shows between two keyframes. It is held within -1
   // and 2.
-  const double base = start(name, own),
-               strength =
-                   std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);
+  const double strength = std::clamp(
+      doc_number(d, by, "strength", t - lag * (double)i, 1), -1.0, 2.0);
   // A relation that is switched off leaves the value as it was. Its strength is
   // kept.
   if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;
-  // Where the layer appeared when it joined. Known for x and y only.
-  const double came = rel.from.empty() || (n != "x" && n != "y")
-                          ? std::nan("")
-                          : rel.from[2 * i + (n == "y" ? 1 : 0)];
-  // Returns the leader layer stored in the value `which`, or 0 when that is the
-  // layer itself.
-  const auto leader = [&](const char* which) {
-    const int l = (int)doc_number(d, by, which, 0, 0);
-    return l != layer ? l : 0;
-  };
-  // A relation written as a file. When the file defines force(), the value
+  // The relation is a script file. When the file defines force(), the value
   // comes from the simulated world. Otherwise it comes from the file's relate()
   // results, one number per member and per name in doc_relate_names, blended by
-  // the strength.
-  if (type == "relate") {
-    if (d.relations.settled) return base;
-    const bool pushes = doc_pushes(d, by);
-    const std::vector<double> none,
-        &all = pushes ? none : doc_related_all(d, by, t);
-    constexpr size_t many = std::size(doc_relate_names);
-    for (size_t j = 0; j < many; ++j)
-      if (n == doc_relate_names[j])
-        return pushes ? doc_world_value(d, layer, j, t, base)
-               : many * i + j < all.size()
-                   ? base + (all[many * i + j] - base) * strength
-                   : base;
-    return base;
-  }
-  // The strength scaled by the falloff at the layer's starting position. This
-  // follows Cavalry, where Falloff is a multiplier on Strength. A relation
-  // written as a file applies its falloff inside the file, see __relates in
-  // engine/community/p5/p5_stand.h.
-  const double s =
-      strength *
-      (doc_number(d, by, "region", 0, 0)
-           ? doc_falloff_at(d, by,
-                            {start("x", doc_number(d, layer, "x", t, 0)),
-                             start("y", doc_number(d, layer, "y", t, 0)),
-                             start("z", doc_number(d, layer, "z", t, 0))},
-                            t)
-           : 1.0);
-  // The relation's own rotation is added to each member, scaled by strength and
-  // falloff.
-  if ((type == "around" || type == "row" || type == "group") &&
-      (n == "rotate" || n == "rotate_x" || n == "rotate_y"))
-    return base + doc_number(d, by, name, ti, 0) * s;
-  // The relation's size and opacity are shares of each layer's own value, so
-  // they multiply it. An opacity of 0 makes the layer disappear.
-  if ((type == "around" || type == "row" || type == "group") &&
-      (n == "size" || n == "opacity"))
-    return base * (1.0 + (doc_number(d, by, name, ti, 1) - 1.0) * s);
-  // Group: moves x and y by the relation's own move, plus the layer's distance
-  // from the middle of the group times the spread, plus a random scatter, all
-  // scaled by strength and falloff.
-  if (type == "group") {
-    if (n != "x" && n != "y") return base;
-    const size_t axis = n == "x" ? 0 : 1;
-    double middle = 0;
-    int counted = 0;
-    // The middle of the group is the average of where the members were when
-    // they joined.
-    for (size_t k = 0; 2 * k + axis < rel.from.size(); ++k)
-      if (!std::isnan(rel.from[2 * k + axis]))
-        middle += rel.from[2 * k + axis], ++counted;
-    // If that is not known, use their current places instead.
-    if (!counted)
-      for (const int t : rel.members)
-        if (t) middle += doc_literal(d, t, name, ti, 0), ++counted;
-    middle = counted ? middle / counted : base;
-    // A fixed scatter in the range -1 to 1 for each member and axis, so the
-    // same scatter shows each time. It uses the common fract-of-sine hash from
-    // GLSL.
-    const double seed = std::sin((double)(i + 1) * (axis ? 78.233 : 12.9898)) *
-                        43758.5453,
-                 scatter = (seed - std::floor(seed)) * 2 - 1;
-    const double away =
-        doc_number(d, by, name, ti, 0) +
-        (base - middle) * (doc_number(d, by, "spread", ti, 1) - 1) +
-        doc_number(d, by, "scatter", ti, 0) * scatter;
-    return base + away * s;
-  }
-  // Around: members on a circle around a middle, the first at the top, each
-  // placed by its order. Row: members in a line through the middle, `gap`
-  // apart.
-  if (type == "around" || type == "row") {
-    if (n != "x" && n != "y" && n != "z") return base;
-    const int l = leader("leader");
-    const double tilt =
-        type == "around" ? doc_number(d, by, "tilt", t, 0) * TAU / 360.0 : 0.0;
-    // A circle that faces the camera and has no leader leaves depth alone.
-    if (n == "z" && tilt == 0.0 && !l) return base;
-    // The middle of the circle or row: the centre values plus the leader's
-    // position, if there is a leader.
-    const double cx = doc_number(d, by, "centre_x", t, 0) +
-                      (l ? doc_literal(d, l, "x", t, 0) : 0.0),
-                 cy = doc_number(d, by, "centre_y", t, 0) +
-                      (l ? doc_literal(d, l, "y", t, 0) : 0.0);
-    double place;
-    // The circle is tipped back by `tilt` about the x axis. With a leader it is
-    // centred on the leader in depth as well.
-    if (type == "around") {
-      const double turn = TAU * (doc_number(d, by, "offset", t, 0) +
-                                 (double)i / many),
-                   r = doc_number(d, by, "radius", t, 0.5);
-      const double cz = l ? doc_literal(d, l, "z", t, 0) : 0.0,
-                   up = r * std::cos(turn);
-      if (n == "z") return base + (cz + up * std::sin(tilt) - base) * s;
-      place = n == "x" ? cx + r * std::sin(turn) : cy + up * std::cos(tilt);
-    } else if (n == "z")
-      return base;
-    // A row is centred on its middle, so a wider gap spreads it both ways.
-    else
-      place = n == "x" ? cx + doc_number(d, by, "gap", t, 0.2) *
-                                  ((double)i - (many - 1) / 2.0)
-                       : cy;
-    // When the starting position is known, add only the step from there to the
-    // new place.
-    return std::isnan(came) ? base + (place - base) * s
-                            : base + (place - came) * s;
-  }
-  if ((type == "follow" || type == "push") && d.relations.settled) return base;
-  // Follow: the layer takes its leader's value from `lag` seconds ago, later
-  // for each member. A second leader, if there is one, is mixed in by the
-  // "hand" value from 0 to 1.
-  if (type == "follow") {
-    const int a = leader("leader"), b = leader("leader_b");
-    if (!a) return base;
-    const double back = t - doc_number(d, by, "lag", t, 0) * (double)(i + 1),
-                 hand =
-                     b ? std::clamp(doc_number(d, by, "hand", t, 0), 0.0, 1.0)
-                       : 0.0;
-    const double from = doc_literal(d, a, name, back, own),
-                 to = b ? doc_literal(d, b, name, back, own) : from,
-                 lead = from + (to - from) * hand;
-    return std::isnan(came) ? base + lead * s : base + (lead - came) * s;
-  }
-  // Push: moves the layer out of its leader's way. Within `radius` of the
-  // leader the layer is pushed out to between 0.6 and 1 times the radius,
-  // keeping the order of distance.
-  if (type == "push") {
-    const int l = leader("leader");
-    if (!l || (n != "x" && n != "y")) return base;
-    // The layer's x and y: this axis is `base`, and the other is read from its
-    // keyframes.
-    const double bx =
-                     n == "x"
-                         ? base
-                         : start("x", doc_keys_at(d, doc_keys_of(d, layer, "x"),
-                                                  t, 0)),
-                 by_ =
-                     n == "y"
-                         ? base
-                         : start("y", doc_keys_at(d, doc_keys_of(d, layer, "y"),
-                                                  t, 0));
-    const double lx = doc_literal(d, l, "x", t, 0),
-                 ly = doc_literal(d, l, "y", t, 0),
-                 r = doc_number(d, by, "radius", t, 0.5);
-    double dx = bx - lx, dy = by_ - ly, far = std::hypot(dx, dy);
-    if (far >= r || r <= 0.0) return base;
-    // A layer exactly on its leader is pushed out in a direction chosen by its
-    // index.
-    if (far < 1e-6)
-      dx = std::sin(TAU * (double)i / many),
-      dy = std::cos(TAU * (double)i / many), far = 1e-6;
-    // Land in the outer part of the circle, ordered by distance, so that layers
-    // do not end up on top of each other.
-    const double out = r * (0.6 + 0.4 * far / r),
-                 v = n == "x" ? lx + dx / far * out : ly + dy / far * out;
-    return base + (v - base) * s;
-  }
+  // the strength. Its falloff is applied inside the file, see __relates in
+  // engine/community/p5/p5_stand.h. While layers settle (d.relations.settled)
+  // it gives nothing, because what it gives may change with time.
+  if (d.relations.settled) return base;
+  const bool pushes = doc_pushes(d, by);
+  const std::vector<double> none,
+      &all = pushes ? none : doc_related_all(d, by, t);
+  constexpr size_t many = std::size(doc_relate_names);
+  for (size_t j = 0; j < many; ++j)
+    if (!strcmp(name, doc_relate_names[j]))
+      return pushes ? doc_world_value(d, layer, j, t, base)
+             : many * i + j < all.size()
+                 ? base + (all[many * i + j] - base) * strength
+                 : base;
   return base;
 }
 

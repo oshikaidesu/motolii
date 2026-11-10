@@ -1,6 +1,6 @@
 // The Relations tab: the layers seen from outside the camera, as the Depth tab shows depth.
-// It draws every layer where it is (including off camera), the camera's frame, and each relation as its shape:
-// a ring, a row, the reach of a push, or the threads of a follow.
+// It draws every layer where it is (including off camera), the camera's frame, and each relation as its leader's ring
+// with a thread to each layer it moves.
 // The user views it from the front or top, or turns it by dragging. Tapping picks a layer or a relation, which the inspector shows.
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/window_tokens.dart';
@@ -298,10 +298,10 @@ class _World {
       if (kind == 'behaviour') {
         if (relationKinds.contains(m.word(t, 'file'))) {
           rels.add(
-            _Relation(l.id, m.word(t, 'file'), [
+            _Relation(l.id, relationLeader(m, t), [
               for (final s in m.word(t, 'members').split(' '))
                 if (s != '_' && s.isNotEmpty) s,
-            ], v),
+            ]),
           );
         }
         continue;
@@ -329,22 +329,11 @@ class _World {
   }
 }
 
-/// A relation's shape in the world: its kind, its layers and the parameters that place it.
+/// A relation in the world: its leader (0 for none) and its layers.
 class _Relation {
-  _Relation(this.id, this.kind, this.members, double Function(int, String) v)
-    : radius = v(int.parse(id), 'radius'),
-      gap = v(int.parse(id), 'gap'),
-      tilt = v(int.parse(id), 'tilt') * math.pi / 180,
-      centre = (
-        x: v(int.parse(id), 'centre_x'),
-        y: v(int.parse(id), 'centre_y'),
-        z: 0.0,
-      ),
-      leader = '${v(int.parse(id), 'leader').round()}';
-  final String id, kind, leader;
+  _Relation(this.id, int leader, this.members) : leader = '$leader';
+  final String id, leader;
   final List<String> members;
-  final double radius, gap, tilt;
-  final _Point3 centre;
 }
 
 /// The world rotated and fitted to the map.
@@ -422,7 +411,7 @@ class _View {
     return null;
   }
 
-  /// The layer nearest the tap, else the relation whose shape passes nearest.
+  /// The layer nearest the tap.
   String? hit(Offset at) {
     String? best;
     var d = 16.0;
@@ -430,48 +419,7 @@ class _View {
       final o = (on(e.value.$1) - at).distance;
       if (o < d) (best, d) = (e.key, o);
     }
-    if (best != null) return best;
-    for (final r in world.relations) {
-      for (final p in shape(r)) {
-        if ((on(p) - at).distance < 10) return r.id;
-      }
-    }
-    return null;
-  }
-
-  /// Points along a relation's shape, in the world.
-  List<_Point3> shape(_Relation r) {
-    final lead = world.things[r.leader]?.$1;
-    final c = (
-      x: r.centre.x + (lead?.x ?? 0),
-      y: r.centre.y + (lead?.y ?? 0),
-      z: lead?.z ?? 0.0,
-    );
-    switch (r.kind) {
-      case 'around' || 'push':
-        final o = r.kind == 'push' ? lead : c;
-        if (o == null) return const [];
-        final t = r.kind == 'push'
-            ? 0.0
-            : r.tilt; // An around relation is tipped back by its tilt.
-        return [
-          for (var k = 0; k <= 48; k++)
-            (
-              x: o.x + r.radius * math.sin(k / 48 * 2 * math.pi),
-              y: o.y + r.radius * math.cos(k / 48 * 2 * math.pi) * math.cos(t),
-              z: o.z + r.radius * math.cos(k / 48 * 2 * math.pi) * math.sin(t),
-            ),
-        ];
-      case 'row':
-        final half = r.gap * (r.members.length - 1) / 2;
-        return [
-          for (var k = 0; k <= 12; k++)
-            (x: c.x - half + 2 * half * k / 12, y: c.y, z: c.z),
-        ];
-      default:
-        // A follow has no shape of its own here; the painter draws its threads from the leader to each layer.
-        return const [];
-    }
+    return best;
   }
 }
 
@@ -496,36 +444,22 @@ class _Map extends CustomPainter {
     if (v.world.camera case final cam?) {
       c.drawCircle(v.on(cam), 5, Paint()..color = WindowTokens.toneCamera);
     }
-    // Each relation's shape and its threads to its layers, in its own colour.
+    // Each relation's leader and its threads to its layers, in its own colour.
     for (final r in v.world.relations) {
       final hue = layerLabelColor(r.id),
           picked = r.id == selected; // The same label colour as its row.
       line
         ..color = hue.withValues(alpha: picked ? 1 : .7)
         ..strokeWidth = picked ? 2 : 1;
-      final pts = [for (final p in v.shape(r)) v.on(p)];
-      for (var k = 0; k + 1 < pts.length; k += 2) {
-        // The shape is drawn as separate segments, so it reads as a relation and not a layer.
-        // Each stretch takes the colour of the layer it carries, as the bar in its row does.
-        if (r.members.isNotEmpty) {
-          line.color = layerLabelColor(
-            r.members[(k * r.members.length / pts.length).floor().clamp(
-              0,
-              r.members.length - 1,
-            )],
-          ).withValues(alpha: picked ? 1 : .8);
-        }
-        c.drawLine(pts[k], pts[k + 1], line);
-      }
       final lead = v.world.things[r.leader]?.$1;
-      if (r.kind == 'follow' && lead != null) {
+      if (lead != null) {
         for (final m in r.members) {
           if (v.world.things[m]?.$1 case final p?) {
             c.drawLine(v.on(lead), v.on(p), line);
           }
         }
+        c.drawCircle(v.on(lead), 9, line); // Ring the leader.
       }
-      if (lead != null) c.drawCircle(v.on(lead), 9, line); // Ring the leader.
       for (final m in r.members) {
         if (v.world.things[m]?.$1 case final p?) {
           c.drawCircle(v.on(p), 7, Paint()..color = hue.withValues(alpha: .25));
