@@ -32,10 +32,19 @@
 #include "stage/render/render_stage.h"
 #include "third_party/filament_src/third_party/cgltf/cgltf.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Aabb;
+using filament::ACCURATE;
+using filament::Color;
+using filament::Material;
+using filament::MaterialInstance;
+using filament::sRGBColor;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
+namespace gltfio = filament::gltfio;
 
 void solid_at(Solid* d, const std::string& name, double seconds, size_t nth) {
   gltfio::Animator* moves = d->asset->getAssetInstances()[nth]->getAnimator();

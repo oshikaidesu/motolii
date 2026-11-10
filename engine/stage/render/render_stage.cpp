@@ -42,10 +42,32 @@
 #include <string>
 #include <vector>
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Box;
+using filament::Engine;
+using filament::IndexBuffer;
+using filament::IndirectLight;
+using filament::InstanceBuffer;
+using filament::Material;
+using filament::MaterialInstance;
+using filament::RenderableManager;
+using filament::Renderer;
+using filament::RenderTarget;
+using filament::Texture;
+using filament::TextureSampler;
+using filament::VertexAttribute;
+using filament::VertexBuffer;
+using filament::View;
+using filament::Viewport;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
+using filament::math::quatf;
+namespace backend = filament::backend;
+namespace geometry = filament::geometry;
+namespace math = filament::math;
 
 void sheet_deep(Mesh* m, float deep) {
   for (size_t i = 0; i < 4; ++i)

@@ -29,10 +29,21 @@
 
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::ACCURATE;
+using filament::Camera;
+using filament::Color;
+using filament::MaterialInstance;
+using filament::RenderTarget;
+using filament::sRGBColor;
+using filament::Texture;
+using filament::TextureSampler;
+using filament::View;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
+namespace backend = filament::backend;
 
 namespace {
 // Returns a typical thickness of the solid: four times its volume divided by

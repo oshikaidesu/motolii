@@ -19,10 +19,10 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::View;
+using filament::math::mat4f;
 
 void move(Stage& s, const Mesh* m,
           const std::function<mat4f(int, const mat4f&)>& to, const mat4f* eye) {
