@@ -265,7 +265,8 @@ target_link_libraries(motolii_stage_canvas PUBLIC ${THORVG}/build_dawn/src/libth
 
 # A layer's own effect stack.
 add_library(motolii_stage_layer_effects STATIC
-  stage/layer_effects/layer_fx.cpp)
+  stage/layer_effects/layer_fx.cpp
+  stage/layer_effects/layer_fx_place.cpp)
 target_link_libraries(motolii_stage_layer_effects PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_community_three motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_stage_canvas)
 
 # The project (SQLite): its values, edits, evaluation at a time.
