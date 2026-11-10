@@ -46,10 +46,22 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Camera;
+using filament::Renderer;
+using filament::RenderTarget;
+using filament::Scene;
+using filament::Texture;
+using filament::TextureSampler;
+using filament::View;
+using filament::Viewport;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
+namespace backend = filament::backend;
+namespace math = filament::math;
 
 void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   if (st.files == files) return;
