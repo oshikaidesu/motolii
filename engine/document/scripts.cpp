@@ -3,9 +3,11 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 #include "community/absent_motion/absent_motion.h"
