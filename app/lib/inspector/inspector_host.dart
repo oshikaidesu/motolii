@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_sync.dart';
 import 'package:motolii/inspector/inspector_values.dart';

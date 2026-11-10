@@ -9,10 +9,10 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_host.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
@@ -24,8 +24,8 @@ import 'package:motolii/workspace/stage/stage_view_relations.dart'
     show RelationStack;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 /// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the tool panel.

@@ -90,11 +90,11 @@ class ChooserState extends State<Chooser> {
     }
     if (k == LogicalKeyboardKey.escape) {
       _set(false);
-    } else if (down)
+    } else if (down) {
       _go(_at + 1);
-    else if (up)
+    } else if (up) {
       _go(_at - 1);
-    else if (enter) {
+    } else if (enter) {
       if (_at >= 0 && _at < _hits.length) _pick?.call(_hits[_at]);
     } else if (letter != null) {
       final now = DateTime.now();
@@ -271,7 +271,8 @@ class ChooserState extends State<Chooser> {
       child: CompositedTransformTarget(
         link: _link,
         // Uses the root overlay, not the nearest one, so a list that extends beyond its pane still receives pointer events.
-        child: OverlayPortal.targetsRootOverlay(
+        child: OverlayPortal(
+          overlayLocation: OverlayChildLocation.rootOverlay,
           controller: _portal,
           overlayChildBuilder: (_) {
             final w =
