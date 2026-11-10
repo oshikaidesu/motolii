@@ -16,6 +16,7 @@ import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -70,7 +71,7 @@ class RelationMarks extends StatelessWidget {
         ),
       );
       (double, double) units(Offset p) {
-        final c = v.toComp(p);
+        final c = v.toComposition(p);
         return (
           (c.dx - ArtGeometry.comp.width / 2) / m!.point,
           (ArtGeometry.comp.height / 2 - c.dy) / m.point,
@@ -93,7 +94,7 @@ class RelationMarks extends StatelessWidget {
         final cx = val('centre_x') + lx,
             cy = val('centre_y') + ly,
             mid = screen(cx, cy),
-            px = m.point * v.s;
+            px = m.point * v.scale;
         Widget handle(
           String key,
           Offset at,
@@ -226,10 +227,10 @@ class RelationMarks extends StatelessWidget {
       final tags = relationsOfSelected(ws),
           sel = ws.selected == null ? null : on(ws.selected!);
       // A layer is selected: draw the shape of each relation it belongs to, including its leader's ring while it is dragged.
-      if (sel != null && m != null && !isRelation)
+      if (sel != null && m != null && !isRelation) {
         for (final r in tags.map(int.parse)) {
           double val(String n, [double or = 0]) => m.value(r, n, now) ?? or;
-          final px = m.point * v.s,
+          final px = m.point * v.scale,
               l = val('leader') > 0 ? on('${val('leader').round()}') : null,
               off = val('visible', 1) <= .5;
           switch (m.word(r, 'file')) {
@@ -271,6 +272,7 @@ class RelationMarks extends StatelessWidget {
               shape.add(_Shape.ring(l, val('radius', .5) * px, off: off));
           }
         }
+      }
       return Stack(
         children: [
           IgnorePointer(
@@ -728,8 +730,8 @@ class StageNavigator extends StatelessWidget {
             painter: _MapPainter(
               scene,
               Rect.fromPoints(
-                view.toComp(view.area.topLeft),
-                view.toComp(view.area.bottomRight),
+                view.toComposition(view.area.topLeft),
+                view.toComposition(view.area.bottomRight),
               ),
             ),
           ),

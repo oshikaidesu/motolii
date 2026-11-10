@@ -15,8 +15,8 @@ import 'package:perfect_freehand/src/get_stroke_radius.dart'
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/widgets/text_gestures.dart' show textToType;
-import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -59,15 +59,15 @@ extension StageViewDraw on StageViewState {
     drawFrom = null;
     setState(() {});
     if (from == null || m == null || kind == null) return;
-    final a = v.toComp(from),
-        b = v.toComp(to),
+    final a = v.toComposition(from),
+        b = v.toComposition(to),
         p = m.point,
         c = ArtGeometry.comp;
     // Drawn out from its centre: twice the drag, centred on where the drag started.
     final centred = kind == 'circle' && widget.fromCentre;
     final mid = centred ? a : (a + b) / 2,
         d = centred ? (b - a) * 2 : b - a,
-        tiny = d.distance < 6 / v.s;
+        tiny = d.distance < 6 / v.scale;
     final x = ((kind == 'text' || tiny ? a.dx : mid.dx) - c.width / 2) / p,
         y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
     final cut = widget.mask ? int.tryParse(ws.selected ?? '') : null;
@@ -150,9 +150,9 @@ extension StageViewDraw on StageViewState {
     final ws = WorkspaceScope.read(context), m = ws.inside!;
     // The fitted path is complete, so the next pen click starts a new one.
     penning = false;
-    final points = [for (final p in way) v.toComp(p)],
-        error =
-            (v.toComp(way.first + const Offset(8, 0)) - points.first).distance;
+    final points = [for (final p in way) v.toComposition(p)],
+        error = (v.toComposition(way.first + const Offset(8, 0)) - points.first)
+            .distance;
     final closed = (points.first - points.last).distance < 4 * error;
     m.later('together', number: 1);
     var made = 0;
@@ -194,7 +194,7 @@ extension StageViewDraw on StageViewState {
       isComplete: true,
     );
     final points = getStrokePoints([
-      for (final p in way) PointVector.fromOffset(offset: v.toComp(p)),
+      for (final p in way) PointVector.fromOffset(offset: v.toComposition(p)),
     ], options: options);
     if (points.length < 2) return;
     getStrokeOutlinePoints(

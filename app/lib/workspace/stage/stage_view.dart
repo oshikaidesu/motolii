@@ -10,9 +10,6 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 
-/// Zoom steps of the header chip: fit, then fixed scales.
-const stageZooms = ['Fit', '50%', '100%'];
-
 /// Viewport sizes: the ruler band, the margin a fit leaves around the composition, the HUD pill and the navigator.
 abstract final class StageTokens {
   static double get ruler => Shape.z(16.0);
@@ -29,26 +26,6 @@ abstract final class StageTokens {
   static Color get tick => Grey.g38;
   static Color get guide => WindowTokens.toneAudio;
   static const overlay = Color(0x40FFFFFF), safe = Color(0x99F6EFDD);
-}
-
-/// Composition px to screen px: the composition's top-left at [o], [s] screen px per composition px, inside [area].
-@immutable
-class StageViewport {
-  const StageViewport(this.o, this.s, this.area);
-  final Offset o;
-  final double s;
-  final Rect area;
-  Rect get comp => o & ArtGeometry.comp * s;
-  Offset toScreen(Offset p) => o + p * s;
-  Offset toComp(Offset p) => (p - o) / s;
-  @override
-  bool operator ==(Object other) =>
-      other is StageViewport &&
-      other.o == o &&
-      other.s == s &&
-      other.area == area;
-  @override
-  int get hashCode => Object.hash(o, s, area);
 }
 
 /// The stage viewport.

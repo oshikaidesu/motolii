@@ -10,6 +10,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -75,7 +76,7 @@ class ViewPainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size size) {
-    final comp = v.comp;
+    final comp = v.compositionRect;
     if (part != ViewPart.over) {
       c.drawRect(Offset.zero & size, Paint()..color = StageTokens.surround);
     }
@@ -265,17 +266,19 @@ class ViewPainter extends CustomPainter {
       _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1);
       c.drawLine(frame[0], frame[2], linePaint(ink.withValues(alpha: .35), 1));
       c.drawLine(frame[1], frame[3], linePaint(ink.withValues(alpha: .35), 1));
-      if (eye != null)
+      if (eye != null) {
         for (final p in frame) {
           c.drawLine(eye, p, linePaint(ink.withValues(alpha: .35), 1));
         }
-      if (picked)
+      }
+      if (picked) {
         for (final p in frame) {
           c.drawRect(
             Rect.fromCenter(center: p, width: 7, height: 7),
             Paint()..color = ink,
           );
         }
+      }
     }
     if (g[4] case final look?) {
       c.drawCircle(look, 5, linePaint(Grey.g00, 3));
@@ -479,7 +482,7 @@ class RulerPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size size) {
     final r = StageTokens.ruler;
-    final comp = v.comp,
+    final comp = v.compositionRect,
         bg = Paint()..color = StageTokens.rulerGround,
         span = Paint()..color = StageTokens.rulerSpan;
     c.drawRect(Rect.fromLTWH(0, 0, size.width, r), bg);
@@ -505,15 +508,15 @@ class RulerPainter extends CustomPainter {
     final edge = linePaint(WindowTokens.line);
     c.drawLine(Offset(0, r - .5), Offset(size.width, r - .5), edge);
     c.drawLine(Offset(r - .5, 0), Offset(r - .5, size.height), edge);
-    final step = _step(v.s),
+    final step = _step(v.scale),
         minor = step / 5,
         tick = Paint()..color = StageTokens.tick;
     final label = TextStyles.micro(Grey.g56);
 
     c.save();
     c.clipRect(Rect.fromLTWH(r, 0, size.width - r, r));
-    final x0 = (v.toComp(Offset(r, 0)).dx / minor).floor() * minor,
-        x1 = v.toComp(Offset(size.width, 0)).dx;
+    final x0 = (v.toComposition(Offset(r, 0)).dx / minor).floor() * minor,
+        x1 = v.toComposition(Offset(size.width, 0)).dx;
     for (var x = x0; x <= x1; x += minor) {
       final sx = v.toScreen(Offset(x, 0)).dx.roundToDouble() + .5,
           major = (x / step).round() * step == x;
@@ -524,8 +527,8 @@ class RulerPainter extends CustomPainter {
 
     c.save();
     c.clipRect(Rect.fromLTWH(0, r, r, size.height - r));
-    final y0 = (v.toComp(Offset(0, r)).dy / minor).floor() * minor,
-        y1 = v.toComp(Offset(0, size.height)).dy;
+    final y0 = (v.toComposition(Offset(0, r)).dy / minor).floor() * minor,
+        y1 = v.toComposition(Offset(0, size.height)).dy;
     for (var y = y0; y <= y1; y += minor) {
       final sy = v.toScreen(Offset(0, y)).dy.roundToDouble() + .5,
           major = (y / step).round() * step == y;

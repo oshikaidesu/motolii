@@ -27,12 +27,11 @@ import 'package:motolii/workspace/stage/stage_view_drag.dart';
 import 'package:motolii/workspace/stage/stage_view_draw.dart';
 import 'package:motolii/workspace/stage/stage_view_painter.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-
-const _fixed = [0.0, .5, 1.0];
 
 class StageViewState extends State<StageView> implements StageHandles {
   Offset _pan = Offset.zero;
@@ -158,9 +157,9 @@ class StageViewState extends State<StageView> implements StageHandles {
       final ticket = m.desk(
         (v.area.width * dpr).round(),
         (v.area.height * dpr).round(),
-        (v.o.dx - v.area.left) * dpr,
-        (v.o.dy - v.area.top) * dpr,
-        v.s * dpr,
+        (v.origin.dx - v.area.left) * dpr,
+        (v.origin.dy - v.area.top) * dpr,
+        v.scale * dpr,
         dpr,
       );
       void look(Duration _) {
@@ -209,29 +208,18 @@ class StageViewState extends State<StageView> implements StageHandles {
     super.dispose();
   }
 
-  StageViewport _view(Size size) {
-    final area = Rect.fromLTRB(
-      StageTokens.ruler,
-      StageTokens.ruler,
-      size.width,
-      size.height,
-    );
-    final fit = math.max(
-      .02,
-      math.min(
-        (area.width - StageTokens.fitMargin * 2) / ArtGeometry.comp.width,
-        (area.height - StageTokens.fitMargin * 2) / ArtGeometry.comp.height,
-      ),
-    );
-    final s = widget.zoom == 0 ? fit : _fixed[widget.zoom];
-    final half =
-        Offset(ArtGeometry.comp.width * s, ArtGeometry.comp.height * s) / 2;
-    return StageViewport(area.center - half + _pan, s, area);
-  }
+  StageViewport _view(Size size) => StageViewport.of(
+    size,
+    composition: ArtGeometry.comp,
+    zoom: widget.zoom,
+    pan: _pan,
+    ruler: StageTokens.ruler,
+    margin: StageTokens.fitMargin,
+  );
 
   String? hitLocal(StageViewport v, Offset local) {
     // A layer off the canvas can still be grabbed by its frame and dragged back.
-    final d = v.toComp(local),
+    final d = v.toComposition(local),
         id = ArtGeometry.hit(widget.scene, d),
         m = WorkspaceScope.read(context).inside;
     if (widget.group && m != null && id != null) {
@@ -288,7 +276,7 @@ class StageViewState extends State<StageView> implements StageHandles {
     setState(() {});
     if (m == null) return;
     if (way != null && _scribbled(way, down, up)) return fit(v, way);
-    final a = v.toComp(down), h = v.toComp(up) - a;
+    final a = v.toComposition(down), h = v.toComposition(up) - a;
     final first = !penning;
     penning = true;
     if (first) m.later('together', number: 1);
@@ -376,7 +364,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       setState(() {});
       return;
     }
-    final all = (local - h.from) / v.s; // Screen pixels to canvas points.
+    final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
     if (h.by case final way? when way.startsWith('crop ')) {
       // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
       final side = int.parse(way.substring(5)),
@@ -422,7 +410,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       return;
     }
     if (h.by case final way?) {
-      var gone = v.toComp(local) - v.toComp(h.from);
+      var gone = v.toComposition(local) - v.toComposition(h.from);
       // As in Figma: a corner handle resizes freely in both directions with the opposite side fixed; a side handle resizes that
       // way only. Shift keeps the aspect ratio or rotates in 15 degree steps; Alt scales from the centre.
       final keys = HardwareKeyboard.instance,
@@ -453,7 +441,7 @@ class StageViewState extends State<StageView> implements StageHandles {
       1 => Offset(all.dx, 0),
       2 => Offset(0, all.dy),
       _ => all,
-    }, v.s);
+    }, v.scale);
     m.dragUpdate('place', by.dx, by.dy);
     drag = (from: h.from, moved: true, by: null);
     setState(() {});
@@ -462,17 +450,7 @@ class StageViewState extends State<StageView> implements StageHandles {
   /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
   void _panBy(Offset by, StageViewport v) {
     if (widget.zoom == 0) return;
-    final lim = Offset(
-      ArtGeometry.comp.width * v.s / 2 + v.area.width / 2 - 60,
-      ArtGeometry.comp.height * v.s / 2 + v.area.height / 2 - 60,
-    );
-    final p = _pan + by;
-    setState(
-      () => _pan = Offset(
-        p.dx.clamp(-lim.dx, lim.dx),
-        p.dy.clamp(-lim.dy, lim.dy),
-      ),
-    );
+    setState(() => _pan = v.clampPan(_pan + by));
   }
 
   // The selected layer's motion path over time as the engine computes it (including its wave), in canvas points, drawn thin
@@ -531,7 +509,7 @@ class StageViewState extends State<StageView> implements StageHandles {
           onPan: (by, _) => _panBy(by, v),
           child: MouseRegion(
             onHover: (e) {
-              widget.cursor.value = v.toComp(e.localPosition);
+              widget.cursor.value = v.toComposition(e.localPosition);
               final h = hitLocal(v, e.localPosition);
               if (h != _hover) setState(() => _hover = h);
             },
@@ -603,7 +581,9 @@ class StageViewState extends State<StageView> implements StageHandles {
                       penWay?.add(d.localPosition);
                     })
                   : pulling != null
-                  ? (widget.cursor.value = v.toComp(_last = d.localPosition))
+                  ? (widget.cursor.value = v.toComposition(
+                      _last = d.localPosition,
+                    ))
                   : _dragUpdate(v, _last = d.localPosition),
               onPanEnd: (_) => brush != null
                   ? brushDragEnd(v)
@@ -662,14 +642,14 @@ class StageViewState extends State<StageView> implements StageHandles {
                       ),
                     ),
                     Positioned.fromRect(
-                      rect: v.comp,
+                      rect: v.compositionRect,
                       child: const IgnorePointer(
                         child: SizedBox(key: ValueKey('ws-stage-comp')),
                       ),
                     ), // Where the canvas lies inside it.
                   ] else
                     Positioned.fromRect(
-                      rect: v.comp,
+                      rect: v.compositionRect,
                       child: IgnorePointer(
                         child: widget.texture == null
                             ? const SizedBox(key: ValueKey('ws-stage-comp'))
@@ -684,7 +664,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                     ),
                   if (widget.snapshot case final shot?) // While Show Snapshot is held, the earlier frame is drawn over the canvas.
                     Positioned.fromRect(
-                      rect: v.comp,
+                      rect: v.compositionRect,
                       child: IgnorePointer(
                         child: Image.file(
                           File(shot),
@@ -811,7 +791,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                   Positioned(
                     left: StageTokens.ruler + StageTokens.pad,
                     bottom: StageTokens.pad,
-                    child: Hud(scale: v.s, cursor: widget.cursor),
+                    child: Hud(scale: v.scale, cursor: widget.cursor),
                   ),
                   if (widget.zoom != 0 &&
                       box.maxWidth > 360 &&

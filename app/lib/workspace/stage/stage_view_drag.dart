@@ -11,6 +11,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_camera.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
+import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -102,7 +103,7 @@ extension StageViewDrag on StageViewState {
   bool _pull(StageViewport v, Offset local) {
     final ws = WorkspaceScope.read(context), m = ws.inside;
     if (m == null) return false;
-    final at = v.toComp(local), tol = 4 / v.s;
+    final at = v.toComposition(local), tol = 4 / v.scale;
     if (local.dy < StageTokens.ruler || local.dx < StageTokens.ruler) {
       pulling = (axis: local.dy < StageTokens.ruler ? 'y' : 'x', was: null);
       return true;
@@ -123,7 +124,7 @@ extension StageViewDrag on StageViewState {
     final over = p.axis == 'y'
             ? local.dy < StageTokens.ruler
             : local.dx < StageTokens.ruler,
-        at = v.toComp(local);
+        at = v.toComposition(local);
     // Group the guide changes into one undo step.
     m.later('together', number: 1);
     if (p.was != null) {
@@ -236,7 +237,7 @@ extension StageViewDrag on StageViewState {
       if (by != null) {
         m.take(picked);
         // Canvas coordinates, which is what the engine expects.
-        final at = v.toComp(local);
+        final at = v.toComposition(local);
         m.dragUpdate('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
         drag = (from: local, moved: false, by: by);
