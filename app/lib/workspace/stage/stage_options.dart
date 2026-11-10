@@ -1,6 +1,21 @@
 // The strip under the stage: the selected tool's options (fill, stroke, radius, font, brush kind), read from the
 // selected layer or from the fill and stroke the next drawn layer gets, and the selected layer's position.
-part of 'stage.dart';
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/hex_color.dart' show colorOfHex;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/tool_strip.dart';
+import 'package:motolii/workspace/stage/stage.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/workspace.dart' show wsPlace;
 
 /// A document colour (six hex digits) as a Flutter [Color], or null when there is none.
 ///
@@ -16,7 +31,7 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
 /// What the selected layer is painted with and how it is set.
 ///
 /// With nothing selected, it is the fill and stroke the next drawn layer gets.
-({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintOf(Ws ws) {
+({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) paintOf(Ws ws) {
   final key = (ws.rev, ws.selected, ws.ink, ws.edge);
   if (_paintRead case (final k, final p) when k == key) return p;
   final p = _paintNow(ws);
@@ -45,8 +60,8 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
 // ---- tool options strip ------------------------------------------------------------------------------------------------
 
 /// The strip of the selected tool's options, with the selected layer's readout at its right.
-class _OptionsStrip extends StatelessWidget {
-  const _OptionsStrip({required this.tool, required this.opts, required this.onOpt, required this.scene, required this.layer, required this.ws});
+class OptionsStrip extends StatelessWidget {
+  const OptionsStrip({super.key, required this.tool, required this.opts, required this.onOpt, required this.scene, required this.layer, required this.ws});
   final Ws ws;
   final int tool;
   final Map<String, int> opts;
@@ -58,10 +73,10 @@ class _OptionsStrip extends StatelessWidget {
       Forms.worn.segment(c, ChoiceSpec(labels: items, selected: opts[key] ?? initial, onSelect: (i) => onOpt(key, i)));
   Widget _flag(String key, String label, {bool initial = false}) {
     final on = (opts[key] ?? (initial ? 1 : 0)) == 1;
-    return _Toggle(label: label, on: on, icon: _Icon.safe, onTap: () => onOpt(key, on ? 0 : 1));
+    return Toggle(label: label, on: on, icon: StageIcon.safe, onTap: () => onOpt(key, on ? 0 : 1));
   }
 
-  List<Widget> _items(BuildContext c) => _joined(c, ws, _paintOf(ws));
+  List<Widget> _items(BuildContext c) => _joined(c, ws, paintOf(ws));
 
   /// The tool's own settings (how it draws or moves) and the selected layer's values as the document has them.
   List<Widget> _joined(BuildContext c, Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) =>
@@ -136,7 +151,7 @@ class _OptionsStrip extends StatelessWidget {
         left: [
           SizedBox(
             width: Shape.z(62),
-            child: Text(_tools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
+            child: Text(stageTools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
           ),
           for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: Shape.s(6)), items[i]],
         ],

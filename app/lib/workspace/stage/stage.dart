@@ -1,31 +1,25 @@
 // The Stage panel: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
 // The image is the work (state/art_scene.dart). The chrome around it stays grey, with the accent only on what is switched on.
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
-
-import 'package:motolii/widgets/controls.dart' show Badge, Hov, IconPress;
-import 'package:motolii/widgets/glyphs.dart';
-import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/state/art_scene.dart';
-import 'package:motolii/workspace/stage/stage_view.dart';
-import 'package:motolii/widgets/two_fingers.dart';
-import 'package:motolii/widgets/tool_strip.dart';
-import 'package:motolii/workspace/workspace.dart' show wsPlace;
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/stage/stage_options.dart';
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii.dart';
-
-part 'stage_options.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 class WsStage extends StatelessWidget {
   const WsStage({super.key});
@@ -33,7 +27,7 @@ class WsStage extends StatelessWidget {
   Widget build(BuildContext context) => const WsPanel(child: _Stage());
 }
 
-const _tools = [
+const stageTools = [
   (G.select, 'Select', 'V'),
   (G.move, 'Move', 'M'),
   (G.rect, 'Rectangle', 'R'),
@@ -50,7 +44,7 @@ const _tools = [
 ///
 /// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
 /// Photoshop do, not only while the stage has focus.
-Map<String, VoidCallback> wsToolCommands(Ws ws) => {for (final (i, t) in _tools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i)};
+Map<String, VoidCallback> wsToolCommands(Ws ws) => {for (final (i, t) in stageTools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i)};
 
 class _Stage extends StatefulWidget {
   const _Stage();
@@ -155,16 +149,16 @@ class _StageState extends State<_Stage> {
                 trailing: [
                   Forms.worn.segment(context, ChoiceSpec(labels: stageZooms, selected: _zoom, onSelect: (i) => setState(() => _zoom = i))),
                   SizedBox(width: Shape.s(6)),
-                  _Toggle(label: 'Safe', icon: _Icon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
+                  Toggle(label: 'Safe', icon: StageIcon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
                   SizedBox(width: WsT.gap),
-                  _Toggle(label: 'Grid', icon: _Icon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
+                  Toggle(label: 'Grid', icon: StageIcon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
                   SizedBox(width: Shape.s(6)),
                   if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[
                     // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
-                    _Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
+                    Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
                     SizedBox(width: Shape.s(6)),
                   ],
-                  _Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: _Icon.snap, on: false, onTap: _take),
+                  Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: StageIcon.snap, on: false, onTap: _take),
                   if (_shot != null) ...[
                     SizedBox(width: WsT.gap),
                     Listener(
@@ -172,7 +166,7 @@ class _StageState extends State<_Stage> {
                       onPointerDown: (_) => setState(() => _showing = true),
                       onPointerUp: (_) => setState(() => _showing = false),
                       onPointerCancel: (_) => setState(() => _showing = false),
-                      child: _Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: _Icon.show, on: _showing, onTap: () {}),
+                      child: Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: StageIcon.show, on: _showing, onTap: () {}),
                     ),
                   ],
                 ],
@@ -216,7 +210,7 @@ class _StageState extends State<_Stage> {
                   ],
                 ),
               ),
-              _OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
+              OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
             ],
           ),
         ),
@@ -227,15 +221,15 @@ class _StageState extends State<_Stage> {
 
 // ---- header toggles ----------------------------------------------------------------------------------------------------
 
-enum _Icon { safe, grid, snap, show }
+enum StageIcon { safe, grid, snap, show }
 
 /// An on/off chip: raised with an accent mark when on, a quiet well when off.
-class _Toggle extends StatelessWidget {
-  const _Toggle({super.key, required this.label, required this.on, required this.onTap, this.icon, this.glyph});
+class Toggle extends StatelessWidget {
+  const Toggle({super.key, required this.label, required this.on, required this.onTap, this.icon, this.glyph});
   final String label;
   final bool on;
   final VoidCallback onTap;
-  final _Icon? icon;
+  final StageIcon? icon;
   final G? glyph;
   @override
   Widget build(BuildContext context) => Forms.worn.flag(
@@ -254,7 +248,7 @@ class _Toggle extends StatelessWidget {
 
 class _IconPainter extends CustomPainter {
   const _IconPainter(this.icon, this.c);
-  final _Icon icon;
+  final StageIcon icon;
   final Color c;
   @override
   void paint(Canvas cv, Size s) {
@@ -266,19 +260,19 @@ class _IconPainter extends CustomPainter {
       ..strokeWidth = 1.2;
     final r = (Offset.zero & s).deflate(1);
     switch (icon) {
-      case _Icon.safe:
+      case StageIcon.safe:
         cv.drawRect(r, p);
         cv.drawRect(r.deflate(2.5), p);
-      case _Icon.grid:
+      case StageIcon.grid:
         cv.drawRect(r, p);
         for (final t in const [1 / 3, 2 / 3]) {
           cv.drawLine(Offset(r.left + r.width * t, r.top), Offset(r.left + r.width * t, r.bottom), p);
           cv.drawLine(Offset(r.left, r.top + r.height * t), Offset(r.right, r.top + r.height * t), p);
         }
-      case _Icon.snap: // A camera body and its lens.
+      case StageIcon.snap: // A camera body and its lens.
         cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom), const Radius.circular(1.5)), p);
         cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
-      case _Icon.show: // The image halved: then and now.
+      case StageIcon.show: // The image halved: then and now.
         cv.drawRect(r, p);
         cv.drawRect(Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom), p..style = PaintingStyle.fill);
     }
@@ -328,7 +322,7 @@ class _ToolColumn extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (var i = 0; i < _tools.length; i++) ...[
+              for (var i = 0; i < stageTools.length; i++) ...[
                 if (i == 2 || i == 4 || i == 7)
                   Container(
                     width: Shape.z(20),
@@ -338,7 +332,7 @@ class _ToolColumn extends StatelessWidget {
                   ),
                 if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
                 IconPress(
-                  (ink) => Glyph(_tools[i].$1, size: Shape.z(16), color: ink),
+                  (ink) => Glyph(stageTools[i].$1, size: Shape.z(16), color: ink),
                   key: ValueKey('ws-tool-$i'),
                   size: Shape.z(28),
                   rest: WsT.body,
@@ -371,7 +365,7 @@ class _Swatches extends StatelessWidget {
   const _Swatches();
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), p = _paintOf(ws);
+    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), p = paintOf(ws);
     final fill = p.fill ?? WsT.body, stroke = p.stroke ?? WsT.line, edgeOn = ws.aim == 'stroke';
     Widget box(String aim, BoxDecoration look) => Hov(
       key: ValueKey('ws-ink-$aim'),

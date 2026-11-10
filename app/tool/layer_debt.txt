@@ -2,6 +2,6 @@
 # One per line, importer -> imported, as paths from app/lib. Written by
 # `python3 app/tool/check_layers.py --write`. It should only get shorter.
 workspace/shelf/shelf_add.dart -> workspace/dock/dock_make.dart
-workspace/stage/stage.dart -> workspace/workspace.dart
+workspace/stage/stage_options.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_blend.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_depth.dart -> workspace/workspace.dart
