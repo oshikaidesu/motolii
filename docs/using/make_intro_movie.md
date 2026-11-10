@@ -1,10 +1,10 @@
-# README の頭の 8 秒の作り方
+# ガイドの頭の 8 秒の作り方
 
-*How the 8 seconds at the top of the README were made: the calls below, pasted as they are into a shell at the repository's root once the engine is built (README, "Build and open"), write `~/Movies/Motolii/mv.mp4`.*
+*How the 8 seconds at the top of the guide ([guide.md](guide.md)) were made: the calls below, pasted as they are into a shell at the repository's root once the engine is built (README, "Build and run"), write `~/Movies/Motolii/mv.mp4`.*
 
 ![光る文字、回るピンクの輪、線の模様、色のずれ](../pictures/mv.gif)
 
-組み立てた後（README の「組み立てて開く」）、リポジトリの直下でそのまま貼ると `~/Movies/Motolii/mv.mp4` ができます。1 行が `engine/edit.sh` の命令 1 つ（一覧は `help`）：レシピ Weave、3D の輪、文字、Glow、最後に画面全体へ RGB のずれ（`shelves/effects/glitch/rgbshift.wgsl`）。
+組み立てた後（README の「Build and run」）、リポジトリの直下でそのまま貼ると `~/Movies/Motolii/mv.mp4` ができます。1 行が `engine/edit.sh` の命令 1 つ（一覧は `help`）：レシピ Weave、3D の輪、文字、Glow、最後に画面全体へ RGB のずれ（`shelves/effects/glitch/rgbshift.wgsl`）。
 
 ```zsh
 mkdir -p ~/Movies/Motolii && rm -f ~/Movies/Motolii/mv.motolii

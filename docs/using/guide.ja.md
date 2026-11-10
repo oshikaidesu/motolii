@@ -83,7 +83,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。
 
-**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、このガイドの手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（[README](../../README.ja.md) の build バッジ）。自分で書いたテストはありません。外から求める条件は [`docs/TESTING.md`](../TESTING.md)。
+**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、このガイドの手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（[README](../../README.ja.md) の build バッジ）。アプリのテストと、整形・解析の確かめは push のたびに走ります（checks バッジ）。手元での走らせ方は [`docs/TESTING.md`](../TESTING.md)。
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 フレーム約 4 ms で、毎秒 240 フレームでも落ちません。8 秒の書き出しは約 5 秒（ffmpeg のエンコードを含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
 

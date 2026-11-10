@@ -83,7 +83,7 @@ A work's rights stay with its author. Many works on Shadertoy and OpenProcessing
 
 Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export.
 
-**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this guide says, then the UI's analyzer (`flutter analyze`) runs (the build badge on the [README](../../README.md)). There are no self-written tests; the external requirements are in [`docs/TESTING.md`](../TESTING.md).
+**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this guide says, then the UI's analyzer (`flutter analyze`) runs (the build badge on the [README](../../README.md)). The app's tests and the format and analyzer checks run on every push (the checks badge); how to run them yourself is in [`docs/TESTING.md`](../TESTING.md).
 
 **Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 frames a second. Exporting the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
 

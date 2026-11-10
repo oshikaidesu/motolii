@@ -48,6 +48,8 @@ app/tool/live.sh
 
 The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it.
 
+To run the tests: `engine/build.sh test` for the engine (CMake's ctest) and `cd app && flutter test` for the app. More in [Testing](docs/TESTING.md).
+
 Each step in detail, a first piece, and what to do if something goes wrong: [guide, "Try it"](docs/using/guide.md#try-it).
 
 ## Use a file you found
