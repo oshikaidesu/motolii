@@ -180,8 +180,6 @@ inline const DocCard doc_cards[] = {
     // Any behaviour with a file. A behaviour shows only such cards, see
     // doc_cards_of.
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},
-    // What the author wrote about the layer: After Effects' layer comment.
-    {"Note", "label note", nullptr, nullptr, true},
     // After Effects' shape operator, added from the shelf.
     {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
     // The compressed images of a video, see media/video_datamosh.h.

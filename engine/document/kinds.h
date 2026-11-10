@@ -306,10 +306,6 @@ inline const DocValue doc_values[] = {
     {"element_at", doc_kinds, -1, 1e12, false, nullptr},
     {"element_part", doc_kinds, 0, 1e9, false, nullptr},
     {"element_text", "text", 0, 0, false, ""},
-    // What an author wrote about the layer for whoever opens the project next:
-    // After Effects' layer
-    // comment.
-    {"note", doc_kinds, 0, 0, false, ""},
     // For a 3D file: which of the file's own animations it plays, over and
     // over, at its speed, from
     // when the layer comes on.

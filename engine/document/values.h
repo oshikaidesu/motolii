@@ -143,7 +143,6 @@ inline const DocShown doc_shown[] = {
     {"opacity", "share", "%", "Opacity", 0, 1, nullptr},
     {"blend", "", "", "Blend", 0, 0, nullptr},
     {"clip", "onoff", "", "Clip to below", 0, 1, nullptr},
-    {"note", "words", "", "Note", 0, 0, nullptr},
     {"label", "", "", "Label colour", 0, 0, nullptr},
     {"distance", "", "px", "Distance", 0.05, 4, nullptr},
     {"zoom", "share", "%", "Zoom", 0.1, 4, nullptr},
