@@ -1,3 +1,6 @@
+#ifndef MOTOLII_MOTION_EASING_NAMES_H_
+#define MOTOLII_MOTION_EASING_NAMES_H_
+
 // Named easings that use Cavalry's Magic Easing names.
 //
 // Each entry is an expression of u, the progress through the span between two keyframes
@@ -6,8 +9,8 @@
 // script function ease(name, u) (script.cpp, evaluated as JavaScript), so the two cannot
 // drift apart. Expressions may only use functions that both SQLite and JavaScript
 // provide here: pow, exp, cos, abs and pi().
-#pragma once
-static const struct { const char* name; const char* goes; } named_ways[] = {
+
+inline const struct { const char* name; const char* goes; } named_ways[] = {
     {"SlowIn", "pow(u, 3)"},
     {"SlowOut", "1 - pow(1 - u, 3)"},
     {"SlowInSlowOut", "u * u * u * (u * (6 * u - 15) + 10)"},
@@ -18,3 +21,5 @@ static const struct { const char* name; const char* goes; } named_ways[] = {
     {"BounceOut", "1 - abs(cos(3.5 * pi() * u)) * pow(1 - u, 2)"},
     {"Overshoot", "1 + 2.70158 * pow(u - 1, 3) + 1.70158 * pow(u - 1, 2)"},
 };
+
+#endif  // MOTOLII_MOTION_EASING_NAMES_H_
