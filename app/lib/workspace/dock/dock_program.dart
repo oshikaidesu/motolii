@@ -265,7 +265,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
 }
 
 /// A program's code: what is typed is given to [write] a moment after the last key (the shelf writes it over its file;
-/// a thing's script on its card writes it to the thing's own copy: ScriptCode).
+/// a thing's script on its card writes it to the thing's own copy: FxCode).
 class ProgramCode extends StatefulWidget {
   const ProgramCode(this.file, this.write, {super.key, this.keep = false});
   final String file;

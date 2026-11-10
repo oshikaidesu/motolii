@@ -1,4 +1,4 @@
-// An effect's code on its card, under its knobs, as the Script card's is (script_code.dart): a .wgsl's, an ISF .fs's, an
+// An effect's code on its card, under its knobs, as the Script card's is (slot: 'script'): a .wgsl's, an ISF .fs's, an
 // expression's (a .js with each() among its fx: document/expressions.h). What is typed is this thing's effect alone. The shelf's file is never written over: the first typing copies it to a folder of its own in the maker's
 // programs (programs/fx/<stamp>/) under the same file name, and this thing's fx says the copy in its place. The same
 // name keeps what hangs on it: its values' names (js_<stem>_<knob>, doc_screen_knob), its card's title (doc_fx_title),
@@ -16,10 +16,12 @@ import 'shelf_add.dart';
 import '../state/state.dart';
 
 class FxCode extends StatefulWidget {
-  const FxCode(this.ws, this.thing, this.word, {super.key});
+  const FxCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});
   final Ws ws;
   final int thing;
-  final String word; // (as the thing's fx says it)
+  final String word; // (as the thing's slot says it)
+  final String slot; // ('fx': the effects; 'script': the Script card's one file) the thing's word that says the file, and the programs/ folder of its copies
+  final bool shelf; // (Add to shelf under it: an effect's, not a script's)
   @override
   State<FxCode> createState() => _FxCodeState();
 
@@ -113,14 +115,14 @@ class _FxCodeState extends State<FxCode> {
   String _added = ''; // (what came of the last Add to shelf: why not, or where it went)
   bool _addedOk = false;
 
-  static String get _own => '${EffectTiles.own}/programs/fx/';
+  String get _own => '${EffectTiles.own}/programs/${widget.slot}/';
 
   /// Whether the file is this thing's card's alone: one of its own copies, said by no other card of any thing.
   bool _alone(String word) {
     final m = widget.ws.inside!, file = FxCode.source(word);
     if (!file.startsWith(_own)) return false;
     for (final t in m.layers) {
-      for (final w in Ws.fxFiles(m.word(t, 'fx'))) {
+      for (final w in Ws.fxFiles(m.word(t, widget.slot))) {
         if (!(t == widget.thing && w == word) && FxCode.source(w) == file) return false;
       }
     }
@@ -146,8 +148,8 @@ class _FxCodeState extends State<FxCode> {
     _mine = said;
     _making = true;
     _typed = text;
-    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' '); // (as doc_fx_join says it)
-    m.later('say', layer: widget.thing, name: 'fx', word: fx);
+    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, widget.slot))) w == word ? said : w].join(' '); // (as doc_fx_join says it)
+    m.later('say', layer: widget.thing, name: widget.slot, word: fx);
     ws.after(m.later('code', word: to), (_, _) {
       _making = false;
       File(to).writeAsStringSync(_typed!);
@@ -233,10 +235,11 @@ class _FxCodeState extends State<FxCode> {
             child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error)),
           ),
         Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
-        Padding(
-          padding: EdgeInsets.only(top: Shape.s(4)),
-          child: _shelf(),
-        ),
+        if (widget.shelf)
+          Padding(
+            padding: EdgeInsets.only(top: Shape.s(4)),
+            child: _shelf(),
+          ),
       ],
     );
   }

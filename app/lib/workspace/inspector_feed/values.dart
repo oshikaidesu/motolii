@@ -201,7 +201,7 @@ bool _flag(Ws ws, String? id, Map<String, bool> changed) {
       k.endsWith('.adv') ||
       k.endsWith('.code') ||
       k.endsWith('.past') ||
-      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, script_code.dart)
+      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, fx_code.dart)
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }

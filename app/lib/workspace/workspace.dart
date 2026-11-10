@@ -41,7 +41,6 @@ import 'top_bar/top_bar.dart';
 import '../bridge/motolii.dart';
 import 'edits/make_relation.dart';
 import 'state/state.dart';
-import 'shelf/script_code.dart';
 import 'shelf/fx_code.dart';
 part 'inspector_feed/panel.dart';
 part 'inspector_feed/cards.dart';
