@@ -28,8 +28,9 @@ Builds if needed, opens the project and reads one command per line from standard
 
 - `./check_syntax.sh [path-fragment]` runs `clang++ -fsyntax-only` on every source of ours with CMake's flags. It builds
   nothing, writes nothing and takes no lock. It prints clang's errors, or `ok: <count> sources`.
-- `./build.sh test` runs ctest. CMake collects every `<name>_test.cpp` beside the code it tests into one GoogleTest
-  binary, but the tree has no `*_test.cpp` file yet, so no C++ test exists today.
+- `./build.sh test` builds, then runs the C++ tests with ctest. A test is a `<name>_test.cpp` file beside the code it
+  tests, written with GoogleTest; CMake finds it by name. Today there are four: the easing curves and the Godot easing
+  (`motion/`), the script header parser (`community/quickjs/`) and the files shelf recipes name (`document/scripts/`).
 - `./drawings_unchanged.sh <old-commit>` draws every shelf recipe and motion with the engine at that commit and with this
   one, and compares the pictures byte by byte. How tests are run, and what counts as passing, is in
   [`../docs/TESTING.md`](../docs/TESTING.md).

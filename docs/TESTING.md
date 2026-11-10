@@ -35,7 +35,7 @@ This scrolls the Workspace timeline with 120 mouse-wheel notches and fails if an
 engine/build.sh test
 ```
 
-Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test; CMake collects them into one GoogleTest binary (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). None exists yet.
+Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test, written with GoogleTest; CMake finds them by name (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). There are four today: `engine/motion/easing_curves_test.cpp`, `engine/motion/easing_godot_test.cpp`, `engine/community/quickjs/script_header_test.cpp` and `engine/document/scripts/shelf_recipe_files_test.cpp`.
 
 ### Picture comparison
 
