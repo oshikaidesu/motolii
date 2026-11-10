@@ -1,32 +1,29 @@
-# アプリとエンジンの境目（2026-10-24 から）
+# The app-engine bridge
 
-*The contract between the app (Flutter) and the engine (C++, `engine/entry/motolii.mm`): writes are recorded and come back, questions are answered later, what changes every frame is subscribed to. Each rule names the open-source app it was taken from.*
+The contract between the Flutter app (`app/`) and the C++ engine (`engine/`, called through `engine/entry/motolii.h`), for anyone who changes either side.
 
-アプリ（Flutter、`app`）とエンジン（C++、`engine/entry/motolii.mm`）の間の決まり。仲間の作りに揃える：Lumit（`docs/17-BRIDGE-CONTRACT.md`）、
-AppFlowy（「誰の何が変わったか」を1本で流す）、Rive の CommandQueue（書きは記録して戻る、問い合わせは後で届く）、Anthem（毎フレーム変わる物は購読）、
-Thermion（描けは前が終わるまで捨てる）。調べた記録は `research_notes/flutter_native_kin.md`。GPL・AGPL の物は考え方だけ借りる。
+In short: writes are recorded and return at once, questions are answered later, and what changes every frame is subscribed to. The design follows other open-source apps with the same split: Lumit (a bridge contract), AppFlowy (one stream that says what changed and for whom), Rive's CommandQueue (writes are recorded and return, queries arrive later), Anthem (values that change every frame are subscribed to) and Thermion (a draw request is dropped while the previous one runs). Only the ideas of GPL and AGPL projects are borrowed. [`../design/bridge_rework.md`](../design/bridge_rework.md) records the rework that produced this contract.
 
-## 決まり
+## Rules
 
-1. **アプリはエンジンを待たない。** アプリのスレッドからエンジンを呼んで、答えが出るまで止まる道は1本も無い。
-2. **アプリは組み立て（build）の中でエンジンを呼ばない。** 読むのはエンジンが渡したスナップショットだけ。
-3. **スナップショットは2つ。** どちらもエンジンのレンダースレッドが、プロジェクトの鍵を持っている間に作り、出来上がった物を丸ごと差し替える（変更できない物、版の番号つき）。
-   - **プロジェクトのスナップショット（D）**：プロジェクトが変わった時だけ作る。レイヤーの一覧と、それぞれのレイヤーの種類・名前・長さ・キーの位置・区間・カード・選べる言葉・範囲・見せ方・効果の並び・止まっている値、
-     プロジェクト全体の印・ガイド・作業範囲・長さ・大きさ・イージングの一覧。レイヤーごとに版の番号を持ち、変わらなかったレイヤーは前と同じオブジェクトのまま（アプリは `identical` で比べられる）。
-   - **フレームのスナップショット（M）**：1 フレーム描くごとに作る。その時刻、動いている値、レイヤーごとの枠と見えている四角、運ばれている値（`shows`）、選んだレイヤーのキーの有無・点・取っ手。
-4. **エンジンは「何が変わったか」を1本で知らせる。** 知らせは `NativeCallable.listener`（Dart SDK の勧め）を1つだけ。エンジンから送るのは、どちらのスナップショットが新しくなったかと、プロジェクトなら変わったレイヤーの番号。
-   アプリは1フレームに何回来ても、受け取りは1回にまとめる。
-5. **アプリは聞きたい物だけを聞く。** `Ws` の中は `ValueNotifier` に分ける：プロジェクト（全体とレイヤーごと）、フレーム、それにアプリだけの状態
-   （再生ヘッド、再生中、選んだレイヤー、選んだキー、ツールパネル、棚、見え方、Animate）をそれぞれ1つずつ。何でも知らせる口（`Ws` 全体の `notifyListeners`）は作らない。
-6. **書き（W）は投げるだけ。** 列に積んで、すぐ戻る。番号が要る物（`add`・`make`）は、答えを後でスナップショットと一緒に受け取る。同じレイヤーの同じ値への書きが列に残っていたら、最新の1つにまとめる。
-7. **今の時刻以外を聞く物と、長い物（Q）は問い合わせ。** 頼んで `Future` で受け取る。組み立ての中では待たない（届いたら、その部品だけ描き直す）。
-8. **起動時に1回の物（S）**（レシピ・効果・アニメーターのフォルダ、フォントの種類）は、アプリが開く時に別のスレッドで1回読む。（10/27 から：作者のフォルダ `~/Library/Application Support/Motolii/` はアプリが開いている間見張り、ファイルが入るか出るかしたら読み直す。棚の効果は全部、気球の見本に掛けた 8 フレーム（0.1〜1.9 秒、ポインタを乗せると動く：Alight Motion の棚のまね）を別の isolate で描き、エンジンが言う置き場所（`~/Library/Caches/Motolii/tiles/`、ファイルと書いた時で名付け：`engine/document/recipes.h` の doc_tile）に置いてすぐ見せる。作者の物が先。見本と見分けが付かない物（ffmpeg の psnr で 40 dB 超）は NO CHANGE：`app/lib/workspace/shelf/effect_tiles.dart`）
-9. **再生ヘッド・選択・ズームはアプリの持ち物**（Lumit と同じ）。エンジンへは書きとして伝えるだけ。
-10. **見張り。** アプリがエンジンを待った回数は 0（今の赤ポチ）。再生ヘッドを1つ動かした時と、再生を押した時に組み立て直される部品の数に上限を付け、超えたら赤。
+1. **The app never waits for the engine.** No path calls the engine from an app thread and blocks until it answers.
+2. **The app never calls the engine inside a widget's `build`.** It reads only the snapshots the engine handed over.
+3. **There are two snapshots.** The engine's render thread builds each while it holds the project lock, then swaps in the finished object whole. A snapshot is immutable and carries a version number.
+   - **Project snapshot.** Built only when the project changes. It holds the list of layers and, for each layer: kind, name, length, key positions, ranges, cards, word choices, how it is shown, the effect list and the resting values. For the whole project it holds markers, guides, the work range, length, size and the list of easings. Each layer has its own version. A layer that did not change is the same object as before, so the app can compare with `identical`.
+   - **Frame snapshot.** Built for every frame drawn. It holds the time, the values that are moving, each layer's bounds and visible rectangle, the carried values (`shows`), and for the selected layer whether it has keys, its points and its handles.
+4. **The engine reports what changed through one channel.** The channel is a single `NativeCallable.listener`, as the Dart SDK recommends (`app/lib/bridge/motolii.dart`). The engine says which snapshot is new and, for the project snapshot, the numbers of the layers that changed. The app merges any number of notices within one frame into one.
+5. **The app listens only to what it needs.** `WorkspaceController` (`app/lib/workspace/state/workspace_state.dart`) splits its state into `ValueNotifier`s: the project (whole and per layer), the frame, and the app-only state (playhead, playing, selected layer, selected key, tool panel, shelves, view options, Animate). There is no catch-all `notifyListeners` for the whole controller.
+6. **Writes are fire and forget.** A write goes into a queue and returns. A write that needs an id (`add`, `make`) gets its answer later, together with the next snapshot. If the queue already holds a write to the same value of the same layer, the newest one replaces it.
+7. **A question about any time but now, or one that takes long, is a query.** The app asks and receives a `Future`. It does not wait inside `build`: when the answer arrives, only the widget that asked is redrawn.
+8. **Data read once at start-up** (the folders of recipes, effects and expressions, and the font families) is read once on another thread when the app opens. After that:
+   - The user's folder (`~/Library/Application Support/Motolii/`) is watched while the app runs, and its content is read again when a file comes or goes.
+   - Every effect on a shelf gets a tile: eight frames of a sample balloon scene (0.1 to 1.9 seconds, played when the pointer is over the tile), rendered in a separate isolate. The engine says where each tile is kept (`~/Library/Caches/Motolii/tiles/`, named by the file and the time it was written; see `doc_tile` in `engine/document/scripts/recipes.cpp`), and the tile is shown at once. The user's files come first. An effect whose result cannot be told from the sample (above 40 dB PSNR, measured with ffmpeg) is marked NO CHANGE. The code is `app/lib/workspace/shelf/effect_tiles.dart`.
+9. **The app owns the playhead, the selection and the zoom**, as Lumit does. It tells the engine about them as writes.
+10. **A watchdog counts the waits.** `brokenCount` and `broken` in `app/lib/bridge/motolii_watch.dart` report each time the app's thread waited for the engine and each read that waited on the project longer than 2 ms. The count must stay 0.
 
-## スナップショットの中身（10/24、`engine/entry/snapshot.h`）
+## What the snapshots contain
 
-- プロジェクトのスナップショット：全体の部分（長さ・大きさ・作業範囲・印・ガイド・イージングの一覧・イージングの曲線（65点）・効果の一覧・変わったレイヤーの一覧・値の初期値の表・種類ごとに知っている値の表）と、レイヤーごとの部分（長さ・値の名前・動く値の名前・カード・効果の並び・区間・キーの時刻・言葉・止まっている値・範囲・言葉の選択肢・読み方・見せ方・値ごとのキーの時刻とそのイージング）。レイヤーごとの部分は作った版の番号を持ち、アプリは「この版より新しい物」を頼む。
-- フレームのスナップショット：時刻、レイヤーごとの枠・見えている四角・見えている値（x y z rotate scale_x scale_y opacity と、関係が動かしているか）、選んだレイヤーの動く値・点・取っ手。
+Both are JSON, built in `engine/entry/snapshot.h` and read in `app/lib/bridge/`.
 
-作り直した時の表（消した仕組み H1〜H16・C1〜C6、アプリがエンジンを呼んでいた 608 か所、測った数）は [記録](../design/bridge_rework.md)。
+- **Project snapshot.** The project-wide part holds the length, size, work range, markers, guides, the list of easings, the easing curves (65 points each), the list of effects, the list of changed layers, the table of default values and the table of values each kind knows. The per-layer part holds the length, the names of values and of values that move, the cards, the effect list, the ranges, the key times, words, resting values, ranges, word choices, how to read the layer, how it is shown, and, for each value, its key times and their easings. Each per-layer part carries the version it was built at, and the app asks for what is newer than the version it has.
+- **Frame snapshot.** The time; for each layer its bounds, visible rectangle and visible values (x, y, z, rotate, scale_x, scale_y and opacity, and whether a relation moves them); and for the selected layer its moving values, points and handles.

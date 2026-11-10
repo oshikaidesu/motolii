@@ -1,164 +1,44 @@
-# 今の土台の Windows の道（2026-10-14）
+# Porting the engine to Windows
 
-*What building the engine on Windows would take. Nothing has been built or run on Windows yet: this is what reading the sources and headers showed, what is still unknown, and the first steps once a machine is there.*
+What it would take to build the engine on Windows, for a developer who has a Windows machine and wants to start.
 
-**Windows では何もビルドしていないし、動かしてもいない。機械も無い。** ここにあるのは、手元のソースとヘッダを読んで分かった事と、まだ分からない事。
-今の土台＝Filament を Dawn（WebGPU）で、ThorVG、GStreamer、SQLite、FFmpeg。下の「ガラスを Windows の Skin に出す経路」は 10/12 の古い土台（Vulkan 直）の話で、今は使っていない。
+The engine has not been built or run on Windows yet, and no Windows machine has been available. This document records what reading the sources and headers shows, what is still unknown, and the first steps once a machine is there.
 
-## そのまま行くはずの物（読んで確かめた）
+The engine is Filament on Dawn (WebGPU), ThorVG, GStreamer, SQLite and ffmpeg.
 
-| 物 | なぜ | どこで読んだ |
+## What should work as it is
+
+| Part | Why | Where it was checked |
 |---|---|---|
-| Filament の WebGPU 版 | Windows 用の土台がある。Dawn の Vulkan か D3D12 を選ぶ | `filament_src/filament/backend/src/webgpu/platform/WebGPUPlatformWindows.cpp` 39、42行 |
-| 材質（`flat.mat`、`thick_glass.mat`、`matte.mat`）、型、重ね方 | WebGPU 用にビルドした物をそのまま使う。Mac 専用の行は無い | 材質のファイル |
-| ThorVG（AEの絵、写真、文字） | Dawn の上で描かせている。Dawn は Windows にある。ビルドは meson | `deps/thorvg.sh` |
-| 3Dファイル（gltfio） | Filament の部品。OS 専用の行は `gltf_model.h` に無い | `gltf_model.h` |
-| 文書（SQLite）、キー（GStreamer の controller）、編集の口（`motolii.h`） | どれも C。OS 専用の行は `doc.h`、`motolii.h` に無い | `doc.h`、`motolii.h` |
-| 動画を読む（GStreamer の decodebin3、切り出し・速さ・逆再生） | GStreamer の口だけ。Windows では専用回路の部品が D3D12／D3D11 の物に替わる（GStreamer が自分で選ぶ） | `video_layer.h` 160〜260行 |
-| 音と書き出し（FFmpeg） | コマンドを呼ぶだけ | `render.h` の `film` |
+| Filament's WebGPU backend | It has a Windows platform class, which lets Dawn pick Vulkan or D3D12. | `engine/third_party/filament_src/filament/backend/src/webgpu/platform/WebGPUPlatformWindows.cpp` |
+| Materials (`flat.mat`, `thick_glass.mat`, `matte.mat` and the rest), types and layering | They are built for WebGPU and have no Mac-only lines. | `engine/materials/` |
+| ThorVG (After Effects art, pictures, text) | It draws on Dawn, which exists on Windows. It builds with meson. | `engine/deps/thorvg.sh` |
+| 3D files (gltfio) | A Filament component. `gltf_model.h` has no OS-specific lines. | `engine/stage/render/gltf_model.h` |
+| The project (SQLite), keyframes (GStreamer's controller) and the edit calls (`motolii.h`) | All plain C or C++. No OS-specific lines in `doc.h` or `motolii.h`. | `engine/document/doc.h`, `engine/entry/motolii.h` |
+| Reading video (GStreamer's `decodebin3`; cutting, speed, reverse) | Only GStreamer's own interface is used. On Windows GStreamer picks the D3D12 or D3D11 hardware decoder parts itself. | `engine/media/video_layer.cpp` |
+| Sound and export (ffmpeg) | The engine only runs the command. | `film` in `engine/stage/render/render_draw.h` |
 
-## 書き直しが要る物（Mac 専用の行）
+## What needs rewriting (Mac-only code)
 
-| 物 | 今 | Windows では | 分かっている事 |
+| Part | Now | On Windows | What is known |
 |---|---|---|---|
-| 動画の絵の受け渡し（`video_layer.h` の13行） | 専用回路の絵（IOSurface）を Dawn の `SharedTextureMemoryIOSurface` で共有 | D3D12 か D3D11 の絵を、Dawn の `SharedTextureMemoryD3D12Resource`／`D3D11Texture2D`／`DXGISharedHandle` で共有 | Dawn に口がある事は確認（`webgpu.h` 633、634、656行の機能名、2750行の記述、`dawn/native/D3D12Backend.h`）。Filament に足した「機能を頼む」数行（パッチ 344〜348行）に Windows の機能名を足す必要がある |
-| 専用回路の絵を GStreamer から受け取る口 | 公開されていない札の並びを読んでいる | GStreamer の D3D12 用の公開ヘッダ（`gst/d3d12`）があるはず | **未確認。** この Mac の GStreamer には Windows 用のヘッダが入っていないので、名前を確かめられていない。あれば、Mac より正しい形（公開の口）になる |
-| 絵の範囲（狭い／フル） | 渡ってきた絵の形式（Mac の `420v`／`420f`）に聞く | D3D の絵は形式に範囲を持たない。GStreamer の札に聞く事になる | Mac では札と中身が食い違った。Windows で食い違うかは未確認 |
-| 絵をファイルに書く（`render.h` の `shoot`）、文字の立体（`letters`） | Cocoa、SceneKit | 絵は Filament の `imageio`、ほかは Windows の物 | `letters` は今夜のプロジェクトでは使っていない |
-| ビルドの手順 | zsh のスクリプトと clang | CMake か同じ手順を別に | 手つかず |
-| `gpu_interop`（Filament の描画の列に仕事を入れる口） | Filament の内側のヘッダを使う | 同じ（OS に依らない） | ThorVG を Filament の機械で描かせるのに要る |
+| Handing a decoded video frame to the GPU (`engine/media/video_layer.cpp`) | The hardware decoder's frame (an IOSurface) is shared into Dawn with `SharedTextureMemoryIOSurface`. | A D3D12 or D3D11 frame shared into Dawn with `SharedTextureMemoryD3D12Resource`, `D3D11Texture2D` or `DXGISharedHandle`. | Dawn has these interfaces: the feature names are in `webgpu.h` and `dawn/native/D3D12Backend.h`. The feature list the Filament patch requests (`engine/deps/patches/filament/filament_dawn_compute.patch`) needs the Windows feature names added. |
+| Getting the decoded frame from GStreamer | The code reads an unpublished layout of GStreamer's memory. | GStreamer should have a public D3D12 header (`gst/d3d12`). | **Not confirmed.** The GStreamer installed on the Mac has no Windows headers, so the names could not be checked. If the header exists, this will be a cleaner (public) interface than the Mac one. |
+| Color range of a frame (narrow or full) | Read from the frame's format (`420v` or `420f` on the Mac). | A D3D frame's format carries no range, so the range must be read from GStreamer's caps. | On the Mac the caps and the content disagreed. Whether they do on Windows is not known. |
+| Writing a picture to a file (`shoot` in `engine/stage/render/render_draw.mm`) | Cocoa (`NSBitmapImageRep`). | Filament's `imageio`, or any PNG writer. | Not started. |
+| Build | CMake, with Mac frameworks listed in `engine/CMakeLists.txt`, driven by `engine/build.sh` (zsh). | The same CMake file with a Windows branch, and a build script that is not zsh. | Not started. |
+| `gpu_interop` (a way to put work into Filament's render queue) | Uses Filament's internal headers. | The same on every OS. | Needed so that ThorVG draws on Filament's device (`engine/gpu/gpu_interop.h`). |
+| Frame timing | Thermion's `FrameScheduler` uses CVDisplayLink. | The same class uses DXGI on Windows (`engine/third_party/thermion_frame/`). | Not tried. |
+| Showing the preview in the app | `engine/stage/live.h` draws into three IOSurface-backed CVPixelBuffers that a Flutter external texture reads (`app/macos/Runner/MainFlutterWindow.swift`). | A shared D3D11 texture handed to Flutter's Windows texture registrar. | See the unknowns below. The app has no `windows/` runner yet. |
 
-## 分からない事
+## What is not known
 
-- Dawn の D3D12 と Vulkan のどちらで行くか。動画の受け渡しは D3D12 の方が口が直接（D3D12 の絵をそのまま渡せる）。
-- 2面の絵（明るさ＋色）の形式 `R8BG8Biplanar420Unorm` が Dawn の D3D12 で同じように使えるか（機能名 `DawnMultiPlanarFormats` はある。試していない）。
-- 専用回路で同時に読める動画の本数（Mac は59本まで）。
-- Flutter の Windows 版に動く絵を渡す口（Mac で使った形とは別の物になる）。
+- Whether to run Dawn on D3D12 or Vulkan. Video hand-over is more direct with D3D12, because a D3D12 frame can be passed as it is.
+- Whether the two-plane format `R8BG8Biplanar420Unorm` (luma plus chroma) works the same way on Dawn's D3D12 backend. The feature `DawnMultiPlanarFormats` exists, but it has not been tried.
+- How many videos the hardware decoder can read at the same time. On the Mac it is 59.
+- How to give Flutter on Windows a moving picture without a copy. It will differ from the Mac code. Flutter's Windows embedder accepts a GPU surface in the form of a DXGI shared handle or an `ID3D11Texture2D` (BGRA8888 or RGBA8888).
+- Which kind of D3D11 shared handle Dawn and Flutter can both open, and how to choose the same GPU on a laptop that has two.
 
-## 最初の一歩（機械が来たら）
+## First step
 
-動画の無いプロジェクト（マスク）を1本、Windows でビルドして同じ絵を出す。上の「そのまま行くはずの物」だけで出来ているので、ここで詰まるならビルドの手順の問題。
-
----
-
-# ガラスを Windows の Skin に出す経路
-
-2026-10-12 に書いた。**Windows では何もビルドしていないし、動かしてもいない。** ここにあるのは、ヘッダと公式ソースを読んで決めた道順と、実機で最初に確かめる項目。
-
-Mac で動いている形(`glass_live.h`、`build_live.sh`、`app/lib/sets/glass_live.dart`)と同じ絵、同じ操作、コピーなしを Windows で通すのが目的。
-
-## ひとことで
-
-- Mac: Filament(Metal)が共有バッファ(CVPixelBuffer)に直接描く。Flutter が同じバッファを表示する。
-- Windows: Filament(Vulkan)が **D3D11 の共有テクスチャ**に直接描く。Flutter が同じテクスチャを表示する。
-
-形は同じ。違うのは「共有バッファの種類」と「描き終わりの知らせ方」の2点だけ。
-
-## なぜこの形か
-
-- Filament の Windows 版に D3D はない。Vulkan か OpenGL。
-- Flutter の Windows 版は D3D11(ANGLE)で描く。外から受け取れる GPU の絵は「DXGI 共有ハンドル」か「ID3D11Texture2D」の2種類だけ。
-- なので橋は「Vulkan から D3D11 の共有テクスチャを開く」になる。これは Vulkan の標準拡張(`VK_KHR_external_memory_win32`)。
-- Flutter のテクスチャ受け渡しは OS ごとに別の API なので、ここだけは OS 別のつなぎが避けられない。ガラスの絵を作る部分は共通のまま。
-
-## 読んで確かめたこと
-
-| 事実 | どこで |
-|---|---|
-| スワップチェーンを自前の絵に差し替える口が公式にある。`createSwapChain` / `getSwapChainBundle` / `acquire` / `present` / `destroy` が全部 `virtual` | `third_party/filament/include/backend/platforms/VulkanPlatform.h` 195〜280行 |
-| 拡張を足してデバイスを作る口がある(`createVkDevice` が `virtual`)。Filament がデバイスを持ったままでよい | 同 534行 |
-| Windows 用の土台クラス `VulkanPlatformWindows` がある | `VulkanPlatformWindows.h` |
-| `Engine::createSwapChain(ウィンドウ, flags)` に渡したポインタは、そのまま自前の `createSwapChain` に届く。幅と高さだけの版(ヘッドレス)だと `present` が呼ばれない | Filament v1.77.2 `VulkanSwapChain.cpp` |
-| `present(chain, index, finishedDrawing)` に「描き終わったら立つセマフォ」が渡される | 同上、`VulkanPlatform.h` 218行 |
-| 表示用のレイアウト変更は切れる(`Customization::transitionSwapChainImageLayoutForPresent = false`) | `VulkanPlatform.h` 165行 |
-| **Mac で使った `setFrameCompletedCallback` は Vulkan では中身が空** | Filament v1.77.2 `VulkanDriver.cpp` |
-| Vulkan では `Texture::Builder::import` は使えない(アサートで落ちる) | 同上 |
-| Flutter Windows: `GpuSurfaceTexture(kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle, コールバック)`、形式は `BGRA8888` か `RGBA8888`、`RegisterTexture` / `MarkTextureFrameAvailable` | Flutter `flutter_texture_registrar.h`、`client_wrapper/include/flutter/texture_registrar.h` |
-
-先例: Thermion(Flutter + Filament、Apache-2.0)が Windows で同じ橋を渡している。ただしあちらは「Filament の外部画像に描く → GPU 内で1回コピー → D3D11 共有テクスチャ」で、コピーが1回入る。メモは `../research_notes/filament_integrations.md` の3章。
-
-## 作るもの
-
-### 1. Filament の Windows 版と材質
-
-- 公式の配布物 `filament-v1.77.2-windows.tgz` を `third_party/filament` と同じ並びで置く。Vulkan が入っているかは未確認(手順の最初に確かめる)。
-- 材質(`.mat` 64枚)を Vulkan 向けに作り直す。`matc -a vulkan -p desktop`。中身は書き換えない。
-
-### 2. 絵を描く本体の持ち運び
-
-OS で違う部分は `glass_door.h` の関数4つに切り出してある(2026-10-12、Mac で確認済み: 切り出しの前後で止め絵が1バイトも変わらず、60 fps)。
-
-| 関数 | 役目 | Mac(`glass_door_mac.mm`、44行) |
-|---|---|---|
-| `glass_door_engine()` | その OS の方式でエンジンを作る | Metal |
-| `glass_door_open(engine, w, h, finished)` | バッファを3枚作る。描き終わるたびに `finished(番号)` を呼ぶ。描画スレッドを時間どおり起こす設定もここ | CVPixelBuffer 3枚、スワップチェーン3本、Filament の描き終わり通知、QoS |
-| `glass_door_chain(番号)` | その1枚に描くために `beginFrame` に渡すもの | その1枚のスワップチェーン |
-| `glass_door_hand(番号)` | ホストに渡す形にする | 保持した CVPixelBuffer |
-
-**Windows でやることは、この4つを `glass_door_win.cpp` に書くことだけ。** `glass_scene.mm` と `glass_live.mm` は Objective-C を使っていない(`clang++ -x c++ -fsyntax-only -DGLASS_LIB` でエラー 0 を確認)。拡張子は `.mm` のままなので、Windows では `-x c++` を付けてコンパイルする。
-
-残る Apple 寄りの書き方(どれも1行ずつ):
-
-- `glass_live.mm` の `setenv` → Windows は `_putenv_s`。
-- `glass_live.mm` の `__attribute__((visibility("default")))` → `__declspec(dllexport)`。
-- `glass_scene.mm` 1016行の `(const int[]){0, 0}` という書き方(GNU 拡張。clang-cl なら通るはず、MSVC は通らない)。
-- `std::system("mkdir -p …")`(ライブラリ版では通らない道)。
-
-コンパイラは clang-cl を第一候補にする(今のコードは clang でしか通していない)。
-
-### 3. 扉(新しく書くのはここだけ)
-
-`VulkanPlatformWindows` を継いだクラス1つ。見積もり 200行前後。
-
-- `createVkDevice`: Filament が用意した設定に `VK_KHR_external_memory_win32` を足してからデバイスを作る。
-- `getCustomization`: 表示用のレイアウト変更を切る。
-- `createSwapChain`: D3D11 で BGRA8 の共有テクスチャを3枚作る。同じ3枚を Vulkan の絵として開く。深度の絵も1枚作る。
-- `getSwapChainBundle`: その3枚と深度、形式、大きさを返す。
-- `acquire`: Flutter が今見せていない1枚の番号を返す。
-- `present`: 渡されたセマフォを待つ空の提出を1回出して、フェンスを付ける。別スレッドがフェンスを待って、立ったらその1枚を「表」にして `frames` を1つ進める。
-- `hasResized` は常に偽。`destroy` で片付け。
-
-Mac との違いが1つある。Mac はスワップチェーンを3本持った。Windows は1本で絵が3枚。こっちのほうが Vulkan の普通の形。`glass_door_chain(番号)` は「次の `acquire` はこの番号」と覚えてから、その1本を返せばよい。
-
-4つの関数との対応: `glass_door_engine` がこのクラスを `Engine::Builder().backend(VULKAN).platform(...)` に渡す。`glass_door_open` は `engine->createSwapChain(自前の構造体, 0)` を1回呼ぶ。`present` の先のスレッドが `finished(番号)` を呼ぶ。`glass_door_hand` が共有ハンドルを返す。
-
-`present` は Filament の描画スレッドから呼ばれる。そこで提出するので、Filament とキューを取り合わない。Thermion が入れていた「キューに鍵をかける細工」は要らないはず(未確認)。
-
-### 4. Skin 側
-
-- `app` に Windows の入れ物がまだ無い。`flutter create --platforms=windows .` で作る。
-- `windows/runner/flutter_window.cpp` に、Mac の `GlassTexture`(`macos/Runner/MainFlutterWindow.swift` の末尾、約70行)と同じものを C++ で書く。
-  - チャンネル `motolii/glass` の `start {lib, base, width, height, env}`。`LoadLibrary` で DLL を開いて `glass_env` / `glass_start` を呼ぶ。
-  - `GpuSurfaceTexture` を登録。コールバックで `glass_front()` のハンドルを `FlutterDesktopGpuSurfaceDescriptor` に入れて返す。
-  - `glass_frames()` が進んだら `MarkTextureFrameAvailable`。
-- `glass_live.dart`: ライブラリ名を `libglass_live.dylib` と `glass_live.dll` で切り替える。`GLASS_DIR` の既定値を OS で分ける。ほかはそのまま(ドラッグ、ホイール、つまみ、読み出し)。
-- Windows には Mac のようなサンドボックスの設定は無い。
-
-## 実機で最初に確かめる順
-
-小さく切って、1つずつ絵で確かめる。
-
-1. **Filament が Vulkan で立つか。** 配布物に Vulkan が入っているか。`glass_scene` の単体版を Vulkan でビルドして、PNG を1枚出す。Mac の同じ設定の絵と見比べる(1バイト一致は期待しない。GPU が違う)。
-2. **速さ。** 単体版の `PACE=1 PACE_HZ=2000 PACE_FRAMES=2500` で1コマ何 ms か。Mac(M4)は 1080p で約 5〜9 ms だった。
-3. **扉だけ。** 三角形1枚を D3D11 の共有テクスチャに描いて、D3D11 側で読んで色を確かめる。Flutter はまだ使わない。
-4. **Flutter に出す。** 止まった絵 → 動く絵 → 60 fps。
-5. **操作。** ドラッグ、ホイール、つまみ、ページを離れて戻る。
-
-## 分かっていない点(実機で決める)
-
-- **共有ハンドルの種類。** D3D11 の共有ハンドルには古い型と新しい型(NT ハンドル)がある。Vulkan 側の指定(`D3D11_TEXTURE_KMT_BIT` か `D3D11_TEXTURE_BIT`)と、Flutter が開ける型が一致する組を探す。Thermion の `flutter_d3d_texture.cpp` と `WindowsVulkanTexture.cpp` が答えを持っている。
-- **GPU が2つあるノート PC。** Vulkan、D3D11、Flutter が同じ GPU に乗らないと共有できない。Vulkan のデバイスの LUID で D3D11 のアダプタを選ぶ(Thermion と同じ)。Flutter 側が別の GPU を選んだ場合の扱いは未定。
-- **描き終わりの待ち方。** 上の「セマフォ → フェンス」が本線。だめなら Filament の `Fence` を使う。どちらも Mac の通知より一手多い。
-- **上下と色。** 絵が逆さになる、赤と青が入れ替わる、明るさがずれる、のどれかは出ると思っておく。3番の三角形で先に潰す。
-- **60 Hz の刻み。** Mac ではスレッドの優先度が低いと 45 fps まで落ちた。Windows の同じ罠はタイマーの粗さ(既定で約15 ms)。
-- **止め方。** Mac は `Engine::destroy` が落ちるので「止める = 休む」にした。Windows も同じにする。
-- **アプリとして配る形。** DLL と材質ファイルを今は絶対パスで読んでいる。見本のアプリとしてはそのままでよい。
-
-## 退路
-
-扉(3)がどうしても通らないとき: Thermion と同じ「外部画像に描く → GPU 内で1回コピー → 共有テクスチャ」。Filament は無改造のまま、動いた実績がある。コピーは GPU の中で1回、CPU には戻らない。
-
-## これは決定ではない
-
-- これは「Skin のアプリにガラスを出す」ための入口。マスクや ThorVG と GPU を分け合う話(`motolii/melt`、`motolii/bridge`)とは別で、あちらの方式はまだ選んでいない。
-- Filament を Vulkan で動かすこと自体は、どの方式を選んでも Windows で必要になる。手順の1と2はそのまま使える。
+Build one project without video (a mask, for example) on Windows and draw the same picture as on the Mac. Everything it needs is in the first table above, so if this fails, the cause is the build procedure.
