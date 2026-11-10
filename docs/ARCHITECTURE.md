@@ -82,7 +82,7 @@ flowchart TB
 
 ## The project file
 
-- A `.motolii` file is a SQLite database. Tables hold layers, values, keyframes and the easings between keys. Easings are expressions, and SQLite functions `bezier()` and `anime()` evaluate them (`engine/document/undo.cpp`, `doc.h`).
+- A `.motolii` file is a SQLite database. Tables hold layers, values, keyframes and the easings between keys. Easings are expressions, and SQLite functions `bezier()` and `anime()` evaluate them (`engine/document/undo.cpp`).
 - Undo records each change in the `undo_step` table (`engine/document/undo.h`).
 - Layer kinds are video, image, text, solid, shape, camera and light, plus behaviour layers (`engine/document/kinds.h`).
 - `engine/document/edit/` changes the project and `engine/document/evaluate/` computes what it shows at a given time.

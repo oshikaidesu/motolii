@@ -14,7 +14,7 @@ The engine is Filament on Dawn (WebGPU), ThorVG, GStreamer, SQLite and ffmpeg.
 | Materials (`flat.mat`, `thick_glass.mat`, `matte.mat` and the rest), types and layering | They are built for WebGPU and have no Mac-only lines. | `engine/materials/` |
 | ThorVG (After Effects art, pictures, text) | It draws on Dawn, which exists on Windows. It builds with meson. | `engine/deps/thorvg.sh` |
 | 3D files (gltfio) | A Filament component. `gltf_model.h` has no OS-specific lines. | `engine/stage/render/gltf_model.h` |
-| The project (SQLite), keyframes (GStreamer's controller) and the edit calls (`motolii.h`) | All plain C or C++. No OS-specific lines in `doc.h` or `motolii.h`. | `engine/document/doc.h`, `engine/entry/motolii.h` |
+| The project (SQLite), keyframes (GStreamer's controller) and the edit calls (`motolii.h`) | All plain C or C++. No OS-specific lines in `document.h` or `motolii.h`. | `engine/document/document.h`, `engine/entry/motolii.h` |
 | Reading video (GStreamer's `decodebin3`; cutting, speed, reverse) | Only GStreamer's own interface is used. On Windows GStreamer picks the D3D12 or D3D11 hardware decoder parts itself. | `engine/media/video_layer.cpp` |
 | Sound and export (ffmpeg) | The engine only runs the command. | `film` in `engine/stage/render/render_draw.h` |
 

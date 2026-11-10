@@ -49,9 +49,10 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 |---|---|
 | `entry/` | The public surface. `motolii.h` is the whole C API; `render_thread.h` owns the render thread that holds the project and the GPU; `calls*.h` are the API calls grouped by purpose (find, map, sound, files, time); `edit.cpp` is the shell. |
 | `base/` | Small helpers used everywhere. `json.h` is the single entry point to rapidjson. |
-| `document/` | The project, stored in SQLite. `doc.h` is the one include for the whole module; `document.h` defines `Doc`, the open project, as one member for each part, each part a struct in the header that owns it; `kinds.h` lists the kinds of layer and the named values; `undo.h` keeps the change tables and undo; `values.h`, `cards.h` and `marks.h` hold layer values and keys; `match.h` matches items. |
+| `document/` | The project, stored in SQLite. `document.h` defines `Doc`, the open project, as one member for each part, each part a struct in the header that owns it; `kinds.h` lists the kinds of layer and the named values; `undo.h` keeps the change tables and undo; `values.h`, `cards.h` and `marks.h` hold layer values and keys; `match.h` matches items. |
 | `document/edit/` | Changes to the project: layers, keys, easings, effects, parents, relations, arrangement and time (`layer_edit.h`, `keys_put.h`, `fx_put.h`). |
 | `document/evaluate/` | Computing what a project shows at a given time: values between keys, effect lists, camera, world and materials (`evaluate.h`, `value_at.h`, `world.h`). |
+| `document/match/` | Rebuilding the preview stage to match the project, one step at a time: `match_<kind>.cpp` for each kind of layer (video, image, text, shape, models, light), `match_look.cpp`, `match_layers.cpp`, and `match_describe.cpp`, which writes the text that tells whether a layer must be rebuilt. `rebuild.h` holds what one call works out early. The steps are listed in `doc_match` (`../match.cpp`). |
 | `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, and the shelf folder lists (`recipes.h`, `scripts.h`, `folders.h`). |
 | `shelf/` | Where the shelf folders are: the library's and the user's, and a count of changed files (`shelf_folders.h`). |
 | `stage/` | Drawing. `live.h` hands frames to the app. |
@@ -109,6 +110,6 @@ runs code from the net unchanged: only `community/sites/adapter*.h`, `community/
 
 - [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html), formatted with the root `.clang-format`.
 - Every header is self-contained, has an include guard named `MOTOLII_<PATH>_<NAME>_H_`
-  (`MOTOLII_DOCUMENT_DOC_H_` for `document/doc.h`), and has its source file beside it.
+  (`MOTOLII_DOCUMENT_DOCUMENT_H_` for `document/document.h`), and has its source file beside it.
 - Functions of the document module start with `doc_`; the file names do not repeat it.
 - Tests are `<name>_test.cpp` beside the code, written with GoogleTest.

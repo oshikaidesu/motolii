@@ -39,7 +39,7 @@
 来た人も AI も、最初の 3 分でこれだけ読めば動ける。
 
 - 始める前に `git config core.hooksPath .githooks`。コミットのたびに、Dart が `dart format` のままかだけが確かめられる（[.githooks/README.md](.githooks/README.md)）。整形・解析・テストは push と PR のたびに CI（`.github/workflows/checks.yml`）が回す。
-- 言葉：コードも文書も、アプリ・エンジン・レイヤー・プロジェクト・プレビューと、After Effects などと同じ言葉で呼ぶ。左のタブだけ「棚」（Blender の Asset Shelf）。古い言い方との対応は [rename_words.md §1](docs/design/renamed_words.md)。
+- 言葉：コードも文書も、アプリ・エンジン・レイヤー・プロジェクト・プレビューと、After Effects などと同じ言葉で呼ぶ。左のタブだけ「棚」（Blender の Asset Shelf）。古い言い方との対応は [renamed_words.md §1](docs/design/renamed_words.md)。
 - 確かめるときは、錠の要らない静的な検査から始める。
   - Dart：`cd app && dart analyze lib`
   - C++：`./engine/check_syntax.sh`（CMake が各ソースに渡す指定で `clang++ -fsyntax-only`。何も書かない。`ok: <本数> sources` か、誤りとその行）
