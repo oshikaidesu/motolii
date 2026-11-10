@@ -112,7 +112,7 @@ target_include_directories(motolii_flags INTERFACE
   ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
   ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap ${JOLT}
   ${HOMEBREW}/opt/sqlite/include ${HOMEBREW}/opt/luajit/include/luajit-2.1 ${HOMEBREW}/opt/quickjs-ng/include
-  ${HOMEBREW}/opt/onnxruntime/include/onnxruntime)
+  ${THIRD_PARTY}/onnxruntime/include)
 
 # ---- Modules: one target a folder, lowest first. A module lists the modules it includes headers from; CMake refuses
 # a cycle between them. To add a file, add it to its module below.
@@ -344,9 +344,13 @@ add_library(motolii_entry OBJECT
   entry/snapshot.cpp
   entry/window.cpp)
 target_link_libraries(motolii_entry PUBLIC motolii_flags motolii_base motolii_shelf motolii_stage_render motolii_media motolii_motion motolii_stage_canvas motolii_document motolii_stage motolii_preview)
-target_link_directories(motolii_entry PUBLIC ${HOMEBREW}/opt/onnxruntime/lib)
+# ONNX Runtime is the release deps/onnxruntime.sh fetches: one library that carries its own dependencies.
+if(NOT EXISTS ${THIRD_PARTY}/onnxruntime/lib)
+  message(FATAL_ERROR "third_party/onnxruntime is not fetched: run engine/deps/onnxruntime.sh")
+endif()
+target_link_directories(motolii_entry PUBLIC ${THIRD_PARTY}/onnxruntime/lib)
 target_link_libraries(motolii_entry PUBLIC onnxruntime)
-target_link_options(motolii_entry PUBLIC -Wl,-rpath,${HOMEBREW}/opt/onnxruntime/lib)
+target_link_options(motolii_entry PUBLIC -Wl,-rpath,${THIRD_PARTY}/onnxruntime/lib)
 
 # ---- What each module can include. Headers are written by their path from this folder ("stage/render/render.h"), so
 # one include folder for everybody would let a module include any other. Instead each module is compiled with a folder

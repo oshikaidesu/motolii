@@ -4,13 +4,12 @@ brew "cmake"
 brew "ninja"
 brew "meson"
 brew "pkgconf"
-# What the editor links: films (GStreamer), the document (SQLite), AviUtl's scripts (LuaJIT), effects and recipes (QuickJS-ng),
-# the shelves' maps telling how alike pictures look (ONNX Runtime)
+# What the editor links: films (GStreamer), the document (SQLite), AviUtl's scripts (LuaJIT), effects and recipes (QuickJS-ng).
+# (The shelves' maps telling how alike pictures look use ONNX Runtime, which engine/deps/onnxruntime.sh fetches.)
 brew "gstreamer"
 brew "sqlite"
 brew "luajit"
 brew "quickjs-ng"
-brew "onnxruntime"
 # What the editor runs: writing a film (ffmpeg makes the mp4, render_draw.h's film)
 brew "ffmpeg"
 # (not the build: shelves/effects/sources/from_three.py, which makes effects from three.js shaders, wants naga on PATH: brew install naga-cli)
