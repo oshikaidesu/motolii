@@ -65,13 +65,32 @@ target_include_directories(video_flash_check PRIVATE ${ENGINE} ${IRIS}/IRIS/incl
   ${IRIS}/spdlog/include ${IRIS}/json/single_include ${IRIS}/opencv_out/include/opencv4)
 
 # Shaders turned into WGSL by Filament's glslang and Dawn's Tint (ISF's GLSL, AviUtl2's HLSL).
-add_library(shader_translation OBJECT community/isf/isf.cpp community/aviutl/aviutl.cpp)
-target_compile_definitions(shader_translation PRIVATE TINT_BUILD_SPV_READER=1 TINT_BUILD_WGSL_WRITER=1 TINT_BUILD_WGSL_READER=1)
-set_source_files_properties(community/aviutl/aviutl.cpp PROPERTIES COMPILE_DEFINITIONS ENABLE_HLSL)
-target_include_directories(shader_translation PRIVATE ${ENGINE}
+add_library(isf_translation OBJECT community/isf/isf.cpp)
+add_library(aviutl_translation OBJECT community/aviutl/aviutl.cpp)
+target_compile_definitions(aviutl_translation PRIVATE ENABLE_HLSL)
+foreach(translation isf_translation aviutl_translation)
+  target_compile_definitions(${translation} PRIVATE TINT_BUILD_SPV_READER=1 TINT_BUILD_WGSL_WRITER=1 TINT_BUILD_WGSL_READER=1)
+  target_include_directories(${translation} PRIVATE ${ENGINE}
   ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${HOMEBREW}/opt/sqlite/include
   ${FILAMENT}/third_party/glslang ${FILAMENT}/third_party/spirv-tools/include ${FILAMENT}/libs/filamat/src
   ${FILAMENT}/third_party/dawn ${FILAMENT}/third_party/dawn/include ${FILAMENT}/out/wgpu/third_party/dawn/gen)
+endforeach()
+
+# ---- Other projects' libraries, each named once and linked by the module that uses it.
+
+# Filament with its WebGPU backend, and our interop built inside Filament's own build (gpu/CMakeLists.txt).
+add_library(filament_libraries INTERFACE)
+target_link_directories(filament_libraries INTERFACE ${FILAMENT_SDK}/lib/arm64)
+target_link_libraries(filament_libraries INTERFACE
+  ${FILAMENT}/out/wgpu/filament/motolii_probe/libmotolii_interop.a
+  gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl bluevk filabridge filaflat utils geometry smol-v
+  ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
+  matdbg filamat civetweb viewer z
+  "-framework Cocoa" "-framework SceneKit" "-framework ModelIO" "-framework Metal" "-framework CoreVideo"
+  "-framework QuartzCore" "-framework IOSurface" "-framework IOKit" "-framework AVFoundation" "-framework CoreMedia"
+  "-framework CoreGraphics" "-framework Accelerate")
+add_library(skia_libraries INTERFACE)
+target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${SKIA}/out/path/libskia.a)
 
 # ---- What every module is compiled with.
 
@@ -89,7 +108,6 @@ target_include_directories(motolii_flags INTERFACE ${ENGINE}
   ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap ${JOLT}
   ${HOMEBREW}/opt/sqlite/include ${HOMEBREW}/opt/luajit/include/luajit-2.1 ${HOMEBREW}/opt/quickjs-ng/include
   ${HOMEBREW}/opt/onnxruntime/include/onnxruntime)
-target_link_libraries(motolii_flags INTERFACE PkgConfig::GSTREAMER PkgConfig::FFMPEG)
 
 # ---- Modules: one target a folder, lowest first. A module lists the modules it includes headers from; CMake refuses
 # a cycle between them. To add a file, add it to its module below.
@@ -98,16 +116,23 @@ target_link_libraries(motolii_flags INTERFACE PkgConfig::GSTREAMER PkgConfig::FF
 add_library(motolii_base INTERFACE)
 
 # Adapter: absent motion code run as it is.
-add_library(motolii_community_absent_motion INTERFACE)
+add_library(motolii_community_absent_motion STATIC $<TARGET_OBJECTS:absent_motion>)
+target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
+# Only part of AbsentMotion is compiled: what its scene.cpp would call to draw a whole scene is never reached, and
+# the linker has to drop it before it looks for those functions.
+target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
 
 # Adapter: quickjs code run as it is.
-add_library(motolii_community_quickjs OBJECT
+add_library(motolii_community_quickjs STATIC
   community/quickjs/script.cpp
   community/quickjs/script_leva.cpp)
 target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags)
+target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)
+target_link_libraries(motolii_community_quickjs PUBLIC qjs)
+target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
 
 # Adapter: after effects code run as it is.
-add_library(motolii_community_after_effects OBJECT
+add_library(motolii_community_after_effects STATIC
   community/after_effects/lottie_slots.cpp)
 target_link_libraries(motolii_community_after_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs)
 
@@ -115,35 +140,36 @@ target_link_libraries(motolii_community_after_effects PUBLIC motolii_flags motol
 add_library(motolii_gpu INTERFACE)
 
 # Where the shelves are on disk.
-add_library(motolii_shelf OBJECT
+add_library(motolii_shelf STATIC
   shelf/shelf_folders.cpp)
 target_link_libraries(motolii_shelf PUBLIC motolii_flags)
 
 # Adapter: sites code run as it is.
-add_library(motolii_community_sites OBJECT
+add_library(motolii_community_sites STATIC
   community/sites/adapter.cpp
   community/sites/adapter_net.cpp
   community/sites/adapter_shadertoy.cpp
   community/sites/adapter_shadertoy_json.cpp)
 target_link_libraries(motolii_community_sites PUBLIC motolii_flags motolii_base)
+target_link_libraries(motolii_community_sites PUBLIC PkgConfig::GSTREAMER)   # adapter_net.cpp fetches with GLib
 
 # Adapter: three code run as it is.
-add_library(motolii_community_three OBJECT
+add_library(motolii_community_three STATIC
   community/three/solid_three.cpp
   community/three/three_isf.cpp)
 target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base)
 
 # Adapter: isf code run as it is.
-add_library(motolii_community_isf INTERFACE)
-target_link_libraries(motolii_community_isf INTERFACE motolii_base motolii_community_sites motolii_community_three)
+add_library(motolii_community_isf STATIC $<TARGET_OBJECTS:isf_translation>)
+target_link_libraries(motolii_community_isf PUBLIC filament_libraries motolii_base motolii_community_sites motolii_community_three)
 
 # Adapter: playcanvas code run as it is.
-add_library(motolii_community_playcanvas OBJECT
+add_library(motolii_community_playcanvas STATIC
   community/playcanvas/splatfx.cpp)
 target_link_libraries(motolii_community_playcanvas PUBLIC motolii_flags motolii_community_quickjs)
 
 # Filament: the scene, cameras, lights, 3D files.
-add_library(motolii_stage_render OBJECT
+add_library(motolii_stage_render STATIC
   stage/render/gltf_model.cpp
   stage/render/point_cloud.cpp
   stage/render/render_draw.cpp
@@ -151,15 +177,16 @@ add_library(motolii_stage_render OBJECT
   stage/render/render_layers.cpp
   stage/render/render_stage.cpp)
 target_link_libraries(motolii_stage_render PUBLIC motolii_flags motolii_community_playcanvas)
+target_link_libraries(motolii_stage_render PUBLIC filament_libraries)
 
 # Screen effects.
-add_library(motolii_stage_effects OBJECT
+add_library(motolii_stage_effects STATIC
   stage/effects/screen_fx.cpp
   stage/effects/viewer_settings.cpp)
 target_link_libraries(motolii_stage_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_community_isf motolii_stage_render)
 
 # Adapter: aviutl code run as it is.
-add_library(motolii_community_aviutl OBJECT
+add_library(motolii_community_aviutl STATIC
   community/aviutl/aviutl_fx.cpp
   community/aviutl/aviutl_load.cpp
   community/aviutl/aviutl_obj.cpp
@@ -168,19 +195,23 @@ add_library(motolii_community_aviutl OBJECT
   community/aviutl/aviutl_pixels.cpp
   community/aviutl/aviutl_run.cpp)
 target_link_libraries(motolii_community_aviutl PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_stage_render motolii_stage_effects)
+target_sources(motolii_community_aviutl PRIVATE $<TARGET_OBJECTS:aviutl_translation>)
+target_link_directories(motolii_community_aviutl PUBLIC ${HOMEBREW}/opt/luajit/lib)
+target_link_libraries(motolii_community_aviutl PUBLIC luajit-5.1)
+target_link_options(motolii_community_aviutl PUBLIC -Wl,-rpath,${HOMEBREW}/opt/luajit/lib)
 
 # Adapter: hydra code run as it is.
-add_library(motolii_community_hydra OBJECT
+add_library(motolii_community_hydra STATIC
   community/hydra/hydra_isf.cpp)
 target_link_libraries(motolii_community_hydra PUBLIC motolii_flags)
 
 # Adapter: p5 code run as it is.
-add_library(motolii_community_p5 OBJECT
+add_library(motolii_community_p5 STATIC
   community/p5/adapter_p5_shader.cpp)
 target_link_libraries(motolii_community_p5 PUBLIC motolii_flags motolii_base motolii_community_sites motolii_community_hydra)
 
 # Video, sound and MIDI, on GStreamer.
-add_library(motolii_media OBJECT
+add_library(motolii_media STATIC
   media/midi_notes.cpp
   media/midi_roll.cpp
   media/sound_level.cpp
@@ -189,40 +220,48 @@ add_library(motolii_media OBJECT
   media/video_frames_for_scripts.cpp
   media/video_layer.cpp)
 target_link_libraries(motolii_media PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_stage_render)
+target_sources(motolii_media PRIVATE $<TARGET_OBJECTS:video_flash_check>)
+target_link_directories(motolii_media PUBLIC ${IRIS}/opencv_out/lib ${IRIS}/opencv_out/lib/opencv4/3rdparty)
+target_link_libraries(motolii_media PUBLIC PkgConfig::GSTREAMER PkgConfig::FFMPEG ${IRIS}/lib/libiris.a
+  opencv_features2d opencv_videoio opencv_imgcodecs opencv_imgproc opencv_core tegra_hal)
 
 # Easing curves and Lottie motion.
-add_library(motolii_motion OBJECT
+add_library(motolii_motion STATIC
   motion/easing_curves.cpp
   motion/lottie_motion.cpp)
 target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_absent_motion)
 
 # Adapter: script runner code run as it is.
-add_library(motolii_community_script_runner OBJECT
+add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
   community/script_runner/script_runner.cpp)
 target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_media motolii_motion)
 
 # Rigid bodies, on Jolt.
-add_library(motolii_physics OBJECT
+add_library(motolii_physics STATIC
   physics/jolt.cpp)
 target_link_libraries(motolii_physics PUBLIC motolii_flags)
+target_link_libraries(motolii_physics PUBLIC ${JOLT}/jbuild/libJolt.a)
 
 # ThorVG: 2D drawings placed in the scene.
-add_library(motolii_stage_canvas OBJECT
+add_library(motolii_stage_canvas STATIC
   stage/canvas/canvas_cache.cpp
   stage/canvas/canvas_edge.cpp
   stage/canvas/canvas_flat.cpp
   stage/canvas/canvas_renderables.cpp
   stage/canvas/canvas_sketch.cpp)
 target_link_libraries(motolii_stage_canvas PUBLIC motolii_flags motolii_community_absent_motion motolii_gpu motolii_shelf motolii_stage_render motolii_community_script_runner)
+target_sources(motolii_stage_canvas PRIVATE $<TARGET_OBJECTS:thorvg_path_operators> $<TARGET_OBJECTS:skia_path_operations>)
+target_link_libraries(motolii_stage_canvas PUBLIC ${THORVG}/build_dawn/src/libthorvg-1.a skia_libraries
+  ${THIRD_PARTY}/libtess2/build/libtess2.a)
 
 # A layer's own effect stack.
-add_library(motolii_stage_layer_effects OBJECT
+add_library(motolii_stage_layer_effects STATIC
   stage/layer_effects/layer_fx.cpp)
 target_link_libraries(motolii_stage_layer_effects PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_community_three motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_stage_canvas)
 
 # The project (SQLite): its values, edits, evaluation at a time.
-add_library(motolii_document OBJECT
+add_library(motolii_document STATIC
   document/cards.cpp
   document/edit/arrange.cpp
   document/edit/easings_put.cpp
@@ -272,14 +311,16 @@ add_library(motolii_document OBJECT
   document/scripts/scripts.cpp
   document/undo.cpp)
 target_link_libraries(motolii_document PUBLIC motolii_flags motolii_community_absent_motion motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_physics motolii_stage_canvas motolii_stage_layer_effects)
+target_link_libraries(motolii_document PUBLIC ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib
+  ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 
 # The frame handed to the app.
-add_library(motolii_stage OBJECT
+add_library(motolii_stage STATIC
   stage/live.mm)
 target_link_libraries(motolii_stage PUBLIC motolii_flags motolii_gpu motolii_stage_render motolii_stage_effects)
 
 # The playback cache.
-add_library(motolii_preview OBJECT
+add_library(motolii_preview STATIC
   preview/playback_cache.cpp)
 target_link_libraries(motolii_preview PUBLIC motolii_flags motolii_community_quickjs motolii_shelf motolii_stage_render motolii_stage_canvas motolii_document motolii_stage)
 
@@ -298,37 +339,17 @@ add_library(motolii_entry OBJECT
   entry/snapshot.cpp
   entry/window.cpp)
 target_link_libraries(motolii_entry PUBLIC motolii_flags motolii_base motolii_shelf motolii_stage_render motolii_media motolii_motion motolii_stage_canvas motolii_document motolii_stage motolii_preview)
+target_link_directories(motolii_entry PUBLIC ${HOMEBREW}/opt/onnxruntime/lib)
+target_link_libraries(motolii_entry PUBLIC onnxruntime)
+target_link_options(motolii_entry PUBLIC -Wl,-rpath,${HOMEBREW}/opt/onnxruntime/lib)
 
-# ---- The library: every module, and the sources with flags of their own.
+# ---- The library the app loads: the entry module's objects (the C API). Every other module is a static library
+# reached through the dependencies the modules declare.
 
 add_library(motolii SHARED
-  third_party/scipy_lsap/rectangular_lsap.cpp third_party/thermion_frame/FrameScheduler.cpp
-  $<TARGET_OBJECTS:thorvg_path_operators> $<TARGET_OBJECTS:skia_path_operations> $<TARGET_OBJECTS:absent_motion>
-  $<TARGET_OBJECTS:video_flash_check> $<TARGET_OBJECTS:shader_translation>)
-target_link_libraries(motolii PRIVATE
-  motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_playcanvas 
-  motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_physics motolii_stage_canvas motolii_stage_layer_effects
-  motolii_document motolii_stage motolii_preview motolii_entry)
+  third_party/scipy_lsap/rectangular_lsap.cpp third_party/thermion_frame/FrameScheduler.cpp)
+target_link_libraries(motolii PRIVATE motolii_entry)
 set_target_properties(motolii PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ENGINE}/out INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR ON)
-target_link_directories(motolii PRIVATE ${FILAMENT_SDK}/lib/arm64 ${IRIS}/opencv_out/lib ${IRIS}/opencv_out/lib/opencv4/3rdparty
-  ${HOMEBREW}/opt/luajit/lib ${HOMEBREW}/opt/quickjs-ng/lib ${HOMEBREW}/opt/onnxruntime/lib)
-target_link_libraries(motolii PRIVATE
-  ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib luajit-5.1 qjs onnxruntime
-  # ThorVG (built against Dawn), Skia's path operations, libtess2, curve_fit_nd, Jolt, IRIS and its OpenCV
-  ${THORVG}/build_dawn/src/libthorvg-1.a ${SKIA}/out/path/libpathops.a ${SKIA}/out/path/libskia.a
-  ${THIRD_PARTY}/libtess2/build/libtess2.a ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a
-  ${JOLT}/jbuild/libJolt.a ${IRIS}/lib/libiris.a
-  opencv_features2d opencv_videoio opencv_imgcodecs opencv_imgproc opencv_core tegra_hal
-  # Filament with its WebGPU backend, and our interop built inside Filament's own build (gpu/CMakeLists.txt)
-  ${FILAMENT}/out/wgpu/filament/motolii_probe/libmotolii_interop.a
-  gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl bluevk filabridge filaflat utils geometry smol-v
-  ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
-  matdbg filamat civetweb viewer z
-  "-framework Cocoa" "-framework SceneKit" "-framework ModelIO" "-framework Metal" "-framework CoreVideo"
-  "-framework QuartzCore" "-framework IOSurface" "-framework IOKit" "-framework AVFoundation" "-framework CoreMedia"
-  "-framework CoreGraphics" "-framework Accelerate")
-target_link_options(motolii PRIVATE -Wl,-dead_strip
-  -Wl,-rpath,${HOMEBREW}/opt/luajit/lib -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib -Wl,-rpath,${HOMEBREW}/opt/onnxruntime/lib)
 
 # ---- The shell: a project edited by one call a line (edit.sh).
 
@@ -337,17 +358,34 @@ target_include_directories(edit_wgpu PRIVATE ${ENGINE})
 target_link_libraries(edit_wgpu PRIVATE motolii)
 set_target_properties(edit_wgpu PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/out BUILD_RPATH "@executable_path")
 
-# ---- Tests: every <name>_test.cpp beside the code it tests, run by ctest.
+# ---- Tests: <name>_test.cpp beside the code it tests. Each module has a test program of its own, linked with that
+# module and the modules it declares and nothing else, so a module is judged without building the rest:
+#   cmake --build out/cmake --target motolii_motion_test && ctest --test-dir out/cmake -R '^Easing'
 
 include(CTest)
-file(GLOB_RECURSE MOTOLII_TESTS CONFIGURE_DEPENDS
-  base/*_test.cpp shelf/*_test.cpp motion/*_test.cpp physics/*_test.cpp media/*_test.cpp preview/*_test.cpp
-  stage/*_test.cpp document/*_test.cpp entry/*_test.cpp community/*_test.cpp)
-if(BUILD_TESTING AND MOTOLII_TESTS)
+if(BUILD_TESTING)
   # Homebrew's googletest (Brewfile), not one another toolchain on PATH happens to carry.
   find_package(GTest REQUIRED CONFIG PATHS ${HOMEBREW}/opt/googletest NO_DEFAULT_PATH)
   include(GoogleTest)
-  add_executable(motolii_test ${MOTOLII_TESTS})
-  target_link_libraries(motolii_test PRIVATE motolii motolii_flags GTest::gtest_main)
-  gtest_discover_tests(motolii_test)
+  # motolii_module_tests(<module target> <glob> ...): the module's own tests.
+  function(motolii_module_tests module)
+    file(GLOB tests CONFIGURE_DEPENDS ${ARGN})
+    if(tests)
+      add_executable(${module}_test ${tests})
+      target_link_libraries(${module}_test PRIVATE ${module} GTest::gtest_main)
+      # Beside the library in out/: the engine finds the shelves and its own parts from where its code is loaded.
+      set_target_properties(${module}_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/out)
+      gtest_discover_tests(${module}_test)
+    endif()
+  endfunction()
+  foreach(folder shelf motion physics media preview stage entry)
+    motolii_module_tests(motolii_${folder} ${folder}/*_test.cpp)
+  endforeach()
+  foreach(folder absent_motion after_effects aviutl hydra isf p5 playcanvas quickjs script_runner sites three)
+    motolii_module_tests(motolii_community_${folder} community/${folder}/*_test.cpp)
+  endforeach()
+  foreach(folder render canvas effects layer_effects)
+    motolii_module_tests(motolii_stage_${folder} stage/${folder}/*_test.cpp)
+  endforeach()
+  motolii_module_tests(motolii_document document/*_test.cpp document/*/*_test.cpp)
 endif()
