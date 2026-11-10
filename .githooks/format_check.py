@@ -2,16 +2,17 @@
 # Is every staged Dart file as `dart format` leaves it? A contributor's editor formats on save (dart.dev/tools/dart-format),
 # so a file left unformatted turns their one-line change into a whole-file diff. The staged text is checked (not the disk),
 # at the width app/analysis_options.yaml gives (formatter: page_width:, found through --stdin-name).
-# No `dart` on PATH: skipped with a word, not refused. Run by the pre-commit hook, or by hand.
-import shutil, subprocess, sys
+# No `dart` on PATH nor in ~/flutter/bin: skipped with a word, not refused. Run by the pre-commit hook, or by hand.
+import os, shutil, subprocess, sys
 
-dart = shutil.which('dart')
+# (~/flutter/bin: where docs/using/guide.md puts Flutter, found even when the committing program, an editor or a GUI client, has no login-shell PATH)
+dart = shutil.which('dart') or shutil.which('dart', path=os.path.expanduser('~/flutter/bin'))
 staged = [p for p in subprocess.run(['git', 'diff', '--cached', '--name-only', '-z', '--diff-filter=ACMR'], capture_output=True)
           .stdout.decode('utf-8', 'replace').split('\0') if p.startswith('app/') and p.endswith('.dart')]
 if not staged:
     sys.exit(0)
 if dart is None:
-    print('format check skipped: no dart on PATH (Flutter puts it in its bin/)', file=sys.stderr)
+    print('format check skipped: no dart on PATH nor in ~/flutter/bin (docs/using/guide.md, "Get Flutter")', file=sys.stderr)
     sys.exit(0)
 
 bad = []

@@ -50,7 +50,8 @@ class ShelfTags {
   void setOwn(String shelf, String id, Iterable<String> tags) {
     _load();
     final set = {
-      for (final t in tags) t.trim().toLowerCase().replaceFirst(RegExp(r'^#'), ''),
+      for (final t in tags)
+        t.trim().toLowerCase().replaceFirst(RegExp(r'^#'), ''),
     }..remove('');
     if (set.isEmpty) {
       _own.remove('$shelf|$id');
