@@ -3,10 +3,14 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
+
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
-import 'package:motolii/workspace/dock/media/file_node.dart' show dockRead;
+
+/// Goes up each time the fonts or their dots have been read: the shelf then looks again.
+final dockRead = ValueNotifier<int>(0);
 
 /// The size in pixels of a font's dot on the map.
 ///

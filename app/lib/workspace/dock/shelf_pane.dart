@@ -1,6 +1,6 @@
 // A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Program or Presets.
 // It has a header, a search field and a body. Each shelf is one tab of the window's panes.
-// Media is the one file browser, for the project and the disk (dock_files.dart).
+// Media is the one file browser, for the project and the disk (media/media_shelf.dart).
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -16,8 +16,9 @@ import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/create/create_shelf.dart';
 import 'package:motolii/workspace/dock/effects/effects_shelf.dart';
+import 'package:motolii/workspace/dock/fonts/font_map.dart' show dockRead;
 import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart';
-import 'package:motolii/workspace/dock/media/file_node.dart';
+import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/dock/media/media_shelf.dart';
 import 'package:motolii/workspace/dock/program/program_shelf.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
@@ -44,6 +45,18 @@ class _ShelfPaneState extends State<ShelfPane> {
       WorkspaceScope.read(context).view
               .putIfAbsent('dock.${widget.name}', ShelfMemory.new)
           as ShelfMemory;
+
+  /// What a shelf keeps between builds besides its memory: made by [make] the first time it is asked for, then kept
+  /// in the window's view under [name], so it is still there when the pane is opened again.
+  T _kept<T extends Object>(String name, T Function() make) =>
+      WorkspaceScope.read(context).view.putIfAbsent('dock.$name', make) as T;
+
+  /// Goes up each time a shelf has read something from the disk off the UI thread, so the shelves look again.
+  ValueNotifier<int> get _reads => _kept('reads', () => ValueNotifier<int>(0));
+  MediaController get _media => _kept(
+    'Media.controller',
+    () => MediaController(WorkspaceScope.read(context), _reads),
+  );
   late final TextEditingController _search =
       TextEditingController(
         text: WorkspaceScope.read(context)
@@ -207,6 +220,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                 constraints: BoxConstraints(maxWidth: Shape.z(88)),
                 child: ListenableBuilder(
                   listenable: Listenable.merge([
+                    _reads,
                     dockRead,
                     EffectTiles.progress,
                   ]),
@@ -301,7 +315,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                   style: TextStyles.label(Grey.g63),
                 ),
               ),
-              _ => MediaShelf(c),
+              _ => MediaShelf(c, _media),
             },
           ),
         ),

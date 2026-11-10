@@ -1,21 +1,18 @@
-// The Media shelf's browser: where it starts, the path to a folder, the tree, the folder rows, the breadcrumbs, and navigating and opening.
-import 'dart:io';
-
+// The Media shelf, in the style of AEViewer 2: one browser for the project's files and media.
+// A folder tree (locations, then folders only) sits beside or above the open folder's contents, shown as thumbnails or a list.
+// Wide: tree | contents. Narrow: the tree band (its height set by dragging) over the contents.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/dock/common/folder_row.dart';
 import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
 import 'package:motolii/workspace/dock/media/folder_contents.dart';
-import 'package:motolii/workspace/dock/media/place_files.dart';
+import 'package:motolii/workspace/dock/media/folder_navigation.dart';
+import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The tree band's height when the shelf is narrow. A double-click on its grip resets to this.
 const dockTreeHeight = 132.0;
@@ -23,22 +20,24 @@ const dockTreeHeight = 132.0;
 /// From this shelf width the tree stands beside the contents instead of above them.
 const _wide = 440.0;
 
-final _home = Platform.environment['HOME'] ?? '/';
-
+/// The Media shelf: the folder tree and the contents of the open folder.
 class MediaShelf extends StatelessWidget {
-  const MediaShelf(this.c, {super.key});
+  const MediaShelf(this.c, this.media, {super.key});
   final ShelfContext c;
+
+  /// What the shelf keeps between builds: the folders read, the files picked.
+  final MediaController media;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(
-    valueListenable: dockRead,
+    valueListenable: media.reads,
     builder: (context, _, _) => _shelf(context),
   );
 
   Widget _shelf(BuildContext context) {
     final at = c.mem.folder;
     if (at != 'Project' && !at.startsWith('/')) {
-      c.mem.folder = _rootsOf(c).first.id;
+      c.mem.folder = mediaRoots(c, media).first.id;
     }
     return LayoutBuilder(
       builder: (context, box) {
@@ -51,12 +50,12 @@ class MediaShelf extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(width: Shape.z(160), child: _Tree(c)),
+              SizedBox(width: Shape.z(160), child: _Tree(c, media)),
               ColoredBox(
                 color: WindowTokens.ground,
                 child: SizedBox(width: WindowTokens.gutter),
               ),
-              Expanded(child: FolderContents(c)),
+              Expanded(child: FolderContents(c, media)),
             ],
           );
         }
@@ -69,9 +68,9 @@ class MediaShelf extends StatelessWidget {
               reset: dockTreeHeight,
               gripKey: const ValueKey('browser:tree-grip'),
               onHeight: (h) => c.set(() => c.mem.treeHeight = h),
-              child: _Tree(c),
+              child: _Tree(c, media),
             ),
-            Expanded(child: FolderContents(c)),
+            Expanded(child: FolderContents(c, media)),
           ],
         );
       },
@@ -79,86 +78,22 @@ class MediaShelf extends StatelessWidget {
   }
 }
 
-/// The locations in the tree: the project's own files and the folders they are in, then the disk.
-List<FileNode> _rootsOf(ShelfContext c) {
-  final kindOf = c.ws.inside!.kindOf;
-  kindOfFile = (f) =>
-      // CLIP STUDIO's and OpenToonz's timesheet is not a layer kind in the engine, but its columns are.
-      f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f);
-  thumbnailAtOf = c.ws.inside!.thumbnailAt;
-  final files = filesUsed(c.ws).keys.toList()..sort();
-  return [
-    FileNode(
-      'Project',
-      'Project',
-      AppGlyphs.folder,
-      kids: [
-        for (final d in {
-          ?c.ws.documentFolder,
-          for (final f in files) dirname(f),
-        })
-          FileNode(d, basename(d), AppGlyphs.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
-        for (final f in files)
-          if (glyphOf(f) case final g?) FileNode(f, basename(f), g),
-      ],
-    ),
-    FileNode(_home, 'Home', AppGlyphs.folder),
-  ];
-}
-
-/// The folders from the root down to [id], root first.
-List<FileNode> folderPathOf(ShelfContext c, String id) {
-  final roots = _rootsOf(c);
-  if (!id.startsWith('/')) return [roots.first];
-  final out = <FileNode>[];
-  for (var at = id; ; at = dirname(at)) {
-    if (at == _home || at == '/') {
-      return out
-        ..insert(0, FileNode(at, at == _home ? 'Home' : '/', AppGlyphs.folder));
-    }
-    out.insert(0, FileNode(at, basename(at), AppGlyphs.folder));
-  }
-}
-
-void _go(ShelfContext c, String id) => c.set(() {
-  if (id.startsWith('/')) {
-    readFolder(id); // A folder on disk is read again each time it is opened.
-  }
-  c.mem.folder = id;
-  // Only that folder opens: the same folder is listed under more than one location,
-  // and opening every location above it would move the rows under the pointer.
-  c.mem.open.add(id);
-});
-
-void openNode(FileNode n, ShelfContext c) {
-  if (n.folder) return _go(c, n.id);
-  if (DockHover.cmdAtPress && kindOfFile(n.id).isNotEmpty) {
-    // Cmd adds or removes one file from the selection, as in Finder.
-    if (filesPicked.isEmpty && c.sel != null && kindOfFile(c.sel!).isNotEmpty) {
-      filesPicked.add(c.sel!);
-    }
-    filesPicked.contains(n.id)
-        ? filesPicked.remove(n.id)
-        : filesPicked.add(n.id);
-  } else {
-    filesPicked.clear();
-  }
-  c.pick(n.id);
-}
-
 class _Tree extends StatelessWidget {
-  const _Tree(this.c);
+  const _Tree(this.c, this.media);
   final ShelfContext c;
+  final MediaController media;
   @override
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     void walk(FileNode n, int depth) {
       final open = c.mem.open.contains(n.id),
-          subs = open || n.listed
-              ? n.kids.where((k) => k.folder).toList()
+          subs = open || media.listed(n)
+              ? media.kidsOf(n).where((k) => k.folder).toList()
               : const <FileNode>[];
-      final hasSubs = !n.listed || subs.isNotEmpty,
-          files = n.listed ? n.kids.where((k) => !k.folder).length : 0;
+      final hasSubs = !media.listed(n) || subs.isNotEmpty,
+          files = media.listed(n)
+              ? media.kidsOf(n).where((k) => !k.folder).length
+              : 0;
       rows.add(
         dockFolderRow(
           key: ValueKey('browser:folder:${n.id}'),
@@ -171,7 +106,7 @@ class _Tree extends StatelessWidget {
           open: hasSubs ? open : null,
           onToggle: hasSubs ? () => c.toggle(c.mem.open, n.id) : null,
           count: files > 0 ? files : null,
-          onTap: () => _go(c, n.id),
+          onTap: () => openFolder(c, media, n.id),
           name: (s) => Text(
             n.name,
             maxLines: 1,
@@ -187,7 +122,7 @@ class _Tree extends StatelessWidget {
       }
     }
 
-    for (final r in _rootsOf(c)) {
+    for (final r in mediaRoots(c, media)) {
       walk(r, 0);
     }
     return ColoredBox(
@@ -198,69 +133,4 @@ class _Tree extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Breadcrumbs for the open folder: each step opens that folder. While searching, they name the location searched.
-class FolderCrumbs extends StatelessWidget {
-  const FolderCrumbs(this.path, this.c, {super.key, required this.searching});
-  final List<FileNode> path;
-  final ShelfContext c;
-  final bool searching;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: Shape.z(24),
-    color: WindowTokens.card,
-    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
-    child: Row(
-      children: [
-        if (searching)
-          Expanded(
-            child: Text(
-              'Search in ${path.first.name}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyles.micro(Grey.g76),
-            ),
-          )
-        else
-          Expanded(
-            child: Row(
-              children: [
-                for (final (i, n) in path.indexed) ...[
-                  if (i > 0)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
-                      child: Glyph(
-                        AppGlyphs.chevron,
-                        size: Shape.z(6),
-                        color: Grey.g56,
-                      ),
-                    ),
-                  Flexible(
-                    child: Pressable(
-                      key: ValueKey('browser:crumb:${n.id}'),
-                      cursor: MouseCursor.defer,
-                      onTap: () => _go(c, n.id),
-                      builder: (_, _) => Text(
-                        n.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyles.micro(
-                              n == path.last ? Grey.g95 : Grey.g63,
-                            ).copyWith(
-                              fontWeight: n == path.last
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-      ],
-    ),
-  );
 }

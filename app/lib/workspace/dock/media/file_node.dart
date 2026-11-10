@@ -1,10 +1,4 @@
-// The Media shelf, in the style of AEViewer 2: one browser for the project's files and media.
-// A folder tree (locations, then folders only) sits beside or above the open folder's contents, shown as thumbnails or a list.
-// Wide: tree | contents. Narrow: the tree band (its height set by dragging) over the contents.
-//
-// Reads folders from the disk, once each and off the UI thread, and describes a file: its name, folder, size, kind and media type.
-import 'dart:io';
-
+// A file or folder as the Media shelf shows it, and the words the shelf uses for the kinds of media.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
@@ -13,97 +7,53 @@ import 'package:motolii/widgets/app_glyphs.dart';
 
 /// A file or folder in the Media shelf's tree.
 class FileNode {
-  // ignore: prefer_initializing_formals
   const FileNode(
     this.id,
     this.name,
     this.g, {
     this.meta = '',
-    this._kids = const [],
+    this.fixedKids = const [],
   });
   final String id, name, meta;
   final AppGlyphs g;
-  final List<FileNode> _kids;
+
+  /// The entries of a node that is not on the disk, such as Project. A folder on the disk is listed by the shelf's
+  /// controller when it is first opened.
+  final List<FileNode> fixedKids;
   bool get folder => g == AppGlyphs.folder;
 
-  /// A file or folder on disk: its id is its full path. A folder's contents are read when it is first opened (see [listed]).
+  /// A file or folder on disk: its id is its full path.
   bool get disk => id.startsWith('/');
-  bool get listed => !disk || _lists.containsKey(id);
-  List<FileNode> get kids => disk && folder ? _listed(id) : _kids;
 }
 
-// Files on disk.
-
-/// The kind of layer a file makes, as the engine says it. An empty string means none, so the file is not shown.
-/// The shelf chooses the icon for each kind.
-String Function(String file) kindOfFile = (_) => '';
-Future<String?> Function(String film, int step, int steps)? thumbnailAtOf;
-AppGlyphs? glyphOf(String file) => switch (kindOfFile(file)) {
-  'film' => AppGlyphs.video,
-  // Songs have a tab of their own, as in Alight Motion's Add, where Audio is apart from Media (docs/design/alight_motion_ui.md).
-  'sound' => AppGlyphs.audio,
-  'picture' => AppGlyphs.image,
-  'solid' => AppGlyphs.shape,
-  'text' => AppGlyphs.font,
-  'timesheet' => AppGlyphs.comp, // Its columns are put together by placeSheet.
-  _ => null,
-};
-
+/// The last part of [path]: a file's or folder's own name.
 String basename(String path) => path.substring(path.lastIndexOf('/') + 1);
 
+/// The folder [path] is in.
 String dirname(String path) =>
     path.lastIndexOf('/') <= 0 ? '/' : path.substring(0, path.lastIndexOf('/'));
 
-String _size(int bytes) => bytes >= 1 << 20
-    ? '${(bytes / (1 << 20)).toStringAsFixed(1)} MB'
-    : '${(bytes / 1024).ceil()} KB';
+/// The chip a file or folder is counted under, by its mark.
+String kindLabelOf(FileNode n) => switch (n.g) {
+  AppGlyphs.folder => 'Folders',
+  AppGlyphs.comp => 'Comps',
+  AppGlyphs.video => 'Video',
+  AppGlyphs.image => 'Images',
+  AppGlyphs.light => 'HDR',
+  AppGlyphs.audio => 'Audio',
+  AppGlyphs.font => 'Fonts',
+  AppGlyphs.shape => '3D',
+  _ => 'Docs',
+};
 
-final _lists = <String, List<FileNode>>{};
-
-final _reading = <String>{};
-
-/// Goes up each time a folder of the disk has been read: the shelf then looks again.
-final dockRead = ValueNotifier<int>(0);
-
-/// Returns the entries of the folder [path] as last read and starts reading it if needed, without waiting for the disk.
-/// A folder the system asks permission for is empty until the user grants it.
-List<FileNode> _listed(String path) {
-  if (!_lists.containsKey(path)) readFolder(path);
-  return _lists[path] ?? const [];
-}
-
-void readFolder(String path) {
-  if (!_reading.add(path)) return;
-  _lists.putIfAbsent(path, () => const []);
-  () async {
-    final out = <FileNode>[];
-    try {
-      await for (final e in Directory(path).list()) {
-        final name = basename(e.path);
-        if (name.startsWith('.')) continue;
-        if (e is Directory) {
-          out.add(FileNode(e.path, name, AppGlyphs.folder));
-        } else if (glyphOf(name) case final g?) {
-          out.add(
-            FileNode(
-              e.path,
-              name,
-              g,
-              meta:
-                  '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size((await e.stat()).size)}',
-            ),
-          );
-        }
-      }
-    } on FileSystemException {
-      out.clear();
-    }
-    _lists[path] = out
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-    _reading.remove(path);
-    dockRead.value++;
-  }();
-}
+/// The kind of media a mark stands for, or null when it is not media.
+MediaType? mediaTypeOf(AppGlyphs g) => switch (g) {
+  AppGlyphs.video => MediaType.video,
+  AppGlyphs.image => MediaType.image,
+  AppGlyphs.light => MediaType.hdr,
+  AppGlyphs.audio => MediaType.audio,
+  _ => null,
+};
 
 /// The kinds of media a file is, by the shelf's mark: a tag and a hue.
 enum MediaType {

@@ -26,7 +26,6 @@ import 'package:motolii/workspace/dock/common/star_button.dart';
 import 'package:motolii/workspace/dock/fonts/font_map.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
-import 'package:motolii/workspace/dock/media/file_node.dart' show dockRead;
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';

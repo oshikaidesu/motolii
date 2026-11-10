@@ -1,13 +1,9 @@
-// Places a timesheet on the canvas: each of its columns becomes a level timed by keyframes.
-import 'dart:async';
+// Reads a timesheet and finds the drawings of its levels on the disk. MediaCommands.placeSheet places them.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
-import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
 ///
@@ -20,7 +16,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 /// A number with a letter, such as 3a, is not supported and is returned in `unread`.
 /// Returns null if [text] is not a timesheet.
 ({int frames, List<(String, List<(int, int)>)> columns, Set<String> unread})?
-_sheetOf(String text) {
+sheetOf(String text) {
   const first = 'exchangeDigitalTimeSheet Save Data';
   if (!text.startsWith(first)) return null;
   try {
@@ -77,12 +73,17 @@ _sheetOf(String text) {
 ///
 /// The drawings are image files in one folder with the same name apart from a number at the end, such as
 /// animation_0001.png, which OpenToonz reads in tfilepath.cpp. At least [least] drawings are needed.
-List<(int, String)>? levelOf(List<String> files, {int least = 2}) {
+/// [kindOf] says what kind of layer a file makes; a drawing is a 'picture'.
+List<(int, String)>? levelOf(
+  List<String> files,
+  String Function(String file) kindOf, {
+  int least = 2,
+}) {
   final named = RegExp(r'^(.*?)(\d+)(\.[^./]+)$'), drawings = <(int, String)>[];
   String? level;
   for (final f in files) {
     final m = named.firstMatch(f);
-    if (kindOfFile(f) != 'picture' ||
+    if (kindOf(f) != 'picture' ||
         m == null ||
         (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') {
       return null;
@@ -99,74 +100,26 @@ List<(int, String)>? levelOf(List<String> files, {int least = 2}) {
 /// A level's name is the part before the '.' or '_' and the number, as in OpenToonz's tfilepath.cpp getLevelNameW
 /// (A.0001.png, A_0001.png). It looks in the sheet's folder, then in a subfolder of that name, as CLIP STUDIO writes
 /// foo/A/ (OpenToonz's xdtsimportpopup.cpp, updateSuggestions).
-List<(int, String)>? _levelNamed(String sheet, String name) {
+List<(int, String)>? levelNamed(
+  String sheet,
+  String name,
+  String Function(String file) kindOf,
+) {
   final here = File(sheet).parent.path,
       named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
     if (!Directory(folder).existsSync()) continue;
-    if (levelOf([
-          for (final e in Directory(folder).listSync())
-            if (e is File && named.hasMatch(basename(e.path))) e.path,
-        ], least: 1)
+    if (levelOf(
+          [
+            for (final e in Directory(folder).listSync())
+              if (e is File && named.hasMatch(basename(e.path))) e.path,
+          ],
+          kindOf,
+          least: 1,
+        )
         case final drawings?) {
       return drawings;
     }
   }
   return null;
-}
-
-/// Places the timesheet [file] on the canvas, starting at the current time.
-///
-/// Each column becomes a level as [_placeLevel] makes one, named after the column as OpenToonz does, and as long as
-/// the sheet. Each change gets a hold keyframe on the level's Drawing property at 24 frames per second, as DiTiS reads
-/// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
-/// Missing drawings and unsupported values are reported in the notice.
-Future<void> placeSheet(ShelfContext c, String file) async {
-  final sheet = _sheetOf(await File(file).readAsString().catchError((_) => ''));
-  if (sheet == null) {
-    c.ws.notice = 'Not a timesheet: ${basename(file)}';
-    return;
-  }
-  final m = c.ws.inside!,
-      from = c.ws.frame / WorkspaceController.fps,
-      missing = <String>[],
-      made = <Future<int>>[];
-  m.later('together', number: 1);
-  for (final (name, keys) in sheet.columns) {
-    if (_levelNamed(file, name) case final drawings?) {
-      final asked = Completer<int>();
-      c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
-        if (!done) asked.complete(0);
-      }, asked.complete);
-      m.later('fit', layer: -1, word: 'fit');
-      m.later('say', layer: -1, name: 'name', word: name);
-      m.later('set', layer: -1, name: 'duration', number: sheet.frames / 24);
-      for (final (f, n) in keys) {
-        final at = '${from + f / 24}';
-        m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
-        m.later(
-          'easing',
-          layer: -1,
-          name: 'cel',
-          number: double.parse(at),
-          word: 'hold',
-        );
-      }
-      made.add(asked.future);
-    } else {
-      missing.add(name);
-    }
-  }
-  c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-  final ids = [
-    for (final i in await Future.wait(made))
-      if (i > 0) '$i',
-  ];
-  c.ws.pickMany(ids);
-  final told = [
-    if (missing.isNotEmpty) 'no drawings named ${missing.join(', ')} beside it',
-    if (sheet.unread.isNotEmpty) 'not read: ${sheet.unread.join(', ')}',
-  ];
-  c.ws.notice =
-      'Placed ${ids.length} of ${sheet.columns.length} columns of ${basename(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
 }
