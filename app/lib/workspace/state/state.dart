@@ -16,20 +16,9 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart';
 
-export '../../bridge/motolii.dart'
-    show
-        MotoliiDocument,
-        MotoliiMoment,
-        MotoliiWrites,
-        MotoliiQuestions,
-        MotoliiShelves,
-        MotoliiWatch; // Extensions of Motolii, so anything holding Ws.inside can call the engine's reads.
-
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/workspace/state/beats.dart';
-
-export 'beats.dart';
 
 part 'window.dart';
 part 'effects.dart';

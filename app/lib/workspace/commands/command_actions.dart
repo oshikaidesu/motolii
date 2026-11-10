@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 
 /// A request to the timeline about its own view: zoom or loop. The timeline keeps that state itself.
 ///

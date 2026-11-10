@@ -17,6 +17,7 @@ import 'package:motolii/workspace/dock/dock_program.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 
 /// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
 class WsShelf extends StatefulWidget {

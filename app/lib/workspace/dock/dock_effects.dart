@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiShelves;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/widgets/media.dart' show Draw;

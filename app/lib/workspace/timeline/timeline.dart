@@ -19,7 +19,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/bridge/motolii.dart' show Motolii, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, mediaSecondsOf;
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/widgets/number_field.dart';
@@ -34,6 +34,7 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
 import 'package:motolii/widgets/text_gestures.dart';

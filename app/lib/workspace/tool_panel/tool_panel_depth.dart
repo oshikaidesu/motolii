@@ -13,6 +13,7 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/workspace.dart' show LayerCards;
 import 'package:motolii/widgets/two_fingers.dart';
 

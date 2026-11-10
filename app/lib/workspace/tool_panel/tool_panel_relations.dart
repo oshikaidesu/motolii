@@ -17,6 +17,7 @@ import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 
 class RelationsTool extends StatefulWidget {
   const RelationsTool({super.key});

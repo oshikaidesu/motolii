@@ -11,7 +11,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiWrites, MotoliiQuestions, MotoliiShelves, mediaInfoOf, mediaSecondsOf;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_resizable.dart';
 import 'package:motolii/widgets/app_glyphs.dart';

@@ -23,6 +23,7 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/widgets/grid_columns.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
 part 'dock_folder_row.dart';

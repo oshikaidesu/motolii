@@ -13,6 +13,7 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
 
 /// The Align tool: six buttons that align the selected layer to the canvas edges or center.
 class AlignTool extends StatelessWidget {

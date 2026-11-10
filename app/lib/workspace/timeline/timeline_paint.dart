@@ -14,6 +14,7 @@ import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge;
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/beats.dart';
 
 part 'timeline_tracks_paint.dart';
 
