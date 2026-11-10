@@ -1,5 +1,5 @@
 # A colour is written once, in lib/skin, and panels read it. Not allowed in a panel: an 8-digit hex literal, Colors.*,
-# CupertinoColors.*, Color.fromARGB and Color.fromRGBO. (A decimal Color(123) or a hex built at run time is not seen.)
+# CupertinoColors.*, Color.fromARGB, Color.fromRGBO, and a number given straight to Color(...). (A hex built at run time, or arithmetic inside Color(...), is not seen.)
 # `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
 # existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
 id: color
@@ -11,6 +11,30 @@ rule:
     - {kind: hex_integer_literal, regex: '^0[xX][0-9A-Fa-f]{8}$'}
     - {kind: identifier, regex: '^(Colors|CupertinoColors|fromARGB|fromRGBO)$'}
     - {kind: type_identifier, regex: '^(Colors|CupertinoColors)$'}
+    # A number that is itself an argument of Color(...), const Color(...) or new Color(...): decimal, 6 or 9 digits, -1.
+    # (Numbers deeper inside, such as the bounds of a clamp() that computes a colour, are not looked at.)
+    - any:
+        - kind: decimal_integer_literal
+        - kind: hex_integer_literal
+      inside:
+        any:
+          - matches: color-arguments
+          - kind: unary_expression
+            inside:
+              matches: color-arguments
+utils:
+  color-arguments:
+    kind: arguments
+    inside:
+      any:
+        - kind: call_expression
+          has: {field: function, kind: identifier, regex: '^Color$'}
+        - any:
+            - kind: const_object_expression
+            - kind: new_expression
+          has:
+            field: type
+            has: {kind: type_identifier, regex: '^Color$'}
 files:
   - lib/**
 ignores:

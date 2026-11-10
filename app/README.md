@@ -31,7 +31,7 @@ flutter analyze
 flutter test
 ```
 
-`ast-grep scan` (in `app/`, 0.1 s) holds the rules in `tool/rules/`: no hex colour, `Colors.*` or `Color.fromARGB` in a panel (`color.yml`; colours live in `lib/skin/`), no raw Flutter text field, button, switch or slider (`raw_widgets.yml`; they come from `lib/widgets/`), and no comment that silences a rule (`no_suppression.yml`, plus a `grep` step in CI). Files that broke a rule before it existed are listed in the rule and are removed from the list as they are fixed; a new file is never added to it. A file on that list can still gain a new break unseen.
+`ast-grep scan` (in `app/`, 0.1 s) holds the rules in `tool/rules/`: no hex colour, `Colors.*`, `Color.fromARGB` or number given straight to `Color(...)` in a panel (`color.yml`; colours live in `lib/skin/`), no raw Flutter text field, button, switch or slider (`raw_widgets.yml`; they come from `lib/widgets/`), and no comment that silences a rule (`no_suppression.yml`, plus a `grep` step in CI). Files that broke a rule before it existed are listed in the rule and are removed from the list as they are fixed; a new file is never added to it. A file on that list can still gain a new break unseen.
 
 `dart analyze lib` is the quick static check. Most tests need no engine; `test/accessibility_guidelines_test.dart` opens the real app and is skipped when `../engine/out/libmotolii.dylib` is missing.
 
