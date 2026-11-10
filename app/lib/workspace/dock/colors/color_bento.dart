@@ -8,8 +8,9 @@ import 'package:material_color_utilities/material_color_utilities.dart'
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/workspace/dock/colors/color_commands.dart';
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
-import 'package:motolii/workspace/dock/colors/colors_shelf.dart';
+import 'package:motolii/workspace/dock/colors/colors_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
@@ -25,7 +26,6 @@ class BentoBox {
   final ShelfGradient? grad;
 }
 
-int bentoDice = 0; // The dice's last throw, which sets the boxes' shapes.
 const _rainbow = [
   Color(0xFFFF3B30),
   Color(0xFFFF9500),
@@ -36,9 +36,6 @@ const _rainbow = [
   Color(0xFFAF52DE),
   Color(0xFFFF3B30),
 ];
-final _hovered = ValueNotifier<String?>(
-  null,
-); // The group of the box under the pointer.
 
 /// Where each box lies, in grid cells, as (x, y, width, height).
 /// The dice picks each box's shape: a color that covers more of the picture gets a larger box, and a gradient a wide one.
@@ -92,23 +89,19 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
   return out;
 }
 
-final _boxMenu = GlobalKey<ContextMenuState>();
-(String, List<(int, int, int, int)>)?
-_bentoLaid; // The last layout, keyed by what it was laid out for.
-
-/// The range of the box size slider. The size can be any value in it, not a few steps,
-/// like Finder's icon size, Photoshop's Swatches panel and Lightroom's thumbnails.
-const bentoTileLeast = 16.0, bentoTileMost = 120.0;
-double bentoTile = 52;
-
 /// The colors as a bento of boxes of many sizes, wide and tall, packed with no holes.
 /// As many boxes fit in a row as the shelf is wide. A poster's colors take the space they cover, so the boxes are not all squares.
 /// The dice throws the shapes again. Boxes move to their new place quickly and without overshooting
 /// (AnimatedPositioned with easeOutCubic).
 class Bento extends StatelessWidget {
-  const Bento(this.boxes, this.c, {super.key});
+  const Bento(this.boxes, this.c, this.colors, {super.key});
+
+  /// The boxes, in the order they are packed.
   final List<BentoBox> boxes;
   final ShelfContext c;
+
+  /// What the shelf keeps between builds: the box size, the dice, the last layout and the boxes' menu.
+  final ColorsController colors;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
@@ -116,20 +109,20 @@ class Bento extends StatelessWidget {
       // CLIP STUDIO PAINT's Color Set and CSS Grid's repeat(auto-fill, minmax()) work the same way.
       // The layout is redone only when the columns, the colors or the dice change, and only then do the boxes move.
       // Widening the shelf just stretches them without a new layout, which keeps the app at 60 frames per second.
-      final cols = math.max(1, box.maxWidth ~/ Shape.z(bentoTile)),
+      final cols = math.max(1, box.maxWidth ~/ Shape.z(colors.saved.tile)),
           unit = box.maxWidth / cols,
           all = boxes;
       final key =
-          '$cols/$bentoDice/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
-      final laid = _bentoLaid?.$1 == key
-              ? _bentoLaid!.$2
-              : _packed(all, cols, bentoDice),
-          moved = _bentoLaid?.$1 != key;
-      _bentoLaid = (key, laid);
+          '$cols/${colors.dice}/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
+      final laid = colors.laid?.$1 == key
+              ? colors.laid!.$2
+              : _packed(all, cols, colors.dice),
+          moved = colors.laid?.$1 != key;
+      colors.laid = (key, laid);
       final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4)),
           gap = Shape.s(3);
       return ContextMenu(
-        key: _boxMenu,
+        key: colors.boxMenu,
         child: SizedBox(
           height: rows * unit,
           child: Stack(
@@ -146,8 +139,8 @@ class Bento extends StatelessWidget {
                   width: laid[k].$3 * unit - gap,
                   height: laid[k].$4 * unit - gap,
                   child: b.grad != null
-                      ? _GradientTile('grad-${b.i}', b.grad!, c)
-                      : _ColorBox(b, c),
+                      ? _GradientTile('grad-${b.i}', b.grad!, c, colors)
+                      : _ColorBox(b, c, colors),
                 ),
             ],
           ),
@@ -161,31 +154,34 @@ class Bento extends StatelessWidget {
 /// Hovering it draws a rim around its group and shows the group in the shelf footer.
 /// For the user's own colors, the right-click menu replaces or deletes it.
 class _ColorBox extends StatelessWidget {
-  const _ColorBox(this.b, this.c);
+  const _ColorBox(this.b, this.c, this.colors);
   final BentoBox b;
   final ShelfContext c;
+  final ColorsController colors;
   @override
   Widget build(BuildContext context) {
     final col = b.colour!,
         own = b.group == 'mine',
-        pal = colorPalettes.where((p) => p.id == b.group).firstOrNull;
+        pal = colors.saved.allPalettes
+            .where((p) => p.id == b.group)
+            .firstOrNull;
     return DockHover(
       key: ValueKey('colour-box-${b.group}-${b.i}'),
       onMenu: (at) {
         final items = [
           if (own) ...[
             ContextMenuItem(
-              'Replace with ${hexOfColor(wheelColor.toColor())}',
+              'Replace with ${hexOfColor(colors.wheelColor.toColor())}',
               () => c.set(() {
-                ownColors[b.i] = wheelColor.toColor();
-                colorsKeep();
+                colors.saved.colors[b.i] = colors.wheelColor.toColor();
+                colors.saved.keep();
               }),
             ),
             ContextMenuItem(
               'Delete',
               () => c.set(() {
-                ownColors.removeAt(b.i);
-                colorsKeep();
+                colors.saved.colors.removeAt(b.i);
+                colors.saved.keep();
               }),
             ),
           ],
@@ -193,36 +189,38 @@ class _ColorBox extends StatelessWidget {
             ContextMenuItem(
               'Delete this palette',
               () => c.set(() {
-                ownPalettes.remove(pal);
-                paletteShown.value = palettePressed = null;
-                colorsKeep();
+                colors.saved.palettes.remove(pal);
+                colors.paletteShown.value = colors.palettePressed = null;
+                colors.saved.keep();
               }),
             ),
         ];
         if (items.isEmpty) return;
-        final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-        _boxMenu.currentState?.show(
+        final box =
+            colors.boxMenu.currentContext?.findRenderObject() as RenderBox?;
+        colors.boxMenu.currentState?.show(
           box?.globalToLocal(at) ?? Offset.zero,
           items,
         );
       },
       onHover: (on) {
-        paletteShown.value = on ? b.group : palettePressed;
-        _hovered.value = on ? b.group : null;
+        colors.paletteShown.value = on ? b.group : colors.palettePressed;
+        colors.hovered.value = on ? b.group : null;
       },
       onTap: () {
-        paletteShown.value = palettePressed = b.group;
-        takeColor(c, col);
+        colors.paletteShown.value = colors.palettePressed = b.group;
+        ColorCommands(c, colors).takeColor(col);
       },
       builder: (context, h) => ValueListenableBuilder<String?>(
-        valueListenable: _hovered,
+        valueListenable: colors.hovered,
         builder: (context, over, _) {
           // Hovering a box puts a rainbow rim around each box of its palette, so the palette is seen whole. The other boxes are not darkened.
           final box = Container(
             decoration: BoxDecoration(
               color: col,
               borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
-              border: wheelFrom == hexOfColor(col).substring(1).toLowerCase()
+              border:
+                  colors.wheelFrom == hexOfColor(col).substring(1).toLowerCase()
                   ? Border.all(color: Grey.g95, width: 2)
                   : null,
             ),
@@ -247,10 +245,11 @@ class _ColorBox extends StatelessWidget {
 /// A gradient as a small tile. Its name shows only on hover, like a swatch's,
 /// because the user looks for the colors and the tiles stay a compact block however many are saved.
 class _GradientTile extends StatelessWidget {
-  const _GradientTile(this.id, this.g, this.c);
+  const _GradientTile(this.id, this.g, this.c, this.colors);
   final String id;
   final ShelfGradient g;
   final ShelfContext c;
+  final ColorsController colors;
   @override
   Widget build(BuildContext context) {
     final word = [
@@ -266,22 +265,22 @@ class _GradientTile extends StatelessWidget {
             : (at) {
                 // The menu of the user's own gradient, which can be deleted like the user's own colors.
                 final box =
-                    _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-                _boxMenu.currentState?.show(
+                    colors.boxMenu.currentContext?.findRenderObject()
+                        as RenderBox?;
+                colors.boxMenu.currentState?.show(
                   box?.globalToLocal(at) ?? Offset.zero,
                   [
                     ContextMenuItem(
                       'Delete this gradient',
                       () => c.set(() {
-                        ownGradients.remove(g);
-                        colorsKeep();
+                        colors.saved.gradients.remove(g);
+                        colors.saved.keep();
                       }),
                     ),
                   ],
                 );
               },
-        onTap: () => putGradient(
-          c,
+        onTap: () => ColorCommands(c, colors).putGradient(
           g.colors,
           g.blend,
           g.at,
@@ -290,7 +289,7 @@ class _GradientTile extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: look, stops: at),
             borderRadius: BorderRadius.all(Shape.r(5)),
-            border: wheelFrom == word
+            border: colors.wheelFrom == word
                 ? Border.all(color: Grey.g95, width: 2)
                 : (h ? Border.all(color: Grey.g76) : null),
           ),

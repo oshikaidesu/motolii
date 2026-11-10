@@ -11,6 +11,7 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
+import 'package:motolii/workspace/dock/colors/colors_controller.dart';
 import 'package:motolii/workspace/dock/colors/colors_shelf.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
@@ -57,6 +58,8 @@ class _ShelfPaneState extends State<ShelfPane> {
     'Media.controller',
     () => MediaController(WorkspaceScope.read(context), _reads),
   );
+  ColorsController get _colors =>
+      _kept('Colors.controller', ColorsController.new);
   FontsController get _fonts =>
       _kept('Fonts.controller', () => FontsController(_reads));
   late final TextEditingController _search =
@@ -302,7 +305,7 @@ class _ShelfPaneState extends State<ShelfPane> {
             builder: (context, _) => switch (name) {
               'Effects' => EffectsShelf(c),
               'Fonts' => FontsShelf(c, _fonts),
-              'Colors' => ColorsShelf(c),
+              'Colors' => ColorsShelf(c, _colors),
               'Create' => CreateShelf(c),
               'Program' => ProgramShelf(c),
               'Presets' => Padding(

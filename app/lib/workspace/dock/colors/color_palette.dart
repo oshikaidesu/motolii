@@ -1,13 +1,7 @@
-// The Colors shelf's palettes and gradients: the starters and the user's own, saved in ~/.motolii/colors.json.
-import 'dart:convert';
-import 'dart:io';
-
+// The Colors shelf's palettes and gradients: what each is, the starters, and the colors a project uses.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/skin/hex_color.dart' show colorOfHex;
-import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
-import 'package:motolii/workspace/dock/colors/color_bento.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A color palette: the starters, the user's saved ones, or one taken from a photo.
@@ -57,7 +51,8 @@ class ShelfGradient {
   final bool saved;
 }
 
-const _starterPals = <ColorPalette>[
+/// The palettes the shelf shows before the user has saved any.
+const starterPalettes = <ColorPalette>[
   ColorPalette('pop', 'Pop Poster', [
     Color(0xFFB3C66B),
     Color(0xFF4781E5),
@@ -106,7 +101,8 @@ const _starterPals = <ColorPalette>[
   ]),
 ];
 
-const _starterGrads = <ShelfGradient>[
+/// The gradients the shelf shows before the user has saved any.
+const starterGradients = <ShelfGradient>[
   ShelfGradient('Lime dusk', [Color(0xFFB3C66B), Color(0xFF4781E5)]),
   ShelfGradient('Hot pink', [
     Color(0xFFE974AB),
@@ -120,108 +116,7 @@ const _starterGrads = <ShelfGradient>[
   ]),
 ];
 
-// What the user has saved, in ~/.motolii/colors.json: {"palettes": [{"name": "", "colors": ["#rrggbb"]}], "gradients": [{"name": "", "colors": [], "blend": "oklab"}], "colours": [], "tile": 52}.
-final ownPalettes = <ColorPalette>[];
-
-/// The user's own colors, saved one by one, as in CLIP STUDIO PAINT's color set: Add Color stores the drawing color,
-/// pressing a tile draws with it, and a tile's menu replaces or deletes it.
-final ownColors = <Color>[];
-final ownGradients = <ShelfGradient>[];
-bool _mineRead = false;
-File _mineFile = File('${Platform.environment['HOME']}/.motolii/colors.json');
-
-/// Sets where the saved colors are stored. A test points it elsewhere, and what was read is forgotten, as easeStarsAt does.
-void colorsAt(File f) {
-  _mineFile = f;
-  _mineRead = false;
-  ownPalettes.clear();
-  ownColors.clear();
-  ownGradients.clear();
-  bentoTile = 52;
-}
-
-void colorsRead() {
-  if (_mineRead) return;
-  _mineRead = true;
-  try {
-    final told = fileJson(_mineFile) as Map;
-    for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
-      final cs = [for (final h in (p['colors'] as List)) ?colorOfHex('$h')];
-      final sh = (p['shares'] as List?)
-          ?.map((v) => (v as num).toDouble())
-          .toList();
-      if (cs.isNotEmpty) {
-        ownPalettes.add(
-          ColorPalette(
-            'mine$i',
-            '${p['name']}',
-            cs,
-            saved: true,
-            reference: p['reference'] as String?,
-            shares: sh != null && sh.length == cs.length ? sh : null,
-          ),
-        );
-      }
-    }
-    ownColors.addAll([
-      for (final h in (told['colours'] as List?) ?? const []) ?colorOfHex('$h'),
-    ]);
-    if (told['tile'] case final num v) {
-      bentoTile = v.toDouble().clamp(bentoTileLeast, bentoTileMost);
-    }
-    for (final g in (told['gradients'] as List?) ?? const []) {
-      final cs = [for (final h in (g['colors'] as List)) ?colorOfHex('$h')];
-      final at = (g['at'] as List?)?.map((v) => (v as num).toDouble()).toList();
-      if (cs.length > 1) {
-        ownGradients.add(
-          ShelfGradient(
-            '${g['name']}',
-            cs,
-            blend:
-                g['blend'] as String? ??
-                (g['oklab'] == false ? 'rgb' : 'oklab'),
-            saved: true,
-            at: at != null && at.length == cs.length ? at : null,
-          ),
-        );
-      }
-    }
-  } catch (_) {
-    // No file: only the starters are shown.
-  }
-}
-
-void colorsKeep() {
-  fileKeep(
-    _mineFile,
-    jsonEncode({
-      'palettes': [
-        for (final p in ownPalettes)
-          {
-            'name': p.name,
-            'colors': [for (final c in p.colors) hexOfColor(c)],
-            'reference': p.reference,
-            'shares': p.shares,
-          },
-      ],
-      'gradients': [
-        for (final g in ownGradients)
-          {
-            'name': g.name,
-            'colors': [for (final c in g.colors) hexOfColor(c)],
-            'blend': g.blend,
-            'at': g.at,
-          },
-      ],
-      'colours': [for (final c in ownColors) hexOfColor(c)],
-      'tile': bentoTile,
-    }),
-  );
-}
-
-List<ColorPalette> get colorPalettes => [...ownPalettes, ..._starterPals];
-List<ShelfGradient> get shelfGradients => [...ownGradients, ..._starterGrads];
-
+/// The color [c] as #RRGGBB.
 String hexOfColor(Color c) {
   String h(double v) =>
       (v * 255).round().toRadixString(16).padLeft(2, '0').toUpperCase();
