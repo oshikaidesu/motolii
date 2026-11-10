@@ -1,89 +1,88 @@
-# 同梱した他の人の作品（Third-party notices）
+# Third-party notices
 
-*Other people's work shipped with Motolii, each under its own licence (Motolii's licence does not cover it): who made it, where it came from, its licence, and where it sits in this repository. Changes we make are kept apart as patches.*
+Motolii に同梱した他の人の作品の、ライセンスと出所の一覧です。
+作品の作者の方で、同梱のしかたの変更や削除をご希望の場合は、日本語で Issue を開いてください（[.github/CONTRIBUTING.ja.md](.github/CONTRIBUTING.ja.md)）。
 
-Motolii は「ネットで見つけたかっこいい表現を、自分の動画にすぐ使う」ための道具です。そのために、多くの作者が公開してくれた作品を同梱し、なるべく作者の作り方のまま動かしています。作者のみなさんに感謝します。
+Motolii exists so that you can use an expression you found on the net in your own video at once. To make that possible, it bundles works that many authors have published, and runs them as close to the author's own way as it can. Thank you to all the authors.
 
-- 同梱した物はそれぞれの作者の物で、それぞれのライセンスに従います。Motolii のリポジトリのライセンスはこれらには掛かりません。
-- 各作品の隣に、作者のライセンスの文書（`LICENSE` など）と、取ってきた所（`SOURCE.txt` や `README.md`）を置いています。
-- 手を入れて使っている物は、元に当てる差分（`.patch`）として分けて置き、元のソースは組み立ての時に作者の配布元から取ってきます（下の「組み立ての時に取ってくる物」）。
-- 配ってよいと書かれていない作品は同梱していません。作者の配布元にライセンスの文書が無く、カタログに載ったライセンスだけが根拠の AviUtl2 の 8 パッケージは、同梱から外しました（2026-10-27）。
-- AviUtl2 のパッケージに入っていた Windows のバイナリ（.mod2・.aux2・.exe・.dll、Chromium Embedded Framework 一式）は同梱していません。Motolii は macOS で動くためです。外した物は各フォルダの `SOURCE.txt` の「left out」にあり、作者の配布元から取れます。
-- 同梱した物のうち、手を入れて使っている物（three.js などのシェーダーを WGSL に書き換えた物）は、各ファイルの 1 行目に元と改変を書いています。
-- **作者の方へ**：載せ方に問題があれば、Issue でお知らせください。すぐに直すか、外します。
+- Each bundled work belongs to its author and follows its author's licence. Motolii's own licence does not cover these works.
+- Next to each work sit the author's licence text (`LICENSE` or similar) and where it was taken from (`SOURCE.txt` or `README.md`).
+- Where a work is modified, the changes are kept apart as patches (`.patch`) applied to the original, and the original source is fetched from the author's own distribution when the engine is assembled (see "Fetched at assembly time" below).
+- Works that are not stated to be free to redistribute are not bundled. Eight AviUtl2 packages, whose authors' distribution has no licence text and whose only basis was the licence listed in the catalogue, were removed from the bundle (2026-10-27).
+- The Windows binaries that came in AviUtl2 packages (.mod2, .aux2, .exe, .dll, the whole of Chromium Embedded Framework) are not bundled, because Motolii runs on macOS. What was left out is listed under "left out" in each folder's `SOURCE.txt`, and can be taken from the author's distribution.
+- Among the bundled works, those that are modified (for example shaders from three.js rewritten in WGSL) state the original and the changes on the first line of each file.
+- **To authors**: if something in how a work is listed is wrong, please tell us in an issue. We will fix it at once, or remove the work.
 
-*Motolii bundles works by other authors, unchanged, each under its own licence (its licence text and where it came from sit beside it). Modified upstream code is kept as patches applied at build time. If you are an author and want a change or removal, please open an issue.*
+## 1. Bundled works
 
-## 1. 同梱している物
-
-| 物 | 作者・出所 | ライセンス | 置き場所 |
+| Work | Author and source | Licence | Where it sits |
 |---|---|---|---|
-| AviUtl2 のスクリプト 172 パッケージ（一覧は下） | 各作者。集め方は [Neosku/aviutl2-catalog-data](https://github.com/Neosku/aviutl2-catalog-data) の入れ方の手順どおり | MIT 133・CC0 26・Unlicense 6・BSD-3-Clause 4・MIT-0 2・Apache-2.0 1 | `shelves/aviutl_scripts/<作者>__<名前>/`（各フォルダに LICENSE と SOURCE.txt） |
-| ISF の効果 | [Vidvox/ISF-Files](https://github.com/Vidvox/ISF-Files) ほか（各 .fs の `CREDIT` に作者） | MIT | `shelves/effects/*.fs`、`ISF-Files-LICENSE.txt` |
-| ossia score の ISF：Directional Blur・Polar Coordinates・Radial Blur | [ossia/score-user-library](https://github.com/ossia/score-user-library) | CC BY-SA 4.0（この 3 本と、その改変だけに掛かる） | `shelves/effects/color/Directional Blur.fs`・`Polar Coordinates.fs`・`Radial Blur.fs`、`ossia-score-user-library-LICENSE.txt` |
-| ossia score の ISF：Luma Key（IMIMOT、memo.tv から移植） | [ossia/score-user-library](https://github.com/ossia/score-user-library) | MIT | `shelves/effects/key/Luma Key.fs`、`ossia-LICENSE-ISF.txt` |
-| three.js の画面の効果（WGSL にした物） | [mrdoob/three.js](https://github.com/mrdoob/three.js) の examples/jsm/shaders | MIT | `shelves/effects/*.wgsl`（各ファイルの 1 行目に出所）、`three-LICENSE.txt` |
-| AbsentMotion の効果（SkSL を Skia の skslc で WGSL にした物） | [Comett1225/AbsentMotion](https://github.com/Comett1225/AbsentMotion) app/src/main/assets/effects、コミット 0f5d891 | Apache-2.0（Copyright 2026 The AbsentMotion authors） | `shelves/effects/am_*.wgsl`（各ファイルの 1 行目に出所と改変）、`AbsentMotion-LICENSE.txt`、`AbsentMotion-NOTICE.txt` |
-| Shader Lab の効果（TSL を three.js の変換器で WGSL にした物） | [basementstudio/shader-lab](https://github.com/basementstudio/shader-lab)、コミット 7421a259f76e | Apache-2.0（Copyright © 2026 basement.studio LLC） | `shelves/effects/sl_*.wgsl`（各ファイルの 1 行目に出所と改変）、`ShaderLab-LICENSE.txt` |
-| Geist Mono の字（ASCII の文字盤の絵） | [vercel/geist-font](https://github.com/vercel/geist-font) | OFL-1.1（Copyright (c) 2023 Vercel, in collaboration with basement.studio） | `shelves/effects/sl_ascii_*.0.png`（字を描いた絵だけで、フォントは同梱しない） |
-| tsl-textures の材質（TSL を three.js の変換器で WGSL にした物） | [boytchev/tsl-textures](https://github.com/boytchev/tsl-textures)、コミット a7d5da1bb69a | MIT（Copyright (c) 2024 Pavel Boytchev） | `shelves/effects/tt_*.wgsl`（各ファイルの 1 行目に出所）、`tsl-textures-LICENSE.txt` |
-| threejs-noise-functions のノイズ（TSL を three.js の変換器で WGSL にした物） | [bandinopla/threejs-noise-functions](https://github.com/bandinopla/threejs-noise-functions)、コミット 0122771daa36 | MIT（Copyright (c) 2026 lumiey） | `shelves/effects/nf_*.wgsl`（各ファイルの 1 行目に出所）、`noise-functions-LICENSE.txt` |
-| TSLFX の爆発（TSL を three.js の変換器で WGSL にした物） | [verekia/tslfx](https://github.com/verekia/tslfx)、コミット 7fe666adec47 | MIT（Copyright (c) 2024 Verekia） | `shelves/effects/tf_*.wgsl`（各ファイルの 1 行目に出所）、`tslfx-LICENSE.txt` |
-| Sashimono Edit の効果（GLSL を ISF にした物） | [kagemorikosame/sashimono-edit](https://github.com/kagemorikosame/sashimono-edit) src/sashimono/effects/builtin.py、コミット 761b6e4ba247 | MIT（Copyright (c) 2026 Sashimono Edit contributors） | `shelves/effects/* (Sashimono).fs`（`shelves/effects/sources/from_sashimono.py` で作った物）、`shelves/effects/sources/sashimono-LICENSE.txt` |
-| pixi-filters の OutlineFilter（Multi-Border の縁） | [pixijs/filters](https://github.com/pixijs/filters) 6.1.5、lib/outline/outline.mjs | MIT（Copyright (c) 2013-2025 Mathew Groves, Chad Engler） | `shelves/effects/stylize/Multi-Border.fs`（ISF の頭に出所と、uniform を入力にした所）、`pixi-filters-LICENSE.txt` |
-| gl-chromakey の ProcessChromaKey（Key Spill Cleaner の色かぶり取り） | [bhj/gl-chromakey](https://github.com/bhj/gl-chromakey)、src/lib/shaders/fragmentShaderPaint.js | MIT（Copyright (c) 2011 Mozilla Foundation、Copyright (c) 2020-2025 RadRoot LLC） | `shelves/effects/key/Key Spill Cleaner.fs`（ISF の頭に出所と、絵の読み方を ISF の IMG_NORM_PIXEL にした所）、`gl-chromakey-LICENSE.txt` |
-| YMM4-LuaScript の aviutl_rand（AviUtl2 のスクリプトの obj.rand・rand） | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript)、native/shim.lua・native/worker.lua、コミット fd540b834bfd | MIT（Copyright (c) 2026 routersys） | `engine/community/aviutl/aviutl_fx.h`（Lua のまま、頭に出所）、`engine/third_party/ymm4-luascript/LICENSE` |
-| leva のつまみの書き方（folder() と、範囲を書かない数の刻み：getStep・Number の normalize） | [pmndrs/leva](https://github.com/pmndrs/leva)、packages/leva/src/helpers/folder.ts・utils/math.ts・plugins/Number/number-plugin.ts、コミット 402a1e9d0899 | MIT（Copyright (c) 2021 Poimandres） | `engine/community/quickjs/script_leva.h`（JavaScript のまま、頭に出所）、`engine/third_party/leva/LICENSE` |
-| 場面転換の効果 13 本（ISF-Files が ISF にした物） | [gl-transitions](https://github.com/gl-transitions/gl-transitions)（各 .fs の頭に作者：gre、Jake Nelson、Fernando Kuteken、bobylito、Hewlett-Packard ほか） | 各ファイルの頭のとおり：MIT 12 本、BSD-3-Clause 1 本（Inverted Page Curl、Copyright (c) 2010 Hewlett-Packard。著作権表示とライセンスの全文がファイルの中のコメントにある） | `shelves/effects/transition/Fade.fs`・`Wipe *.fs` など、`CREDIT` に gl-transitions の URL |
-| CRT の仕上げ（WGSL に改変） | [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) の post.wgsl | MIT | `shelves/effects/stylize/crt_finish.wgsl`、`vgpu-LICENSE.txt` |
-| データモッシュ（WGSL に改変） | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `shelves/effects/glitch/datamosh.wgsl`、`phosphor-LICENSE.txt` |
-| 時間のずらし（WGSL に改変） | [keijiro/SlitScanCam](https://github.com/keijiro/SlitScanCam) | Unlicense | `shelves/effects/glitch/time_displacement.wgsl`、`SlitScanCam-LICENSE.txt` |
-| 効果の見本の写真（熱気球） | Wikimedia Commons「Mid-Hudson balloon festival 15」（Juliancolton 撮影） | パブリックドメイン（PD-self） | `shelves/effects/sources/fx_sample.jpg`（正方形に切った物）、効果の見本 `shelves/effects/*.png` はこれに掛けた物 |
-| 効果の見本の写真（道、トランジションの行き先） | Wikimedia Commons「Road through Mojave National Preserve」（NPS / Emily Hassell、Joshua Tree National Park の Flickr） | パブリックドメイン（米国政府の著作物） | `shelves/effects/sources/fx_sample_end.jpg`（正方形に切った物） |
-| 点群の効果 4 本 | [playcanvas/engine](https://github.com/playcanvas/engine) の scripts/esm/gsplat | MIT | `shelves/effects/*.mjs`、`playcanvas-LICENSE.txt` |
-| three.js（形を作る部品） | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `engine/third_party/js/three/` |
-| d3-contour・d3-array | [d3](https://github.com/d3) | ISC | `engine/third_party/js/d3-contour/`、`d3-array/` |
+| 172 AviUtl2 script packages (list below) | Each author. Collected as in the instructions of [Neosku/aviutl2-catalog-data](https://github.com/Neosku/aviutl2-catalog-data) | MIT 133, CC0 26, Unlicense 6, BSD-3-Clause 4, MIT-0 2, Apache-2.0 1 | `shelves/aviutl_scripts/<作者>__<名前>/` (each folder has LICENSE and SOURCE.txt; the folder name is author, two underscores, name) |
+| ISF effects | [Vidvox/ISF-Files](https://github.com/Vidvox/ISF-Files) and others (the author is in `CREDIT` of each .fs) | MIT | `shelves/effects/*.fs`, `ISF-Files-LICENSE.txt` |
+| ossia score ISF: Directional Blur, Polar Coordinates, Radial Blur | [ossia/score-user-library](https://github.com/ossia/score-user-library) | CC BY-SA 4.0 (covers only these 3 files and their modifications) | `shelves/effects/color/Directional Blur.fs`, `Polar Coordinates.fs`, `Radial Blur.fs`, `ossia-score-user-library-LICENSE.txt` |
+| ossia score ISF: Luma Key (IMIMOT, ported from memo.tv) | [ossia/score-user-library](https://github.com/ossia/score-user-library) | MIT | `shelves/effects/key/Luma Key.fs`, `ossia-LICENSE-ISF.txt` |
+| three.js screen effects (as WGSL) | examples/jsm/shaders of [mrdoob/three.js](https://github.com/mrdoob/three.js) | MIT | `shelves/effects/*.wgsl` (the source is on the first line of each file), `three-LICENSE.txt` |
+| AbsentMotion effects (SkSL turned into WGSL with Skia's skslc) | [Comett1225/AbsentMotion](https://github.com/Comett1225/AbsentMotion) app/src/main/assets/effects, commit 0f5d891 | Apache-2.0 (Copyright 2026 The AbsentMotion authors) | `shelves/effects/am_*.wgsl` (the source and changes are on the first line of each file), `AbsentMotion-LICENSE.txt`, `AbsentMotion-NOTICE.txt` |
+| Shader Lab effects (TSL turned into WGSL with three.js's converter) | [basementstudio/shader-lab](https://github.com/basementstudio/shader-lab), commit 7421a259f76e | Apache-2.0 (Copyright © 2026 basement.studio LLC) | `shelves/effects/sl_*.wgsl` (the source and changes are on the first line of each file), `ShaderLab-LICENSE.txt` |
+| Geist Mono glyphs (images of the ASCII character set) | [vercel/geist-font](https://github.com/vercel/geist-font) | OFL-1.1 (Copyright (c) 2023 Vercel, in collaboration with basement.studio) | `shelves/effects/sl_ascii_*.0.png` (only images of the drawn glyphs; the font is not bundled) |
+| tsl-textures materials (TSL turned into WGSL with three.js's converter) | [boytchev/tsl-textures](https://github.com/boytchev/tsl-textures), commit a7d5da1bb69a | MIT (Copyright (c) 2024 Pavel Boytchev) | `shelves/effects/tt_*.wgsl` (the source is on the first line of each file), `tsl-textures-LICENSE.txt` |
+| threejs-noise-functions noise (TSL turned into WGSL with three.js's converter) | [bandinopla/threejs-noise-functions](https://github.com/bandinopla/threejs-noise-functions), commit 0122771daa36 | MIT (Copyright (c) 2026 lumiey) | `shelves/effects/nf_*.wgsl` (the source is on the first line of each file), `noise-functions-LICENSE.txt` |
+| TSLFX explosions (TSL turned into WGSL with three.js's converter) | [verekia/tslfx](https://github.com/verekia/tslfx), commit 7fe666adec47 | MIT (Copyright (c) 2024 Verekia) | `shelves/effects/tf_*.wgsl` (the source is on the first line of each file), `tslfx-LICENSE.txt` |
+| Sashimono Edit effects (GLSL turned into ISF) | [kagemorikosame/sashimono-edit](https://github.com/kagemorikosame/sashimono-edit) src/sashimono/effects/builtin.py, commit 761b6e4ba247 | MIT (Copyright (c) 2026 Sashimono Edit contributors) | `shelves/effects/* (Sashimono).fs` (made with `shelves/effects/sources/from_sashimono.py`), `shelves/effects/sources/sashimono-LICENSE.txt` |
+| pixi-filters OutlineFilter (the outline of Multi-Border) | [pixijs/filters](https://github.com/pixijs/filters) 6.1.5, lib/outline/outline.mjs | MIT (Copyright (c) 2013-2025 Mathew Groves, Chad Engler) | `shelves/effects/stylize/Multi-Border.fs` (the ISF header gives the source and says that the uniforms became inputs), `pixi-filters-LICENSE.txt` |
+| gl-chromakey ProcessChromaKey (the colour-spill removal of Key Spill Cleaner) | [bhj/gl-chromakey](https://github.com/bhj/gl-chromakey), src/lib/shaders/fragmentShaderPaint.js | MIT (Copyright (c) 2011 Mozilla Foundation, Copyright (c) 2020-2025 RadRoot LLC) | `shelves/effects/key/Key Spill Cleaner.fs` (the ISF header gives the source and says that image reads became ISF's IMG_NORM_PIXEL), `gl-chromakey-LICENSE.txt` |
+| YMM4-LuaScript aviutl_rand (obj.rand and rand of AviUtl2 scripts) | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript), native/shim.lua and native/worker.lua, commit fd540b834bfd | MIT (Copyright (c) 2026 routersys) | `engine/community/aviutl/aviutl_fx.h` (kept as Lua, the source is in its header), `engine/third_party/ymm4-luascript/LICENSE` |
+| leva knob conventions (folder(), and the step of numbers that have no range: getStep and the Number normalize) | [pmndrs/leva](https://github.com/pmndrs/leva), packages/leva/src/helpers/folder.ts, utils/math.ts and plugins/Number/number-plugin.ts, commit 402a1e9d0899 | MIT (Copyright (c) 2021 Poimandres) | `engine/community/quickjs/script_leva.h` (kept as JavaScript, the source is in its header), `engine/third_party/leva/LICENSE` |
+| 13 transition effects (made into ISF by ISF-Files) | [gl-transitions](https://github.com/gl-transitions/gl-transitions) (the author is in the header of each .fs: gre, Jake Nelson, Fernando Kuteken, bobylito, Hewlett-Packard and others) | As in the header of each file: MIT 12, BSD-3-Clause 1 (Inverted Page Curl, Copyright (c) 2010 Hewlett-Packard; the copyright notice and the full licence text are in a comment in the file) | `shelves/effects/transition/Fade.fs`, `Wipe *.fs` and others; `CREDIT` has the gl-transitions URL |
+| CRT finish (modified into WGSL) | post.wgsl of [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) | MIT | `shelves/effects/stylize/crt_finish.wgsl`, `vgpu-LICENSE.txt` |
+| Datamosh (modified into WGSL) | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `shelves/effects/glitch/datamosh.wgsl`, `phosphor-LICENSE.txt` |
+| Time displacement (modified into WGSL) | [keijiro/SlitScanCam](https://github.com/keijiro/SlitScanCam) | Unlicense | `shelves/effects/glitch/time_displacement.wgsl`, `SlitScanCam-LICENSE.txt` |
+| Sample photo for effects (hot-air balloon) | Wikimedia Commons "Mid-Hudson balloon festival 15" (photographed by Juliancolton) | Public domain (PD-self) | `shelves/effects/sources/fx_sample.jpg` (cropped to a square); the effect previews `shelves/effects/*.png` are this photo with the effect applied |
+| Sample photo for effects (road, the destination of transitions) | Wikimedia Commons "Road through Mojave National Preserve" (NPS / Emily Hassell, Joshua Tree National Park's Flickr) | Public domain (US government work) | `shelves/effects/sources/fx_sample_end.jpg` (cropped to a square) |
+| 4 point-cloud effects | scripts/esm/gsplat of [playcanvas/engine](https://github.com/playcanvas/engine) | MIT | `shelves/effects/*.mjs`, `playcanvas-LICENSE.txt` |
+| three.js (parts that make shapes) | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `engine/third_party/js/three/` |
+| d3-contour and d3-array | [d3](https://github.com/d3) | ISC | `engine/third_party/js/d3-contour/`, `d3-array/` |
 | anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
-| acorn 8.18.0（After Effects の式を貼った時に一度だけ読む構文解析器） | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/`（npm 配布の `acorn.js` と `LICENSE` をそのまま。レシピが `AE.compile` と書いた時だけ読み、毎コマは読まない） |
-| p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
-| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/create/repeats/Cube Wave.js`（1 行目に元、以下そのまま） |
-| Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
-| Godot の String::capitalize（つまみのキーを名前として見せる：ease_in → Ease In） | [godotengine/godot](https://github.com/godotengine/godot) core/string/ustring.cpp の _separate_compound_words・capitalize、コミット c51ff06e8836 | MIT | `engine/community/quickjs/script_leva.h`（JavaScript に移した、頭に出所）、ライセンスは `engine/third_party/godot_easing/` の物と同じ |
-| 日本語 WordNet v1.1（検索で日本語を英語に引く表 `ja_en.tsv`、`engine/deps/wnja_export.py` で切り出した物） | [bond-lab/wnja](https://github.com/bond-lab/wnja)（NICT、Francis Bond・Takayuki Kuribayashi） | 日本語 WordNet のライセンス（`LICENSE-wnja.txt`） | `engine/third_party/wordnet_ja/`（`SOURCE.txt`） |
-| Noto Sans JP（字が足りない時の代わりの書体） | [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) | SIL OFL 1.1 | `engine/third_party/noto_sans_jp/`（`NotoSansJP-LICENSE.txt`） |
-| gflanguages の見本の文（Fonts タブ、`engine/deps/from_gflanguages.py` で切り出した `samples.json`） | [googlefonts/lang](https://github.com/googlefonts/lang) | Apache-2.0 | `engine/third_party/gflanguages/`（`gflanguages-LICENSE.txt`） |
-| 画面の拍子 | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `engine/third_party/thermion_frame/`（NOTICE.md） |
-| ブロブの追跡 | [k1sh0r/blob-tracker](https://github.com/k1sh0r/blob-tracker) | MIT | `engine/blobtrack/kit/` |
-| JetBrains Mono（ブロブの追跡の文字） | [JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) | SIL OFL 1.1 | `engine/blobtrack/kit/JetBrainsMono-Regular.ttf`、`JetBrainsMono-OFL.txt` |
-| 棚の地図の t-SNE：qdtsne v3.0.3、knncolle v3.1.2、aarand v1.1.0、subpar v0.5.2、sanisizer v0.2.2 | [libscran/qdtsne](https://github.com/libscran/qdtsne) ほか（Copyright (c) Aaron Lun） | MIT | `engine/third_party/qdtsne/`（LICENSE.<名前>、SOURCE.txt） |
-| 棚の地図の格子：SciPy v1.14.1 の rectangular_lsap（linear_sum_assignment の中身、PM Larsen） | [scipy/scipy](https://github.com/scipy/scipy)（Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers） | BSD-3-Clause | `engine/third_party/scipy_lsap/`（LICENSE.scipy.txt、SOURCE.txt） |
+| acorn 8.18.0 (the parser read once, when After Effects expressions are pasted) | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/` (`acorn.js` from the npm package and `LICENSE`, as they are; read only when a recipe says `AE.compile`, never per frame) |
+| p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/` (`p5.min.js` and `license.txt` from the distribution, as they are; read as an ordinary file that can be replaced) |
+| Cube Wave (Coding Challenge 86) | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges) (Copyright (c) 2022 Coding Train) | MIT | `shelves/create/repeats/Cube Wave.js` (the source on the first line, the rest unchanged) |
+| Godot easing equations | easing_equations.h of [godotengine/godot](https://github.com/godotengine/godot) (Robert Penner's equations) | MIT | `engine/third_party/godot_easing/` |
+| Godot's String::capitalize (shows a knob key as a name: ease_in becomes Ease In) | _separate_compound_words and capitalize in core/string/ustring.cpp of [godotengine/godot](https://github.com/godotengine/godot), commit c51ff06e8836 | MIT | `engine/community/quickjs/script_leva.h` (moved to JavaScript, the source is in its header); the licence is the same as the one in `engine/third_party/godot_easing/` |
+| Japanese WordNet v1.1 (the table `ja_en.tsv` that looks Japanese up in English for search, cut out with `engine/deps/wnja_export.py`) | [bond-lab/wnja](https://github.com/bond-lab/wnja) (NICT, Francis Bond, Takayuki Kuribayashi) | The Japanese WordNet licence (`LICENSE-wnja.txt`) | `engine/third_party/wordnet_ja/` (`SOURCE.txt`) |
+| Noto Sans JP (the fallback typeface for missing glyphs) | [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) | SIL OFL 1.1 | `engine/third_party/noto_sans_jp/` (`NotoSansJP-LICENSE.txt`) |
+| gflanguages sample text (Fonts tab, `samples.json` cut out with `engine/deps/from_gflanguages.py`) | [googlefonts/lang](https://github.com/googlefonts/lang) | Apache-2.0 | `engine/third_party/gflanguages/` (`gflanguages-LICENSE.txt`) |
+| Frame pacing | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `engine/third_party/thermion_frame/` (NOTICE.md) |
+| Blob tracking | [k1sh0r/blob-tracker](https://github.com/k1sh0r/blob-tracker) | MIT | `engine/blobtrack/kit/` |
+| JetBrains Mono (the text of blob tracking) | [JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) | SIL OFL 1.1 | `engine/blobtrack/kit/JetBrainsMono-Regular.ttf`, `JetBrainsMono-OFL.txt` |
+| t-SNE of the shelf map: qdtsne v3.0.3, knncolle v3.1.2, aarand v1.1.0, subpar v0.5.2, sanisizer v0.2.2 | [libscran/qdtsne](https://github.com/libscran/qdtsne) and others (Copyright (c) Aaron Lun) | MIT | `engine/third_party/qdtsne/` (LICENSE.<名前>, SOURCE.txt) |
+| Grid of the shelf map: rectangular_lsap of SciPy v1.14.1 (the inside of linear_sum_assignment, by PM Larsen) | [scipy/scipy](https://github.com/scipy/scipy) (Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers) | BSD-3-Clause | `engine/third_party/scipy_lsap/` (LICENSE.scipy.txt, SOURCE.txt) |
 
-## 2. 組み立ての時に取ってくる物（リポジトリには入っていない）
+## 2. Fetched at assembly time (not in the repository)
 
-版を決めて作者の配布元から取り、Motolii の差分（`.patch`）があれば当てます。取ってくる所と版は各スクリプトの先頭にあります。
+Each is fetched from the author's own distribution at a fixed version, and Motolii's patches (`.patch`), if any, are applied. Where it is fetched from and the version are at the top of each script.
 
-| 物 | 版 | ライセンス | 取ってくるスクリプト | Motolii の差分 |
+| Work | Version | Licence | Script that fetches it | Motolii's patches |
 |---|---|---|---|---|
-| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/deps/filament.sh` | `engine/deps/patches/filament/`、`glslang/`、`tint/`、`dawn/` |
+| [Filament](https://github.com/google/filament) (includes Dawn and glslang) | v1.77.2 | Apache-2.0 and others | `engine/deps/filament.sh` | `engine/deps/patches/filament/`, `glslang/`, `tint/`, `dawn/` |
 | [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/deps/thorvg.sh` | `engine/deps/patches/thorvg/` |
-| [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | なし |
-| [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | なし |
-| [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/deps/jolt.sh` | なし |
-| [IRIS](https://github.com/electronicarts/IRIS)（書き出した動画の点滅の確かめ） | d96978a | BSD-3-Clause | `engine/deps/iris.sh` | なし |
-| [OpenCV](https://github.com/opencv/opencv)（IRIS が読む core・imgproc・features2d・videoio だけ） | 4.12.0（49486f6） | Apache-2.0 | `engine/deps/iris.sh` | なし |
-| [spdlog](https://github.com/gabime/spdlog)（IRIS のログ。fmt を含む） | v1.15.3（6fa3601） | MIT | `engine/deps/iris.sh` | なし |
-| [nlohmann/json](https://github.com/nlohmann/json)（IRIS の設定と結果） | v3.12.0（55f9368） | MIT | `engine/deps/iris.sh` | なし |
-| [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/deps/midi_roll.sh` | なし |
-| [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
-| TSL の表現 48 か所 | `engine/community/three_shading_language_to_shelf/sources.tsv` のとおり | 各作者 | `engine/community/three_shading_language_to_shelf/fetch.sh` | `engine/deps/patches/shader-lab/`、`ics-creative/` |
-| [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `app/pubspec.yaml`（flutter pub get） | なし |
-| [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `shelves/effects/sources/absent.sh` | なし |
-| [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 の絵の読み手（棚の地図：効果のコマ）。ONNX にして `~/Library/Caches/Motolii/models/clip_b32.onnx` に置く | open_clip の `openai` の重み（ViT-B-32.pt） | MIT | `engine/deps/likeness_models.py`（読み込みは [open_clip](https://github.com/mlfoundations/open_clip)、MIT。書き出しは [PyTorch](https://github.com/pytorch/pytorch) の torch.onnx.export、BSD-3-Clause） | なし |
-| [FontCLIP](https://github.com/yukistavailable/FontCLIP)（Tatsukawa ら、Eurographics 2024）の絵の読み手（棚の地図：字体の見本）。ONNX にして `fontclip_b32.onnx` | setup_data.py の model.pt | MIT（重みも MIT と作者が issue 13 で） | `engine/deps/likeness_models.py`（[FontMap](https://github.com/tfrere/fontmap) の fontclip_model.py の読み方、MIT） | なし |
+| [Skia](https://skia.org/) (the path part only) | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | none |
+| [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | none |
+| [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/deps/jolt.sh` | none |
+| [IRIS](https://github.com/electronicarts/IRIS) (checks exported video for flashing) | d96978a | BSD-3-Clause | `engine/deps/iris.sh` | none |
+| [OpenCV](https://github.com/opencv/opencv) (only core, imgproc, features2d and videoio, which IRIS reads) | 4.12.0 (49486f6) | Apache-2.0 | `engine/deps/iris.sh` | none |
+| [spdlog](https://github.com/gabime/spdlog) (IRIS's log; includes fmt) | v1.15.3 (6fa3601) | MIT | `engine/deps/iris.sh` | none |
+| [nlohmann/json](https://github.com/nlohmann/json) (IRIS's settings and results) | v3.12.0 (55f9368) | MIT | `engine/deps/iris.sh` | none |
+| [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll) (the piano roll of the MIDI view) | 205854e | MIT (as declared in the author's package.json; not bundled, because the author's side has no licence text) | `engine/deps/midi_roll.sh` | none |
+| [Prebuilt Filament SDK](https://github.com/google/filament/releases/tag/v1.77.2) (used only by an earlier trial script) | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | none |
+| 48 TSL expressions | As in `engine/community/three_shading_language_to_shelf/sources.tsv` | Each author | `engine/community/three_shading_language_to_shelf/fetch.sh` | `engine/deps/patches/shader-lab/`, `ics-creative/` |
+| [perfect_freehand](https://pub.dev/packages/perfect_freehand) (the outline of Brush strokes; originally Steve Ruiz's perfect-freehand) | 2.5.2+1 | MIT (Copyright (c) 2021 Stephen Ruiz, 2023 Adil Hanney) | `app/pubspec.yaml` (flutter pub get) | none |
+| [AbsentMotion](https://github.com/Comett1225/AbsentMotion) (the source of the effects turned into WGSL) | 0f5d891 | Apache-2.0 | `shelves/effects/sources/absent.sh` | none |
+| [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 image encoder (shelf map: effect frames). Turned into ONNX and placed at `~/Library/Caches/Motolii/models/clip_b32.onnx` | The `openai` weights of open_clip (ViT-B-32.pt) | MIT | `engine/deps/likeness_models.py` (loaded with [open_clip](https://github.com/mlfoundations/open_clip), MIT; exported with torch.onnx.export of [PyTorch](https://github.com/pytorch/pytorch), BSD-3-Clause) | none |
+| [FontCLIP](https://github.com/yukistavailable/FontCLIP) (Tatsukawa et al., Eurographics 2024) image encoder (shelf map: font samples). Turned into ONNX as `fontclip_b32.onnx` | model.pt from setup_data.py | MIT (the author says in issue 13 that the weights are MIT too) | `engine/deps/likeness_models.py` (follows the way fontclip_model.py of [FontMap](https://github.com/tfrere/fontmap) reads it, MIT) | none |
 
-## 3. AviUtl2 のスクリプトの一覧（172）
+## 3. List of AviUtl2 scripts (172)
 
-| 名前 | 作者 | ライセンス | 配布元 | 置き場所 |
+| Name | Author | Licence | Distribution | Where it sits |
 |---|---|---|---|---|
 | PSD連携アニメーション(非公式) | CJF | MIT | https://github.com/ColorJellyFish/aviutl2_cjf_psdanimation | `CJF__PSD_anime` |
 | ペン&矩形ツール | CJF | MIT | https://github.com/ColorJellyFish/aviutl2_cjf_pentool | `CJF__PenTool` |
