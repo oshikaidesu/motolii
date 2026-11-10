@@ -14,5 +14,8 @@ brew "onnxruntime"
 # What the editor runs: writing a film (ffmpeg makes the mp4, render_draw.h's film)
 brew "ffmpeg"
 # (not the build: shelves/effects/sources/from_three.py, which makes effects from three.js shaders, wants naga on PATH: brew install naga-cli)
-# What the checks run, not the build (.githooks/shape_check.sh): shapes refused in Dart and C++
+# What the checks run, not the build: the C++ formatter (.clang-format), the C++ tests (engine/**/*_test.cpp, ctest),
+# shapes refused in Dart and C++ (.githooks/shape_check.sh)
+brew "clang-format"
+brew "googletest"
 brew "ast-grep"
