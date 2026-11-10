@@ -8,6 +8,8 @@
 #include "document/kinds.h"
 #include "entry/motolii.h"
 
+namespace motolii {
+
 // A string a call answers with. It is kept until the same thread asks again, so
 // each caller has its own: the render thread, the window, and a question on
 // another isolate. motolii_cache keeps its runs in the same way. One string
@@ -37,5 +39,7 @@ int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
 // Sets the camera that the window works through. word holds three numbers. If
 // it does not, the document's own camera is used. Returns 1.
 int view_camera_is(Motolii* m, const char* word);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_WINDOW_H_

@@ -48,6 +48,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 void render_thread_run(Motolii* m, std::string document, int wide, int high,
                        std::promise<bool>* opened) {
   // Run at user-interactive priority. The thread makes the frames the window
@@ -437,3 +439,5 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   }
   for (auto& [who, h] : m->heard) heard_off(h);
 }
+
+}  // namespace motolii

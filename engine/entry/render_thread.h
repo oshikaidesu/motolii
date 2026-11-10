@@ -35,18 +35,26 @@
 #include "stage/live.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
+// Frames per second. This is also the frame rate of an exported video.
+inline constexpr int RATE = 60;
+
+}  // namespace motolii
+
 // The state of the render thread. That thread does everything that touches the
 // engine: it opens the stage, runs each queued call as it arrives while the
 // caller waits for the result, and, when the stage is live, draws a frame
 // whenever something has changed or time is advancing. The clock belongs to the
 // engine. The app is notified when a frame is finished and never asks for one
-// to be drawn. Frames per second. This is also the frame rate of an exported
-// video.
-inline constexpr int RATE = 60;
+// to be drawn.
+//
+// This is the handle that the C API names (entry/motolii.h declares it at
+// global scope), so it is defined outside namespace motolii.
 struct Motolii {
-  Stage* s = nullptr;
-  Doc* d = nullptr;
-  Live* live = nullptr;
+  motolii::Stage* s = nullptr;
+  motolii::Doc* d = nullptr;
+  motolii::Live* live = nullptr;
   // The layer selected in the window and the layer under the pointer. Both are
   // marked in the preview.
   int pick = 0, hover = 0;
@@ -55,7 +63,7 @@ struct Motolii {
   std::set<int> watched;
   // The sound of each layer, keyed by pointer, while the live stage plays. See
   // sound_playback.h.
-  std::map<const void*, Heard> heard;
+  std::map<const void*, motolii::Heard> heard;
   std::string error, listed;
   std::thread render_thread;
   // Where the render thread is in its loop. Printed to stderr if the loop
@@ -166,7 +174,7 @@ struct Motolii {
   double scale = 1.0;
   // Frames of the stage cached on disk for playback. See
   // preview/playback_cache.h.
-  StageCache cache;
+  motolii::StageCache cache;
   // Seconds spent, and in the next member the number of calls, for: changes,
   // reads, evaluating a time, and drawing.
   double spent[4] = {0, 0, 0, 0};
@@ -193,6 +201,9 @@ struct Motolii {
   // The window's single listener.
   void (*listener)(int) = nullptr;
 };
+
+namespace motolii {
+
 // Length of one beat in milliseconds. A frame that takes longer misses a beat.
 inline constexpr double BEAT_MS = 1000.0 / 60.0;
 // Appends a line with the current wall-clock time and why to m->broke, which
@@ -361,5 +372,7 @@ auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION())
   }
   return out;
 }
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_RENDER_THREAD_H_

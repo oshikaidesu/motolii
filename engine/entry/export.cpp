@@ -20,6 +20,8 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
+using namespace motolii;
+
 // Writes the work area of the project to a video file: .mp4, .mov (HEVC), .gif,
 // or .png / .jpg with one image per frame. Calls from other threads are
 // answered while it runs, but they only read the project. Returns 1 on success,

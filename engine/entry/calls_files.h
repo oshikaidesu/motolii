@@ -6,6 +6,8 @@
 // IRIS (media/video_flash_check.h), and report the kinds of a font with
 // CoreText.
 
+namespace motolii {
+
 // Writes a frame of a video as a small PNG of width `wide`. A GStreamer
 // pipeline decodes, scales and encodes to PNG, is paused at its first frame,
 // and that frame is taken and written. The pipeline needs no stage, so any
@@ -18,5 +20,7 @@
 // the frames it plays. Returns nonzero if the PNG was written.
 int thumbnail_at(const char* video, const char* png, int wide, double fraction,
                  double seconds = -1.0);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_CALLS_FILES_H_

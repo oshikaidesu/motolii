@@ -8,10 +8,14 @@
 
 #include "entry/motolii.h"
 
+namespace motolii {
+
 // Body of the render thread. Opens the stage and the document at the given
 // size, reports through opened whether that worked, and then loops until
 // closing is set.
 void render_thread_run(Motolii* m, std::string document, int wide, int high,
                        std::promise<bool>* opened);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_RENDER_THREAD_LOOP_H_

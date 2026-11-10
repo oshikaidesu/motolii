@@ -21,6 +21,10 @@
 #include "entry/window.h"
 #include "media/sound_level.h"
 
+using namespace motolii;
+
+namespace motolii {
+
 namespace {
 
 // Returns the loudness in dB of a file's sound, sampled 100 times per second of
@@ -42,6 +46,8 @@ const std::vector<float>* loudness_of(const std::string& file,
 }
 
 }  // namespace
+
+}  // namespace motolii
 
 // Copies the loudness of a video layer's sound, in dB, to db: 100 samples per
 // second of the video's own time, at most room of them. Returns how many
@@ -94,6 +100,9 @@ int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
     return n;
   });
 }
+
+namespace motolii {
+
 bool duck(Motolii* m, int layer) {
   Doc& d = *m->d;
   if (!doc_knows(d, layer) || doc_word(d, layer, "kind") != "video")
@@ -154,6 +163,9 @@ bool duck(Motolii* m, int layer) {
       d.act_ok = false;
   return doc_acted(d);
 }
+
+}  // namespace motolii
+
 // Finds the times where a video's sound grows louder by at least `rise` dB
 // within 30 ms. If own is nonzero the times are in the video's own seconds.
 // Otherwise they are mapped to project time, and times outside the part of the

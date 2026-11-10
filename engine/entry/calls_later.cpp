@@ -38,6 +38,8 @@
 #include "entry/snapshot.h"
 #include "entry/window.h"
 
+using namespace motolii;
+
 // Queues a change behind every other change on the render thread and returns a
 // ticket at once, so that the app's UI thread never waits for the render
 // thread. motolii_answer returns the result for a ticket: -1 if the change is

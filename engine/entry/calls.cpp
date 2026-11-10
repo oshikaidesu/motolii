@@ -46,6 +46,7 @@
 #include "stage/render/render_stage.h"
 
 using namespace filament;
+using namespace motolii;
 
 // Adds a layer of kind `kind` made from `file`. Returns nonzero on success.
 int motolii_add(Motolii* m, const char* kind, const char* file) {
@@ -121,6 +122,9 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file,
     return changes(m, (int)(doc_acted(d) && ok));
   });
 }
+
+namespace motolii {
+
 int easing_is(Motolii* m, int layer, const char* name, double at,
               const char* easing) {
   Doc& d = doc(m);
@@ -139,6 +143,9 @@ int easing_is(Motolii* m, int layer, const char* name, double at,
     d.act_ok = false;
   return changes(m, (int)doc_acted(d));
 }
+
+}  // namespace motolii
+
 // Puts easing `easing` on the keyframe of property `name` at time `at`. Returns
 // nonzero on success.
 int motolii_easing(Motolii* m, int layer, const char* name, double at,
@@ -146,6 +153,9 @@ int motolii_easing(Motolii* m, int layer, const char* name, double at,
   return on_render_thread(
       m, [=] { return easing_is(m, layer, name, at, easing); });
 }
+
+namespace motolii {
+
 int define_is(Motolii* m, const char* easing, const char* expression) {
   Doc& d = doc(m);
   doc_act(d);
@@ -176,6 +186,9 @@ int define_is(Motolii* m, const char* easing, const char* expression) {
     d.act_ok = false;
   return changes(m, (int)doc_acted(d));
 }
+
+}  // namespace motolii
+
 // Returns the names of the effects that can be added, separated by spaces.
 const char* motolii_effect_names(Motolii* m) {
   return by_look(m, [m] { return (m->listed = doc_effect_names()).c_str(); });
@@ -632,6 +645,8 @@ const char* motolii_easing_of(Motolii* m, int layer, const char* name,
   });
 }
 
+namespace motolii {
+
 namespace {
 
 // Returns how many points of the image one stage unit is, for layers whose z is
@@ -644,6 +659,8 @@ double point_of(Motolii* m) {
 }
 
 }  // namespace
+
+}  // namespace motolii
 
 // Returns how many points of the image one stage unit is, for layers whose z is
 // 0.

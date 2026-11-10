@@ -19,6 +19,10 @@
 #include "shelf/shelf_folders.h"
 #include "third_party/rapidfuzz/rapidfuzz_amalgamated.hpp"
 
+using namespace motolii;
+
+namespace motolii {
+
 namespace {
 
 // Decodes UTF-8 into code points and lower-cases the ASCII letters, as
@@ -116,6 +120,8 @@ std::vector<std::vector<std::string>> find_english(const std::string& query) {
 }
 
 }  // namespace
+
+}  // namespace motolii
 
 // Searches the items of a shelf for the query and returns the best matches
 // nearest first, one per line as "id\tscore\n". `items` has one item per line

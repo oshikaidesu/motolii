@@ -25,6 +25,8 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
+using namespace motolii;
+
 // Returns the length of the project in seconds.
 double motolii_seconds(Motolii* m) {
   return by_look(m, [m] { return doc_seconds(*m->d); });
@@ -53,6 +55,9 @@ int motolii_at(Motolii* m, double seconds) {
     if (m->d->stage) m->d->stage->now = seconds;
   });
 }
+
+namespace motolii {
+
 bool ends(const char* name, const char* with) {
   return strlen(name) > strlen(with) &&
          !strcmp(name + strlen(name) - strlen(with), with);
@@ -61,6 +66,9 @@ bool placed(const char* name) {
   return std::filesystem::is_directory(
       std::filesystem::absolute(name).parent_path());
 }
+
+}  // namespace motolii
+
 // Writes the project's poster image to png and stores it in the project
 // together with the project's size and length, so that motolii_doc_properties
 // can read it without opening the project. This follows how AbsentMotion keeps

@@ -28,6 +28,8 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
+using namespace motolii;
+
 // Changes the working directory to folder.
 void motolii_home(const char* folder) {
   if (chdir(folder)) std::printf("motolii_home: %s is not a folder\n", folder);
@@ -62,15 +64,24 @@ void motolii_close(Motolii* m) {
   if (m->beat) m->beat->stop();
   if (m->d) sqlite3_close(m->d->file);
 }
+
+namespace motolii {
+
 std::string& said_word() {
   static thread_local std::string w;
   return w;
 }
+
+}  // namespace motolii
+
 // Returns the error text of the calling thread's last call, or the current
 // error text if that call left none.
 const char* motolii_error(Motolii* m) {
   return why_asked.empty() ? motolii_why(m) : why_asked.c_str();
 }
+
+namespace motolii {
+
 int checked(Motolii* m, bool ok, const char* otherwise) {
   if (!ok && otherwise) m->error = otherwise;
   return ok ? 1 : 0;
@@ -88,6 +99,9 @@ int changes(Motolii* m, int done) {
 int live_is(Motolii* m) {
   return m->live || (m->live = live_open(*m->s)) ? 1 : 0;
 }
+
+}  // namespace motolii
+
 // Returns the last finished frame of the stage, or nullptr.
 void* motolii_front(Motolii* m) {
   return m->live ? live_front(m->live) : nullptr;
@@ -111,6 +125,9 @@ const char* motolii_cache(Motolii* m) {
   std::lock_guard<std::mutex> hold(m->cache.runsLock);
   return (runs = m->cache.runs).c_str();
 }
+
+namespace motolii {
+
 int pick_is(Motolii* m, int layer, int hover) {
   m->pick = layer, m->hover = hover, m->changed = true;
   return 1;
@@ -142,6 +159,9 @@ int view_camera_is(Motolii* m, const char* word) {
   m->changed = true;
   return 1;
 }
+
+}  // namespace motolii
+
 // Returns the last finished frame of the preview, or nullptr.
 void* motolii_desk_front(Motolii* m) {
   return m->live && m->live->desk ? live_front(m->live->desk) : nullptr;

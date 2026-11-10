@@ -15,6 +15,10 @@
 #include "entry/motolii.h"
 #include "media/video_flash_check.h"
 
+using namespace motolii;
+
+namespace motolii {
+
 int thumbnail_at(const char* video, const char* png, int wide, double fraction,
                  double seconds) {
   gst_init(nullptr, nullptr);
@@ -64,6 +68,9 @@ int thumbnail_at(const char* video, const char* png, int wide, double fraction,
   gst_object_unref(pipeline);
   return done;
 }
+
+}  // namespace motolii
+
 // Writes the thumbnail at `fraction`, from 0 to 1, of the video's duration. See
 // thumbnail_at.
 int motolii_thumbnail_at(const char* video, const char* png, int wide,

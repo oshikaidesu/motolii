@@ -24,6 +24,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 thread_local std::string why_asked;
 
 void broke_one(Motolii* m, const char* why) {
@@ -106,3 +108,5 @@ int posted(Motolii* m, const std::string& kind, std::function<void()> does) {
   m->asked_now.notify_one();
   return 1;
 }
+
+}  // namespace motolii

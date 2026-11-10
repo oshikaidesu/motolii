@@ -5,6 +5,8 @@
 // Duck does.
 #include "entry/motolii.h"
 
+namespace motolii {
+
 // Keys a video layer's volume down by 12 dB while any other video's sound is
 // louder than -30 dB, as Audacity's Auto Duck does (see its manual). The volume
 // fades down over the half second before and back up over the half second
@@ -13,5 +15,7 @@
 // not a video, its volume already has keyframes, another video's sound has not
 // been read yet (motolii_loudness reads it), or no other sound is loud enough.
 bool duck(Motolii* m, int layer);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_CALLS_SOUND_H_

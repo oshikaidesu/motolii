@@ -26,6 +26,8 @@
 #include "document/undo.h"
 #include "entry/render_thread.h"
 
+namespace motolii {
+
 namespace {
 
 // A rapidjson writer that never emits a non-finite number.
@@ -381,3 +383,5 @@ void snapshot_notify(Motolii* m) {
     pending |= 4, m->cacheNotified = k;
   if (pending && m->listener) m->listener(pending);
 }
+
+}  // namespace motolii

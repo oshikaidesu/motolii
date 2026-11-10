@@ -15,6 +15,8 @@
 //     time that was drawn.
 #include "entry/motolii.h"
 
+namespace motolii {
+
 // Rebuilds the parts of the document snapshot that changed. Runs on the render
 // thread while it holds the document.
 //
@@ -39,5 +41,7 @@ void snapshot_time(Motolii* m);
 // mask: 1 for the document snapshot, 2 for the time snapshot, and 4 for a
 // change in which stage frames are cached on disk.
 void snapshot_notify(Motolii* m);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_ENTRY_SNAPSHOT_H_
