@@ -6,9 +6,12 @@
 // styles.cpp is included whole and unchanged so that DrawStrokeEnd, which is private to that
 // file, can be called from here. The rest of styles.cpp is never called and is removed by the
 // linker (gpu/filament_webgpu.sh, -dead_strip).
-#include "styles.cpp"
 #include "community/absent_motion/absent_motion.h"
+
+#include <string>
+
 #include "include/utils/SkParsePath.h"
+#include "styles.cpp"
 
 // See absent_motion.h.
 std::string absent_line_end(float x, float y, float dx, float dy, float r, float width, int cap, int join, const char* style) {
