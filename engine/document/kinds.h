@@ -1,38 +1,47 @@
-// Included by doc.h; not self-contained. Defines Doc, the in-memory state of an open project, and
-// doc_values, the table of named values that layers can have.
-#include "stage/canvas/canvas.h"
-#include <string_view>
-#include <unordered_map>
-#include <tuple>
-#include "motion/lottie_motion.h"
-#include "motion/easing_curves.h"
-#include "physics/physics.h"
-#include "community/quickjs/script.h"
-#include "community/sites/adapter.h"
-#include "community/hydra/hydra_isf.h"
-#include "community/after_effects/lottie_slots.h"
-#include "stage/effects/viewer_settings.h"
-#include "community/absent_motion/absent_motion.h"
-#include "community/isf/isf.h"
-#include "community/three/three_isf.h"
-#include "media/midi_roll.h"
-#include "motion/easing_names.h"
-#include "stage/effects/screen_fx.h"
-#include "stage/effects/layer_fx.h"
-#include "media/video_datamosh.h"
-#include "stage/render/point_cloud.h"
-#include <filesystem>
+#ifndef MOTOLII_DOCUMENT_KINDS_H_
+#define MOTOLII_DOCUMENT_KINDS_H_
+// Defines Doc, the in-memory state of an open project, and doc_values, the table of named values
+// that layers can have.
+
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
 #include <mutex>
-#include <dlfcn.h>
-#include <fstream>
-#include "stage/render/gltf_model.h"
-#include "media/video_layer.h"
-#include "media/sound_level.h"
-#include "media/midi_notes.h"
-#include <filament/Skybox.h>
 #include <set>
-#include <sstream>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include <filament/MaterialInstance.h>
+#include <filament/RenderTarget.h>
+#include <filament/Scene.h>
+#include <filament/Skybox.h>
+#include <filament/Texture.h>
+#include <math/mat4.h>
+#include <math/vec2.h>
+#include <math/vec3.h>
+#include <math/vec4.h>
 #include <sqlite3.h>
+#include <utils/Entity.h>
+
+#include "community/absent_motion/absent_motion.h"
+#include "community/playcanvas/splatfx.h"
+#include "community/quickjs/script.h"
+#include "media/video_layer.h"
+#include "motion/easing_curves.h"
+#include "motion/lottie_motion.h"
+#include "physics/physics.h"
+#include "stage/canvas/canvas_cache.h"
+#include "stage/effects/layer_fx.h"
+#include "stage/effects/screen_fx.h"
+#include "stage/render/gltf_model.h"
+#include "stage/render/render_stage.h"
 
 struct DocScript;
 // Doc is an open project: the SQLite database plus the caches built from it. Most members are
@@ -70,7 +79,7 @@ struct Doc {
     // Per-copy materials, keyed by the copy's entity: the layer's material duplicated while its
     // copies are colored individually. copyEdges holds the same for the edge, the second part of a
     // copy.
-    std::map<uint32_t, MaterialInstance*> copyLooks, copyEdges;
+    std::map<uint32_t, filament::MaterialInstance*> copyLooks, copyEdges;
     // Each value's behavior (`<name>_by`), by layer and name. Found once and cleared at every
     // change.
     std::map<std::pair<int, std::string>, int> drivers;
@@ -91,13 +100,13 @@ struct Doc {
     int ctxCopy = 0, ctxN = 1;
     // Where that copy lies on the stage once laid out, valid when ctxHasAt is true. A behavior's
     // falloff weighs it.
-    bool ctxHasAt = false; math::double3 ctxAt{0.0};
+    bool ctxHasAt = false; filament::math::double3 ctxAt{0.0};
     // The room's own light, as it was when the stage was opened.
     float roomLight = 0.f;
     // Which room lights the stage now (see doc_look).
     std::string roomIs;
     // The room behind everything, once one is set.
-    Skybox* sky = nullptr;
+    filament::Skybox* sky = nullptr;
     // The color behind everything: a flat color as large as the stage, drawn before everything else
     // in the stage's own view.
     Canvas2D* backdrop = nullptr;
@@ -175,7 +184,7 @@ struct Doc {
     std::map<int, ThingFx> layerFx;
     // A layer that reads what is under it: seen is its image of what is below, into is the target
     // that image is drawn to.
-    struct Read { Texture* seen = nullptr; RenderTarget* into = nullptr; };
+    struct Read { filament::Texture* seen = nullptr; filament::RenderTarget* into = nullptr; };
     // The layers that read what is under them, each with its image of it (see doc_layers_read).
     std::map<int, Read> reads;
     // Which layer each of the stage's `before` entries belongs to.
@@ -234,7 +243,7 @@ struct Doc {
     bool evaluating = false;
     // A layer's half size and depth (doc_half). Worked out once per time, because all its copies
     // ask for it.
-    std::map<int, std::pair<float2, float>> halves;
+    std::map<int, std::pair<filament::math::float2, float>> halves;
     // Each value's word, cached the same way as moving.
     std::map<std::pair<int, std::string>, std::string> words;
     // The times of each value's keyframes, cached the same way as moving.
@@ -243,9 +252,9 @@ struct Doc {
     // once and then evaluated by SQLite.
     std::map<std::string, sqlite3_stmt*> named, expression_statements;
     // One layer as it is on the stage, and what it was made of.
-    struct Shown { std::string of; Video* video = nullptr; Canvas2D* drawn = nullptr; Solid* solid = nullptr; Mesh* shape = nullptr; bool in = true, clipped = false, camera = false, drivenLooks = false, behaviour = false, grains = false; std::shared_ptr<SplatEffect> splatFx; std::string splatFxFile; MaterialInstance* splatPlain = nullptr; bool splatDone = false; int run = -1, lies = -1;
+    struct Shown { std::string of; Video* video = nullptr; Canvas2D* drawn = nullptr; Solid* solid = nullptr; Mesh* shape = nullptr; bool in = true, clipped = false, camera = false, drivenLooks = false, behaviour = false, grains = false; std::shared_ptr<SplatEffect> splatFx; std::string splatFxFile; filament::MaterialInstance* splatPlain = nullptr; bool splatDone = false; int run = -1, lies = -1;
                    // sketch: a p5.js sketch's mesh and what it was last made from (see sketch.h).
-                   bool sketch = false; int sketchFrame = -1; int sketchMade = -1; float3 sketchEye{}; std::map<int, float> sketchStrong; std::vector<SketchShape> sketchShapes; std::vector<Canvas2D*> sketchPics; std::vector<SketchPaint> sketchPaints; size_t sketchParts = 1;
+                   bool sketch = false; int sketchFrame = -1; int sketchMade = -1; filament::math::float3 sketchEye{}; std::map<int, float> sketchStrong; std::vector<SketchShape> sketchShapes; std::vector<Canvas2D*> sketchPics; std::vector<SketchPaint> sketchPaints; size_t sketchParts = 1;
                    // The layer's Filament light, if it is a light. It is in every scene of the
                    // stage while the light is on.
                    utils::Entity light;
@@ -262,12 +271,12 @@ struct Doc {
                    double cel = -2; bool celMove = false;
                    // The scene the layer is in and its channel there. If none is set, the stage's
                    // own scene, where the layer was made.
-                   Scene* scene = nullptr; int channel = -1;
+                   filament::Scene* scene = nullptr; int channel = -1;
                    // A solid's own material, made by the render code. A matte cuts it.
-                   MaterialInstance* look = nullptr;
+                   filament::MaterialInstance* look = nullptr;
                    // A 3D layer of an After Effects image: a sheet of its own, placed where the
                    // layer is.
-                   struct Deep { uint32_t id; Canvas2D* sheet; float4 box; };
+                   struct Deep { uint32_t id; Canvas2D* sheet; filament::math::float4 box; };
                    std::vector<Deep> deep;
                    // motion: the same file, read for its poses only. They give the position of each
                    // part.
@@ -275,7 +284,7 @@ struct Doc {
     // The camera of the current time, against the stage's own camera, which is 6 units in front and
     // 30 degrees high. rig is how the world is moved for the camera, and a 2D layer moves with it.
     // facing is only how the world is turned, and a 2.5D layer keeps its own angle.
-    math::mat4 rig, facing;
+    filament::math::mat4 rig, facing;
     // True if the lens blurs what is off its focus. Applies to solid layers and layers in the world
     // only.
     bool blurred = false;
@@ -283,7 +292,7 @@ struct Doc {
     // own. from: the layer whose image cuts it. look: the material of the layer that the matte was
     // told about. how: how it was last cut: by transparency or by brightness, inverted or not, and
     // how soft.
-    struct Cut { int matte = -1, from = 0; const Canvas2D* by = nullptr; MaterialInstance* look = nullptr; std::string how; };
+    struct Cut { int matte = -1, from = 0; const Canvas2D* by = nullptr; filament::MaterialInstance* look = nullptr; std::string how; };
     std::map<int, Cut> cuts;
     // The layers as they are on the stage, and what each was made of.
     std::map<int, Shown> shown;
@@ -292,16 +301,16 @@ struct Doc {
     std::map<int, Along> along;
     // Where a layer was at a tick of a trail's own grid. Worked out once and cleared at every
     // change.
-    std::map<std::tuple<int, double, long long>, math::double3> tracks;
+    std::map<std::tuple<int, double, long long>, filament::math::double3> tracks;
 };
 // The kinds of layer.
-static const char* const doc_kinds = "video image text solid shape camera light";
+inline const char* const doc_kinds = "video image text solid shape camera light";
 // The kinds of layer that are seen.
-static const char* const doc_visible_kinds = "video image text solid shape";
+inline const char* const doc_visible_kinds = "video image text solid shape";
 // The kinds of relation. A group is the plainest: layers in an order and nothing else.
-static const char* const doc_relations = "around row follow push group relate";
+inline const char* const doc_relations = "around row follow push group relate";
 // The built-in shapes a solid can have.
-static const char* const doc_shapes = "ring gem cube ball sketch";
+inline const char* const doc_shapes = "ring gem cube ball sketch";
 // SQL condition for whether a value is keyed. See doc_key.
 #define DOC_KEYED "(select count(*) > 1 or max(at) <> 0 or max(easing) is not null from keyframe where layer = %d and name = %Q)"
 // A named value that a layer can have: its name, the kinds of layer that have it, a range from low
@@ -309,7 +318,7 @@ static const char* const doc_shapes = "ring gem cube ball sketch";
 // and high only say how far the control goes. A value typed beyond them is accepted, like After
 // Effects' slider range and valid range (PF_FloatSliderDef).
 struct DocValue { const char* name; const char* kinds; double low, high; bool moves; const char* words; bool open = false; };
-static const DocValue doc_values[] = {
+inline const DocValue doc_values[] = {
     // For a group, z is how far its layers are away when it is out.
     {"x", "video image text solid shape camera light behaviour", -1e4, 1e4, true, nullptr}, {"y", "video image text solid shape camera light behaviour", -1e4, 1e4, true, nullptr}, {"z", doc_kinds, -1e4, 1e4, true, nullptr},
     // For a relation, rotate is added to each of its layers in turn.
@@ -795,3 +804,4 @@ struct DocCard { const char* title; const char* names; const char* when = nullpt
 // the name of the fold it lies in on its card if it is folded away, named by what the fold holds. A
 // card's first row holds at most eight, as on Ableton's Push.
 struct DocShown { const char* name; const char* look; const char* unit; const char* label; double low, high; const char* fold; bool open = false; };
+#endif  // MOTOLII_DOCUMENT_KINDS_H_
