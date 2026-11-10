@@ -5,7 +5,7 @@ import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/workspace/dock/dock_make_create.dart';
+import 'package:motolii/workspace/dock/create/create_shelf.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
