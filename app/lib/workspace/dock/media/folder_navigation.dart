@@ -48,9 +48,8 @@ List<FileNode> folderPathOf(ShelfContext c, MediaController media, String id) {
 /// Opens the folder [id] in the shelf: its contents are shown and its row in the tree is opened.
 void openFolder(ShelfContext c, MediaController media, String id) => c.set(() {
   if (id.startsWith('/')) {
-    media.readFolder(
-      id,
-    ); // A folder on disk is read again each time it is opened.
+    // A folder on disk is read again each time it is opened.
+    media.readFolder(id);
   }
   c.mem.folder = id;
   // Only that folder opens: the same folder is listed under more than one location,
