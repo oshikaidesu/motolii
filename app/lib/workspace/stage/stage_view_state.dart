@@ -21,13 +21,13 @@ import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/camera_gestures.dart';
+import 'package:motolii/workspace/stage/draw_tools.dart';
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_drag.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
-import 'package:motolii/workspace/stage/stage_view_draw.dart';
 import 'package:motolii/workspace/stage/stage_view_painter.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
@@ -49,9 +49,10 @@ class StageViewState extends State<StageView>
   @override
   List<double> get crop => _cropOf();
 
-  // The drag in progress, and the camera gestures that are carried on through it.
+  // The drag in progress, the camera gestures that are carried on through it, and the strokes of the drawing tools.
   late final StageDrag _drag;
   late final CameraGestures _camera;
+  late final DrawTools _draw;
 
   void _rebuild() => setState(() {});
 
@@ -131,6 +132,7 @@ class StageViewState extends State<StageView>
     super.initState();
     _drag = StageDrag(this)..addListener(_rebuild);
     _camera = CameraGestures(this, _drag)..addListener(_rebuild);
+    _draw = DrawTools(this)..addListener(_rebuild);
     HardwareKeyboard.instance.addHandler(_enter);
   }
 
@@ -147,7 +149,7 @@ class StageViewState extends State<StageView>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.zoom != widget.zoom) _pan = Offset.zero;
     if (oldWidget.tool.make != widget.tool.make) {
-      penning = false; // Another tool: the pen's next point starts a new shape.
+      _draw.endPenPath(); // Another tool: the pen's next point starts a new shape.
     }
   }
 
@@ -225,6 +227,7 @@ class StageViewState extends State<StageView>
     _deskOf?.desk(0, 0, 0, 0, 0, 0); // Back to the engine's own stage view.
     _camera.dispose();
     _drag.dispose();
+    _draw.dispose();
     _tapWait?.cancel();
     HardwareKeyboard.instance.removeHandler(_enter);
     super.dispose();
@@ -261,80 +264,16 @@ class StageViewState extends State<StageView>
 
   Offset? _last;
 
-  // A layer being drawn with the current tool, from where the pointer went down to where it is released. A rectangle or
-  // ellipse fills that box, a line runs between the points, text goes where the pointer went down. A click alone creates
-  // the layer at once. It is one undo step and the new layer is selected.
-  Offset? drawFrom;
-
-  // A lasso drawn on empty stage with no tool: the layers whose centres are inside are selected together (WorkspaceController.many), and the
-  // actions available for them are offered beside them (make_relation.dart).
-  List<Offset>? lasso;
-
-  // The pen: each pointer-down places a point and dragging pulls out its handle; a click alone makes a corner point. The first
-  // point goes to the selected layer, later ones to the path the pen created (layer -1). The engine works out the rest:
-  // starting a path, closing it on its first point, adding or removing a point on a closed path.
-  bool penning = false;
-  List<Offset>? penWay; // Pointer path while the pen is down; a scribble rather than a handle becomes a path of its own.
-
-  void _pen(StageViewport v, Offset down, Offset up) {
-    final ws = WorkspaceScope.read(context), m = ws.inside, way = penWay;
-    drawFrom = null;
-    penWay = null;
-    setState(() {});
-    if (m == null) return;
-    if (way != null && _scribbled(way, down, up)) return fit(v, way);
-    final a = v.toComposition(down), h = v.toComposition(up) - a;
-    final first = !penning;
-    penning = true;
-    if (first) m.later('together', number: 1);
-    var made = 0;
-    ws.after(
-      m.later(
-        'pen',
-        layer: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1,
-        word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}',
-      ),
-      null,
-      (t) => made = t,
-    ); // On the first point a closed selected path gains or loses a point; otherwise a new path begins.
-    if (first) {
-      applyChosenInks(ws, 'shape', 'path');
-      ws.after(
-        m.later('together'),
-        (done, _) => done && made > 0 ? ws.select('$made') : null,
-      );
-    }
-  }
-
-  /// Whether the pointer path strayed more than 16 points from the straight line a handle is dragged along, so it was a
-  /// freehand line, not a handle.
-  static bool _scribbled(List<Offset> way, Offset down, Offset up) {
-    final d = up - down, long = d.distance;
-    return way.any(
-      (p) =>
-          (long < 1
-              ? (p - down).distance
-              : ((p - down).dx * d.dy - (p - down).dy * d.dx).abs() / long) >
-          16,
-    );
-  }
-
-  // The brush stroke so far, in window points. On release the points are smoothed by perfect-freehand (MIT, Steve Ruiz; Dart
-  // port by Adil Hanney), which also simulates pressure from speed. The engine keeps the stroke and builds its outline the
-  // way Alight Motion's brush does. Each point's pressure is its radius here over half the brush size.
-  List<Offset>? brush;
-
   /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
   /// a camera gizmo, a guide, a layer, and otherwise a lasso.
   void _dragStart(StageViewport v, Offset local) {
     if (widget.tool.make == 'camera') return _camera.orbitDragStart(local);
     if (widget.tool.make == 'brush') {
-      setState(() => brush = [local]);
+      _draw.brushDragStart(local);
       return;
     }
     if (widget.tool.make != null) {
-      if (widget.tool.make == 'pen') penWay = [local];
-      setState(() => drawFrom = local);
+      _draw.drawDragStart(local);
       return;
     }
     final ws = WorkspaceScope.read(context), m = ws.inside;
@@ -353,7 +292,7 @@ class StageViewState extends State<StageView>
     if (m != null && t == null) {
       // Nothing under the pointer: draw a lasso.
       ws.select(null);
-      setState(() => lasso = [local]);
+      _draw.lassoDragStart(local);
       return;
     }
     if (m == null || t == null) return;
@@ -472,7 +411,7 @@ class StageViewState extends State<StageView>
               onTapUp: (d) {
                 widget.onPoke?.call();
                 if (widget.tool.make == 'pen') {
-                  return _pen(
+                  return _draw.pen(
                     v,
                     d.localPosition,
                     d.localPosition,
@@ -482,9 +421,9 @@ class StageViewState extends State<StageView>
                   return; // A stroke is drawn, not clicked.
                 }
                 if (widget.tool.make != null) {
-                  return draw(
+                  return _draw.drawAt(
                     v,
-                    drawFrom = d.localPosition,
+                    d.localPosition,
                   ); // A click creates one layer there.
                 }
                 final hit = hitLocal(v, d.localPosition),
@@ -508,37 +447,40 @@ class StageViewState extends State<StageView>
               },
               dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
               onPanStart: (d) => _dragStart(v, _last = d.localPosition),
-              onPanUpdate: (d) => brush != null
-                  ? setState(() => brush!.add(d.localPosition))
-                  : lasso != null
-                  ? setState(() => lasso!.add(d.localPosition))
-                  : drawFrom != null
-                  ? setState(() {
-                      _last = d.localPosition; // Record the pointer position for every tool, not only the pen.
-                      penWay?.add(d.localPosition);
-                    })
+              onPanUpdate: (d) => _draw.brush != null
+                  ? _draw.brushDragUpdate(d.localPosition)
+                  : _draw.lasso != null
+                  ? _draw.lassoDragUpdate(d.localPosition)
+                  : _draw.drawFrom != null
+                  ? _draw.drawDragUpdate(
+                      _last = d.localPosition, // Record the pointer position for every tool, not only the pen.
+                    )
                   : _drag.isPullingGuide
                   ? (widget.cursor.value = v.toComposition(
                       _last = d.localPosition,
                     ))
                   : _dragUpdate(v, _last = d.localPosition),
-              onPanEnd: (_) => brush != null
-                  ? brushDragEnd(v)
-                  : lasso != null
-                  ? lassoDragEnd(v)
-                  : drawFrom != null
+              onPanEnd: (_) => _draw.brush != null
+                  ? _draw.brushDragEnd(v)
+                  : _draw.lasso != null
+                  ? _draw.lassoDragEnd(v)
+                  : _draw.drawFrom != null
                   ? (widget.tool.make == 'pen'
-                        ? _pen(v, drawFrom!, _last ?? drawFrom!)
-                        : draw(v, _last ?? drawFrom!))
+                        ? _draw.pen(
+                            v,
+                            _draw.drawFrom!,
+                            _last ?? _draw.drawFrom!,
+                          )
+                        : _draw.drawDragEnd(v, _last ?? _draw.drawFrom!))
                   : _drag.isPullingGuide
                   ? _drag.guideDragEnd(v, _last!)
                   : _dragEnd(),
-              onPanCancel: () => brush != null
-                  ? setState(() => brush = null)
-                  : lasso != null
-                  ? setState(() => lasso = null)
-                  : drawFrom != null
-                  ? setState(() => drawFrom = null)
+              onPanCancel: () => _draw.brush != null
+                  ? _draw.brushDragCancel()
+                  : _draw.lasso != null
+                  ? _draw.lassoDragCancel()
+                  : _draw.drawFrom != null
+                  ? _draw.drawDragCancel()
                   : _drag.isPullingGuide
                   ? _drag.guideDragCancel()
                   : _dragEnd(keep: false),
@@ -632,19 +574,19 @@ class StageViewState extends State<StageView>
                         ),
                       ),
                     ),
-                  if (drawFrom case final from?
+                  if (_draw.drawFrom case final from?
                       when _last != null &&
                           widget.tool.make == 'pen' &&
-                          penWay != null &&
-                          _scribbled(
-                            penWay!,
+                          _draw.penWay != null &&
+                          DrawTools.scribbled(
+                            _draw.penWay!,
                             from,
                             _last!,
                           )) // A scribble is drawn thin like the brush and becomes a path on release.
                     IgnorePointer(
-                      child: CustomPaint(painter: _BrushWay(penWay!)),
+                      child: CustomPaint(painter: _BrushWay(_draw.penWay!)),
                     )
-                  else if (drawFrom case final from?
+                  else if (_draw.drawFrom case final from?
                       when _last != null &&
                           widget.tool.make ==
                               'pen') // The pen's handle being pulled out, drawn through its point both ways.
@@ -657,7 +599,7 @@ class StageViewState extends State<StageView>
                         ),
                       ),
                     )
-                  else if (drawFrom case final from?
+                  else if (_draw.drawFrom case final from?
                       when _last != null) // The box of the layer being drawn.
                     Positioned.fromRect(
                       rect: Rect.fromPoints(from, _last!),
@@ -721,9 +663,9 @@ class StageViewState extends State<StageView>
                     ),
                   ),
                   // Marks for the lasso, the layers picked together and the picked relation: its shape, handles and what it moves.
-                  RelationMarks(scene: scene, v: v, lasso: lasso),
+                  RelationMarks(scene: scene, v: v, lasso: _draw.lasso),
                   // The brush path so far, drawn thin; once released the stroke belongs to the engine.
-                  if (brush case final way?)
+                  if (_draw.brush case final way?)
                     IgnorePointer(child: CustomPaint(painter: _BrushWay(way))),
                   Positioned(
                     left: StageTokens.ruler + StageTokens.pad,
