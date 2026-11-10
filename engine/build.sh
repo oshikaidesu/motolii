@@ -21,6 +21,7 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     ./deps/libtess2.sh
     ./deps/curve_fit_nd.sh
     ./deps/jolt.sh
+    ./deps/ffmpeg.sh
     ./deps/iris.sh
     ./deps/midi_roll.sh
     [ -f third_party/skia_src/out/path/libpathops.a ] || ./deps/skia.sh

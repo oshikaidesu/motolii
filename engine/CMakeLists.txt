@@ -32,6 +32,11 @@ set(JOLT ${THIRD_PARTY}/physics/JoltPhysics)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0)
+# FFmpeg's libraries are the LGPL-only build deps/ffmpeg.sh makes, never Homebrew's (it has GPL parts: libx264, libx265).
+if(NOT EXISTS ${THIRD_PARTY}/ffmpeg_lgpl/lib/pkgconfig/libavcodec.pc)
+  message(FATAL_ERROR "third_party/ffmpeg_lgpl is not built: run engine/deps/ffmpeg.sh")
+endif()
+set(ENV{PKG_CONFIG_PATH} "${THIRD_PARTY}/ffmpeg_lgpl/lib/pkgconfig")
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil)
 execute_process(COMMAND brew --prefix OUTPUT_VARIABLE HOMEBREW OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
 

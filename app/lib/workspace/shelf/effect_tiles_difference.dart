@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:motolii/bridge/engine_paths.dart' show findProgram;
+import 'package:motolii/bridge/engine_paths.dart' show findProgram, motoliiDir;
 
 /// Whether two pictures (or `_%d` runs of them) look the same: every frame differs by less than 2.0, the threshold
 /// AbsentMotion's effect_thumbs.py uses. False when nothing could be measured because ffmpeg is missing.
@@ -12,7 +12,8 @@ bool looksSame(String a, String b) {
   return changes.isNotEmpty && changes.every((c) => c < 2.0);
 }
 
-/// Runs ffmpeg over a tile's pictures. Returns null when ffmpeg is missing, as where the app was started from;
+/// Runs ffmpeg over a tile's pictures: the LGPL-only one the build made (deps/ffmpeg.sh) if it is there. Returns null when
+/// ffmpeg is missing;
 /// the tile is then its still alone.
 ProcessResult? ffmpeg(
   List<String> also, {
@@ -20,7 +21,10 @@ ProcessResult? ffmpeg(
 }) {
   try {
     return Process.runSync(
-      findProgram('ffmpeg', Platform.environment['PATH'] ?? ''),
+      findProgram(
+        'ffmpeg',
+        '$motoliiDir/third_party/ffmpeg_lgpl/bin:${Platform.environment['PATH'] ?? ''}',
+      ),
       ['-hide_banner', '-loglevel', 'error', '-y', ...also],
       stdoutEncoding: stdoutEncoding,
     );

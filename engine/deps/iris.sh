@@ -4,7 +4,7 @@
 # OpenCV 4.12.0 (Apache-2.0) built by its own CMake as a static library of the modules IRIS's code calls (core, imgproc,
 # features2d for a header, videoio reading a film by the Mac's own AVFoundation), nothing else fetched or read by it;
 # spdlog 1.15.3 and nlohmann/json 3.12.0 (MIT, headers only). IRIS's own CMake finds ffmpeg through vcpkg's FindFFMPEG,
-# so its sources, the ones its CMakeLists lists, are built here as they are, against Homebrew's ffmpeg (Brewfile).
+# so its sources, the ones its CMakeLists lists, are built here as they are, against the LGPL-only ffmpeg deps/ffmpeg.sh builds (its headers; the libraries are linked by CMake).
 # Out come third_party/iris/lib/libiris.a and OpenCV's in third_party/iris/opencv_out (media/video_flash_check.cpp; build.sh
 # links them). Measured on this Mac: 44 s for OpenCV, 31 s for IRIS (docs/design/alight_motion_checklist.md, 11/4).
 #   ./deps/iris.sh
@@ -30,6 +30,6 @@ fetch json https://github.com/nlohmann/json 55f93686c01528224f448c19128836e7df24
 [ -f $R/lib/libiris.a ] || {
     mkdir -p $R/iris_build $R/lib
     (cd $R/iris_build && clang++ -c -std=c++17 -O2 -I$R/IRIS/include -I$R/IRIS/src -I$R/IRIS/utils/include -I$R/spdlog/include \
-        -I$R/json/single_include -I$R/opencv_out/include/opencv4 $(pkg-config --cflags libavformat libavcodec) $R/IRIS/src/*.cpp $R/IRIS/utils/src/*.cpp)
+        -I$R/json/single_include -I$R/opencv_out/include/opencv4 $(PKG_CONFIG_PATH=$PWD/third_party/ffmpeg_lgpl/lib/pkgconfig pkg-config --cflags libavformat libavcodec) $R/IRIS/src/*.cpp $R/IRIS/utils/src/*.cpp)
     ar rcs $R/lib/libiris.a $R/iris_build/*.o
 }
