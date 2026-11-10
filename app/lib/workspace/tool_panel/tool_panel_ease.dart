@@ -9,7 +9,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
 
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The span of time the easing shapes: from the first selected keyframe to the layer's next keyframe.
 typedef EaseSpan = ({WsLayer layer, int from, int to, int picked});

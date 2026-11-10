@@ -24,7 +24,7 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/empty_fx.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/widgets/menu.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.

@@ -3,7 +3,8 @@
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// Gives the widgets below access to the window's [Ws].
 ///

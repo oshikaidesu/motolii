@@ -45,7 +45,7 @@ flowchart TB
 
 | 境目 | どこ | 決まり |
 |---|---|---|
-| アプリの入口 | `app/lib/main.dart` → `app/lib/workspace/workspace.dart`（`Workspace`：アプリの画面全体、プロジェクトを開く、メニュー）。アプリの状態は `app/lib/workspace/state/window.dart`（`Ws`） | アプリのファイルの地図は [`app/README.md`](../app/README.md)。パネルを足すのは `Workspace` の `extra`（`WsPane` の並び） |
+| アプリの入口 | `app/lib/main.dart` → `app/lib/workspace/workspace.dart`（`Workspace`：アプリの画面全体、プロジェクトを開く、メニュー）。アプリの状態は `app/lib/workspace/state/workspace_state.dart`（`Ws`） | アプリのファイルの地図は [`app/README.md`](../app/README.md)。パネルを足すのは `Workspace` の `extra`（`WsPane` の並び） |
 | アプリ → エンジン | `engine/entry/motolii.h`（約 260 行）、Dart 側は `app/lib/bridge/motolii.dart` と ffigen が作る `motolii_bindings.dart` | アプリは値を持たない。読むのも変えるのも C の呼び出しで、プロジェクトが正（アプリとエンジンの境目の決まりは [`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)） |
 | エンジンの中 | `engine/entry/render_thread.h` | プロジェクトと GPU に触るのはレンダースレッド 1 本だけ。アプリはこのスレッドを待たない：書きは列に積んで戻り、読むのはこのスレッドが作ったスナップショット（[`docs/app/BRIDGE.md`](app/BRIDGE.md) の決まり 1・3・6）。待つ呼び出し（`by_hand`）は試験と C の確かめの道具だけ |
 | エンジン → アプリ（フレーム） | `engine/stage/live.h` | プレビューは IOSurface の上の CVPixelBuffer 3 枚に描き、それを Dawn のテクスチャとして Filament の描き先にする。アプリ（Flutter の外部テクスチャ、`app/macos/Runner/MainFlutterWindow.swift`）は同じ物を読む |

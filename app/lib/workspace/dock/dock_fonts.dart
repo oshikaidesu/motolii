@@ -22,7 +22,7 @@ import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 part 'dock_font_map.dart';
 

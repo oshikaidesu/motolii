@@ -1,6 +1,6 @@
 // What is applied to the canvas: effects on a layer, a canvas-sized shape or adjustment layer,
 // and the presets and motions the shelf previews, applies and removes.
-part of 'state.dart';
+part of 'workspace_state.dart';
 
 extension WsFx on Ws {
   // Forwarders to the statics on Ws, so the extension can use the same names.

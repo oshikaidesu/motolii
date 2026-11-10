@@ -16,7 +16,8 @@ import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/dock/dock_program.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/widgets/panel_header.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 

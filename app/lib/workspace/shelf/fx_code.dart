@@ -15,7 +15,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_program.dart' show ProgramCode;
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_add.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/bridge/motolii.dart';
 
 class FxCode extends StatefulWidget {

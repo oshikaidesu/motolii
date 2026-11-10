@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/fx_code.dart' show FxCode;
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/bridge/motolii.dart';
 
 // Left as it is, this effect changes nothing.

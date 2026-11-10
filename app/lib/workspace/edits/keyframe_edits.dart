@@ -3,7 +3,8 @@
 // Sliding works like dragging keyframes in After Effects. Every property of the layer that has a keyframe at that
 // time keeps its value and easing at the new time, all as one undo step. The edit is queued on the engine without
 // waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/bridge/motolii.dart';
 
 /// Moves the keyframes [keys] (each a row and a frame) [by] frames later, or earlier when [by] is negative.

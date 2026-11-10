@@ -69,7 +69,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 | 文字の大きさ | `T.px(11)` | 革の TextScale を掛けた大きさ（`.copyWith(fontSize: T.px(n))`） |
 | 書体の名前 | `T.sans` `T.mono` | 革が言う書体の名前 |
 | 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段がアプリのどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
-| 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/workspace/state/state.dart`、`lib/inspector/inspector_parts.dart`） |
+| 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/skin/window_tokens.dart`、`lib/skin/inspector_tokens.dart`） |
 | 色 | `axX` `axY` `axZ`、Spec の `tone` | 軸の色、札の種類の色 |
 | 形 | `Shape.r(n)` | 角の丸み（`Radius`、革の Corner を掛ける） |
 | 形 | `Shape.s(n)` `Shape.z(n)` | 余白・大きさ（革の Spacing・Size を掛ける） |

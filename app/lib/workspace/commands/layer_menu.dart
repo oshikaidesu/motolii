@@ -2,7 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/menu.dart' show WsMenuItem;
 import 'package:motolii/workspace/commands/keymap.dart' show CommandIntent;
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The context menu for layer [l], opened by a right-click on its bar, its row or the stage.
 ///

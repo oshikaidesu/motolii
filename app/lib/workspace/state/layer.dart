@@ -1,27 +1,9 @@
-// The workspace: one window that gathers the panels (browser dock, preview, inspector, timeline, tool panel).
-// This file holds what every panel shares: the document state they all read (Ws) and the window's design tokens (WsT).
-// The look follows the Inspector's rules: square containers tiled edge to edge, round controls,
-// flat opaque colour, one lime accent, and one hue per layer kind.
-import 'package:motolii/workspace/easing/ease_curve.dart';
-import 'package:motolii/skin/layer_colors.dart';
-import 'package:motolii/skin/window_tokens.dart';
-
-import 'dart:async' show Timer;
-import 'dart:developer' show Timeline, TimelineTask;
-import 'dart:io' show Platform;
-import 'dart:math' as math;
-
+// A layer of the composition as the window lists it (WsLayer): its kind and the kind's colour, its bar and its keyframes.
+// Also the records that name a keyframe, and a stretch between two keyframes, when the user selects one.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
-
-import 'package:motolii/workspace/state/pane.dart';
-import 'package:motolii/storage/free_name.dart' show firstFree;
-import 'package:motolii/workspace/state/beats.dart';
-
-part 'window.dart';
-part 'effects.dart';
-part 'picked.dart';
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/window_tokens.dart';
 
 /// The kinds of layer the timeline distinguishes.
 enum WsKind { shape, text, image, camera, group, particles, audio }
@@ -83,8 +65,3 @@ typedef WsKey = ({String layer, int frame});
 
 /// A stretch of one property selected by its line in the timeline, from the keyframe at [at] seconds to the next keyframe of that property.
 typedef WsStretchPicked = ({String layer, String name, double at, int from, int to});
-
-/// What part of the window's state changed. A widget rebuilds only when an aspect it reads changes (see [WsScope.of]).
-///
-/// [document] means the engine's snapshot of the document was read again.
-enum WsAspect { document, picked, playing, view, fronted, animating, notice, stage }

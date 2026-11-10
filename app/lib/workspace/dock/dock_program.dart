@@ -34,7 +34,7 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/program_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/widgets/menu.dart';
 
 /// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.

@@ -5,7 +5,7 @@
 // It is one undo step, and the new behaviour is selected once it exists.
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 

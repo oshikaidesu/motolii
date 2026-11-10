@@ -8,7 +8,9 @@ export 'widgets/text_gestures.dart' show TypedField; // a word typed, said once
 export 'widgets/media.dart' show MiniSlider, glyph; // a slider of one or two handles; a picture drawn by a function
 export 'widgets/glyphs.dart' show Glyph, GlyphKind, G; // a mark by its name; a skin's SVG of that name wins
 export 'widgets/two_fingers.dart'; // a trackpad's two fingers and the wheel
-export 'workspace/state/state.dart' show Ws, WsAspect, WsLayer; // the window's state
+export 'workspace/state/workspace_state.dart' show Ws; // the window's state
+export 'workspace/state/workspace_aspect.dart' show WsAspect; // the part of the state a widget listens to
+export 'workspace/state/layer.dart' show WsLayer; // a layer as the window lists it
 export 'workspace/state/workspace_scope.dart' show WsScope; // how a widget reaches the window's state
 export 'widgets/panel_header.dart' show WsHeader; // a panel's header
 export 'skin/window_tokens.dart' show WsT; // the window's sizes and colours

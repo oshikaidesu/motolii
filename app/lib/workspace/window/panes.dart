@@ -12,7 +12,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/pane.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 class WsPanes extends StatefulWidget {

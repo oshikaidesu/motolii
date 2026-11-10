@@ -18,7 +18,7 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 part 'dock_files_read.dart';

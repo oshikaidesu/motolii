@@ -7,7 +7,7 @@
 | 場所 | 中身 |
 |---|---|
 | `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
-| `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`、種類の色 `wsTone`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`effects.dart` 掛かった効果、`beats.dart` テンポの格子 |
+| `state/` | どのパネルも読むアプリの状態。`workspace_state.dart` に `Ws`（その部品（part）が `picked.dart` 選ばれた物、`effects.dart` 掛かった効果）、`workspace_scope.dart` に `WsScope`、`workspace_aspect.dart` 聞く面 `WsAspect`、`layer.dart` レイヤー `WsLayer` と種類の色 `wsTone`、`pane.dart` タブ `WsPane`、`art_scene.dart` Stage の絵の寸法と箱（`WsArt`・`ArtScene`）、`beats.dart` テンポの格子 |
 | `easing/` | イージングそのもの：`ease.dart` `Ease` とプリセット、`ease_text.dart` 文書に書く文字の形、`ease_curve.dart` 重ねたカードの曲線と式 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`home.dart` プロジェクトを選ぶ最初の画面、`zoom.dart` 画面全体の拡大 |
 | `top_bar/` | 上のバー：`top_bar.dart`、`size_chip.dart` 画面の大きさ、`timings.dart` エンジンにかかった時間 |
@@ -21,7 +21,7 @@
 | `tool_panel/` | Inspector の下のツールパネル（Ease、Align、Blend …） |
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`state/pane.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`state/pane.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/workspace_state.dart`・`state/workspace_scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)

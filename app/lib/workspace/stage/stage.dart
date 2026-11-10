@@ -19,7 +19,9 @@ import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/workspace.dart' show wsPlace;
 import 'package:motolii/widgets/panel_header.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii.dart';
 

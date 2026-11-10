@@ -2,7 +2,9 @@
 // Ws.on, which decide what rebuilds). The expected values are what the code gave when this was written, so a move or a
 // split that changes one fails here. What only the engine answers (stops, marks, guides, the layers read) is not here.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// How many times each aspect of [ws] was told while [does] ran. An aspect that was not told is left out.
 Map<WsAspect, int> _told(Ws ws, void Function() does) {

@@ -6,7 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiMoment;
-import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// One layer as the artwork needs it: an immutable copy, so a scene can be compared with the previous one.
 @immutable

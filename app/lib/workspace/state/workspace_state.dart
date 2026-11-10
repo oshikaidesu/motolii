@@ -1,5 +1,25 @@
-// Part of state.dart: the workspace state that every panel reads (Ws).
-part of 'state.dart';
+// The workspace state that every panel reads (Ws): the document's layers as rows, the selection, the playhead and the view.
+// Its parts: picked.dart (the selection) and effects.dart (what is applied to the canvas).
+import 'package:motolii/workspace/easing/ease_curve.dart';
+import 'package:motolii/skin/layer_colors.dart';
+
+import 'dart:async' show Timer;
+import 'dart:developer' show Timeline, TimelineTask;
+import 'dart:io' show Platform;
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+
+import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+
+part 'effects.dart';
+part 'picked.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
 /// Like Alight Motion's audio layer (docs/internal/reports/alight_motion/alight_ui.md).

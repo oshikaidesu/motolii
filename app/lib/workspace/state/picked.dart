@@ -1,5 +1,5 @@
 // The selection: one layer or many, keyframes, and the stretch between two keyframes. Each change notifies [WsAspect.picked].
-part of 'state.dart';
+part of 'workspace_state.dart';
 
 extension WsPick on Ws {
   /// Selects the layer [id], or clears the selection when null.
