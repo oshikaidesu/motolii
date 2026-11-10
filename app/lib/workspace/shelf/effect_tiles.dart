@@ -505,8 +505,11 @@ abstract final class EffectTiles {
           ? showcase(f, File(f).readAsStringSync(), shows)
           : null;
       final said = m.tags(f),
-          isf = f.endsWith('.fs') ? File(f).readAsStringSync() : '',
-          plays = RegExp(r'"PERSISTENT"\s*:\s*(true|1)').hasMatch(isf);
+          plays =
+              said.contains(
+                'feedback',
+              ), // ISF's PERSISTENT: the engine reads it (isf_tags).
+          isf = f.endsWith('.fs') ? File(f).readAsStringSync() : '';
       final lists = [
         for (final l in RegExp(
           r'\{[^{}]*"TYPE"\s*:\s*"long"[^{}]*\}',
@@ -532,15 +535,11 @@ abstract final class EffectTiles {
               weights.entries.every(
                 (w) => w.key == '_time' || w.value <= time,
               )); // Its weights say letting it run shows it best, so no parameter is turned, as for AbsentMotion's Noise Displace.
-      final runs =
-          said.contains('time') || said.contains('feedback') || plays || timed;
+      final runs = said.contains('time') || plays || timed;
       // Whether to try the moving card first. Effects of what came before, and cut-out effects (they need an edge with room around it), have something to see.
       // A glass over the whole photo would just turn it black. An effect that hears goes on the whole picture first, so its sound is drawn large.
       final first =
-          ((show?.moves ?? false) ||
-              said.contains('feedback') ||
-              plays ||
-              needs(dir, f) == 'shape') &&
+          ((show?.moves ?? false) || plays || needs(dir, f) == 'shape') &&
           !hears;
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
