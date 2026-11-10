@@ -22,8 +22,6 @@ export 'controls/param_infer.dart';
 // ---- 0. open values -------------------------------------------------------------------------------------------------
 // [open] one narrowing rule for the whole panel (H1): a cell narrower than _wUnit drops its unit, narrower than _wTight drops decimals (never to a false 0).
 const wUnit = 72.0, wTight = 60.0;
-// [open] two clicks within this are a double click.
-const dblParts = Duration(milliseconds: 320);
 
 /// The bold skin of the direct-manipulation prototype: rounded cards, filled badges, one lime fill for "selected".
 class Pop extends InheritedWidget {

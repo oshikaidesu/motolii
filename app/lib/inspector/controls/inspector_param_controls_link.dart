@@ -4,6 +4,7 @@ import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 import '../../widgets/controls.dart' show Hov;
 import '../../widgets/media.dart' show glyph;
+import '../../widgets/number_field.dart' show blockValue;
 
 /// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.
 enum LinkTo {

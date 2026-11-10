@@ -24,24 +24,7 @@ class ParamTile extends StatelessWidget {
     final fid = sub == null ? id : '$id.$sub';
     return RowInfo(
       keys: Ctx.of(context).doc.keys[id] ?? KeyS.off,
-      child: NumField(
-        id: fid,
-        caption: caption ?? p.label,
-        glyph: glyph,
-        glyphOwnsPointer: owns,
-        glyphTall: tall,
-        unit: p.unit,
-        decimals: p.dec,
-        min: p.min,
-        max: p.max,
-        open: p.open,
-        validMin: p.validMin,
-        validMax: p.validMax,
-        perPx: p.perPx,
-        step: p.dec > 0 ? p.step * 10 : 1,
-        bipolar: p.look == ParamLook.bipolar,
-        turns: p.look == ParamLook.angle, // (counted in turns past one, as After Effects' angle: 1x 30°)
-      ),
+      child: NumField(p, id: fid, caption: caption ?? p.label, glyph: glyph, glyphOwnsPointer: owns, glyphTall: tall),
     );
   }
 

@@ -18,6 +18,7 @@ import '../../skin/forms/forms.dart';
 import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
 import '../../widgets/controls.dart' show Chip, ChipLook, IconPress;
 import '../../widgets/media.dart' show MiniSlider;
+import '../../widgets/number_field.dart';
 import '../../widgets/two_fingers.dart';
 import '../commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
 import '../../widgets/glyphs.dart' show Glyph;

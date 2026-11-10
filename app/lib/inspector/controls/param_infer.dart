@@ -100,7 +100,7 @@ class Param {
   /// How much moving it alone shows its effect, 0 to 10, `@weight(7)` (null: not weighed).
   final double? weight;
 
-  /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (NumField.validMin).
+  /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (PF_FloatSliderDef's valid_min and valid_max).
   final double? validMin, validMax;
 
   bool get bounded => min != null && max != null;

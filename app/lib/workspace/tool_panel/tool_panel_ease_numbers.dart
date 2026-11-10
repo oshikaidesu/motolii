@@ -8,9 +8,9 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Hov;
+import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/state/state.dart';
 
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
@@ -96,15 +96,21 @@ class _EaseNumbersState extends State<EaseNumbers> {
                         ))
                           SizedBox(
                             width: each,
-                            child: ToolScrub(
+                            child: NumberField(
                               key: ValueKey('ease-number-${n.name}'),
-                              label: n.name,
-                              value: n.many ? 1 / now[n.at] : now[n.at],
+                              inline: true,
+                              caption: n.name,
+                              accent: WsT.accent,
+                              value: () => n.many ? 1 / now[n.at] : now[n.at],
+                              text: (v, _) => n.many ? v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2) : v.toStringAsFixed(2),
                               min: lo,
                               max: hi,
                               perPx: n.many ? .05 : (hi - lo) / 200,
-                              format: (v) => n.many ? v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2) : v.toStringAsFixed(2),
-                              onChanged: (v) => change(n.at, n.many ? 1 / v : v),
+                              reach: (to, _) => to.clamp(lo, hi), // (a hand goes so far: _kinds' lo and hi)
+                              // (typed, a number is held only where the inside holds it: a bezier's X at 0 and 1 (engine/motion/easing_curves.h:
+                              //  interp_ease clamps x1 and x2), its Y too while Overshoot is off (this file's head); the inside says why it refuses any other)
+                              onChange: (v) =>
+                                  change(n.at, n.many ? 1 / v : (n.name.startsWith('X') || n.name.startsWith('Y') && !widget.overshoot ? v.clamp(lo, hi) : v)),
                             ),
                           ),
                       if (bezier)

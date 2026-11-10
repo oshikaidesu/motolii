@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../skin/tokens.dart';
 import 'settings_file.dart';
-import '../../widgets/two_fingers.dart';
+import '../../widgets/number_field.dart';
 
 abstract final class WsZoom {
   /// The zoom a window opens at and a double tap returns to: at 100% the parts read too large (user, 2026-10-20).
@@ -28,27 +28,27 @@ class WsZoomReadout extends StatefulWidget {
 }
 
 class _WsZoomReadoutState extends State<WsZoomReadout> {
-  double _from = 1, _dx = 0;
+  bool _held = false; // (a hand dragging it: the zoom is kept once, when it lets go)
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<double>(
     valueListenable: WsZoom.value,
-    builder: (context, z, _) => MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      child: GestureDetector(
-        supportedDevices: wsPressing,
-        key: const ValueKey('ws-zoom'),
-        behavior: HitTestBehavior.opaque,
-        onHorizontalDragStart: (_) {
-          _from = z;
-          _dx = 0;
-        },
-        onHorizontalDragUpdate: (e) => WsZoom.set(_from + ((_dx += e.delta.dx) / 3).round() / 100, keep: false),
-        onHorizontalDragEnd: (_) => WsZoom.set(WsZoom.value.value),
-        onDoubleTap: () => WsZoom.set(WsZoom.usual),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(4)),
-          child: Text('${(z * 100).round()}%', style: T.micro(z == WsZoom.usual ? Grey.g56 : Grey.g91)),
-        ),
+    builder: (context, z, _) => NumberField(
+      key: const ValueKey('ws-zoom'),
+      value: () => WsZoom.value.value * 100,
+      text: (v, _) => '${v.round()}%',
+      style: T.micro(z == WsZoom.usual ? Grey.g56 : Grey.g91),
+      perPx: 1 / 3,
+      typeOnTap: false,
+      onGrab: () => _held = true,
+      onChange: (v) => WsZoom.set(v / 100, keep: !_held),
+      onDrop: () {
+        _held = false;
+        WsZoom.set(WsZoom.value.value);
+      },
+      onReset: () => WsZoom.set(WsZoom.usual),
+      paint: (_, shown, _) => Padding(
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(4)),
+        child: shown,
       ),
     ),
   );

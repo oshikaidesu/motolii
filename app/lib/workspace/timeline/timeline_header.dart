@@ -70,7 +70,25 @@ class _Header extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(12)),
-              _TimeTyped(ws: ws, style: big, onStep: onStep), // (one number, one weight: not three colours)
+              // The playhead's time: pressed, it is typed (Premiere Pro's and After Effects' current time display: click it and
+              // type); Return goes there, Esc or a press elsewhere leaves the playhead where it was (golf_noise.md ㊺).
+              ValueListenableBuilder<int>(
+                valueListenable: ws.moment,
+                builder: (_, _, _) => NumberField(
+                  key: const ValueKey('ws-tl-time'),
+                  editorKey: const ValueKey('ws-tl-time-words'),
+                  value: () => ws.frame.toDouble(),
+                  text: (_, _) => ws.timecode(), // (all of it picked: what is typed takes its place)
+                  style: big.copyWith(color: Grey.g100),
+                  accent: WsT.accent,
+                  allow: null,
+                  parse: (said) => wtTimeOf(said, ws.frame, Ws.fps)?.toDouble(),
+                  sayOnLeave: false,
+                  onType: (to) => onStep(to.round().clamp(0, Ws.duration) - ws.frame),
+                  paint: (_, shown, typing) =>
+                      typing ? SizedBox(width: Shape.z(72), child: shown) : Text(ws.timecode(), style: big), // (one number, one weight: not three colours)
+                ),
+              ),
               SizedBox(width: Shape.s(8)),
               if (roomy) ...[Text('/ ${ws.timecode(Ws.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
               Chip(label: '${Ws.fps} fps', look: _readout()),
@@ -156,58 +174,6 @@ int? wtTimeOf(String said, int now, int fps) {
     '-' => now - f,
     _ => f,
   };
-}
-
-/// The playhead's time: pressed, it is typed (Premiere Pro's and After Effects' current time display: click it and
-/// type); Return goes there, Esc or a press elsewhere leaves the playhead where it was (golf_noise.md ㊺).
-class _TimeTyped extends StatefulWidget {
-  const _TimeTyped({required this.ws, required this.style, required this.onStep});
-  final Ws ws;
-  final TextStyle style;
-  final ValueChanged<int> onStep;
-  @override
-  State<_TimeTyped> createState() => _TimeTypedState();
-}
-
-class _TimeTypedState extends State<_TimeTyped> {
-  bool _typing = false;
-
-  void _go(String? said) {
-    final ws = widget.ws;
-    setState(() => _typing = false);
-    if (wtTimeOf(said ?? '', ws.frame, Ws.fps) case final to?) widget.onStep(to.clamp(0, Ws.duration) - ws.frame);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ws = widget.ws;
-    if (!_typing) {
-      return NakedButton(
-        key: const ValueKey('ws-tl-time'),
-        mouseCursor: SystemMouseCursors.text,
-        enableFeedback: false,
-        onPressed: () => setState(() => _typing = true),
-        child: ValueListenableBuilder<int>(
-          valueListenable: ws.moment,
-          builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
-        ),
-      );
-    }
-    return SizedBox(
-      width: Shape.z(72),
-      child: TypedField(
-        key: const ValueKey('ws-tl-time-words'),
-        text: ws.timecode(), // (all of it picked: what is typed takes its place)
-        take: true,
-        sayOnLeave: false,
-        escapes: true,
-        style: widget.style.copyWith(color: Grey.g100),
-        cursor: Grey.g100,
-        selection: WsT.accent.withValues(alpha: .35),
-        onDone: _go,
-      ),
-    );
-  }
 }
 
 /// A round touchable: a well that lights on hover; [on] fills it with the accent, [lit] raises it in grey.

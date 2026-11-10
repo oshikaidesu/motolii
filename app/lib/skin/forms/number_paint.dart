@@ -30,6 +30,7 @@ class NumberSpec {
     this.keyEmpty = false,
     this.pad = 8,
     this.glyphBox = 22,
+    this.inline = false,
   });
 
   /// The number as text, when it is not being typed.
@@ -49,6 +50,9 @@ class NumberSpec {
 
   /// The key mark drawn hollow: the value takes keys and has none here (Alight Motion's diamond beside a value, empty).
   final bool keyEmpty;
+
+  /// One row: the caption before the number, the number at the right, no frame (a tool panel's small numbers).
+  final bool inline;
 }
 
 /// A value's key mark: a diamond, as Alight Motion's beside each value and the timeline's keys (filled: a key here;
@@ -82,7 +86,7 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
     decoration: BoxDecoration(
       color: n.fillColor,
       borderRadius: BorderRadius.circular(6),
-      border: Border.all(color: n.borderColor),
+      border: n.inline ? null : Border.all(color: n.borderColor),
     ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(5),
@@ -121,21 +125,29 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
             ),
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(n.pad, Shape.s(4), n.glyph != null ? n.glyphBox + n.pad : n.pad, Shape.s(5)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: n.inline
+                  ? EdgeInsets.symmetric(horizontal: n.pad)
+                  : EdgeInsets.fromLTRB(n.pad, Shape.s(4), n.glyph != null ? n.glyphBox + n.pad : n.pad, Shape.s(5)),
+              child: Flex(
+                direction: n.inline ? Axis.horizontal : Axis.vertical, // (a tile is a column: the caption over the number)
+                crossAxisAlignment: n.inline ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (n.caption != null)
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(n.caption!, maxLines: 1, style: T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                      child: Text(n.caption!, maxLines: 1, style: n.inline ? T.label(Grey.g63) : T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
                     ),
-                  SizedBox(
-                    height: Shape.z(18),
-                    child: Align(alignment: Alignment.centerLeft, child: shown),
-                  ),
+                  if (n.inline)
+                    Expanded(
+                      child: Align(alignment: Alignment.centerRight, child: shown),
+                    )
+                  else
+                    SizedBox(
+                      height: Shape.z(18),
+                      child: Align(alignment: Alignment.centerLeft, child: shown),
+                    ),
                 ],
               ),
             ),

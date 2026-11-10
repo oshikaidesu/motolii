@@ -13,7 +13,6 @@
 1501 engine/third_party/js/three/BufferGeometryUtils.js
 60586 engine/third_party/js/three/three.core.js
 503 engine/media/video_layer.h
-627 app/lib/inspector/controls/inspector_number_field_num_field_state.dart
 664 app/lib/workspace/dock/dock_effects.dart
 539 app/lib/workspace/dock/dock_make.dart
 590 app/lib/workspace/shelf/effect_tiles.dart

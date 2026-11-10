@@ -10,7 +10,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 | `lib/bridge/` | アプリとエンジンの境目（[`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)）。エンジン（`libmotolii.dylib`）を呼ぶ口：プロジェクト、棚、問い合わせ、書き込み |
 | `lib/workspace/` | アプリの画面そのもの。`state/` 画面の状態、`window/` ウィンドウの枠、`top_bar/` 上のバー、`commands/` キーとメニュー、`edits/` まとめて掛ける編集、`inspector_feed/` Inspector へ渡す物、`dock/` 左の棚、`stage/` プレビュー、`timeline/` タイムライン、`tool_panel/` 下のツールパネル、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
 | `lib/inspector/` | 右の Inspector。カードは全部エンジンの宣言（`engine/document/card_table.h` → `lib/workspace/inspector_feed/` の cards が WGSL の構造体に）で、効果もそれ以外も `inspector_card.dart` の `ValuesCard` 1 つが描く。カードごとの Dart は置かない。`controls/` 値の種類ごとの操作部品（数・角度・色・文字・リンク）、`rows/` 行とカードの枠 |
-| `lib/widgets/` | パネルをまたいで使うウィジェット（Flutter の言葉）：操作部品（`controls.dart`）、印（`glyphs.dart`）、トラックパッドの 2 本指（`two_fingers.dart`）、タイムラインの絵（`timeline_painters.dart`）など |
+| `lib/widgets/` | パネルをまたいで使うウィジェット（Flutter の言葉）：操作部品（`controls.dart`）、数の欄（`number_field.dart`）、印（`glyphs.dart`）、トラックパッドの 2 本指（`two_fingers.dart`）、タイムラインの絵（`timeline_painters.dart`）など |
 | `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`svg_parts.dart` スキンの `parts/*.svg`（theme.xml の `<Parts>`）、`forms/` 部品の組み立て方（theme.xml の `<Forms Value="poster"/>` が `poster_forms.dart` を選ぶ。名前の無いスキンは `own_forms.dart`、どのフォームも書かなかった部品は `base_controls.dart`） |
 | `assets/` | アプリが読むデータ。`effect_parameter_weights.json`：効果のパラメーターごとの効き（Effects 棚のタイルが読む）。pubspec の `assets:` には載せない：棚と同じく repo の中から `File` で同期に読む（`lib/workspace/shelf/effect_tiles.dart` の `_entry`） |
 | `test/` | ウィジェットの試験（`flutter test`）。`accessibility_guidelines_test.dart`：本物のアプリの画面が Flutter のアクセシビリティの指針を満たすか |
