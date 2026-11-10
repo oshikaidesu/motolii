@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 

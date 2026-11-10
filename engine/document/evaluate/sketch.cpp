@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-#include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"

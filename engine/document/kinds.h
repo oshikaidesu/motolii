@@ -485,7 +485,7 @@ inline const DocValue doc_values[] = {
     // in units of the stage per second per second.
     {"physics", doc_visible_kinds, 0, 0, false, "none moves still"},
     // script: a preset as code, a JavaScript file that gives the position of
-    // each copy (script.h).
+    // each copy (script_runner.h).
     // The parameters in its header are values of the layer, named js_ plus the
     // parameter's name.
     // For the stage, script is a whole-screen effect: a .wgsl file

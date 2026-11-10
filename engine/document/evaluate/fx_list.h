@@ -24,7 +24,7 @@ std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off = false);
 // Returns whether the layer's effects are laid on it as the camera sees it,
 // rather than in its own canvas as ThorVG draws it. That is the case when any
 // effect in `list` is a file. Then all of them run in order in the camera view;
-// see thing_effects_draw in engine/stage/effects/screen_fx.h.
+// see thing_effects_draw in engine/stage/layer_effects/layer_fx.h.
 bool doc_fx_files(const std::vector<std::string>& list);
 // Returns the effects as the stack runs them: the list from doc_fx_list without
 // expressions. AbsentMotion's Motion Blur and Shutter Blur are replaced by its

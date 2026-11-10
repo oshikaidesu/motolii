@@ -10,9 +10,11 @@
 
 #include "community/absent_motion/absent_motion.h"
 #include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "document/kinds.h"
 
-// A script attached to a layer, see engine/community/quickjs/script.h. The
+// A script attached to a layer, see
+// engine/community/script_runner/script_runner.h. The
 // parameters declared in the head of the file become properties of the layer,
 // named js_ followed by the name of the parameter. The code is compiled once
 // per file and again when the file changes, so that a script that is written

@@ -14,6 +14,7 @@
 
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "document/card_table.h"
 #include "document/edit/arrange.h"
 #include "document/edit/keys_put.h"

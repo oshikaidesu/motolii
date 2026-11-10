@@ -84,7 +84,8 @@ file(GLOB_RECURSE MOTOLII_SOURCES CONFIGURE_DEPENDS
   base/*.cpp shelf/*.cpp motion/*.cpp physics/*.cpp media/*.cpp media/*.mm preview/*.cpp preview/*.mm
   stage/*.cpp stage/*.mm document/*.cpp document/*.mm entry/*.cpp entry/*.mm
   community/after_effects/*.cpp community/aviutl/*.cpp community/hydra/*.cpp community/isf/*.cpp community/p5/*.cpp
-  community/playcanvas/*.cpp community/quickjs/*.cpp community/sites/*.cpp community/three/*.cpp)
+  community/playcanvas/*.cpp community/quickjs/*.cpp community/script_runner/*.cpp community/sites/*.cpp
+  community/three/*.cpp)
 list(REMOVE_ITEM MOTOLII_SOURCES ${SOURCES_WITH_OWN_FLAGS} ${ENGINE}/entry/edit.cpp)
 list(FILTER MOTOLII_SOURCES EXCLUDE REGEX "_test\\.cpp$")
 

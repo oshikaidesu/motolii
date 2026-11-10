@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "community/absent_motion/absent_motion.h"
-#include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "document/card_table.h"
 #include "document/cards.h"
 #include "document/evaluate/evaluate.h"

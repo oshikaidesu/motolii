@@ -52,8 +52,8 @@ std::string adapter_library(const std::string& form);
 // page's own script files. A script loaded from the net, other than the p5.js
 // and three.js ones bundled here, is passed to `fetched`, which returns a file
 // name. That name is written as a "//! needs" line above the code, because a
-// library is not part of the sketch's own lines (script.h reads that line).
-// Returns `t` unchanged if the page has no usable scripts.
+// library is not part of the sketch's own lines (Script in script_runner.h
+// reads that line). Returns `t` unchanged if the page has no usable scripts.
 std::string adapter_page(
     const std::string& t, const std::filesystem::path& beside = {},
     const std::function<std::string(const std::string&)>& fetched = {});

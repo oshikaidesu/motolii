@@ -9,6 +9,7 @@
 
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
@@ -129,7 +130,7 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     numbers["round"] = d.round;
     // The fourth argument is the size of one project pixel in stage units at
     // the layer's depth. The last argument is the copies laid by the earlier
-    // scripts, the fifth argument of each(); see script.h.
+    // scripts, the fifth argument of each(); see script_runner.h.
     const std::vector<ScriptCopy> made = sc->run->copies(
         n, clock, numbers, words,
         (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) *

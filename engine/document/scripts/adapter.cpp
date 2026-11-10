@@ -17,6 +17,7 @@
 #include "community/isf/isf.h"
 #include "community/p5/adapter_p5_shader.h"
 #include "community/quickjs/script.h"
+#include "community/script_runner/script_runner.h"
 #include "community/sites/adapter.h"
 #include "community/sites/adapter_net.h"
 #include "community/sites/adapter_shadertoy_json.h"

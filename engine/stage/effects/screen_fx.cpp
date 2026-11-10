@@ -220,7 +220,12 @@ bool screen_read(ScreenFx& fx, std::string& code) {
   }
   fx.others.clear();
   fx.sounds.clear();
-  for (const ScriptParameter& k : script_parameters(file))
+  // `file` is WGSL here (isf_file gave it), so its parameters are its header
+  // lines.
+  std::ifstream header(file);
+  const std::vector<ScriptParameter> declared =
+      script_header_parameters(header);
+  for (const ScriptParameter& k : declared)
     if (k.kind == "picture" || k.kind == "sound") {
       fx.others.push_back(k.name), fx.sounds.push_back({});
       if (k.kind == "sound")
@@ -284,7 +289,7 @@ bool screen_read(ScreenFx& fx, std::string& code) {
     }
     fx.bytes = (end + most - 1) / most * most;
   }
-  fx.parameters = script_parameters(file);
+  fx.parameters = declared;
   // Fill in the default values where the file's own declarations give none; see
   // shelves/effects/sources/fx_first.sh.
   script_first(fx.file, fx.parameters);
