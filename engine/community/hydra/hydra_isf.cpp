@@ -1,23 +1,34 @@
-// hydra_isf.cpp: code for Hydra (hydra-synth, Olivia Jack and others, AGPL-3.0) as an ISF effect. Hydra is not in Motolii:
-// extensions/hydra/get.sh puts npm's package in the maker's own folder, and it is run here in a QuickJS of its own, told
-// the code and giving back text. Its own generator-factory.js writes the GLSL, with no WebGL and no page. Every number of a
-// chain is passed as a function, so Hydra makes it a uniform and it is a parameter here; what is moving in the code (a function
-// of time, an array) is read every 0.1 second by Hydra's own code and is that parameter's keys, to be edited as any keys are.
+// Converts Hydra code (hydra-synth, by Olivia Jack and others, AGPL-3.0) into an ISF effect.
+//
+// Hydra is not part of this repository. shelves/extensions/hydra/get.sh downloads the npm package
+// into a separate folder. This file runs that package in its own QuickJS runtime: the Hydra code
+// goes in and the ISF text comes out. Hydra's generator-factory.js produces the GLSL, so neither
+// WebGL nor a web page is needed.
+//
+// Every number in a Hydra chain is passed as a function, which makes Hydra emit it as a uniform.
+// Each such uniform becomes a parameter of the ISF effect. A value that changes over time, such
+// as a function of time or an array, is sampled every HYDRA_STEP seconds by Hydra's own code. The
+// samples become the keyframes of that parameter and can be edited like any other keyframes.
 #include "community/hydra/hydra_isf.h"
 #include <quickjs.h>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 
+// Returns the contents of the file at `file`, or an empty string if it cannot be read.
 static std::string hydra_text(const std::string& file) {
     std::ifstream in(file);
     std::stringstream all;
     all << in.rdbuf();
     return all.str();
 }
+// QuickJS module-name normalizer. Resolves `name` relative to the directory of the importing
+// module `base` and returns the result as a newly allocated string.
 static char* hydra_name(JSContext* cx, const char* base, const char* name, void*) {
     return js_strdup(cx, (std::filesystem::path(base).parent_path() / name).lexically_normal().string().c_str());
 }
+// QuickJS module loader. Reads the file `name` from disk and compiles it as a module without
+// running it. Returns nullptr if compilation fails.
 static JSModuleDef* hydra_load(JSContext* cx, const char* name, void*) {
     const std::string src = hydra_text(name);
     JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
@@ -27,6 +38,10 @@ static JSModuleDef* hydra_load(JSContext* cx, const char* name, void*) {
     return m;
 }
 
+// JavaScript module that runs inside QuickJS. The caller sets the globals __code (the Hydra
+// source), __seconds and __step first. On success the module sets __isf (the ISF text) and
+// __parameters, and sets __moving to the list of time-varying parameters. On failure it sets
+// __why to the error text.
 static const char* const hydra_make = R"(
 import Generator from './generator-factory.js'
 import arrayUtils from './lib/array-utils.js'
@@ -93,6 +108,8 @@ try {
 } catch (e) { globalThis.__why = String(e) + ' ' + (e.stack || ''); }
 )";
 
+// See hydra_isf.h. Runs the Hydra code in a fresh QuickJS runtime that is destroyed before
+// returning, so no state is shared between calls.
 bool hydra_isf(const std::string& folder, const std::string& code, double seconds, std::string& isf, std::vector<HydraParameter>& parameters, std::string& why) {
     const std::filesystem::path src = std::filesystem::path(folder) / "src";
     std::error_code wrong;
@@ -114,6 +131,7 @@ bool hydra_isf(const std::string& folder, const std::string& code, double second
     }
     JS_FreeValue(cx, ran);
     for (JSContext* job; JS_ExecutePendingJob(rt, &job) > 0;) {}
+    // Returns the string value of the global `n`, or an empty string if it is not a string.
     const auto said = [&](const char* n) {
         JSValue v = JS_GetPropertyStr(cx, g, n);
         std::string out;
@@ -123,6 +141,7 @@ bool hydra_isf(const std::string& folder, const std::string& code, double second
     };
     if (why.empty()) why = said("__why");
     isf = said("__isf");
+    // Copy the time-varying parameters from the JavaScript array into `parameters`.
     JSValue moving = JS_GetPropertyStr(cx, g, "__moving");
     if (JS_IsArray(moving)) {
         int64_t n = 0;

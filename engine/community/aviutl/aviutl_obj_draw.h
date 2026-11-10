@@ -1,12 +1,29 @@
-// aviutl_obj_draw.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj.draw and obj.drawpoly: a picture placed in depth on the interop's mesh, and the blend and sampler it is laid with.
-// Faces on the interop's mesh into `to`, its middle the corners' 0, 0, y down: each four corners two triangles, 0-1-2 and
-// 0-2-3 (sashimono-edit's _fill_quad, MIT), the picture `from` on them at the corners' u, v (pixels), or their colours
-// (premultiplied, 0 to 1: lua.txt's, as sashimono-edit's raster.draw_triangle takes them); all of one call at once (as
-// Filament draws its own triangle). Seen by AviUtl's camera as sashimono-edit's engine/gpu/projection.py has it (1024
-// pixels before the screen, a point z further 1024 / (1024 + z) as large; a face with a corner at the camera or behind
-// it not drawn), the GPU's own divide by w laying the picture between in perspective. Into the temporary buffer too, unlike sashimono-edit's (z left out there): GrungeConverter.anm2's maker draws it
-// with z there and thresholds it after "for the edges blurred, z moved", so AviUtl2's own sees it so.
+// aviutl_obj_draw.h: obj.draw and obj.drawpoly of the AviUtl adapter. They place an image in depth
+// on the interop's mesh, using the blend and sampler that were set.
+//
+// Included by aviutl_fx.h; not self-contained.
+// One corner of a face. (x, y, z) is the position in pixels relative to the centre of the target,
+// with y pointing down. (u, v) is the position in pixels in the source image. colour is
+// premultiplied, with each channel from 0 to 1.
 struct AviutlCorner { double x, y, z, u, v; float colour[4] = {1, 1, 1, 1}; };
+// Draws faces from the image `from` into `to` on the interop's mesh. The centre of `to` is the
+// origin and y points down. A face has three or four corners. A four-corner face is drawn as two
+// triangles, 0-1-2 and 0-2-3 (sashimono-edit's _fill_quad, MIT). The image is mapped onto the faces
+// at the corners' u, v in pixels, or the corners' colours are used (premultiplied, 0 to 1, as
+// lua.txt and sashimono-edit's raster.draw_triangle take them). All faces of one call are drawn at
+// once, as Filament draws its own triangles.
+//
+// The faces are seen through AviUtl's camera, as in sashimono-edit's engine/gpu/projection.py. The
+// canvas is 1024 pixels in front of the camera, and a point z further away appears 1024 / (1024 +
+// z) as large. A face with a corner at or behind the camera is not drawn. The GPU's own divide by w
+// interpolates the image in perspective between the corners.
+//
+// This also draws into the temporary buffer. sashimono-edit leaves z out there, but the script
+// GrungeConverter.anm2 draws with z in that buffer and thresholds the result after blurring the
+// edges, so AviUtl2 itself must apply z there.
+//
+// ox, oy and oz move the whole group. fade multiplies the alpha. way is the blend number from
+// aviutl_way, and sampler is the number from aviutl_sampling.
 static void aviutl_mesh(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to, const std::vector<std::vector<AviutlCorner>>& faces, double ox, double oy, double oz, double fade, int way, int sampler) {
     std::vector<float> corners;
     const auto corner = [&](const AviutlCorner& p) {
@@ -25,12 +42,16 @@ static void aviutl_mesh(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to
     Texture* texture = from.t ? from.t : r.none;
     interop::draw(r.s->engine, r.poly, &texture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / interop::MESH_CORNER));
 }
-// obj.setoption "blend" as the interop lays it (screen_interop.h's blend), as lua.txt's words are read by sashimono-edit
-// (MIT, compat/aviutl/raster.py _over): the buffers premultiplied, so "alpha_add" (colours weighed by their alphas,
-// the alphas added) is what is there plus what is drawn; "alpha_sub" (colours kept, the alpha drawn taken away)
-// Porter-Duff's "out", the same where either is opaque (their a_b - a_t is a_b (1 - a_t) there); "alpha_add2"
-// (colours laid over, the alphas added); "screen" (AviUtl's 4) Filament's own screen; AviUtl's 3 (multiply) as
-// Motolii's own sheets multiply (flat.mat), what is under taken as opaque. Others not yet: -1.
+// Maps the value of obj.setoption "blend" to the interop's blend number. Returns -1 for a value
+// that is not supported. The names follow lua.txt, as read by sashimono-edit (MIT,
+// compat/aviutl/raster.py _over).
+//
+// The buffers are premultiplied, so "alpha_add" (colours weighted by their alphas, alphas added) is
+// the destination plus the source. "alpha_sub" (colours kept, the source alpha subtracted) is
+// Porter-Duff "out". The two agree wherever either side is opaque, because sashimono-edit's a_b -
+// a_t is a_b (1 - a_t) there. "alpha_add2" lays the colours over each other and adds the alphas.
+// "screen" (AviUtl's 4) is Filament's own screen blend. AviUtl's 3 (multiply) is done as Motolii's
+// own sheets multiply (flat.mat), treating what is underneath as opaque.
 static int aviutl_way(const std::string& b) {
     if (b.empty() || b == "none" || b == "0") return 0;
     if (b == "add" || b == "1" || b == "rgba_add" || b == "alpha_add") return 1;
@@ -40,10 +61,13 @@ static int aviutl_way(const std::string& b) {
     if (b == "3") return 6;
     return -1;
 }
+// Maps the current sampler name to the interop's sampler number.
 static int aviutl_sampling(const AviutlRun& r) { return r.sampler == "dot" ? 1 : r.sampler == "loop" ? 2 : r.sampler == "mirror" ? 3 : 0; }
-// The object put in depth, as obj.draw and the frame's own placing do with z, rx or ry: its four corners turned about
-// its centre (cx, cy) by X, then Y, then Z, in degrees, and moved (sashimono-edit's engine/gpu/compositor.py
-// Transform.corners and projection.py rotate: X up tipping away, Y right tipping away, Z clockwise), seen by the camera.
+// Draws an image placed in depth, as obj.draw and the frame's own placement do with z, rx or ry.
+// The four corners are rotated about the centre (cx, cy) by X, then Y, then Z, in degrees, then
+// moved by (x, y, z) and seen by the camera. The rotation follows sashimono-edit's
+// engine/gpu/compositor.py Transform.corners and projection.py rotate: positive X tips the top
+// away, positive Y tips the right side away, and positive Z turns clockwise.
 static void aviutl_placed(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to, double x, double y, double z, double sx, double sy, double rx, double ry, double rz, double cx, double cy, double fade, int way, int sampler) {
     std::vector<AviutlCorner> c;
     const double hw = from.w * sx / 2, hh = from.h * sy / 2;
@@ -58,16 +82,23 @@ static void aviutl_placed(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& 
     aviutl_mesh(r, from, to, {c}, x, y, z, fade, way, sampler);
 }
 
-static int aviutl_draw(lua_State* L) {   // (ox, oy, oz, zoom, alpha, rx, ry, rz): in depth when oz, rx or ry, the object's own added (aviutl_placed)
+// obj.draw(ox, oy, oz, zoom, alpha, rx, ry, rz) draws the object into the current draw target. The
+// object's own oz, rx and ry are added to the arguments. If any of the sums is not 0 the object is
+// drawn in depth (aviutl_placed); otherwise it is drawn flat.
+static int aviutl_draw(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const int way = aviutl_way(r.blend);
     if (way < 0) return aviutl_no(L, "obj.draw blend " + r.blend);
     lua_getglobal(L, "obj");
     const auto f = [&](const char* k, double otherwise) { lua_getfield(L, -1, k); const double v = aviutl_num(L, -1, otherwise); lua_pop(L, 1); return v; };
-    // (into the frame: as the thing stands, its x and y too; into the temporary buffer not where the thing stands (lua.txt:
-    //  "オブジェクトの持っている座標等の設定は反映せず"), but as the script has moved it since it began (obj.ox, rz, zoom,
-    //  alpha: 0 and 1 at its start here, the thing's own laid outside it): Mathy_Su moves obj.ox, obj.rz and obj.alpha
-    //  before each obj.draw() into it, its README's "配置位置でパス上の移動" and "元画像透明度" so made, and 四隅に配置 its four)
+    // When drawing into the frame, the layer's own x and y are added. When drawing into the
+    // temporary buffer, the layer's placement is not applied (lua.txt says the object's own
+    // coordinates and settings are not reflected there). What the script has changed since it
+    // started is applied: obj.ox, rz, zoom and alpha, which start at 0 or 1 here, with the layer's
+    // own placement applied outside them. Mathy_Su moves obj.ox, obj.rz and obj.alpha before each
+    // obj.draw() into that buffer, which its README describes as moving along a path by placement
+    // position and as the source image's transparency. The script that places an object at four
+    // corners does the same with its four.
     const bool own = r.target == "framebuffer";
     const double zoom = aviutl_num(L, 4, 1) * f("zoom", 1), aspect = f("aspect", 0);
     const AviutlBuf& to = r.bufs[r.target];
@@ -83,12 +114,20 @@ static int aviutl_draw(lua_State* L) {   // (ox, oy, oz, zoom, alpha, rx, ry, rz
     if (own) r.drew = true;
     return 0;
 }
-// obj.drawpoly as lua.txt has it (the AviUtl2 script skill's references/api.md): corners from the object's place into
-// the frame (oz too), as they are into the temporary buffer, in depth (aviutl_mesh), the frame's alpha the object's too
-// (sashimono-edit's lua_drawpoly); u, v pixels (none: the picture's four corners), the alpha the 13th or 21st; a table
-// of faces of 20 ({x0 .. z3, u0 .. v3}[, alpha]), or of corners {x, y, z, u, v} with u, v 0 to 1, or {x, y, z, r, g,
-// b, a} coloured, 4 or 3 a face ([, count, alpha]) (sashimono-edit's _drawpoly_table); or faces of 28, coloured
-// ({x0 .. z3, r0, g0, b0, a0 .. a3}: 連結ライン.obj2's).
+// obj.drawpoly, as lua.txt describes it (references/api.md of the AviUtl2 script skill). The
+// corners are placed from the object's position into the frame, including oz, as they are into the
+// temporary buffer, in depth (aviutl_mesh). The frame's alpha also applies to the object
+// (sashimono-edit's lua_drawpoly).
+//
+// The corners are either 12 numbers (x, y, z for each of four corners) followed by 8 numbers of u,
+// v in pixels, or a table. Without u, v, the four corners of the image are used. The alpha is the
+// 13th or the 21st argument.
+//
+// A table holds faces in one of three forms. Items of 20 numbers are faces ({x0 .. z3, u0 .. v3},
+// with an optional alpha as the second argument). Items of 5 numbers {x, y, z, u, v} with u, v from
+// 0 to 1, or of 7 numbers {x, y, z, r, g, b, a} coloured, are corners that make faces of 4 or 3
+// corners (optional arguments: count, alpha), as sashimono-edit's _drawpoly_table does. Items of 28
+// numbers are coloured faces ({x0 .. z3, r0, g0, b0, a0 .. a3}), as used by 連結ライン.obj2.
 static int aviutl_drawpoly(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const AviutlBuf& from = r.bufs["object"];
@@ -106,20 +145,26 @@ static int aviutl_drawpoly(lua_State* L) {
         if (items.empty()) return 0;
         const size_t width = items[0].size();
         for (const auto& v : items) if (v.size() != width) return aviutl_no(L, "obj.drawpoly of mixed faces");
-        if (width == 20) {   // (faces)
+        if (width == 20) {
+            // Faces: 12 position numbers, then 8 numbers of u, v.
             alpha = aviutl_num(L, 2, 1);
             for (const auto& v : items) faces.push_back(face(v.data()));
-        } else if (width == 28) {   // (faces coloured: four corners' places, then their colours, premultiplied 0 to 1, as the 20's places then uv)
+        } else if (width == 28) {
+            // Coloured faces: the positions of four corners, then their colours (premultiplied, 0
+            // to 1). This is laid out like the 20-number face, which has positions and then u, v.
             alpha = aviutl_num(L, 2, 1);
             for (const auto& v : items) {
                 std::vector<AviutlCorner> c(4);
                 for (int i = 0; i < 4; ++i) {
-                    c[i] = {v[i * 3], v[i * 3 + 1], v[i * 3 + 2], -2.0 * from.w, -2.0 * from.h};   // (no picture: its uv off it)
+                    // There is no image, so u, v are placed well outside it.
+                    c[i] = {v[i * 3], v[i * 3 + 1], v[i * 3 + 2], -2.0 * from.w, -2.0 * from.h};
                     for (int k = 0; k < 4; ++k) c[i].colour[k] = (float)std::clamp(v[12 + i * 4 + k], 0.0, 1.0);
                 }
                 faces.push_back(c);
             }
-        } else if (width == 5 || width == 7) {   // (corners: pictured, or coloured)
+        } else if (width == 5 || width == 7) {
+            // Corners: 5 numbers have a position and an image position (u, v). 7 numbers have a
+            // position and a colour.
             const int count = lua_isnumber(L, 2) ? (int)lua_tonumber(L, 2) : 4;
             alpha = aviutl_num(L, 3, 1);
             if ((count != 3 && count != 4) || items.size() % count) return aviutl_no(L, "obj.drawpoly of " + std::to_string(count) + "-cornered faces");
@@ -127,7 +172,9 @@ static int aviutl_drawpoly(lua_State* L) {
                 std::vector<AviutlCorner> c;
                 for (int i = 0; i < count; ++i) {
                     const auto& v = items[f + i];
-                    AviutlCorner one{v[0], v[1], v[2], width == 5 ? v[3] * from.w : -2.0 * from.w, width == 5 ? v[4] * from.h : -2.0 * from.h};   // (coloured: no picture, its uv off it)
+                    // A coloured corner (7 numbers) uses no image, so u, v are placed well outside
+                    // it.
+                    AviutlCorner one{v[0], v[1], v[2], width == 5 ? v[3] * from.w : -2.0 * from.w, width == 5 ? v[4] * from.h : -2.0 * from.h};
                     if (width == 7) for (int k = 0; k < 4; ++k) one.colour[k] = (float)std::clamp(v[3 + k], 0.0, 1.0);
                     c.push_back(one);
                 }

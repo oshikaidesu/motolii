@@ -1,9 +1,13 @@
-// Datamosh as it really is: the compressed pictures themselves, not a shader. A film made again by FFmpeg with its
-// keyframes dropped (its own noise bitstream filter, drop='key*gt(n,0)'), so after the cut the other film's motion is
-// drawn by moving this one's last picture: the pixels of one, the movement of the other. Made once, on a thread of its
-// own, into ~/Library/Caches/Motolii/mosh/<hash>.mp4, named by what goes in (the files as they are, the moment); the
-// thing plays its own film till then. A step on the film before it is decoded: first, before any of its effects.
-// (doc.h: read after render.h)
+// Datamosh done on the compressed video itself, not with a shader.
+//
+// Included after render.h; not self-contained.
+// FFmpeg re-encodes the video with its keyframes dropped, using its noise bitstream filter with
+// drop='key*gt(n,0)'. After the cut, the motion of the other video is applied to the last
+// image of this one, so the result has the pixels of one video and the movement of the other.
+// The result is made once, on a thread of its own, into
+// ~/Library/Caches/Motolii/mosh/<hash>.mp4. The name is a hash of the input files and the
+// cut time. Until the file exists the layer plays its own video. This is a step on the video
+// before it is decoded, so it runs first, before any effect of the layer.
 #pragma once
 #include <sys/stat.h>
 #include <atomic>
@@ -14,18 +18,23 @@
 #include <string>
 #include <thread>
 
-static std::atomic<bool> mosh_done{false};   // (one made since asked: the stage made to match again, motolii.mm)
+// Set when a datamosh file has been made since the last time it was asked for. The canvas
+// then has to be rebuilt to match; see motolii.mm.
+static std::atomic<bool> mosh_done{false};
 
-static std::string mosh_quoted(std::string name) {   // (a file's name as a shell takes it)
+// Returns `name` quoted for a shell.
+static std::string mosh_quoted(std::string name) {
     for (size_t at = 0; (at = name.find('\'', at)) != std::string::npos; at += 4) name.replace(at, 1, "'\\''");
     return "'" + name + "'";
 }
 
-// The film made of `film` till `at` seconds, then `with`'s motion poured into it: its path once made, "" till then (and
-// asked to be made, once). "" too if it could not be made.
+// Returns the path of the datamoshed video made of `film` up to `at` seconds, followed by the
+// motion of `with` applied to it. Returns "" until the file exists, and the first such call
+// starts making it. Also returns "" if it could not be made.
 static std::string mosh_file(const std::string& film, double at, const std::string& with) {
     static std::mutex lock;
-    static std::map<std::string, int> asked;   // (1 being made, 2 made, 3 could not be)
+    // State by output path: 1 is being made, 2 is made, 3 could not be made.
+    static std::map<std::string, int> asked;
     std::string key = film + "|" + with + "|" + std::to_string(at);
     for (const std::string& f : {film, with}) {
         struct stat st {};
@@ -48,8 +57,10 @@ static std::string mosh_file(const std::string& film, double at, const std::stri
         std::error_code e;
         std::filesystem::create_directories(work, e);
         const std::string w = mosh_quoted(work);
-        // (both as MPEG-4 part 2 in AVI, one keyframe each, no frames from the future, the size and rate of the first:
-        //  then joined as they are, and every keyframe but the first dropped; decoded once more into a film anyone plays)
+        // Encode both videos as MPEG-4 part 2 in AVI with a single keyframe each, no B-frames,
+        // and the size and frame rate of the first. Then join them without re-encoding, drop
+        // every keyframe except the first, and decode once more into a video that any player
+        // can play.
         const std::string like = "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 " + mosh_quoted(film) + ")";
         const std::string rate = "$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 " + mosh_quoted(film) + ")";
         const std::string enc = " -an -c:v mpeg4 -bf 0 -g 100000 -q:v 3 ";

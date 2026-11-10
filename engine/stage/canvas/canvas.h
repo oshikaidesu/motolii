@@ -1,14 +1,22 @@
-// canvas.h: a picture ThorVG draws, put in the scene as a thing like any other. The scene and its things are
-// Filament's (an entity with a place and a look); this only makes one whose look is ThorVG's picture: a flat sheet.
-// The picture is a file: an After Effects film (Lottie) with all it holds, or an SVG. ThorVG draws it with WebGPU on
-// Filament's own device straight into a texture Filament reads: nothing goes through the CPU, nothing is copied.
-// Only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh), with ThorVG built against Dawn
-// (deps/thorvg.sh) and Filament patched to lend its device and take a texture (gpu_interop.h).
-// All of ThorVG's work is queued like Filament's own calls and runs on Filament's driver thread.
-// In parts, read in this order (each a piece of the one before it, none alone):
+// Draws an image with ThorVG as a flat layer in the Filament scene. The scene and its layers belong
+// to Filament, where a layer is an entity with a transform and a material. This file only makes a
+// layer whose material shows the ThorVG image, on a flat sheet.
+//
+// The image comes from a file: an After Effects animation (Lottie) with everything in it, or an
+// SVG. ThorVG draws it with WebGPU on Filament's own device, straight into a texture that Filament
+// samples. Nothing goes through the CPU and nothing is copied.
+//
+// This works only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh), with ThorVG
+// compiled against Dawn (deps/thorvg.sh) and Filament patched to lend its device and take a texture
+// (gpu_interop.h). All of ThorVG's work is queued like Filament's own calls and runs on Filament's
+// driver thread.
+//
+// The parts below must be included in this order. Each one depends on the one before it, and none
+// stands alone.
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/canvas_sketch.h"
-#include "community/absent_motion/absent_motion.h"   // (an open edge's ends as AbsentMotion draws them: canvas_flat.h)
+// Used by canvas_flat.h to draw the ends of an open edge as AbsentMotion does.
+#include "community/absent_motion/absent_motion.h"
 #include "stage/canvas/canvas_flat.h"

@@ -1,29 +1,46 @@
-// Things of the document falling and striking one another: Jolt (physics_bench chose it), behind an interop that shows
-// none of its own types. Every picture of the stage is a step of 1/60 s from the document's beginning, kept once made,
-// so going back in time is reading what was kept, and the same document moves the same way every time.
+// Rigid-body physics for layers: layers fall and collide with each other.
+// The simulation uses Jolt, chosen by physics_bench, behind an adapter that exposes none of
+// Jolt's types.
+//
+// The simulation advances in fixed steps of 1/60 s starting at the beginning of the project.
+// Each frame's result is cached once computed, so seeking backward reads the cache and the same
+// project always produces the same motion.
 #pragma once
 #include <functional>
 #include <memory>
 #include <vector>
 
+// One simulated layer.
 struct PhysThing {
-    bool still = false;          // a wall: where the document puts it (moved only by its keys)
-    bool flat = false;           // held to its own plane, turning only about the eye's line (Jolt's Plane2D)
-    bool ball = false;           // a ball of radius half[0]; else a box of half sizes half
+    // True for a wall: the project places it, and only its keyframes move it.
+    bool still = false;
+    // True if the layer is constrained to its own plane and can only rotate about the camera's
+    // viewing axis (Jolt's Plane2D).
+    bool flat = false;
+    // True for a ball of radius half[0]; false for a box with half extents half.
+    bool ball = false;
     float half[3] = {0.5f, 0.5f, 0.5f};
     float bounce = 0.3f, friction = 0.5f;
-    double until = 0.0;          // before this moment it goes as its keys say; from it the world has it (with the speed it had)
+    // Time in seconds. Before this time the layer follows its keyframes. From this time on the
+    // simulation moves it, starting with the velocity the keyframes gave it.
+    double until = 0.0;
 };
-struct PhysPose { float at[3] = {0, 0, 0}, turn[4] = {0, 0, 0, 1}; };   // where its middle is, and how it is turned (x y z w)
 
-// Where the document puts a thing's middle at a moment, and how it is turned (its keys, as the stage reads them).
+// Position and rotation of a layer's center.
+// at is the position as x, y, z. turn is the rotation quaternion as x, y, z, w.
+struct PhysPose { float at[3] = {0, 0, 0}, turn[4] = {0, 0, 0, 1}; };
+
+// Returns the pose the project's keyframes give layer `index` at time `at` in seconds.
 using PhysKeyed = std::function<PhysPose(int index, double at)>;
 
+// A physics simulation over a fixed set of layers.
 class PhysWorld {
 public:
     PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKeyed keyed);
     ~PhysWorld();
-    // Each thing at picture n (n / 60 s from the beginning): stepped there once, then kept.
+    // Returns the pose of layer `index` at frame `frameIndex`, which is time frameIndex / 60 s
+    // from the beginning of the project. Simulates up to that frame on the first request and
+    // caches every frame on the way. Returns a default pose if `index` is out of range.
     PhysPose pose(int index, int frameIndex);
 private:
     struct Own;

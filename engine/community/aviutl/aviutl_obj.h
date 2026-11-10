@@ -1,14 +1,23 @@
-// aviutl_obj.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj's calls that read and set: its shaders and buffers (pixelshader, clearbuffer, copybuffer), its options, values, sound,
-// anchors and font.
-// ---- obj, as lua.txt says each (only these; any other name: not yet) ----
-// obj.module(name): lua.txt's "スクリプトモジュール（.mod2）の関数を取得します": a module is AviUtl2's own Windows
-// DLL, so here none is: the script stops saying which it wanted.
+// aviutl_obj.h: the Lua obj functions of the AviUtl adapter that read and set state: shaders and
+// buffers (pixelshader, clearbuffer, copybuffer), options, values, audio, anchors and font.
+//
+// Included by aviutl_fx.h; not self-contained.
+// The functions below follow lua.txt. Any obj function not implemented here raises an error naming
+// it.
+// obj.module(name) loads a script module (.mod2), which lua.txt describes as a way to get the
+// functions of an AviUtl2 script module. A module is a Windows DLL, so none can be loaded here. The
+// script stops with an error naming the module it wanted.
 static int aviutl_module(lua_State* L) { return luaL_error(L, "needs %s.mod2, an AviUtl2 script module (a Windows DLL)", luaL_checkstring(L, 1)); }
-// ffi.load("kernel32")'s clock, as Wine gives it (dlls/ntdll/unix/sync.c NtQueryPerformanceCounter: the monotonic clock
-// counted at TICKSPERSEC, 10,000,000 a second): HexScript's Particle_H.lua times its own frame by it (M.clock). No other
-// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_open's sandbox).
+// Stands in for the clock of ffi.load("kernel32"). Returns the monotonic clock in 100 ns ticks,
+// 10,000,000 per second, as Wine's NtQueryPerformanceCounter does (dlls/ntdll/unix/sync.c).
+// HexScript's Particle_H.lua uses it to time its own frames (M.clock). No other Windows library and
+// no other kernel32 call is provided. A script that asks for one stops with an error naming it (see
+// the sandbox in aviutl_open).
 static int aviutl_ticks(lua_State* L) { return lua_pushnumber(L, (double)std::chrono::duration_cast<std::chrono::duration<long long, std::ratio<1, 10000000>>>(std::chrono::steady_clock::now().time_since_epoch()).count()), 1; }
-static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...}, {constant...}, blend, sampler)
+// obj.pixelshader(name, target, {resource...}, {constant...}, blend, sampler) draws the named
+// shader into the target buffer, reading the resource buffers. The blend is copy, draw, add or
+// mask. The sampler is clip, dot, loop or mirror. Anything else raises an error.
+static int aviutl_pixelshader(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string name = luaL_checkstring(L, 1), target = aviutl_name(luaL_checkstring(L, 2)), blend = lua_isstring(L, 5) ? lua_tostring(L, 5) : "copy", sampler = aviutl_str(L, 6);
     const AviutlShader* sh = nullptr;
@@ -23,10 +32,13 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     for (size_t i = 0; i < res.size() && i < read.size(); ++i) {
         if (res[i] == "random") { read[i] = r.random; continue; }
         if ((res[i] == "framebuffer" && !r.behind) || !r.bufs.count(res[i])) return aviutl_no(L, "obj.pixelshader reading " + res[i]);
-        if (res[i] == target) aviutl_copy(r, "~" + std::to_string(i), target), read[i] = r.bufs["~" + std::to_string(i)].t;   // (the target read as a copy, as the spec says)
+        // When the target is also a resource, it is read from a copy, as the spec requires.
+        if (res[i] == target) aviutl_copy(r, "~" + std::to_string(i), target), read[i] = r.bufs["~" + std::to_string(i)].t;
         else read[i] = r.bufs[res[i]].t;
     }
-    std::vector<float> lua, k(sh->bytes / 4, 0.f);   // (the floats as Lua gives them, moved where WGSL lays them: aviutl.cpp)
+    // lua holds the constants as the script gave them. k holds them at the offsets where the WGSL
+    // layout expects them (see aviutl.cpp).
+    std::vector<float> lua, k(sh->bytes / 4, 0.f);
     if (lua_istable(L, 4)) for (int i = 1; i <= (int)lua_objlen(L, 4); ++i) lua_rawgeti(L, 4, i), lua.push_back((float)aviutl_num(L, -1)), lua_pop(L, 1);
     for (size_t s = 0; s < sh->from.size(); ++s)
         for (uint32_t c = 0; c < sh->count[s]; ++c)
@@ -39,7 +51,10 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     interop::draw(r.s->engine, d, read.data(), t.rt, t.w, t.h, pass, nullptr, way >= 0, std::max(way, 0), sampler == "dot" ? 1 : sampler == "loop" ? 2 : sampler == "mirror" ? 3 : 0);
     return 0;
 }
-static int aviutl_clearbuffer(lua_State* L) {   // (target[, w, h][, colour])
+// obj.clearbuffer(target[, w, h][, colour]) clears a buffer, creating it at the given size first if
+// a size is given. Only cache buffers, object, tempbuffer and a framebuffer without a size are
+// allowed.
+static int aviutl_clearbuffer(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string target = aviutl_name(luaL_checkstring(L, 1));
     const bool sized = lua_isnumber(L, 3);
@@ -48,8 +63,12 @@ static int aviutl_clearbuffer(lua_State* L) {   // (target[, w, h][, colour])
     aviutl_clear(r, b, aviutl_num(L, sized ? 4 : 2), lua_isnumber(L, sized ? 4 : 2));
     return 0;
 }
-static const AviutlBuf* aviutl_image(AviutlRun& r, std::string file);   // (aviutl_load.h)
-static int aviutl_copybuffer(lua_State* L) {   // (dst, src; src "image:" a picture file, read as obj.load reads one: lua.txt)
+// Defined in aviutl_load.h.
+static const AviutlBuf* aviutl_image(AviutlRun& r, std::string file);
+// obj.copybuffer(dst, src) copies one buffer to another. A src of the form "image:<file>" is an
+// image file, read as obj.load reads one (lua.txt). Returns true on success and false if src does
+// not exist.
+static int aviutl_copybuffer(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string to = aviutl_name(luaL_checkstring(L, 1)), from = aviutl_name(luaL_checkstring(L, 2));
     if (from.rfind("image:", 0) == 0 && to != "framebuffer") {
@@ -64,8 +83,11 @@ static int aviutl_copybuffer(lua_State* L) {   // (dst, src; src "image:" a pict
     aviutl_copy(r, to, from);
     return lua_pushboolean(L, 1), 1;
 }
-#include "community/aviutl/aviutl_load.h"   // (obj.load: a buffer, a figure, a picture file)
-#include "community/aviutl/aviutl_pixels.h"   // (obj.getpixeldata, obj.putpixeldata)
+// obj.load: loads a buffer, a figure or an image file.
+#include "community/aviutl/aviutl_load.h"
+// obj.getpixeldata and obj.putpixeldata.
+#include "community/aviutl/aviutl_pixels.h"
+// obj.setoption(name, value...) sets the draw target, blend, draw state or sampler.
 static int aviutl_setoption(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string n = luaL_checkstring(L, 1);
@@ -77,26 +99,37 @@ static int aviutl_setoption(lua_State* L) {
     } else if (n == "blend") r.blend = lua_isnumber(L, 2) ? std::to_string((int)lua_tonumber(L, 2)) : aviutl_str(L, 2);
     else if (n == "draw_state") r.drew = lua_toboolean(L, 2);
     else if (n == "sampler") r.sampler = aviutl_str(L, 2);
-    else if (n != "culling" && n != "billboard" && n != "focus_mode") return aviutl_no(L, "obj.setoption " + n);   // (those three change nothing flat)
+    // culling, billboard and focus_mode change nothing when drawing flat, so they are accepted and
+    // ignored.
+    else if (n != "culling" && n != "billboard" && n != "focus_mode") return aviutl_no(L, "obj.setoption " + n);
     return 0;
 }
+// obj.getoption(name[, index]) returns the current value of an option.
 static int aviutl_getoption(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string n = luaL_checkstring(L, 1);
-    if (n == "track_mode" || n == "camera_mode" || n == "culling" || n == "billboard") lua_pushinteger(L, 0);   // (no track moves by itself here; no camera, nothing turned)
+    // No track moves by itself here, and there is no camera or rotation, so these are always 0.
+    if (n == "track_mode" || n == "camera_mode" || n == "culling" || n == "billboard") lua_pushinteger(L, 0);
     else if (n == "section_num") lua_pushinteger(L, 1);
     else if (n == "gui" || n == "multi_object") lua_pushboolean(L, 0);
     else if (n == "draw_state") lua_pushboolean(L, r.drew);
     else if (n == "drawtarget") lua_pushstring(L, r.target.c_str());
     else if (n == "blend") lua_pushstring(L, r.blend.c_str());
-    else if (n == "script_name") {   // (that many effects along from this one on the thing (lua.txt), by its name; past them, nil)
+    else if (n == "script_name") {
+        // The name of the effect that many steps along the effect chain from this one on the layer
+        // (lua.txt), or nil past either end.
         const long i = r.at + (lua_isnumber(L, 2) ? std::lround(lua_tonumber(L, 2)) : 0);
         if (i >= 0 && i < (long)r.chain.size()) lua_pushstring(L, r.chain[(size_t)i].c_str());
         else lua_pushnil(L);
-    } else if (n == "group_info") {   // (the layer of the group it is in, 0 the nearest; none, 0: PixelSnap_S's `group_layer > 0`; doc_aviutl_asked)
+    } else if (n == "group_info") {
+        // The layer of the enclosing group, where index 0 is the nearest group. 0 means there is
+        // none, which PixelSnap_S tests as `group_layer > 0`. The value comes from the numbers
+        // callback (doc_aviutl_asked).
         const double v = r.numbers ? (*r.numbers)(r.file, "aviutl.group" + std::to_string(lua_isnumber(L, 2) ? (int)lua_tonumber(L, 2) : 0), NAN) : NAN;
         lua_pushinteger(L, std::isnan(v) ? 0 : (lua_Integer)v);
-    } else if (n == "camera_param") {   // (AviUtl's own camera, none of its own here: 1024 before the screen looking at its middle, as sashimono-edit's CAMERA_DISTANCE is AviUtl's)
+    } else if (n == "camera_param") {
+        // AviUtl's camera. There is no camera here, so report a default one 1024 in front of the
+        // canvas, looking at its centre. sashimono-edit's CAMERA_DISTANCE uses the same 1024.
         lua_newtable(L);
         static const std::pair<const char*, double> camera[] = {{"x", 0}, {"y", 0}, {"z", -1024}, {"tx", 0}, {"ty", 0}, {"tz", 0}, {"rz", 0}, {"d", 1024}};
         for (const auto& [k, v] : camera) lua_pushnumber(L, v), lua_setfield(L, -2, k);
@@ -104,26 +137,35 @@ static int aviutl_getoption(lua_State* L) {
     else return aviutl_no(L, "obj.getoption " + n);
     return 1;
 }
+// obj.getinfo(name) returns information about the host.
 static int aviutl_getinfo(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string n = luaL_checkstring(L, 1);
-    if (n == "version") lua_pushinteger(L, 2011500);   // (the spec read: v2.1.15)
+    // The version of the spec that was read: v2.1.15.
+    if (n == "version") lua_pushinteger(L, 2011500);
     else if (n == "filter" || n == "saving" || n == "reference_frame") lua_pushboolean(L, 0);
-    else if (n == "image_max") return lua_pushinteger(L, r.bufs["framebuffer"].w), lua_pushinteger(L, r.bufs["framebuffer"].h), 2;   // (a thing's picture grows no larger than its box)
+    // A layer's image does not grow larger than its box.
+    else if (n == "image_max") return lua_pushinteger(L, r.bufs["framebuffer"].w), lua_pushinteger(L, r.bufs["framebuffer"].h), 2;
     else if (n == "script_path") lua_pushstring(L, (std::filesystem::path(r.file).parent_path().string() + "/").c_str());
-    else if (n == "layer_max") lua_pushinteger(L, r.numbers ? (lua_Integer)(*r.numbers)(r.file, "aviutl.layer_max", 1) : 1);   // (as many layers as there are things: doc_aviutl_asked)
+    // As many layers as the document has layers (doc_aviutl_asked).
+    else if (n == "layer_max") lua_pushinteger(L, r.numbers ? (lua_Integer)(*r.numbers)(r.file, "aviutl.layer_max", 1) : 1);
     else if (n == "clock") lua_pushnumber(L, std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count());
     else return aviutl_no(L, "obj.getinfo " + n);
     return 1;
 }
-static int aviutl_getvalue(lua_State* L) {   // (target): its own tracks, and the thing's base values as a flat thing's are
+// obj.getvalue(target) returns one of the script's own tracks, the time, a value of another layer,
+// or a base value of this layer. Base values are those of a flat layer: position, rotation and
+// centre are 0, scale and alpha are 1, and zoom is 100.
+static int aviutl_getvalue(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     std::string n = lua_isnumber(L, 1) ? std::to_string((int)lua_tonumber(L, 1)) : aviutl_str(L, 1);
     int tracks = 0;
     for (const AviutlVar& v : r.vars)
         if (v.kind == "track" && (n == std::to_string(tracks++) || n == "track." + v.var)) return aviutl_old(v) ? (lua_getglobal(L, "obj"), lua_getfield(L, -1, v.var.c_str())) : lua_getglobal(L, v.var.c_str()), 1;
     if (n == "time") return lua_pushnumber(L, r.s->now), 1;
-    if (n.rfind("layer", 0) == 0 && r.numbers) {   // (another layer's, at a time from its start: the document's things as layers, doc_aviutl_asked; none there, nil)
+    if (n.rfind("layer", 0) == 0 && r.numbers) {
+        // Another layer's value, at a time counted from that layer's start, or nil if there is no
+        // such layer. The numbers callback supplies the document's layers (doc_aviutl_asked).
         const double v = (*r.numbers)(r.file, "aviutl." + n + (lua_isnumber(L, 2) ? "@" + std::to_string(lua_tonumber(L, 2)) : std::string()), NAN);
         return std::isnan(v) ? lua_pushnil(L) : lua_pushnumber(L, v), 1;
     }
@@ -134,12 +176,21 @@ static int aviutl_getvalue(lua_State* L) {   // (target): its own tracks, and th
     if (n == "scale") return lua_pushnumber(L, 1), lua_pushnumber(L, 1), lua_pushnumber(L, 1), 3;
     return aviutl_no(L, "obj.getvalue " + n);
 }
-// obj.getaudio(buffer, "audiobuffer"[, kind[, count]]) as YMM4-LuaScript's LuaScript.ja-jp.txt tells it (routersys,
-// MIT): the scene's sound now (the document's films heard, document/place.h doc_sound_now), "pcm" its wave at 16 bits'
-// scale, "spectrum" count bands (32; at most 512) of 0 to 32768, "fourier" (1024) of 0 to 1, as Motolii reads a
-// sound for ISF (sound_level.h: GStreamer's spectrum made the Web's AnalyserNode, 512 bands, the wave 1024 samples at
-// 24000); ".l" and ".r" as both. Into buffer[1..n], or a table of its own as the third; none heard, 0. Any other
-// file: 0 (YMM4's own: "取得できない場合はデータ数 0 を返し、エラーにはなりません").
+// obj.getaudio(buffer, "audiobuffer"[, kind[, count]]), as described by YMM4-LuaScript's
+// LuaScript.ja-jp.txt (routersys, MIT).
+//
+// Reads the project's sound at the current time: the audible videos (doc_sound_now in
+// document/place.h). The kind "pcm" gives the waveform scaled to 16 bits. The kind "spectrum" gives
+// count bands (default 32, at most 512) with values from 0 to 32768. The kind "fourier" gives count
+// bands (default 1024) with values from 0 to 1. Motolii reads sound for ISF the same way
+// (sound_level.h): GStreamer's spectrum element presented like the Web's AnalyserNode, with 512
+// bands and a waveform of 1024 samples at 24000 Hz. A ".l" or ".r" suffix on the kind is accepted
+// and both channels are used.
+//
+// The values go into buffer[1..n], or into a new table when the first argument is not a table.
+// Returns the count, the sample rate (24000), and the new table if one was made. If nothing is
+// heard, or if any other file is asked for, the count is 0. YMM4 specifies the same: when the data
+// cannot be obtained it returns a count of 0 and raises no error.
 static int aviutl_getaudio(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     std::string kind = lua_isstring(L, 3) ? lua_tostring(L, 3) : "pcm";
@@ -156,21 +207,33 @@ static int aviutl_getaudio(lua_State* L) {
     if (own) lua_pushvalue(L, into);
     return own ? 3 : 2;
 }
-static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its parameters without)
-// obj.setanchor(name, num, options...) as AviUtl2's lua.txt tells it (aviutl2_modern_docs, MIT: docs/lua/index.md):
-// a table's points too few for num, its {table} option taken, else laid by AviUtl itself. Its points are not on the
-// screen here yet for a hand to move, so points all on one spot (a table's usual {0,0,...}, BezierPath's) would stay a
-// path of no length: they are laid as a hand would first draw them, a screen's third from the object's middle: across
-// it as "line" joins them (one wave over and under), round it as "loop", "star" and "arm" join them or none, on a grid
-// for "mesh". Tracks'
-// points ("track", "x,y") are their keys': one, the parameters' values, for now.
+// obj.data returns nil, because nothing is stored with the object here. The script 波形ライン.obj2 calls
+// it inside pcall and draws from its parameters when there is no data.
+static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }
+// obj.setanchor(name, num, options...), as described by AviUtl2's lua.txt (aviutl2_modern_docs,
+// MIT: docs/lua/index.md).
+//
+// The global table `name` receives num points. When the table has too few points for num, the
+// {table} option is used if given. Otherwise the points are generated here, where AviUtl itself
+// would generate them. There is no handle on the canvas yet for the user to move the points. Points
+// that all sit on one spot, such as the usual {0,0,...} table of BezierPath, would make a path of
+// no length, so they are generated too.
+//
+// The generated points start a third of the canvas from the object's centre. With "line" they are
+// laid across the canvas and joined, as one wave over and under. With "loop", "star" and "arm" they
+// are laid around the centre. With "mesh" they are laid on a grid.
+//
+// Points for tracks ("track", or a name like "x,y") are not generated; for now the parameters'
+// values stand for them and one point is reported. Returns num.
 static int aviutl_setanchor(lua_State* L) {
     const int num = std::max(1, (int)aviutl_num(L, 2));
-    if (!lua_isstring(L, 1) || lua_isnumber(L, 1)) return lua_pushinteger(L, num), 1;   // (a table itself: only its line shown)
+    // A table was passed instead of a name. Leave it as it is.
+    if (!lua_isstring(L, 1) || lua_isnumber(L, 1)) return lua_pushinteger(L, num), 1;
     const std::string name = lua_tostring(L, 1);
     if (name == "track" || name.find(',') != std::string::npos) return lua_pushinteger(L, num), 1;
     int dims = 2, mesh = 0, given = 0;
-    bool along = false;   // (joined as a line; else round its middle)
+    // True when the points are laid along a line. Otherwise they are laid around the centre.
+    bool along = false;
     for (int i = 3; i <= lua_gettop(L); ++i) {
         if (lua_istable(L, i)) given = i;
         if (lua_type(L, i) != LUA_TSTRING) continue;
@@ -182,7 +245,8 @@ static int aviutl_setanchor(lua_State* L) {
     lua_getglobal(L, name.c_str());
     if (!lua_istable(L, -1)) lua_pop(L, 1), lua_newtable(L), lua_pushvalue(L, -1), lua_setglobal(L, name.c_str());
     const int t = lua_gettop(L), want = num * dims, had = (int)lua_objlen(L, t);
-    bool one = had == want && num > 1;   // (all its points on one spot)
+    // True when all the points sit on one spot.
+    bool one = had == want && num > 1;
     for (int i = 1 + dims; one && i <= want; ++i) {
         lua_rawgeti(L, t, i), lua_rawgeti(L, t, 1 + (i - 1) % dims);
         one = lua_tonumber(L, -1) == lua_tonumber(L, -2);
@@ -195,7 +259,9 @@ static int aviutl_setanchor(lua_State* L) {
         double w = 0, h = 0;
         if (lua_istable(L, -1)) lua_getfield(L, -1, "screen_w"), lua_getfield(L, -2, "screen_h"), w = lua_tonumber(L, -2), h = lua_tonumber(L, -1), lua_pop(L, 2);
         lua_pop(L, 1);
-        const double r = w > 0 && h > 0 ? 0.3 * std::min(w, h) : 100;   // (by the screen, as a thing goes round a path across it: a small thing's own size would make it a speck)
+        // Scale by the canvas size, because a layer travels along a path across the canvas. A small
+        // layer's own size would make the path a speck.
+        const double r = w > 0 && h > 0 ? 0.3 * std::min(w, h) : 100;
         for (int i = 0; i < num; ++i) {
             const double f = num > 1 ? (double)i / (num - 1) : 0.5;
             double x, y;
@@ -211,8 +277,10 @@ static int aviutl_setanchor(lua_State* L) {
     lua_pop(L, 1);
     return lua_pushinteger(L, num), 1;
 }
-// (name, size, decoration, colour, edge colour, bold, italic): the nine of obj.getfont as sashimono-edit reads AviUtl2's
-// lua.txt (MIT, objapi.py lua_getfont), the spacings after them not read yet; defaults its own (48, white, black).
+// obj.setfont(name, size, decoration, colour, edge colour, bold, italic) sets the font used for
+// text. These are the first seven of the nine values of obj.getfont, as sashimono-edit reads them
+// from AviUtl2's lua.txt (MIT, objapi.py lua_getfont). The spacing values after them are not read
+// yet. The defaults are size 48, white colour and black edge.
 static int aviutl_setfont(lua_State* L) {
     auto& f = aviutl_of(L).font;
     f.name = lua_isstring(L, 1) ? lua_tostring(L, 1) : "";

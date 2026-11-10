@@ -1,7 +1,17 @@
-// skia_path_operations.cpp: Skia's own path operations on a flat shape's path (Cavalry draws its shapes' paths with the same):
-// union, difference, intersection, exclusion of two paths (SkPathOps, its Boolean), and a path read from SVG's path
-// data (SkParsePath), a path roughened (SkDiscretePathEffect), a path's points moved. Apart from the rest because Skia's headers bring its names in; out come its calls (canvas.h).
-// Built by skia.sh.
+// skia_path_operations.cpp: Path operations on 2D shapes, implemented with Skia.
+//
+// Cavalry draws its shape paths with the same Skia code. The functions here provide:
+//   - Boolean operations on two paths: union, difference, intersection and exclusion
+//     (SkPathOps).
+//   - Reading SVG path data (SkParsePath) and editing it like a pen tool: moving points and
+//     handles, adding and removing points.
+//   - Roughening a path (SkDiscretePathEffect), morphing between two paths, resampling,
+//     trimming, placing points along a path, and voxelizing.
+//   - Hit testing against a path.
+//
+// This file is separate from the rest of the canvas code because Skia's headers declare many
+// names that would clash with ours. Only the functions declared in canvas.h are visible to the
+// rest of the engine. Built by skia.sh.
 #include "thorvg.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPathBuilder.h"
@@ -26,9 +36,11 @@ static SkPath sk_of(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::P
     return b.detach();
 }
 
-// Skia's path in ThorVG's commands, a quad or conic as a cubic (what ThorVG knows).
+// Appends the Skia path to `cmds` and `pts` as ThorVG commands. ThorVG has only cubic curves, so
+// quads and conics are converted to cubics. Returns false if nothing was appended.
 static bool tvg_of(const SkPath& built, std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts) {
-    const auto cubic = [&](SkPoint a, SkPoint q, SkPoint e) {   // (a quad as the cubic it is)
+    // Appends the quad a, q, e as the cubic with the same shape.
+    const auto cubic = [&](SkPoint a, SkPoint q, SkPoint e) {
         cmds.push_back(tvg::PathCommand::CubicTo);
         pts.push_back({a.fX + 2.f / 3.f * (q.fX - a.fX), a.fY + 2.f / 3.f * (q.fY - a.fY)});
         pts.push_back({e.fX + 2.f / 3.f * (q.fX - e.fX), e.fY + 2.f / 3.f * (q.fY - e.fY)});
@@ -57,25 +69,32 @@ static bool tvg_of(const SkPath& built, std::vector<tvg::PathCommand>& cmds, std
     return !cmds.empty();
 }
 
-// `op`: 0 A less B, 1 where both are, 2 either, 3 either but not both (Skia's SkPathOp, in its order). false: nothing left.
+// Combines path A (ac, ap) with path B (bc, bp) and writes the result to `cmds` and `pts`.
+// `op` is an SkPathOp value: 0 is A minus B, 1 is the intersection, 2 is the union and 3 is the
+// exclusion (either path but not both). Returns false if the result is empty.
 bool sk_op(int op, const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* ap, const tvg::PathCommand* bc, uint32_t bcn, const tvg::Point* bp,
            std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts) {
     cmds.clear(), pts.clear();
     const SkPath b = sk_of(bc, bcn, bp);
-    const std::optional<SkPath> one = Simplify(b);   // (its pieces, if many and over each other, made one first)
+    // Simplify B first so that overlapping pieces of B become one shape.
+    const std::optional<SkPath> one = Simplify(b);
     std::optional<SkPath> built = Op(sk_of(ac, acn, ap), one ? *one : b, (SkPathOp)op);
-    if (built && built->getFillType() != SkPathFillType::kWinding) built = AsWinding(*built);   // (as it is filled: by its winding, as the shape is cut)
+    // Shapes are filled by winding rule, so convert a result that uses another fill type.
+    if (built && built->getFillType() != SkPathFillType::kWinding) built = AsWinding(*built);
     return built && !built->isEmpty() && tvg_of(*built, cmds, pts);
 }
 
-// A path from SVG's path data ("M0 0 L1 1 C... Z"). false: none read.
+// Parses SVG path data such as "M0 0 L1 1 C... Z" into `cmds` and `pts`. Returns false if the
+// data cannot be parsed or is empty.
 bool sk_svg(const char* data, std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts) {
     cmds.clear(), pts.clear();
     const std::optional<SkPath> built = SkParsePath::FromSVGString(data);
     return built && !built->isEmpty() && tvg_of(*built, cmds, pts);
 }
 
-// A path roughened (Skia's discrete path effect): cut in pieces `apart` long, each end pushed up to `far` off at random.
+// Roughens a path with Skia's discrete path effect. The path is cut into pieces about `apart`
+// long, and each end is moved by a random offset of up to `far`. `seed` makes the result
+// repeatable. Returns false if the effect fails or the result is empty.
 bool sk_rough(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float apart, float far, uint32_t seed,
               std::vector<tvg::PathCommand>& outCmds, std::vector<tvg::Point>& outPts) {
     outCmds.clear(), outPts.clear();
@@ -84,7 +103,8 @@ bool sk_rough(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* 
     return SkDiscretePathEffect::Make(apart, far, seed)->filterPath(&built, sk_of(cmds, cmdsCnt, pts), &fill) && tvg_of(built.detach(), outCmds, outPts);
 }
 
-// The points a path goes through (each stretch's end, its handles not), as SVG's path data has them: xy two a point.
+// Writes the anchor points of the SVG path data to `xy` as x, y pairs. An anchor is the end
+// point of each segment; handles are not included. Returns the number of anchors.
 int sk_svg_anchors(const char* data, std::vector<float>& xy) {
     xy.clear();
     const std::optional<SkPath> built = SkParsePath::FromSVGString(data);
@@ -95,8 +115,10 @@ int sk_svg_anchors(const char* data, std::vector<float>& xy) {
     return (int)xy.size() / 2;
 }
 
-// What a pen asks of a path before it puts a point on: its first point, and how it ends (Skia's verbs: 0 not read or
-// empty, 1 a move alone, 2 a line, 3 a curve, 4 closed); how many stretches it has.
+// Describes the SVG path data for a pen tool that is about to add a point. Writes the first
+// point to `fx`, `fy` and the number of segments, not counting moves and closes, to `stretches`.
+// Returns how the path ends: 0 if it cannot be parsed or is empty, 1 for a move alone, 2 for a
+// line, 3 for a curve and 4 if it is closed.
 int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches) {
     fx = fy = 0.f, stretches = 0;
     const std::optional<SkPath> built = SkParsePath::FromSVGString(data);
@@ -113,16 +135,20 @@ int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches) {
     return last;
 }
 
-// A path with its nth point (and any point lying where it does: a closed path's first and last) moved by dx, dy, its
-// handles on either side going with it, as a pen tool moves a point; written again as SVG's path data (Skia's own).
+// Moves the nth anchor of the SVG path data by dx, dy and writes the new path data to `out`.
+// Any other anchor at the same place, such as the first and last points of a closed path, moves
+// with it. The handles on both sides of a moved anchor move too, as in a pen tool. Returns false
+// if `nth` is out of range.
 bool sk_svg_move(const char* data, int nth, float dx, float dy, std::string& out) {
     std::vector<float> xy;
     if (nth < 0 || nth >= sk_svg_anchors(data, xy)) return false;
     const SkPoint was{xy[2 * nth], xy[2 * nth + 1]}, by{dx, dy};
     const auto here = [&](SkPoint p) { return SkPoint::Distance(p, was) < 1e-4f; };
     SkPathBuilder b;
-    bool after = false;   // (the stretch after a moved point: its first handle goes too)
-    const SkPath path = *SkParsePath::FromSVGString(data);   // (kept: its iterator reads it)
+    // True on the segment after a moved anchor, whose first handle moves too.
+    bool after = false;
+    // The iterator reads from this path, so it must stay alive while iterating.
+    const SkPath path = *SkParsePath::FromSVGString(data);
     SkPathIter it = path.iter();
     while (const std::optional<SkPathIter::Rec> r = it.next()) {
         std::vector<SkPoint> p(r->fPoints.begin(), r->fPoints.end());
@@ -146,9 +172,11 @@ bool sk_svg_move(const char* data, int nth, float dx, float dy, std::string& out
     return true;
 }
 
-// A path turned `t` of the way into another, as Cavalry's Morph: each outline walked at 256 even steps (Skia's contour
-// measure), the other's turned the same way round and started where it lies nearest, point to point between; an
-// outline one has and the other has not, kept until half way.
+// Morphs path A (ac, ap) into path B (bc, bp), as Cavalry's Morph does. `t` is the progress from
+// 0 for A to 1 for B. Each outline is sampled at 256 evenly spaced points with Skia's contour
+// measure. Two closed outlines are made to run in the same direction, and B starts at the point
+// nearest to the start of A. The points are then interpolated pairwise. An outline that exists in
+// only one path is shown until t reaches 0.5. Returns false if the result is empty.
 bool sk_morph(const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* ap, const tvg::PathCommand* bc, uint32_t bcn, const tvg::Point* bp, float t,
               std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts) {
     constexpr int N = 256;
@@ -175,7 +203,8 @@ bool sk_morph(const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* ap, co
         const std::vector<SkPoint>& p = a[k].first;
         std::vector<SkPoint> q = b[k].first;
         int shift = 0;
-        if (a[k].second && b[k].second) {   // (two rounds: the same way round, from the nearest start)
+        // Two closed outlines: match the direction and the start point.
+        if (a[k].second && b[k].second) {
             if ((area(p) < 0) != (area(q) < 0)) std::reverse(q.begin(), q.end());
             double best = 1e300;
             for (int s = 0; s < N; ++s) {
@@ -191,8 +220,11 @@ bool sk_morph(const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* ap, co
     return !cmds.empty();
 }
 
-// A path's handles (each curve's control points, in order), as SVG's path data has them: xy two a handle; `of`, if
-// asked, the point each is the handle of (a curve's first, the point it leaves; its last, the point it comes to).
+// Writes the handles of the SVG path data to `xy` as x, y pairs. A handle is a control point of
+// a curve, in path order. If `of` is not null, it receives for each handle the anchor that the
+// handle belongs to, as x, y pairs. The first handle of a cubic belongs to the anchor the curve
+// leaves, and the last one belongs to the anchor the curve arrives at. Returns the number of
+// handles.
 int sk_svg_handles(const char* data, std::vector<float>& xy, std::vector<float>* of = nullptr) {
     xy.clear();
     if (of) of->clear();
@@ -209,25 +241,32 @@ int sk_svg_handles(const char* data, std::vector<float>& xy, std::vector<float>*
     return (int)xy.size() / 2;
 }
 
-// A path with its nth handle moved by dx, dy; the handle on the other side of its point turned with it if the two lay
-// in one line through it (a smooth point, as a pen tool keeps it smooth), as long as it was; written again as SVG's data.
+// Moves the nth handle of the SVG path data by dx, dy and writes the new path data to `out`.
+// If the handle and the handle on the other side of the same anchor lay on one straight line
+// through it, within about ten degrees, the other handle is turned to stay opposite and keeps its
+// length. This keeps a smooth point smooth, as a pen tool does. Returns false if `nth` is out of
+// range.
 bool sk_svg_move_handle(const char* data, int nth, float dx, float dy, std::string& out) {
     std::vector<float> xy;
     if (nth < 0 || nth >= sk_svg_handles(data, xy)) return false;
-    const SkPath path = *SkParsePath::FromSVGString(data);   // (kept: its iterator reads it)
+    // The iterator reads from this path, so it must stay alive while iterating.
+    const SkPath path = *SkParsePath::FromSVGString(data);
     struct Rec { SkPathVerb verb; std::vector<SkPoint> p; float w; };
     std::vector<Rec> all;
     SkPathIter it = path.iter();
     while (const std::optional<SkPathIter::Rec> r = it.next())
         all.push_back({r->fVerb, std::vector<SkPoint>(r->fPoints.begin(), r->fPoints.end()), r->fVerb == SkPathVerb::kConic ? r->conicWeight() : 1.f});
     const auto curved = [&](size_t v) { return all[v].verb == SkPathVerb::kCubic; };
-    size_t hv = 0, hp = 0;   // (the handle: which stretch, which of its points)
+    // The moved handle: hv is its segment and hp is the index of its point in that segment.
+    size_t hv = 0, hp = 0;
     for (size_t v = 0, k = 0; v < all.size(); ++v)
         if (all[v].verb == SkPathVerb::kCubic || all[v].verb == SkPathVerb::kQuad || all[v].verb == SkPathVerb::kConic)
             for (size_t i = 1; i + 1 < all[v].p.size(); ++i, ++k) if ((int)k == nth) hv = v, hp = i;
     const SkPoint was = all[hv].p[hp];
     all[hv].p[hp] += SkPoint{dx, dy};
-    if (curved(hv)) {   // (the other side of its point: the stretch before's last handle, or the next's first, round a closed outline)
+    // Find the handle on the other side of the anchor. It is the last handle of the previous
+    // segment or the first handle of the next one, wrapping around on a closed outline.
+    if (curved(hv)) {
         size_t first = hv, last = hv;
         while (first > 0 && all[first].verb != SkPathVerb::kMove) --first;
         while (last + 1 < all.size() && all[last + 1].verb != SkPathVerb::kMove) ++last;
@@ -235,11 +274,15 @@ bool sk_svg_move_handle(const char* data, int nth, float dx, float dy, std::stri
         const bool closed = last + 1 < all.size() && all[last + 1].verb == SkPathVerb::kClose;
         size_t ov = SIZE_MAX, op = 0;
         SkPoint at{};
-        if (hp == 2) {   // (its last handle: the point it comes to, and the next stretch's first)
+        // The moved handle is the last of its curve: the anchor is where the curve arrives, and
+        // the other handle is the first one of the next curve.
+        if (hp == 2) {
             at = all[hv].p[3];
             size_t next = hv + 1 <= last ? hv + 1 : (closed && SkPoint::Distance(at, all[first].p[0]) < 1e-4f ? first + 1 : SIZE_MAX);
             if (next != SIZE_MAX && next <= last && curved(next)) ov = next, op = 1;
-        } else {   // (its first: the point it leaves, and the stretch before's last)
+        } else {
+            // The moved handle is the first of its curve: the anchor is where the curve leaves,
+            // and the other handle is the last one of the previous curve.
             at = all[hv].p[0];
             size_t before = hv - 1 > first ? hv - 1 : (closed && SkPoint::Distance(all[last].p.back(), at) < 1e-4f ? last : SIZE_MAX);
             if (before != SIZE_MAX && before > first && curved(before)) ov = before, op = 2;
@@ -247,7 +290,7 @@ bool sk_svg_move_handle(const char* data, int nth, float dx, float dy, std::stri
         if (ov != SIZE_MAX) {
             SkVector a = was - at, b = all[ov].p[op] - at;
             const float la = a.length(), lb = b.length();
-            if (la > 1e-6f && lb > 1e-6f && (a.fX * b.fX + a.fY * b.fY) / (la * lb) < -0.985f) {   // (in one line through it, within ten degrees)
+            if (la > 1e-6f && lb > 1e-6f && (a.fX * b.fX + a.fY * b.fY) / (la * lb) < -0.985f) {
                 SkVector now = all[hv].p[hp] - at;
                 if (now.length() > 1e-6f) all[ov].p[op] = at - now * (lb / now.length());
             }
@@ -266,8 +309,10 @@ bool sk_svg_move_handle(const char* data, int nth, float dx, float dy, std::stri
     return true;
 }
 
-// A path as its points, each with the handle it comes in by and the one it leaves by (a line's on its ends), a
-// contour each, and whether it is closed; and back. What a pen adds a point to or takes one from.
+// A path as editable nodes, for adding and removing points. Each node has an incoming handle,
+// an anchor and an outgoing handle. For a line, both handles lie on the anchor. SkNodes holds
+// one list of nodes per contour, with a flag that is true when the contour is closed.
+// sk_nodes converts a Skia path to nodes and sk_path converts nodes back.
 struct SkNode { SkPoint in, at, out; };
 using SkNodes = std::vector<std::pair<std::vector<SkNode>, bool>>;
 static SkNodes sk_nodes(const SkPath& path) {
@@ -280,11 +325,13 @@ static SkNodes sk_nodes(const SkPath& path) {
         std::vector<SkNode>& n = all.back().first;
         switch (r->fVerb) {
             case SkPathVerb::kLine: n.push_back({p[1], p[1], p[1]}); break;
-            case SkPathVerb::kQuad: case SkPathVerb::kConic:   // (a quad as the cubic it is)
+            // A quad or conic is converted to the cubic with the same shape.
+            case SkPathVerb::kQuad: case SkPathVerb::kConic:
                 n.back().out = p[0] + (p[1] - p[0]) * (2.f / 3.f), n.push_back({p[2] + (p[1] - p[2]) * (2.f / 3.f), p[2], p[2]}); break;
             case SkPathVerb::kCubic: n.back().out = p[1], n.push_back({p[2], p[3], p[3]}); break;
             case SkPathVerb::kClose:
-                if (n.size() > 1 && SkPoint::Distance(n.back().at, n.front().at) < 1e-4f) n.front().in = n.back().in, n.pop_back();   // (its last point its first again: one)
+                // When the last point equals the first, merge them into one node.
+                if (n.size() > 1 && SkPoint::Distance(n.back().at, n.front().at) < 1e-4f) n.front().in = n.back().in, n.pop_back();
                 all.back().second = true;
                 break;
             default: break;
@@ -303,8 +350,11 @@ static SkPath sk_path(const SkNodes& all) {
     return b.detach();
 }
 
-// A pen on a path: on one of its points (within `reach`), that point taken away; on its outline, a point put there,
-// the curve split where it lies (de Casteljau: the same curve); else nothing (0). 1 taken, 2 put.
+// Applies a pen tool click at x, y to the SVG path data and writes the new data to `out`.
+// If the click is within `reach` of an anchor, that anchor is removed. If it is within `reach`
+// of the outline, a new anchor is added there and the curve is split at that place with de
+// Casteljau's algorithm, which keeps the shape unchanged. Returns 1 if a point was removed, 2 if
+// one was added and 0 if nothing changed.
 int sk_svg_edit(const char* data, float x, float y, float reach, std::string& out) {
     const std::optional<SkPath> built = SkParsePath::FromSVGString(data);
     if (!built) return 0;
@@ -321,6 +371,7 @@ int sk_svg_edit(const char* data, float x, float y, float reach, std::string& ou
     float best = reach, at = 0.f;
     int contour = -1;
     size_t seg = 0;
+    // Returns the point at t on the cubic a, b, c, d.
     const auto on = [](SkPoint a, SkPoint b, SkPoint c, SkPoint d, float t) { const float u = 1.f - t; return a * (u * u * u) + b * (3.f * u * u * t) + c * (3.f * u * t * t) + d * (t * t * t); };
     for (size_t k = 0; k < all.size(); ++k) {
         const auto& [n, closed] = all[k];
@@ -341,9 +392,11 @@ int sk_svg_edit(const char* data, float x, float y, float reach, std::string& ou
     return 2;
 }
 
-// Each open outline's two ends as its trim leaves them (from, to: shares of its own length, as ThorVG trims each
-// outline), where they are and the way the line goes there (Skia's contour measure): 8 numbers an outline, its end
-// (x, y, dx, dy) then its start (x, y, dx, dy, pointing back out of it).
+// Finds the two ends of each open outline after trimming. `from` and `to` are fractions of each
+// outline's own length, as ThorVG trims each outline. Writes 8 numbers per outline to `out`:
+// the position and direction of its end as x, y, dx, dy, followed by the position and direction
+// of its start as x, y, dx, dy. The start direction points away from the outline. Closed outlines
+// and outlines trimmed to nothing are skipped. Returns the number of outlines written.
 int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<float>& out) {
     out.clear();
     if (to < from) std::swap(from, to);
@@ -358,8 +411,9 @@ int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pt
     return (int)out.size() / 8;
 }
 
-// A path walked again at `n` even steps an outline (Skia's contour measure), straight between, as Cavalry's Resample
-// Path: a round made a polygon, every outline as finely pointed as every other.
+// Resamples a path into straight lines, as Cavalry's Resample Path does. Each outline is walked
+// at `n` evenly spaced points with Skia's contour measure, so curves become polygons and every
+// outline has the same number of points. Returns false if the result is empty.
 bool sk_resample(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, int n, std::vector<tvg::PathCommand>& outCmds, std::vector<tvg::Point>& outPts) {
     outCmds.clear(), outPts.clear();
     SkContourMeasureIter it(sk_of(cmds, cmdsCnt, pts), false);
@@ -376,8 +430,11 @@ bool sk_resample(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Poin
     return !outCmds.empty();
 }
 
-// Each outline of a path from `from` to `to` (shares of its length, going round past either end) in short straight pieces,
-// closed across: what is filled of a trimmed shape, as After Effects' Trim Paths and Skottie's cut the fill (Skia's contour measure).
+// Converts the part of each outline between `from` and `to` into short straight pieces and
+// closes it with a straight line across. `from` and `to` are fractions of the outline length.
+// On a closed outline, values outside 0 to 1 wrap around. This is the filled area of a trimmed
+// shape, which is how After Effects' Trim Paths and Skottie trim a fill. Returns false if the
+// result is empty.
 bool sk_trim(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<tvg::PathCommand>& outCmds, std::vector<tvg::Point>& outPts) {
     outCmds.clear(), outPts.clear();
     SkContourMeasureIter it(sk_of(cmds, cmdsCnt, pts), false);
@@ -395,9 +452,12 @@ bool sk_trim(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* p
     return !outCmds.empty();
 }
 
-// `n` places along a path, evenly by its length (all its outlines one after another; a closed path's last place not
-// on its first), slid on by `from` (a share of its length, going round): x, y and the way it goes there (radians), three
-// numbers a place (Skia's contour measure), as Cavalry's Duplicator on a shape's outline.
+// Finds `n` places along a path, evenly spaced by length, as Cavalry's Duplicator does on a
+// shape's outline. All outlines are treated as one path, one after another. On a closed path
+// the last place does not coincide with the first. The places are shifted along the path by
+// `from`, a fraction of the total length that wraps around on a closed path. Writes three
+// numbers per place to `out`: x, y and the direction of the path there in radians. Returns the
+// number of places.
 int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, int n, float from, std::vector<float>& out) {
     out.clear();
     std::vector<sk_sp<SkContourMeasure>> all;
@@ -420,8 +480,10 @@ int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* p
     return (int)out.size() / 3;
 }
 
-// A path made of squares `cell` across, one where a grid's square has its middle inside it, as Cavalry's Voxelize:
-// the path scan-converted on that grid by Skia's own SkRegion (a pixel is in where its middle is). At most 256 a side.
+// Replaces a path with squares of side `cell`, as Cavalry's Voxelize does. A square is included
+// when the middle of its grid cell lies inside the path. The path is scan-converted onto the grid
+// with SkRegion, where a pixel is inside if its center is. The grid has at most 256 cells on a
+// side, so `cell` is raised if needed. Returns false if the path or `cell` is empty.
 bool sk_voxel(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float cell, std::vector<tvg::PathCommand>& outCmds, std::vector<tvg::Point>& outPts) {
     outCmds.clear(), outPts.clear();
     const SkPath path = sk_of(cmds, cmdsCnt, pts);
@@ -429,7 +491,8 @@ bool sk_voxel(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* 
     if (box.isEmpty() || cell <= 0.f) return false;
     cell = std::max(cell, std::max(box.width(), box.height()) / 256.f);
     const float x0 = std::floor(box.fLeft / cell) * cell, y0 = std::floor(box.fTop / cell) * cell;
-    const SkPath grid = path.makeTransform(SkMatrix::Translate(-x0, -y0).postScale(1.f / cell, 1.f / cell));   // (a square one pixel)
+    // Scale the path so that one grid cell is one pixel.
+    const SkPath grid = path.makeTransform(SkMatrix::Translate(-x0, -y0).postScale(1.f / cell, 1.f / cell));
     SkRegion in;
     in.setPath(grid, SkRegion(SkIRect::MakeWH((int)std::ceil((box.fRight - x0) / cell) + 1, (int)std::ceil((box.fBottom - y0) / cell) + 1)));
     for (SkRegion::Iterator it(in); !it.done(); it.next())
@@ -442,8 +505,9 @@ bool sk_voxel(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* 
     return !outCmds.empty();
 }
 
-// Whether a point lies inside a path (Skia's own contains, its winding) and how far it is from its outline (the nearest
-// of its stretches, a curve walked in 16 steps), in the path's own units.
+// Returns whether the point x, y lies inside the path, using Skia's contains with the winding
+// rule. If `far` is not null, it receives the distance from the point to the outline in the
+// path's own units. Curves are approximated by 16 straight pieces for this distance.
 bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float x, float y, float* far) {
     const SkPath path = sk_of(cmds, cmdsCnt, pts);
     const SkPoint at{x, y};

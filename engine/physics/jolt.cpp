@@ -1,4 +1,5 @@
-// physics.h's interop, Jolt behind it (built as jolt_bench.cpp was, tag lab-archive-2026-11-09: cross-platform deterministic, one thread).
+// Implements the adapter declared in physics.h on top of Jolt.
+// Built as jolt_bench.cpp was: deterministic across platforms, single-threaded.
 #include "physics/physics.h"
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
@@ -16,7 +17,10 @@ using namespace JPH;
 
 namespace {
 constexpr ObjectLayer STILL = 0, MOVING = 1;
+
+// Collision filter: two bodies collide unless both are STILL.
 struct Pairs final : ObjectLayerPairFilter { bool ShouldCollide(ObjectLayer a, ObjectLayer b) const override { return a == MOVING || b == MOVING; } };
+// Maps each object layer to the broad-phase layer with the same number.
 struct Broad final : BroadPhaseLayerInterface {
     uint GetNumBroadPhaseLayers() const override { return 2; }
     BroadPhaseLayer GetBroadPhaseLayer(ObjectLayer l) const override { return BroadPhaseLayer((BroadPhaseLayer::Type)l); }
@@ -24,11 +28,15 @@ struct Broad final : BroadPhaseLayerInterface {
     const char* GetBroadPhaseLayerName(BroadPhaseLayer) const override { return "layer"; }
 #endif
 };
+// Broad-phase filter: an object layer is tested against a broad-phase layer unless both are
+// STILL.
 struct ObjectVsBroad final : ObjectVsBroadPhaseLayerFilter { bool ShouldCollide(ObjectLayer a, BroadPhaseLayer b) const override { return a == MOVING || (BroadPhaseLayer::Type)b == MOVING; } };
+// Initializes Jolt's global state. Safe to call from any thread, any number of times.
 void once() {
     static std::once_flag done;
     std::call_once(done, [] { RegisterDefaultAllocator(); Factory::sInstance = new Factory(); RegisterTypes(); });
 }
+// Returns the current pose of body `id`: center of mass position and rotation quaternion.
 PhysPose read(BodyInterface& bi, BodyID id) {
     PhysPose p;
     const RVec3 at = bi.GetCenterOfMassPosition(id);
@@ -39,6 +47,7 @@ PhysPose read(BodyInterface& bi, BodyID id) {
 }
 }
 
+// All state of a PhysWorld, hidden from physics.h so that it shows no Jolt types.
 struct PhysWorld::Own {
     Pairs pairs; Broad broad; ObjectVsBroad ovb;
     TempAllocatorImpl temp{16 * 1024 * 1024};
@@ -46,12 +55,16 @@ struct PhysWorld::Own {
     PhysicsSystem ps;
     std::vector<PhysThing> things;
     std::vector<BodyID> bodies;
-    std::vector<bool> handed;                      // (a keyed thing the world has taken over)
+    // Per layer: true once the simulation has taken the layer over from its keyframes.
+    std::vector<bool> handed;
     PhysKeyed keyed;
-    std::vector<std::vector<PhysPose>> poses;       // (picture by picture, every thing)
+    // Cache of simulated poses, indexed by frame and then by layer.
+    std::vector<std::vector<PhysPose>> poses;
 };
 
-PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKeyed keyed) : own((once(), new Own)) {   // (Jolt made ready before anything of it is made)
+// Creates one Jolt body per layer and caches the poses of frame 0.
+// once() runs first so that Jolt is initialized before any Jolt object is created.
+PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKeyed keyed) : own((once(), new Own)) {
     Own& o = *own;
     o.things = things, o.keyed = std::move(keyed);
     o.ps.Init(4096, 0, 16384, 8192, o.broad, o.ovb, o.pairs);
@@ -62,7 +75,9 @@ PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKe
         const PhysPose p = o.keyed((int)i, 0.0);
         const Shape* shape = t.ball ? (Shape*)new SphereShape(std::max(t.half[0], 1e-3f))
                                     : (Shape*)new BoxShape(Vec3(std::max(t.half[0], 1e-3f), std::max(t.half[1], 1e-3f), std::max(t.half[2], 1e-3f)), std::min({0.05f, t.half[0], t.half[1], t.half[2]}));
-        const bool keyedNow = t.still || t.until > 0.0;   // (a wall, or a thing still going as its keys say: moved by them, struck by nothing)
+        // A wall, or a layer still following its keyframes, is moved by the keyframes and is not
+        // pushed by collisions.
+        const bool keyedNow = t.still || t.until > 0.0;
         BodyCreationSettings s(shape, RVec3(p.at[0], p.at[1], p.at[2]), Quat(p.turn[0], p.turn[1], p.turn[2], p.turn[3]).Normalized(),
                                keyedNow ? EMotionType::Kinematic : EMotionType::Dynamic, MOVING);
         s.mRestitution = t.bounce, s.mFriction = t.friction;
@@ -76,6 +91,8 @@ PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKe
 }
 PhysWorld::~PhysWorld() = default;
 
+// Steps the simulation forward until frame `frameIndex` is cached, then returns the pose of
+// layer `index` at that frame. A negative frameIndex is treated as 0.
 PhysPose PhysWorld::pose(int index, int frameIndex) {
     Own& o = *own;
     frameIndex = std::max(frameIndex, 0);
@@ -83,11 +100,14 @@ PhysPose PhysWorld::pose(int index, int frameIndex) {
     BodyInterface& bi = o.ps.GetBodyInterface();
     const float dt = 1.f / 60.f;
     while ((int)o.poses.size() <= frameIndex) {
-        const double at = (double)o.poses.size() / 60.0;   // (the moment this step ends)
+        // The time at which this step ends.
+        const double at = (double)o.poses.size() / 60.0;
         for (size_t i = 0; i < o.bodies.size(); ++i) {
             const PhysThing& t = o.things[i];
             if (o.handed[i]) continue;
-            if (!t.still && at > t.until) {   // (its last key passed: the world has it now, with the speed its keys gave it)
+            if (!t.still && at > t.until) {
+                // The last keyframe has passed. Switch the body to dynamic and give it the
+                // velocity its keyframes had over the last step before `until`.
                 const PhysPose a = o.keyed((int)i, t.until - dt), b = o.keyed((int)i, t.until);
                 bi.SetMotionType(o.bodies[i], EMotionType::Dynamic, EActivation::Activate);
                 bi.SetLinearVelocity(o.bodies[i], Vec3(b.at[0] - a.at[0], b.at[1] - a.at[1], b.at[2] - a.at[2]) / dt);

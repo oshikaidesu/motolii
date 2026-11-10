@@ -1,23 +1,41 @@
-// A recipe as code: a JavaScript file whose head declares its parameters in AviUtl2's manner, one a line,
-//   // --track@count:Count,1,5000,800,1      a number: name:label,lowest,highest,as it comes,step
-//   // --check@spin:Spin,1                    on or off (1 or 0)
-//   // --select@way:Way,ring,grid,spiral      one of some words, the first as it comes
-//   // --group:Advanced                       the parameters after it folded away under that name, until a bare // --group
+// Declares Script, which runs a JavaScript file that places copies of a layer, and the helpers
+// that read a script's header and find shelf files.
+//
+// A script declares its parameters in a header of // lines, one parameter per line, in the
+// manner of AviUtl2:
+//   // --track@count:Count,1,5000,800,1      A number: name:label,lowest,highest,default,step.
+//   // --check@spin:Spin,1                    On or off, 1 or 0: name:label,default.
+//   // --select@way:Way,ring,grid,spiral      One of several words. The first is the default.
+//   // --group:Advanced                       Folds the parameters after it under that name, until
+//                                             a bare // --group line.
 //   // --macro@Spread:Spread,0.5 -> StepX 0 0.6, ScatterX 0 2
-//                                             one parameter, 0 to 1 (as it comes: 0.5), turning others: each is its min + (max - min) x
-//                                             the macro, Min above Max the other way (Ableton's Rack Macro Controls, Live 12
-//                                             manual 25.7.1 Map Mode). On its card it stands first; what it turns is folded into
-//                                             Advanced, "← Spread" after its name, and may still be set by hand: the macro adds
-//                                             to its own value what it turns away from where it comes, (max - min) x (macro -
-//                                             as it comes), as an After Effects expression "value + ..." keeps the hand's value
-//                                             (document/expressions.h doc_macro_adds)
-// or, in place of those lines, leva's object form at its top, const knobs = { distance: 2, Advanced: folder({ ... }) } (script_leva.h);
-// and whose body says, for each copy of the thing it is given to, where it is and how:
-//   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the parameters (and k.duration: how long the thing lasts)
-// (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the interop: QuickJS-ng (js_bench chose it).
-// each() may take a fifth, each(i, n, t, k, at): at.x, at.y, at.z, where the layer's script and the expressions before this one lay this copy (none before: 0 0 0), as After Effects gives an expression `value`; what it returns is laid on top of that all the same (document/expressions.h).
-// k also has duration and px (a pixel of the document, in the stage's units). A recipe may hold an After Effects expression
-// as it is posted: AE.compile(`...`) once, AE.run(f, ...) in each() (ae_expr.h; read once, not every frame).
+// A macro is one parameter from 0 to 1, here with default 0.5. It drives other parameters.
+// Each driven parameter equals its min + (max - min) x the macro. If min is above max, it runs
+// the other way. This follows the Rack Macro Controls of Ableton Live 12, Map Mode, section
+// 25.7.1 of its manual. On the layer's card the macro comes first and the parameters it drives
+// are folded into Advanced, labeled "← Spread" after their names. The user can still set a
+// driven parameter by hand. The macro then adds (max - min) x (macro - default) to the
+// parameter's own value, just as an After Effects expression "value + ..." keeps the user's
+// value. See doc_macro_adds in document/expressions.h.
+//
+// Instead of those header lines, the file may start with leva's object form, for example
+//   const knobs = { distance: 2, Advanced: folder({ ... }) }
+// See script_leva.h.
+//
+// The body defines where each copy of the layer is and how it looks:
+//   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }
+// Here i is the index of the copy out of n copies, t is the number of seconds since the layer
+// began, and k holds the parameters. k also has duration, how long the layer lasts, and px,
+// the size of one project pixel in stage units. This is how Cavalry's JavaScript Utility gives
+// a Duplicator its points. QuickJS-ng runs the code.
+//
+// each() may take a fifth argument: each(i, n, t, k, at). at.x, at.y and at.z are the position
+// the layer's script and the expressions before this one gave the copy, or 0 0 0 if there are
+// none. After Effects gives an expression the same thing as `value`. What each() returns is
+// added on top of that position. See document/expressions.h.
+//
+// A script may hold an After Effects expression as it was posted: AE.compile(`...`) once, then
+// AE.run(f, ...) in each(). The expression is compiled once, not every frame. See ae_expr.h.
 #pragma once
 #include <atomic>
 #include <map>
@@ -29,33 +47,50 @@
 #include <string>
 #include <vector>
 
-// How many times a watched file or folder was said to be written, put in or taken out (motolii_files_changed): the OS's
-// own watch runs in the window (dart:io's, on FSEvents), none in here; what is made from files asks its file again only then.
+// Counts how many times a watched file or folder was reported as written, added or removed
+// (motolii_files_changed). The watching itself runs in the app through the operating system
+// (dart:io, on FSEvents), not here. Anything built from files rereads its file only when this
+// count changes.
 static std::atomic<int>& files_changed() { static std::atomic<int> n{0}; return n; }
 
+// One parameter declared in a script's header.
 struct ScriptParameter {
-    std::string name, label, kind;   // kind: track, check, select or picture (an effect's image read from another thing)
+    // kind is one of track, check, select, sound or picture. A picture is an effect's image read
+    // from another layer.
+    std::string name, label, kind;
+    // Range, default and step of a track or check. usual is the default.
     double low = 0, high = 1, usual = 0, step = 0;
-    std::string words;               // a select's words, with spaces between
-    std::string group;               // the group it lies in, as AviUtl2's head says (// --group:Name … // --group): its card's fold ("" none)
+    // The words of a select, separated by spaces. A sound has two: fft or wave, then the count.
+    std::string words;
+    // The group from the header's // --group lines, shown as a fold on the card. Empty if none.
+    std::string group;
+    // A parameter driven by a macro, with the range the macro sweeps it over.
     struct Turned { std::string name; double low, high; };
-    std::vector<Turned> turns;       // a macro's (// --macro@): the parameters it turns and over what span; a macro is a track of 0 to 1
-    std::string by;                  // the macro that turns this one ("" none)
+    // For a macro, the parameters it drives. A macro is a track from 0 to 1.
+    std::vector<Turned> turns;
+    // The macro that drives this parameter. Empty if none.
+    std::string by;
 };
-struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0, opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1; };   // (colour: a solid copy's own, red green blue; -1: as the solid is)
+// The placement and look of one copy, as returned by each(). colour is the copy's own color;
+// -1 means the copy keeps the color of its solid.
+struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0, opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1; };
 
-// The files a word names in turn, with spaces between (an effect's list, the stage's): a path (a word with a "/" in it) is one to
-// its .wgsl, .fs, .js, .mjs, .json (Filament's own settings), .am (AbsentMotion's own motion) or AviUtl2 script (.anm2, .obj2, "#name" after an @ file's), spaces and all ("Application Support", an ISF effect's "Bad TV.fs"); any other word stands alone.
-// A shelf file a document names where it no longer is (the shelves moved: engine/effects/, then shelves/effects/<source>/):
-// the one of that name in that kind's shelf now (shelves/ beside engine/, as doc_folders finds it), read through.
+// Returns the path of a shelf file that a project names where the file no longer is. The shelf
+// folders have moved: first engine/effects/, then shelves/effects/<source>/. If file contains a
+// "/" and does not exist, this looks in the shelf of the same kind for a file with the same
+// name. The shelves/ folder is found beside engine/, as doc_folders finds it. Otherwise, or if
+// no such file exists, file is returned unchanged.
 inline std::string script_shelf_file(const std::string& file) {
     std::error_code wrong;
     if (file.find('/') == std::string::npos || std::filesystem::exists(file, wrong)) return file;
-    static std::map<std::string, std::map<std::string, std::string>> by;   // (a kind's files by their name)
+    // For each shelf kind, a map from file name to full path. Filled on first use.
+    static std::map<std::string, std::map<std::string, std::string>> by;
     for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
         const std::string kind = p.filename().string();
         if (kind != "effects" && kind != "create" && kind != "relations" && kind != "expressions" && kind != "solids" && kind != "looks" && kind != "recipes" && kind != "animators") continue;
-        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;   // (a document saved before 2026-11-09 names the shelf's old folder)
+        // A project saved before the shelves were renamed names the old folders: recipes is now
+        // create and animators is now expressions.
+        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;
         if (!by.count(now)) {
             Dl_info lib{};
             dladdr((const void*)&script_shelf_file, &lib);
@@ -68,6 +103,12 @@ inline std::string script_shelf_file(const std::string& file) {
     }
     return file;
 }
+// Splits a space-separated list of files, such as an effect's list or the stage's. A word
+// containing "/" is a path and may itself contain spaces, as in "Application Support" or an ISF
+// effect's "Bad TV.fs". The path continues until a word ends in .wgsl, .fs, .js, .mjs, .json
+// (Filament's own settings), .am (Alight Motion's own motion file), or names an AviUtl2 script
+// (.anm2 or .obj2, with "#name" after an @ file's). Any other word stands alone. Each file goes
+// through script_shelf_file.
 inline std::vector<std::string> script_files(const std::string& word) {
     std::vector<std::string> all;
     std::istringstream each(word);
@@ -80,54 +121,98 @@ inline std::vector<std::string> script_files(const std::string& word) {
     return all;
 }
 
-// A file of p5.js's own two, setup() and draw(), as sketches are written: not a recipe of ours, whose code is each().
-inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }   // (a relation that pushes: document/world.h)
+// Returns true if src is a relation that pushes layers: it defines force() and has no draw().
+// See document/world.h.
+inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }
+// Returns true if src is a p5.js sketch, written with setup() and draw(), rather than one of
+// our scripts, whose code is each().
 inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || script_pushes(src) || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
-// The lines of a sketch that draw: a for makes hundreds from one line and a count may grow, the line stays. Each is told
-// to the run as it comes, __L (as Processing's Tweak Mode rewrites a sketch's source to reach its numbers,
-// java/src/processing/mode/java/tweak), and is a parameter of the thing, how strong that line's shapes are, named line_ and its
-// number: so a sketch is opened into few rows, however many it draws. Returns the source so told.
+// Marks the calls in a sketch that draw. A for loop can make hundreds of shapes from one source
+// line, and a count may grow, but the line stays. Each drawing call is wrapped as
+// __at(line, name), the way Processing's Tweak Mode rewrites a sketch's source to reach its
+// numbers (java/src/processing/mode/java/tweak). Each such line becomes a parameter of the
+// layer, named line_ plus its line number, that sets how strong that line's shapes are. So a
+// sketch opens into a few rows, however many shapes it draws. If lines is not null, it receives
+// the marked lines. Returns the rewritten source.
+// A line of a sketch that draws, and the name of the drawing call on it.
 struct SketchLine { int line; std::string what; };
 std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines);
-// The parameters a file declares (read from its head, a sketch's its lines that draw; empty if it has none or cannot be read).
+// Returns the parameters a file declares. They are read from its header; for a sketch they
+// are its lines that draw. Returns an empty list if there are none or the file cannot be read.
 std::vector<ScriptParameter> script_parameters(const std::string& file);
-// The values an effect comes with where its own show nothing on a picture (Alight Motion's rule: an effect is seen as it
-// is put on, docs/internal/reports/alight_motion/alight_ui.md "最初の値"): first.tsv beside it, "file<TAB>parameter<TAB>value" a line, measured by
-// fx_first.sh, laid over its parameters' usual values. The author's file is left as it is.
+// Sets default values for an effect's parameters where its own defaults show nothing on the
+// image. Alight Motion's rule is that an effect is seen as it is first put on a layer; see the
+// section on first values in docs/internal/reports/alight_motion/alight_ui.md. This reads
+// first.tsv beside file, with one line per value: file, parameter and value separated by tabs.
+// The table is measured by fx_first.sh. Its values replace the parameters' defaults (usual).
+// The author's file is not changed.
 void script_first(const std::string& file, std::vector<ScriptParameter>& parameters);
 
-// How far an ease of anime.js (third_party/anime, MIT) has gone at u, 0 to 1: `said` as anime.js says it ("outElastic(1, .3)",
-// "spring({ bounce: .5 })", "linear(0, '0.25 75%', 1)", "steps(4)", "irregular(10, 1)"); `bundle` is where its file is.
-// Not an ease, or anime.js not there: u, and `trouble` says why.
+// Returns how far an anime.js ease (third_party/anime, MIT license) has progressed at u. Both u
+// and the result are from 0 to 1. said is the ease as anime.js writes it, for example
+// "outElastic(1, .3)", "spring({ bounce: .5 })", "linear(0, '0.25 75%', 1)", "steps(4)" or
+// "irregular(10, 1)". bundle is the path of the anime.js file. If said is not an ease, or
+// anime.js is not found, returns u and sets *trouble to the reason.
 double anime_ease(const std::string& bundle, const std::string& said, double u, std::string* trouble);
 
+// Runs one JavaScript file with QuickJS-ng. The file is a script with an each() function, a
+// Cavalry distribution that is run whole, or a p5.js sketch. The constructor runs the code once
+// and keeps each().
 class Script {
 public:
-    explicit Script(const std::string& file, const std::string& p5 = "", const std::string& film = "");   // (film: what a sketch's createCapture and createVideo see)   // made once a file: its code run, its each() kept (p5: where p5.js is, for a sketch: p5_stand.h)
+    // Runs file. p5 is the path of p5.js, needed for a sketch; see p5_stand.h. film is the video
+    // that a sketch's createCapture and createVideo see.
+    explicit Script(const std::string& file, const std::string& p5 = "", const std::string& film = "");
     ~Script();
+    // Returns true if the file ran without error.
     bool ok() const;
+    // Returns the text of the error, or an empty string if there was none.
     const std::string& trouble() const;
-    bool sketch() const;       // a p5.js sketch, run by p5.js itself (p5_stand.h)
-    bool lays() const;         // an expression: it has its own each(), each copy asked in turn (not a sketch, not a Canvalry distribution run whole)
-    int most();                // how many copies it draws at once
-    std::string shape();       // and of what shape, as a solid's word
-    bool flat();               // a sketch that paints on a 2D canvas
-    int width();               // its canvas
-    float density();   // (what pixelDensity() says: its canvas has this many pixels to each of its width)
+    // Returns true for a p5.js sketch, which p5.js itself runs; see p5_stand.h.
+    bool sketch() const;
+    // Returns true if the script has its own each(), which is asked once per copy. Returns false
+    // for a sketch and for a Cavalry distribution that is run whole.
+    bool lays() const;
+    // Returns how many copies the sketch draws at once.
+    int most();
+    // Returns the shape of the sketch's copies, as the word a solid uses.
+    std::string shape();
+    // Returns true if the sketch paints on a 2D canvas.
+    bool flat();
+    // Returns the width of the sketch's canvas.
+    int width();
+    // Returns the sketch's pixelDensity(): the number of canvas pixels per unit of width.
+    float density();
+    // Returns the height of the sketch's canvas.
     int height();
-    std::string said(const std::string& js);   // what the sketch says to that, as words
-    std::vector<uint8_t> bytes(const std::string& js);   // what it leaves in __bytes on being told that
-    std::vector<double> numbers(const std::string& js);   // what it answers to that, a Float64Array (empty: it failed, and says so once)
+    // Evaluates js in the sketch and returns the result as a string.
+    std::string said(const std::string& js);
+    // Evaluates js in the sketch and returns the contents of __bytes that it leaves.
+    std::vector<uint8_t> bytes(const std::string& js);
+    // Evaluates js in the sketch and returns the Float64Array it answers with. Returns an empty
+    // vector if the evaluation failed, which is reported once.
+    std::vector<double> numbers(const std::string& js);
+    // Returns what makes frame `frame` on a canvas holding frame `had`, which is the result of
+    // __paints in p5_stand.h.
     std::vector<double> paints(int frame, int had, int pic = -1);
-    std::vector<int> lines() const;   // (a sketch's lines that draw, as sketch_marked says)   // what makes that frame on a canvas holding the frame `had` (p5_stand.h's __paints)
-    // Every copy at once, the parameters as the document says them now (a select by the word it is): each() for each (its
-    // fifth, where the copy lies so far, from `before`: none, 0 0 0), or, for a file with no each(), the whole file run with its parameters as globals
-    // (n0, n1...), time and frame, giving a Canvalry PointCloud whose points are in pixels (`unit` stage units a pixel).
+    // Returns the source lines of the sketch that draw, as sketch_marked reports them.
+    std::vector<int> lines() const;
+    // Returns n copies of the layer at time t, with the parameters as the project has them now.
+    // numbers holds the numeric parameters, and words holds each select as the word it is set to.
+    // For a script with each(), calls each() once per copy. The fifth argument is the placement
+    // the copy has so far, taken from before, or 0 0 0 if before has no entry. For a file with no
+    // each(), runs the whole file with its parameters as globals (n0, n1, ...), plus time and
+    // frame. That run must give a Cavalry PointCloud whose points are in pixels. unit is the size
+    // of one pixel in stage units.
     std::vector<ScriptCopy> copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit, const std::vector<ScriptCopy>& before = {});
 private:
-    void parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);   // (told the script's parameters object)
-    ScriptCopy ask(int i, int n, double t, const ScriptCopy& at);   // (each() with the parameters as last told)
+    // Sets the parameters on the script's parameters object.
+    void parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);
+    // Calls each() for copy i of n at time t, with the parameters as last set. at is where the
+    // copy lies so far, passed as each()'s fifth argument.
+    ScriptCopy ask(int i, int n, double t, const ScriptCopy& at);
 
+    // State of the JavaScript runtime. Defined in script.cpp.
     struct Own;
     std::unique_ptr<Own> own;
 };

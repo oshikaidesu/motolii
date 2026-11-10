@@ -1,9 +1,14 @@
-// The stage's own pictures kept on disk for playing (Final Cut Pro's background render, After Effects' disk cache): what
-// will be played is known (the work area), so while the hand rests each of its pictures is drawn once as a written film
-// draws it, and one that took longer than a picture may (it would be late when played) is kept, zstd on disk as kept
-// frames are (canvas.h). Played, a kept picture is put on the screen instead of drawn. A light document keeps nothing.
-// Kept by the document as it is (its facts, its ways, the files it uses as they are, its size): any change, drawn again.
-// (motolii.mm: read after render.h, doc.h and live.h)
+// Caches rendered stage frames on disk for playback, like Final Cut Pro's background render or
+// After Effects' disk cache.
+//
+// The work area tells us what will be played. While the render thread is idle, each frame in it
+// is drawn once, the way an exported video frame is drawn. A frame that took longer than one
+// frame period to draw would be late during playback, so it is compressed with zstd and written
+// to disk, as cached frames are in canvas.h. During playback a cached frame is put on the screen
+// instead of being drawn. A light document caches nothing.
+// The cache is keyed on the document's content: its keyframes, its easings, the files it uses and
+// its size. Any change draws everything again.
+// Included by motolii.mm after render.h, doc.h and live.h; not self-contained.
 #pragma once
 #include <sys/stat.h>
 #include <future>
@@ -12,24 +17,45 @@
 #include <atomic>
 #include <mutex>
 
+// The on-disk frame cache of the stage and the state needed to fill and play it.
 struct StageCache {
-    uint64_t key = 0;               // (the document as it is)
-    long revision = -1;             // (the revision the key was taken at)
-    int seen = -1;                  // (files_changed when the key was taken: a file written over takes it again)
-    std::vector<uint8_t> state;     // (each picture of the document: 0 not looked at, 1 drawn in time (not kept), 2 kept)
+    // Hash of the document's current content, which names the cache files.
+    uint64_t key = 0;
+    // The document revision at which key was computed.
+    long revision = -1;
+    // The value of files_changed() when key was computed. A file written over changes it, which
+    // forces the key to be computed again.
+    int seen = -1;
+    // The state of each frame in the document: 0 not examined, 1 drawn fast enough so not cached,
+    // 2 cached on disk.
+    std::vector<uint8_t> state;
+    // Stage size in pixels at the time key was computed.
     int w = 0, h = 0;
-    RenderTarget* target = nullptr; // (where a picture to keep is drawn, as large as the stage)
+    // Render target that a frame to cache is drawn into. Same size as the stage.
+    RenderTarget* target = nullptr;
+    // The texture behind target.
     Texture* into = nullptr;
-    Texture* shown = nullptr;       // (a kept picture, put on the stage when played)
-    std::deque<uint64_t> keys;      // (the last documents kept for: an undo back to one finds its pictures; older ones go)
-    std::atomic<long> told{0};      // (how many times what is kept has changed: a window reads it without waiting, as the revision)
+    // Texture holding a cached frame while it is shown during playback.
+    Texture* shown = nullptr;
+    // Keys of the most recent documents that have cache files. Undoing back to one of them finds
+    // its frames still on disk. Older ones are deleted.
+    std::deque<uint64_t> keys;
+    // Counts changes to the set of cached frames. The app reads it without locking, like the
+    // revision.
+    std::atomic<long> told{0};
+    // Guards runs.
     std::mutex runsLock;
-    std::string runs;               // (the kept pictures as stretches, "from to from to", for a window to mark: After Effects' green line)
-    int ahead = -1;                 // (the next picture, read from disk on a thread of its own while this one is shown)
+    // The cached frames as ranges, "from to from to", for the app to mark on its timeline, like
+    // After Effects' green line.
+    std::string runs;
+    // Index of the frame being read from disk ahead of time on its own thread, or -1.
+    int ahead = -1;
+    // The read-ahead result for frame ahead.
     std::future<std::vector<uint8_t>*> next;
 };
 
-// What is kept, told again as stretches (each picture's state changed: kept, or all thrown away).
+// Rebuilds runs from state and signals that the set of cached frames changed. Call it whenever a
+// frame is cached, dropped, or all frames are discarded.
 static void stage_cache_tell(StageCache& k) {
     std::string runs;
     for (int i = 0; i < (int)k.state.size(); ++i) {
@@ -41,14 +67,19 @@ static void stage_cache_tell(StageCache& k) {
     { std::lock_guard<std::mutex> hold(k.runsLock); k.runs = std::move(runs); }
     k.told.fetch_add(1, std::memory_order_release);
 }
+// Returns a hash of everything that affects how the stage looks: its size, all keyframes, the
+// modification time and size of every file the document uses, and every easing expression.
 static uint64_t stage_cache_key(Doc& d, int w, int h) {
-    uint64_t hash = 1469598103934665603ull;   // (FNV-1a, as kept frames are named)
+    // FNV-1a, as cached frames are named in canvas.h.
+    uint64_t hash = 1469598103934665603ull;
     const auto add = [&](const std::string& s) { for (unsigned char c : s) hash = (hash ^ c) * 1099511628211ull; hash = (hash ^ 0xff) * 1099511628211ull; };
     add(std::to_string(w) + "x" + std::to_string(h));
     doc_rows(d, sqlite3_mprintf("select layer, name, at, value, coalesce(easing, '') from keyframe order by layer, name, at"), [&](sqlite3_stmt* row) {
         for (int i = 0; i < 5; ++i) add(sqlite3_column_text(row, i) ? (const char*)sqlite3_column_text(row, i) : "");
         const char* name = (const char*)sqlite3_column_text(row, 1);
-        if (sqlite3_column_text(row, 3) && (!strcmp(name, "file") || !strcmp(name, "fx") || !strcmp(name, "script")))   // (a file it uses, as it is now: a picture's, and its effects' and script's)
+        // Files the document uses, in their current state: an image's file, and the files of
+        // effects and scripts.
+        if (sqlite3_column_text(row, 3) && (!strcmp(name, "file") || !strcmp(name, "fx") || !strcmp(name, "script")))
             for (const std::string& one : !strcmp(name, "file") ? std::vector<std::string>{(const char*)sqlite3_column_text(row, 3)} : script_files((const char*)sqlite3_column_text(row, 3))) {
                 struct stat st {};
                 if (stat(one.c_str(), &st) == 0) add(std::to_string(st.st_mtimespec.tv_sec) + "." + std::to_string(st.st_mtimespec.tv_nsec) + "." + std::to_string(st.st_size));
@@ -58,20 +89,23 @@ static uint64_t stage_cache_key(Doc& d, int w, int h) {
     return hash;
 }
 
+// Returns the path of the cache file for a frame of the current document.
 static std::filesystem::path stage_cache_file(const StageCache& k, int frameIndex) {
     char name[64];
     std::snprintf(name, sizeof name, "stage_%016llx_%05d.zst", (unsigned long long)k.key, frameIndex);
     return cache_dir() / name;
 }
 
-// The key taken again once the document has changed; what is on disk for it already is found as it is asked.
+// Recomputes the key if the document, its files, or the stage size changed, and resets the
+// per-frame state. Cache files already on disk for the new key are found and marked as cached.
 static void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision, int rate) {
     if (k.revision == revision && k.seen == files_changed() && k.w == s.w && k.h == s.h) return;
     k.revision = revision, k.seen = files_changed(), k.w = s.w, k.h = s.h;
     k.key = stage_cache_key(d, s.w, s.h);
     std::erase(k.keys, k.key);
     k.keys.push_back(k.key);
-    if (k.keys.size() > 3) {   // (the document as it was three changes ago: its pictures off the disk, on a thread of its own)
+    // Delete the frames of the document as it was three changes ago, on a separate thread.
+    if (k.keys.size() > 3) {
         char gone[32];
         std::snprintf(gone, sizeof gone, "stage_%016llx_", (unsigned long long)k.keys.front());
         k.keys.pop_front();
@@ -82,21 +116,25 @@ static void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision, in
         }).detach();
     }
     k.state.assign((size_t)std::max(1.0, std::ceil(doc_seconds(d) * rate)) + 1, 0);
-    // (each forgotten as it goes: `shown` is made when played, not with the target, and left said it was thrown away twice,
-    //  the throw left `target` said, and the next picture drawn into what was gone: golf_noise.md (102))
+    // Reset each pointer as it is destroyed. `shown` is created during playback rather than with
+    // the target, so a stale pointer would be destroyed twice, and a stale `target` would be drawn
+    // into after it was destroyed.
     if (k.target) s.engine->destroy(k.target), k.target = nullptr, s.engine->destroy(k.into), k.into = nullptr;
     if (k.shown) s.engine->destroy(k.shown), k.shown = nullptr;
-    for (int i = 0; i < (int)k.state.size(); ++i) {   // (what is on disk for it already, from before: an undo back to it, or the document opened again)
+    // Frames already on disk for this key, from an earlier session or from before an undo.
+    for (int i = 0; i < (int)k.state.size(); ++i) {
         std::error_code e;
         if (std::filesystem::exists(stage_cache_file(k, i), e)) k.state[i] = 2;
     }
     stage_cache_tell(k);
 }
 
-// One picture of the work area not looked at yet, drawn as a written film draws it and kept if it took too long (the
-// hand rests: what it draws is not shown). false: none left to look at.
+// Draws one not-yet-examined frame of the work area, the way an exported video frame is drawn, and
+// caches it if it took longer than budget_ms. The render thread is idle, so the result is not
+// shown. Returns false if there is no frame left to examine.
 static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double budget_ms) {
-    if (d.viewCameraAsked) return false;   // (these are the camera's pictures: not drawn by the window's working eye)
+    // The frames in view are the camera's, which are not drawn from the editing viewpoint.
+    if (d.viewCameraAsked) return false;
     double from = 0.0, to = 0.0;
     doc_work(d, &from, &to);
     int at = -1;
@@ -112,9 +150,12 @@ static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double bu
         k.target = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, k.into).build(*s.engine);
     }
     const auto t0 = std::chrono::steady_clock::now();
-    const double playhead = s.now;   // (the moment the window shows, where a new thing starts: AbsentMotion's addAudio and addText, startTime frameStart(frame))
+    // The time the app shows. A new layer starts here, as with AbsentMotion's addAudio and
+    // addText, whose startTime is frameStart(frame).
+    const double playhead = s.now;
     { const DocExact exact(d); time_is(s, (double)at / rate); }
-    const double moment = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();   // (the hand's part, as when it plays)
+    // The render thread's share of the time, measured as it is during playback.
+    const double moment = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     RenderTarget* wasOut = s.out;
     Texture* const wasInto = s.drawTarget;
     s.out = k.target;
@@ -128,8 +169,11 @@ static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double bu
     s.renderer->readPixels(k.target, 0, 0, (uint32_t)s.w, (uint32_t)s.h,
                            backend::PixelBufferDescriptor(pixels->data(), pixels->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE));
     s.renderer->endFrame();
-    s.engine->flushAndWait();   // (the hand rests: it may wait for the one picture)
-    double gpu = 0.0;   // (the GPU's part, as Filament tells it of its last pictures: played, the two go side by side, so either may make it late)
+    // The render thread is idle, so it may wait for this one frame.
+    s.engine->flushAndWait();
+    // The GPU's share of the time, from Filament's frame info for its last frames. During
+    // playback the two shares run side by side, so either one can make the frame late.
+    double gpu = 0.0;
     for (const auto& f : s.renderer->getFrameInfoHistory(2))
         if (f.gpuFrameComplete > 0 && f.backendBeginFrame > 0) gpu = std::max(gpu, (double)(f.gpuFrameComplete - f.backendBeginFrame) / 1e6);
     const double took = std::max(moment, gpu);
@@ -137,8 +181,12 @@ static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double bu
     if (!s.over) {
         s.view->setRenderTarget(nullptr);
     }
-    s.out = wasOut, s.drawTarget = wasInto;   // (its things left at that moment: the next picture shown is told its own first, and films step on rather than seek back)
-    s.now = playhead;   // (but the stage's moment is the playhead again: left at the background's, a song placed with the playhead at 0 started at 4.6 s)
+    // The layers stay at the cached frame's time. The next frame shown sets its own time first,
+    // so videos step forward instead of seeking back.
+    s.out = wasOut, s.drawTarget = wasInto;
+    // The stage's time goes back to the playhead. Leaving it at the cached frame's time made a
+    // song placed with the playhead at 0 start at 4.6 s.
+    s.now = playhead;
     if (took > budget_ms) {
         ++cache_unwritten;
         cache_write(stage_cache_file(k, at), std::move(*pixels));
@@ -149,7 +197,9 @@ static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double bu
     return true;
 }
 
-// The kept picture of this moment put on the stage instead of drawn. false: none kept for it (draw it).
+// Puts the cached frame for the given time on the stage instead of drawing it, and starts reading
+// the next frame from disk. Returns false if no frame is cached for that time, in which case the
+// caller must draw it.
 static bool stage_cache_show(StageCache& k, Stage& s, Live* l, double now, int rate) {
     const int at = (int)std::lround(now * rate);
     if (at < 0 || at >= (int)k.state.size() || k.state[at] != 2) return false;
@@ -160,7 +210,8 @@ static bool stage_cache_show(StageCache& k, Stage& s, Live* l, double now, int r
         std::vector<uint8_t>* got = k.next.get();
         if (k.ahead == at) pixels = got; else delete got;
     }
-    if (!pixels) pixels = read(stage_cache_file(k, at));   // (not read ahead: the play began here, or skipped)
+    // Not read ahead, because playback began here or skipped to here.
+    if (!pixels) pixels = read(stage_cache_file(k, at));
     if (at + 1 < (int)k.state.size() && k.state[at + 1] == 2) k.ahead = at + 1, k.next = std::async(std::launch::async, read, stage_cache_file(k, at + 1));
     if (!pixels) { k.state[at] = 0; stage_cache_tell(k); return false; }
     if (!k.shown) k.shown = Texture::Builder().width(s.w).height(s.h).levels(1).format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::SAMPLEABLE | Texture::Usage::UPLOADABLE).build(*s.engine);

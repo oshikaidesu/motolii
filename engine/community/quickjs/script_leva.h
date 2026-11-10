@@ -1,12 +1,30 @@
-// A recipe's parameters in leva's object form (pmndrs/leva, MIT, https://github.com/pmndrs/leva at 402a1e9d0899: engine/third_party/leva/LICENSE), one object at its top:
-//   const knobs = { count: 5, spin: true, tint: "#ff3366", way: { value: "ring", options: ["ring", "grid"] },
-//                   spread: { value: 0.5, min: 0, max: 2, step: 0.01 }, Advanced: folder({ ... }, { collapsed: true }) };
-// the kind from the value as leva's own plugins tell it (a number a slider, a boolean a check, "#rrggbb" a colour, options a
-// choice). Told as the AviUtl2 head lines script.cpp already reads (as isf.cpp tells an ISF's JSON), so the card is the same.
-// min and max are how far its parameter goes, not how far a hand may (document/layer_edit.h); none written: Houdini's FloatParmTemplate's
-// own, 0 to 10, min_is_strict False, widened to reach its value (Motolii's own: a parameter at its end could not be dragged to it). The values reach each() flat, k.name, as leva's useControls returns them.
-// Its label: leva's { label } as written, else the key as Godot's inspector shows one (String::capitalize, MIT, godotengine/godot
-// at c51ff06e8836: "ease_in" Ease In, "scaleFrom" Scale From).
+// Reads a script's parameters written in the object form of leva (pmndrs/leva, MIT license,
+// https://github.com/pmndrs/leva, revision 402a1e9d0899, license text in
+// engine/third_party/leva/LICENSE) and turns them into the AviUtl2 header lines that
+// script.cpp already reads. The card shown to the user is therefore the same as for an
+// AviUtl2 script, and isf.cpp does the same for the JSON of an ISF shader.
+//
+// The script declares one object at its top level:
+//   const knobs = { count: 5, spin: true, tint: "#ff3366",
+//                   way: { value: "ring", options: ["ring", "grid"] },
+//                   spread: { value: 0.5, min: 0, max: 2, step: 0.01 },
+//                   Advanced: folder({ ... }, { collapsed: true }) };
+//
+// The kind of each parameter follows from its value, as leva's plugins decide it: a number
+// becomes a slider, a boolean a check box, a "#rrggbb" string a color, and an object with
+// options a choice.
+//
+// min and max only set the range of the slider. They do not limit what the user may type
+// (see document/layer_edit.h). When they are not written, the range is the one of
+// Houdini's FloatParmTemplate: 0 to 10 with min_is_strict false. The range is widened to
+// include the current value, so that a parameter sitting at the end of its range can still
+// be dragged back to that value. This widening is Motolii's own.
+//
+// The values reach each() flat, as k.name, the way leva's useControls returns them.
+//
+// The label is leva's { label } when written. Otherwise it is the key formatted as Godot's
+// inspector formats a property name (String::capitalize, MIT license, godotengine/godot
+// revision c51ff06e8836): "ease_in" becomes "Ease In" and "scaleFrom" becomes "Scale From".
 #pragma once
 #include <quickjs.h>
 #include <algorithm>
@@ -17,11 +35,14 @@
 #include <map>
 #include <string>
 
-// leva's folder() (packages/leva/src/helpers/folder.ts): only marks the object as a fold. Global in a recipe's runtime too.
+// JavaScript source for leva's folder() (packages/leva/src/helpers/folder.ts). It only marks
+// the object as a folder. The script's runtime defines it as a global as well.
 static const char* leva_prelude = "function folder(schema, settings) { return { __folder: true, schema: schema, settings: settings || {} }; }";
 
-// (the object told as head lines: a fold its key, a colour three numbers _x _y _z of 0 to 1 labelled r g b as an ISF colour
-//  is, which the card shows as one colour; the step none written as leva's Number plugin's normalize() makes it)
+// JavaScript source of a function that converts the parameter object into header lines.
+// A folder becomes a group named by its key. A color becomes three numbers named _x, _y and
+// _z, each from 0 to 1 and labeled r, g and b, as an ISF color is, so the card shows them as
+// one color. A missing step is computed as normalize() in leva's Number plugin computes it.
 static const char* leva_told = R"((function (all) {
   var lines = [];
   function digits(x) { var n = Math.abs(+String(x).replace('.', '')); if (n === 0) return 0.01; while (n !== 0 && n % 10 === 0) n /= 10;
@@ -70,10 +91,13 @@ static const char* leva_told = R"((function (all) {
   return lines.join('\n');
 }))";
 
-// The head a recipe's `const knobs = { ... }` (let or var too; the name its authors write, kept as they write it) says, as lines; "" if it has none or it cannot be read.
+// Returns the header lines for the object declared as `const knobs = { ... }` in src. `let`
+// and `var` work as well. Returns "" if there is no such declaration or it cannot be
+// evaluated. If trouble is not null and evaluation throws, it receives the exception text.
 inline std::string leva_head(const std::string& src, std::string* trouble = nullptr) {
     size_t open = std::string::npos;
-    for (size_t i = 0; i < src.size() && open == std::string::npos; ++i) {   // (the first, outside comments and strings)
+    // Find the first declaration that is outside comments and strings.
+    for (size_t i = 0; i < src.size() && open == std::string::npos; ++i) {
         if (src.compare(i, 2, "//") == 0) { i = src.find('\n', i); if (i == std::string::npos) break; continue; }
         if (src.compare(i, 2, "/*") == 0) { i = src.find("*/", i + 2); if (i == std::string::npos) break; ++i; continue; }
         if (src[i] == '"' || src[i] == '\'' || src[i] == '`') { const char q = src[i]; for (++i; i < src.size() && src[i] != q; ++i) if (src[i] == '\\') ++i; continue; }
@@ -94,7 +118,8 @@ inline std::string leva_head(const std::string& src, std::string* trouble = null
     if (open == std::string::npos) return "";
     int deep = 0;
     size_t close = open;
-    for (; close < src.size(); ++close) {   // (its closing brace, strings and comments passed over)
+    // Find the matching closing brace, skipping strings and comments.
+    for (; close < src.size(); ++close) {
         const char c = src[close];
         if (src.compare(close, 2, "//") == 0) { close = src.find('\n', close); if (close == std::string::npos) return ""; continue; }
         if (src.compare(close, 2, "/*") == 0) { close = src.find("*/", close + 2); if (close == std::string::npos) return ""; ++close; continue; }
@@ -118,8 +143,9 @@ inline std::string leva_head(const std::string& src, std::string* trouble = null
     return head;
 }
 
-// A colour's three numbers _x _y _z also told to each() as leva's useControls returns a colour, k.tint "#rrggbb" (a name
-// that is a parameter of its own is left as it is).
+// Sets each color on k as a "#rrggbb" string, as leva's useControls returns it (k.tint, for
+// example). A color is found as three numbers named base_x, base_y and base_z. A base name
+// that is already a parameter of its own is skipped.
 inline void leva_colours(JSContext* cx, JSValue k, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
     for (const auto& [name, v] : numbers) {
         const std::string base = name.size() > 2 && name.compare(name.size() - 2, 2, "_x") == 0 ? name.substr(0, name.size() - 2) : "";

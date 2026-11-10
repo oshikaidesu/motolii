@@ -1,29 +1,41 @@
-// adapter_p5_shader.h: part of document/adapter.h. A p5.js sketch that paints its stage with shader(): its GLSL as an ISF effect (with
-// its vertex shader as ISF's own .vs, isf.cpp), what the sketch tells it each frame (p5_stand.h's __shaded_take) as parameters,
-// keyed where it moves, as Hydra's are (hydra_isf.h). A shape's own vertices do not come: what reaches a pixel is what its
-// place across a flat rect, plane or quad gives, the same, being straight in the place.
+// Converts a p5.js sketch that paints the whole canvas with shader() into an ISF effect.
+// Included by document/adapter.h; not self-contained.
+//
+// The sketch's fragment shader becomes the ISF effect and its vertex shader becomes the ISF
+// vertex shader (.vs, see isf.cpp). The uniform values the sketch sets each frame (collected by
+// __shaded_take in p5_stand.h) become effect parameters, with keyframes where a value changes,
+// as in hydra_isf.h. The vertices of the sketch's shape are not carried over: the shader is run
+// over a flat rect, plane or quad, so each pixel gets the same input as it would in the sketch.
 #pragma once
 #include <rapidjson/document.h>
 #include "community/sites/adapter.h"
 #include "community/hydra/hydra_isf.h"
 
-// A value that goes as a straight line: two keys say it, and it goes on as far as a video does (HYDRA_STEP apart it stops at 30 s).
+// Seconds over which a linear value is extended; recorded keys cover only about 30 s.
 inline constexpr double ADAPTER_LINE_ENDS = 600.0;
+// Returns true if there are 3+ keys on a straight line at equal steps.
 inline bool adapter_line(const std::vector<double>& keys) {
     if (keys.size() < 3) return false;
     const double by = (keys.back() - keys[0]) / (double)(keys.size() - 1);
     for (size_t i = 0; i < keys.size(); ++i) if (std::abs(keys[i] - keys[0] - by * (double)i) > 1e-6 * (1.0 + std::abs(keys.back()))) return false;
     return true;
 }
+// Returns the value a linear key series reaches after ADAPTER_LINE_ENDS seconds.
 inline double adapter_line_end(const std::vector<double>& keys) { return keys[0] + (keys.back() - keys[0]) / (double)(keys.size() - 1) * ADAPTER_LINE_ENDS / HYDRA_STEP; }
 
-// The GLSL ES a browser takes as what isf.cpp's route reads: one thing said on each line, handed on by one word.
+// Rewrites GLSL ES as a browser accepts it into the form that isf.cpp reads. Removes #version,
+// #extension and precision statements, and turns every in, out, attribute and varying
+// declaration into a separate "varying" declaration on its own line.
 inline std::string adapter_p5_glsl(const std::string& text) {
     std::string t = std::regex_replace(text, std::regex(R"(#version[^\n]*|#extension[^\n]*|\bprecision\s+\w+\s+\w+\s*;)"), "");
     return std::regex_replace(t, std::regex(R"((^|[;\n}])\s*(?:(?:flat|smooth|centroid)\s+)?(?:varying|attribute|in|out)\s+(?:(?:highp|mediump|lowp)\s+)?(\w+)\s+(\w+)\s*(\[[^\]]*\])?\s*;)"), "$1\nvarying $2 $3$4;\n");
 }
 
-// json: __shaded_take's. The .fs and the .vs, and what moves; or false and `why`.
+// Builds the ISF effect for a sketch. `json` is the output of __shaded_take: the sketch's shader
+// sources, the canvas size, and the uniform values set in each frame. On success returns true
+// with the ISF fragment shader in `fs`, the vertex shader in `vs`, and in `moving` the
+// parameters whose values change over time. Otherwise returns false and sets `why` to a message
+// for the user.
 inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::string& vs, std::vector<HydraParameter>& moving, std::string& why) {
     rapidjson::Document all;
     if (all.Parse(json.c_str()).HasParseError() || !all.IsObject()) return why = "this sketch's shader did not come out whole", false;
@@ -32,14 +44,17 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
     const rapidjson::Value& told = all["told"];
     const double width = all["width"].GetDouble(), height = all["height"].GetDouble(), density = all["density"].GetDouble();
     const std::string kind = all["kind"].GetString();
-    const bool down = adapter_has(vert, "uProjectionMatrix");   // (p5's own matrices turn y over: a sketch's corners numbers from the top. Without them, from the bottom)
+    // p5's own matrices flip y, so a sketch that uses them counts corner coordinates from the
+    // top. Without them, coordinates count from the bottom.
+    const bool down = adapter_has(vert, "uProjectionMatrix");
     std::string head, set, inputs;
     static const std::regex output(R"((^|[;\n}])\s*(?:layout\s*\([^)]*\)\s*)?out\s+(?:(?:highp|mediump|lowp)\s+)?vec4\s+(\w+)\s*;)");
     std::smatch said;
     if (std::regex_search(frag, said, output)) head += "#define " + said[2].str() + " gl_FragColor\n", frag = std::regex_replace(frag, output, "$1");
     vert = adapter_p5_glsl(vert), frag = adapter_p5_glsl(frag);
     static const std::regex uniform(R"(\buniform\s+(?:(?:highp|mediump|lowp)\s+)?(\w+)\s+([^;]+);)"), each(R"((\w+)\s*(?:\[\s*(\d+)\s*\])?)");
-    std::map<std::string, std::pair<std::string, int>> names;   // (each by its name: its type, how many in a row)
+    // Maps each uniform name to its type and its array length (0 if it is not an array).
+    std::map<std::string, std::pair<std::string, int>> names;
     for (std::string* t : {&vert, &frag}) {
         for (std::sregex_iterator u(t->begin(), t->end(), uniform), end; u != end; ++u) {
             const std::string list = (*u)[2];
@@ -61,10 +76,14 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
         if (low != high) moving.push_back({name, keys});
     };
     bool reads = false;
-    static const std::set<std::string> taken = {"time", "resolution", "frame", "passindex", "clip_time", "clip_length", "frameRect", "passRect"};   // (isf.cpp's parameters)
+    // Names that isf.cpp already defines. A sketch uniform with one of these names is renamed.
+    static const std::set<std::string> taken = {"time", "resolution", "frame", "passindex", "clip_time", "clip_length", "frameRect", "passRect"};
     for (const auto& [name, info] : names) {
         const auto& [type, row] = info;
-        if (type.rfind("sampler", 0) == 0) {   // (the first picture is what it is put on, a film as much as anything; p5's rows start at the top)
+        // The first sampler reads the input image, which is the layer the effect is applied
+        // to, whether it is a video or an image. Later samplers read nothing. p5's texture
+        // rows start at the top, so the read flips v (see adapter_read).
+        if (type.rfind("sampler", 0) == 0) {
             const std::regex read(R"(\b(?:texture2D|texture)\s*\(\s*)" + name + R"(\s*,)");
             for (std::string* t : {&vert, &frag}) *t = std::regex_replace(*t, read, reads ? "adapter_none(" : "adapter_read(");
             reads = true;
@@ -82,12 +101,15 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
                 else if (s.IsArray()) for (const auto& n : s.GetArray()) v.push_back(n.IsNumber() ? n.GetDouble() : 0.0);
                 if (!v.empty()) samples.push_back(v);
             }
-        if (samples.empty()) {   // (never told: p5's own matrices, as nothing moved them)
+        // The sketch never set this uniform. For p5's own matrices that means the identity,
+        // because nothing transformed them.
+        if (samples.empty()) {
             if (type.rfind("mat", 0) == 0 && !row) set += name + "=" + type + "(1.);";
             continue;
         }
         const std::vector<double>& first = samples[0];
-        if (row) {   // (a row: as it stood first)
+        // An array uniform is set once, to the values of the first sample.
+        if (row) {
             set += name + "=" + type + "[" + std::to_string(row) + "](";
             for (int i = 0; i < row; ++i) set += (i ? "," : "") + built(type, first, (size_t)(i * size), (size_t)size);
             set += ");";
@@ -100,12 +122,16 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
             still = still && s == first;
             stage = stage && s.size() >= 2 && std::abs(s[0] / width - times) < 1e-6 && std::abs(s[1] / height - times) < 1e-6;
         }
-        if (stage) {   // (the sketch's size as it was said, the stage's here)
+        // The uniform holds the sketch's canvas size, scaled by a constant. Replace it with
+        // the size of the canvas the effect runs on, so that it follows the project.
+        if (stage) {
             const std::string size2 = "adapter_size()*" + number(times / density);
             set += name + "=" + (type == "vec3" ? "vec3(" + size2 + "," + number(first.size() > 2 ? first[2] : 1.0) + ")" : type + "(" + size2 + ")") + ";";
             continue;
         }
-        if ((type == "vec3" || type == "vec4") && still && std::all_of(first.begin(), first.end(), [](double v) { return v >= 0.0 && v <= 1.0; })) {   // (a colour)
+        // A constant vec3 or vec4 with every component in [0, 1] is taken to be a color and
+        // becomes a color parameter.
+        if ((type == "vec3" || type == "vec4") && still && std::all_of(first.begin(), first.end(), [](double v) { return v >= 0.0 && v <= 1.0; })) {
             inputs += ",{\"NAME\":\"door_" + name + "\",\"LABEL\":\"" + name + "\",\"TYPE\":\"color\",\"DEFAULT\":[" + number(first[0]) + "," + number(first[1]) + "," + number(first[2]) + "," + number(first.size() > 3 ? first[3] : 1.0) + "]}";
             set += name + "=door_" + name + (type == "vec3" ? ".rgb;" : ";");
             continue;

@@ -1,4 +1,4 @@
-// See gpu_interop.h.
+// Implements gpu_interop.h.
 #include "gpu_interop.h"
 
 #include <filament/Engine.h>

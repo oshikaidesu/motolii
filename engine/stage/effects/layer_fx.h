@@ -1,13 +1,21 @@
-// layer_fx.h: a thing's own effects (its fx: .wgsl and ISF files, ThorVG's own among them), as Filament's makers say
-// to do one's own effect: the thing drawn alone into a texture offscreen (samples/rendertarget.cpp: a view of its own,
-// its post-processing off), the effects run on that texture one after another (Friction's and After Effects' way: a
-// layer's picture, then its effects), and the picture made laid where the thing lies (effected.mat; google/filament
-// #1818, #7676, #3784). The functions as they were before the one view (git bf0d4c2, screen_fx.h), less what laid the
-// picture over the screen.
+// Per-layer effects for the stage. A layer with effects is drawn alone into an offscreen
+// texture, in a view of its own with post-processing off, as in Filament's
+// samples/rendertarget.cpp. The effects (.wgsl and ISF files, including ThorVG's own) then run
+// on that texture one after another, as in After Effects where a layer's image comes first and
+// its effects after. The result is laid on a sheet where the layer sits; see effected.mat and
+// google/filament issues #1818, #7676 and #3784. These are the functions of the earlier
+// screen_fx.h, minus the code that laid the image over the whole screen.
 #pragma once
 #include "community/three/solid_three.h"
 #include "community/aviutl/aviutl_fx.h"
+// Returns the one-letter code of the ThorVG effect named by `w`, or 0 if `w` is not one.
+// Defined elsewhere.
 static char doc_thor_letter(const std::string& w);
+// Rebuilds the effect chain of a layer from `files`, the effect files in order. Does nothing if
+// st.files already equals `files`. Fills st.fx with the GPU effects and st.aviutl with the
+// AviUtl2 script runners, reusing a runner already open for the same file. st.steps gets one
+// code per step: 'a' for an AviUtl2 script, a ThorVG letter, or 0 for the next entry of st.fx.
+// Also sets st.readsBehind and st.wide.
 static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     if (st.files == files) return;
     st.files = files;
@@ -17,18 +25,32 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     std::vector<std::shared_ptr<AviutlRun>> scripts;
     for (const std::string& file : script_files(files)) {
         if (file == "none") continue;
-        if (aviutl_is(file)) {   // (an AviUtl2 script: run each frame on its picture, the one already made kept)
+        // An AviUtl2 script. It runs each frame on the layer's image.
+        if (aviutl_is(file)) {
             const auto found = std::find_if(st.aviutl.begin(), st.aviutl.end(), [&](const auto& r) { return r->file == file; });
-            const auto first = !scripts.empty() ? scripts.front() : !st.aviutl.empty() ? st.aviutl.front() : nullptr;   // (one Lua for the thing's scripts: what one leaves in a global the next on it reads, as AviUtl2 runs an object's effects one after another in one Lua: CrEasy's 背景ブラー reads the ox its CrEasy set)
+            // All scripts of a layer share one Lua state. AviUtl2 runs an object's effects one
+            // after another in one Lua, so a global set by one script is read by the next. For
+            // example the CrEasy background blur reads the ox that CrEasy set.
+            const auto first = !scripts.empty() ? scripts.front() : !st.aviutl.empty() ? st.aviutl.front() : nullptr;
             scripts.push_back(found != st.aviutl.end() ? *found : aviutl_open(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
-            st.readsBehind |= scripts.back()->behind;   // (one that reads its frame reads what is behind: the stage's behind drawn, its own sheet left out of it)
-            st.wide |= scripts.back()->wide;   // (one that draws: on the whole stage, as AviUtl2 draws an object on its screen)
+            // A script that reads its frame needs what is behind the layer: the stage drawn
+            // without this layer's own sheet.
+            st.readsBehind |= scripts.back()->behind;
+            // A script that draws works on the whole stage, as AviUtl2 draws an object on its
+            // screen.
+            st.wide |= scripts.back()->wide;
             continue;
         }
-        if (const char k = doc_thor_letter(file)) { st.steps.push_back(k); continue; }   // (one of ThorVG's own: drawn by ThorVG, in its place)
-        if (std::filesystem::path(file).extension() == ".mjs") continue;   // (a splat effect: in the cloud's own look, point_cloud.h)
-        if (const std::string ext = std::filesystem::path(file).extension().string(); ext == ".am" || ext == ".json") continue;   // (AbsentMotion's own motion, the thing moved: absent_motion.h; Filament's own settings, the stage's: viewer_settings.h)
-        if (solid_is(file)) continue;   // (a solid's shape: its picture laid on it, not an effect on its picture: thing_fx_solid)
+        // One of ThorVG's own effects. ThorVG draws it at its place in the chain.
+        if (const char k = doc_thor_letter(file)) { st.steps.push_back(k); continue; }
+        // A splat effect. The point cloud applies it; see render/point_cloud.h.
+        if (std::filesystem::path(file).extension() == ".mjs") continue;
+        // .am is AbsentMotion's own motion that moves the layer; see absent_motion.h. .json is
+        // Filament's settings for the stage; see viewer_settings.h. Neither is an effect here.
+        if (const std::string ext = std::filesystem::path(file).extension().string(); ext == ".am" || ext == ".json") continue;
+        // A solid's shape. The layer's image is laid on the solid, not run through an effect;
+        // see thing_fx_solid.
+        if (solid_is(file)) continue;
         ScreenFx*& built = st.built[file];
         if (!built) {
             built = new ScreenFx;
@@ -40,19 +62,28 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
             built->stamp = screen_stamp(file);
         }
         if (built->interop) st.fx.push_back(built), st.steps.push_back(0);
-        if (built->interop && std::find(built->others.begin(), built->others.end(), "backdrop") != built->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
+        // AbsentMotion's backdrop reads what is behind the layer, the stage drawn without it;
+        // see screen_fx.h.
+        if (built->interop && std::find(built->others.begin(), built->others.end(), "backdrop") != built->others.end()) st.readsBehind = true;
     }
-    const auto nameOf = [](const std::string& file) { const size_t hash = file.rfind('#'); return hash != std::string::npos ? aviutl_unword(file.substr(hash + 1)) : std::filesystem::path(file).stem().string(); };   // (one of an @ file: its name after #)
-    std::vector<std::string> names;   // (the effects in their order, by name: what a script asks of its fellows, obj.getoption "script_name")
+    // Returns the effect's name: for an @ file the part after '#', otherwise the file stem.
+    const auto nameOf = [](const std::string& file) { const size_t hash = file.rfind('#'); return hash != std::string::npos ? aviutl_unword(file.substr(hash + 1)) : std::filesystem::path(file).stem().string(); };
+    // The effect names in order. A script can ask for its neighbours with
+    // obj.getoption("script_name").
+    std::vector<std::string> names;
     for (const std::string& file : script_files(files)) if (file != "none") names.push_back(nameOf(file));
     for (const auto& r : scripts) r->chain = names, r->at = (int)(std::find(names.begin(), names.end(), nameOf(r->file)) - names.begin());
     st.aviutl = scripts;
 }
-// One of ThorVG's own effects as a step (k: its letter), on the picture `from` (the device's) drawn into picture
-// between `into` (0 or 1): a picture of the one before put in a scene of ThorVG's, the effect on the scene, drawn on the
-// driver thread in line with Filament's pictures. Its lengths are points of the stage, `ppp` pixels each.
+// Runs one of ThorVG's own effects as one step of the chain. `k` is the effect's letter. The
+// input is the GPU texture `from`, w by h pixels. The output goes to the texture with index
+// `into` (0 or 1) of the two alternating textures. The input is put in a ThorVG scene, the
+// effect is applied to the scene, and the drawing runs on the driver thread in order with
+// Filament's drawing. Lengths in `fx` are stage points, `ppp` pixels each.
 static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, uint32_t w, uint32_t h, const Canvas2DFx& fx, float ppp) {
-    interop::submit(s.engine);   // (what Filament drew into `from` on the GPU's queue first: ThorVG hands its own drawing over at once)
+    // Filament's drawing into `from` must reach the GPU queue first, because ThorVG starts
+    // drawing at once.
+    interop::submit(s.engine);
     interop::on_driver(s.engine, [&s, &st, k, from, into, w, h, fx, ppp] {
         tvg::WgCanvas*& c = st.thor[into];
         if (!c) {
@@ -73,24 +104,30 @@ static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, 
         c->sync();
     });
 }
-// Its pictures, as large as the view draws (made again when that moves): made before the frame, as the look that shows
-// one is told it then (thing_fx_seen).
+// Creates or recreates the offscreen textures and render targets of a layer's effects, sized
+// to the view's viewport. Called before the frame, because the material that shows a texture
+// is given it later by thing_fx_seen.
 static void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
     const Viewport vp = v->getViewport();
     const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width), h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
-    if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {   // (its pictures as large as the view draws; made again when that moves)
+    // Recreate everything when the viewport size changes.
+    if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {
         for (Texture*& t : {std::ref(st.shot), std::ref(st.depth), std::ref(st.between[0]), std::ref(st.between[1])}) if (t) s.engine->destroy(t), t = nullptr;
         for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]), std::ref(st.betweenTarget[1])}) if (r) s.engine->destroy(r), r = nullptr;
-        interop::on_driver(s.engine, [built = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {   // (after the pictures drawn with them)
+        // Release the device textures only after the drawing that uses them has finished.
+        interop::on_driver(s.engine, [built = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {
             for (tvg::WgCanvas* c : thor) delete c;
             for (void* t : built) if (t) wgpuTextureRelease((WGPUTexture)t);
         });
         st.thor[0] = st.thor[1] = nullptr;
         int n = 0;
-        const auto newTexture = [&] {   // (the device's own, so ThorVG reads and draws it too; Filament's by import)
+        // Creates a texture on the device so that ThorVG can read and draw it, and imports it
+        // into Filament.
+        const auto newTexture = [&] {
             WGPUTextureDescriptor like{};
             like.size = {w, h, 1};
-            like.format = WGPUTextureFormat_BGRA8Unorm;   // (what ThorVG's last step writes, as a picture of its own is: canvas.h)
+            // The format ThorVG's last step writes, as for an image of its own; see canvas.h.
+            like.format = WGPUTextureFormat_BGRA8Unorm;
             like.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
             like.dimension = WGPUTextureDimension_2D;
             like.mipLevelCount = 1, like.sampleCount = 1;
@@ -105,73 +142,118 @@ static void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
         for (int k = 0; k < 2; ++k) st.between[k] = newTexture(), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
     }
 }
-// The picture its effects leave (the last one drawn into; its own, with none): what its sheet or solid shows.
-static Texture* thing_fx_seen(const ScreenStack& st) { return st.steps.empty() ? st.shot : st.between[st.steps.size() % 2]; }   // (the last made back in linear light: thing_effects_draw)
+// Returns the texture that holds the layer's image after its effects: the last one drawn into,
+// or the layer's own image if it has none. The sheet or solid shows this texture. The last
+// step converts back to linear light; see thing_effects_draw.
+static Texture* thing_fx_seen(const ScreenStack& st) { return st.steps.empty() ? st.shot : st.between[st.steps.size() % 2]; }
+// Draws the layer alone into st.shot, then runs its effects one after another through the two
+// alternating textures st.between. The image is converted to sRGB before the effects and back
+// to linear light after. The result is left in st.seen. `thorFx` supplies the values of
+// ThorVG effects and is called only when the chain has one. `textures` returns the extra
+// textures an effect asks for by name.
 static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx = nullptr, const ScreenTextures& textures = nullptr) {
-    thing_fx_textures(s, st, v);   // (made already when it was aimed: a thing's; the stage's own others made here)
+    // The textures already exist if the layer was aimed; otherwise they are created here.
+    thing_fx_textures(s, st, v);
     const Viewport vp = v->getViewport();
     const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width), h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
     RenderTarget* const was = v->getRenderTarget();
     const Renderer::ClearOptions clearWas = s.renderer->getClearOptions();
     Renderer::ClearOptions clear = clearWas;
-    clear.clearColor = {0, 0, 0, 0}, clear.clear = true, clear.discard = true;   // (the thing alone, on nothing)
+    // Draw the layer alone, on a transparent background.
+    clear.clearColor = {0, 0, 0, 0}, clear.clear = true, clear.discard = true;
     s.renderer->setClearOptions(clear);
     v->setRenderTarget(st.target);
     s.renderer->render(v);
     v->setRenderTarget(was);
     s.renderer->setClearOptions(clearWas);
     st.seen = st.shot;
-    if (st.steps.empty()) return;   // (quiet with no effects: only its picture, for another's)
-    const float ppp = (float)s.view->getViewport().width / (float)std::max(1, s.w);   // (pixels of its picture a point of the stage, as the stage's view draws: the desk's are fewer)
+    // With no effects only the layer's own image is needed, for other layers to use.
+    if (st.steps.empty()) return;
+    // Pixels of the layer's texture per stage point, as the stage's view draws. A smaller view,
+    // such as the tool panel's, has fewer.
+    const float ppp = (float)s.view->getViewport().width / (float)std::max(1, s.w);
     const Canvas2DFx thor = thorFx && std::any_of(st.steps.begin(), st.steps.end(), [](char k) { return k != 0 && k != 'a'; }) ? thorFx() : Canvas2DFx{};
-    screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);   // (its picture as its colours are said, sRGB, for the effects: screen_fx.h screen_tone)
-    for (size_t i = 0, f = 0, a = 0; i < st.steps.size(); ++i) {   // (each into a picture between: the effects take the whole picture as theirs, and fill what is clear)
+    // Convert the image to sRGB for the effects; see screen_tone in screen_fx.h.
+    screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);
+    // Each step draws into one of the two alternating textures. The effects take the whole
+    // texture as their input and fill what is clear.
+    for (size_t i = 0, f = 0, a = 0; i < st.steps.size(); ++i) {
         Texture* from = i == 0 ? st.between[1] : st.between[(i - 1) % 2];
-        if (st.steps[i] == 'a') { std::copy(st.box, st.box + 4, st.aviutl[a]->box), std::copy(st.thingSeen, st.thingSeen + 4, st.aviutl[a]->seen), st.aviutl[a]->ground = st.ground, st.aviutl[a]->sounds = &st.sounds; aviutl_draw_step(s, *st.aviutl[a++], from, st.betweenTarget[i % 2], numbers, w, h); continue; }   // (an AviUtl2 script, told where the thing is seen)
-        if (st.steps[i]) { thing_thor(s, st, st.steps[i], st.device[i == 0 ? 2 : 1 + (i - 1) % 2], (int)(i % 2), w, h, thor, ppp); continue; }   // (one of ThorVG's own)
+        // An AviUtl2 script, told where the layer is seen.
+        if (st.steps[i] == 'a') { std::copy(st.box, st.box + 4, st.aviutl[a]->box), std::copy(st.thingSeen, st.thingSeen + 4, st.aviutl[a]->seen), st.aviutl[a]->ground = st.ground, st.aviutl[a]->sounds = &st.sounds; aviutl_draw_step(s, *st.aviutl[a++], from, st.betweenTarget[i % 2], numbers, w, h); continue; }
+        // One of ThorVG's own effects.
+        if (st.steps[i]) { thing_thor(s, st, st.steps[i], st.device[i == 0 ? 2 : 1 + (i - 1) % 2], (int)(i % 2), w, h, thor, ppp); continue; }
         screen_fresh(s, *st.fx[f]);
         ScreenFx& one = *st.fx[f++];
         one.othersNow.clear();
         for (const std::string& n : one.others) one.othersNow.push_back(textures ? textures(one.file, n) : nullptr);
         screen_draw(s, st, one, from, st.betweenTarget[i % 2], numbers, w, h);
     }
-    screen_tone(s, st.between[(st.steps.size() - 1) % 2], st.betweenTarget[st.steps.size() % 2], w, h, false);   // (back in linear light, as the stage takes it)
+    // Convert back to linear light, as the stage expects.
+    screen_tone(s, st.between[(st.steps.size() - 1) % 2], st.betweenTarget[st.steps.size() % 2], w, h, false);
     st.seen = thing_fx_seen(st);
 }
 
-// A thing with effects of its own as the stage keeps it: the view it is drawn alone in, its effects, and the sheet its
-// picture with them on is laid on in the stage's own view.
+// State of a layer that has effects of its own: the view it is drawn alone in, its effect
+// chain, and the sheet (a quad) that carries the result into the stage's view.
 struct ThingFx {
     ScreenStack st;
     View* view = nullptr;
     Mesh* sheet = nullptr;
     MaterialInstance* look = nullptr;
-    std::string lay;                       // (how its sheet lies on what is behind: Filament's own blending, effected.mat's ways; none: over it)
-    Scene* in = nullptr;                   // (the scene its sheet lies in: a group's that has effects of its own; none, the stage's)
-    utils::Entity eye;                     // (its own camera's: told the stage's each picture, as samples/rendertarget.cpp's offscreen camera is)
+    // How the sheet blends with what is behind it: one of Filament's blending variants of
+    // effected.mat. Empty means normal, over the background.
+    std::string lay;
+    // The scene the sheet lies in: the scene of a group that has effects of its own, or null
+    // for the stage's scene.
+    Scene* in = nullptr;
+    // Entity of this layer's own camera. It is given the stage's camera each frame, as the
+    // offscreen camera in samples/rendertarget.cpp is.
+    utils::Entity eye;
     Camera* camera = nullptr;
-    double box[4] = {0, 0, 0, 0};          // (where it is seen, in points of the stage: left, top, right, bottom)
-    double sides[4] = {0, 0, 0, 0};        // (stood: how far the stage is from it along its own face, left, right, down, up, in units of the world: AbsentMotion's effects are cut by the scene, effects.cpp EffectRuntime::draw)
-    bool world = false;                    // (its sheet stands where it lies in the world, its picture filmed square to it: thing_fx_stand; else laid on the screen)
-    double own[5] = {0, 0, 0, 0, 0};       // (stood: where it is on its picture, its middle, its width and height, in its points, and how many points a unit of the world)
-    math::mat4 square;                     // (stood: where its picture is filmed from, the thing's own place, unscaled)
-    bool shell = false;                    // (a solid: it stays in the world and shows its picture itself, `look` on its faces while the stage is drawn: effected_solid.mat)
-    std::vector<MaterialInstance*> looks;  // (its faces' own looks while that one is on them: doc_layer_shell)
-    // (its picture on a solid's faces, when its fx names a shape (solids/*.js): the shape's file, what the solid was last
-    //  made of, the solid and its look; for one made of its outline, its coverage as last read back, and how many times)
-    std::string solidFile, solidSaid, solidAs;   // (solidAs: its look's material)
-    std::map<std::string, double> parameters;   // (its shape's parameters as said now, its words, and the thing's size: its own units)
+    // Where the layer is seen, in stage points: left, top, right, bottom.
+    double box[4] = {0, 0, 0, 0};
+    // Set by thing_fx_stand. How far the stage extends from the layer along its own face, in
+    // the order left, right, down, up, in world units. AbsentMotion's effects are cut by the
+    // scene; see EffectRuntime::draw in
+    // engine/third_party/AbsentMotion/app/src/main/cpp/effects.cpp.
+    double sides[4] = {0, 0, 0, 0};
+    // True if the sheet stands where the layer is in the world and the image is filmed square
+    // to the layer; see thing_fx_stand. False if the sheet is laid on the screen.
+    bool world = false;
+    // Set by thing_fx_stand. Where the layer itself lies in its image: its center, then its
+    // width and height, all in the layer's points, then the points per world unit.
+    double own[5] = {0, 0, 0, 0, 0};
+    // Set by thing_fx_stand. The layer's own placement without scale, which is where the
+    // image is filmed from.
+    math::mat4 square;
+    // True for a solid. It stays in the world and shows the image itself, using `look` on its
+    // faces while the stage is drawn; see effected_solid.mat.
+    bool shell = false;
+    // The faces' own materials, kept while this layer's image is on them; see doc_layer_shell.
+    std::vector<MaterialInstance*> looks;
+    // The image on a solid's faces, used when the layer's effects name a shape file in
+    // solids/*.js. solidFile is the shape file, solidSaid is what the solid was last built
+    // from, solidAs is the material of solidLook, and solid is the mesh. For a shape built from
+    // the layer's outline, `cover` holds the coverage as last read back.
+    std::string solidFile, solidSaid, solidAs;
+    // The shape's parameters as set now, their text values, and the layer's size in its own
+    // units.
+    std::map<std::string, double> parameters;
     std::map<std::string, std::string> words;
     float2 size{1.f};
     Mesh* solid = nullptr;
     MaterialInstance* solidLook = nullptr;
     bool solidRepeat = false;
+    // Coverage (alpha) sampled from the layer's image: a grid of `w` by `h` cells in `a`, and
+    // the number of times it has been read back.
     struct Cover { std::vector<uint8_t> a; int w = 0, h = 0, times = 0; };
     std::shared_ptr<Cover> cover = std::make_shared<Cover>();
 };
 
-// The view a thing is drawn alone in: samples/rendertarget.cpp's offscreen view (its own scene, the stage's eye, its
-// post-processing off: the stage's own view does that once, over everything).
+// Creates the view a layer is drawn alone in. It follows the offscreen view of
+// samples/rendertarget.cpp: a scene of its own, a camera that follows the stage's, and
+// post-processing off, since the stage's own view applies it once over everything.
 static View* thing_fx_view(Stage& s, ThingFx& e) {
     View* v = s.engine->createView();
     v->setScene(s.engine->createScene());
@@ -181,36 +263,46 @@ static View* thing_fx_view(Stage& s, ThingFx& e) {
     v->setCamera(e.camera);
     v->setViewport(s.view->getViewport());
     v->setPostProcessingEnabled(false);
-    v->setVisibleLayers(0x03, 0x03);   // (both of the stage's layers seen, as the stage's own view sees them)
+    // Both layer groups of the stage are visible, as in the stage's own view.
+    v->setVisibleLayers(0x03, 0x03);
     v->setBlendMode(View::BlendMode::TRANSLUCENT);
     return v;
 }
 
-// Its sheet (and solid) moved into the scene it lies in (`into`: a group's, or the stage's own): the renderer makes and takes
-// off things in the stage's own only.
+// Moves the layer's sheet and solid into scene `into`, a group's scene or, if null, the
+// stage's scene. The renderer adds and removes renderables only in the stage's scene.
 static void thing_fx_into(Stage& s, ThingFx& e, Scene* into) {
     Scene* const to = into ? into : s.scene;
-    for (const Stage::Renderable& built : s.renderables)   // (one made since, in the stage's own, moved too)
+    // Renderables created since then in the stage's scene are moved too.
+    for (const Stage::Renderable& built : s.renderables)
         if ((built.of == e.sheet || (e.solid && built.of == e.solid)) && !to->hasEntity(built.thing)) (e.in ? e.in : s.scene)->remove(built.thing), s.scene->remove(built.thing), to->addEntity(built.thing);
     e.in = to == s.scene ? nullptr : to;
 }
-// The sheet: the whole picture, samples/materials/image.mat's way (its points are the screen's own corners).
+// Creates the layer's view, sheet and material if they are missing or if `lay`, `world` or
+// `shell` changed, and returns `e`. The sheet is a quad that covers the whole image, as in
+// samples/materials/image.mat; its corners are the screen's corners.
 static ThingFx& thing_fx_built(Stage& s, ThingFx& e, const std::string& lay = "", bool world = false, bool shell = false) {
     if (e.view && e.lay == lay && e.world == world && e.shell == shell) return e;
     if (!e.view) e.view = thing_fx_view(s, e);
     thing_fx_into(s, e, s.scene);
-    if (e.sheet) take_off(s, e.sheet), delete e.sheet;   // (another way of lying: its sheet made again in it)
+    // A different way of lying needs the sheet made again.
+    if (e.sheet) take_off(s, e.sheet), delete e.sheet;
     e.lay = lay, e.world = world, e.shell = shell;
     e.sheet = new Mesh;
     for (float2 c : {float2{-1, -1}, float2{1, -1}, float2{1, 1}, float2{-1, 1}}) e.sheet->pos.push_back({c.x, c.y, 0.f}), e.sheet->nrm.push_back({0, 0, 1}), e.sheet->uv.push_back(c * 0.5f + 0.5f);
     e.sheet->idx = {0, 1, 2, 0, 2, 3};
     e.look = add(s, e.sheet, shell ? "effected_solid.filamat" : (std::string(world ? "effected_world" : "effected") + (lay.empty() ? "" : "_" + lay) + ".filamat").c_str(), {mat4f{}}, 1, world);
-    if (shell) move(s, e.sheet, [](int, const mat4f&) { return mat4f::scaling(float3{0.f}); });   // (the look is what is wanted of it: its sheet nowhere)
+    // Only the material is wanted here, so the sheet itself is scaled to nothing.
+    if (shell) move(s, e.sheet, [](int, const mat4f&) { return mat4f::scaling(float3{0.f}); });
+    // Give it an image from the start, as the image.mat sample does. Filament prepares every
+    // material instance before any view renders, and the layer's own view is drawn first.
     e.look->setParameter("image", white_point(s), TextureSampler());
-    if (!world && !shell) e.look->setParameter("place", math::mat4f{});   // (the whole stage till it is aimed)   // (a picture from the start, as image.mat's sample sets it at once: Filament readies every instance before any view, the thing's own drawn first; never seen, its picture set before the stage's view)
+    // The place covers the whole stage until the layer is aimed.
+    if (!world && !shell) e.look->setParameter("place", math::mat4f{});
     return e;
 }
 
+// Removes everything the layer created in the engine and resets `e`.
 static void thing_fx_off(Stage& s, ThingFx& e) {
     thing_fx_into(s, e, s.scene);
     if (e.sheet) take_off(s, e.sheet), delete e.sheet;
@@ -220,17 +312,21 @@ static void thing_fx_off(Stage& s, ThingFx& e) {
     e = ThingFx{};
 }
 
-// Aimed at the box the thing is seen in (left, top, right, bottom, points of the stage): its own camera told the stage's
-// projection and place, as samples/rendertarget.cpp tells its offscreen camera each frame (setCustomProjection,
-// setModelMatrix), the projection narrowed to the box so the box is the whole of its picture (After Effects' layer: its
-// effects work on the layer's own picture, an ISF effect's centre its middle); its picture as many pixels as the box
-// covers on the stage's view; its sheet laid on the box (effected.mat place).
+// Aims the layer's camera at `said`, the box where the layer is seen: left, top, right, bottom
+// in stage points. The camera is given the stage's projection and pose each frame, as the
+// offscreen camera in samples/rendertarget.cpp is (setCustomProjection, setModelMatrix). The
+// projection is narrowed to the box so that the box is the whole image. This matches After
+// Effects, where a layer's effects work on the layer's own image, and an ISF effect's center
+// is its middle. The image has as many pixels as the box covers on the stage's view. The
+// sheet is laid on the box through the `place` parameter of effected.mat.
 static void thing_fx_aim(Stage& s, ThingFx& e, const double* said) {
     const double ppp = (double)s.view->getViewport().width / std::max(1, s.w);
     double box[4] = {said[0], said[1], said[2], said[3]};
-    if (e.shell) box[0] = std::floor(box[0] * ppp) / ppp, box[1] = std::floor(box[1] * ppp) / ppp, box[2] = std::ceil(box[2] * ppp) / ppp, box[3] = std::ceil(box[3] * ppp) / ppp;   // (on the stage's own pixels: a solid reads its picture point for point)
+    // A solid reads its image point for point, so snap the box to the stage's pixels.
+    if (e.shell) box[0] = std::floor(box[0] * ppp) / ppp, box[1] = std::floor(box[1] * ppp) / ppp, box[2] = std::ceil(box[2] * ppp) / ppp, box[3] = std::ceil(box[3] * ppp) / ppp;
     std::copy(box, box + 4, e.box), std::copy(box, box + 4, e.st.box);
-    const double x0 = 2 * box[0] / s.w - 1, x1 = 2 * box[2] / s.w - 1, y0 = 1 - 2 * box[3] / s.h, y1 = 1 - 2 * box[1] / s.h;   // (the box in the stage's clip space, y up)
+    // The box in the stage's clip space, y up.
+    const double x0 = 2 * box[0] / s.w - 1, x1 = 2 * box[2] / s.w - 1, y0 = 1 - 2 * box[3] / s.h, y1 = 1 - 2 * box[1] / s.h;
     math::mat4 crop;
     crop[0][0] = 2 / (x1 - x0), crop[1][1] = 2 / (y1 - y0), crop[3][0] = -(x0 + x1) / (x1 - x0), crop[3][1] = -(y0 + y1) / (y1 - y0);
     const Camera& c = *s.camera;
@@ -244,10 +340,12 @@ static void thing_fx_aim(Stage& s, ThingFx& e, const double* said) {
     else e.look->setParameter("place", place);
 }
 
-// Aimed square at the thing's own face, for a solid's faces (its picture the same however it is turned): an orthographic
-// camera on its own z line, as wide and high as it is (Filament's Camera::setProjection ORTHO; told each frame, as
-// samples/rendertarget.cpp tells its offscreen camera), its picture 1024 pixels along its longer side, or as many a unit
-// of the world as `dense` says, with `room` round it.
+// Aims the layer's camera square at the layer's own face, for a solid's faces, so that the
+// image is the same however the solid is turned. The camera is orthographic, on the layer's z
+// axis, as wide and high as the layer (Filament's Camera::setProjection with ORTHO), and is
+// updated each frame as in samples/rendertarget.cpp. The image is 2048 pixels along its
+// longer side, or `dense` pixels per world unit if that is given, with `room` added around the
+// layer. `sides`, if given, are the extents left, right, down, up instead of the layer's size.
 static void thing_fx_face(Stage& s, ThingFx& e, const math::mat4& place, float2 half, double room = 0.0, double dense = 0.0, const double* sides = nullptr) {
     math::double3 x = place[0].xyz, y = place[1].xyz;
     const double sx = length(x), sy = length(y), wide = half.x * sx + room, high = half.y * sy + room;
@@ -264,16 +362,22 @@ static void thing_fx_face(Stage& s, ThingFx& e, const math::mat4& place, float2 
     e.view->setViewport({0, 0, (uint32_t)std::max(1L, std::lround(k * (l + r))), (uint32_t)std::max(1L, std::lround(k * (b + t)))});
 }
 
-// A flat thing's picture stood in the world (After Effects' layer: "masks, effects, transformations"): filmed square to
-// its own face, as far as the stage goes (e.sides), with the frame its effects reckon by round it (sashimono-edit's
-// BAKE_MARGIN, 128 points of the stage), its room and shares the same wherever the eye is, so that what its effects make keeps to it; as many
-// pixels as the eye sees of it when it is near (`seen`: points of the stage a unit of the world where it is), so that it
-// is as sharp as it is without them. Its sheet lies where it lies.
+// Stands a flat layer's image in the world, as After Effects does for a layer with masks,
+// effects and transformations. The image is filmed square to the layer's face and covers as
+// much of the stage as e.sides says, plus a margin that the effects measure by: 128 stage
+// points, as BAKE_MARGIN in sashimono-edit. The margin and extents are the same wherever the
+// camera is, so what the effects produce stays attached to the layer. When the layer is near
+// the camera, the image has as many pixels as the camera sees of it, so it stays sharp. `seen`
+// is the number of stage points per world unit where the layer is. The sheet lies where the
+// layer lies.
 static void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half, double seen) {
-    const double ppp = (double)s.view->getViewport().width / std::max(1, s.w), usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));   // (points a unit of the world, by the stage's own eye: document/evaluate.h)
+    // `usual` is the number of stage points per world unit at the stage's own camera distance;
+    // see document/evaluate.h.
+    const double ppp = (double)s.view->getViewport().width / std::max(1, s.w), usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));
     const double room = 128.0 / usual, sx = length(place[0].xyz), sy = length(place[1].xyz), wide = half.x * sx + room, high = half.y * sy + room;
     const double c[4] = {std::max(wide, e.sides[0]), std::max(wide, e.sides[1]), std::max(high, e.sides[2]), std::max(high, e.sides[3])}, across = c[0] + c[1], tall = c[2] + c[3];
-    const double point = std::min(std::max(usual, seen), 4096.0 / (ppp * std::max(across, tall)));   // (4096 pixels at the most)
+    // At most 4096 pixels.
+    const double point = std::min(std::max(usual, seen), 4096.0 / (ppp * std::max(across, tall)));
     thing_fx_face(s, e, place, half, room, point * ppp, c);
     e.box[0] = e.box[1] = 0, e.box[2] = across * point, e.box[3] = tall * point;
     std::copy(e.box, e.box + 4, e.st.box);
@@ -284,10 +388,12 @@ static void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2
     move(s, e.sheet, [&](int, const mat4f&) { return sheet; });
 }
 
-// Its solid made again when what it is made of has changed (its shape's file, parameters and size; its coverage): put in the
-// stage's own scene, casting and taking shadows, unlit when its Lit is off; one already there given its new points in
-// place (reshape). Within a frame only that: a look made then is not ready till the next (Filament readies every look
-// as a frame begins, FEngine::prepare), so a new one waits for the next moment.
+// Rebuilds the layer's solid when what it is made of has changed: the shape file, parameters,
+// size or coverage. The solid goes in the stage's scene, casts and receives shadows, and is
+// unlit when its Lit parameter is off. A solid that already exists only gets its new vertices
+// through reshape. Within a frame, when `inFrame` is set, only that happens: a material
+// created then is not ready until the next frame, because Filament prepares every material as a frame begins,
+// in FEngine::prepare. So a new solid waits for the next frame.
 static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     std::string said = e.solidFile + " " + std::to_string(e.size.x) + " " + std::to_string(e.size.y) + " " + std::to_string(e.cover->times);
     for (const auto& [n, v] : e.parameters) said += " " + n + "=" + std::to_string(v);
@@ -300,7 +406,9 @@ static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     SolidMesh built;
     std::string why;
     if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, built, why)) std::fprintf(stderr, "the solid %s is not built: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
-    if (built.idx.empty() || built.pos.size() != built.nrm.size() || built.uv.size() * 3 != built.pos.size() * 2) built = SolidMesh{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};   // (none yet, Raster Extrude's before its picture is read: a point, its look ready)
+    // Nothing is built yet, for example Raster Extrude before its image is read. Use a single
+    // point so that the material is ready.
+    if (built.idx.empty() || built.pos.size() != built.nrm.size() || built.uv.size() * 3 != built.pos.size() * 2) built = SolidMesh{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};
     e.solidSaid = said;
     if (anew && e.solid) take_off(s, e.solid), delete e.solid, e.solid = nullptr;
     Mesh* m = e.solid ? e.solid : new Mesh;
@@ -313,12 +421,15 @@ static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     e.solid = m, e.solidAs = look;
     e.solidLook = add(s, m, look, {mat4f{}}, 1, true);
     if (!e.solidLook) return;
-    e.solidLook->setParameter("image", white_point(s), TextureSampler());   // (a picture from the start, as the sheet's)
+    // Give it an image from the start, as the sheet does.
+    e.solidLook->setParameter("image", white_point(s), TextureSampler());
     if (!flat) e.solidLook->setParameter("roughness", 0.5f), e.solidLook->setParameter("metallic", 0.f);
 }
 
-// Its picture's coverage read back for a shape made of its outline (Filament's Renderer::readPixels, its callback on a
-// later frame: the shape made of it then), every so many pixels, at most `cells` along the longer side.
+// Reads back the coverage (alpha) of the layer's image, for a shape built from its outline.
+// Uses Filament's Renderer::readPixels, whose callback runs on a later frame; the shape is
+// built from the result then. Samples every so many pixels, at most `cells` along the longer
+// side.
 static void thing_fx_cover(Stage& s, ThingFx& e, int cells) {
     RenderTarget* const from = e.st.steps.empty() ? e.st.target : e.st.betweenTarget[(e.st.steps.size() - 1) % 2];
     const Viewport vp = e.view->getViewport();

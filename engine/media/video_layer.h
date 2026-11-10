@@ -1,13 +1,19 @@
-// video_layer.h: a film from a file (whatever GStreamer can read: it chooses the parts itself), put in the scene as a thing like any other: a flat sheet
-// whose look is the film's picture at a moment (flat.mat, as for ThorVG's pictures: so it can be cut by mattes, seen
-// through glass, and keyed: `green`).
-// GStreamer reads the file and has the machine's video decoder make the pictures; a picture stays where the decoder
-// left it, on the GPU (on the Mac an IOSurface), and is shared with Filament's own WebGPU device as it is (Dawn's
-// SharedTextureMemory): its light and its colour are two planes of one texture, turned to red, green and blue in
-// flat.mat. Nothing of a picture goes through the CPU. A picture is chosen by the time the film gives it (a phone's
-// film does not keep an even pace), and a film that says it is to be turned (shot upright) is turned.
-// Only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
-// asking its device for the sharing (filament_dawn_compute.patch). The Mac's interop only, so far.
+// Video layers: plays a video file as a flat quad in the stage.
+//
+// Any file GStreamer can read is accepted; GStreamer chooses the demuxers and decoders. The quad
+// is a normal layer in the stage, drawn with flat.mat like ThorVG images, so mattes, glass and
+// chroma keying (`green`) all work on it.
+//
+// GStreamer decodes with the machine's hardware decoder. Each decoded frame stays on the GPU
+// (an IOSurface on macOS) and is shared with Filament's WebGPU device without a copy, through
+// Dawn's SharedTextureMemory. The luma and chroma planes of the frame are two planes of one
+// texture, and flat.mat converts them to RGB. No frame data goes through the CPU. The frame to
+// show is chosen by the video's own timestamps, because the frame rate of a phone video is not
+// constant. A video that carries a rotation tag, such as one shot in portrait, is rotated.
+//
+// Works only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh with KIT_EXTRA, see
+// puppet.sh), where Filament requests the texture sharing (filament_dawn_compute.patch). Only the
+// macOS interop is implemented so far.
 #include "gpu/gpu_interop.h"
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
@@ -20,56 +26,99 @@
 #include <map>
 #include <string>
 
+// State of one video layer: its GStreamer reader, the frames being shown, and the quad that
+// displays them.
 struct Video {
-    GstElement* reader = nullptr;      // GStreamer's pipeline for this film
+    // The GStreamer pipeline that reads this video.
+    GstElement* reader = nullptr;
     GstAppSink* out = nullptr;
-    GstSample* held = nullptr;         // the picture for now (held, so that the decoder does not write over it)
-    GstSample* next = nullptr;         // the one after it, once it has come: it says until when `held` is the picture
-    GstSample* on = nullptr;           // the picture that is on the sheet (`held`, but for the moment a surface is first shared)
-    double nextAt = 0.0;               // when `next` is due, in seconds of the film's run (on through its repeats)
-    bool seeking = false;              // a seek back asked and its first picture not yet come (Pitivi's way: one at a time)
-    float want = -1.f;                 // and the moment asked for meanwhile, sought once it has come (-1: none)
-    double origin = 0.0, last = 0.0;   // the stage's time at which that run began; the stage's time last asked for
-    int w = 0, h = 0, turned = 0;      // turned: quarter turns clockwise the film asks for before it is shown
-    float seconds = 0.f;               // how long it is as it is shown (its cut, at its speed)
-    float starts = 0.f;                // how far into its cut it is when the stage's time is 0
-    float from = 0.f, to = 0.f, speed = 1.f;   // the cut of the file that is shown, in the file's seconds, and how fast (below 0: backwards)
-    std::atomic<bool> sound{false};    // the file has sound too
-    bool heard = false;                // the file is sound alone: its picture GStreamer's own wavescope, as playbin draws a visualisation where there is no video (GST_PLAY_FLAG_VIS)
-    std::atomic<bool> ended{false};    // the reader has read to the cut's end: the mark of it has come down the stream of pictures, after the last of them
-    float4 key{0.f};                   // its green screen, if it has one (green); until its first picture is on the sheet the sheet is all clear
+    // The current frame. It is kept referenced so that the decoder does not overwrite it.
+    GstSample* held = nullptr;
+    // The frame after `held`, once it has arrived. Its timestamp says until when `held` is the
+    // current frame.
+    GstSample* next = nullptr;
+    // The frame that is on the quad. It equals `held`, except while a new surface is being shared.
+    GstSample* on = nullptr;
+    // Time at which `next` is due, in seconds of the reader's running time, including repeats.
+    double nextAt = 0.0;
+    // True after a seek back was requested and until its first frame has arrived. Only one seek
+    // is in flight at a time, as in Pitivi.
+    bool seeking = false;
+    // The time requested while a seek was in flight, or -1 if none. It is sought once the
+    // current seek has finished.
+    float want = -1.f;
+    // `origin` is the stage time at which the current run began. `last` is the stage time of the
+    // most recent request.
+    double origin = 0.0, last = 0.0;
+    // `turned` is the number of clockwise quarter turns the video asks for before it is shown.
+    int w = 0, h = 0, turned = 0;
+    // Length of the video as shown, after the cut and the speed are applied.
+    float seconds = 0.f;
+    // How far into the cut the video is when the stage time is 0.
+    float starts = 0.f;
+    // The part of the file that is shown, in seconds of the file, and the playback speed.
+    // A negative speed plays backwards.
+    float from = 0.f, to = 0.f, speed = 1.f;
+    // True if the file also has an audio stream.
+    std::atomic<bool> sound{false};
+    // True if the file is audio only. Its image is then a wavescope drawn by GStreamer, the way
+    // playbin draws a visualization when there is no video (GST_PLAY_FLAG_VIS).
+    bool heard = false;
+    // True once the reader has read to the end of the cut. The end-of-segment event travels down
+    // the frame stream after the last frame.
+    std::atomic<bool> ended{false};
+    // Chroma key parameters (see `green`). Until the first frame is on the quad the key makes the
+    // quad fully transparent.
+    float4 key{0.f};
     float2 keySoft{0.f};
-    int own = 0;                       // keyed by its own ground (the colour its four corners share): 1 if it has one, 2 in any case (green if it has none)
-    mat4f rule;                        // its light and two colour numbers to red, green, blue
-    Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (render.h: move)
+    // Keying by the video's own background color, which is the color shared by its four corners.
+    // 1 keys only if such a color exists. 2 keys always, using green if there is none.
+    int own = 0;
+    // Converts the luma and the two chroma values to red, green and blue.
+    mat4f rule;
+    // The quad in the stage. It is moved like any other layer (see render.h: move).
+    Mesh* sheet = nullptr;
+    // The material instance of the quad.
     MaterialInstance* look = nullptr;
+    // A decoder surface that has been shared with Filament.
     struct Planes { std::atomic<WGPUTexture> shared{nullptr}; WGPUSharedTextureMemory lent = nullptr; Texture* light = nullptr; Texture* colour = nullptr; gint64 used = 0; };
-    uint32_t shown = 0;                // which surface is on the sheet
-    GstElement* into = nullptr;        // what the reader's pictures go into: `out`, or (read on the CPU) a converter before it
-    Texture* cpuLight = nullptr;       // read on the CPU (the machine's decoder had no room for it): its two planes, put on the GPU picture by picture
+    // ID of the surface that is on the quad.
+    uint32_t shown = 0;
+    // The element that receives the reader's frames: `out`, or a converter in front of it when
+    // the video is read on the CPU.
+    GstElement* into = nullptr;
+    // Used when the video is read on the CPU because the hardware decoder had no capacity left.
+    // The luma and chroma planes are uploaded to the GPU frame by frame.
+    Texture* cpuLight = nullptr;
     Texture* cpuColour = nullptr;
-    std::map<uint32_t, Planes> seen;   // the decoder's surfaces come round again: each is shared once
+    // The decoder reuses its surfaces, so each one is shared only once, keyed by surface ID.
+    std::map<uint32_t, Planes> seen;
 };
 
-// The decoder's picture inside one of GStreamer's buffers: its Mac plugin hangs it there under this name, in this
-// layout (gst-plugins-bad, sys/applemedia/corevideobuffer.h, which is not installed for others to include).
+// The macOS GStreamer plugin attaches the decoder's pixel buffer to a GstBuffer under this meta
+// name and layout. The layout is from gst-plugins-bad, sys/applemedia/corevideobuffer.h, which
+// is not installed as a public header.
 struct VideoCoreVideoMeta { GstMeta meta; CVBufferRef cvbuf; CVPixelBufferRef pixbuf; };
 
-static const char* video_trouble = "";   // why the last film that could not be shown could not
+// Explains why the last video that could not be shown failed. Read by the caller when video()
+// returns null.
+static const char* video_trouble = "";
 static bool video_counted = false;
-static long video_asked = 0, video_late = 0;   // how often a film was asked for a moment, and how often it could not yet tell its picture for it
+// Counters for the statistics line. `video_asked` counts requests for a frame at a time.
+// `video_late` counts requests where the decoder could not yet provide the frame for that time.
+static long video_asked = 0, video_late = 0;
 
-// When a picture is due, in seconds of the film's run: its own time stamp, on through the film's repeats.
+// Returns the time at which a frame is due, in seconds of running time, including repeats. This
+// is the frame's own timestamp.
 static double video_due(GstSample* sample) {
     const GstClockTime at = gst_segment_to_running_time(gst_sample_get_segment(sample), GST_FORMAT_TIME, GST_BUFFER_PTS(gst_sample_get_buffer(sample)));
     return GST_CLOCK_TIME_IS_VALID(at) ? (double)at / (double)GST_SECOND : 0.0;
 }
 
-// The held picture put on the sheet. A surface seen for the first time is first shared with Filament's device, on
-// Filament's own thread and without waiting for it: until that is done (a picture or two later) the sheet keeps the
-// picture it had. false: not on the sheet yet.
-static long video_shared = 0;   // how many of the decoders' surfaces are shared now
-// A surface that was lent is given back: Filament's two views of it let go, then Dawn's own end of a lend.
+// Number of decoder surfaces that are currently shared with Filament.
+static long video_shared = 0;
+// Releases a surface that was shared. Filament's two texture views are destroyed first, then
+// Dawn's end of the shared access is closed.
 static void video_give_back(Stage& s, Video::Planes& planes) {
     --video_shared;
     if (planes.light) s.engine->destroy(planes.light);
@@ -83,24 +132,30 @@ static void video_give_back(Stage& s, Video::Planes& planes) {
     });
 }
 
+// Returns the CoreVideo pixel buffer behind a frame, or null if the frame is in CPU memory.
 static CVPixelBufferRef video_surface(GstSample* sample) {
     const GType api = g_type_from_name("GstCoreVideoMetaAPI");
     VideoCoreVideoMeta* meta = api ? (VideoCoreVideoMeta*)gst_buffer_get_meta(gst_sample_get_buffer(sample), api) : nullptr;
     return meta ? meta->pixbuf : nullptr;
 }
-// A film's ground: the colour its picture has in all four corners, if they are one strong colour (a green screen, of
-// whatever green; a blue one). Read once, from its first picture: four small patches, through GStreamer's own view of
-// a picture's planes (gst_video_frame_map: the same on every system).
+// Detects the background color of a video. This is the color that the frame has in all four
+// corners, if the corners agree and the color is strongly saturated, such as a green or blue
+// screen of any shade. Reads four small patches from the planes of the first frame, through
+// GStreamer's gst_video_frame_map, which works the same on every platform. Returns true and fills
+// `ground` (RGB) and `strong` (distance of its chroma from gray) if such a color exists.
 static bool video_ground(Video* v, GstSample* sample, float3* ground, float* strong) {
     GstVideoInfo info;
     GstVideoFrame planes;
-    if (!gst_video_info_from_caps(&info, gst_sample_get_caps(sample)) || GST_VIDEO_INFO_FORMAT(&info) != GST_VIDEO_FORMAT_NV12) return false;   // (light, and the two colour numbers side by side at half the size)
+    // Only NV12 is handled: a luma plane, and an interleaved chroma plane at half the size.
+    if (!gst_video_info_from_caps(&info, gst_sample_get_caps(sample)) || GST_VIDEO_INFO_FORMAT(&info) != GST_VIDEO_FORMAT_NV12) return false;
     if (!gst_video_frame_map(&planes, &info, gst_sample_get_buffer(sample), GST_MAP_READ)) return false;
     const uint8_t* light = (const uint8_t*)GST_VIDEO_FRAME_PLANE_DATA(&planes, 0);
     const uint8_t* colours = (const uint8_t*)GST_VIDEO_FRAME_PLANE_DATA(&planes, 1);
     const size_t lightRow = (size_t)GST_VIDEO_FRAME_PLANE_STRIDE(&planes, 0), coloursRow = (size_t)GST_VIDEO_FRAME_PLANE_STRIDE(&planes, 1);
-    const int w = v->w / 2, h = v->h / 2, in = std::max(2, std::min(w, h) / 40);   // (in the colour plane's points; a little in from the very edge)
-    const auto hue = [](float3 c) { return float2{dot(c, float3{-0.1146f, -0.3854f, 0.5f}), dot(c, float3{0.5f, -0.4542f, -0.0458f})}; };   // (as flat.mat's)
+    // Sizes are in samples of the chroma plane. The patches sit a little inside the edge.
+    const int w = v->w / 2, h = v->h / 2, in = std::max(2, std::min(w, h) / 40);
+    // Chroma of an RGB color. The weights are the same as in flat.mat.
+    const auto hue = [](float3 c) { return float2{dot(c, float3{-0.1146f, -0.3854f, 0.5f}), dot(c, float3{0.5f, -0.4542f, -0.0458f})}; };
     float3 corner[4];
     for (int i = 0; i < 4; ++i) {
         const int x = i & 1 ? w - 1 - in : in, y = i & 2 ? h - 1 - in : in;
@@ -116,22 +171,28 @@ static bool video_ground(Video* v, GstSample* sample, float3* ground, float* str
     const float3 mean = 0.25f * (corner[0] + corner[1] + corner[2] + corner[3]);
     float apart = 0.f;
     for (const float3& c : corner) apart = std::max(apart, distance(hue(c), hue(mean)));
-    // (measured on 23 files with a screen: the corners 0.003 apart at most; a bright green 0.5 to 0.6 from grey, a dark one 0.17)
+    // Thresholds measured on 23 files that have a screen: the corners were at most 0.003 apart,
+    // a bright green was 0.5 to 0.6 from gray, and a dark green was 0.17.
     *ground = mean, *strong = length(hue(mean));
     return apart < 0.05f && *strong > 0.15f;
 }
-// The key of a film that is keyed by its own ground, worked out from the picture it has now.
+// Computes the key of a video that is keyed by its own background color, from the given frame.
+// Falls back to pure green if the frame has no such color and `own` is 2.
 static void video_own_key(Video* v, GstSample* sample) {
     float3 ground{0.f, 1.f, 0.f};
-    float strong = 0.6f;   // (pure green's)
+    // Chroma distance from gray of pure green.
+    float strong = 0.6f;
     const bool has = sample && video_ground(v, sample, &ground, &strong);
     if (!has) ground = float3{0.f, 1.f, 0.f}, strong = 0.6f;
-    // (how near counts as the screen, how wide its edge, how far its colour is taken out: render.h's numbers for pure green, in
-    //  proportion to how far this ground is from grey: a dark green's greys are nearer to it)
+    // The thresholds are the ones render.h uses for pure green, scaled by how far this color is
+    // from gray. They set how near a color must be to count as the screen, how wide the soft
+    // edge is, and how much of the color is removed. A dark green has grays nearer to it, so
+    // its thresholds are smaller.
     if (v->own && (has || v->own == 2)) v->key = float4{ground, 0.2f * strong}, v->keySoft = float2{0.5f * strong, 1.5f * strong};
 }
-// A picture read on the CPU (by a decoder of the CPU: the machine's had no room for it) put on the sheet: its light
-// and its colour copied up to two textures of Filament's, as a film's shared planes are read.
+// Shows a frame that was read on the CPU. This is used when the hardware decoder had no capacity
+// left. The luma and chroma planes are copied into two Filament textures, which are then bound
+// in the same way as the shared planes of a GPU frame. Returns false if the frame cannot be read.
 static bool video_show_copied(Stage& s, Video* v) {
     GstVideoInfo info;
     GstVideoFrame frame;
@@ -143,7 +204,8 @@ static bool video_show_copied(Stage& s, Video* v) {
         v->cpuLight = Texture::Builder().width((uint32_t)w).height((uint32_t)h).levels(1).format(Texture::InternalFormat::R8).build(*s.engine);
         v->cpuColour = Texture::Builder().width((uint32_t)cw).height((uint32_t)ch).levels(1).format(Texture::InternalFormat::RG8).build(*s.engine);
     }
-    const auto up = [&](Texture* t, int plane, int pw, int ph, int bytes, Texture::Format as) {   // (packed, without the decoder's row padding)
+    // Uploads one plane, packed without the decoder's row padding.
+    const auto up = [&](Texture* t, int plane, int pw, int ph, int bytes, Texture::Format as) {
         auto* copy = (uint8_t*)std::malloc((size_t)pw * ph * bytes);
         const uint8_t* from = (const uint8_t*)GST_VIDEO_FRAME_PLANE_DATA(&frame, plane);
         const int stride = GST_VIDEO_FRAME_PLANE_STRIDE(&frame, plane);
@@ -156,7 +218,8 @@ static bool video_show_copied(Stage& s, Video* v) {
     gst_video_frame_unmap(&frame);
     v->look->setParameter("picture", v->cpuLight, smooth);
     v->look->setParameter("colours", v->cpuColour, smooth);
-    if (!v->on) {   // (its first picture: seen from now on)
+    // First frame: set the chroma key from now on.
+    if (!v->on) {
         video_own_key(v, v->held);
         v->look->setParameter("key", v->key);
         v->look->setParameter("keySoft", v->keySoft);
@@ -165,14 +228,19 @@ static bool video_show_copied(Stage& s, Video* v) {
     v->on = v->held;
     return true;
 }
+// Puts the held frame on the quad. A surface seen for the first time is shared with Filament's
+// device on Filament's own thread, without waiting for it. Until that finishes, which takes a
+// frame or two, the quad keeps the frame it had. Returns false if the held frame is not on the
+// quad yet.
 static bool video_show(Stage& s, Video* v) {
     CVPixelBufferRef held = video_surface(v->held);
     IOSurfaceRef surface = held ? CVPixelBufferGetIOSurface(held) : nullptr;
     if (!surface) return video_show_copied(s, v);
     auto found = v->seen.find(IOSurfaceGetID(surface));
     if (found == v->seen.end()) {
-        // (a decoder goes round a few surfaces, and takes new ones when its film goes round: one it has not handed on
-        //  for two seconds is given back, but for the one on the sheet)
+        // A decoder cycles through a few surfaces and takes new ones when the video loops. A
+        // surface that the decoder has not handed out for two seconds is given back, except the
+        // one that is on the quad.
         for (auto it = v->seen.begin(); it != v->seen.end();)
             if (it->second.shared && it->first != v->shown && g_get_monotonic_time() - it->second.used > 2 * G_USEC_PER_SEC) { video_give_back(s, it->second); it = v->seen.erase(it); }
             else ++it;
@@ -191,13 +259,15 @@ static bool video_show(Stage& s, Video* v) {
             WGPUSharedTextureMemory memory = wgpuDeviceImportSharedTextureMemory((WGPUDevice)interop::device(engine), &what);
             WGPUTextureDescriptor like{};
             like.size = {w, h, 1};
-            like.format = WGPUTextureFormat_R8BG8Biplanar420Unorm;   // (light, and colour at half the size: what a decoder leaves)
+            // Luma plus chroma at half the size, which is what the decoder produces.
+            like.format = WGPUTextureFormat_R8BG8Biplanar420Unorm;
             like.usage = WGPUTextureUsage_TextureBinding;
             like.dimension = WGPUTextureDimension_2D;
             like.mipLevelCount = 1;
             like.sampleCount = 1;
             WGPUTexture shared = wgpuSharedTextureMemoryCreateTexture(memory, &like);
-            // (lent for good: the decoder writes a surface only while nobody holds its picture, and the one shown is held)
+            // Access is never ended while the surface is shared. The decoder writes a surface
+            // only while nobody holds its frame, and the frame being shown is held.
             WGPUSharedTextureMemoryBeginAccessDescriptor lend{};
             lend.initialized = true;
             wgpuSharedTextureMemoryBeginAccess(memory, shared, &lend);
@@ -210,7 +280,8 @@ static bool video_show(Stage& s, Video* v) {
     Video::Planes& planes = found->second;
     WGPUTexture shared = planes.shared;
     planes.used = g_get_monotonic_time();
-    if (!shared) return false;   // (being shared)
+    // The surface is still being shared on the driver thread.
+    if (!shared) return false;
     v->shown = found->first;
     if (!planes.light) {
         const auto plane = [&](Texture::InternalFormat as, int w, int h) {
@@ -223,7 +294,8 @@ static bool video_show(Stage& s, Video* v) {
     const TextureSampler smooth(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR, TextureSampler::WrapMode::CLAMP_TO_EDGE);
     v->look->setParameter("picture", planes.light, smooth);
     v->look->setParameter("colours", planes.colour, smooth);
-    if (!v->on) {   // (its first picture: seen from now on)
+    // First frame: set the chroma key from now on.
+    if (!v->on) {
         video_own_key(v, v->held);
         v->look->setParameter("key", v->key);
         v->look->setParameter("keySoft", v->keySoft);
@@ -233,26 +305,31 @@ static bool video_show(Stage& s, Video* v) {
     return true;
 }
 
-// The held picture on the sheet for the picture drawn next: a film made picture by picture waits for a surface that
-// is being shared (a moment, once for each of the decoder's surfaces); one played by the clock does not.
+// Puts the held frame on the quad for the frame that is drawn next. When the stage is rendered
+// frame by frame, this waits for a surface that is being shared. That takes a moment, once for
+// each decoder surface. When the stage is played in real time it does not wait.
 static void video_put(Stage& s, Video* v) {
     if (v->on == v->held || video_show(s, v) || s.by_clock) return;
     s.engine->flushAndWait();
     video_show(s, v);
 }
 
-// The reader set to a moment of the film as it is shown (`seconds` into its cut, at its speed), to go on from there
-// and round again without a break at the cut's end (GStreamer's own: a segment with a rate, which ends with a word
-// on the bus instead of the end of the stream; backwards it runs from the segment's end down to its start).
+// Seeks the reader to `seconds` of the video as shown (into its cut, at its speed). Playback
+// continues from there and loops without a gap at the end of the cut. This uses a GStreamer
+// segment seek with a rate. At the end of the segment it posts a segment-done message on the
+// bus instead of ending the stream. Played backwards, the segment runs from its end down to its
+// start. With `afresh` the pipeline is flushed and the seek is accurate.
 static void video_from(Video* v, float seconds, bool afresh) {
-    const double at = (double)seconds * std::fabs((double)v->speed);   // (that far into the cut, in the file's seconds)
+    // How far into the cut, in seconds of the file.
+    const double at = (double)seconds * std::fabs((double)v->speed);
     const double start = v->speed > 0.f ? (double)v->from + at : (double)v->from, stop = v->speed > 0.f ? (double)v->to : (double)v->to - at;
     gst_element_seek(v->reader, (double)v->speed, GST_FORMAT_TIME, (GstSeekFlags)((afresh ? GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE : 0) | GST_SEEK_FLAG_SEGMENT),
                      GST_SEEK_TYPE_SET, (gint64)(start * (double)GST_SECOND), GST_SEEK_TYPE_SET, (gint64)(stop * (double)GST_SECOND));
 }
 
-// The mark that the cut is read to its end, seen as it comes down the stream of pictures (GStreamer also says so on
-// its bus, but only when every stream of the file has ended, and played backwards the sound's never does).
+// Pad probe that records the end of the cut. The segment-done event arrives down the frame
+// stream. GStreamer also posts it on the bus, but only after every stream of the file has
+// ended, and when played backwards the audio stream never ends.
 static GstPadProbeReturn video_ending(GstPad*, GstPadProbeInfo* info, gpointer film) {
     if (GST_EVENT_TYPE(GST_PAD_PROBE_INFO_EVENT(info)) == GST_EVENT_SEGMENT_DONE) ((Video*)film)->ended = true;
     return GST_PAD_PROBE_OK;
@@ -260,25 +337,26 @@ static GstPadProbeReturn video_ending(GstPad*, GstPadProbeInfo* info, gpointer f
 
 static void video_at(Stage& s, Video* v, float seconds);
 
-// Which of the file's streams the reader reads: its pictures only (GStreamer asks, stream by stream). The sound is
-// not read at all. (Read and dropped it cost 51 decoders their work, and an HEVC film played slower than it was shot
-// then gave no picture at all: so GStreamer alone, 1.28.8, with both streams taken.)
+// Chooses which streams of the file the reader reads. GStreamer calls this once per stream.
+// Normally only the video stream is read and the audio stream is not. Reading the audio and
+// dropping it made 51 decoders do the work, and an HEVC video that played slower than it was
+// shot then produced no frame at all. So GStreamer alone, 1.28.8, with only the wanted stream
+// taken, is used. An audio-only file takes its audio stream instead.
 static gint video_wanted(GstElement*, GstStreamCollection*, GstStream* stream, gpointer film) {
-    if (gst_stream_get_stream_type(stream) & GST_STREAM_TYPE_AUDIO) ((Video*)film)->sound = true;   // (it has sound: heard in a written film, render.h)
+    // Record that the file has audio, which is played when the project is exported (see render.h).
+    if (gst_stream_get_stream_type(stream) & GST_STREAM_TYPE_AUDIO) ((Video*)film)->sound = true;
     return (gst_stream_get_stream_type(stream) & (((Video*)film)->heard ? GST_STREAM_TYPE_AUDIO : GST_STREAM_TYPE_VIDEO)) ? 1 : 0;
 }
 
-// The stream of pictures the reader found in the file goes to `out`.
+// Links the stream that the reader found in the file to the element that receives the frames.
 static void video_found(GstElement*, GstPad* stream, gpointer film) {
     GstPad* to = gst_element_get_static_pad(((Video*)film)->into, "sink");
     if (!gst_pad_is_linked(to)) gst_pad_link(stream, to);
     gst_object_unref(to);
 }
 
-// The film in `file` put in the scene: a sheet `high` tall (as wide as the film makes it) with its middle at `place`,
-// facing along the place's z. from, to: the cut of it that is shown, in seconds of the file (to below 0: to its end);
-// speed: how fast (2: twice as fast, 0.5: half, below 0: backwards).
-// How long a file is, as GStreamer's discoverer tells it, which reads on until it knows (gst-discoverer-1.0's own).
+// Returns the length of a file in nanoseconds as reported by GStreamer's discoverer, which reads
+// on until it knows. This is what gst-discoverer-1.0 does. Returns 0 if it cannot be found.
 static gint64 video_discovered(const char* file) {
     GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
     gchar* uri = gst_filename_to_uri(file, nullptr);
@@ -289,12 +367,22 @@ static gint64 video_discovered(const char* file) {
     g_free(uri);
     return length;
 }
+// Adds the video in `file` to the stage as a quad `high` tall, as wide as the video's aspect
+// ratio makes it, centered at `place` and facing along the z axis of `place`.
+//   from, to: the part of the file to show, in seconds of the file. A `to` below 0 means the end.
+//   speed: playback speed. 2 is twice as fast, 0.5 is half speed, below 0 plays backwards.
+//   lay, lit, wear: passed to flat_laid() to choose the material. `wear` names a material from
+//     doc_sheet_material.
+// Returns null and sets video_trouble if the video cannot be shown.
 static Video* video(Stage& s, const char* file, const mat4f& place, float high, float from = 0.f, float to = -1.f, float speed = 1.f, const char* lay = nullptr, bool lit = false, const std::string& wear = "") {
-    if (!interop::device(s.engine)) return video_trouble = "not the WebGPU backend", nullptr;   // (another backend)
+    // Another backend is in use.
+    if (!interop::device(s.engine)) return video_trouble = "not the WebGPU backend", nullptr;
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
     Video* v = new Video;
-    {   // (sound alone: GStreamer's discoverer finds sound in it and no picture but stills (an album's cover), as gst-discoverer-1.0 tells)
+    {
+        // Detect an audio-only file. GStreamer's discoverer reports audio streams, and for an
+        // album cover only still images, as gst-discoverer-1.0 shows.
         GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
         gchar* uri = gst_filename_to_uri(file, nullptr);
         if (GstDiscovererInfo* info = looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr) : nullptr) {
@@ -307,17 +395,20 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         g_free(uri);
         if (looks) g_object_unref(looks);
     }
-    // (read by the machine's decoder; where it has no room (59 films at once on an M4) by a decoder of the CPU, the
-    //  pictures then copied up: decodebin, told to pass the machine's decoders over, and a converter to NV12)
+    // First try the hardware decoder. Where it has no capacity left, for example with 59 videos
+    // at once on an M4, retry with a CPU decoder and copy the frames up. The retry uses
+    // decodebin, told to skip the hardware decoders, and a converter to NV12.
     for (int cpu = 0; cpu < 2; ++cpu) {
         if (v->reader) gst_element_set_state(v->reader, GST_STATE_NULL), gst_object_unref(v->reader), v->reader = nullptr;
         v->reader = gst_pipeline_new(nullptr);
         GstElement* opens = gst_element_factory_make("filesrc", nullptr);
-        GstElement* reads = gst_element_factory_make(cpu ? "decodebin" : "decodebin3", nullptr);   // (chooses the parts for whatever the file is)
+        // Chooses the demuxers and decoders for whatever the file is.
+        GstElement* reads = gst_element_factory_make(cpu ? "decodebin" : "decodebin3", nullptr);
         GstElement* turn = cpu && !v->heard ? gst_element_factory_make("videoconvert", nullptr) : nullptr;
         v->out = GST_APP_SINK(gst_element_factory_make("appsink", nullptr));
         if (!opens || !reads || !v->out || (cpu && !turn)) return video_trouble = "GStreamer lacks a part (filesrc, decodebin3, decodebin, videoconvert or appsink)", nullptr;
-        GstCaps* wanted = gst_caps_from_string("video/x-raw,format=NV12");   // (light and colour apart, eight bits: what video_layer.h shares)
+        // Luma and chroma in separate planes, eight bits. This is the format video_layer.h shares.
+        GstCaps* wanted = gst_caps_from_string("video/x-raw,format=NV12");
         g_object_set(opens, "location", file, nullptr);
         g_object_set(v->out, "sync", FALSE, "max-buffers", 2, "caps", wanted, nullptr);
         gst_caps_unref(wanted);
@@ -325,7 +416,9 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         gst_element_link(opens, reads);
         if (turn) gst_bin_add(GST_BIN(v->reader), turn), gst_element_link(turn, GST_ELEMENT(v->out));
         v->into = turn ? turn : GST_ELEMENT(v->out);
-        if (v->heard) {   // (its sound drawn as a wave: audioconvert ! wavescope ! a 1280 by 720 picture ! videoconvert, into `out`)
+        if (v->heard) {
+            // Draw the audio as a wave: audioconvert ! wavescope ! a 1280 by 720 frame !
+            // videoconvert, into `out`.
             GstElement* a = gst_element_factory_make("audioconvert", nullptr), *scope = gst_element_factory_make("wavescope", nullptr), *size = gst_element_factory_make("capsfilter", nullptr), *c = gst_element_factory_make("videoconvert", nullptr);
             if (!a || !scope || !size || !c) return video_trouble = "GStreamer lacks a part (audioconvert, wavescope, capsfilter or videoconvert)", nullptr;
             GstCaps* big = gst_caps_from_string("video/x-raw,width=1280,height=720,framerate=30/1");
@@ -343,9 +436,12 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         gst_pad_add_probe(in, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM, video_ending, v, nullptr);
         gst_object_unref(in);
         gst_element_set_state(v->reader, GST_STATE_PAUSED);
-        if (gst_element_get_state(v->reader, nullptr, nullptr, 5 * GST_SECOND) == GST_STATE_CHANGE_FAILURE) continue;   // (waits until the file is open and its first picture is there)
+        // Wait until the file is open and its first frame is there.
+        if (gst_element_get_state(v->reader, nullptr, nullptr, 5 * GST_SECOND) == GST_STATE_CHANGE_FAILURE) continue;
         gint64 length = 0;
-        if (!gst_element_query_duration(v->reader, GST_FORMAT_TIME, &length) || length <= 0) length = video_discovered(file);   // (an .mp3 says no length: its parser reckons one from frames it has seen, and the appsink stopped it after the first)
+        // An .mp3 reports no length: its parser estimates one from the frames it has seen, and the
+        // appsink stopped it after the first. The discoverer is used instead.
+        if (!gst_element_query_duration(v->reader, GST_FORMAT_TIME, &length) || length <= 0) length = video_discovered(file);
         if (length <= 0) return video_trouble = "the file does not open as a film (no length)", nullptr;
         v->from = std::max(0.f, from);
         v->to = to < 0.f ? (float)((double)length / (double)GST_SECOND) : std::min(to, (float)((double)length / (double)GST_SECOND));
@@ -355,20 +451,22 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         if (v->seconds <= 0.f) return video_trouble = "the cut is empty", nullptr;
         video_from(v, 0.f, true);
         gst_element_set_state(v->reader, GST_STATE_PLAYING);
-        if ((v->held = gst_app_sink_try_pull_sample(v->out, (cpu ? 5 : 2) * GST_SECOND))) break;   // (its first picture says how large it is)
+        // The first frame tells how large the video is.
+        if ((v->held = gst_app_sink_try_pull_sample(v->out, (cpu ? 5 : 2) * GST_SECOND))) break;
     }
     if (!v->held) return video_trouble = "no frame came within 5 seconds", nullptr;
     const GstStructure* said = gst_caps_get_structure(gst_sample_get_caps(v->held), 0);
     if (!gst_structure_get_int(said, "width", &v->w) || !gst_structure_get_int(said, "height", &v->h)) return video_trouble = "the frame does not say its size", nullptr;
-    // the film's own rule for its colours, as GStreamer read it from the file: which two weights (BT.601, BT.709,
-    // BT.2020: Kr, Kb), and where black, white and no-colour lie in its numbers (the narrow range or the full one)
+    // Build the video's own color conversion, as GStreamer read it from the file. It consists of
+    // the two luma weights (Kr, Kb) of BT.601, BT.709 or BT.2020, and the positions of black,
+    // white and zero chroma in its sample values, which depend on the narrow or full range.
     GstVideoInfo told;
     gdouble kr = 0.2126, kb = 0.0722;
     gint zero[GST_VIDEO_MAX_COMPONENTS] = {16, 128, 128}, span[GST_VIDEO_MAX_COMPONENTS] = {219, 224, 224};
     if (gst_video_info_from_caps(&told, gst_sample_get_caps(v->held))) {
         gst_video_color_matrix_get_Kr_Kb(told.colorimetry.matrix, &kr, &kb);
-        // (the range is asked of the picture itself where it says: the Mac's decoder hands on the narrow range
-        //  whatever the file was in, and the caps go on naming the file's)
+        // The range is read from the pixel buffer itself where possible. The macOS decoder
+        // delivers the narrow range whatever the file used, and the caps keep naming the file's.
         CVPixelBufferRef first = video_surface(v->held);
         const GstVideoColorRange range = !first ? told.colorimetry.range
             : CVPixelBufferGetPixelFormatType(first) == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ? GST_VIDEO_COLOR_RANGE_0_255 : GST_VIDEO_COLOR_RANGE_16_235;
@@ -376,10 +474,12 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
     }
     const float kg = 1.f - (float)kr - (float)kb, red = 2.f * (1.f - (float)kr), blue = 2.f * (1.f - (float)kb);
     const float3 gain{255.f / (float)span[0], 255.f / (float)span[1], 255.f / (float)span[2]}, base{-(float)zero[0] / (float)span[0], -(float)zero[1] / (float)span[1], -(float)zero[2] / (float)span[2]};
-    const float3 byBlue{0.f, -blue * (float)kb / kg, blue}, byRed{red, -red * (float)kr / kg, 0.f};   // (what its two colour numbers add to red, green, blue)
+    // What the two chroma values add to red, green and blue.
+    const float3 byBlue{0.f, -blue * (float)kb / kg, blue}, byRed{red, -red * (float)kr / kg, 0.f};
     const mat4f rule(float4{float3{gain.x}, 0.f}, float4{gain.y * byBlue, 0.f}, float4{gain.z * byRed, 0.f}, float4{float3{base.x} + base.y * byBlue + base.z * byRed, 1.f});
     GstBus* bus = gst_element_get_bus(v->reader);
-    while (GstMessage* said = gst_bus_pop_filtered(bus, GST_MESSAGE_TAG)) {   // (a film shot upright says which way it is to be turned)
+    // A video shot in portrait carries a tag that says which way to rotate it.
+    while (GstMessage* said = gst_bus_pop_filtered(bus, GST_MESSAGE_TAG)) {
         GstTagList* tags = nullptr;
         GstVideoOrientationMethod way = GST_VIDEO_ORIENTATION_IDENTITY;
         gst_message_parse_tag(said, &tags);
@@ -387,33 +487,42 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         gst_tag_list_unref(tags);
         gst_message_unref(said);
     }
-    gst_bus_set_flushing(bus, TRUE);   // (nothing more is read from it: what it is told from now on goes as it comes, not kept)
+    // Nothing more is read from the bus. Later messages are dropped instead of queued.
+    gst_bus_set_flushing(bus, TRUE);
     gst_object_unref(bus);
-    const float wide = v->turned % 2 ? (float)v->h / (float)v->w : (float)v->w / (float)v->h;   // (as it is shown)
+    // Aspect ratio as shown, after the rotation.
+    const float wide = v->turned % 2 ? (float)v->h / (float)v->w : (float)v->w / (float)v->h;
     v->sheet = new Mesh;
     for (float2 c : {float2{-1, -1}, float2{1, -1}, float2{1, 1}, float2{-1, 1}}) {
         v->sheet->pos.push_back({0.5f * high * wide * c.x, 0.5f * high * c.y, 0.f});
         v->sheet->nrm.push_back({0, 0, 1});
-        // which point of the film is at this corner: the corner turned back the other way
+        // The point of the video at this corner: the corner rotated back the other way.
         const float2 of = v->turned == 1 ? float2{-c.y, c.x} : v->turned == 2 ? float2{-c.x, -c.y} : v->turned == 3 ? float2{c.y, -c.x} : c;
-        v->sheet->uv.push_back(of * 0.5f + 0.5f);   // (a film's first row is its top: Filament turns a sheet's v over itself)
+        // The first row of a video is its top. Filament flips v for a quad itself.
+        v->sheet->uv.push_back(of * 0.5f + 0.5f);
     }
     v->sheet->idx = {0, 1, 2, 0, 2, 3};
-    v->look = add(s, v->sheet, flat_laid(lay, lit, wear).c_str(), {place}, 1, lit);   // (wear: a material it wears, doc_sheet_material)
-    if (lit) v->look->setParameter("surface", float3{0.08f, 0.6f, 0.5f});   // (a solid's as it comes)
+    v->look = add(s, v->sheet, flat_laid(lay, lit, wear).c_str(), {place}, 1, lit);
+    // A solid's default surface color.
+    if (lit) v->look->setParameter("surface", float3{0.08f, 0.6f, 0.5f});
     if (!v->look) return video_trouble = "flat.filamat", nullptr;
     v->look->setParameter("filmed", 1.f);
     v->look->setParameter("filmRule", rule);
     v->rule = rule;
-    v->look->setParameter("picture", white_point(s), TextureSampler());   // (until its first picture is shared: a white that is
-    v->look->setParameter("key", float4{1.f, 0.5f, 1.f, 9.f});            //  keyed out whole, so the sheet is not seen)
+    // Until the first frame is shared, show a white that is keyed out completely, so the quad
+    // is not visible.
+    v->look->setParameter("picture", white_point(s), TextureSampler());
+    v->look->setParameter("key", float4{1.f, 0.5f, 1.f, 9.f});
     v->look->setParameter("keySoft", float2{1.f, 1.f});
     video_put(s, v);
-    s.playing[v] = [&s, v](double now) { video_at(s, v, (float)now + v->starts); };   // (it goes on by itself as the stage's time does)
+    // The video advances by itself as the stage time does.
+    s.playing[v] = [&s, v](double now) { video_at(s, v, (float)now + v->starts); };
     if (v->sound) s.sounding[v] = [v, name = std::string(file)] { return Stage::Sound{name, v->from, v->to, v->speed, v->starts, 0.0, -1.0}; };
     if (s.said_after.empty() || !video_counted) {
         video_counted = true;
-        s.said_after.push_back([] {   // (of the times a film was asked for a moment in that stretch, how often it could not yet tell its picture)
+        // Reports, for the requests in that period, how often a video could not yet provide the
+        // frame for the requested time.
+        s.said_after.push_back([] {
             std::printf("    films late %ld of %ld times asked (%.2f %%); surfaces shared now %ld\n", video_late, video_asked, video_asked ? 100.0 * (double)video_late / (double)video_asked : 0.0, video_shared);
             video_asked = video_late = 0;
         });
@@ -421,12 +530,14 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
     return v;
 }
 
-// A film taken off the stage for good: its sheet gone, its reader stopped and let go.
+// Removes a video from the stage for good. Its quad is removed, its reader is stopped, and its
+// resources are released.
 static void video_off(Stage& s, Video* v) {
     s.playing.erase(v);
     s.sounding.erase(v);
     take_off(s, v->sheet);
-    s.engine->flushAndWait();   // (a surface may be on its way to being shared)
+    // A surface may still be in the middle of being shared.
+    s.engine->flushAndWait();
     gst_element_set_state(v->reader, GST_STATE_NULL);
     if (v->next) gst_sample_unref(v->next);
     if (v->held && v->held != v->on) gst_sample_unref(v->held);
@@ -438,37 +549,49 @@ static void video_off(Stage& s, Video* v) {
     delete v;
 }
 
-// The film keyed by its own ground (the colour its four corners share in its first picture): a green screen of
-// whatever colour, without being told which. always: keyed even if it has no such ground (then as a green screen).
+// Keys the video by its own background color. This is the color its four corners share in the
+// first frame, so a green screen of any shade works without being told which. With `always`
+// the video is keyed even if it has no such color, and then it is keyed as a green screen.
 static void key_own(Video* v, bool always) {
     v->own = always ? 2 : 1;
-    if (!v->on) return;   // (its first picture is not on the sheet yet: worked out when it comes)
+    // The first frame is not on the quad yet. The key is computed when it arrives.
+    if (!v->on) return;
     video_own_key(v, v->on);
     v->look->setParameter("key", v->key);
     v->look->setParameter("keySoft", v->keySoft);
 }
 
-// The film at its moment, `seconds` of the stage's time (it goes round again when it ends), for the picture that comes
-// next. The picture for a moment is the last one due by then, by the film's own time stamps.
+// Sets the video to `seconds` of the stage time, for the frame that is drawn next. The video
+// loops when it ends. The frame for a time is the last one due by then, judged by the video's own
+// timestamps.
 static void video_at(Stage& s, Video* v, float seconds) {
-    const auto back = [v](float to) {   // (from that moment afresh. Asked on this thread: tried from another, it left out as many pictures and the films took longer to settle)
+    // Restarts the reader at `to`. This must be called on this thread. When it was tried from
+    // another thread, it dropped as many frames and the videos took longer to settle.
+    const auto back = [v](float to) {
         video_from(v, std::fmod(to, v->seconds), true);
         v->origin = to;
         v->ended = false;
         v->seeking = true;
         if (v->next) { gst_sample_unref(v->next); v->next = nullptr; }
     };
-    if (v->seeking) v->want = seconds;   // (a seek still under way: this moment kept, the latest only, as Pitivi keeps its next seek till ASYNC_DONE)
-    else if (seconds < v->last) back(seconds);   // (time went back)
+    // While a seek is in flight, only the latest requested time is kept, as Pitivi keeps its next
+    // seek until ASYNC_DONE.
+    if (v->seeking) v->want = seconds;
+    else if (seconds < v->last) back(seconds);
     v->last = seconds;
     const double now = (double)seconds - v->origin;
-    // (a stage played by the clock does not wait for a film: one that is not ready keeps its picture for that frame and
-    //  catches up at the next; made picture by picture, every picture is waited for, up to half a second)
-    const gint64 until = g_get_monotonic_time() + (s.by_clock || v->seeking ? 0 : 500000);   // (a seek under way is not waited for: the picture held is shown till its first comes)
-    bool sure = false;   // (known: the picture held is the one for now)
+    // A stage played in real time does not wait for a video. A video that is not ready keeps its
+    // frame for that frame and catches up at the next. When rendering frame by frame, every
+    // frame is waited for, up to half a second. A seek in flight is not waited for: the held
+    // frame is shown until the first frame of the seek arrives.
+    const gint64 until = g_get_monotonic_time() + (s.by_clock || v->seeking ? 0 : 500000);
+    // True once it is known that the held frame is the one for the current time.
+    bool sure = false;
     while (true) {
         if (!v->next && (v->next = gst_app_sink_try_pull_sample(v->out, s.by_clock || v->seeking ? 0 : 2 * GST_MSECOND))) v->nextAt = video_due(v->next);
-        if (v->next && v->seeking) {   // (the seek's first picture: it is done; shown, and the moment asked meanwhile sought next)
+        // The first frame of a seek has arrived. Show it, then seek to the time requested
+        // meanwhile.
+        if (v->next && v->seeking) {
             if (v->held != v->on) gst_sample_unref(v->held);
             v->held = v->next, v->next = nullptr, v->seeking = false;
             if (v->want >= 0.f && v->want != (float)v->origin) { const float to = v->want; v->want = -1.f; back(to); }
@@ -477,13 +600,17 @@ static void video_at(Stage& s, Video* v, float seconds) {
         }
         if (v->next) {
             if (v->nextAt > now) { sure = true; break; }
-            if (v->held != v->on) gst_sample_unref(v->held);   // (the next one is due: it is the picture now)
+            // The next frame is due, so it becomes the current frame.
+            if (v->held != v->on) gst_sample_unref(v->held);
             v->held = v->next;
             v->next = nullptr;
             continue;
         }
-        if (v->ended) {   // (round again, without a break. Asked from another thread, GStreamer's own way: the reader
-            v->ended = false;   //  cannot be turned back while it waits to hand a picture on, and this thread is the one that takes them)
+        if (v->ended) {
+            v->ended = false;
+            // Loop again without a gap. The restart is requested from another thread, which is
+            // GStreamer's own way. The reader cannot be turned back while it waits to hand a
+            // frame on, and this thread is the one that takes the frames.
             gst_element_call_async(v->reader, [](GstElement*, gpointer film) { video_from((Video*)film, 0.f, false); }, v, nullptr);
             continue;
         }

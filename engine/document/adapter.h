@@ -1,10 +1,16 @@
-// adapter.h: part of doc.h. Code taken from the net, read as what it is (adapter.h), kept in the maker's own folder as it
-// came (so it is on the shelf too) and put on the stage. word: the code, or a file of it. A shader that reads a picture
-// goes on the picked layer, as an effect; one that makes its own fills the stage; a sketch is a picture, in 3D a solid.
+// adapter.h: imports code found on the net into the project. Included by doc.h; not self-contained.
+// The code (a shader, a p5.js sketch, a three.js scene, Hydra code, or a file of any of them) is
+// read as what it is, stored unchanged in the Program shelf folder so that it also appears on the
+// shelf, and placed on the canvas. A shader that reads an image becomes an effect on the selected
+// layer. A shader that makes its own pixels becomes a layer that fills the canvas. A p5.js sketch
+// becomes an image layer, and a three.js scene becomes solid layers in 3D.
+
 #include "community/sites/adapter_shadertoy_json.h"
 #include "community/p5/adapter_p5_shader.h"
 #include "community/sites/adapter_net.h"
-// What moved in a program's code as keys on what wears its effect `fx`, where they can be edited: a straight line two of them.
+// Writes the animated parameters of imported code as keyframes on the layer that carries the effect
+// `fx`, so that the user can edit them. A straight line needs only two keyframes; any other motion
+// gets one keyframe per sample, HYDRA_STEP seconds apart.
 static void doc_door_keys(Doc& d, int layer, const std::string& fx, const std::vector<HydraParameter>& moving) {
     for (const HydraParameter& k : moving) {
         const std::string name = doc_screen_parameter(fx, k.name);
@@ -12,7 +18,9 @@ static void doc_door_keys(Doc& d, int layer, const std::string& fx, const std::v
         else for (size_t i = 0; i < k.keys.size(); ++i) doc_key(d, layer, name.c_str(), (double)i * HYDRA_STEP, k.keys[i]);
     }
 }
-// A p5 sketch's shader as an effect beside its code, its .fs's text (""; `why` when it has one that cannot come).
+// Extracts the shader of a p5.js sketch as an effect stored beside the sketch, as a .fs file and a
+// .vs file. Returns the text of the .fs file. Returns an empty string when the sketch has no usable
+// shader; `why` is then set if the sketch has a shader that cannot be used.
 static std::string doc_p5_shaded(const std::filesystem::path& file, std::vector<HydraParameter>& moving, std::string& why) {
     Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const std::string got = run.said("__shaded_take(30)");
@@ -23,14 +31,19 @@ static std::string doc_p5_shaded(const std::filesystem::path& file, std::vector<
     std::ofstream(std::filesystem::path(file).replace_extension(".vs")) << vs;
     return fs;
 }
-// One part of a three.js scene as a solid (a new one, or `solid` as it is now): its shape a .glb beside the code, its look
-// as the scene says it, stood where the scene stands it (js_part: p5_stand.h's __three_each).
+// Creates or updates one part of a three.js scene as a solid layer. The mesh is written as a .glb
+// file beside the script, the material comes from the scene, and the layer is placed where the
+// scene places the part. The layer's js_part property holds `p`, so that the script can find its
+// part again (see __three_each in community/p5/p5_stand.h). Passing `solid` as 0 creates a new
+// layer; otherwise that layer is updated. Returns the layer, or 0 on failure.
 static int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file, int p, int solid) {
     const std::vector<uint8_t> shape = run.bytes("__three_glb(" + std::to_string(p) + ")");
     const std::filesystem::path glb = file.parent_path() / (file.stem().string() + "-" + std::to_string(p) + ".glb");
     std::ofstream out(glb, std::ios::binary);
     out.write((const char*)shape.data(), (std::streamsize)shape.size());
     out.close();
+    // The scene reports four values for the part: the number of copies, the fill color, and the
+    // metallic and roughness of its material.
     std::istringstream says(run.said("__three_says(" + std::to_string(p) + ")"));
     int most = 1;
     double metal = 0, rough = 1;
@@ -42,11 +55,18 @@ static int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file
     doc_say(d, solid, "script", file.string().c_str()), doc_set(d, solid, "js_part", p);
     return solid;
 }
+// Imports code from `said`, which is a file path, a link to a supported site, or the code itself,
+// and places it on the canvas as described at the top of this file. `picked` is the selected layer,
+// or 0 for none. Returns the layer that now shows the code, or 0 with d.error set. The whole import
+// is one undo step.
 static int doc_door(Doc& d, const std::string& said, int picked) {
     std::string word = said, why;
     std::error_code wrong;
+    // A link to an OpenProcessing sketch is downloaded first.
     if (const std::string work = adapter_site_work(said); !work.empty() && (word = adapter_openprocessing(work, doc_folders("sites").back() / "openprocessing" / work, why).string()).empty()) return d.error = why, 0;
     std::string text = word;
+    // If `word` is a short path of an existing file, read the code from it. Otherwise `word` is the
+    // code.
     if (word.size() < 1024 && std::filesystem::is_regular_file(word, wrong)) {
         std::ifstream in(word);
         std::stringstream all;
@@ -54,13 +74,18 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
         text = all.str();
     }
     const std::filesystem::path folder = doc_folders("programs").back();
-    const bool kept = std::filesystem::path(word).parent_path() == folder;   // (one of the Program shelf's own, as it is now: not kept again)
-    std::vector<std::pair<std::string, std::filesystem::path>> libraries;   // (each file's name, where it was fetched to)
+    // True when the code is already a file in the Program shelf folder. It is then used where it is
+    // and not stored again.
+    const bool kept = std::filesystem::path(word).parent_path() == folder;
+    // Libraries that the page loads: each file's name and the place it was downloaded to.
+    std::vector<std::pair<std::string, std::filesystem::path>> libraries;
     const std::filesystem::path brought = doc_folders("libraries").back();
     text = adapter_page(text, text != word ? std::filesystem::path(word).parent_path() : std::filesystem::path{}, [&](const std::string& url) {
         uint64_t mark = 1469598103934665603ull;
         for (unsigned char c : url) mark = (mark ^ c) * 1099511628211ull;
-        const std::string name = std::to_string(mark & 0xffffff) + ".js";   // (an address is not a file's name; each one fetched once)
+        // A web address is not a usable file name, so the name is the FNV-1a hash of the address.
+        // Each address is downloaded once.
+        const std::string name = std::to_string(mark & 0xffffff) + ".js";
         std::filesystem::create_directories(brought, wrong);
         if (!std::filesystem::exists(brought / name, wrong) && !adapter_fetch(url, brought / name)) return std::string();
         libraries.push_back({name, brought / name});
@@ -68,19 +93,25 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     });
     if (text != word) text = adapter_shader_files(text, std::filesystem::path(word).parent_path());
     const bool tabs = adapter_has(text, "\"renderpass\"");
-    if (tabs) {   // (Shadertoy's file of all its tabs: made one ISF here, as Hydra's is)
+    // A Shadertoy file with all its tabs is converted here to one ISF file, as Hydra code is.
+    if (tabs) {
         std::string why;
         if ((text = adapter_shadertoy(text, why)).empty()) return d.error = why, 0;
     }
+    // `came` keeps the text as it arrived, before Hydra conversion. `told` is its JavaScript form.
     const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text), told = adapter_js(text, form);
     const bool hydra = form == "hydra", shader = hydra || form == "shadertoy" || form == "sandbox" || form == "twigl" || form == "bonzomatic";
     std::vector<HydraParameter> moving;
-    if (hydra) {   // (the code as an ISF effect, kept as that: Hydra is a part apart, hydra_isf.cpp)
+    // Hydra code is converted to an ISF effect and stored in that form. The converter is
+    // hydra_isf.cpp.
+    if (hydra) {
         std::string why, isf;
         if (!hydra_isf(doc_folders("extensions/hydra").back().string(), text, 30.0, isf, moving, why)) return d.error = why, 0;
         text = isf;
     }
     if (!shader && !script_is_sketch(told)) return d.error = "this is not code that Motolii can read", 0;
+    // The FNV-1a hash of the text, as its last four hex digits, is added to the file name so that
+    // different code gets a different file.
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : text) hash = (hash ^ c) * 1099511628211ull;
     char tail[16];
@@ -88,32 +119,47 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     const std::string name = adapter_name(form);
     std::filesystem::create_directories(folder, wrong);
     std::filesystem::path file = folder / (name + tail + (shader ? ".fs" : ".js"));
+    // Code that is already a file in the shelf folder is used as it is, except Hydra code, which is
+    // stored converted. Other code is written to the shelf folder unless that file already exists.
     if (kept && !hydra) file = word;
     else if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
+    // Images that the code loads are copied from the place it came from to beside the stored file.
     if (word != came && !kept) adapter_images(text, std::filesystem::path(word).parent_path(), file);
-    for (const auto& [name, from] : libraries) {   // (it needs them beside it, as its pictures)
+    // The code needs its libraries beside it, as it needs its images.
+    for (const auto& [name, from] : libraries) {
         const std::filesystem::path to = file.parent_path() / file.stem();
         std::filesystem::create_directories(to, wrong);
         std::filesystem::copy_file(from, to / name, std::filesystem::copy_options::skip_existing, wrong);
     }
-    if (hydra) std::ofstream(file.parent_path() / (file.stem().string() + ".hydra")) << came;   // (what was written, kept beside what it became: the Program shelf shows this one)
-    std::string shaded;   // (a p5 sketch that paints its stage with a shader is that shader, an effect as any: not a picture of it)
+    // The Hydra code as it was written is kept beside the converted effect. The Program shelf shows
+    // this file.
+    if (hydra) std::ofstream(file.parent_path() / (file.stem().string() + ".hydra")) << came;
+    // A p5.js sketch that paints its canvas with a shader is imported as that shader, an effect
+    // like any other, and not as an image of its output.
+    std::string shaded;
     if (form.empty() && adapter_has(told, "hader(") && (shaded = doc_p5_shaded(file, moving, why)).empty() && !why.empty()) return d.error = why, 0;
     const std::string fx = shaded.empty() ? file.string() : std::filesystem::path(file).replace_extension(".fs").string();
     const bool effect = shader || !shaded.empty();
+    // Begin the undo step.
     doc_act(d);
     int layer = 0;
+    // An effect that reads an input image goes on the selected layer.
     if (effect && adapter_has(shaded.empty() ? adapter_isf(text) : shaded, "inputImage") && picked) {
         if (doc_fx_file(d, picked, fx.c_str(), d.stage->now)) layer = picked;
+    // An effect that makes its own pixels becomes a rectangle layer stretched over the canvas.
     } else if (effect) {
         if ((layer = doc_add(d, "shape", "rect")) && doc_say(d, layer, "name", name.c_str()) && doc_fx_file(d, layer, fx.c_str(), d.stage->now)) doc_fit(d, layer, "stretch");
-    } else if (form == "three") {   // (each pair of a shape and a material a solid of its own, under a group: stood in the world, not a picture of it)
+    // Each pair of a mesh and a material becomes a solid layer of its own, under a group layer when
+    // there is more than one. The layers are placed in the 3D world and are not a picture of it.
+    } else if (form == "three") {
         Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
         const int parts = std::atoi(run.said("__three_parts()").c_str());
         if (!run.ok()) return d.error = run.trouble(), d.act_ok = false, doc_acted(d), 0;
         if (!parts) return d.error = "this three.js scene drew no meshes", d.act_ok = false, doc_acted(d), 0;
         const bool together = d.act_together;
-        d.act_together = true;   // (matched once at the end: each of a scene's parts is an act of its own otherwise, and each matches them all)
+        // Rebuild the canvas (doc_match) once at the end. Otherwise each part is an undo step of
+        // its own and each one rebuilds all the parts.
+        d.act_together = true;
         if (parts > 1 && (layer = doc_add(d, "shape", "null"))) doc_say(d, layer, "name", name.c_str());
         for (int p = 0; p < parts; ++p) {
             const int solid = doc_three_part(d, run, file, p, 0);
@@ -123,23 +169,32 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
             if (parts > 1) doc_set(d, solid, "parent", layer);
         }
         d.act_together = together;
+    // A p5.js sketch in WEBGL mode becomes a cube solid that runs the script.
     } else if (told.find("WEBGL") != std::string::npos) {
         if ((layer = doc_add(d, "solid", "cube"))) doc_say(d, layer, "name", name.c_str()), doc_say(d, layer, "script", file.string().c_str());
-        if (DocScript* sc = layer ? doc_script_of(d, file.string()) : nullptr; sc && sc->run && !sc->run->ok()) return d.error = sc->run->trouble(), d.act_ok = false, doc_acted(d), 0;   // (it stopped as it began: a white box is not what it drew)
+        // If the script failed on its first run, report that. A white box is not what the sketch
+        // drew.
+        if (DocScript* sc = layer ? doc_script_of(d, file.string()) : nullptr; sc && sc->run && !sc->run->ok()) return d.error = sc->run->trouble(), d.act_ok = false, doc_acted(d), 0;
+    // Any other p5.js sketch becomes an image layer fitted to the canvas.
     } else if ((layer = doc_add(d, "image", file.string().c_str()))) doc_say(d, layer, "name", name.c_str()), doc_fit(d, layer, "fit");
-    if (layer && !moving.empty()) {   // (what moved in its code: keys, where it can be edited)
+    // What moves in the code becomes keyframes, so that it can be edited.
+    if (layer && !moving.empty()) {
         doc_evaluate(d, d.stage->now);
         doc_door_keys(d, layer, fx, moving);
     }
     return doc_acted(d) ? layer : 0;
 }
-// A three.js scene's code saved: its parts made again, as many as it has now, each scene that stands from it.
+// Called when the code of a three.js scene is saved. Rebuilds its parts so that there is one solid
+// layer for each mesh in the scene as it is now. Existing layers stay in their groups, new parts
+// are added, and layers whose part no longer exists are removed. Returns the reason the code cannot
+// run, or an empty string.
 static std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
     Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const int parts = std::atoi(run.said("__three_parts()").c_str());
     if (!run.ok()) return run.trouble();
     if (!parts) return "this three.js scene drew no meshes";
-    std::map<int, std::vector<int>> stood;   // (by the group each is under, 0 none)
+    // The layers made from this script, grouped by their parent layer; 0 means no parent.
+    std::map<int, std::vector<int>> stood;
     std::vector<int> gone;
     for (const int t : doc_layers(d))
         if (doc_word(d, t, "script") == file.string()) stood[(int)doc_number(d, t, "parent", 0, 0)].push_back(t);
@@ -161,7 +216,9 @@ static std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
     doc_acted(d);
     return "";
 }
-// Hydra's code saved: the effect made from it again, and what moves in it keyed again on what wears it.
+// Called when Hydra code is saved. Converts it to an ISF effect again and re-creates the keyframes
+// of its animated parameters on every layer that uses the effect. Returns the reason the code
+// cannot run, or an empty string.
 static std::string doc_hydra_saved(Doc& d, const std::filesystem::path& file, const std::string& text) {
     std::string why, isf;
     std::vector<HydraParameter> moving;
@@ -173,7 +230,9 @@ static std::string doc_hydra_saved(Doc& d, const std::filesystem::path& file, co
     doc_acted(d);
     return "";
 }
-// A p5 sketch's code saved, one whose shader is an effect: the effect made from it again, its keys again on what wears it.
+// Called when the code of a p5.js sketch whose shader is an effect is saved. Extracts the effect
+// again and re-creates its keyframes on every layer that uses it. Returns the reason the code
+// cannot run, or an empty string.
 static std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
     std::string why;
     std::vector<HydraParameter> moving;
@@ -184,8 +243,11 @@ static std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file
     doc_acted(d);
     return "";
 }
-// A program's file saved on the shelf: what was made from it follows now, not when the OS's watch tells the window. Why
-// its code does not run comes back ("": it runs). Told twice of one saving (by the shelf and by that watch): made once.
+// Called when a program file on the shelf is saved. Updates what was made from the file at once,
+// instead of waiting for the operating system's file watcher to notify the app. Returns the reason
+// the code cannot run, or an empty string when it runs. The shelf and the watcher both report one
+// save, so this may be called twice for it; the work is done once, decided by the file's
+// modification time.
 static std::string doc_code_saved(Doc& d, const std::string& file) {
     std::string& why = doc_scripts_kept(d).why[file];
     std::error_code wrong;
@@ -207,6 +269,9 @@ static std::string doc_code_saved(Doc& d, const std::string& file) {
     doc_files_moved(d);
     if (ext == ".js" && !three && !shaded) doc_sketch_written(d, file);
     doc_match(d);
-    if (ext == ".fs") isf_file(file), doc_scripts_kept(d).why[file] = isf_trouble(file);   // (an ISF effect half typed: drawn as it last was made, and why said: isf.cpp; not by `why`, which doc_match may have erased: doc_script_of)
+    // An ISF effect that is half typed keeps being drawn as it was last built, and the reason is
+    // reported (see community/isf/isf.cpp). The reason is stored here and not in `why`, because
+    // doc_match may have erased `why`. See doc_script_of.
+    if (ext == ".fs") isf_file(file), doc_scripts_kept(d).why[file] = isf_trouble(file);
     return doc_scripts_kept(d).why[file];
 }

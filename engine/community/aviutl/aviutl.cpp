@@ -1,6 +1,11 @@
-// See aviutl.h. The HLSL read by glslang as glslangValidator -D does (EShSourceHlsl, the entry its registered name,
-// registers moved apart by setShiftBinding by D3D11's own slot counts: t from 0, s from 128, b from 144), SPIR-V made WGSL by Tint (isf.cpp's way),
-// the cbuffer's places taken from glslang's reflection (HLSL's packing) and from Tint's own layout of the struct (WGSL's).
+// Reads AviUtl2 script files and headers and converts their shaders from HLSL to WGSL. See
+// aviutl.h.
+//
+// The HLSL is parsed by glslang as glslangValidator -D does (EShSourceHlsl, with the entry point
+// named by the shader's registered name). Registers are moved apart with setShiftBinding by
+// D3D11's slot counts: t from 0, s from 128, b from 144. The SPIR-V is converted to WGSL by Tint,
+// as in isf.cpp. The positions of the constants come from glslang's reflection (HLSL packing) and
+// from Tint's own layout of the struct (WGSL).
 #include "community/aviutl/aviutl.h"
 #include <cstring>
 #include <filesystem>
@@ -38,7 +43,8 @@ bool aviutl_text(const std::string& file, std::string& own, std::string& all, st
     text << in.rdbuf();
     own = all = text.str();
     if (std::filesystem::path(aviutl_path(file)).filename().string()[0] != '@') return true;
-    // (an @ file: its scripts each from a line "@name" (lua.txt); none named, the first)
+    // An "@" file holds several scripts, each starting at a line "@name" (lua.txt). If no script is
+    // named, the first one is used.
     const std::string name = hash == std::string::npos ? "" : aviutl_unword(file.substr(hash + 1));
     std::smatch m;
     if (!std::regex_search(all, m, std::regex(name.empty() ? std::string("(^|\\n)@[^\\r\\n]*") : "(^|\\n)@" + std::regex_replace(name, std::regex(R"([.^$|()\[\]{}*+?\\])"), "\\$&") + "[ \\t]*\\r?\\n")))
@@ -54,8 +60,13 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
     const std::regex said(R"(^--(track|checksection|check|color|select|value|file|folder|font|figure|text|string)(?:@(\w+)|(\d)):([^\r]*))");
     for (std::string line; std::getline(lines, line);) {
         std::smatch m;
-        if (line.rfind("--dialog:", 0) == 0) {   // (AviUtl's own of before: "label[/kind],name=first;..." as sashimono-edit's control.py _dialog reads it (MIT): /chk a check
-            const std::string body = line.substr(9);   //  of 0 or 1, every other its first a Lua value as it is, one first nil not made; cut at ; outside quotes and [[ ]])
+        // A "--dialog:" line is AviUtl's older way to declare variables, in the form
+        // "label[/kind],name=first;...". It is read as sashimono-edit's control.py _dialog reads
+        // it (MIT license). "/chk" makes a check whose value is 0 or 1. For every other item the
+        // first value is a Lua value taken as it is, and an item whose first value is nil is
+        // skipped. Items are split at ";" outside quotes and [[ ]].
+        if (line.rfind("--dialog:", 0) == 0) {
+            const std::string body = line.substr(9);
             std::vector<std::string> items(1);
             for (size_t i = 0; i < body.size(); ++i) {
                 const char c = body[i];
@@ -86,30 +97,42 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
         }
         if (!std::regex_search(line, m, said)) continue;
         AviutlVar v;
-        v.kind = m[1], v.var = m[2].matched ? m[2].str() : v.kind + m[3].str();   // (--track0: is obj.track0)
+        // A name such as track0, with no @name, is the old numbered form, which the script reads as
+        // obj.track0.
+        v.kind = m[1], v.var = m[2].matched ? m[2].str() : v.kind + m[3].str();
         v.named = m[2].matched;
-        if (v.kind == "checksection") v.kind = "check";   // (a check that opens the parameters under it, its third its own folding: as a check)
+        // A checksection is a check that folds the parameters below it; Motolii treats it as a
+        // plain check.
+        if (v.kind == "checksection") v.kind = "check";
         std::vector<std::string> parts;
         std::stringstream rest(m[4].str());
         for (std::string one; std::getline(rest, one, ',');) parts.push_back(std::regex_replace(one, std::regex(R"(^\s+|\s+$)"), ""));
         if (parts.empty()) continue;
-        v.label = parts[0].substr(0, parts[0].find('='));   // (a choice's: before its first value)
-        if (v.kind == "track" && parts.size() >= 4) v.usual = std::atof(parts[3].c_str()), v.step = parts.size() >= 5 && std::atof(parts[4].c_str()) > 0 ? std::atof(parts[4].c_str()) : 1;   // (lua.txt: 移動単位, the value's least unit, 1 not said)
+        // The label ends at "=". For a select, what follows is the default value.
+        v.label = parts[0].substr(0, parts[0].find('='));
+        // The fifth field is the step (the "unit of movement" in lua.txt), the smallest change of
+        // the value. It defaults to 1.
+        if (v.kind == "track" && parts.size() >= 4) v.usual = std::atof(parts[3].c_str()), v.step = parts.size() >= 5 && std::atof(parts[4].c_str()) > 0 ? std::atof(parts[4].c_str()) : 1;
         else if (v.kind == "check") v.truth = parts.size() > 1 && (parts[1] == "true" || parts[1] == "false"), v.usual = parts.size() > 1 && (parts[1] == "true" || std::atof(parts[1].c_str()) != 0);
         else if (v.kind == "color") v.unset = parts.size() < 2 || parts[1] == "nil", v.usual = v.unset ? 0xffffff : std::strtod(parts[1].c_str(), nullptr);
-        else if (v.kind == "select") {   // (label=as it comes, choice=value, ...)
+        // A select is written label=default, choice=value, ...
+        else if (v.kind == "select") {
             const size_t eq = parts[0].find('=');
             const double usual = eq == std::string::npos ? 0 : std::atof(parts[0].c_str() + eq + 1);
             for (size_t i = 1; i < parts.size(); ++i) {
                 const size_t e = parts[i].find('=');
                 v.values.push_back(e == std::string::npos ? (double)(i - 1) : std::atof(parts[i].c_str() + e + 1));
-                v.choices.push_back(parts[i].substr(0, e));   // (its name, an alias file's word for it)
+                // The choice's name. Alias files refer to a choice by this name.
+                v.choices.push_back(parts[i].substr(0, e));
                 if (v.values.back() == usual) v.usual = (double)(i - 1);
             }
-        } else if (v.kind == "value") {   // (a Lua value as it is: a number, a string, a table)
+        // A value is kept as Lua source text: a number, a string or a table.
+        } else if (v.kind == "value") {
             const size_t c = m[4].str().find(',');
             v.expr = c == std::string::npos ? "nil" : m[4].str().substr(c + 1);
-        } else {   // (a file's, a folder's, a font's, a figure's name, a text: words, "" for no file chosen)
+        // A file, folder, font, figure, text or string variable is kept as a Lua long string, which
+        // is empty when nothing is chosen.
+        } else {
             const size_t c = m[4].str().find(',');
             v.kind = "value", v.expr = "[==[" + (c == std::string::npos ? "" : m[4].str().substr(c + 1)) + "]==]";
         }
@@ -126,7 +149,9 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
     const std::regex said(R"(^--(track|checksection|check|color|select)(?:@(\w+)|(\d)):([^,\r]*)(?:,([^\r]*))?)");
     for (std::string line; std::getline(lines, line);) {
         std::smatch m;
-        if (line.rfind("--dialog:", 0) == 0) {   // (its checks: each a parameter, its label before its /chk)
+        // From a "--dialog:" line only the checks become parameters. The label of each is the text
+        // before its "/chk".
+        if (line.rfind("--dialog:", 0) == 0) {
             const std::regex check(R"((?:^|;)\s*([^,;]*)/chk\s*,\s*(?:local\s+)?(\w+))");
             for (const AviutlVar& v : aviutl_vars(line))
                 if (v.kind == "check")
@@ -159,9 +184,12 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
     return parameters;
 }
 
-// (each float of the constants, HLSL's place to WGSL's: a scalar or a vector, a matrix's columns or an array's elements
-//  each in a register of its own on HLSL's side (16 bytes apart), at Tint's stride on WGSL's; a struct's members where
-//  glslang's SPIR-V says (its Offset decorations, by the struct's name))
+// Appends to `sh` the placement of every float of the constants buffer, moving it from the HLSL
+// offset `from` to the WGSL offset `to`. A scalar or a vector is one entry. The columns of a matrix
+// and the elements of an array each sit in a register of their own on the HLSL side (16 bytes
+// apart) and at Tint's stride on the WGSL side. The members of a struct are placed at the offsets
+// that glslang's SPIR-V gives (Offset decorations, found by the struct's name in `hlsl`).
+// Returns false for a type that cannot be placed.
 using AviutlOffsets = std::map<std::string, std::vector<uint32_t>>;
 static bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_t to, const AviutlOffsets& hlsl, AviutlShader& sh) {
     using namespace tint::core::type;
@@ -180,10 +208,13 @@ static bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_
     }
     if (const auto* st = t->As<Struct>()) {
         const std::string name = st->Name().Name();
-        if (name.rfind("tint_", 0) == 0 && st->Members().Length() == 1)   // (Tint's own wrapping of an element padded to a register)
+        // Tint wraps an element padded to a full register in a single-member struct named tint_*.
+        // Look through it.
+        if (name.rfind("tint_", 0) == 0 && st->Members().Length() == 1)
             return aviutl_place(st->Members()[0]->Type(), from, to + st->Members()[0]->Offset(), hlsl, sh);
         auto at = hlsl.find(name);
-        if (at == hlsl.end()) at = hlsl.find(std::regex_replace(name, std::regex("(_\\d+)+$"), ""));   // (Tint's name made apart from another's)
+        // Tint appends _N to a struct name to keep it unique. Retry without that suffix.
+        if (at == hlsl.end()) at = hlsl.find(std::regex_replace(name, std::regex("(_\\d+)+$"), ""));
         if (at == hlsl.end() || at->second.size() != st->Members().Length()) return false;
         for (const auto* m : st->Members())
             if (!aviutl_place(m->Type(), from + at->second[m->Index()], to + m->Offset(), hlsl, sh)) return false;
@@ -192,6 +223,8 @@ static bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_
     return false;
 }
 
+// Converts one HLSL pixel shader, whose fragment entry point is `entry`, to WGSL laid out for the
+// interop (see AviutlShader). On failure the result has an empty `wgsl` and `why` is set.
 static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entry, bool clip) {
     AviutlShader sh;
     static std::once_flag once;
@@ -204,7 +237,10 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     s.setEnvInput(glslang::EShSourceHlsl, EShLangFragment, glslang::EShClientVulkan, 100);
     s.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
     s.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
-    s.setShiftBinding(glslang::EResTexture, 0), s.setShiftBinding(glslang::EResSampler, 128), s.setShiftBinding(glslang::EResUbo, 144);   // (D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT 128, ..._SAMPLER_SLOT_COUNT 16: a t16 is a picture, not s0)
+    // Binding ranges follow D3D11: 128 texture slots, which is
+    // D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, then 16 sampler slots, then constant buffers.
+    // A t16 stays a texture and does not collide with s0.
+    s.setShiftBinding(glslang::EResTexture, 0), s.setShiftBinding(glslang::EResSampler, 128), s.setShiftBinding(glslang::EResUbo, 144);
     s.setAutoMapBindings(true), s.setAutoMapLocations(true);
     const EShMessages msg = EShMessages(EShMsgSpvRules | EShMsgVulkanRules | EShMsgReadHlsl);
     if (!s.parse(&DefaultTBuiltInResource, 100, false, msg)) return sh.why = std::string("HLSL: ") + s.getInfoLog(), sh;
@@ -213,9 +249,12 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (!program.link(msg) || !program.mapIO()) return sh.why = std::string("HLSL: ") + program.getInfoLog(), sh;
     std::vector<uint32_t> spv;
     glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spv);
-    {   // (checked first by SPIRV-Tools' own validator as spirv-val --before-hlsl-legalization checks it, the patterns the
-        //  legalization fixes let by: glslang (16.6.0 too) makes ペンローズタイルσ's float2x4 ._14_24 an int2 of its
-        //  indices, and the legalization's constant folding (FoldOpDotWithConstants) crashed the program on that OpDot)
+    // Validate first with SPIRV-Tools' validator, as spirv-val --before-hlsl-legalization does.
+    // That mode accepts the patterns the legalization below fixes. It still rejects what glslang
+    // makes of a float2x4 swizzle such as ._14_24, an int2 of its indices; this happens in
+    // glslang 16.6.0 too. The legalization's constant folding (FoldOpDotWithConstants) crashed
+    // on the resulting OpDot.
+    {
         spvtools::SpirvTools check(SPV_ENV_VULKAN_1_1);
         std::string said;
         check.SetMessageConsumer([&](spv_message_level_t, const char*, const spv_position_t&, const char* m) { if (said.empty()) said = m; });
@@ -223,10 +262,13 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
         before.SetBeforeHlslLegalization(true);
         if (!check.Validate(spv.data(), spv.size(), before)) return sh.why = "SPIR-V: " + said.substr(0, said.find('\n')), sh;
     }
-    {   // (made legal as glslang makes HLSL's SPIR-V itself when built with spirv-opt (SPIRV/SpvTools.cpp SpirvToolsLegalize),
-        //  by SPIRV-Tools' own set for it, as DXC uses: Optimizer::RegisterLegalizationPasses; Filament's glslang is built
-        //  without it (tnt/CMakeLists.txt ENABLE_OPT OFF), so a texture handed to a function was stored, which Vulkan forbids;
-        //  not checked first, as glslang runs it (set_run_validator(false)): it is not yet legal, which is why it is run)
+    // Make the SPIR-V legal with the legalization passes of SPIRV-Tools, registered by
+    // Optimizer::RegisterLegalizationPasses. DXC does the same, and so does glslang when it is
+    // built with spirv-opt (SPIRV/SpvTools.cpp, SpirvToolsLegalize). Filament builds glslang
+    // without it (ENABLE_OPT is OFF in tnt/CMakeLists.txt), so a texture passed to a function was
+    // stored in a variable, which Vulkan forbids. As in glslang, the optimizer's own validation is
+    // off, because the input is not legal yet; that is why the passes run.
+    {
         spvtools::Optimizer legal(SPV_ENV_VULKAN_1_1);
         legal.RegisterLegalizationPasses();
         spvtools::OptimizerOptions unchecked;
@@ -234,7 +276,10 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
         std::vector<uint32_t> built;
         if (legal.Run(spv.data(), spv.size(), &built, unchecked)) spv.swap(built);
     }
-    std::map<uint32_t, std::string> names;   // (SPIR-V read for each struct's member offsets: OpName 5, OpMemberDecorate 72 Offset 35; an empty struct (OpTypeStruct 30 of none) Tint cannot take)
+    // Read the SPIR-V words to collect the names of structs (OpName, opcode 5) and the offsets of
+    // their members (OpMemberDecorate, opcode 72, decoration Offset, 35). Tint cannot take an empty
+    // struct (OpTypeStruct, opcode 30, with no members), so such a shader is rejected.
+    std::map<uint32_t, std::string> names;
     std::map<uint32_t, std::map<uint32_t, uint32_t>> offsets;
     for (size_t i = 5; i < spv.size() && spv[i] >> 16;) {
         const uint32_t n = spv[i] >> 16, op = spv[i] & 0xffff;
@@ -253,7 +298,8 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     auto built = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
     if (built != tint::Success) return sh.why = "WGSL: " + built.Failure().reason, sh;
     const tint::Program& p = built.Get();
-    for (const auto* g : p.AST().GlobalVariables()) {   // (the constants' struct, b0, as Tint lays it)
+    // Find the constants buffer (b0, binding 144) and take its layout as Tint lays it out.
+    for (const auto* g : p.AST().GlobalVariables()) {
         const auto* v = p.Sem().Get<tint::sem::GlobalVariable>(g);
         if (!v || v->AddressSpace() != tint::core::AddressSpace::kUniform || !v->Attributes().binding_point || v->Attributes().binding_point->binding != 144) continue;
         const auto* st = v->Type()->UnwrapRef()->As<tint::core::type::Struct>();
@@ -262,16 +308,21 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     }
     auto wgsl = tint::wgsl::writer::Generate(p, o);
     if (wgsl != tint::Success) return sh.why = "WGSL: " + wgsl.Failure().reason, sh;
-    // (another cbuffer (a global not static: $Global) is bound to nothing in AviUtl2, which reads zero in D3D11: a private
-    //  variable, which WGSL begins at zero)
+    // Any other cbuffer, such as the $Global one that holds non-static globals, is bound to nothing
+    // in AviUtl2, so D3D11 reads zeros from it. Make it a private variable, which WGSL starts at
+    // zero.
     std::string code = std::regex_replace(wgsl->wgsl, std::regex(R"(@group\(0u?\) @binding\((?!144u?\))\d+u?\) var<uniform>)"), "var<private>");
-    // (the interop's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
+    // Renumber the bindings for the interop: the texture of image k at 2k, its sampler at 2k+1, and
+    // the constants after all the images.
     const std::regex bound(R"(@group\(0u?\) @binding\((\d+)u?\) var(<uniform>)?)");
     int most = 0;
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m)
         if (!(*m)[2].matched) most = std::max(most, std::stoi((*m)[1]) % 128 + 1);
     sh.textureCount = std::max(1, most);
-    if (sh.textureCount > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
+    // Filament asks Dawn for 16 samplers per stage (WebGPUPlatform.cpp, REQUIRED_LIMITS), and each
+    // image uses a texture and a sampler (WebGPUDescriptorSetLayout.cpp). One image past that limit
+    // made every draw of the frame invalid.
+    if (sh.textureCount > 16)
         return sh.why = "not yet: " + std::to_string(sh.textureCount) + " textures read at once, Filament's WebGPU takes 16", sh;
     std::string out;
     auto at = code.cbegin();
@@ -284,7 +335,9 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     }
     out.append(at, code.cend());
     out = std::regex_replace(out, std::regex("@fragment\\s*\\nfn " + entry + "\\("), "@fragment\nfn main(");
-    if (clip)   // (D3D11's BORDER address (transparent) under linear filtering: the clamped sample faded over the half texel past the edge)
+    // Emulate D3D11's border addressing (transparent outside the image) under linear filtering:
+    // fade the clamped sample over the half texel past the edge.
+    if (clip)
         out = std::regex_replace(out, std::regex(R"(\btextureSample(Level)?\()"), "aviutl_clip$1(") +
               "\nfn aviutl_clipLevel(t: texture_2d<f32>, s: sampler, c: vec2f, l: f32) -> vec4f {\n"
               "  let n = vec2f(textureDimensions(t, 0));\n"
@@ -297,7 +350,8 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
 
 const AviutlShader& aviutl_shader(const std::string& hlsl, const std::string& entry, bool clip) {
     static std::mutex lock;
-    static std::map<std::string, AviutlShader> built;   // (each shader as written made once: a few milliseconds each)
+    // Each shader is converted once, because a conversion takes a few milliseconds.
+    static std::map<std::string, AviutlShader> built;
     std::lock_guard<std::mutex> hold(lock);
     const std::string key = entry + (clip ? "|clip|" : "||") + hlsl;
     if (auto m = built.find(key); m != built.end()) return m->second;

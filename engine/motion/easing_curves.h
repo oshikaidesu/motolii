@@ -1,48 +1,84 @@
-// easing_curves.h: how a value goes through the stretch between two keys. Alight Motion's nine kinds (its help center,
-// "Animation Easing Curves": Cubic Bezier, Bounce, Elastic, Cyclic, Random, Steps, Elastic Steps, with hold and linear),
-// as the past repository made them after it, brought as they are from there (rust_ae/Motolii, motolii/crates/motolii-doc/src/eval/track.rs and bezier.rs): the same names,
-// the same numbers in the same order, the same formulas, the same numbers refused. `interp_ease` is told u (how far
-// through the stretch, 0 to 1) and gives how far the value has gone from the one key's to the other's: 0 at the
-// start, 1 at the end (Cyclic ends where its wave is), and on the way it may pass the end and come back.
+// Easing kinds: how a value moves between two keyframes.
+//
+// The nine kinds are those of Alight Motion (help center, "Animation Easing Curves":
+// Cubic Bezier, Bounce, Elastic, Cyclic, Random, Steps, Elastic Steps, plus Hold and Linear).
+// They were ported unchanged from an earlier Motolii implementation
+// (rust_ae/Motolii, motolii/crates/motolii-doc/src/eval/track.rs and bezier.rs), keeping the
+// same names, parameter order, formulas and rejected parameter values.
+//
+// interp_ease() takes u, the progress through the span between two keyframes (0 to 1), and
+// returns how far the value has moved from the first keyframe's value to the second's. The
+// result is 0 at the start and 1 at the end (Cyclic ends wherever its wave ends). In between
+// it may overshoot the end and come back.
+//
+// Included by kinds.h; not self-contained.
 #include <cmath>
 #include <sstream>
 #include <string>
 
-// AbsentMotion's own eases (its easing.cpp Ease, read as it reads Alight Motion's: absent_motion.cpp).
+// Evaluates one of AbsentMotion's easings (its easing.cpp, Ease) by type name.
+// p holds n parameters and u is the progress. See absent_motion.cpp.
 double absent_ease(const char* type, const double* p, int n, double u);
 
+// One easing: a kind and its parameters.
 struct Interp {
     enum Kind { Hold, Linear, Bezier, Bounce, Elastic, Cyclic, Random, Steps, ElasticSteps } kind = Linear;
-    double p[8] = {0, 0, 0, 0, 0, 0, 0, 0};   // (its numbers, in the order of interp_kinds' names)
+    // Parameters, in the order given by the names in interp_kinds.
+    double p[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 };
-// name, how many numbers, their names, and the usual numbers when none are said: the past repository's own, as it
-// found them good on the machine (rust_ae/Motolii, motolii/ui/native/src/editor/ease_kinds.rs).
-// lo / hi: how far a hand takes each number, the past skin's own (motolii/ui/native/src/editor/ease_kinds.rs, its handles' clamps).
+// Describes each kind, indexed by Interp::Kind.
+//
+// name: the kind's name. numbers: how many parameters it has. names: the parameter names,
+// separated by spaces. usual: the default parameters, used when none are given. lo and hi: the
+// range the editor allows for each parameter. The values come from the earlier implementation
+// (rust_ae/Motolii, motolii/ui/native/src/editor/ease_kinds.rs, which also has the handle
+// limits used for lo and hi).
 static const struct { const char* name; int numbers; const char* names; double usual[8], lo[8], hi[8]; } interp_kinds[] = {
     {"Hold", 0, "", {}, {}, {}},
     {"Linear", 0, "", {}, {}, {}},
     {"Bezier", 4, "x1 y1 x2 y2", {0.42, 0.0, 0.58, 1.0}, {0, -0.4, 0, -0.4}, {1, 1.6, 1, 1.6}},
-    {"Bounce", 2, "length bounce", {0.3, 0.8}, {0.01, 0}, {1, 1}},   // (AbsentMotion's, its Alight Motion preset: Keyframes.kt; run by its easing.cpp, absent_ease)
-    {"Elastic", 4, "a b c d", {0.25, 1, 0.5, 1}, {0, 0, 0, 0}, {1, 2, 2, 2}},   // (as AbsentMotion's: its easing.cpp reads a, c, d)
-    {"Cyclic", 5, "a b c d e", {2.0 / 7.0, 0, 0.5, 0, 0}, {0.01, 0, 0, 0, 0}, {1, 1, 1, 1, 1}},   // (as AbsentMotion's)
-    {"Random", 6, "a b c d e f", {0.5, 0.5, 0.5, 0.5, 0.5, 0}, {0, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1}},   // (as AbsentMotion's)
-    {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},   // (as AbsentMotion's: four steps, the last to 1 at the end, docs/internal/reports/alight_motion/alight_ui/135_ease_steps.jpg; the past repository's 0.178 made six)
-    {"ElasticSteps", 2, "length magnitude", {0.2, 0.5}, {0.05, 0}, {1, 1}},   // (as AbsentMotion's)
+    // Bounce: the defaults match AbsentMotion's Alight Motion preset (Keyframes.kt) and run
+    // through absent_ease() in its easing.cpp.
+    {"Bounce", 2, "length bounce", {0.3, 0.8}, {0.01, 0}, {1, 1}},
+    // Elastic: AbsentMotion's easing.cpp reads only a, c and d.
+    {"Elastic", 4, "a b c d", {0.25, 1, 0.5, 1}, {0, 0, 0, 0}, {1, 2, 2, 2}},
+    // Cyclic: the defaults match AbsentMotion's.
+    {"Cyclic", 5, "a b c d e", {2.0 / 7.0, 0, 0.5, 0, 0}, {0.01, 0, 0, 0, 0}, {1, 1, 1, 1, 1}},
+    // Random: the defaults match AbsentMotion's.
+    {"Random", 6, "a b c d e f", {0.5, 0.5, 0.5, 0.5, 0.5, 0}, {0, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1}},
+    // Steps: the default length of 0.25 gives four steps, the last reaching 1 at the end, as in
+    // docs/internal/reports/alight_motion/alight_ui/135_ease_steps.jpg. The earlier
+    // implementation's 0.178 gave six steps.
+    {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},
+    // ElasticSteps: the defaults match AbsentMotion's.
+    {"ElasticSteps", 2, "length magnitude", {0.2, 0.5}, {0.05, 0}, {1, 1}},
 };
 
+// Returns the standard smoothstep of x between edge0 and edge1, clamped to 0..1.
+// Returns a hard step at edge0 when the two edges are equal.
 static double interp_smoothstep(double edge0, double edge1, double x) {
     if (std::fabs(edge1 - edge0) < 2.220446049250313e-16) return x < edge0 ? 0.0 : 1.0;
     const double t = std::fmin(std::fmax((x - edge0) / (edge1 - edge0), 0.0), 1.0);
     return t * t * (3.0 - 2.0 * t);
 }
-// Bounce, as Alight Motion's (AbsentMotion's own: absent_motion.cpp), but for one thing. There a bounce that would end after
-// the stretch is not drawn, however high, and all the room left lies flat: a ball stopped dead in the air's reach (the maker,
-// 10/31: "畳まれてる"). Here it goes in that room, as much lower as it is shorter, so it lands on the key, and it grows out
-// of nothing as the room does. No other tool cuts one short: Dan Ebberts' runs on past the key, Penner's and GSAP's are
-// fitted. Fitting them all, as GSAP does, costs the Length parameter and the stillness of a bounce that has died away: left as it
-// is. The usual numbers leave under 0.05 of room, so they go as Alight Motion's, to the number.
+// Bounce easing. p[0] is the length of the first bounce and p[1] the factor by which each
+// following bounce shrinks. Returns the eased value for progress u.
+//
+// This matches Alight Motion (as implemented in AbsentMotion, absent_motion.cpp) except in one
+// case. Alight Motion does not draw a bounce that would end after the span, however high it is,
+// so the room left at the end of the span stays flat and the value looks stuck short of the
+// target. Here a final, lower bounce is fitted into that room, so the value lands on the second
+// keyframe. Its height scales with the room and grows from zero as the room grows.
+//
+// No other tool cuts a bounce short this way: Dan Ebberts' version runs past the second
+// keyframe, and Penner's and GSAP's are fitted to the span. Fitting all bounces, as GSAP does,
+// would lose the length parameter and the stillness of a bounce that has died away, so it is
+// not done. With the default parameters less than 0.05 of room is left, so the result is
+// identical to Alight Motion's.
 static double interp_bounce(const double* p, double u) {
-    const double lowest = 0.0055;   // (easing.cpp's kMinBounce: lower, it has died away, and what is left is still)
+    // Same as kMinBounce in easing.cpp. A bounce lower than this has died away and the value is
+    // held still.
+    const double lowest = 0.0055;
     double start = p[0] / 2, length = p[0] * p[1], height = p[1];
     for (int i = 0; i < 10000 && height >= lowest && start + length <= 1; ++i) start += length, length *= p[1], height *= p[1];
     const double room = 1 - start;
@@ -50,11 +86,16 @@ static double interp_bounce(const double* p, double u) {
     const double high = height * room / length * interp_smoothstep(0.05, 0.15, room);
     return 1 - 4 * high * (u - start) * (1 - u) / (room * room);
 }
+// Clamps x to the range low..high.
 static double interp_clamp(double x, double low, double high) { return std::fmin(std::fmax(x, low), high); }
 
-// (bezier.rs: the CSS easing curve. x back to the curve's own parameter: Newton eight times, then halving: the past
-//  repository's own earlier solver, kept there as the one its present solver is checked against)
+// Returns one coordinate of a cubic Bezier curve from (0, 0) to (1, 1) with control values p1
+// and p2, at curve parameter s.
 static double interp_sample(double p1, double p2, double s) { const double inv = 1.0 - s; return 3.0 * inv * inv * s * p1 + 3.0 * inv * s * s * p2 + s * s * s; }
+// Cubic Bezier easing, as in CSS: the curve has control points (x1, y1) and (x2, y2). Returns y
+// for the given x. To find the curve parameter for x it runs eight Newton iterations and falls
+// back to bisection. This is the solver of the earlier implementation (bezier.rs) that its newer
+// solver was checked against.
 static double interp_bezier(double x1, double y1, double x2, double y2, double x) {
     if (x <= 0.0) return 0.0;
     if (x >= 1.0) return 1.0;
@@ -74,6 +115,8 @@ static double interp_bezier(double x1, double y1, double x2, double y2, double x
     return interp_sample(y1, y2, s);
 }
 
+// Returns the eased value for progress u using easing i. Hold always returns 0, so the value
+// stays at the first keyframe's value until the second keyframe.
 static double interp_ease(const Interp& i, double u) {
     const double* p = i.p;
     switch (i.kind) {
@@ -90,7 +133,8 @@ static double interp_ease(const Interp& i, double u) {
     return u;
 }
 
-// A kind said back: its name as the table writes it, then all its numbers. (However it was said, it reads back so.)
+// Formats an easing as text: the kind's name as in interp_kinds, followed by all its
+// parameters. interp_said() reads this text back to the same easing.
 static std::string interp_words(const Interp& is) {
     const auto& kind = interp_kinds[(size_t)is.kind];
     std::string said = kind.name;
@@ -99,8 +143,10 @@ static std::string interp_words(const Interp& is) {
     return said;
 }
 
-// A kind as it is said: its name (capitals or not) and then either none of its numbers (the usual ones) or all of
-// them. 0: said rightly. -1: not the name of a kind. 1: a kind, but not rightly said (`why` tells how it is said).
+// Parses an easing from text: a kind name, in any letter case, followed by either no parameters
+// (the defaults are used) or all of them. Returns 0 and fills *is on success. Returns -1 if the
+// text does not start with a kind name. Returns 1 if the kind is known but the parameters are
+// wrong, and then fills *why, when given, with a description of the accepted form.
 static int interp_said(const std::string& text, Interp* is, std::string* why = nullptr) {
     std::istringstream said(text);
     std::string name, more;
@@ -118,7 +164,9 @@ static int interp_said(const std::string& text, Interp* is, std::string* why = n
         const double* p = built.p;
         bool finite = true;
         for (int j = 0; j < kind.numbers; ++j) finite = finite && std::isfinite(p[j]);
-        const char* rule = !right ? "" : !finite ? "every number is a real one"   // (the past repository's own rules for the numbers)
+        // The first violated rule, as a message. Empty if the count of parameters is wrong,
+        // and null if no rule is violated. The rules are those of the earlier implementation.
+        const char* rule = !right ? "" : !finite ? "every number is a real one"
             : built.kind == Interp::Bezier && (p[0] < 0.0 || p[0] > 1.0 || p[2] < 0.0 || p[2] > 1.0) ? "x1 and x2 are from 0 to 1"
             : built.kind == Interp::Bounce && p[0] <= 0.0 ? "first_dip is above 0"
             : (built.kind == Interp::Elastic && p[1] <= 0.0) || (built.kind == Interp::Cyclic && p[0] <= 0.0) ? "period is above 0"

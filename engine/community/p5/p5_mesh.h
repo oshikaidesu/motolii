@@ -1,4 +1,7 @@
-// What a p5.js sketch draws in WEBGL, taken for document/sketch.h: its mesh, its lights, its shaders, its pictures and words (p5_stand.h, run after p5_after).
+// JavaScript source, embedded as a string, that records what a p5.js sketch draws in WEBGL mode:
+// meshes, lights, shaders, textures and text. document/sketch.h consumes the result. It is
+// run by p5_stand.h after p5_after. The comments inside the embedded script are not rewritten
+// here, because they are part of the string literal.
 #pragma once
 
 static const char* const p5_mesh = R"(

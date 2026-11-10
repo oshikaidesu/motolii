@@ -1,4 +1,4 @@
-// (splatfx.h says what this is)
+// Implementation of SplatEffect and splat_effect_look. See splatfx.h.
 #include "community/playcanvas/splatfx.h"
 #include <quickjs.h>
 #include <filesystem>
@@ -6,7 +6,7 @@
 #include <regex>
 #include <sstream>
 
-// What an effect takes from 'playcanvas', and its base class, as small as it uses them.
+// Minimal stand-ins for the parts of the 'playcanvas' module that an effect imports.
 static const char* const splatfx_playcanvas = R"(
 export class Vec3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; } copy(v) { return this.set(v.x, v.y, v.z); } clone() { return new Vec3(this.x, this.y, this.z); } }
 export class Color { constructor(r = 0, g = 0, b = 0, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; } set(r, g, b, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; return this; } copy(c) { return this.set(c.r, c.g, c.b, c.a); } clone() { return new Color(this.r, this.g, this.b, this.a); } }
@@ -21,16 +21,20 @@ export class GSplatShaderEffect extends Script {
 }
 )";
 
+// Private state of a SplatEffect: the QuickJS runtime, the effect object and its parameters.
 struct SplatEffect::Own {
     JSRuntime* rt = nullptr;
     JSContext* cx = nullptr;
     JSValue effect = JS_UNDEFINED;
     std::string trouble, glsl, file;
     std::vector<ScriptParameter> parameters;
-    std::vector<std::pair<std::string, int>> fields;   // (each attribute and how many numbers it is: 1, or 3)
+    // Each attribute name with its kind: 1 for a number, 3 for a Color, -3 for a Vec3.
+    std::vector<std::pair<std::string, int>> fields;
     bool finished = false;
 };
 
+// QuickJS module loader. Serves the stand-ins for 'playcanvas' and for the gsplat shader effect
+// base module, and reads any other module from the file system. Returns null on a compile error.
 static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     const std::string n = name;
     std::string src;
@@ -44,6 +48,7 @@ static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     return m;
 }
 
+// Takes the pending QuickJS exception and returns its text.
 static std::string splatfx_said(JSContext* cx) {
     JSValue e = JS_GetException(cx);
     const char* s = JS_ToCString(cx, e);
@@ -58,7 +63,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
     own->cx = JS_NewContext(own->rt);
     JS_SetModuleLoaderFunc(own->rt, nullptr, splatfx_load, nullptr);
     JSContext* cx = own->cx;
-    // (its one class that says a shader, made once, as PlayCanvas makes a script)
+    // Instantiate the module's one class that has getShaderGLSL, as PlayCanvas creates a script.
     const std::string wrap = "import * as m from '" + std::filesystem::absolute(file).string() + "';\n"
         "const C = Object.values(m).find(v => typeof v === 'function' && v.prototype && v.prototype.getShaderGLSL);\n"
         "globalThis.__effect = C ? new C() : null;\n";
@@ -73,7 +78,8 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
     JSValue fn = JS_GetPropertyStr(cx, own->effect, "getShaderGLSL"), said = JS_Call(cx, fn, own->effect, 0, nullptr);
     if (const char* s = JS_ToCString(cx, said)) own->glsl = s, JS_FreeCString(cx, s);
     JS_FreeValue(cx, said), JS_FreeValue(cx, fn);
-    // (its attributes: the numbers, Vec3s and Colors it holds as it comes, each with the range its comment gives)
+    // Turn the effect's attributes into parameters. Numbers, Vec3s and Colors are read with their
+    // initial values. Each takes its range from an @range comment in the source, if there is one.
     std::ifstream in(file);
     std::stringstream all;
     all << in.rdbuf();
@@ -87,7 +93,8 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
         JS_FreeCString(cx, key);
         if (name.empty() || name[0] == '_' || name == "effectTime" || name == "enabled") continue;
         double low = 0, high = 1;
-        std::smatch r;   // (/** ... @range [a, b] ... */ name = ...)
+        // Matches a doc comment of the form /** ... @range [a, b] ... */ followed by name = ...
+        std::smatch r;
         if (std::regex_search(text, r, std::regex("@range\\s*\\[\\s*(-?[\\d.]+)\\s*,\\s*(-?[\\d.]+)\\s*\\][^/]*\\*/\\s*" + name + "\\s*=")))
             low = std::stod(r[1]), high = std::stod(r[2]);
         JSValue v = JS_GetPropertyStr(cx, own->effect, name.c_str());
@@ -117,6 +124,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
     js_free(cx, props);
 }
 
+// Frees the QuickJS context and runtime.
 SplatEffect::~SplatEffect() {
     if (!own->cx) return;
     JS_FreeValue(own->cx, own->effect);
@@ -131,12 +139,14 @@ void SplatEffect::usual(const std::string& parameter, double is) {
     for (ScriptParameter& k : own->parameters) if (k.name == parameter) k.usual = is, k.low = std::min(k.low, is), k.high = std::max(k.high, is);
 }
 
+// See splatfx.h.
 std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(double time, double dt, const std::function<double(const std::string&, double)>& value) {
     std::vector<std::pair<std::string, std::vector<float>>> out;
     if (!ok()) return out;
     JSContext* cx = own->cx;
     size_t k = 0;
-    for (const auto& [name, n] : own->fields) {   // (each attribute as the parameters say it now)
+    // Write the current parameter values into the effect's attributes.
+    for (const auto& [name, n] : own->fields) {
         if (n == 1) { JS_SetPropertyStr(cx, own->effect, name.c_str(), JS_NewFloat64(cx, value(own->parameters[k].name, own->parameters[k].usual))); ++k; continue; }
         JSValue v = JS_GetPropertyStr(cx, own->effect, name.c_str());
         const char* parts = n == 3 ? "rgb" : "xyz";
@@ -176,7 +186,8 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
 #include <mutex>
 
 namespace {
-struct SplatConfig : matp::Config {   // (as filament_webgpu.sh runs matc: -a webgpu -a metal -p desktop)
+// The matp configuration that filament_webgpu.sh passes to matc: -a webgpu -a metal -p desktop.
+struct SplatConfig : matp::Config {
     SplatConfig() { mTargetApi = TargetApi::WEBGPU | TargetApi::METAL; mPlatform = Platform::DESKTOP; }
     Output* getOutput() const noexcept override { return nullptr; }
     Input* getInput() const noexcept override { return nullptr; }
@@ -185,7 +196,9 @@ struct SplatConfig : matp::Config {   // (as filament_webgpu.sh runs matc: -a we
 };
 }
 
+// See splatfx.h.
 std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string& glsl, utils::JobSystem& jobs, std::string& why) {
+    // FNV-1a hash of both texts names the cache file.
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : mat + "\x01" + glsl) hash = (hash ^ c) * 1099511628211ull;
     const char* home = std::getenv("HOME");
@@ -194,7 +207,8 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     std::snprintf(name, sizeof name, "%016llx.filamat", (unsigned long long)hash);
     const std::filesystem::path cached = dir / name;
     if (std::ifstream in(cached, std::ios::binary); in) return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
-    // (its uniforms said as the look's parameters, read through their own names; the rest of its text as it is)
+    // Turn each uniform declaration in the GLSL into a material parameter, and define a macro so
+    // that the GLSL still refers to it by its own name. All other lines are kept as they are.
     std::string params, names, code;
     std::istringstream lines(glsl);
     const std::regex uniform(R"(^\s*uniform\s+(?:highp\s+|mediump\s+|lowp\s+)?(float|vec2|vec3|vec4|int|mat3|mat4)\s+(\w+)\s*;)");
@@ -212,7 +226,8 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     if (list == std::string::npos || at == std::string::npos) return why = "points.mat has no place for an effect", std::vector<uint8_t>{};
     text.insert(at, "#define SPLAT_EFFECT\n" + names + code + "\n");
     text.insert(list + 14, "\n" + params);
-    static std::mutex one;   // (filamat is made ready once, and builds one at a time)
+    // filamat is initialized once and builds one material at a time.
+    static std::mutex one;
     std::lock_guard<std::mutex> hold(one);
     static bool ready = (filamat::MaterialBuilder::init(), true);
     (void)ready;

@@ -1,25 +1,43 @@
-// undo.h: part of doc.h (the document's file opened; each change kept as one step, undone and done again). Read only through doc.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (folders.h)
-// The document in `path` (made if it is not there), on the stage. nullptr: the file is not a document.
-static std::string doc_recipe_code_path(const std::string& name);   // (recipes.h: the file of the recipe with code that is called so; none: "")
-// A document from before 2026-11-09 (user_version 0 and a table `fact`) given the words After Effects and Blender use
-// (docs/internal/notes/rename_words.md §3), by SQLite's own ALTER TABLE ... RENAME (sqlite.org/lang_altertable.html),
-// its version kept in its header (sqlite.org/pragma.html#pragma_user_version). Its undo steps' changesets name the old
-// tables, and SQLite applies a changeset of a table not there to nothing and calls it done
-// (sqlite.org/session/sqlite3changeset_apply.html): so the steps before are cut, their times kept (doc_edited).
-// A newer version is refused. schema: "main", or an attached preset's ("preset"); a new file is only given version 1.
+// Included by doc.h; not self-contained.
+//
+// Opens a project file, upgrades older files, and records each change to the project as one undo
+// step that can be undone and redone.
+// Defined in folders.h.
+static std::vector<std::filesystem::path> doc_folders(const char* folder);
+// Returns the path of the recipe called `name` that has code, or an empty string if there is none.
+// Defined in recipes.h.
+static std::string doc_recipe_code_path(const std::string& name);
+// Upgrades the database `schema` of `file` from the old table names to the current ones (layer,
+// keyframe, easing, undo_step), as described in section 3 of docs/internal/notes/rename_words.md.
+// It uses SQLite's ALTER TABLE ... RENAME (https://sqlite.org/lang_altertable.html) and records the
+// version in the file header with PRAGMA user_version
+// (https://sqlite.org/pragma.html#pragma_user_version).
+// The undo steps stored in the file are cut off. Their changesets name the old tables, and SQLite
+// applies a changeset for a table that no longer exists to nothing and still reports success
+// (https://sqlite.org/session/sqlite3changeset_apply.html). Only their changesets are cleared.
+// Their times are kept for doc_edited.
+// `schema` is "main", or "preset" for an attached preset file. A file with user_version 0 and no
+// `fact` table is new and is only given version 1. A file with a newer version is refused. Returns
+// false with the reason in `why` on failure.
 static bool doc_upgrade(sqlite3* file, const std::string& schema, std::string& why) {
+    // Runs `sql` and returns the first integer of the first row, or -1 if it fails or has no row.
     const auto count = [&](const std::string& sql) { int n = -1; sqlite3_stmt* q = nullptr; if (sqlite3_prepare_v2(file, sql.c_str(), -1, &q, nullptr) == SQLITE_OK && sqlite3_step(q) == SQLITE_ROW) n = sqlite3_column_int(q, 0); sqlite3_finalize(q); return n; };
     const int version = count("pragma " + schema + ".user_version");
     if (version > 1) return why = "the document was made by a newer Motolii (version " + std::to_string(version) + ")", false;
     if (version == 1) return true;
+    // True if `table` exists in the schema.
     const auto has = [&](const char* table) { return count("select count(*) from " + schema + ".sqlite_master where type = 'table' and name = '" + table + "'") > 0; };
     const std::string at = schema + ".";
     std::string sql = "begin;";
+    // Only a file that still has the old tables needs renaming.
     if (has("fact")) {
+        // Create the tables if they are missing so that the renames below cannot fail.
         sql += "create table if not exists " + at + "thing(id integer primary key autoincrement);"
                "create table if not exists " + at + "way(name text primary key, goes text) without rowid;";
-        if (count("select count(*) from pragma_table_info('fact', '" + schema + "') where name = 'way'") == 0) sql += "alter table " + at + "fact add column way text;";   // (from before stretches had ways)
+        // The oldest files have no easing column. Add it before renaming.
+        if (count("select count(*) from pragma_table_info('fact', '" + schema + "') where name = 'way'") == 0) sql += "alter table " + at + "fact add column way text;";
+        // Rename tables and columns to their current names, then rewrite the kind values 'film' to
+        // 'video' and 'picture' to 'image'.
         sql += "alter table " + at + "thing rename to layer;"
                "alter table " + at + "fact rename to keyframe;"
                "alter table " + at + "keyframe rename column thing to layer;"
@@ -28,6 +46,7 @@ static bool doc_upgrade(sqlite3* file, const std::string& schema, std::string& w
                "alter table " + at + "easing rename column goes to expression;"
                "update " + at + "keyframe set value = 'video' where name = 'kind' and value = 'film';"
                "update " + at + "keyframe set value = 'image' where name = 'kind' and value = 'picture';";
+        // Clear the changesets of old undo steps, for the reason given above this function.
         if (has("step")) sql += "alter table " + at + "step rename to undo_step; update " + at + "undo_step set change = null;";
     }
     sql += "pragma " + at + "user_version = 1; commit;";
@@ -36,15 +55,20 @@ static bool doc_upgrade(sqlite3* file, const std::string& schema, std::string& w
     sqlite3_exec(file, "rollback", nullptr, nullptr, nullptr);
     return false;
 }
+// Opens the project file at `path`, creating it if it is not there, upgrades it if needed, and
+// attaches it to the stage `s`. Returns nullptr if the file cannot be opened or is not a project.
 static Doc* doc_open(Stage& s, const char* path) {
     Doc* d = new Doc;
     if (sqlite3_open(path, &d->file) != SQLITE_OK) return nullptr;
-    // (a way defined in the document may ask how far a cubic bezier ease is at u, by its two handles, as the nine kinds'
-    //  Bezier goes: bezier(u, x1, y1, x2, y2))
+    // SQL function bezier(u, x1, y1, x2, y2): how far a cubic Bezier easing with handles (x1, y1)
+    // and (x2, y2) has gone at u. It is the same function the built-in Bezier easing uses, and an
+    // easing defined in the project can call it.
     sqlite3_create_function(d->file, "bezier", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, [](sqlite3_context* c, int, sqlite3_value** v) {
         sqlite3_result_double(c, interp_bezier(interp_clamp(sqlite3_value_double(v[1]), 0.0, 1.0), sqlite3_value_double(v[2]), interp_clamp(sqlite3_value_double(v[3]), 0.0, 1.0), sqlite3_value_double(v[4]), sqlite3_value_double(v[0])));
     }, nullptr, nullptr);
-    // (and how far an ease of anime.js has gone at u, as anime.js says it: anime('outElastic(1, .3)', u), script.h)
+    // SQL function anime(text, u): how far an anime.js easing has gone at u, written as anime.js
+    // writes it, for example anime('outElastic(1, .3)', u). Implemented in script.h. An invalid
+    // easing raises an SQL error.
     sqlite3_create_function(d->file, "anime", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, [](sqlite3_context* c, int, sqlite3_value** v) {
         static const std::string bundle = (doc_engine("third_party/anime") / "anime.umd.min.js").string();
         std::string error;
@@ -52,48 +76,70 @@ static Doc* doc_open(Stage& s, const char* path) {
         if (error.empty()) sqlite3_result_double(c, went);
         else sqlite3_result_error(c, error.c_str(), -1);
     }, nullptr, nullptr);
-    // (and how far another way has gone at u, as it is said: way('Cyclic', u), way('Bezier .2 0 0 1', u). So ways are laid
-    //  over one another, one through another, times or plus it: GSAP's CustomWiggle's timingEase and amplitudeEase,
-    //  Blender's F-Curve stack and its Noise; each begins at its first key and ends at its next, so what they make does too)
-    //  Called easing() too; way() is its name in documents and shelves/ease/*.way from before 2026-11-09 (rename_words.md §3)
+    // SQL functions easing(text, u) and way(text, u): how far the easing named by `text` has gone
+    // at u, for example easing('Cyclic', u) or easing('Bezier .2 0 0 1', u). Easings can therefore
+    // be layered over one another: one through another, multiplied or added, as GSAP's CustomWiggle
+    // does with timingEase and amplitudeEase and as Blender's F-Curve modifier stack and Noise do.
+    // Each easing begins at its first keyframe and ends at the next, so what they make does too.
+    // `way` is the old name of `easing`. It stays registered because projects and
+    // shelves/ease/*.way written before the rename call it (rename_words.md section 3).
     static void (*const ease_by)(sqlite3_context*, int, sqlite3_value**) = [](sqlite3_context* c, int, sqlite3_value** v) {
         const char* text = (const char*)sqlite3_value_text(v[0]);
         const std::string said = text ? text : "";
         const double u = sqlite3_value_double(v[1]);
         Interp kind;
-        sqlite3_result_double(c, u <= 0.0 || u >= 1.0 ? u : interp_said(said, &kind) == 0 ? interp_ease(kind, u) : doc_went_by(*(Doc*)sqlite3_user_data(c), said, u, u, 1.0, 0.0, 1.0));   // (past its ends as it was: an overshoot above it stays one)
+        // Outside the open interval (0, 1) the value is returned as it is, so an overshoot beyond
+        // the ends stays an overshoot.
+        sqlite3_result_double(c, u <= 0.0 || u >= 1.0 ? u : interp_said(said, &kind) == 0 ? interp_ease(kind, u) : doc_went_by(*(Doc*)sqlite3_user_data(c), said, u, u, 1.0, 0.0, 1.0));
     };
     for (const char* name : {"easing", "way"}) sqlite3_create_function(d->file, name, 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, d, ease_by, nullptr, nullptr);
-    sqlite3_busy_timeout(d->file, 2000);   // (another program at the same document is waited for)
+    // Wait up to 2 seconds if another program has the project file locked.
+    sqlite3_busy_timeout(d->file, 2000);
     if (std::string why; !doc_upgrade(d->file, "main", why)) return std::fprintf(stderr, "%s: %s\n", path, why.c_str()), nullptr;
-    // (a key's `easing` is how the stretch from it to the next key goes; `easing` the table holds the easings defined in this document)
+    // In the keyframe table, `easing` is the easing used from that keyframe to the next. The easing
+    // table holds the easings defined in this project.
+    // The layer table only hands out layer numbers. Because it is autoincrement, a number is never
+    // given again. The last statement fills it from the highest layer number in a file that has
+    // none. The setting table holds the app's choices for this project. They are not undo steps
+    // (see doc_setting).
     if (sqlite3_exec(d->file, "create table if not exists keyframe(layer integer, name text, at numeric, value, easing text, primary key(layer, name, at)) without rowid;"
                               "create table if not exists easing(name text primary key, expression text) without rowid;"
                               "create table if not exists undo_step(n integer primary key, change blob, undone integer default 0);"
-                              "create table if not exists layer(id integer primary key autoincrement);"   // (a layer's number is never given again: SQLite's own)
-                              "create table if not exists setting(name text primary key, value text) without rowid;"   // (the window's choices kept with the document, not steps: doc_setting)
+                              "create table if not exists layer(id integer primary key autoincrement);"
+                              "create table if not exists setting(name text primary key, value text) without rowid;"
                               "insert into layer(id) select max(layer) from keyframe where (select count(*) from layer) = 0 having max(layer) is not null", nullptr, nullptr, nullptr) != SQLITE_OK) return nullptr;
-    if (sqlite3_exec(d->file, "select easing from keyframe limit 0", nullptr, nullptr, nullptr) != SQLITE_OK)   // (a document from before stretches had ways)
+    // Files from before easings existed have no easing column.
+    if (sqlite3_exec(d->file, "select easing from keyframe limit 0", nullptr, nullptr, nullptr) != SQLITE_OK)
         sqlite3_exec(d->file, "alter table keyframe add column easing text", nullptr, nullptr, nullptr);
-    if (sqlite3_exec(d->file, "select made from undo_step limit 0", nullptr, nullptr, nullptr) != SQLITE_OK)   // (a document from before its steps kept when they were made)
+    // Files from before undo steps recorded their time have no `made` column.
+    if (sqlite3_exec(d->file, "select made from undo_step limit 0", nullptr, nullptr, nullptr) != SQLITE_OK)
         sqlite3_exec(d->file, "alter table undo_step add column made real", nullptr, nullptr, nullptr);
-    // (a document from before its moments were numeric: SQLite's session keeps a row whose moment is a whole number
-    //  made and then changed in one act as two, if the moment is real, and that step cannot be undone. Made again once)
+    // Files from before `at` became numeric have it as REAL. With a REAL time, SQLite's session
+    // extension records a keyframe that is inserted and then changed in one undo step as two
+    // changes if its time is a whole number, and such a step cannot be undone. Rebuild the table
+    // once with a numeric column.
     bool real = false;
     doc_rows(*d, sqlite3_mprintf("select 1 from pragma_table_info('keyframe') where name = 'at' and type = 'REAL'"), [&](sqlite3_stmt*) { real = true; });
     if (real)
         sqlite3_exec(d->file, "begin; create table keyframe_numeric(layer integer, name text, at numeric, value, easing text, primary key(layer, name, at)) without rowid;"
                               "insert into keyframe_numeric select layer, name, at, value, easing from keyframe; drop table keyframe; alter table keyframe_numeric rename to keyframe; commit", nullptr, nullptr, nullptr);
-    // (a document from before the copy and scatter values were taken out, the Repeater recipe laying them now: a layer that had any of
-    //  them and no script of its own is given the Repeater, and its values under their new names, their keys and ways as they were;
-    //  what drove them (`<name>_by`) is dropped, nothing drives those names now. A step it started from is nothing (the recipe's own
-    //  is .3), and a scatter's seed is the recipe's own too. A layer with another script keeps its old rows, which nothing reads)
+    // Files from before the copy and scatter properties were taken out, when the Repeater recipe
+    // started to provide them. A layer that has any of the old properties and no script of its own
+    // is given the Repeater script, and its properties are renamed to the Repeater's js_ names with
+    // their keyframes and easings kept. The `<name>_by` properties that used to drive them are
+    // deleted because nothing drives those names now.
+    // A layer that had no copy_x gets js_StepX = 0, because the recipe's own default is 0.3. The
+    // old `seed` becomes js_Seed for a layer with scatter properties. A layer with another script
+    // keeps its old rows, which nothing reads.
     if (const std::string repeater = doc_recipe_code_path("Repeater"); !repeater.empty()) {
+        // Pairs of an old property name and the Repeater parameter that replaces it.
         static const char* const moved[][2] = {{"copy_x", "js_StepX"}, {"copy_y", "js_StepY"}, {"copy_z", "js_StepZ"}, {"copy_columns", "js_Columns"}, {"copy_turn", "js_Turn"},
                                                {"copy_rotate", "js_Rotate"}, {"copy_rotate_x", "js_RotateX"}, {"copy_rotate_y", "js_RotateY"}, {"copy_size", "js_Size"}, {"copy_wide", "js_Wide"},
                                                {"scatter_x", "js_ScatterX"}, {"scatter_y", "js_ScatterY"}, {"scatter_z", "js_ScatterZ"}, {"scatter_rotate", "js_ScatterRotate"},
                                                {"scatter_size", "js_ScatterSize"}, {"drift_x", "js_DriftX"}, {"drift_y", "js_DriftY"}};
         std::string names, by, rename;
+        // Build the SQL lists: the old names, their `_by` names, and the CASE branches that rename
+        // them.
         for (const auto& m : moved) {
             names += std::string(names.empty() ? "" : ",") + "'" + m[0] + "'", by += std::string(by.empty() ? "" : ",") + "'" + m[0] + "_by'";
             rename += std::string(" when '") + m[0] + "' then '" + m[1] + "'";
@@ -113,13 +159,16 @@ static Doc* doc_open(Stage& s, const char* path) {
         sqlite3_free(sql);
     }
     d->stage = &s;
+    // Evaluate the project on every frame while it plays.
     s.playing[d] = [d](double now) { doc_evaluate(*d, now); };
+    // Build the stage from the project. A failure is printed but the project opens.
     if (!doc_match(*d)) std::printf("%s\n", d->error.c_str());
     return d;
 }
 
-// One change to the document (in SQLite's own words), kept as one step of undo; the stage shows it at once. If the
-// stage cannot show it, it is not made: the document and the stage stay as they were.
+// Begins an undo step. Calls nest. Only the outermost call opens the SQLite transaction and starts
+// recording changes to the keyframe and easing tables. Every call must be matched by doc_acted. All
+// changes made in between become one undo step.
 static void doc_act(Doc& d) {
     if (d.act++) return;
     sqlite3_exec(d.file, "begin", nullptr, nullptr, nullptr);
@@ -128,10 +177,14 @@ static void doc_act(Doc& d) {
     sqlite3session_attach(d.acting, "easing");
     d.act_ok = true;
 }
+// Rebuilds the stage from the project. Returns false if the stage cannot show it.
 static bool doc_match(Doc& d);
+// Discards the state the stage derived from the project, before doc_match rebuilds it.
 static void doc_forget(Doc& d);
-// What a step changed, as a shell is told it: each value (layer, name) its changeset touches, and whether a layer came
-// or went (its kind written or taken away). The changeset is SQLite's own record of the step: nothing is missed.
+// Records what an undo step changed, so that the app can be told. Each property (layer, name) that
+// the changeset touches goes in d.changed, and each touched layer goes in d.touched.
+// d.layers_changed is set when a layer came or went, that is when its kind was written or removed.
+// The changeset is SQLite's own record of the step, so no change is missed.
 static void doc_note(Doc& d, int size, void* changeset) {
     sqlite3_changeset_iter* it = nullptr;
     if (sqlite3changeset_start(&it, size, changeset) != SQLITE_OK) return;
@@ -140,7 +193,11 @@ static void doc_note(Doc& d, int size, void* changeset) {
         const char* table = nullptr;
         int columns = 0, op = 0, indirect = 0;
         sqlite3changeset_op(it, &table, &columns, &op, &indirect);
-        if (!table || strcmp(table, "keyframe")) { d.layers_changed = true; if (table && !strcmp(table, "easing")) d.touched.push_back(-1); continue; }   // (the ways defined: anything may go another way)
+        // A change to any table other than keyframe sets layers_changed. A change to the easing
+        // table can alter any layer, so -1 is recorded, which means every layer.
+        if (!table || strcmp(table, "keyframe")) { d.layers_changed = true; if (table && !strcmp(table, "easing")) d.touched.push_back(-1); continue; }
+        // Columns 0 and 1 of a keyframe row are the layer and the name. An insert has them in the
+        // new row and any other change in the old row.
         sqlite3_value *layer = nullptr, *name = nullptr;
         (op == SQLITE_INSERT ? sqlite3changeset_new : sqlite3changeset_old)(it, 0, &layer);
         (op == SQLITE_INSERT ? sqlite3changeset_new : sqlite3changeset_old)(it, 1, &name);
@@ -148,12 +205,18 @@ static void doc_note(Doc& d, int size, void* changeset) {
         const std::string n = (const char*)sqlite3_value_text(name);
         d.changed.insert({sqlite3_value_int(layer), n});
         if (sqlite3_value_int(layer) != last) d.touched.push_back(last = sqlite3_value_int(layer));
+        // A kind written or removed means that a layer came or went.
         if (n == "kind" && op != SQLITE_UPDATE) d.layers_changed = true;
     }
     sqlite3changeset_finalize(it);
 }
+// Ends an undo step begun by doc_act. When the outermost call ends, the recorded changes are stored
+// as one undo step and the transaction is committed, or rolled back if any change failed. Returns
+// false if the step was rolled back.
 static bool doc_acted(Doc& d) {
-    if (d.act == 1 && d.act_unmatched) {   // (the act's changes shown once, all of them: if the stage cannot, none of them is made)
+    // Show the changes that were put off on the stage once, all together. If the stage cannot show
+    // them, none of them is made.
+    if (d.act == 1 && d.act_unmatched) {
         d.act_unmatched = false;
         doc_forget(d);
         if (d.act_ok && !doc_match(d)) d.act_ok = false;
@@ -164,29 +227,42 @@ static bool doc_acted(Doc& d) {
     sqlite3session_changeset(d.acting, &size, &changed);
     sqlite3session_delete(d.acting);
     d.acting = nullptr;
-    if (size) doc_note(d, size, changed);   // (an act given up changed them too, and back: shown as they are again)
-    if (d.act_ok && size) {   // (what was undone and not done again is forgotten: a new step follows the last one that stands)
+    // Record the touched properties even for a step that is given up, because the stage showed them
+    // changed and must now show them as they were.
+    if (size) doc_note(d, size, changed);
+    // A new step discards the steps that were undone and not redone, so history stays a single
+    // line.
+    if (d.act_ok && size) {
         sqlite3_exec(d.file, "delete from undo_step where undone", nullptr, nullptr, nullptr);
         sqlite3_stmt* keep = nullptr;
-        sqlite3_prepare_v2(d.file, "insert into undo_step(change, made) values(?, (julianday('now') - 2440587.5) * 86400.0)", -1, &keep, nullptr);   // (and when, in seconds: doc_edited)
+        // Store the step with the time it was made, in seconds since 1970. doc_edited reads it.
+        sqlite3_prepare_v2(d.file, "insert into undo_step(change, made) values(?, (julianday('now') - 2440587.5) * 86400.0)", -1, &keep, nullptr);
         sqlite3_bind_blob(keep, 1, changed, size, SQLITE_TRANSIENT);
         sqlite3_step(keep);
         sqlite3_finalize(keep);
     }
     sqlite3_free(changed);
     sqlite3_exec(d.file, d.act_ok ? "commit" : "rollback", nullptr, nullptr, nullptr);
-    if (!d.act_ok) { doc_forget(d); const std::string why = d.error; doc_match(d); d.error = why; }   // (the stage as the document was before the act)
+    // After a rollback, rebuild the stage from the restored project and keep the error.
+    if (!d.act_ok) { doc_forget(d); const std::string why = d.error; doc_match(d); d.error = why; }
     return d.act_ok;
 }
-// One change to the document (in SQLite's own words), an act by itself unless it is made within one; the stage shows
-// it at once. If the stage cannot show it, it is not made, and no other change of its act is.
+// Applies one SQL change `change` to the project. The string was allocated by SQLite and is freed
+// here. It is an undo step by itself unless it is made within another step. The stage shows the
+// result at once. If the stage cannot show it, the change is not made, and neither is any other
+// change of the same step. Returns true on success. On failure d.error says why.
 static bool doc_change(Doc& d, char* change, bool later) {
     doc_act(d);
-    bool ok = d.act_ok;   // (a change before it in this act was refused: d.error still says why)
+    // If an earlier change in this step was refused, d.error still says why.
+    bool ok = d.act_ok;
+    // The project cannot be changed while it is being exported.
     if (ok && d.writing) ok = false, d.error = "the document is being written as a film: it is not changed until that is done";
     if (ok && !(ok = sqlite3_exec(d.file, change, nullptr, nullptr, nullptr) == SQLITE_OK)) d.error = sqlite3_errmsg(d.file);
     sqlite3_free(change);
-    if (ok && (later || d.act_together) && d.act > 1) d.act_unmatched = true;   // (a key within a larger act, one of a thousand, or any change within motolii_together's: matched once when the act ends)
+    // Within a larger step, rebuild the stage once when the step ends instead of after each change
+    // if `later` is set, as for one key of a thousand, or if the step was started by
+    // motolii_together.
+    if (ok && (later || d.act_together) && d.act > 1) d.act_unmatched = true;
     else if (ok) {
         doc_forget(d);
         ok = doc_match(d);
@@ -195,10 +271,11 @@ static bool doc_change(Doc& d, char* change, bool later) {
     return doc_acted(d) && ok;
 }
 
-// The last step undone (back = true), or the last undone step done again. false: there is none.
-// How long the document has been worked on (Alight Motion's Total Edit Time), from when its steps were made: the time
-// from one to the next counted while it is under a quarter of an hour, a longer one a break (WakaTime's way of
-// counting time at work from its heartbeats, its keystroke timeout 15 minutes by default). Seconds.
+// Returns how long the project has been worked on, in seconds, like Alight Motion's Total Edit
+// Time. It is computed from the times at which the undo steps were made. The gap from one step to
+// the next counts if it is under 15 minutes, and a longer gap is a break. This follows WakaTime's
+// way of counting time at work from its heartbeats, whose keystroke timeout is 15 minutes by
+// default.
 static double doc_edited(Doc& d) {
     double all = 0.0, was = -1.0;
     doc_rows(d, sqlite3_mprintf("select made from undo_step where made is not null order by n"), [&](sqlite3_stmt* row) {
@@ -208,6 +285,8 @@ static double doc_edited(Doc& d) {
     });
     return all;
 }
+// Undoes the last undo step if `back` is true, otherwise redoes the last undone step. Returns false
+// with d.error set if there is none or if the step no longer fits the project.
 static bool doc_undo_step(Doc& d, bool back) {
     int n = 0;
     std::vector<uint8_t> change;
@@ -215,10 +294,14 @@ static bool doc_undo_step(Doc& d, bool back) {
         n = sqlite3_column_int(row, 0);
         change.assign((const uint8_t*)sqlite3_column_blob(row, 1), (const uint8_t*)sqlite3_column_blob(row, 1) + sqlite3_column_bytes(row, 1));
     });
-    if (!n) return d.error = back ? "nothing to undo" : "nothing to do again", false;   // (a step from before doc_upgrade has no change: undo stops there)
+    // Steps whose changeset doc_upgrade cleared are skipped by the query, so undo stops at the
+    // upgrade.
+    if (!n) return d.error = back ? "nothing to undo" : "nothing to do again", false;
     int size = (int)change.size();
     void* apply = change.data();
+    // Undo applies the inverse of the changeset. Redo applies it as stored.
     if (back) sqlite3changeset_invert((int)change.size(), change.data(), &size, &apply);
+    // Any conflict aborts the whole apply.
     const bool ok = sqlite3changeset_apply(d.file, size, apply, nullptr, [](void*, int, sqlite3_changeset_iter*) { return (int)SQLITE_CHANGESET_ABORT; }, nullptr) == SQLITE_OK;
     if (ok) doc_note(d, size, apply);
     if (back) sqlite3_free(apply);
@@ -227,8 +310,9 @@ static bool doc_undo_step(Doc& d, bool back) {
     doc_forget(d);
     return doc_match(d);
 }
-// The way of the stretch that begins at a key, said back in one form: a kind's name as the table writes it and all
-// its numbers, however it was told ("": there is no key of that value at that moment).
+// Returns the easing that runs from the keyframe at time `at` to the next keyframe, in one form:
+// the name of a built-in kind as the table writes it, with all its numbers, however the easing was
+// written. Returns "" if the property has no keyframe at that time.
 static std::string doc_easing_of(Doc& d, int layer, const char* name, double at) {
     std::string said;
     doc_rows(d, sqlite3_mprintf("select coalesce(easing, 'Linear') from keyframe where layer = %d and name = %Q and at = %!.17g and " DOC_KEYED, layer, name, at, layer, name),
@@ -237,6 +321,6 @@ static std::string doc_easing_of(Doc& d, int layer, const char* name, double at)
     return !said.empty() && interp_said(said, &kind) == 0 ? interp_words(kind) : said;
 }
 
-// Whether a call names a layer that is there and tells it something a layer of its kind can be told (if not,
-// d.error says what it can be told).
+// Checks that a call names a layer that exists and sets something a layer of its kind accepts. If
+// not, d.error says what it accepts.
 static std::string doc_words(Doc& d, int layer, const char* name);

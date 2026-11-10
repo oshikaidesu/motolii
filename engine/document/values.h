@@ -1,8 +1,16 @@
-// values.h: part of doc.h (the values a layer may have, and how each is shown). Read only through doc.h.
+// Lists every property a layer may have and how the inspector shows it.
+// Included by doc.h; not self-contained.
+
+// One entry per property. The fields of DocShown are: property name, kind of control, unit,
+// label shown to the user, lowest and highest value of the slider, and the name of the fold
+// the property is grouped under (nullptr for none). The slider range is for display only;
+// typed values may go beyond it.
 static const DocShown doc_shown[] = {
     { "text", "words", "", "Text", 0, 0, nullptr },
     { "file", "file", "", "Font", 0, 0, nullptr },
-    { "fill_media", "file", "", "Media", 0, 0, nullptr }, // (a shape filled with a picture: Alight Motion's Fill > Media; put from the Media shelf's Fill)
+    // An image that fills a shape, as in Alight Motion's Fill > Media. It is chosen from the Fill
+    // button of the Media shelf.
+    { "fill_media", "file", "", "Media", 0, 0, nullptr },
     { "size", "", "px", "Size", 0, 2, nullptr },
     { "align", "share", "%", "Align", 0, 1, nullptr },
     { "fill", "colours", "", "Fill", 0, 0, nullptr },
@@ -67,15 +75,18 @@ static const DocShown doc_shown[] = {
     { "field_x", "stage", "px", "At X", -3, 3, nullptr },
     { "field_y", "down", "px", "At Y", -2, 2, nullptr },
     { "field_radius", "stage", "px", "Size", 0, 4, nullptr },
-    { "strength", "share", "%", "Strength", 0, 1, nullptr }, // (a relation's: how much of it works)
+    // How much of a relation's effect applies.
+    { "strength", "share", "%", "Strength", 0, 1, nullptr },
     { "radius", "stage", "px", "Radius", 0, 2, nullptr },
-    { "tilt", "angle", "°", "Tilt", -90, 90, nullptr }, // (an around's ring tipped back: 0 faces the camera, 90 lies flat)
+    // Tilt of the ring of an "around" arrangement: 0 faces the camera and 90 lies flat.
+    { "tilt", "angle", "°", "Tilt", -90, 90, nullptr },
     { "gap", "stage", "px", "Gap", -1, 1, nullptr },
     { "centre_x", "stage", "px", "Centre X", -2, 2, nullptr },
     { "centre_y", "down", "px", "Centre Y", -2, 2, nullptr },
     { "leader", "thing", "", "Leader", 0, 0, nullptr },
     { "leader_b", "thing", "", "Hand to", 0, 0, nullptr },
-    { "region", "thing", "", "Falloff", 0, 0, nullptr }, // (a behaviour's or a relation's: the shape it works inside, Cavalry's Falloff)
+    // The shape inside which a behaviour or a relation works, like Cavalry's Falloff.
+    { "region", "thing", "", "Falloff", 0, 0, nullptr },
     { "falloff_soft", "stage", "px", "Soft", 0, 2, nullptr },
     { "falloff_invert", "onoff", "", "Invert", 0, 1, nullptr },
     { "hand", "share", "%", "Handed", 0, 1, nullptr },
@@ -87,7 +98,8 @@ static const DocShown doc_shown[] = {
     { "field_band", "stage", "px", "Ring", 0, 2, nullptr },
     { "field_z", "stage", "px", "At Z", -2, 2, nullptr },
     { "field_rotate", "angle", "°", "Turn", -180, 180, nullptr },
-    { "seed", "seed", "", "Seed", 0, 9999, "Wiggle" }, // (a shape's wiggle's, on its Deform card; a behaviour's own too)
+    // The random seed of a shape's wiggle, shown on its Deform card. Behaviors have their own seed.
+    { "seed", "seed", "", "Seed", 0, 9999, "Wiggle" },
     { "emissive", "", "×", "Light up", 0, 10, nullptr },
     { "marker", "", "", "Part", 0, 0, nullptr },
     { "cel", "", "", "Drawing", 1, 100, nullptr },
@@ -99,9 +111,12 @@ static const DocShown doc_shown[] = {
     { "time_remap_loop", "", "", "Loop", 0, 0, nullptr },
     { "retime", "", "", "Re-timing", 0, 0, nullptr },
     { "retime_in", "", "s", "End of intro", 0, 10, nullptr },
-    { "retime_out", "", "s", "Start of outro", 0, 10, nullptr }, // (an element's, Alight Motion's)
-    { "frame_rate", "", "fps", "Frame rate", 0, 60, nullptr }, // (0: as smooth as the stage)
-    { "volume", "share", "%", "Volume", 0, 2, nullptr }, // (1 shown as 100%, as Alight Motion shows it)
+    // Retiming of a nested element, as in Alight Motion.
+    { "retime_out", "", "s", "Start of outro", 0, 10, nullptr },
+    // 0 means the layer is sampled as smoothly as the stage.
+    { "frame_rate", "", "fps", "Frame rate", 0, 60, nullptr },
+    // A value of 1 is shown as 100%, as Alight Motion shows it.
+    { "volume", "share", "%", "Volume", 0, 2, nullptr },
     { "beats", "", "dB", "Beats", 0, 30, nullptr },
     { "clip_matte", "", "", "Cut by", 0, 0, nullptr },
     { "clip_invert", "onoff", "", "Invert", 0, 1, nullptr },
@@ -111,7 +126,8 @@ static const DocShown doc_shown[] = {
     { "connect", "thing", "", "Join", 0, 0, nullptr },
     { "x", "", "px", "Position X", -4, 4, nullptr },
     { "y", "", "px", "Position Y", -3, 3, nullptr },
-    { "z", "", "px", "Position Z", -6, 6, nullptr }, // (in points of the picture from its top left: motolii_reading)
+    // Measured in image points from the top left corner; see motolii_reading.
+    { "z", "", "px", "Position Z", -6, 6, nullptr },
     { "scale_x", "share", "%", "Scale X", 0, 4, nullptr },
     { "scale_y", "share", "%", "Scale Y", 0, 4, nullptr },
     { "scale_z", "share", "%", "Scale Z", 0, 4, nullptr },
@@ -126,8 +142,9 @@ static const DocShown doc_shown[] = {
     { "label", "", "", "Label colour", 0, 0, nullptr },
     { "distance", "", "px", "Distance", 0.05, 4, nullptr },
     { "zoom", "share", "%", "Zoom", 0.1, 4, nullptr },
-    // (After Effects' Focus Distance, Blender's F-Stop; the knobs go as far as the Camera pane's top view (3000 points of a 1080 picture, 8.9 units)
-    //  and f/22; typed further as kinds.h takes: 1e4, 64)
+    // Focus distance and aperture follow After Effects' Focus Distance and Blender's F-Stop. The
+    // sliders reach as far as the top view of the camera panel, 3000 points of a 1080-point-high
+    // image or 8.9 units, and f/22. Typed values may go as far as kinds.h allows: 1e4 and 64.
     { "focus", "stage", "px", "Focus Distance", 0, 9, nullptr },
     { "aperture", "", "", "F-Stop", 0, 22, nullptr },
     { "anchor_x", "", "%", "Anchor X", -1, 1, "Anchor" },
@@ -140,7 +157,7 @@ static const DocShown doc_shown[] = {
     { "scale_assist", "", "", "Assist", 0, 0, nullptr },
     { "scale_assist_amount", "share", "%", "Scale", 0, 4, nullptr },
     { "scale_assist_damp", "share", "%", "Damp", 1, 3, nullptr },
-    { "roll_radius", "", "", "Roll radius", -5, 5, nullptr }, // (the layer it goes with: shown by its name)
+    { "roll_radius", "", "", "Roll radius", -5, 5, nullptr },
     { "mosh_with", "thing", "", "Motion of", 0, 0, nullptr },
     { "dissolve", "", "", "Dissolve", 0, 2, nullptr },
     { "grain", "share", "%", "Grain", 0.1, 4, nullptr },
@@ -226,7 +243,8 @@ static const DocShown doc_shown[] = {
     { "crop_left", "share", "%", "Left", 0, 0.95, nullptr },
     { "crop_top", "share", "%", "Top", 0, 0.95, nullptr },
     { "crop_right", "share", "%", "Right", 0, 0.95, nullptr },
-    { "crop_bottom", "share", "%", "Bottom", 0, 0.95, nullptr }, // (where it is all but whole: Alight Motion's far; 0 not said, the fog's own thickness)
+    // The crop sliders stop at 0.95, almost the whole image, which is as far as Alight Motion goes.
+    { "crop_bottom", "share", "%", "Bottom", 0, 0.95, nullptr },
     { "fog_color", "colour", "", "Fog", 0, 0, "Tints" },
     { "lens_flare", "share", "%", "Flare", 0, 1, nullptr },
     { "anti_aliasing", "", "", "Smooth", 0, 0, nullptr },

@@ -1,18 +1,31 @@
-// calls_map.h: part of motolii.mm, read before calls.h. The shelves' maps: what is alike lies near, as XLN Audio's
-// XO lays its samples out by how alike they sound, by t-SNE (its head of software design to Computer Music, 2019), here
-// qdtsne's (MIT, third_party/qdtsne), its quick start as it is; and a font's letters drawn small to be told by, as IDEO's
-// Font Map laid fonts out by their drawn letters.
+// Included by motolii.mm; not self-contained. Implements the shelf maps declared in motolii.h:
+// motolii_map lays items out on a plane so that similar ones lie near each other, motolii_grid
+// snaps such a layout to a grid, motolii_likeness describes images as vectors, and
+// motolii_type_frame draws a font specimen.
+//
+// XLN Audio's XO lays out samples by how alike they sound using t-SNE, and IDEO's Font Map lays
+// out fonts by their drawn letters. The shelves use the same idea. The t-SNE is qdtsne (MIT,
+// third_party/qdtsne), used as in its quick start.
 
+// Lays out n points of dims numbers each on a plane with t-SNE, so that similar points lie near
+// each other. points holds the n points one after another. Writes 2n numbers to xy, with x and y
+// each scaled to the range 0 to 1. Returns n, or 0 if there are fewer than 4 points or an
+// argument is invalid.
 int motolii_map(const float* points, int n, int dims, double* xy) {
     if (!points || !xy || n < 4 || dims < 1) return 0;
-    std::vector<double> data(points, points + (size_t)n * (size_t)dims);   // (a point a column: qdtsne's column-major)
+    // qdtsne expects column-major data: one point per column.
+    std::vector<double> data(points, points + (size_t)n * (size_t)dims);
     knncolle::VptreeBuilder<int, double, double> near(std::make_shared<knncolle::EuclideanDistance<double, double>>());
     qdtsne::Options o;
-    o.perplexity = std::min(o.perplexity, (n - 1) / 3.0);   // (its own 30, or what so few allow: three neighbours to a unit, perplexity_to_k)
+    // The perplexity is qdtsne's default of 30, or less when there are few points,
+    // because qdtsne needs about three neighbours per unit of perplexity.
+    o.perplexity = std::min(o.perplexity, (n - 1) / 3.0);
     auto status = qdtsne::initialize<2>((std::size_t)dims, n, data.data(), near, o);
-    auto y = qdtsne::initialize_random<2>((std::size_t)n);   // (its own seed: the same points, the same map)
+    // qdtsne's default seed, so the same points always give the same map.
+    auto y = qdtsne::initialize_random<2>((std::size_t)n);
     status.run(y.data());
-    for (int axis = 0; axis < 2; ++axis) {   // (each way from 0 to 1: where on the shelf's plane)
+    // Scale each axis to the range 0 to 1, where the shelf's plane lies.
+    for (int axis = 0; axis < 2; ++axis) {
         double lo = y[axis], hi = y[axis];
         for (int i = 0; i < n; ++i) lo = std::min(lo, y[2 * i + axis]), hi = std::max(hi, y[2 * i + axis]);
         for (int i = 0; i < n; ++i) xy[2 * i + axis] = hi > lo ? (y[2 * i + axis] - lo) / (hi - lo) : 0.5;
@@ -20,11 +33,15 @@ int motolii_map(const float* points, int n, int dims, double* xy) {
     return n;
 }
 
-// Those places each given a cell of a cols x rows grid, the one nearest them all told (none on another): Kyle McDonald's
-// CloudToGrid, a t-SNE map's pictures on a grid as it does it (its nodes 0 to 1 each way as np.linspace, the cost each
-// place's squared distance to each node), the assignment solved by SciPy's own linear_sum_assignment
-// (third_party/scipy_lsap, BSD-3, as it is). cell[i]: row * cols + column. 0: not solved, too few cells, or so many
-// that each to each is past 4 million (32 MB, some seconds: about 2,000 on a grid).
+// Assigns each of n places in xy (x and y in 0 to 1) its own cell of a cols x rows grid, so that
+// the total squared distance between each place and its cell is as small as possible. cell[i]
+// receives row * cols + column. This follows Kyle McDonald's CloudToGrid, which puts the images
+// of a t-SNE map on a grid: the grid nodes are spaced evenly from 0 to 1 on each axis, as
+// np.linspace does, and the cost is the squared distance from each place to each node. The
+// assignment is solved by SciPy's linear_sum_assignment (third_party/scipy_lsap, BSD-3,
+// unmodified). Returns n, or 0 if an argument is invalid, there are fewer cells than places, or
+// n times the number of cells exceeds 4 million, which takes 32 MB and some seconds, about 2,000
+// places on a square grid.
 int motolii_grid(const double* xy, int n, int cols, int rows, int* cell) {
     if (!xy || !cell || n < 1 || cols < 1 || rows < 1 || (long)cols * rows < n || (long)n * cols * rows > 4000000) return 0;
     const int cells = cols * rows;
@@ -40,11 +57,14 @@ int motolii_grid(const double* xy, int n, int cols, int rows, int* cell) {
     return n;
 }
 
-// Each of n pictures (224 points square, RGBA, one after another) told as `dims` numbers by a CLIP image encoder in an
-// ONNX file (OpenAI CLIP ViT-B/32's, or FontCLIP's, as deps/likeness_models.py writes them): the picture made into CLIP's
-// own input (clip.py _transform's Normalize, its mean and spread), run by ONNX Runtime (its C++ API: Env, Session, Run),
-// each answer made one long, as FontMap keeps its FontCLIP numbers (L2-normalised). A model once opened is kept open.
-// 0: not told (no such model, or it answers otherwise).
+// Describes each of n images as a vector of `dims` numbers using a CLIP image encoder stored as
+// an ONNX file, either OpenAI CLIP ViT-B/32 or FontCLIP, as engine/deps/likeness_models.py
+// writes them. rgba holds the images one after another, each 224 x 224 pixels in RGBA. The
+// pixels are normalized with CLIP's own mean and standard deviation (clip.py, _transform's
+// Normalize) and run with the ONNX Runtime C++ API (Env, Session, Run). Each output vector is
+// scaled to length 1 (L2 normalization), as FontMap does with its FontCLIP vectors. Writes
+// n * dims floats to out. A model, once opened, stays open for the life of the process.
+// Returns n, or 0 if the model file does not exist or its output is not n x dims.
 int motolii_likeness(const char* model, const unsigned char* rgba, int n, int dims, float* out) {
     constexpr int side = 224, area = side * side;
     if (!model || !rgba || !out || n < 1 || dims < 1 || !std::filesystem::is_regular_file(model)) return 0;
@@ -87,25 +107,31 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n, int di
     }
 }
 
-// The words in a font file, white on black w by h, as large as they fit with a point round them (no larger than size
-// `most`, when it is more than 0), a byte a point (how much is covered): ThorVG's own CPU canvas, as aviutl_load.h
-// draws a script's words; the font let go again after, as type_sets does (a font only asked about leaves memory).
-// 0: not drawn.
+// Draws words in the font file as white on black into grey, a w x h image with one byte per
+// pixel giving how much of the pixel is covered. The text is as large as fits with a margin of
+// one pixel on each side, and no larger than font size `most` when most is above 0. It is drawn
+// on ThorVG's CPU canvas, as aviutl_load.h draws a script's text. The font is unloaded
+// afterwards, as type_sets does, so a font that was only queried does not stay in memory.
+// Returns 1 on success, or 0 if the text could not be drawn.
 int motolii_type_frame(const char* font, const char* words, int w, int h, float most, unsigned char* grey) {
     if (!font || !words || !grey || w < 3 || h < 3 || w > 1024 || h > 1024 || !std::filesystem::is_regular_file(font)) return 0;
-    tvg::Initializer::init(0);   // (ThorVG makes no canvas when it is not started: aviutl_drawn)
+    // ThorVG creates no canvas unless it has been initialized.
+    tvg::Initializer::init(0);
     if (tvg::Text::load(font) != tvg::Result::Success) return 0;
     std::vector<uint32_t> px((size_t)w * (size_t)h, 0);
     tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
     tvg::Text* t = tvg::Text::gen();
-    t->font(std::filesystem::path(font).stem().string().c_str());   // (ThorVG names a font by its file)
+    // ThorVG identifies a loaded font by its file name without the extension.
+    t->font(std::filesystem::path(font).stem().string().c_str());
     t->size(100.f);
     t->text(words);
     t->fill(255, 255, 255);
     float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
     bool drew = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success && wide > 0.f && tall > 0.f;
     if (drew) {
-        const float k = std::min((w - 2) / wide, (h - 2) / tall), by = most > 0.f ? std::min(k, most / 100.f) : k;   // (as FontMap sets its specimen at 75, never larger)
+        // Fit the text inside the image with a one pixel margin. FontMap sets its specimen at
+        // size 75 and never larger.
+        const float k = std::min((w - 2) / wide, (h - 2) / tall), by = most > 0.f ? std::min(k, most / 100.f) : k;
         t->scale(by);
         t->translate((w - wide * by) / 2 - x * by, (h - tall * by) / 2 - y * by);
         drew = canvas->target(px.data(), w, w, h, tvg::ColorSpace::ABGR8888) == tvg::Result::Success && canvas->add(t) == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
@@ -113,6 +139,7 @@ int motolii_type_frame(const char* font, const char* words, int w, int h, float 
     delete canvas;
     tvg::Text::unload(font);
     if (!drew) return 0;
-    for (size_t i = 0; i < px.size(); ++i) grey[i] = (unsigned char)(px[i] & 0xFF);   // (white, premultiplied: any channel is how much is covered)
+    // The text is white and premultiplied, so any channel is the coverage.
+    for (size_t i = 0; i < px.size(); ++i) grey[i] = (unsigned char)(px[i] & 0xFF);
     return 1;
 }

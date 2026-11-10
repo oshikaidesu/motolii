@@ -1,13 +1,20 @@
-// absent_ends.cpp: AbsentMotion's own ends of a line (Alight Motion's line start and end: arrow, t-line, square,
-// diamond, arrow, circle and teardrop, hollow or filled: its styles.cpp DrawStrokeEnd; Apache-2.0, Copyright 2026 The
-// AbsentMotion authors). Its styles.cpp is read whole into this file as it is, so that its own drawing of an end, kept
-// to that file, is called from here; what else of it is not reached is stripped (gpu/filament_webgpu.sh, -dead_strip).
+// Line ends from AbsentMotion: the start and end shapes of a line (arrow, t-line, square, diamond,
+// circle and teardrop, hollow or filled), drawn by DrawStrokeEnd in AbsentMotion's styles.cpp.
+// That function matches Alight Motion's line start and end. AbsentMotion is Apache-2.0,
+// Copyright 2026 The AbsentMotion authors.
+//
+// styles.cpp is included whole and unchanged so that DrawStrokeEnd, which is private to that
+// file, can be called from here. The rest of styles.cpp is never called and is removed by the
+// linker (gpu/filament_webgpu.sh, -dead_strip).
 #include "styles.cpp"
 #include "community/absent_motion/absent_motion.h"
 #include "include/utils/SkParsePath.h"
 
+// See absent_motion.h.
 std::string absent_line_end(float x, float y, float dx, float dy, float r, float width, int cap, int join, const char* style) {
-    SkPaint paint;   // (as its StrokePaint makes a line's: round and bevelled unless the line says otherwise)
+    // The same paint that AbsentMotion's StrokePaint makes for a line: round caps and bevel joins
+    // unless the line asks for another cap or join.
+    SkPaint paint;
     paint.setAntiAlias(true);
     paint.setStrokeWidth(width);
     paint.setStrokeCap(cap == 0 ? SkPaint::kButt_Cap : cap == 2 ? SkPaint::kSquare_Cap : SkPaint::kRound_Cap);

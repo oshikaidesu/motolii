@@ -1,9 +1,14 @@
-// viewer_settings.h: Filament's own settings file as a whole-screen effect on the shelf. The file is libs/viewer's JSON
-// (viewer/Settings.h: {"view": {"colorGrading": {...}, "bloom": {...}, "fog": {...}, ...}}, what gltf_viewer saves and
-// reads); its numbers and on-offs are parameters on its card, as an After Effects file's slots are (lottie_slots.h, and by its
-// rule for a range none says), and the values as they are now are read back by Filament's own JsonSerializer and laid
-// on the stage's view over what the stage's own values make (document/camera.h doc_look): a part the file does not name stays
-// as the stage has it. Its words (enum names: a tone mapping, a custom LUT) are not parameters: the file says them.
+// Filament's own settings file as a whole-screen effect on the shelf.
+//
+// The file is the JSON of Filament's libs/viewer, as saved and read by gltf_viewer:
+// {"view": {"colorGrading": {...}, "bloom": {...}, "fog": {...}, ...}} (see viewer/Settings.h).
+// Its numbers and on/off switches become parameters on the effect's card, as the slots of an
+// After Effects file do (see community/after_effects/lottie_slots.h, whose rule for a range is
+// used when none is given). The current values are written back into the file's text, read by
+// Filament's JsonSerializer, and laid on the stage's view over the values the stage itself sets
+// (see doc_look in document/camera.h). A part the file does not mention keeps the stage's values.
+// Words such as enum names (a tone mapping, a custom LUT) are not parameters; they stay as the
+// file says them.
 #pragma once
 #include "community/quickjs/script.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
@@ -19,7 +24,8 @@
 #include <string>
 #include <vector>
 
-// The file's text, read again only after the window says a file changed (files_changed).
+// Returns the text of the settings file. It is read again only after the window reports that a
+// file changed (see files_changed).
 static const std::string& viewer_text(const std::string& file) {
     struct CachedSettings { int seen = -1; std::string text; };
     static std::map<std::string, CachedSettings> cache;
@@ -32,11 +38,15 @@ static const std::string& viewer_text(const std::string& file) {
     }
     return one.text;
 }
-// Read as Filament's own reader (jsmn, not strict, numbers by strtof) takes what Filament's own writer makes: a comma
-// before a closing brace (its agxToneMapper), none after a list (its cascadeSplitPositions), a colour space said bare
-// ("colorspace": Rec709-sRGB-D65) and a fog that never ends said inf (Settings.cpp's writeJson); an After Effects file
-// has its layers.
+// Parses `text` into `doc`. Returns true if it is a viewer settings file: a JSON object with a
+// "view" object and no "layers" (an After Effects file has layers).
+//
+// The text is first adjusted to what Filament's own writer produces and its reader accepts (jsmn,
+// not strict, numbers by strtof): a comma before a closing brace (its agxToneMapper), none after
+// a list (its cascadeSplitPositions), a color space written bare ("colorspace": Rec709-sRGB-D65),
+// and a fog that never ends written as inf (writeJson in Settings.cpp).
 static bool viewer_read(std::string text, rapidjson::Document& doc) {
+    // Replaces every occurrence of `was` in the text with `as`.
     const auto say = [&](const std::string& was, const std::string& as) {
         for (size_t at = text.find(was); at != std::string::npos; at = text.find(was, at + as.size())) text.replace(at, was.size(), as);
     };
@@ -45,18 +55,24 @@ static bool viewer_read(std::string text, rapidjson::Document& doc) {
     constexpr unsigned loose = rapidjson::kParseTrailingCommasFlag | rapidjson::kParseNanAndInfFlag;
     return !doc.Parse<loose>(text.c_str()).HasParseError() && doc.IsObject() && doc.HasMember("view") && doc["view"].IsObject() && !doc.HasMember("layers");
 }
+// Returns true if the file is a viewer settings file.
 static bool viewer_is(const std::string& file) {
     rapidjson::Document doc;
     return viewer_read(viewer_text(file), doc);
 }
 
-// Each parameter's words: "viewer <its place in the file, a JSON Pointer> <which of its numbers, -1 when it is one>".
+// Appends to `parameters` one parameter for each boolean, number, or array of up to four numbers
+// found under `v`, descending through objects. `at` is the JSON Pointer of `v` in the file,
+// starting with "/view". Each parameter's `words` is
+// "viewer <JSON Pointer> <index of the number in its array, or -1 for a single value>".
+// Other values, such as strings and longer arrays, are skipped.
 static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::vector<ScriptParameter>& parameters) {
     if (v.IsObject()) {
         for (auto& m : v.GetObject()) viewer_walk(m.value, at + "/" + m.name.GetString(), parameters);
         return;
     }
-    std::string name = at.substr(6), label = name;   // (after "/view/")
+    // Drop the leading "/view/" from the name.
+    std::string name = at.substr(6), label = name;
     for (char& c : name) if (c == '/') c = '_';
     for (char& c : label) if (c == '/') c = ' ';
     if (v.IsBool()) {
@@ -75,12 +91,15 @@ static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::v
         one.name = v.IsArray() ? name + "_" + xyzw[i] : name;
         one.label = v.IsArray() ? label + " " + xyzw[i] : label;
         one.usual = n[i];
-        one.low = n[i] < 0 ? 4 * n[i] : 0, one.high = std::max(1.0, 4 * std::fabs(n[i]));   // (lottie_slots.h's rule for a range none says)
+        // The range follows the rule of lottie_slots.h for a value with no stated range.
+        one.low = n[i] < 0 ? 4 * n[i] : 0, one.high = std::max(1.0, 4 * std::fabs(n[i]));
         one.step = 0.001;
         one.words = "viewer " + at + " " + std::to_string(v.IsArray() ? (int)i : -1);
         parameters.push_back(one);
     }
 }
+// Returns the parameters for all the numbers and switches under "view" in the file; empty if
+// the file is not a viewer settings file.
 static std::vector<ScriptParameter> viewer_parameters(const std::string& file) {
     std::vector<ScriptParameter> parameters;
     rapidjson::Document doc;
@@ -88,7 +107,9 @@ static std::vector<ScriptParameter> viewer_parameters(const std::string& file) {
     return parameters;
 }
 
-// The file with each parameter's number now put in its place, as Filament's JsonSerializer reads it ("" when it does not read).
+// Returns the file's text with each parameter's current value written into its place, in the
+// form Filament's JsonSerializer reads, or "" if the file cannot be read. `now(k)` returns the
+// current value of parameter k.
 static std::string viewer_said(const std::string& file, const std::vector<ScriptParameter>& parameters, const std::function<double(size_t)>& now) {
     rapidjson::Document doc;
     if (!viewer_read(viewer_text(file), doc)) return "";
@@ -104,7 +125,8 @@ static std::string viewer_said(const std::string& file, const std::vector<Script
         else if (v->IsArray() && i >= 0 && i < (int)v->Size()) (*v)[i].SetDouble(now(k));
     }
     rapidjson::StringBuffer out;
-    rapidjson::Writer<rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>, rapidjson::CrtAllocator, rapidjson::kWriteNanAndInfFlag> write(out);   // (Infinity: strtof reads it)
+    // Infinity is written as such, because strtof reads it.
+    rapidjson::Writer<rapidjson::StringBuffer, rapidjson::UTF8<>, rapidjson::UTF8<>, rapidjson::CrtAllocator, rapidjson::kWriteNanAndInfFlag> write(out);
     doc.Accept(write);
     return out.GetString();
 }

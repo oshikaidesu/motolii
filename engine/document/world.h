@@ -1,12 +1,20 @@
-// world.h: part of doc.h (relations written as files, and the world those that push share). Read only through doc.h.
+// Evaluates relations that are written as script files, and the shared simulated world that the
+// relations which push layers act on.
+// Included by doc.h; not self-contained.
 
-// Whether a kept solve has had its 5 ms of this picture, as React's Scheduler yields: a window shows the frames it has
-// till they are made again; a film, a still, a picture kept and Bake wait for all of it (DocExact).
+// Returns true if a cached solve has used up its 5 ms time slice for this image, so it should
+// yield, as React's Scheduler does. The app then shows the frames it already has until the rest
+// are computed. Video export, still-image export, cached images and Bake never yield and wait
+// for the whole solve (see DocExact).
 static bool doc_spent(const Doc& d) { return d.live && !d.exact && !d.writing && std::chrono::steady_clock::now() - d.slice > std::chrono::milliseconds(5); }
+// While alive, copies the layers that a cached solve read into d.reading, so that the caller's own
+// dependency tracking sees them even when the cached result is returned.
 struct DocKeptTells { Doc& d; Doc::RelatedKept& k; ~DocKeptTells() { if (d.reading) d.reading->insert(k.reads.begin(), k.reads.end()); } };
-// Whether what is kept stands for this moment. A step that touches nothing it reads leaves it be (SQLite's changeset,
-// doc_note; what it reads as a build system's dynamic dependencies are found, by watching); any other goes on only from
-// the first frame told otherwise, as GGPO's rollback goes back to the input that differed and runs on.
+// Returns true if the cache `k` is still valid for time `t`. An undo step that changes nothing the
+// solve read leaves the cache alone. What the solve read is found by watching it run, like the
+// dynamic dependencies of a build system, and changes are detected with SQLite's changeset
+// (see doc_note). Any other change invalidates the cache only from the first frame whose input
+// differs, as GGPO's rollback returns to the first differing input and runs forward from there.
 static bool doc_kept_stands(Doc& d, Doc::RelatedKept& k, double t) {
     const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
     const bool same = k.changes == changes && k.made == doc_scripts_made(d) && k.seen == d.touched.size();
@@ -17,8 +25,10 @@ static bool doc_kept_stands(Doc& d, Doc::RelatedKept& k, double t) {
     k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.behind = false;
     return false;
 }
-// From the start of the stage a frame at a time at p5_stand.h's 60, each kept so going back asks nothing: tell(f) says
-// what the frame is told, make(said, f) works it out, only if it was told otherwise. False if nothing can be shown.
+// Solves frames one at a time from the start of the stage at 60 frames per second, the rate of
+// p5_stand.h, and caches each so that going back costs nothing. tell(f) returns the input for
+// frame f. make(input, f) computes the frame and is called only when the input differs from the
+// cached one. Returns false if no frame can be shown.
 template <class Tell, class Make> static bool doc_kept_walk(Doc& d, Doc::RelatedKept& k, double t, Tell tell, Make make) {
     const size_t frame = (size_t)std::max(0.0, std::round(t * 60.0));
     while (k.sure <= frame) {
@@ -34,6 +44,8 @@ template <class Tell, class Make> static bool doc_kept_walk(Doc& d, Doc::Related
     }
     return !k.frames.empty();
 }
+// Returns the script parameters of relation `by` at time `at` as the text of a JavaScript object
+// literal. Choice parameters send the selected word, or the first choice when none is selected.
 static std::string doc_relate_parameters(Doc& d, int by, const DocScript& sc, double at) {
     std::ostringstream js;
     js.precision(12);
@@ -47,12 +59,18 @@ static std::string doc_relate_parameters(Doc& d, int by, const DocScript& sc, do
     js << '}';
     return js.str();
 }
-// What a relation written as a file says of all its layers at a moment. Its relate() is told them all at once, as a Python
-// Effector in Cinema 4D's Full Control is, not one value at a time as the kinds in relations.h: each one's place can
-// hang on all the others. For each layer, doc_relate_names in turn. Empty: no file, or it failed (what is under it shows,
-// and it says why). One whose relate() takes a fourth argument remembers, as Cavalry's Value Solver and Context's
-// saveObject: told what it said the frame before, null at the first. It sleeps while its Strength is 0, as Houdini's
-// Activation: what is under it shows, and it wakes where those layers are then. Held by hand, it waits.
+// Returns the values that relation `by`, written as a script file, gives all its layers at time
+// `t`. For each layer the values are those named in doc_relate_names, in order. The script's
+// relate() receives all layers at once, as a Python Effector in Cinema 4D's Full Control does,
+// rather than one value at a time as the kinds in relations.h do, so each layer's result can
+// depend on all the others.
+// Returns an empty vector if there is no script or it failed; the layers underneath then show
+// unchanged, and the script's error is reported.
+// If relate() takes a fourth argument, the script keeps state, as Cavalry's Value Solver and
+// Context's saveObject do: it receives its own result from the previous frame, and null at the
+// first frame. While Strength is 0 the relation sleeps, as Houdini's Activation does, and the
+// layers underneath show; when it wakes it continues from where those layers are then. While
+// the user is dragging a value it waits.
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
     Doc::RelatedKept& k = d.relatedKept[by];
     DocKeptTells tells{d, k};
@@ -87,7 +105,8 @@ static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
         js << "]," << at << ',' << doc_relate_parameters(d, by, *sc, at) << ',' << by << ',' << frame << ',' << (!k.solves || doc_number(d, by, "strength", at, 1) > 0 ? "true" : "false") << ')';
         return js.str();
     };
-    const auto told = [&](double at, size_t frame) {   // (watching what it reads, at the first)
+    // Builds the input as `tell` does. On the first frame it also records which layers are read.
+    const auto told = [&](double at, size_t frame) {
         std::set<int>* const outer = d.reading;
         if (!frame) k.reads.clear(), d.reading = &k.reads;
         const std::string js = tell(at, frame);
@@ -103,24 +122,35 @@ static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
     return k.values;
 }
 
-// Whether a relation written as a file pushes: force(), not relate().
+// Returns true if the script of relation `by` defines force(), meaning it pushes layers, rather
+// than relate().
 static bool doc_pushes(Doc& d, int by) {
     DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
     if (!sc || !sc->run || !sc->run->ok()) return false;
     if (sc->pushes < 0) { const std::vector<double> has = sc->run->numbers("Float64Array.of(typeof force == 'function' ? 1 : 0)"); sc->pushes = !has.empty() && has[0] > 0; }
     return sc->pushes > 0;
 }
-// The relations that push share one world, as Houdini's POP microsolvers share one stream of particles: each layer is
-// one particle, where it is and how fast it goes, whichever of them are on it. All are told the frame as it stands and
-// each adds to the speed, the contract of d3-force ("read the node's current position and then add to the node's
-// velocity"), so d3's own forces run as they are. What each adds is weighed by its Strength and Falloff (Cavalry's: a
-// multiplier on its Strength), added up as the POP Solver's microsolvers "accumulate forces", and the world moves each
-// by its speed once, as d3-force's tick. So a rule changes without a jolt: the speed goes on, whoever gives it.
-// A layer none is pushing shows what is under them all, and goes on from there with the speed that has, as a Houdini
-// Bullet object follows its animation till it is made active; between, by how much is pushing, as Strength always
-// weighed (a layer fading out of its only force goes home, no source for that but this file's own past: Houdini's would
-// coast). A plain relation between two that push is passed over: the world stands on what is under the lowest.
-static constexpr size_t doc_world_told = 11, doc_world_at = 8, doc_world_speed = 11, doc_world_home = 14, doc_world_kept = 17;   // (for each layer, told: doc_relate_names, then its speed; kept: the 8 it shows, where it is, its speed, where it would be left alone)
+// All relations that push share one world, as Houdini's POP microsolvers share one stream of
+// particles. Each layer is one particle with a position and a speed, whichever relations act on
+// it. Every relation receives the frame as it stands and adds to the speed. This is the contract
+// of d3-force: "read the node's current position and then add to the node's velocity", so d3's own
+// forces run unchanged. What each relation adds is weighted by its Strength and Falloff
+// (Cavalry's Falloff is a multiplier on Strength). The weighted additions are summed, as the POP
+// Solver's microsolvers "accumulate forces", and the world then moves each layer by its speed
+// once, as d3-force's tick does. A rule can therefore change without a jolt, because the speed
+// carries on whichever relation provides it.
+// A layer that nothing pushes shows what is under all the relations, and continues from there
+// with the speed it has, as a Houdini Bullet object follows its animation until it is made
+// active. While some relations push it, it blends by the total weight, as Strength always
+// weights. A layer fading out of its only force goes home. The only source for that is this
+// file's own earlier behavior; Houdini's would coast. A plain relation between two layers that
+// push is passed over, and the world stands on what is under the lowest one.
+//
+// Layout of the values for each layer. "Told" is the input sent to the scripts: the values in
+// doc_relate_names, then the speed. "Kept" is what is cached per frame: the 8 values the layer
+// shows, its position, its speed, and the position where it would be left alone.
+static constexpr size_t doc_world_told = 11, doc_world_at = 8, doc_world_speed = 11, doc_world_home = 14, doc_world_kept = 17;
+// Rebuilds d.world: the layers that pushing relations act on and the relations themselves.
 static void doc_world_made(Doc& d) {
     Doc::World w;
     std::vector<int> files;
@@ -134,6 +164,8 @@ static void doc_world_made(Doc& d) {
     }
     d.world = std::move(w);
 }
+// Returns the cached values of the shared world at time `t`, doc_world_kept doubles per layer,
+// solving any frames not yet cached. Returns nullptr if nothing can be shown yet.
 static const std::vector<double>* doc_world(Doc& d, double t) {
     Doc::RelatedKept& k = d.relatedKept[0];
     DocKeptTells tells{d, k};
@@ -142,12 +174,15 @@ static const std::vector<double>* doc_world(Doc& d, double t) {
     if (k.solves < 0) {
         const std::vector<int> was = d.world.layers;
         doc_world_made(d), k.solves = 1;
-        if (d.world.layers != was) k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;   // (a frame kept lay them out otherwise)
+        // Cached frames were laid out for different layers, so they are no longer valid.
+        if (d.world.layers != was) k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;
     }
     struct Walking { Doc& d; explicit Walking(Doc& d) : d(d) { d.walking = true; } ~Walking() { d.walking = false; } } walking(d);
     const Doc::World& w = d.world;
     const size_t many = std::size(doc_relate_names), n = w.layers.size();
-    struct Call { DocScript* sc; std::string js; std::vector<std::pair<size_t, double>> on; };   // (on: where each of its layers lies, and how much it counts)
+    // One script call. `on` lists, for each layer the call covers, its slot in the world and the
+    // weight of the call for it.
+    struct Call { DocScript* sc; std::string js; std::vector<std::pair<size_t, double>> on; };
     std::vector<Call> calls;
     std::vector<double> now, home;
     const auto tell = [&](size_t f) {
@@ -176,10 +211,13 @@ static const std::vector<double>* doc_world(Doc& d, double t) {
             DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
             if (!sc || !sc->run) continue;
             const Doc::Relation& rel = doc_relation_of(d, by);
-            const double strength = doc_number(d, by, "strength", at, 1), weight = f && doc_number(d, by, "visible", 0, 1) > 0.5 ? std::clamp(strength, 0.0, 2.0) : 0.0;   // (nothing at the first: where each starts)
+            // The weight is 0 at the first frame, where every layer starts at its home position.
+            const double strength = doc_number(d, by, "strength", at, 1), weight = f && doc_number(d, by, "visible", 0, 1) > 0.5 ? std::clamp(strength, 0.0, 2.0) : 0.0;
             std::ostringstream js;
             js.precision(12);
-            if (f && weight <= 0.0) {   // (asleep: it forgets what it wrote, as it wakes anew; at the first it is told all the same, to find what it reads)
+            // An asleep relation forgets the state it wrote, so it starts anew when it wakes. At the
+            // first frame it is still called, to find out which layers it reads.
+            if (f && weight <= 0.0) {
                 js << "__asleep(" << by << ',' << f << ')';
                 all += js.str(), calls.push_back(Call{sc, js.str(), {}});
                 continue;
@@ -208,7 +246,8 @@ static const std::vector<double>* doc_world(Doc& d, double t) {
         std::vector<double> sum = now, pushed(n, 0.0), next(n * doc_world_kept);
         for (const Call& call : calls) {
             const std::vector<double> said = call.sc->run->numbers(call.js);
-            if (said.size() != call.on.size() * doc_world_told) continue;   // (it failed, and says why: what the others say stands)
+            // The call failed and its error is reported; the results of the other calls stand.
+            if (said.size() != call.on.size() * doc_world_told) continue;
             for (size_t in = 0; in < call.on.size(); ++in) {
                 const auto [s, weight] = call.on[in];
                 pushed[s] += weight;
@@ -230,6 +269,8 @@ static const std::vector<double>* doc_world(Doc& d, double t) {
     doc_kept_walk(d, k, t, tell, make);
     return known();
 }
+// Returns value number `name` (an offset within the doc_world_kept values) of `layer` in the
+// shared world at time `t`, or `otherwise` if the layer is not in the world.
 static double doc_world_value(Doc& d, int layer, size_t name, double t, double otherwise) {
     const std::vector<double>* const all = doc_world(d, t);
     const auto at = d.world.slot.find(layer);

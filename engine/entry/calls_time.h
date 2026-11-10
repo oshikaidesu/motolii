@@ -1,22 +1,39 @@
-// calls_time.h: part of motolii.mm. Read only through motolii.mm. The document's moment, its own picture (poster, still) and facts read without opening it, and the window's thread watched.
+// Included by motolii.mm; not self-contained. Implements the time calls of motolii.h: the
+// project's length and current time, its poster image and properties (read without opening it),
+// a still image of the preview, and the watch on the app's main thread.
+
+// Returns the length of the project in seconds.
 double motolii_seconds(Motolii* m) { return by_look(m, [m] { return doc_seconds(*m->d); }); }
+// Sets the preview's time. The change is posted to the render thread and not waited for, and a
+// newer one that is still waiting replaces it. The app reads what was drawn and the time it was
+// drawn at from the snapshot (stage/snapshot.h), so it need not wait. A time outside the
+// project, from 0 to its length, is refused when the render thread handles it, and the reason is
+// set as the error.
 int motolii_at(Motolii* m, double seconds) {
-    // (sent, not waited for: the window reads what was drawn, at the moment it was drawn (the moment's picture, snapshot.h),
-    //  so it need not wait for the hand to tell this one; a later one still waiting replaces it. Past the document's
-    //  ends it is refused there, and said in the trouble)
     return posted(m, "at", [m, seconds] {
         if (!(seconds >= 0.0 && seconds <= doc_seconds(*m->d))) { char runs[80]; std::snprintf(runs, sizeof runs, "the document runs from 0 to %.2f seconds", doc_seconds(*m->d)); m->d->error = runs; return; }
-        m->now = seconds;   // (told to the stage in the hand's round, the films put there after the document is let go: not here, under its lock)
-        if (m->d->stage) m->d->stage->now = seconds;   // (what is asked after this is made at this moment: a round busy with a sketch's frames has not come yet)
+        // The preview's videos are updated in the render thread's loop after the project lock is
+        // released, not here under the lock.
+        m->now = seconds;
+        // Anything asked after this is drawn at this time, even if the render thread is busy
+        // drawing other frames and its loop has not run yet.
+        if (m->d->stage) m->d->stage->now = seconds;
     });
 }
+// Returns true if name ends with the suffix and is longer than it.
 static bool ends(const char* name, const char* with) { return strlen(name) > strlen(with) && !strcmp(name + strlen(name) - strlen(with), with); }
+// Returns true if the folder that would contain the file exists.
 static bool placed(const char* name) { return std::filesystem::is_directory(std::filesystem::absolute(name).parent_path()); }
-// The document's own picture, for a list of documents, as AbsentMotion keeps a project's (MainActivity.kt saveThumbnail:
-// a still 256 on its longer side, drawn as the editor is closed at where its playhead is): drawn at the stage's
-// poster_at if it is said (Alight Motion's Set Project Thumbnail), else now, made small (thumbnail_at, GStreamer's
-// own scaling, reading a .png as it reads a film), and kept in the document with its size and length (table poster,
-// not one the undo records: the session is on fact and way), for motolii_doc_properties to read without opening it.
+// Writes the project's poster image to png and stores it in the project together with the
+// project's size and length, so that motolii_doc_properties can read it without opening the
+// project. This follows how AbsentMotion keeps a project thumbnail (MainActivity.kt,
+// saveThumbnail: a still 256 pixels on its longer side, drawn at the playhead when the editor
+// closes). The poster is drawn at the project's poster_at time if it is set, as in Alight
+// Motion's Set Project Thumbnail, otherwise at the current time. It is then scaled down with
+// thumbnail_at, which uses GStreamer's own scaling and reads a .png as it reads a video. It is
+// stored in the table poster, which is not an undo step because the undo session records only
+// the keyframe and easing tables. Returns 1 on success, or 0 on failure with the reason set as
+// the error.
 int motolii_poster(Motolii* m, const char* png) {
     return on_render_thread(m, [m, png] {
         Doc& d = doc(m);
@@ -37,14 +54,17 @@ int motolii_poster(Motolii* m, const char* png) {
         sqlite3_stmt* keep = nullptr;
         sqlite3_prepare_v2(d.file, "insert or replace into poster(id, png, wide, high, seconds, rate) values(1, ?, ?, ?, ?, ?)", -1, &keep, nullptr);
         sqlite3_bind_blob(keep, 1, bytes.data(), (int)bytes.size(), SQLITE_TRANSIENT);
-        sqlite3_bind_int(keep, 2, m->s->w), sqlite3_bind_int(keep, 3, m->s->h), sqlite3_bind_double(keep, 4, doc_seconds(d)), sqlite3_bind_double(keep, 5, doc_number(d, 0, "frame_rate", 0, 60));   // (its frames a second, the size box's frame_rate)
+        // rate is the frames per second, from the project's frame_rate property.
+        sqlite3_bind_int(keep, 2, m->s->w), sqlite3_bind_int(keep, 3, m->s->h), sqlite3_bind_double(keep, 4, doc_seconds(d)), sqlite3_bind_double(keep, 5, doc_number(d, 0, "frame_rate", 0, 60));
         const bool saved = sqlite3_step(keep) == SQLITE_DONE;
         sqlite3_finalize(keep);
         return checked(m, saved, "the document could not keep it");
     });
 }
-// What a document is, read without opening it (asks nothing of an open one: any thread): "wide high seconds rate" as it
-// was last kept (motolii_poster), its picture written to `png` (null: not); "" when it has kept none or is not one.
+// Reads a project's properties without opening it, and without asking anything of an open
+// project, so any thread may call it. Returns "width height seconds rate" as last stored by
+// motolii_poster, or "" if none were stored or path is not a project. If png is not null the
+// poster image is written to it. The result is valid until the next call on this thread.
 const char* motolii_doc_properties(const char* path, const char* png) {
     static thread_local std::string out;
     out.clear();
@@ -62,6 +82,7 @@ const char* motolii_doc_properties(const char* path, const char* png) {
     sqlite3_close(file);
     return out.c_str();
 }
+// Writes the preview as it is now to a .png file. Returns 1 on success, or 0 on failure.
 int motolii_still(Motolii* m, const char* png) {
     return on_render_thread(m, [m, png] {
         doc(m);
@@ -71,12 +92,17 @@ int motolii_still(Motolii* m, const char* png) {
         return checked(m, shoot(*m->s, png), "the file could not be written");
     });
 }
+// Returns the frame rate of the exported video, in frames per second.
 int motolii_rate(Motolii*) { return RATE; }
-// The window's thread watched (Chromium's ThreadRestrictions, in the manner of its DisallowBlocking): while on, any
-// change it waits for and any read that waits on the document over 2 ms is kept, named and timed; motolii_broken says
-// them all ("" none), one to a line, the last 200. Watched from the opening; turned on again, what was kept is forgotten.
+// Watches the app's main thread, in the manner of Chromium's ThreadRestrictions and its
+// DisallowBlocking. While on, any change the main thread waits for and any read that waits on the
+// project for more than 2 ms is recorded with its name and duration. motolii_broken returns the
+// records, the last 200. Watching is on from the time the project is opened, and turning it on
+// again clears the records.
 void motolii_watch(Motolii* m, int on) { std::lock_guard<std::mutex> h(m->asked_lock); if (on) m->broke.clear(), m->broken = 0; m->watching = on != 0; }
-long motolii_broken_count(Motolii* m) { return m->broken.load(); }   // (no lock: a window may ask it every picture)
+// Takes no lock, because the app may ask for this on every frame.
+long motolii_broken_count(Motolii* m) { return m->broken.load(); }
+// Returns the records made while watching, one per line, or "" if none. Valid until the next call.
 const char* motolii_broken(Motolii* m) {
     std::lock_guard<std::mutex> h(m->asked_lock);
     m->listed.clear();

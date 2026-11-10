@@ -1,6 +1,10 @@
-// sound_level.h: how loud a file's sound is through its length, as GStreamer's own level element measures it (decoded as
-// fast as it goes, not played), and the moments it strikes: where it grows louder by so much at once (a drum, a clap).
-// After Effects' Convert Audio to Keyframes reads the same loudness; the strikes are where its curve jumps.
+// Measures the sound of an audio or video file.
+//
+// Provides the loudness over the length of the file, measured with GStreamer's level element.
+// The file is decoded as fast as possible, not played. Also provides the strikes, the times
+// where the sound gets suddenly louder, such as a drum or a clap. After Effects' Convert Audio
+// to Keyframes reads the same loudness, and the strikes are where its curve jumps. Finally
+// provides the sound as ISF audio inputs take it.
 #pragma once
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
@@ -15,7 +19,8 @@
 #include <string>
 #include <vector>
 
-// The loudest channel's loudness (dB, 0 at full) every 1/rate seconds of the file's own time; empty: no sound read.
+// Returns the loudness of the loudest channel of `file` in dB, where 0 is full scale, sampled
+// every 1/rate seconds of the file's own time. Returns an empty list if no sound could be read.
 static std::vector<float> sound_loudness(const char* file, double rate) {
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
@@ -52,46 +57,60 @@ static std::vector<float> sound_loudness(const char* file, double rate) {
     return db;
 }
 
-// Where it strikes, in the file's own seconds: it grows `rise` dB louder within 30 ms, and is loud enough to be heard
-// (above -40 dB); one strike, then none for 120 ms.
+// Returns the strike times, in seconds of the file, found in the loudness list `db` that was
+// sampled at `rate` per second. A strike is a point where the loudness grows by at least `rise`
+// dB within 30 ms and is above -40 dB, so that it can be heard. After a strike, no other strike
+// is reported for 120 ms.
 static std::vector<double> sound_strikes(const std::vector<float>& db, double rate, double rise) {
     std::vector<double> at;
     const int near = std::max(1, (int)std::lround(0.03 * rate)), apart = std::max(1, (int)std::lround(0.12 * rate));
     int last = -apart;
     for (int i = 0; i < (int)db.size(); ++i) {
         if (i - last < apart || db[(size_t)i] < -40.f) continue;
-        float low = i < near ? -100.f : db[(size_t)i];   // (before the file begins: silence)
+        // Before the file begins there is silence.
+        float low = i < near ? -100.f : db[(size_t)i];
         for (int j = std::max(0, i - near); j < i; ++j) low = std::min(low, db[(size_t)j]);
         if (db[(size_t)i] - low >= rise) at.push_back(i / rate), last = i;
     }
     return at;
 }
 
-// Its sound as ISF's audio inputs take it (ISF_Spec: an image, a row a channel; "audio" a column a sample of the wave,
-// centred on 0.5; "audioFFT" a column a value of the FFT): one channel, all of its length, read once. As much of it at
-// a moment as VIDVOX's own ISF Editor hands an ISF (VVISF-GL, AudioController: fftQuality 512, the wave twice that).
+// The sound of a file as ISF audio inputs take it, one channel for the whole length of the file.
+// In the ISF specification an audio input is an image with one row per channel. In an "audio"
+// input each column is one sample of the wave, centered on 0.5. In an "audioFFT" input each
+// column is one value of the FFT. At each time the amount of data matches what VIDVOX's own ISF
+// Editor gives an ISF (VVISF-GL, AudioController: fftQuality 512, and the wave is twice that).
 struct SoundRead {
-    std::vector<float> wave;    // its samples, sound_rate a second (-1 to 1)
-    std::vector<float> fft;     // sound_bands a row, sound_rows rows a second (0 at minDecibels to 1 at maxDecibels)
+    // Samples of the wave, sound_rate per second, from -1 to 1.
+    std::vector<float> wave;
+    // Spectrum rows of sound_bands values, sound_rows rows per second. Values go from 0 at
+    // minDecibels to 1 at maxDecibels.
+    std::vector<float> fft;
 };
 static constexpr int sound_rate = 24000, sound_bands = 512, sound_rows = 60;
-// The spectrum as GStreamer's spectrum element posts it (its documentation's example: "magnitude", a band each, in dB,
-// below the threshold set to the threshold), made what the Web's AnalyserNode gives (W3C Web Audio API 1.8.6, as
-// Shadertoy's sound reads: smoothed over time by smoothingTimeConstant 0.8, then minDecibels -100 to maxDecibels -30
-// scaled to 0 to 1); the wave as appsink hands its samples on (gst_app_sink_pull_sample: NULL at the end).
+// Reads the sound of `file` once, decoding it at full speed.
+//
+// The spectrum comes from GStreamer's spectrum element, which posts "magnitude" with one value
+// per band in dB, with values below the threshold set to the threshold. It is converted to what
+// the Web's AnalyserNode returns (W3C Web Audio API 1.8.6, which Shadertoy's sound also uses):
+// smoothed over time with smoothingTimeConstant 0.8, then scaled from minDecibels -100 and
+// maxDecibels -30 to the range 0 to 1. The wave is taken from appsink, whose
+// gst_app_sink_pull_sample returns NULL at the end of the stream.
 static SoundRead sound_read(const std::string& file) {
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
     SoundRead r;
     const std::string from = std::string("filesrc name=in ! decodebin ! audioconvert ! audioresample ! audio/x-raw,format=F32LE,channels=1,rate=") + std::to_string(sound_rate);
-    const double low = -100.0, high = -30.0, tau = 0.8;   // (AnalyserOptions' defaults)
+    // The defaults of AnalyserOptions: minDecibels, maxDecibels and smoothingTimeConstant.
+    const double low = -100.0, high = -30.0, tau = 0.8;
     {
         GstElement* reads = gst_parse_launch((from + " ! spectrum name=s bands=" + std::to_string(sound_bands) + " threshold=" + std::to_string((int)low) + " interval=" + std::to_string((guint64)(1e9 / sound_rows)) + " post-messages=true message-magnitude=true ! fakesink sync=false").c_str(), nullptr);
         if (!reads) return r;
         gst_read_from(reads, file.c_str());
         GstBus* bus = gst_element_get_bus(reads);
         gst_element_set_state(reads, GST_STATE_PLAYING);
-        std::vector<double> smooth((size_t)sound_bands, 0.0);   // (the previous block's: zeros at first)
+        // The smoothed values of the previous block, zero at first.
+        std::vector<double> smooth((size_t)sound_bands, 0.0);
         for (bool going = true; going;) {
             GstMessage* heard = gst_bus_timed_pop_filtered(bus, 10 * GST_SECOND, (GstMessageType)(GST_MESSAGE_ELEMENT | GST_MESSAGE_EOS | GST_MESSAGE_ERROR));
             if (!heard) break;
@@ -113,7 +132,9 @@ static SoundRead sound_read(const std::string& file) {
     if (!reads) return r;
     gst_read_from(reads, file.c_str());
     GstElement* out = gst_bin_get_by_name(GST_BIN(reads), "out");
-    const bool pulling = gst_element_set_state(reads, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE;   // (no such file: no end would come)
+    // If the pipeline cannot start, for example because the file does not exist, no end of
+    // stream would ever arrive, so do not pull.
+    const bool pulling = gst_element_set_state(reads, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE;
     while (GstSample* got = pulling ? gst_app_sink_pull_sample(GST_APP_SINK(out)) : nullptr) {
         GstMapInfo map;
         if (GstBuffer* b = gst_sample_get_buffer(got); b && gst_buffer_map(b, &map, GST_MAP_READ)) {
@@ -127,8 +148,10 @@ static SoundRead sound_read(const std::string& file) {
     gst_object_unref(out), gst_object_unref(reads);
     return r;
 }
-// A file's sound read once, aside (it takes as long as decoding it does): none until it is (silence meanwhile). Each
-// read is std::async's, its future kept: let go of at the end, it waits for its read to finish ([futures.async]).
+// Returns the sound of `file`, read once in the background because reading takes as long as
+// decoding the file. Returns null until the read has finished; the caller should treat that as
+// silence. Each read runs under std::async and its future is kept. When the futures are
+// destroyed at exit, each destructor waits for its read to finish ([futures.async]).
 static const SoundRead* sound_of(const std::string& file) {
     static std::map<std::string, std::shared_future<SoundRead>> read;
     static std::mutex one;
@@ -137,9 +160,12 @@ static const SoundRead* sound_of(const std::string& file) {
     if (found == read.end()) found = read.emplace(file, std::async(std::launch::async, sound_read, file).share()).first;
     return found->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready ? &found->second.get() : nullptr;
 }
-// What an ISF audio input reads at a moment of the file's own (seconds), `wide` values (its MAX; 0: as many as there
-// are): VVISF-GL's AudioController's way, each value the mean of as many next to it (valsPerAvg, the last ones kept
-// inside), the wave the 1024 samples up to then, each (sample * 4 + 4) / 8.
+// Returns what an ISF audio input reads at time `at`, in seconds of the file. `r` may be null.
+// `fft` selects the spectrum; otherwise the wave is returned. `wide` is the number of values
+// wanted, which is the MAX of the input; 0 means all of them. Follows VVISF-GL's
+// AudioController. Each value is the mean of the neighboring values it covers (valsPerAvg),
+// with the last group kept inside the range. The wave is the 1024 samples up to `at`, and each
+// sample is mapped by (sample * 4 + 4) / 8. Returns silence when there is no data.
 static std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at) {
     const int raw = fft ? sound_bands : 2 * sound_bands;
     std::vector<float> v((size_t)std::clamp(wide > 0 ? wide : raw, 1, raw), fft ? 0.f : 0.5f);

@@ -1,10 +1,23 @@
-// three_isf.cpp: a three.js screen effect (examples/jsm/shaders/*.js: a module whose export holds uniforms and a GLSL
-// fragmentShader reading tDiffuse at vUv) made the text of an ISF effect, so that it goes the ISF way (isf.cpp).
-// The module run as it is in QuickJS, as splatfx.cpp runs a PlayCanvas effect: 'three' given as a module of stand-ins
-// for what uniforms' values are made of (QuickJS's module loader). Its shader adapted to ISF as ISF's own primer says
-// (docs.isf.video, chapter 9: the uniforms to INPUTS, their declarations taken out; texture2D as it is): tDiffuse is
-// ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A parameter's range as from_three.py made it
-// (from 0, or four times below, to four times its value, at least 1). Not taken: three's own #include pieces.
+// Converts a three.js screen effect into ISF effect text, so isf.cpp can load it.
+//
+// A three.js effect is a module under examples/jsm/shaders/*.js. Its export holds
+// a uniforms table and a GLSL fragmentShader that reads the input image tDiffuse
+// at the coordinate vUv.
+//
+// The module is run unmodified in QuickJS, the same way splatfx.cpp runs a
+// PlayCanvas effect. The module 'three' is replaced by a small module of stand-in
+// classes for the types that uniform values are made of.
+//
+// The shader is adapted to ISF as described in the ISF primer
+// (docs.isf.video, chapter 9). Uniforms become INPUTS and their declarations are
+// removed. texture2D is left as it is. tDiffuse becomes ISF's inputImage, vUv
+// becomes isf_FragNormCoord, and time becomes TIME.
+//
+// A parameter's range follows from_three.py. It runs from 0 (or from four times
+// the default, if that is negative) up to four times the absolute default, and the
+// maximum is at least 1.
+//
+// Not supported: three.js's own #include chunks in the shader.
 #include "community/three/three_isf.h"
 #include <quickjs.h>
 #include <filesystem>
@@ -15,6 +28,9 @@
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"
 
+// Source of the stand-in 'three' module: just enough of Vector2/3/4, Color and
+// Matrix3/4 for a shader module to build its uniform values. Vectors keep their
+// components and Color converts a hex number to r, g, b in 0-1.
 static const char* const three_stand_ins = R"(
 export class Vector2 { constructor(x = 0, y = 0) { this.x = x; this.y = y; } }
 export class Vector3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } }
@@ -23,6 +39,9 @@ export class Color { constructor(r = 1, g, b) { if (g === undefined) { const h =
 export class Matrix3 {} export class Matrix4 {}
 )";
 
+// QuickJS module loader. Compiles the stand-in source for the name "three" and
+// the file at `name` for any other module, without running it. Returns null if
+// the module does not compile.
 static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     std::string src;
     if (std::string(name) == "three") src = three_stand_ins;
@@ -34,6 +53,7 @@ static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     return m;
 }
 
+// See three_isf.h.
 bool three_is(const std::string& file) {
     if (std::filesystem::path(file).extension() != ".js") return false;
     std::ifstream in(file);
@@ -42,7 +62,10 @@ bool three_is(const std::string& file) {
     return all.str().find("fragmentShader") != std::string::npos;
 }
 
-// Its export that says a fragment shader, as JSON: {"frag": ..., "u": {name: value}} (a Vector2 {x, y}, a Color {r, g, b}).
+// Runs the module `file` and returns the export that has a fragmentShader as JSON:
+// {"frag": shader, "d": {defines}, "u": {uniform name: value}}. A Vector2 value is
+// serialized as {x, y} and a Color as {r, g, b}. On failure returns an empty
+// string and sets `why`.
 static std::string three_said(const std::string& file, std::string& why) {
     JSRuntime* rt = JS_NewRuntime();
     JSContext* cx = JS_NewContext(rt);
@@ -69,6 +92,8 @@ static std::string three_said(const std::string& file, std::string& why) {
     return out;
 }
 
+// See three_isf.h. The result is a JSON header comment (CREDIT, ISFVSN, INPUTS),
+// followed by #define lines and the adapted shader body.
 std::string three_isf(const std::string& file, std::string& why) {
     const std::string said = three_said(file, why);
     rapidjson::Document d;
@@ -77,6 +102,11 @@ std::string three_isf(const std::string& file, std::string& why) {
     if (std::regex_search(frag, std::regex(R"(^\s*#include\s*<)", std::regex::multiline))) return why = "it names three's own #include pieces", "";
     const rapidjson::Value none(rapidjson::kObjectType);
     const rapidjson::Value& u = d.HasMember("u") && d["u"].IsObject() ? d["u"] : none;
+    // Returns the default for uniform `n` from the module's uniform values. `field`
+    // selects a component of an object value, and `i` is that component's index.
+    // A plain number counts only for component 0. Returns `otherwise` if the
+    // value is missing or unusable. A "_three" suffix, added below when a name
+    // would clash with an ISF built-in, is ignored.
     const auto value = [&](const std::string& n, const char* field, int i, double otherwise) {
         const std::string k = n.size() > 6 && n.compare(n.size() - 6, 6, "_three") == 0 ? n.substr(0, n.size() - 6) : n;
         if (!u.HasMember(k.c_str())) return otherwise;
@@ -94,20 +124,28 @@ std::string three_isf(const std::string& file, std::string& why) {
     w.Key("INPUTS"), w.StartArray();
     std::string defines;
     bool first = true;
-    if (d.HasMember("d") && d["d"].IsObject())   // (its defines, put before it as three's ShaderMaterial does)
+    // The module's defines are emitted before the shader, as three.js's
+    // ShaderMaterial does.
+    if (d.HasMember("d") && d["d"].IsObject())
         for (auto& one : d["d"].GetObject())
             defines += "#define " + std::string(one.name.GetString()) + " " + (one.value.IsString() ? std::string(one.value.GetString()) : one.value.IsNumber() ? std::to_string(one.value.GetDouble()) : one.value.IsBool() ? std::string(one.value.GetBool() ? "1" : "0") : std::string()) + "\n";
     const std::regex uniform(R"(^[ \t]*uniform[ \t]+(\w+)[ \t]+(\w+)[ \t]*;[ \t]*(//.*)?$)", std::regex::multiline);
     for (std::sregex_iterator m(frag.begin(), frag.end(), uniform), end; m != end; ++m) {
         const std::string type = (*m)[1], own = (*m)[2];
-        const bool taken = own == "resolution" || own == "frame" || own == "passindex";   // (names isf.cpp's parameters have of their own: the shader's renamed)
+        // These names are already used by built-in ISF parameters in isf.cpp, so the
+        // shader's own uniform is renamed with a "_three" suffix.
+        const bool taken = own == "resolution" || own == "frame" || own == "passindex";
         const std::string n = taken ? own + "_three" : own;
         if (taken) defines += "#define " + own + " " + n + "\n";
         const auto range = [&](double v) { w.Key("MIN"), w.Double(v < 0 ? 4 * v : 0), w.Key("MAX"), w.Double(std::max(1.0, 4 * std::fabs(v))); };
         if (n == "time" && type == "float") { defines += "#define time TIME\n"; continue; }
-        if ((n == "width" || n == "height") && type == "float") { defines += "#define " + n + " RENDERSIZE." + (n == "width" ? "x" : "y") + "\n"; continue; }   // (the picture's size, as three's passes set them (HalftonePass.setSize))
+        // width and height are the image size, which three.js passes set themselves
+        // (see HalftonePass.setSize), so they map to RENDERSIZE.
+        if ((n == "width" || n == "height") && type == "float") { defines += "#define " + n + " RENDERSIZE." + (n == "width" ? "x" : "y") + "\n"; continue; }
         if (type != "vec3") w.StartObject();
-        if (type == "sampler2D") {   // (the first its picture in; any other another thing's picture)
+        // The first sampler is the input image. Any other sampler is an image
+        // input from another layer.
+        if (type == "sampler2D") {
             const std::string as = first ? "inputImage" : n;
             if (as != n) defines += "#define " + n + " " + as + "\n";
             w.Key("NAME"), w.String(as.c_str()), w.Key("TYPE"), w.String("image");
@@ -126,7 +164,9 @@ std::string three_isf(const std::string& file, std::string& why) {
             w.Key("NAME"), w.String(n.c_str()), w.Key("TYPE"), w.String("color"), w.Key("DEFAULT"), w.StartArray();
             for (const char* f : {"x", "y", "z", "w"}) w.Double(value(n, f, 1, 0));
             w.EndArray();
-        } else if (type == "vec3") {   // (ISF has no three numbers: three parameters, the shader's own name made of them)
+        } else if (type == "vec3") {
+            // ISF has no three-component type, so a vec3 becomes three float inputs.
+            // A #define rebuilds the shader's own name from them.
             const bool colour = u.HasMember(n.c_str()) && u[n.c_str()].IsObject() && u[n.c_str()].HasMember("r");
             const char* const fields[] = {colour ? "r" : "x", colour ? "g" : "y", colour ? "b" : "z"};
             for (int i = 0; i < 3; ++i) {
@@ -135,7 +175,9 @@ std::string three_isf(const std::string& file, std::string& why) {
                 if (colour) w.Key("MIN"), w.Double(0), w.Key("MAX"), w.Double(1);
                 else range(v);
                 if (i < 2) w.EndObject();
-            }   // (the last closed below, as every other)
+            }
+            // The last object is closed by the w.EndObject() after this chain, as for
+            // every other type.
             defines += "#define " + n + " vec3(" + n + "_" + fields[0] + ", " + n + "_" + fields[1] + ", " + n + "_" + fields[2] + ")\n";
         } else { w.EndObject(), w.EndArray(), w.EndObject(); return why = "a uniform of a kind ISF has no parameter for: " + type + " " + n, ""; }
         w.EndObject();
@@ -144,9 +186,14 @@ std::string three_isf(const std::string& file, std::string& why) {
     w.EndArray(), w.EndObject();
     frag = std::regex_replace(frag, uniform, "");
     std::smatch at;
-    if (std::regex_search(frag, at, std::regex(R"(^[ \t]*varying[ \t]+vec2[ \t]+(\w+)[ \t]*;[ \t]*$)", std::regex::multiline)))   // (where on the picture: three's vUv, by whatever name)
+    // The varying vec2 is the position in the image, three.js's vUv under whatever
+    // name the shader uses. It maps to isf_FragNormCoord.
+    if (std::regex_search(frag, at, std::regex(R"(^[ \t]*varying[ \t]+vec2[ \t]+(\w+)[ \t]*;[ \t]*$)", std::regex::multiline)))
         defines += "#define " + at[1].str() + " isf_FragNormCoord\n", frag = std::regex_replace(frag, std::regex(R"(^[ \t]*varying[ \t]+\w+[ \t]+\w+[ \t]*;[ \t]*$)", std::regex::multiline), "");
-    if (frag.find("luminance(") != std::string::npos && frag.find("float luminance") == std::string::npos)   // (three puts it before every shader: WebGLProgram.js getLuminanceFunction)
+    // three.js prepends a luminance() function to every shader (see
+    // getLuminanceFunction in WebGLProgram.js), so add it if the shader uses it
+    // without defining it.
+    if (frag.find("luminance(") != std::string::npos && frag.find("float luminance") == std::string::npos)
         defines += "float luminance(vec3 rgb) { return dot(vec3(0.2126, 0.7152, 0.0722), rgb); }\n";
     return "/*" + std::string(head.GetString()) + "*/\n" + defines + frag;
 }

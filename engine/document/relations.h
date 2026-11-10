@@ -1,8 +1,20 @@
-// relations.h: part of doc.h (behaviours, falloffs, relations, physics). Read only through doc.h.
+// Behaviours, falloffs, relations, copy placement and physics for layers. Included by doc.h; not
+// self-contained.
+
+// Returns the value that behaviour layer `by` gives to copy number `copy` of `n` copies at time
+// `t`.
+// The behaviour type is the layer's "file" value: stagger, oscillator, noise or random. A number
+// from 0 to 1 is mapped onto the range from "minimum" to "maximum", then rounded to a multiple of
+// "step" when step is positive.
+// As in Cavalry, a parameter of a behaviour can itself be driven by another behaviour.
 static double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
-    static int depth = 0;   // (behaviours given by behaviours, as Cavalry chains them: so deep at most, a ring of them stops)
+    // Limits how deeply behaviours can drive each other, so that a cycle of them terminates.
+    static int depth = 0;
     struct Deeper { Deeper() { ++depth; } ~Deeper() { --depth; } } deeper;
-    const auto parameter = [&](const char* name, double otherwise) {   // (one of its knobs: given by another behaviour, that one's for this copy)
+    // Returns the parameter `name` of this behaviour for this copy. When another behaviour drives
+    // the parameter, that behaviour's value for this copy is used. Otherwise it is the stored
+    // number, or `otherwise` when there is none.
+    const auto parameter = [&](const char* name, double otherwise) {
         if (depth < 4) if (const int other = doc_driven_by(d, by, name); other && other != by) return doc_behaviour_at(d, other, copy, n, t);
         return doc_number(d, by, name, t, otherwise);
     };
@@ -10,29 +22,41 @@ static double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
     const double lo = parameter("minimum", 0), hi = parameter("maximum", 1), offset = parameter("offset", 0);
     const double frequency = parameter("frequency", 1), apart = parameter("stagger", 0) / 360.0;
     const uint32_t seed = (uint32_t)doc_number(d, by, "seed", 0, 0);
-    const auto hash = [&](int64_t k) {   // (0 to 1: the seed and k)
+    // Returns a deterministic number from 0 to 1 for the seed and the integer `k`.
+    const auto hash = [&](int64_t k) {
         uint32_t h = seed * 0x9E3779B9u ^ (uint32_t)k * 0x85EBCA6Bu ^ 0xC2B2AE35u;
         h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16;
         return (double)h / 4294967295.0;
     };
     double u = 0.0;
-    if (type == "stagger") u = std::clamp((n > 1 ? (double)copy / (n - 1) : 0.0) + offset, 0.0, 1.0);   // (in their order)
+    // Stagger: the copy's position in the order, from 0 for the first copy to 1 for the last,
+    // shifted by the offset.
+    if (type == "stagger") u = std::clamp((n > 1 ? (double)copy / (n - 1) : 0.0) + offset, 0.0, 1.0);
+    // Oscillator: a sine wave over time, mapped to the range 0 to 1. `apart` is the phase shift per
+    // copy in turns.
     else if (type == "oscillator") u = 0.5 + 0.5 * std::sin((double)TAU * (frequency * t + offset + apart * copy));
-    else if (type == "noise") {   // (a smooth noise along time, each copy so far along it)
+    // Noise: smooth interpolation between hashed values at whole positions along time. Each copy
+    // starts further along.
+    else if (type == "noise") {
         const double x = frequency * t + offset + apart * copy * 4.0, f = std::floor(x), e = (x - f) * (x - f) * (3.0 - 2.0 * (x - f));
         u = hash((int64_t)f) * (1.0 - e) + hash((int64_t)f + 1) * e;
     }
+    // Random: a fixed value for each copy, determined by the seed.
     else if (type == "random") u = hash(copy + 1);
+    // Round to a multiple of `step` when it is positive.
     const double step = parameter("step", 0), v = lo + (hi - lo) * u;
     return step > 0.0 ? std::round(v / step) * step : v;
 }
-// The behaviour a value of a layer is connected to (`<name>_by`), 0 none.
+// Returns whether any property of the layer is connected to a behaviour, that is, whether it has a
+// nonzero `<name>_by` value. The answer is cached per layer.
 static bool doc_connects(Doc& d, int layer) {
     if (const auto known = d.connects.find(layer); known != d.connects.end()) return known->second;
     bool any = false;
     doc_rows(d, sqlite3_mprintf("select 1 from keyframe where layer = %d and name glob '*_by' and value <> 0 limit 1", layer), [&](sqlite3_stmt*) { any = true; });
     return d.connects.emplace(layer, any).first->second;
 }
+// Returns the id of the behaviour that drives property `name` of the layer, stored as the property
+// `<name>_by`. Returns 0 when there is none, or when the target is not a behaviour layer.
 static int doc_driven_by(Doc& d, int layer, const char* name) {
     if (!doc_connects(d, layer)) return 0;
     const auto key = std::make_pair(layer, std::string(name));
@@ -41,10 +65,16 @@ static int doc_driven_by(Doc& d, int layer, const char* name) {
     if (by && doc_word(d, by, "kind") != "behaviour") by = 0;
     return d.drivers.emplace(key, by).first->second;
 }
+// Defined elsewhere. Tests whether the point x, y is inside a path. The caller uses `far` as the
+// distance from the point to the outline.
 bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float x, float y, float* far);
+// Declared here; defined elsewhere in doc.h.
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy, bool member);
-// How much of a behaviour works at a place on the stage: its falloff's shape (where it lies now, as shape_cut lays its
-// outline), all inside, none outside past falloff_soft; 1 with no falloff.
+// Returns how strongly behaviour `by` applies at the point `at` of the stage, from 0 to 1. The
+// falloff is the outline of the layer named by the behaviour's "region" value, placed where it is
+// at time `t`. Inside the outline the result is 1. Outside it falls linearly to 0 over the distance
+// "falloff_soft". "falloff_invert" swaps inside and outside. The result is 1 when the behaviour has
+// no falloff.
 static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
     const int f = (int)doc_number(d, by, "region", 0, 0);
     if (!f) return 1.0;
@@ -52,23 +82,31 @@ static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
     const Canvas2D* b = found == d.shown.end() ? nullptr : found->second.drawn;
     if (!b || !b->cut || !b->outline) return 1.0;
     const math::mat4 place = doc_place(d, f, t, 0, 0, false);
+    // The point in the falloff layer's own space.
     const math::double4 on = inverse(place) * math::double4{at, 1.0};
     const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
     b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
     float far = 0.f;
+    // Convert to the units of the outline, which is plainHigh high with its origin at the top left.
     const bool inside = sk_inside(cmds, cmdsCnt, pts, (float)(on.x / b->sheetHigh * b->plainHigh + 0.5 * b->cutW), (float)(0.5 * b->plainHigh - on.y / b->sheetHigh * b->plainHigh), &far);
-    const double soft = doc_number(d, by, "falloff_soft", t, 0), away = far / b->plainHigh * b->sheetHigh * std::sqrt(length(place[0].xyz) * length(place[1].xyz));   // (Soft is the stage's, not the shape's: it does not grow with it)
+    // The softness is measured on the stage, so it does not grow with the shape. `away` is the
+    // distance to the outline in stage units.
+    const double soft = doc_number(d, by, "falloff_soft", t, 0), away = far / b->plainHigh * b->sheetHigh * std::sqrt(length(place[0].xyz) * length(place[1].xyz));
     const double w = inside ? 1.0 : soft > 0.0 ? std::max(0.0, 1.0 - away / soft) : 0.0;
     return doc_number(d, by, "falloff_invert", 0, 0) > 0.5 ? 1.0 - w : w;
 }
-// A value given by a behaviour to a copy: what it gives, weighed by its falloff where the copy lies (`at`, if known)
-// against the value's own.
+// Returns the value that behaviour `by` gives to a copy. When the copy's position `at` is known,
+// the result is blended between the property's own value `own` and the behaviour's value by the
+// falloff at that position. `at` may be null.
 static double doc_given(Doc& d, int by, int copy, int n, double t, double own, const math::double3* at) {
     const double v = doc_behaviour_at(d, by, copy, n, t);
     if (!at) return v;
     const double w = doc_falloff_at(d, by, *at, t);
     return own + (v - own) * w;
 }
+// Gives every renderable of mesh `m` its shared material back and destroys the materials made just
+// for single copies. `main` is the shared material; when it is null the renderables are left as
+// they are.
 static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
     Stage& s = *d.stage;
     auto& faces = s.engine->getRenderableManager();
@@ -79,7 +117,8 @@ static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
         if (main) faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, main);
         s.engine->destroy(found->second);
         d.copyLooks.erase(found);
-        if (const auto edge = d.copyEdges.find(made.thing.getId()); edge != d.copyEdges.end()) {   // (its edge's own too, back to the layer's edge look)
+        // The copy's own edge material goes back to the layer's edge material in the same way.
+        if (const auto edge = d.copyEdges.find(made.thing.getId()); edge != d.copyEdges.end()) {
             const Doc::Shown* t = nullptr;
             for (const auto& [id, one] : d.shown) if (one.drawn && one.drawn->sheet == m) t = &one;
             if (t && t->drawn->edgeLook) faces.setMaterialInstanceAt(faces.getInstance(made.thing), 1, t->drawn->edgeLook);
@@ -88,24 +127,33 @@ static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
         }
     }
 }
-// How many members a layer has in their order: a text split into letters, a letter each; else its copies.
-// A value doc_place reads, by a name written in the program (a literal: its place in memory says which name, ever):
-// where its keys are is found once and held until the document changes (as Beutl and Skottie hold a property), each
-// moment reckoned from them; a value with no keys or one is its number at once. Not while a hand carries it.
+// Returns the value of property `literal` of the layer at time `at`, or `otherwise` when the
+// property has no keyframes. Declared here; defined below.
 static double doc_literal(Doc& d, int layer, const char* literal, double at, double otherwise);
-// A relation's layers (any of their values `<name>_by` = it, or = a relation that starts from it for them), in the order
-// its members word says (0 where one was taken out, its place kept), else in the order they were made; with what each
-// was in before and where it showed when it came in (under and from: as many as members, else none).
+// Returns the layers that belong to relation `by`, and the data kept for each. A layer belongs when
+// any of its properties has `<name>_by` equal to `by`, or when it is reached through another
+// relation that this one builds on.
+// `members` follows the order of the relation's "members" value. A slot is 0 where a layer was
+// removed, so the other layers keep their places. Layers not listed there come after, in ascending
+// layer id.
+// `under` has, for each member, the relation it was in before. `from` has two numbers per member, x
+// and y, saying where the layer appeared when it joined. Each is empty unless it matches the number
+// of members.
+// The result is cached.
 static const Doc::Relation& doc_relation_of(Doc& d, int by) {
     if (const auto known = d.relationsOf.find(by); known != d.relationsOf.end()) return known->second;
-    static int depth = 0;   // (relations on relations: so deep at most, a ring of them stops)
+    // Limits how deeply relations can build on relations, so that a cycle of them terminates.
+    static int depth = 0;
     struct Deeper { Deeper() { ++depth; } ~Deeper() { --depth; } } deeper;
     Doc::Relation r;
     std::vector<int> connected;
     doc_rows(d, sqlite3_mprintf("select distinct layer from keyframe where name glob '*_by' and value = %d order by layer", by), [&](sqlite3_stmt* q) { connected.push_back(sqlite3_column_int(q, 0)); });
+    // Splits the text value `name` of the relation into words.
     const auto words = [&](const char* name) { std::vector<std::string> all; std::istringstream said(doc_word(d, by, name)); for (std::string one; said >> one;) all.push_back(one); return all; };
     const std::vector<std::string> members = words("members"), under = words("under"), from = words("from");
-    const auto reaches = [&](int t) {   // (in it through a relation that starts from it)
+    // Returns whether layer `t` is a member of this relation indirectly. Walks back through the
+    // relations that the layer was in before, at most 8 steps, looking for this one.
+    const auto reaches = [&](int t) {
         for (int cur = doc_driven_by(d, t, "x") ? doc_driven_by(d, t, "x") : doc_driven_by(d, t, "y"), n = 0; cur && n < 8 && depth < 6; ++n) {
             if (cur == by) return true;
             const Doc::Relation& above = doc_relation_of(d, cur);
@@ -114,31 +162,42 @@ static const Doc::Relation& doc_relation_of(Doc& d, int by) {
         }
         return false;
     };
+    // Keep a listed member only when it is still connected or reachable. Otherwise leave a 0 slot.
     for (size_t k = 0; k < members.size(); ++k) {
         const int t = std::atoi(members[k].c_str());
         const bool in = t && std::find(r.members.begin(), r.members.end(), t) == r.members.end() && (std::find(connected.begin(), connected.end(), t) != connected.end() || reaches(t));
         r.members.push_back(in ? t : 0);
     }
+    // Append the connected layers that are not listed.
     for (const int t : connected) if (std::find(r.members.begin(), r.members.end(), t) == r.members.end()) r.members.push_back(t);
     if (under.size() == members.size()) for (const std::string& u : under) r.under.push_back(std::atoi(u.c_str()));
     if (from.size() == 2 * members.size()) for (const std::string& f : from) r.from.push_back(std::atof(f.c_str()));
+    // Keep `under` and `from` either empty or one entry per member, padding with 0 and NaN.
     r.under.resize(r.under.empty() ? 0 : r.members.size(), 0);
     r.from.resize(r.from.empty() ? 0 : 2 * r.members.size(), std::nan(""));
     return d.relationsOf.emplace(by, std::move(r)).first->second;
 }
+// Returns the member layers of relation `by`, in order.
 static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relation_of(d, by).members; }
-// What a relation written as a file says of all its layers (world.h), and what those that push say of a layer's value.
+// The properties that a relation written as a file (engine/document/world.h) can set on its layers.
+// The file returns one number per member for each name, in this order.
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
+// Declared here; defined below.
 static double doc_related(Doc& d, int by, int layer, const char* name, double t, double own);
+// Declared here; defined elsewhere.
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t);
 static bool doc_pushes(Doc& d, int by);
 static double doc_world_value(Doc& d, int layer, size_t name, double t, double otherwise);
-// What a relation gives a value of one of its layers (`own`: the layer's own value there), weighed by its strength: it
-// starts from what the relation the layer was in before gives (else its own value); an around or a row that knows where
-// the layer showed when it came in adds the step from there to its place (so a hand that moves the layer moves it), a
-// follow that knows adds how far its leader has gone since (else each puts it at its place, or at its leader's).
+// Returns the value that relation `by` gives to property `name` of `layer` at time `t`. `own` is
+// the layer's own value, and the result is blended with it by the relation's strength.
+// The result starts from the value that the relation the layer was in before gives, or from `own`
+// when there is none. An "around" or "row" relation that knows where the layer appeared when it
+// joined adds only the step from there to the new place, so a layer that the user drags stays where
+// it is dragged. A "follow" relation that knows adds how far its leader has moved since. Without
+// that knowledge each relation puts the layer at its computed place, or at its leader's.
 static double doc_related(Doc& d, int by, int layer, const char* name, double t, double own) {
-    static int depth = 0;   // (a leader in a relation that leads back: so deep at most)
+    // Limits recursion when a leader is itself in a relation that leads back to this one.
+    static int depth = 0;
     struct Deeper { Deeper() { ++depth; } ~Deeper() { --depth; } } deeper;
     if (depth > 6) return own;
     const std::string type = doc_word(d, by, "file"), n = name;
@@ -147,12 +206,24 @@ static double doc_related(Doc& d, int by, int layer, const char* name, double t,
     if (found == rel.members.end()) return own;
     const size_t i = (size_t)(found - rel.members.begin());
     const int many = std::max(1, (int)rel.members.size()), was = rel.under.empty() ? 0 : rel.under[i];
+    // The value before this relation: what the previous relation gives, or `mine`.
     const auto start = [&](const char* what, double mine) { return was ? doc_related(d, was, layer, what, t, mine) : mine; };
-    const double ti = type == "follow" ? t : t - doc_number(d, by, "lag", t, 0) * (double)i;   // (in turn: each so much later than the one before, as Cavalry's stagger; a follow's lag is its own)
-    const double base = start(name, own), strength = std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);   // (past 1 and below 0 as an ease overshoots: a Back or an Elastic between two keys shows; held within twice)
-    if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;   // (switched off, its eye shut: what it is on top of shows, its strength kept)
-    const double came = rel.from.empty() || (n != "x" && n != "y") ? std::nan("") : rel.from[2 * i + (n == "y" ? 1 : 0)];   // (where it showed when it came in: across and up only)
+    // The time for this member. Each member lags the one before by "lag" seconds, as in Cavalry's
+    // stagger. A follow relation uses the plain time here, because its lag is applied to the leader
+    // instead.
+    const double ti = type == "follow" ? t : t - doc_number(d, by, "lag", t, 0) * (double)i;
+    // The strength may go below 0 and above 1 so that an easing that overshoots, such as Back or
+    // Elastic, shows between two keyframes. It is held within -1 and 2.
+    const double base = start(name, own), strength = std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);
+    // A relation that is switched off leaves the value as it was. Its strength is kept.
+    if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;
+    // Where the layer appeared when it joined. Known for x and y only.
+    const double came = rel.from.empty() || (n != "x" && n != "y") ? std::nan("") : rel.from[2 * i + (n == "y" ? 1 : 0)];
+    // Returns the leader layer stored in the value `which`, or 0 when that is the layer itself.
     const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != layer ? l : 0; };
+    // A relation written as a file. When the file defines force(), the value comes from the
+    // simulated world. Otherwise it comes from the file's relate() results, one number per member
+    // and per name in doc_relate_names, blended by the strength.
     if (type == "relate") {
         if (d.settled) return base;
         const bool pushes = doc_pushes(d, by);
@@ -161,72 +232,113 @@ static double doc_related(Doc& d, int by, int layer, const char* name, double t,
         for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return pushes ? doc_world_value(d, layer, j, t, base) : many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
         return base;
     }
-    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, layer, "x", t, 0)), start("y", doc_number(d, layer, "y", t, 0)), start("z", doc_number(d, layer, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, world.h)
-    if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
+    // The strength scaled by the falloff at the layer's starting position. This follows Cavalry,
+    // where Falloff is a multiplier on Strength. A relation written as a file applies its falloff
+    // inside the file, see __relates in engine/community/p5/p5_stand.h.
+    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, layer, "x", t, 0)), start("y", doc_number(d, layer, "y", t, 0)), start("z", doc_number(d, layer, "z", t, 0))}, t) : 1.0);
+    // The relation's own rotation is added to each member, scaled by strength and falloff.
+    if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))
         return base + doc_number(d, by, name, ti, 0) * s;
-    if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)
+    // The relation's size and opacity are shares of each layer's own value, so they multiply it. An
+    // opacity of 0 makes the layer disappear.
+    if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))
         return base * (1.0 + (doc_number(d, by, name, ti, 1) - 1.0) * s);
-    if (type == "group") {   // (where it was put, and away by its own move, its spread from their middle and its scatter, as much as its strength, in turn)
+    // Group: moves x and y by the relation's own move, plus the layer's distance from the middle of
+    // the group times the spread, plus a random scatter, all scaled by strength and falloff.
+    if (type == "group") {
         if (n != "x" && n != "y") return base;
         const size_t axis = n == "x" ? 0 : 1;
         double middle = 0;
         int counted = 0;
+        // The middle of the group is the average of where the members were when they joined.
         for (size_t k = 0; 2 * k + axis < rel.from.size(); ++k)
-            if (!std::isnan(rel.from[2 * k + axis])) middle += rel.from[2 * k + axis], ++counted;   // (their middle where they were when they came in)
-        if (!counted)   // (not told where they came in: their own places now)
+            if (!std::isnan(rel.from[2 * k + axis])) middle += rel.from[2 * k + axis], ++counted;
+        // If that is not known, use their current places instead.
+        if (!counted)
             for (const int t : rel.members) if (t) middle += doc_literal(d, t, name, ti, 0), ++counted;
         middle = counted ? middle / counted : base;
-        const double seed = std::sin((double)(i + 1) * (axis ? 78.233 : 12.9898)) * 43758.5453, scatter = (seed - std::floor(seed)) * 2 - 1;   // (fixed for each: the same scatter every time it is shown)
+        // A fixed scatter in the range -1 to 1 for each member and axis, so the same scatter shows
+        // each time. It uses the common fract-of-sine hash from GLSL.
+        const double seed = std::sin((double)(i + 1) * (axis ? 78.233 : 12.9898)) * 43758.5453, scatter = (seed - std::floor(seed)) * 2 - 1;
         const double away = doc_number(d, by, name, ti, 0) + (base - middle) * (doc_number(d, by, "spread", ti, 1) - 1) + doc_number(d, by, "scatter", ti, 0) * scatter;
         return base + away * s;
     }
-    if (type == "around" || type == "row") {   // (around a middle, the first at the top, each as far round as its order; or in a row from the middle, gap apart)
+    // Around: members on a circle around a middle, the first at the top, each placed by its order.
+    // Row: members in a line through the middle, `gap` apart.
+    if (type == "around" || type == "row") {
         if (n != "x" && n != "y" && n != "z") return base;
         const int l = leader("leader");
         const double tilt = type == "around" ? doc_number(d, by, "tilt", t, 0) * TAU / 360.0 : 0.0;
-        if (n == "z" && tilt == 0.0 && !l) return base;   // (a ring facing the camera with no leader leaves depth alone)
+        // A circle that faces the camera and has no leader leaves depth alone.
+        if (n == "z" && tilt == 0.0 && !l) return base;
+        // The middle of the circle or row: the centre values plus the leader's position, if there
+        // is a leader.
         const double cx = doc_number(d, by, "centre_x", t, 0) + (l ? doc_literal(d, l, "x", t, 0) : 0.0), cy = doc_number(d, by, "centre_y", t, 0) + (l ? doc_literal(d, l, "y", t, 0) : 0.0);
         double place;
-        if (type == "around") {   // (round its middle, tipped back by its tilt about the across axis; round its leader in depth too)
+        // The circle is tipped back by `tilt` about the x axis. With a leader it is centred on the
+        // leader in depth as well.
+        if (type == "around") {
             const double turn = TAU * (doc_number(d, by, "offset", t, 0) + (double)i / many), r = doc_number(d, by, "radius", t, 0.5);
             const double cz = l ? doc_literal(d, l, "z", t, 0) : 0.0, up = r * std::cos(turn);
             if (n == "z") return base + (cz + up * std::sin(tilt) - base) * s;
             place = n == "x" ? cx + r * std::sin(turn) : cy + up * std::cos(tilt);
         } else if (n == "z") return base;
-        else place = n == "x" ? cx + doc_number(d, by, "gap", t, 0.2) * ((double)i - (many - 1) / 2.0) : cy;   // (a row about its middle: a wider gap spreads it both ways)
+        // A row is centred on its middle, so a wider gap spreads it both ways.
+        else place = n == "x" ? cx + doc_number(d, by, "gap", t, 0.2) * ((double)i - (many - 1) / 2.0) : cy;
+        // When the starting position is known, add only the step from there to the new place.
         return std::isnan(came) ? base + (place - base) * s : base + (place - came) * s;
     }
     if ((type == "follow" || type == "push") && d.settled) return base;
-    if (type == "follow") {   // (where its leader was so many seconds ago, each later than the one before)
+    // Follow: the layer takes its leader's value from `lag` seconds ago, later for each member. A
+    // second leader, if there is one, is mixed in by the "hand" value from 0 to 1.
+    if (type == "follow") {
         const int a = leader("leader"), b = leader("leader_b");
         if (!a) return base;
         const double back = t - doc_number(d, by, "lag", t, 0) * (double)(i + 1), hand = b ? std::clamp(doc_number(d, by, "hand", t, 0), 0.0, 1.0) : 0.0;
         const double from = doc_literal(d, a, name, back, own), to = b ? doc_literal(d, b, name, back, own) : from, lead = from + (to - from) * hand;
         return std::isnan(came) ? base + lead * s : base + (lead - came) * s;
     }
-    if (type == "push") {   // (out of its leader's way: within radius pressed towards its edge, the nearer still nearer; further off as it is)
+    // Push: moves the layer out of its leader's way. Within `radius` of the leader the layer is
+    // pushed out to between 0.6 and 1 times the radius, keeping the order of distance.
+    if (type == "push") {
         const int l = leader("leader");
         if (!l || (n != "x" && n != "y")) return base;
+        // The layer's x and y: this axis is `base`, and the other is read from its keyframes.
         const double bx = n == "x" ? base : start("x", doc_keys_at(d, doc_keys_of(d, layer, "x"), t, 0)), by_ = n == "y" ? base : start("y", doc_keys_at(d, doc_keys_of(d, layer, "y"), t, 0));
         const double lx = doc_literal(d, l, "x", t, 0), ly = doc_literal(d, l, "y", t, 0), r = doc_number(d, by, "radius", t, 0.5);
         double dx = bx - lx, dy = by_ - ly, far = std::hypot(dx, dy);
         if (far >= r || r <= 0.0) return base;
+        // A layer exactly on its leader is pushed out in a direction chosen by its index.
         if (far < 1e-6) dx = std::sin(TAU * (double)i / many), dy = std::cos(TAU * (double)i / many), far = 1e-6;
-        const double out = r * (0.6 + 0.4 * far / r), v = n == "x" ? lx + dx / far * out : ly + dy / far * out;   // (into the outer part of the ring, in their order: a clear way, none piled on another)
+        // Land in the outer part of the circle, ordered by distance, so that layers do not end up
+        // on top of each other.
+        const double out = r * (0.6 + 0.4 * far / r), v = n == "x" ? lx + dx / far * out : ly + dy / far * out;
         return base + (v - base) * s;
     }
     return base;
 }
+// Returns the value of property `literal` of the layer at time `at`, or `otherwise` when the
+// property has no keyframes. `literal` must be a string literal, because its address identifies the
+// name in the cache. The keyframes of a property are found once and kept until the document
+// changes, as Beutl and Skottie do for properties, and each call only evaluates them. The cache is
+// not used while the user drags the layer.
+// A property driven by a behaviour gets the behaviour's value for the copy being placed. One driven
+// by a relation gets the relation's value.
 static double doc_literal(Doc& d, int layer, const char* literal, double at, double otherwise) {
-    if (d.held.layer == layer) {   // (carried by a hand: what it carries; in a relation, still in it, the hand moving its own value)
+    // The layer is being dragged. Use its own value. If it is in a relation, the relation still
+    // applies, because the drag moves the layer's own value.
+    if (d.held.layer == layer) {
         const double own = doc_number(d, layer, literal, at, otherwise);
         const int by = doc_driven_by(d, layer, literal);
         return by && doc_among(doc_relations, doc_word(d, by, "file")) ? doc_related(d, by, layer, literal, at, own) : own;
     }
-    if (const int by = doc_driven_by(d, layer, literal)) {   // (given by a behaviour: the copy being placed's own, where it lies weighed by its falloff)
+    // Driven by a behaviour or relation. For a behaviour, use the value for the copy being placed,
+    // weighed by its falloff where the copy lies.
+    if (const int by = doc_driven_by(d, layer, literal)) {
         const Doc::Keys& k = doc_keys_of(d, layer, literal);
         const double own = doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
-        if (doc_among(doc_relations, doc_word(d, by, "file"))) return doc_related(d, by, layer, literal, at, own);   // (a relation: by the layer's place among its layers, not a copy's)
+        // A relation applies by the layer's place among its layers, not by a copy's place.
+        if (doc_among(doc_relations, doc_word(d, by, "file"))) return doc_related(d, by, layer, literal, at, own);
         return doc_given(d, by, d.ctxCopy, d.ctxN, at, own, d.ctxHasAt ? &d.ctxAt : nullptr);
     }
     const auto key = std::make_pair(layer, literal);
@@ -234,13 +346,16 @@ static double doc_literal(Doc& d, int layer, const char* literal, double at, dou
     if (kept == d.literals.end()) kept = d.literals.emplace(key, &doc_keys_of(d, layer, literal)).first;
     return doc_keys_at(d, *kept->second, doc_stepped(d, layer, *kept->second, at), otherwise);
 }
-static const std::string& doc_literal_word(Doc& d, int layer, const char* literal) {   // (a word so, kept the same way)
+// Like doc_literal, but for a text property. The text is cached in the same way.
+static const std::string& doc_literal_word(Doc& d, int layer, const char* literal) {
     const auto key = std::make_pair(layer, literal);
     if (const auto kept = d.heardWords.find(key); kept != d.heardWords.end()) return kept->second;
     return d.heardWords.emplace(key, doc_word(d, layer, literal)).first->second;
 }
-// A layer's copies as AbsentMotion's repeat effects on it lay them (absent_motion.h), at a moment: made again only when
-// the moment, the document or a file has changed. None: no repeat effect on it.
+// Returns the copies that AbsentMotion's repeat effects lay out for the layer at time `now`, see
+// engine/community/absent_motion/absent_motion.h. The effects are the .am files in the layer's fx
+// list. The result is computed again only when the time, the document or a file has changed. It is
+// empty when no repeat effect is on the layer.
 static const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer, double now) {
     Doc::AbsentKept& k = d.absentKept[layer];
     const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
@@ -249,16 +364,23 @@ static const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer, doubl
     k.copies.clear();
     if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return k.copies;
     const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
-    const double high = doc_number(d, 0, "high", 0, 1080), k2 = high / std::max(1, d.stage->h);   // (a point of the picture in the document's pixels)
+    // `k2` converts points of the preview to pixels of the document.
+    const double high = doc_number(d, 0, "high", 0, 1080), k2 = high / std::max(1, d.stage->h);
     const math::double2 at = doc_seen(d, (doc_above(d, layer, now, 0) * math::double4{doc_literal(d, layer, "x", now, 0), doc_literal(d, layer, "y", now, 0), doc_literal(d, layer, "z", now, 0), 1.0}).xyz) * k2;
     float2 half{0.5f};
     doc_half(d, layer, &half);
-    const double reach = std::max(half.x, half.y) * doc_literal(d, layer, "size", now, 1) * doc_point(d, layer, now) * k2 * 1.415;   // (as CopiesOf: its box's farthest from where it stands, by 1.415)
+    // Distance from the layer's position to the farthest point of its box, computed as in CopiesOf:
+    // half of the longer side times 1.415, about the square root of 2.
+    const double reach = std::max(half.x, half.y) * doc_literal(d, layer, "size", now, 1) * doc_point(d, layer, now) * k2 * 1.415;
+    // AbsentMotion measures time in milliseconds.
     k.copies = absent_copies(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, (float)(d.stage->w * k2), (float)high, (float)at.x, (float)at.y, (float)reach);
     return k.copies;
 }
-// A text's words as they are seen at a moment: as typed, or as AbsentMotion's text effects on it change them (Count
-// Up/Down, Timecode, Text Randomizer: absent_motion.h), at the stage's 60 frames a second (entry/render_thread.h's RATE).
+// Returns the text of a text layer as it is shown at time `now`. It is the typed text, or the text
+// changed by AbsentMotion's text effects on the layer such as Count Up, Count Down, Timecode and
+// Text Randomizer, see engine/community/absent_motion/absent_motion.h. They run at the stage's 60
+// frames a second, the RATE in engine/entry/render_thread.h. `moves`, when given, is set to whether
+// an effect changes the text.
 static std::string doc_text_shown(Doc& d, int layer, double now, bool* moves = nullptr) {
     const std::string typed = doc_word(d, layer, "text");
     if (moves) *moves = false;
@@ -269,36 +391,45 @@ static std::string doc_text_shown(Doc& d, int layer, double now, bool* moves = n
     const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
     return absent_text(on, layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, typed);
 }
-// How long a layer's shutter is open (AbsentMotion's Motion Blur or Shutter Blur on it: absent_shutter), seconds at the
-// stage's 60 a second, and whether its way is smeared; false: none is on it.
+// Returns whether AbsentMotion's Motion Blur or Shutter Blur is on the layer. If so, `open`
+// receives how long the shutter is open in seconds at the stage's 60 frames a second, and `moves`
+// whether the motion path is smeared.
 static bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
     if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return false;
     const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
     return absent_shutter(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, open, moves);
 }
-// How a layer's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
-// Nulls it goes with, up to the top (a Null draws nothing of its own, so its opacity is its group's), their opacities
-// one into another; 0 if one of them is hidden. 1 with none.
+// Returns the opacity that the layer inherits from its groups, following Alight Motion, where the
+// opacity and visibility of a group apply to everything in it. The groups are the Null layers that
+// the layer is parented to, up to the top. A Null draws nothing of its own, so its opacity belongs
+// to its group. The opacities are multiplied. The result is 0 when one of the Nulls is hidden, and
+// 1 when there are none.
 static double doc_group_opacity(Doc& d, int layer, double now) {
     double k = 1.0;
+    // Stop after 64 levels so that a cycle of parents terminates.
     for (int up = (int)doc_number(d, layer, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
         if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;
     return k;
 }
-// A layer's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
+// Returns the opacity share that AbsentMotion's opacity effects leave on the layer, 1 when there
+// are none.
 static double doc_absent_opacity(Doc& d, int layer, double now) {
     if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return 1.0;
     const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
     return absent_opacity(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
+// Returns how many members the layer has in their order. A text split into letters has one per
+// letter. Otherwise it is the number of copies that AbsentMotion's repeat effect lays, or the
+// "copies" value. The result is at least 1.
 static int doc_members(Doc& d, int layer) {
     const auto t = d.shown.find(layer);
     if (t != d.shown.end() && t->second.drawn && !t->second.drawn->letters.empty()) return (int)t->second.drawn->letters.size();
-    if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, layer, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
+    if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, layer, d.stage->now); !copies.empty()) return (int)copies.size();
     return std::max(1, (int)doc_literal(d, layer, "copies", 0, 1));
 }
-// How much later a layer's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
-// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
+// Returns how much later copy `nth` of the layer moves than the layer itself. The "stagger" value
+// is spread over the copies by their order, as in GSAP's stagger. "stagger_from" chooses whether
+// the order runs from the start, from the centre out, from the end, or from the edges in.
 static double doc_delay(Doc& d, int layer, int nth) {
     const double stagger = doc_literal(d, layer, "stagger", 0, 0);
     const int n = doc_members(d, layer);
@@ -307,15 +438,18 @@ static double doc_delay(Doc& d, int layer, int nth) {
     const std::string& from = doc_literal_word(d, layer, "stagger_from");
     return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
 }
-// Where the layer it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D layer
-// going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
+// Returns the transform of the layer's parent, or the identity when there is no parent or it does
+// not exist any more. A 2D layer parented to a camera also gets the identity, because it already
+// sticks to the camera in doc_place and would take the camera's moves twice.
 static math::mat4 doc_above(Doc& d, int layer, double now, int deeper = 0) {
     const int parent = (int)doc_literal(d, layer, "parent", 0, 0);
     const auto up = d.shown.find(parent), self = d.shown.find(layer);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
-    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
+    // Stop after 64 levels so that a document with a cycle of parents terminates.
+    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};
 }
-// Where a split text's letter has its middle across the layer, in its own units (0: not a letter of one).
+// Returns where the middle of letter `copy` of a split text layer lies across the layer, in the
+// layer's own units. Returns 0 when `copy` is not a letter of the layer.
 static double doc_letter_middle(Doc& d, int layer, int copy) {
     const auto sh = d.shown.find(layer);
     if (copy < 0 || sh == d.shown.end() || !sh->second.drawn || copy >= (int)sh->second.drawn->letters.size()) return 0.0;
@@ -325,11 +459,17 @@ static double doc_letter_middle(Doc& d, int layer, int copy) {
     const float2 l = sh->second.drawn->letters[(size_t)copy];
     return ((double)(l.x + l.y) * 0.5 - 0.5) * 2.0 * half.x;
 }
-// The world of the layers that fall and strike, made from the document when first asked: each one's shape (a box as
-// large as it is, a ball for a ball, flat layers held to their plane), what it bounces and rubs, where its keys put
-// it. Where the world has one at a moment (false: the world does not have it then, its keys do).
+// Looks up where the physics world puts a layer at time `now` and stores it in `pose`. `copy` is a
+// letter of a split text, or -1 for the whole layer.
+// The world holds the layers that fall and collide. Each is a box as large as the layer, or a ball,
+// and flat layers stay in their plane. It also holds how much each bounces and rubs and where its
+// keyframes put it. The world is built from the document when first asked.
+// Returns false when the world does not control the layer at that time, which means that its
+// keyframes do.
 static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy = -1) {
-    if (d.phys_stale) {   // (all the world is made of: every value and key of the layers with physics, and the pull down)
+    // Rebuild the description of everything the world is made of: every value and keyframe of the
+    // layers that have physics, and the gravity. A change in it discards the world.
+    if (d.phys_stale) {
         d.phys_stale = false;
         std::string made;
         doc_rows(d, sqlite3_mprintf("select group_concat(layer || ' ' || name || ' ' || at || ' ' || quote(value) || ' ' || coalesce(easing, ''), ';') from (select * from keyframe where layer in "
@@ -338,14 +478,18 @@ static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy 
         if (made != d.phys_made) d.phys.reset(), d.phys_of.clear(), d.phys_copy.clear(), d.phys_until.clear(), d.phys_made = made;
         d.phys_any = made.find(" physics ") != std::string::npos;
     }
-    if (!d.phys_any) return false;   // (no layer has physics: nothing asked of the document at every place)
+    // No layer has physics, so nothing needs to be asked of the document at every place.
+    if (!d.phys_any) return false;
     const std::string mine = doc_word(d, layer, "physics");
+    // Only layers set to "moves" are placed by the world. Layers set to "still" are fixed
+    // obstacles.
     if (mine != "moves") return false;
     if (!d.phys) {
         std::vector<PhysThing> made;
         d.phys_of.clear(), d.phys_copy.clear(), d.phys_until.clear();
         for (int t : doc_laid(d)) {
             const std::string how = doc_word(d, t, "physics");
+            // Layers without physics, and layers with a parent, are not in the world.
             if ((how != "moves" && how != "still") || doc_number(d, t, "parent", 0, 0) != 0.0) continue;
             float2 half{0.5f};
             float deep = 0.f;
@@ -358,14 +502,17 @@ static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy 
             one.half[1] = (float)(half.y * size * std::fabs(doc_number(d, t, "scale_y", 0, 1)));
             one.half[2] = one.flat ? 0.05f : (float)(deep * size * std::fabs(doc_number(d, t, "scale_z", 0, 1)));
             one.bounce = (float)doc_number(d, t, "bounce", 0, 0.3), one.friction = (float)doc_number(d, t, "friction", 0, 0.5);
-            for (const char* name : {"x", "y", "z", "rotate", "rotate_x", "rotate_y"}) {   // (its keys hold it till the last of them)
+            // The layer's keyframes control it until the last one of these properties.
+            for (const char* name : {"x", "y", "z", "rotate", "rotate_x", "rotate_y"}) {
                 doc_rows(d, sqlite3_mprintf("select max(at) from keyframe where layer = %d and name = %Q and " DOC_KEYED, t, name, t, name), [&](sqlite3_stmt* row) {
                     if (sqlite3_column_type(row, 0) != SQLITE_NULL) one.until = std::max(one.until, sqlite3_column_double(row, 0));
                 });
             }
             const auto sh = d.shown.find(t);
             const std::vector<float2>* letters = sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty() ? &sh->second.drawn->letters : nullptr;
-            const int copies = letters ? (int)letters->size() : 1;   // (a split text: each letter a body of its own, as wide as its ink, a little narrower so neighbours do not start inside each other)
+            // A split text gets one body for each letter, as wide as its ink but a little narrower,
+            // so that neighbours do not start inside each other.
+            const int copies = letters ? (int)letters->size() : 1;
             for (int c = 0; c < copies; ++c) {
                 PhysThing each = one;
                 if (letters) each.half[0] = std::max(0.01f, 0.92f * ((*letters)[(size_t)c].y - (*letters)[(size_t)c].x) * one.half[0]);
@@ -373,11 +520,14 @@ static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy 
                 d.phys_of.push_back(t), d.phys_copy.push_back(letters ? c : -1), d.phys_until.push_back(one.still ? 1e9 : one.until);
             }
         }
-        const auto keyed = [&d](int index, double at) {   // (where its keys put its middle, and how they turn it)
+        // Returns the pose that the layer's keyframes give at time `at`: where its middle is, and
+        // its rotation. The world calls this to place the layers that keyframes still control.
+        const auto keyed = [&d](int index, double at) {
             const int t = d.phys_of[(size_t)index], copy = d.phys_copy[(size_t)index];
             d.phys_keyed = true;
             const math::double3 middle = (doc_place(d, t, at, 0, std::max(copy, 0), copy >= 0) * math::double4{doc_letter_middle(d, t, copy), 0, 0, 1}).xyz;
             d.phys_keyed = false;
+            // Returns the quaternion for a rotation of `degrees` about the axis `about`.
             const auto half = [](double degrees, math::double3 about) { const double a = 0.5 * degrees * (double)TAU / 360.0; return math::quat{std::cos(a), about.x * std::sin(a), about.y * std::sin(a), about.z * std::sin(a)}; };
             const math::quat q = half(doc_number(d, t, "rotate", at, 0), {0, 0, 1}) * half(doc_number(d, t, "rotate_y", at, 0), {0, 1, 0}) * half(doc_number(d, t, "rotate_x", at, 0), {1, 0, 0});
             PhysPose p;
@@ -388,33 +538,47 @@ static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy 
         d.phys = std::make_unique<PhysWorld>(made, (float)doc_number(d, 0, "gravity", 0, 9.81), keyed);
     }
     size_t index = d.phys_of.size();
-    for (size_t i = 0; i < d.phys_of.size(); ++i) if (d.phys_of[i] == layer && d.phys_copy[i] == copy) { index = i; break; }   // (a layer's copies that are not letters keep to their keys)
+    // Copies of a layer that are not letters are not in the world, so they follow their keyframes.
+    for (size_t i = 0; i < d.phys_of.size(); ++i) if (d.phys_of[i] == layer && d.phys_copy[i] == copy) { index = i; break; }
     if (index == d.phys_of.size()) return false;
-    if (now <= d.phys_until[index]) return false;   // (its keys have it still)
+    // The layer's keyframes still control it.
+    if (now <= d.phys_until[index]) return false;
+    // The world is stepped at 60 frames a second.
     *pose = d.phys->pose((int)index, (int)std::lround(now * 60.0));
     return true;
 }
-// Whether the stage places a layer as a member of its copies (each copy, the first too, as late as its order says, laid
-// as its expressions say), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
-static std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer);   // (expressions.h)
+// Defined in engine/document/expressions.h.
+static std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer);
+// Returns whether the stage places a layer as a member of its copies, or as itself. A member is
+// delayed by its order, the first copy too, and laid out as its expressions say. The stage and
+// everyone who asks how the layer moves, such as motolii_path, place it in the same way.
 static bool doc_staggered(Doc& d, int layer, double now) {
-    if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
-    if (!doc_expressions_fx(d, layer).empty()) return true;   // (and a layer with no copies by its expressions: itself their one copy, i 0 of n 1)
+    // One box in a sketch is placed by the sketch in the same way.
+    if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script")); sc && sc->run && sc->run->sketch()) return true;
+    // A layer with no copies but with expressions is its own single copy, index 0 of 1.
+    if (!doc_expressions_fx(d, layer).empty()) return true;
     return doc_members(d, layer) > 1 || doc_number(d, layer, "stagger", 0, 0) > 0.0 || doc_number(d, layer, "field_radius", now, 0) > 0.0;
 }
-// How far a layer that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
-// carry it then; standing still, the way it last went or will go. 0 for any other.
+// Defined in engine/document/shown.h.
 static std::vector<double> doc_key_times(Doc& d, int layer, const char* name);
+// Returns the angle in radians about z by which a layer that turns the way it moves is turned at
+// time `now`. A layer does this when its "orient" value is above 0.5. The angle is the direction
+// its keyframes carry it at that time. When it stands still, it is the direction it last moved in,
+// or else the direction it will move in. Returns 0 for any other layer.
 static double doc_heading(Doc& d, int layer, double now) {
     if (doc_literal(d, layer, "orient", 0, 0) <= 0.5) return 0.0;
+    // Computes the direction of motion between two times into `heading`. Returns false when the
+    // layer did not move.
     const auto going = [&](double from, double to, double* heading) {
         const double ax = doc_literal(d, layer, "x", from, 0), ay = doc_literal(d, layer, "y", from, 0), bx = doc_literal(d, layer, "x", to, 0), by = doc_literal(d, layer, "y", to, 0);
         return std::hypot(bx - ax, by - ay) > 1e-6 && (*heading = std::atan2(by - ay, bx - ax), true);
     };
     double heading = 0.0;
+    // Try a short window around the time first, then a longer one.
     for (const double step : {1.0 / 240.0, 1.0 / 30.0})
         if (going(now - step, now + step, &heading)) return heading;
-    // (standing still: the way it went as it came to the last key before, else the way it will go from the first after)
+    // The layer is standing still. Use the direction of motion as it reached the last keyframe
+    // before the time, or else the direction it takes from the first keyframe after it.
     std::vector<double> keys = doc_key_times(d, layer, "x"), more = doc_key_times(d, layer, "y");
     keys.insert(keys.end(), more.begin(), more.end());
     std::sort(keys.begin(), keys.end());

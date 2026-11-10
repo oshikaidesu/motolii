@@ -1,14 +1,22 @@
-// place.h: part of doc.h (where a layer and its copies lie, and what joins them). Read only through doc.h.
-// How much deeper it is drawn: a flat layer's thickness keyed through 0 has none, not a place that cannot be turned back.
+// place.h: computes where each layer, and each copy of a layer, is placed on the stage, and the
+// lines that join copies.
+//
+// Included by doc.h; not self-contained.
+
+// Returns the depth scale of a layer at time `now`. A scale of exactly 0 would make the matrix
+// singular, so a layer that is not a solid gets 1e-3 instead.
 static double doc_scale_z(Doc& d, int layer, double now) {
     const double z = doc_literal(d, layer, "scale_z", now, 1);
     return z == 0 && doc_word(d, layer, "kind") != "solid" ? 1e-3 : z;
 }
-// Where a recipe, or a MIDI file's notes, lay copy `copy` of `n` of a layer (by 0: neither; 1: a MIDI file's note, 2: a recipe's each()): its place, turn and size.
-// Asked first, so that what a falloff weighs is where the copy lies.
+// Where a script, or the notes of a MIDI file, put one copy of a layer: its position, rotation and
+// size. `by` says what produced it: 0 for neither, 1 for a MIDI file's note, 2 for a script's
+// each().
 struct DocLaid { ScriptCopy c; int by = 0; };
-// What lays a layer's copies, and AbsentMotion's motions on it: the same for each copy, so while a moment is told
-// (d.telling: the document does not change meanwhile) asked once for the layer, as its talls are; else asked as it is.
+// Returns the expressions that place the copies of `layer`. Returns an empty list for a sketch,
+// whose mesh has no copies to place (see sketch.h). The result is the same for every copy, so while
+// the document is being evaluated at one time (d.evaluating, and the document cannot change
+// meanwhile) it is computed once per layer and cached in d.placing, like the copy_tall values.
 static std::vector<DocScript*> doc_placing_scs(Doc& d, int layer) {
     const auto ask = [&] { return doc_literal_word(d, layer, "shape") != "sketch" ? doc_expressions_on(d, layer) : std::vector<DocScript*>{}; };
     if (!d.evaluating) return ask();
@@ -16,18 +24,31 @@ static std::vector<DocScript*> doc_placing_scs(Doc& d, int layer) {
     if (!kept.laid) kept.laid = true, kept.scs = ask(), kept.from = kept.scs.empty() ? "" : doc_expressions_said(d, layer);
     return kept.scs;
 }
+// Returns the AbsentEffect motions on `layer` at time `said`, cached per layer while the document
+// is being evaluated, like doc_placing_scs.
 static std::vector<AbsentEffect> doc_placing_absent(Doc& d, int layer, double said) {
     if (!d.evaluating) return doc_absent_on(d, layer, said);
     Doc::Placing& kept = d.placing[layer];
     if (kept.absentAt != said) kept.absentAt = said, kept.absent = doc_absent_on(d, layer, said);
     return kept.absent;
 }
+// Returns the placement of copy `copy` of the `n` copies of `layer` at time `said`, as given by the
+// layer's MIDI file or script. It is asked first, so that a falloff weighs each copy by the
+// position where the copy lies.
 static DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     DocLaid out;
-    if (const std::string notes = doc_literal_word(d, layer, "script"); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi_notes.h)
+    // If the layer's script is a MIDI file, each copy is one note of the file; see midi_notes.h.
+    // Otherwise the script and the layer's expressions place each copy, on top of what the copy's
+    // own values say.
+    if (const std::string notes = doc_literal_word(d, layer, "script"); std::filesystem::path(notes).extension() == ".mid") {
         Doc::Scripted& kept = d.scripted[layer];
-        if (kept.at != said || (int)kept.copies.size() != n)   // (its speed: the file's beats faster or slower, as a film's)
-        {   // (its highest row where the roll of the same file at the same speed has it, put at the same place: midi_roll.cpp, its top row the file's highest note)
+        // Recompute only when the time or the number of copies changed. The speed scales the file's
+        // beats like the playback speed of a video.
+        if (kept.at != said || (int)kept.copies.size() != n)
+        {
+            // midi_roll_box returns the size of the piano roll of the same file at the same speed
+            // (midi_roll.cpp). The copies' highest row is placed where the roll has its top row,
+            // which is the file's highest note.
             const double speed = doc_literal(d, layer, "speed", 0, 1);
             std::string why;
             double w = 0, h = 0;
@@ -36,11 +57,14 @@ static DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
         }
         const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
         out.c = c, out.by = 1;
-    } else   // (a recipe as code: each copy where the layer's script and its expressions say, on top of what its copies' values say)
-        if (const std::vector<DocScript*> scs = doc_placing_scs(d, layer); !scs.empty()) {   // (a sketch's own mesh has no copies to place: sketch.h)
+    } else
+        if (const std::vector<DocScript*> scs = doc_placing_scs(d, layer); !scs.empty()) {
             Doc::Scripted& kept = d.scripted[layer];
-            const double gone = doc_literal(d, layer, "begin", 0, 0), begins = doc_literal(d, layer, "start", 0, 0) - gone, clock = doc_own_time(d, layer, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
-            if (const std::string from = d.evaluating ? d.placing[layer].from : doc_expressions_said(d, layer); kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n || kept.from != from) {   // (every copy at once, the knobs read once)
+            // `clock` is the layer's own time. A part after a cut continues from where it was
+            // before the cut; see doc_own_clock.
+            const double gone = doc_literal(d, layer, "begin", 0, 0), begins = doc_literal(d, layer, "start", 0, 0) - gone, clock = doc_own_time(d, layer, said, said - begins);
+            // Recompute all copies at once, so that the parameters are read once.
+            if (const std::string from = d.evaluating ? d.placing[layer].from : doc_expressions_said(d, layer); kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n || kept.from != from) {
                 kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d), kept.from = from;
                 kept.copies = doc_expressions_lay(d, layer, scs, n, said, clock, gone);
             }
@@ -49,60 +73,86 @@ static DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
         }
     return out;
 }
+// Returns the matrix that places `layer` on the stage at time `now`. `deeper` is nonzero when the
+// result is wanted before the layer's space (2D, 2.5D or 3D) is applied. With `member`, the matrix
+// is for copy number `copy` of the layer's copies, shown with that copy's delay.
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy, bool member) {
-    const double said = now;   // (the moment itself: what lays its copies is asked at it, whatever the copy's delay)
-    struct Placing { Doc& d; int copy, n; bool hasAt; math::double3 at; ~Placing() { d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at; } } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};   // (which copy, as it was before: told back after)
+    // The time itself, before the copy's delay is subtracted. What places the copies is evaluated
+    // at this time.
+    const double said = now;
+    // Restores the copy context that was set before this call when the function returns.
+    struct Placing { Doc& d; int copy, n; bool hasAt; math::double3 at; ~Placing() { d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at; } } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};
     {
         const int many = member ? doc_members(d, layer) : 1;
         d.ctxCopy = member ? copy : 0, d.ctxN = many, d.ctxHasAt = false;
     }
-    if (member) now -= doc_delay(d, layer, copy);   // (a member of its copies: as it was so much earlier)
+    // A copy is shown with its delay: the layer as it was that much earlier.
+    if (member) now -= doc_delay(d, layer, copy);
     const auto turned = [&](const char* name, math::double3 about) { return math::mat4::rotation(doc_literal(d, layer, name, now, 0) * (double)TAU / 360.0, about); };
     float2 half{0.5f};
     float deep = 0.f;
     doc_half(d, layer, &half, &deep);
     const math::double3 anchor{doc_literal(d, layer, "anchor_x", now, 0) * half.x, doc_literal(d, layer, "anchor_y", now, 0) * half.y, doc_literal(d, layer, "anchor_z", now, 0) * deep};
-    // A member of its copies is moved in units of the stage (so a larger layer is not further apart), laid where
-    // its recipe or its MIDI file's notes say (doc_laid) about the layer's own place; then turned and sized as they
-    // say, about its anchor.
+    // A copy is offset in stage units, so that a larger layer does not get larger gaps. The script
+    // or the MIDI file places it (doc_laid) relative to the layer's own position. Then it is
+    // rotated and scaled as they say, about its anchor.
     const int n = member ? doc_members(d, layer) : 1;
     const DocLaid laid = member ? doc_laid(d, layer, copy, n, said) : DocLaid{};
     math::double3 shift{0.0};
     math::mat4 own;
     if (member) {
-        shift += math::double3{laid.c.x, laid.c.y, laid.c.z};   // (where its recipe, or its MIDI file's notes, lay this copy: first, so a falloff reads where it lies)
-        if (doc_connects(d, layer)) {   // (where this copy lies, as its recipe lays it, on the stage: what a falloff weighs; its own values, unconnected)
+        // Apply the scripted offset first, so that a falloff reads the position where the copy
+        // lies.
+        shift += math::double3{laid.c.x, laid.c.y, laid.c.z};
+        // Record the copy's position on the stage as the script places it. A falloff weighs copies
+        // by this position. It is recorded only for a connected layer; otherwise ctxHasAt stays
+        // false.
+        if (doc_connects(d, layer)) {
             d.ctxAt = (doc_above(d, layer, now, deeper) * math::double4{doc_number(d, layer, "x", now, 0) + shift.x, doc_number(d, layer, "y", now, 0) + shift.y, doc_number(d, layer, "z", now, 0) + shift.z, 1.0}).xyz;
             d.ctxHasAt = true;
         }
     }
-    if (const std::string file = doc_literal_word(d, layer, "file"); std::filesystem::path(file).extension() == ".mid") {   // (a MIDI file's roll going by: its start at the layer at its first moment, 300 points a second, ALMaMPlayer's track.gd)
+    // A MIDI file shown as a piano roll scrolls past. At the layer's start time its beginning is at
+    // the layer, and it moves 300 points per second, as in ALMaMPlayer's track.gd.
+    if (const std::string file = doc_literal_word(d, layer, "file"); std::filesystem::path(file).extension() == ".mid") {
         const double speed = doc_literal(d, layer, "speed", 0, 1), point = doc_point(d, layer, said);
         std::string why;
         double w = 0, h = 0;
         if (point > 0 && midi_roll_box(midi_roll_file(file, speed == 1.0 ? 0.0 : midi_bpm(file.c_str()) * speed, why), w, h))
             shift.x += (0.5 * w - 300.0 * (said - doc_literal(d, layer, "start", 0, 0))) / point;
     }
-    if (laid.by == 1) own = own * math::mat4::scaling(laid.c.size);   // (a MIDI file's note: as large as it is told)
-    else if (laid.by == 2)   // (a recipe's copy turned and sized as its script and its expressions say)
+    // by == 1: a MIDI note, scaled to the size it was given. by == 2: a script's copy, rotated and
+    // scaled as its script and expressions say.
+    if (laid.by == 1) own = own * math::mat4::scaling(laid.c.size);
+    else if (laid.by == 2)
         own = own * math::mat4::rotation(laid.c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(laid.c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
                   math::mat4::rotation(laid.c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{laid.c.size * laid.c.scale_x, laid.c.size * laid.c.scale_y, laid.c.size * laid.c.scale_z});
-    if (const std::vector<AbsentEffect> moving = doc_placing_absent(d, layer, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)
+    // Apply the motion of the layer's AbsentEffect list, in stack order, as absent_motion.h does
+    // for Alight Motion.
+    if (const std::vector<AbsentEffect> moving = doc_placing_absent(d, layer, said); !moving.empty()) {
         const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
         const AbsentMoved m = absent_motion(moving, layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * said);
-        const double pixel = (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, layer, said));   // (a pixel of the document where the layer stands, as a script's copies are told)
-        shift += math::double3{m.x * pixel, -m.y * pixel, m.z * pixel};   // (its y down, the stage's up)
-        own = own * math::mat4::rotation(-m.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::scaling(math::double3{m.scale_x, m.scale_y, 1.0});   // (its turn clockwise)
-        if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, layer, said); member && copy < (int)copies.size()) {   // (each copy where AbsentMotion's repeat lays it)
+        // The size of one document pixel in stage units where the layer stands, as for the copies
+        // of a script.
+        const double pixel = (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, layer, said));
+        // Alight Motion's y axis points down; the stage's points up.
+        shift += math::double3{m.x * pixel, -m.y * pixel, m.z * pixel};
+        // Alight Motion rotates clockwise, so the angle is negated.
+        own = own * math::mat4::rotation(-m.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::scaling(math::double3{m.scale_x, m.scale_y, 1.0});
+        // Offset each copy as the repeat effect lays it out.
+        if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, layer, said); member && copy < (int)copies.size()) {
             const AbsentCopy& c = copies[(size_t)copy];
             shift += math::double3{c.x * pixel, -c.y * pixel, 0.0};
             own = own * math::mat4::rotation(-c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::scaling(c.scale);
         }
     }
-    double tall = doc_literal(d, layer, "tall", now, 1);   // (taller, its anchor staying: a copy as its number in copy_tall says too)
+    // Vertical scale, with the anchor staying fixed. A copy is also scaled by its entry in
+    // copy_tall.
+    double tall = doc_literal(d, layer, "tall", now, 1);
     if (member) {
         auto found = d.talls.find(layer);
-        if (found == d.talls.end()) {   // (read once a moment)
+        // Parse copy_tall once per time step and cache it in d.talls.
+        if (found == d.talls.end()) {
             std::istringstream said(doc_literal_word(d, layer, "copy_tall"));
             std::vector<double> all;
             for (std::string one; said >> one && one != "none";) all.push_back(std::atof(one.c_str()));
@@ -112,9 +162,13 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
         if (!each.empty()) tall *= each[(size_t)copy % each.size()];
     }
     own = own * math::mat4::scaling(math::double3{1.0, tall, 1.0});
-    if (member)   // (a split text's letter turns and grows about its own middle, not the whole line's)
+    // The letters of a split text rotate and scale about their own middle, not the middle of the
+    // whole line.
+    if (member)
         if (const double middle = doc_letter_middle(d, layer, copy); middle != 0.0) own = math::mat4::translation(math::double3{middle, 0, 0}) * own * math::mat4::translation(math::double3{-middle, 0, 0});
-    if (!d.phys_keyed && !deeper) {   // (a layer that falls and strikes, or a letter of one: where the world has its middle, turned as it has it)
+    // A layer under physics simulation, or a letter of one: use the position and rotation that the
+    // physics world gives, then return.
+    if (!d.phys_keyed && !deeper) {
         PhysPose pose;
         if (doc_physics(d, layer, now, &pose, member ? copy : -1)) {
             const math::quat q{pose.turn[3], pose.turn[0], pose.turn[1], pose.turn[2]};
@@ -125,7 +179,9 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
         }
     }
     const math::mat4 heading = math::mat4::rotation(doc_heading(d, layer, now), math::double3{0, 0, 1});
-    if (member)   // (laid on another shape's outline, evenly, each turned the way it goes there, as Cavalry's Duplicator on a shape)
+    // Copies placed evenly along another shape's outline, each rotated to follow the direction of
+    // the outline there, like Cavalry's Duplicator on a shape.
+    if (member)
         if (const int on = (int)doc_literal(d, layer, "copy_on", 0, 0); on && on != layer && doc_number(d, on, "copy_on", 0, 0) == 0.0) {
             const auto found = d.shown.find(on);
             const Canvas2D* b = found == d.shown.end() ? nullptr : found->second.drawn;
@@ -138,26 +194,34 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                 if (kept.at != said || kept.key != key || kept.of != b) kept.at = said, kept.key = key, kept.of = b, sk_along(cmds, cmdsCnt, pts, n, (float)from, kept.each);
                 if ((size_t)copy * 3 + 2 < kept.each.size()) {
                     const float* e = &kept.each[(size_t)copy * 3];
-                    const math::mat4 there = doc_place(d, on, now);   // (its outline's place on the stage: as shape_cut lays it)
+                    // The placement of the outline's layer on the stage, as shape_cut computes it.
+                    const math::mat4 there = doc_place(d, on, now);
                     const math::double4 world = there * math::double4{(e[0] - 0.5 * b->cutW) / b->plainHigh * b->sheetHigh, (0.5 * b->plainHigh - e[1]) / b->plainHigh * b->sheetHigh, 0.0, 1.0};
                     const math::double3 way = there.upperLeft() * math::double3{std::cos(e[2]), -std::sin(e[2]), 0.0};
                     const math::mat4 frame = doc_above(d, layer, now, deeper) * math::mat4::translation(math::double3{doc_literal(d, layer, "x", now, 0), doc_literal(d, layer, "y", now, 0), doc_literal(d, layer, "z", now, 0)}) *
                                              heading * turned("rotate", {0, 0, 1}) * turned("rotate_y", {0, 1, 0}) * turned("rotate_x", {1, 0, 0});
                     const math::mat4 back = inverse(frame);
-                    shift = (back * world).xyz;   // (where it lies, in the layer's own turned frame: its rows and scatter left out)
+                    // The copy's position in the layer's own rotated frame, without the offsets of
+                    // rows and scatter.
+                    shift = (back * world).xyz;
                     const math::double3 w = back.upperLeft() * way;
                     own = math::mat4::rotation(std::atan2(w.y, w.x), math::double3{0, 0, 1}) * own;
                 }
             }
         }
     const math::mat4 above = doc_above(d, layer, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, layer, "x", now, 0), doc_literal(d, layer, "y", now, 0), doc_literal(d, layer, "z", now, 0)});
-    math::mat4 helped;   // (Alight Motion's Parenting Helper, as bevy_alight_motion works it (MIT/Apache-2.0, src/animation/parenthelper.rs): its parent's turn and size taken by their weights, and a wheel's roll)
+    // Alight Motion's Parenting Helper, as bevy_alight_motion implements it (MIT/Apache-2.0,
+    // src/animation/parenthelper.rs). The parent's rotation and size are applied scaled by their
+    // weights, plus the rolling of a wheel.
+    math::mat4 helped;
     if (const double wr = doc_literal(d, layer, "parent_rotate", now, 1), ws = doc_literal(d, layer, "parent_size", now, 1); doc_literal(d, layer, "parent", 0, 0) != 0.0 && (wr != 1.0 || ws != 1.0)) {
         const math::double3 ax = above[0].xyz;
         const double turn = std::atan2(ax.y, ax.x), size = std::max(1e-9, length(ax));
         helped = math::mat4::rotation(turn * (wr - 1.0), math::double3{0, 0, 1}) * math::mat4::scaling((1.0 + (size - 1.0) * ws) / size);
     }
-    if (const std::string roll = doc_literal_word(d, layer, "roll"); roll == "x" || roll == "y") {   // (the way gone along over the wheel's round, in turns: x to the right turns it clockwise)
+    // Wheel roll: the distance travelled along the roll axis turns the layer by distance divided by
+    // radius, in radians. Moving right along x turns it clockwise.
+    if (const std::string roll = doc_literal_word(d, layer, "roll"); roll == "x" || roll == "y") {
         float2 half{0.5f};
         float deep = 0.f;
         doc_half(d, layer, &half, &deep);
@@ -166,8 +230,11 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
         if (std::fabs(r) > 1e-6) helped = helped * math::mat4::rotation(-(roll == "x" ? at.x : -at.y) / r, math::double3{0, 0, 1});
     }
     math::double2 assisted{doc_literal(d, layer, "scale_x", now, 1), doc_literal(d, layer, "scale_y", now, 1)};
-    if (const std::string assist = doc_literal_word(d, layer, "scale_assist"); !assist.empty()) {   // (Alight Motion's Scale Assist, as bevy_alight_motion works it (MIT/Apache-2.0, src/animation/parenthelper.rs
-        const double k = doc_literal(d, layer, "scale_assist_amount", now, 1), damp = std::max(1.0, doc_literal(d, layer, "scale_assist_damp", now, 1));   //  resolve_parenthelper_visual_scale): its axis 1 y, 2 x, 3 both)
+    // Alight Motion's Scale Assist, as bevy_alight_motion implements it
+    // (resolve_parenthelper_visual_scale in src/animation/parenthelper.rs). The axis is 1 for y, 2
+    // for x and 3 for both; here it is the word "y", "x" or "both".
+    if (const std::string assist = doc_literal_word(d, layer, "scale_assist"); !assist.empty()) {
+        const double k = doc_literal(d, layer, "scale_assist_amount", now, 1), damp = std::max(1.0, doc_literal(d, layer, "scale_assist_damp", now, 1));
         if (assist == "y") assisted.y *= k;
         else if (assist == "x") assisted.x *= k;
         else if (assist == "both") assisted.x *= k, assisted.y /= std::max(1e-9, std::pow(k, 1.71) * std::pow(damp, 1.0 + 2.75 * std::pow(damp - 1.0, 1.93)));
@@ -177,32 +244,40 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                        math::mat4::scaling(math::double3{assisted.x, assisted.y, doc_scale_z(d, layer, now)}) *
                        own * math::mat4::translation(-anchor);
     const double reach = member ? doc_literal(d, layer, "field_radius", said, 0) : 0.0;
-    if (reach > 0.0) {   // (within the field: larger and turned about where it is seen, its picture's middle, as near the field's middle as it is)
+    // Within the field's radius, the layer is scaled and rotated about the point where it is seen,
+    // the middle of its image, in proportion to how close it is to the middle of the field.
+    if (reach > 0.0) {
         const math::double3 at = (place * math::double4{0.0, 0.0, 0.0, 1.0}).xyz;
-        const math::double3 middle{doc_literal(d, layer, "field_x", said, 0), doc_literal(d, layer, "field_y", said, 0), doc_literal(d, layer, "field_z", said, 0)};   // (a ball: near and far measured too)
+        // The field is a sphere, so distance is measured in z as well.
+        const math::double3 middle{doc_literal(d, layer, "field_x", said, 0), doc_literal(d, layer, "field_y", said, 0), doc_literal(d, layer, "field_z", said, 0)};
         const double from = length(at - middle), band = doc_literal(d, layer, "field_band", said, 0);
         const double near = std::clamp(band > 0.0 ? 1.0 - std::fabs(from - reach) / band : 1.0 - from / reach, 0.0, 1.0), k = near * near * (3.0 - 2.0 * near);
         const math::double3 away = at - middle;
-        const double r = length(away), by = doc_literal(d, layer, "field_push", said, 0);   // (pushed out as if from a hole that wide: the nearest ones all end about as far out, the hole round however they lay)
+        // Push the layer outward as if from a round hole of radius `by`: the nearest copies all end
+        // up about the same distance out, so the hole is round however the copies were laid.
+        const double r = length(away), by = doc_literal(d, layer, "field_push", said, 0);
         const math::double3 push = r > 1e-9 ? normalize(away) * (by > 0.0 ? k * (std::sqrt(r * r + by * by) - r) : k * by) : math::double3{0.0};
         place = math::mat4::translation(push) * math::mat4::translation(at) * math::mat4::rotation(k * doc_literal(d, layer, "field_rotate", said, 0) * (double)TAU / 360.0, math::double3{0, 0, 1}) *
                 math::mat4::scaling(std::max(0.0, 1.0 + k * doc_literal(d, layer, "field_size", said, 0))) * math::mat4::translation(-at) * place;
     }
-    // (the user's three tags: 2D sticks to the camera; 2.5D stays in the world, smaller far, but keeps the angle it
-    //  was given on the screen; 3D, and a solid, is filmed as it is)
+    // Space set by the user: 2D sticks to the camera; 2.5D stays in the world and is smaller when
+    // far, but keeps the angle it was given on the screen; 3D, and a solid, is filmed as it is.
     const auto shown = d.shown.find(layer);
     if (deeper || shown == d.shown.end() || shown->second.space == 3) return place;
     if (shown->second.space == 2) return d.rig * place;
-    const math::double3 at = (place * math::double4{anchor, 1.0}).xyz;   // (where it stands)
+    const math::double3 at = (place * math::double4{anchor, 1.0}).xyz;
     return math::mat4::translation(at) * d.facing * math::mat4::translation(-at) * place;
 }
-// Where a joining layer's copies lie (its connect): one from each copy of the layer it joins to another, stretched
-// along the way between them and as fine as they are far apart; those left over shown nowhere. Only where its copies
-// are placed, as any layer's: the lines are its own copies, in its own fill.
+// Returns one matrix per line that joins copies of the layer named by "connect" to copies of the
+// layer named by "connect_to", or to other copies of the same layer. Each line is stretched along
+// the direction between the two copies and gets thinner the farther apart they are. Copies left
+// over are not shown. The lines are the layer's own copies, placed like those of any layer and
+// drawn with its own fill.
 static std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
     const int one = (int)doc_number(d, layer, "connect", 0, 0), two = (int)doc_number(d, layer, "connect_to", 0, 0);
     if (!one || one == layer || !d.shown.count(one) || (two && (two == layer || !d.shown.count(two)))) return {};
-    const auto where = [&](int other) {   // (where each copy of it is seen, its picture's middle, before its space is taken into account)
+    // Returns the position of the middle of each copy of `other`, before the space is applied.
+    const auto where = [&](int other) {
         std::vector<math::double3> at((size_t)doc_members(d, other));
         for (size_t i = 0; i < at.size(); ++i) at[i] = (doc_place(d, other, now, 1, (int)i, true) * math::double4{0.0, 0.0, 0.0, 1.0}).xyz;
         return at;
@@ -222,8 +297,11 @@ static std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
     std::vector<math::mat4> lines;
     for (size_t k = 0; k < pairs.size() && k < most; ++k) {
         const math::double3 from = a[pairs[k].first], to = b[pairs[k].second], mid = (from + to) * 0.5, way = to - from;
-        const double far = length(way), fine = reach > 0.0 && !two ? 0.35 + 0.65 * (1.0 - far / reach) : 1.0;   // (never finer than about a third: thinner than a dot of the screen it breaks up)
-        // (along the way between them however deep it goes; its width across, as level as it can lie, facing the eye)
+        // The width factor never drops below about a third, because thinner lines break up on the
+        // screen.
+        const double far = length(way), fine = reach > 0.0 && !two ? 0.35 + 0.65 * (1.0 - far / reach) : 1.0;
+        // The line's axes: along the direction between the two copies, however deep it goes; across
+        // it, as level as possible and facing the viewer.
         const math::double3 along = far > 1e-9 ? way / far : math::double3{1, 0, 0}, flat = cross(along, math::double3{0, 0, 1});
         const math::double3 across = length(flat) > 1e-6 ? normalize(flat) : math::double3{0, 1, 0}, up = cross(along, across);
         const double wide = doc_number(d, layer, "size", now, 1) * fine;
@@ -237,8 +315,9 @@ static std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
     return lines;
 }
 
-// The shapes the kit's mattes are cut by that `which` names, taken out of their matte's scene and done away with,
-// their looks too (a look holds the picture it reads: Filament will not let that picture go while a look holds it).
+// Removes the matte shapes selected by `which` from every matte scene and destroys them together
+// with their material instances. A material instance holds the texture it reads, and Filament will
+// not release that texture while the instance exists.
 static void doc_unshape(Stage& s, const std::function<bool(const Stage::Renderable&)>& which) {
     auto& faces = s.engine->getRenderableManager();
     for (size_t i = s.renderables.size(); i-- > 0;) {
@@ -251,19 +330,32 @@ static void doc_unshape(Stage& s, const std::function<bool(const Stage::Renderab
         s.renderables.erase(s.renderables.begin() + (long)i);
     }
 }
-// Every layer told its moment: whether it is on (from its start, for its duration if it has one), what of itself it
-// shows (it goes round when it comes to its end), and where it is.
-// The stage's own looks, Filament's, as the document says them (layer 0): its grade made again only when it is told
-// otherwise; the glow, flare, darkened corners and fog on the stage's own view; the room's light and the colour behind.
+// The next two declarations are used below. The two paragraphs here describe the per-time update of
+// the stage and are not specific to them.
+//
+// For every layer at a given time: whether it is on (from its start, for its duration if it has
+// one), what part of itself it shows (it loops when it reaches its end), and where it is.
+//
+// The stage's own settings as Filament has them, taken from the document (layer 0): the grade is
+// rebuilt only when it changes; the glow, flare, darkened corners and fog on the stage's own view;
+// the room's light and the background colour.
 static bool doc_knows(Doc& d, int layer, const char* name, const double* number, const char* word, bool key);
 static bool doc_frame(Doc& d, int layer, double now, double* frame);
-// An ISF audio input's values now (screen_fx.h sounds): the sound of the layer its knob names (by number, on the card as
-// a picture's is), at that layer's own moment as its film shows it (from its start, from where it begins, at its
-// speed: motolii_loudness_over's way), read once aside (sound_level.h); none named, or not read yet: none (silence).
+// Returns the values of an ISF audio input at the current time (see the sounds in screen_fx.h). The
+// sound comes from the layer whose number the effect parameter `name` holds, set on the effect's
+// card in the same way as an image input. It is read at that layer's own time in its video, counted
+// from the layer's start, offset by where the clip begins and scaled by its speed, the same as
+// motolii_loudness_over. The audio is decoded once, separately (sound_level.h). `fft` selects the
+// spectrum instead of the waveform, and `wide` is the number of values wanted. Returns an empty
+// vector, meaning silence, when no layer is named or its audio is not yet read.
 static std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file, const std::string& name, bool fft, int wide) {
-    std::lock_guard<std::recursive_timed_mutex> hold(d.lock);   // (asked while the picture is drawn)
+    // Called while a frame is being drawn.
+    std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
     const double now = d.stage->now;
-    if (name == "aviutl.audiobuffer") {   // (the scene's whole sound, as AviUtl2's "audiobuffer" is every item's mixed: each film heard now, each at its own moment as below; the waves added, the bands the loudest)
+    // The special name "aviutl.audiobuffer" selects the mix of all video layers heard now, like
+    // AviUtl2's "audiobuffer", which is the mix of every item. Each layer is read at its own time,
+    // as below. Waveforms are added; spectrum bands take the maximum.
+    if (name == "aviutl.audiobuffer") {
         std::vector<float> all;
         for (const int t : doc_laid(d)) {
             if (doc_word(d, t, "kind") != "video" || doc_number(d, t, "volume", now, 1) <= 0) continue;

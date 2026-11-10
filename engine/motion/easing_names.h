@@ -1,7 +1,11 @@
-// Ways by name: Cavalry's Magic Easing names, each an expression of u (how far through the stretch, 0 to 1) that
-// gives how far the value has gone. One table for both: a key's stretch (doc.h, worked out by SQLite) and a script's
-// ease(name, u) (script.cpp, the same text run as JavaScript), so they cannot drift apart. Only what both have:
-// pow, exp, cos, abs, pi().
+// Named easings that use Cavalry's Magic Easing names.
+//
+// Each entry is an expression of u, the progress through the span between two keyframes
+// (0 to 1), and evaluates to how far the value has moved (0 at the start, 1 at the end).
+// The same table is used by keyframe evaluation (evaluated by SQLite) and by the
+// script function ease(name, u) (script.cpp, evaluated as JavaScript), so the two cannot
+// drift apart. Expressions may only use functions that both SQLite and JavaScript
+// provide here: pow, exp, cos, abs and pi().
 #pragma once
 static const struct { const char* name; const char* goes; } named_ways[] = {
     {"SlowIn", "pow(u, 3)"},

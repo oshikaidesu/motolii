@@ -1,10 +1,19 @@
-// Code found on the net, as it comes: what it is read from itself and run by the adapter it needs, the file left as it is.
-// What is on the page of each is said in a line before it, so a sketch's lines stay its own lines (script.h sketch_marked).
-// JavaScript is told as a p5.js sketch on p5.js's canvas (p5_stand.h), a shader as an ISF effect (isf.cpp). The forms are
-// each site's own: Dwitter's page (dwitter/templates/dweet/dweet.html: c, x, S, C, T, R, u(t) 60 times a second on a white
-// 1920 x 1080), tixy.land's (t, i, x, y, with(Math); 16 x 16, white or red), Turtletoy's (walk(i), turtletoy on npm),
-// Two.js's and Paper.js's own canvas renderers, Shadertoy's mainImage and its uniforms, GLSL Sandbox's time and resolution,
-// twigl's r m t f s b and FC (src/fragmen.js), Bonzomatic's fGlobalTime, v2Resolution and out_color (its default shader).
+// Adapters for code found on the net. They detect which site a pasted program was written for and
+// turn it into something the engine runs without the user changing the code.
+// JavaScript becomes a p5.js sketch running on the p5.js canvas (community/p5/p5_stand.h). A shader
+// becomes an ISF effect (community/isf/isf.cpp). Information taken from the page, such as the
+// libraries it needs, goes in a comment line before the code, so the sketch's own lines stay as
+// they were (sketch_marked in community/quickjs/script.h).
+// Each form follows its site's own conventions:
+//   Dwitter: the variables c, x, S, C, T, R and the function u(t), called 60 times a second on a
+//     white 1920 x 1080 canvas (dwitter/templates/dweet/dweet.html in the Dwitter repository).
+//   tixy.land: the variables t, i, x, y and with(Math), on a 16 x 16 grid drawn in white or red.
+//   Turtletoy: walk(i), from the turtletoy package on npm.
+//   Two.js and Paper.js: their own canvas renderers.
+//   Shadertoy: mainImage and its uniforms.
+//   GLSL Sandbox: the time and resolution uniforms.
+//   twigl: the variables r m t f s b and FC (src/fragmen.js in the twigl repository).
+//   Bonzomatic: fGlobalTime, v2Resolution and out_color, from its default shader.
 #pragma once
 #include <filesystem>
 #include <fstream>
@@ -16,16 +25,20 @@
 #include <vector>
 #include "third_party/js/twigl/noise.h"
 
+// Returns true if `t` contains `word`.
 inline bool adapter_has(const std::string& t, const char* word) { return t.find(word) != std::string::npos; }
 #include "community/sites/adapter_shadertoy.h"
 
-// What a form is called where it is written for: its programs' files are named so (document/adapter.h), the Program shelf's chips.
+// Returns the display name of a form, as shown on the Program shelf chips and used in the names of
+// program files. A form with no known name is returned as it is.
 inline std::string adapter_name(const std::string& form) {
     static const std::map<std::string, std::string> names = {{"", "p5.js"}, {"shadertoy", "Shadertoy"}, {"sandbox", "GLSL Sandbox"}, {"three", "three.js"}, {"hydra", "Hydra"}, {"dweet", "Dwitter"}, {"tixy", "tixy"}, {"turtle", "Turtletoy"}, {"two", "Two.js"}, {"paper", "Paper.js"}, {"canvas", "Canvas"}, {"twigl", "twigl"}, {"bonzomatic", "Bonzomatic"}};
     const auto at = names.find(form);
     return at == names.end() ? form : at->second;
 }
-// "" as it is (ISF, a p5.js sketch, a recipe of ours, or not code); or shadertoy sandbox hydra two paper turtle canvas dweet tixy.
+// Detects the form of pasted code. Returns "" for ISF, a p5.js sketch, one of our own presets, or
+// text that is not code. Otherwise returns one of: shadertoy, sandbox, hydra, three, two, turtle,
+// paper, canvas, bonzomatic, twigl, dweet, tixy.
 inline std::string adapter_form(const std::string& t) {
     static const std::regex twigl(R"(\bFC\b|\buniform\s+vec2\s+r\s*;)"), sandbox(R"(\buniform\s+\w+\s+(u_)?(time|resolution)\b)"), hydra(R"(\b(osc|noise|voronoi|shape|gradient|solid|src)\s*\()"), member(R"(\b[xc]\.\w|\bwith\s*\(\s*x\s*\))"), tixy(R"(\b[tixy]\b)"), paper(R"(\bnew\s+(Path|Point|Group|Raster|PointText|Layer|Size)\b|\bview\.|\bfunction\s+onFrame\b|\bproject\.)");
     if (adapter_has(t, "\"ISFVSN\"") || adapter_has(t, "\"INPUTS\"") || adapter_has(t, "\"CATEGORIES\"") || adapter_has(t, "function each")) return "";
@@ -41,19 +54,24 @@ inline std::string adapter_form(const std::string& t) {
     if (adapter_has(t, "vec") && !adapter_has(t, "=>") && !adapter_has(t, "function") && (std::regex_search(t, twigl) || adapter_has(t, "gl_FragCoord") || adapter_has(t, "gl_FragColor"))) return "twigl";
     if (std::regex_search(t, paper)) return "paper";
     if (adapter_has(t, "getContext")) return "canvas";
-    if (t.size() <= 900 && (adapter_has(t, "unescape(escape`") || std::regex_search(t, member))) return "dweet";   // (a dweet packed in wide characters: Dwitter's own players unpack it by running it)
+    // A dweet packed into wide characters. Dwitter's own players unpack it by running it.
+    if (t.size() <= 900 && (adapter_has(t, "unescape(escape`") || std::regex_search(t, member))) return "dweet";
     if (t.size() <= 120 && t.find('\n') == t.rfind('\n') && !adapter_has(t, ";") && !adapter_has(t, "function") && std::regex_search(t, tixy)) return "tixy";
     return "";
 }
 
-// A library a form runs on, from third_party/js ("": none).
+// Returns the library a form runs on, as a path under third_party/js, or "" if it needs none.
 inline std::string adapter_library(const std::string& form) {
     return form == "two" ? "two/two.min.js" : form == "paper" ? "paper/paper-full.min.js" : form == "turtle" ? "turtletoy/turtletoy.umd.cjs" : form == "three" ? "three/three.core.js" : "";
 }
 
-// A whole page as it is copied: what its own <script> tags hold; what they load is the form's library. `beside`: where a saved
-// page's own scripts are. A script from the net (p5's and three's are here already) is what `fetched` makes of it, a file's name,
-// told in a line above what is kept: a library is not the sketch's own lines (script.cpp reads the line).
+// Extracts the code from a whole HTML page that was copied. Returns the contents of its inline
+// <script> tags, and the libraries the page loads are handled as the form's library.
+// `beside` is the directory holding the saved page's own script files. A script loaded from the
+// net, other than the p5.js and three.js ones bundled here, is passed to `fetched`, which returns a
+// file name. That name is written as a "//! needs" line above the code, because a library is not
+// part of the sketch's own lines (script.h reads that line).
+// Returns `t` unchanged if the page has no usable scripts.
 inline std::string adapter_page(const std::string& t, const std::filesystem::path& beside = {}, const std::function<std::string(const std::string&)>& fetched = {}) {
     static const std::regex named(R"re(\bsrc\s*=\s*['"]([^'"]+)['"])re"), ours(R"re(^(p5(\.sound|\.dom)?|three(\.module|\.core)?)(\.min)?\.js$)re");
     std::string out, needs;
@@ -76,7 +94,9 @@ inline std::string adapter_page(const std::string& t, const std::filesystem::pat
     }
     return out.empty() ? t : needs + out;
 }
-inline std::vector<std::string> adapter_needs(const std::string& text) {   // (what adapter_page told above what is kept)
+// Reads back the "//! needs" lines that adapter_page wrote at the top of `text`. Returns the file
+// names in order.
+inline std::vector<std::string> adapter_needs(const std::string& text) {
     std::vector<std::string> out;
     for (size_t at = 0; text.compare(at, 9, "//! needs") == 0;) {
         const size_t end = text.find('\n', at);
@@ -86,14 +106,16 @@ inline std::vector<std::string> adapter_needs(const std::string& text) {   // (w
     return out;
 }
 
-inline std::string adapter_quoted(const std::string& t) {   // (as a JavaScript string)
+// Returns `t` as a double-quoted JavaScript string literal. Carriage returns are dropped.
+inline std::string adapter_quoted(const std::string& t) {
     std::string out = "\"";
     for (const char c : t) out += c == '"' ? "\\\"" : c == '\\' ? "\\\\" : c == '\n' ? "\\n" : c == '\r' ? "" : std::string(1, c);
     return out + "\"";
 }
 
-// p5's loadShader as the two files beside the sketch say it, in the sketch from here on: what is kept is one file, and a
-// script has no net to fetch them by. Files not there: as it was.
+// Replaces each p5.js loadShader call with a createShader call holding the source of the two files
+// found in `beside`. The saved sketch is a single file and a script cannot fetch files, so the
+// shader source is embedded. A call whose files are missing or empty is left as it is.
 inline std::string adapter_shader_files(const std::string& text, const std::filesystem::path& beside) {
     static const std::regex load(R"re(\bloadShader\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*(?:,[^)]*)?\))re");
     const auto file = [&](const std::string& name) { std::ifstream in(beside / name); std::stringstream all; all << in.rdbuf(); return all.str(); };
@@ -107,7 +129,9 @@ inline std::string adapter_shader_files(const std::string& text, const std::file
     return out + text.substr(at);
 }
 
-// The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (video_frames_for_scripts.h's beside).
+// Copies the images a sketch loads with loadImage from `beside` to a folder next to `saved`, named
+// after it, because a script has no files of its own (see `beside` in
+// media/video_frames_for_scripts.h). Missing files are skipped.
 inline void adapter_images(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& saved) {
     static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
     std::error_code wrong;
@@ -119,7 +143,9 @@ inline void adapter_images(const std::string& text, const std::filesystem::path&
     }
 }
 
-// A library as a script runs it: three.js's module, its names one object as three.min.js gave them.
+// Returns library source in a form a script can run. For three.js, the export list of its ES module
+// is rewritten into one globalThis.THREE object, the way three.min.js exposed its names. Other
+// forms are returned as they are.
 inline std::string adapter_library_text(const std::string& form, std::string text) {
     if (form != "three") return text;
     const size_t at = text.rfind("export {");
@@ -128,7 +154,9 @@ inline std::string adapter_library_text(const std::string& form, std::string tex
     return text.substr(0, at) + "globalThis.THREE = {" + std::regex_replace(names, std::regex(R"((\w+) as (\w+))"), "$2: $1") + "};\n";
 }
 
-// A file's imports, which a script does not have, as what they are here: three.js's names from THREE, any other's stand-ins.
+// Rewrites the import statements of a three.js program, which a script cannot run. Imports of three
+// become variables taken from THREE. Imports from any other module become stand-ins taken from
+// __any_names.
 inline std::string adapter_three_imports(std::string src) {
     src = std::regex_replace(src, std::regex(R"re(import\s+\*\s+as\s+(\w+)\s+from\s+['"]three['"]\s*;?)re"), "var $1=globalThis.THREE;");
     src = std::regex_replace(src, std::regex(R"re(import\s+(\w+)\s+from\s+['"]three['"]\s*;?)re"), "var $1=globalThis.THREE;");
@@ -146,7 +174,8 @@ inline std::string adapter_three_imports(std::string src) {
     return out + src.substr(at);
 }
 
-// A JavaScript form as a p5.js sketch: the source's lines stay where they were. Any other: the source as it is.
+// Wraps a JavaScript form as a p5.js sketch, keeping the source's lines where they were. Returns
+// the source as it is for any other form.
 inline std::string adapter_js(const std::string& src, const std::string& form) {
     const std::string body = "function __adapter_body(){" + src + "\n;return typeof walk=='function'?walk:null}\n";
     if (form == "dweet")
@@ -166,11 +195,12 @@ inline std::string adapter_js(const std::string& src, const std::string& form) {
     return src;
 }
 
-// A shader's form as an ISF effect: what it asks of its site said in ISF's words. A shader that reads iChannel takes the
-// picture it is put on, a film as much as anything. Any other: the text as it is.
-// A shader with a main of its own (or a body with none: twigl's geekest) called from ISF's: `before` what it is given at
-// its top, `start` what it is told each time, `done` what comes of it. What it reads of its last frame (`last`, the names
-// that picture has) is a pass kept from frame to frame (ISF_Spec's PERSISTENT).
+// Wraps a shader body that has its own main, or a bare body such as twigl's geekest mode, so that
+// ISF's main calls it.
+// `name` is the effect's description. `before` is placed at the top of the shader, `start` runs at
+// the start of each call, and `done` runs after the shader. If the shader reads its previous frame,
+// `last` is a regex alternation of the names that texture goes by, and the result is a persistent
+// pass kept from frame to frame (PERSISTENT in the ISF spec).
 inline std::string adapter_called(const std::string& name, std::string body, const std::string& last, const std::string& before, const std::string& start, const std::string& done) {
     static const std::regex hasMain(R"(\bvoid\s+main\s*\(\s*(void)?\s*\))");
     const std::regex past(R"(\b(?:texture|texture2D)\s*\(\s*(?:)" + last + R"()\s*,)");
@@ -181,9 +211,13 @@ inline std::string adapter_called(const std::string& name, std::string body, con
            "\nvoid main(){" + (persistent ? "if(PASSINDEX==1){gl_FragColor=IMG_NORM_PIXEL(adapter_last,gl_FragCoord.xy/RENDERSIZE);return;}" : "") + start + "adapter_main();" + done + "}\n";
 }
 
+// Converts shader code to an ISF effect, expressing what the shader asks of its site in ISF terms.
+// A shader that reads iChannel takes the image of the layer it is applied to, whether that is a
+// video or anything else. Returns `text` unchanged for any other form.
 inline std::string adapter_isf(const std::string& text) {
     const std::string form = adapter_form(text);
-    if (form == "shadertoy") {   // (one tab, as it is copied: every iChannel the picture it is put on)
+    if (form == "shadertoy") {
+        // A single tab, as copied. Every iChannel reads the image the effect is applied to.
         AdapterTab tab;
         tab.name = "Image", tab.code = adapter_toy_clean(text);
         const bool reads = adapter_has(text, "iChannel");
@@ -195,28 +229,38 @@ inline std::string adapter_isf(const std::string& text) {
         std::smatch said;
         const std::string out = std::regex_search(text, said, output) ? said[1].str() : "out_color";
         static const std::regex samplerUniform(R"(\buniform\s+sampler[12]D\s+(\w+)\s*;)");
-        std::string none = "texFFT\\w*";   // (its sound and its pictures, whatever their names: none here)
+        // Names of its sound and image inputs, whatever they are called. Reads of them return
+        // nothing here.
+        std::string none = "texFFT\\w*";
         for (std::sregex_iterator at(text.begin(), text.end(), samplerUniform), end; at != end; ++at) if ((*at)[1] != "texPreviousFrame") none += "|" + (*at)[1].str();
         std::string body = std::regex_replace(text, std::regex(R"(#version[^\n]*|\buniform\s+\w+\s+(?:fGlobalTime|fFrameTime|v2Resolution)\s*;)"), "");
         body = std::regex_replace(std::regex_replace(body, output, ""), samplerUniform, "");
         body = std::regex_replace(body, std::regex(R"(\b(?:texture|texture2D|texture1D|textureLod|texelFetch)\s*\(\s*(?:)" + none + R"()\s*,)"), "adapter_none(");
-        return adapter_called("Bonzomatic", body, "texPreviousFrame", "float fGlobalTime,fFrameTime;vec2 v2Resolution;float adapter_now(){return TIME;}vec2 adapter_size(){return RENDERSIZE;}\nvec4 " + out + ";\nvec4 adapter_none(float a){return vec4(0.);}\nvec4 adapter_none(float a,float b){return vec4(0.);}\nvec4 adapter_none(vec2 a){return vec4(0.);}\nvec4 adapter_none(vec2 a,float b){return vec4(0.);}\n", "fGlobalTime=adapter_now();v2Resolution=adapter_size();fFrameTime=1./60.;", "gl_FragColor=vec4(" + out + ".rgb,1.);");   // (values, not words: `#define time fGlobalTime` is its usual first line)
+        // The globals are variables assigned at the start rather than macros, because a Bonzomatic
+        // shader usually begins with `#define time fGlobalTime`.
+        return adapter_called("Bonzomatic", body, "texPreviousFrame", "float fGlobalTime,fFrameTime;vec2 v2Resolution;float adapter_now(){return TIME;}vec2 adapter_size(){return RENDERSIZE;}\nvec4 " + out + ";\nvec4 adapter_none(float a){return vec4(0.);}\nvec4 adapter_none(float a,float b){return vec4(0.);}\nvec4 adapter_none(vec2 a){return vec4(0.);}\nvec4 adapter_none(vec2 a,float b){return vec4(0.);}\n", "fGlobalTime=adapter_now();v2Resolution=adapter_size();fFrameTime=1./60.;", "gl_FragColor=vec4(" + out + ".rgb,1.);");
     }
     if (form == "twigl") {
         static const std::regex own(R"(\bvoid\s+main\s*\()"), frag(R"(\bFC\b)");
         std::string body = std::regex_replace(text, std::regex(R"(#version[^\n]*|\bprecision\s+\w+\s+\w+\s*;|\buniform\s+\w+\s+(?:r|m|t|f|s|b|resolution|mouse|time|backbuffer)\s*;|\bout\s+vec4\s+(?:o|outColor)\s*;)"), "");
-        const std::string given = std::regex_search(text, own) && !std::regex_search(text, frag) ? "" : twigl_noise;   // (its helpers, its geekest mode's alone)
+        // The helper functions belong to twigl's geekest mode only. A shader with its own main that
+        // does not use FC does not get them.
+        const std::string given = std::regex_search(text, own) && !std::regex_search(text, frag) ? "" : twigl_noise;
         return adapter_called("twigl", body, "b|backbuffer", "#define FC gl_FragCoord\nvec2 r,m,mouse;float t,f,s;vec4 o,outColor;\n" + given + "\n", "r=RENDERSIZE;m=mouse=vec2(0.);t=TIME;f=float(FRAMEINDEX);s=0.;",
                            adapter_has(body, "gl_FragColor") ? "" : std::string("gl_FragColor=vec4(") + (adapter_has(body, "outColor") ? "outColor" : "o") + ".rgb,1.);");
     }
     if (form == "sandbox") {
         std::string body = std::regex_replace(text, std::regex(R"(\buniform\s+\w+\s+(u_)?(time|resolution|mouse)\s*;|\bvarying\s+vec2\s+surface\w*\s*;|#extension[^\n]*)"), "");
         body = std::regex_replace(body, std::regex(R"(\bvoid\s+main\s*\(\s*void\s*\))"), "void main()");
-        if (adapter_has(body, "backbuffer")) {   // (what it drew last: GLSL Sandbox's own, twigl's classic mode too)
+        if (adapter_has(body, "backbuffer")) {
+            // backbuffer is the previous frame's output. GLSL Sandbox has it, and so does
+            // twigl's classic mode.
             body = std::regex_replace(body, std::regex(R"(\buniform\s+sampler2D\s+backbuffer\s*;)"), "");
             return adapter_called("GLSL Sandbox", body, "backbuffer", "#define u_time TIME\n#define u_resolution RENDERSIZE\n#define mouse vec2(.5)\n#define u_mouse vec2(.5)\n", "", "");
         }
-        return "/*{\"ISFVSN\":\"2\",\"DESCRIPTION\":\"GLSL Sandbox\",\"CATEGORIES\":[\"Shadertoy\"],\"INPUTS\":[]}*/\n#define u_time TIME\n#define u_resolution RENDERSIZE\n#define mouse vec2(.5)\n#define u_mouse vec2(.5)\n" + body;   // (time and resolution are what ISF's own are called here: isf.cpp)
+        // The site's time and resolution uniforms are ISF's TIME and RENDERSIZE (see
+        // community/isf/isf.cpp).
+        return "/*{\"ISFVSN\":\"2\",\"DESCRIPTION\":\"GLSL Sandbox\",\"CATEGORIES\":[\"Shadertoy\"],\"INPUTS\":[]}*/\n#define u_time TIME\n#define u_resolution RENDERSIZE\n#define mouse vec2(.5)\n#define u_mouse vec2(.5)\n" + body;
     }
     return text;
 }

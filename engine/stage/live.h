@@ -1,32 +1,50 @@
-// live.h: the stage's picture as it is drawn, handed to a shell on a screen without a copy. The main view draws into
-// one of three pixel buffers that the GPU and the shell share (CVPixelBuffers on IOSurfaces: made as glass_door_mac.mm
-// makes them, which did this on Filament's Metal backend). Here each buffer is shown to Dawn as a texture (the call
-// video_layer.h reads films by, used the other way round) and made a render target of Filament's through the interop the
-// patch already has (Texture::Builder::import). "Finished" is a Filament fence put after it signalled. macOS only.
+// Presents the stage's frames to the app without copying them.
+//
+// The main view draws into one of three pixel buffers that the GPU and the app share
+// (CVPixelBuffers on IOSurfaces, as Filament's Metal backend creates them). Each buffer is
+// exposed to Dawn as a texture, the same call video_layer.h uses to read video, but here the
+// buffer is the destination. The texture is then made a Filament render target through the
+// interop that the patch already provides (Texture::Builder::import). A frame counts as
+// finished once a Filament fence created after it has signalled. macOS only.
+// Included by the engine's single translation unit; not self-contained.
 #include <CoreVideo/CoreVideo.h>
 #include <IOSurface/IOSurface.h>
 #include <webgpu/webgpu.h>
 #include <atomic>
 #include <filament/Fence.h>
 
+// The set of shared buffers that the stage draws into, and the state of the frame in flight.
 struct Live {
+    // Number of buffers. They are used round-robin.
     static constexpr int N = 3;
     CVPixelBufferRef buffer[N] = {};
     WGPUSharedTextureMemory lent[N] = {};
     WGPUTexture shared[N] = {};
     Texture* seen[N] = {};
     RenderTarget* target[N] = {};
-    int next = 0;                      // the buffer the next picture is drawn into (they go round)
-    std::atomic<int> front{-1};        // the last one finished
-    std::atomic<uint64_t> frames{0};   // how many have been finished
-    double waited = 0;   // seconds spent waiting for the GPU to finish them (for measuring)
-    Fence* pending = nullptr;          // the picture begun and not yet finished by the GPU, and which buffer it is in
+    // Index of the buffer that the next frame is drawn into.
+    int next = 0;
+    // Index of the last finished buffer, or -1 if none has finished yet.
+    std::atomic<int> front{-1};
+    // Number of frames finished so far.
+    std::atomic<uint64_t> frames{0};
+    // Seconds spent waiting for the GPU to finish frames. Used for measuring.
+    double waited = 0;
+    // Fence of the frame that has been started but that the GPU has not finished, or null.
+    Fence* pending = nullptr;
+    // Index of the buffer that the pending frame is drawn into, or -1 if it is not in this Live.
     int pendingIn = -1;
-    void* marks[N] = {};               // (a desk's: ThorVG's canvas on each buffer, the marks drawn over the picture: desk_marks)
-    Live* desk = nullptr;              // the editing window's whole stage pane (render.h desk_lay): while it is on, the stage is drawn there, not here
+    // One ThorVG canvas per buffer, used by desk_marks to draw the overlay. Only used on the Live
+    // that belongs to the editing window.
+    void* marks[N] = {};
+    // The Live that covers the editing window's whole stage pane (see desk_lay in render.h).
+    // While it is set, the stage is drawn there instead of into this Live's own buffers.
+    Live* desk = nullptr;
 };
 
-static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the stage's own size)
+// Creates the shared buffers and wraps them as Filament render targets. A size of 0 means the
+// stage's own size. Returns null if a buffer or texture cannot be created.
+static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {
     Live* l = new Live;
     if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
     NSDictionary* like = @{(id)kCVPixelBufferIOSurfacePropertiesKey : @{}, (id)kCVPixelBufferMetalCompatibilityKey : @YES};
@@ -49,7 +67,8 @@ static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the 
             as.mipLevelCount = 1;
             as.sampleCount = 1;
             l->shared[i] = wgpuSharedTextureMemoryCreateTexture(l->lent[i], &as);
-            WGPUSharedTextureMemoryBeginAccessDescriptor lend{};   // (lent while the stage is live: on macOS nothing is locked by it)
+            // Access stays open while the stage is live. On macOS this locks nothing.
+            WGPUSharedTextureMemoryBeginAccessDescriptor lend{};
             lend.initialized = false;
             wgpuSharedTextureMemoryBeginAccess(l->lent[i], l->shared[i], &lend);
         }
@@ -64,7 +83,8 @@ static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the 
     return l;
 }
 
-// Its buffers done away with, once the GPU has finished with them (a desk made again at another size: the old one).
+// Destroys the buffers after the GPU has finished with them. Also used to drop the old Live when
+// the editing window's Live is recreated at another size.
 static void live_close(Stage& s, Live* l) {
     if (!l) return;
     s.engine->flushAndWait();
@@ -81,14 +101,19 @@ static void live_close(Stage& s, Live* l) {
         }
     });
     s.engine->flushAndWait();
-    for (CVPixelBufferRef b : l->buffer) if (b) CVPixelBufferRelease(b);   // (a shell holding one keeps it till it lets go)
+    // An app that still holds a buffer keeps it alive until it releases it.
+    for (CVPixelBufferRef b : l->buffer) if (b) CVPixelBufferRelease(b);
     if (l->pending) s.engine->destroy(l->pending);
     delete l;
 }
 
-// The marks over the desk's picture (and the cover over what lies off the stage, under them), drawn by ThorVG into the same buffer after Filament's picture and not clearing
-// it, on the same device and queue (canvas.h's way): the picked thing's frame, its four corners, the rotation handle it turns by,
-// the point it turns about; the frame of the one under the hand, thin. As the window's own marks were (stage_view.dart).
+// Draws the editing overlay on top of the frame in buffer i of the editing window's Live.
+//
+// ThorVG draws into the same buffer after Filament has finished, without clearing it, on the same
+// device and queue (the approach canvas.h uses). The overlay has a half-transparent cover over the
+// area outside the stage, then for the selected layer its outline, four corner handles, a rotation
+// handle, and the pivot, and a thin outline for the layer under the pointer. It reproduces what
+// stage_view.dart used to draw in the app.
 static void desk_marks(Stage& s, Live* l, int i) {
     const auto k = s.desk;
 
@@ -97,20 +122,25 @@ static void desk_marks(Stage& s, Live* l, int i) {
     interop::on_driver(s.engine, [l, i, k, device, instance, s_w, s_h] {
         auto& canvas = reinterpret_cast<tvg::WgCanvas*&>(l->marks[i]);
         if (!canvas) {
-            tvg::Initializer::init(0);   // (as canvas.h: counted, once is enough)
+            // Same as canvas.h. Initialization is reference counted, so once is enough.
+            tvg::Initializer::init(0);
             canvas = tvg::WgCanvas::gen();
-            if (!canvas || canvas->target(device, instance, l->shared[i], k.w, k.h, tvg::ColorSpace::ABGR8888S, 2) != tvg::Result::Success) return;   // (2: drawn over: thorvg_over.patch)
+            // The last argument, 2, selects drawing over existing content (thorvg_over.patch).
+            if (!canvas || canvas->target(device, instance, l->shared[i], k.w, k.h, tvg::ColorSpace::ABGR8888S, 2) != tvg::Result::Success) return;
         }
         canvas->remove();
         const float pt = (float)k.point;
         const auto at = [&](double x, double y) { return float2{(float)(x * k.scale + k.x), (float)(y * k.scale + k.y)}; };
         struct Frame { float2 c[4], top, mid, pivot; };
-        const auto frame = [&](const double* f) {   // (its corners as seen: turned clockwise about its middle)
+        // Corners of a layer's box on the screen, rotated clockwise about its center. f holds the
+        // center x, y, width, height, rotation in degrees, and the pivot x, y.
+        const auto frame = [&](const double* f) {
             const double turn = f[4] * 3.14159265358979 / 180.0, cs = std::cos(turn), sn = std::sin(turn);
             const auto local = [&](double u, double v) { const double x = u * 0.5 * f[2], y = v * 0.5 * f[3]; return at(f[0] + x * cs - y * sn, f[1] + x * sn + y * cs); };
             return Frame{{local(-1, -1), local(1, -1), local(1, 1), local(-1, 1)}, local(0, -1), at(f[0], f[1]), at(f[5], f[6])};
         };
-        // (quiet: no dark edging, thin lines, small handles, a little see-through; the accent is the window's own)
+        // The overlay is deliberately quiet: no dark edging, thin lines, small handles, and slight
+        // transparency. The accent color matches the app's.
         const auto line = [&](std::initializer_list<float2> pts, bool closed, float width, uint8_t a) {
             tvg::Shape* sh = tvg::Shape::gen();
             bool first = true;
@@ -121,12 +151,15 @@ static void desk_marks(Stage& s, Live* l, int i) {
         };
         const auto square = [&](float2 c, float half) { tvg::Shape* sh = tvg::Shape::gen(); sh->appendRect(c.x - half * pt, c.y - half * pt, 2.f * half * pt, 2.f * half * pt, 0.6f * pt, 0.6f * pt); sh->fill(0xB3, 0xC6, 0x6B, 230); canvas->add(sh); };
         const auto dot = [&](float2 c, float r) { tvg::Shape* sh = tvg::Shape::gen(); sh->appendCircle(c.x, c.y, r * pt, r * pt); sh->fill(0xB3, 0xC6, 0x6B, 230); canvas->add(sh); };
-        tvg::Shape* off = tvg::Shape::gen();   // (what lies off the stage, covered half way: the stage's own frame reads as the picture)
+        // Half-cover the area outside the stage so the stage reads as the picture.
+        tvg::Shape* off = tvg::Shape::gen();
         off->appendRect(0, 0, (float)k.w, (float)k.h);
         off->appendRect((float)k.x, (float)k.y, (float)(s_w * k.scale), (float)(s_h * k.scale), 0, 0, false);
-        off->fill(0x19, 0x19, 0x19, 140);   // (the window's surround, Grey.g10, half way)
+        // The app's surround color, Grey.g10, at about half opacity.
+        off->fill(0x19, 0x19, 0x19, 140);
         canvas->add(off);
-        if (k.hovered) {   // (the one under the hand: its frame, thin and pale)
+        // The layer under the pointer gets a thin pale outline.
+        if (k.hovered) {
             const Frame f = frame(k.hover);
             tvg::Shape* sh = tvg::Shape::gen();
             sh->moveTo(f.c[0].x, f.c[0].y);
@@ -137,47 +170,62 @@ static void desk_marks(Stage& s, Live* l, int i) {
         }
         if (k.picked) {
             const Frame f = frame(k.pick);
-            line({f.c[0], f.c[1], f.c[2], f.c[3]}, true, 1.f, 220);   // (its frame, the corners joined)
-            if (k.rotateHandle) {   // (the handle it is turned by, a stem's length out from the middle of its top edge)
+            // Outline of the selected layer: the four corners joined.
+            line({f.c[0], f.c[1], f.c[2], f.c[3]}, true, 1.f, 220);
+            // The rotation handle sits one stem length out from the middle of the top edge.
+            if (k.rotateHandle) {
                 float2 n = f.top - f.mid;
                 const float len = length(n);
                 n = len < 1.f ? float2{0.f, -1.f} : n / len;
-                const float2 handle = f.top + n * 18.f * pt;   // (where the window takes hold of it: stage_view.dart _V.stem)
+                // The stem length matches the one the app hit-tests (stage_view.dart _V.stem).
+                const float2 handle = f.top + n * 18.f * pt;
                 line({f.top, handle}, false, 0.75f, 140);
                 dot(handle, 2.75f);
             }
-            for (float2 c : f.c) square(c, 2.75f);   // (the corners a hand pulls it larger by)
+            // Corner handles, used to resize.
+            for (float2 c : f.c) square(c, 2.75f);
+            // Side-middle handles, shown only together with the rotation handle (see
+            // stage_view.dart _handles).
             if (k.rotateHandle)
-                for (int i = 0; i < 4; ++i) square((f.c[i] + f.c[(i + 1) % 4]) * 0.5f, 2.75f);   // (its sides' middles, one way only: stage_view.dart _handles)
-            tvg::Shape* ring = tvg::Shape::gen();   // (the point it turns about: a small ring and four short ticks)
+                for (int i = 0; i < 4; ++i) square((f.c[i] + f.c[(i + 1) % 4]) * 0.5f, 2.75f);
+            // The pivot that rotation turns about: a small ring and four short ticks.
+            tvg::Shape* ring = tvg::Shape::gen();
             ring->appendCircle(f.pivot.x, f.pivot.y, 4.f * pt, 4.f * pt);
             ring->strokeWidth(1.f * pt), ring->strokeFill(0xB3, 0xC6, 0x6B, 200);
             canvas->add(ring);
             for (float2 d : {float2{1, 0}, float2{-1, 0}, float2{0, 1}, float2{0, -1}}) line({f.pivot + d * 2.f * pt, f.pivot + d * 7.f * pt}, false, 1.f, 200);
         }
         canvas->update();
-        canvas->draw(true);   // (its own picture cleared; the buffer drawn over, not replaced: target type 2, thorvg_over.patch)
+        // Clears the canvas's own content but draws over the buffer instead of replacing it
+        // (target type 2, thorvg_over.patch).
+        canvas->draw(true);
         canvas->sync();
     });
 }
 
-// The stage's picture as it now is, drawn into the next buffer; it is the front one once the GPU has finished it.
+// Draws the stage's current frame into the next buffer. The buffer becomes the front one once the
+// GPU has finished it; see live_ready.
 static void live_draw(Stage& s, Live* l) {
     Live* desk = l->desk && s.desk.w ? l->desk : nullptr;
-    // (with effects, whole-screen or a thing's own, the stage's picture is drawn as a written film has it, then placed on
-    //  the desk where the stage lies: an effect is the picture's, what lies off the stage is not in it. vgpu's way of
-    //  post-processing the screen: the scene drawn into an offscreen target, the effect on that, then presented)
+    // With effects, whether full-screen or on a single layer, the stage is drawn the way an
+    // exported video frame is drawn and then placed in the editing window where the stage lies.
+    // An effect belongs to the frame, so the area outside the stage is not part of it. This is
+    // the usual post-processing arrangement: render the scene into an offscreen target, apply
+    // the effect to that, then present.
     const bool placed = desk && (s.over || !s.before.empty());
     s.out = desk && !placed ? desk->target[desk->next] : l->target[l->next];
     if (desk && !placed) desk_lay(s, true);
-    Texture* const wasInto = s.drawTarget;   // (the picture the views draw into, for one that reads what is under: render.h)
+    // The texture the views draw into, for a view that reads what is beneath it (see render.h).
+    Texture* const wasInto = s.drawTarget;
     if (!s.over) s.drawTarget = desk && !placed ? desk->seen[desk->next] : l->seen[l->next];
     if (placed) {
         const int i = l->next, j = desk->next;
         const int at[4] = {(int)std::lround(s.desk.x), (int)std::lround((double)s.desk.h - s.desk.y - s.h * s.desk.scale), (int)std::lround(s.w * s.desk.scale), (int)std::lround(s.h * s.desk.scale)};
         s.lastly = [&s, l, desk, i, j, at] { screen_place(s, l->seen[i], desk->target[j], s.desk.w, s.desk.h, at); };
     }
-    if (!s.over) {   // (with a whole-screen effect the stage draws to its own picture and the effect to this one: screen_fx.h)
+    // With a full-screen effect the stage draws to its own texture and the effect draws to this
+    // one (see screen_fx.h).
+    if (!s.over) {
         s.view->setRenderTarget(s.out);
     }
     draw(s, nullptr, false);
@@ -189,19 +237,23 @@ static void live_draw(Stage& s, Live* l) {
         desk->pendingIn = desk->next;
         desk->next = (desk->next + 1) % Live::N;
     }
-    l->pending = s.engine->createFence();   // (not waited for: the hand goes back to what it is asked; live_ready offers it once done)
+    // The fence is not waited on here so the render thread can return to its other work.
+    // live_ready publishes the frame once the GPU is done.
+    l->pending = s.engine->createFence();
     s.engine->flush();
     l->pendingIn = l->next;
     if (!s.over) {
         s.view->setRenderTarget(nullptr);
     }
     s.out = nullptr;
-    if (desk && !placed) l->pendingIn = -1;   // (the stage's own buffer was not drawn: its last picture stays the front)
+    // The stage's own buffer was not drawn, so its last frame stays the front one.
+    if (desk && !placed) l->pendingIn = -1;
     else l->next = (l->next + 1) % Live::N;
 }
 
-// A picture made before (stage_cache.h) put on the stage as it is, instead of drawing it: on the desk where the stage
-// lies (what lies off it is not in the picture), its marks over it as live_draw puts them.
+// Presents a frame rendered earlier (see stage_cache.h) instead of drawing the stage again.
+// In the editing window it is placed where the stage lies, since the area outside the stage is
+// not part of the frame, and the overlay is drawn over it as live_draw does.
 static void live_show(Stage& s, Live* l, Texture* frameTexture) {
     Live* desk = l->desk && s.desk.w ? l->desk : nullptr;
     while (!begins(s)) {}
@@ -220,8 +272,10 @@ static void live_show(Stage& s, Live* l, Texture* frameTexture) {
     l->pendingIn = desk ? -1 : l->next;
     if (!desk) l->next = (l->next + 1) % Live::N;
 }
-// Whether the picture begun last is finished (then it is offered to the shell, the front): the hand asks this rather
-// than waiting for the GPU, and begins no other picture till it is (Thermion's way: research_notes/flutter_native_kin.md).
+// Returns true if the most recently started frame has finished, or if none is pending. A finished
+// frame becomes the front buffer and is offered to the app. The render thread polls this instead
+// of blocking on the GPU, and starts no new frame until it returns true. This follows Thermion's
+// approach.
 static bool live_ready(Stage& s, Live* l) {
     if (!l->pending) return true;
     if (l->pending->wait(Fence::Mode::DONT_FLUSH, 0) != Fence::FenceStatus::CONDITION_SATISFIED) return false;
@@ -233,7 +287,8 @@ static bool live_ready(Stage& s, Live* l) {
     return true;
 }
 
-// The last finished picture, held for the one who asks (a CVPixelBufferRef: the shell lets it go). Any thread.
+// Returns the last finished frame as a retained CVPixelBufferRef, or null if there is none yet.
+// The caller must release it. Safe to call from any thread.
 static void* live_front(Live* l) {
     const int i = l->front;
     return i < 0 ? nullptr : (void*)CVPixelBufferRetain(l->buffer[i]);

@@ -1,28 +1,37 @@
-// material.h: part of doc.h (the material a layer wears; its looks and drawn parts on the stage). Read only through doc.h.
-// The material a layer wears (Create's Material group: any layer wears one, one at a time): its shading as said; a solid
-// filled with glass, as documents before it said glass, glass. "" none: a solid Filament's lit surface, a flat layer as drawn.
+// Included by doc.h; not self-contained. Contains the material a layer wears and the helpers that
+// reach the materials and renderables of a layer on the stage.
+
+// Returns the material a layer wears. In the Material group of the Create tab any layer can wear
+// one, one at a time, and the shading property names it. Documents from before that group existed
+// filled a solid with glass to get glass, so a solid filled with glass wears glass. Returns "" for
+// none: a solid then uses Filament's lit surface, and a flat layer is drawn as it is.
 static std::string doc_material(Doc& d, int layer) {
     const std::string said = doc_word(d, layer, "shading");
     if (!said.empty()) return said;
     return doc_word(d, layer, "kind") == "solid" && doc_word(d, layer, "fill") == "glass" ? "glass" : "";
 }
-// The sheet a flat layer (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (filament_webgpu.sh),
-// its picture its colour. "" none: as it is drawn. Of glass, the stage behind it is read (doc_layers_read).
+// Returns the variant of the material for a flat layer (a video, image, text or shape): the variant
+// of flat.mat made for it (filament_webgpu.sh), with the image as its colour. Returns "" for none,
+// and the layer is then drawn as it is. For glass the stage behind the layer is read
+// (doc_layers_read).
 static std::string doc_sheet_material(Doc& d, int layer) {
     if (!doc_among("video image text shape", doc_word(d, layer, "kind"))) return "";
     const std::string m = doc_material(d, layer);
     return m == "lit" ? "wear" : m == "glass" || m == "filament_glass" ? "glass" : doc_among("cloth subsurface lacquer bubble", m) ? m : "";
 }
 
-// Every look of a layer as it is on the stage (a sheet's one; a kit shape's, as many as it is drawn by; every face of a 3D file).
-// A way of lying on what is under that reads what is under (the W3C's compositing, After Effects' and ThorVG's): its
-// number in flat.mat's blendWay (0: one the GPU's own blending does: normal, add, multiply, screen).
+// Returns the 1-based index in flat.mat's blendWay of a blend mode that reads the pixels
+// underneath, as defined by the W3C compositing specification and implemented by After Effects and
+// ThorVG. Returns 0 for the modes that the GPU's own blending does: normal, add, multiply and
+// screen.
 static int doc_blend_way(const std::string& word) {
     static const char* const ways[] = {"darken", "lighten", "overlay", "soft_light", "hard_light", "color_dodge", "color_burn", "difference", "exclusion", "hue", "saturation", "color", "luminosity",
                                        "linear_burn", "linear_light", "vivid_light", "pin_light", "darker_color", "lighter_color", "subtract", "divide"};
     for (int i = 0; i < 21; ++i) if (word == ways[i]) return i + 1;
     return 0;
 }
+// Calls `each` with every material instance of a layer on the stage: the one of a sheet, the ones
+// of a built-in shape (as many as it is drawn by), and every face of a 3D file.
 static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::function<void(MaterialInstance*)>& each) {
     auto& faces = s.engine->getRenderableManager();
     if (t.video) each(t.video->look);
@@ -34,13 +43,14 @@ static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::fun
         for (size_t part = 0; part < faces.getPrimitiveCount(one); ++part) each(faces.getMaterialInstanceAt(one, part));
     }
 }
-// Each drawn part of a layer (Filament's renderables), and the scene it is in (its run's: run 0 or not yet put, the stage's own).
+// Calls `each` with each part of a layer that is drawn, as Filament renderables.
 static void doc_entities(Stage& s, const Doc::Shown& t, const std::function<void(utils::Entity)>& each) {
     const Mesh* m = t.video ? t.video->sheet : t.drawn ? t.drawn->sheet : t.shape;
     for (const Stage::Renderable& made : s.renderables)
         if (m && made.of == m && !made.matte) each(made.thing);
     if (t.solid) for (const utils::Entity e : t.solid->parts) each(e);
 }
+// Calls `each` with the renderable manager and the instance of each drawn part of a layer.
 static void doc_parts(Stage& s, const Doc::Shown& t, const std::function<void(RenderableManager&, RenderableManager::Instance)>& each) {
     auto& faces = s.engine->getRenderableManager();
     doc_entities(s, t, [&](utils::Entity e) { each(faces, faces.getInstance(e)); });
@@ -49,8 +59,9 @@ static bool doc_covers(Doc& d, int layer, double now, double* box);
 static bool doc_seen_box(Doc& d, int layer, double now, double* box);
 static int doc_outline(Doc& d, int layer, double now, double* xy);
 static bool doc_half(Doc& d, int layer, float2* half, float* deep = nullptr);
-// Where a layer is at a moment, as a matrix: moved, turned about z, y and x, made its size, all about its anchor (a
-// point of its own box: 0 its middle, 1 its edge on that side; the past repository's `anchor`, keyed as it was).
+// Returns the matrix that places a layer at a time: moved, rotated about z, y and x, and scaled,
+// all about its anchor. The anchor is a point of the layer's own box: 0 is its middle and 1 is its
+// edge on that side. It is keyed as the older `anchor` property was.
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper = 0, int copy = 0, bool member = false);
 static math::mat4 doc_shown_at(Doc& d, int layer, double now);
 int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, int n, float from, std::vector<float>& out);
@@ -59,7 +70,6 @@ static math::double2 doc_seen(Doc& d, math::double3 p);
 static math::mat4 doc_above(Doc& d, int layer, double now, int deeper);
 static bool doc_match(Doc& d);
 static double doc_seconds(Doc& d);
-// A layer's copies given back its own look, their own looks done away with (no longer coloured each, or taken off).
-// What a behaviour gives the nth of n copies at a moment (Cavalry's stagger, oscillator, noise and random, its names):
-// from its minimum to its maximum.
+// Declared here and defined later. The value a behaviour gives the nth of n copies at a time, from
+// its minimum to its maximum, like Cavalry's stagger, oscillator, noise and random.
 static int doc_driven_by(Doc& d, int layer, const char* name);

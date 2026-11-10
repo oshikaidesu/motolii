@@ -1,6 +1,8 @@
-// gltf_model.h: a 3D file (glTF: .glb, .gltf) in the scene. All of it is Filament's own: its loader (gltfio) reads the
-// file, its ready-made materials for glTF give the looks the file names (lit by the stage's room), and the file's own
-// movement, if it has one, goes on as the stage's time does (gltfio's Animator).
+// Loads a glTF 3D file (.glb or .gltf) into the stage's scene using Filament's gltfio.
+// gltfio reads the file and supplies the ready-made glTF materials, which are lit by the
+// stage's lighting. If the file contains animations, they advance with the stage's time
+// through gltfio's Animator.
+// Included by render.h; not self-contained.
 #include <filament/Color.h>
 #include <filesystem>
 #include <gltfio/Animator.h>
@@ -9,18 +11,28 @@
 #include <gltfio/ResourceLoader.h>
 #include <gltfio/TextureProvider.h>
 #include <gltfio/materials/uberarchive.h>
-#include "third_party/filament_src/third_party/cgltf/cgltf.h"   // (the reader of glTF that Filament's own loader is built on: already in its library)
+// cgltf is the glTF parser that gltfio is built on. It is already part of Filament's library.
+#include "third_party/filament_src/third_party/cgltf/cgltf.h"
 
+// A glTF model placed in the scene.
 struct Solid {
     gltfio::FilamentAsset* asset = nullptr;
-    mat4f fit;             // the file's own size and middle brought to: 1 tall, its middle at the place
-    float seconds = 0.f;   // how long its own movement is (none: 0)
-    float starts = 0.f;    // how far into it it is when the stage's time is 0
-    std::vector<std::string> moves;   // the names of its own movements (gltfio's Animator: a file may have several)
-    std::vector<utils::Entity> parts;  // what it draws, of every copy (gltfio's getRenderableEntities says one instance's worth)
+    // Transform that scales the model to 1 unit tall and centers it on the origin of its placement.
+    mat4f fit;
+    // Length in seconds of the model's first animation, or 0 if it has none.
+    float seconds = 0.f;
+    // Offset into the animation, in seconds, at stage time 0.
+    float starts = 0.f;
+    // Animation names. A file may have several; gltfio's Animator exposes them.
+    std::vector<std::string> moves;
+    // Renderable entities of every instance. gltfio's getRenderableEntities returns only one
+    // instance's worth.
+    std::vector<utils::Entity> parts;
 };
 
-// A file's movement at a moment of its own: the one named (none, or not one of its own: its first), round and round.
+// Poses instance `nth` of the model at `seconds`, looping the animation. Plays the animation
+// called `name`, or the first one if the name is empty or unknown. Does nothing if the model
+// has no animation.
 static void solid_at(Solid* d, const std::string& name, double seconds, size_t nth = 0) {
     gltfio::Animator* moves = d->asset->getAssetInstances()[nth]->getAnimator();
     if (!moves->getAnimationCount()) return;
@@ -32,27 +44,34 @@ static void solid_at(Solid* d, const std::string& name, double seconds, size_t n
     moves->updateBoneMatrices();
 }
 
+// Returns the stage's gltfio AssetLoader, creating it with the default ubershader provider on
+// first use.
 static gltfio::AssetLoader* solid_loader(Stage& s) {
     if (!s.solids) s.solids = gltfio::AssetLoader::create({s.engine, gltfio::createUbershaderProvider(s.engine, UBERARCHIVE_DEFAULT_DATA, UBERARCHIVE_DEFAULT_SIZE)});
     return (gltfio::AssetLoader*)s.solids;
 }
 
-// Where it is (and how large: a place may scale).
+// Places instance `nth` of the model at `place`. `place` may include scaling.
 static void solid_to(Stage& s, Solid* d, const mat4f& place, size_t nth = 0) {
     auto& tm = s.engine->getTransformManager();
     tm.setTransform(tm.getInstance(d->asset->getAssetInstances()[nth]->getRoot()), place * d->fit);
 }
 
-// The 3D file put in the scene, `high` tall, its middle at `place`, `many` of it (gltfio's own instances: one source, each
-// its own place and movement; a count given at once, as gltfio asks: AssetLoader::createInstance). nullptr: it could not be read.
+// Adds the glTF file to the scene, scaled to `high` tall and centered at `place`. Creates
+// `many` instances that share one source and can be placed and animated separately; gltfio
+// needs the count up front (AssetLoader::createInstance). Returns nullptr if the file cannot
+// be read.
 static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, int many = 1) {
     const std::vector<uint8_t> bytes = load_file(file);
     Solid* d = new Solid;
     std::vector<gltfio::FilamentInstance*> ones((size_t)std::max(1, many));
     d->asset = bytes.empty() ? nullptr : solid_loader(s)->createInstancedAsset(bytes.data(), (uint32_t)bytes.size(), ones.data(), ones.size());
     if (!d->asset) return nullptr;
-    gltfio::ResourceLoader resources({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});   // (where a .gltf's parts are: Filament's gltf_viewer tells it so)
-    std::vector<std::vector<uint8_t>> beside(d->asset->getResourceUriCount());   // (a .gltf's parts in files beside it: read and handed over, as gltfio asks)
+    // Filament's gltf_viewer sets gltfPath so that the resources of a .gltf file are found.
+    gltfio::ResourceLoader resources({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});
+    // The external resources of a .gltf, such as .bin files next to it. They are read here and
+    // handed to gltfio, as it requires.
+    std::vector<std::vector<uint8_t>> beside(d->asset->getResourceUriCount());
     for (size_t i = 0; i < beside.size(); ++i) {
         const char* part = d->asset->getResourceUris()[i];
         beside[i] = load_file((std::filesystem::path(file).parent_path() / part).string().c_str());
@@ -71,13 +90,15 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
         if (s.engine->getRenderableManager().hasComponent(d->asset->getEntities()[i])) d->parts.push_back(d->asset->getEntities()[i]);
     s.scene->addEntities(d->parts.data(), d->parts.size());
     gltfio::Animator* moves = d->asset->getInstance()->getAnimator();
-    for (size_t i = 0; i < moves->getAnimationCount(); ++i) {   // (its movements by name; one with none, by its number)
+    // Name each animation. An unnamed one is called move<number>, and spaces become underscores.
+    for (size_t i = 0; i < moves->getAnimationCount(); ++i) {
         const char* name = moves->getAnimationName(i);
         std::string word = name && *name ? name : "move" + std::to_string(i + 1);
         std::replace(word.begin(), word.end(), ' ', '_');
         d->moves.push_back(word);
     }
-    if (moves->getAnimationCount()) {   // (its own movement: round and round, as the stage's time goes)
+    // Loop the first animation as the stage's time advances.
+    if (moves->getAnimationCount()) {
         d->seconds = moves->getAnimationDuration(0);
         s.playing[d] = [d, moves](double now) {
             moves->applyAnimation(0, std::fmod((float)now + d->starts, d->seconds));
@@ -87,9 +108,11 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
     return d;
 }
 
-// A 3D file's shape alone, as a mesh of the renderer: every triangle of it where the file puts it, brought to 1 tall with
-// its middle at the middle (as `solid` shows it). For a look of the renderer's own that draws a shape more than once
-// (glass). It stands as the file has it at rest: a movement of its own is not gone through. nullptr: not read.
+// Reads the shape of a glTF file as a Mesh, without materials. Every triangle is placed where
+// the file puts it, then the mesh is scaled to 1 tall and centered on the origin, the same
+// fit that `solid` applies. This is for renderer-made looks that draw a shape more than once,
+// such as glass. The mesh is the rest pose; the file's animations are ignored. Returns nullptr
+// if the file cannot be read.
 static Mesh* solid_mesh(const char* file) {
     cgltf_options how{};
     cgltf_data* read = nullptr;
@@ -122,7 +145,8 @@ static Mesh* solid_mesh(const char* file) {
             }
             const cgltf_size corners = part.indices ? part.indices->count : places->count;
             for (cgltf_size i = 0; i < corners; ++i) m->idx.push_back(first + (uint32_t)(part.indices ? cgltf_accessor_read_index(part.indices, i) : i));
-            if (!ways)   // (a file that does not say which way its faces look: each corner looks the way its triangles do)
+            // The file has no normals, so each corner gets the flat normal of its triangle.
+            if (!ways)
                 for (size_t i = m->idx.size() - corners; i + 2 < m->idx.size(); i += 3) {
                     const float3 flat = normalize(cross(m->pos[m->idx[i + 1]] - m->pos[m->idx[i]], m->pos[m->idx[i + 2]] - m->pos[m->idx[i]]));
                     for (int k = 0; k < 3; ++k) m->nrm[m->idx[i + (size_t)k]] = flat;
@@ -138,13 +162,16 @@ static Mesh* solid_mesh(const char* file) {
     return m;
 }
 
-// A plain look in one colour (floor_lit.mat: lit by the stage's room); and every face of a file's shape given it, the
-// looks the file names set aside. Its surface, Filament's own: how metal, how rough, how much it reflects, a clear coat
-// over it (how much, how rough), and how much it lights itself (on the picture: 1 its own colour, more brighter).
-// Filament's shading model of it: lit (floor_lit.mat), cloth (solid_cloth.mat) or subsurface (solid_subsurface.mat), each
-// told only what it has.
+// Surface parameters of a Filament material: metallic, roughness, reflectance, clear coat
+// and its roughness, glow, cloth sheen, anisotropy and subsurface thickness. `glow` is how
+// much the surface lights itself: 1 shows its own color, larger values are brighter.
+// Returns the material file for a shading model: "cloth", "subsurface", or the default lit
+// model (floor_lit.filamat, lit by the stage's lighting).
 struct Surface { float metallic = 0.08f, roughness = 0.6f, reflectance = 0.5f, coat = 0.f, coatRoughness = 0.f, glow = 0.f, sheen = 0.f, anisotropy = 0.f, thickness = 0.5f; };
 static const char* surface_model(const std::string& shading) { return shading == "cloth" ? "solid_cloth.filamat" : shading == "subsurface" ? "solid_subsurface.filamat" : "floor_lit.filamat"; }
+// Sets the parameters of a material instance for a flat `colour` (sRGB) and the given surface.
+// The material stores metallic and reflectance as offsets from the defaults 0.08 and 0.5.
+// Parameters that the material does not declare are skipped.
 static void plain(MaterialInstance* look, float3 colour, const Surface& is = {}) {
     const auto put = [&](const char* name, float v) { if (look->getMaterial()->hasParameter(name)) look->setParameter(name, v); };
     look->setParameter("color", float4{Color::toLinear<ACCURATE>(sRGBColor{colour}), 1.f});
@@ -158,6 +185,9 @@ static void plain(MaterialInstance* look, float3 colour, const Surface& is = {})
     put("anisotropy", is.anisotropy);
     put("thickness", is.thickness);
 }
+// Gives every primitive of the model one material instance made from `model`, with the given
+// color and surface. This replaces the materials named in the file. Does nothing if the
+// material is not available.
 static void solid_fill(Stage& s, Solid* d, float3 colour, const Surface& is = {}, const char* model = "floor_lit.filamat") {
     Material* lit = material(s, model);
     if (!lit) return;
@@ -170,11 +200,12 @@ static void solid_fill(Stage& s, Solid* d, float3 colour, const Surface& is = {}
     }
 }
 
-// Whether it is in the picture; and taken off the stage for good.
+// Adds the model to the scene or removes it, according to `in`.
 static void solid_seen(Stage& s, Solid* d, bool in) {
     if (in) s.scene->addEntities(d->parts.data(), d->parts.size());
     else s.scene->removeEntities(d->parts.data(), d->parts.size());
 }
+// Removes the model from the scene and destroys it. The pointer is invalid afterwards.
 static void solid_off(Stage& s, Solid* d) {
     s.playing.erase(d);
     solid_seen(s, d, false);

@@ -1,5 +1,7 @@
-// video_frames_for_scripts.h: a film's pictures one after another on the CPU, small, for a sketch to read: GStreamer's own parts (appsink,
-// as its tutorial "Short-cutting the pipeline" pulls samples). video_layer.h keeps a film on the GPU; a sketch asks for numbers.
+// Reads the frames of a video one after another on the CPU, at a small size, for a script to
+// read. Uses GStreamer's appsink, which pulls samples as in the GStreamer tutorial
+// "Short-cutting the pipeline". video_layer.h keeps a video on the GPU, whereas a script asks
+// for numbers.
 #pragma once
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
@@ -7,14 +9,20 @@
 #include <string>
 #include <vector>
 
+// A GStreamer pipeline that decodes a video file to RGBA frames at 60 fps and hands them out
+// one by one.
 struct FilmRead {
     GstElement* reader = nullptr;
     GstAppSink* out = nullptr;
     int w = 0, h = 0;
-    std::vector<uint8_t> last;   // (the picture last read: at its end it stays)
+    // The frame read last, as RGBA. At the end of the video it stays as the last frame.
+    std::vector<uint8_t> last;
     ~FilmRead() { if (reader) gst_element_set_state(reader, GST_STATE_NULL), gst_object_unref(reader); if (out) gst_object_unref(out); }
-    std::string beside;   // (the folder of the pictures its sketch came with: document/adapter.h)
-    bool open(const std::string& file, int wide) {   // (0: at its own size, a picture)
+    // The folder of the images that the script came with; see document/adapter.h.
+    std::string beside;
+    // Opens `file` and reads its first frame. `wide` is the frame width in pixels, or 0 for the
+    // size of the video. Returns false if the pipeline cannot be made or no frame arrives.
+    bool open(const std::string& file, int wide) {
         gst_init(nullptr, nullptr);
         const std::string line = "filesrc name=in ! decodebin ! videoconvert ! videoscale ! videorate ! video/x-raw,format=RGBA" + (wide ? ",width=" + std::to_string(wide) : std::string()) + ",pixel-aspect-ratio=1/1,framerate=60/1 ! appsink name=out sync=false max-buffers=8";
         reader = gst_parse_launch(line.c_str(), nullptr);
@@ -26,7 +34,9 @@ struct FilmRead {
         gst_element_set_state(reader, GST_STATE_PLAYING);
         return next();
     }
-    bool next() {   // (the picture 1/60 s on)
+    // Reads the next frame, 1/60 s later, into `last`. Returns true if `last` holds a frame. At
+    // the end of the video or after a 5 s wait with no frame, the previous frame is kept.
+    bool next() {
         GstSample* one = gst_app_sink_try_pull_sample(out, 5 * GST_SECOND);
         if (!one) return !last.empty();
         GstStructure* said = gst_caps_get_structure(gst_sample_get_caps(one), 0);

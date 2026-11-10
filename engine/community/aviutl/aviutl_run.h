@@ -1,4 +1,10 @@
-// aviutl_run.h: part of aviutl_fx.h. Read only through aviutl_fx.h. the Lua state made once for a file (AviUtl's globals, obj, its shaders) and one frame of it run on the thing's picture.
+// Runs an AviUtl2 script on a layer: creates the Lua state once per script file and
+// executes one frame of the script on the layer's image.
+// Included by aviutl_fx.h; not self-contained.
+
+// Lua source loaded into every script's Lua state. It defines the AviUtl globals
+// (RGB, HSV, bit helpers, rand) and the obj functions that need no engine access.
+// The Lua comments inside the string are part of the string and are left as they are.
 static const char* const aviutl_globals = R"(
 local bit = require("bit")
 local function byte(v) return math.max(0, math.min(255, math.floor(v))) end
@@ -81,20 +87,32 @@ end
 function rand1(seed, frame) return aviutl_rand(0, 4294967294, seed or 0, frame or obj.frame or 0) / 4294967295 end
 )";
 
-// Made once a file: its Lua state (the libraries lua.txt leaves, require from its own folder), obj, its parameters' first
-// values, and each of its shaders made (said on stderr: one that cannot be is "not yet" when it is used).
+// Opens a script file once: creates its Lua state, the obj table, the first values of its
+// parameters, and builds each of its pixel shaders. The Lua state keeps the libraries that
+// AviUtl2's lua.txt allows, and require searches the script's own folder first.
+// If `with` is not null, that Lua state is reused instead of creating a new one; this is
+// used for the layers after the first on the same layer stack.
+// Failures are printed to stderr and stored in AviutlRun::trouble. A shader that cannot be
+// built is reported as "not yet" when the script uses it.
 static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file, lua_State* with = nullptr) {
     auto r = std::make_shared<AviutlRun>();
     r->file = file, r->s = &s;
     if (!aviutl_text(file, r->own, r->all, r->trouble)) return std::fprintf(stderr, "the AviUtl2 script %s is not taken: %s\n", file.c_str(), r->trouble.c_str()), r;
     r->vars = aviutl_vars(r->own);
-    r->behind = std::regex_search(r->all, std::regex(R"re(copybuffer\s*\([^)]*"(framebuffer|frm)"|getoption\s*\(\s*"drawtarget"\s*\)|load\s*\(\s*"framebuffer"|pixeloption\s*\(\s*"get"\s*,\s*"(framebuffer|frm)")re"));   // (it reads the frame: its picture there is the stage's behind it)
-    r->wide = std::regex_search(r->all, std::regex(R"(obj\.draw(poly)?\s*\()"));   // (it draws the object itself: where it will on the screen)
+    // The script reads the frame buffer. Its content is then what the stage shows behind
+    // the layer.
+    r->behind = std::regex_search(r->all, std::regex(R"re(copybuffer\s*\([^)]*"(framebuffer|frm)"|getoption\s*\(\s*"drawtarget"\s*\)|load\s*\(\s*"framebuffer"|pixeloption\s*\(\s*"get"\s*,\s*"(framebuffer|frm)")re"));
+    // The script draws the object itself, so it decides where the object appears on the screen.
+    r->wide = std::regex_search(r->all, std::regex(R"(obj\.draw(poly)?\s*\()"));
     for (const ScriptParameter& k : aviutl_parameters(file)) r->usual[k.name] = k.usual;
-    std::string& path = r->path;   // (require: its own folder, then the Script folder's others: aviutl_shared)
+    // Search path for require: the script's own folder first, then the other folders
+    // returned by aviutl_shared.
+    std::string& path = r->path;
     for (const std::filesystem::path& dir : aviutl_shared(std::filesystem::path(file).parent_path())) path += (path.empty() ? "" : ";") + dir.string() + "/?.lua;" + dir.string() + "/?/init.lua";
     lua_State* L = r->L = with ? with : luaL_newstate();
-    if (!with) {   // (the thing's first: its Lua made, the libraries lua.txt leaves; those after it on the thing run in this one)
+    // The first script on a layer creates the Lua state with the libraries that lua.txt
+    // allows. Scripts after it on the same layer run in that state.
+    if (!with) {
         luaL_openlibs(L);
         lua_pushcfunction(L, aviutl_ticks), lua_setglobal(L, "__motolii_ticks");
         const std::string sandbox = "os, io, debug, dofile, loadfile = nil, nil, nil, nil, nil\npackage.loaded.os, package.loaded.io, package.loaded.debug = nil, nil, nil\n"
@@ -110,8 +128,10 @@ static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
         {"getinfo", aviutl_getinfo}, {"getvalue", aviutl_getvalue}, {"setanchor", aviutl_setanchor}, {"getpixel", aviutl_getpixel}, {"setfont", aviutl_setfont}, {"draw", aviutl_draw}, {"drawpoly", aviutl_drawpoly}, {"effect", aviutl_effect},
         {"getpixeldata", aviutl_getpixeldata}, {"putpixeldata", aviutl_putpixeldata}, {"pixeloption", aviutl_pixeloption}, {"getaudio", aviutl_getaudio}, {"data", aviutl_data}, {"module", aviutl_module}};
     for (const auto& [n, f] : calls) lua_pushlightuserdata(L, r.get()), lua_pushcclosure(L, f, 1), lua_setfield(L, -2, n);
-    // (any other name of obj: one lua.txt has (every obj. name of aviutl2_modern_docs' docs/lua/index.md, MIT, and its old
-    //  form's track0 to track3 and check0) is not made here yet; one it has not is the script's own slip, stopping AviUtl2 too)
+    // Any other name on obj raises an error. A name that AviUtl2's lua.txt defines is
+    // reported as "not yet" because it is not implemented here. The list covers every obj
+    // name in docs/lua/index.md of aviutl2_modern_docs (MIT) and the old track0 to track3
+    // and check0. A name outside that list is a mistake in the script and also stops AviUtl2.
     luaL_dostring(L, "local named = {}\n"
         "for n in ('alpha aspect clearbuffer computeshader copybuffer copypixel cx cy cz data draw drawpoly effect effect_id effect_layer frame frame_e frame_s '\n"
         "  .. 'framerate getaudio getfont getinfo getoption getpixel getpixeldata getpoint getvalue h id index interpolation layer load mes module multiobject num '\n"
@@ -121,7 +141,8 @@ static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
         "  error('not in AviUtl2: obj.' .. tostring(k) .. ' (its lua.txt has no such name: it stops there too)', 2) end }");
     lua_setmetatable(L, -2);
     lua_setglobal(L, "obj");
-    luaL_dostring(L, "obj.rand, obj.rand1, obj.interpolation = rand, rand1, aviutl_interpolation");   // (lua.txt: obj. or not)
+    // lua.txt allows these functions both as globals and as members of obj.
+    luaL_dostring(L, "obj.rand, obj.rand1, obj.interpolation = rand, rand1, aviutl_interpolation");
     lua_getglobal(L, "obj"), r->obj = luaL_ref(L, LUA_REGISTRYINDEX);
     std::string text = r->own.rfind("\xEF\xBB\xBF", 0) == 0 ? r->own.substr(3) : r->own;
     if (luaL_loadbuffer(L, text.data(), text.size(), ("@" + std::filesystem::path(file).filename().string()).c_str())) r->trouble = lua_tostring(L, -1);
@@ -132,7 +153,9 @@ static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
     if (!(r->blur = interop::screen(s.engine, "aviutl blur", aviutl_blur, 16, &why))) r->trouble = "its blur shader: " + why;
     r->none = Texture::Builder().width(1).height(1).levels(1).format(Texture::InternalFormat::RGBA8).build(*s.engine);
     r->none->setImage(*s.engine, 0, backend::PixelBufferDescriptor(new uint32_t(0), 4, backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE, [](void* p, size_t, void*) { delete (uint32_t*)p; }));
-    auto* noise = new std::vector<math::half>(256 * 256);   // ("random": 256 x 256 of 0 to 1 (R32F there; a half float here, as an interop's picture is filtered))
+    // The "random" texture: 256 x 256 values from 0 to 1. AviUtl2 stores it as R32F. Here it
+    // is a half float because textures shared through interop are filtered.
+    auto* noise = new std::vector<math::half>(256 * 256);
     std::mt19937 rng(1);
     for (math::half& h : *noise) h = math::half(std::uniform_real_distribution<float>(0.f, 1.f)(rng));
     r->random = Texture::Builder().width(256).height(256).levels(1).format(Texture::InternalFormat::R16F).build(*s.engine);
@@ -141,36 +164,50 @@ static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
     const std::regex shader(R"(--\[\[pixelshader@(\w+):)");
     for (std::sregex_iterator m(r->all.begin(), r->all.end(), shader), end; m != end; ++m, ++all) {
         std::string why;
-        if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++built;   // (and the way it samples "clip", made now: not inside a frame)
+        // Also builds the variant that samples "clip" now, so that no shader is built while
+        // a frame is running.
+        if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++built;
         else std::fprintf(stderr, "the AviUtl2 shader %s of %s is not built: %s\n", (*m)[1].str().c_str(), file.c_str(), why.substr(0, 400).c_str());
     }
     std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders built%s%s\n", file.c_str(), built, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
     return r;
 }
 
-// One frame of it: the thing's picture `from` (w x h) its object, its parameters and obj's values told, the script run, and
-// what it leaves (the frame it drew, else the object as obj now places it) drawn into `to`.
+// Runs one frame of the script. `from` (w x h) becomes the script's object, the parameter
+// values and the obj fields are set, and the script is executed. The result is drawn into
+// `to`. The result is the frame buffer if the script drew into it, otherwise the object
+// placed according to the final obj fields. If the script fails, `from` is copied to `to`
+// unchanged and the reason is printed to stderr once.
 static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget* to, const ScreenNumbers& numbers, uint32_t w, uint32_t h) {
     r.s = &s, r.target = "framebuffer", r.blend = "none", r.sampler.clear(), r.drew = false, r.draws.clear(), r.font = {}, r.numbers = &numbers, r.pixelFrom = "object", r.pixelType = "col", r.pixelRead = false;
     for (auto at = r.loaded.begin(); at != r.loaded.end();)
         if (at->first.rfind("text|", 0) == 0 && !r.worded.count(at->first)) s.engine->destroy(at->second.t), at = r.loaded.erase(at);
         else ++at;
     r.worded.clear();
-    if (!r.place) return screen_place(s, from, to, w, h, nullptr);   // (none made: the picture as it came)
+    // Without the placing shader the layer's image is passed through unchanged.
+    if (!r.place) return screen_place(s, from, to, w, h, nullptr);
     AviutlBuf in{from, nullptr, w, h};
-    // (one that draws: the object the thing's own picture, as large as it is seen, at obj.x, obj.y from the frame's
-    //  middle, the frame the stage's: AviUtl2's object, its coordinates from the screen's middle, lua.txt's obj.x)
+    // A script that draws itself gets the layer's image as its object, at the size it is
+    // seen. The object sits at obj.x, obj.y measured from the middle of the frame, and the
+    // frame is the stage. This matches AviUtl2, where coordinates start at the middle of
+    // the screen (lua.txt, obj.x).
     const bool tight = r.wide && r.seen[2] > r.seen[0] && r.seen[3] > r.seen[1] && r.box[2] > r.box[0] && r.box[3] > r.box[1];
-    const double kx = tight ? w / (r.box[2] - r.box[0]) : 1, ky = tight ? h / (r.box[3] - r.box[1]) : 1;   // (its edges on whole pixels of the frame: cut out and laid back, not blurred)
+    // Scale and cut so that the object's edges fall on whole pixels of the frame. It is
+    // cut out and placed back without blurring.
+    const double kx = tight ? w / (r.box[2] - r.box[0]) : 1, ky = tight ? h / (r.box[3] - r.box[1]) : 1;
     const long left = tight ? std::lround((r.seen[0] - r.box[0]) * kx) : 0, top = tight ? std::lround((r.seen[1] - r.box[1]) * ky) : 0;
     const uint32_t ow = tight ? (uint32_t)std::max(1L, std::lround((r.seen[2] - r.box[0]) * kx) - left) : w, oh = tight ? (uint32_t)std::max(1L, std::lround((r.seen[3] - r.box[1]) * ky) - top) : h;
     const double atX = left + ow / 2.0 - w / 2.0, atY = top + oh / 2.0 - h / 2.0;
     const AviutlBuf& object = aviutl_buf(r, "object", ow, oh);
-    aviutl_lay(r, in, object.rt, ow, oh, -atX, -atY, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);   // (premultiplied, as AviUtl2's pictures are)
+    // The object is premultiplied, as AviUtl2's images are.
+    aviutl_lay(r, in, object.rt, ow, oh, -atX, -atY, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);
     const AviutlBuf& frame = aviutl_buf(r, "framebuffer", w, h);
     const bool behind = r.behind && s.behind && r.box[2] > r.box[0] && r.box[3] > r.box[1];
     aviutl_clear(r, frame, behind ? std::max(r.ground, 0) : 0, behind && r.ground >= 0);
-    if (behind) {   // (what is drawn before it, there: the stage's colour, then the stage's picture without the thing (render_layers.h, as AbsentMotion's backdrop reads it) in sRGB as the thing's own picture is given (screen_tone), over it)
+    // Fill the frame buffer with what is drawn behind the layer: first the stage's
+    // background color, then the stage's image without this layer (see render_layers.h) over
+    // it. The stage image is converted to sRGB by screen_tone, like the layer's own image.
+    if (behind) {
         const double bw = s.behind->getWidth(), bh = s.behind->getHeight(), kx = bw / std::max(1, s.w), ky = bh / std::max(1, s.h);
         const AviutlBuf all{s.behind, nullptr, (uint32_t)bw, (uint32_t)bh};
         const AviutlBuf& there = aviutl_buf(r, "~behind", w, h);
@@ -182,7 +219,9 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
     std::string trouble = r.trouble;
     lua_State* L = r.L;
     if (trouble.empty()) {
-        lua_rawgeti(L, LUA_REGISTRYINDEX, r.obj), lua_setglobal(L, "obj");   // (its own obj, its clock (aviutl_late's) and where its require looks, in the Lua it shares)
+        // Install this script's own obj, its time limit clock (used by aviutl_late) and its
+        // require path into the Lua state, which other scripts on the layer share.
+        lua_rawgeti(L, LUA_REGISTRYINDEX, r.obj), lua_setglobal(L, "obj");
         lua_pushlightuserdata(L, &r), lua_setfield(L, LUA_REGISTRYINDEX, "motolii.run");
         lua_getglobal(L, "package"), lua_pushstring(L, r.path.c_str()), lua_setfield(L, -2, "path"), lua_pop(L, 1);
         for (const AviutlVar& v : r.vars) aviutl_set(L, v, [&](const std::string& k) { return numbers(r.file, k, r.usual.count(k) ? r.usual[k] : v.usual); });
@@ -193,7 +232,9 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
             {"layer", numbers(r.file, "aviutl.layer", 1)}, {"index", 0}, {"num", 1}, {"id", 1}, {"effect_id", 1}, {"frame_s", 0}, {"frame_e", frame}, {"effect_layer", 1}, {"originframe", 0}, {"scene_id", 0}};
         for (const auto& [n, v] : values) lua_pushnumber(L, v), lua_setfield(L, -2, n);
         lua_pop(L, 1);
-        std::string with;   // (its parameters' values now)
+        // The current parameter values, as text. If they equal the values of a run that was
+        // stopped for taking too long, the script is not run again.
+        std::string with;
         for (const AviutlVar& v : r.vars) with += std::to_string(numbers(r.file, v.var, NAN)) + ",";
         if (with == r.late) trouble = aviutl_too_long;
         else {
@@ -206,16 +247,20 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
             if (trouble.find(aviutl_too_long) != std::string::npos) r.late = with;
         }
     }
-    if (!trouble.empty()) {   // (the picture as it came, the reason said once)
+    // On failure the layer's image is passed through unchanged and the reason is printed once.
+    if (!trouble.empty()) {
         if (r.said.insert(trouble).second) std::fprintf(stderr, "the AviUtl2 script %s stops: %s\n", r.file.c_str(), trouble.substr(0, 400).c_str());
         return aviutl_lay(r, in, to, w, h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
     }
-    const AviutlBuf& out = aviutl_buf(r, "~out", w, h);   // (what it drew, the object over it unless it drew it, made straight again into `to`)
+    // "~out" holds what the script drew. The object is laid over it unless the script drew
+    // the object itself. The result is converted back to straight alpha when written to `to`.
+    const AviutlBuf& out = aviutl_buf(r, "~out", w, h);
     aviutl_lay(r, r.bufs["framebuffer"], out.rt, w, h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
     lua_getglobal(L, "obj");
     const auto f = [&](const char* k, double otherwise) { lua_getfield(L, -1, k); const double v = aviutl_num(L, -1, otherwise); lua_pop(L, 1); return v; };
     const double zoom = f("zoom", 1), aspect = f("aspect", 0);
-    if (!r.drew && r.poly && (f("rx", 0) != 0 || f("ry", 0) != 0 || f("oz", 0) != 0))   // (in depth: aviutl_placed)
+    // If the object is rotated around x or y or moved in depth, aviutl_placed draws it.
+    if (!r.drew && r.poly && (f("rx", 0) != 0 || f("ry", 0) != 0 || f("oz", 0) != 0))
         aviutl_placed(r, r.bufs["object"], out, f("x", 0) + f("ox", 0), f("y", 0) + f("oy", 0), f("oz", 0), zoom * f("sx", 1) * (aspect > 0 ? 1 - aspect : 1), zoom * f("sy", 1) * (aspect < 0 ? 1 + aspect : 1), f("rx", 0), f("ry", 0), f("rz", 0), f("cx", 0), f("cy", 0), f("alpha", 1), 0, 0);
     else if (!r.drew) aviutl_lay(r, r.bufs["object"], out.rt, w, h, f("x", 0) + f("ox", 0), f("y", 0) + f("oy", 0), zoom * f("sx", 1) * (aspect > 0 ? 1 - aspect : 1), zoom * f("sy", 1) * (aspect < 0 ? 1 + aspect : 1), f("rz", 0), f("alpha", 1), f("cx", 0), f("cy", 0), 0, 0);
     lua_pop(L, 1);

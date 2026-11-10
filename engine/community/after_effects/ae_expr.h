@@ -1,17 +1,40 @@
-// ae_expr.h: an After Effects expression as a recipe holds it. Read ONCE (AE.compile), a function after that; a frame only calls it.
-// What is done once, when the recipe is made: + - * / become vector-aware calls ($a $s $m $d: [1,2] + [3,4] is "1,23,4" in
-// QuickJS-ng, which has no operator overloading), the value of the last statement becomes the return (AE's rule), a name
-// assigned and never declared gets a var, and the random state is reset per call only if the text uses random.
-// This is Bodymovin's way (it rewrites to $bm_sum, $bm_rt once, at export; lottie-web and ThorVG's tvgLottieExpressions.cpp run
-// that text) with the rewrite done here, on the posted text. The names are After Effects' own (ae-expressions.docsforadobe.dev).
-// The parser is acorn (third_party/js/acorn, MIT), read into the recipe's context only when its text says AE.compile.
+// JavaScript prelude that compiles and runs After Effects expressions.
+//
+// The prelude is a raw string, ae_prelude, that the caller evaluates in a QuickJS-ng context
+// when a script uses AE.compile. An expression is parsed once by AE.compile, which returns a
+// function; each frame only calls that function. The parser is acorn
+// (third_party/js/acorn, MIT license), loaded into the context only when the script uses
+// AE.compile.
+//
+// Work done once, at compile time:
+//   - The operators + - * / become vector-aware calls ($a, $s, $m, $d). QuickJS-ng has no
+//     operator overloading, so [1,2] + [3,4] would otherwise give the string "1,23,4".
+//   - The value of the last statement becomes the return value, as in After Effects.
+//   - A name that is assigned but never declared gets a var declaration.
+//   - The random state is reset on each call only if the text uses a random function.
+//
+// This follows Bodymovin, which rewrites expressions to $bm_sum, $bm_rt and so on once at
+// export; lottie-web and ThorVG's tvgLottieExpressions.cpp then run that text. Here the
+// rewrite is done on the text as the user posted it. Names follow After Effects
+// (ae-expressions.docsforadobe.dev).
+//
+// Usage:
 //   const f = AE.compile(`...an expression as it was posted...`);
-//   AE.run(f, { index, time, value, comp, layer, effect })   // undefined from the expression: the value as it was
-//   AE.comp({ width, height, numLayers }, [{ name, index, width, height, position: (t) => [x, y], controls }])   // thisComp
-//   controls: { Effect: { Slider: 1 } } or (effect, property) => number: what effect("Effect")("Slider") reads
-//   AE.name("X Offset"): "X_Offset", a recipe parameter's name
-// Not done: the property names bare (position, opacity), loopOut, + - * / on a vector in -x and +=, toWorld, footage().
-// wiggle and random are not After Effects' own sequences: a value that depends on the very numbers will not match.
+//   // Returns the expression's value, or c.value if the expression returns undefined.
+//   AE.run(f, { index, time, value, comp, layer, effect })
+//   // Builds thisComp from the canvas size and a list of layers. "controls" is either
+//   // { Effect: { Slider: 1 } } or a function (effect, property) => number; it supplies what
+//   // effect("Effect")("Slider") reads.
+//   AE.comp({ width, height, numLayers },
+//           [{ name, index, width, height, position: (t) => [x, y], controls }])
+//   // Turns a parameter name into an identifier: AE.name("X Offset") is "X_Offset".
+//   AE.name("X Offset")
+//
+// Not supported: bare property names (position, opacity), loopOut, the operators + - * / on a
+// vector in unary minus and +=, toWorld, and footage().
+//
+// wiggle and random do not reproduce After Effects' own random sequences, so values that
+// depend on the exact numbers will not match After Effects.
 #pragma once
 static const char ae_prelude[] = R"AEJS(
 (function (G) {

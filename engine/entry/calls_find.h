@@ -1,8 +1,11 @@
-// calls_find.h: part of motolii.mm, read before calls.h. The shelves' search (motolii_find): RapidFuzz for words typed
-// wrong or in part, Japanese WordNet and SQLite's FTS5 for Japanese words (the user's Mercari: read, not asked; golf
-// (91), (96)). Cut out of calls.h as it was, by size.
-// A text's letters (a byte 10xxxxxx goes with the one before it, as canvas_renderables.h splits a text), in small letters as
-// RapidFuzz's utils.default_process; and back to UTF-8.
+// calls_find.h: the search over the items of a shelf, motolii_find. RapidFuzz matches words typed
+// wrongly or in part. Japanese WordNet and SQLite's FTS5 match Japanese words.
+//
+// Included by motolii.mm before calls.h; not self-contained.
+
+// Decodes UTF-8 into code points and lower-cases the ASCII letters, as RapidFuzz's
+// utils.default_process does. A continuation byte of the form 10xxxxxx belongs to the character
+// before it, as canvas_renderables.h splits a text.
 static std::u32string find_letters(const std::string& s) {
     std::u32string out;
     for (size_t i = 0; i < s.size();) {
@@ -15,6 +18,7 @@ static std::u32string find_letters(const std::string& s) {
     }
     return out;
 }
+// Encodes code points as UTF-8.
 static std::string find_utf8(const std::u32string& s) {
     std::string out;
     for (const char32_t c : s) {
@@ -25,11 +29,17 @@ static std::string find_utf8(const std::u32string& s) {
     }
     return out;
 }
-// Japanese words a hand types, said in English: Japanese WordNet (NICT; third_party/wordnet_ja/ja_en.tsv, cut from its wnjpn.db as
-// its SOURCE.txt says; a maker's own words/ja_en.tsv adds to it: doc_folders), its kana as hiragana (katakana and hiragana are
-// Unicode's two blocks 0x60 apart), the longest word it has at each place (a dictionary's longest match); a kana
-// alone (a particle: が, を) is no word, nor letters of other scripts (an English word typed is RapidFuzz's). Each
-// word found, its English words. None: not Japanese, or no word of it known.
+// Translates the Japanese words of a query into English words. The dictionary is Japanese WordNet
+// from NICT, in third_party/wordnet_ja/ja_en.tsv, cut from its wnjpn.db as its SOURCE.txt
+// describes. The ja_en.tsv files in the words folders of the shelves add to it, see doc_folders.
+//
+// Katakana is turned into hiragana; the two Unicode blocks are 0x60 apart. At each position the
+// longest dictionary word is taken, as a dictionary's longest match. A kana alone, such as a
+// particle, is not a word. Letters of other scripts are not looked up, because an English word
+// typed is for RapidFuzz.
+//
+// Returns one list of English words for each Japanese word found. The result is empty if the query
+// is not Japanese or no word of it is known.
 static std::vector<std::vector<std::string>> find_english(const std::string& query) {
     static std::unordered_map<std::string, std::string> words;
     static size_t longest = 0;
@@ -50,11 +60,13 @@ static std::vector<std::vector<std::string>> find_english(const std::string& que
     std::u32string q = find_letters(query);
     for (char32_t& c : q) if (c >= 0x30A1 && c <= 0x30F6) c -= 0x60;
     std::vector<std::vector<std::string>> said;
-    const auto japanese = [](char32_t c) { return c >= 0x3000 && c <= 0x9FFF; };   // (kana, kanji and their marks)
+    // Kana, kanji and their marks.
+    const auto japanese = [](char32_t c) { return c >= 0x3000 && c <= 0x9FFF; };
     for (size_t i = 0; i < q.size();) {
         size_t took = 0;
         for (size_t n = std::min(longest, q.size() - i); n >= 1 && !took && japanese(q[i]); --n) {
-            if (n == 1 && q[i] >= 0x3041 && q[i] <= 0x3096) break;   // (a kana alone: a particle)
+            // A kana alone is a particle, not a word.
+            if (n == 1 && q[i] >= 0x3041 && q[i] <= 0x3096) break;
             if (!std::all_of(q.begin() + (long)i, q.begin() + (long)(i + n), japanese)) continue;
             if (const auto w = words.find(find_utf8(q.substr(i, n))); w != words.end()) {
                 std::vector<std::string> one;
@@ -68,15 +80,22 @@ static std::vector<std::vector<std::string>> find_english(const std::string& que
     }
     return said;
 }
-// The words a hand types, against a shelf's items ("id<TAB>its name and label<TAB>what it does" a line), nearest first,
-// the best `limit` (5 when 0). Japanese words said in English (find_english) are looked for as a search engine looks
-// for a query widened by its synonyms: each word's English OR'd, the words AND'd (each word of the query found in
-// some way; none found so, any of them), SQLite's FTS5 (its porter tokenizer: melt finds melts) ranking by bm25, an
-// English word in many items (mix, level) weighing less than one in few (melt, afterimage). Any other: RapidFuzz
-// (MIT, third_party/rapidfuzz, the user's choice), as its author's process.extract goes as it comes, no cut: a name
-// by WRatio, extract's own scorer; what it does, a longer text, by partial_ratio, RapidFuzz's way to find a short
-// string in a long one (WRatio counts a text 8 times as long at 0.6 of its score); the higher of the two. Nothing of
-// the document read.
+// Searches the items of a shelf for the query and returns the best matches nearest first, one per
+// line as "id\tscore\n". `items` has one item per line as "id\tname and label\twhat it does". At
+// most `limit` results are returned, or 5 when `limit` is 0. Nothing of the project is read.
+//
+// A query with Japanese words is translated by find_english and searched as a search engine
+// searches a query widened by synonyms. The English words of each Japanese word are joined by OR,
+// and the words are joined by AND. If that finds nothing, the words are joined by OR instead. The
+// search is SQLite's FTS5 with the porter tokenizer, so "melt" finds "melts", ranked by bm25. An
+// English word that is in many items, such as mix or level, therefore weighs less than one that is
+// in few, such as melt or afterimage.
+//
+// Any other query goes to RapidFuzz, MIT license, in third_party/rapidfuzz, used as its
+// process.extract does, without a score cutoff. The name is scored with WRatio, which is extract's
+// default scorer. What the item does is a longer text, so it is scored with partial_ratio, which
+// RapidFuzz provides for finding a short string in a long one; WRatio would count a text 8 times as
+// long at 0.6 of its score. The higher of the two scores is used.
 const char* motolii_find(Motolii*, const char* query, const char* items, int limit) {
     static thread_local std::string said;
     said.clear();
@@ -86,7 +105,8 @@ const char* motolii_find(Motolii*, const char* query, const char* items, int lim
         static thread_local size_t built = 0;
         const size_t these = std::hash<std::string>{}(items);
         if (!db) sqlite3_open(":memory:", &db);
-        if (built != these) {   // (the items indexed once while they are the same)
+        // Index the items once while they stay the same.
+        if (built != these) {
             sqlite3_exec(db, "drop table if exists t; create virtual table t using fts5(id unindexed, name, about, tokenize='porter unicode61'); begin", nullptr, nullptr, nullptr);
             sqlite3_stmt* put = nullptr;
             sqlite3_prepare_v2(db, "insert into t values(?, ?, ?)", -1, &put, nullptr);
@@ -103,16 +123,19 @@ const char* motolii_find(Motolii*, const char* query, const char* items, int lim
             sqlite3_exec(db, "commit", nullptr, nullptr, nullptr);
             built = these;
         }
-        std::vector<std::string> each;   // (a word of the query: its English OR'd)
+        // One entry for each Japanese word of the query: its English words joined by OR.
+        std::vector<std::string> each;
         for (const auto& one : english) {
             std::string any;
             for (std::string w : one) {
-                for (size_t at = 0; (at = w.find('"', at)) != std::string::npos; at += 2) w.insert(at, "\"");   // (a quote in a word said twice, as FTS5 reads a string)
+                // Double a quote inside a word, as FTS5 reads a quoted string.
+                for (size_t at = 0; (at = w.find('"', at)) != std::string::npos; at += 2) w.insert(at, "\"");
                 any += (any.empty() ? "\"" : " OR \"") + w + "\"";
             }
             each.push_back("(" + any + ")");
         }
-        for (const char* join : {" AND ", " OR "}) {   // (each word found; none so, any)
+        // Try to match every word first, then any word.
+        for (const char* join : {" AND ", " OR "}) {
             std::string match;
             for (const std::string& e : each) match += (match.empty() ? "" : join) + e;
             sqlite3_stmt* ask = nullptr;

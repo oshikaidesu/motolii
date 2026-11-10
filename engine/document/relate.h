@@ -1,23 +1,32 @@
-// relate.h: part of doc.h (a layer put in a relation and taken out of it; a relation led, let go). Read only through doc.h.
-// A layer taken out of a relation where it shows at that moment: no longer in it (what its values were connected to
-// is what this one started from for it, or none; a relation that started from this one for it now starts from that),
-// its place among the relation's members kept empty so no other moves, then each of its connected values moved (all
-// its keys alike) by as much as it would otherwise jump. One step; nothing jumps.
+// Included by doc.h; not self-contained. Puts layers into a relation, takes them out, and changes a
+// relation's leader.
 static void doc_act(Doc& d);
 static bool doc_acted(Doc& d);
-static const char* doc_lasting(const std::string& name) {   // (a name made at run time, kept where doc_literal can know it again by its place: one place for each name, ever)
+// Returns a copy of the name that stays valid for the life of the program, so doc_literal can
+// recognize it again by its address. There is one address per name, ever.
+static const char* doc_lasting(const std::string& name) {
     static std::set<std::string> kept;
     return kept.insert(name).first->c_str();
 }
-static std::vector<std::pair<std::string, double>> doc_shown_now(Doc& d, int layer, double now) {   // (each connected value and where it shows now)
+// Returns the properties of the layer that are connected to a relation, each as its name with the
+// _by suffix and the value it shows at time `now`.
+static std::vector<std::pair<std::string, double>> doc_shown_now(Doc& d, int layer, double now) {
     std::vector<std::pair<std::string, double>> names;
     doc_rows(d, sqlite3_mprintf("select name from keyframe where layer = %d and name glob '*_by' and value <> 0", layer), [&](sqlite3_stmt* q) { names.push_back({(const char*)sqlite3_column_text(q, 0), 0.0}); });
     for (auto& [n, shown] : names) shown = doc_literal(d, layer, doc_lasting(n.substr(0, n.size() - 3)), now, 0.0);
     return names;
 }
+// Takes a layer out of the relation `by`, keeping the layer where it shows at time `now`. The
+// layer's connected values go back to what they were connected to before, or are removed if there
+// was nothing. A relation that started from `by` for this layer now starts from that earlier one.
+// The layer's place among the relation's members is left empty so no other member moves. If `stay`
+// is true, each connected value is also moved, all its keyframes alike, by the amount it would
+// otherwise jump. One undo step; nothing jumps. `told` is the result of doc_shown_now for the layer
+// if the caller already has it, otherwise it is read here.
 static bool doc_free(Doc& d, int layer, int by, double now, bool stay, const std::vector<std::pair<std::string, double>>* told) {
     const DocExact exact(d);
-    const Doc::Relation rel = doc_relation_of(d, by);   // (a copy: what follows forgets it)
+    // A copy, because the calls below discard the original.
+    const Doc::Relation rel = doc_relation_of(d, by);
     const auto at = std::find(rel.members.begin(), rel.members.end(), layer);
     if (at == rel.members.end()) return d.error = "it is not in that relation", false;
     const size_t i = (size_t)(at - rel.members.begin());
@@ -32,10 +41,12 @@ static bool doc_free(Doc& d, int layer, int by, double now, bool stay, const std
     };
     doc_act(d);
     char* change = word("members", by, [&](size_t k, const std::string& one) { return k == i ? std::string("_") : one; });
-    for (const auto& [n, _] : names)   // (connected to this one: to what it started from)
+    // Values connected to this relation go back to what they were connected to before.
+    for (const auto& [n, _] : names)
         if ((int)doc_number(d, layer, n.c_str(), 0, 0) == by)
             change = was ? sqlite3_mprintf("%z update keyframe set value = %d where layer = %d and name = %Q;", change, was, layer, n.c_str()) : sqlite3_mprintf("%z delete from keyframe where layer = %d and name = %Q;", change, layer, n.c_str());
-    for (const auto& [r, other] : d.relationsOf)   // (a relation that started from this one for it: from that one)
+    // A relation that started from this layer for it now starts from the one before.
+    for (const auto& [r, other] : d.relationsOf)
         if (r != by) {
             const auto there = std::find(other.members.begin(), other.members.end(), layer);
             if (there != other.members.end() && !other.under.empty() && other.under[(size_t)(there - other.members.begin())] == by)
@@ -43,21 +54,30 @@ static bool doc_free(Doc& d, int layer, int by, double now, bool stay, const std
         }
     bool ok = doc_change(d, change);
     doc_forget(d);
-    for (const auto& [n, shown] : names) {   // (each value moved by what it would jump, when baked; else as the relation at strength 0 for good: back to the one under it, or its own value, so a morph by strength and a removal agree)
+    // If `stay` is true, move each value by the amount it would otherwise jump, so the layer stays
+    // where it shows. Otherwise the layer ends as if the relation's strength went to 0 for good:
+    // back at the relation under it, or at its own value, so a morph by strength and a removal
+    // agree.
+    for (const auto& [n, shown] : names) {
         if (!ok || !stay) break;
         const std::string base = n.substr(0, n.size() - 3);
         const double off = shown - doc_literal(d, layer, doc_lasting(base), now, 0.0);
         if (std::abs(off) < 1e-12) continue;
+        // Add the offset to every keyframe of the property, and add a keyframe at time 0 if it had
+        // none.
         ok = doc_change(d, sqlite3_mprintf("update keyframe set value = value + %!.17g where layer = %d and name = %Q; insert into keyframe(layer, name, at, value) select %d, %Q, 0.0, %!.17g where not exists (select 1 from keyframe where layer = %d and name = %Q);",
                                            off, layer, base.c_str(), layer, base.c_str(), off, layer, base.c_str()));
         doc_forget(d);
     }
     return doc_acted(d) && ok;
 }
-// Layers put in a relation as they show now: in its order (round its middle, or from the left), each with the relation
-// it was in before (this one starts from what that gives) and where it showed (this one adds only the step from there:
-// nothing jumps when it comes in, and a hand still moves it); an around's or a row's middle and size where they stand, a
-// follow's or a push's leader (the leftmost, the largest) if none is said. Then connected. One step.
+// Puts layers into the relation `by` as they show now. The members are ordered, round the middle
+// for a ring or from the left for a row. Each records the relation it was in before, which the new
+// relation starts from, and where it showed, so the new relation adds only the step from there.
+// This way nothing jumps when a layer joins, and the user can still move it. For an around or a row
+// the middle and size are taken from where the layers stand. For a follow or a push the leader, the
+// leftmost or the largest layer, is chosen if none is set. Then the layers are connected. One undo
+// step.
 static bool doc_relate(Doc& d, int by, const char* ids, double now) {
     const std::string type = doc_word(d, by, "file");
     if (doc_word(d, by, "kind") != "behaviour" || !doc_among(doc_relations, type)) return d.error = "that is no relation", false;
@@ -65,7 +85,8 @@ static bool doc_relate(Doc& d, int by, const char* ids, double now) {
     std::istringstream said(ids);
     for (std::string one; said >> one;) if (const int t = std::atoi(one.c_str()); t && t != by && doc_knows(d, t) && std::find(layers.begin(), layers.end(), t) == layers.end()) layers.push_back(t);
     if (layers.empty()) return d.error = "no layers to put in it", false;
-    std::map<int, std::pair<double, double>> at;   // (where each settles: what follows and pushes now is not kept)
+    // Where each layer settles, with the effect of follow and push left out (d.settled).
+    std::map<int, std::pair<double, double>> at;
     d.settled = true;
     doc_forget(d);
     for (const int t : layers) at[t] = {doc_literal(d, t, "x", now, 0.0), doc_literal(d, t, "y", now, 0.0)};
@@ -79,24 +100,29 @@ static bool doc_relate(Doc& d, int by, const char* ids, double now) {
         leader = *std::min_element(layers.begin(), layers.end(), [&](int a, int b) { return type == "follow" ? at[a].first < at[b].first : doc_number(d, a, "size", now, 1) > doc_number(d, b, "size", now, 1); });
         ok = ok && doc_set(d, by, "leader", leader);
     }
-    if (type == "follow" && !has("lag")) ok = ok && doc_set(d, by, "lag", 0.1);   // (said, so its card shows what it does: each a tenth of a second later)
+    // Write the value so the relation's card shows it: each member follows a tenth of a second
+    // later.
+    if (type == "follow" && !has("lag")) ok = ok && doc_set(d, by, "lag", 0.1);
     if (type == "push" && !has("radius")) ok = ok && doc_set(d, by, "radius", 0.5);
     std::vector<int> members;
     for (const int t : layers) if (t != leader) members.push_back(t);
     double cx = 0, cy = 0;
     for (const int t : members) cx += at[t].first / members.size(), cy += at[t].second / members.size();
-    if (type == "group")   // (in reading order: the top line first, each line from the left)
+    // Group members are in reading order: the top line first, each line from the left.
+    if (type == "group")
         std::sort(members.begin(), members.end(), [&](int a, int b) { return std::round(at[a].second * 10) != std::round(at[b].second * 10) ? at[a].second > at[b].second : at[a].first < at[b].first; });
     if (type == "around" || type == "row") {
         if (has("centre_x")) cx = doc_number(d, by, "centre_x", now, 0), cy = doc_number(d, by, "centre_y", now, 0);
-        else ok = ok && doc_set(d, by, "centre_x", cx) && doc_set(d, by, "centre_y", cy);   // (its middle where they stand)
+        // Put the middle where the layers stand.
+        else ok = ok && doc_set(d, by, "centre_x", cx) && doc_set(d, by, "centre_y", cy);
         std::sort(members.begin(), members.end(), [&](int a, int b) { return type == "around" ? std::atan2(at[a].first - cx, at[a].second - cy) < std::atan2(at[b].first - cx, at[b].second - cy) : at[a].first < at[b].first; });
         if (type == "around" && !has("radius")) {
             double r = 0;
             for (const int t : members) r += std::hypot(at[t].first - cx, at[t].second - cy) / members.size();
             ok = ok && doc_set(d, by, "radius", std::max(r, 0.2));
         }
-        if (type == "row" && !has("gap") && members.size() > 1) {   // (as far apart as they stand, but never closer than the largest of them is wide)
+        // Place them as far apart as they stand, but never less than 1.6 times the widest layer.
+        if (type == "row" && !has("gap") && members.size() > 1) {
             double wide = 0;
             for (const int t : members) wide = std::max(wide, doc_number(d, t, "size", now, 1) * std::max(1.0, doc_number(d, t, "wide", now, 1)));
             ok = ok && doc_set(d, by, "gap", std::max((at[members.back()].first - at[members.front()].first) / (members.size() - 1), wide * 1.6));
@@ -115,16 +141,20 @@ static bool doc_relate(Doc& d, int by, const char* ids, double now) {
     }
     ok = ok && doc_say(d, by, "members", order.c_str()) && doc_say(d, by, "under", under.c_str()) && doc_say(d, by, "from", from.c_str());
     for (const int t : members) {
-        ok = ok && doc_set(d, t, "x_by", by) && doc_set(d, t, "y_by", by) && (!doc_knows(d, t, "z") || doc_set(d, t, "z_by", by));   // (its depth too, where it has one: a ring tipped back, a leader in depth)
-        if (type == "around" || type == "row" || type == "group" || type == "relate")   // (its turns, size and opacity too: the relation's own, given in turn)
+        // Also connect depth if the layer has one, for a ring tipped back or a leader in depth.
+        ok = ok && doc_set(d, t, "x_by", by) && doc_set(d, t, "y_by", by) && (!doc_knows(d, t, "z") || doc_set(d, t, "z_by", by));
+        // Also connect rotation, size and opacity for these relation types.
+        if (type == "around" || type == "row" || type == "group" || type == "relate")
             for (const char* n : {"rotate", "rotate_x", "rotate_y", "size", "opacity"}) ok = ok && (!doc_knows(d, t, n) || doc_set(d, t, (std::string(n) + "_by").c_str(), by));
     }
     return doc_acted(d) && ok;
 }
-// A relation led by another: the new leader out of its layers if it was one, the old one in among them where it shows,
-// a follow's start the new leader's settled place; then every layer it touches moved by as much as it would otherwise
-// jump. One step; nothing jumps.
+// Changes the leader of the relation `by` to `leader`. The new leader is taken out of the
+// relation's layers if it was one of them, the old leader joins them where it shows, and a follow
+// starts from the new leader's settled place. Then every layer touched is moved by the amount it
+// would otherwise jump. One undo step; nothing jumps.
 static bool doc_lead(Doc& d, int by, int leader, double now) {
+    // Sets doc_leading while this function runs.
     struct Leading { Leading() { doc_leading = true; } ~Leading() { doc_leading = false; } } leading;
     const std::string type = doc_word(d, by, "file");
     if (doc_word(d, by, "kind") != "behaviour" || !doc_among(doc_relations, type)) return d.error = "that is no relation", false;
@@ -144,11 +174,15 @@ static bool doc_lead(Doc& d, int by, int leader, double now) {
     doc_forget(d);
     doc_act(d);
     const std::vector<int>& in = doc_members_of(d, by);
-    bool ok = std::find(in.begin(), in.end(), leader) == in.end() || doc_free(d, leader, by, now, true);   // (the leader is not one it moves)
-    if ((type == "around" || type == "row") && ok)   // (its middle is its leader: the ring or the row goes round it, as planets round a sun)
+    // The leader is not a member the relation moves.
+    bool ok = std::find(in.begin(), in.end(), leader) == in.end() || doc_free(d, leader, by, now, true);
+    // The middle of a ring or a row is its leader, so the members go around it like planets around
+    // a sun.
+    if ((type == "around" || type == "row") && ok)
         ok = doc_set(d, by, "centre_x", 0) && doc_set(d, by, "centre_y", 0);
     ok = ok && doc_set(d, by, "leader", leader);
-    if (ok && was && type != "around" && type != "row") {   // (the old leader in among its layers, where it shows; a ring's or a row's old middle stays out)
+    // The old leader joins the members where it shows. A ring's or row's old middle stays out.
+    if (ok && was && type != "around" && type != "row") {
         const int under = doc_driven_by(d, was, "x");
         char add[96];
         std::snprintf(add, sizeof add, " %.17g %.17g", type == "follow" ? settles.first : wasAt.first, type == "follow" ? settles.second : wasAt.second);
@@ -156,32 +190,41 @@ static bool doc_lead(Doc& d, int by, int leader, double now) {
              && doc_say(d, by, "under", (doc_word(d, by, "under") + " " + std::to_string(under && doc_among(doc_relations, doc_word(d, under, "file")) ? under : 0)).c_str())
              && doc_say(d, by, "from", (doc_word(d, by, "from") + add).c_str()) && doc_set(d, was, "x_by", by) && doc_set(d, was, "y_by", by) && (!doc_knows(d, was, "z") || doc_set(d, was, "z_by", by));
     }
-    if (ok && type == "follow") {   // (each starts from where the new leader settles)
+    // Each member starts from where the new leader settles.
+    if (ok && type == "follow") {
         std::string from;
         char one[64];
         for (size_t k = 0, n = doc_members_of(d, by).size(); k < n; ++k) std::snprintf(one, sizeof one, "%s%.17g %.17g", k ? " " : "", settles.first, settles.second), from += one;
         ok = doc_say(d, by, "from", from.c_str());
     }
     doc_forget(d);
-    for (const auto& [t, at] : shown) {   // (each moved by what it would jump; a ring or a row goes to its new middle)
+    // Move each layer by the amount it would otherwise jump. A ring or a row goes to its new
+    // middle.
+    for (const auto& [t, at] : shown) {
         if (!ok || type == "around" || type == "row") break;
         const double ox = at.first - doc_literal(d, t, "x", now, 0.0), oy = at.second - doc_literal(d, t, "y", now, 0.0);
         for (const auto& [name, off] : {std::make_pair("x", ox), std::make_pair("y", oy)})
             if (std::abs(off) > 1e-12)
+                // The same shift as in doc_free.
                 ok = ok && doc_change(d, sqlite3_mprintf("update keyframe set value = value + %!.17g where layer = %d and name = %Q; insert into keyframe(layer, name, at, value) select %d, %Q, 0.0, %!.17g where not exists (select 1 from keyframe where layer = %d and name = %Q);", off, t, name, t, name, off, t, name));
         doc_forget(d);
     }
     return doc_acted(d) && ok;
 }
-// A relation let go: each of its layers kept where it shows at that moment, the relation gone.
 static bool doc_remove(Doc& d, int layer);
+// Releases the relation `by`. Each of its layers stays where it shows at time `now`, and the
+// relation is removed, in one undo step.
 static bool doc_release(Doc& d, int by, double now) {
     const DocExact exact(d);
     if (doc_word(d, by, "kind") != "behaviour") return d.error = "that is no relation", false;
-    const std::vector<int> all = doc_members_of(d, by);   // (a copy: freeing one forgets the list)
-    std::map<int, std::vector<std::pair<std::string, double>>> shown;   // (all read before any goes: a relation written as a file says each one's place from all the others)
+    // A copy, because freeing one layer changes the member list.
+    const std::vector<int> all = doc_members_of(d, by);
+    // Read every layer's values before any is freed. A relation written as a file derives each
+    // member's place from all the others.
+    std::map<int, std::vector<std::pair<std::string, double>>> shown;
     for (const int t : all) if (t) shown[t] = doc_shown_now(d, t, now);
-    doc_act(d);   // (one step: all of them freed and the relation gone, or none of it)
+    // One undo step: all layers freed and the relation gone, or none of it.
+    doc_act(d);
     bool ok = true;
     for (const int t : all) if (ok && t) ok = doc_free(d, t, by, now, true, &shown[t]);
     ok = ok && doc_remove(d, by);

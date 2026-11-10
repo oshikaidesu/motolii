@@ -1,4 +1,5 @@
-// Godot's Tween's easing (third_party/godot_easing, MIT): godot::Sine::in_out(t, from, by, length) and the rest, as a Tween eases by them.
+// Godot's Tween easing functions, such as godot::Sine::in_out(t, from, by, length).
+// The functions come from third_party/godot_easing (MIT license) and are used unchanged.
 #pragma once
 #include <cmath>
 namespace godot {

@@ -1,4 +1,5 @@
-// render_stage.h: part of render.h. Read only through render.h.
+// The stage: the mesh and Stage types, creating a Filament engine and stage, and adding, reshaping
+// and making meshes on it. Included by render.h; not self-contained.
 #include <filament/Camera.h>
 #include <filament/ColorGrading.h>
 #include <filament/Engine.h>
@@ -52,41 +53,54 @@ using namespace filament::math;
 
 static const float TAU = 6.2831853f;
 
-struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };   // (a shape a p5.js sketch draws, as it has it: document/sketch.h)
-struct SketchTold { std::string name, type; int count = 1, size = 1; };   // (and what its shader() is told, by name)
+// A shape that a p5.js sketch draws, in the form the sketch has it. See document/sketch.h.
+struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };
+// A value that the sketch passes to its shader(), identified by name.
+struct SketchTold { std::string name, type; int count = 1, size = 1; };
+// The material made for a sketch's shader, the values it takes, and its material instances.
 struct SketchPaint { Material* material = nullptr; std::vector<SketchTold> told; int size = 0; std::vector<MaterialInstance*> looks; };
+// The points and triangles of one mesh, and the GPU buffers they were last uploaded to.
 struct Mesh {
     std::vector<float3> pos, nrm;
     std::vector<float2> uv;
     std::vector<uint32_t> idx;
     std::vector<quatf> quat;
-    std::vector<float4> color;   // (each point's own, sketch.mat's; most have none)
-    std::vector<float2> uv1;     // (and where it reads its picture)
-    VertexBuffer* vb = nullptr;   // (as last put in the scene: add_parts, reshape)
+    // Per-point colours for sketch.mat. Most meshes have none.
+    std::vector<float4> color;
+    // A second set of texture coordinates, where each point reads its image.
+    std::vector<float2> uv1;
+    // The buffers as last put in the scene. See add_parts and reshape.
+    VertexBuffer* vb = nullptr;
     IndexBuffer* ib = nullptr;
-    uint32_t vbRoom = 0, ibRoom = 0;   // (how many points and indices they hold: written again in place while they fit)
+    // How many points and indices the buffers hold. The buffers are written again in place while
+    // the mesh fits.
+    uint32_t vbRoom = 0, ibRoom = 0;
 };
 
-// A sheet given depth: its four corners before it and behind it, a box its picture is read through (deep.glsl).
+// Gives a sheet depth: its four corners are duplicated in front of it and behind it, forming a box
+// that its image is read through. See deep.glsl.
 static void sheet_deep(Mesh* m, float deep) {
     for (size_t i = 0; i < 4; ++i) m->pos.push_back(m->pos[i]), m->nrm.push_back(m->nrm[i]), m->uv.push_back(m->uv[i]);
     for (size_t i = 0; i < 4; ++i) m->pos[i].z = deep, m->pos[i + 4].z = -deep;
     m->idx = {0, 1, 2, 0, 2, 3, 5, 4, 7, 5, 7, 6, 4, 5, 1, 4, 1, 0, 5, 6, 2, 5, 2, 1, 6, 7, 3, 6, 3, 2, 7, 4, 0, 7, 0, 3};
 }
 
-// What a buffer is told, copied: Filament reads it later, on its own thread, and lets it go when it has (its callback),
-// so the mesh may be made again meanwhile.
+// Returns a descriptor holding a copy of `bytes` bytes from `from`. Filament reads the buffer later
+// on its own thread and frees it through the callback, so the mesh may be rebuilt meanwhile.
 static backend::BufferDescriptor copied(const void* from, size_t bytes) {
     void* copy = malloc(bytes);
     memcpy(copy, from, bytes);
     return backend::BufferDescriptor(copy, bytes, [](void* buffer, size_t, void*) { free(buffer); });
 }
 
+// Reads the whole file at `path`. Returns an empty vector if it cannot be read.
 static std::vector<uint8_t> load_file(const char* path) {
     std::ifstream in(path, std::ios::binary);
     return std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), {});
 }
 
+// The state of one Filament engine and the stage it draws: scene, views, cameras, helper images,
+// and the entities put on it.
 struct Stage {
     int w, h;
     Engine* engine;
@@ -94,63 +108,139 @@ struct Stage {
     Scene* scene;
     View* view;
     SwapChain* swap;
-    Camera* camera;      // the eye that looks at the stage: every picture of it is taken by this
-    Camera* film;        // the film's own camera: the same, unless another eye looks (god_view); mattes in the film's picture are taken by it
-    Camera* god = nullptr;   // that other eye, once it has been asked for
-    View* view_behind;   // the same scene without the glass (layer 2), drawn first into `behind`: what a block shows
-    Texture* behindDepth = nullptr;   // its depth, as it draws into a picture of its own for a thing that reads what is under (doc_layers_read)
+    // The camera that views the stage. Every image of the stage is taken by it.
+    Camera* camera;
+    // The project's own camera. It is the same as `camera` unless a free camera is in use, see
+    // god_view. Mattes in the project camera's image are taken by it.
+    Camera* film;
+    // The free camera, once it has been requested.
+    Camera* god = nullptr;
+    // The same scene without the glass (layer 2), drawn first into `behind`. It is what a glass
+    // block shows.
+    View* view_behind;
+    // The depth of `behind`. It is drawn into an image of its own for a layer that reads what is
+    // under it, see doc_layers_read.
+    Texture* behindDepth = nullptr;
     Texture* behind;
-    bool behindRead = false;   // whether anything reads `behind` (glass, the paper): until then it is not drawn
-    std::vector<std::function<void()>> after;   // (once the picture is drawn: a solid's own looks back, doc_layer_shell)
-    bool backdropRead = false;   // whether a thing's effect reads `behind` (AbsentMotion's backdrop): then it is drawn before the things' effects too
-    View* view_through = nullptr; // the glass's far faces alone (layer 8), drawn second into `through`: which way they face (far_side.mat)
+    // Whether anything reads `behind`, such as glass or paper. Until then it is not drawn.
+    bool behindRead = false;
+    // Run once the image is drawn, for example to put a solid's own material instances back. See
+    // doc_layer_shell.
+    std::vector<std::function<void()>> after;
+    // Whether a layer's effect reads `behind`, as the backdrop of AbsentMotion does. Then it is
+    // also drawn before the layers' effects.
+    bool backdropRead = false;
+    // The glass's far faces alone (layer 8), drawn second into `through`. It records which way they
+    // face, see far_side.mat.
+    View* view_through = nullptr;
     Texture* through = nullptr;
-    Texture* through_depth = nullptr;   // how far away those far faces are: thick_glass.mat's near faces measure the glass by it
-    double now = 0.0;        // the stage's time, in seconds
-    double frames = 0.0;     // so many frames a second its time is seen at (a document's own frame rate); 0: as smooth as it is drawn
-    bool by_clock = false;   // true: played as the clock goes (nothing is waited for); false: picture by picture (each one exact)
-    // (a live stage: what a moment asks of its films, kept to be done once the document is let go (motolii.mm), so
-    //  that films put back to their start do not hold the shell's reads of it; empty: done at once)
+    // How far away those far faces are. The near faces in thick_glass.mat measure the glass with
+    // it.
+    Texture* through_depth = nullptr;
+    // The stage's time in seconds.
+    double now = 0.0;
+    // Frames per second at which the stage's time is seen, which is the project's frame rate. 0
+    // means as smooth as it is drawn.
+    double frames = 0.0;
+    // True: played as the clock goes, and nothing is waited for. False: frame by frame, each one
+    // exact.
+    bool by_clock = false;
+    // For a live stage: work that a point in time asks of its videos, kept to run once the project
+    // is released, see motolii.mm. This way videos put back to their start do not hold the app's
+    // reads of the project. If null, the work is done at once.
     std::vector<std::function<void()>>* later = nullptr;
-    // a thing's own sound: the cut of its file (seconds of the file) and how fast, how far into that it is as it comes on,
-    // and when on the stage it comes on and for how long (below 0: to the end)
-    struct Sound { std::string file; double from, to, speed, into, on, lasts; double gain = 1.0; std::vector<float> loud = {}; };   // (gain: as loud as that, 1 as it comes; loud: keyed, how loud each 1/30 s from when it comes on)
-    std::map<const void*, std::function<Sound()>> sounding;   // what is heard, each under its own thing: asked when a film is written
-    std::map<const void*, std::function<void(double)>> playing;   // what goes on by itself as the stage's time does (films, pictures), each under its own thing
-    std::vector<std::function<void()>> said_after;      // a word of their own after each line of `clock`
-    struct Renderable { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
-                  InstanceBuffer* many = nullptr; int count = 1; };   // (all its places drawn in one go, Filament's own instancing: each place an instance of the one thing; `move` tells them all at once)
+    // A layer's own sound.
+    // file: the audio file.
+    // from, to: the part of the file used, in seconds of the file.
+    // speed: how fast it plays.
+    // into: how far into that part the sound is when it starts.
+    // on: the stage time in seconds when it starts.
+    // lasts: how long it plays in seconds. A negative value means to the end.
+    // gain: volume factor. 1 leaves the volume of the file unchanged.
+    // loud: keyframed loudness, one value for each 1/30 s from the start.
+    struct Sound { std::string file; double from, to, speed, into, on, lasts; double gain = 1.0; std::vector<float> loud = {}; };
+    // Sounds that are heard, each under its own layer. Asked when a video is exported.
+    std::map<const void*, std::function<Sound()>> sounding;
+    // Callbacks that advance by themselves as the stage's time does, such as videos and images,
+    // each under its own layer.
+    std::map<const void*, std::function<void(double)>> playing;
+    // Callbacks that add their own output after each line of `clock`.
+    std::vector<std::function<void()>> said_after;
+    // One Filament entity put on the stage.
+    // thing: the entity. of: the mesh it was made from. nth: the index of the place of that mesh.
+    //   place: its transform.
+    // matte: true for the shape that a matte is cut by, which lives in that matte's own scene.
+    // many: draws all its places in one go with Filament's instancing, each place being an instance
+    //   of the one entity. `move` updates them all at once.
+    // count: the number of instances.
+    struct Renderable { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;
+                  InstanceBuffer* many = nullptr; int count = 1; };
+    // A matte: its own scene, view and image, the camera that takes it, and the entity it rides on
+    // with that entity's transform. soft: whether some layer reads it blurred.
     struct Matte { Scene* scene; View* view; Texture* frameTexture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
-    std::vector<Matte> mattes;   // the mattes: each a picture taken by its own eye, drawn before all else (matte); soft: some thing reads it blurred
+    // The mattes. Each is an image taken by its own camera and drawn before everything else, see
+    // matte.
+    std::vector<Matte> mattes;
+    // Records that one material instance reads one matte. slot: which matte slot of the instance.
+    // matte: the index into `mattes`. use: 1 for inside, -1 for outside. soft: the blur level.
     struct Cut { MaterialInstance* look; int slot, matte; float use, soft; };
-    std::vector<Cut> cuts;       // which look reads which matte (matted): told where the matte's eye is before every picture
-    Texture* white = nullptr;    // a white point: the matte of a thing that nothing cuts
-    // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
-    std::map<std::string, Material*> materials;    // each material file, read and built once
-    void* solids = nullptr; void* solidTextures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
-    std::vector<Renderable> renderables;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
-    // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
-    // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.
-    // Over it, the marks of the picked thing (its frame: middle, width, height, turn, the point it turns about, as
-    // doc_frame gives them) and of the one under the hand; `point`: desk pixels a point of the screen the marks are sized in.
+    // Which material instance reads which matte, see matted. The matte's camera matrix is set
+    // before every frame.
+    std::vector<Cut> cuts;
+    // A white point: the matte of a layer that nothing cuts.
+    Texture* white = nullptr;
+    // Resources made once for this stage's engine and kept. A stage opened after another in the
+    // same program has its own.
+    // Each material file, read and built once.
+    std::map<std::string, Material*> materials;
+    // Filament's reader of 3D files and its reader of their images, see gltf_model.h.
+    void* solids = nullptr; void* solidTextures = nullptr;
+    // Every entity put on the stage: which mesh it was made from and at which of that mesh's
+    // places. `move` repositions them.
+    std::vector<Renderable> renderables;
+    // The app's preview panel.
+    // w, h: the size in pixels of the whole stage pane of the editing window. 0 means none.
+    // The image there is the same as on the stage but seen further back. x, y: where the stage's
+    //   top left lies, and scale: how many panel pixels a point of the stage takes. What lies off
+    //   the stage is also seen.
+    // Over it are the marks of the picked layer and of the one under the pointer. Each is a frame
+    //   given by doc_frame: center, width, height, rotation, and the point it rotates about. pick
+    //   and hover hold those values, and picked and hovered say whether they are set.
+    // point: panel pixels per point of the screen, in which the marks are sized.
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
              bool picked = false, hovered = false, rotateHandle = true; double pick[8] = {}, hover[8] = {}; } desk;
-    std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
-    std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: canvas_edge.h)
-    std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
-    std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
-    std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
-    Texture* drawTarget = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
-    RenderTarget* out = nullptr;   // where the picture goes at last (none: the screen; the window's live picture: live.h)
+    // Drawn last, over all of them, for example a whole-screen effect. See screen_fx.h.
+    std::function<void()> over;
+    // Work to do once before the next frame, keyed by its owner, for example an image's distances
+    // from its edge. See canvas_edge.h.
+    std::map<const void*, std::function<void()>> once;
+    // Drawn before the stage's own view, each into an image of its own, for layers with effects of
+    // their own. See layer_fx.h.
+    std::vector<std::function<void()>> before;
+    // Run before each frame begins to set those images and the material instances that show them.
+    // Filament uploads material parameters as a frame begins, see FRenderer::beginFrame and
+    // FEngine::prepare.
+    std::vector<std::function<void()>> aim;
+    // Run after everything else in the same frame. For the preview panel it places the stage's
+    // image on it, see live.h.
+    std::function<void()> lastly;
+    // The image the views draw into, see live.h and screen_fx.h. Null means the screen.
+    Texture* drawTarget = nullptr;
+    // Where the image finally goes. Null means the screen. For the app's window it is the live
+    // image, see live.h.
+    RenderTarget* out = nullptr;
 };
 
+// Creates the engine, scene, views and camera of a stage w by h pixels.
 static Stage open_stage(int w, int h) {
     Stage s{w, h};
-    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/filament_webgpu.sh)
+    // BACKEND=webgpu selects Filament's WebGPU backend, Dawn, which is the way to Windows. It needs
+    // Filament built from source, see gpu/filament_webgpu.sh.
     const char* backend = getenv("BACKEND");
     s.engine = Engine::Builder().backend(backend && !strcmp(backend, "webgpu") ? Engine::Backend::WEBGPU : Engine::Backend::METAL).build();
-    // (a picture that does nothing to its colours gets them through exactly: Filament may then take its one fine row of
-    // numbers instead of a coarse block of them; with the block a white of 255 comes out 249)
+    // An image that does nothing to its colours gets them through exactly. Filament may then use
+    // its one-dimensional lookup table instead of a coarse block of values. With the block a white
+    // of 255 comes out as 249.
     s.engine->setFeatureFlag("engine.color_grading.use_1d_lut", true);
     s.renderer = s.engine->createRenderer();
     s.scene = s.engine->createScene();
@@ -164,11 +254,15 @@ static Stage open_stage(int w, int h) {
     s.view->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
     s.view->setDithering(View::Dithering::NONE);
     s.view->setAntiAliasing(View::AntiAliasing::FXAA);
-    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});   // (the edges of flat shapes drawn as triangles, canvas.h flat_mesh: as Unity's and three.js's are)
+    // Anti-aliases the edges of flat shapes drawn as triangles, see flat_mesh in canvas.h, as Unity
+    // and three.js do.
+    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});
     s.view->setScreenSpaceRefractionEnabled(true);
     s.view->setVisibleLayers(0x03, 0x03);
     Renderer::ClearOptions clear{};
-    clear.clearColor = {0, 0, 0, 0};   // (clear, not black: the stage's own view covers all of it anyway, and a card's picture of one thing alone shows the card where it is not)
+    // Clear to transparent, not black. The stage's own view covers all of it anyway, and an image
+    // of one layer alone shows the card where the layer is not.
+    clear.clearColor = {0, 0, 0, 0};
     clear.clear = true;
     s.renderer->setClearOptions(clear);
     s.behind = Texture::Builder().width(w).height(h).levels(1).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE)
@@ -184,15 +278,10 @@ static Stage open_stage(int w, int h) {
     return s;
 }
 
-// A further picture laid over the stage's own (and over the ones before it): Filament's own way of laying one picture
-// over another, a view of its own scene, blended on (its UI is laid so: ImGuiHelper). flat: a picture of flat things,
-// which takes nothing of depth (no depth of field, no bloom, no shade where things meet); its colours still go the way
-// the stage's own do (with no post-processing at all they would not be made ready for the screen: darker). Made when
-// first wanted, lit by the stage's own room, seen by the stage's eye; the k-th is layers[k].
-
-// The stage's pictures laid out on the desk (on: before they are drawn) or on the stage again (off: after): the views the
-// stage's eye sees by, their viewport the desk's, the eye's projection moved and shrunk so the stage lies where the desk
-// says. The floor's and the mattes' own eyes are left as they are.
+// Lays the stage's images out on the preview panel when `on` is true, before they are drawn, or on
+// the stage again when it is false, after. The views that the stage's camera sees by get the
+// panel's viewport, and the camera's projection is moved and scaled so the stage lies where the
+// panel says. The floor's and the mattes' own cameras are left as they are.
 static void desk_lay(Stage& s, bool on) {
     const Viewport at = on ? Viewport{0, 0, s.desk.w, s.desk.h} : Viewport{0, 0, (uint32_t)s.w, (uint32_t)s.h};
     for (View* v : {s.view, s.view_behind, s.view_through}) if (v) v->setViewport(at);
@@ -200,13 +289,16 @@ static void desk_lay(Stage& s, bool on) {
     if (!on) return s.camera->setCustomProjection(s.desk.was, s.desk.wasCulled, near, far);
     s.desk.was = s.camera->getProjectionMatrix(), s.desk.wasCulled = s.camera->getCullingProjectionMatrix();
     const double wide = s.w * s.desk.scale, high = s.h * s.desk.scale;
-    math::mat4 further;   // (the stage's -1..1 to where it lies on the desk's)
+    // Maps the stage's -1..1 range to where the stage lies in the panel's.
+    math::mat4 further;
     further[0][0] = wide / s.desk.w, further[1][1] = high / s.desk.h;
     further[3][0] = 2.0 * (s.desk.x + 0.5 * wide) / s.desk.w - 1.0, further[3][1] = 1.0 - 2.0 * (s.desk.y + 0.5 * high) / s.desk.h;
     s.camera->setCustomProjection(further * s.desk.was, further * s.desk.wasCulled, near, far);
 }
 
-// The room the glass mirrors and is lit by: one of the studios that come with Filament, made into a .ktx by cmgen.
+// Sets the environment light that the glass mirrors and is lit by: one of the studios that come
+// with Filament, converted to a .ktx by cmgen. Returns false if the file is missing or has no
+// spherical harmonics.
 static bool room(Stage& s, const char* ktx, float intensity) {
     static std::vector<std::vector<uint8_t>> ktxs;
     ktxs.push_back(load_file(ktx));
@@ -219,6 +311,7 @@ static bool room(Stage& s, const char* ktx, float intensity) {
     return true;
 }
 
+// Returns a 1x1 white image, created on first use.
 static Texture* white_point(Stage& s) {
     static const uint8_t one[4] = {255, 255, 255, 255};
     if (!s.white) {
@@ -228,30 +321,32 @@ static Texture* white_point(Stage& s) {
     return s.white;
 }
 
-// The flat sheet's material for a way of lying on what is behind it: nullptr (over it, as usual), or "add", "multiply",
-// "screen": Filament's own blending, flat.mat built once for each.
+// Returns the file name of the flat sheet's material for a blend mode against what is behind it.
+// `lay` is nullptr for normal blending over it, or "add", "multiply" or "screen", using Filament's
+// own blending. flat.mat is built once for each. `lit` selects the lit variant. A non-empty `wear`
+// names a material with its own blend mode.
 static std::string flat_laid(const char* lay, bool lit = false, const std::string& wear = "") {
-    if (!wear.empty()) return "flat_" + wear + ".filamat";   // (a material it wears, its own way of lying: doc_sheet_material)
+    // A sheet with its own material has its own blend mode, see doc_sheet_material.
+    if (!wear.empty()) return "flat_" + wear + ".filamat";
     if (lit) return std::string("flat_lit_") + (lay ? lay : "transparent") + ".filamat";
     return lay ? std::string("flat_") + lay + ".filamat" : "flat.filamat";
 }
 
-// A mesh on the stage, once per place. layer 2: left out of the picture of what is behind (all the glass);
-// layer 8: only in the picture of the glass's far faces. order: among things of a kind, lower is drawn first.
-// copies: how many times each is drawn in one go (a material that asks for its instance index tells them apart).
-// A material by its file: read and built once (every thing of it has its own look). nullptr: there is no such file.
+// Returns the material made from the file `filamat`, reading and making it only once. Every entity
+// made from it has its own material instance. Returns nullptr if there is no such file.
 static Material* material(Stage& s, const char* filamat) {
     auto& built = s.materials;
     if (!built.count(filamat)) {
         const std::vector<uint8_t> pkg = load_file(filamat);
         built[filamat] = pkg.empty() ? nullptr : Material::Builder().package(pkg.data(), pkg.size()).build(*s.engine);
-        if (built[filamat]) built[filamat]->compile(Material::CompilerPriorityQueue::HIGH);   // (its programs made now, not at the first picture that needs them: Filament's own; the crowd's first minute left out 1-4 pictures so, 3-16 without)
+            // Compile the shader programs now, not at the first frame that needs them. In the
+            // crowd's first minute this dropped 1 to 4 frames, against 3 to 16 without.
+        if (built[filamat]) built[filamat]->compile(Material::CompilerPriorityQueue::HIGH);
     }
     return built[filamat];
 }
-// A mesh in the scene, once at each place, its triangles in parts (`ends`: where each part's indices end; none: one
-// part), each part a look of its own of the same material (Filament's own: a renderable of so many primitives).
-// A mesh's buffers, and what it says put in them.
+// Creates the vertex buffer of mesh `m` with room for `room` points. A mesh with per-point colours
+// has two more buffers, for the colours and the second texture coordinates.
 static VertexBuffer* mesh_buffers(Stage& s, const Mesh& m, uint32_t room) {
     VertexBuffer::Builder make;
     make.vertexCount(room).bufferCount(m.color.empty() ? 3 : 5)
@@ -261,17 +356,30 @@ static VertexBuffer* mesh_buffers(Stage& s, const Mesh& m, uint32_t room) {
     if (!m.color.empty()) make.attribute(VertexAttribute::COLOR, 3, VertexBuffer::AttributeType::FLOAT4).attribute(VertexAttribute::UV1, 4, VertexBuffer::AttributeType::FLOAT2);
     return make.build(*s.engine);
 }
+// Writes the first n points of `m` into the buffers of `vb`.
 static void mesh_points(Stage& s, const Mesh& m, VertexBuffer* vb, size_t n) {
     vb->setBufferAt(*s.engine, 0, copied(m.pos.data(), n * sizeof(float3)));
     vb->setBufferAt(*s.engine, 1, copied(m.quat.data(), n * sizeof(quatf)));
     vb->setBufferAt(*s.engine, 2, copied(m.uv.data(), n * sizeof(float2)));
     if (!m.color.empty()) vb->setBufferAt(*s.engine, 3, copied(m.color.data(), n * sizeof(float4))), vb->setBufferAt(*s.engine, 4, copied(m.uv1.data(), n * sizeof(float2)));
 }
-static Mesh* sketch_mesh() {   // (nothing yet: document/sketch.h makes it again each frame)
+// Creates a placeholder mesh of one triangle for a sketch. It has no real shape yet, because
+// document/sketch.h makes it again each frame.
+static Mesh* sketch_mesh() {
     Mesh* m = new Mesh;
     m->pos.assign(3, float3{0.f}), m->nrm.assign(3, float3{0.f, 0.f, 1.f}), m->uv.assign(3, float2{0.f}), m->color.assign(3, float4{0.f}), m->uv1.assign(3, float2{0.f}), m->idx = {0, 1, 2};
     return m;
 }
+// Puts mesh `m` on the stage once at each of `places`, with its triangles in parts, and returns the
+// material instance of each part. Returns an empty vector if the material file is missing.
+// ends: where each part's indices end. Empty means one part. Each part has its own material
+// instance of the same material, as a Filament renderable has several primitives.
+// layer: the Filament layer mask value. 2 is left out of the image of what is behind, for all
+// glass. 8 is only in the image of the glass's far faces.
+// order: among entities of a kind, a lower value is drawn first.
+// copies: how many times each place is drawn in one go. A material that asks for its instance index
+// tells them apart.
+// together: draw the places in groups with Filament's instancing, see below.
 static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* filamat, std::vector<mat4f> places, std::vector<uint32_t> ends,
                                                 uint8_t layer = 1, bool shadows = false, int copies = 1, int order = 4, bool together = false) {
     Material* mat = material(s, filamat);
@@ -290,23 +398,31 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
     std::vector<MaterialInstance*> looks;
     for (size_t k = 0; k < ends.size(); ++k) {
         MaterialInstance* mi = mat->createInstance();
-        if (mat->hasParameter("opacity")) mi->setParameter("opacity", 1.f);   // (all there, until it is told otherwise)
-        if (mat->hasParameter("matteUse")) {   // (a material that can be cut: by nothing, until `matted` says so)
+        // Fully opaque until told otherwise.
+        if (mat->hasParameter("opacity")) mi->setParameter("opacity", 1.f);
+        // A material that can be cut is cut by nothing until `matted` says so.
+        if (mat->hasParameter("matteUse")) {
             for (const char* name : {"matte0", "matte1", "matte2", "matte3"}) mi->setParameter(name, white_point(s), TextureSampler());
             for (const char* name : {"matteEye0", "matteEye1", "matteEye2", "matteEye3"}) mi->setParameter(name, mat4f{});
-            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());   // (a film's second plane: video_layer.h)
+            // A video's second plane, see video_layer.h.
+            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }
-        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until canvas_renderables.h makes one: Filament refuses a sampler left unset)
+        // Nothing is read until doc.h says which, and there is no bevel until canvas_renderables.h
+        // makes one. Filament refuses a sampler that is left unset.
+        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());
         looks.push_back(mi);
     }
-    float3 low = n ? m->pos[0] : float3{0.f}, high = low;   // (Filament wants a thing's rough size if it casts or takes shadows)
+    // Filament wants a rough bounding box if the entity casts or receives shadows.
+    float3 low = n ? m->pos[0] : float3{0.f}, high = low;
     for (const float3& p : m->pos) { low = min(low, p); high = max(high, p); }
-    // (together: its places drawn in groups of as many as Filament draws in one go (64), each place an instance of one
-    //  thing; a GPU pays for each draw, not for each triangle: a thousand copies are sixteen draws, not a thousand)
-    //  One of two parts (a fill and its edge) is not: Filament draws a part for all its instances before the next part, so
-    //  every edge would lie over every fill, where one copy's fill hid the edge of the one under it.)
+    // With `together`, the places are drawn in groups of as many as Filament draws in one go, 64,
+    // each place being an instance of one entity. A GPU pays for each draw, not for each triangle,
+    // so a thousand copies take sixteen draws instead of a thousand.
+    // A mesh of two parts, such as a fill and its edge, is not grouped. Filament draws a part for
+    // all its instances before the next part, so every edge would lie over every fill, where one
+    // copy's fill hid the edge of the copy under it.
     const size_t group = together && places.size() > 1 && ends.size() == 1 ? std::min<size_t>(places.size(), s.engine->getMaxAutomaticInstances()) : 1;
     for (const mat4f& place : places) {
         const size_t at = (size_t)(&place - places.data());
@@ -332,18 +448,17 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
     }
     return looks;
 }
+// Like add_parts for a mesh of one part. Returns its material instance, or nullptr on failure.
 static MaterialInstance* add(Stage& s, Mesh* m, const char* filamat, std::vector<mat4f> places = {mat4f{}}, uint8_t layer = 1,
                              bool shadows = false, int copies = 1, int order = 4, bool together = false) {
     const std::vector<MaterialInstance*> looks = add_parts(s, m, filamat, places, {}, layer, shadows, copies, order, together);
     return looks.empty() ? nullptr : looks[0];
 }
 
-// A mesh in the scene made anew (its points and triangles changed, as many or not): new buffers for every place it is
-// at, its parts' ends as told; the old ones let go (Filament keeps them until no picture uses them).
-// A mesh made again, put in the buffers it has while it fits them (as Rive and Live2D write theirs again, not make new
-// ones), else in new ones a quarter larger than it needs (Rive's growth).
-// A mesh in the scene given more parts, all wearing `look` until they are told otherwise: Filament makes an entity's renderable
-// anew when it is built on it (RenderableManager::Builder::build), so it stays where it is, in the scene, under what it is under.
+// Gives mesh `m` more parts on the stage, all using material instance `look` until told otherwise.
+// Filament makes an entity's renderable again when it is built on it, see
+// RenderableManager::Builder::build, so the entity stays where it is, in the scene, under its
+// parent.
 static void more_parts(Stage& s, Mesh* m, size_t parts, MaterialInstance* look) {
     auto& faces = s.engine->getRenderableManager();
     for (const Stage::Renderable& built : s.renderables) {
@@ -358,13 +473,19 @@ static void more_parts(Stage& s, Mesh* m, size_t parts, MaterialInstance* look) 
         b.boundingBox(box).culling(false).castShadows(false).receiveShadows(false).layerMask(0xFF, mask).priority(order).channel(channel).build(*s.engine, built.thing);
     }
 }
+// Replaces the points and triangles of mesh `m`, with the same count or another. `ends` gives where
+// each part's indices end. The mesh is written into the buffers it has while it fits them, as Rive
+// and Live2D write theirs again instead of making new ones. Otherwise new buffers a quarter larger
+// than needed are made, as Rive grows its buffers. The old buffers are destroyed, and Filament
+// keeps them until no frame uses them.
 static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     VertexBuffer* oldVb = nullptr;
     IndexBuffer* oldIb = nullptr;
     const size_t n = m->pos.size();
     if (!n || m->idx.empty()) return;
     m->quat.resize(n);
-    if (std::all_of(m->nrm.begin(), m->nrm.end(), [&](const float3& v) { return v == m->nrm[0]; })) {   // (all facing one way, a flat shape: one frame for every point)
+    // All normals face one way, a flat shape, so one tangent frame serves every point.
+    if (std::all_of(m->nrm.begin(), m->nrm.end(), [&](const float3& v) { return v == m->nrm[0]; })) {
         auto* frames = geometry::SurfaceOrientation::Builder().vertexCount(1).normals(m->nrm.data()).build();
         frames->getQuats(m->quat.data(), 1);
         delete frames;
@@ -397,10 +518,12 @@ static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     if (oldIb) s.engine->destroy(oldIb);
 }
 
-// One glass block, edge 1, as real ones are: the edges a little round (a tenth of half the edge), the faces flat.
-static Mesh* cube(float ROUND, int flat = 1) {   // flat: how many times a flat is cut across
+// Makes one glass block of edge 1, as real ones are: the edges a little round, by a tenth of half
+// the edge, and the faces flat. `flat` is how many times a flat face is cut across.
+static Mesh* cube(float ROUND, int flat = 1) {
     Mesh* m = new Mesh;
-    std::vector<float> line;   // (where a face is cut: finely across the rounding, once across the flat)
+    // Where a face is cut: finely across the rounding, and `flat` times across the flat part.
+    std::vector<float> line;
     for (int k = 0; k <= 4; ++k) line.push_back(-1.f + ROUND * (float)k / 4.f);
     for (int k = 1; k < flat; ++k) line.push_back(-(1.f - ROUND) + 2.f * (1.f - ROUND) * (float)k / (float)flat);
     for (int k = 4; k >= 0; --k) line.push_back(1.f - ROUND * (float)k / 4.f);
@@ -427,7 +550,8 @@ static Mesh* cube(float ROUND, int flat = 1) {   // flat: how many times a flat 
     return m;
 }
 
-// A ring of round section, lying in the plane of x and y.
+// Makes a ring of round section, lying in the plane of x and y. R is the radius of the ring and r
+// the radius of its section.
 static Mesh* torus(float R, float r, int around = 128, int about = 40) {
     Mesh* m = new Mesh;
     for (int i = 0; i < around; ++i)
@@ -444,7 +568,7 @@ static Mesh* torus(float R, float r, int around = 128, int about = 40) {
     return m;
 }
 
-// A ball of radius r, round from pole to pole.
+// Makes a ball of radius r, round from pole to pole.
 static Mesh* sphere(float r, int around = 48, int about = 24) {
     Mesh* m = new Mesh;
     for (int i = 0; i <= around; ++i)
@@ -462,7 +586,8 @@ static Mesh* sphere(float r, int around = 48, int about = 24) {
     return m;
 }
 
-// A solid of twenty flat faces (an icosahedron), each face its own three corners: hard edges.
+// Makes a solid of twenty flat faces, an icosahedron. Each face has its own three corners, so the
+// edges are hard.
 static Mesh* gem(float size) {
     const float f = (1.f + std::sqrt(5.f)) * 0.5f;
     const float3 v[12] = {{-1, f, 0}, {1, f, 0}, {-1, -f, 0}, {1, -f, 0}, {0, -1, f}, {0, 1, f}, {0, -1, -f}, {0, 1, -f}, {f, 0, -1}, {f, 0, 1}, {-f, 0, -1}, {-f, 0, 1}};

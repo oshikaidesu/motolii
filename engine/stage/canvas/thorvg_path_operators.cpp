@@ -1,24 +1,39 @@
-// thorvg_path_operators.cpp: After Effects' path operators on a flat shape, done by ThorVG's own (its Lottie reader's modifiers:
-// round corners, pucker & bloat, zig zag, offset paths), in that order, offset last as ThorVG chains them.
-// And a shape's edge as triangles, as ThorVG's own WebGPU engine strokes it (tvg_edge). Apart from the rest because
-// ThorVG's inside headers bring all of its names in; out come two calls (canvas.h).
+// thorvg_path_operators.cpp: Path operators and stroke tessellation for 2D shapes.
+//
+// tvg_bend applies the After Effects path operators (round corners, pucker & bloat, zig zag,
+// offset paths) using the modifiers of ThorVG's Lottie reader. They run in that order, with the
+// offset last, which is how ThorVG chains them.
+//
+// tvg_edge turns the outline of a shape into triangles the way ThorVG's WebGPU engine strokes it.
+//
+// This file is separate from the rest of the canvas code because ThorVG's internal headers
+// declare many names that would clash with ours. Only the two functions declared in canvas.h
+// are visible to the rest of the engine.
 #include "tvgLottieModifier.h"
 #include "tvgGpuCommon.h"
 #include "tvgWgTessellator.h"
 #include <cmath>
 #include <vector>
 
-// A path as curves only, as an After Effects path is (a line a straight curve, a closed path back to its start: what
-// the operators know), into `into`; `sharp`: a line's handles on its ends, as After Effects writes them (its round
-// corners look for that, its pucker and bloat bend from it), else even along it (a zig zag's ridges); each line and
-// curve cut in pieces no longer than `fine` (0: whole), for what bends it as it is drawn; `fine` below 0: only its
-// curves so cut, its straight lines kept whole (nothing bends it: a curve need only look round).
+// Appends the path to `into` using cubic curves only, as an After Effects path does. A line
+// becomes a straight cubic and a closed path ends back at its start. These are the only forms
+// the operators understand.
+//
+// `sharp` places the handles of a line on its end points, as After Effects writes them. Round
+// corners look for that, and pucker & bloat bend from it. When false, the handles are spaced
+// evenly along the line, which a zig zag needs for its ridges.
+//
+// `fine` is the longest piece allowed. Each line and curve is cut into pieces no longer than
+// `fine`, so that an operator that bends the path later has points along its whole length. A
+// `fine` of 0 leaves everything whole. A negative `fine` cuts only the curves and keeps straight
+// lines whole, because nothing bends them and a curve only needs to look round.
 static void curves(RenderPath& into, const PathCommand* cmds, uint32_t cmdsCnt, const Point* pts, bool sharp, float fine) {
     Point start{}, at{};
     const bool linesWhole = fine < 0.f;
     fine = std::fabs(fine);
-    // (how many pieces a stretch is cut into: by `fine`, at most 1024, and one where its length is no number: a shape
-    //  carried far out or a fine near nothing once asked for more pieces than memory has)
+    // Number of pieces a stretch of length `along` is cut into. The count is limited to 1024 and
+    // is 1 when the length is not finite. Without these limits, a shape moved very far away or a
+    // `fine` near zero once asked for more pieces than memory could hold.
     const auto cut = [&](float along) { return fine > 0.f && std::isfinite(along) ? (int)std::min(1024.f, std::max(1.f, std::ceil(along / fine))) : 1; };
     const auto line = [&](const Point& to) {
         const Point from = at;
@@ -31,13 +46,15 @@ static void curves(RenderPath& into, const PathCommand* cmds, uint32_t cmdsCnt, 
     };
     const auto curve = [&](const Point& c1, const Point& c2, const Point& to) {
         const Point c0 = at;
-        // (nothing bends it: as many pieces as its bending asks, Wang's formula, within a 32nd of `fine`: a straight one
-        //  whole, a round one as round as it looks; bent: by its length, so that what bends it has points all along)
+        // When nothing bends the curve later, the piece count follows Wang's formula for the
+        // flatness of a cubic, with a tolerance of 1/32 of `fine`. A nearly straight curve stays
+        // whole and a round one is cut enough to look round. When something bends the curve
+        // later, the count follows its length so that the bending operator has points along it.
         const Point dd1 = c0 - c1 * 2.f + c2, dd2 = c1 - c2 * 2.f + to;
         const float bendsBy = std::max(length(dd1), length(dd2));
         const int pieces = linesWhole ? (int)std::clamp(std::ceil(std::sqrt(0.75f * bendsBy / (fine / 32.f))), 1.f, 1024.f) : cut(length(c1 - c0) + length(c2 - c1) + length(to - c2));
         if (pieces == 1) return into.cubicTo(c1, c2, to);
-        const auto on = [&](float t) {   // (where it is at t, and which way it goes there)
+        const auto on = [&](float t) {   // Returns the point at t and the tangent there.
             const float u = 1.f - t;
             return std::pair<Point, Point>{c0 * (u * u * u) + c1 * (3.f * u * u * t) + c2 * (3.f * u * t * t) + to * (t * t * t),
                                            (c1 - c0) * (3.f * u * u) + (c2 - c1) * (6.f * u * t) + (to - c2) * (3.f * t * t)};
@@ -57,19 +74,29 @@ static void curves(RenderPath& into, const PathCommand* cmds, uint32_t cmdsCnt, 
     }
 }
 
-// (whether every point is a number: one carried to no number, a shape pushed far past its parameters, sends ThorVG's own
-//  measuring round for ever; such a shape is not drawn)
+// Returns whether every point is a finite number. A point that is not finite, which can happen
+// when a shape is pushed far past its parameters, makes ThorVG's own measuring loop forever, so
+// such a shape is not drawn.
 static bool numbers(const Point* p, uint32_t n) {
     for (uint32_t i = 0; i < n; ++i) if (!std::isfinite(p[i].x) || !std::isfinite(p[i].y)) return false;
     return true;
 }
 
+// Replaces the contents of `shape` with the given path after applying the operators.
+//
+// `round` is the corner radius, `bloat` the pucker & bloat amount, `zigzag` the zig zag size
+// with `ridges` ridges per segment (`smooth` selects smooth rather than corner points), and
+// `offset` the offset distance. An operator whose amount is 0 is skipped. A negative `fine` cuts
+// only curves and keeps lines whole; see curves(). If any input is not finite, the shape is left
+// empty.
 void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,
               float round, float bloat, float zigzag, int ridges, bool smooth, float offset, float fine) {
     shape->reset();
-    if (!numbers(pts, ptsCnt) || !std::isfinite(round + bloat + zigzag + offset + fine)) return;   // (fine below 0: curves cut, lines whole)
+    if (!numbers(pts, ptsCnt) || !std::isfinite(round + bloat + zigzag + offset + fine)) return;
     LottieModifier* chain = nullptr;
-    const auto on = [&](LottieModifier* m) { m->next = chain, chain = m; };   // (as ThorVG's builder chains them: the one put on last is done first; so offset, put on first, is done last)
+    // Chains modifiers the way ThorVG's builder does. The modifier added last runs first, so the
+    // offset, which is added first, runs last.
+    const auto on = [&](LottieModifier* m) { m->next = chain, chain = m; };
     if (offset != 0.f) on(new LottieOffsetModifier(offset));
     if (zigzag != 0.f) on(new LottieZigZagModifier(zigzag, ridges, smooth ? LottieZigZagModifier::Smooth : LottieZigZagModifier::Corner));
     if (bloat != 0.f) on(new LottiePuckerBloatModifier(bloat));
@@ -81,8 +108,9 @@ void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt,
     delete chain;
     const RenderPath& bent = any ? out : in;
     if (!numbers(bent.pts.data, bent.pts.count)) return;
-    // (cut after it is bent: the operators see its whole lines; into 20000 pieces at most, as fine as that lets it be:
-    //  a long zigzag cut fine once made more triangles than the GPU's staging had room for)
+    // Cut after bending, so the operators see whole lines. The path is cut into at most 20000
+    // pieces. A long zig zag cut finely once produced more triangles than the GPU staging buffer
+    // could hold.
     float along = 0.f;
     for (uint32_t i = 1; i < bent.pts.count; ++i) along += length(bent.pts[i] - bent.pts[i - 1]);
     if (fine != 0.f) curves(cut, bent.cmds.data, bent.cmds.count, bent.pts.data, false, std::copysign(std::max(std::fabs(fine), along / 20000.f), fine));
@@ -90,9 +118,16 @@ void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt,
     shape->appendPath(to.cmds.data, to.cmds.count, to.pts.data, to.pts.count);
 }
 
-// A shape's edge as triangles, straight, as ThorVG's own WebGPU engine makes them (its trim, its dash, its stroker:
-// nothing cut by a tessellator): so wide (points), its cap and join (ThorVG's), dashed as long as its gaps (0: not),
-// the part from `from` to `to` of its length (After Effects' trim paths, as ThorVG's trimpath goes round past 1).
+// Converts the outline of a path into triangles, using the trim, dash and stroker code of
+// ThorVG's WebGPU engine. No tessellator cuts the result.
+//
+// `width` is the stroke width in points. `cap` and `join` are ThorVG's StrokeCap and
+// StrokeJoin values. `dash` is the length of each dash and of each gap; 0 means no dashing, and
+// `dashFrom` is where the pattern starts. `from` and `to` select the part of the path's length
+// to stroke, as After Effects trim paths does; as in ThorVG's trim, values past 1 wrap around.
+//
+// Writes vertex positions to `xy` as x, y pairs and triangle indices to `idx`. Both are empty
+// if an input is not finite or the trim leaves nothing.
 void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt, float width, int cap, int join, float dash, float dashFrom,
               float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx) {
     xy.clear(), idx.clear();
@@ -112,7 +147,7 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* 
     const RenderPath* along = &rs.path;
     if (gpuStrokeDash(rs, stroked, nullptr)) along = &stroked;
     else if (rs.trimpath()) {
-        if (!rs.stroke->trim.trim(rs.path, stroked)) return;   // (trimmed to nothing)
+        if (!rs.stroke->trim.trim(rs.path, stroked)) return;
         along = &stroked;
     }
     WgMesh mesh;

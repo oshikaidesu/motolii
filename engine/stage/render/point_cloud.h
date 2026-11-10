@@ -1,12 +1,24 @@
-// A point cloud as a solid thing: a .ply of points (a scan's, red green blue) or of Gaussian splats as 3DGS writes them
-// (f_dc colours, a logit opacity, log scales, a turn as a quaternion), drawn as antimatter15/splat draws them (MIT,
-// Copyright (c) 2023 Kevin Kwok): each splat's data in a texture once (its middle, how much it is seen, its spread in
-// space, its colour), one square a slot that points.mat turns into the ellipse its spread makes on the screen, faded
-// out by exp(-r^2); the slots laid in order of depth by a 16-bit counting sort on a thread of its own each time the eye
-// has moved, only the table of which splat is in which slot sent again; then laid one over another from the farthest,
-// Filament's own see-through blending. A plain scan's point is round, as large as its neighbours are far. Fitted to 1
-// tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the renderer knows the thing by it.
-// (render.h: read before this)
+// Loads a point cloud from a .ply file and draws it as a Filament renderable.
+// The file holds either plain points (a position and a red, green and blue color, as a scan
+// produces) or Gaussian splats as written by 3D Gaussian Splatting (f_dc color, logit opacity,
+// log scales and a rotation quaternion).
+//
+// Splats are drawn the way antimatter15/splat draws them (MIT license, Copyright (c) 2023
+// Kevin Kwok):
+//   - The data of every splat is stored once in a float texture: center, opacity, rotation,
+//     scale and color.
+//   - Each splat is one square. points.mat turns it into the ellipse that the splat's 3D spread
+//     projects to on the screen, faded out by exp(-r^2).
+//   - Splats are ordered by depth with a 16-bit counting sort on a separate thread, rerun
+//     whenever the camera has moved. Only the table that says which splat is in which slot is
+//     uploaded again.
+//   - Splats are blended from the farthest to the nearest with Filament's transparent blending.
+//
+// A point of a plain scan is drawn round, with a size taken from the distance to its
+// neighbors. The cloud is scaled to 1 tall and centered at its placement, as gltf_model.h does
+// for a glTF file. The returned Mesh is only a handle that the renderer uses to identify the
+// cloud.
+// Included by render.h; not self-contained.
 #pragma once
 #include <cmath>
 #include <fstream>
@@ -17,12 +29,23 @@
 #include <dlfcn.h>
 #include "community/playcanvas/splatfx.h"
 
-// (floats handed to a texture, freed by Filament once it has them)
+// Wraps floats in a pixel buffer for a texture upload. Filament frees the vector when it has
+// finished with the data.
 static backend::PixelBufferDescriptor points_pixels(std::vector<float>&& from, backend::PixelDataFormat format) {
     auto* held = new std::vector<float>(std::move(from));
     return backend::PixelBufferDescriptor(held->data(), held->size() * sizeof(float), format, backend::PixelDataType::FLOAT, [](void*, size_t, void* user) { delete (std::vector<float>*)user; }, held);
 }
 
+// Loads the .ply `file` and adds it to the stage as one renderable with a square for each
+// visible point. Returns a Mesh handle for the cloud, or nullptr with the reason in `why`.
+// The remaining arguments are optional outputs and overrides:
+//   - `looks` receives the material instance of the cloud.
+//   - `with` is a material to use instead of points.filamat, such as one made by
+//     points_effect.
+//   - `plainLook` receives a second instance of the plain material over the same data, for
+//     use once an effect has finished. It is filled only when `with` is given.
+//   - `bounds` receives the lowest and highest corner of the trimmed bounding box (see below)
+//     in the file's units, with y up.
 static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstance** looks = nullptr, Material* with = nullptr, MaterialInstance** plainLook = nullptr, float3* bounds = nullptr) {
     std::ifstream in(file, std::ios::binary);
     std::string line, format;
@@ -32,7 +55,8 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     size_t stride = 0;
     bool inVertex = false;
     const auto bytes = [](const std::string& t) -> size_t { return t == "double" || t == "float64" ? 8 : t == "float" || t == "float32" || t == "int" || t == "uint" || t == "int32" || t == "uint32" ? 4 : t == "short" || t == "ushort" || t == "int16" || t == "uint16" ? 2 : 1; };
-    while (std::getline(in, line)) {   // (the header: which properties a point has, in order)
+    // Read the header: which properties a point has, in order.
+    while (std::getline(in, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         std::istringstream w(line);
         std::string word;
@@ -58,30 +82,40 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
                *op = find("opacity"), *s0 = find("scale_0"), *s1 = find("scale_1"), *s2 = find("scale_2"),
                *r0 = find("rot_0"), *r1 = find("rot_1"), *r2 = find("rot_2"), *r3 = find("rot_3");
     if (!x || !y || !z) return why = "a point cloud's points have x, y and z", nullptr;
-    std::vector<uint32_t> visible;   // (the points seen: a splat nearly clear is left out)
+    // Indices of the points to draw. A splat that is nearly clear (opacity below 0.05) is left out.
+    std::vector<uint32_t> visible;
     visible.reserve(n);
     for (size_t i = 0; i < n; ++i) if (!op || 1.0 / (1.0 + std::exp(-get(op, i))) >= 0.05) visible.push_back((uint32_t)i);
     if (visible.empty()) return why = "the point cloud has no points to see", nullptr;
-    // (its box from the most of it, a hundredth left out at each end of each way: a few far-off grains, as a capture's
-    //  sky and floaters are, do not make the rest small; those points stay, drawn where they are)
+    // Bounding box of the middle 98% of the points: the lowest and highest 1% along each axis are
+    // ignored. A few far-off specks, such as the sky and floaters of a capture, would otherwise
+    // shrink the rest. Those points are still drawn where they are.
     float3 lo, hi;
     for (int a = 0; a < 3; ++a) {
         const Prop* along = a == 0 ? x : a == 1 ? y : z;
         std::vector<float> v(visible.size());
-        for (size_t k = 0; k < visible.size(); ++k) v[k] = (float)(a == 1 ? -get(along, visible[k]) : get(along, visible[k]));   // (the scan's y points down, as COLMAP's does: up here)
+        // The scan's y points down, as in COLMAP, so negate it to make y point up.
+        for (size_t k = 0; k < visible.size(); ++k) v[k] = (float)(a == 1 ? -get(along, visible[k]) : get(along, visible[k]));
         std::nth_element(v.begin(), v.begin() + (long)(v.size() / 100), v.end());
         lo[a] = v[v.size() / 100];
         std::nth_element(v.begin(), v.begin() + (long)(v.size() - 1 - v.size() / 100), v.end());
         hi[a] = v[v.size() - 1 - v.size() / 100];
     }
-    // (fitted to 1 tall about its middle; for a scan of a room or a street the tall way is its height)
+    // Scale so that the largest of the height, half the width and half the depth becomes 1.
+    // For a scan of a room or a street, that is its height.
     const float3 mid = 0.5f * (lo + hi);
     const float tall = std::max(1e-6f, std::max({hi.y - lo.y, 0.5f * (hi.x - lo.x), 0.5f * (hi.z - lo.z)}));
-    const float plain = 1.2f * std::cbrt((hi.x - lo.x) * (hi.y - lo.y) * (hi.z - lo.z) / (float)visible.size()) / tall;   // (a scan's grain: as far as its neighbours are, on the whole)
+    // Point size of a plain scan, relative to `tall`: 1.2 times the cube root of the box volume per
+    // point, which approximates the distance to the neighbors.
+    const float plain = 1.2f * std::cbrt((hi.x - lo.x) * (hi.y - lo.y) * (hi.z - lo.z) / (float)visible.size()) / tall;
     const size_t m = visible.size();
-    // (each splat four texels, as PlayCanvas holds a splat, so its effects read them as they are (points.mat): its middle
-    //  in the file's own units with y turned up, and how much it is seen; its turn (x y z w); its size each way, and red;
-    //  green, blue. Fitted to 1 tall only on the way out (the look's `fit`))
+    // Each splat takes four RGBA32F texels, the layout PlayCanvas uses, so that its effects read
+    // them unchanged (see points.mat).
+    //   - Texel 0: center in the file's units with y up, and opacity.
+    //   - Texel 1: rotation quaternion x, y, z, w.
+    //   - Texel 2: size along each axis, and red.
+    //   - Texel 3: green and blue.
+    // The fit to 1 tall is applied only when drawing, through the `fit` parameter of the material.
     const uint32_t wide = 4096, rows = (uint32_t)((m * 4 + wide - 1) / wide);
     std::vector<float> data((size_t)wide * rows * 4, 0.f);
     std::vector<float3> middles(m);
@@ -90,13 +124,18 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
         const float3 p{(float)get(x, i), (float)-get(y, i), (float)get(z, i)};
         float3 colour{1.f};
         if (r && g && b) colour = float3{(float)get(r, i), (float)get(g, i), (float)get(b, i)} / 255.f;
-        else if (d0 && d1 && d2) colour = clamp(0.5f + 0.2820948f * float3{(float)get(d0, i), (float)get(d1, i), (float)get(d2, i)}, 0.f, 1.f);   // (3DGS's zero band)
-        float4 turn{0, 0, 0, 1};   // (x y z w)
-        float3 size{0.5f * plain * tall};   // (a plain scan's: round, half its gap)
+        // 3DGS stores color as the zero-order spherical harmonic: color = 0.5 + 0.2820948 * f_dc.
+        else if (d0 && d1 && d2) colour = clamp(0.5f + 0.2820948f * float3{(float)get(d0, i), (float)get(d1, i), (float)get(d2, i)}, 0.f, 1.f);
+        // Rotation quaternion, x y z w.
+        float4 turn{0, 0, 0, 1};
+        // A plain scan point is round, with a radius of half the gap to its neighbors.
+        float3 size{0.5f * plain * tall};
         if (s0 && s1 && s2) {
-            float4 q = r0 && r1 && r2 && r3 ? float4{(float)get(r1, i), (float)get(r2, i), (float)get(r3, i), (float)get(r0, i)} : float4{0, 0, 0, 1};   // (3DGS writes w first)
+            // 3DGS writes the quaternion with w first.
+            float4 q = r0 && r1 && r2 && r3 ? float4{(float)get(r1, i), (float)get(r2, i), (float)get(r3, i), (float)get(r0, i)} : float4{0, 0, 0, 1};
             q = length(q) > 1e-12f ? normalize(q) : float4{0, 0, 0, 1};
-            turn = float4{-q.x, q.y, -q.z, q.w};   // (the same turn seen with y turned over)
+            // The same rotation seen with the y axis flipped.
+            turn = float4{-q.x, q.y, -q.z, q.w};
             size = float3{std::exp((float)get(s0, i)), std::exp((float)get(s1, i)), std::exp((float)get(s2, i))};
         }
         const float seen = op ? 1.f / (1.f + std::exp(-(float)get(op, i))) : 1.f;
@@ -105,22 +144,28 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
         memcpy(&data[k * 16], four, sizeof four);
     }
     const mat4f fit = mat4f::scaling(float3{1.f / tall}) * mat4f::translation(-mid);
-    if (bounds) bounds[0] = lo, bounds[1] = hi;   // (its 1-99 % box in the file's own units, y up: what its effects are told it is)
-    Material* mat = with ? with : material(s, "points.filamat");   // (or the look with an effect in it: points_effect)
+    // Report the trimmed box in the file's units, y up, for the caller to hand to effects.
+    if (bounds) bounds[0] = lo, bounds[1] = hi;
+    // Use the given material, which has an effect compiled in (see points_effect), or the
+    // plain one.
+    Material* mat = with ? with : material(s, "points.filamat");
     if (!mat) return why = "points.filamat is not built", nullptr;
     Texture* splats = Texture::Builder().width(wide).height(rows).levels(1).format(Texture::InternalFormat::RGBA32F).sampler(Texture::Sampler::SAMPLER_2D).build(*s.engine);
     splats->setImage(*s.engine, 0, points_pixels(std::move(data), backend::PixelDataFormat::RGBA));
     const uint32_t slotRows = (uint32_t)((m + wide - 1) / wide);
     Texture* order = Texture::Builder().width(wide).height(slotRows).levels(1).format(Texture::InternalFormat::R32F).sampler(Texture::Sampler::SAMPLER_2D).build(*s.engine);
-    {   // (in the file's order until the first sort is in)
+    // Until the first sort arrives, the slots hold the splats in file order.
+    {
         std::vector<float> first((size_t)wide * slotRows, 0.f);
         for (size_t k = 0; k < m; ++k) first[k] = (float)k;
         order->setImage(*s.engine, 0, points_pixels(std::move(first), backend::PixelDataFormat::R));
     }
-    // (four corners a slot, each its corner and its slot; six indices a slot; all as they are for good)
+    // Four corners and six indices per splat. They never change after this.
     std::vector<float3> corners(m * 4);
     std::vector<uint32_t> idx(m * 6);
-    static const float2 c4[4] = {{-2, -2}, {2, -2}, {2, 2}, {-2, 2}};   // (two of its spread each way: past that it is all but gone)
+    // The corners are two spreads away from the center in each direction. Beyond that the splat
+    // has all but faded out.
+    static const float2 c4[4] = {{-2, -2}, {2, -2}, {2, 2}, {-2, 2}};
     for (size_t k = 0; k < m; ++k) {
         for (int c = 0; c < 4; ++c) corners[k * 4 + (size_t)c] = float3{c4[c].x, c4[c].y, (float)k};
         const uint32_t v = (uint32_t)(k * 4);
@@ -146,18 +191,31 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     s.scene->addEntity(e);
     s.renderables.push_back({e, name, 0, mat4f{}});
 
-    // (the sort, antimatter15's: each splat's depth along the eye, put to 16 bits between the nearest and the farthest,
-    //  one counting pass; on a thread of its own, asked again whenever the eye has moved; farthest first here)
+    // The depth sort, after antimatter15/splat. The depth of each splat along the viewing
+    // direction is quantized to 16 bits between the nearest and the farthest splat and ordered
+    // with one counting pass. It runs on a separate thread and is requested again whenever the
+    // camera has moved. The resulting order is farthest first.
+    // State shared between the render thread and the sorting thread.
     struct Sorter {
+        // Splat centers in the file's units.
         std::vector<float3> middles;
+        // Guards the fields below.
         std::mutex lock;
+        // Signalled when a sort is requested or the thread must stop.
         std::condition_variable told;
+        // `asked` is the depth row of the latest request. `done` is the row of the latest
+        // finished sort.
         float4 asked{0.f}, done{1e9f};
+        // `fresh`: a request is waiting. `ready`: a finished sort is waiting to be uploaded.
+        // `stop`: the thread must exit.
         bool fresh = false, ready = false, stop = false;
+        // The finished slot table: splat indices ordered back to front.
         std::vector<float> slots;
         std::thread worker;
     };
-    std::shared_ptr<Sorter> sort(new Sorter, [](Sorter* p) {   // (gone with the moment's hand that holds it: its thread stopped first)
+    // Owns the sorter. The deleter stops and joins the thread before freeing the state. The last
+    // owner is the callback registered in s.playing, so the sorter ends when that is erased.
+    std::shared_ptr<Sorter> sort(new Sorter, [](Sorter* p) {
         { std::lock_guard<std::mutex> hold(p->lock); p->stop = true; }
         p->told.notify_one();
         p->worker.join();
@@ -178,7 +236,9 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
             int32_t least = INT32_MAX, most = INT32_MIN;
             for (size_t i = 0; i < depth.size(); ++i) {
                 const float3& p = sort->middles[i];
-                depth[i] = (int32_t)((row.x * p.x + row.y * p.y + row.z * p.z + row.w) * 4096.f);   // (the eye's z: farther is less)
+                // Camera-space z scaled by 4096 and truncated to an integer.
+                // Farther splats get smaller values.
+                depth[i] = (int32_t)((row.x * p.x + row.y * p.y + row.z * p.z + row.w) * 4096.f);
                 least = std::min(least, depth[i]), most = std::max(most, depth[i]);
             }
             const float inv = 65535.f / (float)std::max(1, most - least);
@@ -192,7 +252,8 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
             sort->slots = std::move(slots), sort->done = row, sort->ready = true;
         }
     });
-    // (each moment: where the eye is against the cloud now, asked of the sort if it has moved; a finished order sent on)
+    // Called on every update. Computes the depth row of the camera relative to the cloud, requests
+    // a new sort if the row has changed, and uploads a finished sort.
     s.playing[name] = [&s, sort, e, order, wide, slotRows, fit](double) {
         const auto& places = s.engine->getTransformManager();
         const math::mat4 eye = s.camera->getViewMatrix() * math::mat4(places.getWorldTransform(places.getInstance(e))) * math::mat4(fit);
@@ -205,7 +266,9 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
         if (length(row - sort->asked) > 1e-4f) sort->asked = row, sort->fresh = true, sort->told.notify_one();
     };
     if (looks) *looks = look;
-    if (plainLook && with)   // (with an effect: also its plain look, the same pictures, for once the effect has finished)
+    // With an effect, also build the plain material instance over the same textures, for use once
+    // the effect has finished.
+    if (plainLook && with)
         if (Material* plain = material(s, "points.filamat")) {
             MaterialInstance* p = plain->createInstance();
             p->setParameter("splats", splats, exact), p->setParameter("order", order, exact), p->setParameter("fit", fit);
@@ -215,8 +278,11 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     return name;
 }
 
-// The look with a PlayCanvas splat effect in it (splatfx.h): points.mat's own text (beside the library's folder, as the
-// effects folder is) with the effect's GLSL put in, built once for each effect's GLSL. nullptr, with `why`: the plain look.
+// Builds the points material with the PlayCanvas splat effect `fx` (see splatfx.h) inserted
+// into the text of points.mat, which is found in the materials folder next to the folder that
+// holds this library. The material is built once for each distinct effect GLSL. Returns
+// nullptr with the reason in `why` on failure, in which case the caller uses the plain
+// material.
 static Material* points_effect(Stage& s, const std::string& file, std::shared_ptr<SplatEffect>& fx, std::string& why) {
     fx = std::make_shared<SplatEffect>(file);
     if (!fx->ok()) return why = fx->trouble(), fx.reset(), nullptr;

@@ -1,23 +1,31 @@
-// parent.h: part of doc.h (a layer given a parent; what a group holds; a layer raised among the layers). Read only through doc.h.
-// A layer given another to go with (0: none) without moving on the stage, as the sample's Parent seat promises and
-// After Effects does: where it is, how far it is turned about the eye's line and how large are said again as the new
-// parent sees them (a value with keys is moved whole, by the rule of doc_put; a keyed size is left as it is). A parent
-// that leans, turned about x or y, is not undone in the turn: only where the layer is takes it in.
+// parent.h: parenting and ordering of layers for doc.h. Included by doc.h; not self-contained. It
+// sets a layer's parent, finds the layers a group holds, and moves a layer among the layers.
 static std::vector<double> doc_key_times(Doc& d, int layer, const char* name);
+// Makes `to` the parent of the layer (0 means no parent) without moving the layer on the stage, as
+// After Effects does. The layer's position, its rotation about the camera's line of sight and its
+// size are expressed again relative to the new parent. A property with keyframes is moved as a
+// whole, by the rule of doc_put. A keyed size is left as it is.
+// A parent that leans, rotated about x or y, is not undone in the rotation: only the layer's
+// position takes it into account. Returns false, with d.error set, if the change is refused.
 static bool doc_parent(Doc& d, int layer, double to) {
     if (!doc_knows(d, layer, "parent", &to)) return false;
-    for (int up = (int)to, n = 0; up && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n)   // (a ring of layers each going with the next goes nowhere)
+    // A ring of layers that each have the next as parent would have no end, so refuse a parent that
+    // already has this layer above it. The walk stops after 64 levels.
+    for (int up = (int)to, n = 0; up && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
         if (up == layer) return d.error = "it would go with itself (that one goes with it already)", false;
     const double now = d.stage->now;
-    const auto chain = [&](int up, double* turn, double* size) {   // (how far the parents turn it, and how large they make it)
+    // Sums how far the parents turn the layer and multiplies the sizes they give it, walking up
+    // from `up`.
+    const auto chain = [&](int up, double* turn, double* size) {
         *turn = 0.0, *size = 1.0;
         for (int n = 0; up && n < 64 && d.shown.count(up); up = (int)doc_number(d, up, "parent", 0, 0), ++n) *turn += doc_number(d, up, "rotate", now, 0), *size *= doc_number(d, up, "size", now, 1);
     };
     double turnWas, sizeWas, turnTo, sizeTo;
     chain((int)doc_number(d, layer, "parent", 0, 0), &turnWas, &sizeWas);
     chain((int)to, &turnTo, &sizeTo);
-    // (where it stands at each of its place's keys, and now: every one of them taken over as the hand sees it now, as
-    //  After Effects moves a layer's keys whole when it is parented; none is added)
+    // Record where the layer stands at each keyframe of its position and at the current time. Every
+    // keyframe is carried over to the new parent, as After Effects moves a layer's keyframes whole
+    // when it is parented. No keyframe is added.
     const char* const xyz[] = {"x", "y", "z"};
     std::map<double, math::double4> stood;
     stood[now] = {doc_number(d, layer, "x", now, 0), doc_number(d, layer, "y", now, 0), doc_number(d, layer, "z", now, 0), 1.0};
@@ -27,7 +35,9 @@ static bool doc_parent(Doc& d, int layer, double to) {
     const double size = doc_number(d, layer, "size", now, 1);
     doc_act(d);
     bool ok = doc_change(d, sqlite3_mprintf("insert into keyframe(layer, name, at, value) values(%d, 'parent', 0.0, %!.17g) on conflict do update set value = excluded.value", layer, to));
-    doc_forget(d);   // (the parent read again as now written, not as kept from the last picture: as doc_unrelate reads after its change)
+    // Drop cached values, so that the parent is read as just written and not as cached from the
+    // last frame, as doc_unrelate does after its change.
+    doc_forget(d);
     const math::mat4 into = inverse(doc_above(d, layer, now)) * was;
     for (int k = 0; ok && k < 3; ++k) {
         const std::vector<double> keys = doc_key_times(d, layer, xyz[k]);
@@ -37,15 +47,21 @@ static bool doc_parent(Doc& d, int layer, double to) {
     const double turnBy = turnWas - turnTo;
     if (ok && turnBy != 0.0) ok = doc_keys(d, layer, "rotate") ? doc_change(d, sqlite3_mprintf("update keyframe set value = value + %!.17g where layer = %d and name = 'rotate'", turnBy, layer))
                                                                : doc_set(d, layer, "rotate", doc_number(d, layer, "rotate", now, 0) + turnBy);
-    // (a layer with no size, a camera, keeps none: its parent is its Target's layer in the inspector, and was refused for a
-    //  size it has not, "a camera has no size": golf P08, golf_noise.md (68); as relations.h skips what a layer has not)
+    // A layer without a size property, such as a camera, is skipped here. Its parent is the layer
+    // chosen as its Target in the inspector, and failing on the missing size would wrongly refuse
+    // the change. relations.h skips missing properties in the same way.
     if (ok && doc_knows(d, layer, "size") && !doc_keys(d, layer, "size")) ok = doc_set(d, layer, "size", std::clamp(size * sizeWas / sizeTo, 1e-3, 1e4));
     return doc_acted(d) && ok;
 }
 static double doc_lasts(Doc& d, int layer);
+// Makes sure the property has a keyframe at time `at`, keeping its value there. Returns false if
+// the layer lacks the property. If time_remap has no keyframes yet, it first gets one at the
+// layer's start and one at its end, so that the remap starts as the identity.
 static bool doc_key_here(Doc& d, int layer, const char* name, double at) {
     if (!doc_knows(d, layer, name, nullptr, nullptr, true)) return false;
-    if (!strcmp(name, "time_remap") && !doc_keys(d, layer, name)) {   // (After Effects' Enable Time Remapping: a key at its start and one at its end, each its own time there; so one step)
+    // Like After Effects' Enable Time Remapping: add a keyframe at the layer's start and one at its
+    // end, each holding the layer's own time there. All of it is one undo step.
+    if (!strcmp(name, "time_remap") && !doc_keys(d, layer, name)) {
         const double gone = doc_number(d, layer, "begin", 0, 0), start = doc_number(d, layer, "start", 0, 0), lasts = doc_lasts(d, layer) > 0.0 ? doc_lasts(d, layer) : std::max(1e-3, doc_seconds(d) - start);
         doc_act(d);
         const bool ok = doc_key(d, layer, name, start, gone) && doc_key(d, layer, name, start + lasts, gone + lasts) && (at <= start || at >= start + lasts || doc_key(d, layer, name, at, gone + at - start));
@@ -54,8 +70,9 @@ static bool doc_key_here(Doc& d, int layer, const char* name, double at) {
     }
     return doc_keys(d, layer, name, at) && doc_keys(d, layer, name) ? true : doc_key(d, layer, name, at, doc_number(d, layer, name, at, doc_usual_on(d, layer, name)));
 }
-// What a group holds, however deep: the layers under a Null (a layer's parent that is not a Null holds nothing: After
-// Effects' parenting moves a child, it does not take it in).
+// Returns the layers a group holds, however deep. Only a Null layer holds layers. A layer that is
+// the parent of others but is not a Null holds nothing, because After Effects' parenting moves a
+// child and does not take it in.
 static std::vector<int> doc_under(Doc& d, int group) {
     std::vector<int> all;
     if (doc_word(d, group, "shape") != "null") return all;
@@ -66,11 +83,15 @@ static std::vector<int> doc_under(Doc& d, int group) {
     }
     return all;
 }
-// raise: a layer brought `places` places nearer among the layers (below 0: further back): each layer is told where it
-// lies now, as one change. A group goes with what it holds, one place among the layers (a precomposed layer is one).
+// Moves the layer `places` places nearer among the layers, or further back if places is below 0.
+// The order of every layer is written again as one change. A group moves with the layers it holds,
+// as one place. A precomposed layer counts as one layer. Returns false, with d.error set, if the
+// layer would not move.
 static bool doc_raise(Doc& d, int layer, int places) {
     if (!doc_knows(d, layer)) return false;
-    doc_forget(d);   // (the order as the document has it now, a layer just added in the same act too: as doc_relate forgets before it reads)
+    // Drop cached values, so that the order is read as the document has it now, including a layer
+    // added in the same undo step, as doc_relate does before it reads.
+    doc_forget(d);
     std::vector<int> lie = doc_laid(d), going = doc_under(d, layer);
     going.push_back(layer);
     const long from = std::find(lie.begin(), lie.end(), going.front()) - lie.begin();

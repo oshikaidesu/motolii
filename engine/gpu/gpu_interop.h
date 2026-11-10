@@ -1,7 +1,12 @@
-// gpu_interop: Filament's own WebGPU device lent to someone else who draws with WebGPU (ThorVG), and their drawing put
-// in line with Filament's. Filament 1.77.2 has no public way to either; with filament_dawn_compute.patch its WebGPU
-// platform remembers the device it made and its Texture::Builder::import takes a WGPUTexture of that device.
-// Built inside Filament's own build like compute_interop (it needs the engine's private headers): libmotolii_door.a.
+// Shares Filament's WebGPU device with other code that draws with WebGPU (ThorVG) and
+// orders that code's drawing relative to Filament's.
+//
+// Filament 1.77.2 has no public API for either. With filament_dawn_compute.patch, its
+// WebGPU platform remembers the device it created, and Texture::Builder::import accepts
+// a WGPUTexture from that device.
+//
+// Like compute_interop, this code is built inside Filament's own build because it needs
+// the engine's private headers. It is part of libmotolii_door.a.
 #pragma once
 #include <functional>
 
@@ -10,12 +15,16 @@ class Engine;
 }
 
 namespace interop {
-void* device(filament::Engine*);     // the WGPUDevice Filament draws with (null on another backend)
-void* instance(filament::Engine*);   // its WGPUInstance
-// `work` is queued like any other Filament call: it runs on Filament's driver thread, in order with what was asked
-// before and after it, so what it draws on the device is ready for the frame rendered after this call.
+// Returns the WGPUDevice Filament draws with, or null on another backend.
+void* device(filament::Engine*);
+// Returns the WGPUInstance of that device, or null on another backend.
+void* instance(filament::Engine*);
+// Queues `work` like any other Filament call. It runs on Filament's driver thread, in
+// order with the calls made before and after it. Whatever it draws on the device is
+// therefore ready for the frame rendered after this call.
 void on_driver(filament::Engine*, std::function<void()> work);
-// What Filament has drawn so far handed to the GPU's queue now (its driver's own flush, queued in order): someone else
-// drawing on the device after it (ThorVG submits at once) then reads it done, not still waiting in Filament's encoder.
+// Hands everything Filament has drawn so far to the GPU queue, using the driver's own
+// flush, queued in order. Code that draws on the device afterwards (ThorVG submits at
+// once) then sees that work as finished, not still waiting in Filament's encoder.
 void submit(filament::Engine*);
 }  // namespace interop

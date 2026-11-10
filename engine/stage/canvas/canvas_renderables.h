@@ -1,64 +1,98 @@
-// canvas_renderables.h: part of canvas.h. Read only through canvas.h.
+// Included by canvas.h; not self-contained.
+// Draws ThorVG content (images, animations, text and flat shapes) into textures and places each one
+// in the stage as a flat sheet.
 #include <fstream>
 #include <list>
 #include <mutex>
 #include <stdexcept>
-#define STBTT_assert(x) ((x) ? (void)0 : throw std::out_of_range("stb_truetype"))   // (a font past what it says of itself, a cmap whose last segment is not 0xFFFF (OpenType cmap format 4): told, not the program stopped)
-#define STBTT_STATIC   // (its own here: no name of it seen outside)
+// stb_truetype reports a malformed font by throwing instead of aborting the program. One example is
+// an OpenType cmap (format 4) whose last segment is not 0xFFFF.
+#define STBTT_assert(x) ((x) ? (void)0 : throw std::out_of_range("stb_truetype"))
+// Keep stb_truetype's symbols private to this translation unit.
+#define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "third_party/filament_src/third_party/stb/stb_truetype.h"   // (type_lacks: which letters a font has)
-// What `picture` and `type` share: something of ThorVG's (made by `paints` on Filament's own thread, which says how
-// many points wide and high it is drawn) on a canvas that draws into a texture of Filament's device, and the sheet
-// that shows it. ground below 0: clear where nothing is drawn. shown = false: made but not put in the scene (for a matte).
-// What ThorVG's own scene effects do to it, each as a share of its height (0: none): a blur; a shadow of a colour, so
-// much of it (shadow.w), falling so far, that way (degrees, as ThorVG counts them) and so soft.
-   // (copies: how many times it is put down: the document tells each where)
+// Used by type_lacks() to find which characters a font has.
+#include "third_party/filament_src/third_party/stb/stb_truetype.h"
+// Builds a Canvas2D from a ThorVG paint. The paint is drawn into a texture on Filament's device,
+// and a flat sheet shows that texture. Shared by image_canvas(), type() and flat().
+// Returns nullptr on failure, or when the engine does not use the WebGPU backend.
+// paints: Called on the engine's driver thread. Fills in the paint's width and height in points and
+// returns the paint, or nullptr on failure.
+// place: Transform of the sheet's center.
+// high: Height of the sheet in world units.
+// ground: Background color. If ground.x is below 0, the background is transparent.
+// shown: If false, the canvas is built but not added to the scene. Used for mattes.
+// lay: Name of the layout for the sheet's material.
+// fx: Options applied on top. The effects below are ThorVG scene effects. Their sizes are fractions
+// of the content height, and 0 means none.
+//   blur: blur radius.
+//   shadow: shadow color in xyz and its opacity in w.
+//   fall: distance the shadow falls.
+//   soft: shadow softness.
+//   copies: number of instances placed. The document gives each its own transform.
 static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D*, int*, int*)>& paints, const mat4f& place, float high, float3 ground, bool shown, const char* lay, const Canvas2DFx& fx = {}) {
-    if (!interop::device(s.engine)) return nullptr;   // (another backend)
+    // Return nullptr when the engine runs on another backend.
+    if (!interop::device(s.engine)) return nullptr;
     Canvas2D* d = new Canvas2D;
     WGPUTexture built = nullptr;
     tvg::Paint* loose = nullptr;
     bool owned = false;
     int w = 0, h = 0;
     float own = high;
+    // Everything that touches ThorVG or the GPU device runs on the driver thread.
     interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);
         tvg::Paint* p = paints(d, &w, &h);
         if (!p || w <= 0 || h <= 0) return;
+        // Scale the sheet for multi-line text, so that `high` stays the height of one line.
         high *= d->tallBy, own = high;
-        const float tall = (float)h;   // (what its effects' lengths are shares of: the thing as drawn, without room)
+        // Effect sizes are fractions of this height: the content as drawn, without the margin.
+        const float tall = (float)h;
         if (fx.reach > 0.f) {
+            // Add a margin for effects that reach beyond the content. fx.reach is a fraction of its
+            // height.
             const float room = std::ceil(fx.reach * (float)h);
             p->translate(room, room);
-            high *= ((float)h + 2.f * room) / (float)h;   // (the thing itself stays as large)
+            // Enlarge the sheet by the same ratio as the texture, so the content keeps its size.
+            high *= ((float)h + 2.f * room) / (float)h;
             w += 2 * (int)room, h += 2 * (int)room;
         }
-        if (fx.blur > 0.f || fx.shadow.w > 0.f || fx.tint > 0.f || fx.tritone > 0.f) {   // (in a scene of ThorVG's, which takes the effects; the picture larger all round by as far as they reach)
+        // Effects need a ThorVG scene. Enlarge the picture on all sides by as far as the effects
+        // reach.
+        if (fx.blur > 0.f || fx.shadow.w > 0.f || fx.tint > 0.f || fx.tritone > 0.f) {
             const float blur = fx.blur * tall, fall = fx.fall * tall, soft = fx.soft * tall;
             const int room = (int)std::ceil(std::max({3.f * blur, fx.shadow.w > 0.f ? fall + 3.f * soft : 0.f, fx.room * tall}));
-            tvg::Scene* scene = tvg::Scene::gen();   // (one scene takes them all, in order)
+            // One scene holds all the effects, applied in order.
+            tvg::Scene* scene = tvg::Scene::gen();
             scene->add(p);
             d->effects.push_back(scene);
             p = scene;
             p->translate((float)room, (float)room);
             effects_on(d->effects, fx, tall);
-            d->tall = tall, d->fx = fx;   // (told again at each moment: those that move are drawn again)
-            high *= (float)(h + 2 * room) / (float)h;   // (the thing itself stays as large)
+            // Remember the effects so those that change over time can be drawn again at each time.
+            d->tall = tall, d->fx = fx;
+            // Enlarge the sheet by the same ratio as the texture, so the content keeps its size.
+            high *= (float)(h + 2 * room) / (float)h;
             w += 2 * room, h += 2 * room;
         }
         d->canvasHigh = (float)h;
-        if (const float most = (float)std::max(w, h); most > 4096.f) {   // (no larger than a picture the device takes, with room to spare: the whole drawn smaller, its sheet as large)
+        // Limit the texture to 4096 points on its longer side, which leaves room to spare on the
+        // device. The drawing is scaled down and the sheet keeps its size.
+        if (const float most = (float)std::max(w, h); most > 4096.f) {
             tvg::Scene* smaller = tvg::Scene::gen();
             smaller->add(p);
             smaller->scale(4096.f / most);
             p = smaller;
             w = std::max(2, (int)std::floor((float)w * 4096.f / most)), h = std::max(2, (int)std::floor((float)h * 4096.f / most));
         }
-        loose = d->film ? nullptr : p;   // (a paint that no film owns is let go here if the canvas never takes it)
+        // If no animation owns the paint, release it here in case the canvas never takes it.
+        loose = d->film ? nullptr : p;
         WGPUTextureDescriptor like{};
         like.size = {(uint32_t)w, (uint32_t)h, 1};
-        like.format = WGPUTextureFormat_BGRA8Unorm;   // (what ThorVG's last step writes)
-        like.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;   // (CopyDst: a frame kept on disk is put up in it)
+        // ThorVG's last step writes BGRA.
+        like.format = WGPUTextureFormat_BGRA8Unorm;
+        // CopyDst: frames cached on disk are uploaded into the texture.
+        like.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
         like.dimension = WGPUTextureDimension_2D;
         like.mipLevelCount = 1;
         like.sampleCount = 1;
@@ -75,13 +109,16 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
         d->canvas->add(p);
         owned = true;
         if (d->film) d->frames = d->film->totalFrame(), d->seconds = d->film->duration();
-        if (d->film && d->toFrame > d->fromFrame && d->frames > 0.f) d->seconds *= (d->toFrame - d->fromFrame) / d->frames, d->frames = d->toFrame - d->fromFrame;   // (a named stretch of it: so long)
+        // If a marker selects a range, play only that range: scale the duration to match.
+        if (d->film && d->toFrame > d->fromFrame && d->frames > 0.f) d->seconds *= (d->toFrame - d->fromFrame) / d->frames, d->frames = d->toFrame - d->fromFrame;
         d->canvas->update();
         d->canvas->draw(true);
         d->canvas->sync();
     });
-    s.engine->flushAndWait();   // (once, at set-up: the lines above ran on the other thread)
-    if (!built || !owned) {   // (not made: what was begun is let go)
+    // Wait once at setup, because the code above ran on the driver thread.
+    s.engine->flushAndWait();
+    // Setup failed: release whatever was created.
+    if (!built || !owned) {
         interop::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (built) wgpuTextureRelease(built); });
         s.engine->flushAndWait();
         delete d;
@@ -89,6 +126,7 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
     }
     d->texture = Texture::Builder().width((uint32_t)w).height((uint32_t)h).levels(1).sampler(Texture::Sampler::SAMPLER_2D).format(Texture::InternalFormat::RGBA8)
                      .usage(Texture::Usage::SAMPLEABLE).import((intptr_t)built).build(*s.engine);
+    // The sheet is a quad centered on the origin whose width follows the texture's aspect ratio.
     d->sheet = new Mesh;
     for (float2 c : {float2{-1, -1}, float2{1, -1}, float2{1, 1}, float2{-1, 1}}) {
         d->sheet->pos.push_back({0.5f * high * (float)w / (float)h * c.x, 0.5f * high * c.y, 0.f});
@@ -96,12 +134,16 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
         d->sheet->uv.push_back(c * 0.5f + 0.5f);
     }
     d->sheet->idx = {0, 1, 2, 0, 2, 3};
-    if (fx.thick) sheet_deep(d->sheet, 0.1f * own), d->boxed = float3{d->sheet->pos[1].x, d->sheet->pos[2].y, 0.1f * own};   // (a fifth of its height through: the depth Raster_Extrude.js gives at Scale Z 1)
-    if (d->frames > 1.f)   // (a film: it goes on by itself as the stage's time does, round and round)
+    // Give the sheet depth: a fifth of its height in total. This is the depth that
+    // shelves/solids/Raster_Extrude.js gives at Scale Z 1.
+    if (fx.thick) sheet_deep(d->sheet, 0.1f * own), d->boxed = float3{d->sheet->pos[1].x, d->sheet->pos[2].y, 0.1f * own};
+    // An animation advances by itself with the stage's time and loops.
+    if (d->frames > 1.f)
         s.playing[d] = [&s, d](double now) { canvas_at(s, d, std::fmod((float)now + d->starts, d->seconds)); };
     if (!shown) return d;
     d->inLight = fx.lit;
-    d->look = add(s, d->sheet, flat_laid(lay, fx.lit, fx.wear).c_str(), std::vector<mat4f>((size_t)std::max(1, d->letters.empty() ? fx.copies : (int)d->letters.size()), place), 1, fx.lit, 1, 4, fx.together && d->letters.empty());   // (split into letters: a copy each)
+    // When the text is split into letters, there is one copy per letter.
+    d->look = add(s, d->sheet, flat_laid(lay, fx.lit, fx.wear).c_str(), std::vector<mat4f>((size_t)std::max(1, d->letters.empty() ? fx.copies : (int)d->letters.size()), place), 1, fx.lit, 1, 4, fx.together && d->letters.empty());
     if (!d->look) return nullptr;
     d->look->setParameter("picture", d->texture, TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
     if (fx.thick) d->look->setParameter("deep", float4{d->boxed, 0.f}), d->look->setParameter("deepTurn", float4{1.f, 0.f, 0.f, 1.f});
@@ -110,15 +152,15 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
 }
 
 
-// The picture in `file` put in the scene (an After Effects film, an SVG, a photo): a sheet `high` tall (as wide as
-// the picture makes it) with its middle at `place`, facing along the place's z, drawn as finely as the stage is.
-// The frame an After Effects file begins at (its own "ip", at the top of the file: ThorVG does not say it).
+// Returns the first frame of a Lottie file, which is the "ip" key at the top level of the file.
+// ThorVG does not report it.
 static float lottie_in(const char* file) {
     std::ifstream in(file);
     std::string all((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     int depth = 0;
     bool quoted = false;
-    for (size_t i = 0; i < all.size(); ++i) {   // (the key at the outermost depth only: the layers have theirs)
+    // Look only at the key at the outermost depth, because each layer has its own.
+    for (size_t i = 0; i < all.size(); ++i) {
         const char c = all[i];
         if (quoted) { if (c == '\\') ++i; else if (c == '"') quoted = false; continue; }
         if (c == '"') {
@@ -133,9 +175,17 @@ static float lottie_in(const char* file) {
     return 0.f;
 }
 
-// marker: a named stretch of an After Effects file it plays, over and over (ThorVG's Lottie markers; none: all of it).
+// Adds the image or animation in `file` to the scene. It can be a Lottie animation exported from
+// After Effects, an SVG or a photo. The sheet is `high` tall, as wide as the content's aspect ratio
+// requires, centered at `place` and facing along the z axis of `place`. It is drawn at the stage's
+// resolution.
+// ground, shown, lay, fx: As for place_canvas().
+// marker: Name of a Lottie marker whose range is played in a loop. An empty name plays the whole
+// animation (ThorVG's Lottie markers).
+// Returns nullptr on failure.
 static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, float high, float3 ground = float3{-1.f}, bool shown = true, const char* lay = nullptr, const Canvas2DFx& fx = {}, const char* marker = "") {
-    if (!std::filesystem::is_regular_file(file)) return nullptr;   // (ThorVG ends the program on a folder)
+    // ThorVG ends the program when given a folder, so accept regular files only.
+    if (!std::filesystem::is_regular_file(file)) return nullptr;
     const std::string ext = std::filesystem::path(file).extension().string();
     const bool lottie = ext == ".json" || ext == ".lot";
     Canvas2D* built = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
@@ -146,23 +196,30 @@ static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, fl
         float fw = 0.f, fh = 0.f;
         if (p->load(file) != tvg::Result::Success || p->size(&fw, &fh) != tvg::Result::Success || fw <= 0.f || fh <= 0.f) return nullptr;
         const float first = lottie ? lottie_in(file) : 0.f;
-        std::vector<float> starts;   // (where each named stretch begins: one of no length runs to the next, or to the end)
+        // Where each named range begins. A range of zero length runs to the next start, or to the
+        // end.
+        std::vector<float> starts;
         for (uint32_t i = 0; own && i < own->markersCnt(); ++i) {
             float from = 0.f, to = 0.f;
             if (own->marker(i, &from, &to)) starts.push_back(from);
         }
-        for (uint32_t i = 0; own && i < own->markersCnt(); ++i) {   // (its stretches by name, and the one it plays)
+        // Read each marker's name and pick the one to play.
+        for (uint32_t i = 0; own && i < own->markersCnt(); ++i) {
             float from = 0.f, to = 0.f;
             const char* name = own->marker(i, &from, &to);
             if (!name || !*name) continue;
             std::string word(name);
-            word.erase(std::remove_if(word.begin(), word.end(), [](char c) { return std::isspace((unsigned char)c); }), word.end());   // (a name is one word: "End\r\n" is End)
+            // A name is one word: strip whitespace, so "End\r\n" becomes "End".
+            word.erase(std::remove_if(word.begin(), word.end(), [](char c) { return std::isspace((unsigned char)c); }), word.end());
             d->markers.push_back(word);
-            if (to <= from) {   // (none long: to the next, or to its end)
+            // A marker with no length runs to the next marker or to the end.
+            if (to <= from) {
                 to = 1e9f;
                 for (float b : starts) if (b > from) to = std::min(to, b);
             }
-            if (marker && *marker && word == marker)   // (a marker counts the file's own frames, which begin at its in point; ThorVG counts from 0)
+            // A marker counts the file's own frames, which begin at its in point. ThorVG counts
+            // from 0.
+            if (marker && *marker && word == marker)
                 d->fromFrame = from - first, d->toFrame = std::min(to - first, d->film->totalFrame());
         }
         const float fit = (float)std::max(s.w, s.h) / std::max(fw, fh);
@@ -171,7 +228,9 @@ static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, fl
         p->size((float)*w, (float)*h);
         return p;
     }, place, high, ground, shown, lay, fx);
-    if (built && built->frames > 1.f) {   // (its kept frames known on disk by its file as it is now: cache_file)
+    // Frames cached on disk are identified by the file's path, size and modification time. See
+    // cache_file.
+    if (built && built->frames > 1.f) {
         std::error_code e;
         built->keyBase = std::filesystem::absolute(file, e).string() + "|" + std::to_string(std::filesystem::file_size(file, e)) + "|" +
                         std::to_string((long long)std::filesystem::last_write_time(file, e).time_since_epoch().count());
@@ -179,47 +238,59 @@ static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, fl
     return built;
 }
 
-// Words put in the scene, set by ThorVG in the font of `fontFile` (a .ttf): a sheet `high` tall for each line, as
-// wide as the words make it, its middle at `place`.
-// How the colours between a ramp's stops are mixed, as CSS Color 4's color-interpolation-method: in sRGB, as ThorVG
-// mixes them (0); in OKLab, as an eye mixes them (1: CSS Color 4's sample code for its conversions, Björn Ottosson's
-// OKLab); round the hue the shorter way, saturation and value straight (2: CSS Color 4, hue interpolation, shorter);
-// or not at all, each colour held till the next (3: Blender's ColorRamp, Constant). A mixed way is laid down as more
-// stops between each two, which ThorVG then mixes plainly.
+// Color-ramp blend modes. `blend` selects how colors between two stops are mixed:
+//   0: sRGB, as ThorVG mixes them.
+//   1: OKLab, which is closer to how the eye mixes colors. The conversions follow the sample code
+//     in CSS Color 4 and Bjorn Ottosson's OKLab.
+//   2: HSV, going the shorter way around the hue and interpolating saturation and value linearly
+//     (CSS Color 4, hue interpolation, shorter).
+//   3: Constant. Each color is held until the next stop (Blender's ColorRamp, Constant).
+// Modes 1 to 3 insert extra stops between each pair of stops, which ThorVG then mixes linearly.
+// Converts an sRGB component to linear light.
 static float ramp_lin(float c) { return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f); }
+// Converts a linear-light component to sRGB.
 static float ramp_gam(float c) { return c <= 0.0031308f ? 12.92f * c : 1.055f * std::pow(c, 1.f / 2.4f) - 0.055f; }
+// Converts an sRGB color to OKLab.
 static float3 ramp_oklab(float3 c) {
     const float r = ramp_lin(c.x), g = ramp_lin(c.y), b = ramp_lin(c.z);
     const float l = std::cbrt(0.4122214708f * r + 0.5363325363f * g + 0.0514459929f * b), m = std::cbrt(0.2119034982f * r + 0.6806995451f * g + 0.1073969566f * b), s = std::cbrt(0.0883024619f * r + 0.2817188376f * g + 0.6299787005f * b);
     return {0.2104542553f * l + 0.7936177850f * m - 0.0040720468f * s, 1.9779984951f * l - 2.4285922050f * m + 0.4505937099f * s, 0.0259040371f * l + 0.7827717662f * m - 0.8086757660f * s};
 }
+// Converts an OKLab color to sRGB, clamped to [0, 1].
 static float3 ramp_srgb(float3 o) {
     const float l = o.x + 0.3963377774f * o.y + 0.2158037573f * o.z, m = o.x - 0.1055613458f * o.y - 0.0638541728f * o.z, s = o.x - 0.0894841775f * o.y - 1.2914855480f * o.z;
     const float L = l * l * l, M = m * m * m, S = s * s * s;
     return {std::clamp(ramp_gam(4.0767416621f * L - 3.3077115913f * M + 0.2309699292f * S), 0.f, 1.f), std::clamp(ramp_gam(-1.2684380046f * L + 2.6097574011f * M - 0.3413193965f * S), 0.f, 1.f), std::clamp(ramp_gam(-0.0041960863f * L - 0.7034186147f * M + 1.7076147010f * S), 0.f, 1.f)};
 }
+// Converts an RGB color to HSV: hue in degrees, saturation and value in [0, 1].
 static float3 ramp_hsv(float3 c) {
     const float mx = std::max({c.x, c.y, c.z}), mn = std::min({c.x, c.y, c.z}), d = mx - mn;
     float h = 0.f;
     if (d > 0.f) h = mx == c.x ? std::fmod((c.y - c.z) / d, 6.f) : mx == c.y ? (c.z - c.x) / d + 2.f : (c.x - c.y) / d + 4.f;
     return {std::fmod(h * 60.f + 360.f, 360.f), mx > 0.f ? d / mx : 0.f, mx};
 }
+// Converts an HSV color, with hue in degrees, to RGB.
 static float3 ramp_rgb(float3 h) {
     const float c = h.z * h.y, x = c * (1.f - std::fabs(std::fmod(h.x / 60.f, 2.f) - 1.f)), m = h.z - c;
     const int k = (int)(h.x / 60.f) % 6;
     const float3 p = k == 0 ? float3{c, x, 0} : k == 1 ? float3{x, c, 0} : k == 2 ? float3{0, c, x} : k == 3 ? float3{0, x, c} : k == 4 ? float3{x, 0, c} : float3{c, 0, x};
     return p + m;
 }
+// Expands `ramp` (colors) and `at` (stop positions) in place for blend modes 1 to 3. If `at` does
+// not match `ramp`, stops are spaced evenly. Does nothing for mode 0 or fewer than two stops.
 static void ramp_blend(std::vector<float4>& ramp, std::vector<float>& at, int blend) {
     if (blend <= 0 || ramp.size() < 2) return;
     std::vector<float> pos = at.size() == ramp.size() ? at : std::vector<float>();
     if (pos.empty()) for (size_t i = 0; i < ramp.size(); ++i) pos.push_back((float)i / (float)(ramp.size() - 1));
     std::vector<float4> out;
     std::vector<float> outAt;
+    // Number of steps each pair of stops is split into.
     constexpr int between = 8;
     for (size_t i = 0; i + 1 < ramp.size(); ++i) {
         const float4 a = ramp[i], b = ramp[i + 1];
-        if (blend == 3) {   // (held till the next, which begins a hair after: ThorVG keeps one of two stops at one place)
+        // Hold the color until the next stop, which begins a hair later, because ThorVG keeps only
+        // one of two stops at the same position.
+        if (blend == 3) {
             out.push_back(a), outAt.push_back(pos[i]), out.push_back(a), outAt.push_back(std::max(pos[i], pos[i + 1] - 1e-4f));
             continue;
         }
@@ -231,7 +302,8 @@ static void ramp_blend(std::vector<float4>& ramp, std::vector<float>& at, int bl
             } else {
                 float3 p = ramp_hsv(a.xyz), q = ramp_hsv(b.xyz);
                 float dh = q.x - p.x;
-                if (dh > 180.f) dh -= 360.f; else if (dh < -180.f) dh += 360.f;   // (the shorter way round)
+                // Take the shorter way around the hue circle.
+                if (dh > 180.f) dh -= 360.f; else if (dh < -180.f) dh += 360.f;
                 c = ramp_rgb({std::fmod(p.x + dh * t + 360.f, 360.f), p.y + (q.y - p.y) * t, p.z + (q.z - p.z) * t});
             }
             out.push_back({c, a.w + (b.w - a.w) * t}), outAt.push_back(pos[i] + (pos[i + 1] - pos[i]) * t);
@@ -241,19 +313,28 @@ static void ramp_blend(std::vector<float4>& ramp, std::vector<float>& at, int bl
     ramp = out, at = outAt;
 }
 
-// The colours of a ramp as ThorVG's linear gradient, from the first at y0 to the last at y1 (evenly spaced, or where `at` says).
+// Returns a ThorVG gradient over an area `w` by `h` points. The caller passes it to a ThorVG paint,
+// which takes ownership.
+// A linear gradient runs from the first color to the last, evenly spaced or at the positions in
+// `givenAt`. A radial gradient runs from the center out to the corners.
+// angle: Direction of the linear gradient in degrees. 0 runs from top to bottom.
+// scale: How far the gradient reaches, as a multiple of the area's extent in that direction.
+// spread: ThorVG's FillSpread, clamped to 0..2.
+// blend: Color-mixing mode. See the blend modes above.
 static tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h, bool radial = false, float angle = 0.f, float scale = 1.f, int spread = 0, const std::vector<float>& givenAt = {}, int blend = 0) {
     std::vector<float4> ramp = given;
     std::vector<float> at = givenAt;
     ramp_blend(ramp, at, blend);
     tvg::Fill* g = nullptr;
     const float cx = 0.5f * w, cy = 0.5f * h, k = std::max(scale, 0.01f);
-    if (radial) {   // (from its middle out to its corners)
+    // From the center out to the corners.
+    if (radial) {
         tvg::RadialGradient* r = tvg::RadialGradient::gen();
         const float reach = 0.5f * std::hypot(w, h) * k;
         r->radial(cx, cy, reach, cx, cy, 0.f);
         g = r;
-    } else {   // (across it the way it is turned: 0 from its top to its bottom, as far as its box reaches that way)
+    // Across the area in the direction of `angle`, as far as the box reaches that way.
+    } else {
         tvg::LinearGradient* l = tvg::LinearGradient::gen();
         const float a = angle * (float)TAU / 360.f, dx = std::sin(a), dy = std::cos(a), reach = (0.5f * std::fabs(w * dx) + 0.5f * std::fabs(h * dy)) * k;
         l->linear(cx - dx * reach, cy - dy * reach, cx + dx * reach, cy + dy * reach);
@@ -262,17 +343,23 @@ static tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h, bo
     g->spread((tvg::FillSpread)std::clamp(spread, 0, 2));
     std::vector<tvg::Fill::ColorStop> stops;
     for (size_t i = 0; i < ramp.size(); ++i)
-        stops.push_back({at.size() == ramp.size() ? at[i] : (float)i / (float)(ramp.size() - 1), (uint8_t)std::lround(255.f * ramp[i].x), (uint8_t)std::lround(255.f * ramp[i].y), (uint8_t)std::lround(255.f * ramp[i].z), (uint8_t)std::lround(255.f * ramp[i].w)});   // (a colour's own see-through: eight digits)
+        // The w component of a color is its alpha, written as eight bits.
+        stops.push_back({at.size() == ramp.size() ? at[i] : (float)i / (float)(ramp.size() - 1), (uint8_t)std::lround(255.f * ramp[i].x), (uint8_t)std::lround(255.f * ramp[i].y), (uint8_t)std::lround(255.f * ramp[i].z), (uint8_t)std::lround(255.f * ramp[i].w)});
     g->colorStops(stops.data(), (uint32_t)stops.size());
     return g;
 }
 
-// The letters of `words` a font file has no glyph for, each once as met: its cmap read by stb_truetype (Sean Barrett's,
-// public domain, as Filament carries it), glyph 0 being .notdef, the box ThorVG draws for one it lacks (tofu); spaces,
-// controls and joiners want none. A .ttc: its first face, as ThorVG reads one (thorvg_ttc.patch). The last few files read
-// are kept (the fallback is asked again and again); one not read lacks nothing that can be told.
+// Returns the characters of `words` that the font file has no glyph for, each listed once in the
+// order first seen. Returns "" if the file cannot be read.
+// It reads the font's cmap with stb_truetype (Sean Barrett, public domain, as Filament bundles it).
+// Glyph 0 is .notdef, the box ("tofu") that ThorVG draws for a missing character. Spaces, control
+// characters and joiners need no glyph and are ignored.
+// For a .ttc file only the first face is read, as ThorVG does
+// (engine/deps/patches/thorvg/thorvg_ttc.patch).
+// The last few files read are cached, because the fallback lookup asks again and again.
 static std::string type_lacks(const std::string& fontFile, const std::string& words) {
     static std::mutex lock;
+    // Most recently used first.
     static std::list<std::pair<std::string, std::shared_ptr<const std::vector<unsigned char>>>> cached;
     std::shared_ptr<const std::vector<unsigned char>> bytes;
     {
@@ -294,7 +381,9 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
     } catch (const std::out_of_range&) {
         return "";
     }
-    const auto has = [&](uint32_t u) {   // (a letter past every segment of a cmap without its 0xFFFF end has no glyph: the spec's search finds none)
+    // A font whose cmap lacks the final 0xFFFF segment makes stb_truetype throw. Treat that as no
+    // glyph.
+    const auto has = [&](uint32_t u) {
         try {
             return stbtt_FindGlyphIndex(&info, (int)u) != 0;
         } catch (const std::out_of_range&) {
@@ -302,7 +391,8 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
         }
     };
     std::string lacks;
-    for (size_t i = 0; i < words.size();) {   // (UTF-8, a letter at a time)
+    // Walk the UTF-8 string one character at a time.
+    for (size_t i = 0; i < words.size();) {
         const unsigned char c = (unsigned char)words[i];
         const int n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 1;
         uint32_t u = n == 1 ? c : c & (0x7f >> n);
@@ -314,14 +404,20 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
     }
     return lacks;
 }
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (document/folders.h)
-// What `words` are drawn in when a font file lacks some of their letters (the user, 11/5: no tofu, Noto by default):
-// the first font in the library's (third_party/noto_sans_jp), then the maker's own fonts/ (doc_folders), that has them all, as a browser goes
-// down a font-family list (CSS Fonts 4, the font fallback); there, Noto Sans JP (notofonts/noto-cjk, OFL), named for
-// "no tofu". A whole text in one font: ThorVG sets a text in one. "": it lacks none, or no font has them all.
+// Defined in document/folders.h.
+static std::vector<std::filesystem::path> doc_folders(const char* folder);
+// Returns a font to use instead of `fontFile` when it lacks some characters of `words`, so that no
+// missing-glyph boxes appear. Returns "" if the font has every character or if no font has them
+// all.
+// The search goes through the fonts folders listed by doc_folders: first the bundled fonts
+// (third_party/noto_sans_jp, Noto Sans JP from notofonts/noto-cjk, OFL), then the user's own fonts/
+// folder. It takes the first font that has every character, like a browser going down a CSS
+// font-family list (CSS Fonts 4, font fallback).
+// The whole text uses one font, because ThorVG sets a text in one font.
 static std::string type_fallback(const std::string& fontFile, const std::string& words) {
     if (type_lacks(fontFile, words).empty()) return "";
     for (const std::filesystem::path& dir : doc_folders("fonts")) {
+        // Per-folder listing errors are ignored.
         std::error_code wrong;
         std::vector<std::filesystem::path> fonts;
         for (const auto& e : std::filesystem::directory_iterator(dir, wrong))
@@ -333,9 +429,10 @@ static std::string type_fallback(const std::string& fontFile, const std::string&
     return "";
 }
 
-// Whether ThorVG sets `words` in a font file: it reads the file and the words come out with a size, and the font has
-// every letter of them (a box drawn for one it lacks has a size too: type_lacks). ThorVG's own loader keeps its fonts
-// under a lock, so any thread may ask, once ThorVG is up.
+// Returns whether ThorVG can set `words` in the font file. The file must load, the text must come
+// out with a nonzero size, and the font must have every character. ThorVG also measures the box it
+// draws for a missing character, so type_lacks() is checked first.
+// Any thread may call this once ThorVG is initialized, because ThorVG's font loader holds a lock.
 static bool type_sets(const char* fontFile, const char* words) {
     if (!std::filesystem::is_regular_file(fontFile) || !type_lacks(fontFile, words).empty() || tvg::Text::load(fontFile) != tvg::Result::Success) return false;
     tvg::Text* t = tvg::Text::gen();
@@ -345,41 +442,61 @@ static bool type_sets(const char* fontFile, const char* words) {
     float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
     const bool sets = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success && wide > 0.f && tall > 0.f;
     tvg::Paint::rel(t);
-    tvg::Text::unload(fontFile);   // (ThorVG counts each load: a font only asked about leaves memory, 543 MB over the shelf; one in use stays)
+    // ThorVG counts each load. Unload a font that was only asked about, or memory grows (543 MB
+    // over the shelf). A font in use stays loaded.
+    tvg::Text::unload(fontFile);
     return sets;
 }
-// edge: an outline round the letters, ThorVG's own (its colour; w: how wide, a share of the line's height; 0: none).
-// fx.rims: more of them, each outside the last: the letters drawn again under them, each its outline wider.
-// Lines: the words may be broken by \n; align: how the lines lie one under another (ThorVG's own: 0 left, 1 right).
+// Adds `words` to the scene, set by ThorVG in the font of `fontFile` (a .ttf). Each line is a sheet
+// `high` tall and as wide as its words, centered at `place`. If the font lacks some characters, the
+// whole text is set in a fallback font instead, chosen by type_fallback.
+// colour: Fill color.
+// edge: ThorVG outline around the letters. xyz is its color and w its width as a fraction of the
+// text height. 0 means none.
+// align: How lines align under one another, as ThorVG does: 0 left, 1 right.
+// fx.rims: Further outlines, each outside the last. The letters are drawn again beneath, each with
+// a wider outline.
+// The words may contain \n to break lines.
 static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const mat4f& place, float high, float3 colour = float3{0.f}, const char* lay = nullptr, float4 edge = float4{0.f}, float align = 0.f, const Canvas2DFx& fx = {}) {
     if (!std::filesystem::is_regular_file(fontFile)) return nullptr;
-    const std::string fell = type_fallback(fontFile, words);   // (letters it lacks: all of them in the fallback, no tofu; the inspector says so, motolii_font_lacks)
+    // If the font lacks characters, use the fallback for all of them. The inspector reports this
+    // (motolii_font_lacks).
+    const std::string fell = type_fallback(fontFile, words);
     if (!fell.empty()) fontFile = fell.c_str();
     return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         if (tvg::Text::load(fontFile) != tvg::Result::Success) return nullptr;
         tvg::Text* t = tvg::Text::gen();
         float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
-        const float fine = 0.12f * (float)std::max(s.w, s.h);   // (letters this many points tall: a line as fine as an eighth of the stage)
-        t->font(std::filesystem::path(fontFile).stem().string().c_str());   // (ThorVG names a font by its file)
-        float sized = fine;   // (as large as it is set: ThorVG does not say it back)
+        // Letter height in points, about an eighth of the stage's longer side.
+        const float fine = 0.12f * (float)std::max(s.w, s.h);
+        // ThorVG names a font by its file.
+        t->font(std::filesystem::path(fontFile).stem().string().c_str());
+        // The size as set. ThorVG does not report it back.
+        float sized = fine;
         t->size(sized);
         t->text(words);
         t->spacing(fx.letters, fx.lines);
         if (fx.italic > 0.f) t->italic(fx.italic);
-        if (fx.wrapWidth > 0.f) t->layout(fx.wrapWidth * fine, 0.f), t->wrap((tvg::TextWrap)std::clamp(fx.wrap, 0, 4)), t->align(align, 0.f);   // (in a box: broken into lines there, ThorVG's own)
+        // In a layout box ThorVG breaks the text into lines.
+        if (fx.wrapWidth > 0.f) t->layout(fx.wrapWidth * fine, 0.f), t->wrap((tvg::TextWrap)std::clamp(fx.wrap, 0, 4)), t->align(align, 0.f);
         t->fill((uint8_t)std::lround(255.f * colour.x), (uint8_t)std::lround(255.f * colour.y), (uint8_t)std::lround(255.f * colour.z));
         bool measured = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success && wide > 0.f && tall > 0.f;
-        if (measured && wide > 4096.f) {   // (a line too long for one picture is set smaller)
+        // A line too long for one texture is set smaller.
+        if (measured && wide > 4096.f) {
             t->size(sized = fine * 4096.f / wide);
             measured = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success;
         }
         if (!measured) return tvg::Paint::rel(t), nullptr;
-        if (align > 0.f && fx.wrapWidth <= 0.f) {   // (the lines aligned in a box as wide as the widest of them: ThorVG's layout and align)
+        // Align the lines in a box as wide as the widest line, using ThorVG's layout and align.
+        if (align > 0.f && fx.wrapWidth <= 0.f) {
             t->layout(wide, 0.f);
             t->align(align, 0.f);
             measured = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success;
         }
-        if (strchr(words, '\n') || fx.wrapWidth > 0.f) {   // (a size is a line's, as a font's: more lines, the sheet the taller; After Effects' and Alight Motion's Font Size)
+        // A size means one line's height, as a font size does in After Effects and Alight Motion
+        // (Font Size). With more lines the sheet becomes taller, so measure one line to get the
+        // ratio.
+        if (strchr(words, '\n') || fx.wrapWidth > 0.f) {
             std::string one(words);
             one.erase(std::remove(one.begin(), one.end(), '\n'), one.end());
             tvg::Text* line = tvg::Text::gen();
@@ -396,16 +513,25 @@ static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const m
         }
         const float stroke = edge.w * tall;
         if (stroke > 0.f) t->outline(stroke, (uint8_t)std::lround(255.f * edge.x), (uint8_t)std::lround(255.f * edge.y), (uint8_t)std::lround(255.f * edge.z));
-        float outline = stroke;   // (half of it lies outside the letters: the picture is that much larger all round)
+        // Half of the outline lies outside the letters, so the texture grows by that much on all
+        // sides.
+        float outline = stroke;
         for (const float4& rim : fx.rims) outline += 2.f * rim.w * tall;
         t->translate(-x + 0.5f * outline, -y + 0.5f * outline);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
-        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f && fx.rims.empty()) d->text = t, d->words = words, d->textFont = fontFile, d->textWide = (float)*w, d->textAt = -y + 0.5f * outline;   // (its words told again in place: words_at)
-        std::string line(words);   // (a last line left empty, a Return after the words, is no line: its letters are the ones before)
+        // Keep the text object so the words can be changed in place (see words_at). This works only
+        // for plain text without splitting, wrapping, alignment or rims.
+        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f && fx.rims.empty()) d->text = t, d->words = words, d->textFont = fontFile, d->textWide = (float)*w, d->textAt = -y + 0.5f * outline;
+        // A trailing newline after the words does not make an empty last line.
+        std::string line(words);
         while (!line.empty() && (line.back() == '\n' || line.back() == '\r')) line.pop_back();
-        if (fx.split && line.find('\n') == std::string::npos && fx.wrapWidth <= 0.f) {   // (one line split into its letters: where each ends, by how wide the words up to it are set)
-            const auto across = [&](const std::string& some) {   // (how wide some letters are set, a share of the picture's width; and where their ink ends)
+        // One line split into letters. Work out where each letter ends from the width of the words
+        // up to it.
+        if (fx.split && line.find('\n') == std::string::npos && fx.wrapWidth <= 0.f) {
+            // Measures `some`. Returns in x where its ink ends and in y how wide it is, both as
+            // fractions of the texture width.
+            const auto across = [&](const std::string& some) {
                 tvg::Text* up = tvg::Text::gen();
                 up->font(std::filesystem::path(fontFile).stem().string().c_str());
                 up->size(sized);
@@ -417,16 +543,21 @@ static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const m
                 tvg::Paint::rel(up);
                 return float2{ok ? (ux + uw - x + 0.5f * outline) / (float)*w : 0.f, ok ? (uw + outline) / (float)*w : 0.f};
             };
-            std::vector<float2> inks;   // (each letter: where the words up to it end, and how wide it is alone)
+            // For each letter, x is where the words up to and including it end, and y is its width
+            // alone.
+            std::vector<float2> inks;
             for (const char* at = line.c_str(); *at;) {
                 const char* next = at + 1;
-                while (*next && ((unsigned char)*next & 0xC0) == 0x80) ++next;   // (one letter, however many bytes)
+                // Advance over one UTF-8 character, however many bytes it has.
+                while (*next && ((unsigned char)*next & 0xC0) == 0x80) ++next;
                 if (fx.splitWords) while (*next && *next != ' ') ++next;
                 inks.push_back(float2{across(std::string(line.c_str(), next)).x, across(std::string(at, next)).y});
                 at = next;
                 if (fx.splitWords) while (*at == ' ') ++at;
             }
-            float was = 0.f;   // (cut half way across the gap between a letter's ink and the next one's: no edge of a neighbour in either)
+            // Cut halfway across the gap between one letter's ink and the next, so that neither
+            // includes an edge of its neighbor.
+            float was = 0.f;
             for (size_t i = 0; i < inks.size(); ++i) {
                 const float end = std::max(was, inks[i].x);
                 const float cut = i + 1 < inks.size() ? std::max(end, 0.5f * (end + std::max(end, inks[i + 1].x - inks[i + 1].y))) : 1.f;
@@ -456,8 +587,9 @@ static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const m
             return all;
         };
         if (fx.ramp.size() < 2) return over_rims(t);
-        // (a ramp: a rect as large as the words, filled with it, seen only where the letters are: ThorVG's own alpha
-        //  mask; ThorVG counts a text's own gradient in the font's units, which are not to be had from outside)
+        // With a color ramp, draw a rect as large as the text, filled with the ramp, and show it
+        // only where the letters are, using ThorVG's alpha mask. ThorVG counts a text's own
+        // gradient in the font's units, which are not available from outside.
         tvg::Shape* ramp = tvg::Shape::gen();
         ramp->appendRect(0.f, 0.f, (float)*w, (float)*h);
         ramp->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial, fx.rampAngle, fx.rampScale, fx.spread, fx.rampAt, fx.rampBlend));
@@ -466,15 +598,27 @@ static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const m
     }, place, high, float3{-1.f}, true, lay, fx);
 }
 
-// A flat shape's path, as `flat` draws it in a picture w by h points, set in by `in` (half its stroke): ThorVG's own
-// rectangle, circle, polygon, star, line or wave; its corners rounded (a share of its shorter side), its lines and curves
-// cut in pieces no longer than `fine` points (0: as they are), for what bends it as it is drawn. Kept as made in `d`.
+// Appends to `shape` the path of the flat shape `form`, for a picture `w` by `h` points, inset by
+// `in` (half the stroke width).
+// form: rect, circle, polygon, star, line, wave, spiral, ring, arc, arrow, chamfer, squircle or
+// cog, or SVG path data starting with 'M'.
+// points: Meaning depends on the form, for example the number of corners or teeth.
+// inner: Meaning depends on the form, for example the star's inner radius as a fraction of the
+// outer one.
+// round: Corner rounding as a fraction of the shorter side.
+// fine: Lines and curves are cut into pieces no longer than this many points. 0 leaves them as they
+// are. This lets deformations bend them.
+// The unbent path is kept in `d`.
+// Parses SVG path data into path commands and points. Returns false on failure.
 bool sk_svg(const char* data, std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts);
 int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<float>& out);
 static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h, float in, int points, float inner, float round, float fine) {
     const float cx = 0.5f * (float)w, cy = 0.5f * (float)h, rx = cx - in, ry = cy - in;
-    const float thick = in > 0.f ? 2.f * in : 0.08f * (float)h;   // (a wave's line: its stroke, or a share of its height)
-    if (form[0] == 'M' || form[0] == 'm') {   // (a path of its own, drawn by a pen: SVG's path data, in its height from its middle, down as SVG goes; Skia reads it)
+    // Line width of a wave or spiral: the stroke width, or a fraction of the height.
+    const float thick = in > 0.f ? 2.f * in : 0.08f * (float)h;
+    // SVG path data given by the user. The coordinates are in units of the height from the center,
+    // y pointing down as in SVG. The path is parsed by Skia.
+    if (form[0] == 'M' || form[0] == 'm') {
         std::vector<tvg::PathCommand> c; std::vector<tvg::Point> p;
         if (sk_svg(form, c, p)) {
             for (tvg::Point& at : p) at = {cx + at.x * (float)h, cy + at.y * (float)h};
@@ -482,7 +626,9 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
         }
     }
     else if (!strcmp(form, "circle")) shape->appendCircle(cx, cy, rx, ry);
-    else if (!strcmp(form, "wave")) {   // (a line waving across it: so many times along (points), so far up and down (inner, a share of its half height))
+    // A line waving across the shape: `points` cycles along its width, with an amplitude of `inner`
+    // as a fraction of the half height.
+    else if (!strcmp(form, "wave")) {
         const int cycles = std::clamp(points, 1, 100), n = 48 * cycles;
         const float amp = (cy - thick) * std::clamp(inner, 0.f, 1.f);
         for (int k = 0; k <= n; ++k) {
@@ -490,7 +636,9 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
             k ? shape->lineTo(x, y) : shape->moveTo(x, y);
         }
     }
-    else if (!strcmp(form, "spiral")) {   // (a line winding out from its middle, as Cavalry's spiral: so many turns (points), from `inner` of the way out)
+    // A line winding out from the center as in Cavalry's spiral: `points` turns, starting at
+    // `inner` of the way out.
+    else if (!strcmp(form, "spiral")) {
         const float turns = (float)std::clamp(points, 1, 50), from = std::clamp(inner, 0.f, 0.95f);
         const int n = (int)(96.f * turns);
         for (int k = 0; k <= n; ++k) {
@@ -499,11 +647,15 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
             k ? shape->lineTo(x, y) : shape->moveTo(x, y);
         }
     }
-    else if (!strcmp(form, "ring") || !strcmp(form, "arc")) {   // (a ring: its hole `inner` of the way out; an arc: so many degrees of it (points), `inner` thick, from straight up clockwise)
+    // Ring: the hole is `inner` of the way out. Arc: `points` degrees of it, `inner` thick,
+    // clockwise from straight up.
+    else if (!strcmp(form, "ring") || !strcmp(form, "arc")) {
         const bool arc = !strcmp(form, "arc");
         const float hole = arc ? 1.f - std::clamp(inner, 0.02f, 1.f) : std::clamp(inner, 0.f, 0.98f), sweep = arc ? TAU * std::clamp((float)points, 1.f, 360.f) / 360.f : TAU;
         const int n = std::max(8, (int)(96.f * sweep / TAU));
-        for (int k = 0; k <= n; ++k) {   // (round the outside, then back round the inside: the hole a contour of its own the other way)
+        // Go around the outside, then back around the inside. The hole is a separate contour in the
+        // opposite direction.
+        for (int k = 0; k <= n; ++k) {
             const float a = -0.25f * TAU + sweep * (float)k / (float)n;
             k ? shape->lineTo(cx + rx * std::cos(a), cy + ry * std::sin(a)) : shape->moveTo(cx + rx * std::cos(a), cy + ry * std::sin(a));
         }
@@ -516,19 +668,25 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
         }
         shape->close();
     }
-    else if (!strcmp(form, "arrow")) {   // (pointing right: its shaft `inner` of its height thick, its head a third of its length)
+    // Arrow pointing right: the shaft is `inner` of the height thick and the head is a third of the
+    // length.
+    else if (!strcmp(form, "arrow")) {
         const float shaft = 0.5f * ry * std::clamp(inner, 0.05f, 1.f), head = (float)w - in - std::min(2.f * rx / 3.f, 1.2f * ry);
         const float pts[][2] = {{in, cy - shaft}, {head, cy - shaft}, {head, in}, {(float)w - in, cy}, {head, (float)h - in}, {head, cy + shaft}, {in, cy + shaft}};
         for (int k = 0; k < 7; ++k) k ? shape->lineTo(pts[k][0], pts[k][1]) : shape->moveTo(pts[k][0], pts[k][1]);
         shape->close();
     }
-    else if (!strcmp(form, "chamfer")) {   // (a rect with its corners cut straight, as Cavalry's rectangle with chamfer: `inner` of its shorter half cut off each)
+    // A rect with its corners cut straight, as Cavalry's rectangle with chamfer. Each corner loses
+    // `inner` of the shorter half side.
+    else if (!strcmp(form, "chamfer")) {
         const float c = std::clamp(inner, 0.f, 1.f) * std::min(rx, ry), x0 = in, y0 = in, x1 = (float)w - in, y1 = (float)h - in;
         const float pts[][2] = {{x0 + c, y0}, {x1 - c, y0}, {x1, y0 + c}, {x1, y1 - c}, {x1 - c, y1}, {x0 + c, y1}, {x0, y1 - c}, {x0, y0 + c}};
         for (int k = 0; k < 8; ++k) k ? shape->lineTo(pts[k][0], pts[k][1]) : shape->moveTo(pts[k][0], pts[k][1]);
         shape->close();
     }
-    else if (!strcmp(form, "squircle")) {   // (a superellipse, |x|^p + |y|^p = 1: points its power, 2 an ellipse, higher squarer)
+    // A superellipse |x|^p + |y|^p = 1, where p is `points`. 2 is an ellipse and a higher p is
+    // squarer.
+    else if (!strcmp(form, "squircle")) {
         const float p = std::clamp((float)points, 2.f, 40.f);
         for (int k = 0; k < 128; ++k) {
             const float a = TAU * (float)k / 128.f, c = std::cos(a), sn = std::sin(a);
@@ -537,10 +695,12 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
         }
         shape->close();
     }
-    else if (!strcmp(form, "cog")) {   // (a cogwheel: so many teeth (points), each `inner` of its radius deep, flat topped)
+    // A cogwheel with `points` teeth, each `inner` of the radius deep and flat on top.
+    else if (!strcmp(form, "cog")) {
         const int teeth = std::clamp(points, 3, 100), n = 4 * teeth;
         const float deep = 1.f - std::clamp(inner, 0.02f, 0.9f);
-        for (int k = 0; k < n; ++k) {   // (a tooth: rising, top, falling, bottom: four corners)
+        // Each tooth has four corners: rising, top, falling, bottom.
+        for (int k = 0; k < n; ++k) {
             const float a0 = -0.25f * TAU + TAU * (float)k / (float)n, r = (k % 4 == 1 || k % 4 == 2) ? 1.f : deep;
             k ? shape->lineTo(cx + rx * r * std::cos(a0), cy + ry * r * std::sin(a0)) : shape->moveTo(cx + rx * r * std::cos(a0), cy + ry * r * std::sin(a0));
         }
@@ -550,12 +710,14 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
         const bool star = !strcmp(form, "star");
         const int n = std::clamp(points, 3, 100) * (star ? 2 : 1);
         for (int k = 0; k < n; ++k) {
-            const float a = -0.5f * TAU / 2.f + TAU * (float)k / (float)n, r = star && (k & 1) ? std::clamp(inner, 0.01f, 1.f) : 1.f;   // (the first point straight up)
+            // The first point is straight up.
+            const float a = -0.5f * TAU / 2.f + TAU * (float)k / (float)n, r = star && (k & 1) ? std::clamp(inner, 0.01f, 1.f) : 1.f;
             k ? shape->lineTo(cx + rx * r * std::cos(a), cy + ry * r * std::sin(a)) : shape->moveTo(cx + rx * r * std::cos(a), cy + ry * r * std::sin(a));
         }
         shape->close();
     } else {
-        const float side = std::min((float)w, (float)h) - 2.f * in, corner = !strcmp(form, "line") ? 0.5f * side : 0.f;   // (a rect's corners: round, bent as the others)
+        // Anything else is a rectangle. The line form rounds its ends completely.
+        const float side = std::min((float)w, (float)h) - 2.f * in, corner = !strcmp(form, "line") ? 0.5f * side : 0.f;
         shape->appendRect(in, in, (float)w - 2.f * in, (float)h - 2.f * in, corner, corner);
     }
     const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
@@ -563,16 +725,13 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
     d->plain.assign(cmds, cmds + cmdsCnt), d->plainAt.assign(pts, pts + ptsCnt);
     d->plainHigh = (float)h, d->plainSide = std::min((float)w, (float)h) - 2.f * in;
     d->fine = fine;
+    // Round the corners and cut the path into pieces. Remember the rounding that was used.
     if ((round > 0.f && strcmp(form, "line")) || d->fine != 0.f)
         tvg_bend(shape, d->plain.data(), cmdsCnt, d->plainAt.data(), ptsCnt, strcmp(form, "line") ? std::clamp(round, 0.f, 0.5f) * d->plainSide : 0.f, 0.f, 0.f, 0, false, 0.f, d->fine), d->bent[0] = round;
 }
 
-// A flat shape in one colour, drawn by ThorVG's own Shape (a rectangle, a circle): `wide` times as wide as it is high.
-// edge: ThorVG's stroke round it, inside its frame (its colour; w: how wide, a share of its height; 0: none).
-// form: rect (round: its corners, a share of its shorter side), circle, polygon and star (points of it; a star's
-// inner points at `inner` of the way out), line (a long rect, round at its ends), null (nothing to see: a thing to
-// go with); all drawn by ThorVG's own Shape.
-// How wide a picture's file is to its height, as ThorVG reads it (0: it cannot): on the driver thread, as drawn() makes one.
+// Returns the width-to-height ratio of the image in `file` as ThorVG reads it, or 0 if it cannot be
+// read. Runs on the driver thread, like place_canvas().
 static float canvas_aspect(Stage& s, const char* file) {
     float pw = 0.f, ph = 0.f;
     interop::on_driver(s.engine, [&] {
@@ -587,17 +746,26 @@ static float canvas_aspect(Stage& s, const char* file) {
 static Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place, float high, float3 colour, const char* lay = nullptr, float4 edge = float4{0.f}, const Canvas2DFx& fx = {},
                    int points = 6, float inner = 0.5f, float round = 0.f) {
     return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
-        const float tall = std::min(0.5f * (float)std::max(s.w, s.h), 4096.f / std::max(wide, 1e-3f));   // (as fine as half the stage; a long thin bar less high, so that it is as long as it is said)
+        // Resolution: half the stage's longer side. A long thin bar gets less height so that its
+        // length stays within 4096 points.
+        const float tall = std::min(0.5f * (float)std::max(s.w, s.h), 4096.f / std::max(wide, 1e-3f));
         *h = std::max(2, 2 * (int)std::ceil(0.5f * tall));
         *w = std::max(2, 2 * (int)std::ceil(0.5f * tall * wide));
-        const float in = std::round(0.5f * std::min(edge.w * (float)*h, 0.5f * (float)std::min(*w, *h)));   // (half the stroke: the path is set in by that, so all of it is seen; a whole point, so its corners lie on whole points: ThorVG's round corners take a side as straight only when it is so exactly, tvgLottieModifier.cpp _colinear)
-        const float thick = in > 0.f ? 2.f * in : 0.08f * (float)*h;   // (a wave's line: its stroke, or a share of its height)
+        // Half the stroke width. The path is inset by it so that all of the stroke is visible. It
+        // is a whole number of points so that corners land on whole points, because ThorVG's
+        // rounded corners treat a side as straight only when it is exactly so
+        // (tvgLottieModifier.cpp, _colinear).
+        const float in = std::round(0.5f * std::min(edge.w * (float)*h, 0.5f * (float)std::min(*w, *h)));
+        // Line width of a wave or spiral: the stroke width, or a fraction of the height.
+        const float thick = in > 0.f ? 2.f * in : 0.08f * (float)*h;
         tvg::Shape* shape = d->shape = tvg::Shape::gen();
         flat_path(d, shape, form, *w, *h, in, points, inner, round, 0.f);
         shape->fill((uint8_t)std::lround(255.f * colour.x), (uint8_t)std::lround(255.f * colour.y), (uint8_t)std::lround(255.f * colour.z), strcmp(form, "null") && !fx.hollow ? 255 : 0);
         if (fx.ramp.size() > 1 && strcmp(form, "null")) shape->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial, fx.rampAngle, fx.rampScale, fx.spread, fx.rampAt, fx.rampBlend));
         if (in > 0.f) shape->strokeWidth(2.f * in), shape->strokeFill((uint8_t)std::lround(255.f * edge.x), (uint8_t)std::lround(255.f * edge.y), (uint8_t)std::lround(255.f * edge.z));
-        if (!strcmp(form, "wave") || !strcmp(form, "spiral")) {   // (only its line is seen: in its edge's colour, or its fill's; round at its ends)
+        // Wave and spiral show only their line, in the edge color or else the fill color, with
+        // round ends.
+        if (!strcmp(form, "wave") || !strcmp(form, "spiral")) {
             const float3 ink = in > 0.f ? float3{edge.x, edge.y, edge.z} : colour;
             shape->fill(0, 0, 0, 0);
             shape->strokeWidth(thick), shape->strokeFill((uint8_t)std::lround(255.f * ink.x), (uint8_t)std::lround(255.f * ink.y), (uint8_t)std::lround(255.f * ink.z));
@@ -605,18 +773,25 @@ static Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place
         }
         if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);
         if (fx.join >= 0) shape->strokeJoin((tvg::StrokeJoin)fx.join);
-        if (fx.dash > 0.f) { const float gap[2] = {fx.dash * (float)*h, fx.dash * (float)*h}; shape->strokeDash(gap, 2, fx.dashFrom * (float)*h); }   // (as long as the gaps; in shares of its height)
-        if (!fx.media.empty() && strcmp(form, "null") && !fx.hollow) {   // (filled with a picture: it covers the shape, seen only where the shape is filled, ThorVG's own alpha mask as a ramp on letters is (type); its edge over it)
+        // Dashes and gaps are equally long, as fractions of the height.
+        if (fx.dash > 0.f) { const float gap[2] = {fx.dash * (float)*h, fx.dash * (float)*h}; shape->strokeDash(gap, 2, fx.dashFrom * (float)*h); }
+        // Fill with an image. It covers the shape and is visible only where the shape is filled,
+        // using ThorVG's alpha mask, as a ramp does on letters in type. The edge is drawn over
+        // it.
+        if (!fx.media.empty() && strcmp(form, "null") && !fx.hollow) {
             tvg::Picture* pic = tvg::Picture::gen();
             float pw = 0.f, ph = 0.f;
             if (pic->load(fx.media.c_str()) == tvg::Result::Success && pic->size(&pw, &ph) == tvg::Result::Success && pw > 0.f && ph > 0.f) {
-                const float k = std::max((float)*w / pw, (float)*h / ph);   // (covering it, the middle kept: cut, not stretched)
+                // Cover the shape and keep the middle: crop instead of stretching.
+                const float k = std::max((float)*w / pw, (float)*h / ph);
                 pic->size(pw * k, ph * k);
                 pic->translate(0.5f * ((float)*w - pw * k), 0.5f * ((float)*h - ph * k));
                 tvg::Shape* cut = static_cast<tvg::Shape*>(shape->duplicate());
                 cut->strokeWidth(0.f), cut->fill(255, 255, 255, 255);
                 pic->mask(cut, tvg::MaskMethod::Alpha);
-                shape->fill(0, 0, 0, 0);   // (its own fill none: the picture is its fill; its edge stays over it)
+                // The shape's own fill is cleared because the image is its fill. The edge stays
+                // over it.
+                shape->fill(0, 0, 0, 0);
                 tvg::Scene* both = tvg::Scene::gen();
                 both->add(pic), both->add(shape);
                 return both;
@@ -627,5 +802,6 @@ static Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place
     }, place, high, float3{-1.f}, true, lay, fx);
 }
 
+// Defined in thorvg_path_operators.cpp.
 void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt, float width, int cap, int join, float dash, float dashFrom,
-              float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx);   // (thorvg_path_operators.cpp)
+              float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx);

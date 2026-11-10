@@ -1,12 +1,16 @@
-// thorvg_on_dawn.cpp: does ThorVG's WebGPU engine run on Dawn (the Dawn that Filament's WebGPU backend is built with)?
-// A Dawn device is made, ThorVG is given that device and a texture of it, draws a red disc on clear, and the texture is
-// read back and looked at. ThorVG here is its own source (third_party/thorvg_src, v1.1.2, unchanged) built against
-// Dawn's webgpu.h instead of wgpu-native's (deps/thorvg.sh).   ./deps/thorvg.sh
+// Test program: checks that ThorVG's WebGPU engine runs on Dawn, the same Dawn that
+// Filament's WebGPU backend is built with.
+//
+// It creates a Dawn device, gives ThorVG that device and a texture of it, draws a red
+// disc on a cleared texture, reads the texture back, and checks the pixels. ThorVG is
+// built unchanged from third_party/thorvg_src (v1.1.2) against Dawn's webgpu.h instead
+// of wgpu-native's; see deps/thorvg.sh.
 #include <dawn/webgpu_cpp.h>
 #include <thorvg.h>
 #include <cstdio>
 #include <vector>
 
+// Number of uncaptured Dawn device errors seen so far.
 static int errors = 0;
 
 int main() {
@@ -31,10 +35,11 @@ int main() {
                              [&](wgpu::RequestDeviceStatus, wgpu::Device got, wgpu::StringView) { device = got; }), UINT64_MAX);
     if (!device) { std::printf("FAIL no device\n"); return 1; }
 
-    // the texture ThorVG draws into: one a renderer could read in a material afterwards
+    // The texture ThorVG draws into. It is also bindable, so a renderer could sample it later.
     wgpu::TextureDescriptor like{};
     like.size = {W, H, 1};
-    like.format = wgpu::TextureFormat::BGRA8Unorm;   // (what ThorVG's last step writes: blue first; RGBA is refused by its pipeline)
+    // ThorVG's last step writes blue first, and its pipeline refuses RGBA.
+    like.format = wgpu::TextureFormat::BGRA8Unorm;
     like.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
     wgpu::Texture frameTexture = device.CreateTexture(&like);
 
@@ -49,7 +54,7 @@ int main() {
     const bool rendered = canvas->update() == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
     if (!rendered) { std::printf("FAIL draw\n"); return 1; }
 
-    // read the texture back
+    // Copy the texture into a mappable buffer and read it back.
     wgpu::BufferDescriptor room{};
     room.size = W * H * 4;
     room.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
@@ -76,7 +81,8 @@ int main() {
     const uint8_t* rim = at(128 + 79, 128);
     std::printf("(blue green red alpha) middle %d %d %d %d   corner %d %d %d %d   just inside the rim %d %d %d %d   device errors %d\n", middle[0], middle[1], middle[2], middle[3],
                 corner[0], corner[1], corner[2], corner[3], rim[0], rim[1], rim[2], rim[3], errors);
-    const bool ok = middle[2] > 250 && middle[1] < 5 && middle[0] < 5 && middle[3] > 250 && corner[3] < 5 && errors == 0;   // (bytes are blue, green, red, alpha)
+    // Bytes are in blue, green, red, alpha order.
+    const bool ok = middle[2] > 250 && middle[1] < 5 && middle[0] < 5 && middle[3] > 250 && corner[3] < 5 && errors == 0;
     std::printf(ok ? "PASS: ThorVG drew on the Dawn device\n" : "FAIL: not the image expected\n");
     return ok ? 0 : 1;
 }

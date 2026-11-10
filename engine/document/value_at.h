@@ -1,6 +1,10 @@
-// value_at.h: part of doc.h (a value read at a moment: its keys and ways, an element's and a program's own clock). Read only through doc.h.
+// Reads a property's value at a time: its keyframes and easings, plus the clocks of a nested
+// element and of a script.
+// Included by doc.h; not self-contained.
 
-// Rows of the document: `each` is told every row of what is asked (in SQLite's own words).
+// Runs the query `ask` on the project database and calls `each` once per result row.
+// Takes ownership of `ask`, which must come from sqlite3_mprintf, and frees it.
+// Returns false if SQLite rejects the query.
 static bool doc_rows(Doc& d, char* ask, const std::function<void(sqlite3_stmt*)>& each = nullptr) {
     sqlite3_stmt* rows = nullptr;
     bool ok = sqlite3_prepare_v2(d.file, ask, -1, &rows, nullptr) == SQLITE_OK;
@@ -10,13 +14,16 @@ static bool doc_rows(Doc& d, char* ask, const std::function<void(sqlite3_stmt*)>
     sqlite3_free(ask);
     return ok;
 }
+// Drops every cached read of the document. Call it after the document changes.
 static void doc_forget(Doc& d) {
-    d.phys_stale = true, d.scripted.clear();   // (the world made again only if what it is made of changed: doc_physics)
+    // The physics world is rebuilt only if its inputs changed; see doc_physics.
+    d.phys_stale = true, d.scripted.clear();
     d.moving.clear(), d.literals.clear(), d.words.clear(), d.keyed.clear(), d.halves.clear(), d.heardWords.clear(), d.talls.clear(), d.placing.clear();
     d.named.clear(), d.tracks.clear(), d.drivers.clear(), d.connects.clear(), d.relationsOf.clear();
     d.laid.clear();
 }
-// The layers in the order they lie, the one furthest back first: by `order` where it is said, else as they were made.
+// Returns the layers in stacking order, rearmost first. Layers with an `order` property are sorted
+// by it; the others keep their creation order. The result is cached until doc_forget.
 static const std::vector<int>& doc_laid(Doc& d) {
     if (d.laid.empty())
         doc_rows(d, sqlite3_mprintf("select f.layer from keyframe f where f.name = 'kind' order by coalesce((select o.value from keyframe o where o.layer = f.layer and o.name = 'order' and o.at = 0), f.layer), f.layer"),
@@ -24,7 +31,9 @@ static const std::vector<int>& doc_laid(Doc& d) {
     return d.laid;
 }
 
-// A way's expression made ready for SQLite to work out (nullptr: SQLite does not take it; d.error says why).
+// Returns a prepared statement that evaluates an easing expression, cached by expression text.
+// Returns nullptr if SQLite rejects the expression; d.error then holds the reason.
+// The statement binds, in order: u, t, d, a, b, p1, p2, p3, p4.
 static sqlite3_stmt* doc_expression_statement(Doc& d, const std::string& expression) {
     auto ready = d.expression_statements.find(expression);
     if (ready != d.expression_statements.end()) return ready->second;
@@ -34,6 +43,10 @@ static sqlite3_stmt* doc_expression_statement(Doc& d, const std::string& express
     sqlite3_free(asked);
     return made ? d.expression_statements[expression] = made : nullptr;
 }
+// Runs an easing statement from doc_expression_statement. `u` is progress through the segment,
+// `t` is seconds into it, `length` is its duration in seconds, `a` and `b` are the keyframe
+// values at its ends, and `p` points to the four easing parameters.
+// Returns the eased value, or `a` if the statement yields no row.
 static double doc_went(sqlite3_stmt* statement, double u, double t, double length, double a, double b, const double* p) {
     const double told[] = {u, t, length, a, b, p[0], p[1], p[2], p[3]};
     for (int i = 0; i < 9; ++i) sqlite3_bind_double(statement, i + 1, told[i]);
@@ -41,17 +54,23 @@ static double doc_went(sqlite3_stmt* statement, double u, double t, double lengt
     sqlite3_reset(statement);
     return is;
 }
+// Returns the prepared statement for the easing called `name`, or nullptr if there is none.
+// The project's own easing table is searched first, then the built-in easings in easing_names.h.
+// Results are cached by name.
 static sqlite3_stmt* doc_easing_named(Doc& d, const std::string& name) {
     auto known = d.named.find(name);
     if (known != d.named.end()) return known->second;
     sqlite3_stmt* statement = nullptr;
     doc_rows(d, sqlite3_mprintf("select expression from easing where name = %Q", name.c_str()), [&](sqlite3_stmt* row) { statement = doc_expression_statement(d, (const char*)sqlite3_column_text(row, 0)); });
-    if (!statement)   // (not defined here: one of the ways by name, easing_names.h)
+    // Not defined in the project, so try the built-in easings.
+    if (!statement)
         for (const auto& one : named_ways) if (name == one.name) statement = doc_expression_statement(d, std::string("a + (b - a) * (") + one.goes + ")");
     return d.named[name] = statement;
 }
-// A stretch that goes a way defined in the document (`own`: its name, then its numbers): the value at `u` of the way
-// through, `t` seconds in, between a key of `a` and a key of `b`, `length` seconds apart (no such way: `a`).
+// Evaluates a keyframe segment that uses an easing defined in the project. `own` is the easing
+// name followed by up to four numeric parameters. `u` is progress through the segment, `t` is
+// seconds into it, `length` is its duration in seconds, and `a` and `b` are the keyframe values
+// at its ends. Returns `a` if no such easing exists.
 static double doc_went_by(Doc& d, const std::string& own, double u, double t, double length, double a, double b) {
     std::istringstream said(own);
     std::string easing;
@@ -62,13 +81,17 @@ static double doc_went_by(Doc& d, const std::string& own, double u, double t, do
     return statement ? doc_went(statement, u, t, length, a, b, p) : a;
 }
 
-// A value at a moment: `otherwise` where the document does not say; where it has keys, the value the stretch it is in
-// gives (before the first key and after the last: theirs). A stretch goes the way said for it (not said: Linear).
+// Returns the value of keyframes `k` at time `at`, or `otherwise` if there are no keyframes.
+// Before the first keyframe and after the last, the end values are held. Between two keyframes
+// the segment's easing applies; Linear when none is set.
 static double doc_keys_at(Doc& d, const Doc::Keys& k, double at, double otherwise);
-// Where a value's keys are kept (read from the keyframes once, as doc_number reads them): kept until the document changes.
+// Returns the keyframes of one property of a layer. They are read from the database once and
+// cached until the document changes.
 static const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name);
+// Returns the text value of a property, or an empty string if it is not set.
 static std::string doc_word(Doc& d, int layer, const char* name);
-// The element put in that a layer is held in (a group above it put in from an element, doc_element_add): 0 none.
+// Returns the nearest ancestor of `layer` that is a nested element (see doc_element_add), or 0
+// if there is none.
 static int doc_element_above(Doc& d, int layer) {
     for (int p = layer, n = 0; p && n < 64; ++n) {
         const Doc::Keys& up = doc_keys_of(d, p, "parent");
@@ -77,11 +100,15 @@ static int doc_element_above(Doc& d, int layer) {
     }
     return 0;
 }
-// The moment of itself an element put in shows at `at`, as long as it is now against as long as it was: its intro and
-// outro as they were, the middle held, stretched, looped or looped and stretched between, or nothing after its end
-// (Alight Motion's Re-timing; AbsentMotion's NestedClock, NestedScenes.kt, its at(): Apache-2.0, Copyright 2026 The
-// AbsentMotion authors; in seconds, not rounded to the middles of frames, but what Freeze holds: the middle of the
-// last frame, as its middle() puts its scene's end, not the moment after it). -1e9: not seen then (Blank).
+// Maps stage time `at` to the time inside nested element `el`, which may be shorter or longer
+// than the element's original length. The intro and outro keep their original timing. The
+// middle is held, stretched, looped, or looped and stretched, according to the `retime`
+// property. After the end the clock is blank.
+// Follows Alight Motion's Re-timing and the at() function of NestedClock in AbsentMotion's
+// NestedScenes.kt (Apache-2.0, Copyright 2026 The AbsentMotion authors). Times are in seconds
+// and are not rounded to frame centers. Freeze holds the center of the last frame, as
+// AbsentMotion's middle() does, rather than the time just after the scene end.
+// Returns -1e9 when the element is not visible at `at` (the Blank method).
 static double doc_element_clock(Doc& d, int el, double at) {
     const double origin = doc_keys_at(d, doc_keys_of(d, el, "start"), 0, 0), scene_end = doc_keys_at(d, doc_keys_of(d, el, "element_length"), 0, 0);
     const double lasts = doc_keys_at(d, doc_keys_of(d, el, "duration"), 0, -1), layer_end = lasts > 0.0 ? lasts : scene_end;
@@ -99,21 +126,25 @@ static double doc_element_clock(Doc& d, int el, double at) {
         else if (method == "loop_stretch" && span > 0.0 && room > 0.0) {
             const double each = room / std::max(1.0, std::round(room / span));
             mapped = intro + std::fmod(into, each) * span / each;
-        } else {   // (Freeze, as an element is made)
+        } else {
+            // Freeze, the default method for a new element.
             const double fps = d.stage ? screen_rate(*d.stage) : 60.0, held = (std::ceil(outro * fps - 1e-9) - 0.5) / fps;
             mapped = into < span ? intro + into : std::max(intro, held);
         }
     }
     return origin + mapped;
 }
-// The moment a layer is at, as the element put in that holds it shows it (none: the stage's own).
+// Returns the time `layer` sees at stage time `at`. If the layer is inside a nested element, the
+// element's clock applies; otherwise the stage time is returned unchanged.
 static double doc_element_now(Doc& d, int layer, double at) {
     const int el = layer ? doc_element_above(d, layer) : 0;
     return el ? doc_element_clock(d, el, at) : at;
 }
-// Time Quantization (Alight Motion's; After Effects' Posterize Time): a layer with a frame_rate is seen only at its own
-// frames, counted from its start: a value that moves is read at the frame the moment is in. 0: as smooth as the stage.
-// (Held in an element put in, first the moment the element shows: doc_element_now.)
+// Applies time quantization (Alight Motion's; After Effects' Posterize Time). A layer with a
+// frame_rate is sampled only at its own frames, counted from its start, so an animated value is
+// read at the frame that contains `at`. Without a frame_rate the time is as smooth as the stage.
+// Inside a nested element the time is first mapped by doc_element_now.
+// Returns the time to read the keyframes `k` at.
 static double doc_stepped(Doc& d, int layer, const Doc::Keys& k, double at) {
     if (k.at.size() < 2 || !layer) return at;
     at = doc_element_now(d, layer, at);
@@ -123,24 +154,31 @@ static double doc_stepped(Doc& d, int layer, const Doc::Keys& k, double at) {
     const double start = from.value.empty() ? 0.0 : from.value.front(), r = rate.value.front();
     return at <= start ? at : start + std::floor((at - start) * r + 1e-9) / r;
 }
+// Returns the numeric property `name` of `layer` at time `at`, or `otherwise` if it is not set.
+// A value being dragged by the user overrides the stored one.
 static double doc_number(Doc& d, int layer, const char* name, double at, double otherwise) {
-    if (d.held.layer == layer)   // (what a hand is carrying shows in place of the document's own)
+    if (d.held.layer == layer)
         if (const auto tried = d.held.tried.find(name); tried != d.held.tried.end()) return tried->second;
     const Doc::Keys& k = doc_keys_of(d, layer, name);
     return doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
 }
-// The seconds of its own a program is at, `by` where it has got to by itself. A program is run once in order and its frames
-// are kept, so its time keyed only says which of them is seen: nothing in it is written again or run again, and every way a
-// program has of reading time goes with it (After Effects' Time Remap, whose value is the layer's own time, any way between keys).
+// Returns the script's own time in seconds at stage time `at`. `by` is the time the script has
+// reached on its own and is used when no time_remap is set. A script runs once, in order, and its
+// frames are cached, so the keyed time only selects which cached frame is shown. Nothing is
+// rewritten or rerun, and every easing between keys works. This matches After Effects' Time
+// Remap, whose value is the layer's own time.
 static double doc_own_time(Doc& d, int layer, double at, double by) { return std::max(0.0, doc_number(d, layer, "time_remap", at, by)); }
-// A level's drawing at a moment: its key there or the last before it, held to the next whatever way its keys go (a
-// timesheet's cells: a drawing is never between two, OpenToonz's xdtsio.cpp each to the next item); 1 if it has none.
+// Returns the drawing number of a level at time `at`: the value of the last keyframe at or
+// before `at`, held until the next one regardless of easing. Like the cells of a timesheet, a
+// drawing is never between two numbers (see OpenToonz's xdtsio.cpp). Returns 1 if there are no
+// keyframes.
 static double doc_cel(Doc& d, int layer, double at) {
     const Doc::Keys& k = doc_keys_of(d, layer, "cel");
     double held = k.value.empty() ? 1.0 : k.value.front();
     for (size_t i = 0; i < k.at.size() && k.at[i] <= at + 1e-9; ++i) held = k.value[i];
     return (double)std::llround(held);
 }
+// Implementation of the declaration above.
 static const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name) {
     if (d.reading) d.reading->insert(layer);
     auto& of = d.moving[layer];
@@ -152,21 +190,25 @@ static const Doc::Keys& doc_keys_of(Doc& d, int layer, const char* name) {
             keys.value.push_back(sqlite3_column_double(row, 1));
             const std::string easing = (const char*)sqlite3_column_text(row, 2);
             Interp kind;
-            const bool of_the_nine = interp_said(easing.empty() ? "Linear" : easing, &kind) == 0;   // (not said: Linear, as a new key is in the past repository)
+            // An empty easing means Linear. A name that is not one of the nine built-in kinds is
+            // a project-defined easing, kept in keys.own.
+            const bool of_the_nine = interp_said(easing.empty() ? "Linear" : easing, &kind) == 0;
             keys.interp.push_back(kind);
             keys.own.push_back(of_the_nine ? "" : easing);
         });
-        if (keys.at.size() > 1) keys.loop = doc_word(d, layer, (std::string(name) + "_loop").c_str());   // (the keys gone through again past the last: doc_keys_at)
+        // The `<name>_loop` property says how the keys repeat after the last one; see doc_keys_at.
+        if (keys.at.size() > 1) keys.loop = doc_word(d, layer, (std::string(name) + "_loop").c_str());
         found = d.moving[layer].emplace(std::string(name), std::move(keys)).first;
     }
     return found->second;
 }
-// A value from its keys at a moment (doc_number's own reckoning: before the first key and after the last, theirs).
+// Implementation of the declaration above. This is the calculation behind doc_number.
 static double doc_keys_at(Doc& d, const Doc::Keys& k, double at, double otherwise) {
     if (k.at.empty()) return otherwise;
     if (k.at.size() == 1 || at <= k.at.front()) return k.value.front();
-    // (past the last key, gone through again: After Effects' loopOut, its cycle, pingpong and offset, on all its keys;
-    //  whatever the value is, as the way of a stretch is. offset: each time on from where the last ended)
+    // Past the last keyframe the keys can repeat, as in After Effects' loopOut: "cycle",
+    // "pingpong" or "offset", applied to all keys. With "offset" each repeat starts where the
+    // previous one ended.
     double on = 0.0;
     if (at > k.at.back() && (k.loop == "cycle" || k.loop == "pingpong" || k.loop == "offset")) {
         const double span = k.at.back() - k.at.front(), rounds = std::floor((at - k.at.front()) / span), left = at - k.at.front() - rounds * span;
@@ -175,16 +217,21 @@ static double doc_keys_at(Doc& d, const Doc::Keys& k, double at, double otherwis
     }
     if (at <= k.at.front()) return k.value.front() + on;
     if (at >= k.at.back()) return k.value.back() + on;
-    const size_t i = (size_t)(std::upper_bound(k.at.begin(), k.at.end(), at) - k.at.begin()) - 1;   // (the stretch it is in begins at key i)
+    // The segment containing `at` begins at keyframe i.
+    const size_t i = (size_t)(std::upper_bound(k.at.begin(), k.at.end(), at) - k.at.begin()) - 1;
     const double u = (at - k.at[i]) / (k.at[i + 1] - k.at[i]);
     if (k.own[i].empty()) return k.value[i] + (k.value[i + 1] - k.value[i]) * interp_ease(k.interp[i], u) + on;
     return doc_went_by(d, k.own[i], u, at - k.at[i], k.at[i + 1] - k.at[i], k.value[i], k.value[i + 1]) + on;
 }
+// Implementation of the declaration above. A value being dragged by the user overrides the
+// stored one.
 static std::string doc_word(Doc& d, int layer, const char* name) {
-    if (layer == 0 && !strcmp(name, "kind")) return "stage";   // (layer 0 is the stage: its values are the whole picture's)
-    if (d.held.layer == layer)   // (what a hand is carrying shows in place of the document's own)
+    // Layer 0 is the stage; its properties apply to the whole image.
+    if (layer == 0 && !strcmp(name, "kind")) return "stage";
+    if (d.held.layer == layer)
         if (const auto said = d.held.said.find(name); said != d.held.said.end()) return said->second;
-    const auto known = d.words.find({layer, name});   // (asked again and again between changes: the document asked once)
+    // The same property is read many times between changes, so the database is queried once.
+    const auto known = d.words.find({layer, name});
     if (known != d.words.end()) return known->second;
     std::string is;
     doc_rows(d, sqlite3_mprintf("select value from keyframe where layer = %d and name = %Q", layer, name), [&](sqlite3_stmt* row) { is = (const char*)sqlite3_column_text(row, 0); });

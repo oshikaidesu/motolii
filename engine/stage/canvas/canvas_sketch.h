@@ -1,9 +1,31 @@
-// canvas_sketch.h: part of canvas.h. Read only through canvas.h.
-// A p5.js sketch that paints in 2D, run with no page (p5_stand.h): each frame what it paints is ThorVG's shapes on the
-// picture's canvas, which keeps what it held (Canvas::draw(false): WgCompositor loads what is there), as a sketch's canvas
-// does, so a sketch that never wipes builds up its painting and a frame costs what it adds.
+// canvas_sketch.h: Draws a 2D p5.js sketch onto a ThorVG canvas.
+//
+// Included by canvas.h; not self-contained.
+//
+// The sketch runs without a web page (see p5_stand.h). On each frame its paint commands become
+// ThorVG shapes on the layer's canvas. The canvas keeps its previous contents, because
+// Canvas::draw(false) makes WgCompositor load what is already there. This matches a p5.js
+// canvas: a sketch that never clears the canvas accumulates its painting, and a frame costs only
+// what it adds.
+//
+// The paint commands arrive as a flat array of doubles, which is built by p5_stand.h. Each
+// command has a header of 12 numbers followed by `n` path or text numbers and `more` gradient
+// numbers. The header is laid out as follows:
+//   p[0]: kind, 1 fill, 2 stroke, 3 text, 4 bitmap.
+//   p[1..4]: red, green, blue and alpha, each 0 to 255.
+//   p[5]: ThorVG blend method, 0 for none.
+//   p[6..8]: stroke width, cap and join for strokes. For text, p[6] is the font size, p[7] the
+//     textAlign value and p[8] the textBaseline value.
+//   p[9]: n, the number of path or text numbers after the header.
+//   p[10]: more, the number of gradient numbers after those.
+//   p[11]: the source line of the call in the sketch, which is used to look up a fade amount.
+// The first number of the whole array is nonzero when the canvas is cleared before drawing.
 #include "community/quickjs/script.h"
-static tvg::Fill* sketch_ramp(const double* g, size_t many) {   // (a canvas gradient's numbers, p5_stand.h's ramp)
+// Creates a ThorVG gradient from the `many` numbers at `g`, which p5_stand.h writes for a
+// canvas gradient. g[0] is 1 for a linear gradient and anything else for a radial one. g[1..6]
+// hold the geometry. The color stops follow from g[7] on, five numbers per stop: offset, red,
+// green, blue and alpha. The caller takes ownership of the result.
+static tvg::Fill* sketch_ramp(const double* g, size_t many) {
     std::vector<tvg::Fill::ColorStop> stops;
     for (size_t i = 7; i + 5 <= many; i += 5)
         stops.push_back({(float)g[i], (uint8_t)std::lround(g[i + 1]), (uint8_t)std::lround(g[i + 2]), (uint8_t)std::lround(g[i + 3]), (uint8_t)std::lround(g[i + 4])});
@@ -13,8 +35,12 @@ static tvg::Fill* sketch_ramp(const double* g, size_t many) {   // (a canvas gra
     out->colorStops(stops.data(), (uint32_t)stops.size());
     return out;
 }
+// Creates a ThorVG text paint for a text command. `p` is the command header and `q` the first
+// number after it: the six numbers of the transform matrix, then the code points in [q + 6,
+// end). The result is aligned according to the textAlign and textBaseline values in the header.
 static tvg::Paint* sketch_words(Canvas2D* d, const double* p, const double* q, const double* end) {
-    std::string words;   // (its letters, as UTF-8)
+    // The text encoded as UTF-8.
+    std::string words;
     for (const double* c = q + 6; c < end; ++c) {
         const uint32_t u = (uint32_t)*c;
         if (u < 0x80) words += (char)u;
@@ -32,12 +58,19 @@ static tvg::Paint* sketch_words(Canvas2D* d, const double* p, const double* q, c
     t->metrics(m);
     float x = 0.f, y = 0.f, w = 0.f, h = 0.f;
     t->bounds(&x, &y, &w, &h);
-    const float across = p[7] == 1.0 ? -0.5f * w : p[7] == 2.0 ? -w : 0.f;   // (textAlign)
-    const float down = p[8] == 1.0 ? 0.f : p[8] == 2.0 ? -0.5f * (m.ascent - m.descent) : p[8] == 3.0 ? -(m.ascent - m.descent) : -m.ascent;   // (textBaseline; ThorVG's words hang from their top)
+    const float across = p[7] == 1.0 ? -0.5f * w : p[7] == 2.0 ? -w : 0.f;
+    // ThorVG places text with its top at the origin, so the baseline modes shift it by the font
+    // metrics.
+    const float down = p[8] == 1.0 ? 0.f : p[8] == 2.0 ? -0.5f * (m.ascent - m.descent) : p[8] == 3.0 ? -(m.ascent - m.descent) : -m.ascent;
     t->transform(tvg::Matrix{(float)q[0], (float)q[2], (float)(q[4] + q[0] * across + q[2] * down), (float)q[1], (float)q[3], (float)(q[5] + q[1] * across + q[3] * down), 0.f, 0.f, 1.f});
     return t;
 }
-// A whole picture, p5_stand.h's kind 4: its matrix, its number in __bitmaps, its size, the part of it shown, whether it is smoothed.
+// Creates a ThorVG picture for a bitmap command (kind 4 in p5_stand.h). The numbers at `q` are
+// the transform matrix in q[0..5], the bitmap id in q[6], the bitmap size in q[7..8], the source
+// rectangle x, y, width, height in q[9..12], and q[13], which is nonzero to disable smoothing.
+// The pixels are shared with Canvas2D::sketchPics, and a reference is added to `held` so that
+// they stay alive until ThorVG has drawn. Returns null if the bitmap is unknown or has the wrong
+// size.
 static tvg::Paint* sketch_bitmap(Canvas2D* d, const double* p, const double* q, std::vector<std::shared_ptr<std::vector<uint8_t>>>& held) {
     std::lock_guard<std::mutex> hold(d->sketchPicsLock);
     const auto pic = d->sketchPics.find((int)q[6]);
@@ -55,8 +88,13 @@ static tvg::Paint* sketch_bitmap(Canvas2D* d, const double* p, const double* q, 
     }
     return one;
 }
-// A conic gradient, which ThorVG has not: by the canvas spec's words, each point's colour by its angle from the first ray,
-// a picture of the shape's bounds, the shape its clip. A table of 1024 steps, not the stops each time. (p5_stand.h's ramp.)
+// Creates a conic gradient, which ThorVG does not support. As the canvas specification defines
+// it, each point takes its color from its angle around a center, measured from a start ray. The
+// gradient is rendered into a bitmap the size of the shape's bounds, at most 1024 by 1024, and
+// the shape clips the bitmap. Colors come from a table of 1024 entries computed once from the
+// color stops instead of from the stops for each pixel. `g` has the layout described at
+// sketch_ramp, with the 2 by 2 matrix in g[1..4] and the center in g[5..6]. The bitmap is added
+// to `held`. Returns the shape itself if the matrix cannot be inverted.
 static tvg::Paint* sketch_conic(tvg::Shape* shape, const double* g, size_t many, std::vector<std::shared_ptr<std::vector<uint8_t>>>& held) {
     float bx = 0.f, by = 0.f, bw = 0.f, bh = 0.f;
     shape->bounds(&bx, &by, &bw, &bh);
@@ -89,23 +127,33 @@ static tvg::Paint* sketch_conic(tvg::Shape* shape, const double* g, size_t many,
     out->clip(shape);
     return out;
 }
-static void sketch_bitmaps(Canvas2D* d, Script* run, const std::vector<double>& o) {   // (the pictures a frame paints, while its script may be asked)
+// Fetches from the script the bitmaps that the commands in `o` draw and that are not cached yet.
+// At most 64 bitmaps are cached, and the oldest is dropped first. This runs while the script can
+// still be asked for bitmap data.
+static void sketch_bitmaps(Canvas2D* d, Script* run, const std::vector<double>& o) {
     for (size_t i = 1; i + 12 <= o.size(); i += 12 + (size_t)o[i + 9] + (size_t)o[i + 10]) {
         if (o[i] != 4.0) continue;
         const int id = (int)o[i + 18];
         std::lock_guard<std::mutex> hold(d->sketchPicsLock);
         if (d->sketchPics.count(id)) continue;
         auto pic = std::make_shared<std::vector<uint8_t>>(run->bytes("__bitmap(" + std::to_string(id) + ")"));
-        if (d->sketchPics.size() >= 64) d->sketchPics.erase(d->sketchPics.begin());   // (a film's, one a frame: the oldest goes)
+        if (d->sketchPics.size() >= 64) d->sketchPics.erase(d->sketchPics.begin());
         d->sketchPics[id] = std::move(pic);
     }
 }
+// Draws the commands in `o` onto the canvas of `d`. Nothing is drawn if `o` is empty. The
+// canvas is cleared first when o[0] is nonzero.
 static void sketch_draw(Canvas2D* d, const std::vector<double>& o) {
     if (o.empty()) return;
     d->sketchScene->remove();
     bool wipe = o[0] != 0.0;
-    std::vector<std::shared_ptr<std::vector<uint8_t>>> pics;   // (ThorVG reads them where they are, until it has drawn)
-    const auto out_now = [&] {   // (a painting gone back to from its start comes in lengths: Metal's command buffers hold so much and no more, or it stops the program)
+    // Bitmap pixels that ThorVG reads in place, so they must stay alive until it has drawn.
+    std::vector<std::shared_ptr<std::vector<uint8_t>>> pics;
+    // Draws what has been collected so far and empties the scene. A sketch can paint very many
+    // shapes in one frame, for example when it replays a whole painting from the start. Metal's
+    // command buffers hold a limited number of commands and the program stops if that is
+    // exceeded, so the work is submitted in batches.
+    const auto out_now = [&] {
         d->canvas->update();
         d->canvas->draw(wipe), d->stale = true, wipe = false;
         d->canvas->sync();
@@ -140,7 +188,10 @@ static void sketch_draw(Canvas2D* d, const std::vector<double>& o) {
             out = conic && p[0] == 1.0 ? sketch_conic(one, end, more, pics) : one;
         }
         if (out && p[5] != 0.0) {
-            if (out->type() == tvg::Type::Picture) {   // (WgCompositor::renderImage reads no blend on a picture with a clip, and WgSolidBatch takes one with none: a scene's it does read)
+            // WgCompositor::renderImage ignores the blend method of a picture that has a clip,
+            // and WgSolidBatch takes none, but both honor the blend method of a scene. So a
+            // picture with a blend method is wrapped in a scene.
+            if (out->type() == tvg::Type::Picture) {
                 tvg::Scene* alone = tvg::Scene::gen();
                 alone->add(out), out = alone;
             }
@@ -152,19 +203,30 @@ static void sketch_draw(Canvas2D* d, const std::vector<double>& o) {
     }
     out_now();
 }
-// As a film with no end in sight: its own 60 frames a second, as p5_stand.h's clock, ten minutes of them.
+// Creates the canvas for a sketch layer and places it on the stage. `run` is the script that
+// runs the sketch, `fontFile` is the font used for text, `high` is passed on to place_canvas,
+// `lay` is the layer name and `fx` the canvas effects. Returns null if the sketch has no size.
+//
+// A sketch has no end, so the canvas is given 36000 frames, which is ten minutes at the 60
+// frames a second that the clock in p5_stand.h runs at.
 static Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run, const std::string& fontFile, float high, const char* lay, const Canvas2DFx& fx) {
     const int fw = run->width(), fh = run->height();
     if (fw <= 0 || fh <= 0) return nullptr;
     return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
-        const float fit = (float)std::max(s.w, s.h) / (float)std::max(fw, fh);   // (as finely as the stage is, as picture() draws an SVG)
+        // Render at the resolution of the stage, as picture() does for an SVG.
+        const float fit = (float)std::max(s.w, s.h) / (float)std::max(fw, fh);
         *w = 2 * (int)std::lround(0.5f * (float)fw * fit), *h = 2 * (int)std::lround(0.5f * (float)fh * fit);
-        if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();   // (a sketch's font, any: the one Filament brings)
+        // Any font will do for a sketch, so use the one that Filament also loads.
+        if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();
         d->sketchScene = tvg::Scene::gen();
-        d->sketchScene->scale(fit / run->density());   // (its paints come in its canvas's own pixels: pixelDensity(2) has twice as many as its width says)
+        // Paint coordinates are in the sketch canvas's own pixels, and pixelDensity(2) gives it
+        // twice as many pixels as its width says.
+        d->sketchScene->scale(fit / run->density());
         d->sketchLines = std::make_shared<std::map<int, double>>();
         for (const int line : run->lines()) (*d->sketchLines)[line] = 1.0;
-        d->sketch = [run, d, lines = d->sketchLines](int at, int had) {   // (each paint as strong as its line's parameter is now, doc_evaluate)
+        // Fetches the paint commands for a frame and scales the alpha of each by the current
+        // value of the parameter attached to its source line, as evaluated by doc_evaluate.
+        d->sketch = [run, d, lines = d->sketchLines](int at, int had) {
             std::vector<double> o = run->paints(at, had);
             for (size_t i = 1; i + 12 <= o.size();) {
                 double* p = &o[i];
@@ -182,10 +244,14 @@ static Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run, const std:
         return d->sketchScene;
     }, mat4f{}, high, float3{-1.f}, true, lay, fx);
 }
-// A picture a WEBGL sketch draws with (a createGraphics): the same canvas at its own size, shown only as sketch.mat reads it (document/sketch.h).
+// Creates an offscreen canvas that a WEBGL sketch draws with, which in p5.js is made by
+// createGraphics. It is the same kind of canvas at its own size `wide` by `high`, and `pic`
+// identifies it in the script. It is shown only where sketch.mat reads it, see
+// document/sketch.h. Returns null if the canvas cannot be placed.
 static Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high) {
     Canvas2D* built = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         *w = wide, *h = high;
+        // Any font will do for a sketch, so use the one that Filament also loads.
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();
         d->sketchScene = tvg::Scene::gen();
         d->sketch = [run, d, pic](int at, int had) { std::vector<double> o = run->paints(at, had, pic); sketch_bitmaps(d, run, o); return o; };

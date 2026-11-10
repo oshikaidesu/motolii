@@ -1,25 +1,42 @@
-// aviutl_load.h: part of aviutl_fx.h. obj.load as lua.txt says it, for a figure, a picture file (and obj.copybuffer's "image:"), words and the frame (the AviUtl2 script
-// skill's references/api.md, gasdyueer, MIT: "figure", name[, color, size, line, round]; "image", file, true or false).
-// Canvas2D by ThorVG's own CPU canvas (SwCanvas, in Motolii's ThorVG), its premultiplied pixels laid in the object as
-// they are, kept by what was asked (the same asked again is not drawn again).
-// The figures as sashimono-edit draws them (MIT, engine/sources.py _shape_path, _polygon_path, _star_path; objapi.py
-// FIGURE_NAMES, MAX_FIGURE_SIZE 4096, FILLED_LINE 4000): a square picture `size` wide (背景 the screen), polygons and
-// the star with a corner up, inside a circle of it (sashimono's measure of AviUtl2: a triangle of 400 at x ±173,
-// y -200..+99); a line drawn inward, its outer edge the figure's own (_inside_outline: the stroke cut by the figure);
-// a line as thick as the figure or 4000, filled.
+// obj.load for AviUtl2 scripts. Included by aviutl_fx.h; not self-contained.
+//
+// Implements obj.load as described in AviUtl2's lua.txt for a figure, an image file (also used by
+// obj.copybuffer's "image:"), text, and the frame. The argument forms follow the AviUtl2 script
+// skill's references/api.md (gasdyueer, MIT): "figure", name[, color, size, line, round] and
+// "image", file, true or false.
+//
+// Pixels are drawn on ThorVG's CPU canvas (tvg::SwCanvas, from the ThorVG bundled with Motolii) and
+// stored in the object as premultiplied pixels, unchanged. Results are cached by the request, so
+// the same request is not drawn twice.
+//
+// Figures follow sashimono-edit (MIT; engine/sources.py _shape_path, _polygon_path, _star_path;
+// objapi.py FIGURE_NAMES, MAX_FIGURE_SIZE 4096, FILLED_LINE 4000):
+//   - A figure is a square image `size` wide. The background figure instead covers the screen.
+//   - Polygons and the star have one corner pointing up and fit inside a circle of that size, which
+//     is sashimono's measurement of AviUtl2: a triangle of size 400 spans x +-173, y -200..+99.
+//   - A line is drawn inward, so the outer edge is the figure's own edge (_inside_outline: the
+//     stroke cut by the figure).
+//   - A line as thick as the figure, or 4000, gives a filled figure.
 
 #ifdef __APPLE__
-#include <CoreText/CoreText.h>   // (a font found by its name: aviutl_font_file)
+// Used by aviutl_font_file to find a font by name.
+#include <CoreText/CoreText.h>
 #endif
 
+// Corner count of each figure name accepted by obj.load: circle (0), background (1, a rectangle
+// the size of the screen), rectangle (4), triangle (3), pentagon (5), hexagon (6) and
+// five-point star (-5; a negative count means a star with that many points).
 static const std::map<std::string, int> aviutl_figures ={{"円", 0}, {"四角形", 4}, {"三角形", 3}, {"五角形", 5}, {"六角形", 6}, {"星形", -5}, {"背景", 1}};
 
-// Its pixels, as a picture of the run's own, kept by `key`; made by `paint` into a canvas w x h (none: false).
+// Returns an image of the pixels drawn by `paint` on a ThorVG canvas of w x h pixels, cached in
+// r.loaded under `key`. Returns nullptr if the size is zero or over 4096, or if drawing fails. The
+// pointer stays valid while r.loaded keeps the entry.
 static const AviutlBuf* aviutl_canvas(AviutlRun& r, const std::string& key, uint32_t w, uint32_t h, const std::function<bool(tvg::SwCanvas*)>& paint) {
     if (const auto cached = r.loaded.find(key); cached != r.loaded.end()) return &cached->second;
     if (!w || !h || w > 4096 || h > 4096) return nullptr;
     auto* pixels = new std::vector<uint32_t>((size_t)w * h, 0);
-    tvg::Initializer::init(0);   // (ThorVG makes no canvas, and reads no file, when it is not started: tvgCanvas.cpp SwCanvas::gen)
+    // ThorVG creates no canvas and reads no file until it has been initialized.
+    tvg::Initializer::init(0);
     tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
     const bool drew = canvas->target(pixels->data(), w, w, h, tvg::ColorSpace::ABGR8888) == tvg::Result::Success && paint(canvas) && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
     delete canvas;
@@ -32,6 +49,9 @@ static const AviutlBuf* aviutl_canvas(AviutlRun& r, const std::string& key, uint
     return &b;
 }
 
+// Returns a ThorVG shape of the figure with `corners` corners (see aviutl_figures) that fills a
+// w x h box. A positive count gives a regular polygon with one corner up. A negative count gives a
+// star with -corners points whose inner vertices lie at 0.382 of the outer radius.
 static tvg::Shape* aviutl_figure(int corners, float w, float h) {
     tvg::Shape* s = tvg::Shape::gen();
     if (corners == 0) return s->appendCircle(w / 2, h / 2, w / 2, h / 2), s;
@@ -45,9 +65,12 @@ static tvg::Shape* aviutl_figure(int corners, float w, float h) {
     return s->close(), s;
 }
 
-// A picture file, read by ThorVG and kept (none chosen, not there or not read: none, false to the script, as lua.txt says).
+// Loads an image file with ThorVG and returns it as a cached image. A relative name refers to a
+// file beside the script. Returns nullptr when the name is empty, the file does not exist or
+// ThorVG cannot read it; the script then receives false, as lua.txt specifies. The cache key
+// includes the file's modification time, so a changed file is read again.
 static const AviutlBuf* aviutl_image(AviutlRun& r, std::string file) {
-    if (!file.empty() && file[0] != '/') file = (std::filesystem::path(r.file).parent_path() / file).string();   // (a name of its own beside the script)
+    if (!file.empty() && file[0] != '/') file = (std::filesystem::path(r.file).parent_path() / file).string();
     std::error_code wrong;
     if (file.empty() || !std::filesystem::is_regular_file(file, wrong)) return nullptr;
     float w = 0, h = 0;
@@ -62,9 +85,11 @@ static const AviutlBuf* aviutl_image(AviutlRun& r, std::string file) {
     });
 }
 
-// The file of a font asked by its name, as the Mac finds it (CoreText: the family, a face's own name or its shown
-// name, its bold and italic face if it has them); not found, or a file ThorVG does not read (a collection, .ttc): the
-// window's own for new words (ws_2.dart's wsTextFont). `slant`: italic asked of a face that is not, to be slanted.
+// Returns the path of a font file for the font called `name`, found as macOS finds it (CoreText):
+// by family name, face name or display name, using the bold and italic faces when they exist. If
+// the font is not found, or the file is one ThorVG cannot read (such as a .ttc collection), returns
+// the app's default text font (wsTextFont in app/lib/workspace/state/window.dart). `*slant` is set
+// when italic was requested but the face found is not italic, so the caller must slant the text.
 static std::string aviutl_font_file(const std::string& name, bool bold, bool italic, bool* slant) {
     std::string file;
     bool sloped = false;
@@ -105,13 +130,25 @@ static std::string aviutl_font_file(const std::string& name, bool bold, bool ita
     return *slant = sloped, file;
 }
 
-// obj.load "text": the words in obj.setfont's font, size, colour and decoration, a picture as large as they are set
-// (YMM4-LuaScript, routersys, MIT: TextRenderer.Render, the layout's own box; nothing said, one clear pixel). Set by
-// ThorVG's text as Motolii's words are (canvas_renderables.h type: its size in points, AviUtl's in pixels, so 72 / 96 of it).
-// The decorations as sashimono-edit measured AviUtl2 v2.1.6a (MIT, compat/decoration.py DECORATIONS, by obj.setfont's
-// number in its order: mapping.py _DECORATION_BY_INDEX): an edge of 8, 4, 12 and 4 hundredths of the size outside the
-// letters (縁取り, 細, 太, 角), a shadow 5 hundredths right and down (影付き; 薄, half as strong), in the edge colour.
-static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint32_t* measured = nullptr) {   // (measured: its size alone, none drawn)
+// Implements obj.load "text": draws `words` into an image just large enough for them, using the
+// font, size, color and decoration set by obj.setfont. Returns nullptr if nothing can be drawn.
+// With empty text the caller makes the object one clear pixel instead.
+//
+// If `measured` is not null, nothing is drawn: measured[0] and measured[1] receive the width and
+// height the text would take, and the result is nullptr.
+//
+// The layout follows YMM4-LuaScript (routersys, MIT, TextRenderer.Render, the layout's own box).
+// Text is set with ThorVG text as for Motolii's text layers (canvas_renderables.h): ThorVG sizes
+// are in points while AviUtl's are in pixels, hence the factor 72 / 96.
+//
+// The decorations follow sashimono-edit's measurements of AviUtl2 v2.1.6a (MIT,
+// compat/decoration.py DECORATIONS, indexed by obj.setfont's number in the order of
+// mapping.py _DECORATION_BY_INDEX):
+//   - 1 and 2 are a shadow offset 5 hundredths of the size right and down. 2 is the lighter
+//     shadow, half as strong. The shadow is drawn in the edge color.
+//   - 3 to 6 are outlines of 8, 4, 12 and 4 hundredths of the size outside the letters (outline,
+//     thin, thick and square-cornered), in the edge color.
+static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint32_t* measured = nullptr) {
     const auto& f = r.font;
     const double size = std::clamp(f.size, 1.0, 4096.0);
     const int deco = (int)f.deco, colour = (int)f.colour, edge = (int)f.edge;
@@ -125,7 +162,8 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     if (tvg::Text::load(file.c_str()) != tvg::Result::Success) return nullptr;
     const auto set = [&](int c, uint8_t a) {
         tvg::Text* t = tvg::Text::gen();
-        t->font(std::filesystem::path(file).stem().string().c_str());   // (ThorVG names a font by its file)
+        // ThorVG names a font by its file name without the extension.
+        t->font(std::filesystem::path(file).stem().string().c_str());
         t->size((float)(size * 72.0 / 96.0));
         t->text(words.c_str());
         if (slant) t->italic();
@@ -141,7 +179,9 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     }
     if (out > 0.f) {
         tvg::Text* rim = set(edge, 255);
-        rim->outline(2.f * out, (edge >> 16) & 255, (edge >> 8) & 255, edge & 255);   // (twice as wide: its half within the letters under them)
+        // The stroke is centered on the glyph edge, so draw it twice as wide; the inner half is
+        // hidden by the letters drawn on top of it.
+        rim->outline(2.f * out, (edge >> 16) & 255, (edge >> 8) & 255, edge & 255);
         all->add(rim);
     }
     all->add(set(colour, 255));
@@ -155,10 +195,15 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     return built;
 }
 
+// Implements obj.load(kind, ...) for the kinds "tempbuffer", "figure", "image", "framebuffer",
+// "text.layout" and "text". Pushes true if the object was loaded and false if nothing could be
+// loaded. A form that is not implemented raises "not yet: ..." through aviutl_no.
 static int aviutl_load(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string kind = aviutl_str(L, 1);
     if (kind == "tempbuffer" && lua_gettop(L) == 1 && r.bufs.count(kind)) return aviutl_copy(r, "object", kind), lua_pushboolean(L, 1), 1;
+    // Replaces the object with `from`, a new object buffer of the same size. Pushes false if `from`
+    // is null.
     const auto lay = [&](const AviutlBuf* from) {
         if (!from) return lua_pushboolean(L, 0), 1;
         const AviutlBuf& to = aviutl_buf(r, "object", from->w, from->h);
@@ -174,7 +219,8 @@ static int aviutl_load(lua_State* L) {
         double line = aviutl_num(L, 5, 0);
         if (line >= std::min(4000.0, (double)std::max(w, h))) line = 0;
         if (lua_gettop(L) >= 6 && aviutl_num(L, 6) != 0) return aviutl_no(L, "obj.load figure with round corners");
-        if (f->second == 4 && line <= 0) {   // (a square filled: the buffer cleared to it)
+        // A filled square needs no drawing: clear the buffer to the color.
+        if (f->second == 4 && line <= 0) {
             aviutl_clear(r, aviutl_buf(r, "object", w, h), colour, true);
             return lua_pushboolean(L, 1), 1;
         }
@@ -182,13 +228,18 @@ static int aviutl_load(lua_State* L) {
         return lay(aviutl_canvas(r, "figure|" + name + "|" + std::to_string(colour) + "|" + std::to_string(w) + "x" + std::to_string(h) + "|" + std::to_string(line), w, h, [&](tvg::SwCanvas* c) {
             tvg::Shape* s = aviutl_figure(f->second, (float)w, (float)h);
             if (line <= 0) return s->fill(cr, cg, cb), c->add(s) == tvg::Result::Success;
-            s->fill(0, 0, 0, 0), s->strokeWidth((float)(2 * line)), s->strokeFill(cr, cg, cb);   // (twice as wide, the half outside cut away by the figure)
+            // The stroke is centered on the outline, so draw it twice as wide and clip it to the
+            // figure. Only the inner half remains.
+            s->fill(0, 0, 0, 0), s->strokeWidth((float)(2 * line)), s->strokeFill(cr, cg, cb);
             s->clip(aviutl_figure(f->second, (float)w, (float)h));
             return c->add(s) == tvg::Result::Success;
         }));
     }
     if (kind == "image") return lay(aviutl_image(r, aviutl_str(L, 2)));
-    if (kind == "framebuffer") {   // ([x, y, w, h, alpha]): that much of the frame, its top left at x, y (lua.txt); alpha not asked, laid over black as the screen shows it
+    // obj.load("framebuffer"[, x, y, w, h, alpha]) loads the w x h part of the frame whose top left
+    // corner is at x, y (lua.txt). Unless alpha is requested, the part is laid over black, as it
+    // appears on the screen.
+    if (kind == "framebuffer") {
         const AviutlBuf fb = r.bufs["framebuffer"];
         if (!fb.t) return lua_pushboolean(L, 0), 1;
         const double x = aviutl_num(L, 2, 0), y = aviutl_num(L, 3, 0);
@@ -198,7 +249,9 @@ static int aviutl_load(lua_State* L) {
         aviutl_lay(r, fb, to.rt, w, h, fb.w / 2.0 - x - w / 2.0, fb.h / 2.0 - y - h / 2.0, 1, 1, 0, 1, 0, 0, 0, 1);
         return lua_pushboolean(L, 1), 1;
     }
-    if (kind == "text.layout") {   // (words: how large they would be set, the object left as it is: lua.txt's テキストレイアウト, as 枠内自動フィット_H.obj2 reads it)
+    // obj.load("text.layout", words) returns the width and height the words would take when set,
+    // and leaves the object as it is (lua.txt, text layout).
+    if (kind == "text.layout") {
         uint32_t size[2] = {0, 0};
         if (lua_isstring(L, 2) && *lua_tostring(L, 2)) aviutl_text(r, lua_tostring(L, 2), size);
         return lua_pushinteger(L, size[0]), lua_pushinteger(L, size[1]), 2;

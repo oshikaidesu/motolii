@@ -1,6 +1,10 @@
-// midi_notes.h: a MIDI file's notes, as GStreamer's own midiparse reads it (a buffer an event, its time the event's): each
-// note's coming on and going off, its channel, pitch and velocity. Made keys as om_midi makes After Effects keyframes
-// of them (github.com/otomad/om_midi, Core.ts; GPL: its rules, not its code).
+// Reads the notes of a MIDI file and turns them into keyframe values and note bursts.
+//
+// Notes are read with GStreamer's midiparse element, which emits one buffer per event with
+// the event time as its timestamp. Each note has an on time, an off time, a channel, a pitch
+// and a velocity. Keyframes are made from the notes the way om_midi makes After Effects
+// keyframes (github.com/otomad/om_midi, Core.ts). om_midi is GPL, so only its rules are
+// used, not its code.
 #pragma once
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
@@ -15,9 +19,12 @@
 #include <utility>
 #include <vector>
 
-// A note's coming on or going off, in the file's order (status 0x90 on, 0x80 off; an on of velocity 0 is an off).
+// A note-on or note-off event, in the order of the file. The MIDI status byte is 0x90 for on
+// and 0x80 for off. A note-on with velocity 0 counts as an off. `at` is in seconds.
 struct MidiEvent { double at = 0; bool on = false; int channel = 0, pitch = 0, velocity = 0; };
 
+// Reads all note events of `file` with GStreamer. Returns an empty list if the file cannot be
+// read.
 static std::vector<MidiEvent> midi_events(const char* file) {
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
@@ -27,7 +34,9 @@ static std::vector<MidiEvent> midi_events(const char* file) {
     if (!reads) return events;
     gst_read_from(reads, file);
     GstElement* out = gst_bin_get_by_name(GST_BIN(reads), "out");
-    if (gst_element_set_state(reads, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) pulling = false;   // (no such file: no end would come)
+    // If the pipeline cannot start, for example because the file does not exist, no end of
+    // stream would ever arrive, so do not pull.
+    if (gst_element_set_state(reads, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) pulling = false;
     while (GstSample* got = pulling ? gst_app_sink_pull_sample(GST_APP_SINK(out)) : nullptr) {
         GstBuffer* b = gst_sample_get_buffer(got);
         GstMapInfo map;
@@ -44,15 +53,25 @@ static std::vector<MidiEvent> midi_events(const char* file) {
     return events;
 }
 
-// The keys of one value as om_midi keys its null object's sliders (Core.ts, its chords not keyed apart: a note at the
-// moment of the one before is skipped, but for an on just after an off), each held: velocity (0 to 1: where a note
-// comes on, and its letting go 0.5 ms before it goes off), pitch (the note's number), count (1, 2, 3 ... a note),
-// on (1 while one sounds, 0 where it goes off), bool (count's odd or even: 1, 0, 1 ...). At 0: velocity, on and count
-// 0. Empty: a kind it does not know, or no note of the channel (-1: any).
+// Returns keyframes (time in seconds to value) for one kind of value, made the way om_midi
+// keys the sliders of its null object (Core.ts). Every keyframe is held. Chords are not keyed
+// apart: a note that starts at the time of the previous one is skipped, unless it is an on
+// directly after an off.
+//
+// `kind` is one of:
+//   "velocity": 0 to 1. Set at each note-on, and set again 0.5 ms before each note-off.
+//   "pitch":    the note number.
+//   "count":    1, 2, 3, ... for each note.
+//   "on":       1 while a note sounds, 0 where it goes off.
+//   "bool":     1 for odd counts and 0 for even counts.
+// "velocity", "on" and "count" also get the value 0 at time 0.
+// `channel` selects one MIDI channel; -1 means any channel.
+// Returns an empty map for an unknown kind or when the channel has no notes.
 static std::map<double, double> midi_keys(const std::vector<MidiEvent>& events, const std::string& kind, int channel) {
     std::map<double, double> keys;
     if (kind != "velocity" && kind != "pitch" && kind != "count" && kind != "on" && kind != "bool") return keys;
-    const double min_interval = 5e-4;   // (om_midi's MIN_INTERVAL)
+    // om_midi's MIN_INTERVAL, in seconds.
+    const double min_interval = 5e-4;
     int count = 0;
     double last = -1;
     bool last_off = true;
@@ -72,8 +91,10 @@ static std::map<double, double> midi_keys(const std::vector<MidiEvent>& events, 
     return keys;
 }
 
-// The tempo a MIDI file says first (Standard MIDI File 1.0: the meta event FF 51 03 and microseconds a quarter note),
-// as BPM; one that says none is at 120 (the same spec's default; om_midi's Midi.ts DEFAULT_BPM).
+// Returns the first tempo stored in a MIDI file, in beats per minute. The tempo is the meta
+// event FF 51 03 of Standard MIDI File 1.0, which holds the microseconds per quarter note.
+// A file without a tempo gets 120, the default of the same specification and of om_midi's
+// Midi.ts (DEFAULT_BPM).
 static double midi_bpm(const char* file) {
     std::ifstream in(file, std::ios::binary);
     const std::string b((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -83,18 +104,20 @@ static double midi_bpm(const char* file) {
     return us > 0 ? 60e6 / us : 120.0;
 }
 
-// The rows of its notes as ALMaMPlayer lays them (main_interface.gd: note_spacing = (vertical_offset + top_margin) /
-// note_range, -192 + 880 on its 1920 x 1080 screen): points a semitone.
+// Returns the row height in points per semitone, laid out as ALMaMPlayer does in
+// main_interface.gd: note_spacing = (vertical_offset + top_margin) / note_range, where
+// -192 + 880 = 688 on its 1920 x 1080 screen.
 static double midi_spacing(const std::vector<MidiEvent>& events) {
     int low = 127, high = 0;
     for (const MidiEvent& e : events) if (e.on) low = std::min(low, e.pitch), high = std::max(high, e.pitch);
     return 688.0 / std::max(1, high - low);
 }
 
-// A note: when it comes on and goes off (an on with none: as long as the next), its pitch and velocity.
+// One note. A note-on without a matching off is given an off 0.1 s after its on.
 struct MidiNote { double on = 0, off = 0; int pitch = 0, velocity = 0; };
 
-// A MIDI file's notes, read once (the file as it is), in the order they come on.
+// Returns the notes of `file` in the order they come on. Each file is read once and the
+// result is cached, so later changes to the file are not seen. Thread-safe.
 static const std::vector<MidiNote>& midi_of(const std::string& file) {
     static std::map<std::string, std::vector<MidiNote>> read;
     static std::mutex one;
@@ -102,7 +125,8 @@ static const std::vector<MidiNote>& midi_of(const std::string& file) {
     auto found = read.find(file);
     if (found != read.end()) return found->second;
     std::vector<MidiNote> notes;
-    std::map<std::pair<int, int>, size_t> sounding;   // (channel and pitch: the note of them that is on)
+    // Index into `notes` of the note that is currently on, by channel and pitch.
+    std::map<std::pair<int, int>, size_t> sounding;
     for (const MidiEvent& e : midi_events(file.c_str())) {
         const auto key = std::make_pair(e.channel, e.pitch);
         if (auto was = sounding.find(key); was != sounding.end()) notes[was->second].off = e.at, sounding.erase(was);
@@ -112,19 +136,32 @@ static const std::vector<MidiNote>& midi_of(const std::string& file) {
     return read.emplace(file, std::move(notes)).first->second;
 }
 
-// Its notes' bursts as a thing's copies, as ALMaMPlayer plays them where a note is struck (github.com/almam72/ALMAMPlayer,
-// note_effect.gd and .tscn, GPL-3: its numbers, not its code; `unit` a pixel of its 1920 x 1080 screen in the stage's
-// lengths). Copy i is note i's: at the thing (the line notes are struck on), the highest note at it and each lower one
-// a row lower (midi_spacing, as the roll it goes with: midi_roll.cpp; `roll` how high that roll is, its highest row at its top); 0.8,
-// 1.16 at 0.027 s, 1 at 0.096 s; from 0.025 s before it goes off, smaller to none by 0.167 s, gone between 0.083 and
-// 0.146 s. Not yet struck: not seen.
-static std::vector<ScriptCopy> midi_copies(const std::vector<MidiNote>& notes, int n, double t, double unit, double roll = 0) {   // (roll: how high the roll it goes with is, in points)
+// Returns one copy of a layer per note, animated as the burst ALMaMPlayer plays where a note
+// is struck (github.com/almam72/ALMAMPlayer, note_effect.gd and .tscn). The project is GPL-3,
+// so only its numbers are used, not its code.
+//
+// Copy i belongs to note i and is placed on the layer, which is the line the notes are struck
+// on. The highest note sits at the layer and each lower note is one row lower, using the row
+// height of midi_spacing, as in the matching roll from midi_roll.cpp.
+// `unit` is the size of one pixel of ALMaMPlayer's 1920 x 1080 screen in canvas lengths.
+// `roll` is the height of that roll in points, with its highest row at the top. It is 0 when
+// there is no roll.
+//
+// Timeline of a burst, with t0 the time the note comes on:
+//   size is 0.8 at t0, 1.16 at t0 + 0.027 s and 1 at t0 + 0.096 s.
+//   Starting 0.025 s before the note goes off, size falls to 0 over 0.167 s, and opacity
+//   falls from 1 to 0 between 0.083 s and 0.146 s.
+// A note that has not yet started is invisible.
+static std::vector<ScriptCopy> midi_copies(const std::vector<MidiNote>& notes, int n, double t, double unit, double roll = 0) {
     std::vector<ScriptCopy> all((size_t)std::max(n, 0));
     for (ScriptCopy& c : all) c.opacity = 0.0;
     int low = 127, high = 0;
     for (const MidiNote& m : notes) low = std::min(low, m.pitch), high = std::max(high, m.pitch);
-    const double spacing = 688.0 / std::max(1, high - low), top = roll > 0 ? 0.5 * roll - 0.5 * spacing : 0.0;   // (midi_spacing's, of the same notes; its highest row's middle above the roll's)
-    const auto keys = [](const std::vector<std::pair<double, double>>& k, double x) {   // (Godot's animation track: linear between its keys)
+    // Same row height as midi_spacing for these notes. `top` places the middle of the highest row
+    // at the middle of the roll's highest row.
+    const double spacing = 688.0 / std::max(1, high - low), top = roll > 0 ? 0.5 * roll - 0.5 * spacing : 0.0;
+    // Linear interpolation between keys, like a Godot animation track.
+    const auto keys = [](const std::vector<std::pair<double, double>>& k, double x) {
         if (x <= k.front().first) return k.front().second;
         for (size_t i = 1; i < k.size(); ++i)
             if (x <= k[i].first) return k[i - 1].second + (k[i].second - k[i - 1].second) * (x - k[i - 1].first) / (k[i].first - k[i - 1].first);
@@ -134,7 +171,8 @@ static std::vector<ScriptCopy> midi_copies(const std::vector<MidiNote>& notes, i
         const MidiNote& m = notes[(size_t)i];
         if (t < m.on) continue;
         ScriptCopy& burst = all[(size_t)i];
-        const double end = m.off - m.on > 0.09 ? m.off - 0.025 : m.on + 0.065;   // (note_effect.gd's Timer)
+        // The burst ends when note_effect.gd's Timer fires.
+        const double end = m.off - m.on > 0.09 ? m.off - 0.025 : m.on + 0.065;
         burst.y = (top + (m.pitch - high) * spacing) * unit;
         if (t < end) burst.size = keys({{0, 0.8}, {0.0268592, 1.16}, {0.0956246, 1.0}}, t - m.on), burst.opacity = 1.0;
         else burst.size = keys({{0, 1.0}, {0.166667, 0.0}}, t - end), burst.opacity = keys({{0.0833333, 1.0}, {0.145833, 0.0}}, t - end);
