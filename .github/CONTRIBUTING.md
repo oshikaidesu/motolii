@@ -70,5 +70,5 @@ Decided by the author. A change that breaks one of them is not merged, even when
 
 ## Known gaps
 
-- macOS on Apple silicon only.
+- Tried only on macOS on Apple silicon; Windows and Linux have not been tried yet.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.

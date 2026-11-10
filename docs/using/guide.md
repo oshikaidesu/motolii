@@ -44,7 +44,7 @@ A finished video can be written out as an MP4.
 
 ## Requirements and formats
 
-Apple silicon Mac only, built from source. The formats that run (with the counts we took), what Motolii writes out, and how fast it is: [Specifications](specifications.md).
+Tried only on an Apple silicon Mac, built from source. The formats that run (with the counts we took), what Motolii writes out, and how fast it is: [Specifications](specifications.md).
 
 ## Before you try
 

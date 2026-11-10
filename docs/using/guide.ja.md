@@ -44,7 +44,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 ## 動作環境と形式
 
-Apple Silicon の Mac のみで、ソースからビルドします。動く形式（数えた結果つき）、書き出せる形式、速さは[仕様](specifications.ja.md)にあります。
+確かめたのは Apple Silicon の Mac だけで、ソースからビルドします。動く形式（数えた結果つき）、書き出せる形式、速さは[仕様](specifications.ja.md)にあります。
 
 ## 試す前に
 

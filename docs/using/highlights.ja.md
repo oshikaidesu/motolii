@@ -52,11 +52,9 @@ AviUtl2 は Windows 専用の編集ソフトで、コミュニティのスクリ
 
 ## 試す前に
 
-- **Apple Silicon の Mac だけ。** Windows と Linux はビルドしていません。
+- **確かめたのは Apple Silicon の Mac だけです**（M4、macOS 15.5）。Windows と Linux はまだ試していません。
 - **配布用アプリはありません。** ソースからビルドします（Xcode・Homebrew・Flutter、約10 GB、何も無い状態から1〜2時間）。ビルドした Mac でしか動きません。手順は [README](../../README.ja.md#ビルドして動かす)。
 - **開発途中です。** リリースはまだありません。プリセットは保存できず、MIDI の音には対応していません。
-- **知っている不具合。** コピーでできたレイヤーに画面エフェクト（`.wgsl`）を当てると、絵が崩れます。
-- **いま落ちている検査があります。** テストの記録に載っています：[docs/TESTING.md](../TESTING.md)。
 - **ライセンス。** Motolii 自身のコードは Apache-2.0 または MIT です。同梱の作品は、それぞれの作者のライセンスのままです：[THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md)。
 
 ## 次に

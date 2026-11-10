@@ -52,11 +52,9 @@ Where it stops: the layout uses an image model that is not shipped with the app.
 
 ## Before you start
 
-- **Mac with Apple silicon only.** Windows and Linux have not been built.
+- **Tried only on a Mac with Apple silicon** (an M4, macOS 15.5). Windows and Linux have not been tried yet.
 - **No packaged app.** You build from source (Xcode, Homebrew and Flutter; about 10 GB and 1 to 2 hours from nothing). A build runs only on the Mac that made it. Steps: [README](../../README.md#build-and-run).
 - **In development.** There is no release yet. Presets cannot be saved, and MIDI sound is not supported.
-- **A known bug.** A screen effect (`.wgsl`) on a layer made of copies breaks the picture.
-- **Checks that fail today.** The test record lists them: [docs/TESTING.md](../TESTING.md).
 - **Licences.** Motolii's own code is Apache-2.0 or MIT. Bundled works keep their authors' licences: [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).
 
 ## Next

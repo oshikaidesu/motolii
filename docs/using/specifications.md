@@ -6,7 +6,7 @@ What Motolii runs and what it needs: the system, the formats it reads with the c
 
 ## Requirements
 
-Motolii is still in development and supports Macs with Apple Silicon.
+Motolii is still in development and has been tried only on a Mac with Apple silicon (an M4, macOS 15.5). Windows and Linux have not been tried yet.
 
 There is no packaged app yet, so trying it means building it from source.
 
