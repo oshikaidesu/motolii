@@ -1,6 +1,10 @@
 // Implements the adapter declared in physics.h on top of Jolt.
 // Built as jolt_bench.cpp was: deterministic across platforms, single-threaded.
 #include "physics/physics.h"
+
+#include <algorithm>
+#include <mutex>
+
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
@@ -11,8 +15,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <algorithm>
-#include <mutex>
+
 using namespace JPH;
 
 namespace {

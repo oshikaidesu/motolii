@@ -1,3 +1,6 @@
+#ifndef MOTOLII_PHYSICS_PHYSICS_H_
+#define MOTOLII_PHYSICS_PHYSICS_H_
+
 // Rigid-body physics for layers: layers fall and collide with each other.
 // The simulation uses Jolt, chosen by physics_bench, behind an adapter that exposes none of
 // Jolt's types.
@@ -5,7 +8,7 @@
 // The simulation advances in fixed steps of 1/60 s starting at the beginning of the project.
 // Each frame's result is cached once computed, so seeking backward reads the cache and the same
 // project always produces the same motion.
-#pragma once
+
 #include <functional>
 #include <memory>
 #include <vector>
@@ -46,3 +49,5 @@ private:
     struct Own;
     std::unique_ptr<Own> own;
 };
+
+#endif  // MOTOLII_PHYSICS_PHYSICS_H_
