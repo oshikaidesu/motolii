@@ -23,7 +23,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 |---|---|
 | `lib/skin/theme.dart` | theme.xml を読む・見張る（`ColorTheme`）。着ている革は `~/.motolii/window.xml` の `Skin` |
 | `lib/skin/tokens.dart` | 色の段（`Grey`、Background/Foreground から HCT で作る）、`Shape.r/s/z`（角・余白・大きさ）、`T.px`（文字）。数の効く範囲もここ |
-| `lib/workspace/window/settings_file.dart` | `~/.motolii/window.xml` の読み書き（倍率と着ている革） |
+| `lib/storage/window_settings.dart` | `~/.motolii/window.xml` の読み書き（倍率と着ている革） |
 | `lib/skin/svg_parts.dart` | 印の SVG（`SkinParts.draw`）と枠（`SkinFrame`、9分割） |
 | `lib/skin/forms/forms.dart` | **フォームの約束**：渡す物（Spec）と、フォームが書く関数、登録表 `forms` |
 | `lib/skin/forms/own_forms.dart` | いつもの見た目のフォーム（前からの見た目をそのまま移した） |

@@ -27,7 +27,7 @@ import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show motoliiOwn, motoliiShelves;
-import 'package:motolii/workspace/window/settings_file.dart';
+import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/skin/tokens.dart' show colorOfHex;
 
 /// The colour roles and number/word roles read from the current skin's theme file.

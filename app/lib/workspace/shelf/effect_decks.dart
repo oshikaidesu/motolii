@@ -5,7 +5,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart' show sha256;
 
 import 'package:motolii/bridge/motolii.dart' show motoliiShelves;
-import 'package:motolii/workspace/window/settings_file.dart' show fileJson, fileKeep, fileList, firstFree;
+import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/storage/kept_file.dart' show fileJson, fileKeep, fileList;
 
 /// The file of recently used effects, newest first, at most forty, as Alight Motion's effect browser keeps them
 /// (EffectBrowser.kt:117). It is stored like the Fonts shelf's font_recent.json. Tests point it elsewhere with

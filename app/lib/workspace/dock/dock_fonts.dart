@@ -14,7 +14,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
 import 'package:motolii/workspace/dock/dock_map.dart';
-import 'package:motolii/workspace/window/settings_file.dart' show fileKeep, fileList;
+import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;

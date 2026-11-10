@@ -23,7 +23,7 @@ import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_glyphs.dart';
-import 'package:motolii/workspace/window/settings_file.dart' show fileKeep;
+import 'package:motolii/storage/kept_file.dart' show fileKeep;
 import 'package:motolii/workspace/dock/dock_widgets.dart' show dockMark, IconPress;
 import 'package:motolii/workspace/state/state.dart' show WsT;
 part 'dock_map_view.dart';

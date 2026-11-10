@@ -7,7 +7,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/window/settings_file.dart';
+import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/widgets/number_field.dart';
 
 /// The window zoom factor.

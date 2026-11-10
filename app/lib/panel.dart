@@ -11,4 +11,4 @@ export 'workspace/window/panes.dart' show WsPane, WsAt; // a tab: its name, its 
 export 'workspace/workspace.dart' show Workspace, LayerCards; // the window; a layer's cards as the engine declares them
 export 'workspace/commands/context_menu.dart' show WsMenu, WsMenuItem; // a right-click menu
 export 'workspace/shelf/shelf_tile.dart' show ShelfTile, ShelfGrid; // a tile and a grid of tiles
-export 'workspace/window/settings_file.dart' show fileKeep, fileJson, fileList; // a small file the window keeps
+export 'storage/kept_file.dart' show fileKeep, fileJson, fileList; // a small file the window keeps

@@ -4,7 +4,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/workspace/window/settings_file.dart';
+import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/storage/kept_file.dart' show fileKeep, fileJson, fileList;
 
 void main() {
   late Directory folder;

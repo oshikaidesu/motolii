@@ -18,7 +18,7 @@ import 'package:motolii/widgets/controls.dart' show Badge, Hov;
 export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 
 import 'package:motolii/workspace/dock/dock_glyphs.dart';
-import 'package:motolii/workspace/window/settings_file.dart' show fileKeep, fileList;
+import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
