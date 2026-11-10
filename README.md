@@ -70,6 +70,7 @@ See [`shelves/README.md`](shelves/README.md). Each kind of file has its own fold
 
 ## Documentation
 
+- [What sets Motolii apart](docs/using/highlights.md): what it does today that is hard to get elsewhere, and where each one stops.
 - [Guide](docs/using/guide.md): what Motolii does, the formats it runs, building step by step, a first piece, how it compares.
 - [The tabs](docs/using/screen_tour.md): each tab of the screen, with pictures and how to use it.
 - [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.

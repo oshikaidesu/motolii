@@ -72,6 +72,7 @@ app/tool/live.sh
 
 ## 文書
 
+- [Motolii の特長](docs/using/highlights.ja.md)：いま他では手に入れにくいことと、それぞれの限界。
 - [ガイド](docs/using/guide.ja.md)：Motolii でできる事、動く形式、ビルドの手順、最初の 1 本、他のソフトとの違い。
 - [タブの紹介](docs/using/screen_tour.ja.md)：画面のタブごとの絵と使い方。
 - [作り](docs/ARCHITECTURE.md)：全体の作り：アプリ・エンジン・描画・動画のつながり（英語）。
