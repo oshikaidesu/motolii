@@ -6,7 +6,7 @@
 double motolii_seconds(Motolii* m) { return by_look(m, [m] { return doc_seconds(*m->d); }); }
 // Sets the preview's time. The change is posted to the render thread and not waited for, and a
 // newer one that is still waiting replaces it. The app reads what was drawn and the time it was
-// drawn at from the snapshot (stage/snapshot.h), so it need not wait. A time outside the
+// drawn at from the snapshot (entry/snapshot.h), so it need not wait. A time outside the
 // project, from 0 to its length, is refused when the render thread handles it, and the reason is
 // set as the error.
 int motolii_at(Motolii* m, double seconds) {

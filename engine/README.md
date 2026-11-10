@@ -23,11 +23,12 @@
 
 | フォルダ | 中身 |
 |---|---|
-| `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`calls*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`render_thread*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`window.h`＝開く・閉じる、`export.h`＝書き出し、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
+| `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`calls*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`render_thread*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`window.h`＝開く・閉じる、`export.h`＝書き出し、`snapshot.h`＝アプリが読むプロジェクトの写し、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
 | `base/` | どこからも使う小さな部品：`json.h`＝rapidjson の入口（Filament に付いてくる 1 つの写しをここだけが名前で指す） |
 | `document/` | プロジェクト（SQLite）。`doc.h`＝全部を読む入口、ほかはその部品：`undo.h`＝表と取り消し（変更を SQLite の表に積む）、`values.h`・`keys_put.h`・`layer_edit.h`＝レイヤー・値・キー、`evaluate.h`・`match.h`＝ある時刻の値を出してプレビューへ反映、`presets.h`・`recipes.h`＝棚を読む。中の関数名の頭 `doc_` はファイル名には付けない（フォルダが言っている） |
 | `shelf/` | 棚のフォルダを探す所：`shelf_folders.h`＝ライブラリのフォルダと利用者のフォルダ（`doc_folders`）、エンジン内の部品の場所（`doc_engine`）、ファイルが変わったかの数え（`files_changed`） |
-| `stage/` | 描く所。`render/`＝Filament で描く所（Engine・カメラ・光・書き出し、3D ファイル `gltf_model.h`・点群 `point_cloud.h`）、`canvas/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所（パスの演算：`thorvg_path_operators.cpp`・`skia_path_operations.cpp`）、`effects/`＝効果（レイヤーごと `layer_fx.h`・画面全体 `screen_fx.h`・Filament の設定ファイル `viewer_settings.h`）。直下はプレビューから外へ出す物だけ：アプリへ渡すフレーム（`live.h`）・アプリが読むプロジェクトの写し（`picture.h`）・再生用のキャッシュ（`stage_cache.h`） |
+| `stage/` | 描く所。`render/`＝Filament で描く所（Engine・カメラ・光・書き出し、3D ファイル `gltf_model.h`・点群 `point_cloud.h`）、`canvas/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所（パスの演算：`thorvg_path_operators.cpp`・`skia_path_operations.cpp`）、`effects/`＝効果（レイヤーごと `layer_fx.h`・画面全体 `screen_fx.h`・Filament の設定ファイル `viewer_settings.h`）。直下はプレビューから外へ出す物だけ：アプリへ渡すフレーム（`live.h`） |
+| `preview/` | プロジェクトをステージに置く側：再生用のキャッシュ（`playback_cache.h`） |
 | `community/` | ネットのコードをそのまま動かす口。中のフォルダは、動かす相手（コミュニティ）ごとに 1 つ（下の「`community/` の中」） |
 | `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝プレビューに置く動画のレイヤー、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さなフレーム・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
 | `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
@@ -79,13 +80,14 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 - `community/sites/` (4): `adapter.h`、`adapter_net.h`、`adapter_shadertoy.h`、`adapter_shadertoy_json.h`
 - `community/three/` (4): `solid_three.cpp`、`solid_three.h`、`three_isf.cpp`、`three_isf.h`
 - `document/` (34): `adapter.h`、`arrange.h`、`camera.h`、`card_table.h`、`cards.h`、`doc.h`、`easings_put.h`、`evaluate.h`、`expressions.h`、`fx_list.h`、`fx_put.h`、`hold.h`、`keys_put.h`、`kinds.h`、`layer_edit.h`、`marks.h`、`match.h`、`material.h`、`moment_fx.h`、`parent.h`、`paths.h`、`place.h`、`presets.h`、`recipes.h`、`relate.h`、`relations.h`、`scripts.h`、`shown.h`、`sketch.h`、`time_edit.h`、`undo.h`、`value_at.h`、`values.h`、`world.h`
-- `entry/` (14): `calls.h`、`calls_files.h`、`calls_find.h`、`calls_later.h`、`calls_map.h`、`calls_sound.h`、`calls_time.h`、`edit.cpp`、`export.h`、`motolii.h`、`motolii.mm`、`render_thread.h`、`render_thread_loop.h`、`window.h`
+- `entry/` (15): `calls.h`、`calls_files.h`、`calls_find.h`、`calls_later.h`、`calls_map.h`、`calls_sound.h`、`calls_time.h`、`edit.cpp`、`export.h`、`motolii.h`、`motolii.mm`、`render_thread.h`、`render_thread_loop.h`、`snapshot.h`、`window.h`
 - `gpu/` (7): `compute_interop.cpp`、`compute_interop.h`、`gpu_interop.cpp`、`gpu_interop.h`、`screen_interop.cpp`、`screen_interop.h`、`thorvg_on_dawn.cpp`
 - `media/` (10): `gstreamer_file_source.h`、`midi_notes.h`、`midi_roll.cpp`、`midi_roll.h`、`sound_level.h`、`sound_playback.h`、`video_datamosh.h`、`video_flash_check.cpp`、`video_frames_for_scripts.h`、`video_layer.h`
 - `motion/` (4): `easing_curves.h`、`easing_godot.h`、`easing_names.h`、`lottie_motion.h`
 - `physics/` (2): `jolt.cpp`、`physics.h`
+- `preview/` (1): `playback_cache.h`
 - `shelf/` (2): `shelf_folders.cpp`、`shelf_folders.h`
-- `stage/` (3): `live.h`、`snapshot.h`、`stage_cache.h`
+- `stage/` (1): `live.h`
 - `stage/canvas/` (8): `canvas.h`、`canvas_cache.h`、`canvas_edge.h`、`canvas_flat.h`、`canvas_renderables.h`、`canvas_sketch.h`、`skia_path_operations.cpp`、`thorvg_path_operators.cpp`
 - `stage/effects/` (3): `layer_fx.h`、`screen_fx.h`、`viewer_settings.h`
 - `stage/render/` (6): `gltf_model.h`、`point_cloud.h`、`render.h`、`render_draw.h`、`render_layers.h`、`render_stage.h`

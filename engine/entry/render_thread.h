@@ -5,7 +5,7 @@
 #include "stage/render/render.h"
 #include "document/doc.h"
 #include "stage/live.h"
-#include "stage/stage_cache.h"
+#include "preview/playback_cache.h"
 #include "media/sound_playback.h"
 #include "media/sound_level.h"
 #include "media/midi_notes.h"
@@ -138,7 +138,7 @@ struct Motolii {
     double gpu_ms = 0.0, gpu_most = 0.0;
     // The scale at which the stage's views are drawn now. See stage_scale.
     double scale = 1.0;
-    // Frames of the stage cached on disk for playback. See stage_cache.h.
+    // Frames of the stage cached on disk for playback. See preview/playback_cache.h.
     StageCache cache;
     // Seconds spent, and in the next member the number of calls, for: changes, reads, evaluating a
     // time, and drawing.

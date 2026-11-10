@@ -381,7 +381,7 @@ unsigned long long motolii_frames(Motolii* m);
    desk's, is finished: listener(with). motolii_front or motolii_desk_front then returns it, as
    with Thermion's markTextureFrameAvailable, so the app does not poll on a clock of its own. */
 void motolii_finished(Motolii* m, void (*listener)(void*), void* with);
-/* Returns the preview's frames that are cached on disk for playback (stage_cache.h), as spans of
+/* Returns the preview's frames that are cached on disk for playback (preview/playback_cache.h), as spans of
    frames at motolii_rate, "from to from to", or "" if there are none. How many times that has
    changed is read without waiting, as motolii_revision does. */
 const char* motolii_cache(Motolii* m);

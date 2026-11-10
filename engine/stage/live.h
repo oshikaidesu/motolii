@@ -251,7 +251,7 @@ static void live_draw(Stage& s, Live* l) {
     else l->next = (l->next + 1) % Live::N;
 }
 
-// Presents a frame rendered earlier (see stage_cache.h) instead of drawing the stage again.
+// Presents a frame rendered earlier (see preview/playback_cache.h) instead of drawing the stage again.
 // In the editing window it is placed where the stage lies, since the area outside the stage is
 // not part of the frame, and the overlay is drawn over it as live_draw does.
 static void live_show(Stage& s, Live* l, Texture* frameTexture) {

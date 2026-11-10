@@ -5,7 +5,7 @@
 #                         reach_check.py --rev REV  another commit (`--rev noise-archive-2026-11-09`: before the cut)
 # rule 1: a motolii_* function engine/entry/motolii.h declares that the window never names. The window is app/ (its
 #         Dart, and the Swift or C++ runner that opens the native texture), without the ffigen copy of the header
-#         (app/lib/bridge/motolii_bindings.dart) and without the tests; and engine/stage/snapshot.h, the copy of the
+#         (app/lib/bridge/motolii_bindings.dart) and without the tests; and engine/entry/snapshot.h, the copy of the
 #         document the window reads each frame, which calls motolii_* itself. Comments do not count; strings do (Dart
 #         hands 'motolii_desk_front' to the runner by name).
 # rule 2: a public class, mixin or enum in app/lib that no code outside its own body names: not another file, not the
@@ -14,7 +14,7 @@ import re, subprocess, sys
 
 HEADER = 'engine/entry/motolii.h'
 BINDINGS = 'app/lib/bridge/motolii_bindings.dart'
-SNAPSHOT = 'engine/stage/snapshot.h'
+SNAPSHOT = 'engine/entry/snapshot.h'
 WINDOW_FILES = ('.dart', '.swift', '.cc', '.cpp', '.h', '.mm', '.m')
 NOT_WINDOW = ('app/test/', 'app/integration_test/', BINDINGS)
 # Debt: what may stand unreached for now, each with why; the line goes when the reason does.

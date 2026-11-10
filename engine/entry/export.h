@@ -52,7 +52,7 @@ const char* motolii_list(Motolii* m) {
     });
 }
 
-#include "stage/snapshot.h"
+#include "entry/snapshot.h"
 // Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read without the project
 // lock. which 1 is the project's snapshot: its own part, and the part of each layer newer than
 // `since`. which 2 is the time snapshot. The result is a JSON copy that the caller frees with

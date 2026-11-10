@@ -83,6 +83,7 @@
 1	guard	entry/motolii.h
 1	guard	entry/render_thread.h
 1	guard	entry/render_thread_loop.h
+1	guard	entry/snapshot.h
 1	guard	entry/window.h
 1	guard	gpu/compute_interop.h
 1	guard	gpu/gpu_interop.h
@@ -100,6 +101,7 @@
 1	guard	motion/easing_names.h
 1	guard	motion/lottie_motion.h
 1	guard	physics/physics.h
+1	guard	preview/playback_cache.h
 1	guard	stage/canvas/canvas.h
 1	guard	stage/canvas/canvas_cache.h
 1	guard	stage/canvas/canvas_edge.h
@@ -116,8 +118,6 @@
 1	guard	stage/render/render_draw.h
 1	guard	stage/render/render_layers.h
 1	guard	stage/render/render_stage.h
-1	guard	stage/snapshot.h
-1	guard	stage/stage_cache.h
 2	mutable-static	community/quickjs/script_leva.h
 1	mutable-static	document/layer_edit.h
 1	mutable-static	document/presets.h
@@ -174,6 +174,7 @@
 2	static-function	entry/calls_time.h
 7	static-function	entry/render_thread.h
 1	static-function	entry/render_thread_loop.h
+6	static-function	entry/snapshot.h
 9	static-function	entry/window.h
 1	static-function	media/gstreamer_file_source.h
 6	static-function	media/midi_notes.h
@@ -183,6 +184,7 @@
 17	static-function	media/video_layer.h
 8	static-function	motion/easing_curves.h
 6	static-function	motion/lottie_motion.h
+6	static-function	preview/playback_cache.h
 21	static-function	stage/canvas/canvas_cache.h
 3	static-function	stage/canvas/canvas_edge.h
 8	static-function	stage/canvas/canvas_flat.h
@@ -197,6 +199,4 @@
 3	static-function	stage/render/render_draw.h
 12	static-function	stage/render/render_layers.h
 20	static-function	stage/render/render_stage.h
-6	static-function	stage/snapshot.h
-6	static-function	stage/stage_cache.h
 2	using-namespace	stage/render/render_stage.h
