@@ -78,7 +78,7 @@ const char* motolii_list(Motolii* m) {
 char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
     std::lock_guard<std::mutex> hold(m->snapshotLock);
     if (which == 2) return *version = m->timeVersion, strdup(m->timeSnapshot.c_str());
-    std::string all = "{\"document\":" + (m->snapshotAll.empty() ? std::string("null") : m->snapshotAll) + ",\"thing\":{";
+    std::string all = "{\"document\":" + (m->snapshotAll.empty() ? std::string("null") : m->snapshotAll) + ",\"layer\":{";
     bool first = true;
     for (const auto& [layer, part] : m->snapshotLayers)
         if (part.first > since) all += (first ? "\"" : ",\"") + std::to_string(layer) + "\":" + part.second, first = false;
