@@ -1,53 +1,52 @@
-# 革の絵の部品の名前
+# Names of the pictures a skin can replace
 
-*The names of the pictures a skin can replace: `<Parts Value="folder"/>` in `theme.xml`, then `name.svg` in that folder is drawn instead, recoloured with the colour the app uses there.*
+This is the reference for people who make a skin: the names of the app's icon pictures that a skin can replace. Write `<Parts Value="folder"/>` in `theme.xml`, and `name.svg` in that folder is drawn instead of the app's picture, repainted in the colour the app uses there.
 
-theme.xml に `<Parts Value="フォルダ"/>` を書くと、そのフォルダにある `名前.svg` が、アプリのその絵の代わりに描かれる（フォルダは theme.xml から見た場所でも、~/ からでも、絶対の場所でもよい）。
-色は、アプリがその場所で使っている色に塗り直される（SVG の形だけが使われる）。無い名前は、アプリのいつもの絵のまま。
+The folder may be given relative to theme.xml, from `~/`, or as an absolute path. Only the shape of the SVG is used. A name you do not have stays the app's usual picture. For how to make a skin, see [README.md](README.md).
 
-- 枠は `viewBox="0 0 24 24"`。アプリではおよそ 12〜22 画素に縮めて描かれる（`Size` で変わる）ので、線の太さは 24 の枠で 1.5〜2 がちょうどいい。
-- 塗りの形も、線だけの形（`fill="none"` と `stroke`）も、どちらも塗り直される。塗り直す色はその場所の色：ふだんは文字の灰色、押している時や再生中は差し色（`ChosenInk`）。
-- 印は枠いっぱいに描かれる。いつもの印と大きさをそろえたいときは、24 の枠の中で 2〜3 の余白を残す。
-- ここに載っているのは、アプリに今出ている印だけ。
+- The frame is `viewBox="0 0 24 24"`. The app draws it shrunk to about 12 to 22 pixels (it changes with `Size`), so a line weight of 1.5 to 2 in the 24 frame is just right.
+- Both filled shapes and line-only shapes (`fill="none"` with `stroke`) are repainted. The colour is the colour of that place: usually the grey of text, and the accent (`ChosenInk`) while pressed or playing.
+- An icon is drawn to fill the frame. To match the size of the usual icons, leave a margin of 2 to 3 inside the 24 frame.
+- Only the icons the app shows now are listed here.
 
-## 枠（frame.）：部品の形そのもの
-印と違って、枠は**描いた色のまま**、部品のまわりにのばして描かれる（CSS の border-image と同じ）。四隅は描いたまま、辺と真ん中がのびる。四隅の大きさは SVG の一番外のタグに `data-slice="9"` と書く（書かなければ短い辺の3分の1）。枠を持ってきた部品は、いつもの塗りと角を描かない。
+## Frames (frame.): the shape of a part itself
+Unlike icons, a frame is drawn **in the colours you drew**, stretched around the part (the same as CSS border-image). The four corners are kept as drawn, and the sides and the middle stretch. Write the size of the corners as `data-slice="9"` on the outermost tag of the SVG (if you do not, it is one third of the shorter side). A part that has a frame does not draw its usual fill and corners.
 
-| 名前 | 部品 |
+| Name | Part |
 |---|---|
-| `frame.render` | 上の帯の Render ボタン（`frame.render.hover`：手を乗せた時） |
-| `frame.card` | インスペクタの札1枚（見出しの帯も含む：見出しは上から約26の高さ） |
+| `frame.render` | The Render button in the top bar (`frame.render.hover`: when a hand is over it) |
+| `frame.card` | One card of the inspector (the header band is included: the header is about 26 high from the top) |
 
-見本は [streets](./streets/parts)（黒い箱に白い太枠の Render、青い見出しの帯の札）。
+The sample is [streets](./streets/parts) (Render as a black box with a thick white border, and cards with a blue header band).
 
-## 道具（glyph.）：プレビューの左の縦の道具の列
-| 名前 | 印 |
+## Tools (glyph.): the vertical column of tools to the left of the preview
+| Name | Icon |
 |---|---|
-| `glyph.select` | 選ぶ（矢印） |
-| `glyph.move` | 動かす（十字の矢印） |
-| `glyph.rect` `glyph.ellipse` `glyph.shape` | 四角・楕円・形を描く |
-| `glyph.pen` | ペン |
-| `glyph.text` | 文字 |
-| `glyph.brush` | ブラシ（手描き） |
-| `glyph.image` `glyph.media` `glyph.camera` `glyph.grid` | 画像・素材・カメラ・格子 |
+| `glyph.select` | Select (arrow) |
+| `glyph.move` | Move (cross arrows) |
+| `glyph.rect` `glyph.ellipse` `glyph.shape` | Draw a rectangle, an ellipse, a shape |
+| `glyph.pen` | Pen |
+| `glyph.text` | Text |
+| `glyph.brush` | Brush (freehand) |
+| `glyph.image` `glyph.media` `glyph.camera` `glyph.grid` | Image, media, camera, grid |
 
-## タイムライン（tp.）：タイムラインの上の帯と、層の行
-| 名前 | 印 |
+## Timeline (tp.): the band above the timeline, and the layer rows
+| Name | Icon |
 |---|---|
-| `tp.play` `tp.pause` | 再生・一時停止 |
-| `tp.toStart` `tp.stepBack` `tp.stepFwd` | 頭へ・1コマ戻る・1コマ進む |
-| `tp.loop` | くり返し |
-| `tp.fit` `tp.plus` `tp.minus` | 全体を収める・時間を広げる・縮める |
-| `tp.eye` `tp.eyeOff` | 層の行の「見える・見えない」 |
-| `tp.solo` | 層の行の「これだけ見る」 |
-| `tp.lock` `tp.unlock` | 層の行の「触れない・触れる」 |
-| `tp.caretR` `tp.caretD` | 層の行の三角：閉じている・開いている |
+| `tp.play` `tp.pause` | Play, pause |
+| `tp.toStart` `tp.stepBack` `tp.stepFwd` | To the start, back one frame, forward one frame |
+| `tp.loop` | Loop |
+| `tp.fit` `tp.plus` `tp.minus` | Fit everything, widen the time, narrow the time |
+| `tp.eye` `tp.eyeOff` | A layer row's "visible, not visible" |
+| `tp.solo` | A layer row's "show only this" |
+| `tp.lock` `tp.unlock` | A layer row's "cannot be touched, can be touched" |
+| `tp.caretR` `tp.caretD` | The triangle of a layer row: closed, open |
 
-## ドック（dock.）：パネルの見出しの印、作る棚・効果の棚の印（名前が中身のまま：`dock.media` はメディアのパネル、`dock.star` は星の形を作る）
+## Dock (dock.): the icons of panel headers, and of the create shelf and the effects shelf (the name is the content: `dock.media` is the Media panel, `dock.star` makes a star shape)
 `dock.media` `dock.effects` `dock.fonts` `dock.colors` `dock.create` `dock.program` `dock.search` `dock.close` `dock.reload` `dock.chevron` `dock.grid` `dock.list` `dock.particles` `dock.plus` `dock.light` `dock.copies` `dock.text` `dock.time` `dock.shape` `dock.camera` `dock.nullObj` `dock.rect` `dock.ellipse` `dock.polygon` `dock.star` `dock.line` `dock.radial` `dock.folder` `dock.files` `dock.comp` `dock.image` `dock.audio` `dock.video` `dock.font` `dock.link` `dock.stage` `dock.inspector` `dock.timeline` `dock.toolPanel` `dock.more`
 
-## ツールパネルの道具（dock.）
+## Tool panel tools (dock.)
 `dock.tools` `dock.blend` `dock.align`
 
-## そのほか
-`undo`（やり直しは同じ絵を裏返して使う）、`shade`（明暗の切り替え）、`stage.safe`、`stage.grid`、`stage.snap`（今の絵を取っておく）、`stage.show`（取っておいた絵を見る）
+## Others
+`undo` (redo uses the same picture flipped), `shade` (the light and dark switch), `stage.safe`, `stage.grid`, `stage.snap` (keep the current picture), `stage.show` (look at the kept picture)

@@ -1,33 +1,34 @@
-# 革（スキン）の作り方
+# How to make a skin
 
-*How to make a skin: one folder (`theme.xml`, and pictures or fonts if any) that changes only how the app looks. Put it in your own folder's `skins/` and it appears under View › Skin.*
+[日本語](README.ja.md)
 
-革は、アプリの見た目だけを着せ替えるもの。エンジンの側（プロジェクト・動き・絵）は何も変わらない。
-革は1つのフォルダで、利用者のフォルダ（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可。ほかの棚と同じ）の `skins/` に置く。同じ名前なら利用者の物が勝つ。前の置き場 `~/.motolii/skins/` に置いた革も、そのまま読む。
+This is the first page for anyone who wants to make a skin: one folder (a `theme.xml`, plus pictures or fonts if you like) that changes only how the app looks. Put it in your own `skins/` folder and it appears under View › Skin.
 
-このフォルダにある見本（そのまま View › Skin に並ぶ）：
+A skin is a theme: the colours, type, shapes and SVG parts of the window. Nothing on the engine side (project, motion, pictures) changes.
+A skin is one folder, placed in the `skins/` folder inside your own folder (on a Mac `~/Library/Application Support/Motolii/`, on Windows `%APPDATA%\Motolii\`; `MOTOLII_OWN` changes it, as for every other shelf). A shelf is one of the tabs on the left of the window, where bundled and user content appears, as in Blender's Asset Shelf. If a name is the same, yours wins. A skin in the older location `~/.motolii/skins/` is still read.
 
-| スキン | 見た目 |
+The samples in this folder (they appear under View › Skin as they are):
+
+| Skin | Look |
 |---|---|
-| `labs` | 白地に黒文字、丸いピル、淡い印。灰色を 1 段ずつ書き、印の絵も差し替えた作り込みの見本 |
-| `lighttable` | 光るライトテーブルの上のフィルム。乳白の地、黒い帯、グリースペンシルの橙は触る所だけ |
-| `paper` | 3 色と角 0 だけの、いちばん短い見本 |
-| `poster` | スイスの幾何学ポスター。平たい赤・黄・青・緑・桃、太いグロテスク体 |
-| `sheet` | 紙 1 枚の地と墨の線。赤は今いる所（モード・キー）だけ |
-| `streets` | 黒い箱・白文字・お金の緑・角は四角。Render ボタンとカードに専用の枠（`parts/frame.*.svg`） |
-
+| `labs` | Black text on white, round pills, pale icons. A worked-out sample: every grey step is written and the icon pictures are replaced |
+| `lighttable` | Film on a glowing light table. Milky ground, black bands, grease-pencil orange only where you touch |
+| `paper` | The shortest sample: only three colours and square corners |
+| `poster` | A Swiss geometric poster. Flat red, yellow, blue, green and pink, heavy grotesque type |
+| `sheet` | A ground of one sheet of paper and ink lines. Red only for where you are now (mode, key) |
+| `streets` | Black boxes, white text, money green, square corners. The Render button and the cards have frames of their own (`parts/frame.*.svg`) |
 
 ```
-<利用者のフォルダ>/skins/my_skin/
-  theme.xml      ← 色・形・書体（これだけでも革になる）
-  parts/*.svg    ← 印の絵（なくてもよい）
-  *.otf / *.ttf  ← 書体ファイル（なくてもよい）
-  preview.png    ← 撮ったアプリの画面
+<your folder>/skins/my_skin/
+  theme.xml      <- colours, shapes, fonts (this alone is a skin)
+  parts/*.svg    <- icon pictures (optional)
+  *.otf / *.ttf  <- font files (optional)
+  preview.png    <- a screenshot of the app wearing the skin (optional)
 ```
 
-## 1. いちばん短い革
+## 1. The shortest skin
 
-3色でアプリ全体が変わる。灰色の段（地・札・線・薄い文字…）は全部 `Background` と `Foreground` から作られ、明るい地なら明るい革になる。
+Three colours change the whole app. The grey steps (ground, card, line, quiet text and so on) are all made from `Background` and `Foreground`, and a light ground gives a light skin.
 
 ```xml
 <Motolii>
@@ -41,122 +42,115 @@
 </Motolii>
 ```
 
-これが見本の [paper](./paper/theme.xml)。作り込んだ見本は [labs](./labs/theme.xml)（灰色を1段ずつ書いて、印の絵も差し替えている）。
+This is the sample [paper](./paper/theme.xml). For a worked-out sample see [labs](./labs/theme.xml) (every grey step is written and the icon pictures are replaced).
 
-## 2. 着る・直す・見る
+## 2. Wear it, fix it, look at it
 
-- **着る**：フォルダを利用者のフォルダの `skins/` に入れて、アプリのメニュー **View › Skin** から選ぶ。**Show Skins Folder** でそのフォルダが開く。**Default** でアプリのいつもの見た目に戻る。
-- **直す**：着たまま `theme.xml` を保存すると、アプリはすぐ読み直す。
-- **見る（アプリを開かずに）**：
+- **Wear it**: put the folder in `skins/` in your own folder and choose it from the app's menu **View › Skin**. **Show Skins Folder** opens that folder. **Default** goes back to the app's usual look.
+- **Fix it**: save `theme.xml` while wearing it and the app rereads it at once.
+- A name you leave out keeps the app's usual value. All the names are in [ROLES.md](ROLES.md). [labs](./labs/theme.xml) is a sample that writes every grey step.
 
-```bash
-```
+## 3. Colours
 
-アプリ全体をその革で撮って、フォルダに `preview.png` を書く（2分ほど）。撮るプロジェクトには立体・光・形・文字・カメラ・アニメのレイヤーとキーが入っているので、レイヤーの色・縞・キーの印も写る。フォルダの外には何も書かない。いくつでも並べて渡せる。
+Write `<Name Value="#rrggbb"/>` (with transparency, `#rrggbbaa`). All the names are in [ROLES.md](ROLES.md) (keep them the same as the names the app reads).
 
-- 書かなかった名前は、アプリのいつもの値のまま。名前の全部は [ROLES.md](ROLES.md)、灰色の段まで全部書いた見本は [labs](./labs/theme.xml)。
+- **Background / Foreground**: the colour of a panel's ground and the colour of text. The colours you write become the ground and the text as they are, and the other grey steps (gaps, cards, fields, lines, quiet text and so on) are made between these two. A light ground gives a light skin (`Shade` is not needed).
+- **Grey00 to Grey100**: to decide the grey steps one by one (only the steps you write are overridden). Which step is where in the app is in the table of [ROLES.md](ROLES.md). [labs](./labs/theme.xml) is an example that writes the steps one by one.
+- **ChosenDefault**: the accent (what is selected, what is pressed, the fill of Render). The text on it is **ControlOnForeground**.
+- **Clip1 to Clip7**: the colours of layer kinds (1 shape, 2 text, 3 image or video, 4 camera, 5 group, 6 particles, 7 audio). They are used for the timeline's bars and for the cards and marks of that kind. **Keyframe**: the mark of a keyframe.
+- **Tone…**: the colour of each kind of card in the inspector (layer, blend, place, text animation, time, layout).
 
-## 3. 色
+## 4. Shapes (numbers)
 
-`<名前 Value="#rrggbb"/>` で書く（透明度つきは `#rrggbbaa`）。名前の全部は [ROLES.md](ROLES.md) にある（アプリが読む名前と揃えておく）。
+Each one is "how many times the usual". 1 is the usual size.
 
-- **Background / Foreground**：パネルの地の色と文字の色。書いた色がそのまま地と文字になり、ほかの灰色の段（すき間・札・入力欄・線・薄い文字…）はこの2色の間に作られる。明るい地なら明るい革になる（`Shade` は要らない）。
-- **Grey00〜Grey100**：灰色の段を1つずつ決めたいとき（書いた段だけ上書き）。どの段がアプリのどこかは [ROLES.md](ROLES.md) の表。[labs](./labs/theme.xml) が段を1つずつ書いた例。
-- **ChosenDefault**：差し色（選んだ物・押している物・Render の塗り）。その上の文字は **ControlOnForeground**。
-- **Clip1〜7**：層の種類の色（1 形、2 文字、3 画像・動画、4 カメラ、5 グループ、6 粒子、7 音）。タイムラインの帯と、その種類の札や印に使う。**Keyframe**：キーの印。**AxisX/Y/Z**：軸の色。
-- **Tone…**：インスペクタの札ごとの色（変形・塗り・効果…）。
-
-## 4. 形（数）
-
-どれも「いつもの何倍か」。1 がいつもの大きさ。
-
-| 名前 | 変わるもの | 効く範囲 | 例 |
+| Name | What changes | Range that takes effect | Example |
 |---|---|---|---|
-| `Corner` | 角の丸み | 0〜10 | 0 で角ばる、3.5 で丸い錠剤 |
-| `Spacing` | 余白とすき間 | 0〜2 | 1.25 でゆったり |
-| `Size` | アプリの部品すべての大きさ（行・帯・列・札・印・図） | 0.85〜1.5 | 1.15 で大きめ |
-| `TextScale` | 文字の大きさ | 0.85〜1.3 | 1.08 |
+| `Corner` | How round corners are | 0 to 10 | 0 is square, 3.5 is a round pill |
+| `Spacing` | Margins and gaps | 0 to 2 | 1.25 is roomy |
+| `Size` | The size of every part of the app (rows, bands, columns, cards, icons, figures) | 0.85 to 1.5 | 1.15 is larger |
+| `TextScale` | The size of text | 0.85 to 1.3 | 1.08 |
 
-範囲の外の数、数でない言葉（`NaN`、`big`…）、読めない色、無い書体や無いフォルダを書いてもアプリは壊れない。数は範囲の端に収められ、ほかはいつもの値になる。範囲は、文字が切れず部品がはみ出さない所まで。
+The app does not break when you write a number outside the range, a word that is not a number (`NaN`, `big`), a colour that cannot be read, or a font or folder that does not exist. A number is pulled to the end of its range, and anything else becomes the usual value. The ranges reach as far as text is not clipped and parts do not overflow.
 
-## 5. 書体
+## 5. Fonts
 
 ```xml
 <FontSans Value="Avenir Next"/>
 <FontMono Value="JetBrains Mono"/>
 ```
 
-Mac に入っている書体なら名前だけでよい。幅の広い書体（Monaco など）でも文字は切れない（収まらない所は小さく描かれる）。小さくなり過ぎたら `Size` を少し上げる。入っていない書体は、ファイルを革のフォルダに入れて場所も書く。
+For a font already on the Mac, the name is enough. Even a wide font (Monaco and the like) does not clip text; where it does not fit, it is drawn smaller. If it gets too small, raise `Size` a little. For a font that is not installed, put the file in the skin's folder and write where it is.
 
 ```xml
 <FontSans Value="Inter"/>
 <FontSansFile Value="Inter.ttf"/>
 ```
 
-## 6. 印の絵（SVG）
+## 6. Icon pictures (SVG)
 
 ```xml
 <Parts Value="parts"/>
 ```
 
-と書くと、そのフォルダの `名前.svg` がアプリの印の代わりに描かれる。名前の全部は [PARTS.md](PARTS.md) にある（再生ボタンは `tp.play.svg`、道具の選択は `glyph.select.svg`…）。
+With this, `name.svg` in that folder is drawn in place of the app's icon. All the names are in [PARTS.md](PARTS.md) (the play button is `tp.play.svg`, the select tool is `glyph.select.svg`, and so on).
 
-- 枠は `viewBox="0 0 24 24"` で描く。
-- 色はアプリがその場所の色で塗り直すので、形だけ描けばよい（色は何でもよい）。
-- 無い名前は、アプリのいつもの絵のまま。1枚だけ差し替えるのもあり。
-- 場所は theme.xml から見た相対・`~/`・絶対のどれでもよい。相対にしておくと、フォルダごと配れる。
+- Draw in a `viewBox="0 0 24 24"` frame.
+- The app repaints the colour with the colour of that place, so only the shape matters (any colour will do).
+- A name you do not have stays the app's usual picture. Replacing just one is fine.
+- The folder may be given relative to theme.xml, as `~/`, or as an absolute path. Keep it relative and the whole folder can be handed out.
 
-### 枠：部品の形を変える
+### Frames: change the shape of a part
 
-`parts/frame.render.svg`（Render ボタン）や `parts/frame.card.svg`（インスペクタの札）を置くと、その部品の形がまるごと変わる。四隅はそのまま、辺はのばして、どんな大きさの部品にもはまる。色は描いたまま。書き方は [PARTS.md](PARTS.md) の「枠」。
+Put `parts/frame.render.svg` (the Render button) or `parts/frame.card.svg` (a card of the inspector) and the shape of that part changes entirely. The four corners are kept, the sides are stretched, and it fits a part of any size. The colours stay as drawn. How to write one is in "Frames" of [PARTS.md](PARTS.md).
 
-## 6½. フォーム：部品の組み立てそのものを変える（ヘッドレス UI）
+## 6b. Forms: change how a part is put together (headless UI)
 
-色・数・印・枠は見た目の差し替えまで。ボタンが何の形をしているか、選択肢がどう並ぶか、札がどう組まれるかまで変えるのがフォーム。React Aria や Radix の「ヘッドレス UI」と同じ分け方で、
+Colours, numbers, icons and frames only change appearance. A form goes further: it changes what shape a button is, how choices line up and how a card is built. It is split the way React Aria and Radix split "headless UI":
 
-- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/skin/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
-- **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（押す・手が乗る・選ぶ・切り替える、読み上げも）
-- **フォームが書くもの**：それをどう組み立てて見せるか、だけ
+- **What the app passes in**: the words of a part, its current value and what a press does (`ActionSpec`, `ChoiceSpec`, `SwitchSpec`, `CardSpec` and others in `lib/skin/forms/forms.dart`)
+- **What a hand does**: [naked_ui](https://pub.dev/packages/naked_ui) (press, hover, select, toggle, and screen-reader support)
+- **What the form writes**: only how these are put together and drawn
 
-フォームは Dart のクラス1つ（`lib/skin/forms/poster_forms.dart` が見本）。部品の種類ごとに1つずつ書く：
+A form is one Dart class (`lib/skin/forms/poster_forms.dart` is a sample). The three functions every form must write:
 
-| フォームの関数 | アプリの部品 |
+| Form function | Part of the app |
 |---|---|
-| `action` | Render ボタン |
-| `tabs` | 上の帯の Edit・Animate・Export |
-| `choice` | インスペクタの Space（2D・2.5D・3D） |
-| `onOff` | オン・オフ（Animate all など） |
-| `card` | インスペクタの札1枚 |
+| `action` | The Render button |
+| `onOff` | On and off switches (Animate all and others) |
+| `card` | One card of the inspector |
 
-新しいフォームは、`lib/skin/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/skin/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
+The others (`segment`, `flag`, `chips`, `track`, `number` and more) are optional and have a usual drawing. They are listed in [HANDOFF.md](../../docs/app/skins/HANDOFF.md).
 
-**すぐ試す**：`app/tool/live.sh` でアプリを開いておけば、フォームのファイルを保存した瞬間に開いたアプリが描き直る（状態はそのまま）。
+To add a form, write a class that extends `Forms` in `lib/skin/forms/<name>_forms.dart`, add one line to `forms` in `lib/skin/forms/forms.dart`, and write `<Forms Value="<name>"/>` in the skin's theme.xml.
 
-フォームはアプリに組み込まれるので、配った人が置くだけでは着られない（色・数・印・枠は置くだけで着られる）。
+**To try it at once**: open the app with `app/tool/live.sh`, and the open app redraws the moment you save the form file (its state stays as it is).
 
-## 7. 革に入らないもの
+A form is compiled into the app, so a skin that brings one cannot be worn by just dropping it in place (colours, numbers, icons and frames can).
 
-- **プレビューの中**：枠の外の暗い所も含めて、作品の絵そのもの。
-- **並べ方**：パネルの位置や大きさは、ドックで各自が決める。
-- **アプリ全体の倍率**：見る人の好み。上の帯の「100%」をこすって 1% 刻みで変える（`~/.motolii/window.xml` に残る）。
-- **動き方**：革は見た目だけ。
+## 7. What a skin does not change
 
-## 8. 配る
+- **The inside of the preview**: including the dark area outside its frame, it is the work's own picture.
+- **Layout**: where panels sit and how big they are is each person's choice, in the dock.
+- **The scale of the whole app**: this is the viewer's preference. Scrub "100%" in the top bar in steps of 1% (it is kept in `~/.motolii/window.xml`).
+- **How things move**: a skin is only the look.
 
-フォルダをそのまま zip にして渡す。受け取った人は利用者のフォルダの `skins/` に置いて View › Skin で選ぶ。
+## 8. Handing it out
 
-## 9. LLM に頼むとき
+Zip the folder as it is. Whoever receives it puts it in `skins/` in their own folder and chooses it in View › Skin.
 
-そのまま渡せる頼み方：
+## 9. Asking an LLM
 
-> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`app/tool/live.sh` でアプリを開いて見て、気になる所を直して、また見る。読めない文字や差し色の埋もれがなくなるまで繰り返して。
+A request you can hand over as it is:
 
-## 文字は切れない
+> Read `shelves/skins/README.md` and `shelves/skins/ROLES.md`, then write a skin of "(the look you want)" to `~/Library/Application Support/Motolii/skins/<name>/theme.xml`. Open the app with `app/tool/live.sh`, look, fix whatever bothers you, and look again. Repeat until no text is unreadable and no accent colour is lost.
 
-アプリの文字は、箱より広くなると「…」で切らずに、収まるまで小さく描く（長い名前は2行まで折り返す）。`Size`・`TextScale`・`Spacing`・幅の広い書体を大きく振っても、言葉が割れたり欠けたりしない。
-切れ0・はみ出し0・タブが消えないことが合格。
+## Text is never clipped
 
-## まだできないこと
+When text becomes wider than its box, the app does not cut it with "…". It draws the text smaller until it fits (a long name wraps to two lines). Even with a large `Size`, `TextScale` or `Spacing`, or a wide font, words are not split or lost.
+The pass mark is no clipping, no overflow, and no tab disappearing.
 
-- アプリの中で色を選んで革を作る道具はない。書くのは theme.xml。
-- 文字を大きくしても（`TextScale`）、行や札の高さは `Size` でしか変わらない。文字を大きくするなら `Size` も同じくらい上げると、縮めて収める所が減る。
+## What is not possible yet
+
+- There is no tool in the app to pick colours and make a skin. You write theme.xml.
+- Making text larger (`TextScale`) does not change the height of rows or cards; only `Size` does. If you make text larger, raise `Size` by about the same amount, and less text has to be shrunk to fit.

@@ -1,76 +1,74 @@
-# 革で使える名前（theme.xml の役割）
+# Names a skin can set (roles in theme.xml)
 
-*Every name a skin's `theme.xml` can set (`<Name Value="..."/>`): colours, sizes and fonts. A name left out keeps the app's own value; the app rereads the file the moment it changes.*
+This is the reference for people who make a skin: every name a skin's `theme.xml` can set (`<Name Value="..."/>`), covering colours, numbers and words.
 
-スキンのフォルダの `theme.xml` に `<名前 Value="..."/>` を並べる。書かない名前はアプリのいつもの値のまま。アプリは theme.xml が書き換わった瞬間に読み直す。見本は [paper](./paper/theme.xml)（短い）と [labs](./labs/theme.xml)（作り込み）。
-この一覧とアプリが読む名前は揃えておく。
+Write `<Name Value="..."/>` in the `theme.xml` of the skin's folder. A name you leave out keeps the app's usual value. The app rereads theme.xml the moment it changes. Samples are [paper](./paper/theme.xml) (short) and [labs](./labs/theme.xml) (worked out). For how to make a skin, see [README.md](README.md).
+This list and the names the app reads are kept the same.
 
-## 色（`#rrggbb` か `#rrggbbaa`）
+## Colours (`#rrggbb` or `#rrggbbaa`)
 
-### 地と文字：まずこの2つ
-| 名前 | アプリのどこ |
+### Ground and text: these two first
+| Name | Where in the app |
 |---|---|
-| `Background` | パネルの地と上の帯。書いた色がそのまま地になる |
-| `Foreground` | 文字。書いた色がそのまま文字になる |
+| `Background` | The ground of panels and the top bar. The colour you write becomes the ground as it is |
+| `Foreground` | Text. The colour you write becomes the text as it is |
 
-この2つを書くと、下の灰色の段が全部この2色の間に作られる（明るい地なら明るい革になり、`Shade` は要らない）。明るさは2色の間を順に、色味は地に近い段（Grey00〜Grey44）が Background の、文字に近い段（Grey56〜）が Foreground のものになるので、紫の地に黄の文字のような強い2色でも濁らない。段を1つずつ書けば、その段だけ上書き。
+Write these two and all the grey steps below are made between them (a light ground gives a light skin, and `Shade` is not needed). Brightness runs in order between the two colours. The hue comes from the nearer one: the steps near the ground (Grey00 to Grey44) take Background's, and the steps near the text (Grey56 and up) take Foreground's, so even two strong colours such as a purple ground with yellow text do not turn muddy. Write a step by itself and only that step is overridden.
 
-### 灰色の段（暗い順。明るい革では明るい順）
-| 名前 | アプリのどこ |
+### Grey steps (darkest first; in a light skin, lightest first)
+| Name | Where in the app |
 |---|---|
-| `Grey00` | パネルとパネルのすき間（一番奥） |
-| `Grey07` | パネルの地、上の帯（= Background） |
-| `Grey10` | 一段沈んだ地（プレビューのまわり、タイムラインとグラフの地） |
-| `Grey13` | 札（インスペクタの値の札、カード）、定規の地 |
-| `Grey15` | 入力欄、押せる物の地、定規の目盛りの帯 |
-| `Grey20` | 区切りの線、持ち上がった物、手を乗せた時の地 |
-| `Grey26` | 強めの線、枠 |
-| `Grey38` | 目盛り、使えない時の印 |
-| `Grey44` | ごく薄い文字 |
-| `Grey56` | 薄い文字（見出しの小さい字、単位、説明） |
-| `Grey63` `Grey76` | 少し薄い文字、印 |
-| `Grey91` | 文字（少し控えめ） |
-| `Grey95` | 文字（= Foreground） |
-| `Grey100` | 一番強い文字 |
+| `Grey00` | The gap between panels (the deepest layer) |
+| `Grey07` | The ground of a panel, the top bar (= Background) |
+| `Grey10` | A ground one step down (around the preview, the ground of the timeline and the graph) |
+| `Grey13` | Cards (the inspector's value cards), the ground of the ruler |
+| `Grey15` | Input fields, the ground of things you press, the band of the ruler's ticks |
+| `Grey20` | Divider lines, raised things, the ground under a hand |
+| `Grey26` | Stronger lines, borders |
+| `Grey38` | Ticks, the mark for unavailable |
+| `Grey44` | Very quiet text |
+| `Grey56` | Quiet text (small heading letters, units, descriptions) |
+| `Grey63` `Grey76` | Slightly quiet text, marks |
+| `Grey91` | Text (a little restrained) |
+| `Grey95` | Text (= Foreground) |
+| `Grey100` | The strongest text |
 
-### タイムライン
-| 名前 | アプリのどこ |
+### Timeline
+| Name | Where in the app |
 |---|---|
-| `BandA` `BandB` | 行の縞（交互） |
-| `RowLine` | 行の間の線 |
-| `Clip1` `Clip2` `Clip3` `Clip4` `Clip5` `Clip6` `Clip7` | 層の種類の色：1 形、2 文字、3 画像・動画、4 カメラ、5 グループ、6 粒子、7 音。タイムラインの帯のほか、その種類の札や印（Camera パネルの「Camera」の札は 4、作る棚の印）にも使う。選んでいない帯はこの色を少し地の色へ寄せて描く。帯の上の文字は `ControlOnForeground` |
-| `ElementMark` | 部品（Element）のイントロの終わり・アウトロの始まりの印：選んだグループのルーラーの上の小さな三角（Alight Motion の黄色い印） |
-| `Keyframe` | キーの印 |
+| `BandA` `BandB` | The stripes of rows (alternating) |
+| `RowLine` | The line between rows |
+| `Clip1` `Clip2` `Clip3` `Clip4` `Clip5` `Clip6` `Clip7` | The colour of a layer kind: 1 shape, 2 text, 3 image or video, 4 camera, 5 group, 6 particles, 7 audio. Besides the timeline's bars, they are used for the cards and marks of that kind (the "Camera" card of the Camera panel uses 4, and so do the marks of the create shelf). A bar that is not selected is drawn with this colour moved a little toward the ground. Text on a bar is `ControlOnForeground` |
+| `Label1` `Label2` `Label3` `Label4` `Label5` `Label6` `Label7` `Label8` `Label9` `Label10` `Label11` `Label12` `Label13` `Label14` `Label15` `Label16` | The sixteen label colours of layers. A layer's row, its dot on the Relations map, its frame in the preview and its name in lists use one of them |
+| `ElementMark` | The mark of an element's intro end and outro start: a small triangle on the ruler of the selected group (Alight Motion's yellow mark) |
+| `Keyframe` | The mark of a keyframe |
 
-### 差し色
-| 名前 | アプリのどこ |
+### Accent
+| Name | Where in the app |
 |---|---|
-| `ChosenDefault` | 差し色：選んだ物、押している物、Render や Edit の塗り |
-| `ControlOnForeground` | 差し色の塗りの上の文字と印（Render、Edit の字） |
-| `ChosenInk` | 差し色を地の上で線や文字に使う時の色（書かなければ、明るい革では読める濃さに自動で沈める） |
+| `ChosenDefault` | The accent: what is selected, what is pressed, the fill of Render and Edit |
+| `ControlOnForeground` | Text and marks on an accent fill (the letters of Render and Edit) |
+| `ChosenInk` | The colour for using the accent as a line or text on a ground (if you leave it out, a light skin automatically darkens it until it can be read) |
 
-### そのほか
-| 名前 | アプリのどこ |
+### Others
+| Name | Where in the app |
 |---|---|
-| `AxisX` `AxisY` `AxisZ` | 軸の色（X・Y・Z の印、ハンドル） |
-| `HandleMove` `HandleScale` `HandleRotate` `HandlePivot` `HandleLift` | インスペクタの中で手で動かす図の色（移動・拡大・回転・基準点・持ち上げ）：変形の図、Anchor の立方体と札、光や複製の持ち手。プレビューの上の枠と持ち手は差し色（`ChosenDefault`） |
-| `Alert` | 知らせの赤い点（上の帯） |
-| `Shadow` | 浮いている物（開いた選びの一覧、つかんだ札）の影 |
-| `Glaze9` `Glaze15` | タイムラインのコマの縦線（薄く重ねる線：細かい方・太い方） |
-| `ToneTransform` `ToneLayer` `ToneText` `ToneFill` `ToneBlend` `TonePlace` `TonePath` `ToneSolid` `ToneTextAnim` `ToneMask` `ToneTime` `ToneLayout` `ToneParticles` `ToneCamera` `ToneOutput` `ToneLink` | インスペクタの札の種類ごとの印の色（変形、層、文字、塗り、合成、配置、パス、立体、文字の動き、マスク、時間、並べ方、粒子、カメラ、書き出し、つながり） |
+| `Alert` | The red dot of a notice (top bar) |
+| `Shadow` | The shadow of floating things (an open list of choices, a card being held) |
+| `ToneLayer` `ToneBlend` `TonePlace` `ToneTextAnim` `ToneTime` `ToneLayout` | The colour of the mark of each kind of inspector card (layer, blend, place, text animation, time, layout) |
 
-## 数
+## Numbers
 `Corner` `Size` `Spacing` `TextScale`
-（どれも「いつもの何倍か」。Corner＝角の丸み 0〜10、Size＝部品の大きさ 0.85〜1.5、Spacing＝余白とすき間 0〜2、TextScale＝文字の大きさ 0.85〜1.3。範囲の外は端に収める）
+(Each is "how many times the usual". Corner = how round corners are, 0 to 10; Size = the size of parts, 0.85 to 1.5; Spacing = margins and gaps, 0 to 2; TextScale = the size of text, 0.85 to 1.3. Outside the range it is pulled to the end.)
 
-## 言葉
+## Words
 `FontMono` `FontSans` `Forms` `Parts` `Shade`
 
-- Forms: 部品の形の組み立て方の名前（own＝いつもの、poster＝ポスター風）。中身は `lib/skin/forms/<名前>_forms.dart`（README の「フォーム」）
-- Shade: `light` か `dark`。Background を書けば要らない
-- FontSans / FontMono: 書体の名前。`FontSansFile` / `FontMonoFile` に書体ファイルの場所を書くと、その名前で読み込む
-- Parts: 絵の部品のフォルダ（名前は PARTS.md）。場所は theme.xml から見た相対・`~/`・絶対のどれでもよい
+- Forms: the name of how parts are put together (own = the usual, poster = poster style, lighttable = film on a light table, sheet = ink lines on paper). The code is `lib/skin/forms/<name>_forms.dart` (see "Forms" in the README)
+- Shade: `light` or `dark`. Not needed if you write Background
+- FontSans / FontMono: the name of a font. Write the file's location in `FontSansFile` / `FontMonoFile` and the file is loaded under that name
+- Parts: the folder of icon pictures (the names are in PARTS.md). The location may be relative to theme.xml, `~/`, or absolute
 
-## 革では変わらない所
-- プレビューの中（枠の外の暗い所も）：作品の絵そのもの。枠の外は作品の世界の続きを暗くして見せている
-- プロジェクトの中身の色（レイヤーの色、パレット、合成の見本の絵）
+## What a skin does not change
+- The inside of the preview (including the dark area outside its frame): it is the work's own picture. The area outside the frame shows the work's world continued, darkened
+- The colours of the project's contents (layer colours, palettes, the sample pictures of blends)
