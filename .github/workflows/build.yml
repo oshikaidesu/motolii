@@ -1,5 +1,5 @@
-# Builds the engine on an Apple silicon Mac as README.md describes, opens a document with what was built, then
-# analyzes the app. Runs on pushes to main and pull requests that touch the code, and by hand from the Actions tab.
+# Builds the engine on an Apple silicon Mac as README.md describes, runs its C++ tests, and opens a document with
+# what was built. Runs on pushes to main and pull requests that touch the code, and by hand from the Actions tab.
 # A push made while a run is in progress waits for it; only the latest waiting push runs next.
 name: build
 on:
@@ -43,9 +43,8 @@ jobs:
         with:
           flutter-version: 3.47.2
           channel: stable
-      - run: engine/build.sh
+      - run: engine/build.sh test
       - run: engine/edit.sh build.motolii < /dev/null   # (a document opened by what was built)
-      - run: cd app && flutter analyze lib --no-fatal-infos --no-fatal-warnings
       - uses: actions/cache/save@v4   # (kept even when a step before failed)
         if: always() && steps.deps.outputs.cache-hit != 'true'
         with:

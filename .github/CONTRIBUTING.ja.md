@@ -26,7 +26,7 @@ PR を送る前に手元で回してください。同じ物を push と PR の�
 cd app && dart format . && flutter analyze && flutter test
 ```
 
-C++ は、`./engine/check_syntax.sh` が組み立てずに構文を見て、`engine/build.sh` が組み立てます。全部の組み立ては GitHub Actions の `.github/workflows/build.yml`（Apple Silicon の Mac。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。テストのやり方は [`docs/TESTING.md`](../docs/TESTING.md)。
+C++ は、`./engine/check_syntax.sh` が組み立てずに構文を見て、`engine/build.sh` が組み立て、`engine/build.sh test` が組み立てて C++ のテストを走らせます。全部の組み立ては GitHub Actions の `.github/workflows/build.yml`（Apple Silicon の Mac。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。テストのやり方は [`docs/TESTING.md`](../docs/TESTING.md)。
 
 ## 考え方
 

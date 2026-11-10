@@ -18,7 +18,7 @@ As in [`README.md`](../README.md) ("Build and run"); each step in detail is in t
 git config core.hooksPath .githooks
 ```
 
-How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and [`engine/README.md`](../engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
+How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`engine/README.md`](../engine/README.md) and [`app/README.md`](../app/README.md).
 
 Words in the code and the docs are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
 
@@ -30,7 +30,7 @@ Run these before you send a pull request. CI runs the same on every push and pul
 cd app && dart format . && flutter analyze && flutter test
 ```
 
-For C++, `./engine/check_syntax.sh` checks syntax without building and `engine/build.sh` builds. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
+For C++, `./engine/check_syntax.sh` checks syntax without building, `engine/build.sh` builds, and `engine/build.sh test` builds and runs the C++ tests. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
 
 ## Stance
 
