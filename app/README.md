@@ -47,6 +47,7 @@ FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --dr
 |---|---|
 | [`BRIDGE.md`](../docs/app/BRIDGE.md) | アプリとエンジンの境目の決まり（アプリがエンジンを呼ぶ所） |
 | [`DESIGN.md`](../docs/app/DESIGN.md) | 見た目の決まり（値に出所の印つき。`lib/skin/tokens.dart` の値はここから） |
+| [`GESTURES.md`](../docs/app/GESTURES.md) | 操作の決まり（押し・ドラッグ・キーが、同じ種類の部品のどこでも同じ意味と同じ数で働く。出所の印つき。数は `lib/widgets/gestures.dart` の `Gestures`、立っている例外は理由つき）。パネルを作る前に読む |
 | [`skins/HANDOFF.md`](../docs/app/skins/HANDOFF.md) | スキンの続き（フォーム）を作る人向け。スキンの作り方は [`shelves/skins/README.md`](../shelves/skins/README.md) |
 
 ## 作り方の決まり
