@@ -1,7 +1,33 @@
-// Part of top_bar.dart: counts slow frames and engine errors, and lists them from the top bar.
-part of 'top_bar.dart';
+// Counts slow frames and engine errors, and lists them from the top bar.
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' show FramePhase, FrameTiming;
 
-class _WaitedState extends State<_Waited> {
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, PointerPanZoomUpdateEvent, PointerScrollEvent;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
+import 'package:flutter/widgets.dart';
+
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/workspace/state/workspace_scope.dart';
+
+/// A red dot with a count of problems, shown only when there are any.
+///
+/// It counts frames longer than 1/60 s while something moved (in the app or the engine) and times the app waited
+/// for the engine, which should never happen. A click lists the latest, each with its clock time and slow part.
+class Waited extends StatefulWidget {
+  const Waited({super.key});
+  @override
+  State<Waited> createState() => _WaitedState();
+}
+
+class _WaitedState extends State<Waited> {
   final _open = OverlayPortalController(), _at = LayerLink();
   late final Timer _look;
   final _born = Stopwatch()..start();

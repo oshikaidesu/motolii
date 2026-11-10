@@ -1,36 +1,28 @@
 // The app's top bar: wordmark, project name, selected layer, size, light or dark mode, and the Render button.
-import 'package:motolii/skin/window_tokens.dart';
-
-import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui' show FramePhase, FrameTiming;
 
-import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, PointerPanZoomUpdateEvent, PointerScrollEvent;
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
-import 'package:naked_ui/naked_ui.dart';
 
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart';
-import 'package:motolii/workspace/top_bar/zoom_readout.dart';
-
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
-import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
-import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/widgets/text_gestures.dart';
-part 'timings.dart';
-part 'size_chip.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/top_bar/size_chip.dart';
+import 'package:motolii/workspace/top_bar/timings.dart';
+import 'package:motolii/workspace/top_bar/zoom_readout.dart';
 
 class WsTopBar extends StatelessWidget {
   const WsTopBar({super.key});
@@ -60,7 +52,7 @@ class WsTopBar extends StatelessWidget {
           SizedBox(width: Shape.s(6)),
           Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)),
           SizedBox(width: Shape.s(10)),
-          const _SizeChip(),
+          const SizeChip(),
           SizedBox(width: Shape.s(4)),
           Chip(
             label: '${Ws.fps} fps',
@@ -75,7 +67,7 @@ class WsTopBar extends StatelessWidget {
           const WsZoomReadout(),
           const _ShadeSwitch(),
           SizedBox(width: Shape.s(10)),
-          const _Waited(),
+          const Waited(),
           const _Saved(),
           SizedBox(width: Shape.s(12)),
           const _Render(),
@@ -512,14 +504,4 @@ class _RenderState extends State<_Render> {
       child: Forms.worn.action(context, ActionSpec('Render', _ask)), // Drawn by the skin's forms.
     );
   }
-}
-
-/// A red dot with a count of problems, shown only when there are any.
-///
-/// It counts frames longer than 1/60 s while something moved (in the app or the engine) and times the app waited
-/// for the engine, which should never happen. A click lists the latest, each with its clock time and slow part.
-class _Waited extends StatefulWidget {
-  const _Waited();
-  @override
-  State<_Waited> createState() => _WaitedState();
 }

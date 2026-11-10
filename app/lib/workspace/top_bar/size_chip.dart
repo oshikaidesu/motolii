@@ -1,15 +1,35 @@
 // The top bar's size chip: shows the project size, lets the user scrub or type it, and offers common shapes and resolutions.
-part of 'top_bar.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/widgets.dart';
+
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart';
+import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// Shows the project size.
 ///
 /// A click opens the project box. A double-click turns the chip into a text field: a width alone keeps the aspect
 /// ratio, and "1080x1920" sets both. Dragging sideways changes the width by 1% per 3 px with the aspect ratio kept,
 /// and the project is reopened at the new size when the drag ends.
-class _SizeChip extends StatefulWidget {
-  const _SizeChip();
+class SizeChip extends StatefulWidget {
+  const SizeChip({super.key});
   @override
-  State<_SizeChip> createState() => _SizeChipState();
+  State<SizeChip> createState() => _SizeChipState();
 }
 
 /// The shapes and resolutions of Alight Motion's new-project box.
@@ -27,7 +47,7 @@ const sizeResolutions = [2160, 1440, 1080, 720, 540, 360, 270];
   return a >= b ? (even(p * a / b), p) : (p, even(p * b / a));
 }
 
-class _SizeChipState extends State<_SizeChip> {
+class _SizeChipState extends State<SizeChip> {
   final _box = OverlayPortalController(), _boxKeys = FocusNode(debugLabel: 'document box');
   bool _editing = false;
   // The width the user is dragging to, or null when not dragging.
