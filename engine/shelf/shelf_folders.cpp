@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 
+std::atomic<int>& files_changed() { static std::atomic<int> n{0}; return n; }
 std::filesystem::path doc_engine(const char* part) { Dl_info lib{}; dladdr((const void*)&doc_engine, &lib); std::error_code wrong; return std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path() / part; }
 std::vector<std::filesystem::path> doc_folders(const char* folder) {
     static const std::map<std::string, const char*> before{{"create", "recipes"}, {"expressions", "animators"}, {"ease", "ways"}};

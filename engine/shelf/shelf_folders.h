@@ -11,7 +11,7 @@
 // (motolii_files_changed). The watching itself runs in the app through the operating system
 // (dart:io, on FSEvents), not here. Anything built from files rereads its file only when this
 // count changes.
-inline std::atomic<int>& files_changed() { static std::atomic<int> n{0}; return n; }
+std::atomic<int>& files_changed();
 
 // Returns engine/<part>, the directory of a part of the engine that is not a shelf. Examples are
 // third_party/'s p5.js and anime.js, and Filament's fonts and matc. It is found relative to this
