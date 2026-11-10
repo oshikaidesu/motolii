@@ -21,6 +21,7 @@
 // and Alight Motion's Save as Preset and Paste Style.
 
 #include <string>
+#include <utility>
 
 namespace motolii {
 
@@ -73,6 +74,11 @@ bool doc_preset_keep(Doc& d, int layer, const std::string& name,
 // user's own folders, which are found on any machine. In the copy, the file
 // values become bare file names, which are read relative to the folder the
 // project is opened from. Returns the number of files copied, or -1 on failure.
+// Returns the library's folder and the user's own folder, each with a trailing
+// slash, as the words {motolii}/ and {own}/ stand for them, in the order of
+// doc_folders. If there is no second folder, the second string is "\x01", which
+// matches no path.
+std::pair<std::string, std::string> doc_preset_roots();
 int doc_pack(Doc& d, const std::string& folder, const std::string& name);
 // Returns the presets on the shelf, one per line, as
 // "name\tpath\tlabel\tpicture". They are the

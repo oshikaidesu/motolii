@@ -279,6 +279,7 @@ add_library(motolii_document STATIC
   document/edit/layer_edit.cpp
   document/edit/parent.cpp
   document/edit/paths.cpp
+  document/edit/elements.cpp
   document/edit/presets.cpp
   document/edit/relate.cpp
   document/edit/time_edit.cpp
