@@ -394,52 +394,6 @@ inline const DocValue doc_values[] = {
     {"zigzag_ridges", "shape", 0, 100, true, nullptr},
     {"zigzag_smooth", "shape", 0, 1, true, nullptr},
     {"offset", "shape", -10, 10, true, nullptr},
-    // The path warped as it is drawn, on the GPU, like After Effects' wave
-    // warp. warp is the height
-    // of the wave and warp_width its length, both as shares of the layer's
-    // height. warp_angle is
-    // the angle it runs at, in degrees. warp_speed is the number of waves per
-    // second along it.
-    {"warp", "shape", -10, 10, true, nullptr},
-    {"warp_width", "shape", 0.001, 100, true, nullptr},
-    {"warp_angle", "shape", -1e6, 1e6, true, nullptr},
-    {"warp_speed", "shape", -1e3, 1e3, true, nullptr},
-    // Points moved as the layer is drawn, on the GPU, for a shape of one color
-    // only (flat_mesh).
-    // bend is Cavalry's bend, in degrees round, across it or up it. twist is
-    // After Effects' twist,
-    // in degrees, most at the middle. pinch is Cavalry's pinch, in, or out when
-    // less than 0. skew
-    // is in degrees, along an axis turned by skew_axis. squash is squash and
-    // stretch: taller and as
-    // much narrower, keeping its area. wiggle is After Effects' wiggle paths:
-    // how far as a share of
-    // its height, wiggle_detail how fine, and wiggle_speed how fast.
-    {"bend", "shape", -1e4, 1e4, true, nullptr},
-    {"bend_direction", "shape", 0, 0, false, "horizontal vertical"},
-    {"twist", "shape", -1e5, 1e5, true, nullptr},
-    {"pinch", "shape", -1, 1, true, nullptr},
-    {"skew", "shape", -89, 89, true, nullptr},
-    {"skew_axis", "shape", -1e4, 1e4, true, nullptr},
-    {"squash", "shape", -0.95, 10, true, nullptr},
-    {"wiggle", "shape", -10, 10, true, nullptr},
-    {"wiggle_detail", "shape", 0, 1000, true, nullptr},
-    {"wiggle_speed", "shape", -1e3, 1e3, true, nullptr},
-    // Cavalry's motion stretch: longer in the direction the layer moves, and
-    // narrower, by this much
-    // for each unit per second it goes.
-    {"stretch", "shape", -10, 10, true, nullptr},
-    // After Effects' corner pin: how far each corner is moved, as shares of the
-    // layer's height, up
-    // and right. Everything between follows.
-    {"pin_tl_x", "shape", -10, 10, true, nullptr},
-    {"pin_tl_y", "shape", -10, 10, true, nullptr},
-    {"pin_tr_x", "shape", -10, 10, true, nullptr},
-    {"pin_tr_y", "shape", -10, 10, true, nullptr},
-    {"pin_bl_x", "shape", -10, 10, true, nullptr},
-    {"pin_bl_y", "shape", -10, 10, true, nullptr},
-    {"pin_br_x", "shape", -10, 10, true, nullptr},
-    {"pin_br_y", "shape", -10, 10, true, nullptr},
     // copies: how many copies there are. Each copy is the one before moved,
     // turned about its anchor
     // and scaled by the same amount, like After Effects' Repeater. Where each
@@ -594,8 +548,6 @@ inline const DocValue doc_values[] = {
     // height from its
     // middle, with y pointing down as in SVG.
     {"path", "shape", 0, 0, false, ""},
-    // Another seed gives another wiggle of the path (evaluate.h).
-    {"seed", "shape", 0, 1e6, false, nullptr},
     // More edges, each outside the last: Alight Motion's Add Border,
     // Illustrator's Appearance.
     {"stroke_2", "text", 0, 0, false, ""},

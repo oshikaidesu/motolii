@@ -102,16 +102,6 @@ void told_files_written(Rebuild& rebuild) {
   }
 }
 
-// Adds whether the layer bends.
-void told_bending(Rebuild& rebuild) {
-  Doc& d = rebuild.d;
-  std::map<int, std::string>& told = rebuild.told;
-  // Whether the layer bends: tessellated finely, or subdivided only around its
-  // curves.
-  for (auto& [layer, of] : told)
-    of += doc_bends(d, layer) ? " bent=1" : " bent=0";
-}
-
 // Adds what the layer's effects and its depth, light, words and drawing need
 // of its construction.
 void told_effects(Rebuild& rebuild) {
@@ -172,7 +162,6 @@ void match_describe_layers(Rebuild& rebuild) {
   told_properties(rebuild);
   told_blend_modes_alike(rebuild);
   told_files_written(rebuild);
-  told_bending(rebuild);
   told_effects(rebuild);
   told_held_values(rebuild);
 }

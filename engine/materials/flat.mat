@@ -34,14 +34,6 @@ material {
         { type : mat4, name : filmRule },      // from a film's own three numbers (and a one) to red, green, blue: the rule the file names (video_layer.h)
         { type : sampler2d, name : colours },
         { type : sampler2d, name : picture },
-        // a flat shape in triangles bent as it is drawn (canvas.h flat_mesh; all 0: not), in shares of its height:
-        // [0] After Effects' wave warp: how high, how long a wave, how far along in waves, which way (radians);
-        // [1] Cavalry's bend: how far round (radians), which way (0 across, 1 up); After Effects' twist (radians at its middle); Cavalry's pinch (-1 to 1: in, or out);
-        // [2] Cavalry's skew (radians) and its axis (radians); squash and stretch (-1 to 1, its area kept); half its width;
-        // [3] After Effects' wiggle paths: how far, how fine (waves to its height), how far on in time, its seed;
-        // [4] Cavalry's motion stretch: which way it moves and how fast (its own units a second, as it is turned), how much it stretches for that;
-        // [5] [6] After Effects' corner pin: how far its corners are moved (top left, top right; bottom left, bottom right)
-        { type : float4[8], name : bends },
         // a thing with depth (deep.glsl): half its box across, up and through, in its own lengths (all 0: a sheet), and 1: its box open (0: Z 0, shut, a sheet);
         // how its box's corners turn into its picture's (a film on its side: video_layer.h)
         { type : float4, name : deep },
@@ -66,55 +58,10 @@ material {
 }
 
 vertex {
-    float bendHash(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-    float bendNoise(vec3 p) {   // (value noise, smooth: -1 to 1)
-        vec3 i = floor(p), f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        float a = mix(mix(bendHash(i), bendHash(i + vec3(1, 0, 0)), f.x), mix(bendHash(i + vec3(0, 1, 0)), bendHash(i + vec3(1, 1, 0)), f.x), f.y);
-        float b = mix(mix(bendHash(i + vec3(0, 0, 1)), bendHash(i + vec3(1, 0, 1)), f.x), mix(bendHash(i + vec3(0, 1, 1)), bendHash(i + vec3(1, 1, 1)), f.x), f.y);
-        return 2.0 * mix(a, b, f.z) - 1.0;
-    }
-    vec2 turned(vec2 p, float a) { float c = cos(a), s = sin(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
 #include "deep_vertex.glsl"
     void materialVertex(inout MaterialVertexInputs material) {
         material.copyOf = vec4(float(getInstanceIndex()), 0.0, 0.0, 0.0);
         if (materialParams.deep.z > 0.0) deepVertex(material);
-        vec4 wave = materialParams.bends[0], bend = materialParams.bends[1], skew = materialParams.bends[2], wig = materialParams.bends[3], move = materialParams.bends[4];
-        vec4 pinTop = materialParams.bends[5], pinBottom = materialParams.bends[6];
-        float stretch = move.z * length(move.xy);
-        bool pinned = pinTop != vec4(0.0) || pinBottom != vec4(0.0);
-        if (wave.x == 0.0 && bend.x == 0.0 && bend.z == 0.0 && bend.w == 0.0 && skew.x == 0.0 && skew.z == 0.0 && wig.x == 0.0 && stretch == 0.0 && !pinned) return;
-        vec2 p0 = vec2(material.uv0.x, 1.0 - material.uv0.y), p = p0;   // (where its point is, in shares of its height from its middle: flat_mesh; Filament turns uv0 upside down, flipUV, and this turns it back)
-        float halfWide = max(skew.w, 1e-3), reach = length(vec2(halfWide, 0.5));
-        if (pinned) {   // (each corner moved so far, all within between them in proportion: across, then down)
-            vec2 f = clamp(vec2(p.x / (2.0 * halfWide) + 0.5, 0.5 - p.y), 0.0, 1.0);
-            p += mix(mix(pinTop.xy, pinTop.zw, f.x), mix(pinBottom.xy, pinBottom.zw, f.x), f.y);
-        }
-        if (skew.z != 0.0) p *= vec2(1.0 / (1.0 + skew.z), 1.0 + skew.z);   // (squashed or stretched up, as wide the other way: its area kept)
-        if (skew.x != 0.0) { vec2 q = turned(p, -skew.y); q.x += q.y * tan(skew.x); p = turned(q, skew.y); }
-        if (bend.x != 0.0) {   // (round a centre of its own, as far round as told across all of it)
-            bool up = bend.y > 0.5;
-            vec2 q = up ? vec2(p.y, -p.x) : p;
-            float span = up ? 1.0 : 2.0 * halfWide, r = span / bend.x, a = q.x / r;
-            q = vec2((r - q.y) * sin(a), r - (r - q.y) * cos(a));
-            p = up ? vec2(-q.y, q.x) : q;
-        }
-        if (bend.z != 0.0) p = turned(p, bend.z * max(0.0, 1.0 - length(p) / reach));   // (twisted most at its middle)
-        if (bend.w != 0.0) { float d = length(p); if (d > 1e-5) p *= pow(d / reach, bend.w * 1.5) ; }   // (pinched in towards its middle, or out)
-        if (wave.x != 0.0) { vec2 dir = vec2(cos(wave.w), sin(wave.w)); p += vec2(-dir.y, dir.x) * wave.x * sin(6.2831853 * (dot(p, dir) / max(wave.y, 1e-4) + wave.z)); }
-        if (stretch != 0.0) {   // (longer along the way it goes, as much narrower across: its area kept)
-            vec2 way = normalize(move.xy), side = vec2(-way.y, way.x);
-            float along = 1.0 + stretch;
-            p = way * dot(p, way) * along + side * dot(p, side) / along;
-        }
-        if (wig.x != 0.0) p += wig.x * vec2(bendNoise(vec3(p0 * wig.y, wig.z + wig.w)), bendNoise(vec3(p0 * wig.y + 17.3, wig.z + wig.w + 5.1)));
-        vec4 region = materialParams.bends[7];   // (where the bends work, a behaviour's falloff, Cavalry's, point by point: centre on the stage, radius, soft (below 0: the other way))
-        float w = 1.0;
-        if (region.z > 0.0) {
-            w = 1.0 - smoothstep(region.z, region.z + abs(region.w) + 1e-5, distance(material.worldPosition.xy, region.xy));
-            if (region.w < 0.0) w = 1.0 - w;
-        }
-        material.worldPosition.xyz += mulMat3x3Float3(getWorldFromModelMatrix(), vec3(p - p0, 0.0)) * w;
     }
 }
 

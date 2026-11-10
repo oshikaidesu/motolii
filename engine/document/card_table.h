@@ -134,13 +134,6 @@ inline const DocCard doc_cards[] = {
     // a rectangle that its file fills, see doc_match.
     {"Edit Shape", "crop_left crop_top crop_right crop_bottom round", "kind",
      "image"},
-    // Moves the points of a shape as it is drawn: Cavalry's deformers.
-    {"Deform",
-     "warp bend twist pinch skew squash wiggle stretch bend_direction pin_tl_x "
-     "pin_tl_y pin_tr_x pin_tr_y pin_bl_x pin_bl_y pin_br_x pin_br_y "
-     "warp_width "
-     "warp_angle warp_speed skew_axis wiggle_detail wiggle_speed seed",
-     "kind", "shape", true},
     // Shown for text without being asked: Alight Motion's Border and Shadow is
     // among a text's
     // tiles. These are more outlines, each outside the last, drawn with the

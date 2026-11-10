@@ -41,87 +41,6 @@ using filament::math::float4;
 
 namespace {
 
-// The bends of one layer's shape while they are worked out: the layer, and what
-// working out the bends of the layer and of its copies has found so far.
-struct Bending {
-  Doc& d;
-  const int layer;
-  // The layer as it is on the stage.
-  DocShownLayer& t;
-  const double now;
-  // The time in seconds since the layer started.
-  const double since;
-  // True when a behaviour gives each copy its own bend, so each copy needs
-  // its own material.
-  bool driven = false;
-  // Falloff region of a behaviour that drives a bend, weighed point by
-  // point in the material: a circle where the region's shape lies, as large
-  // as the shape. Its fourth component is the softness, negative when
-  // inverted.
-  float4 region{0.f};
-};
-
-// Fills `bends`, eight float4 values, for one copy. Slots 0 to 3 hold
-// warp, bend and twist, skew and squash, and wiggle. Slot 4 holds
-// stretch, slots 5 and 6 the corner pins, and slot 7 the falloff region.
-// A property driven by a behaviour takes that behaviour's value for this
-// copy.
-void bends_of(Bending& bending, int copy, int n, float4* bends,
-              const math::double3* where = nullptr) {
-  Doc& d = bending.d;
-  const int layer = bending.layer;
-  DocShownLayer& t = bending.t;
-  const double now = bending.now;
-  bool& driven = bending.driven;
-  float4& region = bending.region;
-  const auto num = [&](const char* name, double otherwise) {
-    return (float)doc_number(d, layer, name, now, otherwise);
-  };
-  const float deg = (float)(TAU / 360.0), since = (float)bending.since;
-  const auto at = [&](const char* name, double otherwise) {
-    if (const int by = doc_driven_by(d, layer, name)) {
-      driven = true;
-      // A behaviour with a region weighs points of the shape, not whole
-      // copies.
-      if (const int f = (int)doc_number(d, by, "region", 0, 0);
-          f && d.on_stage.shown.count(f) && d.on_stage.shown[f].drawn) {
-        const math::mat4 there = doc_place(d, f, now, 0, 0, false);
-        const math::double4 middle = there * math::double4{0, 0, 0, 1};
-        const double r = length((there *
-                                 math::double4{
-                                     0.5 * d.on_stage.shown[f].drawn->sheetHigh,
-                                     0, 0, 0})
-                                    .xyz),
-                     soft = doc_number(d, by, "falloff_soft", now, 0);
-        region = float4{(float)middle.x, (float)middle.y, (float)r,
-                        (float)(doc_number(d, by, "falloff_invert", 0, 0) > 0.5
-                                    ? -std::max(soft, 1e-4)
-                                    : soft)};
-        return (float)doc_behaviour_at(d, by, copy, n, now);
-      }
-      return (float)doc_given(d, by, copy, n, now, num(name, otherwise), where);
-    }
-    return num(name, otherwise);
-  };
-  const float4 all[7] = {
-      {at("warp", 0), at("warp_width", 0.5), at("warp_speed", 1) * since,
-       at("warp_angle", 0) * deg},
-      {at("bend", 0) * deg,
-       doc_word(d, layer, "bend_direction") == "vertical" ? 1.f : 0.f,
-       at("twist", 0) * deg, at("pinch", 0)},
-      {at("skew", 0) * deg, at("skew_axis", 0) * deg, at("squash", 0),
-       0.5f * t.drawn->wideBy},
-      {at("wiggle", 0), at("wiggle_detail", 3), at("wiggle_speed", 1) * since,
-       num("seed", 0) * 7.31f},
-      {0.f, 0.f, num("stretch", 0), 0.f},
-      {at("pin_tl_x", 0), at("pin_tl_y", 0), at("pin_tr_x", 0),
-       at("pin_tr_y", 0)},
-      {at("pin_bl_x", 0), at("pin_bl_y", 0), at("pin_br_x", 0),
-       at("pin_br_y", 0)}};
-  std::copy(all, all + 7, bends);
-  bends[7] = region;
-}
-
 // Returns another shape's path at this time, placed in this layer's units
 // as shape_cut lays it out. With `all` true the path of every copy of the
 // other layer is included.
@@ -242,72 +161,15 @@ void drawing_traced(Doc& d, int layer, DocShownLayer& t, double now,
   }
 }
 
-// Gives each copy of the layer its bends. `bends` are the bends of the layer
-// itself.
-void copies_bent(Bending& bending, const float4* bends) {
-  Doc& d = bending.d;
-  Stage& s = *d.stage;
-  const int layer = bending.layer;
-  DocShownLayer& t = bending.t;
-  const bool& driven = bending.driven;
-  t.drivenLooks = driven;
-  const int members = driven ? doc_members(d, layer) : 1;
-  auto& faces = s.engine->getRenderableManager();
-  for (const Stage::Renderable& made : s.renderables) {
-    if (made.of != t.drawn->sheet || made.matte) continue;
-    // When a behaviour drives a bend, each copy gets its own bends in its
-    // own material and its edge's material.
-    if (driven && !made.many) {
-      float4 own[8];
-      // Where this copy lies, which a falloff weighs.
-      const math::double3 where{made.place[3].x, made.place[3].y,
-                                made.place[3].z};
-      bends_of(bending, std::max(0, made.nth), members, own, &where);
-      if (own[4].z == 0.f) own[4] = bends[4];
-      const auto one = faces.getInstance(made.thing);
-      MaterialInstance*& look = d.copy_materials.looks[made.thing.getId()];
-      if (!look)
-        look = MaterialInstance::duplicate(t.drawn->look),
-        faces.setMaterialInstanceAt(one, 0, look);
-      look->setParameter("bends", own, 8);
-      if (t.drawn->edgeLook && faces.getPrimitiveCount(one) > 1) {
-        MaterialInstance*& edge = d.copy_materials.edges[made.thing.getId()];
-        if (!edge)
-          edge = MaterialInstance::duplicate(t.drawn->edgeLook),
-          faces.setMaterialInstanceAt(one, 1, edge);
-        edge->setParameter("bends", own, 8);
-      }
-    } else if (const auto own = d.copy_materials.looks.find(made.thing.getId());
-               own != d.copy_materials.looks.end())
-      own->second->setParameter("bends", bends, 8);
-  }
-}
-
 }  // namespace
 
-// A shape cut into triangles is bent in its material and its copies'
-// materials, and nothing is drawn again.
-void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now,
-                        double since) {
+// A shape cut into triangles is cut again when its path changed.
+void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now) {
   if (!(t.drawn && t.drawn->cut)) return;
   Stage& s = *d.stage;
   const auto num = [&](const char* name, double otherwise) {
     return (float)doc_number(d, layer, name, now, otherwise);
   };
-  Bending bending{d, layer, t, now, since};
-  float4 bends[8];
-  bends_of(bending, 0, 1, bends);
-  // Stretch follows motion. Slot 4 holds where the layer's middle was 1/60
-  // s ago, seen from the layer's current rotation and size and scaled to
-  // units per second.
-  if (bends[4].z != 0.f) {
-    const math::mat4 was = doc_place(d, layer, now - 1.0 / 60.0),
-                     is = doc_place(d, layer, now);
-    const math::float4 back = inverse(is) * was * math::float4{0, 0, 0, 1};
-    bends[4].x = (float)(-60.0 * back.x), bends[4].y = (float)(-60.0 * back.y);
-  }
-  t.drawn->look->setParameter("bends", bends, 8);
-  if (t.drawn->edgeLook) t.drawn->edgeLook->setParameter("bends", bends, 8);
   // `join` combines this shape with another using the path operations of
   // Skia, in the order subtract, intersect, union, exclude; see
   // engine/stage/canvas/skia_path_operations.cpp. `morph` turns this shape
@@ -340,7 +202,6 @@ void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now,
           num("rough", 0), num("rough_detail", 0.03),
           std::round(num("resample", 0)), num("voxel", 0)},
          join, morph, trace);
-  copies_bent(bending, bends);
 }
 
 }  // namespace motolii

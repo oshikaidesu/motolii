@@ -354,7 +354,7 @@ void evaluate_copy_looks(Doc& d, int layer, DocShownLayer& t, const Mesh* m,
     const bool clearLate = !sheetClear &&
                            doc_number(d, layer, "stagger", 0, 0) > 0.0 &&
                            doc_key_times(d, layer, "opacity").size() > 1;
-    if (ramp.size() < 2 && letters.empty() && !clears && !t.drivenLooks &&
+    if (ramp.size() < 2 && letters.empty() && !clears &&
         !clearEach && !pickEach && fadeTo == 1 && !clearLate)
       doc_copy_looks_off(d, m, main);
     else {

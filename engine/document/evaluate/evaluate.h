@@ -40,8 +40,7 @@ struct DocShownLayer {
   Canvas2D* drawn = nullptr;
   Solid* solid = nullptr;
   Mesh* shape = nullptr;
-  bool in = true, clipped = false, camera = false, drivenLooks = false,
-       behaviour = false, grains = false;
+  bool in = true, clipped = false, camera = false, behaviour = false, grains = false;
   std::shared_ptr<SplatEffect> splatFx;
   std::string splatFxFile;
   filament::MaterialInstance* splatPlain = nullptr;

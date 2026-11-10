@@ -97,7 +97,7 @@ bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
   }
   fx.reach =
       (float)(std::max(0.0, num("offset", 0)) + std::fabs(num("zigzag", 0)) +
-              0.5 * std::max(0.0, num("bloat", 0)) + std::fabs(num("warp", 0)));
+              0.5 * std::max(0.0, num("bloat", 0)));
   return ok;
 }
 

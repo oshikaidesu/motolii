@@ -318,8 +318,7 @@ Canvas2D::Cuts::~Cuts() { cuts_held -= bytes; }
 
 Canvas2D* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place,
                     float high, float3 colour, const char* lay, float4 edge,
-                    const Canvas2DFx& fx, int points, float inner, float round,
-                    bool bends) {
+                    const Canvas2DFx& fx, int points, float inner, float round) {
   // The path is built in a space 1024 points high; the width follows from
   // `wide`.
   const int h = 1024, w = std::max(2, (int)std::lround(1024.f * wide));
@@ -331,10 +330,9 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place,
       0.5f * std::min(edge.w * (float)h, 0.5f * (float)std::min(w, h)));
   d->edgeWide = 2.f * in;
   d->outline = tvg::Shape::gen();
-  // With bends the path is subdivided finely all along. Without, only curves
-  // are subdivided and straight lines stay whole.
+  // Only curves are subdivided; straight lines stay whole.
   flat_path(d, d->outline, form, w, h, in, points, inner, round,
-            (bends ? 1.f : -1.f) * (float)h / 64.f);
+            -(float)h / 64.f);
   d->sheet = new Mesh;
   const std::vector<uint32_t> ends = shape_cut(d, 0.f, 1.f, true);
   d->cut = true, d->wideBy = wide;

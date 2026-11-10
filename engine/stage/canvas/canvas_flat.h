@@ -24,7 +24,7 @@ namespace motolii {
 // only when the path changes (see cut_at). It is drawn with flat.mat, tinted
 // with `colour` on a white point. The edge is a second part in the edge color,
 // from ThorVG's own stroker. Antialiasing comes from the view's MSAA, and the
-// vertex stage of the material moves the points (bends). Nothing is rasterized
+// vertex stage of the material places the points. Nothing is rasterized
 // into a texture for it: forty animated shapes cost a quarter of the time of
 // the same shapes drawn as ThorVG pictures. There is no gradient ramp and there
 // are no effects; those belong to `flat`. `wide` is the width as a multiple of
@@ -36,7 +36,7 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide,
                     filament::math::float3 colour, const char* lay = nullptr,
                     filament::math::float4 edge = filament::math::float4{0.f},
                     const Canvas2DFx& fx = {}, int points = 6,
-                    float inner = 0.5f, float round = 0.f, bool bends = true);
+                    float inner = 0.5f, float round = 0.f);
 
 // Rebuilds the triangles of a flat shape for the next frame when its path
 // inputs changed. `trim` is After Effects' trim paths on the edge: x is the

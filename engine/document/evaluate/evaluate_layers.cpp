@@ -206,7 +206,7 @@ void layer_evaluated(const Evaluation& evaluation, size_t i) {
   evaluate_part_colours(d, layer, t, now);
   sketch_lines_set(d, layer, t, now);
   drawing_shown(d, layer, t, now, lies[i].since);
-  evaluate_cut_shape(d, layer, t, now, lies[i].since);
+  evaluate_cut_shape(d, layer, t, now);
   if (t.drawn && t.drawn->shape)
     bend_at(s, t.drawn, (float)doc_number(d, layer, "round", now, 0),
             (float)doc_number(d, layer, "bloat", now, 0),

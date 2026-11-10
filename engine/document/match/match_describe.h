@@ -10,7 +10,7 @@ namespace motolii {
 struct Rebuild;
 
 // Fills `told` of the rebuild with the text of each layer: the properties its
-// construction depends on, when its file was last written, whether it bends,
+// construction depends on, when its file was last written,
 // which of its effects are on and how much room they need, and the values held
 // by a drag in progress.
 void match_describe_layers(Rebuild& rebuild);
