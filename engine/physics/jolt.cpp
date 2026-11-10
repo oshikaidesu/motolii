@@ -20,9 +20,32 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 // clang-format on
 
-using namespace JPH;
-
 namespace motolii {
+
+using JPH::BodyCreationSettings;
+using JPH::BodyID;
+using JPH::BodyInterface;
+using JPH::BoxShape;
+using JPH::BroadPhaseLayer;
+using JPH::BroadPhaseLayerInterface;
+using JPH::cMaxPhysicsJobs;
+using JPH::EActivation;
+using JPH::EAllowedDOFs;
+using JPH::EMotionType;
+using JPH::Factory;
+using JPH::JobSystemSingleThreaded;
+using JPH::ObjectLayer;
+using JPH::ObjectLayerPairFilter;
+using JPH::ObjectVsBroadPhaseLayerFilter;
+using JPH::PhysicsSystem;
+using JPH::Quat;
+using JPH::RegisterDefaultAllocator;
+using JPH::RegisterTypes;
+using JPH::RVec3;
+using JPH::Shape;
+using JPH::SphereShape;
+using JPH::TempAllocatorImpl;
+using JPH::Vec3;
 
 namespace {
 constexpr ObjectLayer STILL = 0, MOVING = 1;
