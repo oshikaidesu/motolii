@@ -178,6 +178,7 @@ add_library(motolii_stage_render STATIC
   stage/render/render_draw.cpp
   stage/render/render_draw.mm
   stage/render/render_layers.cpp
+  stage/render/render_shapes.cpp
   stage/render/render_stage.cpp)
 target_link_libraries(motolii_stage_render PUBLIC motolii_flags motolii_base motolii_community_playcanvas)
 target_link_libraries(motolii_stage_render PUBLIC filament_libraries)
