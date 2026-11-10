@@ -4,15 +4,18 @@
 // The project lives in WorkspaceController. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
-import 'package:motolii/workspace/easing/ease_curve.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/layer.dart';
@@ -25,7 +28,7 @@ import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/slip_edit.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
-import 'package:motolii/workspace/timeline/timeline_media.dart';
+import 'package:motolii/workspace/timeline/timeline_labels.dart';
 import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
@@ -65,78 +68,15 @@ class TimelinePaneState extends State<TimelinePane>
     viewport: viewport,
     snapTo: _snapTo,
   );
+
+  /// The rows in the order they are laid out, and what each one shows.
+  late final rows = TimelineRows(
+    workspaceOf: () => workspace,
+    viewport: viewport,
+    media: media,
+    slip: slip,
+  );
   int lastFrame = -1;
-
-  // The rows as laid out: each layer's own row, then, while it is expanded, a lane for each of its animated properties.
-  // This follows Ableton's automation lanes (Live 12 manual 25.5), where Cmd shows every automated envelope in its own lane.
-  // `value` is the property a lane shows. `aim` is a row naming the layer's target (linkTargets), with an empty value and no keyframes.
-  List<({int layer, String? value, (String, String)? aim})> order = const [];
-
-  // The properties of [l] that have keyframes, in the layer's own order.
-  // Ableton does the same with "Show Automated Parameters Only". With Animate on, every property counts as moving, so its keyframes decide.
-  List<String> _moving(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null) return const [];
-    final moving = m.moving(t).toSet();
-    return [
-      for (final n in m.values(t))
-        if (n.startsWith('js_line_') ||
-            moving.contains(n) && m.keyTimes(t, n).isNotEmpty)
-          n,
-    ];
-  }
-
-  // The title of the inspector card that holds a property: an effect, or Transform and the like.
-  String? laneCard(WorkspaceController ws, Layer l, String name) => [
-    for (final (title, names) in ws.inside!.cards(int.parse(l.id)))
-      if (names.contains(name)) title,
-  ].firstOrNull;
-
-  // The lane for one property: its keyframe times and values, read from the project snapshot without asking the engine.
-  TimelineRow laneRow(WorkspaceController ws, Layer l, String name) {
-    final m = ws.inside!,
-        t = int.parse(l.id),
-        at = m.keyTimes(t, name),
-        vs = m.keyValues(t, name),
-        flags = RowFlags(ws);
-    final n = math.min(at.length, vs.length);
-    final lo = vs.take(n).fold(double.infinity, math.min),
-        hi = vs.take(n).fold(-double.infinity, math.max);
-    return TimelineRow(
-      name: name,
-      kind: l.kind,
-      inF: l.inF,
-      outF: l.outF,
-      keys: [
-        for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round(),
-      ],
-      picked: const {},
-      tone: l.tone,
-      dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
-      locked: flags.isLocked(l.id),
-      lane: [
-        for (var i = 0; i < n; i++)
-          (
-            (at[i] * WorkspaceController.fps).round(),
-            hi > lo ? (vs[i] - lo) / (hi - lo) : .5,
-          ),
-      ],
-      laneWays: [
-        for (var i = 0; i + 1 < n; i++)
-          _wayShape(ws, m.easingOf(t, name, at[i])),
-      ],
-      laneOn: switch (ws.stretch) {
-        final s? when s.layer == l.id && s.name == name => [
-          for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round(),
-        ].indexOf(s.from),
-        _ => null,
-      },
-    );
-  }
-
-  // An easing's curve from 0 to 1, as drawn between keyframes.
-  List<double> _wayShape(WorkspaceController ws, String way) =>
-      way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
 
   @override
   void initState() {
@@ -274,10 +214,10 @@ class TimelinePaneState extends State<TimelinePane>
     // A click, not a box: the tap handler has already dealt with it.
     if (r.width < 4 && r.height < 4) return;
     final keys = <SelectedKeyframe>[], things = <String>[];
-    for (var i = 0; i < order.length; i++) {
+    for (var i = 0; i < rows.order.length; i++) {
       // A box does not select points on a lane.
-      if (order[i].value != null) continue;
-      final l = ws.layers[order[i].layer],
+      if (rows.order[i].value != null) continue;
+      final l = ws.layers[rows.order[i].layer],
           top = i * TimelineMetrics.row - viewport.verticalScroll;
       if (top + TimelineMetrics.row < r.top ||
           top > r.bottom ||
@@ -347,8 +287,6 @@ class TimelinePaneState extends State<TimelinePane>
     ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
   }
 
-  double lift = 0; // how far a label row has been carried up or down
-
   // The context menus of the ruler, of a bar and of a row's name (see timeline_requests.dart).
   // On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
   final rulerMenu = GlobalKey<ContextMenuState>();
@@ -385,57 +323,7 @@ class TimelinePaneState extends State<TimelinePane>
       WorkspaceAspect.picked,
       WorkspaceAspect.animating,
     });
-    final away = ws.foldedAway, flags = RowFlags(ws);
-    final sel = ws.selected,
-        picks = ws.keys,
-        lit = {
-          ...ws.many,
-          ...relationMembers(ws),
-          for (final p in [?sel, ...ws.many]) ?away[p],
-        };
-    // The lit layers are those selected together, those moved by the selected relation, and the closed group a selected layer is in.
-
-    order = [
-      for (final (i, l) in ws.layers.indexed)
-        if (!away.containsKey(l.id)) ...[
-          (layer: i, value: null, aim: null),
-          if (ws.aimsOpen(l.id))
-            for (final a in linkTargets(ws, l.id))
-              (layer: i, value: '', aim: a),
-          if (ws.lanesOpen(l.id))
-            for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
-        ],
-    ];
-    final rows = <TimelineRow>[
-      for (final o in order)
-        if (o.value case final n?)
-          laneRow(ws, ws.layers[o.layer], n)
-        else if (ws.layers[o.layer] case final l)
-          TimelineRow(
-            name: l.name,
-            kind: l.kind,
-            inF: l.inF,
-            outF: l.outF,
-            keys: l.keys,
-            stretches: l.stretches,
-            picked: {
-              for (final k in picks)
-                if (k.layer == l.id) k.frame,
-            },
-            selected: l.id == sel || lit.contains(l.id),
-            dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
-            locked: flags.isLocked(l.id),
-            clipped: l.clipped,
-            wave: media.waveOf(ws, l),
-            frames: media.framesOf(ws, l),
-            form: formOf(ws, l)?.$1,
-            fill: formOf(ws, l)?.$2,
-            outline: formOf(ws, l)?.$3 ?? false,
-            tone: l.tone,
-            mix: mixOf(ws, l.id),
-            whole: slip.wholeOf(ws, l),
-          ),
-    ];
+    final drawn = rows.layOut();
     return Focus(
       focusNode: _focus,
       child: TapRegion(
@@ -462,13 +350,13 @@ class TimelinePaneState extends State<TimelinePane>
                   children: [
                     SizedBox(
                       width: TimelineMetrics.label,
-                      child: labels(ws, rows),
+                      child: _labels(ws, drawn),
                     ),
                     SizedBox(
                       width: TimelineMetrics.divider,
                       child: ColoredBox(color: WindowTokens.ground),
                     ),
-                    Expanded(child: tracks(ws, rows)),
+                    Expanded(child: tracks(ws, drawn)),
                   ],
                 ),
               ),
@@ -478,6 +366,168 @@ class TimelinePaneState extends State<TimelinePane>
       ),
     );
   }
-}
 
-// ---------------------------------------------------------------- header strip
+  /// The layer's row number and name, as After Effects' Parent column shows it. Several layers may share a name.
+  String _numbered(WorkspaceController ws, String id) {
+    final i = ws.layers.indexWhere((l) => l.id == id);
+    return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
+  }
+
+  // The column of layer names beside the tracks.
+  Widget _labels(WorkspaceController ws, List<TimelineRow> drawn) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      TimelineLabelHeader(count: ws.layers.length, solo: RowFlags(ws).anySolo),
+      Expanded(
+        child: ContextMenu(
+          key: labelMenu,
+          child: TwoFingerGestures(
+            onWheel: scrollBy,
+            // The labels scroll vertically together with the track rows.
+            onPan: (by, _) => scrollBy(Offset(0, -by.dy)),
+            child: ClipRect(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final top = viewport.clampVerticalScroll(drawn.length);
+                  return Stack(
+                    children: [
+                      for (var i = 0; i < drawn.length; i++)
+                        if (rows.order[i].aim case (final said, final other)?)
+                          Positioned(
+                            key: ValueKey(
+                              'ws-tl-aim-${ws.layers[rows.order[i].layer].id}-$said-$other',
+                            ),
+                            left: Shape.s(34),
+                            right: Shape.s(8),
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
+                            child: NakedButton(
+                              enableFeedback: false,
+                              mouseCursor: SystemMouseCursors.basic,
+                              // Pressing selects the target layer, like Cavalry's connection list.
+                              onPressed: () => ws.select(other),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    said,
+                                    maxLines: 1,
+                                    style: TextStyles.label(Grey.g56),
+                                  ),
+                                  SizedBox(width: Shape.s(5)),
+                                  Flexible(
+                                    child: Text(
+                                      _numbered(ws, other),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyles.label(Grey.g91),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        // A property lane shows the property name under its layer's name, as Ableton names a lane after its control.
+                        else if (rows.order[i].value case final n?)
+                          Positioned(
+                            key: ValueKey(
+                              'ws-tl-lane-${ws.layers[rows.order[i].layer].id}-$n',
+                            ),
+                            left: Shape.s(34),
+                            right: Shape.s(8),
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
+                            // The lane shows the effect card's name, then the property's own label (for example Threshold, not js_am_rays_threshold).
+                            // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
+                            child: Row(
+                              children: [
+                                if (rows.laneCard(
+                                      ws.layers[rows.order[i].layer],
+                                      n,
+                                    )
+                                    case final card?) ...[
+                                  Flexible(
+                                    child: Text(
+                                      card,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyles.label(Grey.g56),
+                                    ),
+                                  ),
+                                  SizedBox(width: Shape.s(5)),
+                                ],
+                                Text(
+                                  ws.inside?.shown(n)?.label ?? n,
+                                  maxLines: 1,
+                                  style: TextStyles.label(Grey.g76),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (ws.layers[rows.order[i].layer] case final l)
+                          Positioned(
+                            key: ValueKey('ws-tl-label-${l.id}'),
+                            left: 0,
+                            right: 0,
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
+                            // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
+                            child: GestureDetector(
+                              supportedDevices: pressingDevices,
+                              onSecondaryTapDown: (d) =>
+                                  labelRight(l, d.globalPosition),
+                              // Count the whole drag from the pointer-down position.
+                              dragStartBehavior: DragStartBehavior.down,
+                              onVerticalDragStart: (_) => rows.reorderStart(),
+                              onVerticalDragUpdate: (d) =>
+                                  rows.reorderBy(d.delta.dy),
+                              onVerticalDragEnd: (_) => rows.reorderEnd(l),
+                              child: TimelineLabelRow(
+                                // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
+                                index: rows.order[i].layer,
+                                depth: ws.depth(l),
+                                row: drawn[i],
+                                hidden: RowFlags(ws).isHidden(l.id),
+                                solo: RowFlags(ws).isSolo(l.id),
+                                lanes: l.kind == LayerKind.group
+                                    ? ws.groupOpen(l.id)
+                                    : l.keys.isEmpty &&
+                                          linkTargets(ws, l.id).isEmpty &&
+                                          !l.lined
+                                    ? null
+                                    : ws.lanesOpen(l.id),
+                                onLanes: () => l.kind == LayerKind.group
+                                    ? ws.turnGroup(l.id)
+                                    : ws.twirl([l.id]),
+                                onSelect: () =>
+                                    HardwareKeyboard.instance.isShiftPressed
+                                    // Shift selects every row from the last picked one to this one, as in After Effects.
+                                    ? selectRange(ws, l.id)
+                                    : HardwareKeyboard.instance.isMetaPressed
+                                    ? selectAlso(ws, l.id)
+                                    // Cmd adds this layer to the selection, or removes it.
+                                    : ws.select(l.id),
+                                onEye: () => RowFlags(ws).toggleHidden(l.id),
+                                onSolo: () => RowFlags(ws).toggle('solo', l.id),
+                                onLock: () => RowFlags(ws).toggle('lock', l.id),
+                              ),
+                            ),
+                          ),
+                      for (var i = 0; i < drawn.length; i++)
+                        if (rows.order[i].value == null)
+                          // The rename field is written over the label (Cmd+R).
+                          ?renameField(
+                            i,
+                            ws.layers[rows.order[i].layer].id,
+                            i * TimelineMetrics.row - top,
+                          ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}

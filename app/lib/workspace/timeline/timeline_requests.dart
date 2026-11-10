@@ -16,7 +16,6 @@ import 'package:motolii/workspace/commands/panel_requests.dart'
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
-import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 
 mixin TimelineRequests on State<TimelinePane> {
@@ -195,7 +194,7 @@ mixin TimelineRequests on State<TimelinePane> {
 
   /// A right-click on a layer's bar opens the layer's context menu.
   void trackRight(Offset p) {
-    final t = _t, ws = t.workspace, r = t.rowAt(p.dy);
+    final t = _t, ws = t.workspace, r = t.rows.rowAt(p.dy);
     // Below the rows, or on a property lane, there is no bar.
     if (ws == null || r == null || r.value != null) return;
     final l = r.l, f = t.viewport.view.frameAt(p.dx);
