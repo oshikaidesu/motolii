@@ -1,5 +1,5 @@
-// The stage's artwork: a pop poster frame drawn from Ws.layers at one frame, plus the geometry the stage needs to select it.
-// contract: everything here is a pure function of an [ArtScene]; no clock, no randomness at paint time, so a frame always looks the same.
+// The stage's artwork: a poster frame drawn from Ws.layers at one frame, plus the geometry the stage needs to select it.
+// Everything here is a pure function of an [ArtScene]: no clock and no randomness at paint time, so a frame always looks the same.
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart';
 import '../../bridge/motolii.dart' show Motolii, MotoliiMoment;
 import '../state/state.dart';
 
-/// One layer as the picture needs it: a frozen copy, so a scene can be compared with the last one.
+/// One layer as the artwork needs it: an immutable copy, so a scene can be compared with the previous one.
 @immutable
 class ArtLayer {
   ArtLayer(WsLayer l) : id = l.id, name = l.name, kind = l.kind, inF = l.inF, outF = l.outF, keys = List.unmodifiable([...l.keys]..sort());
@@ -25,15 +25,18 @@ class ArtLayer {
 }
 
 /// What the stage draws: the frame, the layers, and whether the camera layer frames the view.
+///
+/// Two scenes are equal when they would draw the same image.
 @immutable
 class ArtScene {
   final String title;
 
-  /// The guides, in composition px: the document's own.
+  /// The document's guides, in composition px.
   final List<double> guidesX, guidesY;
   ArtScene.of(Ws ws, {required this.camera})
     : frame = ws.frame,
-      title = ws.document == null ? 'CODA_main' : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''), // (joined: the document's own name)
+      // The document's own name.
+      title = ws.document == null ? 'CODA_main' : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
       guidesX = [
         for (final (a, at) in ws.guides)
           if (a == 'x') at,
@@ -55,11 +58,15 @@ class ArtScene {
   final Motolii? _inside;
   final _asked = <String, ArtBox?>{};
 
-  /// Where the working eye stood, and each camera as it sees it: the inside's words (doc_gizmo), read with each picture.
+  /// Where the view camera stood, and each camera layer as it sees the stage.
+  ///
+  /// The engine's text (doc_gizmo), read with each image.
   final List<double> eye;
   final Map<String, String> gizmos;
 
-  /// A camera's points on the picture: its frame's four corners, the point it looks at, where it is. Null: one behind the eye.
+  /// A camera layer's points on the image: the four corners of its frame, the point it looks at and its position.
+  ///
+  /// A point is null when it lies behind the view camera.
   List<Offset?> gizmo(String id) {
     final n = (gizmos[id] ?? '').trim().split(' ').map(double.tryParse).toList();
     return [
@@ -68,20 +75,22 @@ class ArtScene {
     ];
   }
 
-  /// A thing's frame on the picture as the inside sees it at this moment, asked when it is wanted (a hand on the
-  /// stage, the picked one's line), not for every thing at every picture: null, not shown.
+  /// A layer's box on the image as the engine sees it at this time, or null when the layer is not shown.
+  ///
+  /// It is asked for only when needed (a handle on the stage, the selected layer's outline), not for every layer
+  /// on every image.
   ArtBox? box(String id) => _asked.putIfAbsent(id, () {
     final f = _inside?.bounds(int.tryParse(id) ?? -1);
     return f == null ? null : ArtBox(Offset(f[0], f[1]), Size(f[2], f[3]), f[4] * math.pi / 180, Offset(f[5], f[6]));
   });
 
-  /// Every thing's frame, asked now.
+  /// The box of every layer, asked for now.
   Map<String, ArtBox> get boxes => {
     for (final l in layers)
       if (box(l.id) case final b?) l.id: b,
   };
 
-  /// How many times the joined document has been read again: a change at the same frame is another scene.
+  /// How many times the document has been read again. A change at the same frame makes a different scene.
   final int rev;
   final int frame;
   final bool camera;
@@ -101,7 +110,7 @@ class ArtScene {
   int get hashCode => Object.hash(frame, camera, Object.hashAll(layers));
 }
 
-/// A layer's box in document px: centre, unscaled size, rotation and its anchor.
+/// A layer's box in document px: centre, unscaled size, rotation and anchor.
 class ArtBox {
   const ArtBox(this.c, this.size, this.rot, this.anchor);
   final Offset c, anchor;
@@ -118,19 +127,21 @@ class ArtBox {
 
 Offset _rot(Offset p, double a) => Offset(p.dx * math.cos(a) - p.dy * math.sin(a), p.dx * math.sin(a) + p.dy * math.cos(a));
 
-/// The stage's picture in document px: its size, the things' frames, and what a point is on.
+/// The stage's image in document px: its size, the layers' boxes, and which layer a point is on.
 abstract final class WsArt {
-  static Size comp = const Size(1920, 1080); // (a document's own)
+  // The document's own size.
+  static Size comp = const Size(1920, 1080);
   static Offset get centre => comp.center(Offset.zero);
 
-  /// The box the stage frames when [id] is selected, or null when the layer has no picture at this frame (the inside
-  /// gives a frame only to what it shows: whether it is on is its, not counted again here in frames).
+  /// The box the stage frames when [id] is selected, or null when the layer has no image at this frame.
+  ///
+  /// The engine gives a box only to what it shows, so whether the layer is on is not worked out again here.
   static ArtBox? boxOf(ArtScene s, String? id) => s.layer(id) == null ? null : s.box(id!);
 
   /// The topmost layer under [p] (document px), or null. The background is locked: a click on it means "nothing".
   static String? hit(ArtScene s, Offset p) {
     for (final l in s.layers) {
-      // (the thing in front, of those whose real frame the point is in; the first row is the nearest thing)
+      // The first layer in the list is the nearest, so the first box containing the point wins.
       if (s.box(l.id)?.contains(p) ?? false) return l.id;
     }
     return null;

@@ -1,4 +1,4 @@
-// A part of a shelf whose height the hand sets: drag its grip, double-click puts it back.
+// A band of a shelf whose height the user sets by dragging its grip.
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/widgets.dart';
 
@@ -6,8 +6,9 @@ import '../../skin/tokens.dart';
 import '../state/state.dart';
 import '../../widgets/two_fingers.dart';
 
-/// A band whose height the user sets: the grip on its lower edge drags it up or down (clamped to 44..[max]);
-/// a double-click on the grip returns to the default.
+/// A band whose height the user sets by dragging the grip on its lower edge.
+///
+/// The height is clamped to 44..[max]. A double-click on the grip sets it back to [reset].
 class DockResizable extends StatefulWidget {
   const DockResizable({
     super.key,
@@ -19,9 +20,11 @@ class DockResizable extends StatefulWidget {
     required this.gripKey,
   });
 
-  /// [reset] is where a double-click on the grip puts the height back.
+  /// The current height, the largest height the grip allows, and the height a double-click on the grip sets.
   final double height, max, reset;
   final Key gripKey;
+
+  /// Called with the new height while the user drags the grip, and on a double-click.
   final ValueChanged<double> onHeight;
   final Widget child;
   @override

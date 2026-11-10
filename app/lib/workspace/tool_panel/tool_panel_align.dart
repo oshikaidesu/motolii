@@ -1,6 +1,7 @@
-// The tool panel's Align tool: the picked thing put against the picture's edges or its middle, by what of it is seen (the
-// upright box of its outline, as the inside sees it). Moved as a hand moves it on the stage (held, carried by so many points of
-// the picture, let go: one step), so the inside reckons it into its own units, through its parent's turn.
+// The Tool Panel's Align tool: aligns the selected layer to an edge or the center of the canvas.
+// It aligns the layer's visible bounds, the upright box around its outline as the engine reports it.
+// The move is sent as a drag on the stage (drag start, an offset in canvas points, drag end), which is one undo step.
+// The engine converts the offset into the layer's own units, taking its parent's rotation into account.
 import 'package:flutter/widgets.dart';
 
 import '../../widgets/controls.dart' show Chip, ChipLook, IconPress;
@@ -11,17 +12,21 @@ import 'tool_panel_widgets.dart';
 import '../stage/stage_art.dart' show WsArt;
 import '../state/state.dart';
 
+/// The Align tool: six buttons that align the selected layer to the canvas edges or center.
 class AlignTool extends StatelessWidget {
   const AlignTool({super.key});
 
-  /// What of the picked thing is seen: the upright box of its outline, as the inside sees it (null: nothing picked or seen).
+  /// The visible bounds of the selected layer: the upright box around its outline as the engine reports it.
+  /// Null when no layer is selected or nothing is visible.
   static Rect? _seen(Ws ws) {
     final t = int.tryParse(ws.selected ?? '');
     return t == null ? null : ws.inside?.seen(t);
   }
 
-  /// Put against `side` (0 left, 1 across the middle, 2 right; 3 top, 4 down the middle, 5 bottom): moved as a hand
-  /// moves it, twice at most (a thing in depth or turned towards the eye is seen otherwise where it has gone).
+  /// Aligns the selected layer to [side]: 0 left, 1 horizontal center, 2 right, 3 top, 4 vertical center, 5 bottom.
+  ///
+  /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
+  /// so the second pass corrects the remaining offset.
   static void align(Ws ws, int side, [int pass = 0]) {
     final m = ws.inside, t = int.tryParse(ws.selected ?? ''), r = t == null ? null : m?.seen(t);
     if (m == null || t == null || r == null) return;
@@ -39,7 +44,8 @@ class AlignTool extends StatelessWidget {
       _ => 0.0,
     };
     if (dx.abs() < .25 && dy.abs() < .25) return;
-    m.later('drag_start', layer: t); // (moved as a hand moves it, without waiting; once more if a thing in depth is seen elsewhere where it went)
+    // Moves the layer like a drag on the stage, without waiting for the engine.
+    m.later('drag_start', layer: t);
     m.dragUpdate('place', dx, dy);
     ws.after(m.later('drag_end', number: 1), (done, _) => done && pass == 0 ? align(ws, side, 1) : null);
   }
@@ -72,7 +78,8 @@ class AlignTool extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(4)),
             child: Opacity(
-              opacity: r == null ? .35 : 1, // (nothing picked that is seen: nothing to put anywhere)
+              // Dimmed when there is no visible selected layer to align.
+              opacity: r == null ? .35 : 1,
               child: Row(
                 children: [
                   for (final side in row) ...[
@@ -96,7 +103,7 @@ class AlignTool extends StatelessWidget {
   }
 }
 
-/// A side drawn as what it does: the picture's edge or middle as a line, a box put against it.
+/// Draws a side button's icon: the canvas edge or center as a line, with a box placed against it.
 class _Side extends CustomPainter {
   _Side(this.side, this.ink);
   final int side;

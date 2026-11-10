@@ -1,5 +1,5 @@
-// The stage's pictures kept on disk for playing (the inside's stage_cache.h), marked under the ruler's work-area band as
-// After Effects marks its cached frames: a thin line where a played picture is put, not drawn.
+// Marks which frames are cached on disk for playback (see engine/stage/stage_cache.h).
+// A thin line under the ruler's work-area band shows each cached range, as After Effects marks its cached frames.
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
@@ -7,6 +7,7 @@ import '../../skin/tokens.dart';
 import 'timeline_paint.dart';
 import '../state/state.dart';
 
+/// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
 class WtKeptPainter extends CustomPainter {
   WtKeptPainter({required this.view, required this.kept}) : super(repaint: kept);
   final WtView view;

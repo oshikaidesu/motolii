@@ -1,25 +1,31 @@
-// The window's keys as Ableton Live 12 has them (its reference manual, chapter 42 "Live Keyboard Shortcuts":
-// www.ableton.com/en/manual/live-keyboard-shortcuts/), each said beside the section it comes from; where Live has no
-// such key, the tool that has one is named. The commands here are what each does to the window's state; keymap.dart
-// says which key says which, and the maker's keybindings.json may say otherwise.
+// Keyboard commands that follow Ableton Live 12.
+//
+// Source: the Live reference manual, chapter 42 "Live Keyboard Shortcuts" (www.ableton.com/en/manual/live-keyboard-shortcuts/).
+// Each command names the manual section it comes from. Where Live has no such key, the app that does is named.
+// This file defines what each command does to the workspace state. keymap.dart maps keys to commands,
+// and the user's keybindings.json can override that mapping.
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../edits/keyframe_edits.dart';
 import '../state/state.dart';
 
-/// What the timeline is asked to do with how it looks at the document (its zoom, its loop): it keeps those itself.
+/// A request to the timeline about its own view: zoom or loop. The timeline keeps that state itself.
+///
+/// The string names the request and the int counts requests so that repeating one still notifies listeners.
 final wsTimelineAsk = ValueNotifier<(String, int)>(('', 0));
 void wsAskTimeline(String what) => wsTimelineAsk.value = (what, wsTimelineAsk.value.$2 + 1);
 
-/// The picked thing's name asked for, in its row (Live: Cmd+R renames, 42.5 and 42.19).
+/// Asks the selected layer's row to start renaming (Live 42.5 and 42.19: Cmd+R renames).
 final wsAskRename = ValueNotifier<int>(0);
 
-/// The mark (locator) picked by a click on its flag: Cmd+R names it, Delete takes it away (Live 6.4: a locator is
-/// selected, then renamed or deleted like anything else).
+/// The marker (locator) selected by a click on its flag, as its time and name.
+///
+/// Cmd+R renames it and Delete removes it (Live 6.4: a locator is selected, then renamed or deleted like anything else).
 final wsMarkPicked = ValueNotifier<(double, String)?>(null);
 
-/// Where playing began (Live 42.20: Space plays from the start marker and stops back there; Shift+Space goes on from
-/// where it stopped).
+/// The frame where playback started.
+///
+/// Live 42.20: Space plays from the start marker and stops back there. Shift+Space continues from where playback stopped.
 int? _playFrom;
 
 Map<String, void Function()> wsAbletonCommands(Ws ws) {
@@ -28,20 +34,21 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     ws.frame = ws.frame + by;
   }
 
-  /// The playhead on the nearest stop that way (After Effects' J and K).
+  /// Moves the playhead to the nearest stop in direction [way] (After Effects' J and K).
   void hop(int way) {
     final all = ws.stops().where((f) => (f - ws.frame) * way > 0).toList()..sort();
     if (all.isNotEmpty) step((way > 0 ? all.first : all.last) - ws.frame);
   }
 
-  /// The picked keys, else the picked thing's bar, carried [by] frames (Live 42.16: Nudge Selection Left/Right); with
-  /// nothing picked, the playhead (Live moves its insert marker so).
+  /// Moves the selected keyframes by [by] frames, else the selected layer's bar. With nothing selected it moves the playhead.
+  ///
+  /// Live 42.16: Nudge Selection Left/Right. Live moves its insert marker the same way.
   void nudge(int by) {
     final m = ws.inside;
     if (m == null) return;
     if (ws.keys.isNotEmpty) {
       wsSlideKeys(ws, ws.keys.toList(), by);
-      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // (still picked, where they now are)
+      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // The keyframes stay selected at their new frames.
       return;
     }
     final t = int.tryParse(ws.selected ?? '');
@@ -51,7 +58,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     ws.after(m.later('drag_end', number: 1));
   }
 
-  /// The row above or below the picked one picked (Live 42.15/42.16: the arrow keys move between tracks).
+  /// Selects the layer [by] rows from the selected one (Live 42.15 and 42.16: the arrow keys move between tracks).
   void row(int by) {
     if (ws.layers.isEmpty) return;
     final i = ws.layers.indexWhere((l) => l.id == ws.selected);
@@ -60,7 +67,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
 
   return {
     'play.fromStart': () {
-      // (Live 42.20 Space: play from the start marker / stop, back at it)
+      // Live 42.20 Space: play from the start marker, or stop and return to it.
       if (ws.playing) {
         ws.playing = false;
         if (_playFrom case final f?) ws.frame = f;
@@ -70,7 +77,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
       }
     },
     'play.continue': () {
-      // (Live 42.20 Shift+Space: continue play from the stop point)
+      // Live 42.20 Shift+Space: continue playing from where it stopped.
       _playFrom = null;
       ws.playing = !ws.playing;
     },
@@ -80,27 +87,29 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     'nudge.right10': () => nudge(10),
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
-    'thing.rename': () =>
-        ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++, // (Live 42.5/42.19 Cmd+R: the picked track, or the picked locator)
+    // Live 42.5 and 42.19 Cmd+R: renames the selected track, or the selected locator.
+    'thing.rename': () => ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++,
     'thing.solo': () {
-      // (Live 42.15/42.19 S: solo selected tracks)
+      // Live 42.15 and 42.19 S: solo the selected tracks.
       final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
       if (t == null || m == null) return;
       ws.after(m.later('set', layer: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
     },
     'thing.lanes': () {
-      // (After Effects' U: the picked layers' keyed properties shown, pressed again gone)
+      // After Effects' U: shows the keyframed properties of the selected layers, and hides them when pressed again.
       final ids = {...ws.many, ?ws.selected};
       if (ids.isNotEmpty) ws.twirl(ids);
     },
-    'mark.animate': () => ws.animating = !ws.animating, // (Apple Motion's A, Mark > Record Animation: the top bar's Animate, the inspector's Animate all)
-    'loop.toggle': () => wsAskTimeline('loop'), // (Live 42.16 Cmd+L: toggle loop brace)
-    'zoom.in': () => wsAskTimeline('in'), // (Live 42.9 +: zoom in time ruler)
-    'zoom.out': () => wsAskTimeline('out'), // (Live 42.9 -)
-    'zoom.selection': () => wsAskTimeline('selection'), // (Live 42.16 Z: zoom to arrangement time selection)
-    'zoom.back': () => wsAskTimeline('back'), // (Live 42.16 X: zoom back)
-    'zoom.width': () => wsAskTimeline('fit'), // (Live 42.16 W: optimize arrangement width)
-    'frame.previous': () => step(-1), // (Live has no frame step; Rive's and Jitter's , and .)
+    // Apple Motion's A (Mark > Record Animation). The top bar's Animate and the inspector's Animate All do the same.
+    'mark.animate': () => ws.animating = !ws.animating,
+    'loop.toggle': () => wsAskTimeline('loop'), // Live 42.16 Cmd+L: toggle the loop brace.
+    'zoom.in': () => wsAskTimeline('in'), // Live 42.9 +: zoom in on the time ruler.
+    'zoom.out': () => wsAskTimeline('out'), // Live 42.9 -.
+    'zoom.selection': () => wsAskTimeline('selection'), // Live 42.16 Z: zoom to the time selection.
+    'zoom.back': () => wsAskTimeline('back'), // Live 42.16 X: zoom back.
+    'zoom.width': () => wsAskTimeline('fit'), // Live 42.16 W: fit the whole width.
+    // Live has no frame step. These are the Rive and Jitter keys, comma and period.
+    'frame.previous': () => step(-1),
     'frame.next': () => step(1),
     'frame.previousStop': () => hop(-1),
     'frame.nextStop': () => hop(1),

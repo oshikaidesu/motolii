@@ -1,12 +1,14 @@
-// The timeline's tracks painted: each row's bar (its band, fill, keys, stretches, film frames, sound wave) and an
-// open lane's value line.
+// Painting for the timeline's tracks: each row's bar (fill, keyframes, easing curves, video frames, sound wave)
+// and the value line of an open property lane.
 part of 'timeline_paint.dart';
 
-/// The bar's fill: the kind's hue, a step quieter when not selected; a hidden or soloed-out layer drops to grey.
+/// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
 Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
 
-// A way drawn from x [xa] to [xb]: as fine as the screen shows, where it is on the screen. What is left at 192 steps is more
-// than a short stretch has pixels for, and a long one still has its curve; Skia draws a curve as such lines too.
+/// Adds an easing curve to [p] from x [xa] to [xb], sampled finely enough for the pixels on screen.
+///
+/// Sampling at 192 steps is more than a short stretch has pixels for, and a long one still looks like a curve.
+/// Skia flattens curves into line segments as well.
 void _wayLine(Path p, List<double> way, double xa, double xb, double width, double Function(double) y) {
   final n = way.length - 1, wide = xb - xa;
   if (wide <= 0) return;
@@ -20,11 +22,13 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
 
 class WtTracksPainter extends CustomPainter {
   const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.restAt});
-  final int? restAt; // (where the hand has come to rest: Alight Motion's SnapLine)
   final List<WtRow> rows;
   final WtView view;
   final int fps;
   final double vscroll;
+
+  /// The frame where the drag snapped, drawn as a line like Alight Motion's SnapLine, or null.
+  final int? restAt;
 
   @override
   void paint(Canvas c, Size s) {
@@ -48,7 +52,8 @@ class WtTracksPainter extends CustomPainter {
   }
 
   void _row(Canvas c, Size s, WtRow r, double cy) {
-    if (r.lane case final pts?) return pts.isEmpty ? null : _lane(c, s, r, pts, cy); // (empty: a row that only says what it aims at)
+    // A lane with no points is a row that only shows what it targets, so nothing is drawn.
+    if (r.lane case final pts?) return pts.isEmpty ? null : _lane(c, s, r, pts, cy);
     final p = Paint(), x0 = view.x(r.inF), x1 = math.max(view.x(r.outF), x0 + 4), h = Forms.worn.trackBar(selected: r.selected);
     if (r.whole case (final a, final b)?) {
       c.drawRect(Rect.fromLTRB(view.x(a), cy - h / 2, view.x(b), cy + h / 2), p..color = wtBarFill(r).withValues(alpha: .18));
@@ -58,7 +63,7 @@ class WtTracksPainter extends CustomPainter {
     final fill = wtBarFill(r), ink = r.dim ? Grey.g56 : WsT.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
     final mix = r.mix;
     if (mix != null && mix.length > 1 && !r.dim) {
-      // (a relation: its things' colours side by side, blended)
+      // A behaviour bar blends the colours of the layers it affects.
       c.drawRRect(
         rr,
         Paint()..shader = LinearGradient(colors: [for (final m in mix) r.selected ? Color.lerp(m, const Color(0xFFFFFFFF), .18)! : m]).createShader(bar),
@@ -68,13 +73,14 @@ class WtTracksPainter extends CustomPainter {
     }
     c.save();
     c.clipRRect(rr);
-    c.drawRect(Rect.fromLTWH(x0, bar.top, 5, bar.height), p..color = grip); // (the ends a hand cuts the bar by: wide, with a light notch)
+    // The trim handles at both ends are wide and have a light notch.
+    c.drawRect(Rect.fromLTWH(x0, bar.top, 5, bar.height), p..color = grip);
     c.drawRect(Rect.fromLTWH(x1 - 5, bar.top, 5, bar.height), p..color = grip);
     final notch = ink.withAlpha(r.selected ? 200 : 120);
     c.drawRect(Rect.fromLTWH(x0 + 2, bar.top + 4, 1.5, bar.height - 8), p..color = notch);
     c.drawRect(Rect.fromLTWH(x1 - 3.5, bar.top + 4, 1.5, bar.height - 8), p..color = notch);
     if (r.frames case final f? when f.length == 1) {
-      // (a photo: itself again and again along the bar at its own shape, as Alight Motion's photo bar)
+      // A single image is repeated along the bar at its own aspect ratio, as in Alight Motion.
       final im = f.single, step = math.max(4.0, bar.height * im.width / math.max(1, im.height));
       for (var x = bar.left + 5; x < bar.right - 5; x += step) {
         paintImage(
@@ -87,7 +93,7 @@ class WtTracksPainter extends CustomPainter {
         );
       }
     } else if (r.frames case final f? when f.isNotEmpty) {
-      // (each picture filling its part of the bar, its middle kept: a strip of frames, as Alight Motion's)
+      // A video shows a strip of frames, each filling its part of the bar with its centre kept, as in Alight Motion.
       final step = (bar.width - 10) / f.length;
       for (final (i, im) in f.indexed) {
         final at = Rect.fromLTWH(bar.left + 5 + i * step, bar.top, step, bar.height);
@@ -96,7 +102,7 @@ class WtTracksPainter extends CustomPainter {
     }
     if (r.wave case final w?) _wave(c, bar, ink, fill, r.inF, w);
     if (r.clipped) {
-      // (↘: cut to the one under it)
+      // The arrow marks a layer clipped to the layer below.
       final at = Offset(math.max(x0 + 8, 6.0), cy - 4),
           arrow = Paint()
             ..color = ink
@@ -119,7 +125,7 @@ class WtTracksPainter extends CustomPainter {
         c.drawRRect(
           RRect.fromLTRBR(nameX - 4, cy - 6.5, nameX + t.width + 4, cy + 6.5, Shape.r(3)),
           p..color = fill,
-        ); // (its name on its own ground, over its sound or its pictures)
+        ); // Backing for the name so it stays readable over the waveform or frames.
       }
       c.save();
       c.clipRect(Rect.fromLTRB(nameX, bar.top, x1 - 6, bar.bottom));
@@ -149,7 +155,7 @@ class WtTracksPainter extends CustomPainter {
       );
     }
     for (final st in r.stretches) {
-      // (each stretch's way, from its key to the next, as a line inside the bar: how it goes there)
+      // The easing between each keyframe and the next, drawn as a thin line inside the bar, as Ableton draws automation.
       final xa = view.x(st.from), xb = view.x(st.to);
       if (xb - xa < 6 || xb < 0 || xa > s.width) continue;
       final h = bar.height * .62, base = cy + h / 2;
@@ -163,7 +169,7 @@ class WtTracksPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round
           ..isAntiAlias = true
           ..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!,
-      ); // (Ableton's automation line: one thin line, the bar's own colour made lighter)
+      );
     }
     for (final k in r.keys) {
       final x = view.x(k);
@@ -199,11 +205,11 @@ class WtTracksPainter extends CustomPainter {
     }
   }
 
-  /// A value's lane, as Ableton draws an envelope in its own lane (Live 12 manual 25.5): its keys as breakpoints at
-  /// their values, lowest at the bottom, joined as each goes there (its way's shape: Ableton draws a curved segment
-  /// curved, 25.5.2; the bar's own stretches the same), and nothing before the first or after the last: with many lanes
-  /// a line across the whole row tells nothing (the maker, 11/1; Theatre.js's connector goes from key to key); the line
-  /// in the bar's colour made lighter, as the bar's own automation line (golf_noise.md ⑫: it was straight whatever the ease).
+  /// Draws a property lane, like an envelope in an Ableton Live lane (Live 12 manual 25.5).
+  ///
+  /// Keyframes are breakpoints at their values, lowest at the bottom, joined by each keyframe's easing curve.
+  /// Nothing is drawn before the first or after the last keyframe, because with many lanes a full-width line says nothing.
+  /// The line is a lighter shade of the bar's colour, like the bar's own easing lines.
   void _lane(Canvas c, Size s, WtRow r, List<(int, double)> pts, double cy) {
     final top = cy - WtM.row / 2 + 4, h = WtM.row - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
     Offset at((int, double) q) => Offset(view.x(q.$1), top + (1 - q.$2) * h);
@@ -213,13 +219,14 @@ class WtTracksPainter extends CustomPainter {
       line.lineTo(a.dx, a.dy);
       if (way == null) continue;
       final b = at(pts[i + 1]);
-      _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3)); // (an overshoot kept within its own lane)
+      // Overshoot is clamped to stay within the lane.
+      _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3));
     }
     if (r.laneOn case final i? when i + 1 < pts.length) {
       c.drawRect(
         Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2),
         Paint()..color = WsT.accent.withValues(alpha: .18),
-      ); // (Theatre.js's connector, lit while it is what the curve editor holds)
+      ); // Highlights the segment open in the curve editor, like Theatre.js's connector.
     }
     c.drawPath(
       line,
@@ -235,7 +242,7 @@ class WtTracksPainter extends CustomPainter {
     }
   }
 
-  /// Its sound as the inside reads it: -60 dB to full across the bar's height, the loudest of each two points.
+  /// Draws the layer's waveform from the engine's decibel values: -60 dB to full scale across the bar's height, using the loudest of each two points.
   void _wave(Canvas c, Rect bar, Color ink, Color fill, int inF, List<double> db) {
     final p = Paint()..color = Color.lerp(fill, ink, .7)!;
     final h = bar.height - 4, cy = bar.center.dy;

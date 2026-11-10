@@ -1,12 +1,16 @@
-// dock_files_sheet.dart: a timesheet put on the stage, each of its columns a level timed by its keys.
+// Places a timesheet on the canvas: each of its columns becomes a level timed by keyframes.
 part of 'dock_files.dart';
 
-/// A timesheet's columns (XDTS, CELSYS's open exchange sheet: its first line, then JSON), read as OpenToonz reads one
-/// (xdtsio.cpp loadXdtsScene and getCellFrameIdTrack): its first time table's cells (fieldId 0), a track a column, named
-/// by the header's names at its trackNo, the bottom first; each item a change at its frame, held to the next, the last
-/// to the sheet's end. A drawing's number, or -1 for × (SYMBOL_NULL_CELL, or no value, and before the first item); a
-/// hyphen and the in-between marks ○ ● (SYMBOL_HYPHEN, SYMBOL_TICK_1, _2) keep what was before; an item below frame 0
-/// is what shows from the start (CLIP STUDIO writes some). A number with a letter (3a) is not read yet: told. Null: not one.
+/// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
+///
+/// It follows OpenToonz (xdtsio.cpp, loadXdtsScene and getCellFrameIdTrack). Each track of the first time table
+/// (fieldId 0) is a column, named by the header name at its trackNo, with the bottom column first.
+/// Each item is a change at its frame that holds until the next item, and the last one holds to the end of the sheet.
+/// A value is a drawing number, or -1 for an empty cell (SYMBOL_NULL_CELL, no value, or before the first item).
+/// The hyphen and in-between marks (SYMBOL_HYPHEN, SYMBOL_TICK_1, SYMBOL_TICK_2) keep the previous value.
+/// An item before frame 0 shows from the start, which CLIP STUDIO writes sometimes.
+/// A number with a letter, such as 3a, is not supported and is returned in `unread`.
+/// Returns null if [text] is not a timesheet.
 ({int frames, List<(String, List<(int, int)>)> columns, Set<String> unread})? _sheetOf(String text) {
   const first = 'exchangeDigitalTimeSheet Save Data';
   if (!text.startsWith(first)) return null;
@@ -32,9 +36,11 @@ part of 'dock_files.dart';
   }
 }
 
-/// The drawings of the level [name] for the timesheet [sheet]: a level's name is what is before the '.' or '_' and its
-/// number (OpenToonz's tfilepath.cpp getLevelNameW: A.0001.png, A_0001.png), looked for in the sheet's folder, then
-/// in a folder of that name in it, as CLIP STUDIO writes foo/A/ (OpenToonz's xdtsimportpopup.cpp updateSuggestions).
+/// Finds the drawings of the level [name] for the timesheet file [sheet].
+///
+/// A level's name is the part before the '.' or '_' and the number, as in OpenToonz's tfilepath.cpp getLevelNameW
+/// (A.0001.png, A_0001.png). It looks in the sheet's folder, then in a subfolder of that name, as CLIP STUDIO writes
+/// foo/A/ (OpenToonz's xdtsimportpopup.cpp, updateSuggestions).
 List<(int, String)>? _levelNamed(String sheet, String name) {
   final here = File(sheet).parent.path, named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
@@ -50,10 +56,12 @@ List<(int, String)>? _levelNamed(String sheet, String name) {
   return null;
 }
 
-/// A timesheet put on the stage from the present moment: each column a level, as [_placeLevel] makes one, named as the
-/// column (OpenToonz names its column so), as long as the sheet, a held key of its Drawing at each change, 24 frames a
-/// second (DiTiS reads a sheet so); the bottom column first, all in one step, all picked. What is not found or read,
-/// the top bar says.
+/// Places the timesheet [file] on the canvas, starting at the current time.
+///
+/// Each column becomes a level as [_placeLevel] makes one, named after the column as OpenToonz does, and as long as
+/// the sheet. Each change gets a hold keyframe on the level's Drawing property at 24 frames per second, as DiTiS reads
+/// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
+/// Missing drawings and unsupported values are reported in the notice.
 Future<void> _placeSheet(DockCtx c, String file) async {
   final sheet = _sheetOf(await File(file).readAsString().catchError((_) => ''));
   if (sheet == null) {

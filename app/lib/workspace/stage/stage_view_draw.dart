@@ -1,15 +1,18 @@
-// The stage's drawing tools, as the hand lets go on the view: the lasso's pick, a rectangle or ellipse dragged out, a
-// pen scribble fitted to a curve, the brush's freehand way.
-// (setState from an extension on the State itself: the analyzer allows it only in a class or mixin)
+// The stage's drawing tools, run when the pointer is released: lasso selection, a dragged-out rectangle or ellipse, a
+// pen scribble fitted to a curve, and the freehand brush.
+//
+// setState is called from an extension on the State itself, which the analyzer allows only in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
 part of 'stage_view.dart';
 
 extension _StageViewDraw on _StageViewState {
+  /// Selects the layers whose centre lies inside the lasso.
   void _lassoDragEnd(_View v) {
     final round = _lasso, ws = WsScope.read(context);
     setState(() => _lasso = null);
     if (round == null || round.length < 3) return;
-    // (drawn straight, it is a box from where the hand came down to where it let go (Figma's, AE's); else the line it drew round)
+    // A nearly straight drag selects the box between its ends, as in Figma and After Effects. Otherwise the drawn
+    // outline is used.
     final a = round.first, z = round.last, along = z - a;
     final straight = along.distance > 4 && round.every((p) => ((p - a).dx * along.dy - (p - a).dy * along.dx).abs() / along.distance < 12);
     final path = straight ? (Path()..addRect(Rect.fromPoints(a, z))) : (Path()..addPolygon(round, true));
@@ -19,34 +22,37 @@ extension _StageViewDraw on _StageViewState {
     ]);
   }
 
+  /// Creates a layer of the active tool's kind from a drag that started at [_drawFrom] and ended at [to].
+  /// A drag shorter than 6 screen pixels creates the layer at its default size.
   void _draw(_View v, Offset to) {
     final from = _drawFrom, ws = WsScope.read(context), m = ws.inside, kind = widget.make;
     _drawFrom = null;
     setState(() {});
     if (from == null || m == null || kind == null) return;
     final a = v.toComp(from), b = v.toComp(to), p = m.point, c = WsArt.comp;
-    final centred = kind == 'circle' && widget.fromCentre; // (drawn out from its middle: twice as large about where the hand came down)
+    // Drawn out from its centre: twice the drag, centred on where the drag started.
+    final centred = kind == 'circle' && widget.fromCentre;
     final mid = centred ? a : (a + b) / 2, d = centred ? (b - a) * 2 : b - a, tiny = d.distance < 6 / v.s;
     final x = ((kind == 'text' || tiny ? a.dx : mid.dx) - c.width / 2) / p, y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
     final cut = widget.mask ? int.tryParse(ws.selected ?? '') : null;
-    // (one step, asked without waiting: the new thing is the one the add made (thing -1), picked once it is there)
+    // Queue everything as one undo step. Layer -1 refers to the layer just added, which is selected once it exists.
     final before = m.layers.length;
     m.later('together', number: 1);
     var made = 0;
-    ws.after(
-      m.later('add', name: kind == 'text' ? '' : 'shape', word: kind == 'text' ? ws.bodyFace : kind),
-      null,
-      (t) => made = t,
-    ); // (a text in the body's font, as a text box is in PowerPoint's Body font)
+    // Text uses the body font, as a text box does in PowerPoint.
+    ws.after(m.later('add', name: kind == 'text' ? '' : 'shape', word: kind == 'text' ? ws.bodyFace : kind), null, (t) => made = t);
     m
       ..later('set', layer: -1, name: 'x', number: x)
       ..later('set', layer: -1, name: 'y', number: y);
-    wsInked(ws, kind == 'text' ? 'text' : 'shape', kind); // (the drawing inks)
+    // Apply the current drawing colours.
+    wsInked(ws, kind == 'text' ? 'text' : 'shape', kind);
     if (kind == 'text') {
-      m.later('set', layer: -1, name: 'anchor_x', number: -1); // (the words begin where the hand came down: After Effects' point text, Figma's, Illustrator's)
+      // The text starts where the drag started, as point text does in After Effects, Figma and Illustrator.
+      m.later('set', layer: -1, name: 'anchor_x', number: -1);
     }
     if (cut != null) {
-      // (Mask: it lies just behind the picked thing, and that one is clipped by it; not seen itself: it only cuts, as After Effects' matte)
+      // Mask: the new layer sits just behind the selected layer, which it clips. It is invisible itself and only cuts,
+      // like an After Effects matte.
       final all = m.layers;
       if (all.contains(cut)) {
         m
@@ -57,7 +63,7 @@ extension _StageViewDraw on _StageViewState {
     }
     if (!tiny && kind != 'text') {
       if (kind == 'line') {
-        // (a line is a twenty-fifth of a unit thick: as long as drawn, turned as drawn)
+        // A line is 1/25 of a unit thick, as long as the drag and rotated to match it.
         m
           ..later('set', layer: -1, name: 'wide', number: d.distance / p / .04)
           ..later('set', layer: -1, name: 'rotate', number: math.atan2(d.dy, d.dx) * 180 / math.pi);
@@ -69,19 +75,23 @@ extension _StageViewDraw on _StageViewState {
     }
     ws.after(m.later('together'), (done, _) {
       if (!done || made <= 0) return;
-      if (kind == 'text') textToType = true; // (typed at once: its words field takes the keys, inspector_param_controls_tile.dart)
+      // The new text's field takes the keyboard at once (see inspector_param_controls_tile.dart).
+      if (kind == 'text') textToType = true;
       ws.select('$made');
     });
-    ws.setView('stage.tool', 0); // (one drawn, the hand is free: Alight Motion's Add is one act and Figma's tool goes back to select; After Effects' stays, so they part and Alight Motion decides: golf_noise.md head, ㊼)
+    // Back to the select tool after one shape, as in Alight Motion's Add and Figma. After Effects keeps the tool.
+    ws.setView('stage.tool', 0);
   }
 
-  /// The pen's scribble made one smooth path (the user, 11/5: drawn wobbly, then made right, as curve-fit-nd makes it):
-  /// within 8 points of the window of the hand's way, as Blender's Draw Curve tool fits its stroke (its error 8 of the
-  /// screen's, editcurve_paint.cc), its anchors and handles then the pen's own to move. Back where it began: closed and
-  /// filled as the pen's are; else a line of the ink.
+  /// Fits one smooth path to the pen scribble [way], as curve-fit-nd does.
+  ///
+  /// The fit stays within 8 screen pixels of the scribble, like Blender's Draw Curve tool (editcurve_paint.cc). The
+  /// result has ordinary pen anchors and handles that the user can move. A scribble that ends where it began becomes
+  /// a closed, filled path. Otherwise it becomes an open stroke in the current ink.
   void _fit(_View v, List<Offset> way) {
     final ws = WsScope.read(context), m = ws.inside!;
-    _penning = false; // (a path of its own: the pen's next point begins another)
+    // The fitted path is complete, so the next pen click starts a new one.
+    _penning = false;
     final points = [for (final p in way) v.toComp(p)], error = (v.toComp(way.first + const Offset(8, 0)) - points.first).distance;
     final closed = (points.first - points.last).distance < 4 * error;
     m.later('together', number: 1);
@@ -102,6 +112,7 @@ extension _StageViewDraw on _StageViewState {
     ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
   }
 
+  /// Turns the brush stroke into a drawing layer, or erases from the selected drawing with the eraser.
   void _brushDragEnd(_View v) {
     final way = _brush, ws = WsScope.read(context), m = ws.inside;
     setState(() => _brush = null);
@@ -114,7 +125,7 @@ extension _StageViewDraw on _StageViewState {
       for (final p in points) '${p.point.x} ${p.point.y} ${2 * getStrokeRadius(options.size, options.thinning, p.pressure, options.easing) / options.size}',
     ];
     if (widget.brushTool == 3) {
-      // (an eraser: taken from the picked drawing, as Alight Motion's eraser takes from the drawing layer it is in)
+      // The eraser removes from the selected drawing, as Alight Motion's eraser does from the drawing layer it is in.
       final into = int.tryParse(ws.selected ?? '');
       if (into == null) {
         ws.notice = 'Pick a drawing to erase from';
@@ -128,12 +139,8 @@ extension _StageViewDraw on _StageViewState {
     m.later('together', number: 1);
     var made = 0;
     ws.after(m.later('brush', word: '${widget.brushTool} ${options.size} ${said.join(' ')}'), null, (t) => made = t);
-    m.later(
-      'say',
-      layer: -1,
-      name: 'fill',
-      word: ws.ink.isEmpty ? 'ffffff' : ws.ink,
-    ); // (an outline with no fill shows nothing: white, as a drawing app's brush begins, when no ink is chosen)
+    // An outline with no fill shows nothing, so use white when no ink is chosen, as drawing apps do.
+    m.later('say', layer: -1, name: 'fill', word: ws.ink.isEmpty ? 'ffffff' : ws.ink);
     ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
   }
 }

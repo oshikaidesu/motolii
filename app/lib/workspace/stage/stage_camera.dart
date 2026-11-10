@@ -1,5 +1,5 @@
-// The Camera View tab: the picture the camera takes, beside the stage, whichever eye the stage has (the maker, 10/31:
-// "ステージとは別にカメラのタブが必要"; After Effects' 2 Views with Active Camera). Nothing to hold here: a look, the hand is on the stage.
+// The Camera View tab: the image the camera takes, shown beside the stage whichever view camera the stage uses.
+// Like After Effects' 2 Views with Active Camera. It is view-only; all editing happens on the stage.
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiWrites;
@@ -7,6 +7,7 @@ import '../../skin/tokens.dart';
 import 'stage_art.dart';
 import '../state/state.dart';
 
+/// The Camera View tab: shows what the camera layer sees.
 class WsCameraView extends StatefulWidget {
   const WsCameraView({super.key});
   @override
@@ -22,13 +23,15 @@ class _WsCameraViewState extends State<WsCameraView> {
     WidgetsBinding.instance.addPostFrameCallback(_look);
   }
 
-  /// The inside told whether this picture is wanted: only while the tab is in front (tabbed_view keeps a tab behind built,
-  /// Offstage), so a tab not looked at costs no second picture. Looked at after each frame the window draws.
+  /// Tells the engine whether this image is wanted, after every frame the app draws.
+  ///
+  /// It is wanted only while the tab is in front. The tab view keeps a hidden tab built but Offstage, so a tab
+  /// nobody looks at costs no second image.
   void _look(Duration _) {
     if (!mounted) return;
     final m = WsScope.read(context).inside, seen = context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
     if (_told != (m, seen)) {
-      // (a document opened begins with the tab unsaid)
+      // A newly opened document starts with the tab not announced.
       _told = (m, seen);
       m?.later('camera_view', word: seen ? 'on' : '');
     }

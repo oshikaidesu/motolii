@@ -1,5 +1,5 @@
 // The Stage panel: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
-// The picture is the work (stage_art.dart); the chrome around it stays grey and round, with the accent only on what is on.
+// The image is the work (stage_art.dart). The chrome around it stays grey, with the accent only on what is switched on.
 import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
@@ -32,14 +32,16 @@ const _tools = [
   (G.ellipse, 'Ellipse', 'E'),
   (G.pen, 'Pen', 'P'),
   (G.text, 'Text', 'T'),
-  (G.brush, 'Brush', 'B'), // (a path drawn by hand, Alight Motion's freehand; B as Photoshop's and After Effects' brush)
-  (G.camera, 'Camera', 'C'), // (After Effects' Unified Camera tool, C: a drag turns the camera round where it looks, the wheel brings it nearer)
+  // Freehand path, as in Alight Motion. B is the brush key in Photoshop and After Effects.
+  (G.brush, 'Brush', 'B'),
+  // After Effects' Unified Camera tool: a drag orbits the camera, the wheel dollies it.
+  (G.camera, 'Camera', 'C'),
 ];
 
-/// The tools as the window's commands (`tool.select`, `tool.text`…), their letters in its keymap (keymap.dart): heard
-/// wherever the window has the keys and no words are being typed, as After Effects' and Photoshop's tool letters are,
-/// not only while the stage has them (golf_noise.md (78): a document box closed left them to the window, and T was
-/// not heard).
+/// The tools as app commands (`tool.select`, `tool.text` ...). Their letters are in the keymap (keymap.dart).
+///
+/// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
+/// Photoshop do, not only while the stage has focus.
 Map<String, VoidCallback> wsToolCommands(Ws ws) => {for (final (i, t) in _tools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i)};
 
 class _Stage extends StatefulWidget {
@@ -49,7 +51,7 @@ class _Stage extends StatefulWidget {
 }
 
 class _StageState extends State<_Stage> {
-  // (how the stage looks: the window's view, so any pane may read it and the window opened again shows the same)
+  // The stage's look is kept in the app's view state, so any panel can read it and a reopened app shows the same.
   Ws get _ws => WsScope.read(context);
   int get _zoom => _ws.viewOf('stage.zoom', 0);
   set _zoom(int v) => _ws.setView('stage.zoom', v);
@@ -59,10 +61,13 @@ class _StageState extends State<_Stage> {
   set _safe(bool v) => _ws.setView('stage.safe', v);
   bool get _grid => _ws.viewOf('stage.grid', false);
   set _grid(bool v) => _ws.setView('stage.grid', v);
-  bool get _camera => _ws.viewOf('stage.camera', false); // (AbsentMotion's cameraView: off till asked, the stage sees the world)
+  // Off until the user asks, so the stage shows the whole world. Alight Motion's cameraView works the same way.
+  bool get _camera => _ws.viewOf('stage.camera', false);
   (Object?, String) _eyeTold = (null, '');
 
-  /// The inside told which eye the stage is seen by, when that has changed (a document opened begins at the world's).
+  /// Tells the engine which view camera the stage is seen through, when that has changed.
+  ///
+  /// A newly opened document starts with the world view.
   void _tellEye(Ws ws) {
     final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
     if (m == null || _eyeTold == (m, word)) return;
@@ -74,8 +79,10 @@ class _StageState extends State<_Stage> {
   Map<String, int> get _opts => _ws.view.putIfAbsent('stage.options', () => <String, int>{}) as Map<String, int>;
   final _cursor = ValueNotifier<Offset?>(null);
   final _focus = FocusNode(debugLabel: 'stage');
-  final _view = GlobalKey(); // (the view: what is under a tile let go over it)
-  String? _shot; // (the picture as it was when taken: a still among the system's temporary files)
+  // Used to find what is under a shelf tile dropped on the stage.
+  final _view = GlobalKey();
+  // The snapshot as it was when taken: a still image among the system's temporary files.
+  String? _shot;
   bool _showing = false;
 
   @override
@@ -86,12 +93,15 @@ class _StageState extends State<_Stage> {
     super.dispose();
   }
 
-  /// After Effects' Take Snapshot: the picture at the playhead kept as a still (the inside's Export Frame), to be seen
-  /// again over the picture while Show Snapshot is held: an earlier look against the one now, nothing undone (P19).
+  /// After Effects' Take Snapshot: keeps the frame at the playhead as a still image (the engine's Export Frame).
+  ///
+  /// While Show Snapshot is held the still is shown over the stage, to compare an earlier look with the current one.
+  /// Nothing is undone.
   void _take() {
     final m = _ws.inside;
     if (m == null) return;
-    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png'; // (a new name each time: Flutter's image cache knows a file by its name)
+    // A new name each time, because Flutter's image cache identifies a file by its name.
+    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';
     if (!m.still(png)) {
       _ws.notice = 'No snapshot: ${m.error}';
       return;
@@ -103,22 +113,25 @@ class _StageState extends State<_Stage> {
   void _forget() {
     try {
       if (_shot case final was?) File(was).deleteSync();
-    } catch (_) {} // (gone already)
+    } catch (_) {
+      // Already gone.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    WsScope.frameOf(context); // (the scene is at the playhead)
-    WsScope.pictureOf(context); // (and as the picture shown has it)
+    // The scene follows the playhead and the image being shown.
+    WsScope.frameOf(context);
+    WsScope.pictureOf(context);
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.stage, WsAspect.view}),
         scene = Ws.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
     _tellEye(ws);
     return DragTarget<VoidCallback>(
-      // (a tile of a shelf dropped here does what its double press does: Ableton's drop of a device on a track)
+      // A shelf tile dropped here does what its double click does, as dropping a device on a track does in Ableton.
       onWillAcceptWithDetails: (_) => true,
       onAcceptWithDetails: (d) {
-        // (on the thing it is let go over, as After Effects takes an effect dragged to a layer in
-        //  the Composition panel; over none, on the picked thing as a double press puts it)
+        // Apply to the layer under the drop, as After Effects does for an effect dragged onto a layer in the
+        // Composition panel. Over no layer, apply to the selected layer, as a double click does.
         if ((_view.currentState as StageHandles?)?.hitAt(d.offset) case final id?) ws.select(id);
         d.data();
       },
@@ -139,7 +152,7 @@ class _StageState extends State<_Stage> {
                   _Toggle(label: 'Grid', icon: _Icon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
                   SizedBox(width: Shape.s(6)),
                   if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[
-                    // (AbsentMotion's PreviewMode: the switch once there is a camera to switch to)
+                    // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
                     _Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
                     SizedBox(width: Shape.s(6)),
                   ],
@@ -147,7 +160,7 @@ class _StageState extends State<_Stage> {
                   if (_shot != null) ...[
                     SizedBox(width: WsT.gap),
                     Listener(
-                      // (After Effects' Show Snapshot: seen while it is held; let go, the picture as it is now)
+                      // After Effects' Show Snapshot: the still is shown only while the button is held.
                       onPointerDown: (_) => setState(() => _showing = true),
                       onPointerUp: (_) => setState(() => _showing = false),
                       onPointerCancel: (_) => setState(() => _showing = false),
@@ -188,7 +201,7 @@ class _StageState extends State<_Stage> {
                               group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1,
                               mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4),
                             ),
-                          ), // (joined: the tool in hand draws a thing of the document)
+                          ),
                         ],
                       ),
                     ),
@@ -204,7 +217,7 @@ class _StageState extends State<_Stage> {
   }
 }
 
-// ---- small round things you touch --------------------------------------------------------------------------------------
+// ---- header toggles ----------------------------------------------------------------------------------------------------
 
 enum _Icon { safe, grid, snap, show }
 
@@ -237,7 +250,8 @@ class _IconPainter extends CustomPainter {
   final Color c;
   @override
   void paint(Canvas cv, Size s) {
-    if (SkinParts.draw(cv, s, 'stage.${icon.name}', c)) return; // (the skin's own picture, if it brings one)
+    // Use the skin's own icon if it provides one.
+    if (SkinParts.draw(cv, s, 'stage.${icon.name}', c)) return;
     final p = Paint()
       ..color = c
       ..style = PaintingStyle.stroke
@@ -253,10 +267,10 @@ class _IconPainter extends CustomPainter {
           cv.drawLine(Offset(r.left + r.width * t, r.top), Offset(r.left + r.width * t, r.bottom), p);
           cv.drawLine(Offset(r.left, r.top + r.height * t), Offset(r.right, r.top + r.height * t), p);
         }
-      case _Icon.snap: // (a camera's body and its lens)
+      case _Icon.snap: // A camera body and its lens.
         cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom), const Radius.circular(1.5)), p);
         cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
-      case _Icon.show: // (the picture halved: then and now)
+      case _Icon.show: // The image halved: then and now.
         cv.drawRect(r, p);
         cv.drawRect(Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom), p..style = PaintingStyle.fill);
     }
@@ -266,7 +280,7 @@ class _IconPainter extends CustomPainter {
   bool shouldRepaint(_IconPainter o) => o.icon != icon || o.c != c;
 }
 
-/// A shape tool pressed twice: one as large as the picture, at once (After Effects': Adobe's own lesson on adding layers).
+/// A shape tool clicked twice adds a shape as large as the canvas at once, as in After Effects.
 void _whole(Ws ws, String kind) {
   ws.whole(kind);
   ws.setView('stage.tool', 0);
@@ -274,12 +288,14 @@ void _whole(Ws ws, String kind) {
 
 // ---- tool column -------------------------------------------------------------------------------------------------------
 
+/// The column of tool buttons, with the fill and stroke swatches at its foot.
 class _ToolColumn extends StatelessWidget {
   const _ToolColumn({required this.active, required this.onChanged, required this.onTwice});
   final int active;
   final ValueChanged<int> onChanged;
   final ValueChanged<String> onTwice;
-  static var _last = (-1, 0); // (the tool last pressed, and when)
+  // The tool last pressed, and when.
+  static var _last = (-1, 0);
 
   void _press(int i) {
     final now = DateTime.now().millisecondsSinceEpoch, twice = _last.$1 == i && now - _last.$2 < 500;
@@ -329,7 +345,7 @@ class _ToolColumn extends StatelessWidget {
                 margin: EdgeInsets.symmetric(vertical: Shape.s(8)),
                 color: WsT.line,
               ),
-              const _Swatches(), // (joined: the picked thing's fill and stroke, or the inks a drawn thing gets)
+              const _Swatches(),
             ],
           ),
         ),
@@ -338,10 +354,11 @@ class _ToolColumn extends StatelessWidget {
   );
 }
 
-/// Fill and stroke inks of the drawing tools, fill above, stroke below. Pressed, one is the one the Colors shelf
-/// gives its colour to, brought to the front and ringed, and the shelf comes (CLIP STUDIO PAINT's main and sub colour
-/// icons at the foot of its tools: the one picked has a blue outline and the wheel changes it; Illustrator's Fill and
-/// Stroke boxes: the one chosen is edited). With nothing picked, it is the ink or the edge a thing drawn next comes in.
+/// Fill and stroke swatches of the drawing tools, fill above and stroke below.
+///
+/// Clicking one makes it the target of the Colors shelf: it is brought to the front, ringed, and the shelf opens.
+/// This follows the main and sub colour icons of CLIP STUDIO PAINT and the Fill and Stroke boxes of Illustrator.
+/// With no layer selected, the swatches show the fill and stroke the next drawn layer will get.
 class _Swatches extends StatelessWidget {
   const _Swatches();
   @override
@@ -395,7 +412,8 @@ class _Swatches extends StatelessWidget {
       width: Shape.z(26),
       height: Shape.z(26),
       child: Stack(
-        children: edgeOn ? [ink, edge] : [edge, ink], // (the one aimed in front)
+        // The targeted swatch goes in front.
+        children: edgeOn ? [ink, edge] : [edge, ink],
       ),
     );
   }

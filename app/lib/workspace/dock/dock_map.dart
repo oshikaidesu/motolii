@@ -1,11 +1,10 @@
-// A shelf's map, as XLN Audio's XO's Space: each item where what is alike lies near (laid out by the inside's t-SNE,
-// motolii_map, as XO's are), then pushed apart till none covers another, each kept near where it lay, as FontMap lays
-// its fonts, on d3-force itself (force_graph; dockSpread), drawn together as far as asked by Obsidian's graph's Center
-// force; the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
-// moved and zoomed by Flutter's own InteractiveViewer. Under it XO's Similarity List (Splice's Similar Sounds beside
-// its list): the nearest to the one picked, stepped along by its arrows or the left and right keys. Laid out again
-// when what the shelf holds changes (XO's Scan & Refresh, done by itself), kept between openings beside the tiles
-// (~/Library/Caches/Motolii).
+// A shelf's map: items laid out so that similar ones lie near each other, like XLN Audio XO's Space.
+// Positions come from the engine's t-SNE (motolii_map), then items are pushed apart until none covers another
+// ([dockSpread], after FontMap) and optionally drawn together (Obsidian's graph "Center force"). The shelf's chips and
+// search words narrow which items are shown, as XO's filters do. Flutter's InteractiveViewer pans and zooms. Below the
+// map, a similarity list shows the items nearest the picked one (XO's Similarity List, Splice's Similar Sounds). The user
+// steps through it with its arrows or the left and right keys. The map is laid out again when the shelf's contents
+// change, and positions are cached in ~/Library/Caches/Motolii.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -29,8 +28,8 @@ import 'dock_widgets.dart' show dockMark, IconPress;
 import '../state/state.dart' show WsT;
 part 'dock_map_view.dart';
 
-/// Where one shelf's items lie on its map, by id, on a canvas the room's shape ([dockSpread]); [laying] while that is
-/// being worked out.
+/// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true
+/// while the layout is being computed.
 class DockMapPlaces {
   DockMapPlaces(this.name) {
     squeeze.addListener(() => _laid.isNotEmpty ? _spread() : null);
@@ -39,23 +38,28 @@ class DockMapPlaces {
   final places = ValueNotifier<Map<String, Offset>>(const {});
   final laying = ValueNotifier<bool>(false);
 
-  /// How tightly the islands are drawn together, 0 to 1 ([dockSpread]'s squeeze: Obsidian's graph's Center force);
-  /// none at first, the map as FontMap lays it.
+  /// How tightly the islands are drawn together, from 0 to 1 (the `squeeze` of [dockSpread], Obsidian's graph "Center
+  /// force"). It starts at 0, which gives the map as FontMap lays it out.
   final squeeze = ValueNotifier<double>(0);
   String? _for;
-  Map<String, Offset> _laid = const {}; // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
-  double _aspect = 1920 / 1080; // (the room's width to its height: FontMap's canvas is the page it is shown on)
+
+  /// Positions from t-SNE, before overlap removal. Similarity is judged from these.
+  Map<String, Offset> _laid = const {};
+
+  /// Width to height of the viewport.
+  double _aspect = 1920 / 1080;
   Future<void>? _spreading;
 
-  /// The room the map is shown in, its width to its height: pushed apart again on a canvas of that shape.
+  /// Sets the viewport's width to height ratio and pushes the items apart again on a canvas of that shape.
   void roomIs(double aspect) {
     if (!aspect.isFinite || aspect <= 0 || aspect == _aspect) return;
     _aspect = aspect;
     if (_laid.isNotEmpty) _spread();
   }
 
-  /// [_laid] pushed apart for the room and drawn together by [squeeze] ([dockSpread]), one at a time, again till what it
-  /// was for is the last asked.
+  /// Pushes [_laid] apart for the current viewport and draws it together by [squeeze] ([dockSpread]).
+  ///
+  /// One run is active at a time. It repeats until its result matches the latest layout, aspect and squeeze.
   Future<void> _spread() =>
       _spreading ??
       (_spreading = Zone.root.run<Future<void>>(
@@ -76,19 +80,20 @@ class DockMapPlaces {
 
   File get _kept => File('${_mapsAt.path}/map_$name.json');
 
-  /// Laid out for these items (each its id and what it is read from), each read as numbers by [read] (null: left off the
-  /// map; [also]: what else they were laid out by, all laid out again when it changes). Those laid out before stay where
-  /// they lay (kept between openings); one new, or its picture changed, goes where its 25 nearest of those lie, the
-  /// middle of theirs each way: openTSNE's way of adding points to a map made (prepare_partial, initialization "median",
-  /// k 25; BSD-3), the others not moved. All laid out by t-SNE only when none lay before.
+  /// Lays out [items], each an id and the source it is read from.
+  ///
+  /// [read] turns the sources into feature vectors, or null for an item to leave off the map. [also] is any other input
+  /// the layout depends on; all items are laid out again when it changes.
+  ///
+  /// Items laid out before stay where they were. A new or changed item goes to the median of its 25 nearest placed items,
+  /// as openTSNE adds points to an existing map (prepare_partial, initialization "median", k 25; BSD-3). Everything goes
+  /// through t-SNE only when nothing was laid out before.
   void need(Motolii m, List<(String, String)> items, Future<List<Float32List?>> Function(List<String> from) read, {String also = ''}) {
     final key = jsonEncode([also, for (final (id, from) in items) '$id\t$from']);
     if (key == _for) return;
     _for = key;
     Zone.root.run(() async {
-      // (on the program's own clock, as fontsRead: a test may wait for it)
       Future<void> show(Map<String, Offset> laid) async {
-        // (kept as t-SNE lays them; pushed apart each time shown, a moment's work)
         if (key != _for) return;
         _laid = laid;
         await _spread();
@@ -104,12 +109,12 @@ class DockMapPlaces {
               if (same.contains('$id\t${from[id]}')) id: Offset(((at as List)[0] as num).toDouble(), (at[1] as num).toDouble()),
           };
         }
-      } catch (_) {} // (none kept, or for others: laid out now)
+      } catch (_) {} // Nothing cached, or the cache is for other items: lay out now.
       if (known.length == items.length) return show(known);
-      if (known.isNotEmpty) await show(known); // (those laid before at once; the new join them when read)
+      if (known.isNotEmpty) await show(known);
       laying.value = known.isEmpty;
       final numbers = await read([for (final (_, from) in items) from]);
-      if (key != _for) return; // (asked for others meanwhile: theirs comes)
+      if (key != _for) return;
       var at = <String, Offset>{};
       if (known.isEmpty) {
         final ids = [
@@ -135,12 +140,12 @@ class DockMapPlaces {
             },
           }),
         );
-      } catch (_) {} // (not kept: laid out again next time)
+      } catch (_) {} // Not cached: laid out again next time.
     });
   }
 
-  /// Where each of [seen] not [known] goes: the middle each way of where its 25 nearest of the known lie (openTSNE's
-  /// initialization.median).
+  /// Places each item of [seen] that is not in [known] at the per-axis median of its 25 nearest known items
+  /// (openTSNE's initialization.median).
   static Map<String, Offset> _joined(Map<String, Offset> known, Map<String, Float32List> seen) {
     final base = [
           for (final id in known.keys)
@@ -166,8 +171,8 @@ class DockMapPlaces {
     return out;
   }
 
-  /// [id] and the [k] - 1 nearest it on the map of [among], nearest first: XO's Similarity List ("the most similar
-  /// sounding in the XO Space"), where t-SNE laid them (FontMap's similar fonts: the nearest before its overlap removal).
+  /// Returns [id] followed by the [k] - 1 items of [among] nearest to it, nearest first (XO's Similarity List).
+  /// Distances use the t-SNE positions before overlap removal, as FontMap does for its similar fonts.
   List<String> alike(String id, Iterable<String> among, int k) {
     final at = _laid.isEmpty ? places.value : _laid, p = at[id];
     if (p == null) return const [];
@@ -180,29 +185,29 @@ class DockMapPlaces {
   }
 }
 
-/// Where the maps are kept between openings (a test points it elsewhere, as the decks and the recent: the maker's own left
-/// alone).
+/// Where the maps are cached between sessions. A test points it elsewhere so the user's own cache is left alone.
 Directory _mapsAt = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii');
 void dockMapsAt(Directory d) => _mapsAt = d;
 
-/// [dockSpread] and [DockMapPlaces._joined] on an isolate of their own (Isolate.run), sent only what they are given here
-/// (a closure made inside [DockMapPlaces.need] would carry the inside's library with it).
+/// Runs [dockSpread] and [DockMapPlaces._joined] on their own isolate. Only their arguments are sent, because a closure
+/// made inside [DockMapPlaces.need] would capture its library too.
 Future<List<Offset>> _spreadAway(List<Offset> at, double aspect, double squeeze) => Isolate.run(() => dockSpread(at, aspect, squeeze));
 Future<Map<String, Offset>> _joinedAway(Map<String, Offset> known, Map<String, Float32List> seen) => Isolate.run(() => DockMapPlaces._joined(known, seen));
 
-/// A tile's reach on the map: FontMap's collision radius, 13 of its canvas's pixels.
+/// A tile's collision radius on the map, in canvas pixels (FontMap uses 13).
 const dockSpreadRadius = 13.0;
 
-/// Places (0 to 1 each way) pushed apart till none is within two [dockSpreadRadius] of another, each kept near where it
-/// lay: FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers (a 1920 x 1080 canvas 40 in from its edges,
-/// radius 13, 140 ticks, pulled back at 0.03) on d3-force itself, in Dart (force_graph, MIT: its ForceSimulation and
-/// CollideForce, strength 1, 3 iterations, with d3's own cooling); its canvas, the page it is shown on, here as many
-/// pixels in the shape of the room ([aspect] its width to its height). [squeeze] (0 to 1): each pulled to the middle as
-/// well, at most at d3's own strength for that pull (forceX's 0.1), the islands drawn together while none covers
-/// another: Obsidian's graph's Center force ("controls how compact the graph is"), as d3's disjoint force-directed graph
-/// keeps its pieces together with forceX and forceY to the middle; then the pulls let go and only the pushing apart
-/// run 40 ticks more, removing what the pull leaves, as FontMap's own drawn-together map does (src/experiments/engine/
-/// cartogram.js, relax). Where each lies on that canvas.
+/// Pushes [at] apart until no two are within two [dockSpreadRadius] of each other, keeping each near where it was.
+///
+/// [at] holds positions from 0 to 1 on each axis. [aspect] is the viewport's width to height. The canvas has the area of
+/// FontMap's 1920 x 1080, in the shape of the viewport. Returns the positions on that canvas.
+///
+/// This follows FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers: 40 px padding, radius 13, 140 ticks
+/// and a pull back to the start position of 0.03. It uses force_graph (MIT), a Dart port of d3-force, with d3's cooling.
+///
+/// [squeeze], from 0 to 1, also pulls every item toward the middle, at most at d3's default forceX strength of 0.1.
+/// This is Obsidian's graph "Center force". Afterwards the pulls are removed and 40 more collision ticks clear any
+/// overlap they caused, as FontMap's cartogram.js (src/experiments/engine/cartogram.js, relax) does.
 List<Offset> dockSpread(List<Offset> at, double aspect, double squeeze) {
   const pad = 40.0, r = dockSpreadRadius, pull = 0.03;
   final w = math.sqrt(1920 * 1080 * aspect), h = 1920 * 1080 / w;
@@ -218,7 +223,8 @@ List<Offset> dockSpread(List<Offset> at, double aspect, double squeeze) {
             1 -
             math
                 .pow(0.001, 1 / 300)
-                .toDouble() // (d3's, where force_graph keeps its Apeirron graph's)
+                // d3's value. force_graph keeps the one from its Apeirron graph.
+                .toDouble()
         ..alphaTarget = 0
         ..addForce(collide)
         ..addForce(_Toward([for (final n in nodes) Offset(n.x, n.y)], pull));
@@ -237,8 +243,8 @@ List<Offset> dockSpread(List<Offset> at, double aspect, double squeeze) {
   return [for (final n in nodes) Offset(n.x, n.y)];
 }
 
-/// d3-force's forceX and forceY (x.js, y.js; ISC) at once, which force_graph leaves out: each pulled toward its own
-/// point, [strength] of the way left, times the heat.
+/// d3-force's forceX and forceY (x.js, y.js; ISC) in one force, which force_graph leaves out.
+/// Each node is pulled toward its own point in [to], scaled by [strength] and the current alpha.
 class _Toward implements Force {
   _Toward(this.to, this.strength);
   final List<Offset> to;
@@ -256,9 +262,10 @@ class _Toward implements Force {
   }
 }
 
-/// A picture's numbers: its colours made 16 points square, as Torralba, Fergus and Freeman's tiny images ("80 million
-/// tiny images", 2008) tell pictures apart by their colours made small; several pictures one after another. null:
-/// one of them cannot be read (yet: asked again next time). Read once while the window is open.
+/// Feature vector for images, from their colours reduced to 16 x 16 pixels (Torralba, Fergus and Freeman, "80 million
+/// tiny images", 2008). Several images are concatenated.
+///
+/// Returns null when one of them cannot be read yet, so it is asked for again next time. Cached while the window is open.
 final _tiny = <String, Float32List>{};
 Future<Float32List?> dockTiny(List<String> files) async {
   final key = files.join('\n');
@@ -289,18 +296,19 @@ Future<Float32List?> _read(List<String> files) async {
   return out;
 }
 
-/// The CLIP image encoder [name] (clip_b32: OpenAI's ViT-B/32; fontclip_b32: FontCLIP's) once it has been made
-/// (engine/deps/likeness_models.py); null: not made, the maps tell pictures apart by their tiny colours ([dockTiny]).
+/// Path of the CLIP image encoder [name] (clip_b32 is OpenAI's ViT-B/32, fontclip_b32 is FontCLIP's) if it has been
+/// built (engine/deps/likeness_models.py), otherwise null. Without a model the maps use tiny colours ([dockTiny]).
 String? dockModel(String name) {
   final f = '${Platform.environment['HOME']}/Library/Caches/Motolii/models/$name.onnx';
   return File(f).existsSync() ? f : null;
 }
 
-/// Pictures' numbers by a CLIP image encoder ([model]): each picture made 224 square (as CLIP's own Resize takes it),
-/// its 512 numbers, several pictures one after another, so two effects are told apart frame by frame at the same
-/// moments: ViSiL's frame-to-frame likeness (Kordopatis-Zilos et al., ICCV 2019) taken only where the frames are of
-/// one moment, the effects' tiles all drawn at the same ones. null: one of them cannot be read, or not told. Each
-/// picture's kept once read ([dockLookKept]): only a new or redrawn one is read again.
+/// Feature vector of several images from the CLIP image encoder [model].
+///
+/// Each image is resized to 224 x 224, as CLIP's own Resize does, and gives 512 numbers. The images are concatenated so
+/// that two effects are compared frame by frame at the same times, as in ViSiL's frame-to-frame similarity
+/// (Kordopatis-Zilos et al., ICCV 2019). Every effect's tile is drawn at the same times. Returns null if an image cannot
+/// be read or the model fails. Results are cached ([dockLookKept]), so only a new or redrawn image is encoded again.
 final _clip = <String, Float32List>{};
 Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async {
   final key = '$model\n${files.join('\n')}';
@@ -310,7 +318,7 @@ Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async
     try {
       keys.add('$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}');
     } catch (_) {
-      return null; // (the picture not there)
+      return null;
     }
     if (dockLookKept(keys[k]) case final had?) {
       v.setRange(512 * k, 512 * (k + 1), had);
@@ -341,8 +349,8 @@ Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async
   return _clip[key] = v;
 }
 
-/// A picture's numbers kept once told (~/Library/Caches/Motolii/looks, by [key]: the model, what was drawn and when),
-/// so a shelf reads again only what is new; null: none kept.
+/// The cache file for an image's feature vector, in ~/Library/Caches/Motolii/looks.
+/// [key] combines the model, the image and when it was drawn. [dockLookKept] returns null when nothing is cached.
 File _look(String key) => File('${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode(key))}.f32');
 Float32List? dockLookKept(String key) {
   try {
@@ -354,13 +362,15 @@ Float32List? dockLookKept(String key) {
 }
 
 void dockLookKeep(String key, Float32List v) {
-  fileKeep(_look(key), Float32List.fromList(v).buffer.asUint8List()); // (not kept: read again next time)
+  fileKeep(_look(key), Float32List.fromList(v).buffer.asUint8List());
 }
 
-/// Items' numbers of several parts side by side, as FontMap lays fonts by FontCLIP's numbers beside their tags' and
-/// their shapes' (weighted 1, 0.5, 0.2): each part's numbers made of one spread in all, times its [weights]' share, those
-/// of the [even] parts first each made of one spread itself (a z-score, each number its own scale). Left off (null): an
-/// item the first part has none for; one another part has none for takes that part's mean (nothing told by it).
+/// Joins several feature vectors per item side by side, as FontMap does for fonts (FontCLIP's numbers beside the tags'
+/// and shapes', weighted 1, 0.5 and 0.2).
+///
+/// Each part is scaled to a total spread of 1, then multiplied by its entry in [weights]. Parts listed in [even] are
+/// first standardised per dimension (z-score). An item the first part has no vector for is left out (null). An item
+/// missing from another part gets that part's mean, so the part says nothing about it.
 List<Float32List?> dockTogether(List<List<Float32List?>> parts, List<double> weights, {Set<int> even = const {}}) {
   final n = parts.first.length, made = <List<Float32List>>[];
   for (final (k, rows) in parts.indexed) {
@@ -409,26 +419,29 @@ List<Float32List?> dockTogether(List<List<Float32List?>> parts, List<double> wei
   ];
 }
 
-/// Each one's colour by where it lies on the map, as DataMapPlot colours its map (TutteInstitute/datamapplot 45a0123,
-/// datamapplot/palette_handling.py, MIT): palette_from_datamap with each one its own label, as its interactive plot
-/// gives each point its finest layer's label's colour (create_plots.py, label_layers reversed) — the hue round the
-/// map's middle by angle, spaced by how far each lies from it (radius_weight_power 1), chroma 20 to 90 and lightness 80
-/// to its palette_min_lightness out from the middle as the others lie in its sector (theta_range π/16); then its
-/// pastel_palette (degree 2), as its darkmode colours text on its dark ground. Alike ones lie together, so each island is
-/// a run of hues. palette_min_lightness 30, not its 10: at 10 the outermost 45 of 328 fonts fell under WCAG 2.1's 3:1
-/// (1.4.11, a picture needed to tell what it is) on the map's ground. JCh by CAM16 (material_color_utilities,
-/// CIECAM02's successor; colorspacious's JCh is CIECAM02's).
+/// A colour for each item, by where it lies on the map, following DataMapPlot
+/// (TutteInstitute/datamapplot 45a0123, datamapplot/palette_handling.py; MIT).
+///
+/// This is palette_from_datamap with every item as its own label, as its interactive plot does (create_plots.py):
+/// - The hue goes round the map's middle by angle, spaced by distance from the middle (radius_weight_power 1).
+/// - Chroma runs from 20 to 90 and lightness from 80 down to palette_min_lightness, outward from the middle among the
+///   items in the same sector (theta_range π/16).
+/// - The result goes through pastel_palette (degree 2), as DataMapPlot's dark mode does.
+///
+/// palette_min_lightness is 30, not DataMapPlot's 10: at 10 the outermost 45 of 328 fonts fell below the 3:1 contrast
+/// that WCAG 2.1 (1.4.11) requires for graphics against the map's background. JCh comes from CAM16
+/// (material_color_utilities), where colorspacious uses its predecessor CIECAM02.
 final _palettes = Expando<Map<String, Color>>();
 Map<String, Color> dockPalette(Map<String, Offset> at) => _palettes[at] ??= _palette(at);
 Map<String, Color> _palette(Map<String, Offset> at) {
   final ids = at.keys.toList(), n = ids.length;
   if (n == 0) return const {};
-  final xs = [for (final id in ids) at[id]!.dx], ys = [for (final id in ids) -at[id]!.dy]; // (y up, as DataMapPlot's)
+  final xs = [for (final id in ids) at[id]!.dx], ys = [for (final id in ids) -at[id]!.dy]; // y points up, as in DataMapPlot.
   final cx = (xs.reduce(math.min) + xs.reduce(math.max)) / 2, cy = (ys.reduce(math.min) + ys.reduce(math.max)) / 2;
   final r = [for (var i = 0; i < n; i++) math.sqrt((xs[i] - cx) * (xs[i] - cx) + (ys[i] - cy) * (ys[i] - cy))];
   final t = [for (var i = 0; i < n; i++) math.atan2(ys[i] - cy, xs[i] - cx)];
   double interp(double x, List<double> xp, List<double> fp) {
-    // (numpy's interp: the ends held)
+    // Same as numpy's interp: the ends are held.
     if (x <= xp.first) return fp.first;
     if (x >= xp.last) return fp.last;
     var k = 1;
@@ -482,6 +495,6 @@ Map<String, Color> _palette(Map<String, Offset> at) {
   };
 }
 
-/// Each shelf's map, while the window is open (not the document's).
+/// Each shelf's map, kept while the window is open.
 final _maps = <String, DockMapPlaces>{};
 DockMapPlaces dockMap(String shelf) => _maps[shelf] ??= DockMapPlaces(shelf);

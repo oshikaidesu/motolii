@@ -1,4 +1,5 @@
-// The dock's painted marks: shelves and panes (on their tabs), effect families, things you can create, files. One stroke weight, filled where a pop poster would fill.
+// The dock's painted icons: shelf and panel tabs, effect families, things the user can create, and files.
+// All use one stroke weight and are filled only where a solid shape reads better.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -76,7 +77,8 @@ enum DockG implements GlyphKind {
       case DockG.media || DockG.video:
         cv.drawRRect(rr(.1, .2, .8, .6, .12), st);
         cv.drawPath(poly(const [Offset(.42, .36), Offset(.64, .5), Offset(.42, .64)]), fl);
-      case DockG.effects: // ("fx", After Effects' and Premiere Pro's mark of a layer's effects: the sparkle was taken for a +, golf (57))
+      // "fx" is the mark After Effects and Premiere Pro use for a layer's effects. A sparkle was tried but looked like a +.
+      case DockG.effects:
         final t = TextPainter(
           text: TextSpan(
             text: 'fx',
@@ -117,11 +119,13 @@ enum DockG implements GlyphKind {
         final k = this == DockG.create ? .3 : .2;
         cv.drawLine(p(.5, k), p(.5, 1 - k), st);
         cv.drawLine(p(k, .5), p(1 - k, .5), st);
-      case DockG.reload: // (the round arrow on a browser's reload)
+      // The round arrow of a browser's reload button.
+      case DockG.reload:
         cv.drawArc(r(.14, .14, .72, .72), -math.pi * .3, math.pi * 1.65, false, st);
         cv.drawLine(p(.84, .1), p(.82, .34), st);
         cv.drawLine(p(.82, .34), p(.58, .3), st);
-      case DockG.program: // (code's angle brackets and slash)
+      // Code's angle brackets with a slash.
+      case DockG.program:
         cv.drawLine(p(.34, .3), p(.12, .5), st);
         cv.drawLine(p(.12, .5), p(.34, .7), st);
         cv.drawLine(p(.66, .3), p(.88, .5), st);
@@ -130,7 +134,8 @@ enum DockG implements GlyphKind {
       case DockG.search:
         cv.drawCircle(p(.43, .43), w * .26, st);
         cv.drawLine(p(.63, .63), p(.86, .86), st);
-      case DockG.more: // (three dots, a menu of what can be done to it)
+      // Three dots: a menu of actions for the item.
+      case DockG.more:
         for (final x in const [.2, .5, .8]) {
           cv.drawCircle(p(x, .5), w * .07, fl);
         }

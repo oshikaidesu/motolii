@@ -1,15 +1,17 @@
-// motolii_questions.dart: questions of the inside (docs/app/BRIDGE.md Q): asked on another isolate or a channel, the answer a Future; the window never waits on them.
+// Questions to the engine (docs/app/BRIDGE.md Q), asked on another isolate or a platform channel.
+// Each answer is a Future, so the app never blocks on them.
 part of 'motolii.dart';
 
 extension MotoliiQuestions on Motolii {
-  /// The stage's picture as a Flutter texture (the inside draws it by its own clock; nothing is copied). -1: none.
+  /// The stage as a Flutter texture. The engine draws it on its own clock and nothing is copied. Returns -1 if unavailable.
   Future<int> texture() async {
-    final (a, _) = await answered(later('live')); // (opened by the hand: the window never stands still for it)
+    // The render thread opens it, so the app never blocks.
+    final (a, _) = await answered(later('live'));
     if (a == 0) return -1;
     return await Motolii._channel.invokeMethod<int>('start', {'lib': libPath, 'handle': _m.address}) ?? -1;
   }
 
-  /// The desk's picture as a Flutter texture (-1: none).
+  /// The tool panel's output as a Flutter texture. Returns -1 if unavailable.
   Future<int> deskTexture() async => _deskId ??=
       await Motolii._channel.invokeMethod<int>('start', {
         'lib': libPath,
@@ -19,8 +21,9 @@ extension MotoliiQuestions on Motolii {
       }) ??
       -1;
 
-  /// The whole document written as a film (.mp4, with its films' sound), on another isolate: the window does not wait.
-  /// The inside's one hand takes the call in its turn, from whatever thread it comes.
+  /// Exports the whole project as an .mp4 with the sound of its videos, on another isolate so the app does not block.
+  ///
+  /// The engine's render thread takes the call in turn, whichever thread it comes from.
   Future<bool> exportVideo(String mp4) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() {
@@ -32,8 +35,10 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// As the stage shows each thing's value at each moment asked (what a relation makes of it, else its own; null: it
-  /// has none): another moment than the picture's, a question (docs/app/BRIDGE.md Q), asked on another isolate.
+  /// Each property as the stage shows it at the requested time: after any relation, otherwise its own value.
+  /// An entry is null if the property has none.
+  ///
+  /// Use it for times other than the current frame's. It runs on another isolate (docs/app/BRIDGE.md Q).
   Future<List<double?>> shownAt(List<(int, String, double)> asks) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() {
@@ -53,7 +58,7 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Of each font file, the first of [words] a text can be set in, by its index; -1 none (on another isolate).
+  /// For each font file, the index of the first of [words] that text can be set in, or -1 if none. Runs on another isolate.
   Future<List<int>> settingFirst(List<String> fonts, List<String> words) {
     final lib = libPath;
     return Isolate.run(() {
@@ -61,7 +66,8 @@ extension MotoliiQuestions on Motolii {
       final said = [for (final w in words) w.toNativeUtf8()], out = <int>[];
       for (final f in fonts) {
         final file = f.toNativeUtf8();
-        out.add(said.indexWhere((w) => ask(file, w) != 0)); // (one lacking a letter is told so by its cmap, before ThorVG reads it: type_sets)
+        // The font's cmap reports a missing glyph before ThorVG reads the file (see type_sets).
+        out.add(said.indexWhere((w) => ask(file, w) != 0));
         malloc.free(file);
       }
       said.forEach(malloc.free);
@@ -69,8 +75,10 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Of each font file, [words] in it white on black [w] by [h], a byte a point, no larger than size [most] when it is
-  /// more than 0 (motolii_type_frame; null: not drawn), asked on another isolate as [setting].
+  /// Renders [words] in each font file as white on black, [w] by [h] bytes with one byte per point.
+  ///
+  /// The text is no larger than [most] when that is above 0. An entry is null if nothing was drawn
+  /// (motolii_type_frame). Runs on another isolate, like [settingFirst].
   Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h, {double most = 0}) {
     final lib = libPath;
     return Isolate.run(() {
@@ -87,8 +95,8 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Each picture (224 points square, RGBA) told as 512 numbers, one long, by the CLIP image encoder in the ONNX file
-  /// [model] (motolii_likeness), on another isolate; null: not told (no such model).
+  /// Encodes each image (224 by 224 points, RGBA) into a 512-number vector with the CLIP image encoder in the ONNX
+  /// file [model] (motolii_likeness), on another isolate. Null if the model is missing.
   Future<List<Float32List>?> likeness(String model, List<Uint8List> pictures) {
     final lib = libPath;
     return Isolate.run(() {
@@ -106,8 +114,10 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// [points] (each as many numbers) laid on a plane, the alike near (motolii_map: t-SNE): where each lies, 0 to 1 each
-  /// way, in their order (null: fewer than four), worked out on another isolate.
+  /// Lays [points] out on a plane with similar ones close together (motolii_map, using t-SNE).
+  ///
+  /// Returns one (x, y) per point, in order, each from 0 to 1. Null if there are fewer than four points.
+  /// Runs on another isolate.
   Future<List<(double, double)>?> map(List<Float32List> points) {
     final lib = libPath;
     return Isolate.run(() {
@@ -124,9 +134,11 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
-  /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
-  /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).
+  /// How a layer moves over a time range as the stage places it, including its wave.
+  ///
+  /// Returns [n] samples from [from] up to [to], four numbers each: position (x, y in stage units), rotation (degrees)
+  /// and scale (a fraction). Null if there is no such layer. Ask once when the properties change, to drive a small
+  /// preview that then plays on its own (motolii_path).
   Future<List<double>?> path(int layer, {double from = 0, required double to, int n = 60}) => _ask((l, m) {
     final out = malloc<Double>(4 * n);
     final got = c.MotoliiBindings(l).motolii_path(m, layer, 0, from, to, n, out);
@@ -135,13 +147,13 @@ extension MotoliiQuestions on Motolii {
     return got > 0 ? p : null;
   });
 
-  /// A question of the inside (docs/app/BRIDGE.md Q): asked on another isolate, the window does not wait for its answer.
+  /// Asks the engine a question on another isolate (docs/app/BRIDGE.md Q), so the app does not wait for the answer.
   Future<T> _ask<T>(T Function(DynamicLibrary lib, _P m) ask) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() => ask(DynamicLibrary.open(lib), _P.fromAddress(at)));
   }
 
-  /// The same in the round: four numbers a moment, where it is (x, y, z, units of the stage) and how large (motolii_path3).
+  /// Like [path] but in 3D. Four numbers per sample: position (x, y, z in stage units) and scale (motolii_path3).
   List<double>? path3(int layer, {int copy = 0, required double to, int n = 24}) {
     final out = malloc<Double>(4 * n);
     final got = _path3(_m, layer, copy, 0, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
@@ -149,8 +161,8 @@ extension MotoliiQuestions on Motolii {
     return got > 0 ? p : null;
   }
 
-  /// A film's sound: its loudness (dB, 0 at full) 100 times a second of its own (none: no sound, or not a film). Read
-  /// on another isolate, the file decoded once: the window does not wait.
+  /// A video layer's loudness in dB (0 is full scale), sampled 100 times per second of the video's own time.
+  /// Empty if there is no sound or the layer is not a video. The file is decoded once, on another isolate.
   Future<List<double>> loudness(int layer) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() {
@@ -162,8 +174,8 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// How loud a film's sound is at [n] moments of the document from [from] to before [to], where its film shows them
-  /// (dB; -100 silent or not shown). null: its sound not read yet ([loudness] reads it); empty: no sound.
+  /// A video layer's loudness in dB at [n] project times from [from] up to [to], at the points where the layer shows them.
+  /// -100 means silent or not shown. Null if the sound has not been read yet ([loudness] reads it). Empty means no sound.
   Future<List<double>?> loudnessOver(int layer, double from, double to, int n) => _ask((l, m) {
     final out = malloc<Float>(n < 1 ? 1 : n);
     final got = c.MotoliiBindings(l).motolii_loudness_over(m, layer, from, to, n, out);
@@ -172,8 +184,8 @@ extension MotoliiQuestions on Motolii {
     return all;
   });
 
-  /// Where a film's sound strikes (grows [rise] dB louder at once): the document's moments where it shows them.
-  /// Asked once its loudness has been read ([loudness]).
+  /// The project times where a video's sound strikes, meaning it gets [rise] dB louder at once, at the points where the layer shows them.
+  /// Ask after its loudness has been read ([loudness]).
   Future<List<double>> strikes(int layer, double rise) => _ask((l, m) {
     final ask = c.MotoliiBindings(l).motolii_strikes;
     final n = ask(m, layer, rise, 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
@@ -182,27 +194,30 @@ extension MotoliiQuestions on Motolii {
     return all;
   });
 
-  /// The film's picture so many seconds in (a tenth's nearest), small: a bar on the timeline shows what it plays.
+  /// A small frame of the video at [seconds], rounded to the nearest tenth. A timeline bar shows it to indicate what the video plays.
   Future<String?> videoFrame(String video, double seconds) =>
       _thumbnails['$video@${(seconds * 10).round()}'] ??= _thumbnail(libPath, video, 0, 1, (seconds * 10).round() / 10);
 
-  /// A picture [step] of [steps] along the film (a tile looked along by the hand's place on it, or played); step 0: its first,
-  /// small, as a .png file (null: none could be made). Made once and on another isolate: the window does not wait.
+  /// A small .png of the frame [step] of [steps] along the video, for a tile that scrubs with the pointer or plays.
+  /// Step 0 is the first frame. Null if no image could be made. Made once, on another isolate.
   Future<String?> thumbnailAt(String video, int step, int steps) =>
       step == 0 ? _thumbnails[video] ??= _thumbnail(libPath, video) : _thumbnails['$video#$step/$steps'] ??= _thumbnail(libPath, video, step, steps);
 
-  /// A ticket's answer when it comes, and why not if refused: Thermion's VoidCallbackRegistry, as it is (a Completer under
-  /// each request's number, completed when the inside says an answer is there: motolii_add_listener 8). Nothing looks again and again.
+  /// Completes with a ticket's answer when it arrives, and with the reason if it was refused.
+  ///
+  /// Like Thermion's VoidCallbackRegistry, it keeps a Completer per ticket and completes it when the engine reports an
+  /// answer (motolii_add_listener, flag 8). Nothing polls.
   Future<(int, String)> answered(int ticket) {
     final a = answer(ticket);
     if (a >= 0) return Future.value((a, a >= 1 ? '' : answerWhy));
     return (_waiting[ticket] ??= Completer<(int, String)>()).future;
   }
 
-  /// A ticket's answer: -1 not done yet, 0 refused ([answerWhy] says why), 1 done; said once.
+  /// A ticket's answer: -1 if not done yet, 0 if refused ([answerWhy] says why), 1 if done. Each answer is reported once.
   int answer(int ticket) {
     final a = _answer(_m, ticket);
-    if (a >= 0) _take(3); // (done: the pictures as the inside made them before it answered)
+    // Done: read the snapshots as the engine made them before it answered.
+    if (a >= 0) _take(3);
     return a;
   }
 

@@ -1,40 +1,52 @@
-// motolii_writes.dart: changes told to the inside (docs/app/BRIDGE.md W): thrown, not waited for, or done in one call; the hand's carrying, keys, ways, undo.
+// Calls that change the document or the preview (docs/app/BRIDGE.md, section W).
+// Each is either queued without waiting for the engine, or done in one synchronous call.
+// Covers dragging, keyframes, easing and undo.
 part of 'motolii.dart';
 
 extension MotoliiWrites on Motolii {
-  /// The desk: the stage pane's whole picture, [w] x [h] pixels, the stage lying at [x], [y] (its top left) [scale]
-  /// pixels a point, what lies off it seen round it, the picked thing marked over it ([point]: pixels a point of the
-  /// screen) (later: desk). [w] 0: off, the stage's own picture again.
-  int desk(int w, int h, double x, double y, double scale, double point) =>
-      later('desk', word: '$w $h $x $y $scale $point'); // (a ticket: [answer] says when the desk's picture exists)
+  /// Asks the engine to render the whole preview pane, [w] x [h] pixels.
+  ///
+  /// The canvas sits at [x], [y] (its top left) at [scale] pixels per point, and whatever lies outside it is drawn
+  /// around it. The selected layer is marked on top. [point] is the number of screen pixels per point.
+  /// A [w] of 0 turns this off and goes back to the canvas's own frame.
+  /// Queued with [later]. The returned ticket tells [answer] when the frame exists.
+  int desk(int w, int h, double x, double y, double scale, double point) => later('desk', word: '$w $h $x $y $scale $point');
 
-  /// The thing picked in the window and the one under its hand (0: none): the desk marks them (later: pick).
+  /// Tells the engine which layer is selected and which is under the pointer (0 for none) so the preview marks them.
+  /// Queued with [later].
   void pick(int layer, int hover) => later('pick', layer: layer, number: hover.toDouble());
 
-  /// The things the window shows the moving values of (Anthem's subscription): their values are in the moment's picture
-  /// from the next (later: watch). Told again only when they change.
+  /// Subscribes to the animated values of [layers].
+  ///
+  /// Their values are included in the snapshot from the next frame on. Queued with [later].
+  /// The engine is told again only when the set changes.
   void subscribe(Set<int> layers) {
     if (setEquals(layers, _watched)) return;
     _watched = layers;
     later('watch', word: layers.join(' '));
   }
 
-  /// The stage as it is now, as a picture (.png): for a hand that sees only pictures.
+  /// Writes the current preview as a PNG to [png], for callers that can only look at images.
   bool still(String png) => _with([png], (s) => _still(_m, s[0])) != 0;
 
-  /// The document's own picture (at its poster_at, else now), small, kept in the document with its size and length,
-  /// for a list of documents to read without opening it (docFactsOf); written to [png] too.
+  /// Renders a small poster frame (at the project's poster_at time, otherwise the current time).
+  ///
+  /// It is stored in the project with its size and length, so a project list can show it without opening the
+  /// project (see docFactsOf). The image is also written to [png].
   bool poster(String png) => _with([png], (s) => _b.motolii_poster(_m, s[0])) != 0;
 
-  /// The document and the files its things are made of copied into [folder] (the document as [name].motolii), to be
-  /// taken elsewhere whole: how many files (-1: not).
+  /// Copies the project (as [name].motolii) and every file its layers use into [folder], so it can be moved as a whole.
+  ///
+  /// Returns the number of files copied, or -1 on failure.
   int pack(String folder, String name) => _with([folder, name], (s) => _b.motolii_pack(_m, s[0], s[1]));
 
   bool play(bool on) => _play(_m, on ? 1 : 0) != 0;
 
   bool at(double seconds) => _at(_m, seconds) != 0;
 
-  /// A sum typed in a number field worked out (+ - * / and brackets, by SQLite as the ways are): null, it is not one.
+  /// Evaluates an expression typed into a number field (+ - * / and parentheses).
+  ///
+  /// SQLite evaluates it, as it does for easing expressions. Returns null if [sum] is not a valid expression.
   double? workOut(String sum) => _with([sum], (s) {
     final out = malloc<Double>();
     try {
@@ -44,8 +56,10 @@ extension MotoliiWrites on Motolii {
     }
   });
 
-  /// A new thing (film, picture, text, solid) from a file (a solid: a file, or ring, gem or cube): its number, 0 if it was not made.
-  /// What a solid is made of is its `fill`: a colour, or `glass`.
+  /// Adds a layer of [kind] (video, image, text or solid) from [file].
+  ///
+  /// For a solid, [file] is a model file, or one of ring, gem or cube. Its material is its `fill` property: a color or `glass`.
+  /// Returns the new layer's number, or 0 if it was not created.
   int add(String kind, String file) => _took(_with([kind, file], (s) => _add(_m, s[0], s[1])));
 
   bool remove(int layer) => _took(_remove(_m, layer) != 0);
@@ -56,31 +70,41 @@ extension MotoliiWrites on Motolii {
 
   bool key(int layer, String name, double at, double number) => _took(_with([name], (s) => _key(_m, layer, s[0], at, number)) != 0);
 
-  /// A thing held by a hand, carried, and let go (motolii.h): the one form of everything a hand drags. [by] is
-  /// 'place' (on the stage: how far the hand has gone, in points of the picture), 'bar', 'head' or 'tail' (its bar on
-  /// the timeline: how many seconds), or a value's name (what the number is now). What is carried shows at once and
-  /// is the document's only when it is let go and kept: one step.
-  /// On: every value a hand changes or carries gets a key at that moment (the inspector's Animate all).
+  /// Turns "animate all" on or off (the inspector's Animate all).
+  ///
+  /// While on, every value the user changes or drags gets a keyframe at the current time.
   void keying(bool on) => _keying(_m, on ? 1 : 0);
 
-  /// Whether every change a hand makes is keyed now (Animate all).
+  /// Whether "animate all" is on.
   bool get keyingNow => _keying(_m, -1) != 0;
 
-  /// A hand takes hold, without waiting (the window's way: refused, its let go says why).
+  /// Starts a drag on [layer] without waiting for the engine (see motolii.h).
+  ///
+  /// If the engine refuses, the matching drag end reports why. Every drag (on the canvas, a timeline bar or a value)
+  /// has the same three steps: start, update, end. What is dragged shows at once, but it only becomes part of the
+  /// project when the drag ends, as one undo step.
   void take(int layer) => later('drag_start', layer: layer);
 
-  bool dragUpdate(String by, double a, [double b = 0]) =>
-      _with([by], (s) => _dragUpdate(_m, s[0], a, b)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
+  /// Updates the current drag. [by] says what is dragged.
+  ///
+  /// - 'place': a layer on the canvas. [a] and [b] are how far the pointer has moved, in points of the frame.
+  /// - 'bar', 'head' or 'tail': a layer's bar on the timeline. [a] is the change in seconds.
+  /// - Any other string is a property name and [a] is its new value.
+  ///
+  /// Sent without waiting. The result appears in the next snapshot.
+  bool dragUpdate(String by, double a, [double b = 0]) => _with([by], (s) => _dragUpdate(_m, s[0], a, b)) != 0;
 
-  /// Whether play goes round the work area (or stops at its end).
+  /// Whether playback loops over the work area instead of stopping at its end.
   bool get looping => _loopIs(_m, -1) != 0;
 
   set looping(bool on) => _loopIs(_m, on ? 1 : 0);
 
-  /// A recipe made at the present moment, as one step: the new thing (0: not made, [trouble] says why).
+  /// Runs a recipe script at the current time as one undo step.
+  ///
+  /// Returns the new layer's number, or 0 if nothing was created. [trouble] then gives the reason.
   int create(String script) => _took(_with([script], (s) => _create(_m, s[0])));
 
-  /// One act of a hand that is several changes: they are one step of undo.
+  /// Runs [changes] so that everything they do becomes one undo step.
   T together<T>(T Function() changes) {
     _together(_m, 1);
     try {
@@ -90,8 +114,10 @@ extension MotoliiWrites on Motolii {
     }
   }
 
-  /// A change asked without waiting for the inside's hand (say, set, let_go, undo, redo, together): queued in order behind
-  /// every other, its ticket said at once ([answer] says when it is done).
+  /// Queues a change for the engine's render thread without waiting for it.
+  ///
+  /// Used for say, set, drag end, undo, redo and together. Calls run in the order queued.
+  /// Returns a ticket at once. [answer] reports when the call has finished.
   int later(String call, {int layer = 0, String name = '', String word = '', double number = 0}) =>
       _with([call, name, word], (s) => _later(_m, s[0], layer, s[1], s[2], number));
 }

@@ -7,12 +7,15 @@ import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 import '../../widgets/controls.dart' show Hov;
 
-/// An effect's parameters as blocks that fill the panel's width: three across in a normal panel, more when it is widened,
-/// so thirty parameters stay a short list. Order is the shader's; a block that needs room (a point, a size, a choice) takes two.
+/// An effect's parameters as blocks that fill the panel's width.
+///
+/// A normal panel shows three blocks across, and a wider one shows more, so thirty parameters stay a short list.
+/// The order is the shader's. A block that needs room, such as a point, a size or a choice, takes two columns.
 class ParamGrid extends StatelessWidget {
   const ParamGrid(this.params, {super.key});
   final List<Param> params;
 
+  /// How many columns the block for [p] takes.
   static int span(Param p) => switch (p.look) {
     ParamLook.point || ParamLook.size || ParamLook.choice => 2,
     _ => 1,
@@ -34,7 +37,7 @@ class ParamGrid extends StatelessWidget {
         rows.last.add(p);
         used += s;
       }
-      // contract: a row cut short by a wide block stretches to the edge, so the grid never shows holes; only the last row may end early
+      // A row cut short by a wide block stretches to the edge, so the grid has no holes. Only the last row may end early.
       Widget row(List<Param> ps, bool last) {
         final filled = ps.fold<int>(0, (a, p) => a + math.min(span(p), cols));
         return Row(
@@ -57,6 +60,7 @@ class ParamGrid extends StatelessWidget {
   );
 }
 
+/// Parses `#RRGGBB` into an opaque colour, or returns null if [s] is not in that form.
 Color? hexControls(String? s) => s != null && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(s) ? Color(int.parse(s.substring(1), radix: 16) | 0xFF000000) : null;
 
 /// The default value of every id a parameter owns, for a fresh layer and for Reset.
@@ -73,10 +77,13 @@ String paramColor(Decl d) {
   return '#${[ch(0), ch(1), ch(2)].map((e) => e.toRadixString(16).padLeft(2, '0')).join().toUpperCase()}';
 }
 
+/// A small colour chip: one colour from [hex], or a gradient through [ramp].
 class Swatch extends StatelessWidget {
   const Swatch(this.hex, {super.key, this.ramp});
   final String? hex;
-  final List<String>? ramp; // (colours in their order, a strip from the first to the last)
+
+  /// Colours in order, drawn as a strip from the first to the last. When set, [hex] is ignored.
+  final List<String>? ramp;
   @override
   Widget build(BuildContext context) => Center(
     child: Container(
@@ -92,7 +99,8 @@ class Swatch extends StatelessWidget {
   );
 }
 
-/// A small whole number's plus and minus, stacked to stay one block tall; the count itself is the field beside them.
+/// Plus and minus buttons for a small whole number, stacked to stay one block tall.
+/// The number itself is the field beside them.
 class Steps extends StatelessWidget {
   const Steps({super.key, required this.id, required this.p});
   final String id;
@@ -125,7 +133,7 @@ class Steps extends StatelessWidget {
   }
 }
 
-/// A seed's re-roll: click the die for another random look; the number stays editable beside it.
+/// A seed's re-roll button: clicking the die picks another random value. The number stays editable beside it.
 class Dice extends StatelessWidget {
   const Dice({super.key, required this.id, required this.p});
   final String id;
@@ -143,7 +151,7 @@ class Dice extends StatelessWidget {
   }
 }
 
-/// A die showing [face]: a solid square in [ink] with dark pips, or ([filled] off) the pips alone in [ink].
+/// A die showing [face]. It is a solid square in [ink] with dark pips, or only the pips in [ink] when [filled] is false.
 class DicePaint extends CustomPainter {
   const DicePaint(this.ink, this.face, {this.filled = true});
   final Color ink;

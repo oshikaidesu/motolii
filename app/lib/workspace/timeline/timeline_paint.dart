@@ -75,35 +75,32 @@ class WtRow {
     this.laneOn,
     this.whole,
   });
-  final (int, int)? whole; // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
-  final List<WsStretch> stretches; // (how it goes between its keys: each stretch's way drawn between them)
 
-  /// A value's own lane in place of a bar (Ableton's automation lane): each key's frame and where its value stands
-  /// between the lowest and the highest the value's keys hold (0 to 1); null: a layer's row.
+  final (int, int)? whole; // The whole length of a video as it lies, cut or not: the pale slip-edit bar of After Effects.
+  final List<WsStretch> stretches; // The easing of each stretch between keyframes, drawn between them.
+
+  /// A property's own lane in place of a bar, as Ableton's automation lane.
+  ///
+  /// Holds each keyframe's frame and where its value stands between the lowest and highest value of the property's
+  /// keyframes (0 to 1). Null for a layer's row.
   final List<(int, double)>? lane;
-
-  /// How the lane goes from each key to the next: its way's shape, 0 at the key and 1 at the next (as a stretch's).
-  final List<List<double>>? laneWays;
-  final int? laneOn; // (the stretch picked by its line: its place among them)
-  final Color? tone; // (its label colour; none: its kind's)
-  final List<Color>? mix; // (a relation's: its things' label colours, its bar their gradient)
+  final List<List<double>>? laneWays; // The easing curve from each keyframe to the next: 0 at the keyframe, 1 at the next.
+  final int? laneOn; // The index of the stretch selected by clicking its line.
+  final Color? tone; // The label colour. Null uses the colour of the layer's kind.
+  final List<Color>? mix; // For a relation, the label colours of its layers; the bar is a gradient of them.
   final String name;
-
-  /// How loud its sound is at each frame of its bar (dB, the inside's reading; null: no sound to show).
-  final List<double>? wave;
-
-  /// What a film's bar plays, a picture for each of its stretches in turn (null: not a film, or not read yet).
-  final List<ui.Image>? frames;
-
-  /// A shape's form (the inside's shape word: rect, circle, star...) and its fill: its own small picture at the row's left.
-  final String? form;
+  final List<double>? wave; // How loud the sound is at each frame of the bar, in dB. Null if there is no sound.
+  final List<ui.Image>? frames; // One image per stretch of a video's bar. Null if not a video or not read yet.
+  final String? form; // A shape's form as named by the engine (rect, circle, star...), drawn as a small icon at the row's left.
   final Color? fill;
-  final bool outline; // (no fill: drawn as its outline, [fill] its stroke's colour)
+  final bool outline; // True if the shape has no fill; [fill] is then the stroke colour.
   final WsKind kind;
   final int inF, outF;
   final List<int> keys;
   final Set<int> picked;
-  final bool selected, dim, locked, clipped; // (clipped: cut to the thing under it, a ↘ before its name as Alight Motion marks it)
+
+  /// [clipped] means the layer is cut to the layer under it; a mark before its name shows this, as in Alight Motion.
+  final bool selected, dim, locked, clipped;
   @override
   bool operator ==(Object other) =>
       other is WtRow &&
@@ -121,7 +118,7 @@ class WtRow {
       other.clipped == clipped &&
       other.whole == whole &&
       identical(other.wave, wave) &&
-      identical(other.frames, frames) && // (read once a change: the same list until the document changes)
+      identical(other.frames, frames) && // Read once per change: the same list until the project changes.
       other.form == form &&
       other.fill == fill &&
       other.outline == outline &&
@@ -136,11 +133,12 @@ class WtRow {
   int get hashCode => Object.hash(name, kind, inF, outF, Object.hashAll(keys), Object.hashAllUnordered(picked), selected, dim, locked);
 }
 
-/// How wide a mark's flag on the ruler is, its name in it (the ruler draws it so; a hand finds it so).
+/// The width of a marker's flag on the ruler, which holds its name. Used both to draw the flag and to hit-test it.
 double wtFlagWidth(String name) => lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
 
-/// How wide a mark's flag is where it stands: its name's width, cut where the next mark is, as Logic Pro shows a
-/// marker's name only as far as the following marker (golf ⑳: 解放 at 8.0 s under M2 at 8.37 s); [xs]: every mark's x.
+/// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
+///
+/// Logic Pro likewise shows a marker's name only as far as the following marker. [xs] holds the x of every marker.
 double wtFlagRoom(String name, double x, Iterable<double> xs) {
   final next = xs.where((o) => o > x).fold<double?>(null, (a, o) => a == null || o < a ? o : a);
   final w = wtFlagWidth(name);
@@ -150,7 +148,7 @@ double wtFlagRoom(String name, double x, Iterable<double> xs) {
 void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
   final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
   if (beats != null) {
-    // (its grid by the beat, not the second, as far as they can be told apart: Live's grid widens as it is zoomed out)
+    // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
     for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
       if (bar || beats.every * v.ppf >= 8) c.drawRect(Rect.fromLTWH(v.x(f).roundToDouble(), top, 1, bottom - top), p..color = bar ? major : fine);
     }
@@ -167,6 +165,7 @@ void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {
 
 // ---------------------------------------------------------------- ruler
 
+/// Paints the ruler: work-area band, time ticks, beats, retimed ends and marker flags.
 class WtRulerPainter extends CustomPainter {
   const WtRulerPainter({
     required this.view,
@@ -182,12 +181,16 @@ class WtRulerPainter extends CustomPainter {
   final WtView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
-  final Map<int, Color> markColors; // (a mark's colour by its frame, if it has one)
+  final Map<int, Color> markColors; // A marker's colour by its frame, if it has one.
 
-  /// Where the films' sound strikes (their Beats), frames: a short tick each at the ruler's foot.
+  /// Frames where the videos' sound has a beat: a short tick each at the ruler's foot.
   final List<int> beats;
-  final WsBeats? tempo; // (the document's own beats: a tick each, taller where a bar begins)
-  final List<int> retimed; // (the picked element's end of intro and start of outro, frames: small yellow marks at the ruler's top, as Alight Motion shows them)
+
+  /// The project's own beats: a tick each, taller where a bar begins.
+  final WsBeats? tempo;
+
+  /// Frames of the selected element's end of intro and start of outro: small yellow marks at the ruler's top, as in Alight Motion.
+  final List<int> retimed;
 
   @override
   void paint(Canvas c, Size s) {
@@ -272,7 +275,7 @@ class WtRulerPainter extends CustomPainter {
       );
       c.drawRect(Rect.fromLTWH(x, r.bottom, 1, bottom - r.bottom), p..color = ink);
       c.save();
-      c.clipRect(Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom)); // (a name cut at its flag's end)
+      c.clipRect(Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom)); // Cut the name at the end of its flag.
       t.paint(c, Offset(r.left + 3, r.center.dy - t.height / 2));
       c.restore();
       t.dispose();
@@ -293,12 +296,13 @@ class WtRulerPainter extends CustomPainter {
 
 // ---------------------------------------------------------------- tracks
 
+/// Paints the playhead: a thin line with a small head.
 class WtPlayheadPainter extends CustomPainter {
   const WtPlayheadPainter({required this.view, required this.frame, required this.headTop, this.moment}) : super(repaint: moment);
   final WtView view;
   final int frame;
   final double headTop;
-  final ValueListenable<int>? moment; // (where it is now, read as it is painted: painted again as it moves, nothing built)
+  final ValueListenable<int>? moment; // The current frame, read at paint time, so moving the playhead repaints without rebuilding.
 
   @override
   void paint(Canvas c, Size s) {
@@ -306,9 +310,9 @@ class WtPlayheadPainter extends CustomPainter {
     final x = view.x(frame).roundToDouble();
     if (x < -40 || x > s.width + 40) return;
     final p = Paint()..color = WsT.playhead;
-    // (a small head, no number on it: Premiere Pro's playhead, After Effects' time indicator, Ableton's and Alight
-    //  Motion's, the moment read in the transport's time; one that carries its frame hid a marker's name under it,
-    //  golf_noise.md ⑱ (Blender and Cavalry number theirs, their markers on a row of their own))
+    // A small head with no number on it, like the playhead of Premiere Pro, After Effects, Ableton and Alight Motion.
+    // The frame is shown in the header's time. A head that carried the frame number hid marker names under it.
+    // Blender and Cavalry number their playheads, but they put markers on a row of their own.
     final w = Shape.z(9), cx = (x + .5).clamp(w / 2, s.width - w / 2);
     final pill = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(cx, headTop + 8), width: w, height: Shape.z(15)), Shape.r(4));
     c.drawRect(Rect.fromLTWH(x, headTop + 8, 1, s.height - headTop - 8), p);
@@ -330,6 +334,7 @@ class WtPlayheadPainter extends CustomPainter {
 
 // ---------------------------------------------------------------- overview (the horizontal scroll strip)
 
+/// Paints the overview strip: the whole project in miniature with the visible range and the playhead.
 class WtOverviewPainter extends CustomPainter {
   const WtOverviewPainter({required this.from, required this.to, required this.frame, required this.hot});
   final double from, to;
@@ -352,10 +357,11 @@ class WtOverviewPainter extends CustomPainter {
 
 // ---------------------------------------------------------------- kind chip
 
-/// A layer's kind: a small square of its hue with the kind drawn in the dark ink.
-/// A row's own small picture, as Alight Motion shows one at the left of each row (docs/internal/reports/alight_motion/alight_ui/95 and 106): a
-/// photo or a film its picture, a shape its form in its own fill; the rest, the mark of its kind (Alight Motion's
-/// camera and sound are marks too; a text's is not seen in its pictures: its mark kept).
+/// A row's small thumbnail, as Alight Motion shows at the left of each row
+/// (docs/internal/reports/alight_motion/alight_ui/95_hidden_drag_layer_time.jpg and 106_keys_layer_view.jpg).
+///
+/// An image or video layer shows its image, a shape shows its form in its own fill, and other kinds show the mark of
+/// their kind. Alight Motion's camera and audio are marks too. Its screenshots show no text thumbnail, so text keeps its mark.
 class WtThumb extends StatelessWidget {
   const WtThumb(this.row, {super.key});
   final WtRow row;
@@ -417,7 +423,7 @@ class _FormPainter extends CustomPainter {
         c.drawLine(b.bottomLeft, b.topRight, st);
       case 'ring':
         c.drawOval(b.deflate(1), st);
-      default: // (circle, and the forms with no small mark of their own: a round in its fill)
+      default: // Circle, and any form without a small mark of its own: a round shape in its fill.
         c.drawOval(b, f);
     }
   }
@@ -426,6 +432,7 @@ class _FormPainter extends CustomPainter {
   bool shouldRepaint(_FormPainter o) => o.form != form || o.ink != ink || o.outline != outline;
 }
 
+/// A layer's kind: a small square of its colour with the kind's mark drawn in dark ink.
 Widget wtKindChip(WsKind kind, {bool dim = false, Color? tone}) =>
     Badge(dim ? Grey.g26 : tone ?? wsTone(kind), size: WtM.chip, radius: Shape.r(3), mark: _KindPainter(kind, dim ? Grey.g56 : WsT.onAccent));
 

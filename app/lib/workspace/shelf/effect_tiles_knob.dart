@@ -1,17 +1,22 @@
-// Part of effect_tiles.dart: the knob that stands for an effect on its tile, and how far it is turned.
+// Part of effect_tiles.dart: the parameter that stands for an effect on its tile, and how far it is turned.
 part of 'effect_tiles.dart';
 
-/// The knob that stands for an effect, and the two values it goes between. Set beside the 121 lines of AbsentMotion's
-/// table where a hand says which (docs/internal/reports/engine/sketch_import_2026-11-01.md), the one that changes the picture most is right
-/// for 3 of the 27 it moves: what a hand moves is what plays as a clock would, rotY, progress, evolution, phase (After
-/// Effects' own Evolution and Transition Completion); then, of [filed], the knobs the hand gave a value, the one that
-/// makes most of it, from what the file has to that; then the file's first that shows, its author's first, single
-/// numbers before a vector's parts, leaving what only fades it out, draws it anew at each value or picks from a list. Each is tried half
-/// way to the far end of its span (all the way round, an angle's far end is where it began), at most eight, as
-/// fx_first.sh tries them and AbsentMotion's change() tells a tile that shows nothing; a turn or a progress goes that
-/// far, as the hand's, the rest as far as is plainly seen, short of wiping the picture out. Null: none shows.
-/// Before all of those, [first]: the knob its weights say shows it most ([weighed]), the user's wish (11/5) that a tile
-/// move by the knob that stands for it; [alone], that one or none (an effect that runs by the clock is let run).
+/// Picks the parameter that stands for an effect on its tile, and the two values it moves between.
+///
+/// Candidates are tried in this order, and the first one that visibly changes the picture wins:
+/// 1. [first], the parameter the weights in [EffectTiles.weighed] say shows the effect most.
+/// 2. Parameters named like a clock: progress, rotY, evolution, phase (After Effects has Evolution and Transition Completion).
+/// 3. The parameters in [filed], whose values the effect table set: the one that changes the picture most.
+/// 4. The remaining parameters in file order, single numbers before the parts of a vector. Parameters that only fade
+///    the effect, redraw it at every value or pick from a list are skipped.
+///
+/// Each candidate is tried half way to the far end of its range, at most eight times, and the change is measured
+/// with ffmpeg as in shelves/effects/sources/fx_first.sh. For an angle the far end is where it began, so half way is
+/// used. A progress or rotY then goes the whole way. Any other parameter goes only as far as the change is plainly
+/// visible, short of wiping the picture out.
+///
+/// If [alone] is set only [first] is tried, because an effect that runs by the clock is left to run.
+/// Returns null when no parameter shows the effect.
 (String, double, double)? _telling(
   Motolii m,
   int on,
@@ -54,7 +59,7 @@ part of 'effect_tiles.dart';
       1 / 2,
       1.0,
       2.0,
-    ]; // (spans go to 4000 in an AviUtl2 script: what shows is often far short of half way; a phase's to 2000, the hand's goes to 3)
+    ]; // Ranges go up to 4000 in an AviUtl2 script, and what shows is often far short of half way.
     final at = [for (final s in steps) from + (half - from) * s];
     for (final (i, v) in at.indexed) {
       m.set(on, k, v);

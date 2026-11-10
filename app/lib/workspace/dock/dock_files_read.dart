@@ -1,4 +1,4 @@
-// dock_files_read.dart: the folders read (once each, off the window's thread) and what a file is: its name, folder, size, kind, the media it is.
+// Reads folders from the disk, once each and off the UI thread, and describes a file: its name, folder, size, kind and media type.
 part of 'dock_files.dart';
 
 String _base(String path) => path.substring(path.lastIndexOf('/') + 1);
@@ -16,8 +16,8 @@ final _reading = <String>{};
 /// Goes up each time a folder of the disk has been read: the shelf then looks again.
 final dockRead = ValueNotifier<int>(0);
 
-/// A folder of the disk as it was last read, read again without waiting (the window never stands still for the
-/// disk: a folder the system asks leave for is simply empty until leave is given).
+/// Returns the entries of the folder [path] as last read and starts reading it if needed, without waiting for the disk.
+/// A folder the system asks permission for is empty until the user grants it.
 List<FileNode> _listed(String path) {
   if (!_lists.containsKey(path)) _read(path);
   return _lists[path] ?? const [];

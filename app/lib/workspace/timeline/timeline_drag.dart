@@ -1,19 +1,21 @@
-// timeline_drag.dart: a hand on the tracks: what the pointer would do over a bar, a bar or a key taken.
+// Pointer handling on the track area: hover cursors, clicks, and picking up a bar or a keyframe.
 part of 'timeline.dart';
 
 extension _WsTimelineDrag on _WsTimelineState {
   // ---------------------------------------------------------------- input
 
-  // The row under a height: its place, its layer, and the value whose lane it is (null: the layer's own row).
+  /// The row at vertical position [y]: its index, its layer, and the property it shows.
+  /// The property is null for the layer's own row.
   ({int i, WsLayer l, String? value})? _rowAt(double y) {
     final i = ((y + _vscroll) / WtM.row).floor();
     if (i < 0 || i >= _order.length) return null;
     return (i: i, l: _ws!.layers[_order[i].layer], value: _order[i].value);
   }
 
-  // A press on a value's lane: on a breakpoint it is taken away, as on Ableton's envelope (Live 12 manual 25.5.2). Between
-  // two it picks that stretch, as Theatre.js's connector (the maker, 10/31: Live's line takes a breakpoint at one press, and
-  // "区間を選択できない"), and a second press in the same place puts a key there, as Live's double click off the line.
+  // A click on a property lane.
+  // - On a keyframe it deletes it, as on Ableton's envelope (Live 12 manual 25.5.2).
+  // - Between two keyframes it selects that span, as Theatre.js does. Live cannot select a span.
+  // - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
   void _laneTap(Offset p) {
     final ws = _ws!, m = ws.inside, r = _rowAt(p.dy), v = _view;
     if (m == null || r == null || r.value == null || _isLocked(ws, r.l.id)) return;
@@ -35,12 +37,13 @@ extension _WsTimelineDrag on _WsTimelineState {
     final ws = _ws!, v = _view;
     final r = _rowAt(p.dy);
     if (r == null) {
-      // (below the rows: nothing picked, After Effects' manner; joined, the inspector is then the whole picture's)
+      // Below the rows nothing is selected, as in After Effects. The inspector then shows the whole project.
       ws.clearKeys();
       ws.select(null);
       return;
     }
-    if (r.value != null) return; // (a lane: its tap is the lane's, on the hand's way up)
+    // A lane handles its own click, on pointer up.
+    if (r.value != null) return;
     final i = r.i, l = r.l;
     final cy = i * WtM.row - _vscroll + WtM.row / 2;
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
@@ -73,7 +76,7 @@ extension _WsTimelineDrag on _WsTimelineState {
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
-      // (a lane: over a breakpoint, it is taken by a click)
+      // On a lane, a click on a keyframe deletes it.
       final t = int.parse(l.id);
       final at = ws.inside!.keyTimes(t, n), f = v.frameAt(p.dx) / Ws.fps;
       return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last)
@@ -89,7 +92,8 @@ extension _WsTimelineDrag on _WsTimelineState {
     final ws = _ws!, v = _view, m = ws.inside;
     final r = _rowAt(p.dy);
     if (m == null || r == null) return false;
-    if (r.value != null) return true; // (a lane: nothing carried, and no box drawn from it)
+    // A lane has nothing to drag and starts no selection box.
+    if (r.value != null) return true;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;

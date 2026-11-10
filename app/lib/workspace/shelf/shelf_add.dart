@@ -1,10 +1,12 @@
-// A thing's effect or expression added to the shelf under a name of the maker's (Add to shelf, on its card's code:
-// fx_code.dart), and one added so renamed by its tile's menu. What is added is the maker's: in their own folder
-// (EffectTiles.own), never the library's (engine/). An effect (.fs, .wgsl) goes in effects/, where the Effects shelf
-// reads the maker's effects (doc_folders); an expression (.js with each()) in expressions/, the Expression group's
-// folder (the inside reads it as a motion too: Create shows it once, as the maker's, dock_make_expressions.dart). Nothing is written over: a name the shelf has, or a file there of
-// that name, is refused. A rename writes the name beside the file (<file>.name, as the Program shelf's: dock_program.dart
-// Program.rename): the file stays where it is, so the documents that use it still find it.
+// Adding an effect or expression from a layer to the shelf under a name the user chooses ("Add to shelf" on the
+// card's code, fx_code.dart), and renaming one added that way from its tile's menu.
+// What is added belongs to the user: it goes in their own folder (EffectTiles.own), never in the library's (engine/).
+// An effect (.fs, .wgsl) goes in effects/, where the Effects shelf reads the user's effects (doc_folders).
+// An expression (a .js with each()) goes in expressions/, the Expression group's folder. The engine also reads it
+// as a motion, but Create shows it only once, as the user's (dock_make_expressions.dart).
+// Nothing is overwritten: a name already on the shelf, or an existing file of that name, is refused.
+// A rename writes the name beside the file (<file>.name, as the Program shelf does: Program.rename in dock_program.dart).
+// The file stays where it is, so documents that use it still find it.
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -21,19 +23,20 @@ String get _ownExpressions => '${EffectTiles.own}/expressions';
 
 bool shelfIsExpression(String file) => file.endsWith('.js');
 
-/// The name written beside one the maker added (null: none, or not theirs).
+/// The display name written beside a file the user added, or null if there is none or the file is not theirs.
 String? shelfNamed(String file) {
   if (!shelfAdded(file)) return null;
   final f = shelfSidecar(file);
   return f.existsSync() ? f.readAsStringSync().trim() : null;
 }
 
-/// Whether the file is one the maker added to a shelf (a library file is not: it has no Rename).
+/// Whether the user added the file to a shelf. Library files were not, so they cannot be renamed.
 bool shelfAdded(String file) => file.startsWith('$_ownEffects/') || file.startsWith('$_ownExpressions/');
 
 File shelfSidecar(String file) => File('${file.substring(0, file.lastIndexOf('.'))}.name');
 
-/// The expressions the maker added, by name (the one written beside it, else its head's, else its file's): name and file.
+/// The expressions the user added as (name, file), sorted by name.
+/// The name is the one written beside the file, else the one in its header, else the file name.
 List<(String, String)> shelfExpressions() {
   final dir = Directory(_ownExpressions);
   if (!dir.existsSync()) return const [];
@@ -43,7 +46,7 @@ List<(String, String)> shelfExpressions() {
   ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
 }
 
-/// The name its first line says ("// Repeater: …"; null none).
+/// The name in the file's first line ("// Repeater: …"), or null if there is none.
 String? _headName(String file) {
   try {
     final first = File(file).readAsLinesSync().firstOrNull ?? '';
@@ -53,8 +56,8 @@ String? _headName(String file) {
   }
 }
 
-/// The names on the shelf an effect ([expression]: an expression) is added to, the library's and the maker's: the Effects
-/// shelf's (dock_effects.dart), else Create's (dock_make.dart).
+/// The names already on the shelf that a new item goes to, from the library and the user.
+/// An effect goes to the Effects shelf (dock_effects.dart); an expression ([expression]) goes to Create (dock_make.dart).
 Set<String> shelfTaken(Ws ws, {required bool expression}) {
   if (expression) return createNames(ws);
   final m = ws.inside;
@@ -66,7 +69,7 @@ Set<String> shelfTaken(Ws ws, {required bool expression}) {
   };
 }
 
-/// Why a name cannot be one on a shelf whose names are [taken] ('' it can): it is a file's name too.
+/// Why [name] cannot be used on a shelf whose names are [taken], or '' if it can. The name is also a file name.
 String _whyNot(String name, Iterable<String> taken) {
   if (name.isEmpty) return 'Give it a name';
   if (name.startsWith('.') || RegExp(r'[/\\:~\t\n]').hasMatch(name)) return 'A name without / \\ : ~ or a leading dot';
@@ -74,20 +77,21 @@ String _whyNot(String name, Iterable<String> taken) {
   return '';
 }
 
-/// [code] (the card's code as it is, read from [from]) added to its shelf as [name]; why it is not ('' it is).
-/// [taken]: the names on that shelf, the library's and the maker's.
+/// Adds [code] (the card's current code, read from [from]) to its shelf as [name].
+/// Returns why it could not be added, or '' on success. [taken] holds the names already on that shelf, from the library and the user.
 String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> taken) {
   name = name.trim();
   if (_whyNot(name, taken) case final why when why.isNotEmpty) return why;
   final ext = from.substring(from.lastIndexOf('.')), expression = shelfIsExpression(from);
   final dir = expression ? _ownExpressions : _ownEffects, file = '$dir/$name$ext';
-  // (the maker's file of a name stands over the library's (doc_folder_files): neither is written over)
-  final library = Directory('$motoliiShelves/effects'); // (a folder for what each does: blur/, color/…, read through)
+  // A user's file of the same name takes precedence over the library's (doc_folder_files), but neither is overwritten.
+  // The library groups effects by what they do (blur/, color/…), so search it recursively.
+  final library = Directory('$motoliiShelves/effects');
   if (File(file).existsSync() || (!expression && library.existsSync() && library.listSync(recursive: true).any((e) => e.path.endsWith('/$name$ext')))) {
     return '"$name$ext" is already there';
   }
   Directory(dir).createSync(recursive: true);
-  // (its card's title and its shelf name: an ISF's its file's (isf.cpp), another's its first line's (doc_fx_title))
+  // The card title and shelf name: an ISF takes its file name (isf.cpp), anything else its first line (doc_fx_title).
   if (ext != '.fs') {
     final lines = code.split('\n'), first = lines.first;
     final head = first.startsWith('// ') && first.contains(':') && !first.startsWith('// --');
@@ -100,8 +104,9 @@ String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> t
   return '';
 }
 
-/// What the engine reads beside an effect's file (fx_code.dart _beside): an ISF's .vs, its lines of first.tsv (under its
-/// new name, added to the folder's), the images its head names (copied where none is: none is written over).
+/// Copies the files the engine reads beside an effect's file (see _beside in fx_code.dart).
+/// That is an ISF's .vs, its lines of first.tsv (under the new name, appended to the folder's), and the images its
+/// header names (copied only where none exists, so nothing is overwritten).
 void _beside(String from, String to, String dir) {
   final home = from.substring(0, from.lastIndexOf('/')), name = from.split('/').last.replaceFirst(RegExp(r'~[0-9]+(?=\.[^.]+$)'), '');
   final stem = to.substring(0, to.lastIndexOf('.'));
@@ -125,7 +130,8 @@ void _beside(String from, String to, String dir) {
   }
 }
 
-/// One the maker added renamed [to] (its name written beside it); why not ('' it is). [taken]: the shelf's names but its own.
+/// Renames a file the user added to [to] by writing the name beside it. Returns why it failed, or '' on success.
+/// [taken] holds the shelf's names except this file's own.
 String shelfRename(Ws ws, String file, String to, Iterable<String> taken) {
   to = to.trim();
   if (!shelfAdded(file)) return 'Only what you added can be renamed';
@@ -136,12 +142,14 @@ String shelfRename(Ws ws, String file, String to, Iterable<String> taken) {
   return '';
 }
 
-/// A name written in place, as Finder's: Return or leaving it says it, Escape lets it be ([done] null).
+/// A name edited in place, as in Finder. Return or leaving the field commits it; Escape cancels and calls [done] with null.
 class ShelfNameField extends StatelessWidget {
   const ShelfNameField(this.name, this.done, {super.key, this.small = true});
   final String name;
   final void Function(String? name) done;
-  final bool small; // (a tile's name; else a card's)
+
+  /// Whether it edits a tile's name (true) or a card's (false).
+  final bool small;
   @override
   Widget build(BuildContext context) => Container(
     color: Grey.g91,

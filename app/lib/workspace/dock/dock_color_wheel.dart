@@ -1,18 +1,21 @@
-// dock_color_wheel.dart: the Colors shelf's wheel, a hue ring with a square inside it for saturation and value, as CLIP
-// STUDIO PAINT's Color Wheel palette (the user: "クリスタで見かけたあれのままで大丈夫"): flutter_colorpicker's own
-// HueRingPicker (MIT, mchome), its ring and its square stacked as it stacks them (the square 1/1.6 of the ring), without
-// its hex field (the shelf has its own). Not flex_color_picker's ColorWheelPicker: it takes the hand's place on the
-// screen less its own corner, so in the window drawn smaller (WsZoom, 76%) a press missed it (the user, "カラーサークルが
-// 選べん"); these take it by globalToLocal, through any scale.
+// The Colors shelf's color wheel: a hue ring with a square inside it for saturation and value,
+// like the Color Wheel palette in CLIP STUDIO PAINT.
+// It stacks flutter_colorpicker's ring and square the way its HueRingPicker does (the square is 1/1.6 of the ring),
+// without that picker's hex field, because the shelf has its own.
+// It does not use flex_color_picker's ColorWheelPicker: that one compares the pointer's screen position
+// with its own corner, so when the window is drawn scaled down (WsZoom, 76%) clicks missed the wheel.
+// The ring and square used here convert the position with globalToLocal, which works at any scale.
 import 'package:flutter/widgets.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart' show ColorPickerArea, ColorPickerHueRing, PaletteType;
 
+/// A hue ring with a saturation and value square inside it. [onChanged] gets every new color.
 class WsColorWheel extends StatelessWidget {
   const WsColorWheel({super.key, required this.color, required this.onChanged, this.onStart, this.onEnd});
   final HSVColor color;
   final ValueChanged<HSVColor> onChanged;
 
-  /// A hand down on it, and up again (Flutter's Listener: it sees the hand without taking it from the ring or square).
+  /// Called when a pointer goes down on the wheel and when it is released or cancelled.
+  /// It uses a Listener, which sees the pointer without taking it from the ring or square.
   final VoidCallback? onStart, onEnd;
 
   static const _ring = 14.0;
@@ -28,8 +31,9 @@ class WsColorWheel extends StatelessWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // (the ring is stroked on the edge of its box, half of it outside, as HueRingPicker pads it; that half takes
-            //  no press there, so an unseen ring the whole size takes them: the hue is the angle from the middle, the same)
+            // The ring is stroked on the edge of its box, half of it outside, as HueRingPicker pads it.
+            // That outer half takes no clicks, so an invisible ring of the full size takes them instead.
+            // The hue is the angle from the center, so both rings give the same result.
             SizedBox.square(
               dimension: s,
               child: IgnorePointer(child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring)),

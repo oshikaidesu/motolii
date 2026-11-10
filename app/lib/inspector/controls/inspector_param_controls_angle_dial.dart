@@ -1,12 +1,12 @@
-// A dial for an angle: turn it by moving around it (the farther out, the finer), or scrub the number beside it.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-/// A dial for an angle: turn it by moving around it (the farther out, the finer), or scrub the number beside it.
-/// contract: one turn of the pointer is one turn of the value, so the dial never lies about direction; one undo per drag.
+/// A dial for an angle. The user turns it by dragging around its centre, or drags the number beside it.
+///
+/// One turn of the pointer is one turn of the value, so the dial always follows the pointer's direction. A drag is one undo step.
 class AngleDial extends StatefulWidget {
   const AngleDial({super.key, required this.id, required this.p});
   final String id;
@@ -19,7 +19,8 @@ class _AngleDialState extends State<AngleDial> {
   double? _last;
   bool _hot = false;
   double _angle(Offset local) {
-    final o = (context.size ?? const Size(22, 22)).center(Offset.zero); // (the middle it is drawn round: its slot may be smaller than it asks, Pop.glyph)
+    // The dial is drawn around this centre. Its slot may be smaller than the size it asks for (Pop.glyph).
+    final o = (context.size ?? const Size(22, 22)).center(Offset.zero);
     return math.atan2(local.dy - o.dy, local.dx - o.dx);
   }
 
@@ -43,8 +44,8 @@ class _AngleDialState extends State<AngleDial> {
           if (d > math.pi) d -= 2 * math.pi;
           if (d < -math.pi) d += 2 * math.pi;
           _last = a;
-          // (as far as a number typed goes, not the slider's ends: After Effects' angle turns on with no end, its
-          //  revolutions counted; a closed span of a turn or more goes round again inside it, as Godot's wrapf)
+          // The limits are those of a typed number, not the slider's ends. An angle in After Effects turns without end and counts
+          // its revolutions. A closed range of at least one turn wraps around inside the range, as Godot's wrapf does.
           final p = widget.p,
               lo = p.open && (p.min ?? 0) < 0 ? double.negativeInfinity : p.validMin ?? p.min ?? double.negativeInfinity,
               hi = p.open ? double.infinity : p.validMax ?? p.max ?? double.infinity;
@@ -60,7 +61,7 @@ class _AngleDialState extends State<AngleDial> {
           if (_last != null) doc.endGesture();
           _last = null;
         },
-        // (drawn again when its number is told anew, as a field is: Doc.watch; the inspector is not built again for it)
+        // Repaints when its value changes, as a number field does (Doc.watch), without rebuilding the Inspector.
         child: ListenableBuilder(
           listenable: doc.watch(widget.id),
           builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null)),

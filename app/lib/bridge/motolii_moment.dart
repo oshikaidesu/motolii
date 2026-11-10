@@ -1,43 +1,48 @@
-// motolii_moment.dart: the moment's copy read (docs/app/BRIDGE.md M): where things are and what they show at the picture's moment. Made by the inside with each picture.
+// The time snapshot reader (docs/app/BRIDGE.md M): where layers are and what they show at the snapshot's time.
+// The engine rebuilds the snapshot with each frame.
 part of 'motolii.dart';
 
 extension MotoliiMoment on Motolii {
   Map<String, dynamic>? _momentOf(int layer) => (_moment['layer'] as Map<String, dynamic>)['$layer'] as Map<String, dynamic>?;
 
-  /// Whether [at] is the moment the moment's picture is of (to a frame).
+  /// Whether [at] is the time of the time snapshot, to within a frame.
   bool _isNow(double at) => (((_moment['now'] as num?)?.toDouble() ?? -1) - at).abs() < .5 / rate;
 
-  /// The moment of the picture the stage last drew: where a playhead is while it plays.
+  /// The time of the frame the stage last drew. The playhead follows it during playback.
   double get now => (_moment['now'] as num?)?.toDouble() ?? 0;
 
-  /// A value at a moment, its own (not what a relation makes of it: [shows]): one that stays, the document's; one that
-  /// moves, the picked thing's at the moment's picture's moment.
+  /// A property's own value at [at], not what a relation makes of it (see [shows]).
+  ///
+  /// A property without keyframes comes from the project snapshot. An animated one comes from the time snapshot.
   double? value(int layer, String name, double at) {
     if (!moving(layer).contains(name) || at == 0) {
       return ((_of(layer)['value'] as Map<String, dynamic>?)?[name] as num?)?.toDouble() ??
-          _usual(layer, name); // (the document's picture holds each value at its first moment)
+          _usual(layer, name); // The project snapshot holds each property's value at time 0.
     }
     if (_isNow(at)) {
-      // (the picked thing's, and those the window watches: [watch])
+      // The time snapshot holds the selected layer and the layers being watched (see [subscribe]).
       if ((_momentOf(layer)?['value'] as Map<String, dynamic>?)?[name] case final num v) return v.toDouble();
     }
     final keys = keyTimes(layer, name), i = keys.indexWhere((k) => (k - at).abs() < .5 / rate);
     if (i >= 0) {
       return (((_of(layer)['keyValues'] as Map<String, dynamic>?)?[name] as List<dynamic>?)?[i] as num?)
-          ?.toDouble(); // (at one of its keys: what the key holds)
+          ?.toDouble(); // [at] is on a keyframe, so use that keyframe's value.
     }
     return _unasked('value', layer, name, at);
   }
 
-  /// A read the pictures do not hold (another moment of a thing not watched): not asked of the inside here, the window
-  /// would wait (docs/app/BRIDGE.md rule 1); ask it as a question ([shownAt]), or watch the thing ([subscribe]). Said once.
+  /// Handles a read that neither snapshot holds, such as another time of a layer that is not watched.
+  ///
+  /// It does not ask the engine, because the app would block (docs/app/BRIDGE.md rule 1). Ask with [shownAt] or watch
+  /// the layer with [subscribe]. A message is printed once per property.
   double? _unasked(String what, int layer, String name, double at) {
-    if (_watched.contains(layer)) return null; // (watched just now: in the next picture)
+    // Just started watching: the value arrives with the next frame.
+    if (_watched.contains(layer)) return null;
     if (_unaskedSaid.add('$what $name')) debugPrint('BRIDGE: $what($layer, $name, $at) is not in the pictures: ask it ([shownAt]) or watch the thing');
     return null;
   }
 
-  /// A value as the stage shows it (what a relation or behaviour makes of it), and whether one drives it; null: none.
+  /// A property as the stage shows it, after any relation or behaviour, and whether one drives it. Null if unavailable.
   (double, bool)? shows(int layer, String name, double at) {
     if (!_isNow(at)) {
       _unasked('shows', layer, name, at);
@@ -47,30 +52,31 @@ extension MotoliiMoment on Motolii {
     return v == null ? null : ((v[0] as num).toDouble(), v[1] as bool);
   }
 
-  /// A camera as the working eye sees it, the inside's words (doc_gizmo); '': by the camera's own eye.
+  /// How the working camera sees a camera layer, as the engine describes it (doc_gizmo). Empty means through its own view.
   String gizmo(int layer) => _momentOf(layer)?['gizmo'] as String? ?? '';
 
-  /// A thing's frame on the picture at the stage's moment: its middle (x, y), how wide, how high (points of the picture,
-  /// from the top left), how far it is turned (degrees, clockwise as seen), the point it turns about (x, y), and how deep
-  /// it is (0: flat). null: not shown.
+  /// A layer's box on the canvas at the stage's time, or null if it is not shown.
+  ///
+  /// The numbers are center (x, y), width, height (canvas points from the top left), rotation (degrees, clockwise),
+  /// the rotation anchor (x, y) and depth (0 is flat).
   List<double>? bounds(int layer) => switch (_momentOf(layer)?['bounds']) {
     final List<dynamic> f => Motolii._numbers(f),
     _ => null,
   };
 
-  /// What of a thing is seen: the upright box of its outline on the picture (points from the top left). null: not shown.
+  /// The axis-aligned bounding box of the layer's visible outline, in canvas points from the top left. Null if it is not shown.
   Rect? seen(int layer) => switch (_momentOf(layer)?['seen']) {
     final List<dynamic> b => Rect.fromLTRB((b[0] as num).toDouble(), (b[1] as num).toDouble(), (b[2] as num).toDouble(), (b[3] as num).toDouble()),
     _ => null,
   };
 
-  /// A path shape's points where the picture shows them (the picked thing's; its handles not); empty: none.
+  /// The points of a path shape as drawn on the canvas, for the selected layer only and without handles. Empty if none.
   List<Offset> points(int layer) {
     final p = Motolii._numbers(_momentOf(layer)?['points']);
     return [for (var i = 0; i + 1 < p.length; i += 2) Offset(p[i], p[i + 1])];
   }
 
-  /// Its curves' handles the same way, each with the point it is the handle of.
+  /// The path's curve handles in the same way, each paired with the point it belongs to.
   List<(Offset, Offset)> handles(int layer) {
     final h = Motolii._numbers(_momentOf(layer)?['handles']), of = Motolii._numbers(_momentOf(layer)?['of']);
     return [for (var i = 0; i + 1 < h.length; i += 2) (Offset(h[i], h[i + 1]), i + 1 < of.length ? Offset(of[i], of[i + 1]) : Offset(h[i], h[i + 1]))];

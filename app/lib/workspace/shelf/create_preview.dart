@@ -1,7 +1,9 @@
-// A recipe's motion, for its tile on the Create shelf: the inside makes it on a document of its own (another isolate,
-// so the window never waits) and says where each thing and copy is, moment by moment, in the round (motolii_path3);
-// the tile draws those places as points, seen a little from above and turning, and plays them round and round. Nothing
-// is kept on disk: the pictures are the inside's own reckoning, drawn again whenever the shelf is shown.
+// Motion previews for the recipe tiles on the Create shelf.
+//
+// The engine creates each recipe on a project of its own, in another isolate so the window never waits. It reports where
+// every layer and copy is at each time step, in 3D (motolii_path3). The tile draws those positions as points, seen a
+// little from above and turning, and loops them. Nothing is cached on disk: the motion is recomputed whenever the shelf
+// is shown.
 import 'dart:async';
 import 'dart:ffi' show Int32, Pointer, Int32Pointer;
 import 'dart:io';
@@ -17,20 +19,27 @@ import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector3;
 
 import '../../bridge/motolii.dart';
 
-/// Each moving part of a recipe: its colour, per copy its places (n moments, x y z size), and a path shape's outline
-/// as its path says it ('' another kind), taken out even-odd or drawn by its edge alone as it says.
+/// The moving parts of a recipe.
+///
+/// Each part has a colour, and for each copy its positions over time (x y z size per time step). [outline] is the SVG
+/// path of a path shape, or '' for other kinds. [evenOdd] selects the even-odd fill rule and [edge] means only the
+/// outline is drawn.
 typedef RecipeMotion = List<({int colour, List<Float32List> copies, String outline, bool evenOdd, bool edge})>;
 
 const _moments = 24, _seconds = 3.0, _mostCopies = 160;
 
+/// Computes the motion of every recipe once, in another isolate, and caches it in memory for the tiles.
 abstract final class RecipeMotions {
   static final _all = <String, RecipeMotion>{};
   static bool _asked = false;
-  static Pointer<Int32>? _halt; // (said to the making: stop after the recipe it is on; read there between recipes)
+  // Set to 1 to tell the isolate to stop after the recipe it is on. The isolate reads it between recipes.
+  static Pointer<Int32>? _halt;
   static Completer<void>? _ended;
 
-  /// The making stopped once the recipe it is on is made, its document shut by itself, and waited for: a window shut,
-  /// or a file of tests done, does not leave it opening documents while the program ends. Asked again, it begins again.
+  /// Stops the computation after the current recipe, closes its project, and waits for the isolate to finish.
+  ///
+  /// This keeps the isolate from opening projects while the app exits, for example when the window closes or a test file
+  /// ends. A later [ask] starts again.
   static Future<void> stop() async {
     final halt = _halt, ended = _ended;
     if (halt == null || ended == null) return;
@@ -42,12 +51,17 @@ abstract final class RecipeMotions {
     _asked = false;
   }
 
+  /// Notifies each time another recipe's motion has been read.
   static final ready = ValueNotifier<int>(0);
 
+  /// The motion of [recipe], or null until it has been read.
   static RecipeMotion? of(String recipe) => _all[recipe];
 
-  /// Asked once: every recipe made on a document of its own, its motion read, the document shut; each one's tile
-  /// shown as soon as it is read (a recipe of many copies takes seconds: those after it do not wait for all).
+  /// Creates every recipe in [recipes] on a project of its own, reads its motion, and closes the project. Only the
+  /// first call does anything.
+  ///
+  /// Each recipe's tile can show as soon as its motion is read. A recipe with many copies takes seconds, and the ones
+  /// after it do not wait for all of them.
   static void ask(String libDir, List<String> recipes) {
     if (_asked) return;
     _asked = true;
@@ -71,7 +85,8 @@ abstract final class RecipeMotions {
     final m = Motolii.open('${folder.path}/previews.motolii', wide: 1080, high: 1080, dir: dir);
     if (m == null) return tell.send(null);
     for (final r in recipes) {
-      if (halt.value != 0) break; // (stopped: its document shut below, as when all are made)
+      // After a stop request the project is still closed below, as when every recipe is done.
+      if (halt.value != 0) break;
       final before = m.layers.toSet();
       if (m.create(r) == 0) continue;
       final parts = <({int colour, List<Float32List> copies, String outline, bool evenOdd, bool edge})>[];
@@ -107,9 +122,11 @@ abstract final class RecipeMotions {
 final _clock = ValueNotifier<int>(0);
 Timer? _ticking;
 
-/// A recipe's motion drawn in its tile, playing by itself.
+/// A recipe's motion drawn in its tile, looping by itself.
 class RecipeMotionView extends StatelessWidget {
   const RecipeMotionView(this.recipe, {super.key});
+
+  /// The recipe whose motion is shown.
   final String recipe;
   @override
   Widget build(BuildContext context) {
@@ -119,7 +136,8 @@ class RecipeMotionView extends StatelessWidget {
       builder: (context, _, _) {
         final motion = RecipeMotions.of(recipe);
         if (motion == null || motion.isEmpty) return const SizedBox.shrink();
-        if (motion case [final one] when one.outline.isNotEmpty && one.copies.length <= 1) return _Outline(one); // (one path shape, still: its outline)
+        // A single path shape that does not move is drawn as its outline.
+        if (motion case [final one] when one.outline.isNotEmpty && one.copies.length <= 1) return _Outline(one);
         return ValueListenableBuilder<int>(
           valueListenable: _clock,
           builder: (context, k, _) => CustomPaint(painter: _MotionPainter(motion, k % _moments, k)),
@@ -136,7 +154,7 @@ class _MotionPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size s) {
-    // (seen a little from above, turning slowly: what is deep reads as deep; Flutter's own Matrix4 does the seeing)
+    // View from slightly above, turning slowly, so depth reads as depth.
     final look = Matrix4.identity()
       ..rotateX(-0.35)
       ..rotateY(tick * 0.01);
@@ -145,7 +163,7 @@ class _MotionPainter extends CustomPainter {
     for (final part in motion) {
       for (final c in part.copies) {
         for (var i = 0; i < c.length ~/ 4; i++) {
-          // (the box is of every moment: the picture holds still while it moves)
+          // The bounding box covers every time step, so the picture stays fitted while the points move.
           final v = look.transform3(Vector3(c[4 * i], c[4 * i + 1], c[4 * i + 2]));
           final o = Offset(v.x, -v.y);
           lo = Offset(math.min(lo.dx, o.dx), math.min(lo.dy, o.dy));
@@ -171,8 +189,9 @@ class _MotionPainter extends CustomPainter {
   bool shouldRepaint(_MotionPainter o) => o.at != at || o.tick != tick || !identical(o.motion, motion);
 }
 
-/// A path shape's outline in its tile, its own colour, fitted to the tile (its numbers are x and y in turn: the path
-/// is said in M, L, C and Z) and drawn by flutter_svg.
+/// A path shape's outline in its tile, in its own colour and fitted to the tile, drawn by flutter_svg.
+///
+/// The path uses M, L, C and Z commands, so its numbers alternate x and y.
 class _Outline extends StatelessWidget {
   const _Outline(this.part);
   final ({int colour, List<Float32List> copies, String outline, bool evenOdd, bool edge}) part;
@@ -187,7 +206,8 @@ class _Outline extends StatelessWidget {
         ? 'fill="none" stroke="#$hex" stroke-width="${side * .08}" stroke-linecap="round"'
         : 'fill="#$hex"${part.evenOdd ? ' fill-rule="evenodd"' : ''}';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14), // (above its name)
+      // Leaves room for the tile's name below.
+      padding: const EdgeInsets.only(bottom: 14),
       child: SvgPicture.string(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="${lo.$1 - pad} ${lo.$2 - pad} ${side + 2 * pad} ${side + 2 * pad}"><path d="${part.outline}" $paint/></svg>',
       ),

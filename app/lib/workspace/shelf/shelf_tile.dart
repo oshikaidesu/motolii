@@ -1,6 +1,7 @@
-// The shelves' one tile and one layout. A shelf's item (ShelfItem, as the engine's shelf line says it) is drawn by
-// ShelfTile in the form its shelf's row of shelfLooks names, and laid out by ShelfGrid: a grid, or the same grid one
-// column wide, which is the list. The press is the dock's DockHover.
+// The shelves' shared tile and grid layout.
+// ShelfTile draws one shelf item (ShelfItem, as the engine's shelf line describes it) in the form that the shelf's entry
+// in shelfLooks names. ShelfGrid lays tiles out as a grid, or as the same grid one column wide, which is the list.
+// Presses are handled by the dock's DockHover.
 import 'dart:async';
 import 'dart:io';
 
@@ -13,14 +14,19 @@ import '../dock/dock_widgets.dart';
 import '../state/state.dart';
 import 'effect_tiles.dart';
 
-export '../../bridge/motolii.dart' show ShelfItem; // (what a tile is given comes with the tile)
+// Re-exported so that whoever builds a tile gets the type it takes.
+export '../../bridge/motolii.dart' show ShelfItem;
 
-/// The three forms a tile has: its name in a bar under its picture (Effects, Program, Media), its name laid over its
-/// picture (Create), or its art being words set in a face (Fonts).
+/// The three forms a tile can take.
+///
+/// - [under]: the name in a bar under the image (Effects, Program, Media).
+/// - [over]: the name laid over the image (Create).
+/// - [words]: the art is text set in a typeface (Fonts).
 enum ShelfForm { under, over, words }
 
-/// How one shelf's tiles look: a row of [shelfLooks]. Every size is today's px, and grows with the skin's Size
-/// (Shape.z) where it is drawn; [cell] only when [sized].
+/// How one shelf's tiles look: an entry of [shelfLooks].
+///
+/// Sizes are in logical pixels and scale with the skin's size (Shape.z) where drawn; [cell] scales only when [sized].
 class ShelfLook {
   const ShelfLook(
     this.form, {
@@ -35,32 +41,44 @@ class ShelfLook {
     this.top = 0,
     this.eased = true,
   });
+
+  /// How the tile is laid out.
   final ShelfForm form;
 
-  /// The least width of a cell, of which there are at least [min] across (wsCols).
+  /// The minimum width of a cell. At least [min] cells fit across (wsCols).
   final double cell;
+
+  /// Whether [cell] scales with the skin's size.
   final bool sized;
+
+  /// The least number of cells across.
   final int min;
 
-  /// The picture's width over its height ([ShelfForm.under]), or the whole tile's [height] where that is fixed.
+  /// The image's width over its height for [ShelfForm.under]. Ignored where [height] fixes the whole tile's height.
   final double aspect;
+
+  /// The fixed height of the whole tile, or null to derive it from [aspect].
   final double? height;
 
-  /// As a row: its height, its picture's size, and the gap between the picture and the name.
+  /// In list form, the row's height.
   final double row;
+
+  /// In list form, the image's size.
   final Size rowArt;
+
+  /// In list form, the gap between the image and the name.
   final double rowGap;
 
-  /// The room over the first tiles.
+  /// The space above the first tiles.
   final double top;
 
-  /// Its fill goes to the next over [Mo.dur], not at once.
+  /// Whether the fill animates to its next colour over [Mo.dur] instead of changing at once.
   final bool eased;
 }
 
 const _square = ShelfLook(ShelfForm.under, cell: 84, sized: true, row: 22, rowArt: Size(18, 18), rowGap: 6, eased: false);
 
-/// Every shelf's look, by the shelf's name (DockCtx.shelf).
+/// The look of every shelf, keyed by the shelf's name (DockCtx.shelf).
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
   'Program': _square,
@@ -69,21 +87,26 @@ const shelfLooks = <String, ShelfLook>{
   'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
 };
 
-/// One item of a shelf, drawn as its shelf's [look] says; [list]: as a row. It draws whatever it is given, as
-/// ValuesCard draws whatever Params it is given. Where each part goes, by form:
+/// One item of a shelf, drawn as its shelf's [look] says, or as a row when [list] is true.
 ///
-/// under, in the grid: the picture ([art], else the item's picture moving, else the plain card), [over] laid on it
-/// (Positioned children of its Stack), a border over all while [lit], [picked] or under the pointer, then the name
-/// bar ([naming] in its place; [ink] and [bold] are the name's, while it is not picked). [small]: the picture alone.
+/// It draws whatever it is given, as ValuesCard draws whatever Params it is given. What goes where depends on the form.
 ///
-/// over, in the grid: [art] is a child of the tile's Stack as it is (Positioned.fill or Align), then [over], then the
-/// name at the bottom left ([naming] in its place).
+/// [ShelfForm.under] in the grid, from the bottom of the stack up:
+/// - the image: [art], else the item's animated image, else the plain card;
+/// - [over], laid on the image as Positioned children of its Stack;
+/// - a border over everything while [lit], [picked] or hovered;
+/// - the name bar, with [naming] in its place while a name is being edited. [ink] and [bold] style the name unless it is picked.
+/// With [small] only the image is drawn.
 ///
-/// under and over, as a row: the picture at the look's rowArt, the name ([ink] is its ink in a row too: none given,
-/// it is g91, not the bar's g76), [says] under it when given, then [after] at the row's end. [indent] is added at its left.
+/// [ShelfForm.over] in the grid: [art] is added to the tile's Stack as it is (Positioned.fill or Align), then [over],
+/// then the name at the bottom left, with [naming] in its place.
 ///
-/// words, as a card: [after] at the top right, [art] (the sample, set by the caller in its face), then [says] with
-/// [marks] after it on its line. As a row: [art] over [says] and [marks], then [after] at the row's end.
+/// [ShelfForm.under] and [ShelfForm.over] as a row: the image at the look's rowArt size, the name, [says] under it
+/// when given, then [after] at the end of the row. [ink] also colours the name in a row; if null, it is g91 rather than
+/// the bar's g76. [indent] is added on the left.
+///
+/// [ShelfForm.words] as a card: [after] at the top right, [art] (the sample, set by the caller in its typeface), then
+/// [says] with [marks] after it on the same line. As a row: [art] over [says] and [marks], then [after] at the end.
 class ShelfTile extends StatelessWidget {
   const ShelfTile(
     this.item,
@@ -119,12 +142,19 @@ class ShelfTile extends StatelessWidget {
   final String? says;
   final List<Widget> Function(bool hover)? over, after;
   final List<Widget> marks;
-  final Widget? naming; // (where its name is being written, in its place)
+
+  /// Shown in place of the name while the name is being edited.
+  final Widget? naming;
   final Color? ink;
   final double indent;
   final VoidCallback? onTap;
-  final VoidCallback? onApply; // (two presses, or carried to the stage and let go)
-  final ValueChanged<Offset>? onMenu, onMove; // (a right click, where on the screen; the pointer moving, where in the tile)
+
+  /// Called on a double-click, or when the tile is dragged to the preview and dropped.
+  final VoidCallback? onApply;
+
+  /// [onMenu] is called on a right-click with the position on the screen.
+  /// [onMove] is called as the pointer moves with the position inside the tile.
+  final ValueChanged<Offset>? onMenu, onMove;
   final ValueChanged<bool>? onHover;
 
   @override
@@ -143,7 +173,8 @@ class ShelfTile extends StatelessWidget {
     },
   );
 
-  // (in the grid always: played while in sight, TileMoving's own; small, on the map, under the pointer alone: 1,255 of 16 pictures are about 3 GB)
+  // In the grid the image always plays while in sight (TileMoving decides that). When [small] it plays only under the
+  // pointer, because decoding 1,255 animated images at 16 frames each takes about 3 GB.
   Widget? _image(bool h) => item.picture.isEmpty ? null : TileMoving(item.picture, playing: h || !small);
 
   Widget _box({double? height, required EdgeInsetsGeometry padding, AlignmentGeometry? alignment, required Color color, required Widget child}) => look.eased
@@ -161,6 +192,7 @@ class ShelfTile extends StatelessWidget {
             ColoredBox(color: WsT.card),
             ?(art?.call(h) ?? _image(h)),
             ...?over?.call(h),
+            // The border is drawn over everything but ignores presses, so the star under it can still be pressed.
             if (lit || picked || h)
               IgnorePointer(
                 child: DecoratedBox(
@@ -168,7 +200,7 @@ class ShelfTile extends StatelessWidget {
                     border: Border.all(color: lit || picked ? WsT.accentInk : Grey.g76, width: lit || picked ? 2 : 1),
                   ),
                 ),
-              ), // (drawn over all, taking no press: the star under it is pressed)
+              ),
           ],
         ),
       ),
@@ -178,12 +210,13 @@ class ShelfTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
           alignment: Alignment.centerLeft,
           color: dockFill(picked, h, WsT.card),
+          // A name wider than its tile is drawn smaller, never cut.
           child:
               naming ??
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(item.name, maxLines: 1, style: T.micro(dockInk(picked, ink ?? Grey.g76)).copyWith(fontWeight: bold ? FontWeight.w700 : null)),
-              ), // (a name wider than its tile is drawn smaller, never cut)
+              ),
         ),
     ],
   );
@@ -200,7 +233,7 @@ class ShelfTile extends StatelessWidget {
           child:
               naming ??
               AutoSizeText(
-                // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
+                // A long name wraps onto two lines at word boundaries, as Finder's icons do. It shrinks rather than break a word.
                 item.name,
                 maxLines: 2,
                 wrapWords: false,
@@ -305,11 +338,13 @@ class ShelfTile extends StatelessWidget {
   );
 }
 
-/// The shelves' one layout: [count] tiles, as many across as the room holds (wsCols, wsCell; or [cols]), only those
-/// in sight made (Flutter's own lazy grid: a Wrap made all 1,293 effects at each opening), then [footer]. [list]: the
-/// same grid one column wide, each row as high as the look's row. [small]: the tiles are their pictures alone.
-/// [shrinkWrap]: as high as what it holds, inside another list, which scrolls it. [pad]: the room round the tiles,
-/// where it is not the look's top alone.
+/// The shelves' shared layout: [count] tiles, as many across as fit (wsCols, wsCell) or [cols], then [footer].
+///
+/// Only the tiles in view are built, using Flutter's lazy grid. A Wrap built all 1,293 effects each time the shelf opened.
+/// - [list]: the same grid one column wide, each row as high as the look's row.
+/// - [small]: the tiles are their images alone.
+/// - [shrinkWrap]: only as high as its content, for use inside another list that does the scrolling.
+/// - [pad]: the space around the tiles. If null, only the look's top space is used.
 class ShelfGrid extends StatelessWidget {
   const ShelfGrid(
     this.look, {
@@ -351,7 +386,8 @@ class ShelfGrid extends StatelessWidget {
                     ? Shape.z(look.row)
                     : switch (look.height) {
                         final x? => Shape.z(x),
-                        null => wsCell(wide, across) / look.aspect + (small ? 0 : Shape.z(ShelfTile.bar)), // (a tile: its picture and its name)
+                        // A tile is its image plus its name bar.
+                        null => wsCell(wide, across) / look.aspect + (small ? 0 : Shape.z(ShelfTile.bar)),
                       },
               ),
               itemCount: count,
@@ -365,9 +401,11 @@ class ShelfGrid extends StatelessWidget {
   );
 }
 
-/// A tile's picture, its moving ones played there and back at 24 a second while [playing], so it neither steps nor jumps
-/// where it starts again (effect_tiles.dart); its still otherwise, and for a picture with none beside it. Keyed by when
-/// the file was written: a widget told the same file keeps the picture it had (an equal provider is not resolved again).
+/// A tile's image. An animated one plays forward and back at 24 frames a second while [playing], so it neither steps
+/// nor jumps where it loops (effect_tiles.dart). Otherwise, or when no animation sits beside the file, the still is shown.
+///
+/// It is keyed by the file's modification time, so a widget given the same file keeps its image. An equal image
+/// provider is not resolved again.
 class TileMoving extends StatefulWidget {
   const TileMoving(this.file, {super.key, required this.playing});
   final String file;
@@ -380,13 +418,15 @@ class TileMovingState extends State<TileMoving> {
   static final _way = [for (var k = 0; k < EffectTiles.moments.length; k++) k, for (var k = EffectTiles.moments.length - 2; k > 0; k--) k];
   int? _step;
   Timer? _clock;
-  bool _awake = true; // (its tab, its page shown: TickerMode, as an AnimationController's)
+  // False while its tab or page is hidden, via TickerMode as an AnimationController does.
+  bool _awake = true;
 
   void _follow() {
     final go =
         widget.playing &&
         _awake &&
-        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync(); // (the last: one drawn with fewer stands until it is drawn again)
+        // Check the last frame: a tile drawn with fewer frames stays as it is until it is drawn again.
+        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync();
     if (go == (_clock != null)) return;
     _clock?.cancel();
     _clock = go
@@ -398,7 +438,7 @@ class TileMovingState extends State<TileMoving> {
     if (!go) _step = null;
   }
 
-  /// Whether some of it is in sight: within the shelf it scrolls in, and the window (a long shelf's tiles out of it stand still).
+  /// Whether any part of it is visible, within both the shelf it scrolls in and the window. Tiles of a long shelf outside them stay still.
   bool _inSight() {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) return false;

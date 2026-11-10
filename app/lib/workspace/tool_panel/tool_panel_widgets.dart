@@ -1,5 +1,5 @@
-// The tool panel's shared small things: a tool's sticker, and the round
-// touchables the tool panel's bodies use (chip, icon button, readout).
+// Small parts shared by the tool panel: a tool's sticker, the strip over a tool's body,
+// a readout, and helpers for drawing text and dashed lines in a painter.
 import 'package:flutter/widgets.dart';
 
 import '../dock/dock_glyphs.dart';
@@ -8,9 +8,10 @@ import '../../skin/tokens.dart';
 import '../window/panes.dart';
 import '../state/state.dart';
 
+/// The tool named [name], or null if there is none.
 WsPane? panelTool(Ws ws, String name) => ws.tools.where((t) => t.name == name).firstOrNull;
 
-/// A tool's sticker: a flat tile of its hue with the glyph knocked out in dark ink.
+/// A tool's sticker: a flat tile in its colour with the glyph knocked out in dark ink.
 class ToolSticker extends StatelessWidget {
   const ToolSticker(this.name, {super.key, this.size = 16});
   final String name;
@@ -25,7 +26,8 @@ class ToolSticker extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
       child: g == null
-          ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent))) // (a tool of your own: its first letter)
+          // A tool the user made shows its first letter.
+          ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent)))
           : Glyph(g, size: size, color: WsT.onAccent),
     );
   }

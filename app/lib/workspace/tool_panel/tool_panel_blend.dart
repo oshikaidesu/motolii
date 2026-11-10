@@ -1,6 +1,7 @@
-// The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend: the ways the
-// inside names, each drawn as two discs and what their overlap becomes). A tap on a name picks it; an opened row shows the inside's Blending
-// card (blend, clip). The ways are the inside's (motolii_words); the window draws each.
+// The Tool Panel's Blend tool: lists the layers, front layer first, with the blend mode of each.
+// Each mode is drawn as two overlapping discs, and the overlap shows the resulting color.
+// Clicking a layer name selects it. Expanding a row shows every blend mode of that layer and the engine's Blending card (blend, clip).
+// The list of modes comes from the engine (motolii_words); this file only draws them.
 import '../../widgets/controls.dart' show Hov, IconPress;
 
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,7 @@ import 'tool_panel_widgets.dart';
 import '../state/state.dart';
 import '../workspace.dart' show LayerCards;
 
+/// The Blend tool: one row per layer, front layer first.
 class BlendTool extends StatelessWidget {
   const BlendTool({super.key});
   @override
@@ -23,6 +25,7 @@ class BlendTool extends StatelessWidget {
   }
 }
 
+/// One layer's row: name, current blend mode, and a button that expands the list of all modes.
 class _Row extends StatefulWidget {
   const _Row(this.l, {required this.picked});
   final WsLayer l;
@@ -63,6 +66,7 @@ class _RowState extends State<_Row> {
             ),
           ),
           if (ways.isNotEmpty) ...[
+            // The mode is also shown as text because two small icons can look alike.
             SizedBox(
               width: Shape.z(74),
               child: Text(
@@ -72,7 +76,7 @@ class _RowState extends State<_Row> {
                 textAlign: TextAlign.right,
                 style: T.micro(now == 'normal' ? Grey.g56 : Grey.g91),
               ),
-            ), // (its way, named: two ways can look alike small)
+            ),
             SizedBox(width: Shape.s(4)),
             IconPress(
               paintInk((ink) => _Way(now, ink)),
@@ -93,7 +97,8 @@ class _RowState extends State<_Row> {
         child: row,
       );
     }
-    // (every way, in After Effects' groups: normal; darker; lighter; contrast; difference; colour; the way under the hand named under)
+    // Group the modes as After Effects does: normal, darker, lighter, contrast, difference, color.
+    // A mode that is in none of the groups goes with normal.
     final groups = <List<String>>[[], [], [], [], [], []];
     for (final w in ways) {
       groups[_group(w)].add(w);
@@ -149,10 +154,10 @@ class _RowState extends State<_Row> {
   }
 }
 
-/// Which of After Effects' groups a way is in (0 normal, 1 darker, 2 lighter, 3 contrast, 4 difference, 5 colour).
+/// The After Effects group of a blend mode: 0 normal, 1 darker, 2 lighter, 3 contrast, 4 difference, 5 color.
 int _group(String w) => _order.indexWhere((g) => g.contains(w)).clamp(0, 5);
 
-/// After Effects' groups and its order within each (a way the inside names that is in none: with normal).
+/// The After Effects blend mode groups, and the order of the modes within each group.
 const _order = [
   ['normal'],
   ['darken', 'multiply', 'color_burn', 'linear_burn', 'darker_color'],
@@ -162,8 +167,8 @@ const _order = [
   ['hue', 'saturation', 'color', 'luminosity'],
 ];
 
-/// A way of lying on what is under, drawn as what it does: a warm disc under, a cool one over, where they meet the
-/// colour the inside draws for that way (check/blend_ways: the same two colours, as drawn).
+/// Draws a blend mode as two overlapping discs: a warm one below and a cool one above.
+/// The overlap uses the color the engine produces for that mode with the same two colors.
 class _Way extends CustomPainter {
   _Way(this.way, this.ink);
   final String way;

@@ -1,6 +1,7 @@
-// The Effects shelf: all the inside does to a picture, as tiles sorted by what each is for (the inside's labels as
-// chips, not who draws it): the effects a thing may be given (picked: its foot puts it on or takes it off), the
-// whole-screen effects (on the picked thing as the camera sees it, or on the stage, in their order), the motions.
+// The Effects shelf: every effect the engine can apply, as tiles sorted by what each is for.
+// - Layer effects go on the selected layer; the footer button adds or removes one.
+// - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
+// - Presets saved from a layer's values can be applied to another layer.
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
@@ -24,26 +25,18 @@ import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 import '../commands/context_menu.dart';
 
-// (each: what it is told by (a thing's own by its name; a file's by its file: two files may share a name, Halftone's
-//  three.js .wgsl and an AviUtl2 script), its name, what it is for, its tile, whether it is on, what two presses do
-//  (also what a drop on the stage does), what it says of itself)
-typedef _Fx = ({
-  String id,
-  String name,
-  String label,
-  Widget Function(bool small, ValueChanged<Offset>? menu) tile, // (menu: what a right click on it does)
-  bool on,
-  VoidCallback apply,
-  String said,
-});
+/// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
+/// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.
+typedef _Fx = ({String id, String name, String label, Widget Function(bool small, ValueChanged<Offset>? menu) tile, bool on, VoidCallback apply, String said});
 
 class EffectsShelf extends StatefulWidget {
   const EffectsShelf(this.c, {super.key});
   final DockCtx c;
 
-  /// The files' effects by their names, as After Effects' Effects & Presets lists each kind: the inside gives them by
-  /// file, so VIDVOX's capitals came before AbsentMotion's am_ files, two runs of A to Z (golf_noise.md ㊾). Once a shelf.
-  static final _byName = Expando<List<(String, ShelfItem)>>(); // (as shown, the inside's item)
+  /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
+  /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
+  /// Computed once per list of files.
+  static final _byName = Expando<List<(String, ShelfItem)>>(); // Each entry is the name as shown and the engine's item.
 
   @override
   State<EffectsShelf> createState() => _EffectsShelfState();
@@ -51,11 +44,11 @@ class EffectsShelf extends StatefulWidget {
 
 class _EffectsShelfState extends State<EffectsShelf> {
   final _menu = GlobalKey<WsMenuState>(), _places = GlobalKey<EffectPlacesState>();
-  final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles'); // (B goes to the tiles once one is pressed, not to the stage's brush)
+  final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles'); // Once a tile is pressed, B goes to the tiles instead of the stage's brush.
   DockCtx get c => widget.c;
-  String? _renaming; // (the file, added by the maker, whose name is being written in its tile: shelf_add.dart)
+  String? _renaming; // The file the user added whose name is being edited in its tile (shelf_add.dart).
 
-  // (its name written beside it, never its file: one of the library's has no Rename)
+  // Renames by the displayed name written beside the tile, never by the file name.
   void _renamed(String file, String was, String? to) {
     setState(() => _renaming = null);
     if (to == null || to.trim() == was) return;
@@ -74,28 +67,29 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final ws = c.ws, m = ws.inside;
     if (m == null) return DockEmpty(c.query);
     final on = ws.fxOf(ws.selected), screen = ws.screenFx, picked = int.tryParse(ws.selected ?? '') != null;
-    // (a thing's own effects, looks and motions go on the picked thing, or on a new board; the whole-screen ones on it, or on the stage)
-    // (put on with words typed: latched to them, the first for them next time, golf (94))
+    // A layer's own effects, presets and motions go on the selected layer, or on a new layer when none is selected.
+    // Whole-screen effects go on the selected layer, or on the stage.
+    // Applying while words are typed in the search box latches the effect to those words, so it comes first next time.
     VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
       final VoidCallback go = () {
-        // (a closure of its own, not a declaration's tear-off: what a carried tile is told by)
+        // A closure of its own rather than a tear-off, because a dragged tile is identified by it.
         DockTags.latch('Effects', c.query, id);
         if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
-        ws.tryOn(null); // (the one shown under the hand let go first: the put reads the document as it is)
+        ws.tryOn(null); // Stop previewing the hovered effect first: applying reads the document as it is.
         put();
       };
       carriedEffect[go] = id;
       return go;
     }
 
-    // (all of them whatever is picked, as After Effects' Effects & Presets panel lists them: nothing picked, those of a
-    //  thing go on a new board, Ws.fxToggle)
-    // (an effect file on the picked thing taken off by Remove, a press putting on another: Ws.screenPut)
+    // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
+    // With no layer selected, a layer effect goes on a new layer (Ws.fxToggle).
+    // A screen effect on the stage is taken off by Remove, and a press adds another (Ws.screenPut).
     VoidCallback? off(_Fx e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final look = shelfLooks['Effects']!;
-    // (laid over a tile's picture, none on a small one: ON (and its place among those on the stage) when it is on, why
-    //  it is seen to change nothing on the sample when it is (FOR SOUND, UNSUPPORTED…), the star once starred or under
-    //  the pointer)
+    // Overlays on a tile's image, none on a small tile.
+    // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
+    // and the star when starred or hovered.
     List<Widget> Function(bool) marks(String id, bool small, {String? on, String? same}) =>
         (h) => [
           if (on != null && !small)
@@ -109,7 +103,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               left: 3,
               bottom: 3,
               child: Chip(label: same, look: ChipLook.tag(Grey.g63, edge: true)),
-            ), // (the sample as it is: what it lacks there, or that the inside does not draw it yet)
+            ), // Shows why the sample is unchanged: what it lacks, or that the engine does not draw it yet.
           if (!small && (c.starred(id) || h))
             Positioned(
               right: 0,
@@ -117,10 +111,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
               child: DockStar(key: ValueKey('ws-star-$id'), on: c.starred(id), onTap: () => c.star(id)),
             ),
         ];
-    // (what the inside said of each, by the id it is told by: a thing's own by its name, a file's by its file)
+    // What the engine said about each effect, by id: a layer effect by its name, a file effect by its file.
     final seen = <String, ShelfItem>{};
     String pic(String id) => seen[id]?.picture ?? '';
-    // (one item of the three listings: only what truly differs by listing is switched on its [from])
+    // Builds one item for any of the three listings; only what really differs by listing is switched on its [from].
     _Fx fx(String name, ShelfItem i) {
       final thing = i.from == 'thing', screened = i.from == 'screen', id = thing ? i.name : i.id;
       final lit = thing ? on.contains(id) : screened && screen.contains(id);
@@ -148,13 +142,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
           look,
           key: small || thing ? null : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
           small: small,
-          art: thing && i.picture.isEmpty ? _painted(Draw((c, _) => _fxLook(c, name), name)) : null, // (without a picture, its small drawing)
+          art: thing && i.picture.isEmpty ? _painted(Draw((c, _) => _fxLook(c, name), name)) : null, // Without an image, its small drawing.
           picked: c.sel == id,
           lit: lit,
           onTap: () => c.pick(id),
           onApply: apply,
           onMenu: menu,
-          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // (what it does shown on the picked thing meanwhile, Ws.tryOn)
+          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (Ws.tryOn).
           naming: screened && _renaming == id ? ShelfNameField(name, (to) => _renamed(id, name, to)) : null,
           over: marks(
             id,
@@ -166,18 +160,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
       );
     }
 
-    // (the files' effects by their names, one the maker added and renamed by the name written beside it, shelf_add.dart)
+    // File effects sorted by name. One the user added and renamed shows the name written beside it (shelf_add.dart).
     final screens = m.items('screen');
     final lined = <(String, ShelfItem)>[
       for (final i in m.items('thing')) (i.name, i),
       ...(EffectsShelf._byName[screens] ??= ([for (final i in screens) (shelfNamed(i.id) ?? i.name, i)]
         ..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
-      // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
+      // A saved preset by its name (Save Look). Applying it gives the selected layer its values, effects and keyframes.
       for (final (_, f) in m.presets)
         if (m.item(f) case final i?) (i.name, i),
     ];
     final every = <_Fx>[
-      // (first: an empty one, its code open on its card to paste an ISF effect into: empty_fx.dart)
+      // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_fx.dart).
       (
         id: 'empty:effect',
         name: 'Empty',
@@ -197,12 +191,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ),
       ),
       for (final (n, i) in lined) fx(n, i),
-      // (no motions: they are expressions, on Create's Expression group: dock_make_3.dart)
+      // There are no motions here: they are expressions, in Create's Expression group.
     ];
-    // (by its name, or by what it does in its maker's words, as Alight Motion's search reads the descriptions; when that
-    //  finds nothing, a word typed wrong or in part, the nearest five by RapidFuzz (the inside's find, the user's choice),
-    //  as a search engine's "Did you mean" comes when the words as typed find nothing)
-    // (and by what it is, read from it, as the other shelves' tags are found: DockTags, each word on its own; golf (92))
+    // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
+    // It also matches the tags read from the effect (DockTags), each word on its own.
+    // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
     Set<String> tagsOf(String id) => DockTags.of('Effects', id, seen[id]?.tags ?? const {});
     bool found(String q, _Fx e) =>
         q.isEmpty ||
@@ -229,7 +222,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         if (id != first) ...every.where((e) => e.id == id).take(1),
     ];
     final byId = {for (final e in all) e.id: e}, recent = [for (final id in effectRecent()) ?byId[id]];
-    // (the decks: what the hand put in and what their words find, as one bundle (EffectDeck))
+    // The decks: what the user put in and what their words find, as one EffectDeck.
     final decks = effectDecks(),
         deckIds = {
           for (final d in decks)
@@ -243,13 +236,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
     for (final e in every) {
       if (effectPack(e.id) case final p?) packs[p] = (packs[p] ?? 0) + 1;
     }
-    // (every folder, one effect in it too, as sashimono-edit's add menu gives each folder its own submenu, add_menu.py:280)
+    // Every pack folder is listed, even with one effect, as sashimono-edit's add menu gives each folder its own submenu (add_menu.py:280).
     final deck = decks.where((d) => '@${d.name}' == c.mem.fxPlace).firstOrNull;
     final place = deck != null || !c.mem.fxPlace.startsWith('@') ? c.mem.fxPlace : 'All', pack = place.startsWith('/') ? place.substring(1) : null;
-    // (on the map the map is all of them, the deck picked beside it to put in and take out: Hearthstone's Collection
-    //  Manager, the collection and the deck being made side by side; elsewhere a deck shows what it holds as the tiles)
+    // On the map, the map shows all effects and the selected deck sits beside it to add and remove effects, like Hearthstone's
+    // Collection Manager. Elsewhere a deck shows what it holds as tiles.
     final building = c.mem.mapped.contains('Effects') && (deck != null || place == '★');
-    // (the last put on the newest first, the Fonts shelf's Recent, as Alight Motion keeps forty, EffectBrowser.kt:117)
+    // Recent lists the last effects applied, newest first, like the Fonts shelf's Recent. Alight Motion keeps forty (EffectBrowser.kt:117).
     final here = place == 'Recent'
         ? recent
         : [
@@ -271,19 +264,19 @@ class _EffectsShelfState extends State<EffectsShelf> {
         read[t] = (read[t] ?? 0) + 1;
       }
     }
-    // (and the tags read from them, the most first, as the Fonts shelf's tag chips (dock_fonts.dart), each with the #
-    //  a tag is typed with (DockTags), a kind of the same word being another thing (VIDVOX's Feedback kind is not the
-    //  kept passes read); transition not twice, the kind Transition being read the same way (isf.cpp): Shadertoy's
-    //  filters, read from the shaders, golf (92))
+    // Tags read from the effects, most common first, as the Fonts shelf's tag chips do (dock_fonts.dart).
+    // Each shows the # that is typed to search for it (DockTags). A kind with the same word is a different thing:
+    // VIDVOX's Feedback kind is not the feedback passes read from the shader.
+    // "transition" is left out because the Transition kind is read the same way (isf.cpp). Shadertoy's filters are read from the shaders.
     final tagChips = [
       for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value)))) MapEntry('#${t.key}', t.value),
-    ]; // (all, the most first: the row slides, as the kinds after them are all there)
+    ]; // Most common first; the row scrolls, since all the kinds follow it.
     final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) ? c.chip : 'All';
     final shown = [
       for (final e in here)
         if (chip == 'All' || (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip)) e,
     ];
-    // (one a deck holds and the shelf does not: its name kept, marked; not an effect of a thing, which waits for a thing)
+    // An effect the deck holds but the shelf does not: its name is kept and marked. Layer effects are excluded, since they wait for a layer.
     final known = {...every.map((e) => e.id), ...m.layerEffects.map((e) => e.$1), ...m.presets.map((e) => e.$2), ...m.animators.map((e) => e.$2)};
     if (deck != null && deck.things.any((t) => !known.contains(t.id))) deckSettle(deck, known);
     final lost = <_Fx>[
@@ -316,13 +309,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
               ),
             ),
     ];
-    // (ten in sight over the tiles while nothing narrows them, as Alight Motion's effect browser opens on its last ten,
-    //  EffectBrowser.kt:217: a list out of sight is not gone back to, Bergman's bookmarks, 32 of 41 by the bar always in sight)
+    // Up to ten recent effects show above the tiles while nothing narrows the list, as Alight Motion's effect browser opens on its last ten
+    // at EffectBrowser.kt:217. A list out of sight is not revisited, so the recent ones stay in view.
     final inSight = place == 'All' && chip == 'All' && c.query.isEmpty && !c.mem.mapped.contains('Effects')
         ? recent.take(10).toList()
-        : const <_Fx>[]; // (on the map the map alone, as XO's Space: the recent box took half the shelf)
+        : const <_Fx>[]; // On the map only the map shows, as in XO's Space: the recent box took half the shelf.
     final listed = building ? shown : [...shown, ...lost];
-    // (what the deck holds, in the order put in, then what its words find; one not here last)
+    // What the deck holds in the order added, then what its words find. Effects not on this machine come last.
     final holds = place == '★'
         ? {for (final id in c.mem.starred) id}
         : deck == null
@@ -333,8 +326,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
     });
-    // (where an effect goes by one press, however many decks there are: the target deck, else the Favorites, and a word
-    //  says where it went, as Lightroom Classic's Add to Target Collection (B), the Quick Collection until one is set)
+    // Where one press sends an effect, however many decks exist: the target deck, else Favorites. A notice says where it went.
+    // Lightroom Classic does the same with Add to Target Collection (B), using the Quick Collection until a target is set.
     final to = effectTarget(), aim = to != null && deckIds.containsKey(to) ? to : null;
     bool aimed(_Fx e) => aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
     void target(_Fx e) {
@@ -343,8 +336,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ws.notice = '${was ? 'Removed from' : 'Added to'} ${aim?.name ?? 'Favorites'}';
     }
 
-    // (what is done to an effect is on the effect, by a right click or by the foot's three dots: Ableton's right click on
-    //  an item, the target's one row, New at its end; Go to Album)
+    // Actions on an effect are in its right-click menu and the footer's three-dot button, as in Ableton's item menu.
     void menuOn(_Fx e, Offset at) {
       final box = _menu.currentContext?.findRenderObject() as RenderBox?;
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
@@ -361,8 +353,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
 
     Widget tile(_Fx e, bool small) => e.tile(small, (at) => menuOn(e, at));
-    // (one the deck holds, under its row: Hearthstone's deck list, each card a strip of its picture and its name; a
-    //  press picks it, two put it on, carried it goes where it is let go, a right click its menu, as its tile)
+    // A strip for an effect the deck holds, under the deck's row, like a card in a Hearthstone deck list: its image and name.
+    // A click selects it, a double-click applies it, a drop applies it where released, and a right-click opens its menu, as on its tile.
     Widget strip(_Fx e) => ShelfTile(
       ShelfItem(e.id, e.name, picture: pic(e.id)),
       look,
@@ -375,8 +367,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
       onApply: e.apply,
       onMenu: e.label == 'Not here' ? null : (at) => menuOn(e, at),
     );
-    // (a deck's picture: the pictures of its first four, two by two, or of its first alone while it holds fewer, as
-    //  Spotify makes a playlist's cover)
+    // A deck's cover, as Spotify makes a playlist's cover: the images of its first four effects in a 2x2 grid,
+    // or the first one alone while it holds fewer than four.
     Widget? cover(Iterable<String> ids) {
       final f = [
         for (final id in ids)
@@ -421,7 +413,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       covers: {for (final d in decks) '@${d.name}': ?cover(deckIds[d]!)},
       put: (d, id) {
         if (every.where((e) => e.id == id).firstOrNull case final e? when !(deckIds[d]?.contains(id) ?? false)) {
-          put(d, e); // (a deck made a moment ago is not in the table yet: Save Favorites…)
+          put(d, e); // A deck made a moment ago is not in the table yet (Save Favorites...).
         }
       },
     );
@@ -437,7 +429,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           ],
           active: chip,
           onPick: c.pickChip,
-        ), // (the tags read first, as Shadertoy's filters head its results: the kinds are many, a hundred and more, the most first as the tags)
+        ), // Tags first, as Shadertoy's filters head its results; the kinds follow, since there are over a hundred.
         if (inSight.isNotEmpty)
           ShelfGrid(
             look,
@@ -448,16 +440,16 @@ class _EffectsShelfState extends State<EffectsShelf> {
             pad: EdgeInsets.only(top: WsT.gutter, bottom: WsT.gutter),
             count: inSight.length,
             tile: (i) => tile(inSight[i], true),
-          ), // (as Alight Motion's box of two rows; one until a sixth: in the window a row with one tile stood empty over the shelf)
+          ), // Two rows as in Alight Motion's box, one row until a sixth effect: a single tile in a row looked empty over the shelf.
         Expanded(
           child: CallbackShortcuts(
-            // (B puts the one picked where its menu's one row would, as in Lightroom's Library grid)
+            // B runs the target action on the selected effect, like the menu's single row, as in Lightroom's Library grid.
             bindings: {const SingleActivator(LogicalKeyboardKey.keyB): () => sel == null ? null : target(sel)},
             child: Focus(
               focusNode: _tileKeys,
               child: TapRegion(
                 behavior: HitTestBehavior.translucent,
-                onTapInside: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(), // (the map takes the keys itself)
+                onTapInside: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(), // The map handles the keys itself.
                 child: listed.isEmpty
                     ? DockEmpty(
                         c.query,
@@ -469,11 +461,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
                       )
                     : c.mem.mapped.contains('Effects')
                     ? ListenableBuilder(
-                        // (laid out by the tiles there are, and again once all are drawn: those drawn meanwhile join it then)
+                        // Laid out by the tiles there are, and again once all are drawn; tiles drawn in between join then.
                         listenable: EffectTiles.progress,
                         builder: (context, _) {
                           final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
-                          final clip = dockModel('clip_b32'); // (by how CLIP sees each moment, once it is made; else by tiny colours)
+                          final clip = dockModel('clip_b32'); // Placed by how CLIP sees each tile's frames once the model is made, else by tiny colours.
                           final drawn = [
                             for (final e in every)
                               if (pic(e.id).isNotEmpty) e,
@@ -510,7 +502,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         children: [
           Expanded(
             child: LayoutBuilder(
-              // (as the Media shelf's tree: beside the tiles by the room, over them with its height the hand's)
+              // As the Media shelf's tree: beside the tiles when wide, above them with a height the user sets when narrow.
               builder: (context, box) => box.maxWidth >= 440
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -526,7 +518,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (c.mem.fxListOpen || building) // (a deck on the map, what it holds under it, at the list's height)
+                        if (c.mem.fxListOpen || building) // A deck on the map, with what it holds under it, at the list's height.
                           DockResizable(
                             height: c.mem.fxListHeight,
                             max: box.maxHeight - 160,
@@ -539,18 +531,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
                           SizedBox(
                             height: Shape.z(22),
                             child: list(true),
-                          ), // (the whole list over the tiles left 3.3 rows of them, 1.7 with the foot open, of the 5.4 and 3.8 before it)
+                          ), // One row for the list leaves room for tiles: the whole list left 3.3 rows of tiles, or 1.7 with the footer open.
                         Expanded(child: tiles),
                       ],
                     ),
             ),
           ),
-          if (sel != null && pic(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
+          if (sel != null && pic(sel.id).isNotEmpty) // A large moving sample of the selected effect, as Alight Motion's effect browser opens.
             SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(pic(sel.id), playing: true)),
           if (sel != null)
             DockFooter(
               title: sel.name,
-              meta: sel.label.isEmpty ? sel.said : '${sel.label} · ${sel.said} · double-click to add', // (one press picks, two put it on)
+              meta: sel.label.isEmpty ? sel.said : '${sel.label} · ${sel.said} · double-click to add', // A click selects, a double-click applies.
               action: sel.on ? 'Remove' : 'Add',
               fresh: !picked,
               onAction: off(sel) ?? sel.apply,
@@ -561,23 +553,23 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   onTap: () => menuOn(sel, (b.findRenderObject() as RenderBox).localToGlobal(Offset.zero)),
                 ),
               ),
-            ), // (none picked: it goes on a board of its own)
+            ), // With nothing selected, the effect goes on a layer of its own.
         ],
       ),
     );
   }
 }
 
-/// A tile's picture drawn by the window, where the inside has none for it: a thing's effect its small drawing, Empty its plus.
+/// A tile's image drawn by the app where the engine has none: a layer effect gets its small drawing, Empty gets its plus.
 Widget Function(bool) _painted(CustomPainter p) =>
     (_) => FittedBox(
       child: CustomPaint(size: const Size(18, 16), painter: p),
     );
 
-/// The Effects map's numbers for [ids], their tiles' moments read from [homes]: how each looks (CLIP's at three moments
-/// of its sixteen: how it moves too; or their tiny colours) beside what it is for, the shelf's own word ([kinds]: the
-/// inside's label, as an ISF's CATEGORIES or its startImage, endImage and progress say it, isf.cpp), that weighted
-/// twice: each kind an island, the alike near within it, as XO's Space keeps each drum type's colour together.
+/// The Effects map's coordinates for the effects whose tile frames are read from [homes].
+/// An effect is placed by how it looks, from CLIP at three of its sixteen frames so motion counts (or tiny colours), and what it is for ([kinds], the engine's label, such as an ISF's CATEGORIES or its startImage, endImage and progress, see isf.cpp).
+/// The kind is weighted twice as much as the look: each kind becomes an island with similar effects near each other,
+/// as XO's Space keeps each drum type's colour together.
 Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kinds, List<String> homes) async {
   final look = [
     for (final f in homes)
@@ -596,17 +588,17 @@ Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kind
   );
 }
 
-/// Joined: the document's value an effect is, and what the picked thing has for it now.
+/// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
 String _said(Ws ws, String name) {
   final m = ws.inside!,
       v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
-      t = int.tryParse(ws.selected ?? ''); // (the shelf shows only what the inside does)
+      t = int.tryParse(ws.selected ?? ''); // The selected layer's id, or null when none is selected.
   final now = t == null ? '' : m.word(t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';
 }
 
-/// What the inside's path effects do to a square, drawn small, where the shelf has no picture for them: a path half
-/// drawn, a dot moving along one. (An effect the window does not know has no picture.)
+/// Small drawings of what the engine's path effects do to a square, for effects the shelf has no image for:
+/// a half-drawn path, and a dot moving along one. An effect the app does not know has no drawing.
 void _fxLook(Canvas c, String name) {
   const ink = Color(0xFFE0A35A), r = Rect.fromLTWH(4, 3, 10, 10);
   switch (name) {

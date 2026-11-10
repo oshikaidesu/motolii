@@ -9,18 +9,24 @@ import 'package:motolii/skin/tokens.dart';
 
 import '../../widgets/number_field.dart';
 
-/// The Inspector's side of a number ([NumberField] has the hands and the typing): the document it reads and writes, the
-/// range it holds a value to, the fields picked with it, its key mark and what a right click on it offers.
+/// The Inspector's side of a number field.
+///
+/// [NumberField] handles dragging and typing. This state adds the document it reads and writes, the range it holds the value to,
+/// multi-selection of fields, the keyframe mark and the right-click menu.
 class NumFieldState extends State<NumField> {
   final _menu = ContextMenuController();
   Offset _menuAt = Offset.zero;
-  static int rightAt = -1; // (the press a field took for its menu: the row round it leaves it)
+
+  /// The pointer id of the right-click press that opened a field's menu, so the surrounding row does not handle it too.
+  static int rightAt = -1;
 
   Ctx get _x => Ctx.read(context);
   Param get _p => widget.p;
-  bool get _turns => _p.look == ParamLook.angle; // (counted in turns past one, as After Effects' angle: 1x 30°)
 
-  // (its own number at a new moment, told alone: the inspector is not built again for it)
+  // An angle past 360 degrees is shown as full turns, as in After Effects: 1x 30°.
+  bool get _turns => _p.look == ParamLook.angle;
+
+  // Rebuilds only this field when its value changes, not the whole Inspector.
   ValueListenable<int>? _watch;
   void _retold() {
     if (mounted) setState(() {});
@@ -29,8 +35,8 @@ class NumFieldState extends State<NumField> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final w = _x.doc.watch(widget.id),
-        k = _x.doc.watch('key:${widget.id}'); // (and its key mark's news: showAt tells it, so the mark is drawn as the document says it, not a step behind)
+    // The key watcher makes the keyframe mark follow the document immediately instead of one step behind.
+    final w = _x.doc.watch(widget.id), k = _x.doc.watch('key:${widget.id}');
     if (w != _watch) {
       _watch?.removeListener(_retold);
       _watch = w..addListener(_retold);
@@ -51,27 +57,30 @@ class NumFieldState extends State<NumField> {
     super.dispose();
   }
 
-  // (Param.open: min and max are how far a scrub goes; a number typed goes past them, only a min of 0 or more holding
-  //  (After Effects' slider and valid ranges, PF_FloatSliderDef). validMin, validMax: how far a number typed goes when it is
-  //  less than open's all: PF_FloatSliderDef's valid_min and valid_max, its slider_min and slider_max being min and max.)
+  // Limits a value to its range.
+  // With Param.open, min and max only bound dragging, and a typed number may go past them. The one limit kept is a min of 0 or more.
+  // Otherwise validMin and validMax bound typed numbers. They follow After Effects' PF_FloatSliderDef, whose valid_min and
+  // valid_max are separate from its slider_min and slider_max, which correspond to min and max here.
   double _clamp(double v) => math.min(
     _p.open ? double.infinity : _p.validMax ?? _p.max ?? double.infinity,
     math.max(_p.open && (_p.min ?? 0) < 0 ? double.negativeInfinity : _p.validMin ?? _p.min ?? double.negativeInfinity, v),
   );
-  // (its card let past its ends by a right click, or Option held now: PastRange)
+  // Whether the card allows values past the slider's ends. See [PastRange].
   bool get _pastCard => switch (PastRange.of(context)) {
     final f? => _x.doc.b[f] ?? false,
     _ => false,
   };
-  bool get _going => _pastCard || HardwareKeyboard.instance.isAltPressed; // (Option goes past the ends)
 
-  // (a scrub stops at the knob's ends, or where a number typed past them already lies; an angle's goes on as far as one
-  //  typed, as After Effects' angle scrubs, and so does one going past)
+  // Holding Option also allows going past the ends.
+  bool get _going => _pastCard || HardwareKeyboard.instance.isAltPressed;
+
+  // A drag stops at the slider's ends, or at the current value if a typed number already lies beyond them.
+  // An angle drags as far as a typed one may go, as in After Effects, and so does a drag that is allowed past the ends.
   double _scrubbed(double v, double start) => _turns || _going || (!_p.open && _p.validMin == null && _p.validMax == null)
       ? _clamp(v)
       : math.min(math.max(_p.max ?? double.infinity, start), math.max(math.min(_p.min ?? double.negativeInfinity, start), v));
 
-  // contract: with several fields picked, typing sets them all; a scrub or nudge moves them all by the same amount.
+  // With several fields selected, typing sets them all to the value, while a drag or nudge moves them all by the same amount.
   void _apply(double v, {bool same = false}) {
     final c = _clamp(v);
     final doc = _x.doc;
@@ -83,7 +92,7 @@ class NumFieldState extends State<NumField> {
     _x.doc.set(widget.id, c);
   }
 
-  // (what a right click on it offers: its keys as its mark does, the rest of the row's menu on the row's own label)
+  // The right-click menu: the keyframe actions match the mark. The rest of the row's menu is on the row's own label.
   List<(String, String, VoidCallback)> _menuItems() {
     final doc = _x.doc, id = widget.id, ks = doc.keys[id] ?? _keys;
     return [
@@ -104,7 +113,8 @@ class NumFieldState extends State<NumField> {
         },
       ),
       if (PastRange.of(context) case final f?)
-        ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)), // (its whole card)
+        // This toggles the flag for the whole card.
+        ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)),
       if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
       if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
       if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(id, KeyS.off)),
@@ -114,9 +124,8 @@ class NumFieldState extends State<NumField> {
   void _reset() {
     final doc = _x.doc, id = widget.id;
     if (id.startsWith('v_') && doc.onCardReset != null) {
-      doc.onCardReset!([
-        id.substring(2),
-      ]); // (as it comes: what is said of it forgotten, its card's own Reset; the inspector's default is only what it was when the card was made)
+      // Use the card's own Reset, which restores the effect's real default. The Inspector's default is only the value from when the card was made.
+      doc.onCardReset!([id.substring(2)]);
     } else {
       doc.resetIds([id]);
     }
@@ -125,7 +134,7 @@ class NumFieldState extends State<NumField> {
   bool _inGlyph(Offset p, double w) =>
       widget.glyph != null && widget.glyphOwnsPointer && p.dx > w - Pop.glyph - Pop.tilePad && (widget.glyphTall || p.dy < Pop.glyph + Pop.tilePad);
 
-  // (whether the key mark is drawn, and what it says: a press near it keys the value there, or takes the key here away)
+  // Whether the keyframe mark is drawn, and its state. Pressing the mark adds a keyframe at this time or removes it.
   bool _marked = false;
   KeyS _keys = KeyS.off;
 
@@ -134,10 +143,11 @@ class NumFieldState extends State<NumField> {
     return box != null && (box.localToGlobal(Offset.zero) & box.size).contains(at);
   }
 
-  // (a press before it is a scrub: true, all this side's; false, a pick and the keys; null, the field's own)
+  // Handles a pointer-down before the field starts a drag.
+  // True means handled here, false means handled as a selection, and null leaves it to the field.
   bool? _press(PointerDownEvent e, double w) {
     if (e.buttons == kSecondaryButton) {
-      // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
+      // A right click on a value opens its menu, as in After Effects and Blender. It works for every number, with the mouse alone.
       rightAt = e.pointer;
       _menuAt = e.position;
       _menu.show(
@@ -148,14 +158,17 @@ class NumFieldState extends State<NumField> {
           of: widget.id,
           items: _menuItems(),
           hide: _menu.remove,
-          keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position), // (right pressed here again: its place, as a Mac's)
+          // A second right press on this field keeps the menu open, as on macOS.
+          keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position),
         ),
       );
       return true;
     }
     if (_marked && e.buttons == kPrimaryButton && (e.localPosition - Offset(w - Pop.tilePad - 3, Pop.tile - 10)).distance <= 9) {
-      final now = _x.doc.keys[widget.id] ?? _keys; // (as the document says it now: the field may not have been built since an undo)
-      _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at); // (a press on the mark keys this frame, or takes that key away)
+      // Read the document's current state, because the field may not have been rebuilt since an undo.
+      final now = _x.doc.keys[widget.id] ?? _keys;
+      // Pressing the mark adds a keyframe at this time or removes it.
+      _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at);
       return true;
     }
     if (_inGlyph(e.localPosition, w) || e.buttons != kPrimaryButton) return true;
@@ -174,13 +187,14 @@ class NumFieldState extends State<NumField> {
     return KeyEventResult.handled;
   }
 
-  // (the number typed, or a sum: After Effects', Figma's and Blender's; one begun with * or / goes on from the value as it is)
+  // Parses typed text as a number or an expression, as After Effects, Figma and Blender do.
+  // Text starting with * or / continues from the current value.
   double? _typed(String said) {
     final cur = _x.doc.get(widget.id);
     return double.tryParse(said) ?? _x.doc.onSum?.call(said.startsWith(RegExp(r'[*/]')) && cur != null ? '$cur$said' : said);
   }
 
-  // (past what it vouches for, or going there under the hand: drawn the other way about)
+  // Whether the value is outside the range the card vouches for, or is being dragged there. It is drawn inverted.
   bool _past(bool live) {
     final v = _x.doc.get(widget.id), min = _p.min, max = _p.max;
     return (!_turns && min != null && max != null && v != null && (v < min || v > max)) ||
@@ -190,9 +204,9 @@ class NumFieldState extends State<NumField> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    // contract: animated = a dim dot, keyed at the playhead = a lit dot (the automation blip, not a column). A value
-    // that takes keys shows its mark always, hollow when it has none, and a press on it keys it there (Alight Motion's
-    // diamond beside each value, After Effects' and Premiere Pro's stopwatch: golf_noise.md (59)).
+    // A dim dot means animated, and a lit dot means a keyframe at the playhead. A value that can be keyed always shows its mark,
+    // hollow when it has no keyframes, and pressing the mark adds a keyframe there.
+    // This follows Alight Motion's diamond beside each value and the stopwatch in After Effects and Premiere Pro.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyS.off || x.doc.keys.containsKey(widget.id);
     return NumberField(
@@ -203,7 +217,8 @@ class NumFieldState extends State<NumField> {
       typeOnTap: false,
       perPx: _p.perPx,
       step: _p.dec > 0 ? _p.step * 10 : 1,
-      reach: (to, from) => from == null ? _clamp(to) : _scrubbed(to, from), // (both by _clamp's ends: After Effects' PF_FloatSliderDef)
+      // Both limits come from _clamp's ends, following After Effects' PF_FloatSliderDef.
+      reach: (to, from) => from == null ? _clamp(to) : _scrubbed(to, from),
       parse: _typed,
       onGrab: () => _x.doc.beginGesture(),
       onChange: _apply,

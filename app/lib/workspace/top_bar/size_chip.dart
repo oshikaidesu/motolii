@@ -1,42 +1,49 @@
-// The top bar's picture size: the chip that shows it, scrubbed or typed, and the shapes and heights it offers.
+// The top bar's size chip: shows the project size, lets the user scrub or type it, and offers common shapes and resolutions.
 part of 'top_bar.dart';
 
-/// The document's size, beside the others: pressed twice it is written over (a width alone keeps the shape; width and
-/// height, as 1080x1920, set both), scrubbed sideways it moves the width 1% every 3 px, the shape kept, and
-/// the document is opened again at it when the hand lets go.
+/// Shows the project size.
+///
+/// A click opens the project box. A double-click turns the chip into a text field: a width alone keeps the aspect
+/// ratio, and "1080x1920" sets both. Dragging sideways changes the width by 1% per 3 px with the aspect ratio kept,
+/// and the project is reopened at the new size when the drag ends.
 class _SizeChip extends StatefulWidget {
   const _SizeChip();
   @override
   State<_SizeChip> createState() => _SizeChipState();
 }
 
-/// Alight Motion's new-project box, its shapes and its resolutions (each the shorter side, as its 2160p to 270p are):
-/// a shape and a resolution pressed is the document's size, opened again at it.
+/// The shapes and resolutions of Alight Motion's new-project box.
+///
+/// A resolution is the length of the shorter side, as in its 2160p to 270p. Choosing a shape and a resolution sets
+/// the project size and reopens the project at it.
 const sizeShapes = [('16:9', 16, 9), ('9:16', 9, 16), ('4:5', 4, 5), ('1:1', 1, 1), ('4:3', 4, 3)];
 
 const sizeResolutions = [2160, 1440, 1080, 720, 540, 360, 270];
 
 (int, int) sizeOf((String, int, int) shape, int p) {
   final (_, a, b) = shape;
-  int even(double v) => (v / 2).round() * 2; // (an even number of pixels: H.264 asks it)
+  // H.264 needs an even number of pixels.
+  int even(double v) => (v / 2).round() * 2;
   return a >= b ? (even(p * a / b), p) : (p, even(p * b / a));
 }
 
-/// A new document asks for its size, as Alight Motion's new-project box comes first: the size chip's box opened once the
-/// window shows the new one (true until it is).
+/// Set to true to open the size box once the window shows a new project, as Alight Motion's new-project box comes first.
+/// The chip resets it to false when it opens the box.
 final wsAskSize = ValueNotifier<bool>(false);
 
 class _SizeChipState extends State<_SizeChip> {
   final _box = OverlayPortalController(), _boxKeys = FocusNode(debugLabel: 'document box');
   bool _editing = false;
-  double? _scrub; // (the width being scrubbed to)
+  // The width the user is dragging to, or null when not dragging.
+  double? _scrub;
   double _dx = 0;
 
   @override
   void initState() {
     super.initState();
     wsAskSize.addListener(_asked);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _asked()); // (asked while the window was opening the new one)
+    // The request may have been made while the window was still opening the new project.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
   }
 
   void _asked() {
@@ -85,14 +92,12 @@ class _SizeChipState extends State<_SizeChip> {
         ),
       );
     }
-    // (pressed once: the shapes and resolutions; the one it is now lit, a shape of its own said as it is)
+    // The box offers shapes and resolutions. The current one is highlighted, or a chip of its own if the size matches no shape.
     final short = math.min(w0, h0).round(), now = sizeShapes.where((s) => sizeOf(s, short) == (w0.round(), h0.round())).firstOrNull;
-    // (Esc and ⌘. cancel, as the name box's above: a Mac dialog's Cancel; it has no field to hold the keys, so it holds
-    //  them itself: golf_noise.md (75))
+    // Esc and Cmd+. cancel, as a Mac dialog's Cancel does. The box has no text field to receive the keys, so it holds focus itself.
     Widget box(BuildContext _) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _box.isShowing && !_boxKeys.hasFocus ? _boxKeys.requestFocus() : null,
-      ); // (the keys taken from whatever had them as it opens)
+      // Take keyboard focus from whatever had it when the box opens.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _box.isShowing && !_boxKeys.hasFocus ? _boxKeys.requestFocus() : null);
       return CallbackShortcuts(
         bindings: {const SingleActivator(LogicalKeyboardKey.escape): _box.hide, const SingleActivator(LogicalKeyboardKey.period, meta: true): _box.hide},
         child: Focus(
@@ -130,7 +135,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final s in sizeShapes) Chip(key: ValueKey('size-${s.$1}'), label: s.$1, on: s == now, onTap: () => _to(ws, sizeOf(s, short))),
-                          if (now == null) Chip(label: '$shownW:$shownH', on: true, onTap: () {}), // (its own: a size typed)
+                          if (now == null) Chip(label: '$shownW:$shownH', on: true, onTap: () {}), // A size the user typed.
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
@@ -150,7 +155,7 @@ class _SizeChipState extends State<_SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      // (Alight Motion's ten, as AbsentMotion's NewProjectSheet lists them: the document seen only at its frames, written at them too)
+                      // The ten frame rates of Alight Motion's new-project sheet.
                       Text('Frame rate', style: T.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
@@ -172,10 +177,8 @@ class _SizeChipState extends State<_SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text(
-                        'Background',
-                        style: T.label(Grey.g56),
-                      ), // (AbsentMotion's NewProjectSheet's six: the colour behind everything, the stage's background; Transparent: none, and written clear)
+                      // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
+                      Text('Background', style: T.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -206,7 +209,8 @@ class _SizeChipState extends State<_SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text('New layer length', style: T.label(Grey.g56)), // (how long a thing put in lasts: AbsentMotion's settings' New Layer Length, its AppSettings.LAYER_DURATIONS; End, to the document's end)
+                      // How long a new layer lasts, as Alight Motion's New Layer Length setting. End runs to the end of the project.
+                      Text('New layer length', style: T.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -226,7 +230,7 @@ class _SizeChipState extends State<_SizeChip> {
                       SizedBox(height: Shape.s(12)),
                       Text('$shownW × $shownH  ·  ${Ws.fps} frames a second', style: T.value(Grey.g76)),
                       if (ws.inside case final m?) ...[
-                        // (Alight Motion's Total Edit Time, in its settings: how long the document has been worked on)
+                        // Alight Motion's Total Edit Time: how long the project has been worked on.
                         SizedBox(height: Shape.s(6)),
                         Text('Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m', key: const ValueKey('size-edited'), style: T.value(Grey.g63)),
                       ],

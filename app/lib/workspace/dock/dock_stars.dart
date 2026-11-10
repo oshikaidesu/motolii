@@ -1,7 +1,7 @@
-// Part of dock_widgets.dart: the stars: the star that keeps an item in Starred, and where the starred are kept.
+// Part of dock_widgets.dart: the star button, and the file that stores which effects are starred.
 part of 'dock_widgets.dart';
 
-/// The star that keeps an item in Starred; shown on hover, on the picked row, or when set.
+/// The star button that adds an item to Starred. It is shown on hover, on the selected row, or when set.
 class DockStar extends StatelessWidget {
   const DockStar({super.key, required this.on, required this.onTap, this.ink});
   final bool on;
@@ -21,7 +21,8 @@ class DockStar extends StatelessWidget {
   );
 }
 
-/// Where the starred effects are kept (a test points it elsewhere: [dockStarsAt]), in the Ease tool panel's way (ease_stars.json).
+/// Where the starred effects are stored, in the same way the Ease tool panel stores its stars (ease_stars.json).
+/// A test can point it elsewhere with [dockStarsAt].
 File _starsFile = File('${Platform.environment['HOME']}/.motolii/effect_stars.json');
 void dockStarsAt(File f) => _starsFile = f;
 Set<String> _starsRead() => {for (final s in fileList(_starsFile)) '$s'};

@@ -1,4 +1,4 @@
-// dock_files_contents.dart: what is in the open folder: tiles (a film looked through by the hand) or rows, the in-use mark, the foot that says the picked one.
+// The contents of the open folder in the Media shelf: tiles or rows, the in-use mark and the footer for the selected file.
 part of 'dock_files.dart';
 
 class _Contents extends StatelessWidget {
@@ -7,7 +7,7 @@ class _Contents extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final path = _pathOf(c, c.mem.folder), here = path.last;
-    final root = here.disk ? here : path.first; // (on the disk a search stays in the open folder and those below it, as far as a pile goes: golf_noise.md 151)
+    final root = here.disk ? here : path.first; // On the disk a search stays within the open folder.
     final searching = c.query.isNotEmpty;
     final List<FileNode> items;
     if (searching) {
@@ -27,10 +27,10 @@ class _Contents extends StatelessWidget {
       }
 
       walk(root, 0);
-      items = {for (final n in found) n.id: n}.values.toList(); // (a file in use is in the project twice over: once)
+      items = {for (final n in found) n.id: n}.values.toList(); // A file in use appears twice, so keep one per id.
     } else {
       if (c.mem.mediaDeep) {
-        // (the folder and every folder below it, their files together: a folder looked at as one pile)
+        // Lists the files of the folder and of every folder below it together.
         final all = <FileNode>[];
         void below(FileNode f, int depth) {
           if (f.disk && !f.listed && depth > 0) _read(f.id);
@@ -77,16 +77,17 @@ class _Contents extends StatelessWidget {
   }
 }
 
-/// A file's picture: its thumbnail if it is media, otherwise a flat tile with its kind's mark.
+/// A file's thumbnail if it is media, otherwise a flat tile with its kind's mark.
 class _Art extends StatelessWidget {
   const _Art(this.n, {this.step = 0});
   final FileNode n;
-  final int step; // (a film: the picture this far along it, of eight)
+
+  /// For a video, which of eight thumbnails to show.
+  final int step;
   @override
   Widget build(BuildContext context) {
     if (n.disk && (n.g == DockG.video || n.g == DockG.image)) {
-      // A file of the disk shows its own picture: a film its first one (the inside makes it), a photo itself (Flutter
-      // reads it); what has none to show (a vector picture, until it is made) is a flat tile with its kind's mark.
+      // A video shows a thumbnail made by the engine and a photo is read by Flutter. Other files get a flat tile.
       final flat = Container(
         color: WsT.well,
         alignment: Alignment.center,
@@ -100,7 +101,7 @@ class _Art extends StatelessWidget {
               : ColoredBox(
                   color: WsT.well,
                   child: Image.file(File(made.data!), fit: BoxFit.contain, gaplessPlayback: true),
-                ), // (the whole picture, not cut to a square)
+                ),
         );
       }
       final photo = RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id);
@@ -146,9 +147,9 @@ class _Tile extends StatefulWidget {
   State<_Tile> createState() => _TileState();
 }
 
-/// The holder of a film's state: it is looked along by the hand's place across it, or played in the tile by the mark at
-/// its corner (eight pictures along it, round and round). The tile itself is ShelfTile; a file's kind is told by a small
-/// tag only where the hand is or it is picked.
+/// Holds the state of a video tile. Moving the pointer across the tile scrubs through eight thumbnails, and the button in
+/// its corner plays them in a loop. The tile itself is a ShelfTile. A small tag with the file's kind shows only while the
+/// pointer is over the tile or the file is selected.
 class _TileState extends State<_Tile> {
   int _step = 0;
   bool _playing = false;
@@ -170,7 +171,7 @@ class _TileState extends State<_Tile> {
     super.dispose();
   }
 
-  // (the kind's own tag; a vector picture says what it is by its file's end: a .json is a Lottie)
+  // A vector image is named by its file extension, so a .json file is a Lottie.
   String _badge(MediaType t) {
     if (t != MediaType.image || !n.disk || RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id)) return t.badge;
     final end = n.id.split('.').last.toLowerCase();
@@ -191,7 +192,7 @@ class _TileState extends State<_Tile> {
       ink: list ? null : (n.folder ? Grey.g91 : Grey.g76),
       says: meta,
       onTap: () => _open(n, c),
-      onApply: !list && can && !n.folder ? () => _place(c, n) : null, // (two presses place it; carried to the stage it does the same)
+      onApply: !list && can && !n.folder ? () => _place(c, n) : null, // Double-click or drag to the canvas places the file.
       onMove: _film && !_playing
           ? (at) {
               final w = (context.size?.width ?? 1) * 1.0, k = (at.dx / math.max(1, w) * 8).floor().clamp(0, 7);
@@ -247,16 +248,16 @@ class _TileState extends State<_Tile> {
   }
 }
 
-/// What the picked file does here: one the inside can show is placed; a folder is gone into.
+/// The footer for the selected file: a file the engine can show is placed, a folder is opened.
 class _Footer extends StatelessWidget {
   const _Footer(this.n, this.c);
   final FileNode n;
   final DockCtx c;
   @override
   Widget build(BuildContext context) {
-    // A file the inside can show is placed (as often as wanted, each a new thing from the present moment); one in use says so.
+    // A file the engine can show can be placed any number of times, each as a new layer starting at the current time.
     if (_filesPicked.length > 1) {
-      // (several picked: placed together)
+      // Several files are selected: they are placed together.
       return DockFooter(
         title: '${_filesPicked.length} files',
         meta: 'Placed one after another, in the order picked',
@@ -266,11 +267,11 @@ class _Footer extends StatelessWidget {
       );
     }
     final layer = _layerOf(n, c), can = _kindOfFile(n.id).isNotEmpty, m = c.ws.inside;
-    // (a shape picked and a still chosen: it fills that shape, Alight Motion's Fill > Media; the button says so)
+    // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
     final shape = int.tryParse(c.ws.selected ?? ''),
         fills = m != null && shape != null && _kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
-    // (a picture or a film picked and another of its kind chosen: it shows that one instead, its place, size, keys and
-    //  effects as they are: After Effects' Replace Layer Source, Premiere Pro's Replace With Clip; P17)
+    // An image or video layer is selected and a file of the same kind chosen: the layer shows that file instead and keeps
+    // its position, size, keyframes and effects. This is After Effects' Replace Layer Source and Premiere Pro's Replace With Clip.
     final swaps =
         m != null &&
         shape != null &&
@@ -278,16 +279,16 @@ class _Footer extends StatelessWidget {
         layer != '$shape' &&
         const {'picture', 'film'}.contains(m.word(shape, 'kind')) &&
         _kindOfFile(n.id) == m.word(shape, 'kind');
-    // (its file shown by others too: all of them at once beside it, _replaceAll)
+    // The other layers that show the same file, which _replaceAll replaces together with this one.
     final all = swaps ? _showing(m, m.whole(m.word(shape, 'file'))) : const <(int, String)>[];
     return FutureBuilder<String>(
-      // (what the media is, as GStreamer's discoverer tells it: Alight Motion's Media Info; its file's kind and size until then)
-      key: ValueKey(n.id), // (a file of its own: what was told of the last one is not carried over till this one's comes)
+      // The description comes from GStreamer's discoverer, like Alight Motion's Media Info. The key gives each file its own state.
+      key: ValueKey(n.id),
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
       builder: (context, info) => DockFooter(
         preview: n.disk && (n.g == DockG.audio || n.g == DockG.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×'))
             ? _Listen(n)
-            : _Art(n), // (sound alone, no picture in it: heard before it is placed)
+            : _Art(n),
         title: n.name,
         meta: c.mem.trouble[n.id] ?? [if (layer != null) 'In use', if (info.data case final i? when i.isNotEmpty) i, _metaOf(n)].join(' · '),
         action: fills
@@ -298,8 +299,8 @@ class _Footer extends StatelessWidget {
             ? 'Place'
             : 'Select',
         done: !can && layer == null,
-        doneLabel: 'Folder', // (the shelf lists only folders and files the inside can place: what cannot be placed is a folder)
-        fresh: can && !fills && !swaps, // (placed, it is a new thing; filling or replacing, the picked one)
+        doneLabel: 'Folder', // Only folders and placeable files are listed, so what cannot be placed is a folder.
+        fresh: can && !fills && !swaps, // Placing creates a new layer, filling or replacing acts on the selected one.
         more: all.length > 1
             ? DockHover(
                 key: const ValueKey('files-replace-all'),
@@ -337,8 +338,8 @@ class _Footer extends StatelessWidget {
   }
 }
 
-/// How long a still lasts, chosen before it is placed: Alight Motion's ruler under a photo (2 seconds as it comes);
-/// End, as long as the document goes on. Kept for the next still.
+/// Chooses how long a still image lasts before it is placed, like the ruler under a photo in Alight Motion.
+/// The default is 2 seconds, and End lasts to the end of the project. The choice is remembered for the next still image.
 class _StillSeconds extends StatelessWidget {
   const _StillSeconds(this.c);
   final DockCtx c;
@@ -365,8 +366,8 @@ class _StillSeconds extends StatelessWidget {
   }
 }
 
-/// The part of a film used, cut before it is placed: Alight Motion's band under a video, its two ends drawn in; the
-/// stretch said in seconds of the film. Kept for that file while the shelf is open.
+/// Chooses which part of a video is used before it is placed, like the band under a video in Alight Motion.
+/// The label shows the range in minutes and seconds. It is remembered for that file while the shelf is open.
 class _FilmRange extends StatelessWidget {
   const _FilmRange(this.c, this.file, this.seconds);
   final DockCtx c;
@@ -377,7 +378,7 @@ class _FilmRange extends StatelessWidget {
     future: seconds,
     builder: (context, got) {
       final len = got.data ?? 0;
-      if (len <= 0) return const SizedBox.shrink(); // (a length not known: all of it, as before)
+      if (len <= 0) return const SizedBox.shrink(); // Without a known length the whole video is used.
       final (a, b) = _filmRanges[file] ?? (0.0, 1.0);
       final w = Shape.z(84);
       String t(double f) => '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
@@ -387,7 +388,7 @@ class _FilmRange extends StatelessWidget {
           Text('use', style: T.label(Grey.g56)),
           SizedBox(width: Shape.s(4)),
           MiniSlider(
-            // (the film's whole length as a dim track, the part used bright between its two bar ends)
+            // The whole video is a dim track, and the part used is bright between the two handles.
             key: const ValueKey('media-film-range'),
             values: [a, b],
             width: w,
@@ -412,11 +413,11 @@ class _FilmRange extends StatelessWidget {
 
 final _filmRanges = <String, (double, double)>{};
 
-const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0]; // (0: to the document's end)
+const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0]; // Seconds. 0 means until the end of the project.
 var _stillSeconds = 2.0;
 
-/// A sound file heard before it is placed (Alight Motion plays a song before it is added): pressed, the Mac's own
-/// player plays it (afplay); pressed again, or another file picked, it stops.
+/// Plays a sound file before it is placed, as Alight Motion does before adding a song. Clicking plays it with macOS's
+/// afplay. Clicking again, or selecting another file, stops it.
 class _Listen extends StatefulWidget {
   const _Listen(this.n);
   final FileNode n;
@@ -438,7 +439,7 @@ class _ListenState extends State<_Listen> {
       return;
     }
     setState(() => _playing = p);
-    p.exitCode.then((_) => mounted && identical(_playing, p) ? setState(() => _playing = null) : null); // (to its end: still again)
+    p.exitCode.then((_) => mounted && identical(_playing, p) ? setState(() => _playing = null) : null);
   }
 
   @override

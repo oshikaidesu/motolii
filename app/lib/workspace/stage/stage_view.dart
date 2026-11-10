@@ -1,5 +1,6 @@
-// The stage's viewport: the composition centred on a dark surround, rulers and guides, overlays, the selection, the zoom HUD and the navigator.
-// contract: paints only when the scene, the selection, the hover or the view changes; the pointer readout repaints the rulers alone.
+// The stage's viewport: the composition centred on a dark surround, rulers and guides, overlays, the selection,
+// the zoom HUD and the navigator.
+// It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
 import 'dart:async' show Timer;
 import 'dart:io' show File;
 import 'dart:math' as math;
@@ -23,7 +24,7 @@ import '../edits/make_relation.dart';
 
 import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
-    show getStrokeRadius; // (how wide its pressure makes a point: kept private by the package, read as it is)
+    show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
 
 import '../state/state.dart';
 import '../commands/context_menu.dart';
@@ -72,6 +73,9 @@ class _View {
   int get hashCode => Object.hash(o, s, area);
 }
 
+/// The stage viewport.
+///
+/// It draws the scene, handles pointer input for selecting, moving and drawing layers, and reports the pointer position.
 class StageView extends StatefulWidget {
   const StageView({
     super.key,
@@ -95,27 +99,39 @@ class StageView extends StatefulWidget {
     this.snapshot,
   });
 
-  /// Joined: how wide the Brush draws, in points of the picture (perfect-freehand's size).
+  /// How wide the Brush draws, in image points (perfect-freehand's size).
   final double brushSize;
-  final int brushTool; // (AbsentMotion's: 0 a pen, 1 a brush, 2 a fill: doc_brush)
 
-  /// Joined: the Move tool's way (0 free, 1 along x only, 2 along y only), and whether an ellipse is drawn out from its middle.
+  /// The brush kind, as in Alight Motion: 0 pen, 1 brush, 2 fill (doc_brush).
+  final int brushTool;
+
+  /// The Move tool's constraint: 0 free, 1 along x only, 2 along y only.
   final int axis;
+
+  /// Whether an ellipse is drawn out from its centre.
   final bool fromCentre;
 
-  /// Joined: a thing carried sticks to the lines of the others, of the picture and of the guides (snap); every thing's
-  /// point it turns about is shown (pivots); a thing taken hold of is the one it goes with, outermost (group); what is
-  /// drawn cuts the picked thing (mask: it lies just behind it, and that one is clipped by it).
-  final bool snap, pivots, group, mask;
+  /// Whether a dragged layer snaps to the edges of other layers, of the image, and to the guides.
+  final bool snap;
 
-  /// Joined: what the tool in hand makes where the hand is drawn across the stage (rect, circle, line, text, brush; null:
-  /// the hand takes hold of things).
+  /// Whether every layer's pivot point is shown.
+  final bool pivots;
+
+  /// Whether a click selects the outermost group that contains the layer instead of the layer itself.
+  final bool group;
+
+  /// Whether a drawn shape cuts the selected layer: it is placed just behind that layer, which is clipped by it.
+  final bool mask;
+
+  /// What the selected tool creates when dragged across the stage (rect, circle, line, text, brush).
+  ///
+  /// Null means the user is selecting and moving layers instead.
   final String? make;
 
-  /// The inside's picture of the stage (a Flutter texture). null: the stand-in art is painted.
+  /// The engine's image of the stage as a Flutter texture id. When null, the stand-in art is painted.
   final int? texture;
 
-  /// A still of the picture taken earlier (After Effects' Take Snapshot), laid over the picture while it is shown.
+  /// A still image taken earlier (After Effects' Take Snapshot), laid over the stage while it is shown.
   final String? snapshot;
   final ArtScene scene;
   final String? selected;
@@ -129,22 +145,27 @@ class StageView extends StatefulWidget {
   State<StageView> createState() => _StageViewState();
 }
 
-/// The picked thing's handles where the stage draws them now, by name, in the stage's own coordinates: what a hand
-/// (or a test, as tldraw's and Excalidraw's do) presses to take hold of each.
+/// The selected layer's handles where the stage draws them now, by name, in the stage's own coordinates.
+///
+/// The user, or a test as in tldraw and Excalidraw, presses a handle to take hold of it.
 abstract interface class StageHandles {
   Map<String, Offset> get handles;
 
-  /// The thing under a point of the screen, as a press there picks it (null: none).
+  /// The layer under a screen point, as a click there would select it, or null when there is none.
   String? hitAt(Offset global);
 }
 
-/// The selection's handles where they are drawn, by name: its four corners, the knob it turns by, the point it turns
-/// about and its middle (the body). The painter draws them from here; [StageHandles] hands them out from here.
-/// A shape's own too (Alight Motion's, on the canvas): its corners' roundness, in from its first corner along its
-/// diagonal as far as they are round (round: a share of its shorter side); a polygon's or star's points, out from the
-/// middle of its right side.
-/// A photo's crop (its left, top, right and bottom cut in, shares of its width or height): a bar on each side where it is
-/// cut, in place of its sides' handles, while it is cropped (pressed twice).
+/// The selection's handles where they are drawn, by name.
+///
+/// They are the four corners, the rotation knob, the anchor point and the middle (the body).
+/// The painter draws them from here and [StageHandles] hands them out from here.
+///
+/// A shape also has its own handles, as in Alight Motion. The corner roundness handle sits on the diagonal from the
+/// first corner, as far in as the corners are rounded ([round] is a share of the shorter side). The points handle of a
+/// polygon or star sits out from the middle of the right side.
+///
+/// While an image is being cropped (after a double click), [crop] holds the left, top, right and bottom amounts cut
+/// away, as shares of its width or height. A bar is shown on each side where it is cut, in place of the side handles.
 Map<String, Offset> _handles(
   Offset Function(Offset doc) scr,
   ArtBox b, {
@@ -158,7 +179,7 @@ Map<String, Offset> _handles(
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
     if (knob && crop.length != 4) ...{
-      // (its sides' middles, one way only: Figma's, Alight Motion's, Keynote's; left, top, right, bottom)
+      // The middle of each side, resizing one way only, as in Figma, Alight Motion and Keynote: left, top, right, bottom.
       'side 0': (c[0] + c[3]) / 2,
       'side 1': (c[0] + c[1]) / 2,
       'side 2': (c[1] + c[2]) / 2,
@@ -178,8 +199,9 @@ Map<String, Offset> _handles(
   };
 }
 
-/// Where a shape's own handles are reckoned from: its first corner, the way along its top and down its left side, and
-/// its shorter side, in points of the window.
+/// The reference frame for a shape's own handles, in app points.
+///
+/// It holds the first corner, the unit directions along the top and down the left side, and the shorter side's length.
 ({Offset c0, Offset u, Offset w, double short}) _gripOf(List<Offset> c) {
   final top = c[1] - c[0], side = c[3] - c[0];
   return (
@@ -194,6 +216,8 @@ extension on ({Offset c0, Offset u, Offset w, double short}) {
   /// The roundness handle: in along the diagonal as far as the corners are round, never on the corner itself.
   Offset roundAt(double round) => c0 + (u + w) * math.max(round.clamp(0.0, .5) * short, 12.0);
 
-  /// How round a hand at `at` makes the corners: how far in along the diagonal, a share of the shorter side.
+  /// How round the corners become when the handle is dragged to [at].
+  ///
+  /// It is how far in along the diagonal the handle is, as a share of the shorter side.
   double roundOf(Offset at) => (((at - c0).dx * (u + w).dx + (at - c0).dy * (u + w).dy) / 2 / short).clamp(0.0, .5);
 }

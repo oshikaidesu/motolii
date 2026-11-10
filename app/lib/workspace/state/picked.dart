@@ -1,7 +1,8 @@
-// What is picked: one thing or many, keys, a stretch between two keys; each told to the window as its own aspect.
+// The selection: one layer or many, keyframes, and the stretch between two keyframes. Each change notifies [WsAspect.picked].
 part of 'state.dart';
 
 extension WsPick on Ws {
+  /// Selects the layer [id], or clears the selection when null.
   void select(String? id) {
     if (id == _sel && many.isEmpty) return;
     _sel = id;
@@ -13,6 +14,7 @@ extension WsPick on Ws {
     _tell(WsAspect.picked);
   }
 
+  /// Selects several layers. With [inOrder] the first one leads.
   void pickMany(Iterable<String> ids, {bool inOrder = false}) {
     many
       ..clear()
@@ -21,6 +23,7 @@ extension WsPick on Ws {
     _tell(WsAspect.picked);
   }
 
+  /// Selects one keyframe, or adds it to the selection when [add] is true.
   void pickKey(WsKey k, {bool add = false}) {
     if (!add) _keys.clear();
     _keys.add(k);
@@ -30,7 +33,7 @@ extension WsPick on Ws {
     _tell(WsAspect.picked);
   }
 
-  /// Keys picked together (a box drawn round them): these and no others.
+  /// Selects exactly these keyframes, for example after a box selection.
   void pickKeys(Iterable<WsKey> ks) {
     _keys
       ..clear()
@@ -41,6 +44,7 @@ extension WsPick on Ws {
     _tell(WsAspect.picked);
   }
 
+  /// Deselects all keyframes and the selected stretch.
   void clearKeys() {
     if (_keys.isEmpty && _stretch == null) return;
     _keys.clear();
@@ -54,6 +58,7 @@ extension WsPick on Ws {
     return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
   }
 
+  /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
   void pickStretch(String layer, String name, int from) {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);

@@ -1,7 +1,10 @@
-// A skin's drawn parts (KDE Plasma's and Kvantum's manner): the theme's `Parts` role names a folder, and an SVG there named for a
-// part (`tp.eye.svg`, `glyph.select.svg`, `undo.svg` ...) is drawn in its place, in the colour the window gives that part; a
-// `frame.<part>.svg` is stretched around that part in its own colours (SkinFrame). A part
-// the folder does not have is the window's own drawing, so a skin may bring one picture or all of them. The names: shelves/skins/PARTS.md.
+// A skin's drawn parts, in the manner of KDE Plasma and Kvantum.
+//
+// The theme's `Parts` role names a folder. An SVG there named for a part (`tp.eye.svg`, `glyph.select.svg`, `undo.svg`)
+// is drawn in place of the built-in drawing, in the colour the app gives that part.
+// A `frame.<part>.svg` is stretched around that part in its own colours (see [SkinFrame]).
+// A part the folder does not have keeps the built-in drawing, so a skin may bring one picture or all of them.
+// The part names are listed in shelves/skins/PARTS.md.
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -11,12 +14,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/media.dart' show Draw;
 import 'theme.dart';
 
+/// The pictures of the current skin, loaded from the folder named by the theme's `Parts` role.
 abstract final class SkinParts {
   static final _pics = <String, PictureInfo>{};
   static final _slices = <String, double>{}, _frames = <String, ui.Image>{};
   static String? _dir;
 
-  /// The folder the theme names, read again when it changes; the window is painted again once its pictures are in.
+  /// Loads the pictures from the folder the theme names, and again whenever the theme changes.
+  ///
+  /// The app is rebuilt once the new pictures are loaded.
   static void follow() {
     void read() {
       final dir = ColorTheme.place(ColorTheme.word('Parts', ''));
@@ -38,11 +44,15 @@ abstract final class SkinParts {
           final name = f.uri.pathSegments.last.replaceAll('.svg', '');
           next[name] = await vg.loadPicture(SvgFileLoader(f), null);
           if (RegExp(r'data-slice="([0-9.]+)"').firstMatch(f.readAsStringSync()) case final m?) _slices[name] = double.parse(m.group(1)!);
-        } catch (_) {} // (a picture that does not read: the window's own drawing stays)
+        } catch (_) {
+          // A picture that cannot be read is skipped, so the built-in drawing stays.
+        }
       }
     }
-    if (dir != _dir) return; // (the theme moved on while these were read)
-    if (next.isEmpty && _pics.isEmpty) return; // (no pictures before or now: nothing to paint again)
+    // The theme moved on while these were loading.
+    if (dir != _dir) return;
+    // No pictures before or now, so there is nothing to repaint.
+    if (next.isEmpty && _pics.isEmpty) return;
     for (final p in _pics.values) {
       p.picture.dispose();
     }
@@ -56,7 +66,9 @@ abstract final class SkinParts {
     WidgetsBinding.instance.reassembleApplication();
   }
 
-  /// Draws the skin's picture for [name] filling [s] in [color] and says so; false: the skin has none, the caller draws its own.
+  /// Draws the skin's picture [name] into [s] in [color], scaled to fit.
+  ///
+  /// Returns false when the skin has no such picture, and the caller then draws its own.
   static bool draw(Canvas c, Size s, String name, Color color) {
     final p = _pics[name];
     if (p == null || p.size.isEmpty) return false;
@@ -74,10 +86,13 @@ abstract final class SkinParts {
   /// Whether the skin brought a picture named [name].
   static bool has(String name) => _pics[name]?.size.isEmpty == false;
 
-  /// Draws the skin's frame [name] around [r] as CSS's border-image does: its corners as drawn, its edges and middle
-  /// stretched; the corners are the SVG's `data-slice` (a third of its smaller side when it says none). Its own colours.
+  /// Draws the skin's frame [name] around [r], as CSS border-image does, in the picture's own colours.
+  ///
+  /// The corners are drawn as they are and the edges and middle are stretched.
+  /// The corner size is the SVG's `data-slice`, or a third of its smaller side when it has none.
   static void frame(Canvas c, Rect r, String name) {
-    final p = _pics[name]!, k = 4.0; // (drawn four times finer than a point, so a frame stays sharp on any screen)
+    // The frame is rasterized at four times the logical resolution so it stays sharp on any screen.
+    final p = _pics[name]!, k = 4.0;
     final img = _frames[name] ??= () {
       final rec = ui.PictureRecorder();
       Canvas(rec)
@@ -98,12 +113,20 @@ abstract final class SkinParts {
   }
 }
 
-/// A part's frame from the skin: `frame.<name>.svg` (`.hover` while a hand is on it, when the skin
-/// brings it) stretched around the part; none, the part's own [usual] decoration.
+/// A part's frame from the skin: `frame.<name>.svg` stretched around [child].
+///
+/// While [hover] is true, `frame.<name>.hover.svg` is used instead when the skin has it.
+/// Without either picture, [usual] is the decoration.
 class SkinFrame extends StatelessWidget {
   const SkinFrame(this.name, {super.key, this.hover = false, required this.usual, required this.child});
+
+  /// The part name, as in `frame.<name>.svg`.
   final String name;
+
+  /// Whether the pointer is over the part.
   final bool hover;
+
+  /// The decoration used when the skin has no frame for this part.
   final Decoration usual;
   final Widget child;
   @override

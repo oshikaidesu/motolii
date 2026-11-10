@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-/// The layer mark knocked out in [ink], for a [Badge]'s child (the badge is 16 square: its radius is .32 of that).
+/// Draws the layer mark in [ink], for use as the child of a [Badge].
+///
+/// The badge is 16 square and its corner radius is 0.32 of that.
 void drawLayerMark(Canvas c, Size s, Color ink) {
   final u = s.width / 20, o = s.center(Offset.zero);
   final fill = Paint()..color = ink;

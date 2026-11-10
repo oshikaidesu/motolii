@@ -1,7 +1,9 @@
-// Tags for the shelves, one thing for all of them (Colors: hot, cold, pastel…; Fonts: serif, gothic…; Media: its kinds): a
-// search finds a thing by its name, its tags, or (a colour) its code, each word of the search on its own; the words
-// being typed are completed from the tags the shelf knows. The maker's own tags are a file, ~/.motolii/tags.json
-// ({"Colors|coda": ["title", "warm"]}, a shelf, a bar, the thing's id), read once.
+// Tags shared by all shelves (Colors: hot, cold, pastel; Fonts: serif, gothic; Media: its kinds).
+//
+// - A search matches an item by its name, its tags or, for a color, its code. Each word of the search is matched on its own.
+// - The word being typed is completed from the tags the shelf has seen.
+// - The user's own tags are read once from ~/.motolii/tags.json, as {"Colors|coda": ["title", "warm"]}.
+//   The key is the shelf name, a bar, then the item's id.
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,7 +13,7 @@ abstract final class DockTags {
   static final _own = <String, Set<String>>{};
   static bool _read = false;
 
-  /// The tags each shelf has been seen to use (the words a search is completed from).
+  /// The tags each shelf has used so far. A search is completed from these words.
   static final seen = <String, Set<String>>{};
 
   static void _load() {
@@ -22,10 +24,12 @@ abstract final class DockTags {
       for (final e in told.entries) {
         _own['${e.key}'] = {for (final t in e.value as List) '$t'.toLowerCase()};
       }
-    } catch (_) {} // (no file, or not a map: the built-in tags alone)
+    } catch (_) {
+      // No file, or not a map: only the built-in tags are used.
+    }
   }
 
-  /// A thing's tags: the built-in, and the maker's own.
+  /// The tags of an item: the built-in ones and the user's own.
   static Set<String> of(String shelf, String id, Set<String> builtIn) {
     _load();
     final all = {...builtIn, ...?_own['$shelf|$id']};
@@ -33,9 +37,10 @@ abstract final class DockTags {
     return all;
   }
 
-  /// A thing chosen after a search is that search's first the next time, for the words exactly as typed: Alfred's
-  /// Keyword Latching (alfredapp.com/help/kb/understanding-result-ordering); the user's "選んだ物から覚える", golf
-  /// (94). Kept in ~/.motolii/latched.json ({"Effects|adjustment layer": the thing's id}); a test points it elsewhere.
+  /// An item chosen after a search becomes the first result the next time the same words are typed.
+  ///
+  /// This follows Alfred's Keyword Latching (alfredapp.com/help/kb/understanding-result-ordering).
+  /// It is stored in ~/.motolii/latched.json as {"Effects|adjustment layer": the item's id}. A test can point it elsewhere.
   static File _latchFile = File('${Platform.environment['HOME']}/.motolii/latched.json');
   static Map<String, String>? _latches;
   static void latchedAt(File f) => (_latchFile = f, _latches = null);
@@ -44,22 +49,23 @@ abstract final class DockTags {
     try {
       return _latches = {for (final e in (fileJson(_latchFile) as Map).entries) '${e.key}': '${e.value}'};
     } catch (_) {
-      return _latches = {}; // (none yet, or not a map)
+      // No file yet, or not a map.
+      return _latches = {};
     }
   }
 
-  /// The thing latched to the words as typed on a shelf (null: none).
+  /// The item latched to these words on a shelf, or null if there is none.
   static String? latched(String shelf, String query) => query.trim().isEmpty ? null : _latched['$shelf|${query.trim().toLowerCase()}'];
 
-  /// A thing chosen with these words typed: latched to them.
+  /// Latches [id] to [query] on [shelf].
   static void latch(String shelf, String query, String id) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty || _latched['$shelf|$q'] == id) return;
     _latched['$shelf|$q'] = id;
-    fileKeep(_latchFile, jsonEncode(_latched)); // (not kept: the latch holds while the window is open)
+    fileKeep(_latchFile, jsonEncode(_latched));
   }
 
-  /// Whether a thing answers a search: every word of it is in its name or among its tags.
+  /// Whether an item matches a search: every word of [query] is in its name or in one of its tags.
   static bool hit(String query, String name, Set<String> tags) {
     if (query.trim().isEmpty) return true;
     final lower = name.toLowerCase();
@@ -71,7 +77,7 @@ abstract final class DockTags {
     return true;
   }
 
-  /// The tags that complete the word being typed (its end begun, not yet whole), all of them.
+  /// The tags that complete the last word of [query], sorted. A tag equal to the word is not included.
   static List<String> completing(String shelf, String query) {
     final words = query.split(RegExp(r'\s+'));
     final last = words.isEmpty ? '' : words.last.toLowerCase();
@@ -83,7 +89,7 @@ abstract final class DockTags {
     return found;
   }
 
-  /// The query with its last word made whole as [tag].
+  /// [query] with its last word replaced by [tag].
   static String complete(String query, String tag) {
     final i = query.lastIndexOf(RegExp(r'\s'));
     return '${i < 0 ? '' : query.substring(0, i + 1)}$tag ';

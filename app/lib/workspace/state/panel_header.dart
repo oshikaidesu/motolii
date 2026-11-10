@@ -1,8 +1,10 @@
-// Part of state.dart: a panel's header and the panel round it.
+// Part of state.dart: a panel's header, the panel around it, and the grid helpers.
 part of 'state.dart';
 
-/// A panel's header: title on the left, [trailing] on the right, a hairline under it.
-/// [height], [color] and [padding] are for the headers that sit taller, darker or tighter; [child] stands in for the whole row.
+/// A panel's header: the title on the left, [trailing] on the right, a hairline underneath.
+///
+/// [height], [color] and [padding] are for headers that need to be taller, darker or tighter.
+/// [child] replaces the whole row.
 class WsHeader extends StatelessWidget {
   const WsHeader(this.title, {super.key, this.trailing = const [], this.leading, this.height, this.color, this.padding, this.child});
   final String title;
@@ -42,8 +44,8 @@ class WsPanel extends StatelessWidget {
   );
 }
 
-/// How many cells of at least [cell] px fit across [width] with [gap] between them, kept within [min]..[max].
-/// Every grid in the window reads this, so a pane made wider gains columns instead of fatter tiles.
+/// How many cells of at least [cell] px fit across [width] with [gap] between them, clamped to [min]..[max].
+/// Every grid in the window uses this, so a wider panel gains columns instead of fatter tiles.
 int wsCols(double width, double cell, {double gap = WsT.gutter, int min = 1, int max = 8}) => ((width + gap) / (cell + gap)).floor().clamp(min, max);
 
 /// The width of one of [cols] cells across [width].

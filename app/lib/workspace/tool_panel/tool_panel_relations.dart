@@ -1,6 +1,7 @@
-// The Relations tab: the world seen from outside the camera, as the Depth tab sees its depth: every thing where it is
-// (off the camera too), the camera's frame, and each relation drawn as its shape (a ring, a row, a pusher's reach,
-// a follow's threads). Front or top, or turned by a drag; a tap picks a thing or a relation, the inspector beside it.
+// The Relations tab: the layers seen from outside the camera, as the Depth tab shows depth.
+// It draws every layer where it is (including off camera), the camera's frame, and each relation as its shape:
+// a ring, a row, the reach of a push, or the threads of a follow.
+// The user views it from the front or top, or turns it by dragging. Tapping picks a layer or a relation, which the inspector shows.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -20,13 +21,16 @@ class RelationsTool extends StatefulWidget {
 }
 
 class _RelationsToolState extends State<RelationsTool> {
-  double _yaw = 0, _pitch = 0, _zoom = 1; // (turned: 0, 0 is from the front, the camera's own way; a scroll comes closer)
-  (int, Map<String, List<_P3>>)? _paths; // (each thing's way through the whole stretch, as the document stood: asked again when it changes)
+  // Yaw and pitch of the view; 0, 0 looks from the front, in the camera's own direction. Scrolling zooms in.
+  double _yaw = 0, _pitch = 0, _zoom = 1;
+  // Each layer's path over the whole duration for one document revision. Requested again when the revision changes.
+  (int, Map<String, List<_P3>>)? _paths;
   int? _pathsAsked;
   Object? _stationsAsked;
 
-  /// A picked relation's things at each of its keys' moments, in time's order: the shapes it goes through, not the way.
-  /// Other moments than the picture's: asked of the inside (another isolate), shown when they come.
+  /// A picked relation's layers at the time of each of its keyframes, in time order.
+  /// These are the shapes the relation passes through, not the path between them.
+  /// They are times other than the one the preview shows, so they are requested from the engine (another isolate) and shown when they arrive.
   (Object, Map<String, List<_P3>>)? _stations;
   Map<String, List<_P3>> _stationsOf(Ws ws) {
     final m = ws.inside, r = int.tryParse(ws.selected ?? '');
@@ -82,7 +86,8 @@ class _RelationsToolState extends State<RelationsTool> {
           final out = <String, List<_P3>>{};
           for (final t in things) {
             final way = [for (var k = 0; k <= steps; k++) (x: next(), y: next(), z: next())];
-            if (way.any((p) => (p.x - way.first.x).abs() + (p.y - way.first.y).abs() + (p.z - way.first.z).abs() > 1e-4)) out['$t'] = way; // (only what moves)
+            // Keep only the layers that move.
+            if (way.any((p) => (p.x - way.first.x).abs() + (p.y - way.first.y).abs() + (p.z - way.first.z).abs() > 1e-4)) out['$t'] = way;
           }
           setState(() => _paths = (rev, out));
         });
@@ -94,8 +99,9 @@ class _RelationsToolState extends State<RelationsTool> {
     listenable: Listenable.merge([
       WsScope.read(context).on[WsAspect.document],
       WsScope.read(context).on[WsAspect.picked],
+      // Changes with the frame the preview shows, which decides where the layers are.
       WsScope.read(context).seen,
-    ]), // (where things are in the picture shown)
+    ]),
     builder: (context, _) {
       final ws = WsScope.read(context), world = _World.of(ws), together = wsRelatable(ws).length, many = together > 1;
       return Column(
@@ -105,7 +111,8 @@ class _RelationsToolState extends State<RelationsTool> {
             left: [Chip(label: 'Relations · ${world.relations.length}', look: ChipLook.flat(WsT.toneGroup))],
           ),
           ColoredBox(
-            // (the tab says what it is for in the words that do it, as the stage's top does; Blender's Constraints tab holds its own Add)
+            // The row names what the tab is for in the words that do it, as the top of the preview does.
+            // Blender's Constraints tab also holds its own Add menu.
             color: WsT.card,
             child: Padding(
               padding: EdgeInsets.fromLTRB(WsT.inset, 0, WsT.inset, Shape.s(5)),
@@ -134,7 +141,7 @@ class _RelationsToolState extends State<RelationsTool> {
               child: LayoutBuilder(
                 builder: (context, box) {
                   final view = _View(world, box.biggest, _yaw, _pitch, paths: _pathsOf(ws), zoom: _zoom);
-                  // (a trackpad's two fingers turn the view, as Blender's do: the drag below takes them; a pinch comes nearer)
+                  // Two fingers on a trackpad turn the view, as in Blender, through the drag handler below. A pinch zooms in.
                   return WsTwoFingers(
                     onWheel: (d) => setState(() => _zoom = (_zoom * math.exp(-d.dy / 300)).clamp(.3, 8.0)),
                     onPinch: (by, _) => setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
@@ -147,7 +154,7 @@ class _RelationsToolState extends State<RelationsTool> {
                       }),
                       onTapUp: (d) {
                         if (view.axisAt(d.localPosition) case final a?) {
-                          // (an axis of the gizmo: seen from that side, as Blender's)
+                          // Tapping an axis of the gizmo looks from that side, as in Blender.
                           final (yaw, pitch) = switch (a) {
                             'x' => (-math.pi / 2, 0.0),
                             'y' => (0.0, -math.pi / 2),
@@ -178,21 +185,26 @@ class _RelationsToolState extends State<RelationsTool> {
 
 typedef _P3 = ({double x, double y, double z});
 
-/// What the map draws, read from the inside: the things, the camera, the relations.
+/// What the map draws, read from the engine: the layers, the camera and the relations.
 class _World {
   _World(this.things, this.camera, this.relations, this.half);
-  final Map<String, (_P3, Color, String)> things; // (id: where, its colour, its name)
+
+  /// Layers by id: position, colour and name.
+  final Map<String, (_P3, Color, String)> things;
   final _P3? camera;
   final List<_Relation> relations;
-  final Size half; // (half the camera's frame, in the stage's units)
+
+  /// Half the camera's frame, in the canvas's units.
+  final Size half;
 
   static _World of(Ws ws) {
     final m = ws.inside;
     if (m == null) return _World(const {}, null, const [], Size.zero);
-    final now = m.now, things = <String, (_P3, Color, String)>{}; // (the moment of the picture shown)
+    // The time of the frame the preview shows.
+    final now = m.now, things = <String, (_P3, Color, String)>{};
     _P3? camera;
-    double v(int t, String n) =>
-        (n == 'x' || n == 'y' || n == 'z' ? m.shows(t, n, now)?.$1 : null) ?? m.value(t, n, now) ?? 0; // (a place where it shows: a relation moves depth too)
+    // Prefer the position where the layer is shown, since a relation moves depth too.
+    double v(int t, String n) => (n == 'x' || n == 'y' || n == 'z' ? m.shows(t, n, now)?.$1 : null) ?? m.value(t, n, now) ?? 0;
     final rels = <_Relation>[];
     for (final l in ws.layers) {
       final t = int.tryParse(l.id);
@@ -214,13 +226,13 @@ class _World {
         camera = at;
         continue;
       }
-      things[l.id] = (at, l.tone, l.name); // (its label colour: the same as its row's)
+      things[l.id] = (at, l.tone, l.name); // The label colour, the same as its row's.
     }
     return _World(things, camera, rels, Size(WsArt.comp.width / 2 / m.point, WsArt.comp.height / 2 / m.point));
   }
 }
 
-/// A relation's shape in the world: its kind, its things, and the knobs that place it.
+/// A relation's shape in the world: its kind, its layers and the parameters that place it.
 class _Relation {
   _Relation(this.id, this.kind, this.members, double Function(int, String) v)
     : radius = v(int.parse(id), 'radius'),
@@ -234,14 +246,14 @@ class _Relation {
   final _P3 centre;
 }
 
-/// The world turned and fitted to the map.
+/// The world rotated and fitted to the map.
 class _View {
   _View(this.world, this.size, double yaw, double pitch, {Map<String, List<_P3>> paths = const {}, double zoom = 1})
     : _cy = math.cos(yaw),
       _sy = math.sin(yaw),
       _cp = math.cos(pitch),
       _sp = math.sin(pitch) {
-    // (fitted to the things and their ways, not to the camera's frame: what moves fills the map; a scroll comes closer)
+    // Fit to the layers and their paths, not the camera's frame, so what moves fills the map. Scrolling zooms in.
     final all = [
       for (final (p, _, _) in world.things.values) _turn(p),
       for (final w in paths.values)
@@ -266,7 +278,7 @@ class _View {
   ];
 
   Offset _turn(_P3 p) {
-    // (turned about the up axis, then tipped: x right, y up on the map)
+    // Rotated about the up axis, then tilted: x to the right, y up on the map.
     final x = p.x * _cy + p.z * _sy, z = -p.x * _sy + p.z * _cy;
     return Offset(x, p.y * _cp - z * _sp);
   }
@@ -276,7 +288,7 @@ class _View {
     return Offset(size.width / 2 + (q.dx - _fit.center.dx) * _scale, size.height / 2 - (q.dy - _fit.center.dy) * _scale);
   }
 
-  /// The axes gizmo in the corner, as Blender's: each axis's end, turned as the world is (x red, y green, z blue).
+  /// The axes gizmo in the corner, as in Blender: the end of each axis, rotated with the world (x red, y green, z blue).
   Offset get axisMiddle => Offset(size.width - 38, size.height - 38);
   Map<String, Offset> get axisEnds => {
     for (final (n, p) in const [('x', (x: 1.0, y: 0.0, z: 0.0)), ('y', (x: 0.0, y: 1.0, z: 0.0)), ('z', (x: 0.0, y: 0.0, z: 1.0))])
@@ -289,7 +301,7 @@ class _View {
     return null;
   }
 
-  /// The thing nearest the tap, else the relation whose shape passes nearest.
+  /// The layer nearest the tap, else the relation whose shape passes nearest.
   String? hit(Offset at) {
     String? best;
     var d = 16.0;
@@ -314,7 +326,7 @@ class _View {
       case 'around' || 'push':
         final o = r.kind == 'push' ? lead : c;
         if (o == null) return const [];
-        final t = r.kind == 'push' ? 0.0 : r.tilt; // (an around tipped back by its tilt)
+        final t = r.kind == 'push' ? 0.0 : r.tilt; // An around relation is tipped back by its tilt.
         return [
           for (var k = 0; k <= 48; k++)
             (
@@ -326,7 +338,8 @@ class _View {
       case 'row':
         final half = r.gap * (r.members.length - 1) / 2;
         return [for (var k = 0; k <= 12; k++) (x: c.x - half + 2 * half * k / 12, y: c.y, z: c.z)];
-      default: // (a follow: from its leader to each of its things)
+      default:
+        // A follow has no shape of its own here; the painter draws its threads from the leader to each layer.
         return const [];
     }
   }
@@ -336,26 +349,28 @@ class _Map extends CustomPainter {
   _Map(this.v, this.selected, this.paths, this.stations);
   final _View v;
   final String? selected;
-  final Map<String, List<_P3>> paths, stations; // (the picked thing's way; a picked relation's shapes at its keys)
+  // paths: the picked layer's path. stations: a picked relation's shapes at its keyframes.
+  final Map<String, List<_P3>> paths, stations;
 
   @override
   void paint(Canvas c, Size s) {
     final line = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-    // (the camera's frame, and where it stands)
+    // The camera's frame and where the camera stands.
     line.color = WsT.toneCamera;
     c.drawPath(Path()..addPolygon([for (final p in v._frame) v.on(p)], true), line);
     if (v.world.camera case final cam?) c.drawCircle(v.on(cam), 5, Paint()..color = WsT.toneCamera);
-    // (each relation's shape, its threads to its things, in its own hue)
+    // Each relation's shape and its threads to its layers, in its own colour.
     for (final r in v.world.relations) {
-      final hue = wsLabel(r.id), picked = r.id == selected; // (in its own label colour, as its row)
+      final hue = wsLabel(r.id), picked = r.id == selected; // The same label colour as its row.
       line
         ..color = hue.withValues(alpha: picked ? 1 : .7)
         ..strokeWidth = picked ? 2 : 1;
       final pts = [for (final p in v.shape(r)) v.on(p)];
       for (var k = 0; k + 1 < pts.length; k += 2) {
-        // (broken: a relation, not a thing; each stretch in the colour of the thing it carries, as its row's bar)
+        // The shape is drawn as separate segments, so it reads as a relation and not a layer.
+        // Each stretch takes the colour of the layer it carries, as the bar in its row does.
         if (r.members.isNotEmpty) {
           line.color = wsLabel(r.members[(k * r.members.length / pts.length).floor().clamp(0, r.members.length - 1)]).withValues(alpha: picked ? 1 : .8);
         }
@@ -367,15 +382,16 @@ class _Map extends CustomPainter {
           if (v.world.things[m]?.$1 case final p?) c.drawLine(v.on(lead), v.on(p), line);
         }
       }
-      if (lead != null) c.drawCircle(v.on(lead), 9, line); // (its leader ringed)
+      if (lead != null) c.drawCircle(v.on(lead), 9, line); // Ring the leader.
       for (final m in r.members) {
         if (v.world.things[m]?.$1 case final p?) c.drawCircle(v.on(p), 7, Paint()..color = hue.withValues(alpha: .25));
       }
     }
-    // (each moving thing's way through the stretch, in its colour, a dot each step: a morph from one relation to another
-    //  shows as the ways bending from one shape into the other, an ease as the dots closing up and spreading)
+    // Each moving layer's path over the duration, in its colour, with a dot per step.
+    // A morph from one relation to another shows as the paths bending from one shape into the other.
+    // An easing shows as the dots bunching up and spreading out.
     for (final e in paths.entries) {
-      // (as After Effects: the picked thing's way only, a dot a step)
+      // As in After Effects, only the picked layer's path, with a dot per step.
       final hue = v.world.things[e.key]?.$2 ?? WsT.accent, pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
@@ -389,7 +405,7 @@ class _Map extends CustomPainter {
       }
     }
     for (final e in stations.entries) {
-      // (a picked relation: where each thing stands at each of its keys, joined straight, ringed hollow)
+      // For a picked relation: where each layer stands at each of its keyframes, joined by straight lines and ringed.
       final hue = v.world.things[e.key]?.$2 ?? WsT.accent, pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
@@ -409,10 +425,11 @@ class _Map extends CustomPainter {
         );
       }
     }
-    // (the things, the picked one ringed)
+    // The layers, with the picked one ringed.
     for (final e in v.world.things.entries) {
       final at = v.on(e.value.$1);
       c.drawCircle(at, 4, Paint()..color = e.value.$2);
+      // The outline keeps a dark layer visible on the dark map.
       c.drawCircle(
         at,
         4,
@@ -420,7 +437,7 @@ class _Map extends CustomPainter {
           ..color = Grey.g56
           ..style = PaintingStyle.stroke
           ..strokeWidth = .75,
-      ); // (a dark thing still seen on the dark map)
+      );
       if (e.key == selected) {
         c.drawCircle(
           at,
@@ -432,7 +449,7 @@ class _Map extends CustomPainter {
         );
       }
     }
-    // (the axes gizmo: a line to each axis's end, a coloured ball with its letter; a touch looks from that side)
+    // The axes gizmo: a line to the end of each axis and a coloured ball with its letter. Tapping a ball looks from that side.
     const hue = {'x': Color(0xFFFF3352), 'y': Color(0xFF8BDC00), 'z': Color(0xFF2890FF)};
     final mid = v.axisMiddle;
     for (final e in v.axisEnds.entries) {
@@ -443,7 +460,7 @@ class _Map extends CustomPainter {
           ..color = hue[e.key]!
           ..strokeWidth = 1.5,
       );
-      c.drawCircle(mid - (e.value - mid), 3, Paint()..color = hue[e.key]!.withValues(alpha: .4)); // (its other way, faint)
+      c.drawCircle(mid - (e.value - mid), 3, Paint()..color = hue[e.key]!.withValues(alpha: .4)); // The opposite end, faint.
     }
     for (final e in v.axisEnds.entries) {
       c.drawCircle(e.value, 7, Paint()..color = hue[e.key]!);

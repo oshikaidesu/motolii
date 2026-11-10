@@ -1,13 +1,15 @@
-// Joined: keys slid in time on the timeline (After Effects' drag of keyframes): every value of the thing with a key
-// at that moment keeps what it holds and how its stretch goes, at the new moment; all of them one step. Told without
-// waiting; the timeline shows where the hand has them by the playhead until it lets go.
+// Editing keyframes on the timeline: slide, remove, copy and paste.
+//
+// Sliding works like dragging keyframes in After Effects. Every property of the layer that has a keyframe at that
+// time keeps its value and easing at the new time, all as one undo step. The edit is queued on the engine without
+// waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.
 import '../state/state.dart';
 
-/// The keys [keys] (a row and a frame each) put [by] frames later (earlier below 0).
+/// Moves the keyframes [keys] (each a row and a frame) [by] frames later, or earlier when [by] is negative.
 void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
   final m = ws.inside;
   if (m == null || by == 0 || keys.isEmpty) return;
-  final moves = <(int, String, double, double, double, String)>[]; // (thing, value, from, to, what it holds, its way)
+  final moves = <(int, String, double, double, double, String)>[]; // (layer, property, from, to, value, easing)
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
@@ -20,7 +22,7 @@ void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
   if (moves.isEmpty) return;
   m.later('together', number: 1);
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', layer: t, name: n, number: at); // (all taken up first: one slid onto another's old moment is not lost)
+    m.later('unkey', layer: t, name: n, number: at); // All are removed first so that a keyframe slid onto another's old time is not lost.
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', layer: t, name: n, word: '$to', number: v);
@@ -29,7 +31,7 @@ void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
 
-/// The picked keys taken away (every value of the thing that has a key at that moment), one step.
+/// Removes the selected keyframes, and those of the other properties of the layer at the same time, as one undo step.
 void wsRemoveKeys(Ws ws, Iterable<WsKey> keys) {
   final m = ws.inside;
   if (m == null || keys.isEmpty) return;
@@ -46,10 +48,11 @@ void wsRemoveKeys(Ws ws, Iterable<WsKey> keys) {
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
 
-/// The keys Cmd+C kept: the value, frames after the first of them, what it holds, its way. None: Cmd+C kept a thing.
+/// The keyframes of the last copy: property, frames after the first one, value, easing.
+/// Empty when the last copy was a layer.
 List<(String, int, double, String)> wsKeysKept = const [];
 
-/// The picked keys kept (After Effects' Copy and paste keyframes).
+/// Copies the selected keyframes, as Copy and Paste of keyframes do in After Effects.
 void wsCopyKeys(Ws ws, Iterable<WsKey> keys) {
   final m = ws.inside;
   if (m == null || keys.isEmpty) return;
@@ -63,7 +66,7 @@ void wsCopyKeys(Ws ws, Iterable<WsKey> keys) {
   ];
 }
 
-/// Those keys on the picked thing, the first at the playhead, one step, picked.
+/// Pastes the copied keyframes onto the selected layer as one undo step, the first at the playhead, and selects them.
 void wsPasteKeys(Ws ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null || wsKeysKept.isEmpty) return;

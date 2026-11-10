@@ -1,8 +1,8 @@
-// timeline_rows.dart: each row's state as the document has it (hidden, solo, locked, a relation's colours) and the column of their names.
+// Each row's state as the project stores it (hidden, solo, locked, a group's colours) and the column of layer names.
 part of 'timeline.dart';
 
 extension _WsTimelineRows on _WsTimelineState {
-  // A relation's row: the label colours of the things it moves, in its order (none: a thing's row, one colour).
+  /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
   List<Color>? _mixOf(Ws ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
     if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !wsRelations.contains(m.word(t, 'file'))) return null;
@@ -12,16 +12,17 @@ extension _WsTimelineRows on _WsTimelineState {
     ];
   }
 
-  // A thing by its row's number and name, as After Effects' Parent column says it (many may share the name).
+  /// The layer's row number and name, as After Effects' Parent column shows it. Several layers may share a name.
   String _numbered(Ws ws, String id) {
     final i = ws.layers.indexWhere((l) => l.id == id);
     return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
   }
 
-  // The eye of a row. Joined: the thing is put aside in the document (visible 0) and is not on the stage; one step.
-  bool _isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden); // (as last read: no call to the inside while a row is built)
+  // Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas. It is one undo step.
+  // This reads the last snapshot, so no engine call is made while a row is built.
+  bool _isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
 
-  // How many things a row carried [by] rows goes past: a shut group's row is all that it holds.
+  /// How many layers a row dragged by [by] rows moves past. A collapsed group counts as itself plus all its members.
   int _places(Ws ws, WsLayer l, int by) {
     final away = ws.foldedAway,
         seen = [
@@ -37,8 +38,8 @@ extension _WsTimelineRows on _WsTimelineState {
     ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: _isHidden(ws, id) ? 1 : 0));
   }
 
-  // Joined: solo and lock are the document's (After Effects keeps both in its project): while any thing is solo only
-  // those are seen; a locked thing is not changed (the inside refuses, and says so). Else the sample's own sets.
+  // Solo and lock are stored in the project, as in After Effects. While any layer is solo, only the solo layers are shown.
+  // The engine refuses to change a locked layer and reports an error.
   bool _isSolo(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
 
   bool _isLocked(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
@@ -54,7 +55,8 @@ extension _WsTimelineRows on _WsTimelineState {
           key: _labelMenu,
           child: WsTwoFingers(
             onWheel: _scrollBy,
-            onPan: (by, _) => _scrollBy(Offset(0, -by.dy)), // (the labels go up and down with the tracks' rows)
+            // The labels scroll vertically together with the track rows.
+            onPan: (by, _) => _scrollBy(Offset(0, -by.dy)),
             child: ClipRect(
               child: LayoutBuilder(
                 builder: (context, box) {
@@ -72,7 +74,8 @@ extension _WsTimelineRows on _WsTimelineState {
                             child: NakedButton(
                               enableFeedback: false,
                               mouseCursor: SystemMouseCursors.basic,
-                              onPressed: () => ws.select(other), // (a press goes there: Cavalry's connection list)
+                              // Pressing selects the target layer, like Cavalry's connection list.
+                              onPressed: () => ws.select(other),
                               child: Row(
                                 children: [
                                   Text(said, maxLines: 1, style: T.label(Grey.g56)),
@@ -84,14 +87,16 @@ extension _WsTimelineRows on _WsTimelineState {
                               ),
                             ),
                           )
-                        else if (_order[i].value case final n?) // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
+                        // A property lane shows the property name under its layer's name, as Ableton names a lane after its control.
+                        else if (_order[i].value case final n?)
                           Positioned(
                             key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
                             left: Shape.s(34),
                             right: Shape.s(8),
                             top: i * WtM.row - top,
                             height: WtM.row,
-                            // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
+                            // The lane shows the effect card's name, then the property's own label (for example Threshold, not js_am_rays_threshold).
+                            // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
                               children: [
                                 if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
@@ -111,11 +116,12 @@ extension _WsTimelineRows on _WsTimelineState {
                             right: 0,
                             top: i * WtM.row - top,
                             height: WtM.row,
-                            // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
+                            // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
                               supportedDevices: wsPressing,
                               onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
-                              dragStartBehavior: DragStartBehavior.down, // (all of the way it was carried counts, from where the hand came down)
+                              // Count the whole drag from the pointer-down position.
+                              dragStartBehavior: DragStartBehavior.down,
                               onVerticalDragStart: (_) => _lift = 0,
                               onVerticalDragUpdate: (d) => _lift += d.delta.dy,
                               onVerticalDragEnd: (_) {
@@ -125,7 +131,8 @@ extension _WsTimelineRows on _WsTimelineState {
                                 }
                               },
                               child: _LabelRow(
-                                index: _order[i].layer, // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
+                                // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
+                                index: _order[i].layer,
                                 depth: ws.depth(l),
                                 row: rows[i],
                                 hidden: _isHidden(ws, l.id),
@@ -137,10 +144,12 @@ extension _WsTimelineRows on _WsTimelineState {
                                     : ws.lanesOpen(l.id),
                                 onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
                                 onSelect: () => HardwareKeyboard.instance.isShiftPressed
-                                    ? wsPickRange(ws, l.id) // (Shift: every row from the last picked to this, After Effects' manner)
+                                    // Shift selects every row from the last picked one to this one, as in After Effects.
+                                    ? wsPickRange(ws, l.id)
                                     : HardwareKeyboard.instance.isMetaPressed
                                     ? wsPickAlso(ws, l.id)
-                                    : ws.select(l.id), // (Cmd: one more, or one less)
+                                    // Cmd adds this layer to the selection, or removes it.
+                                    : ws.select(l.id),
                                 onEye: () => _eye(ws, l.id),
                                 onSolo: () => _flag(ws, 'solo', l.id),
                                 onLock: () => _flag(ws, 'lock', l.id),
@@ -149,7 +158,8 @@ extension _WsTimelineRows on _WsTimelineState {
                           ),
                       for (var i = 0; i < rows.length; i++)
                         if (_order[i].value == null)
-                          if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f, // (its name written over it: Cmd+R)
+                          // The rename field is written over the label (Cmd+R).
+                          if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f,
                     ],
                   );
                 },

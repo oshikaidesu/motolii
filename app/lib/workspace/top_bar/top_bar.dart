@@ -1,4 +1,4 @@
-// The window's top bar: who and what (wordmark, project, comp), the mode, and the one loud action (Render).
+// The app's top bar: wordmark, project name, selected layer, size, light or dark mode, and the Render button.
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -48,11 +48,11 @@ class WsTopBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
             ),
-          ), // (a long name gives way, not the bar)
+          ), // A long name is cut off with an ellipsis so the bar keeps its layout.
           SizedBox(width: Shape.s(6)),
           Text('/', style: T.name(Grey.g44)),
           SizedBox(width: Shape.s(6)),
-          Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)), // (where the hand is: the picked thing, or the stage itself)
+          Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)),
           SizedBox(width: Shape.s(10)),
           const _SizeChip(),
           SizedBox(width: Shape.s(4)),
@@ -104,8 +104,10 @@ class _Wordmark extends StatelessWidget {
   );
 }
 
-/// What a step undone or done again changed, in plain words, as After Effects' and Premiere Pro's Edit menu names the
-/// step (Undo Change Warmth): the things and their values the document read again says it changed (P22: where it came back).
+/// Describes in plain words what an undo or redo changed, as the Edit menu of After Effects and Premiere Pro names
+/// the step, for example "Undo Change Warmth".
+///
+/// It reads the layers and values that the reloaded project reports as changed.
 String wsStepSaid(Ws ws, String done) {
   final c = ws.lastChange, m = ws.inside;
   if (c == null || m == null) return done;
@@ -135,14 +137,13 @@ class _UndoRedo extends StatelessWidget {
           size: Shape.z(24),
           rest: const Color(0x00000000),
           ink: Grey.g63,
-          // (a step of the document back, or forward again)
           onTap: () {
             final ws = WsScope.read(context), m = ws.inside;
             if (m == null) return;
             ws.after(
               m.later(flip ? 'redo' : 'undo'),
               (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why,
-            ); // (the window does not wait for the step)
+            ); // The app does not wait for the step to finish.
           },
         ),
     ],
@@ -150,7 +151,7 @@ class _UndoRedo extends StatelessWidget {
 }
 
 void _drawUndo(Canvas canvas, Size s, Color c) {
-  if (SkinParts.draw(canvas, s, 'undo', c)) return; // (the skin's own picture, if it brings one)
+  if (SkinParts.draw(canvas, s, 'undo', c)) return; // The skin's own icon, if any.
   final p = Paint()
     ..color = c
     ..style = PaintingStyle.stroke
@@ -175,7 +176,7 @@ void _drawUndo(Canvas canvas, Size s, Color c) {
     );
 }
 
-/// Dark / light: flips [Grey.shade] and rebuilds the whole window in place (reassemble keeps every State, so the edit survives).
+/// Switches between dark and light by flipping [Grey.shade] and rebuilding the whole app in place, keeping every State.
 class _ShadeSwitch extends StatelessWidget {
   const _ShadeSwitch();
   static void flip() {
@@ -196,7 +197,7 @@ class _ShadeSwitch extends StatelessWidget {
 
 /// A ring with its left half filled: the usual sign for "light or dark".
 void _drawShade(Canvas canvas, Size s, Color c) {
-  if (SkinParts.draw(canvas, s, 'shade', c)) return; // (the skin's own picture, if it brings one)
+  if (SkinParts.draw(canvas, s, 'shade', c)) return; // The skin's own icon, if any.
   final r = Rect.fromLTWH(.7, .7, s.width - 1.4, s.height - 1.4);
   canvas
     ..drawOval(
@@ -209,7 +210,7 @@ void _drawShade(Canvas canvas, Size s, Color c) {
     ..drawArc(r, 1.5708, 3.14159, true, Paint()..color = c);
 }
 
-/// When the document's file was last written (a change is written as it is made).
+/// When the project file was last written. Every change is written as it is made.
 String _savedAt(Ws ws) {
   final f = File('${ws.documentFolder}/${ws.document}');
   if (ws.document == null || !f.existsSync()) return 'Saved';
@@ -227,7 +228,7 @@ class _Saved extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: go == null ? T.label(Grey.g63) : T.label(Grey.g63).copyWith(decoration: TextDecoration.underline),
-    ); // (a link's underline: it goes somewhere)
+    ); // The underline marks the notice as a link when it has a target.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -249,7 +250,7 @@ class _Render extends StatefulWidget {
   State<_Render> createState() => _RenderState();
 }
 
-/// Cmd+R and the Render button both ask for the settings window (the film's name, its range and size, its rate) before a film is written.
+/// Cmd+R and the Render button both open the export settings before a video is written.
 final wsAskRender = ValueNotifier<int>(0);
 
 class _RenderState extends State<_Render> {
@@ -268,9 +269,10 @@ class _RenderState extends State<_Render> {
     super.dispose();
   }
 
-  String _free = ''; // (the folder's room, read as the dialog opens)
+  // Free space of the folder's disk, read when the dialog opens.
+  String _free = '';
 
-  /// How much room the folder's disk has, as the Mac's df says it (its Available, in 1024-byte blocks).
+  /// Free space on the folder's disk, as the Mac's df reports it (the Available column, in 1024-byte blocks).
   static String _room(String? folder) {
     try {
       final cols = (Process.runSync('df', ['-k', folder ?? '.']).stdout as String).trim().split('\n').last.split(RegExp(r'\s+'));
@@ -289,7 +291,7 @@ class _RenderState extends State<_Render> {
     WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);
   }
 
-  // (the kinds the inside writes, by the file's ending: render_draw.h; Alight Motion's own four)
+  // The export formats the engine writes, chosen by file extension (see render_draw.h). Alight Motion offers the same four.
   static const _formats = [
     ('MP4', '.mp4', "H.264, with the films' sound"),
     ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"),
@@ -333,7 +335,7 @@ class _RenderState extends State<_Render> {
           ),
         );
         Text fact(String v) => Text(v, style: T.value(Grey.g91));
-        // (Esc and ⌘. cancel, as a Mac dialog's Cancel does: Apple's; the keys reach here from the name field it holds)
+        // Esc and Cmd+. cancel, as a Mac dialog's Cancel does. The keys arrive from the name field, which holds focus.
         return CallbackShortcuts(
           bindings: {const SingleActivator(LogicalKeyboardKey.escape): _open.hide, const SingleActivator(LogicalKeyboardKey.period, meta: true): _open.hide},
           child: Stack(
@@ -393,7 +395,7 @@ class _RenderState extends State<_Render> {
                       ),
                       row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
                       row('Size', fact('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}')),
-                      // (how it is written, the document's own and kept with it: Alight Motion's export rows; 0 as the stage is)
+                      // Export settings, stored in the project as in Alight Motion. A value of 0 matches the preview.
                       for (final (label, name, choices) in [
                         (
                           'Resolution',
@@ -421,12 +423,9 @@ class _RenderState extends State<_Render> {
                             for (final b in const [4, 8, 16, 32]) (b, '$b Mbps'),
                           ],
                         ),
-                        ('Motion blur', 'render_blur', const [(0, 'Off'), (8, 'On')]), // (After Effects' 180° shutter: eight moments laid on each picture)
-                        (
-                          'Background',
-                          'render_alpha',
-                          const [(0, 'Solid'), (1, 'Clear')],
-                        ), // (clear where nothing is drawn: kept by PNG, GIF and a .mov's HEVC, render_draw.h film)
+                        ('Motion blur', 'render_blur', const [(0, 'Off'), (8, 'On')]), // Eight samples per frame, like After Effects' 180° shutter.
+                        // Clear leaves empty areas transparent. PNG, GIF and HEVC in .mov keep it (see render_draw.h).
+                        ('Background', 'render_alpha', const [(0, 'Solid'), (1, 'Clear')]),
                       ])
                         row(
                           label,
@@ -452,7 +451,7 @@ class _RenderState extends State<_Render> {
                                       'about ${(now * (to - from) / 8).toStringAsFixed(1)} MB',
                                       key: const ValueKey('render-estimate'),
                                       style: T.label(Grey.g76),
-                                    ), // (megabits a second over its seconds, as Alight Motion estimates it)
+                                    ), // Megabits per second times the duration, as Alight Motion estimates it.
                                 ],
                               );
                             },
@@ -478,7 +477,7 @@ class _RenderState extends State<_Render> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: T.label(Grey.g76),
-                              ), // (under them, one line: five chips leave no room beside)
+                              ), // On its own line under the chips, because five chips leave no room beside it.
                             ],
                           ),
                         ),
@@ -507,14 +506,15 @@ class _RenderState extends State<_Render> {
           ),
         );
       },
-      child: Forms.worn.action(context, ActionSpec('Render', _ask)), // (as the skin's forms draw it)
+      child: Forms.worn.action(context, ActionSpec('Render', _ask)), // Drawn by the skin's forms.
     );
   }
 }
 
-/// How many times Motolii missed 60 fps while something moved (a frame of the window's or a picture of the inside's
-/// over 1/60 s), and how many times the window waited on the inside (the rule: never): a red dot and the count only
-/// when it did; a tap lists the latest, each with its clock time and the part that was slow.
+/// A red dot with a count of problems, shown only when there are any.
+///
+/// It counts frames longer than 1/60 s while something moved (in the app or the engine) and times the app waited
+/// for the engine, which should never happen. A click lists the latest, each with its clock time and slow part.
 class _Waited extends StatefulWidget {
   const _Waited();
   @override

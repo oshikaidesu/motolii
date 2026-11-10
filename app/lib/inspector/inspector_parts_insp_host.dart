@@ -1,11 +1,12 @@
-// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
-// How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only Role.selected. The old Motolii is not a source.
+// Owns the panel's values (Doc) and provides them again whenever they change. A different kind makes a new document, so give the widget a key.
+// The look follows docs/app/DESIGN.md: hairlines, type carries hierarchy, grey levels, and an accent only for Role.selected.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
-/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
+/// Owns the panel's values ([Doc]) and provides them again whenever they change.
+/// A different kind makes a new document, so give the widget a key.
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
@@ -49,75 +50,95 @@ class InspHost extends StatefulWidget {
   final Kind kind;
   final Widget child;
 
-  /// What the host calls the kind (see [Doc.kindWord]), and the values it has.
+  /// The caller's name for the kind (see [Doc.kindWord]).
   final String? kindWord;
 
-  /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
-  /// the fields that show them follow, the rest of the inspector stays as it was built).
+  /// The values and key marks at a new time, applied without rebuilding the host.
+  /// During playback only the time moves, so the fields that show the values follow and the rest of the inspector stays as built.
   final ValueListenable<(Map<String, double>, Map<String, KeyS>)> live;
 
-  /// The host's effects as cards that move up or down its stack (see [Doc.movable]).
+  /// The caller's effects as cards that move up or down its stack (see [Doc.movable]).
   final List<String> movable;
   final void Function(String title, int by)? onCardMove;
   final double? Function(String sum) onSum;
   final VoidCallback? onAddEffect;
   final List<String> moreCards;
   final void Function(String title)? onMoreCard;
-  final void Function(List<String> names)? onCardReset; // (a card's values as they come: Reset on its head)
-  final void Function(String title)? onCardRemove; // (one of its effects taken off: Remove on its card's head, Alight Motion's Delete)
-  final Widget? Function(String title, List<String> names)? cardCode; // (a card's code, drawn by the host: Doc.cardCode)
-  final void Function(String title)? onCardEye; // (one of its effects turned off or on again, its values kept: Alight Motion's eye on an effect)
-  final void Function(String title, List<String> names)?
-  onCardSave; // (an effect's values, keys and all, kept on the shelf: Alight Motion's preset of one effect)
-  final void Function(String title)? onCardInfo; // (what an effect does, in its maker's words: AbsentMotion's Effect Info)
-  final void Function(String title)? onCardDuplicate; // (the effect put on again after it, its values with it: Alight Motion's Duplicate)
-  final List<String> cardsOff; // (the titles of those turned off)
-  final void Function(List<String> names)? onCardCopy; // (a card's values copied, to be given to another thing: Copy on its head)
-  final VoidCallback? onCardPaste; // (and given: Paste)
 
-  /// The host's own cards of values (see [Doc.cards]).
+  /// Resets a card's values to their defaults (Reset on the card head).
+  final void Function(List<String> names)? onCardReset;
+
+  /// Removes an effect (Remove on the card head, like Alight Motion's Delete).
+  final void Function(String title)? onCardRemove;
+
+  /// Builds the code view of a card (see [Doc.cardCode]).
+  final Widget? Function(String title, List<String> names)? cardCode;
+
+  /// Turns an effect off or on again, keeping its values (like the eye on an effect in Alight Motion).
+  final void Function(String title)? onCardEye;
+
+  /// Saves an effect's values, keys included, as a preset on the shelf (like Alight Motion's preset of one effect).
+  final void Function(String title, List<String> names)? onCardSave;
+
+  /// Shows what an effect does, in its author's words (like AbsentMotion's Effect Info).
+  final void Function(String title)? onCardInfo;
+
+  /// Adds a copy of an effect after it, with its values (like Alight Motion's Duplicate).
+  final void Function(String title)? onCardDuplicate;
+
+  /// Titles of the effects that are turned off.
+  final List<String> cardsOff;
+
+  /// Copies a card's values so they can be pasted onto another layer (Copy on the card head).
+  final void Function(List<String> names)? onCardCopy;
+
+  /// Pastes the copied card values (Paste on the card head).
+  final VoidCallback? onCardPaste;
+
+  /// The caller's own cards of values (see [Doc.cards]).
   final List<Fx>? cards;
 
-  /// The selected layer's name, when the host knows it.
+  /// The selected layer's name, when the caller knows it.
   final String? title;
 
-  /// A panel link asked for a panel (`Browser › Fonts`, `Ease`); the host opens it.
+  /// A panel link asked to open a panel (`Browser › Fonts`, `Ease`); the caller opens it.
   final ValueChanged<String> onRoute;
 
-  /// The slot a panel link was aimed at when it asked for its panel ('' : none), told just before [onRoute].
+  /// The slot a panel link pointed at when it asked for its panel, or '' for none. Called just before [onRoute].
   final ValueChanged<String> onAim;
 
-  /// Values the host owns (the layer's transform at this frame): written in silently when they change, so edits made here last until then.
+  /// Values the caller owns, such as the layer's transform at this frame. They are written in silently when they change, so edits made here last until then.
   final Map<String, double> values;
   final Map<String, String> strs;
 
-  /// The key mark of each property (pos, scale, rot ...) as the host's document has it.
+  /// The key mark of each property (position, scale, rotation ...) as the caller's document has it.
   final Map<String, KeyS> keyMarks;
 
-  /// Values changed in the inspector: [live] while a hand is still on them (not settled), then once more when it lets go.
+  /// Values changed in the inspector. [live] is true while a drag is still in progress, and the call is repeated once when the drag ends.
   final void Function(Map<String, double> changed, {required bool live}) onValues;
 
-  /// A hand let go without keeping what it did (Esc): what it showed is to be dropped.
+  /// A drag was cancelled with Esc: what it showed is to be dropped.
   final VoidCallback onDrop;
 
   /// A property's key mark was changed in the inspector.
   final void Function(String prop, KeyS mark) onKey;
 
-  /// Words changed in the inspector (a text's content, a chooser's choice). false: the host did not take them, and they go back to what they were.
+  /// Strings changed in the inspector, such as a text's content or a chooser's choice.
+  /// Returns false if the caller did not take them, and the fields go back to their previous strings.
   final bool Function(Map<String, String> changed) onWords;
 
-  /// Animate all was turned on or off (the host's document may key whatever a hand changes, wherever the hand is).
+  /// Animate all was turned on or off. The caller's document may then key whatever a drag changes, wherever the drag is.
   final ValueChanged<bool> onAnimateAll;
 
-  /// The host's own Animate all: shown as it is, never reset by a new kind.
+  /// The caller's own Animate all. It is shown as given and is never reset by a new kind.
   final bool animating;
 
-  /// The on/off properties the host owns (Clip to below ...), and a change of them told to it. false: the host did not
-  /// take it (nothing is behind that switch), and the switch goes back.
+  /// The on/off properties the caller owns, such as Clip to below, and the callback for a change of them.
+  /// The callback returns false if the caller did not take the change (nothing is behind that switch), and the switch goes back.
   final Map<String, bool> flags;
   final bool Function(Map<String, bool> changed)? onFlags;
 
-  /// What one change of the inspector tells the host (values, then key marks) is told inside this, so a host can keep it as one act.
+  /// Wraps one change of the inspector, values then key marks, so the caller can record it as one undo step.
   final void Function(VoidCallback tells) together;
   @override
   State<InspHost> createState() => _InspHostState();
@@ -133,7 +154,7 @@ class _InspHostState extends State<InspHost> {
       ..s2.addAll(widget.strs)
       ..b.addAll(widget.flags)
       ..keys.addAll(widget.keyMarks)
-      ..animateAll = _animating = widget.animating; // (the host's: the inspector shows it)
+      ..animateAll = _animating = widget.animating;
     _seen
       ..clear()
       ..addAll(d.v);
@@ -149,7 +170,7 @@ class _InspHostState extends State<InspHost> {
     return d..addListener(_r);
   }
 
-  /// What the host says of the picked thing, given to the document as it is now.
+  /// Gives the document what the caller says about the selected layer, as it is now.
   void _wire(Doc d) => d
     ..title = widget.title
     ..kindWord = widget.kindWord
@@ -170,13 +191,14 @@ class _InspHostState extends State<InspHost> {
     ..onCardCopy = widget.onCardCopy
     ..onCardPaste = widget.onCardPaste;
 
-  // what the host has been told of (or gave): only what differs from it is told
+  // What the caller has been told of or gave. Only what differs from it is reported.
   final _seen = <String, double>{};
   final _seenKeys = <String, KeyS>{};
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
-  void _tell() => doc.inGesture ? _tells() : widget.together(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
+  // During a drag, report only the current values and make no undo step, since nothing is settled.
+  void _tell() => doc.inGesture ? _tells() : widget.together(_tells);
   bool _animating = false;
   void _tells() {
     if (doc.animateAll != _animating) widget.onAnimateAll(_animating = doc.animateAll);
@@ -193,7 +215,8 @@ class _InspHostState extends State<InspHost> {
     }
     _live = live;
     for (final e in doc.keys.entries.toList()) {
-      if (live || _seenKeys[e.key] == e.value) continue; // (while a hand is on it nothing is settled: told when it lets go)
+      // While a drag is in progress nothing is settled; the key is reported when the drag ends.
+      if (live || _seenKeys[e.key] == e.value) continue;
       _seenKeys[e.key] = e.value;
       widget.onKey(e.key, e.value);
     }
@@ -205,7 +228,8 @@ class _InspHostState extends State<InspHost> {
       final flags = {
         for (final e in doc.b.entries)
           if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
-            e.key: e.value, // (a card is open until it is folded: its first fold is news too, or it opens again at the next reading)
+            // A card is open until it is folded, so its first fold is news too. Otherwise it would open again at the next read.
+            e.key: e.value,
       };
       if (flags.isNotEmpty) {
         if (tell(flags)) {
@@ -235,8 +259,8 @@ class _InspHostState extends State<InspHost> {
       widget.onAim(doc.s2.remove('route.at') ?? '');
       widget.onRoute(r);
     }
-    // (while a hand is on a value the whole inspector is not built again each step: the field under the hand shows its
-    //  own number and the stage follows what the host is told; everything is built once when the hand lets go)
+    // During a drag the whole inspector is not rebuilt at each step: the field being dragged shows its own value
+    // and the preview follows what the caller is told. Everything is rebuilt once when the drag ends.
     if (mounted && !doc.inGesture && !doc.ending) setState(() => _tick++);
   }
 
@@ -256,11 +280,12 @@ class _InspHostState extends State<InspHost> {
       doc = _make();
       _tick++;
     } else {
-      // A host that is told of changes owns the values: whatever it did not take goes back to what it says, as soon
-      // as no hand is on them (never under a hand: a value being dragged is not written over, even while it plays).
-      // (numbers and key marks: told to the fields that show them; words, flags, choices and the rest: everything again)
+      // A caller that is told of changes owns the values. Whatever it did not take goes back to what it says as soon as no drag is in progress.
+      // A value being dragged is never overwritten, even during playback.
+      // Numbers and key marks are sent to the fields that show them; strings, flags, choices and the rest cause a full rebuild.
       if (!doc.inGesture) {
-        if (doc.showAt(widget.values, const {})) _tick++; // (a value no field watches changed: shown by building again)
+        // A value that no field watches changed, so rebuild to show it.
+        if (doc.showAt(widget.values, const {})) _tick++;
         _seen.addAll(widget.values);
       }
       if (widget.onFlags != null) {
@@ -271,8 +296,8 @@ class _InspHostState extends State<InspHost> {
       if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
       doc.s2.addAll(widget.strs);
       _seenWords.addAll(widget.strs);
-      // (and where what is shown is not what the document says: a key mark pressed shows lit at once, and an undo that
-      //  takes the key away leaves the document's marks as they were before the press, so only the shown one differs)
+      // Also cover the case where what is shown differs from the document. A key mark that was just pressed shows lit at once,
+      // and an undo that removes the key leaves the document's marks as they were before the press, so only the shown one differs.
       if (!mapEquals(o.keyMarks, widget.keyMarks) || widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
         doc.showAt(const {}, widget.keyMarks);
         _seenKeys.addAll(widget.keyMarks);
@@ -283,17 +308,20 @@ class _InspHostState extends State<InspHost> {
       _tick++;
     }
     if (o.title != widget.title || o.kindWord != widget.kindWord || !listEquals(o.cardsOff, widget.cardsOff)) {
-      _tick++; // (an effect's eye shut or opened: its card says so)
+      // The eye of an effect was shut or opened, so its card must change.
+      _tick++;
     }
     _wire(doc);
   }
 
   void _atMoment() {
     final (values, marks) = widget.live.value;
-    if (doc.inGesture) return; // (never under a hand)
+    // Never during a drag.
+    if (doc.inGesture) return;
     _seen.addAll(values);
     _seenKeys.addAll(marks);
-    if (doc.showAt(values, marks) && mounted) setState(() => _tick++); // (a value no field watches, a choice, changed: shown by building again)
+    // A value that no field watches changed, such as a choice, so rebuild to show it.
+    if (doc.showAt(values, marks) && mounted) setState(() => _tick++);
   }
 
   @override

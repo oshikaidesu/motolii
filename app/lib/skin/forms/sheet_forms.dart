@@ -1,5 +1,6 @@
-// Sheet forms: one sheet of paper. A control is a word on that sheet; the sheet stays empty around it.
-// The one chromatic mark is the place you are, or the control under the hand. A card's kind is a dot, because a filled head would make every card a figure.
+// The sheet form set: controls drawn as plain words on an otherwise empty surface.
+// The only coloured mark is the current selection or the control under the pointer.
+// A card's kind is shown as a small dot, because a filled header would make every card look like a figure.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -37,7 +38,7 @@ Widget _mark(_Mark mark, Color ink) => CustomPaint(
 class SheetForms extends Forms {
   const SheetForms();
 
-  /// The word on the sheet, and a ring. The ring becomes the mark's quarter only while the hand is on it.
+  /// A button drawn as its label and a ring. The ring becomes a quarter mark only while hovered or pressed.
   @override
   Widget action(BuildContext context, ActionSpec a) => NakedButton(
     onPressed: a.onPressed,
@@ -57,7 +58,7 @@ class SheetForms extends Forms {
     },
   );
 
-  /// A word for the state, and a circle. Colour arrives only under the hand.
+  /// A switch drawn as the word On or Off and a circle. The accent colour appears only on hover.
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,
@@ -77,7 +78,7 @@ class SheetForms extends Forms {
     ),
   );
 
-  /// Title, a dot of its kind, a hairline. The rows sit on the same sheet, with no frame of their own.
+  /// A card drawn as a title, a dot for its kind and a hairline. The rows sit on the same surface with no frame.
   @override
   Widget card(BuildContext context, CardSpec c) {
     final head = c.title == null
@@ -117,7 +118,7 @@ class SheetForms extends Forms {
     );
   }
 
-  /// Each word stands next to a shape the size of the control. The picked one is a quarter in the mark's colour.
+  /// A segmented choice drawn as labels, each beside a mark. The selected one gets an accent quarter mark.
   @override
   Widget segment(BuildContext context, ChoiceSpec c) => NakedToggleGroup<int>(
     selectedValue: c.selected,
@@ -151,7 +152,7 @@ class SheetForms extends Forms {
     ),
   );
 
-  /// The state is an 18px circle. On, it is filled with the mark. The window's picture sits beside the word.
+  /// A toggle drawn as an 18px circle, filled when on. The caller's optional icon sits beside the label.
   @override
   Widget flag(BuildContext context, FlagSpec f) => NakedButton(
     onPressed: f.onTap,
@@ -173,7 +174,7 @@ class SheetForms extends Forms {
     },
   );
 
-  /// Filter words in a line. The one on has the mark, and its count.
+  /// Filter chips in one row. The active chip gets a dot, and each chip shows its count when it has one.
   @override
   Widget chips(BuildContext context, ChipsSpec c) => SizedBox(
     height: Shape.z(28),
@@ -205,7 +206,7 @@ class SheetForms extends Forms {
     ),
   );
 
-  /// A name on the sheet. Picked, a quarter stands at its left. The band behind it is the sheet.
+  /// A track header drawn as its name. When selected it gets a quarter mark on the left. It has no background band.
   @override
   Widget track(BuildContext context, TrackSpec t) => Usual.track(
     context,
@@ -220,7 +221,7 @@ class SheetForms extends Forms {
     bottom: 0,
   );
 
-  /// A square of the axis, the number, and a rule. A disc travels the rule when the value has a range.
+  /// A number drawn as a mark for the axis, the value and a rule below. When the value has a range, a disc moves along the rule.
   @override
   Widget number(BuildContext context, NumberSpec n) {
     final shown = n.editing && n.editor != null ? n.editor! : n.value;
@@ -265,7 +266,7 @@ class SheetForms extends Forms {
     );
   }
 
-  /// The picked layer is a red block. The others are a thin rule. No rounded bar.
+  /// The selected layer is drawn as a red block and the others as a thin rule, with square corners.
   @override
   double get trackRadius => 0;
 
@@ -278,7 +279,7 @@ class SheetForms extends Forms {
   @override
   Color trackBand(int index, bool selected) => Grey.g07;
 
-  /// A quarter in front of the pane's own mark when that pane is the one open.
+  /// Puts a quarter mark before the pane's icon, filled when that pane is the open one.
   @override
   Widget paneMark(BuildContext context, {required bool selected, required Widget mark}) => Row(
     mainAxisSize: MainAxisSize.min,

@@ -1,8 +1,7 @@
-// The shelf drawn out from the right of the Ease panel and put away (the maker, 10/31, drawn on a picture of it: "右から出せ
-// る、しまえるプリセットメニュー", room for some fifty, what cards make among them). It comes in as a column of its own, pushing
-// the rest left, so the flow stays in sight and its cards can be carried to it; it slides as the colours' boxes do
-// (dock_make_2.dart); as many columns as the pane gives room for, Easey's presetsPage.js. A card carried to the shapes draws
-// it out, as a Finder folder a thing is held over opens (macOS's spring-loaded folders).
+// The shelf of saved easings that slides out from the right of the Ease panel and slides back.
+// It opens as a column of its own and pushes the rest left, so the flow stays in view and its cards can be dragged onto the shelf.
+// It slides like the colour boxes (dock_make_2.dart) and uses as many columns as the pane has room for, like Easey's presetsPage.js.
+// Dragging a card over the grip opens the shelf, like a Finder folder opening under a dragged item (macOS spring-loaded folders).
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,23 +18,27 @@ import 'package:motolii/workspace/state/state.dart';
 import '../../widgets/controls.dart' show Hov;
 import '../window/settings_file.dart' show fileKeep, fileList;
 
-/// What a hand kept, each as it is said (a curve, a card, all the cards), as a device carried to Live's browser by its title
-/// bar is saved (Live's manual, 23.2.5 Saving Presets). In ~/.motolii, as the colours are in colors.json.
+/// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
+/// Saving works like saving a device preset in Ableton Live (manual, 23.2.5 Saving Presets).
+/// The list lives in ~/.motolii/ease_kept.json, next to colors.json.
 File _keptFile = File('${Platform.environment['HOME']}/.motolii/ease_kept.json');
 List<String>? _kept;
 
-/// (a test points it elsewhere, and forgets what was read: as coloursAt)
+/// Points the list at another file and forgets what was read. Tests use this, as they do with coloursAt.
 void easeKeptAt(File f) => (_keptFile = f, _kept = null);
 
 List<String> easeKept() => _kept ??= [for (final w in fileList(_keptFile)) '$w'];
 
+/// Saves [word], or removes it when [off] is set.
 void easeKeep(String word, {bool off = false}) {
   final kept = easeKept()..remove(word);
   if (!off) kept.add(word);
-  fileKeep(_keptFile, jsonEncode(kept)); // (not kept: known while the window is open)
+  // The list is also held in memory, so it is known while the app is open even if writing the file fails.
+  fileKeep(_keptFile, jsonEncode(kept));
 }
 
-final _tiles = <String, Ease>{}; // (each worked out once: fifty are not worked out again as a hand moves a handle)
+// Each saved easing is parsed once, so fifty of them are not parsed again whenever a handle moves.
+final _tiles = <String, Ease>{};
 
 double get easeGripWide => Shape.z(8);
 
@@ -59,12 +62,14 @@ class EaseGrip extends StatelessWidget {
   );
 }
 
-/// The shelf: what a hand kept, with an empty frame for the next, and under a line the ways of the maker's folder and the
-/// library's (a file put in shelves/ease is one more). A press puts a tile on the stretch whole, in place of all that is
-/// there, so one after another can be tried (a carried one is laid on what is there, as a shape is). A card let go on it is
-/// kept, what all the cards make too (the maker, 10/31: "easeの組み合わせの結果も保存できるように"), and so is what is on
-/// the stretch when the empty frame is pressed, as an empty part of Photoshop's Swatches panel takes the colour now. A
-/// kept one comes off by its ×.
+/// The shelf of easings.
+///
+/// The saved easings come first, followed by an empty slot for the next one. Below a divider are the easings from the
+/// project and from the shelves/ease folder, so a file put there appears as one more tile.
+/// Clicking a tile replaces the whole easing on the keyframe interval, so the user can try one after another.
+/// Dropping a card on the shelf saves it, and so does clicking the empty slot, which saves the current easing
+/// as an empty swatch in Photoshop's Swatches panel takes the current colour.
+/// A saved tile is removed with its x button.
 class EaseShelf extends StatelessWidget {
   const EaseShelf({
     super.key,
@@ -78,13 +83,20 @@ class EaseShelf extends StatelessWidget {
     required this.onForget,
     required this.inside,
   });
-  final String now; // (the whole way on the stretch, as said)
-  final List<Ease> ways; // (those of the document and the maker's folder)
+
+  /// The easing on the keyframe interval, as its name string.
+  final String now;
+
+  /// The easings from the project and the shelves/ease folder.
+  final List<Ease> ways;
+
   final int columns;
   final double pitch, side;
   final Motolii? inside;
   final ValueChanged<Ease> onPick, onForget;
-  final ValueChanged<int> onKeep; // (a card of the flow: its place; all of them: below 0)
+
+  /// Called with the index of a dropped card, or a negative number to save all the cards.
+  final ValueChanged<int> onKeep;
 
   @override
   Widget build(BuildContext context) {

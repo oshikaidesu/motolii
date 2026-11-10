@@ -1,5 +1,7 @@
-// The tool panel's Depth tool: the camera seen from above. Layers sit as slabs at their Z in their own hue, the lens cone opens
-// with the focal length, and the focus line (with its depth-of-field band) is dragged or snapped to a slab.
+// The Tool Panel's Depth tool: a top view of the camera and the layers.
+// Each layer is a slab at its Z position, drawn in the color of its kind.
+// The lens cone widens as the focal length shortens.
+// The user drags the focus line, together with its depth-of-field band, or clicks a slab to focus on that layer.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -13,14 +15,14 @@ import '../../widgets/two_fingers.dart';
 
 const _zMax = 3000.0;
 
-/// The lens, kept per document so leaving the tool panel and coming back keeps it.
+/// The lens settings shown in the diagram. One is kept per document, so the values survive leaving the tool panel and coming back.
 class _Lens {
   double focal = 50, focus = 1120, fstop = 2.8;
   String? target;
 
   double get fov => 2 * math.atan(36 / (2 * focal));
 
-  /// Thin-lens depth of field, with one comp px read as 4 mm and a 0.03 mm circle of confusion.
+  /// The thin-lens depth of field, taking one canvas pixel as 4 mm and a circle of confusion of 0.03 mm.
   ({double near, double far}) get dof {
     const c = .03, k = 4.0;
     final s = focus * k, h = focal * focal / (fstop * c) + focal;
@@ -31,12 +33,15 @@ class _Lens {
 
 final _lenses = Expando<_Lens>();
 
-/// Joined: millimetres of focal length to the document camera's zoom 1, on Filament's own 24 mm high film
-/// (Camera::setLensProjection): 12 mm over the tangent of half the stage's 30 degrees.
+/// The focal length in millimetres that corresponds to a document camera zoom of 1.
+///
+/// It assumes Filament's 24 mm high film (Camera::setLensProjection): 12 mm divided by the tangent of half the stage's 30 degree field of view.
 const _filmMm = 12 / 0.2679491924311227;
 
-/// Joined: the document's camera that the tool panel is on (the first one listed), the lens read from it as the tool panel counts
-/// (focus in points of the picture from the eye; none said, where it looks), and how far off its eye is.
+/// Reads the first camera layer of the document into [lens] and returns its layer id and its distance from the eye.
+///
+/// The focus is stored in canvas points measured from the eye. When the camera has no focus value, the focus is the eye distance.
+/// Returns null when the document has no camera.
 ({int camera, double eye})? _lensOf(Ws ws, _Lens lens) {
   final m = ws.inside, cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
   if (m == null || cam == null) return null;
@@ -46,14 +51,15 @@ const _filmMm = 12 / 0.2679491924311227;
     ..focal = (m.value(t, 'zoom', at) ?? 1) * _filmMm
     ..fstop = stop > 0
         ? stop
-        : 22 // (nought, all sharp: the tool panel's narrowest)
+        // An aperture of 0 means everything is sharp, which is shown as the narrowest f-stop of the tool panel.
+        : 22
     ..focus = focus > 0 ? focus * p : eye;
   return (camera: t, eye: eye);
 }
 
 typedef _Slab = ({String id, String name, Color tone, double x, double z, double w});
 
-/// Each thing seen from above: where it is (across, and how far from the eye).
+/// Returns one slab per layer, except cameras: its horizontal position and its distance from the eye.
 List<_Slab> _slabsOf(Ws ws) {
   final m = ws.inside!, eye = _lensOf(ws, _Lens())?.eye;
   return [
@@ -70,6 +76,7 @@ List<_Slab> _slabsOf(Ws ws) {
   ];
 }
 
+/// The Depth tool: a top view of the camera lens with the layers as slabs.
 class DepthTool extends StatefulWidget {
   const DepthTool({super.key});
   @override
@@ -79,9 +86,10 @@ class DepthTool extends StatefulWidget {
 class _DepthToolState extends State<DepthTool> {
   @override
   Widget build(BuildContext context) {
-    WsScope.pictureOf(context); // (the lens as it is in the picture shown)
+    // Rebuild when the displayed snapshot changes, so the lens matches it.
+    WsScope.pictureOf(context);
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
-    // (the one value the hand moves, carried as a hand on the stage carries it)
+    // Sets one camera value and sends it to the engine as a drag, the same way a drag on the stage does.
     void edit(void Function() f, String name, double value) {
       setState(f);
       if (joined != null) {
@@ -93,7 +101,7 @@ class _DepthToolState extends State<DepthTool> {
 
     final cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
     if (joined != null) {
-      // (joined: the thing the focus is on is the one nearest it of those it holds sharp, by the document's values)
+      // With a document camera, the focused layer is the sharp layer nearest to the focus.
       final d = lens.dof,
           sharp = _slabsOf(ws).where((s) => s.z >= d.near && s.z <= d.far).toList()
             ..sort((a, b) => (a.z - lens.focus).abs().compareTo((b.z - lens.focus).abs()));
@@ -133,13 +141,11 @@ class _DepthToolState extends State<DepthTool> {
                       'focus',
                       z.clamp(100.0, _zMax) / (ws.inside?.point ?? 1),
                     ),
-                    onFocal: (f) => edit(
-                      () => lens.focal = f.clamp(8.0, 600.0),
-                      'zoom',
-                      f.clamp(8.0, 600.0) / _filmMm,
-                    ), // (the cone's edge pulled: a narrower view is a longer lens)
+                    // A narrower view is a longer lens.
+                    onFocal: (f) => edit(() => lens.focal = f.clamp(8.0, 600.0), 'zoom', f.clamp(8.0, 600.0) / _filmMm),
                     onDone: () {
-                      if (joined != null) ws.after(ws.inside!.later('drag_end', number: 1)); // (a hand let go is one step of the document)
+                      // Ending the drag makes the change one undo step.
+                      if (joined != null) ws.after(ws.inside!.later('drag_end', number: 1));
                     },
                   ),
                 ),
@@ -157,6 +163,7 @@ class _DepthToolState extends State<DepthTool> {
   }
 }
 
+/// The side column with the depth of field and its near and far limits. With a camera it also shows the Camera Options card.
 class _LensNumbers extends StatelessWidget {
   const _LensNumbers({required this.lens, required this.camera});
   final _Lens lens;
@@ -242,7 +249,8 @@ class _DiagramState extends State<_Diagram> {
             onTapUp: (e) {
               final id = hit(e.localPosition);
               if (id == null) return;
-              widget.onFocus(slabs.firstWhere((s) => s.id == id).z, id); // (focus on that thing, where it is)
+              // Focus on the clicked layer at its own distance.
+              widget.onFocus(slabs.firstWhere((s) => s.id == id).z, id);
               widget.onDone();
             },
             onVerticalDragStart: (e) {
@@ -256,7 +264,7 @@ class _DiagramState extends State<_Diagram> {
               setState(() => _drag = false);
             },
             onHorizontalDragEnd: (_) => widget.onDone(),
-            // (the cone's edge, pulled across, opens or closes the view: the lens's own length, Transform's manner)
+            // Dragging sideways changes the focal length, as the cone edge opens or closes the view.
             onHorizontalDragUpdate: (e) {
               final d = e.localPosition - m.eye;
               if (d.dy < -8) widget.onFocal(18 / math.tan(math.atan2(d.dx.abs(), -d.dy).clamp(.02, 1.5)));
@@ -272,7 +280,7 @@ class _DiagramState extends State<_Diagram> {
   }
 }
 
-/// Comp space (x across, z away from the camera) to the diagram's pixels.
+/// Maps canvas space (x across, z away from the camera) to the diagram's pixels.
 class _Map {
   _Map(Size s) : size = s {
     const top = 12.0, bottom = 30.0, left = 34.0;
@@ -287,6 +295,7 @@ class _Map {
   Rect slab(double x, double z, double w) => Rect.fromCenter(center: at(x, z), width: w * scale, height: Shape.z(6));
 }
 
+/// Paints the diagram: depth rulings, lens cone, depth-of-field band, focus line, slabs and the camera.
 class _DepthPainter extends CustomPainter {
   const _DepthPainter({
     required this.slabs,
@@ -334,7 +343,7 @@ class _DepthPainter extends CustomPainter {
     c.drawRect(Rect.fromLTRB(0, fy, s.width, ny), fill..color = Grey.g20);
     c.restore();
     c.drawPath(cone, line..color = Grey.g38);
-    // (a knob on the cone's edge: pulled across, it opens or closes the view)
+    // A knob on the cone edge shows that dragging sideways changes the view.
     final knobZ = _zMax * .45, knob = m.at(knobZ * math.tan(half), knobZ);
     c.drawCircle(knob, 6, Paint()..color = WsT.toneCamera);
     c.drawCircle(
@@ -365,7 +374,8 @@ class _DepthPainter extends CustomPainter {
       }
       line.strokeWidth = 1;
     }
-    // Names over their slabs, the focused one first; a name that would cover a slab, the tag or another name is left out.
+    // Layer names above their slabs, the focused layer first.
+    // A name that would cover a slab, the focus tag or another name is left out.
     final taken = [for (final sl in slabs) m.slab(sl.x, sl.z, sl.w).inflate(1), Rect.fromLTWH(s.width - 48, y - 8, 42, 16)];
     for (final sl in [...slabs.where((e) => e.id == target), ...slabs.where((e) => e.id != target)]) {
       final r = m.slab(sl.x, sl.z, sl.w), sharp = sl.z >= near && sl.z <= far, on = sl.id == target;

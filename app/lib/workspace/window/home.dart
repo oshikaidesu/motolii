@@ -1,11 +1,12 @@
-// The documents beside the open one, laid out as CapCut's desktop home lays its projects (seen in CapCut for Mac
-// 10/29: a wide "Create project" over all, then "Projects" with a search, its pictures in a grid, square and filled,
-// each named under it with "size | length"), told as AbsentMotion's home tells them (Apache-2.0, ui/home/
-// HomeScreen.kt): its shape and resolution and frames a second too (ProjectFacts.kt aspectName, HomeScreen.kt facts,
-// ExportOptions.kt formatBytes), under the day it was last changed, newest first (its listRows and dateHeader, as
-// Alight Motion's list), or by name (its ListHeader); opened by a press, duplicated ("Name Copy", its
-// edit_layer_copy_name) or put in the Trash, asked first (its delete dialog). The picture and the size and length
-// are what the document last kept (Motolii.poster), read without opening it.
+// The home screen: a grid of the projects in a folder.
+//
+// The layout follows CapCut's desktop home: a wide "New Project" button, then "Projects" with a search field and a grid
+// of square thumbnails, each with its name and "size | length" below.
+// The facts shown (aspect ratio, resolution, frame rate) and the grouping follow AbsentMotion (Apache-2.0,
+// ui/home/HomeScreen.kt, ProjectFacts.kt aspectName, ExportOptions.kt formatBytes):
+// projects are grouped under the day they were last changed, newest first, or listed by name.
+// Clicking a card opens it. Its menu can select, export, duplicate, or move it to the Trash after a confirmation.
+// The thumbnail, size and length come from what the project last saved (Motolii.poster), read without opening it.
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -20,7 +21,7 @@ import '../state/state.dart';
 import 'settings_file.dart' show firstFree;
 import '../../widgets/text_gestures.dart';
 
-/// One document listed: its file, and what it kept (null: none yet, or not read yet).
+/// One project listed: its file, and the facts saved in it. [facts] and [picture] are null until read, or if the project saved none.
 class HomeDoc {
   HomeDoc(this.path, this.changed, this.bytes);
   final String path;
@@ -42,7 +43,15 @@ class WsHome extends StatefulWidget {
     required this.onNew,
     required this.onClose,
   });
-  final String folder, lib, open; // (the folder listed, the inside's library (read on another isolate), the document open now)
+
+  /// The folder whose projects are listed.
+  final String folder;
+
+  /// The engine library, used to read each project's facts on another isolate.
+  final String lib;
+
+  /// The path of the project that is open now.
+  final String open;
   final void Function(String doc) onOpen;
   final void Function(List<String> docs) onExport;
   final VoidCallback onNew, onClose;
@@ -51,11 +60,18 @@ class WsHome extends StatefulWidget {
 }
 
 class _WsHomeState extends State<WsHome> {
-  static var byName = false; // (as it was last asked, as AbsentMotion keeps its sortBy)
+  // The last sort order chosen, kept like AbsentMotion's sortBy.
+  static var byName = false;
   List<HomeDoc> _docs = const [];
-  String? _menu, _asking; // (the card whose actions are open; the one asked whether it goes to the Trash)
-  String _find = ''; // (CapCut's search over its projects: by name)
-  final _picked = <String>{}; // (Alight Motion's ⋯ › Select, or ⌘ as the Finder's and DaVinci Resolve's project list: while any is, a press picks)
+  // The card whose menu is open.
+  String? _menu;
+  // The card waiting for the user to confirm moving it to the Trash.
+  String? _asking;
+  // The search text, matched against project names.
+  String _find = '';
+  // Selected projects, as in Alight Motion's menu "Select" or Cmd-click in the Finder.
+  // While any is selected, a click toggles selection instead of opening.
+  final _picked = <String>{};
   late final Directory _pictures = Directory.systemTemp.createTempSync('motolii_home');
 
   @override
@@ -74,7 +90,8 @@ class _WsHomeState extends State<WsHome> {
     super.dispose();
   }
 
-  var _reads = 0; // (each reading's pictures named apart: one shown is not written over while it is read)
+  // Counts reads so each read writes thumbnails under new names and never overwrites one that is on screen.
+  var _reads = 0;
   void _read() {
     final docs = <HomeDoc>[], read = _reads++;
     for (final f in Directory(widget.folder).listSync().whereType<File>()) {
@@ -96,7 +113,7 @@ class _WsHomeState extends State<WsHome> {
     }
   }
 
-  /// A copy beside it, named as AbsentMotion names one ("Name Copy", then a number when that is taken).
+  /// Copies the project next to it, named "Name Copy" (AbsentMotion's naming), with a number added if that name is taken.
   void _duplicate(HomeDoc d) {
     final to = firstFree('${widget.folder}/${d.name} Copy.motolii', (f) => File(f).existsSync(), (n) => '${widget.folder}/${d.name} Copy $n.motolii');
     File(d.path).copySync(to);
@@ -104,7 +121,7 @@ class _WsHomeState extends State<WsHome> {
     _read();
   }
 
-  /// Into the Trash, not gone: the user's own ~/.Trash, as the Finder puts a file there (a name taken there: a number).
+  /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there.
   void _trash(HomeDoc d) {
     final trash = '${Platform.environment['HOME']}/.Trash';
     final to = firstFree('$trash/${d.name}.motolii', (f) => File(f).existsSync(), (n) => '$trash/${d.name} $n.motolii');
@@ -118,7 +135,8 @@ class _WsHomeState extends State<WsHome> {
   }
 
   static const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  static String _day(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}'; // (AbsentMotion's dateHeader in English: d MMMM yyyy)
+  // AbsentMotion's dateHeader in English: d MMMM yyyy.
+  static String _day(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +176,7 @@ class _WsHomeState extends State<WsHome> {
             const SizedBox(height: 8),
             NakedButton(
               enableFeedback: false,
-              // (CapCut's "Create project", as wide as all)
+              // CapCut's "Create project": a button as wide as the page.
               key: const ValueKey('home-new'),
               onPressed: widget.onNew,
               child: Container(
@@ -228,7 +246,8 @@ class _WsHomeState extends State<WsHome> {
       look: ChipLook(fill: WsT.card, onFill: WsT.accent, ink: Grey.g91, onInk: WsT.onAccent, padX: 8, padY: 4, radius: 6, text: (c) => T.label(c)),
     ),
   );
-  static const _tile = 150.0; // (a tile: its picture square above its name, as CapCut's desktop grid)
+  // A square thumbnail above the name, as in CapCut's desktop grid.
+  static const _tile = 150.0;
 
   Widget _card(HomeDoc d) {
     final f = d.facts, open = d.path == widget.open;
@@ -295,7 +314,8 @@ class _WsHomeState extends State<WsHome> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
-            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: T.value(Grey.g63), maxLines: 1), // (CapCut's "254.3M | 02:13")
+            // CapCut's "254.3M | 02:13".
+            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: T.value(Grey.g63), maxLines: 1),
             Text(_facts(d).join(' · '), key: ValueKey('home-facts:${d.path}'), style: T.value(Grey.g56), maxLines: 1, overflow: TextOverflow.ellipsis),
             if (_menu == d.path)
               Padding(
@@ -333,8 +353,8 @@ class _WsHomeState extends State<WsHome> {
     );
   }
 
-  /// Its shape and resolution, then its size and frames a second: AbsentMotion's facts (a named shape: "9:16" and the
-  /// shorter side "1080p"; else "1080x1350").
+  /// The aspect ratio and resolution, then the frame rate, as AbsentMotion shows them.
+  /// A known ratio gives "9:16" and the shorter side as "1080p"; any other gives "1080x1350".
   static List<String> _facts(HomeDoc d) {
     final f = d.facts;
     if (f == null) return const [];
@@ -348,11 +368,11 @@ class _WsHomeState extends State<WsHome> {
     return [
       if (ratio != null) ...[ratio, '${math.min(f.wide, f.high)}p'] else '${f.wide}x${f.high}',
       '${f.rate == f.rate.roundToDouble() ? f.rate.round() : f.rate}fps',
-    ]; // (its own, the size box's frame_rate)
+    ]; // The frame rate is the project's own frame_rate.
   }
 
   static String _bytes(int bytes) {
-    // (ExportOptions.kt formatBytes)
+    // Follows ExportOptions.kt formatBytes.
     String f(double v, String unit) => (v >= 10 ? v.toStringAsFixed(0) : v.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '')) + unit;
     if (bytes < 1024) return '${math.max(bytes, 0)}B';
     if (bytes < 1024 * 1024 - 512) return f(bytes / 1024, 'KB');
@@ -361,7 +381,7 @@ class _WsHomeState extends State<WsHome> {
   }
 
   static String _length(double seconds) {
-    // (CapCut's "02:13"; an hour or more as AbsentMotion's 01:02:13)
+    // CapCut's "02:13"; an hour or more gives AbsentMotion's "01:02:13".
     final s = seconds.round();
     String two(int n) => n.toString().padLeft(2, '0');
     return s >= 3600 ? '${two(s ~/ 3600)}:${two(s ~/ 60 % 60)}:${two(s % 60)}' : '${two(s ~/ 60)}:${two(s % 60)}';

@@ -1,4 +1,4 @@
-// The tool panel's Ease tool: the curve between the picked key and the next one, its two handles, presets as thumbnails, and the numbers.
+// The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
 import 'dart:async' show scheduleMicrotask;
 import 'dart:math' as math;
@@ -18,33 +18,40 @@ import 'package:motolii/workspace/state/state.dart';
 
 part 'tool_panel_ease_ends.dart';
 
-/// The curve copied in the Ease tool panel, kept while the window is open (Alight Motion's Copy of a curve).
+/// The curve copied in the Ease tool, kept until the app closes. Like Copy Curve in Alight Motion.
 Ease? easeCopied;
 
-/// Whether an end of a stretch pulled up or down jumps there: a key a frame outside keeps the value as it was, so the
-/// value jumps at the key (three points, as the user drew it, 10/30); off, only the key's value moves and the stretch
-/// beside follows. The user's to choose, on the tool panel (10/30: "飛びたくないなら後でおしりの点を消せばいい、もしくは設定で
-/// 決めれると良い、ユーザに託す", "easeにon/offであるといい"). Kept while the window is open.
+/// Whether dragging an end of a segment up or down makes the value jump there.
+///
+/// When on, a keyframe one frame outside the segment keeps its old value, so the value jumps at the keyframe.
+/// When off, only the keyframe's value moves and the neighbouring segment follows. Kept until the app closes.
 bool easeJump = true;
 
-/// Whether the graph looks past 0 and 1 (Alight Motion's Enable Overshoot). Kept while the window is open.
+/// Whether the graph shows values past 0 and 1. Like Enable Overshoot in Alight Motion. Kept until the app closes.
 bool easeOvershoot = false;
 
 class EaseToolState extends State<EaseTool> with _EaseEnds {
-  // Joined: while a hand is down the ease is told to the document as it goes (the stage and the bars follow), the newest
-  // one at a time (one still on its way: the next waits, those between are skipped); all of it one step of undo.
+  // While the pointer is down, each new ease is sent to the document so the canvas and the bars follow it.
+  // While one is in flight the next waits and any in between are skipped. The whole drag is one undo step.
   bool _down = false, _open = false, _going = false;
   Ease? _pending, _waiting;
-  Ease? _told; // (told the document and not yet heard back: shown meanwhile, not what it was)
-  int _card = 0; // (of a way laid from cards, the one the graph shows, below 0 the whole; another stretch: its first)
+  // The ease sent to the document and not yet confirmed. It is shown meanwhile instead of the old one.
+  Ease? _told;
+  // For layered cards, the card the graph shows. Below 0 means the whole stack. Another segment resets it to the first card.
+  int _card = 0;
   String _cardOf = '';
-  Ease? _held; // (what a tile held over the graph would make: seen before it is let go, Final Cut Pro's skimming of an effect)
-  bool _adding = false; // (the flow's empty frame pressed: what is picked next is laid there, as what is picked from Bitwig's + goes in at it)
-  Ease? _base; // (the way as it was: while one is held the stage shows it in an open step, and nothing is kept unless it is let go there)
-  bool _shelf = false, _shelfShown = false; // (drawn out; and built, until it has slid away)
-  bool _overLocked = false; // (AbsentMotion's lockOvershoot: once it looks past 0 and 1 it stays so, a hand bringing a handle back, until the menu says or another card or stretch comes)
+  // What a tile dragged over the graph would produce, shown before it is dropped. Like skimming an effect in Final Cut Pro.
+  Ease? _held;
+  // True after the user clicks the empty slot in the card flow: the next pick is added there, like Bitwig's + button.
+  bool _adding = false;
+  // The easing before a preview started. The preview runs in an open undo step and is kept only if the tile is dropped there.
+  Ease? _base;
+  // The shelf is open, and the shelf is built. It stays built until it has slid away.
+  bool _shelf = false, _shelfShown = false;
+  // Like AbsentMotion's lockOvershoot: once the graph shows past 0 and 1 it stays so, until the menu or another card or segment resets it.
+  bool _overLocked = false;
 
-  // (with no key picked the stretch follows the playhead: built again when it comes into another stretch, not every frame)
+  // With no keyframe picked, the segment follows the playhead. The panel rebuilds when it enters another segment, not every frame.
   Ws? _ws;
   String _spanAt = '';
   void _moved() {
@@ -68,12 +75,12 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     super.dispose();
   }
 
-  // Every picked key's stretch, on whatever bar it is: each value keyed there. A last key has no stretch after it: the
-  // one that ends at it, as the tool panel shows.
+  // The segments of every picked keyframe, on any layer, one for each property keyed there.
+  // A last keyframe has no segment after it, so the segment ending at it is used.
   List<(int, String, double)> _stretches(Ws ws) => [
     if (ws.stretch case final s?)
       (int.parse(s.layer), s.name, s.at)
-    else if (ws.keys.isEmpty) // (none picked: the stretch the playhead is in)
+    else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
       if (easeSpan(ws) case final s?)
         for (final at in keysAt(ws, s).entries) (int.parse(s.layer.id), at.key, at.value),
     for (final k in ws.keys)
@@ -87,7 +94,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
           (int.parse(l.id), at.key, at.value),
   ];
 
-  // (while the hand is down: the newest ease told, one at a time; the step opened at the first)
+  // Sends the newest ease while the pointer is down. The first call opens the undo step.
   void _live(Ws ws, Ease e) {
     final m = ws.inside!;
     if (_going) {
@@ -107,7 +114,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       last = m.later('easing', layer: t, name: name, number: at, word: said(e));
     }
     for (final t in {for (final (t, _, _) in all) t}) {
-      last = m.later('show', layer: t); // (the stage, the bars and the numbers go with the hand, the step still open)
+      last = m.later('show', layer: t);
     }
     ws.after(last, (_, _) {
       _going = false;
@@ -117,7 +124,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     });
   }
 
-  // (a try on the stage given up: the step it opened goes whole, so nothing is kept, not even a step)
+  // Abandons a preview: the undo step it opened is removed whole.
   void _giveUp(Ws ws) {
     _waiting = null;
     if (!_open) {
@@ -139,7 +146,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     _pending = null;
     _waiting = null;
     if (e == null && _base != null) {
-      // (a tile tried and let go: on the graph or the flow it is told in this same event)
+      // A tile was previewed and released. A drop on the graph or the flow is handled in this same event.
       scheduleMicrotask(() => _pending == null && !_down ? _giveUp(ws) : null);
       return;
     }
@@ -148,8 +155,8 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     _told = e;
     final m = ws.inside!, to = said(e);
     final all = _stretches(ws);
-    // (as it already goes, each: nothing is told, so a way's own numbers that have no field here are not written over;
-    //  told as the hand went: told once more as it let go, and the step it opened closed)
+    // Segments that already have this easing are skipped, so numbers with no field here are not overwritten.
+    // If the drag already sent the ease, it is sent once more on release and the undo step is closed.
     final told = [
       for (final (t, name, at) in all)
         if (_open || said(heard(m.easingOf(t, name, at))) != to) (t, name, at),
@@ -160,12 +167,12 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       for (final (t, name, at) in told) {
         m.later('easing', layer: t, name: name, number: at, word: to);
       }
-      _define(m, to); // (again, the stretch on it: what it went by till now, no longer asked for, goes)
+      _define(m, to);
       ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
       return;
     }
     if (told.isEmpty) return setState(() => _trouble = all.isEmpty ? 'No key where the stretch begins' : null);
-    m.later('together', number: 1); // (one step, without waiting)
+    m.later('together', number: 1);
     _define(m, to);
     for (final (t, name, at) in told) {
       m.later('easing', layer: t, name: name, number: at, word: to);
@@ -174,12 +181,13 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
   }
 
-  // (the curve after every key of each picked key's layer, every value keyed there: one step)
+  // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
   void _onEveryKey(Ws ws, Ease e) {
     final m = ws.inside!,
         layers = ws.keys.isNotEmpty
             ? {for (final k in ws.keys) k.layer}
-            : {if (easeSpan(ws) case final s?) s.layer.id}; // (none picked: the layer of the stretch the playhead is in)
+            // Nothing picked: the layer of the segment the playhead is in.
+            : {if (easeSpan(ws) case final s?) s.layer.id};
     m.later('together', number: 1);
     _define(m, said(e));
     for (final l in ws.layers.where((l) => layers.contains(l.id))) {
@@ -201,7 +209,8 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {
-        ease = easeCard(said(ease), m); // (no tile for this kind: its curve is the inside's own working of it, as said now)
+        // There is no tile for this kind, so its curve is the one the engine computes for it now.
+        ease = easeCard(said(ease), m);
       }
       void set(Ease e) {
         setState(() => _pending = e);
@@ -221,31 +230,25 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
         child: _body(ws, span, ease, set),
       );
     }
-    // (no stretch: a way of the panel's own, to make and try and keep on the shelf, the document told nothing: the maker,
-    //  10/31, "区間を選ばなくてもプリセットの作成ぐらいできるように")
+    // No segment: the panel keeps its own easing, so the user can make and save presets. The document is not changed.
     final own = store[id] ?? easingPreset(ws.inside == null ? 'Ease' : 'Linear');
-    return _body(
-      ws,
-      span,
-      easeOther(own) ? easeCard(said(own), ws.inside) : own,
-      (e) => setState(() => store[id] = e),
-    ); // (a tile's own curve is a tile's: few points)
+    return _body(ws, span, easeOther(own) ? easeCard(said(own), ws.inside) : own, (e) => setState(() => store[id] = e));
   }
 
-  // The panel as AbsentMotion's EasingPanel.kt lays it, its widths its weights: the left column, the graph, the shapes.
+  // Lays out the panel as AbsentMotion's EasingPanel.kt does: the left column, the graph and the preset thumbnails.
   Widget _body(Ws ws, EaseSpan? span, Ease ease, ValueChanged<Ease> set) {
     final cards = easeIsLaid(said(ease)) ? [for (final c in easeCards(said(ease))) easeCard(c, ws.inside)] : [ease];
-    // (on a straight line alone there is nothing to lay it on: it goes there as a press would)
+    // Over plain Linear there is nothing to layer onto, so the new easing replaces it.
     Ease laidOn(Ease e) => said(ease) == 'Linear' ? e : easeLaid([...cards, for (final c in easeCards(said(e))) easeCard(c, ws.inside)]);
     final pile = _held == null ? cards : [for (final c in easeCards(said(_held!))) easeCard(c, ws.inside)];
     if (spanId(span) != _cardOf) (_cardOf = spanId(span), _card = 0, _adding = false, _overLocked = false);
     final at = _card.clamp(0, cards.length - 1), card = cards[at], laid = cards.length > 1, whole = laid && _card < 0;
-    void put(Ease e) => set(laid ? easeLaid([...cards]..[at] = easeCard(said(e), ws.inside)) : e); // (a press, a handle, a turn: on the card pressed)
+    void put(Ease e) => set(laid ? easeLaid([...cards]..[at] = easeCard(said(e), ws.inside)) : e);
     final bezier = easeIsBezier(card);
     final overshoot = bezier && (easeOvershoot || _overLocked || [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1));
     _overLocked = overshoot;
-    // (where the beats fall on the card in hand: one that takes what is above it through it is walked by that, not by the
-    //  clock, so a beat is where that has come to then, or a handle put on a line would miss the beat in the film)
+    // Where the beats fall on the selected card. A card that takes the cards above it as input follows their result, not the clock,
+    // so a handle placed on a beat line does not miss the beat in the video.
     final grid = ws.beats, clock = !whole && at > 0 && easeThrough(card) ? easeLaid(cards.sublist(0, at)) : null;
     final beats = grid == null || span == null
         ? const <double>[]
@@ -260,7 +263,6 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     }
 
     void over(Ease? e) {
-      // (on the stage too, as the graph shows it)
       setState(() => _held = e);
       if (ws.inside == null || span == null) return;
       if (e == null) return _giveUp(ws);
@@ -272,7 +274,9 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       ClipboardData? words;
       try {
         words = await Clipboard.getData(Clipboard.kTextPlain);
-      } catch (_) {} // (no clipboard to ask: what was copied here)
+      } catch (_) {
+        // The clipboard is unavailable, so fall back to the curve copied inside the app.
+      }
       final e = easeFromText(words?.text, ws.inside) ?? easeCopied;
       if (e != null) {
         put(e);
@@ -281,15 +285,14 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       }
     }
 
-    final turned = bezier
-        ? card.reversed()
-        : Ease(card.kind, card.p1, card.p2, easeTurn(said(card))); // (AbsentMotion's reversed(): a bezier's handles turned, any other marked so)
+    // Like AbsentMotion's reversed(): a Bezier has its handles turned, any other kind is marked as reversed.
+    final turned = bezier ? card.reversed() : Ease(card.kind, card.p1, card.p2, easeTurn(said(card)));
     void overshootSet() {
       setState(() {
         easeOvershoot = !overshoot;
         _overLocked = !overshoot;
       });
-      // (off, the handles come back inside: AbsentMotion only looks less far, and a curve left out there has handles no hand can reach)
+      // Turning it off pulls the handles back inside 0 to 1, or the user could not reach them. AbsentMotion only zooms the view.
       if (overshoot && [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1)) {
         put(card.withHandles(Offset(card.p1.dx, card.p1.dy.clamp(0.0, 1.0)), Offset(card.p2.dx, card.p2.dy.clamp(0.0, 1.0))));
       }
@@ -312,10 +315,8 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     );
     return LayoutBuilder(
       builder: (_, box) {
-        // (the left column as wide as its two marks; the shapes as large as the height lets seven and a bit be, or the width
-        //  leaves, the two columns round them; all the rest the graph: a pane of any size has no empty part)
-        //  In a tall pane the two go under the graph, or it would be a thin post: what a card does in its container, as CSS's
-        //  container queries have it.
+        // The left column is as wide as its two buttons. The thumbnails are as large as the height (or width) allows for seven and
+        // a bit. The graph takes the rest. In a tall pane the thumbnails and cards go under the graph, like a CSS container query.
         final left = Shape.z(34), tall = box.maxHeight > box.maxWidth * 1.1;
         final side =
             (tall
@@ -333,10 +334,11 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                 'Copy Curve',
                 () {
                   setState(() => easeCopied = ease);
-                  Clipboard.setData(ClipboardData(text: easeText(ease))).catchError((_) {}); // (as words: for a page, or another window)
+                  Clipboard.setData(ClipboardData(text: easeText(ease))).catchError((_) {});
                 },
               ),
-              ('paste', 'Paste Curve', () => paste(set)), // (what was copied here, or a cubic-bezier() or linear() from a page: easeFromText)
+              // Pastes the curve copied in the app, or a cubic-bezier() or linear() from a web page. See easeFromText.
+              ('paste', 'Paste Curve', () => paste(set)),
               if (easeCopied != null && ws.inside != null) ('all', 'Paste Curve to All Keyframes', () => paste((e) => _onEveryKey(ws, e))),
               ('jump', easeJump ? 'Jump On' : 'Jump Off', () => setState(() => easeJump = !easeJump)),
             ],
@@ -365,7 +367,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
             onPick: (e) {
               if (_adding) return add(e);
               if (whole) {
-                // (the whole in hand: it takes the place of the whole, as a press takes that of a card)
+                // With the whole stack selected, the pick replaces the whole stack, as a click replaces a single card.
                 _card = 0;
                 return set(e);
               }
@@ -376,19 +378,19 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
         final target = DragTarget<Object>(
           onWillAcceptWithDetails: (d) {
             if (d.data case final Ease e) over(laidOn(e));
-            return true; // (a card of the flow too: let go on it, it stays)
+            return true; // A card from the flow is accepted too, and stays where it is.
           },
           onLeave: (d) => d is Ease ? over(null) : null,
           onAcceptWithDetails: (d) {
             _held = null;
             if (d.data case final Ease e) {
-              _card = cards.length; // (the one just laid is the one in hand)
+              _card = cards.length; // The card just added becomes the selected one.
               set(laidOn(e));
             }
           },
           builder: (_, hot, _) => DecoratedBox(
             position: DecorationPosition.foreground,
-            decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)), // (as the stage shows a tile held over it)
+            decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
             child: Flex(
               direction: tall ? Axis.vertical : Axis.horizontal,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -401,10 +403,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                         Positioned.fill(
                           child: span == null
                               ? EaseTrial(way: said(ease), builder: (trial) => graph(ws.frame, trial))
-                              : ValueListenableBuilder<int>(
-                                  valueListenable: ws.moment,
-                                  builder: (_, frame, _) => graph(frame),
-                                ), // (only the graph follows the playhead)
+                              : ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, frame, _) => graph(frame)),
                         ),
                         if (span == null && ws.inside != null)
                           Positioned(
@@ -442,7 +441,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                                 style: T.micro(Grey.g63),
                               ),
                             ),
-                          ), // (which thing, which stretch)
+                          ),
                         Positioned.fill(
                           child: EaseNumbers(card: whole ? easeLaid(cards) : card, onChanged: put, overshoot: overshoot, onOvershoot: overshootSet),
                         ),
@@ -493,7 +492,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
           ),
         );
         final across = (box.maxWidth * .3 / column).floor().clamp(1, 6), wide = across * column;
-        const slide = Duration(milliseconds: 200); // (as the colours' boxes move, dock_make_2.dart)
+        const slide = Duration(milliseconds: 200);
         return Stack(
           clipBehavior: Clip.hardEdge,
           children: [
@@ -532,7 +531,8 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                       duration: slide,
                       curve: Curves.easeOutCubic,
                       width: _shelf ? wide : 0,
-                      onEnd: () => _shelf ? null : setState(() => _shelfShown = false), // (put away: not built as a hand moves a handle)
+                      // Once the shelf is closed it is no longer built, so it is not rebuilt while the user drags a handle.
+                      onEnd: () => _shelf ? null : setState(() => _shelfShown = false),
                       child: !_shelfShown
                           ? null
                           : OverflowBox(
@@ -550,7 +550,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                                 onForget: (e) => setState(() => easeKeep(said(e), off: true)),
                                 onPick: (e) {
                                   if (_adding) return add(e);
-                                  _card = 0; // (a preset is the whole way)
+                                  _card = 0; // A preset is a whole easing.
                                   set(e);
                                 },
                               ),

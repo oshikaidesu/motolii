@@ -1,4 +1,5 @@
-// The tool panel's Ease tool: the curve between the picked key and the next one, its two handles, presets as thumbnails, and the numbers.
+// The Tool Panel's Ease tool: edits the easing curve between the selected keyframe and the next one.
+// It shows the curve, its two handles, the presets as thumbnails and the numeric values.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -10,14 +11,15 @@ import '../state/state.dart';
 
 enum EaseKind { bezier, hold }
 
-/// One ease: a kind, and the two bezier handles (kept even while another kind shows, so grabbing a handle returns to bezier).
+/// One easing: a kind and two bezier handles.
+/// The handles are kept even when another kind is shown, so dragging a handle switches back to bezier.
 class Ease {
   const Ease(this.kind, this.p1, this.p2, [this.name, this.drawn]);
   final EaseKind kind;
   final Offset p1, p2;
   final String? name;
 
-  /// A way with no tile on this tool panel: how it goes, as the document itself works it out (how far, at even steps of the stretch).
+  /// Samples of an easing that has no tile in the tool panel, as the document evaluates it, at even steps along the span.
   final List<double>? drawn;
 
   double at(double x) => drawn != null
@@ -36,7 +38,7 @@ class Ease {
   int get hashCode => Object.hash(kind, p1, p2);
 }
 
-/// How far along [x] (0 to 1, held to it) a line of evenly spaced values [ys] stands.
+/// Interpolates the evenly spaced samples [ys] at [x], which is clamped to 0 to 1.
 double easeAlong(List<double> ys, double x) {
   final at = x.clamp(0.0, 1.0) * (ys.length - 1), i = at.floor().clamp(0, ys.length - 2);
   return ys[i] + (ys[i + 1] - ys[i]) * (at - i);
@@ -52,14 +54,15 @@ const easingPresets = [
   Ease(EaseKind.hold, Offset(.25, .1), Offset(.25, 1), 'Hold'),
 ];
 
-/// A way of the document that has no tile on this tool panel yet (Elastic, Random, Steps...): it is carried by its own words, as its name.
-/// A preset by its name (never by its place in the row: a tile added anywhere leaves the others as they are).
+/// Finds a preset by its name, not by its position, so adding a tile never changes the others.
 Ease easingPreset(String name) => easingPresets.firstWhere((p) => p.name == name);
 
+/// Whether [e] is an easing of the document that has no tile in the tool panel yet (Elastic, Random, Steps...).
+/// Such an easing is identified by its name alone.
 bool easeOther(Ease e) => e.name != null && easingPresets.every((p) => p.name != e.name);
 String? easeName(Ease e) => easeOther(e) ? e.name : easingPresets.where((p) => p == e).firstOrNull?.name;
 
-/// The stretch of time the ease shapes: the first picked key and the layer's next key.
+/// The span of time the easing shapes: from the first selected keyframe to the layer's next keyframe.
 typedef EaseSpan = ({WsLayer layer, int from, int to, int picked});
 
 EaseSpan? easeSpan(Ws ws) {
@@ -67,12 +70,14 @@ EaseSpan? easeSpan(Ws ws) {
     if (ws.layers.where((l) => l.id == s.layer).firstOrNull case final l?) return (layer: l, from: s.from, to: s.to, picked: 1);
   }
   if (ws.keys.isEmpty) {
-    // (no key picked: the stretch the playhead is in, of the picked thing, as Alight Motion opens its ease when the playhead is between two keys: docs/internal/reports/alight_motion/alight_ui.md, イーズ)
+    // With no keyframe selected, use the span the playhead is in on the selected layer.
+    // Alight Motion does the same when the playhead is between two keyframes: docs/internal/reports/alight_motion/alight_ui.md.
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull, f = ws.frame;
     final keys = layer == null ? const <int>[] : ([...layer.keys]..sort());
     final from = keys.where((k) => k <= f).lastOrNull, to = keys.where((k) => k > f).firstOrNull, before = keys.where((k) => k < f).lastOrNull;
     if (from == f && to == null && before != null) {
-      return (layer: layer!, from: before, to: f, picked: 0); // (on its last key: the stretch that ends there, as with that key picked below; golf_noise.md ㊵)
+      // On the last keyframe, use the span that ends there, as if that keyframe were selected below.
+      return (layer: layer!, from: before, to: f, picked: 0);
     }
     return from == null || to == null ? null : (layer: layer!, from: from, to: to, picked: 0);
   }
@@ -86,17 +91,19 @@ EaseSpan? easeSpan(Ws ws) {
       : (layer: layer, from: prev ?? math.max(0, k.frame - 30), to: k.frame, picked: picked.length);
 }
 
-/// The eases the user shaped, per document and per span, so leaving the tool panel and coming back keeps them.
+/// The easings the user edited, per document and per span, so they survive leaving the tool panel and coming back.
 final eases = Expando<Map<String, Ease>>();
 String spanId(EaseSpan? s) => s == null ? 'new' : '${s.layer.id}:${s.from}';
 
+/// The Ease tool: curve editor for the easing of the selected span.
 class EaseTool extends StatefulWidget {
   const EaseTool({super.key});
   @override
   State<EaseTool> createState() => EaseToolState();
 }
 
-/// Joined: an ease as the document says a stretch's way (three of its nine kinds have a tile on this tool panel), and back.
+/// Converts an [Ease] to the text the document stores, and [heard] converts it back.
+/// Three of the nine built-in kinds have a tile in the tool panel.
 String said(Ease e) => easeOther(e)
     ? e.name!
     : switch (e.kind) {
@@ -104,21 +111,23 @@ String said(Ease e) => easeOther(e)
         EaseKind.bezier => e.name == 'Linear' ? 'Linear' : 'Bezier ${e.p1.dx} ${e.p1.dy} ${e.p2.dx} ${e.p2.dy}',
       };
 Ease heard(String said) {
-  // (the inside says a way back in one form: the kind's name, then all its numbers)
+  // The engine returns an easing as the kind's name followed by all its numbers.
   final w = said.split(' '), n = [for (final x in w.skip(1)) double.tryParse(x) ?? 0];
   return switch (w.first) {
     'Hold' => easingPreset('Hold'),
     'Linear' => easingPreset('Linear'),
     'Bezier' when n.length == 4 => Ease(EaseKind.bezier, Offset(n[0], n[1]), Offset(n[2], n[3])),
-    _ => Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), said), // (a kind with no tile here yet: its own words, over a straight line)
+    // A kind with no tile yet is kept by its text, over a straight line.
+    _ => Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), said),
   };
 }
 
-/// Joined: the values of the span's thing that have a key where the span begins, each with that key's own moment.
+/// The properties of the span's layer that have a keyframe where the span begins, each with the time of that keyframe.
 Map<String, double> keysAt(Ws ws, EaseSpan span) {
   final m = ws.inside!, t = int.parse(span.layer.id);
-  if (ws.stretch case final s?) return {s.name: s.at}; // (a line picked: that value's alone)
-  // (asked again only when the document is read again: not each picture a playing stage shows)
+  // When a single property line is selected, only that property counts.
+  if (ws.stretch case final s?) return {s.name: s.at};
+  // The result is cached and recomputed only when the document is read again, not on every frame of playback.
   if (_keysAtOf[ws] case (final r, final id, final f, final at) when r == ws.reads && id == span.layer.id && f == span.from) return at;
   final at = _keysAt(m, t, span);
   _keysAtOf[ws] = (ws.reads, span.layer.id, span.from, at);
@@ -134,14 +143,15 @@ Map<String, double> _keysAt(Motolii m, int t, EaseSpan span) {
   };
 }
 
-/// Joined: the ways of the document that the sample's eight tiles have no place for (Elastic, Cyclic, Random, Steps,
-/// ElasticSteps, and any defined in the document), each a tile of its own: its curve is the inside's own working of it.
-/// (worked out again only when the document's ways are not the ones they were: a way defined since shows at once)
+/// The easings of the document that the eight built-in tiles do not cover (Elastic, Cyclic, Random, Steps,
+/// ElasticSteps and any the document defines), each as an [Ease] whose curve is sampled from the engine.
+///
+/// The result is recomputed only when the document is read again, so a newly defined easing shows at once.
 final _untiledOf = Expando<(String, List<Ease>)>();
 List<Ease> easingsWithoutTile(Ws ws) {
   final m = ws.inside;
   if (m == null) return const [];
-  if (_untiledOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles; // (the ways asked again only when the document is read again)
+  if (_untiledOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles;
   final names = m.easingNames, said = '${ws.reads}';
   final tiles = [
     for (final name in names)

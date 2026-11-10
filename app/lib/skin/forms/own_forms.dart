@@ -1,4 +1,4 @@
-// The window's own forms: each control as the window has always drawn it.
+// The app's default forms: each control drawn the way the app has always drawn it.
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
@@ -12,7 +12,7 @@ import '../../widgets/controls.dart' show Hov;
 class OwnForms extends Forms {
   const OwnForms();
 
-  /// A flat lime pill with dark ink (or the skin's frame for it).
+  /// A flat lime pill with dark text, or the skin's frame for it.
   @override
   Widget action(BuildContext context, ActionSpec a) => Hov(
     onTap: a.onPressed,
@@ -29,8 +29,9 @@ class OwnForms extends Forms {
     ),
   );
 
-  /// The word and a switch: the state is a word, never colour alone. The word is pressed as the switch is, the two one
-  /// control, as AbsentMotion's SwitchRow (SettingsDrawer.kt: the whole row toggleable, its label with it).
+  /// The word On or Off next to a switch, so the state is never shown by colour alone.
+  ///
+  /// The word and the switch are one control, as in AbsentMotion's SwitchRow (SettingsDrawer.kt): pressing either toggles it.
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,
@@ -54,7 +55,7 @@ class OwnForms extends Forms {
     ),
   );
 
-  /// A flat card (or the skin's frame for it).
+  /// A flat card, or the skin's frame for it.
   @override
   Widget card(BuildContext context, CardSpec c) => SkinFrame(
     'card',

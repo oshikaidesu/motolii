@@ -1,11 +1,14 @@
-// The number field's picture, kept out of the field's own file: that file is pulled in by the inspector, and the inspector
-// is pulled in by the forms, so the field cannot import the forms back. [bindNumber] is set when the forms load.
+// How a number field looks, kept out of the field's own file to avoid an import cycle.
+//
+// The field's file is imported by the inspector, and the inspector is imported by the forms, so the field cannot import
+// the forms. Instead the forms call [bindNumber] when they load.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
 import '../tokens.dart';
 
+/// Everything a form needs to draw one number field.
 class NumberSpec {
   const NumberSpec({
     required this.value,
@@ -36,27 +39,33 @@ class NumberSpec {
   /// The number as text, when it is not being typed.
   final Widget value;
 
-  /// The text being typed. The field owns it; a form only places it.
+  /// The text field shown while the user types. The field owns it; a form only places it.
   final Widget? editor;
   final Widget? lead, glyph;
   final String? caption;
   final double width, height, pad, glyphBox, zeroAt;
 
-  /// 0..1 along a bounded field. Null: the field has no range, so no mark travels.
+  /// Position of the range mark from 0 to 1 along a bounded field. Null means the field has no range, so no mark is drawn.
   final double? fill;
   final bool bipolar, editing, glyphTall, on, hot, live;
   final Color fillColor, borderColor, rangeColor;
   final Color? keyDot;
 
-  /// The key mark drawn hollow: the value takes keys and has none here (Alight Motion's diamond beside a value, empty).
+  /// Draws the keyframe mark hollow: the property can be keyframed but has no keyframe here.
+  ///
+  /// This follows Alight Motion's empty diamond beside a value.
   final bool keyEmpty;
 
-  /// One row: the caption before the number, the number at the right, no frame (a tool panel's small numbers).
+  /// Lays out the caption and the number in one row with no frame: the caption first, the number at the right.
+  ///
+  /// Used for the small numbers in a tool panel.
   final bool inline;
 }
 
-/// A value's key mark: a diamond, as Alight Motion's beside each value and the timeline's keys (filled: a key here;
-/// faint: keys elsewhere; [empty]: none, yet it takes them). Pressed, the field keys the value there (num_field_state).
+/// A keyframe mark for a value: a diamond, as in Alight Motion beside each value and in the timeline.
+///
+/// Filled means a keyframe at this time, faint means keyframes at other times, and [empty] means none yet.
+/// When the user presses it, the field adds a keyframe there (see lib/widgets/number_field_state.dart).
 Widget keyDiamond(Color colour, {bool empty = false}) => Transform.rotate(
   angle: math.pi / 4,
   child: Container(
@@ -73,12 +82,12 @@ typedef NumberPaint = Widget Function(BuildContext context, NumberSpec spec);
 
 NumberPaint _paint = usualNumber;
 
-/// A form's [Forms.number], installed as the forms library loads.
+/// Installs a form's [Forms.number] when the forms library loads.
 void bindNumber(NumberPaint paint) => _paint = paint;
 
 Widget paintNumber(BuildContext context, NumberSpec spec) => _paint(context, spec);
 
-/// The field as the window has drawn it: a filled well, a range along the bottom.
+/// The app's default number field: a filled well with the range mark along the bottom.
 Widget usualNumber(BuildContext context, NumberSpec n) {
   final shown = n.editing && n.editor != null ? n.editor! : n.value;
   return Container(
@@ -129,7 +138,8 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                   ? EdgeInsets.symmetric(horizontal: n.pad)
                   : EdgeInsets.fromLTRB(n.pad, Shape.s(4), n.glyph != null ? n.glyphBox + n.pad : n.pad, Shape.s(5)),
               child: Flex(
-                direction: n.inline ? Axis.horizontal : Axis.vertical, // (a tile is a column: the caption over the number)
+                // A tile is a column, with the caption above the number.
+                direction: n.inline ? Axis.horizontal : Axis.vertical,
                 crossAxisAlignment: n.inline ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

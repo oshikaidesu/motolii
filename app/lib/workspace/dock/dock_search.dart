@@ -1,15 +1,21 @@
-// Part of dock_widgets.dart: the shelf's search well, and the search asked for from elsewhere.
+// Part of dock_widgets.dart: the shelf's search field, and a way for other panels to focus it.
 part of 'dock_widgets.dart';
 
-/// The shelf's search asked for from elsewhere (the Inspector's Add Effect): the field in sight takes the keys, or the
-/// next one to come.
+/// Bumped when another panel (the Inspector's Add Effect) asks for the search field to take focus.
+///
+/// The search field on screen takes focus. If there is none yet, the next one to be built does.
 final _searchAsked = ValueNotifier(0);
+
+/// Whether a request is still waiting for a search field to be built.
 bool _searchAwaited = false;
+
+/// Asks the shelf's search field to take focus and select its text.
 void askDockSearch() {
   _searchAwaited = true;
   _searchAsked.value++;
 }
 
+/// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
 class DockSearch extends StatefulWidget {
   const DockSearch({super.key, required this.controller, required this.hint});
   final TextEditingController controller;
@@ -34,9 +40,9 @@ class _DockSearchState extends State<DockSearch> {
     if (!mounted) return;
     _searchAwaited = false;
     _focus.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => mounted ? _focus.requestFocus() : null,
-    ); // (the press that asked gives the panel it came from the keys, a frame on: inspector_panel.dart)
+    // The press that asked gives the keys back to the panel it came from one frame later (see inspector_panel.dart),
+    // so ask again after that frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);
     WidgetsBinding.instance.scheduleFrame();
     widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
   }

@@ -1,6 +1,7 @@
-// timeline_overview.dart: the whole document in small under the tracks, the part in view marked and dragged.
+// The whole project in miniature under the tracks. The visible part is highlighted and can be dragged.
 part of 'timeline.dart';
 
+/// The overview strip. [onDrag] receives the pointer position within the strip.
 class _Overview extends StatefulWidget {
   const _Overview({required this.from, required this.to, required this.frame, required this.onDrag});
   final double from, to;

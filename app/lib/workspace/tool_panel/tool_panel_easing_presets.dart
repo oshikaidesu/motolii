@@ -1,4 +1,4 @@
-// A way as a card: a small square.
+// Easing presets drawn as small square thumbnails.
 
 import 'dart:math' as math;
 
@@ -9,14 +9,22 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show 
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;
 
+/// A square thumbnail of [ease] that the user can click to pick it, or drag onto the graph or the card flow.
 class EasingPresetTile extends StatelessWidget {
   const EasingPresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});
   final Ease ease;
-  final double side; // (the square's: as the panel's height lets it be, so no row of them lies empty)
+
+  /// The side of the square. The panel sizes it from the space it has, so a row of tiles never leaves a gap.
+  final double side;
+
+  /// Whether this is the easing currently in use.
   final bool on;
+
+  /// Called when the user clicks the tile.
   final VoidCallback onTap;
 
-  /// Whether a hand may carry it to the graph or the flow, to lay it over the way there (tool_panel_ease_cards.dart).
+  /// Whether the user can drag the tile onto the graph or the card flow to layer it over the easing there.
+  /// See tool_panel_ease_cards.dart.
   final bool carried;
   @override
   Widget build(BuildContext context) {
@@ -32,7 +40,8 @@ class EasingPresetTile extends StatelessWidget {
           );
   }
 
-  // (a square of one size, its ink all that says it is the one: AbsentMotion's CurveThumb; it lifts under the hand)
+  // Every tile is the same size and only its ink shows which one is in use, as in AbsentMotion's CurveThumb.
+  // The tile lifts slightly while hovered.
   Widget _tile() => Hov(
     onTap: onTap,
     builder: (_, h) => Center(
@@ -46,7 +55,7 @@ class EasingPresetTile extends StatelessWidget {
 
 const easeShadow = [BoxShadow(color: Color(0x80000000), blurRadius: 10, offset: Offset(0, 4))];
 
-/// A card in the hand: held by its middle, tilted a little.
+/// The drag feedback for a card: centred on the pointer and tilted slightly.
 Widget easeHeld(Widget card, double side) {
   final w = side, h = side;
   return IgnorePointer(
@@ -65,8 +74,10 @@ Widget easeHeld(Widget card, double side) {
   );
 }
 
-/// A shape as AbsentMotion's EasingIcons.kt draws it, in a square of its own: what it does, not its true curve, too fine
-/// to read so small. A way it has no drawing for: its own curve.
+/// Paints an easing as AbsentMotion's EasingIcons.kt does, in its own square.
+///
+/// The icon shows what the easing does rather than its exact curve, which would be too fine to read at this size.
+/// An easing with no drawing of its own is painted as its real curve.
 class EaseIcon extends CustomPainter {
   const EaseIcon(this.ease, this.ink);
   final Ease ease;
@@ -132,9 +143,11 @@ class EaseIcon extends CustomPainter {
     }
 
     final word = said(ease).split(' ').first;
-    final out = word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1); // (past 0 and 1: drawn as it is it leaves its square)
+    // A Bezier that goes past 0 or 1 would leave the square if drawn as the icon, so it is drawn as its real curve.
+    final out = word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1);
+
     switch (easeIsUsual(said(ease)) && !out ? word : '') {
-      // (its numbers changed: its own curve, or a card or a kept one with 8 waves would look like 3.5)
+      // If the numbers were changed, the real curve is drawn. Otherwise an easing with 8 waves would look like 3.5.
       case 'Linear':
         bezier(const Offset(.25, .25), const Offset(.75, .75));
       case 'Bezier':
@@ -181,7 +194,8 @@ class EaseIcon extends CustomPainter {
               ..strokeJoin = StrokeJoin.round,
           );
         }
-      default: // (its own curve, all of it in the square: what overshoots too)
+      // The real curve, scaled to fit the square including any overshoot.
+      default:
         final at = [for (var i = 0; i < 48; i++) ease.at(i / 47)];
         final lo = math.min(0.0, at.reduce(math.min)), hi = math.max(1.0, at.reduce(math.max));
         line((u) => .06 + .88 * (ease.at(u) - lo) / (hi - lo), 48);

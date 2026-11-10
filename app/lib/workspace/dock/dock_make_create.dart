@@ -1,17 +1,21 @@
-// Part of dock_make.dart: the Create shelf: its tiles (shapes, solids, lights, materials, copies), what each makes, and
-// how many are ready.
+// Part of dock_make.dart: the Create shelf. It holds the tiles (shapes, solids, lights, materials, copies), what each
+// one makes, and how many are ready.
 part of 'dock_make.dart';
 
-/// How many of the Create shelf's tiles make or lay out something of the document, of all it shows.
+/// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
 String createFact(Ws ws) {
-  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length; // (the recipes that are expressions are tiles of the Expression group's)
-  return '${_asked.length + _worn.length + recipes + expressions} ready'; // (the shelf shows only these)
+  // Scripts that are expressions have tiles in the Expression group, so they are counted with the expressions.
+  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length;
+  // The shelf shows only these tiles.
+  return '${_asked.length + _worn.length + recipes + expressions} ready';
 }
 
-/// Joined: the inside's recipes, pictures in one call (as Cavalry's tutorials build them), each a tile.
+/// The engine's create scripts, each shown as a tile. A script builds a whole image in one call, as Cavalry's tutorials do.
 (String, List<_Make>) _recipesOf(Ws ws) {
-  final expressions = {for (final (name, _) in _expressionRecipes()) name}; // (not those that are expressions: their tiles are the Expression group's)
-  final packs = {for (final (name, _) in ws.inside!.packs) name}; // (nor the closed packs: the Program shelf's, dock_program.dart)
+  // Scripts that are expressions are left out: their tiles are in the Expression group.
+  final expressions = {for (final (name, _) in _expressionRecipes()) name};
+  // Closed packs are left out too: they belong to the Program shelf (dock_program.dart).
+  final packs = {for (final (name, _) in ws.inside!.packs) name};
   return (
     'Recipes',
     [
@@ -21,27 +25,34 @@ String createFact(Ws ws) {
   );
 }
 
-/// The elements kept (Edit › Save to My Elements), put in at the playhead linked to their file: Alight Motion's + ›
-/// Object / Element › Element, AbsentMotion's ElementPicker (ElementUi.kt).
+/// Saved elements (Edit > Save to My Elements). Each is added at the playhead and stays linked to its file, as in
+/// Alight Motion (+ > Object / Element > Element) and AbsentMotion's ElementPicker
+/// (engine/third_party/AbsentMotion/app/src/main/kotlin/app/absentmotion/ui/editor/ElementUi.kt).
 (String, List<_Make>) _elementsOf(Ws ws) =>
     ('Elements', [for (final (name, _) in ws.inside!.elements) _Make(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
 
 // ---------------------------------------------------------------- create
 
+/// One tile of the Create shelf. [key] is the keyboard shortcut shown on the tile and [what] the line shown in the footer.
 class _Make {
   const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
   final String name, key, what;
   final DockG g;
   final Color hue;
 
-  /// One of the recipes (a picture made in one call), which may share a name with a tile of the shelf's own: AbsentMotion's
-  /// Rectangle, Star, Cube, Sun beside Motolii's shape, solid and light of those names (the shelf's own were made as
-  /// the recipe while it was asked first).
+  /// True for a create script, which builds a whole image in one call. It may share a name with a built-in tile:
+  /// AbsentMotion's Rectangle, Star, Cube and Sun sit beside Motolii's shape, solid and light of the same names.
   final bool recipe;
-  final String? file; // (an expression: its file, put on the picked thing as a card of its own)
-  final bool made; // (an expression whose head makes its thing (a recipe's "// make"): nothing picked, that is made)
+
+  /// For an expression tile, its file. It is added to the picked layer as a card of its own.
+  final String? file;
+
+  /// True for an expression whose head makes its own layer (a script's "// make" line). With nothing picked, that layer is created.
+  final bool made;
   String get id => file ?? (recipe ? 'recipe:$name' : name);
-  bool get onPicked => file != null || _onPicked.contains(name); // (put on the picked thing, or a new board)
+
+  /// True if the tile goes on the picked layer, or on a new layer when none is picked.
+  bool get onPicked => file != null || _onPicked.contains(name);
 }
 
 final _makes = <(String, List<_Make>)>[
@@ -49,13 +60,8 @@ final _makes = <(String, List<_Make>)>[
     'Layers',
     [
       _Make('Text', DockG.text, WsT.toneText, 'T', 'Type layer'),
-      _Make(
-        'Camera',
-        DockG.camera,
-        WsT.toneCamera,
-        '⇧C',
-        '3D camera, 45 mm',
-      ), // (the lens it comes with: the stage's 30 degrees on Filament's 24 mm film, tool_panel_depth.dart _filmMm, as the Camera tool panel says)
+      // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
+      _Make('Camera', DockG.camera, WsT.toneCamera, '⇧C', '3D camera, 45 mm'),
       _Make('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
       _Make('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],
@@ -71,7 +77,8 @@ final _makes = <(String, List<_Make>)>[
     ],
   ),
   (
-    'Expression', // (every JS that goes on a thing and moves its values, after Empty: dock_make_expressions.dart _expressionsOf)
+    // Every JS file that goes on a layer and moves its values comes after Empty (dock_make_expressions.dart _expressionsOf).
+    'Expression',
     [
       _Make(
         'Empty',
@@ -84,7 +91,7 @@ final _makes = <(String, List<_Make>)>[
   ),
 ];
 
-/// The inside's own 3D shapes, and how a tile is asked of it (kind, then its file or shape).
+/// The engine's own 3D shapes. A tile is created by its kind, then its file or shape (see [_asked]).
 final _solids = (
   '3D',
   [
@@ -96,7 +103,7 @@ final _solids = (
   ],
 );
 
-/// Filament's own lights, things of the document: placed and turned as any thing, they light the solid things.
+/// Filament's own lights. They are layers of the project: placed and rotated like any other layer, and they light the solid layers.
 final _lights = (
   'Light',
   [
@@ -106,10 +113,11 @@ final _lights = (
   ],
 );
 
-/// What a thing is made of, a material: put on the picked thing, any that is seen (a flat one wears it on its own plane,
-/// its picture its colour), one at a time; nothing picked, a ball wearing it (a material is made in Create, not chosen
-/// among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき"). Filament's own and the kit's, by their names to a
-/// user; the inside's word for each (shading: doc.h doc_material). Each tile a ball wearing it: material_tiles.dart.
+/// Materials: Filament's own and the engine's, under the names a user knows (the engine's word is the shading value, see doc.h doc_material).
+///
+/// A material goes on the picked layer in place of the one it has, one at a time. Any visible layer can wear one: a flat layer
+/// wears it on its own plane, and an image layer takes its color. With nothing picked, a ball wearing the material is created.
+/// Materials are in Create, not among the colors. Each tile shows a ball wearing the material (material_tiles.dart).
 final _materials = (
   'Material',
   [
@@ -122,6 +130,7 @@ final _materials = (
     _Make('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
+// Tile name to the shading value it sets.
 const _worn = {
   'Lit': 'lit',
   'Cloth': 'cloth',
@@ -130,20 +139,26 @@ const _worn = {
   'Filament glass': 'filament_glass',
   'Lacquer': 'lacquer',
   'Bubble': 'bubble',
-}; // (the tile, and the shading it gives)
-const _wears = {'film', 'picture', 'text', 'shape', 'solid'}; // (the kinds of thing that are seen, and so wear one)
-const _onPicked = {'Empty'}; // (put on the picked thing, or a new board: empty_fx.dart)
+};
+// The layer kinds that are visible, and so can wear a material.
+const _wears = {'film', 'picture', 'text', 'shape', 'solid'};
+// Tiles that go on the picked layer, or on a new layer when none is picked (empty_fx.dart).
+const _onPicked = {'Empty'};
 
+// Tile name to the (kind, shape) of the layer it creates.
 final _asked = {
   'Text': ('text', wsTextFont),
-  'Solid': ('shape', 'solid'), // (a flat colour as large as the stage: the inside makes it so)
+  // A flat color as large as the preview; the engine builds it that size.
+  'Solid': ('shape', 'solid'),
   'Rectangle': ('shape', 'rect'),
   'Ellipse': ('shape', 'circle'),
   'Polygon': ('shape', 'polygon'),
   'Star': ('shape', 'star'),
   'Line': ('shape', 'line'),
-  'Null': ('shape', 'null'), // (nothing to see: a thing to go with)
-  'Camera': ('camera', 'camera'), // (the nearest one that is on is the stage's eye)
+  // Invisible: other layers can be parented to it.
+  'Null': ('shape', 'null'),
+  // The nearest camera that is on is the one the preview looks through.
+  'Camera': ('camera', 'camera'),
   'Ring': ('solid', 'ring'),
   'Gem': ('solid', 'gem'),
   'Cube': ('solid', 'cube'),
@@ -154,42 +169,45 @@ final _asked = {
   'Spot': ('light', 'spot'),
 };
 
-/// What a tile lays on what it makes, in its one step: Cinema 4D's Floor object, a Cube laid flat under the stage (a flat
-/// Rect is unlit and takes no shadow); a light from above in front, as After Effects' new light looks at the middle of the
-/// composition from there (at no turn a Sun looks along the floor and lights nothing of it).
+/// Transform values set on a layer right after its tile creates it, in the same undo step.
+///
+/// Floor follows Cinema 4D's Floor object: a Cube laid flat under the preview, because a flat Rectangle is unlit and takes no shadow.
+/// Sun shines from above and in front, as After Effects' new light looks at the middle of the composition from there.
+/// With no rotation a Sun would shine along the floor and light nothing on it.
 const _starts = <String, Map<String, double>>{
   'Floor': {'scale_x': 12, 'scale_y': .01, 'scale_z': 12, 'y': -.48},
   'Sun': {'rotate_x': -60, 'rotate_y': 35},
 };
 
-/// What the Repeater tells the picked thing as it is first put on it (its knobs: js_StepX, js_Size), as its tile laid
-/// the thing out before it was an expression: in a row, side by side and a little smaller each time.
+/// Values set on the picked layer when the Repeater is first added to it (its parameters js_StepX and js_Size).
+/// They lay the copies out in a row, side by side and a little smaller each time, as the tile did before it was an expression.
 const _laid = <String, Map<String, double>>{
   'Repeater': {'js_StepX': 1.3, 'js_Size': .92},
 };
 
-/// A tile made on the stage as a new thing, picked; a tile of copies lays the picked thing out. Not done: the foot of
-/// the shelf says why.
+/// Runs a tile: it creates a new layer and selects it. A tile of copies lays out the picked layer instead, and a material changes it.
+/// On failure the reason is stored under the tile's name, and the footer shows it.
 void _make(DockCtx c, _Make tile) {
   final m = c.ws.inside!, name = tile.name;
   if (tile.recipe) {
-    // (a picture in one call: one step, and it is picked)
+    // A create script: one undo step, and the new layer is selected. It does not wait for the result.
     c.ws.after(
       m.later('create', word: name),
       (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
       (made) => c.ws.select('$made'),
-    ); // (without waiting: picked once made)
+    );
     return;
   }
   if (tile.file != null) return _expressionPut(c, tile);
+  // After Effects: New > Adjustment Layer.
   if (name == 'Adjustment') return c.ws.adjustment();
   if (name == 'Empty') {
-    // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
+    // An empty expression for the user to write (empty_fx.dart). Any earlier error for this tile is cleared.
     c.set(() => c.mem.trouble.remove(name));
     return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
-  } // (After Effects' New > Adjustment Layer)
+  }
   if (_worn[name] case final wears?) {
-    // (on the picked thing, in place of the one it wore; nothing picked, a ball wearing it, picked)
+    // Replaces the picked layer's material. With nothing picked, creates a ball wearing it and selects the ball.
     final t = int.tryParse(c.ws.selected ?? '');
     void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
     if (t != null) {
@@ -197,7 +215,8 @@ void _make(DockCtx c, _Make tile) {
       c.ws.after(m.later('say', layer: t, name: 'shading', word: wears), told);
       return;
     }
-    m.later('together', number: 1); // (one step: the ball and what it wears)
+    // One undo step covers the ball and its material.
+    m.later('together', number: 1);
     c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
     wsInked(c.ws, 'solid', 'ball');
     m.later('say', layer: -1, name: 'shading', word: wears);
@@ -206,7 +225,7 @@ void _make(DockCtx c, _Make tile) {
   }
   if (!_asked.containsKey(name)) {
     if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {
-      // (at the playhead, in the middle, picked: AbsentMotion's addElement)
+      // Added at the playhead, in the middle, and selected, as in AbsentMotion's addElement.
       c.ws.after(
         m.later('element', word: e.$2, number: c.ws.frame / Ws.fps),
         (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
@@ -216,28 +235,23 @@ void _make(DockCtx c, _Make tile) {
     return;
   }
   final asked = _asked[name]!;
-  m.later('together', number: 1); // (one step: the thing and its inks)
-  c.ws.after(
-    m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2),
-    null,
-    (made) => c.ws.select('$made'),
-  ); // (without waiting: picked once made; a text in the body's font)
+  // One undo step covers the layer and its colors.
+  m.later('together', number: 1);
+  // Does not wait: the new layer is selected once it exists. A text layer uses the body font.
+  c.ws.after(m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2), null, (made) => c.ws.select('$made'));
   wsInked(c.ws, asked.$1, asked.$2);
   for (final e in (_starts[name] ?? const <String, double>{}).entries) {
     m.later('set', layer: -1, name: e.key, number: e.value);
   }
   if (name == 'Floor') m.later('say', layer: -1, name: 'name', word: name);
   if (asked.$1 == 'light' && (m.value(0, 'environment', 0) ?? 1) == 1) {
-    m.later(
-      'set',
-      layer: 0,
-      name: 'environment',
-      number: .3,
-    ); // (After Effects: a light put in takes over from the default light; the Room dims, what it was is one field in Stage settings)
+    // As in After Effects, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
+    m.later('set', layer: 0, name: 'environment', number: .3);
   }
   c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
 }
 
+/// The Create shelf: filter chips above grouped tiles, and a footer for the selected tile.
 class CreateShelf extends StatelessWidget {
   const CreateShelf(this.c, {super.key});
   final DockCtx c;
@@ -257,11 +271,11 @@ class CreateShelf extends StatelessWidget {
         if (c.chip == 'All' || c.chip == g) (g, items.where((m) => c.hit(m.name)).toList()),
     ].where((e) => e.$2.isNotEmpty).toList();
     if (groups.isEmpty && c.query.trim().isNotEmpty) {
-      // (nothing has the words as typed: the nearest five, each in its own group, golf (97))
-      // (by the tile's name alone, and only those near it: with its group's name, "Material" drew every material up
-      //  for any word, Butterfly's or Empty's. RapidFuzz's WRatio of a word typed wrong to its tile is 77 or more
-      //  (bubbel Bubble 83, lacker Lacquer 77, clth Cloth 89), of a word to a tile it is not 72 or less (butterfly
-      //  Bubble 49, empty Gem 72). A Japanese word is found by what it means (WordNet, its own scores): all kept)
+      // Nothing matches the query as typed, so show the nearest five, each in its own group.
+      // Matching uses the tile's name alone. With the group name included, "Material" pulled in every material for any query.
+      // RapidFuzz's WRatio of a misspelled word to its tile is 77 or more (bubbel/Bubble 83, lacker/Lacquer 77, clth/Cloth 89).
+      // For a word and a tile it does not mean it is 72 or less (butterfly/Bubble 49, empty/Gem 72).
+      // A Japanese query is matched by meaning (WordNet scores), so all those matches are kept.
       final near = c.near([
         for (final (_, items) in makes)
           for (final m in items) (m.id, m.name, ''),
@@ -323,7 +337,9 @@ class CreateShelf extends StatelessWidget {
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
             action: sel.onPicked || (_worn.containsKey(sel.name) && c.ws.selected != null) ? 'Put on' : 'Create',
-            fresh: !sel.onPicked && !(_worn.containsKey(sel.name) && c.ws.selected != null), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
+            // A tile creates a new layer. Copies are laid out on the picked layer, a material is put on it, and so is an empty
+            // expression (or a new layer when none is picked).
+            fresh: !sel.onPicked && !(_worn.containsKey(sel.name) && c.ws.selected != null),
             onAction: () => _make(c, sel),
           ),
       ],
@@ -331,7 +347,7 @@ class CreateShelf extends StatelessWidget {
   }
 }
 
-/// One Create tile: the shelf's one tile, in its look. [naming]: where its name is being written, in its place; [onMenu]: a right click.
+/// One Create tile in the shelf's look. [naming] replaces the name while it is being renamed; [onMenu] is called with the position of a right click.
 Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
   final sel = c.sel == m.id, inside = c.ws.inside;
   final makes =
@@ -347,7 +363,8 @@ Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Off
     naming: naming,
     onMenu: onMenu,
     onTap: () => c.pick(m.id),
-    onApply: makes ? () => _make(c, m) : null, // (two presses make it, one step)
+    // A double-click creates it, in one undo step.
+    onApply: makes ? () => _make(c, m) : null,
     art: (_) => _makeArt(m, c, sel),
     over: (_) => [
       if (m.key.isNotEmpty)
@@ -359,30 +376,30 @@ Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Off
   );
 }
 
-/// A tile's picture, one of four: a recipe's motion, an expression's copies, a material's ball, or its mark.
+/// A tile's art: a script's motion, an expression's copies, a material's ball, or otherwise its mark.
 Widget _makeArt(_Make m, DockCtx c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
     child: Glyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
   );
   if (m.recipe && _isRecipe(c, m.name)) {
-    // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
+    // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.
     return Positioned.fill(child: RecipeMotionView(m.name));
   }
   if (m.file case final f?) {
-    // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
+    // An expression: the copies it lays out, drawn by the engine like an effect's tile and played while visible (copies_tiles.dart).
     return Positioned.fill(
       child: ValueListenableBuilder(
         valueListenable: CopiesTiles.drawn,
         builder: (_, _, _) => switch (CopiesTiles.of(f)) {
           '' => mark(),
-          final p => TileMoving(p, playing: true), // (played while in sight: TileMoving's own)
+          final p => TileMoving(p, playing: true),
         },
       ),
     );
   }
   if (_worn[m.name] case final w?) {
-    // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
+    // A material: a ball wearing it, drawn by the engine (material_tiles.dart).
     return Positioned.fill(
       child: ValueListenableBuilder(
         valueListenable: MaterialTiles.drawn,

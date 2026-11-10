@@ -1,7 +1,10 @@
 part of 'dock_widgets.dart';
 
-/// The shelves' list row (Media's folder, Effects' place): [depth] indent, a chevron slot ([open] null: none; [onToggle]: the chevron itself
-/// presses), [glyph] or a [cover] picture (a taller row, [sub] under the name), [name] given the ink and weight, [field] in its place, [count].
+/// A list row for the shelves, such as a folder in Media or a place in Effects.
+///
+/// [depth] indents the row. [open] shows a chevron (null shows none) and [onToggle] is called when the chevron is clicked.
+/// A [glyph] or a [cover] image leads the row, and a [cover] makes the row taller with [sub] under the name.
+/// [name] builds the name from the ink and weight the row chooses. [field] replaces the name, and [count] is shown at the end.
 Widget dockFolderRow({
   Key? key,
   required bool here,

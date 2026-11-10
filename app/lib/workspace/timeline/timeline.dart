@@ -1,5 +1,7 @@
-// The workspace's Timeline panel: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
-// The document lives in Ws; this panel keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
+// The workspace's Timeline panel.
+//
+// It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
+// The project lives in Ws. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;
@@ -52,19 +54,22 @@ class WsTimeline extends StatefulWidget {
 
 class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMixin, _TimelineAsked {
   late final Ticker _ticker = createTicker(_tick);
-  late final VoidCallback _listener = _changed; // (one closure, added and removed: an extension's method torn off is a new closure each time, never equal to the last, so removing it took nothing off)
+  // One closure, used for both adding and removing the listener.
+  // Tearing off an extension method gives a new closure each time, so removeListener would never match.
+  late final VoidCallback _listener = _changed;
   final _focus = FocusNode(debugLabel: 'timeline');
   Ws? _ws;
   double _zoom = 1, _scroll = 0, _vscroll = 0, _trackW = 1000, _rowsH = 200;
   int _workIn = 12, _workOut = 228;
   int _last = -1;
 
-  // The rows as laid: each layer's own, then, while it stands open, a lane for each of its values that moves (Ableton's
-  // automation lanes, Live 12 manual 25.5: with Cmd, every automated envelope in a lane of its own). value: the lane's.
-  List<({int layer, String? value, (String, String)? aim})> _order = const []; // (aim: a row saying what the layer aims at, wsTargets; its value '', no keys)
+  // The rows as laid out: each layer's own row, then, while it is expanded, a lane for each of its animated properties.
+  // This follows Ableton's automation lanes (Live 12 manual 25.5), where Cmd shows every automated envelope in its own lane.
+  // `value` is the property a lane shows. `aim` is a row naming the layer's target (wsTargets), with an empty value and no keyframes.
+  List<({int layer, String? value, (String, String)? aim})> _order = const [];
 
-  // A layer's values that have keys, in the thing's own order of them (Ableton lays out the automated ones: "Show
-  // Automated Parameters Only"; with Animate on every value is said to move, so its keys tell).
+  // The properties of [l] that have keyframes, in the layer's own order.
+  // Ableton does the same with "Show Automated Parameters Only". With Animate on, every property counts as moving, so its keyframes decide.
   List<String> _moving(Ws ws, WsLayer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null) return const [];
@@ -75,13 +80,13 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     ];
   }
 
-  // The card a lane's value stands on: the effect it is a knob of, or Transform and the like.
+  // The title of the inspector card that holds a property: an effect, or Transform and the like.
   String? _laneCard(Ws ws, WsLayer l, String name) => [
     for (final (title, names) in ws.inside!.cards(int.parse(l.id)))
       if (names.contains(name)) title,
   ].firstOrNull;
 
-  // A value's lane: its keys where they are and what they hold, read from the document's picture (nothing asked of the inside).
+  // The lane for one property: its keyframe times and values, read from the project snapshot without asking the engine.
   WtRow _laneRow(Ws ws, WsLayer l, String name) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyTimes(t, name), vs = m.keyValues(t, name);
     final n = math.min(at.length, vs.length);
@@ -105,13 +110,14 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     );
   }
 
-  // A way's shape from 0 to 1, as the bar's stretches are drawn.
+  // An easing's curve from 0 to 1, as drawn between keyframes.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
 
   @override
   void initState() {
     super.initState();
-    _hearAsks(); // (the window's keys heard: timeline_asked.dart)
+    // Starts listening for requests from the app's commands (timeline_asked.dart).
+    _hearAsks();
   }
 
   @override
@@ -156,8 +162,8 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     setState(() => _scroll = _clampScroll(f - _visible * .1));
   }
 
-  /// A trackpad's two fingers: they carry the tracks as a wheel does, the other way (the content goes with the fingers);
-  /// a pinch zooms about the frame under them (Final Cut's, Cavalry's, Theatre.js's).
+  /// A two-finger trackpad slide scrolls the tracks like a wheel, in the opposite direction, so the content follows the fingers.
+  /// A pinch zooms around the frame under the fingers, as in Final Cut, Cavalry and Theatre.js.
   void _fingers(Offset by, Offset _) => _scrollBy(-by);
   void _pinch(double by, Offset at) => _setZoom(_zoom * by, anchor: _view.frameAt(at.dx).round().clamp(0, Ws.duration));
 
@@ -172,26 +178,33 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     }
   }
 
-  // Joined: a bar held by a hand: by its body it slides, by an end it is cut there. The timeline only says which part
-  // is held and how many seconds the hand has gone; what that does to the thing (its limits, a film's head) is the
-  // inside's, and the bar is drawn from what the inside then says.
+  // The bar being dragged. Dragging the body slides it, and dragging an end trims it.
+  // The timeline only records which part was grabbed and how far the pointer moved.
+  // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
   ({String id, String part, double grab, bool moved})? _bar;
-  Set<int> _stops = const {}; // (what the hand may come to rest on, taken when it took hold: timeline_snap.dart)
-  int? _restAt; // (where it has, its line drawn there)
-  (int, int)? _barWhole; // (the held film whole when it was taken: timeline_slip.dart)
+  // The frames the drag can snap to, collected when the drag starts (timeline_snap.dart).
+  Set<int> _stops = const {};
+  // The frame the drag has snapped to, where a guide line is drawn.
+  int? _restAt;
+  // The whole video's extent when the drag started (timeline_slip.dart).
+  (int, int)? _barWhole;
   final _filmSeconds = <String, double>{};
-  int _barIn = 0, _barOut = 0; // (the held bar's ends when it was taken: a cut stops one frame short of nothing, since a bar cut to nothing cannot be seen, taken again, or kept: the document is as long as its longest thing)
+  // The dragged bar's in and out frames when the drag started.
+  // A trim stops one frame short of an empty bar, because an empty bar cannot be seen, grabbed again or kept.
+  // The project is as long as its longest layer.
+  int _barIn = 0, _barOut = 0;
 
-  // The pointer over a bar says what it would do: an end cuts, the body slides, a key slides; the room between draws a box.
+  // The cursor over the tracks shows what a drag would do: an end trims, the body slides, a keyframe slides, empty space draws a box.
   MouseCursor _cursor = MouseCursor.defer;
 
-  // A key held by a hand: it (and the keys picked with it) slides in time; the playhead shows where, let go it is so.
+  // The keyframe being dragged, together with the other selected keyframes. They slide in time while the playhead shows the position.
   ({List<WsKey> keys, int grab, int by})? _slide;
-  DateTime? _lanePressed; // (when and where a lane was last pressed: a second press there is a double one)
+  // When and where a lane was last clicked, to detect a double-click.
+  DateTime? _lanePressed;
   Offset _laneAt = Offset.zero;
 
-  // A box drawn over the empty room of the tracks (any direction): the keys inside it are picked, else the things whose
-  // bars it touches (Ableton's and After Effects' marquee). Corners, in the tracks' own points.
+  // The selection box dragged over empty track space, in any direction. Its corners are in track coordinates.
+  // It selects the keyframes inside it, or else the layers whose bars it touches, like the marquee in Ableton and After Effects.
   (Offset, Offset)? _box;
 
   void _barDown(Offset p) {
@@ -203,10 +216,12 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     setState(() => _box = null);
     if (b == null) return;
     final ws = _ws!, v = _view, r = Rect.fromPoints(b.$1, b.$2);
-    if (r.width < 4 && r.height < 4) return; // (a click, not a box: the tap has done it)
+    // A click, not a box: the tap handler has already dealt with it.
+    if (r.width < 4 && r.height < 4) return;
     final keys = <WsKey>[], things = <String>[];
     for (var i = 0; i < _order.length; i++) {
-      if (_order[i].value != null) continue; // (a lane's points are not picked by a box)
+      // A box does not select points on a lane.
+      if (_order[i].value != null) continue;
       final l = ws.layers[_order[i].layer], top = i * WtM.row - _vscroll;
       if (top + WtM.row < r.top || top > r.bottom || _isLocked(ws, l.id)) continue;
       for (final k in l.keys) {
@@ -232,7 +247,8 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     }
     final h = _bar, ws = _ws!, m = ws.inside;
     if (h == null || m == null) return;
-    var by = (_view.frameAt(p.dx) - h.grab).round(); // (by whole frames)
+    // Moves by whole frames.
+    var by = (_view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
       _bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
       return _slip(ws, int.parse(h.id), by);
@@ -256,7 +272,8 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final h = _bar, ws = _ws!, m = ws.inside;
     _bar = null;
     if (h == null || m == null) return;
-    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0)); // (let go without waiting)
+    // Does not wait for the engine.
+    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
   }
 
   double _lift = 0; // how far a label row has been carried up or down
@@ -264,19 +281,25 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   int? _workDrag; // 0 in, 1 out, 2 both, null scrub
   double _workGrab = 0;
 
-  // The document's marks on the ruler, as Ableton Live's locators (timeline_asked.dart: a right click puts one, a click
-  // picks and goes to one, Cmd+R names it); one is carried along by its flag (its name kept), and carried off the
-  // ruler, up or down, it is taken away. Each one step.
+  // The project's markers on the ruler, which work like Ableton Live's locators (see timeline_asked.dart).
+  // A right-click adds one, a click selects it and moves the playhead there, and Cmd+R renames it.
+  // A marker can be dragged by its flag and keeps its name. Dragging it off the ruler, up or down, deletes it.
+  // Each of these is one undo step.
   (double, String)? _markHeld;
   int _markTo = 0;
-  double _markGrab = 0; // (where on its flag it was taken, in frames: kept while carried, as Live's locators are dragged (6.4) and as the work area here keeps _workGrab; carried to the hand's own spot, one taken by its name's end jumped 0.47 s)
+  // Where on its flag the marker was grabbed, in frames.
+  // It is kept during the drag, as Live does for locators (6.4) and as _workGrab does for the work area.
+  // Without it the marker jumped to the pointer, and one grabbed by the end of its name moved 0.47 s.
+  double _markGrab = 0;
   final _rulerMenu = GlobalKey<WsMenuState>();
-  final _trackMenu = GlobalKey<WsMenuState>(); // (a bar's own menu: timeline_asked.dart _trackRight)
+  // The context menu of a bar (see _trackRight in timeline_asked.dart).
+  final _trackMenu = GlobalKey<WsMenuState>();
   final _labelMenu = GlobalKey<WsMenuState>();
   bool _markOff = false;
   (double, String)? _naming;
   final _markWords = TextEditingController();
-  late final FocusNode _markFocus = FocusNode()..addListener(() => _markFocus.hasFocus ? null : _named()); // (the field left: the name said)
+  // Commits the marker name when the field loses focus.
+  late final FocusNode _markFocus = FocusNode()..addListener(() => _markFocus.hasFocus ? null : _named());
 
   void _named() {
     final was = _naming, ws = _ws!, words = _markWords.text.trim();
@@ -290,14 +313,14 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     if (_markHeld != null) {
       return setState(() {
         _markTo = (_view.frameAt(p.dx) - _markGrab).round().clamp(0, Ws.duration);
-        _markOff = p.dy < -WtM.ruler * .6 || p.dy > WtM.ruler * 1.6; // (carried off the ruler: taken away when let go)
+        // Dragged off the ruler: the marker is deleted on release.
+        _markOff = p.dy < -WtM.ruler * .6 || p.dy > WtM.ruler * 1.6;
       });
     }
     switch (_workDrag) {
       case 0:
-        setState(
-          () => _workIn = f.clamp(0, _workOut - Ws.fps ~/ 2),
-        ); // (never shut to nothing: half a second at least, so the document cannot be dragged out of sight)
+        // The work area is at least half a second long, so it cannot be dragged out of sight.
+        setState(() => _workIn = f.clamp(0, _workOut - Ws.fps ~/ 2));
       case 1:
         setState(() => _workOut = f.clamp(_workIn + Ws.fps ~/ 2, Ws.duration));
       case 2:
@@ -307,13 +330,14 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           _workOut = a + len;
         });
       default:
-        final shift = HardwareKeyboard.instance.isShiftPressed; // (After Effects': Shift held while the time indicator is dragged, it rests on what it passes)
+        // As in After Effects, holding Shift while dragging the time indicator snaps it to what it passes.
+        final shift = HardwareKeyboard.instance.isShiftPressed;
         if (shift) _stops = _ws!.stops();
         _ws!.frame = shift ? _restOn(f) ?? f : f;
     }
   }
 
-  /// Joined: the work area carried is the document's when the hand lets go (one step).
+  /// Ends a drag on the ruler. The work area becomes the project's on release, as one undo step.
   void _workDragEnd() {
     final m = _ws?.inside;
     if (_markHeld case (final at, final name)?) {
@@ -322,14 +346,15 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
       if (_markOff) {
         _ws!.after(m!.later('mark', number: at));
       } else if ((to - at).abs() >= 0.5 / Ws.fps) {
-        // (moved: one step, its name kept)
+        // Moved: one undo step, and the name is kept.
         m!.later('together', number: 1);
         m.later('mark', number: at);
         m.later('mark', number: to, word: name);
-        if (_ws!.markColors[at] case final k?) m.later('mark_colour', number: to, word: '$k'); // (its colour with it)
+        // The colour moves with the marker.
+        if (_ws!.markColors[at] case final k?) m.later('mark_colour', number: to, word: '$k');
         _ws!.after(m.later('together'));
       } else {
-        // (held and let go where it was, a hand's shake taken for a drag: a click, it goes there and picks it as _rulerTap does; golf (88))
+        // Released where it was grabbed, so a small shake is not a drag. Treated as a click, like _rulerTap.
         wsMarkPicked.value = (at, name);
         _ws!
           ..playing = false
@@ -349,23 +374,25 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
 
   // ---------------------------------------------------------------- build
 
-  // The films' beats (their Beats value, the inside's strikes), asked again only when the document changes: a question
-  // of the inside (another isolate), shown when it comes.
+  // The videos' beats (from their Beats property, computed by the engine).
+  // They are requested from the engine on another isolate, only when the project changes, and shown when they arrive.
   (int, List<int>)? _beats;
   int? _beatsAsked;
-  // A film's sound on its bar: read once on another isolate (the inside keeps it), then laid on the document's frames
-  // where the film shows them, asked again only when the document changes.
-  // A film's pictures on its bar: the one it plays in the middle of each sixth of it (its begin, its speed, either way),
-  // made small by the inside (GStreamer, another isolate) and read as pictures; asked again only when the document changes.
+  // A video's waveform on its bar: read once on another isolate, then laid on the project's frames where the video plays.
+  // It is requested again only when the project changes.
+  // A video's thumbnails on its bar: one frame from the middle of each sixth of the video, whatever its start or speed.
+  // The engine makes them small (GStreamer, on another isolate) and the app reads them as images.
+  // They are requested again only when the project changes.
   final _frames = <String, (Object, List<ui.Image>?)>{};
   final _framesAsked = <String, Object>{};
-  final _waves = <String, (int, int, int, List<double>?)>{}; // (thing: document read, from, to, loudness a frame)
+  // Per layer id: the project read, the from and to frames, and the loudness of each frame.
+  final _waves = <String, (int, int, int, List<double>?)>{};
   final _asked = <String>{};
   final _waveAsked = <String, (int, int, int)>{};
   @override
   Widget build(BuildContext context) {
     if (_workDrag == null) {
-      // (the document's work area)
+      // Takes the project's work area.
       final (from, to) = _ws!.work;
       _workIn = (from * Ws.fps).round();
       _workOut = (to * Ws.fps).round();
@@ -378,7 +405,9 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           ...ws.many,
           ...wsMembersOf(ws),
           for (final p in [?sel, ...ws.many]) ?away[p],
-        }; // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
+        };
+    // The lit layers are those selected together, those moved by the selected relation, and the closed group a selected layer is in.
+
     _order = [
       for (final (i, l) in ws.layers.indexed)
         if (!away.containsKey(l.id)) ...[

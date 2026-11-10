@@ -1,4 +1,4 @@
-// A group: a heading and its rows.
+// A card of the inspector: a heading and its rows.
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
@@ -7,14 +7,22 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Hov;
 import 'package:motolii/widgets/media.dart' show Draw;
 
-/// A card: a heading and its rows, folded by its title.
+/// A card: a heading and its rows. Clicking the heading folds the card.
+///
+/// Alt-click folds or opens every card of the document at once, like Option-click on a disclosure triangle in Finder's list view.
 class Sect extends StatelessWidget {
   const Sect({super.key, required this.title, required this.children, required this.trailing, required this.tone});
+
+  /// The heading text. It also names the card's fold flag in the document.
   final String title;
+
+  /// The rows shown while the card is open.
   final List<Widget> children;
+
+  /// A widget placed at the right end of the heading.
   final Widget? trailing;
 
-  /// The card's colour stripe.
+  /// The colour of the card's badge.
   final Color tone;
 
   @override
@@ -24,7 +32,7 @@ class Sect extends StatelessWidget {
     void toggle() {
       if (!HardwareKeyboard.instance.isAltPressed) return doc.flag('fold.$title', open);
       for (final c in doc.cards) {
-        doc.flag('fold.${c.name}', open); // (the Mac's Option on a disclosure triangle: all of them, Finder's list; this one as they go)
+        doc.flag('fold.${c.name}', open);
       }
       doc.flag('fold.$title', open);
     }
@@ -35,7 +43,7 @@ class Sect extends StatelessWidget {
         height: Pop.titleH,
         child: Row(
           children: [
-            // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
+            // The mark is centred in its box and the gap after it equals the card's inset, so it has equal space on both sides.
             FoldMark(open: open, hot: h),
             SizedBox(width: Pop.inset),
             Badge(tone, size: 16, radius: const Radius.circular(16 * .32), mark: Draw((c, s) => drawLayerMark(c, s, Pop.onAccent), Pop.onAccent)),
@@ -70,7 +78,6 @@ class Sect extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: Pop.gap),
       child: Forms.worn.card(
-        // (as the skin's forms draw a card)
         context,
         CardSpec(title: title, tone: tone, open: open, onToggle: toggle, trailing: trailing, body: body, head: head, own: content),
       ),

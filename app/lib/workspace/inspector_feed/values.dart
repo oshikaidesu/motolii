@@ -1,43 +1,48 @@
-// values.dart: a value as the inspector shows it, read from the inside at the picture's moment, and a hand's change of it told back (numbers, words, choices, switches).
+// Values as the inspector shows them, read from the engine at the time of the frame on screen,
+// and the user's changes to them (numbers, words, choices, switches) written back to the document.
 part of '../workspace.dart';
 
-int? _dragged; // (the thing a hand on the inspector holds now: held once, carried at every step, let go when it lets go)
+/// The layer being dragged in the inspector, or null.
+/// The drag starts once, updates at every step and ends when the user releases.
+int? _dragged;
 
-/// A value as a hand reads it, and back (Motolii.reading).
+/// Converts a document value to the number shown in the inspector (see Motolii.reading).
 double _shown(Motolii m, int t, String n, double v) {
   final (k, f) = m.reading(t, n);
   return v * k + f;
 }
 
+/// Converts a number shown in the inspector back to the document's value.
 double _unshown(Motolii m, int t, String n, double x) {
   final (k, f) = m.reading(t, n);
   return (x - f) / k;
 }
 
+/// Maps an inspector id and shown number to the document's value name and value, or null when the id has no document value.
 (String, double)? _asDocument(Ws ws, int t, String id, double x) {
   if (id.startsWith('v_') && ws.inside!.shown(id.substring(2))?.look == 'thing') {
-    // (another thing: None, then the others by their place)
+    // Another layer: None first, then the others by position.
     final others = _others(ws, t).values.toList(), i = x.round();
     return (id.substring(2), i >= 1 && i <= others.length ? others[i - 1].toDouble() : 0);
   }
   final m = ws.inside!, n = id.substring(2);
   final seen = id.startsWith('v_') && (n == 'x' || n == 'y') ? m.shows(t, n, _drawn(ws)) : null;
   if (seen != null && seen.$2) {
-    return (
-      n,
-      _unshown(m, t, n, x) - (seen.$1 - (m.value(t, n, _drawn(ws)) ?? seen.$1)),
-    ); // (shown where it shows: its own value moved as far as the hand moved that)
+    // The value is displayed somewhere other than where it is stored, so the stored value moves by as much as the user moved the display.
+    return (n, _unshown(m, t, n, x) - (seen.$1 - (m.value(t, n, _drawn(ws)) ?? seen.$1)));
   }
-  if (id.startsWith('v_')) return (n, _unshown(m, t, n, x)); // (a card of the inside's own: the value of that name, in the document's own units)
+  // A value on the engine's own cards: the value of that name in the document's units.
+  if (id.startsWith('v_')) return (n, _unshown(m, t, n, x));
   return null;
 }
 
-// (the moment of the picture on the stage, at a frame: what is read there was set down by the inside as it drew it,
-//  not waited for while it tells the stage a moment the playhead has just been put at)
+/// The time of the frame on the canvas.
+/// The engine records what is read at that time while drawing, so the value is available
+/// without waiting for the engine to be told a time the playhead has just moved to.
 double _drawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
 
-/// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
-/// not the cards' hundreds of numbers [wsTransform] reads.
+/// Only the position, scale and rotation of a layer, as the canvas readout shows them.
+/// [wsTransform] reads all of the cards' numbers instead.
 Map<String, double> wsPlace(Ws ws, String id) {
   final m = ws.inside, t = int.tryParse(id);
   if (m == null || t == null) return const {};
@@ -46,16 +51,16 @@ Map<String, double> wsPlace(Ws ws, String id) {
   return {
     for (final n in const ['x', 'y', 'scale_y', 'rotate'])
       n: r1(_shown(m, t, n, (n == 'x' || n == 'y' ? m.shows(t, n, at)?.$1 : null) ?? m.value(t, n, at) ?? (n == 'scale_y' ? 1 : 0))),
-  }; // (where it shows)
+  };
 }
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
 Map<String, double> wsTransform(Ws ws, String? id) {
   if (ws.inside case final m?) {
-    // (the document's own values, as the inspector counts them)
+    // The document's own values, as the inspector counts them.
     final t = int.tryParse(id ?? '');
     if (id == null) {
-      // (nothing picked: the stage's own cards, thing 0)
+      // With nothing selected these are the stage's own cards, layer 0.
       final at = _drawn(ws);
       return {
         for (final (_, names) in m.cards(0))
@@ -64,9 +69,11 @@ Map<String, double> wsTransform(Ws ws, String? id) {
     }
     if (t == null) return const {};
     final at = _drawn(ws);
-    double r1(double x) => (x * 10).roundToDouble() / 10 + 0; // (+ 0: no minus nought)
+    // Adding 0 turns -0.0 into 0.0.
+    double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
     return {
-      'depth': r1(m.bounds(t)?[7] ?? 0), // (how deep it is in points of the picture: a flat thing is Flat)
+      // The depth in canvas points. A flat layer shows Flat.
+      'depth': r1(m.bounds(t)?[7] ?? 0),
       for (final (_, names) in m.cards(t))
         for (final n in names) 'v_$n': _onCard(ws, m, t, n, at),
     };
@@ -74,18 +81,20 @@ Map<String, double> wsTransform(Ws ws, String? id) {
   return const {};
 }
 
-/// Joined: what was changed in the inspector is a thing held and its numbers carried (the inside's one form of a
-/// drag): while a hand is on it, it only shows; when the hand lets go it is the document's, by the document's rules.
+/// Writes values changed in the inspector. The engine has one form of change, a drag: drag_start, then drag_update with the numbers.
+/// While the user is dragging ([live]) the value is only displayed. On release it becomes the document's, by the document's rules.
 void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}) {
-  final m = ws.inside!, t = id == null ? 0 : int.tryParse(id); // (nothing picked: the stage's own, thing 0)
-  // (a word on a card of the inside's own, picked: the word in that place, said; one step)
+  // With nothing selected the target is the stage's own layer 0.
+  final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
+  // A word chosen on one of the engine's own cards is written as that word, in one undo step.
   final said = {
     for (final e in changed.entries)
       if (t != null && e.key.startsWith('v_') && m.words(t, e.key.substring(2)).isNotEmpty) e.key: e.value,
   };
   if (said.isNotEmpty) {
     if (live) return;
-    m.later('together', number: 1); // (one step, without waiting)
+    // One undo step, without waiting.
+    m.later('together', number: 1);
     for (final e in said.entries) {
       final ways = m.words(t!, e.key.substring(2));
       for (final o in [t, ..._withIt(ws, t)]) {
@@ -101,7 +110,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
   }
   if (t == null) return;
   if (changed['v_speed'] case final speed? when t > 0) {
-    // (its speed: the thing stretched in time round where it is held, After Effects' Time Stretch; let go, not while dragged)
+    // Speed stretches the layer in time around the hold point, like Time Stretch in After Effects. It applies on release, not during the drag.
     changed = {...changed}..remove('v_speed');
     if (!live) {
       ws.after(
@@ -113,7 +122,8 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
   }
   final now = ws.frame / Ws.fps, dragged = _dragged == t;
   if (!dragged) {
-    m.take(t); // (held once a hand: each step after only carries)
+    // The drag starts once. Later steps only update it.
+    m.take(t);
     _found.clear();
   }
   _dragged = live ? t : null;
@@ -124,17 +134,20 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
     if (to != null && !m.dragUpdate(to.$1, to.$2)) why ??= m.error;
     if (to != null) carried[to.$1] = to.$2;
-    if (to == null) why ??= 'the document has no ${e.key}: '; // (a property the document has no value for says so, rather than keep the number)
+    // A property the document has no value for reports that, instead of silently keeping the number.
+    if (to == null) why ??= 'the document has no ${e.key}: ';
   }
   if (live) {
-    if (ws.playing) ws.playing = false; // (a hand on a value stops the play: what is changed is changed at one moment)
+    // Changing a value stops playback, so the change applies at one time.
+    if (ws.playing) ws.playing = false;
     if (why != null) _told(ws, why);
   } else {
     final also = _withIt(ws, t);
     if (also.isNotEmpty) m.later('together', number: 1);
     var kept = m.later('drag_end', number: 1);
     for (final o in also) {
-      // (After Effects' and Figma's: a value changed with many picked is changed on them all that have it, a number dragged by as much, one typed to it)
+      // As in After Effects and Figma, a value changed with several layers selected changes on every selected layer that has it.
+      // A dragged number moves by the same amount, and a typed number is set to the typed value.
       m.take(o);
       for (final e in carried.entries) {
         m.dragUpdate(e.key, dragged ? (m.value(o, e.key, now) ?? e.value) + e.value - _found[e.key]! : e.value);
@@ -142,13 +155,15 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
       m.later('drag_end', number: 1);
     }
     if (also.isNotEmpty) kept = m.later('together');
-    ws.after(kept, (done, no) => _told(ws, why ?? (done ? null : no))); // (the hand let go: the window does not wait for the step)
+    // The user has released, so the app does not wait for the step to finish.
+    ws.after(kept, (done, no) => _told(ws, why ?? (done ? null : no)));
   }
 }
 
-final _found = <String, double>{}; // (the values as the hand found them)
+/// The values as they were when the drag started.
+final _found = <String, double>{};
 
-/// What else is picked with [t].
+/// The other layers selected together with [t].
 List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
     ? [
         for (final id in ws.many)
@@ -156,88 +171,91 @@ List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
       ]
     : const [];
 
-/// Joined: the picked thing's words in the inspector's ids (a text's content; how it lies on what is behind), and a change of them told to the document.
+/// The selected layer's words in the inspector's ids, such as a text's content or how it blends with what is behind.
 Map<String, String> _words(Ws ws, String? id) {
-  final m = ws.inside, t = id == null ? 0 : int.tryParse(id); // (nothing picked: the stage's own cards)
+  // With nothing selected these are the stage's own cards.
+  final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};
   return {
     ..._cardColors(m, t, _drawn(ws)),
-    if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'), // (which light it is: a sun, a point, a spot; the Light card draws it so)
-    if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t), // (letters its font has not: drawn in another, said under its words)
+    // Which light it is (sun, point, spot). The Light card draws it that way.
+    if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'),
+    // Letters the font lacks, which are drawn in another font. Shown under the text.
+    if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t),
     for (final (_, names) in m.cards(t))
       for (final n in names)
         if (m.shown(n)?.look == 'thing')
-          'v_$n':
-              _others(ws, t).entries.where((e) => e.value == (m.value(t, n, 0) ?? 0)).firstOrNull?.key ??
-              'None' // (another thing, by its name)
+          // Another layer, by its name.
+          'v_$n': _others(ws, t).entries.where((e) => e.value == (m.value(t, n, 0) ?? 0)).firstOrNull?.key ?? 'None'
         else if (m.words(t, n).isNotEmpty)
-          'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n), // (one of its words; none said: the first, as it comes)
+          // One of its words. If none is set, the first.
+          'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n),
   };
 }
 
-/// What a text's font lacks of its words, as the Text card says it under them ('' nothing): the letters, and the font
-/// all of it is drawn in instead (the user, 11/5: no tofu, and a reason where it is not as asked).
+/// The message shown under a text when its font lacks some letters, or '' when nothing is missing.
+/// It names the missing letters and the font used instead, so the user sees a reason rather than empty boxes.
 String _lacks(Motolii m, int t) {
   final file = m.whole(m.word(t, 'file')), words = m.word(t, 'text');
-  final (lacks, instead) = m.fontLacks(
-    file,
-    words.isEmpty ? file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '') : words,
-  ); // (no words: the font's own name, as the inside sets it)
+  // With no text, the font's own name is checked, as the engine sets it.
+  final (lacks, instead) = m.fontLacks(file, words.isEmpty ? file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '') : words);
   if (lacks.isEmpty) return '';
   return instead.isEmpty
       ? 'Not in this font: $lacks. No font here has them all: they are left out'
       : 'Not in this font: $lacks. Shown in ${instead.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '')}';
 }
 
-/// How the inspector is looked at (its folds, an effect's Advanced shown): the window's view, not the document's.
+/// How the inspector is displayed, such as its folds and whether an effect's Advanced section is open.
+/// This is part of the app's view, not the document.
 Map<String, bool> _flags(Ws ws, String? id) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool) e.key.substring(10): e.value as bool,
 };
 
 bool _flag(Ws ws, String? id, Map<String, bool> changed) {
-  bool looked(String k) =>
-      k.endsWith('.open') ||
-      k.endsWith('.adv') ||
-      k.endsWith('.code') ||
-      k.endsWith('.past') ||
-      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, fx_code.dart)
+  // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (fx_code.dart).
+  bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.code') || k.endsWith('.past') || k.startsWith('fold.');
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }
   final other = changed.keys.where((k) => !looked(k)).firstOrNull;
   if (other == null) return true;
-  _told(ws, 'the document has no ${other.endsWith('.on') ? 'bypass' : other}: '); // (an effect switched off and kept)
+  // The .on flag is an effect switched off, which the document keeps as bypass.
+  _told(ws, 'the document has no ${other.endsWith('.on') ? 'bypass' : other}: ');
   return false;
 }
 
+/// Writes words chosen in the inspector to the document. Returns false when no layer is selected.
 bool _say(Ws ws, String? id, Map<String, String> changed) {
   final m = ws.inside!, t = int.tryParse(id ?? '');
   if (t == null) return false;
-  // (asked without waiting, one step: the window goes on while the inside works it, then reads it again; refused, the
-  //  words go back to the document's own when it is read)
+  // One undo step, requested without waiting: the app carries on while the engine works, then reads the result.
+  // If the engine refuses, the words return to the document's own when it is read again.
   m.later('together', number: 1);
   for (final e in changed.entries) {
     if (!e.key.startsWith('v_')) continue;
     final n = e.key.substring(2);
     m.shown(n)?.look == 'thing'
-        ? m.later('set', layer: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble()) // (another thing, told by its name: it goes with that one)
-        : m.later('say', layer: t, name: n, word: e.value); // (a card's value of that name)
+        // Another layer, chosen by name: the value follows that layer.
+        ? m.later('set', layer: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble())
+        // A card's value of that name.
+        : m.later('say', layer: t, name: n, word: e.value);
   }
   ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
   return true;
 }
 
-/// Joined: the other things by their row's number on the timeline and the name it shows there.
+/// The other layers, keyed by their row number on the timeline and the name shown there.
 Map<String, int> _others(Ws ws, int t) {
-  final rows = ws.layers.where((l) => l.id != '$t' && ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour'); // (things, not relations or behaviours)
-  return {
-    for (final l in rows) '${ws.layers.indexOf(l) + 1}. ${l.name}': int.parse(l.id),
-  }; // (as After Effects' parent list: the row's number on the timeline, then the name)
+  // Layers only, not relations or behaviours.
+  final rows = ws.layers.where((l) => l.id != '$t' && ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour');
+  // Like After Effects' parent list: the row number on the timeline, then the name.
+  return {for (final l in rows) '${ws.layers.indexOf(l) + 1}. ${l.name}': int.parse(l.id)};
 }
 
-/// Joined: a change the document did not take is said in the top bar, by the inside's own reason (its first clause,
-/// read as it was refused: every call of the inside forgets the last reason); the next one it takes clears it.
+/// Shows a change the document refused in the top bar, using the engine's reason (its first clause).
+/// The reason must be read right when the change is refused, because every engine call forgets the last one.
+/// The next accepted change clears the message.
 void _told(Ws ws, String? why) {
   if (why != null && why.isNotEmpty) {
     ws.notice = 'Not taken: ${why.split(':').first}';

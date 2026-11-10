@@ -1,6 +1,8 @@
-// The window's panes: the panels laid out by the off-the-shelf `docking` package, so a tab can be dragged onto another strip,
-// split off to a side, and every divider resized. The lab's version of Motolii's DockWorkspace (ui/lib/workspace/dock_workspace.dart);
-// no Detach, since a window of its own needs the native shell. Chrome comes from WsT, so both shades apply.
+// The window's panes: panels laid out by the `docking` package.
+//
+// A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
+// A tab cannot be detached into its own window, because that needs the native shell.
+// Colors come from WsT, so both the light and dark shades apply.
 import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 
@@ -13,25 +15,32 @@ import '../state/state.dart';
 /// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.
 enum WsAt { shelves, stage, timeline, ease, inspector, tools, catalog }
 
-/// One pane: its name (also its id), the mark on its tab, and how to build its body.
-/// [iconOnly] tabs show the mark alone: for panes whose body already names them in its header, so a strip of many stays narrow.
+/// One pane: its name (also its id), the glyph on its tab, and how to build its body.
+///
+/// An [iconOnly] tab shows the glyph alone. It suits panes whose body already shows the name in a header, and keeps a strip of many tabs narrow.
 class WsPane {
   const WsPane(this.name, this.glyph, this.build, {this.at = WsAt.inspector, this.minSize = 160, this.iconOnly = false, this.tone, this.acts = ''});
   final String name;
-  final GlyphKind? glyph; // (none: the pane's first letter; a DockG, or a set of marks of one's own)
+
+  /// The glyph on the tab. If null, the tab shows the first letter of [name].
+  final GlyphKind? glyph;
   final Widget Function() build;
   final double minSize;
   final bool iconOnly;
   final WsAt at;
-  final Color? tone; // (a catalog row: the hue of its sticker)
-  final String acts; // (a catalog row: what it works on)
+
+  /// For a catalog row: the color of its sticker.
+  final Color? tone;
+
+  /// For a catalog row: what it works on.
+  final String acts;
 }
 
 class WsPanes extends StatefulWidget {
   const WsPanes({super.key, required this.panes, required this.preset});
   final List<WsPane> panes;
 
-  /// The arrangement a fresh window starts with.
+  /// Builds the arrangement a new window starts with.
   final DockingArea Function(DockingArea Function(WsAt at, {double? size}) strip) preset;
   @override
   State<WsPanes> createState() => _WsPanesState();
@@ -59,7 +68,7 @@ class _WsPanesState extends State<WsPanes> {
   (String, int)? _fronted;
   void _follow() {
     if (_ws!.fronted case final f? when f != _fronted) {
-      // (a pane asked to the front)
+      // A pane has asked to be brought to the front.
       _fronted = f;
       _toFront(f.$1);
     }
@@ -74,7 +83,7 @@ class _WsPanesState extends State<WsPanes> {
     _layout.rebuild();
   }
 
-  /// The tabs that start at [at], in list order: one is the item itself, more are a strip.
+  /// The panes that start at [at], in list order: a single pane is returned as it is, several become a tab strip.
   DockingArea _strip(WsAt at, {double? size}) {
     final here = [
       for (final p in widget.panes)
@@ -106,7 +115,7 @@ class _WsPanesState extends State<WsPanes> {
       size: size,
       minimalSize: p.minSize,
       keepAlive: true,
-      // contract: nothing reopens a closed pane yet, so none can be closed.
+      // Nothing can reopen a closed pane yet, so panes cannot be closed.
       closable: false,
       maximizable: false,
     );
@@ -125,8 +134,8 @@ class _WsPanesState extends State<WsPanes> {
   );
 }
 
-/// Tab strips in the window's manner: a quiet band on the gutter, the front tab wears the panel's body and an accent underline.
-/// A form with [Forms.plainTabs] drops the cards, so its own mark is the only thing that says which pane is in front.
+/// The tab strip theme: a quiet band on the gutter, with the selected tab in the panel's body color and an accent underline.
+/// A form with [Forms.plainTabs] drops the tab backgrounds, so its own glyph is the only sign of which pane is selected.
 TabbedViewThemeData _tabs() {
   final t = Grey.light ? TabbedViewThemeData.minimalist() : TabbedViewThemeData.dark();
   final plain = Forms.worn.plainTabs;
@@ -140,13 +149,8 @@ TabbedViewThemeData _tabs() {
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91;
   t.tab
-    ..padding =
-        EdgeInsets.fromLTRB(
-          Shape.s(plain ? 4 : 8),
-          Shape.s(5),
-          Shape.s(plain ? 4 : 8),
-          Shape.s(5),
-        ) // (seven shelf tabs fit a dock squeezed to 229 by a 1280 window)
+    // The padding is small enough for seven shelf tabs to fit a dock squeezed to 229 px by a 1280 px window.
+    ..padding = EdgeInsets.fromLTRB(Shape.s(plain ? 4 : 8), Shape.s(5), Shape.s(plain ? 4 : 8), Shape.s(5))
     ..margin = EdgeInsets.zero
     ..innerBottomBorder = null
     ..innerTopBorder = null

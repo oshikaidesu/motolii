@@ -1,5 +1,6 @@
-// A browser shelf as a pane of its own (Motolii's Browser: Media, Effects, Fonts, Colors, Create): header, search, body, footer.
-// Each shelf is one tab of the window's panes; Media is the one file browser (project and disk, dock_files.dart).
+// A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Program or Presets.
+// It has a header, a search field and a body. Each shelf is one tab of the window's panes.
+// Media is the one file browser, for the project and the disk (dock_files.dart).
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,6 +16,7 @@ import 'dock_program.dart';
 import '../shelf/effect_tiles.dart';
 import '../state/state.dart';
 
+/// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
 class WsShelf extends StatefulWidget {
   const WsShelf(this.name, this.hint, {super.key});
   final String name, hint;
@@ -23,18 +25,20 @@ class WsShelf extends StatefulWidget {
 }
 
 class _WsShelfState extends State<WsShelf> {
-  // (what the shelf keeps of itself, its picks, folds and search: the window's view, so it is the same when opened again)
+  // What the shelf remembers of itself (selection, folds, search). It lives in the window's view,
+  // so the shelf looks the same when it is opened again.
   DockMem get _mem => WsScope.read(context).view.putIfAbsent('dock.${widget.name}', DockMem.new) as DockMem;
   late final TextEditingController _search = TextEditingController(text: WsScope.read(context).viewOf('dock.${widget.name}.search', ''))
     ..addListener(() => setState(() => WsScope.read(context).view['dock.${widget.name}.search'] = _search.text));
 
-  // (the shelf follows the document a picture after the hand: a change made, the inspector and the stage are built in
-  //  that picture and the shelf in the next, once for all the changes since. It was half of each picture's work)
+  // The shelf follows the document one frame after the render thread. After a change, the inspector and the canvas
+  // build in that frame and the shelf in the next, once for all the changes since. Building them together
+  // was half of each frame's work.
   Ws? _ws;
   bool _due = false;
   Object? _seen;
-  // (a new reading of the document is looked at for what this shelf shows of it: a number a hand let go of changes
-  //  none of the effects on, the motion or the things laid, so the shelf is not built again for it)
+  // A new revision of the document is checked for the part this shelf shows. For example, a number
+  // the user has finished dragging changes no effects, motion or layers, so the shelf is not rebuilt for it.
   int? _rev;
   Object? _shows;
   Object _showing(Ws ws) => switch (widget.name) {
@@ -52,14 +56,16 @@ class _WsShelfState extends State<WsShelf> {
         _seen = null;
       }
     }
-    final now = (_shows, ws.selected); // (what a shelf shows of the window: its part of the document, what is picked)
+    // What the shelf shows of the window: its part of the document, and the selection.
+    final now = (_shows, ws.selected);
     if (_due || now == _seen) return;
     _seen = now;
     _due = true;
     SchedulerBinding.instance
       ..addPostFrameCallback((_) {
         _due = false;
-        if (mounted) setState(() {}); // (built in the next picture, on its own)
+        // Rebuilds in the next frame, on its own.
+        if (mounted) setState(() {});
       })
       ..ensureVisualUpdate();
   }
@@ -103,18 +109,18 @@ class _WsShelfState extends State<WsShelf> {
                 dockMark(DockG.folder),
                 on: _mem.mediaDeep,
                 onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep),
-              ), // (the folders below listed with it)
+              ), // Lists the folders below as well.
               IconPress(
                 dockMark(DockG.files),
                 on: _mem.treeSide != 0,
                 onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
-              ), // (the tree: by the room, left, above)
+              ), // Cycles the folder tree between automatic, left and above.
             ] else if (name == 'Program') ...[
               IconPress(dockMark(DockG.list), on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
               IconPress(dockMark(DockG.program), on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
-                // (its items in rows, or as a map, the alike near: XO's Space beside its list, dock_map.dart)
+                // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (dock_map.dart).
                 IconPress(
                   dockMark(DockG.grid),
                   key: ValueKey('ws-$name-rows'),
@@ -128,7 +134,8 @@ class _WsShelfState extends State<WsShelf> {
                   onTap: () => setState(() => _mem.mapped.add(name)),
                 ),
               ],
-              if (name == 'Effects') // (the tiles being drawn, lit; a press draws the picked one's again, or, none picked, all of them: no source for it, the user's own wish)
+              // Lit while tiles are being drawn. A click draws the selected tile again, or all of them when none is selected.
+              if (name == 'Effects')
                 ListenableBuilder(
                   listenable: EffectTiles.progress,
                   builder: (context, _) => IconPress(
@@ -144,7 +151,7 @@ class _WsShelfState extends State<WsShelf> {
                   listenable: Listenable.merge([dockRead, EffectTiles.progress]),
                   builder: (context, _) => Text(
                     switch (name) {
-                      // (what the inside has: the fonts it sets, the effects it does, the colours the document uses, the tiles that make)
+                      // What the engine offers: its fonts and effects, the colors the document uses, and the tile drawing progress.
                       'Fonts' => '${fontsOffered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
@@ -167,13 +174,13 @@ class _WsShelfState extends State<WsShelf> {
         DockSearch(controller: _search, hint: widget.hint),
         Builder(
           builder: (context) {
-            // (the word being typed, finished by the tags the shelf has: a press takes one)
+            // Completions of the word being typed, from the tags the shelf has. A click takes one.
             final done = DockTags.completing(name, _search.text);
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: Shape.s(3)),
               child: SingleChildScrollView(
-                // (all of them in one line that slides, as the chips' row does: Usual.chips)
+                // All of them in one line that scrolls sideways, as the chips row does (Usual.chips).
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
@@ -202,7 +209,7 @@ class _WsShelfState extends State<WsShelf> {
         ),
         Expanded(
           child: ListenableBuilder(
-            // (a foot waiting for a second press opens when that can no longer come: DockCtx.foot)
+            // A footer waiting for a second click opens once that click can no longer come (DockCtx.foot).
             listenable: DockHover.secondMayCome,
             builder: (context, _) => switch (name) {
               'Effects' => EffectsShelf(c),

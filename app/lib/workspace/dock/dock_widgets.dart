@@ -1,4 +1,4 @@
-// The dock's shared pieces: what a shelf remembers, hover, chips, section heads, the detail strip at the foot of a shelf.
+// The dock's shared pieces: per-shelf memory, hover, section heads, and the footer at the bottom of a shelf.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -13,7 +13,8 @@ import '../../inspector/inspector_parts.dart' show Pop;
 import '../../widgets/media.dart' show drawStar, glyph;
 import '../../skin/tokens.dart';
 import '../../widgets/controls.dart' show Badge, Hov;
-export '../../widgets/controls.dart' show Badge, Chip, IconPress; // (the shared small parts the shelves use, with the dock's own)
+// Re-exported so shelves get the shared small widgets together with the dock's own.
+export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 import 'dock_glyphs.dart';
 import '../window/settings_file.dart' show fileKeep, fileList;
 import '../state/state.dart';
@@ -23,53 +24,59 @@ part 'dock_folder_row.dart';
 part 'dock_search.dart';
 part 'dock_stars.dart';
 
-/// The dock's badge: a hue tile with its glyph at .62 of it (the one [Badge], dressed for a shelf).
+/// A [Badge] for a shelf: a tile of [hue] with the glyph at 0.62 of its size.
 Widget dockBadge(DockG g, Color hue, {required double size}) => Badge(
   hue,
   size: size,
   child: Glyph(g, size: size * .62, color: WsT.onAccent),
 );
 
-/// What the dock remembers per shelf while you hop between shelves (selection, chip, folds). Lives in the dock's state, never in [Ws].
+/// What the dock remembers per shelf while the user switches between shelves (selection, chip, folds).
+/// It lives in the dock's state, never in [Ws].
 class DockMem {
   final sel = <String, String>{'Media': 'coda_intro', 'Effects': 'Glow', 'Fonts': 'Avenir Next', 'Colors': 'pop-2', 'Create': 'Shape'};
   final chip = <String, String>{};
   final folded = <String>{'Time'};
   final open = <String>{'Project'};
-  final starred = _starsRead(); // (what the hand starred: kept in ~/.motolii/effect_stars.json, as the Ease tool panel keeps its own)
 
-  /// Why the last thing asked of the inside for an entry was not done (by the entry's id).
+  /// The ids the user has starred, stored in ~/.motolii/effect_stars.json like the Ease tool panel's stars.
+  final starred = _starsRead();
+
+  /// Why the last request to the engine for an entry failed, by the entry's id.
   final trouble = <String, String>{};
 
-  /// The shelf's foot is open (DockCtx.foot).
+  /// Whether the shelf's footer is open (see [DockCtx.foot]).
   bool footOpen = false;
   bool mediaList = false;
 
-  /// The shelves shown as a map, the alike near (dock_map.dart), not as tiles in rows.
+  /// The shelves shown as a map with similar items close together (dock_map.dart), instead of as rows of tiles.
   final mapped = <String>{};
 
-  /// Program: the picked one's code rather than the list.
+  /// Program: show the selected item's code instead of the list.
   bool programCode = false;
 
-  /// Media: the folders below the open one listed with it (all at once), and where the tree lies (0 by the room, 1 left, 2 above).
+  /// Media: list the folders below the open one together with it, and where the tree sits.
+  /// [treeSide] is 0 for automatic by the available room, 1 for left, 2 for above.
   bool mediaDeep = false;
 
-  /// Create: the sections folded away by the hand (none at first: the recipes' moving tiles are the list to look over).
+  /// Create: the sections the user has folded. None at first, so the moving tiles of every recipe can be looked over.
   final createFolded = <String>{};
   int treeSide = 0;
 
-  /// The Media shelf: the open folder (a [FileNode] id) and the tree band's height when the shelf is narrow.
+  /// Media: the open folder (a [FileNode] id) and the height of the tree band when the shelf is narrow.
   String folder = 'Footage';
   double treeHeight = 132;
 
-  /// The Effects shelf: where it looks (a row of its list: All, Recent, ★, In video, /pack, @deck) and the list's height
+  /// Effects: which row of the list is chosen (All, Recent, ★, In video, /pack, @deck) and the list's height
   /// when the shelf is narrow.
   String fxPlace = 'All';
   double fxListHeight = 176;
-  bool fxListOpen = false; // (narrow: else folded to the one row that says where it looks)
+
+  /// Effects: whether the list is open. When closed in a narrow shelf, it shows only the chosen row.
+  bool fxListOpen = false;
 }
 
-/// One build's view of the dock for a shelf body: the memory, the search text, the document, and how to change local state.
+/// What a shelf body needs from the dock for one build: the memory, the search text, the project, and a way to change local state.
 class DockCtx {
   DockCtx(this.shelf, this.mem, this.query, this.ws, this.set, this.clearSearch);
   final String shelf;
@@ -82,10 +89,12 @@ class DockCtx {
   String? get sel => mem.sel[shelf];
   void pick(String id) => set(() => mem.sel[shelf] = id);
 
-  /// What the shelf's foot shows of its pick. A foot opening shortens the tiles, and a tile low on the shelf would leave
-  /// from under the second press of a double click: a shut foot opens once that press can no longer come, as Microsoft's
-  /// "How to distinguish between single and double clicks" times what a click does that a double click cannot follow.
-  /// The pick does not wait ("one click usually selects an item"), nor a foot already open (golf (77)).
+  /// Returns [picked] if the footer should show it, otherwise null.
+  ///
+  /// Opening the footer shortens the tiles, so a tile low on the shelf could move away before the second click of a
+  /// double-click. A closed footer therefore opens only once a second click can no longer come, following Microsoft's
+  /// "How to distinguish between single and double clicks". The selection itself does not wait,
+  /// and neither does a footer that is already open.
   P? foot<P>(P? picked) {
     mem.footOpen = picked != null && (mem.footOpen || !DockHover.secondMayCome.value);
     return mem.footOpen ? picked : null;
@@ -95,10 +104,11 @@ class DockCtx {
   void pickChip(String c) => set(() => mem.chip[shelf] = c);
   bool hit(String name) => query.isEmpty || name.toLowerCase().contains(query.toLowerCase());
 
-  /// When the words as typed find nothing, the shelf's nearest five, best first (each item its id, name and what it
-  /// does): the inside's find, RapidFuzz for a word typed wrong or in part, Japanese WordNet for a Japanese word, as the
-  /// effects shelf finds them (golf_noise.md (91), (96)); every shelf alike (97). None while nothing is typed.
-  /// [least]: the score under which one is left out (Motolii.find).
+  /// The ids of the five closest [items], best first, for when the search text finds nothing.
+  ///
+  /// Each item is its id, name and description. The engine does the matching, as it does for the effects shelf:
+  /// RapidFuzz for a misspelled or partial word and Japanese WordNet for a Japanese word. Every shelf uses it.
+  /// Empty while nothing is typed. [least] is the score below which an item is left out (see Motolii.find).
   List<String> near(Iterable<(String, String, String)> items, {double least = 0}) =>
       query.trim().isEmpty ? const [] : ws.inside?.find(query, items, least: least) ?? const [];
   Set<String> get _stars => mem.starred;
@@ -114,33 +124,36 @@ class DockCtx {
   void toggle(Set<String> s, String id) => set(() => s.contains(id) ? s.remove(id) : s.add(id));
 }
 
-/// Hover + tap, nothing else: repaints only when the pointer enters or leaves.
+/// Hover and tap handling for a tile. It rebuilds only when the pointer enters or leaves.
 class DockHover extends StatefulWidget {
   const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false, this.onHover, this.onMenu, this.onMove});
 
-  /// Whether ⌘ was held as the last tile was pressed.
+  /// Whether Cmd was held when the last tile was pressed.
   static bool cmdAtPress = false;
 
-  /// A tile that two presses act on was pressed, and a second press may still come (DockCtx.foot).
+  /// True after a tile with a double-click action was pressed, while a second press may still come (see [DockCtx.foot]).
   static final secondMayCome = ValueNotifier(false);
   static Timer? _past;
   final Widget Function(BuildContext context, bool hover) builder;
   final VoidCallback? onTap;
 
-  /// Two presses: the item's own action at once (joined: a tile made without its foot's button).
+  /// Called on a double-click. It runs the item's own action directly, for a tile that has no footer button.
   final VoidCallback? onDoubleTap;
 
-  /// One press only picks it (not so a font's, which sets a role's font): told as the button goes down.
+  /// Whether a single press only selects the tile. [onTap] is called as soon as the button goes down.
+  /// A font tile does not do this, because its tap sets the font of a role.
   final bool picks;
 
-  /// The pointer came onto it (true) or went off (false), told once each; gone from the window under it, off as well
-  /// (a MouseRegion unmounted under the pointer tells no exit).
+  /// Called with true when the pointer enters and false when it leaves.
+  ///
+  /// It is also called with false if the tile is removed while the pointer is over it,
+  /// because a MouseRegion that is unmounted under the pointer sends no exit event.
   final ValueChanged<bool>? onHover;
 
-  /// A secondary press (a right click), told with where it was on the screen.
+  /// Called on a secondary press (right click) with its position on the screen.
   final ValueChanged<Offset>? onMenu;
 
-  /// The pointer moved over it, told with where it is in the tile.
+  /// Called when the pointer moves over the tile, with its position in the tile.
   final ValueChanged<Offset>? onMove;
   @override
   State<DockHover> createState() => _DockHoverState();
@@ -148,7 +161,8 @@ class DockHover extends StatefulWidget {
 
 class _DockHoverState extends State<DockHover> {
   bool _h = false;
-  Timer? _second; // (while a second press would make it two)
+  // Active while a second press would make a double-click.
+  Timer? _second;
 
   @override
   void dispose() {
@@ -162,9 +176,9 @@ class _DockHoverState extends State<DockHover> {
     widget.onHover?.call(h);
   }
 
-  // A tile that one press picks and two act on is picked as the button goes down, as Finder picks an icon and opens it on the
-  // second click: a press told only once a second could no longer come (Flutter's tap waits kDoubleTapTimeout beside
-  // a double tap) left the shelf's button on the tile picked before; golf (77). The second press is the double's.
+  // A tile that is selected by one press and acted on by two is selected as the button goes down, as Finder does with an icon.
+  // Waiting until a second press could no longer come (Flutter's tap waits kDoubleTapTimeout beside a double tap)
+  // left the shelf's button acting on the previously selected tile. The second press belongs to the double-click.
   void _down(PointerDownEvent e) {
     DockHover.cmdAtPress = HardwareKeyboard.instance.isMetaPressed;
     if (!widget.picks || widget.onDoubleTap == null || widget.onTap == null || e.buttons != kPrimaryButton) return;
@@ -176,7 +190,7 @@ class _DockHoverState extends State<DockHover> {
     if (!second) widget.onTap!();
   }
 
-  // (counted from the release, as Flutter's own double tap: multitap.dart _registerFirstTap)
+  // The window is counted from the release, as in Flutter's own double tap (multitap.dart, _registerFirstTap).
   void _up(PointerEvent e) {
     if (!DockHover.secondMayCome.value) return;
     DockHover._past?.cancel();
@@ -191,7 +205,7 @@ class _DockHoverState extends State<DockHover> {
     onHover: widget.onMove == null ? null : (e) => widget.onMove!(e.localPosition),
     child: _carried(
       Listener(
-        // (the press as it comes, before the gestures settle which it is)
+        // Sees the press as it arrives, before the gesture arena decides what it is.
         onPointerDown: _down,
         onPointerUp: _up,
         onPointerCancel: _up,
@@ -206,7 +220,7 @@ class _DockHoverState extends State<DockHover> {
     ),
   );
 
-  /// A tile that has an action of its own can be carried to the stage: dropped there, it does what two presses do.
+  /// Lets a tile with an action of its own be dragged to the preview, where dropping it does what a double-click does.
   Widget _carried(Widget tile) => widget.onDoubleTap == null
       ? tile
       : Draggable<VoidCallback>(
@@ -223,11 +237,11 @@ class _DockHoverState extends State<DockHover> {
         );
 }
 
-/// Pop selection colours: a picked item is the accent with dark ink; hover is one grey step up.
+/// Fill and ink colors: a selected item uses the accent with dark ink, and hover is one grey step lighter.
 Color dockFill(bool sel, bool hover, [Color? rest]) => sel ? WsT.accent : (hover ? WsT.card : rest ?? WsT.body);
 Color dockInk(bool sel, [Color? rest]) => sel ? WsT.onAccent : rest ?? Grey.g91;
 
-/// A section head inside a shelf body: a flat hue block, the name in caps, a count; optional fold chevron.
+/// A section header inside a shelf body: a hue swatch, the title in capitals, an optional count, and an optional fold chevron.
 class DockSection extends StatelessWidget {
   const DockSection(this.title, {super.key, this.count, this.hue, this.folded, this.onTap, this.trailing});
   final String title;
@@ -268,13 +282,14 @@ class DockSection extends StatelessWidget {
               style: T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
             ),
           ),
+          // The trailing widget is scaled down in a narrow shelf, never clipped.
           if (trailing case final w?)
             Flexible(
               child: Align(
                 alignment: Alignment.centerRight,
                 child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w),
               ),
-            ), // (drawn smaller in a narrow shelf, never cut)
+            ),
           if (count != null) Text('$count', style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
         ],
       ),
@@ -282,11 +297,11 @@ class DockSection extends StatelessWidget {
   );
 }
 
-/// The glyph of an [IconPress] in the dock's header: 11 wide, in the ink the press gives.
+/// The glyph of an [IconPress] in the dock's header: 11 wide, in the ink color the press gives.
 Widget Function(Color) dockMark(DockG g) =>
     (ink) => Glyph(g, size: Shape.z(11), color: ink);
 
-/// The foot of a shelf: what is picked (preview, name, facts), where it would go (the selected layer), and the one action, in the accent.
+/// The footer of a shelf: the selected item (preview, name, facts), where it would go (the selected layer), and its one action.
 class DockFooter extends StatelessWidget {
   const DockFooter({
     super.key,
@@ -302,21 +317,32 @@ class DockFooter extends StatelessWidget {
     this.more,
   });
 
-  /// What the action does is make a new thing (not change the selected one): 'to new layer'.
+  /// Whether the action creates a new layer instead of changing the selected one. The target then reads 'to new layer'.
   final bool fresh;
-  final Widget? more; // (beside the action: Spotify's three dots)
-  final Widget? lasts; // (how long the new thing lasts, chosen before it is placed: beside where it goes)
+
+  /// A widget beside the action button, such as a three-dot menu as in Spotify.
+  final Widget? more;
+
+  /// A widget beside the target saying how long the new layer lasts. The user chooses it before the layer is placed.
+  final Widget? lasts;
+
+  /// A small preview of the selected item.
   final Widget? preview;
+
+  /// The item's name, a line of facts about it, the action button's label, and the label shown once [done].
   final String title, meta, action, doneLabel;
+
+  /// Called when the action button is pressed.
   final VoidCallback? onAction;
+
+  /// Whether the action has been done. The button then shows [doneLabel] and does nothing.
   final bool done;
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), l = fresh ? null : ws.layer;
     return Container(
-      constraints: BoxConstraints(
-        minHeight: Shape.z(52),
-      ), // (as tall as what it says, 52 at least: two lines of words overflowed a fixed 52 by a point, Flutter's RenderFlex overflow; golf (95))
+      // At least 52 high and as tall as its content. A fixed 52 overflowed by a point (RenderFlex overflow) with two lines of text.
+      constraints: BoxConstraints(minHeight: Shape.z(52)),
       padding: EdgeInsets.symmetric(horizontal: WsT.inset),
       decoration: BoxDecoration(
         color: WsT.card,
@@ -339,7 +365,8 @@ class DockFooter extends StatelessWidget {
                   style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
                 ),
                 SizedBox(height: Shape.s(4)),
-                Text(meta, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63)), // (two lines of whole words before anything is left out)
+                // Up to two lines of whole words before anything is cut off.
+                Text(meta, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63)),
                 SizedBox(height: Shape.s(4)),
                 Row(
                   children: [
@@ -358,13 +385,14 @@ class DockFooter extends StatelessWidget {
                       Flexible(
                         child: Text('new layer', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
                       ),
+                    // Scaled down rather than clipped when the shelf is narrow.
                     if (lasts case final w?) ...[
                       SizedBox(width: Shape.s(8)),
                       Flexible(
                         flex: 3,
                         child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: w),
                       ),
-                    ], // (smaller rather than cut, when the shelf is narrow)
+                    ],
                   ],
                 ),
               ],
@@ -394,11 +422,13 @@ class DockFooter extends StatelessWidget {
   }
 }
 
-/// What a shelf shows when the search finds nothing.
+/// What a shelf shows when the search finds nothing, or when the shelf is empty.
 class DockEmpty extends StatelessWidget {
   const DockEmpty(this.query, {super.key, this.said});
   final String query;
-  final String? said; // (nothing typed: what is empty here, and what to do)
+
+  /// Shown instead of the default message when nothing is typed: what is empty here and what to do.
+  final String? said;
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(Shape.s(24)),
@@ -406,8 +436,10 @@ class DockEmpty extends StatelessWidget {
   );
 }
 
-/// A shelf's sections as cards: one column while the shelf is narrow; as it widens, columns of at least 300 px stand side by side
-/// and each section goes to the shortest column so far ([weights] estimate the heights, in rows). A shelf made wider shows more at once.
+/// A shelf's sections as cards in one column while the shelf is narrow.
+///
+/// As the shelf widens, columns of at least 300 px stand side by side, and each section goes to the shortest column so far.
+/// [weights] estimate the section heights, in rows.
 class DockMasonry extends StatelessWidget {
   const DockMasonry({super.key, required this.children, required this.weights});
   final List<Widget> children;

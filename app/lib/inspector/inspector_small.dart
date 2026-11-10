@@ -4,8 +4,10 @@ import 'package:flutter/widgets.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
-/// What floats over the window goes when anything else is touched, by either button, and on Esc (Flutter's TapRegion; a
-/// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again; [group] what counts as inside.
+/// Closes a floating widget, such as a menu, when the user presses outside it with either button or presses Esc.
+/// Built on Flutter's TapRegion, as the menus on macOS and Windows are.
+/// [keep] returns true for a press that must not close it, such as the press that opens it again.
+/// [group] sets which regions count as inside.
 class FloatShut extends StatefulWidget {
   const FloatShut({super.key, required this.shut, required this.child, this.group, this.keep});
   final VoidCallback shut;
@@ -18,12 +20,14 @@ class FloatShut extends StatefulWidget {
 
 class _FloatShutState extends State<FloatShut> {
   final _keys = FocusNode(debugLabel: 'float');
-  final _was = FocusManager.instance.primaryFocus; // (who held the keys: given back)
+  // The widget that had keyboard focus before this one, restored on dispose.
+  final _was = FocusManager.instance.primaryFocus;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _keys.requestFocus() : null); // (a field holding the keys would take Esc for itself)
+    // Take focus so Esc is handled here; a focused text field would consume it.
+    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _keys.requestFocus() : null);
   }
 
   @override

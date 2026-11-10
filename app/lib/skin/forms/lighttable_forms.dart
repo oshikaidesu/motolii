@@ -1,6 +1,10 @@
-// Light-table forms: film looked at on a lit opal table. Black film with sprocket holes at the edges (the Render leader,
-// each card's left edge), graphite words, a colour sticker dot for a card's kind, and a grease-pencil orange loop around
-// what is picked or under the hand. What a hand does is naked_ui's.
+// Light-table forms: film seen on a lit opal table.
+//
+// - Black film with sprocket holes at the edges: the Render button's leader and each card's left edge.
+// - Graphite text, and a coloured sticker dot for a card's kind.
+// - A grease-pencil orange loop around whatever is selected or under the pointer.
+//
+// Press and hover behaviour comes from naked_ui.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -15,8 +19,9 @@ const _film = Color(0xFF1B1A18), _opal = Color(0xFFF6F7F4), _grease = Color(0xFF
 TextStyle _mono(Color c, double size) =>
     T.name(c).copyWith(fontFamily: T.mono, fontSize: T.px(size), height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]);
 
-/// A grease-pencil loop around its box: never closed clean, it overshoots its start, wobbles and leans a little; the same
-/// hand for the same seed.
+/// A grease-pencil loop around its box.
+///
+/// The loop is never closed cleanly: it overshoots its start, wobbles and leans a little. The same seed gives the same loop.
 class _Loop extends CustomPainter {
   const _Loop(this.seed, {this.ink = _grease});
   final int seed;
@@ -27,7 +32,8 @@ class _Loop extends CustomPainter {
     final rx = (s.width / 2 - 2) / 1.08, ry = (s.height / 2 - 2) / 1.08, k = 2 + rnd.nextInt(2), ph = rnd.nextDouble() * 6;
     final p = Path();
     for (var i = 0; i <= 72; i++) {
-      final t = a0 + i / 64 * math.pi * 2; // (72 of 64 steps: the pencil runs past where it started)
+      // The loop runs 72 of 64 steps, so the pencil goes past where it started.
+      final t = a0 + i / 64 * math.pi * 2;
       final w = 1 + .045 * math.sin(k * t + ph) - .05 * i / 72;
       final x = rx * w * math.cos(t), y = ry * w * math.sin(t);
       final pt = Offset(s.width / 2 + x * math.cos(lean) - y * math.sin(lean), s.height / 2 + x * math.sin(lean) + y * math.cos(lean));
@@ -48,8 +54,10 @@ class _Loop extends CustomPainter {
   bool shouldRepaint(_Loop o) => o.seed != seed || o.ink != ink;
 }
 
-/// Black film with a row of sprocket holes along each long edge, the table's light showing through them. Across: the
-/// holes run left to right on top and bottom; down: one row, in a strip [strip] wide at the left.
+/// Black film with sprocket holes that let the table's light show through.
+///
+/// By default the holes run left to right along the top and bottom edges.
+/// If [down] is true there is a single row of holes in a strip [strip] wide at the left edge.
 class _Sprockets extends CustomPainter {
   const _Sprockets({this.down = false, this.strip = 0});
   final bool down;
@@ -78,7 +86,7 @@ class _Sprockets extends CustomPainter {
   bool shouldRepaint(_Sprockets o) => o.down != down || o.strip != strip;
 }
 
-/// Edge-print arrow: ▸ shut, ▾ open.
+/// The arrow printed on the film edge: pointing right when closed, down when open.
 void _drawArrow(Canvas c, Size s, bool open, Color ink) {
   final r = Rect.fromCenter(center: s.center(Offset.zero), width: s.shortestSide * .5, height: s.shortestSide * .5);
   c.drawPath(Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true), Paint()..color = ink);
@@ -92,7 +100,7 @@ Widget _looped(bool on, int seed, Widget child, {bool hand = false}) => CustomPa
 class LightTableForms extends Forms {
   const LightTableForms();
 
-  /// A black film leader with sprocket rows, the word lit through it; under the hand the pencil rings the word.
+  /// A black film leader with sprocket rows and the label lit through it. On hover or press, the pencil loops the label.
   @override
   Widget action(BuildContext context, ActionSpec a) => NakedButton(
     onPressed: a.onPressed,
@@ -117,7 +125,7 @@ class LightTableForms extends Forms {
     ),
   );
 
-  /// The word, ringed when on.
+  /// The word On or Off, with the pencil loop around it when on.
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,
@@ -140,7 +148,9 @@ class LightTableForms extends Forms {
     ),
   );
 
-  /// A strip of film down the card's left edge; the head a colour sticker dot for its kind, the title, an edge-print arrow.
+  /// A strip of film down the card's left edge.
+  ///
+  /// The header shows a coloured sticker dot for the card's kind, the title and the edge-print arrow.
   @override
   Widget card(BuildContext context, CardSpec c) {
     final strip = Shape.z(12);

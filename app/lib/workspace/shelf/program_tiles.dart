@@ -1,10 +1,13 @@
-// A program's tile, by AbsentMotion's numbers for its moving ones (tools/effect_thumbs.py, Apache-2.0): rendered at 384,
-// kept at 192, one looping file that plays by itself; its 1.33 seconds at 24 a second, not its 12, which steps. Theirs are made once on an emulator
-// from a table written beforehand, one line an effect; a program moves by itself, so it needs no line and no sample, and
-// its maker needs no developer. Drawn on a document of its own on another isolate, as effect_tiles.dart's, one after
-// another, and again once the file has changed. APNG, as ffmpeg writes it and Flutter's engine plays
-// it (image_generator_apng.cc); no ffmpeg where the window was opened from: one picture. From a second in, where a sketch
-// that builds its picture has something up (no source for that).
+// The tile for a program, using the numbers AbsentMotion uses for its animated tiles
+// (tools/effect_thumbs.py, Apache-2.0). Frames are rendered at 384 and stored at 192 as one looping file that plays
+// by itself, 1.33 seconds at 24 frames a second (not 12, which looks stepped).
+// AbsentMotion makes its tiles once on an emulator from a hand-written table with one line per effect. A program moves
+// by itself, so it needs no table line and no sample, and its author needs no developer.
+// Tiles are drawn on a separate document in another isolate, one after another like effect_tiles.dart's, and again
+// once the file has changed.
+// The format is APNG, as ffmpeg writes it and Flutter's engine plays it (image_generator_apng.cc). Without ffmpeg
+// (where the app was launched from) a single image is used instead.
+// Capture starts one second in, so a sketch that builds its image up has something to show (no source for that value).
 import 'dart:io';
 
 import '../../bridge/motolii.dart';
@@ -13,15 +16,17 @@ import 'effect_tiles.dart' show ffmpeg;
 
 abstract final class ProgramTiles {
   static const _render = 384, _keep = 192, _pictures = 32, _perSecond = 24, _from = 1.0;
-  static final _tiles = TileQueue<(String, String)>(_draw, batch: 4); // (four at a time: one that takes the window down takes at most four)
+  // Four at a time, so a program that crashes the app loses at most four.
+  static final _tiles = TileQueue<(String, String)>(_draw, batch: 4);
 
-  /// Where its tile goes: one place a program, so the last one drawn shows until the next is there.
+  /// The cache path of a program's tile. There is one path per program, so the last tile drawn shows until the next one is ready.
   static String home(String file) => tileHome('program24', file);
 
-  /// The programs whose tile is not drawn since they last changed, put in line. One that took the window down with it
-  /// (its .trying left behind) waits for its file to change.
+  /// Queues the programs whose tile has not been drawn since the file last changed.
+  /// A program that crashed the app (its .trying marker was left behind) waits until its file changes.
   static void ask(Iterable<String> files, void Function() changed) {
-    if (Platform.environment['FLUTTER_TEST'] == 'true') return; // (as EffectTiles.ask)
+    // Same as EffectTiles.ask.
+    if (Platform.environment['FLUTTER_TEST'] == 'true') return;
     _tiles.onDrawn = (_) => changed();
     for (final f in files) {
       final to = home(f), written = File(f).lastModifiedSync();
@@ -37,7 +42,8 @@ abstract final class ProgramTiles {
     if (m == null) return [];
     for (final (f, to) in files) {
       final trying = File('$to.trying')..createSync(recursive: true);
-      m.at(0); // (what is placed comes on where the clock stands)
+      // Layers placed now appear at the current time.
+      m.at(0);
       final ticket = m.later('adapter', word: f);
       var said = -1;
       for (var n = 0; said < 0 && n < 6000; n++) {
@@ -61,19 +67,8 @@ abstract final class ProgramTiles {
 
   static void _kept(String folder, String to) {
     final moving = '$folder/moving.apng';
-    ffmpeg([
-      '-framerate',
-      '$_perSecond',
-      '-i',
-      '$folder/%d.png',
-      '-vf',
-      'scale=$_keep:$_keep:flags=lanczos',
-      '-plays',
-      '0',
-      '-f',
-      'apng',
-      moving,
-    ]); // (no ffmpeg: the one picture, below)
+    ffmpeg(['-framerate', '$_perSecond', '-i', '$folder/%d.png', '-vf', 'scale=$_keep:$_keep:flags=lanczos', '-plays', '0', '-f', 'apng', moving]);
+    // Without ffmpeg there is no animation, so the middle frame is used as a single image.
     File(File(moving).existsSync() ? moving : '$folder/${_pictures ~/ 2}.png').copySync(to);
   }
 }

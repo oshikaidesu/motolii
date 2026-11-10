@@ -5,18 +5,18 @@ import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 import '../widgets/controls.dart' show Chip, ChipLook, Hov;
 
-// ---- 13. the whole panel ----------------------------------------------------------------------------------------------
-// contract: one rule for every card. A card is what the inside declares (card_table.h, sent by motolii_cards and
-// written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), drawn by [ValuesCard] as an effect is: no card is named here.
+// Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and
+// written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.
+// No card is named in this file.
 
-// (under its effects, as Alight Motion's list ends: after the last card the host says is an effect (doc_cards_of lays
-//  them before what it may do besides); none on it, at the end)
+// Where the Add Effect row goes: after the last card that is an effect, as Alight Motion's list ends.
+// doc_cards_of lays the effects out before the other cards. With no effect, it goes at the end.
 int _addAt(Doc doc) {
   final at = doc.cards.lastIndexWhere((c) => doc.movable.contains(c.name)) + 1;
   return at > 0 ? at : doc.cards.length;
 }
 
-/// Alight Motion's Add Effect, under a thing's effects: the shelf of them, ready to be searched.
+/// The Add Effect row under a layer's effects, as in Alight Motion. It opens the shelf of effects with search ready.
 class AddEffectRow extends StatelessWidget {
   const AddEffectRow({super.key});
   @override
@@ -49,12 +49,12 @@ class AddEffectRow extends StatelessWidget {
               ),
             ),
           ),
-          // (Alight Motion's Copy Effects and Paste Effects: its whole stack, the knobs with it)
+          // Copy and paste the whole effect stack with its parameters, as Alight Motion's Copy Effects and Paste Effects do.
           if (doc.movable.isNotEmpty)
             if (doc.onCardCopy case final copy?) word('effects-copy', 'Copy all', () => copy(names)),
           if (doc.onCardPaste case final paste?) word('effects-paste', 'Paste', paste),
           if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[
-            // (what Alight Motion shows for its kind is all that is there unasked: the rest by name)
+            // As in Alight Motion, only the cards for the layer's kind show by default. The rest are listed by name here.
             SizedBox(width: Shape.s(10)),
             CardMore(name: 'More', word: 'More', items: [for (final title in doc.moreCards) (title, title, () => doc.onMoreCard!(title))]),
           ],
@@ -64,7 +64,7 @@ class AddEffectRow extends StatelessWidget {
   }
 }
 
-/// The Inspector: one scrolling stack of the host's cards. Needs an InspHost above it.
+/// The Inspector: one scrolling stack of the app's cards. Needs an InspHost above it.
 class InspectorPanel extends StatefulWidget {
   const InspectorPanel({super.key, required this.width, required this.height});
   final double width, height;
@@ -90,7 +90,8 @@ class _InspectorPanelState extends State<InspectorPanel> {
       if (k == Kind.none)
         const EmptyState()
       else ...[
-        // contract: one stack: the host's cards, Transform first, then the effects on it, then what it may do besides (Premiere Pro's Effect Controls: the effects put on under Motion and Opacity); every titled card folds on its own.
+        // One stack: Transform first, then the layer's effects, then the other cards. Premiere Pro's Effect Controls lists effects under Motion and Opacity the same way.
+        // Every titled card folds on its own.
         for (final (i, c) in doc.cards.indexed) ...[if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(), ValuesCard(c)],
         if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length) const AddEffectRow(),
       ],
@@ -105,11 +106,13 @@ class _InspectorPanelState extends State<InspectorPanel> {
           width: widget.width,
           height: widget.height,
           color: Grey.g07,
-          // (only the cards in sight are built: a stage with seventy effects on it builds as one with seven; a text just
-          //  placed waits for its card, out of sight under Transform: built for it, the box then scrolls itself to the caret)
+          // Only the cards in view are built, so seventy effects cost no more than seven.
+          // A newly placed text layer waits for its card, which is out of view under Transform.
+          // The cache extent below builds it anyway, and its box then scrolls itself to the caret.
           child: Column(
             children: [
-              // (the name and Animate all stay where they are, the cards going by under them: Alight Motion's key button stands in the panel's frame, outside what scrolls, LayerTools.kt LayerPanel)
+              // The name and Animate button stay put while the cards scroll under them.
+              // Alight Motion's keyframe button also sits outside the scrolling area (LayerTools.kt, LayerPanel).
               if (k != Kind.none) Padding(padding: EdgeInsets.fromLTRB(Pop.gap, Pop.gap, Pop.gap, 0), child: const InspHeader()),
               Expanded(
                 child: ListView(

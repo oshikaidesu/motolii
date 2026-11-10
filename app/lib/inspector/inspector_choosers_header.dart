@@ -10,8 +10,9 @@ import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 import '../widgets/controls.dart' show Hov;
 
-// ---- 6. choosers and hand-overs -------------------------------------------------------------------------------------
-/// A short list lives in a segmented control; a long one opens a searchable list (G2, G3). Never prev/next cycling (do-not-repeat 6, 7).
+/// A dropdown for choosing one of [options], stored as a string under [id].
+///
+/// A short list belongs in a segmented control and a long one opens a searchable list. It never cycles with previous and next buttons.
 class Chooser extends StatefulWidget {
   const Chooser({super.key, required this.id, required this.options});
   final String id;
@@ -24,8 +25,10 @@ class ChooserState extends State<Chooser> {
   bool _open = false, _up = false;
   final _node = FocusNode(debugLabel: 'chooser');
   final _list = ScrollController();
-  int _at = -1; // (the one the keys are on)
-  String _typed = ''; // (what has been typed to go to one, and when: a pause starts it again)
+  // The index of the option the keyboard is on.
+  int _at = -1;
+  // The letters typed to jump to an option. A pause of a second starts them over.
+  String _typed = '';
   DateTime _typedAt = DateTime(0);
   void Function(String)? _pick;
   final _link = LayerLink();
@@ -53,8 +56,9 @@ class ChooserState extends State<Chooser> {
     }
   }
 
-  // (a select's keys, W3C's ARIA Authoring Practices, Select-Only Combobox: Down, Up, Return or Space open it; the arrows go
-  //  along it, Return takes the one the keys are on, Esc leaves it; a letter typed goes to the first that starts so)
+  // Keyboard handling follows the select-only combobox in the W3C ARIA Authoring Practices.
+  // Down, Up, Return or Space open the list. The arrows move through it, Return picks the highlighted option and Escape closes it.
+  // A typed letter jumps to the first option that starts with it.
   KeyEventResult _key(FocusNode n, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey, down = k == LogicalKeyboardKey.arrowDown, up = k == LogicalKeyboardKey.arrowUp;
@@ -89,7 +93,7 @@ class ChooserState extends State<Chooser> {
 
   void _set(bool open) {
     if (open) {
-      // contract: the list floats over the panel and never pushes the rows below it; it opens upward when there is no room underneath.
+      // The list floats over the panel and never pushes the rows below it. It opens upward when there is no room underneath.
       final box = context.findRenderObject() as RenderBox?;
       final overlay = Overlay.maybeOf(context, rootOverlay: true)?.context.findRenderObject() as RenderBox?;
       if (box != null && overlay != null) {
@@ -105,7 +109,8 @@ class ChooserState extends State<Chooser> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _node.requestFocus();
-        _go(_at); // (what it is now in sight, the keys on it)
+        // Scroll the current option into view and put the keyboard on it.
+        _go(_at);
       });
     }
   }
@@ -186,10 +191,10 @@ class ChooserState extends State<Chooser> {
           borderRadius: BorderRadius.all(Shape.r(6)),
           border: Border.all(color: _open ? Grey.g63 : const Color(0x00000000)),
         ),
-        // (a menu says so by its mark, not a word)
+        // The mark at the right shows that this is a menu, so no extra label is needed.
         child: Row(
           children: [
-            // the default value (the first option) is dim; a chosen one is bright (dim = default)
+            // The default value (the first option) is dim. A chosen one is bright.
             Expanded(
               child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
             ),
@@ -204,7 +209,7 @@ class ChooserState extends State<Chooser> {
       onKeyEvent: _key,
       child: CompositedTransformTarget(
         link: _link,
-        // (the window's own overlay, not the nearest one: a list that hangs out of its pane is still under the hand)
+        // Uses the root overlay, not the nearest one, so a list that extends beyond its pane still receives pointer events.
         child: OverlayPortal.targetsRootOverlay(
           controller: _portal,
           overlayChildBuilder: (_) {
@@ -229,20 +234,22 @@ class ChooserState extends State<Chooser> {
               ],
             );
           },
-          child: TapRegion(groupId: _link, child: field), // (a press on it shuts the list by its own tap, not shut and opened again)
+          // A press on the field is not an outside tap, so the field's own tap closes the list instead of it closing and reopening.
+          child: TapRegion(groupId: _link, child: field),
         ),
       ),
     );
   }
 }
 
-// ---- 7. header and empty ----------------------------------------------------------------------------------------------
+/// The Inspector's header: the layer's kind icon, name and kind, and the Animate all switch.
 class InspHeader extends StatelessWidget {
   const InspHeader({super.key});
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    final w = doc.kindWord; // (what the host calls it, where the kinds have no word)
+    // The name the app gives the layer kind, for kinds that have no word of their own.
+    final w = doc.kindWord;
     final (word, glyph) = switch (doc.kind) {
       Kind.shape when w != null => (
         w,
@@ -274,7 +281,7 @@ class InspHeader extends StatelessWidget {
           SizedBox(width: Shape.s(8)),
           Flexible(
             child: FittedBox(
-              // (drawn smaller, never cut)
+              // Scale the name down rather than cut it off.
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
@@ -305,12 +312,13 @@ class InspHeader extends StatelessWidget {
   }
 }
 
+/// What the Inspector shows when nothing is selected.
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), ed = const Ed();
-    // contract: one plain muted line, no controls, no stale values (A6).
+    // One plain muted line, with no controls and no stale values.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -319,8 +327,8 @@ class EmptyState extends StatelessWidget {
           padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(8)),
           child: Text('Nothing selected', style: T.label(Grey.g56).copyWith(height: 1.4)),
         ),
-        // (nothing picked, nothing shown: After Effects' Effect Controls is a layer's, Alight Motion shows none; the stage's own
-        //  as Apple Motion's Project: when it is asked for, not there unasked)
+        // With nothing selected, nothing is shown. After Effects' Effect Controls belongs to a layer and Alight Motion shows none.
+        // The stage's own settings appear only when asked for, as in Apple Motion's Project pane.
         Hov(
           key: const ValueKey('stage-settings'),
           onTap: () => x.doc.flag('stage.open', !(x.doc.b['stage.open'] ?? false)),
@@ -333,7 +341,8 @@ class EmptyState extends StatelessWidget {
           ),
         ),
         if (x.doc.b['stage.open'] ?? false)
-          for (final c in x.doc.cards) ValuesCard(c), // (the host's own: the whole picture's values)
+          // The stage's own cards, holding the values for the whole image.
+          for (final c in x.doc.cards) ValuesCard(c),
         SizedBox(height: Shape.s(1)),
         Container(height: 1, color: ed.rule),
       ],

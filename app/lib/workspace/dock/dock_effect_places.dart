@@ -1,10 +1,12 @@
-// Where the Effects shelf looks: a list of its own beside or over the tiles, in the shape of the Media shelf's tree
-// (dock_files_browser.dart), as Ableton's browser sidebar lists its Collections, Final Cut's Effects browser its
-// categories, Spotify its Library, Premiere its bins: a press on a row shows what it holds among the tiles, and the
-// search and the kinds narrow within it. A bundle is never a chip beside the kinds. Over the tiles, where the shelf is
-// narrow, it folds to the row that says where it looks: a press on a row gives the shelf to what it holds, and the row
-// brings the list back, as Alight Motion's browser goes from its categories to one's effects and back (EffectBrowser.kt:
-// 105, 197, 247).
+// The list of places the Effects shelf can look in: All, Recent, Favorites, In This Video, user decks and packs.
+// It sits beside or over the tiles and has the shape of the Media shelf's folder tree (dock_files_browser.dart).
+// Ableton's browser sidebar lists its Collections this way, Final Cut's Effects browser its categories,
+// Spotify its Library and Premiere its bins.
+// Clicking a row shows what it holds among the tiles, and the search and the kinds narrow the result within it.
+// A pack is never a chip beside the kinds.
+// Over the tiles, where the shelf is narrow, the list folds to a single row that says where the shelf is looking.
+// Clicking a place there gives the shelf to its contents, and clicking the row brings the list back.
+// Alight Motion's browser moves between its categories and a category's effects in the same way (EffectBrowser.kt: 105, 197, 247).
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -18,10 +20,12 @@ import '../commands/context_menu.dart';
 
 const dockFxListHeight = 176.0;
 
-/// Which effect a tile being carried is: told by what two presses on it do, which is what the stage takes (DockHover's
-/// Draggable). Dropped on a deck it goes in, as a track on a Spotify playlist, an effect in a Premiere bin.
+/// Maps the drag data of a tile being dragged (its double-click callback, which is what the canvas takes) to the effect id.
+/// See DockHover's Draggable. Dropped on a deck, the effect goes into it, like a track on a Spotify playlist
+/// or an effect in a Premiere bin.
 final carriedEffect = Expando<String>();
 
+/// The list of places the Effects shelf looks in. See the file header.
 class EffectPlaces extends StatefulWidget {
   const EffectPlaces(
     this.c, {
@@ -37,24 +41,45 @@ class EffectPlaces extends StatefulWidget {
     this.covers = const {},
   });
   final DockCtx c;
-  final bool narrow; // (over the tiles, not beside them)
-  final Map<String, int> counts; // (All, Recent, ★, In video: how many of what is found each holds)
+
+  /// Whether the list is laid over the tiles rather than beside them.
+  final bool narrow;
+
+  /// How many results each of All, Recent, ★ and In video holds.
+  final Map<String, int> counts;
+
+  /// How many effects each pack holds.
   final Map<String, int> packs;
+
+  /// How many effects each deck holds.
   final Map<EffectDeck, int> decks;
+
+  /// Puts the effect with this id into the deck.
   final void Function(EffectDeck, String id) put;
-  final Set<String> known; // (all the shelf can tell: what a deck pasted in is settled against)
-  final bool mapped; // (the shelf a map: the map all of it, the deck picked kept open under its row to make)
-  final List<Widget> held; // (what the open deck holds, on the map: under its row)
-  final Map<String, Widget> covers; // (a deck's picture: its first four, Spotify's playlist cover)
+
+  /// The ids of all effects the shelf knows. A pasted deck is checked against them.
+  final Set<String> known;
+
+  /// Whether the shelf shows the map. The whole map is shown, and the selected deck stays open under its row.
+  final bool mapped;
+
+  /// On the map, the effects the open deck holds, shown under its row.
+  final List<Widget> held;
+
+  /// A deck's cover picture made of its first four effects, like a Spotify playlist cover.
+  final Map<String, Widget> covers;
   @override
   State<EffectPlaces> createState() => EffectPlacesState();
 }
 
 class EffectPlacesState extends State<EffectPlaces> {
   final _menu = GlobalKey<WsMenuState>();
-  EffectDeck? _naming; // (the deck whose name, or search, is being written in its row, as a Finder folder's)
-  bool _search = false, _folded = false; // (folded: as it was before the row was needed)
-  List<String>? _saving; // (the Favorites going into the deck being named: emptied once it is named, as Lightroom's Save)
+  // The deck whose name, or search words, is being edited in its row, as with a Finder folder.
+  EffectDeck? _naming;
+  // _folded: whether the list was folded before naming began, so it can fold again afterwards.
+  bool _search = false, _folded = false;
+  // The Favorites going into the deck being named. They are cleared once it is named, as in Lightroom's Save.
+  List<String>? _saving;
   final _words = TextEditingController();
   late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _named());
 
@@ -72,7 +97,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     _words
       ..text = now
       ..selection = TextSelection(baseOffset: 0, extentOffset: now.length);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus()); // (its field is there from the next frame)
+    // The text field exists from the next frame on.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   void _named() {
@@ -94,9 +120,11 @@ class EffectPlacesState extends State<EffectPlaces> {
     _saving = null;
   }
 
-  /// A new deck, its name at once to write, as a new bin in Premiere or a new folder in Finder: [thing] in it (the list
-  /// of decks on an effect ends in one, as YouTube's Save and Spotify's Add to Playlist), or the [words] saved, so that
-  /// what comes later comes in too (Lightroom's Create Smart Collection, Ableton's Add Label); from the +, it opens.
+  /// Adds a new deck and starts editing its name at once, like a new bin in Premiere or a new folder in Finder.
+  ///
+  /// [thing] is put in the new deck. The list of decks on an effect ends in this entry, as with YouTube's Save
+  /// and Spotify's Add to Playlist. [words] is saved as the deck's search, so effects that appear later join it too
+  /// (Lightroom's Create Smart Collection, Ableton's Add Label). When made from the +, the new deck is opened.
   void newDeck({DeckThing? thing, String words = ''}) {
     final c = widget.c, d = EffectDeck(deckName(words.isEmpty ? 'Deck' : words), words: words, things: [?thing]);
     c.set(() {
@@ -108,8 +136,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     naming(d);
   }
 
-  /// A deck's line, copied from wherever it was found: taken in, what this machine lacks kept and marked, as Hearthstone
-  /// reads a deck code as a new deck is begun.
+  /// Adds a deck from a deck code copied from elsewhere. Effects this machine lacks are kept and marked,
+  /// as Hearthstone does when it reads a deck code.
   Future<void> _paste() async {
     final c = widget.c, d = deckRead((await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '');
     if (d == null) {
@@ -132,7 +160,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
   }
 
-  /// The + at the head of the decks, a menu as Spotify's Create and Lightroom's Collections +.
+  /// The + at the head of the decks. It opens a menu, like Spotify's Create and Lightroom's Collections +.
   void _plus(BuildContext at) {
     final q = widget.c.query.trim();
     _open((at.findRenderObject() as RenderBox).localToGlobal(Offset.zero), [
@@ -142,18 +170,22 @@ class EffectPlacesState extends State<EffectPlaces> {
     ]);
   }
 
-  /// Where an effect's right click puts it, set on the row's own right click and set again to go back to the Favorites,
-  /// as Lightroom Classic's Set as Target Collection (on the Quick Collection too) and its unchecking.
+  /// The menu item that sets the deck an effect's right-click adds to. It is on the row's own context menu.
+  /// Choosing it again returns the target to the Favorites. Lightroom Classic has the same Set as Target Collection
+  /// item, on the Quick Collection too, and unchecking it works the same way.
   WsMenuItem _aim(EffectDeck? d) =>
       WsMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
 
-  /// The Favorites' own right click, as Lightroom Classic's on the Quick Collection: Set as Target Collection, Save Quick
-  /// Collection… and Clear Quick Collection (Adobe's Work with photo collections; Thomas Fitzgerald's Quick Lightroom Tip:
-  /// Clear Quick Collection, 2016). Saved, the starred become a deck, its name at once to write and the deck open, as New
-  /// Deck's from the +; named, the Favorites are emptied for the next lot, as Lightroom's Clear Quick Collection After
-  /// Saving is on until unchecked (a deck here is named in its row, with no dialog to uncheck it in); Escape is the
-  /// dialog's Cancel, no deck and the Favorites as they were. The whole of the Favorites, whatever is searched, as
-  /// Lightroom's from a filtered view. Only this shelf's effects: the Fonts shelf's stars are kept in the same file.
+  /// The context menu of the Favorites row, modeled on Lightroom Classic's menu on the Quick Collection:
+  /// Set as Target Collection, Save Quick Collection… and Clear Quick Collection
+  /// (Adobe's "Work with photo collections"; Thomas Fitzgerald's "Quick Lightroom Tip: Clear Quick Collection", 2016).
+  ///
+  /// Save turns the starred effects into a deck, opens it, and starts editing its name, as New Deck from the + does.
+  /// Once the deck is named, the Favorites are emptied for the next batch, as Lightroom does while
+  /// "Clear Quick Collection After Saving" is on. Here the name is edited in the row, so there is no dialog to turn that off.
+  /// Escape cancels: no deck is made and the Favorites stay as they were.
+  /// The whole Favorites list is saved, whatever is searched, as Lightroom does from a filtered view.
+  /// Only this shelf's effects are used, because the Fonts shelf's stars are stored in the same file.
   void _favoritesMenu(Offset at) {
     final c = widget.c,
         held = [
@@ -184,8 +216,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     ]);
   }
 
-  /// What is done to a deck is on its row, by a right click, as Ableton's label (Rename, the colour) and Lightroom's
-  /// Edit Smart Collection.
+  /// The context menu of a deck row, like Ableton's label menu (Rename, color) and Lightroom's Edit Smart Collection.
   void _deckMenu(EffectDeck d, Offset at) {
     final c = widget.c;
     _open(at, [
@@ -208,12 +239,12 @@ class EffectPlacesState extends State<EffectPlaces> {
     ]);
   }
 
-  // (in its row, as dock_program.dart's name on a tile)
+  // The name field, edited inside the row as dock_program.dart does for a tile's name.
   Widget _field(EffectDeck d) => CallbackShortcuts(
     bindings: {
       const SingleActivator(LogicalKeyboardKey.escape): () {
         if (_saving != null) {
-          // (Save Favorites… let go: the dialog's Cancel)
+          // Escape during Save Favorites… cancels it.
           widget.c.set(() => (effectDecks().remove(d), widget.c.mem.fxPlace = '★'));
           _saving = null;
         }
@@ -256,7 +287,7 @@ class EffectPlacesState extends State<EffectPlaces> {
 
   EffectDeck? _deckAt(String place) => widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
 
-  /// What a row says: its name, its mark, how many.
+  /// What a row shows: its name, its glyph and its count.
   (String, DockG, int?) _said(String place) {
     final p = widget.counts, deck = _deckAt(place);
     return switch (place) {
@@ -268,19 +299,20 @@ class EffectPlacesState extends State<EffectPlaces> {
         deck.name,
         deck.words.isEmpty ? DockG.list : DockG.search,
         widget.decks[deck],
-      ), // (one that finds by words its own mark, as Lightroom's smart collection beside a plain one)
+      ), // A deck that finds by search words has its own glyph, as Lightroom's smart collection differs from a plain one.
       _ when place.startsWith('/') => (place.substring(1), DockG.folder, widget.packs[place.substring(1)]),
       _ => ('All Effects', DockG.effects, p['All']),
     };
   }
 
-  /// One row: the Media shelf's folder row (dockFolderRow), a press shows what it holds.
-  /// [cover]: a deck's picture, its row as Spotify's library lists a playlist (its cover, its name, how many under it).
+  /// One row, built on the Media shelf's folder row (dockFolderRow). Clicking it shows what it holds.
+  /// [cover] is a deck's picture; the row then looks like a playlist in Spotify's library
+  /// (cover, name, and the count under it).
   Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false, Widget? cover}) {
     final c = widget.c, here = c.mem.fxPlace == place || lit, to = effectTarget();
     final (name, g, n) = _said(place);
     final aim = place == (to == null ? '★' : '@${to.name}');
-    // (the target's mark, Lightroom's + after its name, kept when a long name is cut short)
+    // The target deck is marked with a + after its name, as in Lightroom. The + stays when a long name is cut short.
     Widget named(TextStyle s) => Row(
       children: [
         Flexible(
@@ -310,8 +342,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     (over) => _row('@${d.name}', field: _naming == d ? _field(d) : null, lit: over, menu: (at) => _deckMenu(d, at), cover: widget.covers['@${d.name}']),
   );
 
-  /// A tile carried onto [d] goes in it; onto the Favorites ([d] null) it is starred, as a track dropped on a Spotify
-  /// playlist or on its Liked Songs.
+  /// Makes the row accept a dragged tile. Dropped on [d] it goes into that deck. Dropped on the Favorites ([d] null)
+  /// it is starred, like a track dropped on a Spotify playlist or on Liked Songs.
   Widget _into(EffectDeck? d, Widget Function(bool over) row) => DragTarget<VoidCallback>(
     onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
     onAcceptWithDetails: (o) {
@@ -325,8 +357,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     builder: (context, over, _) => row(over.isNotEmpty),
   );
 
-  /// What the open deck holds, under its row, on the map: Hearthstone's deck list beside its collection, an effect
-  /// carried onto it put in; said how while it holds none.
+  /// On the map, the effects the open deck holds, shown under its row like Hearthstone's deck list beside its collection.
+  /// A dragged effect dropped on it is added. While the deck is empty it shows how to add one.
   Widget _held(EffectDeck? d) => _into(
     d,
     (over) => ColoredBox(
@@ -357,7 +389,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         color: WsT.body,
         child: widget.narrow && !c.mem.fxListOpen && widget.mapped && (deck != null || c.mem.fxPlace == '★')
             ? Column(
-                // (folded to the deck on the map, what it holds under it, as the browser goes into a category and back)
+                // Folded to the open deck on the map, with what it holds below, as the browser goes into a category and back.
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _into(
@@ -378,7 +410,7 @@ class EffectPlacesState extends State<EffectPlaces> {
               )
             : widget.narrow && !c.mem.fxListOpen
             ? DragTarget<VoidCallback>(
-                // (a tile carried over it opens the list, for a deck to drop it on: Finder's spring-loaded folders)
+                // A tile dragged over it opens the list so the tile can be dropped on a deck, like Finder's spring-loaded folders.
                 onWillAcceptWithDetails: (_) {
                   c.set(() => c.mem.fxListOpen = true);
                   return false;
@@ -410,7 +442,8 @@ class EffectPlacesState extends State<EffectPlaces> {
                     ),
                   ),
                   for (final d in widget.decks.keys) ...[_deck(d), if (widget.mapped && c.mem.fxPlace == '@${d.name}') _held(d)],
-                  _row('Packs', open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')), // (what the makers bundled, as Ableton's Packs, folded)
+                  // The effects bundled by their authors, collapsed, like Ableton's Packs.
+                  _row('Packs', open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')),
                   if (open)
                     for (final p in widget.packs.keys) _row('/$p', depth: 1),
                 ],

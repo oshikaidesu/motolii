@@ -1,6 +1,8 @@
-// timeline_snap.dart: what a bar's end, a key or the hand comes to rest on: Alight Motion's snapFrame and moveTarget (its
-// Timeline.kt), the nearest within 8 points, a bar by whichever end is nearer, a line where it lands. Live's grid beside
-// them while there is a tempo, and held with Cmd none (its manual, 6.7 and 6.10).
+// Snapping for the end of a bar, a keyframe or the playhead.
+//
+// It snaps to the nearest stop within 8 points, and a bar snaps by whichever end is nearer. A line is drawn where it lands.
+// The beat grid is also a stop while the project has a tempo. Holding Cmd turns snapping off.
+// This follows Alight Motion's snapFrame and moveTarget (Timeline.kt) and Ableton Live's grid (manual, 6.7 and 6.10).
 part of 'timeline.dart';
 
 extension _WsTimelineSnap on _WsTimelineState {
@@ -13,7 +15,7 @@ extension _WsTimelineSnap on _WsTimelineState {
     return best;
   }
 
-  /// How far the hand's [by] goes, the nearest of [ends] resting where it can.
+  /// Returns the drag distance [by] adjusted so that the nearest of [ends] lands on a snap stop, if one is close enough.
   int _rested(int by, List<int> ends) {
     var went = by;
     _restAt = null;

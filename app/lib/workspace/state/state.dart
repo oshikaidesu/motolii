@@ -1,7 +1,7 @@
-// The workspace: one window that gathers the lab's panels (browser dock, stage, inspector, timeline, tool panel).
-// This file is what every panel shares: the mock document they all read (Ws), and the window's own tokens (WsT).
-// Tone and manner come from the Inspector's Pop rules (sets/inspector_parts.dart): containers square and tiled edge to edge,
-// what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
+// The workspace: one window that gathers the panels (browser dock, preview, inspector, timeline, tool panel).
+// This file holds what every panel shares: the document state they all read (Ws) and the window's design tokens (WsT).
+// The look follows the Inspector's rules: square containers tiled edge to edge, round controls,
+// flat opaque colour, one lime accent, and one hue per layer kind.
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;
@@ -20,7 +20,7 @@ export '../../bridge/motolii.dart'
         MotoliiWrites,
         MotoliiQuestions,
         MotoliiShelves,
-        MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
+        MotoliiWatch; // Extensions of Motolii, so anything holding Ws.inside can call the engine's reads.
 import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
 import '../window/panes.dart' show WsAt, WsPane;
@@ -75,33 +75,37 @@ abstract final class WsT {
   static double get inset => Shape.s(8);
   static double get gap => Shape.s(4);
 
-  /// Hues per kind of layer / asset, shared by timeline bars, browser tiles and the stage's artwork, so a thing keeps its colour everywhere.
-  static Color get toneShape => ColorTheme.of('Clip1', const Color(0xFFF08A5D)); // (a layer's kind: Ableton's clip colours)
+  /// Hues per kind of layer or asset, shared by timeline bars, browser tiles and the preview artwork, so a kind keeps its colour everywhere.
+  /// Modelled on Ableton's clip colours.
+  static Color get toneShape => ColorTheme.of('Clip1', const Color(0xFFF08A5D));
   static Color get toneText => ColorTheme.of('Clip2', const Color(0xFFD9D2C3));
   static Color get toneImage => ColorTheme.of('Clip3', const Color(0xFF7FB8B0));
   static Color get toneCamera => ColorTheme.of('Clip4', const Color(0xFFA7B4C8));
   static Color get toneGroup => ColorTheme.of('Clip5', const Color(0xFFB0A6F0));
   static Color get toneParticles => ColorTheme.of('Clip6', const Color(0xFFF2A65A));
   static Color get toneAudio => ColorTheme.of('Clip7', const Color(0xFF5CC8E8));
-  static Color get toneMark =>
-      ColorTheme.of('ElementMark', const Color(0xFFF2C94C)); // (an element's intro and outro marks on the ruler: Alight Motion's small yellow ones)
+  // The marks on the ruler for a layer's intro and outro, like Alight Motion's small yellow ones.
+  static Color get toneMark => ColorTheme.of('ElementMark', const Color(0xFFF2C94C));
 
   /// The playhead line: the accent, so "now" is the loudest line in the window. Its head is an [accent] fill.
   static Color get playhead => accentInk;
 }
 
+/// The kinds of layer the timeline distinguishes.
 enum WsKind { shape, text, image, camera, group, particles, audio }
 
-/// A thing's label colour, as Ableton gives each clip its own: one of sixteen, five apart from the last made so
-/// neighbours differ, the same each time the document is opened; its row, its dot on the Relations map, its frame on
-/// the stage and its name in a list wear it, so a photo or a model is told apart as well as a red dot. A skin may say
-/// each (Label1 ... Label16).
-/// The colours chosen on the Note card (the document's label: its place among Live's colours), read with the document.
+/// The colours the user chose on the Note card, by layer id. Each value is an index into Ableton Live's 16 colours.
+/// Read together with the document.
 final wsChosenLabels = <String, int>{};
 
+/// A layer's label colour, as Ableton gives each clip its own.
+///
+/// Without a chosen colour it is one of sixteen, five apart from the previous layer so that neighbours differ.
+/// It is the same every time the document is opened. The layer's row, its dot on the Relations map, its frame in the
+/// preview and its name in lists all use it. A skin can override each colour (Label1 to Label16).
 Color wsLabel(String id) => wsLabelColor(wsChosenLabels[id] ?? ((int.tryParse(id) ?? 0) * 5) % _live.length);
 
-/// The label colour [k], 0 to 15 (a mark's colour is one of these too).
+/// The label colour [k], from 0 to 15. Marks use these colours too.
 Color wsLabelColor(int k) => ColorTheme.of('Label${k + 1}', Color(_live[k]));
 const _live = [
   0xFFFF94A6,
@@ -120,7 +124,7 @@ const _live = [
   0xFFF66C03,
   0xFF10A4EE,
   0xFF00BFAF,
-]; // (Ableton Live's clip colours)
+]; // Ableton Live's clip colours.
 
 Color wsTone(WsKind k) => switch (k) {
   WsKind.shape => WsT.toneShape,
@@ -132,7 +136,7 @@ Color wsTone(WsKind k) => switch (k) {
   WsKind.audio => WsT.toneAudio,
 };
 
-/// One layer of the mock composition: where it lives in time, and where its keys are (frames).
+/// One layer of the composition: when it is on, and where its keyframes are, in frames.
 class WsLayer {
   WsLayer(
     this.id,
@@ -153,25 +157,34 @@ class WsLayer {
   final WsKind kind;
   int inF, outF;
   final List<int> keys;
-  final List<WsStretch> stretches; // (how it goes between its keys, as the inside says: drawn on its bar)
+
+  /// The easing between its keyframes, as the engine reports it. Drawn on the layer's bar.
+  final List<WsStretch> stretches;
+
+  /// The id of the parent layer, if any.
   final String? parent;
-  final bool lined; // (a sketch whose lines that draw are knobs of it: opened, a row of each, script.h sketch_marked)
-  final bool hidden, solo, locked, clipped; // (clipped: shown only inside the thing under it, Clip to below) (as the inside said when the layers were last read: a row asks nothing of it while the stage plays)
-  Color get tone => wsLabel(id); // (its label colour)
+
+  /// Whether this is a sketch whose drawn lines are parameters of it. When opened, each line gets a row.
+  final bool lined;
+
+  /// The layer's flags as the engine reported them at the last read, so a row asks nothing of the engine while the preview plays.
+  /// [clipped] means it is shown only inside the layer below it (Clip to Below).
+  final bool hidden, solo, locked, clipped;
+
+  /// The layer's label colour.
+  Color get tone => wsLabel(id);
 }
 
-/// A stretch between two keys: its frames and how it goes there (the way's shape, 0 to 1, at 17 points along it).
+/// The stretch between two keyframes: its frames, its easing, and the easing curve (0 to 1) sampled at 17 points.
 typedef WsStretch = ({int from, int to, String way, List<double> shape});
 
-/// A key the user picked: which layer, which frame.
+/// A keyframe the user selected: its layer and frame.
 typedef WsKey = ({String layer, int frame});
 
-/// A stretch of one value picked by its line in the timeline: from a key, [at] seconds, to the next of that value (frames).
+/// A stretch of one property selected by its line in the timeline, from the keyframe at [at] seconds to the next keyframe of that property.
 typedef WsStretchPicked = ({String layer, String name, double at, int from, int to});
 
-/// The window's state: the document's things as rows (read again from the inside), what is picked, the moment, the
-/// view. Every panel listens to this and nothing else; a panel never keeps a copy of what is here.
-/// contract: changes notify once per user action; nothing here ticks while idle (play advances only while [playing]).
-/// What of the window changed: a part of it is built again only when one it reads did (Flutter's InheritedModel
-/// aspects: [WsScope.of]). [WsAspect.document]: the inside's picture of the document was read again.
+/// What part of the window's state changed. A widget rebuilds only when an aspect it reads changes (see [WsScope.of]).
+///
+/// [document] means the engine's snapshot of the document was read again.
 enum WsAspect { document, picked, playing, view, fronted, animating, notice, stage }

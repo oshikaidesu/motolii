@@ -4,11 +4,16 @@ import '../../skin/tokens.dart';
 import '../../widgets/media.dart' show glyph;
 import '../inspector_parts.dart';
 
-// ---- 5. sections and rows -------------------------------------------------------------------------------------------
-/// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.
+/// The disclosure triangle on a card's heading.
+///
+/// It points right when the card is folded and down when it is open, so the user can see that the card folds before touching it.
 class FoldMark extends StatelessWidget {
   const FoldMark({super.key, required this.open, required this.hot});
+
+  /// Fields: `open` is whether the card is open (the triangle points down); `hot` is whether the pointer is over the
+  /// heading, which draws the triangle brighter.
   final bool open, hot;
+
   @override
   Widget build(BuildContext context) => AnimatedRotation(
     turns: open ? .25 : 0,
@@ -30,8 +35,13 @@ void _drawFold(Canvas c, Size s, Color ink) => c.drawPath(
     ..strokeJoin = StrokeJoin.round,
 );
 
+/// Gives the rows below it the keyframe state of their property.
+///
+/// A row reads this when its own value has no keyframe state yet.
 class RowInfo extends InheritedWidget {
   const RowInfo({super.key, required this.keys, required super.child});
+
+  /// The keyframe state of the property the rows below belong to.
   final KeyS keys;
   static RowInfo of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>()!;
   @override

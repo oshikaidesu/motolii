@@ -6,9 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'inspector_parts.dart';
 part 'inspector_values.dart';
 
-/// Said by the stage as it places a text: the words field next built for it holds the keys, its words all picked, so
-/// what is typed at once is the text's (AbsentMotion's addText opens its EditText panel; Figma's text tool types where
-/// it was placed).
+/// Whether the next text-content field should take keyboard focus with all its text selected.
+/// The preview sets it when it places a new text, so that typing replaces the text at once.
+/// AbsentMotion's addText opens its EditText panel, and Figma's text tool types where the text was placed.
 bool textToType = false;
 
 enum KeyS { off, anim, at }
@@ -21,7 +21,8 @@ class Ed {
   Color get rule => const Color.fromRGBO(255, 255, 255, .12);
 }
 
-/// The property a value is part of, whose key mark is theirs together: a document's x, y, z are its position; its
-/// scale_x .. scale_z its scale, rotate_x, rotate_y and rotate its rotation, anchor_x .. anchor_z its anchor.
+/// The property that a value belongs to. All values of one property share one key mark.
+/// The document's x, y, z belong to position; scale_x to scale_z to scale; rotate_x, rotate_y and rotate to rotation; anchor_x to anchor_z to anchor.
 String propOf(String id) => _place.hasMatch(id) ? 'v_position' : _axis.firstMatch(id)?.group(1) ?? id;
-final _place = RegExp(r'^v_[xyz]$'), _axis = RegExp(r'^(v_\w+?)_[xyz]$'); // (made once: asked hundreds of times a picture)
+// Compiled once because propOf runs hundreds of times for every frame.
+final _place = RegExp(r'^v_[xyz]$'), _axis = RegExp(r'^(v_\w+?)_[xyz]$');

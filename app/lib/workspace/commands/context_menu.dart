@@ -1,8 +1,8 @@
-// context_menu.dart: the window's right-click menu: what can be done to what is under the hand, there, so the mouse alone
-// finishes it (Ableton Live's context menus, everywhere; Figma's right-click on a thing). Flutter's own RawMenuAnchor
-// opens it where the hand is and shuts it on a click outside; a row is a word, and why when it cannot be done,
-// floating as the design's context menu does
-// (sets/foundations/navigation_2.dart: the keys it is pressed with too, dim on the right).
+// The workspace's right-click menu.
+//
+// It lists what can be done to the item under the pointer, so the mouse alone is enough (Ableton Live's context menus, Figma's right-click).
+// Flutter's RawMenuAnchor opens it at the pointer and closes it on a click outside.
+// A row is a label. A disabled row shows why it cannot be done, and the keyboard shortcut is dimmed on the right.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -13,9 +13,10 @@ import 'keymap.dart' show CommandIntent;
 import '../state/state.dart';
 import '../../widgets/controls.dart' show Hov;
 
-/// A thing's own menu by a right click, on its bar, its row or the stage (Ableton Live's clip context menu: Rename,
-/// Duplicate, Split, Deactivate, Delete; Figma's right click on a layer or a thing: mouse_map.md, 7), each the window's
-/// own command as the menu bar and the keys say it; the thing is picked first, so it is the one they work on.
+/// The context menu for layer [l], opened by a right-click on its bar, its row or the stage.
+///
+/// It follows Ableton Live's clip menu (Rename, Duplicate, Split, Deactivate, Delete) and Figma's right-click on a layer.
+/// Each row runs the same command as the menu bar and the keys. The layer is selected first, so the commands act on it.
 List<WsMenuItem> wsThingMenu(BuildContext context, Ws ws, WsLayer l) {
   ws.select(l.id);
   void say(String c) => Actions.maybeInvoke(context, CommandIntent(c, false));
@@ -29,17 +30,22 @@ List<WsMenuItem> wsThingMenu(BuildContext context, Ws ws, WsLayer l) {
   ];
 }
 
-/// One row: [go] null, it cannot be done now and [why] says why; [keys] what it is pressed with too (never the only way).
-/// A rule between groups: [WsMenuItem.rule].
+/// One row of a menu.
+///
+/// A null [go] means the row cannot be done now, and [why] says why. [keys] is the keyboard shortcut shown beside it.
+/// The shortcut is never the only way to run it. [WsMenuItem.rule] is a divider between groups.
 class WsMenuItem {
   const WsMenuItem(this.label, this.go, {this.keys = '', this.why = '', this.id}) : colors = const [], picked = -1, pick = null;
   const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', id = null, colors = const [], picked = -1, pick = null;
 
-  /// Colours to pick one of, as Ableton Live's context menus end in the clip's or the track's colours: [picked] the one
-  /// it has (-1: none), [pick] told the number of the one pressed.
+  /// A row of colours to choose from, as Ableton Live's context menus end with the clip or track colours.
+  ///
+  /// [picked] is the index of the current colour, or -1 for none. [pick] is called with the index of the one clicked.
   const WsMenuItem.colors(this.colors, this.picked, this.pick) : label = '', go = null, keys = '', why = '', id = null;
   final String label, keys, why;
-  final String? id; // (the row's key, where it is not ws-menu- and its label)
+
+  /// The row's widget key, when it should not be derived from the label.
+  final String? id;
   final VoidCallback? go;
   final List<Color> colors;
   final int picked;
@@ -53,8 +59,9 @@ class WsMenu extends StatefulWidget {
   State<WsMenu> createState() => WsMenuState();
 }
 
-/// The floating panel of [items] ([width] wide, scrolling within [max]): every pick runs, then [close]. The window's
-/// context menu and the small ⋮ and right-click lists of the inspector are this one.
+/// A floating panel of [items], [width] wide, scrolling when taller than [max].
+///
+/// Choosing an item runs it and then calls [close]. The workspace context menu and the inspector's ⋮ and right-click lists all use this.
 class WsMenuList extends StatelessWidget {
   const WsMenuList({super.key, required this.items, required this.close, required this.max, required this.width});
   final List<WsMenuItem> items;
@@ -71,7 +78,7 @@ class WsMenuList extends StatelessWidget {
 
   Widget _one(WsMenuItem it) => it.colors.isNotEmpty
       ? Padding(
-          // (eight to a row)
+          // Eight swatches to a row.
           padding: EdgeInsets.all(Shape.s(4)),
           child: Wrap(
             spacing: Shape.s(4),
@@ -142,7 +149,7 @@ class WsMenuList extends StatelessWidget {
       boxShadow: [BoxShadow(color: const Color(0x80000000), blurRadius: 24, offset: const Offset(0, 8))],
     ),
     child: ConstrainedBox(
-      // (a long one, as many palettes as are kept, scrolls within half the window)
+      // A long list scrolls within [max].
       constraints: BoxConstraints(maxHeight: max),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in items) _one(it)]),
@@ -155,7 +162,7 @@ class WsMenuState extends State<WsMenu> {
   final _m = MenuController();
   List<WsMenuItem> _items = const [];
 
-  /// Opens at [at], a place of the child, with [items].
+  /// Opens the menu with [items] at [at], a position within the child.
   void show(Offset at, List<WsMenuItem> items) {
     setState(() => _items = items);
     _m.open(position: at);
@@ -170,9 +177,10 @@ class WsMenuState extends State<WsMenu> {
       final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
       return Positioned(
         left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
-        top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h), // (down from the hand, or up where there is no room)
+        // Opens downward from the pointer, or upward where there is no room.
+        top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h),
         child: FloatShut(
-          // (the anchor shuts it on a left press outside and no more: every press, and Esc, as all that floats)
+          // The anchor only closes on a left press outside. FloatShut also closes on any press and on Esc, like every floating panel.
           group: info.tapRegionGroupId,
           shut: _m.close,
           child: WsMenuList(items: _items, close: _m.close, max: info.overlaySize.height * .5, width: w),

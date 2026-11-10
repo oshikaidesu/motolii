@@ -1,4 +1,4 @@
-// timeline_view.dart: the timeline's clock and view: the playhead ticked, played and stepped; how much of the document it shows (fit, zoom, scroll).
+// The timeline's clock and view: advancing, playing and stepping the playhead, and how much of the project is shown (fit, zoom, scroll).
 part of 'timeline.dart';
 
 extension _WsTimelineView on _WsTimelineState {
@@ -16,11 +16,13 @@ extension _WsTimelineView on _WsTimelineState {
     _follow(ws.frame);
   }
 
-  void _tick(Duration e) => Timeline.timeSync('ws tick', () => _tickNow(e)); // (named in Flutter's timeline)
+  // The tick is wrapped in a named span so it shows up in Flutter's timeline.
+  void _tick(Duration e) => Timeline.timeSync('ws tick', () => _tickNow(e));
 
   void _tickNow(Duration e) {
     final ws = _ws!;
-    _last = (ws.inside!.now * Ws.fps).round().clamp(0, Ws.duration); // (the inside keeps the clock, the playhead shows the moment of the picture it drew last)
+    // The engine keeps the clock. The playhead shows the time of the last frame it drew.
+    _last = (ws.inside!.now * Ws.fps).round().clamp(0, Ws.duration);
     ws.frame = _last;
   }
 

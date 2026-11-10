@@ -1,7 +1,9 @@
-// The window's commands by name and the keys that say them, in VS Code's manner (keybindings.json): the window's own
-// table, then the maker's file over it (~/.motolii/keybindings.json, a list of {"key": "cmd+shift+z", "command":
-// "edit.redo"}; a command begun with '-' takes that key from the command). Flutter's own Shortcuts and Actions carry
-// them; the menus show the same keys. While words are being typed, a key with no cmd, ctrl or alt is the words'.
+// Keyboard shortcuts and the commands they run, in the manner of VS Code's keybindings.json.
+//
+// The app's default table is loaded first, then the user's file ~/.motolii/keybindings.json overrides it.
+// That file is a list such as {"key": "cmd+shift+z", "command": "edit.redo"}. A command starting with '-' removes the key from that command.
+// Flutter's Shortcuts and Actions carry the keys, and the menus show the same keys.
+// While the user is typing text, a key without cmd, ctrl or alt goes to the text field.
 import 'package:re_editor/re_editor.dart' show CodeEditor;
 
 import 'dart:convert';
@@ -10,64 +12,65 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// The window's own keys: Ableton Live 12's (its manual, chapter 42; command_actions.dart says where each comes from), the
-/// standard Mac ones (New, Undo, Cut, Copy, Paste, Select All), and the stage's tools.
+/// The default keys: Ableton Live 12's (manual chapter 42; command_actions.dart says where each comes from),
+/// the standard Mac ones (New, Undo, Cut, Copy, Paste, Select All), and the canvas tools.
 const defaultKeys = <(String, String)>[
   ('cmd+n', 'file.new'),
-  ('cmd+o', 'file.home'), // (the documents listed: the Mac's own Open, as Alight Motion's home lists its projects)
-  ('cmd+shift+r', 'file.render'), // (Live 42.3: Export Audio/Video)
-  ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
+  ('cmd+o', 'file.home'), // Lists the projects: the Mac's Open, as Alight Motion's home screen lists its projects.
+  ('cmd+shift+r', 'file.render'), // Live 42.3: Export Audio/Video.
+  ('shift+e', 'file.exportFrame'), // Premiere Pro's Export Frame.
   ('cmd+z', 'edit.undo'),
   ('cmd+shift+z', 'edit.redo'),
   ('cmd+x', 'edit.cut'),
   ('cmd+c', 'edit.copy'),
   ('cmd+v', 'edit.paste'),
-  ('cmd+alt+c', 'edit.copyStyle'), // (the Mac's own: Pages, Keynote, TextEdit)
+  ('cmd+alt+c', 'edit.copyStyle'), // The Mac's Copy Style, as in Pages, Keynote and TextEdit.
   ('cmd+alt+v', 'edit.pasteStyle'),
   ('cmd+a', 'edit.selectAll'),
-  ('cmd+shift+a', 'edit.deselectAll'), // (After Effects', Premiere Pro's: Deselect All)
-  ('cmd+alt+b', 'edit.workToPicked'), // (After Effects': the work area to the selected layers, else the whole)
-  ('cmd+d', 'thing.duplicate'), // (Live 42.5)
-  ('cmd+g', 'thing.group'), // (Figma's, Keynote's: Group)
+  ('cmd+shift+a', 'edit.deselectAll'), // Deselect All, as in After Effects and Premiere Pro.
+  ('cmd+alt+b', 'edit.workToPicked'), // After Effects: set the work area to the selected layers, else to the whole project.
+  ('cmd+d', 'thing.duplicate'), // Live 42.5.
+  ('cmd+g', 'thing.group'), // Group, as in Figma and Keynote.
   ('cmd+shift+g', 'thing.ungroup'),
-  ('cmd+]', 'thing.forward'), // (After Effects', Figma's, Illustrator's: Bring Forward, Send Backward)
+  ('cmd+]', 'thing.forward'), // Bring Forward and Send Backward, as in After Effects, Figma and Illustrator.
   ('cmd+[', 'thing.backward'),
-  ('cmd+e', 'thing.split'), // (Live 42.5: Split)
-  ('[', 'time.playhead'), // (After Effects': Move Layer In Point to current time, Out Point)
+  ('cmd+e', 'thing.split'), // Live 42.5: Split.
+  ('[', 'time.playhead'), // After Effects: move the layer's in point, or its out point for ], to the current time.
   (']', 'time.playhead_end'),
-  ('alt+[', 'time.extend'), // (Final Cut Pro: Trim Start, Trim End)
+  ('alt+[', 'time.extend'), // Final Cut Pro: Trim Start and Trim End.
   ('alt+]', 'time.trim_end'),
-  ('cmd+r', 'thing.rename'), // (Live 42.5, 42.19)
-  ('0', 'thing.deactivate'), // (Live 42.15/42.16/42.19: 0 switches a clip off and on; here the eye)
-  ('s', 'thing.solo'), // (Live 42.15/42.19)
-  ('u', 'thing.lanes'), // (After Effects' U: the picked layers' keyed properties)
-  ('a', 'mark.animate'), // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
+  ('cmd+r', 'thing.rename'), // Live 42.5 and 42.19.
+  ('0', 'thing.deactivate'), // Live 42.15, 42.16 and 42.19: 0 switches a clip off and on. Here it toggles the layer's visibility.
+  ('s', 'thing.solo'), // Live 42.15 and 42.19.
+  ('u', 'thing.lanes'), // After Effects' U: show the keyframed properties of the selected layers.
+  ('a', 'mark.animate'), // Apple Motion's A (Record Animation): every change is keyframed until it is pressed again.
   ('backspace', 'thing.remove'),
   ('delete', 'thing.remove'),
-  ('space', 'play.fromStart'), // (Live 42.20)
-  ('shift+space', 'play.continue'), // (Live 42.20)
-  ('left', 'nudge.left'), // (Live 42.16: nudge selection)
+  ('space', 'play.fromStart'), // Live 42.20.
+  ('shift+space', 'play.continue'), // Live 42.20.
+  ('left', 'nudge.left'), // Live 42.16: nudge selection.
   ('right', 'nudge.right'),
   ('shift+left', 'nudge.left10'),
   ('shift+right', 'nudge.right10'),
-  ('up', 'layer.previous'), // (Live: the arrow keys go between tracks)
+  ('up', 'layer.previous'), // Live: the arrow keys move between tracks.
   ('down', 'layer.next'),
-  ('cmd+l', 'loop.toggle'), // (Live 42.16)
-  ('=', 'zoom.in'), // (Live 42.9: + and -, the + without shift)
+  ('cmd+l', 'loop.toggle'), // Live 42.16.
+  ('=', 'zoom.in'), // Live 42.9: + and -, with + working without shift.
   ('shift+=', 'zoom.in'),
   ('-', 'zoom.out'),
-  ('z', 'zoom.selection'), // (Live 42.16)
+  ('z', 'zoom.selection'), // Live 42.16.
   ('x', 'zoom.back'),
   ('w', 'zoom.width'),
-  (',', 'frame.previous'), // (Live has none: Rive's and Jitter's)
+  (',', 'frame.previous'), // Live has no frame step. These are the Rive and Jitter keys.
   ('.', 'frame.next'),
-  ('j', 'frame.previousStop'), // (After Effects': J and K, the previous and next visible item in the time ruler)
+  ('j', 'frame.previousStop'), // After Effects' J and K: the previous and next visible item in the time ruler.
   ('k', 'frame.nextStop'),
   ('shift+,', 'frame.back10'),
   ('shift+.', 'frame.forward10'),
-  ('home', 'frame.first'), // (Live 42.20: move insert marker to beginning)
+  ('home', 'frame.first'), // Live 42.20: move the insert marker to the beginning.
   ('end', 'frame.last'),
-  ('v', 'tool.select'), // (the stage's tools, their letters as stage.dart lists them: After Effects', Photoshop's)
+  // The canvas tools, with the letters stage.dart lists, as in After Effects and Photoshop.
+  ('v', 'tool.select'),
   ('m', 'tool.move'),
   ('r', 'tool.rectangle'),
   ('e', 'tool.ellipse'),
@@ -77,7 +80,7 @@ const defaultKeys = <(String, String)>[
   ('c', 'tool.camera'),
 ];
 
-/// The keys in use: the window's own, the maker's file over them.
+/// The keys in use: the defaults with the user's keybindings.json applied over them.
 class Keymap {
   Keymap(this.pairs);
   final List<(SingleActivator, String)> pairs;
@@ -93,21 +96,22 @@ class Keymap {
       for (final e in told.cast<Map>()) {
         final a = activatorOf('${e['key']}'), c = '${e['command']}';
         if (a == null) continue;
-        all.removeWhere((p) => _same(p.$1, a)); // (one key, one command: the maker's)
+        // One key runs one command, and the user's file wins.
+        all.removeWhere((p) => _same(p.$1, a));
         if (!c.startsWith('-')) all.add((a, c));
       }
-    } catch (_) {} // (no file, or not a list: the window's own keys)
+    } catch (_) {} // No file, or not a list: keep the default keys.
     return Keymap(all);
   }
 
-  /// The first key that says a command (the menus show it), if any.
+  /// The first key bound to [command], or null. The menus show it.
   SingleActivator? keyOf(String command) => pairs.where((p) => p.$2 == command).firstOrNull?.$1;
 
   static bool _same(SingleActivator a, SingleActivator b) =>
       a.trigger == b.trigger && a.meta == b.meta && a.shift == b.shift && a.control == b.control && a.alt == b.alt;
 }
 
-/// A key as written ("cmd+shift+z", "space", "left"...) as Flutter's own activator; null if not one it knows.
+/// Parses a key written as "cmd+shift+z", "space" or "left" into a [SingleActivator]; null if the key is unknown.
 SingleActivator? activatorOf(String said) {
   final parts = said.toLowerCase().split('+').map((p) => p.trim()).toList();
   final key = _keys[parts.last] ?? (parts.last.length == 1 ? LogicalKeyboardKey.findKeyByKeyId(parts.last.codeUnitAt(0)) : null);
@@ -151,14 +155,16 @@ const _keys = {
   'f12': LogicalKeyboardKey.f12,
 };
 
-/// A command said by a key.
+/// An intent to run the command called [name], produced by a key.
 class CommandIntent extends Intent {
   const CommandIntent(this.name, this.plain);
   final String name;
-  final bool plain; // (a key with no cmd, ctrl or alt: the words' while words are typed)
+
+  /// True for a key with no cmd, ctrl or alt, which belongs to the text field while the user is typing.
+  final bool plain;
 }
 
-/// The keys over the whole window, each saying its command ([commands]: what each does).
+/// Installs the shortcuts of [keymap] over [child]. [commands] maps each command name to what it does.
 class WsKeys extends StatelessWidget {
   const WsKeys({super.key, required this.keymap, required this.commands, required this.child});
   final Keymap keymap;
@@ -174,8 +180,9 @@ class WsKeys extends StatelessWidget {
 class _Command extends Action<CommandIntent> {
   _Command(this.commands);
   final Map<String, VoidCallback> commands;
-  // (a field's, or code's: re_editor's CodeEditor takes its keys by its own DeltaTextInputClient, no EditableText under it,
-  //  and a plain key the window answers never reaches it)
+  // True while focus is in a text field or a code editor.
+  // re_editor's CodeEditor reads keys through its own DeltaTextInputClient with no EditableText under it,
+  // so a plain key that the workspace handles would never reach it.
   static bool get _typing {
     final at = FocusManager.instance.primaryFocus?.context;
     return at?.findAncestorStateOfType<EditableTextState>() != null || at?.findAncestorWidgetOfExactType<CodeEditor>() != null;

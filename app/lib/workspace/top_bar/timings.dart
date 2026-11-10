@@ -1,38 +1,54 @@
-// Part of top_bar.dart: how long the inside took, shown from the bar.
+// Part of top_bar.dart: counts slow frames and engine errors, and lists them from the top bar.
 part of 'top_bar.dart';
 
 class _WaitedState extends State<_Waited> {
   final _open = OverlayPortalController(), _at = LayerLink();
   late final Timer _look;
   final _born = Stopwatch()..start();
+  // The number shown on the dot.
   int _count = 0,
-      _inside = 0,
-      _insideSeen = 0,
-      _lateCount = 0,
-      _lastFinish = 0; // (the inside's count as last read; what of it was seen while the window was shown)
-  int _seen = 0; // (how many the list has shown: the dot counts only those after, as an app's badge counts unread)
-  Object? _of; // (the inside the count is of, and its document: another document counts from 0)
+          // The engine's error count as last read.
+          _inside =
+          0,
+          // Engine errors that happened while the window was shown.
+          _insideSeen =
+          0,
+          // Slow app frames counted so far.
+          _lateCount =
+          0,
+          // Raster finish time of the previous frame, in microseconds.
+          _lastFinish =
+          0;
+  // How many problems the list has already shown. The dot counts only newer ones, like an unread badge.
+  int _seen = 0;
+  // The engine whose errors are counted. A different engine starts counting again from 0.
+  Object? _of;
+  // The project whose problems are counted. A different project starts again from 0.
   String? _doc;
-  final _group = Object(); // (the dot and its list are one place for a tap: one outside closes the list, TapRegion's group)
-  bool _moved = false; // (played, or a hand down dragging or scrolling, since the window's last timings came)
-  final _late = <String>[]; // (the window's own missed frames, timed: the last 200)
+  // The dot and its list form one tap region, so a tap outside both closes the list.
+  final _group = Object();
+  // True if playback ran, or a pointer was down or scrolling, since the last frame timings arrived.
+  bool _moved = false;
+  // The app's own slow frames, each with a time stamp. Only the last 200 are kept.
+  final _late = <String>[];
 
-  static const _beat = 1000000 ~/ 60; // (1/60 s in microseconds: a frame's budget, as Flutter's performance overlay judges it)
+  // One frame's budget at 60 fps, in microseconds, as Flutter's performance overlay judges it.
+  static const _beat = 1000000 ~/ 60;
   @override
   void initState() {
     super.initState();
     SchedulerBinding.instance.addTimingsCallback(_timings);
     GestureBinding.instance.pointerRouter.addGlobalRoute(_pointer);
     _look = Timer.periodic(const Duration(milliseconds: 500), (_) {
-      // (read without waiting: the inside's count)
+      // Read the engine's error count without waiting for it.
       final ws = WsScope.read(context);
       _moved |= ws.playing;
       final n = ws.inside?.brokenCount ?? 0;
       if (!identical(ws.inside, _of)) {
-        // (opened, or opened again: what the inside kept before it was seen here is not counted)
+        // The project was opened or reopened. Errors recorded before it was seen here are not counted.
         final doc = '${ws.documentFolder}/${ws.document}';
         if (doc != _doc) {
-          // (a new or another document: from 0)
+          // A different project: start again from 0.
           _doc = doc;
           _insideSeen = _lateCount = _seen = 0;
           _late.clear();
@@ -44,7 +60,8 @@ class _WaitedState extends State<_Waited> {
         AppLifecycleState.hidden || AppLifecycleState.paused => false,
         _ => true,
       };
-      if (shown) _insideSeen += math.max(0, n - _inside); // (the inside's, counted only while the window is shown)
+      // Count engine errors only while the window is shown.
+      if (shown) _insideSeen += math.max(0, n - _inside);
       _inside = n;
       _recount();
     });
@@ -54,9 +71,11 @@ class _WaitedState extends State<_Waited> {
     if (e.down || e is PointerScrollEvent || e is PointerPanZoomUpdateEvent) _moved = true;
   }
 
-  /// Flutter's own per-frame timings (FrameTiming): a frame whose build (UI thread) or raster (raster thread) took longer
-  /// than a beat missed 60 fps. Counted only while something moves: drawn right after the frame before (within two
-  /// beats of its raster's end) while played or handled, and not in the window's opening seconds.
+  /// Handles Flutter's per-frame timings ([FrameTiming]).
+  ///
+  /// A frame whose build (UI thread) or raster (raster thread) took longer than one frame budget missed 60 fps.
+  /// A frame is counted only while something moves: it must start within two budgets of the previous frame's raster
+  /// end while playing or while the user is interacting, and not in the first 3 seconds after launch.
   void _timings(List<FrameTiming> timings) {
     if (!mounted) return;
     final moved = _moved || WsScope.read(context).playing;
@@ -84,9 +103,11 @@ class _WaitedState extends State<_Waited> {
 
   void _recount() {
     final all = _insideSeen + _lateCount;
-    if (_open.isShowing) _seen = all; // (the list open: each line in it is seen)
+    // While the list is open, every line in it counts as seen.
+    if (_open.isShowing) _seen = all;
     final n = all - _seen;
-    if ((n != _count || _open.isShowing) && mounted) setState(() => _count = n); // (open: its lines read again as they come)
+    // While the list is open, rebuild so new lines appear as they come.
+    if ((n != _count || _open.isShowing) && mounted) setState(() => _count = n);
   }
 
   void _show(bool open) {
@@ -105,9 +126,8 @@ class _WaitedState extends State<_Waited> {
   @override
   Widget build(BuildContext context) {
     if (_count == 0 && !_open.isShowing) return const SizedBox.shrink();
-    final lines =
-        _open
-            .isShowing // (the inside's and the window's, newest first: each line starts with its clock time)
+    // The engine's and the app's lines, newest first. Each line starts with its clock time.
+    final lines = _open.isShowing
         ? ([...(WsScope.read(context).inside?.broken ?? '').split('\n').where((l) => l.isNotEmpty), ..._late]..sort((a, b) => b.compareTo(a))).take(40).toList()
         : const <String>[];
     return CompositedTransformTarget(
@@ -122,7 +142,7 @@ class _WaitedState extends State<_Waited> {
           child: Align(
             alignment: Alignment.topRight,
             child: TapRegion(
-              // (a tap anywhere else closes it, as macOS's transient NSPopover; it is not taken from what is under it)
+              // A tap anywhere else closes the list, like a transient NSPopover on macOS, and still reaches what is under it.
               groupId: _group,
               onTapOutside: (_) => _show(false),
               child: NakedButton(
@@ -131,7 +151,7 @@ class _WaitedState extends State<_Waited> {
                 mouseCursor: SystemMouseCursors.basic,
                 child: Container(
                   width: Shape.z(520),
-                  constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7), // (each line whole, wrapped; many: scrolled, none cut)
+                  constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7), // Lines wrap rather than being cut, and a long list scrolls.
                   padding: EdgeInsets.all(Shape.s(10)),
                   decoration: BoxDecoration(
                     color: WsT.card,

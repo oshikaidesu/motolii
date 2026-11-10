@@ -1,8 +1,8 @@
-// timeline_ruler.dart: the ruler's flags: the document's marks found, made, named and carried.
+// The ruler's flags: finding, creating, naming and dragging the project's marks.
 part of 'timeline.dart';
 
 extension _WsTimelineRuler on _WsTimelineState {
-  /// The mark whose flag is under the hand, if any.
+  /// The mark whose flag is under the pointer [p], if any.
   (double, String)? _flagAt(Offset p) {
     if (p.dy < WtM.band + 1 || p.dy > WtM.band + 15) return null;
     final xs = [for (final m in _ws!.marks) _view.x((m.$1 * Ws.fps).round()).roundToDouble()];
@@ -37,18 +37,19 @@ extension _WsTimelineRuler on _WsTimelineState {
     _rulerMove(p);
   }
 
-  /// The marks on the ruler: the document's own (moments with a name).
+  /// The marks on the ruler, as frame and name. These are the project's named times.
   List<(int, String)> _marksOf(Ws ws) {
     return [
       for (final (at, name) in _ws!.marks)
         if ((at, name) != _markHeld)
           ((at * Ws.fps).round(), name)
         else if (!_markOff)
-          (_markTo, name), // (the one carried: where the hand has it; off the ruler, gone)
+          // The mark being dragged is drawn where the pointer holds it, and disappears when dragged off the ruler.
+          (_markTo, name),
     ];
   }
 
-  /// The marks' colours on the ruler, by frame (the one carried: where the hand has it).
+  /// The marks' colours by frame. The mark being dragged uses the frame where the pointer holds it.
   Map<int, Color> _markColorsOf(Ws ws) => {
     for (final MapEntry(key: at, value: k) in ws.markColors.entries) (_markHeld?.$1 == at ? _markTo : (at * Ws.fps).round()): wsLabelColor(k - 1),
   };

@@ -9,45 +9,72 @@ import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
 import '../../skin/tokens.dart';
 import '../../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
 
+/// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
 class NumField extends StatefulWidget {
   const NumField(this.p, {super.key, required this.id, required this.caption, this.glyph, this.glyphOwnsPointer = false, this.glyphTall = false});
 
-  /// The value as its card declares it ([NumFieldState] reads its unit, its places and its ends), and which number of it.
+  /// The parameter as its card declares it. [NumFieldState] reads its unit, decimal places and range from it.
   final Param p;
+
+  /// The document id of the number this field edits.
   final String id;
 
-  /// [caption] on top, the value large under it, [glyph] (a picture of the value) in the top-right corner.
-  /// With [glyphOwnsPointer] a press on the glyph is the glyph's (a dial, a die), not a scrub.
-  /// contract: every number in the Inspector scrubs sideways, whatever it means (a Y, a height); only a glyph may move otherwise.
+  /// The label shown above the value.
   final String caption;
+
+  /// A picture of the value, drawn in the top-right corner.
   final Widget? glyph;
+
+  /// Whether a press on [glyph] belongs to the glyph (a dial, a die) instead of starting a drag on the number.
+  ///
+  /// Every number in the Inspector drags sideways, whatever it means, so only a glyph may behave differently.
   final bool glyphOwnsPointer;
 
-  /// The glyph runs the block's full height on the right (stacked buttons) instead of sitting in the corner.
+  /// Whether the glyph spans the block's full height on the right (stacked buttons) instead of sitting in the corner.
   final bool glyphTall;
   @override
   State<NumField> createState() => NumFieldState();
 }
 
-/// A card whose numbers may be scrubbed past their sliders' ends, put round its fields by the card: [flag], its doc
-/// flag, is set by a right click on any of them; a held Option does it for one scrub (a quasimode, Raskin's The Humane
-/// Interface). The slider's span is what the effect vouches for; past it, as far as the inside takes (Houdini's
-/// range not strict: FloatParmTemplate minIsStrict).
+/// Placed around a card's fields by the card. It lets their numbers be dragged past the slider's ends.
+///
+/// [flag] is a document flag. A right click on any of the fields toggles it, and holding Option does the same for a single drag
+/// (a quasimode, as in Raskin's The Humane Interface). The slider range is only what the effect vouches for. Beyond it the value
+/// may go as far as the engine accepts, as with Houdini's non-strict ranges (FloatParmTemplate minIsStrict).
 class PastRange extends InheritedWidget {
   const PastRange({super.key, required this.flag, required super.child});
+
+  /// The document flag that allows going past the slider's ends.
   final String flag;
+
+  /// The flag of the nearest [PastRange], or null outside one.
   static String? of(BuildContext c) => c.getInheritedWidgetOfExactType<PastRange>()?.flag;
   @override
   bool updateShouldNotify(PastRange o) => o.flag != flag;
 }
 
-/// A short list over the panel ([WsMenuList]; each row keyed name-word:of) where the hand pressed, kept inside the window: a number's right click.
+/// A short menu at the pointer position, kept inside the window. It is the right-click menu of a number.
+///
+/// It shows a [WsMenuList]. Each row has the id `name-key:of`.
 class TinyMenuAt extends StatelessWidget {
   const TinyMenuAt({super.key, required this.at, required this.name, required this.of, required this.items, required this.hide, this.keep});
+
+  /// Where the pointer was pressed, in the overlay's coordinates.
   final Offset at;
-  final String name, of;
+
+  /// The first part of each row's id.
+  final String name;
+
+  /// The last part of each row's id.
+  final String of;
+
+  /// The rows as (key, label, action).
   final List<(String, String, VoidCallback)> items;
+
+  /// Closes the menu.
   final VoidCallback hide;
+
+  /// Whether a pointer-down should leave the menu open instead of closing it.
   final bool Function(PointerDownEvent)? keep;
   @override
   Widget build(BuildContext context) {

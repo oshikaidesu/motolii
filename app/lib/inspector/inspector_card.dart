@@ -10,24 +10,29 @@ import '../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
 import '../widgets/glyphs.dart' show Glyph;
 import '../widgets/timeline_painters.dart' show TpGlyph;
 
-// ---- 10. a card ------------------------------------------------------------------------------------------------------
-/// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
-/// (workspace/inspector_feed/cards.dart writes it from motolii_cards, card_table.h). Its fields are whatever [infer] makes of it.
+/// A card as the engine declares it, for an effect or a layer's own values: a name and a WGSL uniform struct.
+///
+/// workspace/inspector_feed/cards.dart writes the struct from motolii_cards (card_table.h).
+/// The card's fields are whatever [infer] makes of it.
 class Fx {
   Fx(this.name, this.wgsl, {required this.toneOf});
   final String name, wgsl;
-  final Color Function() toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
+
+  /// The skin's colour for this card. It is read when drawn, so a card made before the skin changed shows the new colour.
+  final Color Function() toneOf;
   Color get tone => toneOf();
   late final List<Decl> decls = parseWgsl(wgsl);
   late final List<Param> params = [for (final d in decls) infer(d)];
 }
 
-/// A thing's own card's head: its values copied, given to another, as they come (After Effects' Reset).
+/// The Copy, Paste and Reset words in the head of a layer's own card, acting on the values [ids] as they are (like After Effects' Reset).
 class CardWords extends StatelessWidget {
   const CardWords(this.name, this.ids, {super.key, this.more = const []});
   final String name;
   final List<String> ids;
-  final List<(String, String, VoidCallback)> more; // (under its ⋮)
+
+  /// Extra items listed under the card's ⋮ menu.
+  final List<(String, String, VoidCallback)> more;
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
@@ -49,7 +54,7 @@ class CardWords extends StatelessWidget {
   }
 }
 
-/// Every card of the panel, drawn one way: its declaration's Params, each field a value (keyed `v_` and its name).
+/// Draws every card of the panel the same way: one field per Param of its declaration, keyed `v_` plus the param name.
 class ValuesCard extends StatelessWidget {
   const ValuesCard(this.card, {super.key});
   final Fx card;
@@ -64,8 +69,9 @@ class ValuesCard extends StatelessWidget {
           for (final p in card.params)
             if (p.advanced) p,
         ];
-    // (the first row, then the rest folded under the name of what they are; the fold says nothing more than its glyph)
-    final at = doc.movable.indexOf(card.name); // (one of its effects: up or down its stack, After Effects' dragging a card)
+    // The main params show first. The advanced ones are folded under a row named for what they are.
+    // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack, as in After Effects.
+    final at = doc.movable.indexOf(card.name);
     final sect = Sect(
       title: card.name,
       tone: card.tone,
@@ -74,7 +80,8 @@ class ValuesCard extends StatelessWidget {
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (past) // (let past its ends: its range's lock open, Houdini's range lock; a press shuts it)
+                // The range lock is open, so values may go past the range ends, as with Houdini's range lock. A press closes it.
+                if (past)
                   Hov(
                     key: ValueKey('card-past:${card.name}'),
                     onTap: () => doc.flag('$k.past', false),
@@ -89,7 +96,8 @@ class ValuesCard extends StatelessWidget {
                     [for (final p in card.params) p.id],
                     more: [('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past))],
                   ),
-                if (card.name == 'Script' && doc.onCardRemove != null) // (a script is put on as an effect is, and comes off the same way: golf_noise.md (123))
+                // A script is added like an effect and removed the same way.
+                if (card.name == 'Script' && doc.onCardRemove != null)
                   Hov(
                     key: const ValueKey('card-remove:Script'),
                     onTap: () => doc.onCardRemove!(card.name),
@@ -99,7 +107,7 @@ class ValuesCard extends StatelessWidget {
                     ),
                   ),
                 if (at >= 0) ...[
-                  // (an effect's card, as AbsentMotion's EffectHeader and Alight Motion's: its eye, ⋮ with the rest, the bin)
+                  // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
                   if (doc.onCardEye != null)
                     Hov(
                       key: ValueKey('card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}'),
@@ -112,12 +120,10 @@ class ValuesCard extends StatelessWidget {
                   CardMore(
                     name: card.name,
                     items: [
-                      // (AbsentMotion's More: Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values; Alight Motion's Duplicate; and a preset of it kept)
-                      (
-                        'past',
-                        past ? 'Stop at Range Ends' : 'Go Past Range Ends',
-                        () => doc.flag('$k.past', !past),
-                      ), // (as a right click on any of its numbers: PastRange)
+                      // The items follow AbsentMotion's More menu (Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values),
+                      // Alight Motion's Duplicate, and saving the effect as a preset.
+                      // The first item does the same as a right click on any of its numbers (PastRange).
+                      ('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past)),
                       if (doc.onCardInfo case final info?) ('info', 'Effect Info', () => info(card.name)),
                       if (doc.onCardReset case final reset?) ('reset', 'Reset to Defaults', () => reset([for (final p in card.params) p.id])),
                       if (doc.onCardDuplicate case final duplicate?) ('duplicate', 'Duplicate', () => duplicate(card.name)),
@@ -136,7 +142,8 @@ class ValuesCard extends StatelessWidget {
                       ),
                     ),
                 ],
-                if (at >= 0 && doc.onCardMove != null && doc.movable.length > 1) // (Alight Motion's ≡ on an effect's row, After Effects' dragging an effect in Effect Controls: held and dragged up or down its stack)
+                // The ≡ grip drags an effect up or down its stack, as in Alight Motion and After Effects' Effect Controls.
+                if (at >= 0 && doc.onCardMove != null && doc.movable.length > 1)
                   Draggable<String>(
                     key: ValueKey('card-drag:${card.name}'),
                     data: card.name,
@@ -157,7 +164,7 @@ class ValuesCard extends StatelessWidget {
         ParamGrid(heroes),
         if (rest.isNotEmpty) ...[_FoldRow(rest.first.fold ?? 'Advanced', adv, () => doc.flag('$k.adv', !adv)), if (adv) ParamGrid(rest)],
         if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
-          // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
+          // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
           _FoldRow('Code', doc.b['$k.code'] ?? false, () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)), key: ValueKey('card-code:${card.name}')),
           if (doc.b['$k.code'] ?? false) SizedBox(height: Shape.z(360), child: code),
         ],
@@ -166,7 +173,7 @@ class ValuesCard extends StatelessWidget {
     final shown = PastRange(flag: '$k.past', child: sect);
     if (at < 0 || doc.onCardMove == null) return shown;
     return DragTarget<String>(
-      // (an effect let go on this one's card takes its place; the line says on which side it lands)
+      // An effect dropped on this card takes its place. The line shows on which side it lands.
       onWillAcceptWithDetails: (d) => d.data != card.name && doc.movable.contains(d.data),
       onAcceptWithDetails: (d) => doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
       builder: (context, held, _) {
@@ -192,7 +199,7 @@ class ValuesCard extends StatelessWidget {
   }
 }
 
-/// A card's fold: a ruled 24px row, its word lit while hot or open, [FoldMark] at the right.
+/// A card's fold row: 24px high with a rule above. The label is lit while hovered or open, with a [FoldMark] at the right.
 class _FoldRow extends StatelessWidget {
   const _FoldRow(this.label, this.open, this.onTap, {super.key});
   final String label;
@@ -220,7 +227,7 @@ class _FoldRow extends StatelessWidget {
   );
 }
 
-/// Three short lines, ≡: an effect's card held there is dragged up or down its stack.
+/// Draws the ≡ grip, three short lines. Dragging an effect card by it moves the effect up or down its stack.
 void _drawGrip(Canvas c, Size s, Color ink) {
   final paint = Paint()
     ..color = ink
@@ -231,12 +238,16 @@ void _drawGrip(Canvas c, Size s, Color ink) {
   }
 }
 
-/// An effect card's ⋮ (AbsentMotion's EffectHeader More): what else is done with it, in a short list over the panel,
-/// as Chooser's lists look; one picked, it does that and closes.
+/// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
+///
+/// It opens a short list over the panel, styled like Chooser's lists, of the other things the user can do with the card.
+/// Picking an item runs it and closes the list.
 class CardMore extends StatefulWidget {
   const CardMore({super.key, required this.name, required this.items, this.word = '⋮', this.above = false, this.big = false});
   final String name, word;
-  final bool above, big; // (above: opened upward, for one at the window's foot: AbsentMotion's AboveAnchor)
+
+  /// [above] opens the list upward, for a button at the foot of the window (AbsentMotion's AboveAnchor).
+  final bool above, big;
   final List<(String key, String label, VoidCallback does)> items;
   @override
   State<CardMore> createState() => _CardMoreState();
@@ -245,7 +256,8 @@ class CardMore extends StatefulWidget {
 class _CardMoreState extends State<CardMore> {
   final _link = LayerLink();
   final _portal = OverlayPortalController();
-  bool _up = false; // (no room under it: opened upward, as TinyMenuAt does)
+  // Opened upward because there is no room below, as TinyMenuAt does.
+  bool _up = false;
 
   void _open() {
     final box = context.findRenderObject()! as RenderBox;
@@ -286,7 +298,8 @@ class _CardMoreState extends State<CardMore> {
         ),
       ),
       child: TapRegion(
-        groupId: _link, // (a press on the ⋮ itself shuts it, by the ⋮: not shut, then opened again)
+        // A press on the ⋮ itself is not an outside tap, so the ⋮ closes the list instead of it closing and reopening.
+        groupId: _link,
         child: Hov(
           key: ValueKey('card-more:${widget.name}'),
           onTap: widget.items.isEmpty ? null : _open,
@@ -311,7 +324,7 @@ class _CardMoreState extends State<CardMore> {
   );
 }
 
-/// A bin: an effect taken off by it (AbsentMotion's Trash on its header).
+/// Draws the bin that removes an effect, like AbsentMotion's Trash on its header.
 void _drawBin(Canvas c, Size s, Color color) {
   final p = Paint()
     ..color = color
@@ -330,7 +343,7 @@ void _drawBin(Canvas c, Size s, Color color) {
   );
 }
 
-/// What follows the pointer while an effect is dragged: the folded head, lifted.
+/// The folded card head that follows the pointer while an effect is dragged.
 class FxDragGhost extends StatelessWidget {
   const FxDragGhost(this.fx, {super.key});
   final Fx fx;

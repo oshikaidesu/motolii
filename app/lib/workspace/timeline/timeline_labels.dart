@@ -1,6 +1,7 @@
-// timeline_labels.dart: the names column: its head and a row each, with eye, solo and lock.
+// The layer name column: a header, and one row per layer with visibility, solo and lock toggles.
 part of 'timeline.dart';
 
+/// Header of the name column: layer count and the visibility, solo and lock icons.
 class _LabelHeader extends StatelessWidget {
   const _LabelHeader({required this.count, required this.solo});
   final int count;
@@ -31,6 +32,7 @@ class _LabelHeader extends StatelessWidget {
   );
 }
 
+/// One layer's row in the name column.
 class _LabelRow extends StatefulWidget {
   const _LabelRow({
     required this.index,
@@ -48,7 +50,7 @@ class _LabelRow extends StatefulWidget {
   final int index, depth;
   final WtRow row;
   final bool hidden, solo;
-  final bool? lanes; // (whether its keyed values stand open; null: it has no keys)
+  final bool? lanes; // Whether its keyframed properties are expanded; null if the layer has no keyframes.
   final VoidCallback onLanes, onSelect, onEye, onSolo, onLock;
   @override
   State<_LabelRow> createState() => _LabelRowState();
@@ -72,10 +74,10 @@ class _LabelRowState extends State<_LabelRow> {
           hot: _h,
           onSelect: widget.onSelect,
           kind: Row(
-            // (its own small picture, as Alight Motion's row; before it the triangle of a row with keys, After Effects' twirl)
+            // A small thumbnail as in Alight Motion's rows, preceded by the expand triangle (After Effects' twirl) if the layer has keyframes.
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(width: Shape.z(10) * widget.depth), // (set in under its group, as Apple Motion's Layers list and Cavalry's tree)
+              SizedBox(width: Shape.z(10) * widget.depth), // Indent layers inside a group, as in Apple Motion's Layers list and Cavalry's tree.
               if (widget.lanes case final open?)
                 _Toggle(open ? TpGlyph.caretD : TpGlyph.caretR, on: false, lit: true, onTap: widget.onLanes)
               else
@@ -92,7 +94,7 @@ class _LabelRowState extends State<_LabelRow> {
   }
 }
 
-/// A row toggle: a bare glyph; [on] puts it on an accent chip, [strong] on a raised grey one.
+/// A row toggle shown as a bare icon. [on] puts it on an accent chip, [strong] on a raised grey one.
 class _Toggle extends StatelessWidget {
   const _Toggle(this.g, {required this.on, required this.lit, this.strong = false, required this.onTap});
   final TpGlyph g;

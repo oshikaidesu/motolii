@@ -1,25 +1,42 @@
-// dock_map_view.dart: the map drawn, its names over it and what the pointer is on; under it the list of the alike.
+// Draws the map, the name of the item under the pointer, and the similarity list below it.
 part of 'dock_map.dart';
 
-/// The map: each shown item's tile where it lies ([DockMapPlaces]), inside its circle so none covers another ([aspect] a
-/// tile's width to its height), the whole fitted to the room at one scale and zoomed as one, the tiles with it, as
-/// FontMap's map (useMapRenderer: calculateMappingDimensions; useMapZoom: framed at 0.92 to start, never further out,
-/// at most 10 times, moved only within its canvas); the rest left off; what is
-/// said while it is being laid out. No colour of its own: the pictures tell them apart; the fonts' words, in one ink,
-/// are inked by where they lie ([dockPalette]). [picked]: the one picked, its nearest under the map; [press]: one press on one
-/// of them. What the pointer is on is told by it: its [peek] (its pictures moving, as the shelf's foot shows the
-/// picked one) and its name of [names]. A pick leaves the map where the hand left it, as a pick in Figma leaves its
-/// canvas (it moves by Zoom to Selection alone): flown to, the one picked dragged the view away (11/4, the user: "like
-/// being grabbed by the shoulders"). From its corner how compact it is laid ([DockMapPlaces.squeeze], Obsidian's graph's
-/// Center force).
+/// The map view: each shown item's tile at its position from [DockMapPlaces].
+///
+/// The tiles are drawn inside a circle so none covers another. The whole map is fitted to the viewport at one scale and
+/// zoomed as one, tiles included, as in FontMap (useMapRenderer: calculateMappingDimensions; useMapZoom). It starts
+/// framed at 0.92, never zooms out further, zooms in at most 10 times, and can only be moved within its canvas.
+/// Items not in [DockMap.shown] are left off, and a message is shown while the map is being laid out.
+///
+/// The map has no colour of its own because the images tell items apart. Font names, drawn in one ink, are coloured by
+/// position ([dockPalette]).
+///
+/// Picking an item leaves the map where the user put it, as picking in Figma leaves its canvas. Only Zoom to Selection
+/// moves it. Flying to the picked item dragged the view away from the user, who said it felt like being grabbed by the
+/// shoulders. A button in the top right corner sets how compact the layout is ([DockMapPlaces.squeeze], Obsidian's graph
+/// "Center force").
 class DockMap extends StatefulWidget {
   const DockMap(this.places, this.shown, {super.key, this.aspect = 1, this.picked, this.press, this.peek, this.names = const {}});
+
+  /// Where each item lies.
   final DockMapPlaces places;
+
+  /// The items to show, each an id and its tile.
   final List<(String, Widget)> shown;
+
+  /// Width to height of a tile.
   final double aspect;
+
+  /// The id of the picked item. Its nearest items are listed below the map.
   final String? picked;
+
+  /// Called when the user presses an item.
   final void Function(String id)? press;
+
+  /// Builds the moving image shown for the item under the pointer, as the shelf's footer does for the picked one.
   final Widget Function(String id)? peek;
+
+  /// The name shown beside the item under the pointer, by id.
   final Map<String, String> names;
   @override
   State<DockMap> createState() => _DockMapState();
@@ -27,14 +44,24 @@ class DockMap extends StatefulWidget {
 
 class _DockMapState extends State<DockMap> {
   final _keys = FocusNode(debugLabel: 'ws-map');
-  String? _from; // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
-  final _seen = <String>[]; // (what was picked, in turn: XO's History)
+
+  /// The item the similarity list is built from: the one pressed on the map, as in XO's Space.
+  String? _from;
+
+  /// Items in the order they were picked, like XO's History.
+  final _seen = <String>[];
   int _at = -1;
-  final _view = TransformationController(); // (how near it is zoomed: what the pointer is on told at its size)
-  final _over = ValueNotifier<String?>(null); // (the one the pointer is on)
+
+  /// The zoom state. The hover label is sized with it.
+  final _view = TransformationController();
+
+  /// The id of the item under the pointer.
+  final _over = ValueNotifier<String?>(null);
   Map<String, Offset>? _atWas;
   Size _roomWas = Size.zero;
-  bool _forces = false; // (Obsidian's graph settings opened from its corner: its Forces)
+
+  /// Whether the force settings are open. They are opened from the corner button, like Obsidian's graph settings.
+  bool _forces = false;
 
   @override
   void initState() {
@@ -49,14 +76,15 @@ class _DockMapState extends State<DockMap> {
   }
 
   void _saw(String? id) {
-    if (id == null || (_at >= 0 && _seen[_at] == id)) return; // (gone to by the history itself: kept as it is)
+    // Ignore a pick that came from stepping through the history itself.
+    if (id == null || (_at >= 0 && _seen[_at] == id)) return;
     _seen
       ..removeRange(_at + 1, _seen.length)
       ..add(id);
     _at = _seen.length - 1;
   }
 
-  /// XO's History: the up and down keys back and forth through what was picked.
+  /// Moves [by] steps through the picked items, like XO's History. The up and down keys call this.
   void _back(int by) {
     final i = _at + by;
     if (i < 0 || i >= _seen.length || widget.press == null) return;
@@ -74,7 +102,7 @@ class _DockMapState extends State<DockMap> {
 
   String get _name => widget.places.name;
 
-  /// XO's arrows: [by] along the list of the alike (Shift: five).
+  /// Moves [by] items along the similarity list, like XO's arrows. Shift moves five.
   void _step(List<String> list, int by) {
     final i = list.indexOf(widget.picked ?? '');
     if (i < 0 || widget.press == null) return;
@@ -84,7 +112,8 @@ class _DockMapState extends State<DockMap> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      widget.places.roomIs(box.maxWidth / box.maxHeight); // (laid out on a canvas the shape of the room it is seen in)
+      // Lay out on a canvas shaped like the viewport.
+      widget.places.roomIs(box.maxWidth / box.maxHeight);
       return ListenableBuilder(
         listenable: Listenable.merge([widget.places.places, widget.places.laying]),
         builder: (context, _) {
@@ -97,7 +126,8 @@ class _DockMapState extends State<DockMap> {
           final k = math.max(2, ((box.maxWidth - 3 * Shape.z(20) - 2 * gap) / (sw + gap)).floor());
           final picked = widget.picked;
           if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) {
-            _from = picked; // (picked elsewhere: its own list)
+            // Picked elsewhere, so it gets its own list.
+            _from = picked;
           }
           final list = picked == null || _from == null || !tiles.containsKey(_from) ? const <String>[] : widget.places.alike(_from!, tiles.keys, k);
           return CallbackShortcuts(
@@ -113,7 +143,8 @@ class _DockMapState extends State<DockMap> {
               focusNode: _keys,
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) => _keys.requestFocus(), // (the keys go to the map once it is pressed, not to the stage's nudge)
+                // Once the map is pressed the keys go to it, not to the canvas nudge.
+                onPointerDown: (_) => _keys.requestFocus(),
                 child: Column(
                   children: [
                     Expanded(child: LayoutBuilder(builder: (context, room) => _map(at, tiles, Size(room.maxWidth, room.maxHeight)))),
@@ -129,7 +160,8 @@ class _DockMapState extends State<DockMap> {
   );
 
   Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
-    final r = dockSpreadRadius, a = widget.aspect, side = 2 * r / math.sqrt(1 + a * a); // (a tile inside its circle)
+    // A tile's side is such that the tile fits inside its circle.
+    final r = dockSpreadRadius, a = widget.aspect, side = 2 * r / math.sqrt(1 + a * a);
     var box = Rect.fromCenter(center: at.values.first, width: 0, height: 0);
     for (final p in at.values) {
       box = box.expandToInclude(Rect.fromCenter(center: p, width: 0, height: 0));
@@ -141,7 +173,7 @@ class _DockMapState extends State<DockMap> {
     Rect? place(String id) =>
         at[id] == null ? null : Rect.fromCenter(center: Offset(left + at[id]!.dx * s, top + at[id]!.dy * s), width: side * a * s, height: side * s);
     if (!identical(at, _atWas) || room != _roomWas) {
-      // (laid out anew, or the room another size: where it was looking is gone, so the whole)
+      // The layout or the viewport changed, so the old view is meaningless. Show the whole map.
       if (_atWas != null) _view.value = Matrix4.identity();
       _atWas = at;
       _roomWas = room;
@@ -149,7 +181,8 @@ class _DockMapState extends State<DockMap> {
     Widget item(String id, Widget tile) => MouseRegion(
       onEnter: (_) => _over.value = id,
       onExit: (_) => _over.value == id ? _over.value = null : null,
-      child: Listener(onPointerDown: (_) => _from = id, child: tile), // (pressed on the map: the list made from it, as XO's Space)
+      // Pressing on the map makes the similarity list start from this item, as in XO's Space.
+      child: Listener(onPointerDown: (_) => _from = id, child: tile),
     );
 
     return ClipRect(
@@ -167,7 +200,7 @@ class _DockMapState extends State<DockMap> {
                   for (final MapEntry(key: id, value: tile) in tiles.entries)
                     if (place(id) case final at?)
                       AnimatedPositioned.fromRect(
-                        // (laid out anew, each moves there: d3's transition, 250 ms, easeCubic, its defaults)
+                        // After a new layout each tile moves to its place with d3's default transition: 250 ms, easeCubic.
                         key: ValueKey('ws-map-$_name-$id'),
                         rect: at,
                         duration: const Duration(milliseconds: 250),
@@ -185,8 +218,10 @@ class _DockMapState extends State<DockMap> {
     );
   }
 
-  /// Obsidian's graph settings, opened from the map's top right corner: its Forces' Center force, "how compact the graph
-  /// is" ([DockMapPlaces.squeeze]), on the slider the Create shelf's Colours size is set by.
+  /// The settings opened from the map's top right corner, like Obsidian's graph settings.
+  ///
+  /// They hold its Center force, "how compact the graph is" ([DockMapPlaces.squeeze]), on the same slider the Create
+  /// shelf uses for the size of Colours.
   Widget _settings() => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
@@ -212,14 +247,16 @@ class _DockMapState extends State<DockMap> {
     ],
   );
 
-  /// What the pointer is on, by it: its tile larger and its name (DataMapPlot's hover text, the Projector's label of
-  /// the one hovered), kept inside the map.
+  /// Shows the item under the pointer larger, with its name, kept inside the map.
+  ///
+  /// This is DataMapPlot's hover text, and the Embedding Projector's label of the hovered point.
   Widget _told(Map<String, Widget> tiles, Rect? Function(String) place, Size room) => ListenableBuilder(
     listenable: Listenable.merge([_over, _view]),
     builder: (context, _) {
       final id = _over.value, r = id == null ? null : place(id);
       if (id == null || r == null || tiles[id] == null) return const SizedBox();
-      final w = Shape.z(140), at = MatrixUtils.transformRect(_view.value, r); // (as large as the foot's moving picture)
+      // The same size as the moving image in the footer.
+      final w = Shape.z(140), at = MatrixUtils.transformRect(_view.value, r);
       final left = (at.right + Shape.s(6) + w > room.width ? at.left - Shape.s(6) - w : at.right + Shape.s(6)).clamp(0.0, math.max(0.0, room.width - w));
       return Stack(
         children: [
@@ -247,8 +284,10 @@ class _DockMapState extends State<DockMap> {
     },
   );
 
-  /// XO's Similarity List under the map: its arrows, the alike in a row, and its Refresh (the picked one first:
-  /// Splice's Similar Sounds run again on one of its matches).
+  /// The similarity list under the map, after XO's Similarity List.
+  ///
+  /// It has arrows and the similar items in a row. The picked item comes first, like Splice's Similar Sounds run again
+  /// on one of its matches.
   Widget _alike(List<String> list, Map<String, Widget> tiles, double sw, double gap) {
     final i = list.indexOf(widget.picked ?? '');
     Widget arrow(String key, int by) => Transform.flip(

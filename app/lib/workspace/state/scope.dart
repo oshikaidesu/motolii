@@ -1,16 +1,17 @@
-// How the window's widgets reach the Ws: WsScope above them, each widget rebuilt only for the aspects it asked for
-// (Flutter's InheritedModel), the picture and the playhead's moment as notifiers of their own.
+// How the window's widgets reach the Ws. A WsScope above them is an InheritedModel, so each widget rebuilds only for the
+// aspects it asked for. The snapshot counter and the playhead are separate notifiers.
 part of 'state.dart';
 
-/// The window's state to the parts below (Flutter's InheritedModel): a part says which aspects it reads
-/// ([WsScope.of]) and is built again only when one of those changed.
+/// Gives the widgets below access to the window's [Ws].
+///
+/// A widget names the aspects it reads with [WsScope.of] and rebuilds only when one of those changes.
 class WsScope extends StatefulWidget {
   const WsScope({super.key, required this.ws, required this.child});
   final Ws ws;
   final Widget child;
 
-  /// The window's state, the part built again when one of [aspects] changes (none said: any, as a pane of your own
-  /// may: the window's own parts each say theirs).
+  /// Returns the window's state and rebuilds the caller when one of [aspects] changes.
+  /// With no [aspects] the caller rebuilds on any change. The window's own widgets always name theirs.
   static Ws of(BuildContext c, [Set<WsAspect>? aspects]) {
     for (final a in aspects ?? WsAspect.values) {
       InheritedModel.inheritFrom<_WsAll>(c, aspect: a);
@@ -18,12 +19,14 @@ class WsScope extends StatefulWidget {
     return read(c);
   }
 
+  /// Returns the window's state without subscribing to changes.
   static Ws read(BuildContext c) => c.getInheritedWidgetOfExactType<_WsAll>()!.ws;
 
-  /// The playhead, and built again when it moves (nothing else of the window does that).
+  /// Returns the playhead frame and rebuilds the caller when it moves. Nothing else in the window rebuilds on that.
   static int frameOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<WsMoment>()!.notifier!.value;
 
-  /// The inside's moment's picture: built again when a new one comes (what shows values at the moment shown).
+  /// Returns a counter that increases whenever the engine produces a new snapshot of the current time.
+  /// Widgets that show values at the displayed time use it to rebuild.
   static int pictureOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_WsPicture>()!.notifier!.value;
   @override
   State<WsScope> createState() => _WsScopeState();
@@ -73,14 +76,16 @@ class _WsPicture extends InheritedNotifier<ValueNotifier<int>> {
 class _WsAll extends InheritedModel<WsAspect> {
   const _WsAll({required this.ws, required this.told, required super.child});
   final Ws ws;
-  final Map<WsAspect, int> told; // (how many times each aspect was told, as of this build)
+
+  /// How many times each aspect has notified, as of this build.
+  final Map<WsAspect, int> told;
   @override
   bool updateShouldNotify(_WsAll old) => !mapEquals(told, old.told) || ws != old.ws;
   @override
   bool updateShouldNotifyDependent(_WsAll old, Set<WsAspect> dependencies) => ws != old.ws || dependencies.any((a) => told[a] != old.told[a]);
 }
 
-/// The playhead's own scope, under [WsScope]: [WsScope.frameOf].
+/// The playhead's own scope below [WsScope], read through [WsScope.frameOf].
 class WsMoment extends InheritedNotifier<ValueNotifier<int>> {
   const WsMoment({super.key, required super.notifier, required super.child});
 }

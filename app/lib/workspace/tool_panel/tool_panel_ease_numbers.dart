@@ -1,9 +1,9 @@
-// A way's numbers, said exactly: under the graph its name wears the Inspector's fold mark, and folds them open over the
-// graph's foot as a card of it does (the maker, 10/31: "数値の指定", and of a name that gave no sign of it: "わかるかー！").
-// Their names are those of AbsentMotion's Keyframes.kt; Alight Motion has them only as handles. Waves and steps are said by
-// how many, not by how long each is, which is how they are thought of. Overshoot is here, where it decides how far a number
-// goes, not in a menu Alight Motion's way (the maker, 10/31: a number written turned it on unseen, and the curve went out of
-// reach): off, Y stops at 0 and 1.
+// The numbers of an easing, shown exactly. Under the graph the easing's name carries the Inspector's fold mark and
+// opens the numbers as a card over the foot of the graph, as an Inspector card does.
+// The names are those of AbsentMotion's Keyframes.kt; Alight Motion only offers them as handles.
+// Waves and steps are entered as a count rather than a length, which is how people think of them.
+// Overshoot is switched here, next to the numbers it affects, rather than in a menu as in Alight Motion.
+// Without it Y stops at 0 and 1, so typing a number cannot silently push the curve out of reach.
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
 import 'package:motolii/skin/tokens.dart';
@@ -16,7 +16,8 @@ import 'package:motolii/workspace/state/state.dart';
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
 _Number _n(String name, int at, double lo, double hi, {bool many = false}) => (name: name, at: at, lo: lo, hi: hi, many: many);
 
-// (each kind's numbers as engine/motion/easing_curves.h has them, how far a hand takes each, and what they are when the way says none)
+// For each easing kind: its default numbers, then the numbers shown with their range.
+// The kinds and defaults follow engine/motion/easing_curves.h. The range is how far a drag takes the number.
 final _kinds = <String, (List<double>, List<_Number>)>{
   'Bezier': (const [0, 0, 1, 1], [_n('X1', 0, 0, 1), _n('Y1', 1, -2, 3), _n('X2', 2, 0, 1), _n('Y2', 3, -2, 3)]),
   'Bounce': (const [.3, .8], [_n('Length', 0, .02, 1), _n('Bounce', 1, 0, .95)]),
@@ -30,21 +31,31 @@ final _kinds = <String, (List<double>, List<_Number>)>{
   'ElasticSteps': (const [.2, .5], [_n('Steps', 0, 1, 20, many: true), _n('Over', 1, 0, 1)]),
 };
 
-/// Whether they are open: left so, whatever is pressed, as the Inspector's cards are.
+/// Whether the numbers are open. It stays as the user left it, like the Inspector's cards.
 bool easeNumbersOpen = false;
 
-/// Whether a way goes by its kind's usual numbers: a tile then draws what the kind does, and otherwise its own curve.
+/// Whether the easing uses its kind's default numbers. A tile then draws the kind itself, otherwise the easing's own curve.
 bool easeIsUsual(String said) {
   final w = said.split(' '), usual = _kinds[w.first]?.$1;
-  if (usual == null || w.length == 1 || w.first == 'Bezier') return true; // (a bezier's tile draws its own numbers already)
+  // A Bezier tile already draws its own numbers.
+  if (usual == null || w.length == 1 || w.first == 'Bezier') return true;
   return [for (final (i, x) in w.skip(1).indexed) (double.tryParse(x) ?? 0) - (i < usual.length ? usual[i] : 0)].every((d) => d.abs() < 1e-6);
 }
 
+/// The easing's name with the fold-out card of its numbers.
 class EaseNumbers extends StatefulWidget {
   const EaseNumbers({super.key, required this.card, required this.onChanged, this.overshoot = false, this.onOvershoot});
-  final Ease card; // (the card in hand, or the whole: a whole has a name, and no numbers)
+
+  /// The easing being edited: one card, or the whole easing, which has a name and no numbers.
+  final Ease card;
+
+  /// Called with the changed easing.
   final ValueChanged<Ease> onChanged;
-  final bool overshoot; // (a bezier's: Alight Motion's Enable Overshoot)
+
+  /// Whether a Bezier may go past 0 and 1 in Y, like Alight Motion's Enable Overshoot.
+  final bool overshoot;
+
+  /// Called when the user toggles Overshoot.
   final VoidCallback? onOvershoot;
   @override
   State<EaseNumbers> createState() => _EaseNumbersState();
@@ -106,9 +117,10 @@ class _EaseNumbersState extends State<EaseNumbers> {
                               min: lo,
                               max: hi,
                               perPx: n.many ? .05 : (hi - lo) / 200,
-                              reach: (to, _) => to.clamp(lo, hi), // (a hand goes so far: _kinds' lo and hi)
-                              // (typed, a number is held only where the inside holds it: a bezier's X at 0 and 1 (engine/motion/easing_curves.h:
-                              //  interp_ease clamps x1 and x2), its Y too while Overshoot is off (this file's head); the inside says why it refuses any other)
+                              // Dragging stops at the range given in _kinds.
+                              reach: (to, _) => to.clamp(lo, hi),
+                              // A typed number is limited only where the engine limits it: Bezier X to 0..1
+                              // (interp_ease in engine/motion/easing_curves.h clamps x1 and x2), and Y too while Overshoot is off.
                               onChange: (v) =>
                                   change(n.at, n.many ? 1 / v : (n.name.startsWith('X') || n.name.startsWith('Y') && !widget.overshoot ? v.clamp(lo, hi) : v)),
                             ),

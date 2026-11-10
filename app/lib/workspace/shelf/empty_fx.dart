@@ -1,6 +1,7 @@
-// An empty effect, or an empty expression, put on the picked thing with its code open on its card: somewhere to paste
-// code found on the net (an ISF effect; a .js with each(), document/expressions.h). Written once a press, in the maker's
-// programs where a thing's own copy is (fx_code.dart): the thing's alone from the first, so what is typed is its.
+// Puts an empty effect, or an empty expression, on the selected layer with its code open on its card. It gives the user
+// somewhere to paste code found on the net (an ISF effect, or a .js with each(), see engine/document/expressions.h).
+// The file is written fresh on each press, in the user's programs folder where a layer's own copy lives (fx_code.dart),
+// so what is typed belongs to that layer alone.
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -10,7 +11,7 @@ import 'effect_tiles.dart' show EffectTiles;
 import 'fx_code.dart' show FxCode;
 import '../state/state.dart';
 
-// (as it comes it changes nothing)
+// Left as it is, this effect changes nothing.
 const _isf = '''/*{
 	"DESCRIPTION": "Empty: the picture as it is. Paste an ISF effect over this",
 	"ISFVSN": "2",
@@ -31,8 +32,9 @@ const _js = '''// Empty: the copies where they are. Write where each goes in eac
 function each(i, n, t, k) { return {}; }
 ''';
 
-/// An empty effect ([expression]: an empty expression) put on the picked thing, its card's code open. Nothing picked:
-/// on a new board, as the shelf's others go. [told] why it is not taken, or '' once it is.
+/// Puts an empty effect on the selected layer, or an empty expression if [expression], with its code open.
+/// With no layer selected it goes on a new layer, as the shelf's other effects do. [told] receives the reason it
+/// was refused, or '' once it was taken.
 void emptyPut(Ws ws, {required bool expression, void Function(String why)? told}) {
   if (ws.inside == null) return;
   final dir = '${EffectTiles.own}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
@@ -42,15 +44,15 @@ void emptyPut(Ws ws, {required bool expression, void Function(String why)? told}
   fxPut(ws, file, expression: expression, told: told, open: true);
 }
 
-/// An effect file ([expression]: an expression's) put on the picked thing; [open], its card's code open. Nothing picked:
-/// on a new board, as the shelf's others go (an effect on an Adjustment board, Ws.screenToggle; an expression on a
-/// board of its own, Ws.motionToggle). [told] why it is not taken, or '' once it is.
+/// Puts an effect file (an expression file if [expression]) on the selected layer. [open] opens its code on the card.
+/// With no layer selected, an effect goes on a new adjustment layer and an expression on a new layer of its own.
+/// [told] receives the reason it was refused, or '' once it was taken.
 void fxPut(Ws ws, String file, {required bool expression, void Function(String why)? told, bool open = false}) {
   final m = ws.inside;
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
   final (word, title) = _said(t == null ? '' : m.word(t, 'fx'), file);
-  if (open) ws.view['inspector.v.$title.code'] = true; // (its card's Code fold, as a hand opens it: values.dart _flag)
+  if (open) ws.view['inspector.v.$title.code'] = true; // Opens the Code section of its card.
   if (t == null) return expression ? ws.whole('rect', (m) => m.later('fx_file', layer: -1, word: word)) : ws.adjustment(word);
   ws.after(m.later('fx_file', layer: t, word: word), (done, why) {
     told?.call(done ? '' : why);
@@ -58,10 +60,12 @@ void fxPut(Ws ws, String file, {required bool expression, void Function(String w
   });
 }
 
-/// The word that says the file among the thing's effects [fx], and its card's title. One there already of its name (the
-/// same file, or an empty effect beside an empty expression: both are titled Empty) is said again as the engine's
-/// Duplicate says one ("Empty~2.fs", doc_fx_duplicate): its values its own, its title its own (the eye, the bin and
-/// the stack find a card by its title: doc_fx_eye); fx_file would take the same word out.
+/// Returns the file name to use among the layer's effects [fx], and the title of its card.
+///
+/// If the layer already has an effect of that name, it is renamed as the engine's Duplicate does ("Empty~2.fs",
+/// doc_fx_duplicate). That happens for the same file, and for an empty effect beside an empty expression, which are
+/// both titled Empty. Its values and title are then its own, because the engine finds a card by its title
+/// (doc_fx_eye), and fx_file would otherwise remove the existing effect of the same name.
 (String, String) _said(String fx, String file) {
   final title = FxCode.titleOf(file), stem = EffectTiles.knobStem(file).toLowerCase();
   final stems = {for (final w in Ws.fxFiles(fx)) EffectTiles.knobStem(w).toLowerCase()};
@@ -74,7 +78,7 @@ void fxPut(Ws ws, String file, {required bool expression, void Function(String w
   return ('${file.substring(0, dot)}~$n${file.substring(dot)}', '$title $n');
 }
 
-/// The "+" on its tile.
+/// The "+" drawn on the empty effect's tile.
 class EmptyLook extends CustomPainter {
   const EmptyLook();
   @override

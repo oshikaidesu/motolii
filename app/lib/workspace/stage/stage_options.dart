@@ -1,15 +1,21 @@
-// The strip under the stage: the picked tool's options (fill, stroke, radius, font, the brush's kind), read from the
-// picked thing or the inks a drawn one gets, and where the picked thing stands.
+// The strip under the stage: the selected tool's options (fill, stroke, radius, font, brush kind), read from the
+// selected layer or from the fill and stroke the next drawn layer gets, and the selected layer's position.
 part of 'stage.dart';
 
-/// Joined: a colour of the document as Flutter's (six digits; a ramp by its first); null: none.
-Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').first)?.withAlpha(255); // (a gradient by its first stop, where it stands left out)
+/// A document colour (six hex digits) as a Flutter [Color], or null when there is none.
+///
+/// A gradient is read as its first stop, with the stop's position left out.
+Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').first)?.withAlpha(255);
 
-/// Joined: what the picked thing is painted with and how it is set (or, nothing picked, the inks a drawn thing gets).
-// (read once a reading of the document and a pick: the strip is built at every picture while it plays, these do not
-//  change with the moment, and a read then waits for the inside telling the stage its moment)
+// The paint values last read, with the key they were read for.
+//
+// The strip is rebuilt on every image during playback. These values do not change with time, so they are read
+// once per document revision and selection instead of waiting for the engine to report the current time.
 (Object, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}))? _paintRead;
 
+/// What the selected layer is painted with and how it is set.
+///
+/// With nothing selected, it is the fill and stroke the next drawn layer gets.
 ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintOf(Ws ws) {
   final key = (ws.rev, ws.selected, ws.ink, ws.edge);
   if (_paintRead case (final k, final p) when k == key) return p;
@@ -28,7 +34,8 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
     fill: _colorOf(m.word(t, 'fill')),
     stroke: _colorOf(m.word(t, 'stroke')),
     width: m.word(t, 'stroke').isEmpty ? 'None' : '${(w ?? 0).round()} px',
-    round: '${((r ?? 0) * 200).round()}%', // (of the shorter side's half)
+    // A share of half the shorter side.
+    round: '${((r ?? 0) * 200).round()}%',
     font: text ? m.word(t, 'file').split('/').last.replaceFirst(RegExp(r'\.ttf$'), '') : '—',
     size: text ? '${((m.value(t, 'size', m.now) ?? 1) * m.point).round()} px' : '—',
     align: ((m.value(t, 'align', 0) ?? 0) * 2).round().clamp(0, 2),
@@ -37,6 +44,7 @@ Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').firs
 
 // ---- tool options strip ------------------------------------------------------------------------------------------------
 
+/// The strip of the selected tool's options, with the selected layer's readout at its right.
 class _OptionsStrip extends StatelessWidget {
   const _OptionsStrip({required this.tool, required this.opts, required this.onOpt, required this.scene, required this.layer, required this.ws});
   final Ws ws;
@@ -55,7 +63,7 @@ class _OptionsStrip extends StatelessWidget {
 
   List<Widget> _items(BuildContext c) => _joined(c, ws, _paintOf(ws));
 
-  /// Joined: the tool's own settings (how it draws or carries), and the picked thing's values as the document has them.
+  /// The tool's own settings (how it draws or moves) and the selected layer's values as the document has them.
   List<Widget> _joined(BuildContext c, Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) =>
       switch (tool) {
         0 => [
@@ -81,12 +89,13 @@ class _OptionsStrip extends StatelessWidget {
         4 => [
           _seg(c, 'pen.mode', const ['Path', 'Mask']),
         ],
-        7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')], // (what the hand does with it, as After Effects' camera tools are named)
+        // What the user's drag and wheel do, named as After Effects names its camera tools.
+        7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],
         6 => [
           _Field('Fill', swatch: p.fill ?? WsT.body),
           _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
           _seg(c, 'brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
-        ], // (Alight Motion's drawing tools: as the pressure says, as wide all along, the way gone round filled, and its eraser, of the picked drawing)
+        ], // Alight Motion's drawing tools: pen (width follows pressure), brush (constant width), fill, and eraser.
         _ => [
           _Field('Font', value: p.font),
           _Field('Size', value: p.size),
@@ -96,19 +105,22 @@ class _OptionsStrip extends StatelessWidget {
               labels: const ['L', 'C', 'R'],
               selected: p.align,
               onSelect: (i) {
-                // (the picked text's lines laid so: the document's align)
+                // Aligns the selected text's lines this way, using the document's align property.
                 final t = int.tryParse(ws.selected ?? '');
                 final m = ws.inside;
                 if (t == null || m == null) return;
                 m
                   ..later('together', number: 1)
                   ..later('set', layer: t, name: 'align', number: i / 2)
-                  ..later('set', layer: t, name: 'anchor_x', number: i - 1.0); // (round where it stands: After Effects' point text)
-                ws.after(m.later('together')); // (without waiting)
+                  // Anchors the text where it stands, as After Effects' point text does.
+                  ..later('set', layer: t, name: 'anchor_x', number: i - 1.0);
+                // Does not wait for the result.
+                ws.after(m.later('together'));
               },
             ),
           ),
-          _Field('Fill', swatch: p.fill ?? WsT.body), // (and its colour, in the same row: Alight Motion's text bar, align, font, size, colour)
+          // The colour sits in the same row, as in Alight Motion's text bar: align, font, size, colour.
+          _Field('Fill', swatch: p.fill ?? WsT.body),
         ],
       };
 
@@ -130,7 +142,8 @@ class _OptionsStrip extends StatelessWidget {
         ],
         right: [
           ConstrainedBox(
-            // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_widgets.dart's trailing)
+            // As wide as it needs, with the tool options before it getting the rest. If it is wider than the whole
+            // strip it is scaled down and never cut off, as the trailing part in dock_widgets.dart is.
             constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -139,7 +152,7 @@ class _OptionsStrip extends StatelessWidget {
                 valueListenable: ws.seen,
                 builder: (_, _, _) => _Readout(scene: scene, layer: layer),
               ),
-            ), // (and while a hand carries a value)
+            ), // Also rebuilt while a value is being dragged.
           ),
         ],
       ),
@@ -147,7 +160,7 @@ class _OptionsStrip extends StatelessWidget {
   }
 }
 
-/// A labelled value in a well: the options strip's mock fields.
+/// A labelled value in a well: a read-only field of the options strip.
 class _Field extends StatelessWidget {
   const _Field(this.label, {this.value, this.swatch});
   final String label;
@@ -188,7 +201,7 @@ class _Readout extends StatelessWidget {
       return Text(
         ws.many.isEmpty ? 'Nothing selected' : '${ws.many.length} picked',
         style: T.label(Grey.g56),
-      ); // (picked together, one of them picked before or not: said so, as the bar over the stage does)
+      ); // Several layers selected together: say so, as the bar above the stage does.
     }
     Widget pair(String k, String v) => Padding(
       padding: EdgeInsets.only(left: Shape.s(10)),
@@ -207,8 +220,8 @@ class _Readout extends StatelessWidget {
         Badge(l.tone, size: Shape.z(8), radius: Shape.r(2)),
         SizedBox(width: Shape.s(6)),
         Text(l.name, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)),
-        // (a relation has no picture of its own: nothing to say; nor has a camera, which is on the frame while its bar is,
-        //  and has no size: its name alone, as After Effects' camera layer has no bounds and no Scale; golf (76))
+        // A behaviour layer has no image of its own, so there is nothing to say. A camera layer, while its bar covers
+        // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
         if (box == null &&
             ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour' &&
             !(l.kind == WsKind.camera && (scene.layer(l.id)?.live(scene.frame) ?? false)))
@@ -221,10 +234,10 @@ class _Readout extends StatelessWidget {
                   ? 'In Camera View'
                   : 'Not on this frame',
               style: T.label(Grey.g56),
-            ), // (a 2D thing shows in the camera's eye alone, as in After Effects' working views)
+            ), // A 2D layer shows only through the camera, as in After Effects' working views.
           )
         else if (l.kind != WsKind.camera) ...[
-          // (the same numbers as the inspector's, which are the document's)
+          // The same numbers as the inspector shows, which come from the document.
           if (wsPlace(ws, l.id) case final at) ...[
             pair('P', '${at['x']?.round()}, ${at['y']?.round()}'),
             pair('S', '${at['scale_y']?.round()}%'),

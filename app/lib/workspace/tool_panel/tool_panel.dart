@@ -1,5 +1,5 @@
-// The Tool Panel: the drawer under the Inspector. It holds the catalog or one catalog row (a tool opened by hand stays pinned until
-// the selection moves or you unpin it).
+// The Tool Panel, shown under the Inspector. It shows either the catalog of tools or a single tool.
+// A tool the user opens from the catalog stays pinned until the selection changes or the user unpins it.
 import 'package:flutter/widgets.dart';
 
 import '../../widgets/controls.dart' show Chip, Hov, IconPress;
@@ -32,7 +32,7 @@ class WsToolPanel extends StatelessWidget {
   }
 }
 
-/// The tool's sticker and name, whether it follows the selection or is pinned, and the way back to the catalog.
+/// Header showing the tool's icon and name, whether it follows the selection or is pinned, and a button back to the catalog.
 class _ToolHeader extends StatelessWidget {
   const _ToolHeader({required this.name});
   final String name;
@@ -66,7 +66,10 @@ class _ToolHeader extends StatelessWidget {
   }
 }
 
-/// Every tool panel tool as a tile: sticker, name, what it acts on. /// Columns come from the width; the rows share the height while each keeps [_minTile], else the grid scrolls; a tall tool panel never stretches a tile past [_maxTile].
+/// Every tool as a tile with its icon, name and what it acts on.
+///
+/// The column count follows the width. Rows share the height but keep at least [_minTile], otherwise the grid scrolls.
+/// A tile never grows beyond [_maxTile].
 class _Catalog extends StatelessWidget {
   const _Catalog();
   static const _cell = 104.0, _minTile = 62.0, _maxTile = 92.0;

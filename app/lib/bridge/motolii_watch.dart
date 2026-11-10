@@ -1,13 +1,14 @@
-// motolii_watch.dart: how the inside is doing, for a check or a person looking: why the last call was refused, what it holds, what its calls cost, when the window waited on it, how many pictures it drew.
+// Engine diagnostics, for checks and for people debugging: why the last call was refused, how long calls take,
+// when the app had to wait on the engine, and the frame rate.
 part of 'motolii.dart';
 
 extension MotoliiWatch on Motolii {
   String get error => _error(_m).toDartString();
 
-  /// How many pictures a second a film written of the document has: what a frame is.
+  /// The project's frame rate in frames per second.
   int get rate => _rate(_m);
 
-  /// The stage's pictures kept on disk for playing, as stretches of frames [from, to) (motolii_cache).
+  /// The frame ranges [from, to) of the stage that are cached on disk for playback (motolii_cache).
   List<(int, int)> get cache {
     final n = _cacheRuns(_m).toDartString().split(' ').where((w) => w.isNotEmpty).map(int.parse).toList();
     return [for (var i = 0; i + 1 < n.length; i += 2) (n[i], n[i + 1])];
@@ -15,5 +16,6 @@ extension MotoliiWatch on Motolii {
 
   String get broken => _broken(_m).toDartString();
 
-  int get brokenCount => _brokenCount(_m); // (how many times since watched: read without waiting)
+  // How many times since watching began. Reading it does not wait.
+  int get brokenCount => _brokenCount(_m);
 }

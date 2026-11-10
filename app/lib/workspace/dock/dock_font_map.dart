@@ -1,14 +1,15 @@
-// Part of dock_fonts.dart: the fonts on the map: each family's word drawn by the inside, its kind, and where FontCLIP
-// places it (as FontMap does).
+// The font map: each family's sample word drawn by the engine, its kind, and where FontCLIP places it, as FontMap does.
 part of 'dock_fonts.dart';
 
-/// On the map: a family's word as the stage sets it (drawn by the inside, [_drawn]: no face of all of them loaded here),
-/// [_dot] points; its numbers are it made half as large, a point the four under it.
+/// The size in pixels of a font's dot on the map.
+///
+/// The engine draws each family's sample word into [_drawn], because not every font is loaded in Flutter.
+/// The embedding input is that image at half size, where each pixel averages four.
 const _dot = (96, 32);
 final _drawn = <String, Uint8List?>{}, _seen = <String, ui.Image>{}, _making = <String>{};
 Future<void>? _drawing;
 Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.run<Future<void>>(() async {
-  // (once, as fontsRead)
+  // Runs once, like fontsRead.
   final byWord = <String, List<String>>{};
   for (final f in files) {
     (byWord[_wordOf(f, 0)] ??= []).add(f);
@@ -22,11 +23,13 @@ Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.r
   dockRead.value++;
 });
 
-/// A font of other letters' own words (fontsRead), by its file.
+/// Sample text for fonts that cannot show Latin letters, keyed by file. Filled by fontsRead.
 var _ownWords = const <String, String>{};
 
-/// The words a font is told by on the map: its dot's (0), and FontMap's two lines for FontCLIP (1, 2). A font of other
-/// letters, by its own: its first word, and its words' halves (letters' halves, a script with no spaces between).
+/// The sample text for a font: line 0 is for its dot on the map, and lines 1 and 2 are the two lines FontMap uses for FontCLIP.
+///
+/// A font that cannot show Latin letters uses its own sample text. Line 0 is its first word, and lines 1 and 2 are the
+/// two halves of its words. For a script with no spaces between words the halves are of its letters.
 String _wordOf(String path, int line) {
   final own = _ownWords[path];
   if (own == null) return const ['Motion', 'Hamburge', 'fonstiv'][line];
@@ -39,21 +42,24 @@ String _wordOf(String path, int line) {
   };
 }
 
-/// Each font as FontCLIP ([model]) sees its specimen drawn as FontMap draws it for FontCLIP (tfrere/fontmap,
-/// pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG): "Hamburge" over "fonstiv" in a 224 square, 12 round it,
-/// each line in its half no wider than 200 nor taller than 85, set at 75 and never larger, its middle at its line's;
-/// black on white. 32 told at a time. null: not drawn.
-/// A font's kind on the map, as FontMap colours each by its category (sans-serif, serif, handwriting, monospace,
-/// decorative): the class CoreText gives it (motolii_font_tags), monospace before it as Google files a monospace font
-/// ('' none said).
+/// A font's kind on the map. FontMap colours fonts by category: sans-serif, serif, handwriting, monospace and decorative.
+///
+/// The kind is the class CoreText gives the font (motolii_font_tags). Monospace is checked first, as Google files
+/// monospace fonts. Returns '' if no kind is known.
 String _kindOf(Motolii m, String path) {
   final t = m.fontTags(path);
   return t.contains('mono') ? 'mono' : const ['serif', 'sans', 'script', 'ornaments', 'symbols'].firstWhere(t.contains, orElse: () => '');
 }
 
+/// Embeds each font with FontCLIP ([model]) from a specimen image drawn as FontMap draws it for FontCLIP.
+///
+/// FontMap's code is tfrere/fontmap, pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG. The specimen has
+/// "Hamburge" over "fonstiv" in a 224 pixel square with a 12 pixel margin. Each line fits in its half, at most 200 wide
+/// and 85 tall, is set at size 75 or smaller and is centred on its half. The text is black on white.
+/// Fonts are embedded 32 at a time, and an entry is null when the font could not be drawn.
 Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {
   String key(String f) {
-    // (kept by the model, the font and when it was written, as the effects' pictures: only a new font is drawn and told)
+    // The cache key is the model, the font and its modification time, as for the effect thumbnails, so only a new font is embedded.
     try {
       return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\n${_wordOf(f, 1)} ${_wordOf(f, 2)}';
     } catch (_) {
@@ -75,7 +81,7 @@ Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> fil
     (byWords[(_wordOf(f, 1), _wordOf(f, 2))] ??= []).add(k);
   }
   for (final MapEntry(key: (a, b), value: ks) in byWords.entries) {
-    // (a font of other letters by its own two lines)
+    // A font with its own sample text uses its own two lines.
     for (final (j, w) in [a, b].indexed) {
       final drawn = await m.typePictures([for (final k in ks) missing[k]], w, 202, 87, most: 75);
       for (final (i, k) in ks.indexed) {
@@ -103,7 +109,8 @@ Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> fil
 Uint8List _specimen(Uint8List top, Uint8List bottom) {
   final px = Uint8List(224 * 224 * 4)..fillRange(0, 224 * 224 * 4, 255);
   for (final (line, g) in [top, bottom].indexed) {
-    final y0 = 12 + 100 * line + 50 - 87 ~/ 2, x0 = 112 - 202 ~/ 2; // (its middle at its line's)
+    // Centres the line on the middle of its half.
+    final y0 = 12 + 100 * line + 50 - 87 ~/ 2, x0 = 112 - 202 ~/ 2;
     for (var y = 0; y < 87; y++) {
       for (var x = 0; x < 202; x++) {
         final at = ((y0 + y) * 224 + x0 + x) * 4;
@@ -126,8 +133,10 @@ Float32List _halved(Uint8List g) {
   return out;
 }
 
-/// [map]: inked by where it lies on it ([dockPalette]: the user, 11/4, "文字のグラフビューは色が使えるからいい感じにジャンル別の島で
-/// グラデしたら綺麗": a word in one ink, unlike the effects' pictures, so colour tells its island; FontMap's category colours).
+/// A font's dot on the map, inked by where it lies on the [map] (see [dockPalette]).
+///
+/// Unlike the effect thumbnails, a word is a single ink, so colour can tell which island of fonts it belongs to.
+/// FontMap colours fonts by category in the same way.
 class _FontDot extends StatefulWidget {
   const _FontDot(this.f, this.c, {this.map});
   final _Font f;
@@ -141,15 +150,10 @@ class _FontDotState extends State<_FontDot> {
   void _make(String p, Uint8List g) {
     final rgba = Uint8List(g.length * 4);
     for (var i = 0; i < g.length; i++) {
-      rgba.setRange(i * 4, i * 4 + 4, [
-        g[i],
-        g[i],
-        g[i],
-        g[i],
-      ]); // (white, its colours already by how much is covered: Flutter takes them so, seen white boxes otherwise)
+      rgba.setRange(i * 4, i * 4 + 4, [g[i], g[i], g[i], g[i]]); // The pixels are premultiplied white. Without that Flutter showed white boxes.
     }
     ui.decodeImageFromPixels(rgba, _dot.$1, _dot.$2, ui.PixelFormat.rgba8888, (image) {
-      // (Flutter's own: the bytes as a picture)
+      // Flutter's own decoder turns the pixels into an image.
       _seen[p] = image;
       if (mounted) setState(() {});
     });

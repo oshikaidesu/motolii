@@ -1,13 +1,17 @@
-// timeline_asked.dart: what the window's keys ask of how the timeline looks (command_actions.dart: Ableton Live's zoom,
-// loop and rename), which the timeline keeps itself; and the ruler as Live's scrub area and locators (Live 12 manual,
-// chapter 6 "Arrangement View": 6.3 and 6.4).
+// Timeline requests from the app's commands, and the ruler.
+//
+// - Zoom, loop and rename requests come from command_actions.dart and follow Ableton Live. The timeline keeps its own view state.
+// - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
 part of 'timeline.dart';
 
 mixin _TimelineAsked on State<WsTimeline> {
-  _WsTimelineState get _t => this as _WsTimelineState; // (the timeline it is part of: its zoom, its scroll)
+  // The timeline state this mixin is part of: its zoom and scroll.
+  _WsTimelineState get _t => this as _WsTimelineState;
 
-  (double, double)? _before; // (the zoom and scroll before Z: X goes back to them, Live 42.16)
-  String? _renaming; // (the row whose name is being written: Cmd+R, Live 42.5)
+  // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
+  (double, double)? _before;
+  // The id of the layer row being renamed with Cmd+R, as in Live.
+  String? _renaming;
   final _renameWords = TextEditingController();
   late final FocusNode _renameFocus = FocusNode()..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
@@ -35,7 +39,8 @@ mixin _TimelineAsked on State<WsTimeline> {
         t._setZoom(t._zoom / 1.5);
       case 'fit':
         t._setZoom(1);
-      case 'selection': // (the picked keys, else the picked thing's bar, fill the view: Live's Z)
+      // Zooms to fill the view with the selected keyframes, else the selected layer's bar, as Z does in Live.
+      case 'selection':
         final frames = ws.keys.isNotEmpty
             ? [for (final k in ws.keys) k.frame]
             : [
@@ -55,7 +60,7 @@ mixin _TimelineAsked on State<WsTimeline> {
     }
   }
 
-  /// Played from where it now is (stopped first if playing: the clock goes where the playhead is put).
+  /// Plays from frame [f]. Playback is stopped first so the clock restarts at the playhead.
   void _playAt(int f) {
     final ws = _t._ws!;
     ws.playing = false;
@@ -63,11 +68,12 @@ mixin _TimelineAsked on State<WsTimeline> {
     ws.playing = true;
   }
 
-  /// A click on the ruler: on a locator, it is picked; the playhead goes where it is clicked, and play stops, as any
-  /// touch of Alight Motion's timeline stops it (AbsentMotion's Timeline.kt: a scrub, a key or an end grabbed, the
-  /// wheel, each sets playing false). Its playhead stands in the middle and the time is drawn under it; a PC's moves
-  /// instead, so it goes where the click is, as Audacity's ruler puts it without playing (its manual: "Click ruler to
-  /// start playback" is a setting, off as it comes). The work area's band is the work area's.
+  /// A click on the ruler.
+  ///
+  /// On a marker it selects the marker. Anywhere else it moves the playhead there and stops playback.
+  /// Any touch of Alight Motion's timeline stops playback too. There the playhead stays in the middle and the timeline moves.
+  /// On desktop the playhead moves, as in Audacity, whose "Click ruler to start playback" setting is off by default.
+  /// The work area band handles its own clicks.
   void _rulerTap(Offset p) {
     final t = _t, ws = t._ws;
     if (ws == null) return;
@@ -85,9 +91,11 @@ mixin _TimelineAsked on State<WsTimeline> {
       ..frame = f;
   }
 
-  /// A double click: on a marker, its name is written (the best-selling editors agree: Premiere Pro's and DaVinci
-  /// Resolve's open the marker's dialog, Final Cut Pro's its words, picked; Live's plays from it, the one apart, so
-  /// playing from it is on its right-click menu); elsewhere, zoom to what is picked, else to the whole (Live 6.1).
+  /// A double-click on the ruler.
+  ///
+  /// On a marker it renames the marker, as Premiere Pro, DaVinci Resolve and Final Cut Pro do.
+  /// Live plays from the marker instead, so here "Play from Here" is in the right-click menu.
+  /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
   void _rulerDouble(Offset p) {
     if (_t._flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
@@ -98,10 +106,11 @@ mixin _TimelineAsked on State<WsTimeline> {
     _t._setZoom(1);
   }
 
-  /// A right click: the ruler's menu where it is (6.4: the scrub area's context menu adds a locator, and a locator has
-  /// its own). On a mark, it is picked and the menu acts on it: named (Edit > Rename, Cmd+R), played from, taken away
-  /// (Delete). Elsewhere a mark is added there, named by its order, and picked; or added with its name opened, its
-  /// words picked (Final Cut Pro's Add Marker and Modify).
+  /// A right-click on the ruler.
+  ///
+  /// As in Live (6.4), the scrub area and each locator have their own context menu.
+  /// On a marker it selects the marker, and the menu can rename it, play from it or delete it.
+  /// Elsewhere the menu adds a marker named by its order, or one whose name field opens at once, as in Final Cut Pro.
   void _rulerRight(Offset p) {
     final ws = _t._ws, m = ws?.inside;
     if (ws == null || m == null) return;
@@ -116,7 +125,7 @@ mixin _TimelineAsked on State<WsTimeline> {
           ws.after(m.later('mark', number: flag.$1));
         }, keys: '⌫'),
         const WsMenuItem.rule(),
-        // (its colour, one of the label colours, as Premiere Pro's, DaVinci Resolve's and CapCut's markers have one; golf ㉕)
+        // A marker has one of the label colours, as in Premiere Pro, DaVinci Resolve and CapCut.
         WsMenuItem.colors(
           [for (var k = 0; k < 16; k++) wsLabelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
@@ -130,30 +139,34 @@ mixin _TimelineAsked on State<WsTimeline> {
       WsMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
       if (ws.beats != null)
         WsMenuItem(
+          // Starts a bar here, as in Live.
           'Set 1.1.1 Here',
           () => ws.after(m.later('set', layer: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
-        ), // (a bar begins here: Live's)
+        ),
     ]);
   }
 
-  /// A bar's own menu by a right click (golf_noise.md ㉒: P15 split the title and took pieces out by the menu bar alone).
+  /// A right-click on a layer's bar opens the layer's context menu.
   void _trackRight(Offset p) {
     final t = _t, ws = t._ws, r = t._rowAt(p.dy);
-    if (ws == null || r == null || r.value != null) return; // (below the rows, or a lane: no bar)
+    // Below the rows, or on a property lane, there is no bar.
+    if (ws == null || r == null || r.value != null) return;
     final l = r.l, f = t._view.frameAt(p.dx);
-    if (f < l.inF || f > l.outF) return; // (beside its bar)
+    // Beside the bar.
+    if (f < l.inF || f > l.outF) return;
     t._trackMenu.currentState?.show(p, wsThingMenu(context, ws, l));
   }
 
-  /// The same on a row's name.
+  /// The same menu, opened by a right-click on a row's name.
   void _labelRight(WsLayer l, Offset global) {
     final menu = _t._labelMenu.currentState, ws = _t._ws;
     if (menu == null || ws == null) return;
     menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), wsThingMenu(context, ws, l));
   }
 
-  /// The Marker button (6.4: Set Locator): a mark where the playhead is, picked; on one, it is taken away (the button
-  /// is then Delete Locator).
+  /// The Marker button, as Set Locator in Live (6.4).
+  ///
+  /// It adds a marker at the playhead and selects it. If a marker is already there, it deletes it (Delete Locator in Live).
   void _setMark() {
     final ws = _t._ws, m = ws?.inside;
     if (ws == null || m == null) return;
@@ -181,7 +194,7 @@ mixin _TimelineAsked on State<WsTimeline> {
     final ws = _t._ws;
     if (!mounted || ws == null) return;
     if (wsMarkPicked.value case final flag?) {
-      // (a picked locator is named, in its flag, its words picked: Final Cut Pro's marker)
+      // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
       setState(() => _t._naming = flag);
       _t._markWords
         ..text = flag.$2
@@ -203,7 +216,8 @@ mixin _TimelineAsked on State<WsTimeline> {
     if (t != null && words.isNotEmpty && words != was && ws?.inside != null) ws!.after(ws.inside!.later('say', layer: t, name: 'name', word: words));
   }
 
-  /// The name field over the row being renamed (Enter or clicking away keeps it, Esc leaves the name as it was).
+  /// The name field over the row being renamed.
+  /// Enter or clicking away commits the name. Esc restores the old one.
   Widget? _renameField(int i, String id, double top) => _renaming != id
       ? null
       : Positioned(

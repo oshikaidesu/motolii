@@ -1,4 +1,5 @@
-// Motolii: the window. Opens the document given by MOTOLII_DOC or the last one (motolii.dart).
+// App entry point. Opens the project named by the MOTOLII_DOC environment variable, or the last one opened.
+// See bridge/motolii.dart.
 import 'package:flutter/widgets.dart';
 
 import 'bridge/motolii.dart';

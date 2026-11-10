@@ -1,6 +1,7 @@
-// timeline_header.dart: the row above the tracks: the document's name, the transport, the time, the zoom.
+// The row above the tracks: project name, transport buttons, playhead time, tempo and zoom controls.
 part of 'timeline.dart';
 
+/// The timeline header. Narrow widths drop the total time, then the project name and layer summary, then the zoom slider.
 class _Header extends StatelessWidget {
   const _Header({
     required this.ws,
@@ -28,21 +29,19 @@ class _Header extends StatelessWidget {
       height: WtM.header,
       child: LayoutBuilder(
         builder: (context, box) {
-          final roomy = box.maxWidth >= 1000,
-              mid = box.maxWidth >= 820,
-              slide = box.maxWidth >= 600; // (narrower: the zoom by its buttons alone, as the document's name and length go)
+          final roomy = box.maxWidth >= 1000, mid = box.maxWidth >= 820, slide = box.maxWidth >= 600; // Narrower than this, only the zoom buttons remain.
           return Row(
             children: [
               if (mid) ...[
                 Chip(label: ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', look: _readout(mono: false)),
                 SizedBox(width: Shape.s(12)),
-              ], // (joined: the document's name)
+              ], // End of the project name chip.
               _Btn(TpGlyph.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
               SizedBox(width: Shape.s(2)),
               _Btn(TpGlyph.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
-                // (only the button follows play: the rows are not built again)
+                // Only the play button listens to playback, so the rest of the row is not rebuilt.
                 valueListenable: ws.on[WsAspect.playing]!,
                 builder: (_, _, _) => _Btn(
                   ws.playing ? TpGlyph.pause : TpGlyph.play,
@@ -59,7 +58,7 @@ class _Header extends StatelessWidget {
               _Btn(TpGlyph.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
-                // (Live's Set button, 6.4: a marker where the playhead is; on one, it takes it away)
+                // Like the Set button in Ableton Live: adds a marker at the playhead, or removes the one already there.
                 valueListenable: ws.moment,
                 builder: (_, _, _) => _Btn(
                   ws.marks.any((k) => (k.$1 * Ws.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
@@ -70,15 +69,15 @@ class _Header extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(12)),
-              // The playhead's time: pressed, it is typed (Premiere Pro's and After Effects' current time display: click it and
-              // type); Return goes there, Esc or a press elsewhere leaves the playhead where it was (golf_noise.md ㊺).
+              // The playhead time. Clicking it lets the user type a time, as in the current time display of Premiere Pro and After Effects.
+              // Return moves the playhead there; Esc or a click elsewhere leaves it where it was.
               ValueListenableBuilder<int>(
                 valueListenable: ws.moment,
                 builder: (_, _, _) => NumberField(
                   key: const ValueKey('ws-tl-time'),
                   editorKey: const ValueKey('ws-tl-time-words'),
                   value: () => ws.frame.toDouble(),
-                  text: (_, _) => ws.timecode(), // (all of it picked: what is typed takes its place)
+                  text: (_, _) => ws.timecode(), // The whole text starts selected, so typing replaces it.
                   style: big.copyWith(color: Grey.g100),
                   accent: WsT.accent,
                   allow: null,
@@ -86,7 +85,7 @@ class _Header extends StatelessWidget {
                   sayOnLeave: false,
                   onType: (to) => onStep(to.round().clamp(0, Ws.duration) - ws.frame),
                   paint: (_, shown, typing) =>
-                      typing ? SizedBox(width: Shape.z(72), child: shown) : Text(ws.timecode(), style: big), // (one number, one weight: not three colours)
+                      typing ? SizedBox(width: Shape.z(72), child: shown) : Text(ws.timecode(), style: big), // One colour and one weight for the whole time.
                 ),
               ),
               SizedBox(width: Shape.s(8)),
@@ -104,7 +103,7 @@ class _Header extends StatelessWidget {
                       SizedBox(width: Shape.s(6)),
                       Flexible(
                         child: FittedBox(
-                          // (drawn smaller, never cut)
+                          // Scale the text down to fit instead of cutting it off.
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -155,9 +154,10 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// What a typed time says, as Premiere Pro's timecode reads it: the digits from the right are frames, seconds, minutes
-/// (852, 8:52 and 8.52 are 8 seconds 52 frames); begun with + or -, so far from where the playhead is (+30: 30 frames
-/// on). Null: not a time.
+/// Parses a typed time the way Premiere Pro's timecode field reads it.
+///
+/// Digits are read from the right as frames, seconds and minutes, so 852, 8:52 and 8.52 all mean 8 seconds 52 frames.
+/// A leading + or - makes the time relative to [now] (+30 is 30 frames later). Returns null if [said] is not a time.
 int? wtTimeOf(String said, int now, int fps) {
   final m = RegExp(r'^\s*([+-]?)([\d:.;]+)\s*$').firstMatch(halfWidth(said));
   if (m == null) return null;
@@ -176,7 +176,7 @@ int? wtTimeOf(String said, int now, int fps) {
   };
 }
 
-/// A round touchable: a well that lights on hover; [on] fills it with the accent, [lit] raises it in grey.
+/// A round icon button that lights up on hover. [on] fills it with the accent colour, [lit] raises it in grey.
 class _Btn extends StatelessWidget {
   const _Btn(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
   final TpGlyph g;
@@ -200,13 +200,15 @@ class _Btn extends StatelessWidget {
     lit: lit,
     size: size,
     width: width,
-    rest: const Color(0x00000000), // (flat at rest: a button shows itself when the hand is on it)
+    rest: const Color(0x00000000), // Flat at rest; the button shows itself on hover.
     ink: rest ?? Grey.g56,
   );
 }
 
-/// The document's tempo, beside its frame rate as Live's is in its Control Bar: pressed, it is written, and Tap goes by the
-/// hand, one press a beat, the more the truer (Live's manual, 9.1.2 Tapping the Tempo). None written: no beats.
+/// The project's tempo, shown beside the frame rate as in Ableton Live's Control Bar.
+///
+/// Clicking it lets the user type a value. Tap sets it from presses made in time with the beat; more presses give a more
+/// accurate value (see "Tapping the Tempo" in the Live manual). With no tempo set, no beats are shown.
 class _Tempo extends StatefulWidget {
   const _Tempo({required this.ws});
   final Ws ws;
@@ -218,13 +220,13 @@ class _TempoState extends State<_Tempo> {
   final _taps = <DateTime>[];
   final _field = GlobalKey<TypedFieldState>();
   bool _typing = false;
-  bool _tapping = false; // (a hand on Tap takes the keyboard from the field: it stays while the beats go on)
+  bool _tapping = false; // True while Tap is pressed. Tap takes keyboard focus from the field, so the field stays open until the taps stop.
   Timer? _tapped;
 
-  // (left, it is said, as a marker's name is; Esc: as it was)
+  // Called when editing ends. [said] is the typed text, or null if the user cancelled with Esc.
   void _left(String? said) {
     setState(() => _typing = false);
-    final bpm = wsNumber(said ?? '') ?? 0; // (nothing written: no tempo)
+    final bpm = wsNumber(said ?? '') ?? 0; // An empty field means no tempo.
     if (said != null && bpm != widget.ws.bpm) _set(bpm);
   }
 
@@ -305,5 +307,5 @@ class _TempoState extends State<_Tempo> {
   }
 }
 
-/// The timeline header's readouts: a well, g91 ink, the radius of its buttons.
+/// Chip style of the header's readouts: well background, Grey.g91 text, and the same corner radius as the buttons.
 ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WsT.radius, mono: mono);

@@ -12,8 +12,9 @@ import 'package:motolii/skin/tokens.dart';
 import '../../widgets/two_fingers.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
-/// contract: every block still shows the number and takes typing, scrubbing and the sideways slide; the picture is added, never a replacement.
-/// contract: numbers scrub sideways, all of them; a picture may be handled its own way (a dial turns, a pad moves both ways).
+///
+/// Every block still shows the number and takes typing, scrubbing and the sideways slide. The picture is added, never a replacement.
+/// Numbers always scrub sideways. A picture may handle the pointer its own way: a dial turns, a pad moves both ways.
 class ParamTile extends StatelessWidget {
   const ParamTile(this.p, {super.key});
   final Param p;
@@ -28,16 +29,18 @@ class ParamTile extends StatelessWidget {
     );
   }
 
-  /// How much moving it shows its effect (Param.weight, 0 to 10), in three steps: the user's wish, 11/4, that those be
-  /// told by colour, by degrees and not marked yes or no ("1, 2, 3"), not by one colour, and quiet enough that the rest
-  /// is still looked at (a whole block filled was "too loud"). Each step its own colour, worn as GitHub's labels wear
-  /// theirs on a dark page (Primer: the ground the colour at 0.18, the words in it): the block drawn as a duotone,
-  /// Pop.well to that ground and Grey.g95 to the colour, every grey between. The colours Japan's own, picked by the
-  /// user, 11/5, of thirty tried in the window: 青磁 seiji, 撫子 nadeshiko,
-  /// 浅黄 usuki, from nipponcolors.com, each 6:1 or more on Pop.well.
+  /// How strongly the parameter changes the result (`Param.weight`, 0 to 10), as a step from 0 to 3.
+  ///
+  /// Each step above 0 tints the block with its own colour, so strength reads as a gradation of colour, not as yes or no,
+  /// and the block stays quiet enough that the rest is still read. The tint follows GitHub's dark-page labels (Primer):
+  /// the background is the colour at 0.18 alpha and the text is the colour itself.
   static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
-  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)]; // (a picture test tries others)
 
+  /// The tint of each step above 0: 青磁 (seiji), 撫子 (nadeshiko) and 浅黄 (usuki) from nipponcolors.com.
+  /// Each has a contrast of at least 6:1 against `Pop.well`. It is not final so a picture test can try others.
+  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];
+
+  /// A filter that draws the block as a duotone: `Pop.well` maps to the tinted background, `Grey.g95` to [to], and greys between.
   static ColorFilter duotone(Color to) {
     final lo = Pop.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
     List<double> row(int k, double low, double high, double under, double word) {
@@ -69,7 +72,7 @@ class ParamTile extends StatelessWidget {
       dimension: Pop.glyph,
       child: FittedBox(child: Gauge(v, p)),
     );
-    // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
+    // Same layout as a number block: name at the top left, the control along the bottom, the picture at the top right.
     Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
       onTap: onTap,
       builder: (_, h) => Container(
@@ -108,7 +111,8 @@ class ParamTile extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
             child: Row(
-              key: ValueKey('toggle:$id'), // (found by its value's id)
+              // Tests find it by the parameter id.
+              key: ValueKey('toggle:$id'),
               children: [
                 PopSwitch(on: b),
                 SizedBox(width: Shape.s(6)),
@@ -123,7 +127,8 @@ class ParamTile extends StatelessWidget {
             height: Shape.z(22),
             child: p.options.length <= 4
                 ? Segmented(
-                    key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
+                    // Tests find it by the parameter id, as they do the menu used for more options.
+                    key: ValueKey('choice:$id'),
                     items: p.options,
                     index: (v ?? 0).round().clamp(0, p.options.length - 1),
                     onChanged: (i) => doc.set(id, i.toDouble()),
@@ -132,10 +137,10 @@ class ParamTile extends StatelessWidget {
           ),
         );
       case ParamLook.color when p.unit == 'words':
-        // any words, typed (lines too): said when the hand leaves the field; Esc puts them back (Cavalry's string attribute)
+        // Free text, possibly several lines. It is committed when the field loses focus and Esc restores it (like Cavalry's string attribute).
         return shell(ParamWords(id: id), tall: true);
       case ParamLook.color when p.unit == 'file':
-        // a file, given from a shelf (the text's font: the Fonts shelf), as a colour is given from the Colors shelf
+        // A file chosen from a shelf, such as a text layer's font from the Fonts shelf, as a colour is chosen from the Colors shelf.
         return shell(
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
@@ -143,7 +148,7 @@ class ParamTile extends StatelessWidget {
           ),
         );
       case ParamLook.color when p.unit == 'numbers':
-        // numbers, one for each in their order (a bar chart's heights): bars a hand drags up and down, said when let go
+        // A list of numbers, such as a bar chart's heights, edited as bars the user drags up and down. Committed on release.
         return shell(_Heights(id: id));
       case ParamLook.color:
         final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
@@ -151,11 +156,8 @@ class ParamTile extends StatelessWidget {
           glyph: Swatch(doc.s2[id], ramp: all.length > 1 ? all : null),
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
-            child: LinkLine(
-              to: LinkTo.colors,
-              value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—',
-              id: id,
-            ), // (colours in their order: how many, the strip shows which)
+            // With several colours, the line shows how many and the swatch strip shows which.
+            child: LinkLine(to: LinkTo.colors, value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—', id: id),
           ),
         );
       case ParamLook.angle:
@@ -203,8 +205,10 @@ class ParamTile extends StatelessWidget {
   }
 }
 
-/// A 2D value's handle: drag it like a trackpad, sideways moves X (or width), up and down moves Y (or height); the picture shows where it is.
-/// contract: one drag is one undo; Y follows the canvas (down is more) for a point, and up is more for a height.
+/// A handle for a 2D value that the user drags like a trackpad. Sideways changes X (or width), up and down changes Y (or height).
+///
+/// The picture shows the current value. One drag is one undo step. For a point, Y follows the canvas (down increases it);
+/// for a size, up increases the height.
 class _PadGlyph extends StatefulWidget {
   const _PadGlyph({required this.id, required this.p, required this.size});
   final String id;
@@ -256,7 +260,7 @@ class _PadGlyphState extends State<_PadGlyph> {
   }
 }
 
-/// Numbers, one for each in their order, as bars: a hand drags a bar up or down; the row is said once it lets go.
+/// A list of numbers drawn as bars. The user drags a bar up or down, and the new list is committed when the drag ends.
 class _Heights extends StatefulWidget {
   const _Heights({required this.id});
   final String id;
@@ -265,12 +269,14 @@ class _Heights extends StatefulWidget {
 }
 
 class _HeightsState extends State<_Heights> {
-  List<double>? _held; // (while a hand is on it: the numbers as it moves them)
+  /// The numbers as edited during a drag. Null when no drag is in progress.
+  List<double>? _held;
   double _top = 1;
 
   List<double> _said(Doc doc) {
     final w = [for (final s in (doc.s2[widget.id] ?? '').split(' ')) ?double.tryParse(s)];
-    return w.isEmpty ? List.filled(8, 1) : w; // (none said yet: eight alike, to be dragged)
+    // With no value yet, start from eight equal bars to drag.
+    return w.isEmpty ? List.filled(8, 1) : w;
   }
 
   void _at(Offset p, Size box) {
@@ -297,7 +303,7 @@ class _HeightsState extends State<_Heights> {
             setState(() => _held = null);
           }
 
-          // (up and down, as the bars go: the panel's own scrolling does not take the hand away; a tap sets a bar too)
+          // Only vertical drags are claimed, so the panel can still scroll. A tap also sets a bar.
           return GestureDetector(
             supportedDevices: wsPressing,
             behavior: HitTestBehavior.opaque,
@@ -333,7 +339,7 @@ class _BarsPaint extends CustomPainter {
   bool shouldRepaint(_BarsPaint o) => o.v != v || o.top != top;
 }
 
-/// A long option list for an effect: the same floating chooser as everywhere, storing the index as the value.
+/// A long list of options for an effect, shown in the shared floating chooser. The stored value is the option's index.
 class _ChoiceField extends StatelessWidget {
   const _ChoiceField({required this.id, required this.options});
   final String id;
@@ -346,7 +352,7 @@ class _ChoiceField extends StatelessWidget {
   );
 }
 
-/// Keeps a chooser's picked name and the numeric index the shader reads in step.
+/// Keeps the chooser's picked name and the numeric index the shader reads in sync.
 class _ChoiceSync extends StatelessWidget {
   const _ChoiceSync({required this.id, required this.options, required this.child});
   final String id;

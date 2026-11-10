@@ -1,4 +1,4 @@
-// The graph.
+// The easing graph.
 
 import 'dart:math' as math;
 
@@ -13,22 +13,17 @@ import 'package:motolii/workspace/state/state.dart';
 
 import '../../widgets/two_fingers.dart';
 
-/// The graph: value up, time across. Handles are dragged; only a drag or hover repaints it. The two ends stand on a bar
-/// each, left and right, and are pulled up and down them (the user's, 10/30: "左と右にある点を上下に動かせるように", and
-/// 10/31, the bars drawn on a picture of it, "確定してもその位置のままで"): [onEnd] is told which end and how far, in the
-/// bars' own measure (1: from the one key's value to the other's as they first were); [ends] is where they stand. With
-/// [jump] on, a dashed line shows the value jumping there, as the keys it makes will.
-/// Where the curve's square lies in a graph of that size, all it can be, with room each side for the bars; and how far out of it they stand: past any handle, which goes no further than its edge.
+/// The rectangle the curve's square occupies in a graph of size [s]: as large as possible, with room at each side for the bars.
 Rect easeBox(Size s) {
-  final side = Shape.z(14) + easeBarOut,
-      top = Shape.z(22),
-      under = Shape.z(36); // (room for the bars, the thing's name, the frames and the way's name: no more, whatever its size)
+  // Room below for the bars, the layer name, the frames and the easing name, whatever the size of the graph.
+  final side = Shape.z(14) + easeBarOut, top = Shape.z(22), under = Shape.z(36);
   return Rect.fromLTRB(side, top, math.max(side + 1, s.width - side), math.max(top + 1, s.height - under));
 }
 
+/// How far outside the square the bars stand. It is beyond any handle, which goes no further than the square's edge.
 double get easeBarOut => Shape.z(16);
 
-/// How far up and down a graph looks: the way's own reach, and far enough for where the ends stand, and for all that ways laid make: one card's overshoot is theirs too.
+/// The vertical range a graph shows: the easing's own range, widened to include the ends and the whole stack, so one card's overshoot fits too.
 (double, double) easeFit(Ease e, bool over, (double, double) ends, Ease? onion) {
   var (lo, hi) = easeReach(e, over);
   lo = math.min(lo, math.min(ends.$1, ends.$2) - .15);
@@ -41,6 +36,12 @@ double get easeBarOut => Shape.z(16);
   return (lo, hi);
 }
 
+/// The graph: value up, time across.
+///
+/// The user drags handles, and only a drag or hover repaints it. The two ends each stand on a bar, left and right,
+/// and are dragged up and down them. [onEnd] receives which end moved and how far, measured in the bars' own scale:
+/// 1 is the distance between the two key values as they first were. [ends] is where the ends stand.
+/// With [jump] on, a dashed line shows the value jumping there, as the keys it creates will.
 class EaseGraph extends StatefulWidget {
   const EaseGraph({
     super.key,
@@ -58,35 +59,56 @@ class EaseGraph extends StatefulWidget {
     this.onion,
     this.ends = (0, 1),
   });
+
   final Ease ease;
+
+  /// Where the start and end stand on their bars, in the bars' scale.
   final (double, double) ends;
-  final Ease? onion; // (what all the cards make, faint behind the one a hand shapes)
+
+  /// What all the cards make together, drawn faint behind the card being edited.
+  final Ease? onion;
+
+  /// The span being edited, or null for none.
   final EaseSpan? span;
+
   final int frame;
+
   final ValueChanged<Ease> onChanged;
-  final void Function(bool start, double by)? onEnd, onEndMove; // (let go; and as it goes)
-  final String? Function(bool start, double by)? endSays; // (what the end pulled makes its value, shown beside it while it is pulled)
-  final bool jump, overshoot; // (overshoot: looks past 0 and 1, and a handle goes there: Alight Motion's Enable Overshoot)
-  final double? trial; // (where a trial of the way has come to, 0 to 1, with no stretch to go by: tool_panel_ease_trial.dart)
-  final List<double>
-  beats; // (where the document's beats fall in the stretch, 0 to 1: a line each, and a handle stays on one it is brought near, as the timeline's grid)
+
+  /// Called when an end drag is released ([onEnd]) and on every update during it ([onEndMove]).
+  final void Function(bool start, double by)? onEnd, onEndMove;
+
+  /// The text shown beside the dragged end, describing the value it now gives.
+  final String? Function(bool start, double by)? endSays;
+
+  /// [jump] draws the dashed jump at a dragged end. [overshoot] lets the view and the handles go past 0 and 1,
+  /// as Alight Motion's Enable Overshoot does.
+  final bool jump, overshoot;
+
+  /// Progress of a preview of the easing, 0 to 1, shown when there is no span to follow (tool_panel_ease_trial.dart).
+  final double? trial;
+
+  /// Where the document's beats fall in the span, 0 to 1. Each gets a line, and a handle snaps to one it comes near,
+  /// as on the timeline's grid.
+  final List<double> beats;
   @override
   State<EaseGraph> createState() => _EaseGraphState();
 }
 
 class _EaseGraphState extends State<EaseGraph> {
-  static const _end = 100; // (_drag, _hot: a handle's place in easeHandles, or the key at the start, or at the end)
+  // For _drag and _hot: below this is a handle's index in easeHandles, this is the start end and this + 1 the end end.
+  static const _end = 100;
   int? _drag, _hot;
-  double? _endAt; // (where the end pulled is, in the graph's measure, while it is pulled)
-  double _endFrom = 0; // (where it stood when taken)
-  (double, double)? _reachHeld; // (the graph's measure while a hand holds anything: it does not move under the hand)
-  Offset _from = Offset.zero, _handle = Offset.zero; // (where the hand took it, and where the handle was: it goes by the hand's move, as Alight Motion's)
-
+  double? _endAt;
+  double _endFrom = 0;
+  // The vertical range, frozen while something is dragged so the graph does not move under the pointer.
+  (double, double)? _reachHeld;
+  // Where the drag began, and where the handle was then. The handle moves by the pointer's movement, as in Alight Motion.
+  Offset _from = Offset.zero, _handle = Offset.zero;
   static Rect _box(Size s) => easeBox(s);
 
   (double, double) get _reach => _reachHeld ?? easeFit(widget.ease, widget.overshoot, widget.ends, widget.onion);
-  Offset _px(Rect g, Offset v) =>
-      _pxIn(g, _reach, Offset(v.dx, widget.ends.$1 + (widget.ends.$2 - widget.ends.$1) * v.dy)); // (a point of the curve, on the graph between its two ends)
+  Offset _px(Rect g, Offset v) => _pxIn(g, _reach, Offset(v.dx, widget.ends.$1 + (widget.ends.$2 - widget.ends.$1) * v.dy));
   static Offset _pxIn(Rect g, (double, double) reach, Offset v) =>
       Offset(g.left + v.dx * g.width, g.bottom - (v.dy - reach.$1) / (reach.$2 - reach.$1) * g.height);
 
@@ -216,9 +238,9 @@ class _EaseGraphState extends State<EaseGraph> {
   );
 }
 
-/// A relation's stretch: each of its things gets the same curve so much later, in turn (its lag times its place): as
-/// the relation spreads it, seen and not touched, in the thing's own colour, as Blender shows the curves it will not let
-/// a hand change.
+/// Copies of a behaviour's curve, one per member layer after the first, each delayed by its lag times its position.
+///
+/// They are drawn in the layer's own colour and cannot be edited, as Blender shows curves it will not let the user change.
 List<(double, Color)> _ghosts(Ws ws, EaseSpan? span) {
   final m = ws.inside, t = int.tryParse(span?.layer.id ?? '');
   if (m == null || t == null || span == null || span.to <= span.from || m.word(t, 'kind') != 'behaviour') return const [];
@@ -253,7 +275,9 @@ class _GraphPainter extends CustomPainter {
     this.jump = true,
   });
   final (double, double) reach;
-  final List<(double, Color)> ghosts; // (a relation's things: how much later each, across the stretch, and its colour)
+
+  /// A behaviour's member layers: how much later each starts across the span, and its colour.
+  final List<(double, Color)> ghosts;
   final List<double> beats;
   final double? trial;
   final Ease ease;
@@ -262,14 +286,16 @@ class _GraphPainter extends CustomPainter {
   final bool dragging, jump, overshoot;
   final Ease? onion;
   final (double, double) ends;
-  final double? endAt; // (the key at an end, while it is pulled: where it is)
+
+  /// Where the key at an end is while it is dragged.
+  final double? endAt;
 
   @override
   void paint(Canvas c, Size s) {
-    // (AbsentMotion's EasingPanel.kt drawGraph: its grid, its dashed 0 and 1, the stems, the curve, the handles)
+    // Follows AbsentMotion's EasingPanel.kt drawGraph: the grid, dashed 0 and 1 lines, the stems, the curve and the handles.
     final g = _EaseGraphState._box(s), handles = easeHandles(ease), end = _EaseGraphState._end;
     Offset px(Offset v) => _EaseGraphState._pxIn(g, reach, v);
-    // (an end pulled: the curve goes from where its start is to where its end is, as the keys it makes will)
+    // While an end is dragged, the curve runs from where the start is to where the end is, as the keys it creates will.
     final pulled = endAt != null && dragging && (active ?? 0) >= end ? active : null;
     final y0 = pulled == end ? endAt! : ends.$1, y1 = pulled == end + 1 ? endAt! : ends.$2;
     double along(double x) => y0 + (y1 - y0) * ease.at(x);
@@ -277,7 +303,8 @@ class _GraphPainter extends CustomPainter {
     final top = home.$2.dy, bottom = home.$1.dy;
     final grid = Paint()
       ..strokeWidth = 1
-      ..color = Grey.g20; // (few lines, only where the way goes: so small, AbsentMotion's 32 are a grain)
+      // Few lines, so the grid stays light. AbsentMotion's 32 lines would look like grain at this size.
+      ..color = Grey.g20;
     for (var i = 0; i <= 8; i++) {
       final x = (g.left + i * g.width / 8).floorToDouble() + .5;
       c.drawLine(Offset(x, top), Offset(x, bottom), grid);
@@ -298,7 +325,7 @@ class _GraphPainter extends CustomPainter {
     }
     dashed(c, Offset(g.left, top), Offset(g.right, top), Grey.g56, 1, 4, 3);
     dashed(c, Offset(g.left, bottom), Offset(g.right, bottom), Grey.g56, 1, 4, 3);
-    // A relation's things' copies of the curve, each so much later (thin, faint, under the one a hand shapes).
+    // The delayed copies of the curve: thin and faint, under the curve being edited.
     c.save();
     c.clipRect(g);
     for (final (shift, hue) in ghosts) {
@@ -332,7 +359,7 @@ class _GraphPainter extends CustomPainter {
           ..color = Grey.g56,
       );
     }
-    // The stems (on the curve as it is pulled: its handles go with its ends).
+    // The stems. Handles move with the ends while an end is dragged.
     Offset handle(double x, double y) => px(Offset(x, y0 + (y1 - y0) * y));
     for (final h in handles) {
       if (h.fromX == null || h.fromY == null) continue;
@@ -368,11 +395,11 @@ class _GraphPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..color = WsT.accentInk,
     );
-    // The timeline here: its playhead in its own colour, where on the way it is now, and the frames: which part is being read.
+    // The timeline position: the playhead in its own color, where the easing is now, and the frame numbers.
     final numbers = T.micro(Grey.g56);
     if (from != null && to != null && to! > from!) {
       if (g.width > Shape.z(80)) {
-        // (too narrow, only the frame now)
+        // When too narrow, only the current frame is shown.
         toolText(c, '$from', Offset(g.left, bottom + 6), numbers);
         toolText(c, '$to', Offset(g.right, bottom + 6), numbers, ax: 1);
       }
@@ -387,12 +414,12 @@ class _GraphPainter extends CustomPainter {
         c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WsT.playhead);
         if (frame != from && frame != to) toolText(c, '$frame', Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       } else if (g.width > Shape.z(80)) {
-        // (not in this stretch: which way it lies, and where)
+        // The frame is outside this span: show which side it lies on.
         final before = frame < from!;
         toolText(c, before ? '‹ $frame' : '$frame ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       }
     }
-    // A way tried: where it has come to on its curve, and a ball on the bar going as a value would.
+    // A previewed easing: where it has reached on its curve, and a ball on the bar moving as a value would.
     if (trial case final u?) {
       final at = px(Offset(u, y0 + (y1 - y0) * (onion ?? ease).at(u)));
       c.drawLine(
@@ -405,13 +432,13 @@ class _GraphPainter extends CustomPainter {
       c.drawCircle(at, 4.5, Paint()..color = WsT.playhead);
       c.drawCircle(Offset(g.right + easeBarOut, at.dy), 6, Paint()..color = WsT.playhead);
     }
-    // The value jumping at the end pulled: from where it was (the key the jump leaves outside) to where it is now.
+    // The jump at the dragged end: from where the value was (the key the jump leaves outside) to where it is now.
     if (pulled != null && jump) {
       final was = pulled == end ? home.$1 : home.$2, now = pulled == end ? a : b;
       dashed(c, was, now, Role.warning, 1.6, 3.5, 2.5);
       c.drawCircle(was, 3, Paint()..color = Grey.g63);
     }
-    // The handles: large, a hand's: yellow the shape's, white where it runs.
+    // The handles: large ones are the user's. Yellow marks the preset's parameters, white the rest.
     for (final (i, h) in handles.indexed) {
       final o = handle(h.x, h.y), on = active == i, ink = h.param ? WsT.keyDot : Grey.g95;
       c.drawCircle(o, on ? 7 : 6, Paint()..color = ink);
@@ -426,7 +453,7 @@ class _GraphPainter extends CustomPainter {
         );
       }
     }
-    // The bars, left and right, as high as the way's 0 to 100, longer where an end has gone past; each end a grip on its own.
+    // The bars at left and right, as tall as the easing's 0 to 100, longer where an end has gone past. Each end has its own grip.
     final rail = easeBarOut;
     for (final (i, (x, k, inward)) in [(g.left - rail, a, 1.0), (g.right + rail, b, -1.0)].indexed) {
       final on = active == end + i, cap = rail * .35;

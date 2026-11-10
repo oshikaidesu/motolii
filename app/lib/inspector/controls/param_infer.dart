@@ -88,19 +88,20 @@ class Param {
   final List<String> options;
   final bool advanced;
 
-  /// The name of the fold it lies in, as `// @advanced(Name)` says (null: unnamed, shown as Advanced).
+  /// The name of the fold the field sits in, from `// @advanced(Name)`. Null means an unnamed fold, shown as Advanced.
   final String? fold;
 
-  /// For vertical looks: dragging up raises the value (false: dragging down does, e.g. a drop).
+  /// For vertical looks: whether dragging up raises the value. False means dragging down does, as for a drop.
   final bool upIncreases;
 
-  /// [min] and [max] are how far its scrub goes; more is taken typed.
+  /// Whether [min] and [max] limit only scrubbing. The user can still type a value outside them.
   final bool open;
 
-  /// How much moving it alone shows its effect, 0 to 10, `@weight(7)` (null: not weighed).
+  /// How strongly this parameter alone changes the result, 0 to 10, from `@weight(7)`. Null means not weighted.
   final double? weight;
 
-  /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (PF_FloatSliderDef's valid_min and valid_max).
+  /// The limits of a typed value, from `@valid(lo, hi)`, where they are wider than [min] and [max].
+  /// They correspond to valid_min and valid_max of After Effects' PF_FloatSliderDef.
   final double? validMin, validMax;
 
   bool get bounded => min != null && max != null;
@@ -202,8 +203,10 @@ bool _any(List<String> w, Set<String> set) => w.any(set.contains);
 
 const _angleW = {'angle', 'rotation', 'hue', 'phase', 'heading', 'direction', 'twist', 'spin', 'theta', 'turn'};
 
-/// Whether a knob's label names an angle: the words [infer] takes for one, and AviUtl scripts' own (角度, 回転); not
-/// how fast one turns (回転速度, spin speed: a slider, as After Effects' is).
+/// Whether a parameter's label names an angle.
+///
+/// It accepts the words [infer] treats as angles plus the ones AviUtl scripts use (角度, 回転).
+/// A label for how fast something turns, such as 回転速度 or spin speed, is not an angle: it is a slider, as in After Effects.
 bool angleLabel(String label) =>
     (_any(paramWords(label), _angleW) || RegExp('角度|回転|色相|向き|方向').hasMatch(label)) && !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
 const _shareW = {
@@ -251,7 +254,8 @@ Param infer(Decl d) {
   int dec(double? lo, double? hi) {
     if (whole) return 0;
     if (a['step']?.firstOrNull case final s?) return s.contains('.') ? s.split('.').last.length : 0;
-    if (unit == 's' || unit == '×') return 1; // (fixed places for a unit, as Push shows them: seconds and times to one, pixels and degrees whole)
+    // Fixed decimal places per unit: seconds and multipliers get one, pixels and degrees get none.
+    if (unit == 's' || unit == '×') return 1;
     if (unit == 'px' || unit == '°') return 0;
     final span = lo != null && hi != null ? hi - lo : 100;
     return span <= 4 ? 2 : (span <= 40 ? 1 : 0);

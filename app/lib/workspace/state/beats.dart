@@ -1,21 +1,24 @@
-// The document's beats, what the timeline's grid goes by when it has a tempo (Live's Tempo field and Editing Grid: its
-// manual, 6.10). Four to a bar, Live's first time signature. Alight Motion has no such grid.
+// The document's beats. When the document has a tempo, the timeline grid follows them.
+// Modelled on Ableton Live's Tempo field and editing grid (Live manual, section 6.10): four beats to a bar.
 import '../../skin/tokens.dart' show halfWidth;
 
-/// A number as it was typed (null: none).
+/// Parses a typed number, ignoring full-width characters and surrounding spaces. Returns null if it is not a number.
 double? wsNumber(String said) => double.tryParse(halfWidth(said).trim());
 
+/// The beat grid of a document, in frames.
 class WsBeats {
   const WsBeats(this.first, this.every);
-  final double first, every; // (in frames: where a bar begins, and from one beat to the next)
 
-  /// The beats from a frame to a frame, each with whether a bar begins there.
+  /// The frame where a bar begins, and the number of frames from one beat to the next.
+  final double first, every;
+
+  /// The beats from frame [a] to frame [b], each paired with whether a bar begins there.
   Iterable<(double, bool)> between(double a, double b) sync* {
     for (var n = ((a - first) / every).ceil(); first + n * every <= b; n++) {
       yield (first + n * every, n % 4 == 0);
     }
   }
 
-  /// The frame of the beat nearest a frame.
+  /// The frame of the beat nearest to [frame].
   int nearest(int frame) => (first + ((frame - first) / every).round() * every).round();
 }

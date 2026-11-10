@@ -1,9 +1,9 @@
-// What the window keeps for the next time (its zoom, the skin it wears), in ~/.motolii/window.xml in the theme's form:
+// Window settings that persist between runs (the zoom and the skin), stored in ~/.motolii/window.xml like this:
 //   <Motolii><Window><Zoom Value="1.17"/><Skin Value="labs"/></Window></Motolii>
 import 'dart:convert';
 import 'dart:io';
 
-/// Text or bytes kept in a file, its folder made first; any error is swallowed (not kept).
+/// Writes text or bytes to [f], creating its folder first. Any error is ignored, so nothing is saved.
 void fileKeep(File f, Object data) {
   try {
     f.parent.createSync(recursive: true);
@@ -11,7 +11,7 @@ void fileKeep(File f, Object data) {
   } catch (_) {}
 }
 
-/// The JSON a file holds (null: no file, or not JSON).
+/// The JSON decoded from [f], or null if the file is missing or is not JSON.
 Object? fileJson(File f) {
   try {
     return jsonDecode(f.readAsStringSync());
@@ -20,13 +20,13 @@ Object? fileJson(File f) {
   }
 }
 
-/// The list a file holds (empty: no file, or not a list).
+/// The list stored in [f] as JSON, or an empty list if the file is missing or does not hold a list.
 List fileList(File f) => switch (fileJson(f)) {
   final List l => l,
   _ => const [],
 };
 
-/// [name], or the first of at(2), at(3)... that is not [taken]: as Finder names a copy.
+/// Returns [name], or else the first of at(2), at(3), ... that is not [taken], as the Finder names copies.
 String firstFree(String name, bool Function(String) taken, String Function(int n) at) {
   for (var n = 2; taken(name); n++) {
     name = at(n);
@@ -34,6 +34,7 @@ String firstFree(String name, bool Function(String) taken, String Function(int n
   return name;
 }
 
+/// Reads and writes the window settings file.
 abstract final class WindowFile {
   static File get _file => File('${Platform.environment['HOME']}/.motolii/window.xml');
 
@@ -45,10 +46,10 @@ abstract final class WindowFile {
     }
   }
 
-  /// A value kept (none: not kept).
+  /// The saved value for [name], or null if none is saved.
   static String? get(String name) => _all()[name];
 
-  /// A value kept, the others as they were (null: no longer kept).
+  /// Saves [value] for [name] and leaves the other settings as they were. A null [value] removes the setting.
   static void set(String name, String? value) {
     final all = _all();
     value == null ? all.remove(name) : all[name] = value;

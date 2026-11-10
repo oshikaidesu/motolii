@@ -1,8 +1,9 @@
 // Part of dock_make.dart: the colour bento: boxes of colours and gradients.
 part of 'dock_make.dart';
 
-/// One box of the colour bento: a colour or a gradient, the group it is of (the document's, one's own, a palette, the
-/// gradients), and how much of the picture it is beside the others of its group (1: as much as each).
+/// One box of the color bento: a color or a gradient.
+/// It belongs to a group: the project's colors, the user's own, a palette or the gradients.
+/// [weight] is how much of the picture the box covers compared with the others of its group, where 1 is the same as each.
 class _Box {
   const _Box(this.group, this.i, this.weight, {this.colour, this.grad});
   final String group;
@@ -12,7 +13,7 @@ class _Box {
   final _Gradient? grad;
 }
 
-int _dice = 0; // (the dice's last throw: the boxes' shapes)
+int _dice = 0; // The dice's last throw, which sets the boxes' shapes.
 const _rainbow = [
   Color(0xFFFF3B30),
   Color(0xFFFF9500),
@@ -23,12 +24,13 @@ const _rainbow = [
   Color(0xFFAF52DE),
   Color(0xFFFF3B30),
 ];
-final _hovered = ValueNotifier<String?>(null); // (the group of the box the hand is on)
+final _hovered = ValueNotifier<String?>(null); // The group of the box under the pointer.
 
-/// Where each box lies, in cells: its shape thrown by the dice (a colour that is more of the picture, a larger box; a
-/// gradient wide), then each put where it first fits from the top left and the gaps filled by later ones (CSS Grid's
-/// auto-placement, dense: CSS Grid Layout 1, 8.5). A throw takes up about a third of the boxes, the rest keep their
-/// shapes (the user: all of them changing at once was too much).
+/// Where each box lies, in grid cells, as (x, y, width, height).
+/// The dice picks each box's shape: a color that covers more of the picture gets a larger box, and a gradient a wide one.
+/// Each box then goes where it first fits from the top left, and later boxes fill the gaps
+/// (dense auto-placement, CSS Grid Layout Module Level 1, section 8.5).
+/// A throw changes about a third of the boxes and the rest keep their shapes, because changing all at once was too much.
 List<(int, int, int, int)> _packed(List<_Box> boxes, int cols, int seed) {
   final taken = <int, Set<int>>{}, out = <(int, int, int, int)>[];
   bool free(int x, int y, int w, int h) {
@@ -42,7 +44,7 @@ List<(int, int, int, int)> _packed(List<_Box> boxes, int cols, int seed) {
   }
 
   for (final b in boxes) {
-    var thrown = 0; // (the last throw that took this box up)
+    var thrown = 0; // The last throw that changed this box.
     for (var d = 1; d <= seed; d++) {
       if (math.Random(Object.hash(d, b.group, b.i, 7)).nextDouble() < .35) thrown = d;
     }
@@ -73,18 +75,18 @@ List<(int, int, int, int)> _packed(List<_Box> boxes, int cols, int seed) {
 }
 
 final _boxMenu = GlobalKey<WsMenuState>();
-(String, List<(int, int, int, int)>)? _bentoLaid; // (the last laying out, by what it was laid for)
+(String, List<(int, int, int, int)>)? _bentoLaid; // The last layout, keyed by what it was laid out for.
 
-/// How large a box is, any size the maker likes (the user: not a few steps, "任意で数値を"): a size slider over the
-/// grid, as the Browser study's (sets/studies/panel_browser_b_8.dart, "size"), Finder's icon size, Photoshop's
-/// Swatches panel, Lightroom's thumbnails.
+/// The range of the box size slider. The size can be any value in it, not a few steps,
+/// like Finder's icon size, Photoshop's Swatches panel and Lightroom's thumbnails.
 const _tileLeast = 16.0, _tileMost = 120.0;
 double _tile = 52;
 Timer? _tileKept;
 
-/// The colours as a bento of boxes of many sizes, wide and tall, packed with no holes, as many to a row as the shelf is
-/// wide (the user: a poster's colours come with the space they take, so not all squares; a dice throws the shapes
-/// again). Boxes move briskly to where they now lie, without overshooting (Flutter's AnimatedPositioned, easeOutCubic).
+/// The colors as a bento of boxes of many sizes, wide and tall, packed with no holes.
+/// As many boxes fit in a row as the shelf is wide. A poster's colors take the space they cover, so the boxes are not all squares.
+/// The dice throws the shapes again. Boxes move to their new place quickly and without overshooting
+/// (AnimatedPositioned with easeOutCubic).
 class _Bento extends StatelessWidget {
   const _Bento(this.boxes, this.c);
   final List<_Box> boxes;
@@ -92,10 +94,10 @@ class _Bento extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      // (as many columns as boxes of the size chosen fit, the boxes stretching to fill the row: CLIP STUDIO PAINT's
-      //  Color Set at a fixed tile size, as many a row as the palette is wide; CSS Grid's repeat(auto-fill, minmax()).
-      //  Laid again only when its columns, its colours or the dice change, and only then do the boxes move; widened
-      //  between, they only stretch, nothing laid again: the window's 60 frames a second kept)
+      // As many columns as boxes of the chosen size fit, with the boxes stretching to fill the row.
+      // CLIP STUDIO PAINT's Color Set and CSS Grid's repeat(auto-fill, minmax()) work the same way.
+      // The layout is redone only when the columns, the colors or the dice change, and only then do the boxes move.
+      // Widening the shelf just stretches them without a new layout, which keeps the app at 60 frames per second.
       final cols = math.max(1, box.maxWidth ~/ Shape.z(_tile)), unit = box.maxWidth / cols, all = boxes;
       final key = '$cols/$_dice/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
       final laid = _bentoLaid?.$1 == key ? _bentoLaid!.$2 : _packed(all, cols, _dice), moved = _bentoLaid?.$1 != key;
@@ -126,8 +128,9 @@ class _Bento extends StatelessWidget {
   );
 }
 
-/// A colour's box: pressed, it colours (or the stop picked, while a gradient is coloured); the hand on it rings its
-/// group and tells the group in the shelf's foot; its right-click menu, for one's own, replaces or deletes it.
+/// A color's box. Pressing it applies the color, or sets the selected stop while a gradient is the target.
+/// Hovering it draws a rim around its group and shows the group in the shelf footer.
+/// For the user's own colors, the right-click menu replaces or deletes it.
 class _ColorBox extends StatelessWidget {
   const _ColorBox(this.b, this.c);
   final _Box b;
@@ -180,7 +183,7 @@ class _ColorBox extends StatelessWidget {
       builder: (context, h) => ValueListenableBuilder<String?>(
         valueListenable: _hovered,
         builder: (context, over, _) {
-          // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
+          // Hovering a box puts a rainbow rim around each box of its palette, so the palette is seen whole. The other boxes are not darkened.
           final box = Container(
             decoration: BoxDecoration(
               color: col,
@@ -205,8 +208,8 @@ class _ColorBox extends StatelessWidget {
   }
 }
 
-/// The colour now kept as one's own (CLIP STUDIO PAINT's colour set: Add Color); a gradient coloured now is kept whole,
-/// where its colours stand and how they mix.
+/// Saves the current color as the user's own, like Add Color in CLIP STUDIO PAINT's color set.
+/// If the target is a gradient, the whole gradient is saved with its stop positions and blend.
 void _keepNow(DockCtx c) {
   final stops = _stopsIn(_paintNow(c));
   stops.length > 1
@@ -214,12 +217,12 @@ void _keepNow(DockCtx c) {
           0,
           _Gradient('Gradient ${_mineGrads.length + 1}', [for (final s in stops) s.$1], at: [for (final s in stops) s.$2], blend: _blendNow(c), saved: true),
         )
-      : _mineColors.insert(0, _wheel.toColor()); // (at the top, as the newest)
+      : _mineColors.insert(0, _wheel.toColor()); // At the top, as the newest.
   _keepMine();
 }
 
-/// A gradient's colours and where each stands, as the document says its fill ("ff3366@0.35 ..."; one with no @ stands
-/// evenly), and back.
+/// Parses a gradient's fill word, such as "ff3366@0.35 ...", into colors and their positions.
+/// A color without @ is spaced evenly. Returns an empty list if the word is not a gradient.
 List<(Color, double)> _stopsIn(String word) {
   final parts = word.split(' ').where((w) => w.isNotEmpty).toList();
   if (parts.length < 2) return const [];
@@ -232,6 +235,7 @@ List<(Color, double)> _stopsIn(String word) {
   return out;
 }
 
+/// The inverse of [_stopsIn]: writes the stops back as a fill word.
 String _wordOfStops(List<(Color, double)> stops) {
   String hex8(Color c) => _hex(c).substring(1).toLowerCase() + (c.a < 1 ? (c.a * 255).round().toRadixString(16).padLeft(2, '0') : '');
   return [
@@ -239,23 +243,27 @@ String _wordOfStops(List<(Color, double)> stops) {
   ].join(' ');
 }
 
-int _stop = 0; // (the stop the picker colours)
+int _stop = 0; // The stop the picker edits.
 
-/// The gradient being coloured, its bar and its stops beneath (Figma's and Canva's gradient editors): a press on the
-/// bar puts a stop there in the colour the bar has there; a stop pressed is the one the square above colours; a stop
-/// carried along the bar moves; Remove takes the picked one out (two stay at least).
+/// The gradient editor: a bar with its stops beneath, as in Figma and Canva.
+/// - Pressing the bar adds a stop there, in the color the bar has at that point.
+/// - Pressing a stop selects it, and the square above then edits its color.
+/// - Dragging a stop along the bar moves it.
+/// - Remove deletes the selected stop, but at least two stay.
 class _Stops extends StatefulWidget {
   const _Stops(this.stops, this.onChanged, this.onPick, {this.onDrag});
   final List<(Color, double)> stops;
   final ValueChanged<List<(Color, double)>> onChanged;
   final ValueChanged<int> onPick;
-  final ValueChanged<bool>? onDrag; // (a hand down on it, and up: one step)
+
+  /// Called with true when a drag starts and false when it ends, so the caller can make it one undo step.
+  final ValueChanged<bool>? onDrag;
   @override
   State<_Stops> createState() => _StopsState();
 }
 
 class _StopsState extends State<_Stops> {
-  List<(Color, double)>? _held; // (while a stop is carried: where the hand has it)
+  List<(Color, double)>? _held; // The stops as they are while one is being dragged.
 
   Color _at(List<(Color, double)> s, double x) {
     final sorted = [...s]..sort((a, b) => a.$2.compareTo(b.$2));
@@ -287,7 +295,7 @@ class _StopsState extends State<_Stops> {
                   onTapUp: (d) {
                     final x = (d.localPosition.dx / w).clamp(0.0, 1.0);
                     widget.onChanged([...s, (_at(s, x), x)]);
-                    widget.onPick(s.where((e) => e.$2 <= x).length); // (where it stands among them: the document keeps them in order)
+                    widget.onPick(s.where((e) => e.$2 <= x).length); // The index among the stops, because the document keeps them in order.
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -319,7 +327,7 @@ class _StopsState extends State<_Stops> {
                     },
                     onHorizontalDragEnd: (_) {
                       final held = _held!, at = held[i].$2;
-                      widget.onPick(held.where((e) => e.$2 < at).length); // (carried past another, it is picked where it now stands)
+                      widget.onPick(held.where((e) => e.$2 < at).length); // If it was dragged past another stop, select it at its new index.
                       setState(() => _held = null);
                       widget.onDrag?.call(false);
                     },
@@ -340,8 +348,8 @@ class _StopsState extends State<_Stops> {
   }
 }
 
-/// A gradient, a small tile of it: its name is said when the hand is on it, as a swatch's (the colours are what is
-/// looked for, and the tiles keep to a block however many are kept).
+/// A gradient as a small tile. Its name shows only on hover, like a swatch's,
+/// because the user looks for the colors and the tiles stay a compact block however many are saved.
 class _Grad extends StatelessWidget {
   const _Grad(this.id, this.g, this.c);
   final String id;
@@ -358,7 +366,7 @@ class _Grad extends StatelessWidget {
         onMenu: !g.saved
             ? null
             : (at) {
-                // (one's own gradient's menu: deleted, as one's own colour)
+                // The menu of the user's own gradient, which can be deleted like the user's own colors.
                 final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
                 _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
                   WsMenuItem(
@@ -370,7 +378,7 @@ class _Grad extends StatelessWidget {
                   ),
                 ]);
               },
-        onTap: () => _putGradient(c, g.colors, g.blend, g.at), // (a press puts it on, where its colours stand and mixed as it was kept)
+        onTap: () => _putGradient(c, g.colors, g.blend, g.at), // Applies it with the stop positions and blend it was saved with.
         builder: (context, h) => Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: look, stops: at),
@@ -383,7 +391,7 @@ class _Grad extends StatelessWidget {
   }
 }
 
-/// The colours' die: a face of five; pressed, the boxes are thrown again.
+/// The dice button, showing a face of five. Pressing it throws the box shapes again.
 Widget _colourDice(VoidCallback onTap) => IconPress(
   (k) => glyph(Shape.z(22), DicePaint(k, 5, filled: false).paint, k),
   key: const ValueKey('colour-dice'),

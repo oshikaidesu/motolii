@@ -1,10 +1,14 @@
-// Ways laid over one another: each a card. A press on a shape puts it in place of the card in hand; a shape laid on the
-// graph or the flow joins them; a card carried out comes off. Top to bottom each acts on what is above it as its intent
-// asks (the maker, 10/31: "そのeaseの意図から考えるべき"): one that moves a value along, or cuts it into steps, takes what
-// is above through it, as GSAP's timingEase and Blender's stack; a wave is as large as what is above, as GSAP's
-// amplitudeEase; a shake is added to it, as Blender's Noise. Between two cards the flow says which: an arrow, a ×, a + (the
-// maker, 10/31, of a reader who could not tell). To the document they are one way, defined so (way(), document/undo.h), so it is
-// kept, undone and listed as any way is. Linear changes nothing that goes through it; a wave under it is as large as it.
+// Easings stacked as cards.
+//
+// - Pressing a preset replaces the selected card. Dropping one on the graph or the flow adds it. Dragging a card out removes it.
+// - Each card acts on the result of the cards above it, according to its kind:
+//   - Most cards map the value through themselves, like GSAP's timingEase and Blender's modifier stack. Steps cards do this too.
+//   - Wave cards scale with the result above, like GSAP's amplitudeEase.
+//   - Shake cards add to the result above, like Blender's Noise modifier.
+// - Between two cards the flow shows which of these applies: an arrow, a x or a +.
+// - The document stores the stack as one custom easing built from `way()` (document/undo.h),
+//   so it is saved, undone and listed like any other easing.
+// - A Linear card changes nothing that passes through it.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -16,35 +20,41 @@ import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;
 import 'package:motolii/widgets/media.dart' show Draw;
 
-const _over = '×', _space = '~', _turned = 'Reverse:'; // (a way defined in a document is one word)
-const _all = -1; // (what the tile at the foot of the flow carries: all the cards, EaseShapes.onKeep)
+// An easing defined in a document is one word, so a space inside a name is written as _space.
+const _over = '×', _space = '~', _turned = 'Reverse:';
 
-/// The ways a way is laid from, each as it is said; one not laid: itself.
+// Drag data of the tile at the foot of the flow, which stands for all the cards (EaseShapes.onKeep).
+const _all = -1;
+
+/// The text form of each card in a stacked easing. An easing that is not stacked gives a list of itself.
 List<String> easeCards(String said) => [for (final w in said.split(_over)) w.startsWith(_turned) || easeIsPoints(w) ? w : w.replaceAll(_space, ' ')];
 
 bool easeIsLaid(String said) => said.contains(_over);
 
-/// A way said by its points, as CSS's linear() (one word: a space in it is said as ~; anime.js works it out: document/undo.h).
+/// Whether [said] is an easing given by points, like CSS linear().
+///
+/// It is one word, so spaces are written as ~. anime.js evaluates it (document/undo.h).
 bool easeIsPoints(String said) => said.startsWith('linear(');
 bool easeIsTurned(String said) => said.startsWith(_turned);
 
-/// A way turned end for end, as it is said, or turned back (AbsentMotion's "reverse": this document has no such word, so
-/// it is a way defined so, as ways laid are).
+/// The text form of an easing played backwards, or the original when [said] is already reversed.
+///
+/// AbsentMotion has a "reverse" option. The document has no such thing, so it is stored as a custom easing, like stacked easings.
 String easeTurn(String said) => easeIsTurned(said) ? said.substring(_turned.length).replaceAll(_space, ' ') : '$_turned${said.replaceAll(' ', _space)}';
 
 enum _By { through, times, plus }
 
-/// Whether a card takes what is above it through it, so that it is walked by that and not by the clock.
+/// Whether [card] maps the result of the cards above it, so its input is that result and not the time.
 bool easeThrough(Ease card) => _by(said(card)) == _By.through;
 
-// (how a card acts on what is above it)
+// How a card combines with the cards above it.
 _By _by(String word) => switch ((easeIsTurned(word) ? easeTurn(word) : word).split(' ').first) {
   'Cyclic' => _By.times,
   'Random' => _By.plus,
   _ => _By.through,
 };
 
-// (how far cards laid have gone at u, as the document works it out)
+// The expression for the value of the stacked cards at progress u, as the document evaluates it.
 String _goes(List<String> cards) {
   var went = "way('${_quoted(cards.first)}', u)";
   for (final c in cards.skip(1)) {
@@ -60,23 +70,24 @@ String _goes(List<String> cards) {
 
 String _quoted(String word) => word.replaceAll("'", "''");
 
-/// The ways a word needs defined before a stretch can go by it: name and how it goes.
+/// The custom easings a stack needs defined before a span can use it, as (name, expression) pairs.
 List<(String, String)> easeDefines(String word) => [
   for (final c in easeCards(word)) ...[
     if (easeIsTurned(c)) (c, "a + (b - a) * (1 - way('${easeTurn(c).replaceAll("'", "''")}', 1 - u))"),
     if (easeIsPoints(c))
-      (
-        c,
-        "a + (b - a) * anime('${c.replaceAllMapped(RegExp('[^(,)]*$_space[^(,)]*'), (stop) => '"${stop[0]!.replaceAll(_space, ' ')}"')}', u)",
-      ), // (a stop with its place is a string to anime.js's linear())
+      (c, "a + (b - a) * anime('${c.replaceAllMapped(RegExp('[^(,)]*$_space[^(,)]*'), (stop) => '"${stop[0]!.replaceAll(_space, ' ')}"')}', u)"),
+    // A stop with a position is passed to anime.js linear() as a string.
   ],
   if (easeIsLaid(word)) (word, 'a + (b - a) * (${_goes(easeCards(word))})'),
 ];
 
-const _steps = 192; // (a curve drawn large, its peaks whole)
-final _worked = <String, List<double>>{}; // (a card's curve, worked out once: all but the one a hand moves stay as they were)
+// Samples per curve, enough to keep the peaks of a large curve intact.
+const _steps = 192;
 
-/// A card, as the way it says.
+// Each card's curve, computed once so that only the card being dragged is recomputed.
+final _worked = <String, List<double>>{};
+
+/// The easing for one card, given its text form.
 Ease easeCard(String word, Motolii? m) {
   if (easeIsLaid(word)) return easeLaid([for (final c in easeCards(word)) easeCard(c, m)]);
   if (easeIsTurned(word)) {
@@ -85,15 +96,19 @@ Ease easeCard(String word, Motolii? m) {
   }
   final e = heard(word);
   if (!easeOther(e) || m == null) return e;
-  if (easeIsPoints(word) && !_worked.containsKey(word) && m.easingExact(word, 1) < .5) return e; // (not defined yet, so it ends nowhere: drawn when it is)
+  if (easeIsPoints(word) && !_worked.containsKey(word) && m.easingExact(word, 1) < .5) {
+    // Not defined yet, so it does not end at 1. It is drawn once it is defined.
+    return e;
+  }
   if (_worked.length > 256) _worked.clear();
   return Ease(e.kind, e.p1, e.p2, e.name, _worked[word] ??= [for (var i = 0; i <= _steps; i++) m.easingExact(word, i / _steps)]);
 }
 
 final _curves = <String, List<double>>{};
 
-/// How a way goes, at fine even steps of its stretch, for a timeline to draw at any size. Worked out once for each way as it
-/// is said, which says all of it: seventeen points could not hold eight waves (the maker, 10/31: "曲線じゃないのかな？").
+/// The easing sampled at evenly spaced steps, for the timeline to draw at any size.
+///
+/// It is computed once per text form. Many samples are needed because 17 points cannot hold eight waves.
 List<double> easeCurve(String way, Motolii m) {
   if (_curves.length > 512) _curves.clear();
   return _curves[way] ??= () {
@@ -102,19 +117,21 @@ List<double> easeCurve(String way, Motolii m) {
   }();
 }
 
-/// The cards laid as one way; a card left alone: itself.
+/// The cards stacked as one easing. A single card is returned as it is.
 Ease easeLaid(List<Ease> cards) => cards.length == 1
     ? cards.single
     : Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), [for (final c in cards) said(c).replaceAll(' ', _space)].join(_over), [
         for (var i = 0; i <= _steps; i++) _went(cards, i / _steps),
       ]);
 
-// (as _goes, for the window to draw)
+// The same as _goes, but evaluated directly so the app can draw it.
 double _went(List<Ease> cards, double u) {
   var went = cards.first.at(u);
   for (final c in cards.skip(1)) {
     went = switch (_by(said(c))) {
-      _By.through => went <= 0 || went >= 1 ? went : c.at(went), // (past its ends as it was: an overshoot above it stays one)
+      _By.through =>
+        // Outside 0..1 the value is kept, so an overshoot from a card above stays an overshoot.
+        went <= 0 || went >= 1 ? went : c.at(went),
       _By.times => went * c.at(u),
       _By.plus => went + c.at(u) - u,
     };
@@ -122,24 +139,25 @@ double _went(List<Ease> cards, double u) {
   return went;
 }
 
-/// What a way is called under the graph.
+/// The name shown under the graph.
 String easeWord(Ease e) {
   final s = said(e);
   return easeIsPoints(s) ? 'linear()' : (easeIsTurned(s) ? easeTurn(s) : easeName(e) ?? 'Bezier').split(' ').first;
 }
 
-/// A way as words anyone can read: a bezier as CSS says it, so it can be pasted into a page too; any other as it is said.
+/// An easing as text anyone can read. A bezier is written as CSS cubic-bezier(), so it can be pasted into a web page.
 String easeText(Ease e) => easeIsBezierAlone(e) ? 'cubic-bezier(${e.p1.dx}, ${e.p1.dy}, ${e.p2.dx}, ${e.p2.dy})' : said(e);
 
 bool easeIsBezierAlone(Ease e) => said(e).startsWith('Bezier ');
 
-/// A way out of copied words: CSS's cubic-bezier() and linear() (CSS Easing Functions 2), wherever they stand in what was
-/// copied (a line of a page's style, cubic-bezier.com), or as [easeText] said it. None: no way in them.
+/// Parses an easing from copied text: CSS cubic-bezier() and linear() (CSS Easing Functions 2), anywhere in the text
+/// (a line of a page's style, cubic-bezier.com), or the form [easeText] writes. Returns null when there is none.
 Ease? easeFromText(String? text, Motolii? m) {
   final t = (text ?? '').trim();
   if (RegExp(r'cubic-bezier\(([^)]*)\)').firstMatch(t) case final b?) {
     final n = [for (final x in b[1]!.split(',')) double.tryParse(x.trim())];
-    if (n.length != 4 || n.contains(null) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null; // (CSS's own rule: time goes only forward)
+    // CSS requires x values in 0..1, so time only moves forward.
+    if (n.length != 4 || n.contains(null) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null;
     return Ease(EaseKind.bezier, Offset(n[0]!, n[1]!), Offset(n[2]!, n[3]!));
   }
   if (RegExp(r'linear\(([^)]*)\)').firstMatch(t) case final l?) {
@@ -152,11 +170,13 @@ Ease? easeFromText(String? text, Motolii? m) {
       : null;
 }
 
-/// The flow: the ways laid, top to bottom, each acting on what is above it (the maker's arrows, 10/31; Blender's stack); an
-/// empty frame under them for the next (Monster Train's empty slots: it says it takes one, and nothing need be learnt);
-/// what they make small at its foot. The card pressed is the one the graph shows, its handles in hand (the maker: seen
-/// always, the whole has no handles); that at the foot pressed, the graph shows the whole. A card carried up or down it takes that place, a shape let go on a card goes in
-/// before it, and one carried off the flow comes off.
+/// The flow of cards, top to bottom, each acting on the result above it (like Blender's modifier stack).
+///
+/// - An empty dashed slot under the last card shows that another can be added, as in Monster Train.
+/// - The combined result is shown small at the foot. Selecting it makes the graph show the whole stack, which has no handles.
+/// - Selecting a card makes the graph show that card with its handles.
+/// - Dragging a card up or down moves it. Dropping a preset on a card inserts it before that card.
+///   Dragging a card out of the flow removes it.
 class EaseCards extends StatelessWidget {
   const EaseCards({
     super.key,
@@ -174,24 +194,48 @@ class EaseCards extends StatelessWidget {
     required this.side,
     this.across = false,
   });
+
+  /// The width and height of each card.
   final double side;
-  final bool across; // (laid across, under the graph, in a tall pane)
-  final bool adding; // (the empty frame pressed: it waits for what is picked next)
+
+  /// Whether the cards run horizontally, under the graph in a tall panel.
+  final bool across;
+
+  /// Whether the empty slot has been pressed and the flow waits for a preset to be picked.
+  final bool adding;
+
+  /// Called when the empty slot is pressed.
   final VoidCallback? onSlot;
+
+  /// The cards, top to bottom.
   final List<Ease> cards;
+
+  /// The index of the selected card, or a negative number when the whole stack is selected.
   final int now;
+
+  /// The combined result shown at the foot, or null for none.
   final Ease? whole;
+
+  /// Called when the combined result is pressed.
   final VoidCallback onWhole;
+
+  /// Called with a card's index when it is pressed or removed.
   final ValueChanged<int> onPress, onOff;
+
+  /// Called when a card is dragged from one index to another.
   final void Function(int from, int to) onMove;
+
+  /// Called when a preset is dropped on the card at the index.
   final void Function(Ease shape, int at) onLay;
-  final void Function(Ease? shape, int at) onOver; // (a shape held over a card: seen before it is let go)
+
+  /// Called while a preset hovers over a card, and with null when it leaves, so the result can be previewed before the drop.
+  final void Function(Ease? shape, int at) onOver;
 
   @override
   Widget build(BuildContext context) {
     final side = Size.square(this.side);
     Widget card(int i, Ease c) => Hov(
-      // (under the hand, its × : as Cavalry's, Bitwig's and Serum's rows take a modulation off)
+      // Hovering shows a x that removes the card, like the rows in Cavalry, Bitwig and Serum.
       builder: (_, h) => Stack(
         clipBehavior: Clip.none,
         children: [
@@ -233,14 +277,16 @@ class EaseCards extends StatelessWidget {
       dragAnchorStrategy: pointerDragAnchorStrategy,
       feedback: easeHeld(card(i, c), this.side),
       childWhenDragging: Opacity(opacity: .3, child: card(i, c)),
-      onDraggableCanceled: (_, _) => onOff(i), // (let go on the flow or the graph it is accepted there, and stays; on the shapes it is kept, and stays)
+      // Dropped on the flow or the graph, the drop target accepts it and the card stays.
+      // Dropped on the presets, the card stays too. Dropped anywhere else, it is removed.
+      onDraggableCanceled: (_, _) => onOff(i),
       child: card(i, c),
     );
     final axis = across ? Axis.horizontal : Axis.vertical;
     final gap = across ? Size(this.side * .4, side.height) : Size(side.width, this.side * .4);
     Widget arrow() => CustomPaint(size: gap, painter: Draw((cv, s) => _drawArrow(cv, s, across), across));
     Widget by(int i) => switch (_by(said(cards[i]))) {
-      // (how it takes what is above it)
+      // How the card combines with the result above it.
       _By.through => arrow(),
       final how => SizedBox.fromSize(
         key: ValueKey('ease.by.$i'),
@@ -270,7 +316,8 @@ class EaseCards extends StatelessWidget {
                     else if (c == easingPreset('Linear'))
                       card(i, c)
                     else
-                      carried(i, c), // (a straight line alone: nothing to carry)
+                      // A lone Linear card has nothing to drag.
+                      carried(i, c),
                   ],
                   arrow(),
                   Hov(
@@ -308,7 +355,7 @@ class EaseCards extends StatelessWidget {
   }
 }
 
-/// A round × that takes a thing off (Cavalry's, Bitwig's and Serum's rows).
+/// A round x button that removes an item, like the rows in Cavalry, Bitwig and Serum.
 class EaseOff extends StatelessWidget {
   const EaseOff({super.key, required this.onTap});
   final VoidCallback onTap;
@@ -327,7 +374,7 @@ class EaseOff extends StatelessWidget {
 
 void _drawArrow(Canvas c, Size s, bool across) {
   if (across) {
-    // (the same arrow, turned to point along the row)
+    // Rotate the arrow to point along the row.
     c.translate(0, s.height);
     c.rotate(-math.pi / 2);
     s = Size(s.height, s.width);
@@ -349,10 +396,14 @@ void _drawArrow(Canvas c, Size s, bool across) {
   );
 }
 
-/// An empty frame, dashed: it says it takes one (Monster Train's empty slots).
+/// A dashed empty frame showing that another card can be added, as in Monster Train.
 class EaseSlot extends StatelessWidget {
   const EaseSlot({super.key, required this.side, required this.ink});
+
+  /// The width and height of the frame.
   final double side;
+
+  /// The color of the dashed outline.
   final Color ink;
   @override
   Widget build(BuildContext context) => CustomPaint(size: Size.square(side), painter: Draw((cv, s) => _drawSlot(cv, s, ink), ink));

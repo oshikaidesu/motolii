@@ -1,6 +1,7 @@
-// Poster forms: the window's controls as a Swiss geometric poster (Posterlad's Checkers, the Xavito deVito gig poster):
-// flat red, yellow, blue, green and pink on paper, circles, half circles, quarters, triangles and stripes, heavy grotesque
-// words. Each control is put together from those blocks; what a hand does is naked_ui's.
+// Poster forms: the app's controls as a Swiss geometric poster, after Posterlad's Checkers and the Xavito deVito gig poster.
+//
+// Flat red, yellow, blue, green and pink on paper, with circles, half circles, quarters, triangles, stripes and heavy
+// grotesque text. Each control is built from those blocks. Press and hover behaviour comes from naked_ui.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -56,8 +57,9 @@ TextStyle _word(Color c, double size) => T.name(c).copyWith(fontSize: T.px(size)
 class PosterForms extends Forms {
   const PosterForms();
 
-  /// A yellow block with the word, a black square with a paper circle; under the hand the circle turns to a red quarter,
-  /// pressed the whole sinks.
+  /// A yellow block with the label, next to a black square with a paper circle.
+  ///
+  /// On hover the circle becomes a red quarter. While pressed the whole button sinks.
   @override
   Widget action(BuildContext context, ActionSpec a) => NakedButton(
     onPressed: a.onPressed,
@@ -84,7 +86,9 @@ class PosterForms extends Forms {
     ),
   );
 
-  /// A black slot with a yellow disc: on, the slot turns green and the disc rolls right; the word in capitals beside it.
+  /// A black slot with a yellow disc, and ON or OFF in capitals beside it.
+  ///
+  /// When on, the slot turns green and the disc rolls to the right.
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,
@@ -115,8 +119,9 @@ class PosterForms extends Forms {
     ),
   );
 
-  /// A head of solid colour (its own block of the poster, by its title) with the title heavy in black and a shape at its
-  /// end; the rows on paper beneath, held by a black rule.
+  /// A header of solid colour with the title in heavy black type and a shape at its end.
+  ///
+  /// The colour is one of the poster blocks, chosen from the title. The rows sit on paper beneath, framed by a black rule.
   @override
   Widget card(BuildContext context, CardSpec c) {
     final title = c.title ?? '', block = _blocks[title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0xffff) % _blocks.length];
@@ -154,7 +159,8 @@ class PosterForms extends Forms {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (c.title != null) head else ?c.head, // (a card with no title may still have a head: what sits at its end)
+          // A card with no title may still have a head, which is whatever sits at its end.
+          if (c.title != null) head else ?c.head,
           if (c.open && c.body.isNotEmpty)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(8)),

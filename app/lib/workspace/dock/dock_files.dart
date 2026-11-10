@@ -1,5 +1,6 @@
-// The Media shelf, AEViewer 2 style: one browser for the project's files and media. A folder tree (locations, then folders only) beside
-// or above the open folder's contents, shown as thumbnails or as a list. Wide: tree | contents. Narrow: tree band (height by drag) over contents.
+// The Media shelf, in the style of AEViewer 2: one browser for the project's files and media.
+// A folder tree (locations, then folders only) sits beside or above the open folder's contents, shown as thumbnails or a list.
+// Wide: tree | contents. Narrow: the tree band (its height set by dragging) over the contents.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -24,12 +25,13 @@ part 'dock_files_sheet.dart';
 part 'dock_files_browser.dart';
 part 'dock_files_contents.dart';
 
-/// The tree band's height when the shelf is narrow (double-click on its grip comes back here).
+/// The tree band's height when the shelf is narrow. A double-click on its grip resets to this.
 const dockTreeHeight = 132.0;
 
 /// From this shelf width the tree stands beside the contents instead of above them.
 const _wide = 440.0;
 
+/// A file or folder in the Media shelf's tree.
 class FileNode {
   // ignore: prefer_initializing_formals
   const FileNode(this.id, this.name, this.g, {this.meta = '', List<FileNode> kids = const []}) : _kids = kids;
@@ -38,24 +40,25 @@ class FileNode {
   final List<FileNode> _kids;
   bool get folder => g == DockG.folder;
 
-  /// A file or folder of the disk: its id is its whole path. Its folder is read when it is first opened ([listed]).
+  /// A file or folder on disk: its id is its full path. A folder's contents are read when it is first opened (see [listed]).
   bool get disk => id.startsWith('/');
   bool get listed => !disk || _lists.containsKey(id);
   List<FileNode> get kids => disk && folder ? _listed(id) : _kids;
 }
 
-// ---------------------------------------------------------------- the disk
+// Files on disk.
 
-/// What a file of the disk is here: the inside says what kind of thing it makes (null: none, not shown); the mark for
-/// each kind is the shelf's own.
+/// The kind of layer a file makes, as the engine says it. An empty string means none, so the file is not shown.
+/// The shelf chooses the icon for each kind.
 String Function(String file) _kindOfFile = (_) => '';
 Future<String?> Function(String film, int step, int steps)? _thumbnailAtOf;
 DockG? _glyphOf(String file) => switch (_kindOfFile(file)) {
   'film' => DockG.video,
-  'sound' => DockG.audio, // (songs on a tab of their own: Alight Motion's Add has Audio apart from Media, docs/internal/reports/alight_motion/alight_ui.md 176)
+  // Songs have a tab of their own, as in Alight Motion's Add, where Audio is apart from Media (docs/internal/reports/alight_motion/alight_ui.md).
+  'sound' => DockG.audio,
   'picture' => DockG.image,
   'solid' => DockG.shape,
   'text' => DockG.font,
-  'timesheet' => DockG.comp, // (its columns put together: _placeSheet)
+  'timesheet' => DockG.comp, // Its columns are put together by _placeSheet.
   _ => null,
 };

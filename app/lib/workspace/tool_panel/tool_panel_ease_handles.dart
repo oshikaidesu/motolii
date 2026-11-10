@@ -1,12 +1,14 @@
-// The handles on an ease's curve, as AbsentMotion's Keyframes.kt has them for Alight Motion's kinds (Easing.handles, its
-// numbers and its moves written over one for one: Kotlin does not run in this window, 10/30 the user's "そのまま移した方が
-// いい"). A yellow one changes the shape, a white one where it starts and ends; each says how it moves the numbers.
+// Draggable handles on an easing curve, ported one for one from AbsentMotion's Keyframes.kt (Alight Motion's easing kinds).
+// The Kotlin is ported rather than run because Kotlin does not run in this app.
+// A yellow handle changes the shape of the curve; a white one marks where the curve starts and ends.
+// Each handle carries the function that turns its new position into the changed easing.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 
+/// One draggable handle on an easing curve.
 class EaseHandle {
   const EaseHandle(
     this.x,
@@ -20,21 +22,38 @@ class EaseHandle {
     this.damping = 1,
     this.along = false,
   });
+
+  /// Position of the handle on the graph, both in 0..1 unless [overshoot] is set.
   final double x, y;
-  final bool param, dashed, overshoot; // (param: yellow, the shape's; dashed: only its stem, on Random; overshoot: past 0 and 1)
-  final bool along; // (it goes along the line x = y: where a beat holds its x, so its y)
-  final double? fromX, fromY; // (its stem starts there)
+
+  /// Whether this is a shape handle, drawn yellow.
+  final bool param;
+
+  /// Whether only the stem is drawn dashed. Used by Random.
+  final bool dashed;
+
+  /// Whether the handle can go past 0 and 1.
+  final bool overshoot;
+
+  /// Whether the handle moves along the line x = y, so x and y change together.
+  final bool along;
+
+  /// Where the stem of the handle starts.
+  final double? fromX, fromY;
+
   final double damping;
+
+  /// Returns the easing that results from dragging the handle to (x, y).
   final Ease Function(double x, double y) moved;
 }
 
 const _shortest = 0.02;
 double _legal(double v, double lo, double hi) => v.clamp(lo, hi);
 
-/// The handles of an ease: Bezier's two on its own; the others' as its words say them.
+/// The handles of an easing. Bezier has its two control points; the other kinds take theirs from the numbers in the name.
 List<EaseHandle> easeHandles(Ease e) {
   if (easeIsTurned(said(e))) {
-    // (AbsentMotion's handles(): a reversed way's are its own, turned end for end)
+    // A reversed easing uses the handles of the original, flipped end for end, as AbsentMotion's handles() does.
     return [
       for (final h in easeHandles(heard(easeTurn(said(e)))))
         EaseHandle(
@@ -52,7 +71,7 @@ List<EaseHandle> easeHandles(Ease e) {
   }
   if (e.kind == EaseKind.hold) return const [];
   if (e.name == 'Linear') {
-    // (a curve a hand pulled straight is still its curve: its handles stay where they were let go)
+    // A curve dragged straight is still a curve: its handles stay where the user dropped them.
     return [
       EaseHandle(.25, .25, (x, y) => e.withHandles(Offset(x, y), const Offset(.75, .75)), fromX: 0, fromY: 0),
       EaseHandle(.75, .75, (x, y) => e.withHandles(const Offset(.25, .25), Offset(x, y)), fromX: 1, fromY: 1),
@@ -169,7 +188,7 @@ List<EaseHandle> easeHandles(Ease e) {
   return const [];
 }
 
-/// How far up and down the graph looks for an ease: AbsentMotion's EasingPanel.kt geoOf.
+/// The vertical range the graph shows for an easing, as in AbsentMotion's EasingPanel.kt geoOf.
 (double, double) easeReach(Ease e, [bool overshoot = false]) => overshoot
     ? (-2, 3)
     : easeIsTurned(said(e))

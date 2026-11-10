@@ -1,37 +1,40 @@
-// dock_files_used.dart: which files the document uses (and by which thing), and a file put on the stage.
+// Which files the project uses and by which layer, and placing files on the canvas.
 part of 'dock_files.dart';
 
 var _usedNow = <String, String>{};
 
 int? _usedRev;
 
-/// The files the document's things are made of, by whole path: the thing that uses each (the last one, the one in front).
+/// Maps each file the project uses, by whole path, to the layer that uses it. If several layers use a file, the front one wins.
 Map<String, String> _used(Ws ws) {
   if (_usedRev == ws.rev) return _usedNow;
   final m = ws.inside!;
   _usedRev = ws.rev;
   return _usedNow = {
-    for (final l in ws.layers.reversed) // (the nearest thing is the first row: it is told last, so it is the one kept)
+    // The front layer is the first row, so going in reverse makes it the last entry and therefore the one kept.
+    for (final l in ws.layers.reversed)
       if (m.word(int.parse(l.id), 'file') case final f when f.isNotEmpty && !const {'behaviour', 'camera', 'light'}.contains(m.word(int.parse(l.id), 'kind')))
-        m.whole(f): l.id, // (theirs is their kind's name, no file)
+        // Behaviour, camera and light layers hold a kind name instead of a file.
+        m.whole(f): l.id,
   };
 }
 
-/// The thing of the document a file is on.
+/// The id of the layer that uses [n], or null.
 String? _layerOf(FileNode n, DockCtx c) => _used(c.ws)[n.id];
 
 bool _inUse(FileNode n, DockCtx c) => _layerOf(n, c) != null;
 
-/// Every thing that shows [file] (whole path), by the word that says so: its own file, or a shape filled with it.
+/// Every layer that shows [file] (whole path), with the property that says so: its own file or a shape filled with it.
 List<(int, String)> _showing(Motolii m, String file) => [
   for (final t in m.layers)
     for (final w in const ['file', 'fill_media'])
       if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file) (t, w),
 ];
 
-/// [file] put in place of what [all] show, in one step, as Alight Motion's Media Info replaces a file in the whole scene
-/// (AbsentMotion's replaceMedia, model/Media.kt: the file's uri and every fill of it), After Effects' and Premiere Pro's
-/// Replace Footage.
+/// Replaces what every entry of [all] shows with [file], in one undo step.
+///
+/// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
+/// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
 void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
   final m = c.ws.inside!;
   m.later('together', number: 1);
@@ -43,20 +46,22 @@ void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
   c.ws.after(m.later('together'), (_, _) => c.ws.reread());
 }
 
-/// The files picked together (⌘ and a press, as Finder adds to what is picked): placed together, one after another.
+/// The files selected together with Cmd and click, as Finder adds to a selection. They are placed together.
 final _filesPicked = <String>{};
 
-/// The files picked together put on the stage, each a new thing from the present moment, each film as long as it plays
-/// (the discoverer's length: a film said no length lasts to the document's end), then, all of them films, laid one after
-/// another in the order picked (the inside's Stagger: Alight Motion adds several so); all of them picked. A still lasts
-/// as long as chosen under it (End: stills are laid together).
+/// Places the selected [files] on the canvas, each as a new layer starting at the current time, and selects the new layers.
+///
+/// A video lasts as long as it plays, using the length from the discoverer. A video of unknown length lasts to the
+/// end of the project. A still image lasts as long as chosen under it, and End stacks the stills together.
+/// If every file has a length, the layers are laid one after another in the order selected with the engine's
+/// Stagger, as Alight Motion does when adding several files.
 Future<void> _placeAll(DockCtx c, List<String> files) async {
   if (_level(files) case final drawings?) return _placeLevel(c, drawings);
   final m = c.ws.inside!;
   final lengths = [
     for (final (i, s) in (await Future.wait([for (final f in files) mediaSecondsOf(m.libPath, f)])).indexed)
       _kindOfFile(files[i]) == 'picture' ? _stillSeconds : s,
-  ]; // (a still: as long as chosen)
+  ]; // A still image lasts as long as chosen.
   m.later('together', number: 1);
   final made = <Future<int>>[];
   for (final (i, f) in files.indexed) {
@@ -67,7 +72,7 @@ Future<void> _placeAll(DockCtx c, List<String> files) async {
       asked.complete(0);
     }, asked.complete);
     if (_fitted(f)) m.later('fit', layer: -1, word: 'fit');
-    if (lengths[i] > 0) m.later('set', layer: -1, name: 'duration', number: lengths[i]); // (the one just added)
+    if (lengths[i] > 0) m.later('set', layer: -1, name: 'duration', number: lengths[i]); // Applies to the layer just added.
     made.add(asked.future);
   }
   c.ws.after(m.later('together'));
@@ -82,8 +87,10 @@ Future<void> _placeAll(DockCtx c, List<String> files) async {
   });
 }
 
-/// The pictures picked together, when they are the drawings of one level: one folder, one name, a number at its end
-/// (OpenToonz's level, animation_0001.png, read by (\d+): tfilepath.cpp), each by its number, the lowest first.
+/// Returns the drawings of one level, lowest number first, if [files] are all drawings of it, otherwise null.
+///
+/// The drawings are image files in one folder with the same name apart from a number at the end, such as
+/// animation_0001.png, which OpenToonz reads in tfilepath.cpp. At least [least] drawings are needed.
 List<(int, String)>? _level(List<String> files, {int least = 2}) {
   final named = RegExp(r'^(.*?)(\d+)(\.[^./]+)$'), drawings = <(int, String)>[];
   String? level;
@@ -95,12 +102,14 @@ List<(int, String)>? _level(List<String> files, {int least = 2}) {
   return drawings.length < least ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
 }
 
-/// A level put on the stage as one thing (OpenToonz's level, CLIP STUDIO's animation folder), its lowest drawing its
-/// file, fitted; which drawing shows a key of its Drawing for each, the drawing's own number (not the how-manieth:
-/// a drawing put in between, or a gap, moves no other), held to the next as a timesheet holds it (XDTS's frames, read
-/// by OpenToonz's xdtsio.cpp: each to the next item). Each at its number's frame of 24 a second from the lowest (24: as
-/// DiTiS reads a timesheet), so drawings numbered by their frames, 1, 3, 5, are held across the gaps, which the After
-/// Effects forum asks for and After Effects lacks; the timing is then changed by moving the keys.
+/// Places a level, OpenToonz's term and CLIP STUDIO's animation folder, on the canvas as one layer.
+///
+/// The lowest drawing is the layer's file and is fitted to the canvas. The layer's Drawing property gets one hold
+/// keyframe per drawing, valued with the drawing's own number rather than its position, so a drawing added in between
+/// or a gap does not move the others. A hold lasts until the next keyframe, as in a timesheet (XDTS frames, read by
+/// OpenToonz's xdtsio.cpp). Each keyframe sits at 24 frames per second from the lowest number, as DiTiS reads a
+/// timesheet. Drawings numbered 1, 3, 5 are therefore held across the gaps, which After Effects users ask for on the
+/// forum and After Effects lacks. The timing can then be changed by moving the keyframes.
 void _placeLevel(DockCtx c, List<(int, String)> drawings) {
   final m = c.ws.inside!, from = c.ws.frame / Ws.fps, first = drawings.first.$1;
   m.later('together', number: 1);
@@ -118,34 +127,36 @@ void _placeLevel(DockCtx c, List<(int, String)> drawings) {
   _filesPicked.clear();
 }
 
-/// A photo or a film comes fitted inside the picture, in its middle, as Alight Motion places one (AbsentMotion's
-/// imageLayer and videoLayer, editor/EditorActions.kt and VideoActions.kt: golf ㊱); a drawing (Lottie, SVG, a roll) as it is.
+/// Whether [file] is fitted inside the canvas and centred, as Alight Motion places photos and videos (imageLayer and
+/// videoLayer in AbsentMotion's editor/EditorActions.kt and VideoActions.kt). Vector images such as Lottie and SVG
+/// are placed as they are.
 bool _fitted(String file) =>
     _kindOfFile(file) == 'film' || _kindOfFile(file) == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp|heic)$', caseSensitive: false).hasMatch(file);
 
 final _placing = <String>{};
 
-/// A file put on the stage as a new thing, picked. Not done: the foot of the shelf says why.
+/// Places the file [n] on the canvas as a new layer and selects it. If it fails, the footer of the shelf says why.
 void _place(DockCtx c, FileNode n) {
   if (_kindOfFile(n.id) == 'timesheet') return unawaited(_placeSheet(c, n.id));
   if (!_placing.add(n.id)) {
-    return; // (a song takes the inside a moment to read: a press in that moment is the same press; golf_noise.md (119), no source, a rule of this window's)
+    // Reading a song takes the engine a moment, so a second click in that moment counts as the same click.
+    return;
   }
   final m = c.ws.inside!,
       still = _kindOfFile(n.id) == 'picture' && _stillSeconds > 0,
       cut = const ['film', 'sound'].contains(_kindOfFile(n.id)) ? _filmRanges[n.id] : null,
-      fit = _fitted(n.id); // (the inside makes of it what the file is; without waiting, picked once made)
-  if (still || cut != null || fit) m.later('together', number: 1); // (made, fitted and given its length: one step)
+      fit = _fitted(n.id); // The engine works out what the file is without waiting, and the layer is selected once made.
+  if (still || cut != null || fit) m.later('together', number: 1); // Adding, fitting and setting the length are one undo step.
   c.ws.after(m.later('add', word: n.id), (done, why) {
     _placing.remove(n.id);
     c.set(() => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why);
   }, (made) => c.ws.select('$made'));
   if (fit) m.later('fit', layer: -1, word: 'fit');
-  if (still) m.later('set', layer: -1, name: 'duration', number: _stillSeconds); // (the one just added: as long as chosen under it)
+  if (still) m.later('set', layer: -1, name: 'duration', number: _stillSeconds); // Applies to the layer just added.
   if (cut case (final a, final b)) {
     mediaSecondsOf(m.libPath, n.id).then((len) {
-      // (known already: the band drew it)
-      m.later('set', layer: -1, name: 'begin', number: a * len); // (from where the band's left end is in the film)
+      // The length is already known because the range band drew it. The begin time is where the band's left end is in the video.
+      m.later('set', layer: -1, name: 'begin', number: a * len);
       m.later('set', layer: -1, name: 'duration', number: (b - a) * len);
       c.ws.after(m.later('together'), (_, _) => c.ws.reread());
     });

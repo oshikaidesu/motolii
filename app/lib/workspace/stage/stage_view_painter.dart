@@ -1,4 +1,4 @@
-// Part of stage_view.dart: the painter: guides, grid, boxes, handles and captions.
+// The stage's painter: guides, grid, boxes, handles and captions.
 part of 'stage_view.dart';
 
 class _ViewPainter extends CustomPainter {
@@ -19,22 +19,32 @@ class _ViewPainter extends CustomPainter {
     this.form = ('', 0),
     this.crop = const [],
   });
-  final String? grip; // (the handle in hand: it alone shown, lit; the others gone till it is let go)
-  final (String, double) form; // (the picked shape's form and roundness: its own handles)
-  final List<double> crop; // (the picked photo's crop: a bar on each side)
 
-  /// The inside marks the picked thing and the one under the hand on its desk: not drawn here.
+  /// The handle being dragged. Only it is drawn, highlighted, until the drag ends.
+  final String? grip;
+
+  /// The selected shape's form and corner roundness, which decide its own handles.
+  final (String, double) form;
+
+  /// The selected image's crop, drawn as a bar on each side.
+  final List<double> crop;
+
+  /// Whether the engine already marks the selected and hovered layers, so they are not drawn here.
   final bool marked;
+
+  /// Which part to paint: below the preview, above it, or all.
   final _Part part;
 
-  /// Joined: every thing's point it turns about shown (Pivots), and the lines a carried thing has stuck to (Snap).
+  /// Whether to show every layer's anchor point (Pivots).
   final bool pivots;
+
+  /// The snap lines (x, y) the dragged layer sits on, or null on an axis with none.
   final (double?, double?) met;
 
-  /// The picked thing's way over its time, in points of the picture (null: it stays put, or not read yet).
+  /// The selected layer's path over time in canvas coordinates, or null if it does not move or is not read yet.
   final List<Offset>? trail;
 
-  /// The picked thing's parent (what it goes with), its frame drawn grey: Alight Motion's parent outline.
+  /// The id of the selected layer's parent. Its frame is drawn grey, like Alight Motion's parent outline.
   final String? parent;
   final ArtScene scene;
   final _View v;
@@ -61,7 +71,7 @@ class _ViewPainter extends CustomPainter {
     c.restore();
     _guides(c);
     if (trail case final w? when w.length > 1) {
-      // (thin, an arrow every so often the way it goes)
+      // A thin line with an arrowhead at intervals along the direction of motion.
       final line = _line(WsT.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) v.toScreen(q)];
       c.drawPoints(PointMode.polygon, pts, line);
       for (var i = 6; i + 1 < pts.length; i += 12) {
@@ -91,18 +101,20 @@ class _ViewPainter extends CustomPainter {
         c.drawCircle(a, 3.5, _line(Grey.g91, 1.2));
       }
     }
-    if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), _line(Grey.g63, 1)); // (what the picked thing goes with: its frame, grey)
+    // The selected layer's parent frame, in grey.
+    if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), _line(Grey.g63, 1));
     for (final id in scene.gizmos.keys) {
       _gizmo(c, id);
     }
     if (marked) {
-      // (the inside marks its frame, corners, sides, knob and pivot; its own handles are drawn here, over them)
+      // The engine marks the frame, corners, sides, rotate knob and anchor. Only the layer's own handles are drawn here.
       if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
         _own(c, _handles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
       }
       return c.restore();
     }
-    if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1); // (in its label colour, as its row)
+    // The hovered layer's outline uses its label colour, like its row in the layer list.
+    if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);
     if (WsArt.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
     c.restore();
   }
@@ -160,8 +172,9 @@ class _ViewPainter extends CustomPainter {
     }
   }
 
-  /// A camera in the working eye: its frame, crossed, as AbsentMotion's DrawCameraFrames, the lines to where it is and
-  /// the point it looks at as After Effects' camera. Picked, its corners take a hand (the frame's size is the lens).
+  /// Draws a camera in the custom view: its crossed frame as in AbsentMotion's DrawCameraFrames, lines from its
+  /// position to the frame corners, and its point of interest as in After Effects. The selected camera also gets
+  /// corner handles, because the frame size sets the lens.
   void _gizmo(Canvas c, String id) {
     final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], picked = id == sel;
     if (g.length < 6) return;
@@ -240,25 +253,26 @@ class _ViewPainter extends CustomPainter {
     _tag(c, bounds.topLeft, l.name, WsT.accent, WsT.onAccent, wsTone(l.kind));
   }
 
-  /// The picked thing's own handles, besides its frame's (which the inside marks on its desk too: live.h desk_marks).
+  /// Draws the selected layer's own handles (roundness, points, crop), besides the frame handles that the engine marks
+  /// too (see desk_marks in live.h).
   void _own(Canvas c, Map<String, Offset> h) {
     final lit = WsT.accent.withValues(alpha: 1);
     bool seen(String k) => grip == null || grip == k;
     if (h['round'] case final r? when seen('round')) {
-      // (its corners' roundness: a ring in from its first corner)
+      // Corner roundness: a ring inside the first corner.
       final big = grip == 'round' ? 1.6 : 1.0;
       c.drawCircle(r, 4.5 * big, Paint()..color = Grey.g00);
       c.drawCircle(r, 3.5 * big, _line(lit, 1.5));
     }
     if (h['points'] case final p? when seen('points')) {
-      // (its points: a diamond out from its side)
+      // Point count: a diamond outside one side.
       final big = grip == 'points' ? 1.6 : 1.0,
           d = Path()..addPolygon([p + Offset(0, -5 * big), p + Offset(5 * big, 0), p + Offset(0, 5 * big), p + Offset(-5 * big, 0)], true);
       c.drawPath(d, _line(Grey.g00, 3));
       c.drawPath(d, Paint()..color = lit);
     }
     for (var i = 0; i < 4; i++) {
-      // (a photo's crop: a bar along each side where it is cut)
+      // Image crop: a bar on each side where the image is cut.
       if (h['crop $i'] case final p? when seen('crop $i')) {
         final big = grip == 'crop $i' ? 1.6 : 1.0, along = i.isEven ? Offset(0, 7 * big) : Offset(7 * big, 0);
         c.drawLine(p - along, p + along, _line(Grey.g00, 6));
@@ -267,7 +281,7 @@ class _ViewPainter extends CustomPainter {
     }
   }
 
-  /// A small rounded name tag sitting on top of [at] (moved inside the viewport when it would leave it).
+  /// Draws a small rounded name tag above [at], kept inside the viewport.
   void _tag(Canvas c, Offset at, String text, Color fill, Color ink, Color? pip) {
     final tp = lineText(text, T.micro(ink).copyWith(fontWeight: FontWeight.w700));
     final w = tp.width + 12 + (pip == null ? 0 : 10);

@@ -1,7 +1,9 @@
-// Part of dock_make.dart: a recipe's motion and the Expression group.
+// Part of dock_make.dart: a script's motion preview and the Expression group.
 part of 'dock_make.dart';
 
-// ---- a recipe's motion: asked of the inside once (create_preview.dart), on a document of its own.
+// ---- A script's motion preview: the engine is asked for it once (create_preview.dart), on a project of its own.
+
+/// True if [name] is one of the engine's create scripts. It also starts asking for the motions of all the scripts.
 bool _isRecipe(DockCtx c, String name) {
   final m = c.ws.inside;
   if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
@@ -9,7 +11,8 @@ bool _isRecipe(DockCtx c, String name) {
   return true;
 }
 
-/// The colour's number, typed: After Effects' Color Picker and Figma's both take one, #d4a72c, d4a72c or #da2. Told on Return or on leaving it.
+/// A field for typing a color's hex value, as in the color pickers of After Effects and Figma: #d4a72c, d4a72c or #da2.
+/// It reports the color on Return or when the field loses focus.
 class _HexField extends StatelessWidget {
   const _HexField(this.hex, this.onTold);
   final String hex;
@@ -35,22 +38,24 @@ class _HexField extends StatelessWidget {
   );
 }
 
-// ---- the Expression group: every JS that goes on a thing and moves its values (docs/internal/notes/CREATE_PROGRAM.md), one
-//  place for them all: the recipes with each() (the Repeater, After Effects' expressions, Maze, Sunflower…), the
-//  motions (Cavalry's Animators, expressions/), the maker's own (Add to shelf: shelf_add.dart). Each is put on the picked
-//  thing as a card of its own, as many as are wanted (fx_file, empty_fx.dart fxPut); nothing picked, a recipe makes
-//  its thing as its head says, the others go on a new board.
+// ---- The Expression group: every JS file that goes on a layer and moves its values (docs/internal/notes/CREATE_PROGRAM.md).
+// It gathers three kinds in one place:
+// - scripts with each(): the Repeater, After Effects expressions, Maze, Sunflower and others
+// - motions: Cavalry's Animators, in expressions/
+// - the user's own, added with Add to shelf (shelf_add.dart)
+// Each is added to the picked layer as a card of its own, as many times as wanted (fx_file, empty_fx.dart fxPut).
+// With nothing picked, a script creates its own layer as its head says, and the others go on a new layer.
 
-/// The recipes that are expressions, by their head's name, and their files (the maker's of a file's name stands over
-/// the library's, as the inside's doc_folders).
+/// The create scripts that are expressions, as (name from the file's head, file path).
+/// A user's file replaces a library file of the same name, as the engine's doc_folders does.
 List<(String, String)> _expressionRecipes() {
   final by = <String, String>{};
   for (final dir in ['$motoliiShelves/create', '${EffectTiles.own}/recipes', '${EffectTiles.own}/create']) {
-    // (recipes/: the maker's folder of the name it had before 2026-11-09, as doc_folders reads it)
+    // recipes/ is the user's folder under its former name, which doc_folders still reads.
     final d = Directory(dir);
     if (!d.existsSync()) continue;
     for (final f in d.listSync(recursive: true).whereType<File>()) {
-      // (its folders: shapes/, cavalry/, repeats/, over_footage/)
+      // Subfolders: shapes/, cavalry/, repeats/, over_footage/.
       final n = f.path.split('/').last;
       if (n.endsWith('.js') && f.readAsStringSync().contains(RegExp(r'function\s+each\b'))) by[n] = f.path;
     }
@@ -62,11 +67,13 @@ List<(String, String)> _expressionRecipes() {
   ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
 }
 
+/// The tiles of the Expression group: scripts that are expressions, then the engine's motions, then the user's own.
 List<_Make> _expressionsOf(Ws ws) => [
   for (final (name, file) in _expressionRecipes())
     _Make(name, DockG.copies, Pop.tonePlace, '', 'On the picked thing, a card of its own (nothing picked: makes its own thing)', file: file, made: true),
   for (final (name, file) in ws.inside?.animators ?? const <(String, String)>[])
-    if (!shelfAdded(file)) // (one the maker added is in expressions/ too, the inside's motions' folder: its tile is the one below, with its name)
+    // A motion the user added is also in expressions/, the engine's motions folder. Its tile is the one below, with its own name.
+    if (!shelfAdded(file))
       _Make(name, DockG.copies, Pop.tonePlace, '', 'A motion, on the picked thing, a card of its own (nothing picked: on a new board)', file: file),
   for (final (name, file) in shelfExpressions())
     _Make(
@@ -79,18 +86,20 @@ List<_Make> _expressionsOf(Ws ws) => [
     ),
 ];
 
+/// Puts an expression on the picked layer, or on a new layer when none is picked.
 void _expressionPut(DockCtx c, _Make tile) {
   final m = c.ws.inside!, name = tile.name, file = tile.file!, t = int.tryParse(c.ws.selected ?? '');
   void told(String why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
   c.set(() => c.mem.trouble.remove(name));
   if (t == null && tile.made) {
-    return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made')); // (as a recipe's tile makes it)
+    // Created the same way as a script tile.
+    return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made'));
   }
   final first = t != null && !Ws.fxFiles(m.word(t, 'fx')).contains(file);
   fxPut(c.ws, file, expression: true, told: told);
   if (t == null) return;
-  // (the copies its head makes its own thing with (// set copies), on a thing that has none to lay out; the Repeater's
-  //  first knobs as its tile laid a thing out: _laid)
+  // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
+  // The first time the Repeater is added, its starting parameters are also set from _laid.
   final head = File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'));
   if (head.map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1]).nonNulls.firstOrNull case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
     m.later('set', layer: t, name: 'copies', number: double.parse(n));
@@ -102,7 +111,7 @@ void _expressionPut(DockCtx c, _Make tile) {
   }
 }
 
-/// The names on Create, the library's and the maker's (an expression is not added under one: shelf_add.dart).
+/// All names on Create, the library's and the user's. An expression cannot be added under one of them (shelf_add.dart).
 Set<String> createNames(Ws ws) => {
   for (final (_, items) in [
     if (ws.inside != null) ...[_recipesOf(ws), _elementsOf(ws)],
@@ -115,8 +124,8 @@ Set<String> createNames(Ws ws) => {
   for (final m in _expressionsOf(ws)) m.name,
 };
 
-/// One the maker added: its tile, with Rename… on its menu (a library tile has none). The name is written beside its
-/// file, never the file (shelf_add.dart shelfRename).
+/// A tile for an item the user added, with Rename… on its menu (library tiles have none).
+/// The new name is stored beside the file and never changes the file (shelf_add.dart shelfRename).
 class _OwnTile extends StatefulWidget {
   const _OwnTile(this.m, this.c, {super.key});
   final _Make m;

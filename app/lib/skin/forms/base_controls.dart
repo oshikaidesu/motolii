@@ -1,4 +1,4 @@
-// The window's own drawing of the controls a form may replace. A form that does not override these keeps this picture.
+// The app's default drawing of the controls a form may replace. A form that does not override a control keeps this one.
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
@@ -8,7 +8,7 @@ import '../../workspace/state/state.dart' show WsT;
 import 'forms.dart';
 
 abstract final class Usual {
-  /// A well of round items, the chosen one filled.
+  /// A row of round options in a well, with the selected one filled.
   static Widget segment(BuildContext context, ChoiceSpec c) => Container(
     height: Shape.z(20),
     padding: EdgeInsets.all(Shape.s(2)),
@@ -34,7 +34,7 @@ abstract final class Usual {
     ),
   );
 
-  /// An on/off chip: raised, with the mark in the accent, when on.
+  /// An on/off chip. When on, it is raised and the mark is drawn in the accent colour.
   static Widget flag(BuildContext context, FlagSpec f) => Hov(
     onTap: f.onTap,
     builder: (_, h) {
@@ -55,9 +55,10 @@ abstract final class Usual {
     },
   );
 
-  /// Round filter chips in a sideways scroll, moved as any sideways list on a Mac is: a trackpad's sideways swipe, or a
-  /// mouse's wheel with Shift held (Flutter's own ScrollBehavior.pointerAxisModifiers); the wheel alone moves what is
-  /// up and down, not this (golf_noise.md (93)). The active one is the accent.
+  /// Round filter chips in a horizontal scroll view, with the active chip in the accent colour.
+  ///
+  /// It scrolls like any horizontal list on a Mac: a trackpad's sideways swipe, or the mouse wheel with Shift held
+  /// (Flutter's ScrollBehavior.pointerAxisModifiers). The wheel alone scrolls the vertical list around it, not this one.
   static Widget chips(BuildContext context, ChipsSpec c) => SizedBox(
     height: Shape.z(28),
     child: SingleChildScrollView(
@@ -93,7 +94,9 @@ abstract final class Usual {
     ),
   );
 
-  /// One timeline name: a band, an accent edge when picked, the kind and the three toggles. [banded] false is a bare row; a [mark] stands at its left.
+  /// One layer name in the timeline: a band, an accent edge when selected, the kind icon and the three toggles.
+  ///
+  /// If [banded] is false the row has no band or edge. A [mark] is drawn at the left.
   static Widget track(
     BuildContext context,
     TrackSpec t, {

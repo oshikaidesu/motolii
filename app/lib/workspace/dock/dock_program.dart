@@ -1,12 +1,18 @@
-// The Program shelf: what came as code (the door, engine/community/sites/adapter.h), kept as it was written and listed by what it was
-// written for: neither an effect, nor a thing to create, nor a preset. A list, or the picked one's code: what is typed
-// is saved as it is typed, and the thing on the stage and its knobs in the inspector follow (doc_script_of reads a file
-// that changed). As Godot and Unity keep scripts as files on a shelf with their knobs in the inspector; where the code is
-// typed they differ, and it is here so the stage stays in sight (no source for that). The code view is re_editor's
-// CodeEditor (MIT), coloured by re_highlight (highlight.js's rules and themes). Its tiles: program_tiles.dart. Its name is
-// kept beside the file and not in it (the file's name is what documents hold it by, its lines what its knobs are named
-// by; no source for the file beside it). A right click on a tile: Live's browser renames by its context menu (Live 12
-// manual, 4.2.1 and 4.5) and shows a file in Finder or Explorer (4.7.7).
+// The Program shelf: code that came from outside, kept as written and listed by what it was written for.
+//
+// A program is neither an effect, nor something to create, nor a preset.
+// - The shelf shows a list, or the picked program's code. Typed code is saved as it is typed, and the layer it made and
+//   its parameters in the inspector follow (doc_script_of reads a file that changed).
+// - Godot and Unity also keep scripts as files on a shelf with their parameters in the inspector. They edit the code
+//   elsewhere. It is edited here so the canvas stays in sight.
+// - The code view is re_editor's CodeEditor (MIT), coloured by re_highlight (highlight.js rules and themes).
+// - The tiles are in program_tiles.dart.
+// - A program's name is stored in a sidecar file next to it, not inside it. Documents refer to the file by its own name,
+//   and the parameters are named by its lines.
+// - Right-clicking a tile opens a context menu with Rename, as Live's browser does (Live 12 manual, 4.2.1 and 4.5),
+//   and shows the file in Finder or Explorer (4.7.7).
+//
+// The code arrives through engine/community/sites/adapter.h.
 import 'dart:async';
 import 'dart:io';
 
@@ -34,18 +40,21 @@ class Program {
   Program(this.file, {this.recipe, this.kind});
   final String file;
 
-  /// A closed pack of the library's recipes (a whole Cavalry script, a p5.js sketch as it came: CREATE_PROGRAM.md): made
-  /// by its name as Create made it (doc_make), what it was written for as the inside says; its file not written over.
+  /// [recipe] is the name of a closed pack from the library: a whole Cavalry script or a p5.js sketch as it came
+  /// (CREATE_PROGRAM.md). It is created by that name, as Create does (doc_make).
+  ///
+  /// [kind] is what the program was written for, as the engine reports it. A pack's file is never overwritten.
   final String? recipe, kind;
   String get stem => file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
   String get form => kind ?? (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
   String get tail => stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
 
-  /// What it is called with no name given: what it was written for and its hash.
+  /// The name used when none is set: what it was written for, then its hash.
   String get plain => '$form $tail'.trim();
 
-  /// What it is called: its maker's word, or what it says of itself (the site's title adapter_net.h wrote at its head, a
-  /// file of many tabs' description).
+  /// The display name: the user's own name if set, otherwise what the file says about itself.
+  ///
+  /// That is the site title adapter_net.h wrote at the head of the file, or the description of a multi-tab file.
   String get name {
     if (recipe case final r?) return r;
     try {
@@ -60,17 +69,18 @@ class Program {
     }
   }
 
-  /// Nothing written: what it is called with none.
+  /// Sets the name to [to]. An empty name removes the sidecar, so [name] falls back to [plain].
   void rename(String to) {
     if (to.trim().isNotEmpty) return shelfSidecar(file).writeAsStringSync(to.trim());
     if (shelfSidecar(file).existsSync()) shelfSidecar(file).deleteSync();
   }
 
-  /// The first line of it that says something.
+  /// The first line of the file that says something.
   String get first {
     try {
       final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
-          .firstMatch(File(file).readAsLinesSync().first); // (what a file of many tabs says it is)
+          // A multi-tab file describes itself in its first line.
+          .firstMatch(File(file).readAsLinesSync().first);
       if (kept != null && kept[1] != 'Shadertoy') return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
       return File(file)
           .readAsLinesSync()
@@ -82,7 +92,9 @@ class Program {
   }
 }
 
-/// The maker's programs, the last written first. Kept code stands for what it became: Hydra's, a p5 sketch's shader.
+/// The user's programs, most recently written first.
+///
+/// A Hydra or p5 source is hidden when the shader it became sits beside it, because that shader stands for it.
 List<Program> programs() {
   final dir = Directory('${EffectTiles.own}/programs');
   if (!dir.existsSync()) return const [];
@@ -95,7 +107,9 @@ List<Program> programs() {
   return [for (final f in kept) Program(f.path)];
 }
 
-/// The maker's programs, then the library's packs not among them (one put in from the net and kept there too: once).
+/// The user's programs, then the library's packs that are not among them.
+///
+/// A pack that was also put in from the web and kept appears only once.
 List<Program> programsAndPacks(Motolii? m) {
   final own = programs(), stems = {for (final p in own) p.stem}, kinds = {for (final (name, kind) in m?.packKinds ?? const <(String, String)>[]) name: kind};
   return [
@@ -116,14 +130,17 @@ class _ProgramShelfState extends State<ProgramShelf> {
   DockCtx get c => widget.c;
   void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
   final _menu = GlobalKey<WsMenuState>();
-  String? _renaming; // (the file whose name is being written)
+
+  /// The file whose name is being edited, if any.
+  String? _renaming;
 
   void _drawn() => setState(() {});
 
   @override
   void initState() {
     super.initState();
-    CopiesTiles.drawn.addListener(_drawn); // (a pack's tile drawn: shown)
+    // Show a pack's tile as soon as it has been drawn.
+    CopiesTiles.drawn.addListener(_drawn);
   }
 
   @override
@@ -139,7 +156,8 @@ class _ProgramShelfState extends State<ProgramShelf> {
         m.later('create', word: r),
         (done, why) => _told(p, done, why),
         (made) => c.ws.select('$made'),
-      ); // (as Create's tile made it: dock_make_colors.dart _make)
+        // Created as Create's tile does it (see _make in dock_make_colors.dart).
+      );
     }
     c.ws.after(m.later('adapter', layer: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;
@@ -164,7 +182,9 @@ class _ProgramShelfState extends State<ProgramShelf> {
     ]);
   }
 
-  /// What was made from it follows, its knobs in the inspector too; why its code does not run, under the code.
+  /// Applies the saved code: the layer made from it follows, and so do its parameters in the inspector.
+  ///
+  /// If the code does not run, the reason is shown under the code.
   void _saved(Program p) {
     final m = c.ws.inside;
     if (m == null) return;
@@ -174,7 +194,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     });
   }
 
-  /// The program the picked thing is made from: its code is the one shown (Godot opens a node's script from the node).
+  /// The program the selected layer was made from, whose code is the one shown. Godot likewise opens a node's script from the node.
   Program? _stood(List<Program> all) {
     final m = c.ws.inside, t = int.tryParse(c.ws.selected ?? '');
     if (m == null || t == null) return null;
@@ -202,10 +222,11 @@ class _ProgramShelfState extends State<ProgramShelf> {
         if (mounted) setState(() {});
       });
     }
+    // A pack's tile is drawn by its name, as Create's expressions are.
     String tile(Program p) => switch (p.recipe) {
       final r? => CopiesTiles.of(p.file, make: r),
       _ => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '',
-    }; // (a pack's drawn as Create's expressions are, made by its name)
+    };
     return WsMenu(
       key: _menu,
       child: Column(
@@ -216,8 +237,8 @@ class _ProgramShelfState extends State<ProgramShelf> {
             child:
                 c.mem.programCode &&
                     sel != null &&
-                    sel.recipe ==
-                        null // (a pack's file is the library's: not written over here)
+                    // A pack's file belongs to the library and is never written over here.
+                    sel.recipe == null
                 ? ProgramCode(sel.file, (text) {
                     File(sel.file).writeAsStringSync(text);
                     _saved(sel);
@@ -229,6 +250,8 @@ class _ProgramShelfState extends State<ProgramShelf> {
                     count: shown.length,
                     tile: (i) {
                       final p = shown[i];
+                      // Two presses create it, as on Create. The key includes the tile's modification time. Otherwise an
+                      // Image with the same file would keep showing the old picture after the tile is drawn again.
                       return ShelfTile(
                         ShelfItem(p.file, p.name, picture: tile(p)),
                         shelfLooks['Program']!,
@@ -243,12 +266,12 @@ class _ProgramShelfState extends State<ProgramShelf> {
                                 setState(() => _renaming = null);
                               })
                             : null,
-                      ); // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
+                      );
                     },
                   ),
           ),
-          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) // (large, as the Effects shelf's)
-            SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
+          // Large, as on the Effects shelf.
+          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
           if (sel != null)
             DockFooter(
               preview: dockBadge(DockG.program, WsT.toneText, size: Shape.z(34)),
@@ -264,13 +287,17 @@ class _ProgramShelfState extends State<ProgramShelf> {
   }
 }
 
-/// A program's code: what is typed is given to [write] a moment after the last key (the shelf writes it over its file;
-/// a thing's script on its card writes it to the thing's own copy: FxCode).
+/// An editor for a program's code.
+///
+/// Typed text is passed to [write] shortly after the last key. The shelf writes it over the program's file. A layer's
+/// script on its card writes it to the layer's own copy instead (FxCode).
 class ProgramCode extends StatefulWidget {
   const ProgramCode(this.file, this.write, {super.key, this.keep = false});
   final String file;
   final void Function(String text) write;
-  final bool keep; // (what is typed kept as it is, the file not read back: being made, FxCode)
+
+  /// Whether the typed text is kept as it is, without reading the file back. FxCode uses this while a script is being made.
+  final bool keep;
   @override
   State<ProgramCode> createState() => _ProgramCodeState();
 }
@@ -289,7 +316,7 @@ class _ProgramCodeState extends State<ProgramCode> {
   void didUpdateWidget(ProgramCode old) {
     super.didUpdateWidget(old);
     final now = File(widget.file).readAsStringSync();
-    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now; // (written by another editor)
+    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now; // Another editor wrote the file.
   }
 
   @override
@@ -303,9 +330,11 @@ class _ProgramCodeState extends State<ProgramCode> {
   @override
   Widget build(BuildContext context) => CodeEditor(
     controller: _text,
-    wordWrap: true, // (a shelf's width: a line pushed sideways is out of sight)
-    autocompleteSymbols:
-        false, // (exactly what is typed: re_editor puts in a closing " ] } and does not step over one typed, {"a":"b"} came out with ""} after it)
+    // The shelf is narrow, and a line pushed sideways would be out of sight.
+    wordWrap: true,
+    // Keep exactly what is typed. re_editor inserts a closing quote or bracket and does not step over one that is typed,
+    // so {"a":"b"} came out as {"a":"b""}.
+    autocompleteSymbols: false,
     onChanged: (_) {
       _soon?.cancel();
       _soon = Timer(const Duration(milliseconds: 400), _save);

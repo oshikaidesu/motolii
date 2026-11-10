@@ -6,7 +6,8 @@ import '../../widgets/controls.dart' show Hov;
 import '../../widgets/media.dart' show glyph;
 import '../../widgets/number_field.dart' show blockValue;
 
-/// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.
+/// The panels that own lists of choices, such as fonts and colours.
+/// The Inspector shows the current choice and links to the panel. It never holds the list itself.
 enum LinkTo {
   fonts('Browser', 'Fonts'),
   colors('Browser', 'Colors');
@@ -16,7 +17,7 @@ enum LinkTo {
   String get route => panel == shelf ? panel : '$panel › $shelf';
 }
 
-/// The value line of a block tile that is chosen elsewhere: the value, then where it is chosen.
+/// The value line of a block tile whose value is chosen in another panel: the value, then where to choose it.
 class LinkLine extends StatelessWidget {
   const LinkLine({super.key, required this.to, required this.value, required this.id});
   final LinkTo to;
@@ -27,7 +28,8 @@ class LinkLine extends StatelessWidget {
     return Hov(
       key: ValueKey('link:${to.name}:$id'),
       onTap: () {
-        x.doc.s2['route.at'] = id; // (the slot it is aimed at: the host may say the panel's pick to it)
+        // Record which parameter the target panel's pick should be applied to.
+        x.doc.s2['route.at'] = id;
         x.doc.str('route', to.route);
       },
       builder: (_, h) => SizedBox(
@@ -37,9 +39,10 @@ class LinkLine extends StatelessWidget {
             Expanded(
               child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: blockValue(Grey.g95)),
             ),
+            // In a narrow tile the name is cut short like the value, never running over the edge.
             Flexible(
               child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(h ? Grey.g95 : Grey.g56)),
-            ), // (a narrow tile: cut short as its value is, never over the edge)
+            ),
             SizedBox(width: Shape.s(2)),
             glyph(7, (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56), h),
           ],

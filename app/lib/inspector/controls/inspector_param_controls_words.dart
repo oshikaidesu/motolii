@@ -1,22 +1,24 @@
-// A words value's field: any words, typed (lines too), as Cavalry's string attribute.
+// The field for a words value: free text that may span lines, like Cavalry's string attribute.
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
 import '../../widgets/text_gestures.dart';
 
-/// Any words, typed (two lines shown): said to the host when the hand leaves; Esc puts back what was there.
+/// A text field for free text, two lines tall. The text is committed when the field loses focus, and Esc restores the previous text.
 class ParamWords extends StatelessWidget {
   const ParamWords({super.key, required this.id});
   final String id;
 
   @override
   Widget build(BuildContext context) {
-    final take = textToType; // (a text just placed: the first words field built takes the keys, its words picked)
+    // After a text layer has just been placed, the first words field built takes keyboard focus with its text selected.
+    final take = textToType;
     textToType = false;
     return TypedField(
       key: ValueKey('words:$id'),
-      text: Ctx.of(context).doc.s2[id] ?? '', // (out of the field it is what the host has now: another thing picked, an undo)
+      // Outside editing, the text is whatever the document holds now, for example after another layer is selected or after undo.
+      text: Ctx.of(context).doc.s2[id] ?? '',
       standing: true,
       take: take,
       escapes: true,
@@ -26,7 +28,7 @@ class ParamWords extends StatelessWidget {
       backgroundCursor: Grey.g20,
       selection: Role.selected.withValues(alpha: .4),
       onDone: (said) => said == null ? null : Ctx.read(context).doc.str(id, said),
-      // (its letters picked by the hand, kept for the Colors shelf to colour those alone: wordsPicked)
+      // Remembers the selected characters in wordsPicked so the Colors shelf can colour just those.
       onPick: (v) =>
           wordsPicked.value = v.selection.isValid && !v.selection.isCollapsed ? (text: v.text, start: v.selection.start, end: v.selection.end) : null,
     );

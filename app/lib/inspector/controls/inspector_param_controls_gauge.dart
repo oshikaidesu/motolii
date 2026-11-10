@@ -1,11 +1,12 @@
-// The value as a small live picture beside its label: a pie for a share, a level for a height, a dot for a point.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-/// The value as a small live picture beside its label: a pie for a share, a level for a height, a dot for a point.
+/// A small live picture of a value, shown beside its label.
+///
+/// It draws a pie for a percentage, a bar for a level and a dot for a point.
 class Gauge extends StatelessWidget {
   const Gauge(this.v, this.p, {super.key, this.x, this.y});
   final double? v, x, y;

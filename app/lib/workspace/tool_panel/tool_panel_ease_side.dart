@@ -1,5 +1,5 @@
-// What stands beside the graph, as AbsentMotion's EasingPanel.kt lays it, Apache-2.0: LeftColumn (reverse and ⋯) and a
-// narrow row of shapes, none named. Its layout and its moves, in this window's own colours.
+// The controls beside the Ease graph, laid out as in AbsentMotion's EasingPanel.kt (Apache-2.0): a left column with
+// reverse and a menu, and a narrow row of easing shapes without names. The layout and behavior are ported; the colors are this app's.
 import 'package:flutter/widgets.dart';
 
 import '../../widgets/controls.dart' show Hov, IconPress;
@@ -13,41 +13,49 @@ import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/state/state.dart';
 
-/// The shapes, one row, one press each (the maker, 10/31: with ways multiplied the second row of AbsentMotion's panel is
-/// not needed). Alight Motion's, in the order of AbsentMotion's EasingCatalog.families, its four beziers first.
+/// The easing shapes shown in one row, one click each.
+/// They are Alight Motion's, in the order of AbsentMotion's EasingCatalog.families, with the four Beziers first.
+/// The second row of AbsentMotion's panel is not needed because the shelf holds the rest.
 const easeShapes = ['Linear', 'In', 'Out', 'In-out', 'Bounce', 'Elastic', 'Cyclic', 'Random', 'Steps', 'ElasticSteps'];
 
-/// How many a row of that length shows: all that stay a good size, seven at the least, and part of the next, cut by the
-/// edge: it says there is more.
+/// How many shapes a row of [length] shows: as many as fit at a good size, at least seven, plus part of the next one.
+/// The cut-off shape tells the user there is more to scroll to.
 double easeFits(double length) => (length / Shape.z(34)).floorToDouble().clamp(7, easeShapes.length) + .45;
 
+/// Whether [e] is a Linear or Bezier curve.
 bool easeIsBezier(Ease e) => const {'Linear', 'Bezier'}.contains(said(e).split(' ').first);
 
-/// The row: the shapes, then, scrolled to, Hold, which has no tile among them.
+/// The row of shapes, followed by Hold, which is reached by scrolling.
 List<Ease> easeRow(List<Ease> ways) {
   Ease? named(String n) => easingPresets.where((p) => p.name == n).firstOrNull ?? ways.where((w) => w.name == n).firstOrNull;
   return [for (final n in easeShapes) ?named(n), easingPreset('Hold')];
 }
 
-/// The ways of the window and the document that are none of the shapes: they lie on the shelf (tool_panel_ease_shelf.dart).
+/// The easings from the app and the project that are not one of the shapes. They go on the shelf (tool_panel_ease_shelf.dart).
 List<Ease> easeOthers(List<Ease> ways) => [
   for (final w in ways)
     if (!easeShapes.contains(w.name)) w,
 ];
 
-/// Whether the way now is this shape: AbsentMotion's EasingCatalog.matches, a bezier by its numbers, any other by its kind.
+/// Whether [now] is this shape, as in AbsentMotion's EasingCatalog.matches: a Bezier matches by its numbers, any other kind by its name.
 bool _isOf(Ease shape, Ease now) {
   final word = said(now), base = easeIsTurned(word) ? easeTurn(word) : word;
   return easeIsBezier(shape) ? shape == now : said(shape).split(' ').first == base.split(' ').first;
 }
 
-/// The row beside the graph: a press puts a shape on the stretch, or a curved line back straight.
+/// The row beside the graph. Clicking a shape applies it to the keyframe interval, and clicking Linear straightens a curve.
 class EaseShapes extends StatelessWidget {
   const EaseShapes({super.key, required this.ease, required this.shapes, required this.side, required this.onPick, this.across = false});
+
+  /// The current easing.
   final Ease ease;
   final double side;
-  final bool across; // (laid across, under the graph, in a tall pane)
+
+  /// Whether the row lies horizontally under the graph, which is used in a tall pane.
+  final bool across;
   final List<Ease> shapes;
+
+  /// Called with the shape the user clicked.
   final ValueChanged<Ease> onPick;
 
   @override
@@ -64,19 +72,23 @@ class EaseShapes extends StatelessWidget {
               key: ValueKey('ease.${e.name}'),
               on: _isOf(e, ease),
               side: side,
+              // Clicking the shape already in use does nothing, so its own numbers are kept.
               onTap: () => _isOf(e, ease) && !(easeIsBezier(e) && said(e) != said(ease)) ? null : onPick(e),
-            ), // (the one it is already: its own numbers kept)
+            ),
         ],
       ),
     ),
   );
 }
 
-/// The left column: reverse, and under ⋯ the curve copied and pasted (Alight Motion's Copy Curve, Paste Curve, Paste
-/// Curve to All Keyframes), and the maker's own Jump (tool_panel_ease_state.dart easeJump). Its Enable Overshoot is among the numbers.
+/// The left column: a reverse button, and a ⋯ menu to copy and paste the curve.
+/// The menu has Alight Motion's Copy Curve, Paste Curve and Paste Curve to All Keyframes, and this app's own Jump
+/// (easeJump in tool_panel_ease_state.dart). Enable Overshoot is among the numbers instead.
 class EaseLeft extends StatelessWidget {
   const EaseLeft({super.key, this.onReverse, required this.menu});
-  final VoidCallback? onReverse; // (none: the way cannot be turned)
+
+  /// Called to reverse the easing. Null when the easing cannot be reversed.
+  final VoidCallback? onReverse;
   final List<(String, String, VoidCallback)> menu;
 
   @override
@@ -105,7 +117,7 @@ class EaseLeft extends StatelessWidget {
   );
 }
 
-// (AbsentMotion's EasingIcons.kt REVERSE_ARROWS)
+// The reverse arrows, from AbsentMotion's EasingIcons.kt REVERSE_ARROWS.
 void _drawReverse(Canvas c, Size s, Color ink) {
   c.scale(s.width / 24);
   c.drawPath(
@@ -129,7 +141,7 @@ void _drawReverse(Canvas c, Size s, Color ink) {
   );
 }
 
-/// The arrow to the curve before or after, in a bottom corner of the graph (AbsentMotion's StretchButton).
+/// The arrow in a bottom corner of the graph that moves to the previous or next curve (AbsentMotion's StretchButton).
 class EaseStep extends StatelessWidget {
   const EaseStep({super.key, required this.span, required this.back});
   final EaseSpan? span;
@@ -157,6 +169,7 @@ class EaseStep extends StatelessWidget {
   }
 }
 
+/// Draws a chevron pointing back (left) or forward (right).
 void drawEaseChevron(Canvas c, Size s, Color ink, bool back) {
   final x = back ? s.width * .6 : s.width * .4, d = back ? -s.width * .2 : s.width * .2;
   c.drawPath(

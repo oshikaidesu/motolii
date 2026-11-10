@@ -1,9 +1,9 @@
-// The camera on the stage: which thing is the camera, its gizmo taken by the hand (turned or its frame sized), and
-// the wheel's dolly.
+// The camera on the stage: which layer is the camera, dragging its gizmo (orbit it or resize its frame), and the
+// mouse wheel dolly.
 part of 'stage_view.dart';
 
 extension _StageViewCamera on _StageViewState {
-  /// The camera the Camera tool turns: the picked one, else the document's first.
+  /// The camera the Camera tool acts on: the selected one, else the project's first.
   int? _cameraOf(Ws ws) {
     final m = ws.inside, picked = int.tryParse(widget.selected ?? '');
     if (m == null) return null;
@@ -14,17 +14,14 @@ extension _StageViewCamera on _StageViewState {
     return null;
   }
 
-  /// After Effects' Unified Camera tool's wheel: the camera nearer or further from where it looks, the wheel's turning
-  /// one step once it rests (golf_noise.md ㊲: no hand on the stage turned or brought the camera).
+  /// Moves the camera nearer to or further from its point of interest, like the wheel of After Effects' Unified Camera
+  /// tool. All wheel turns until the wheel rests for 300 ms form one undo step.
   void _dolly(double by) {
     final ws = WsScope.read(context), m = ws.inside, cam = _cameraOf(ws);
     if (m == null || cam == null) return;
     if (ws.freeEye) {
-      return ws.setView('stage.eye', [
-        ws.eye[0],
-        ws.eye[1],
-        (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0),
-      ]); // (After Effects' working views: the tool moves the view, not the camera)
+      // As in After Effects' custom views, the tool moves the view, not the camera layer.
+      return ws.setView('stage.eye', [ws.eye[0], ws.eye[1], (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0)]);
     }
     if (_dollyAt == null) {
       m.take(cam);
@@ -39,9 +36,13 @@ extension _StageViewCamera on _StageViewState {
     });
   }
 
-  /// A hand on a camera in the working eye: where it is goes round the point it looks at (After Effects' camera and point
-  /// of interest), a picked one's corner sizes the frame, which is the lens (AbsentMotion's withCameraFrameScaled), and
-  /// the frame or that point moves it (cameraGesture). [inside]: anywhere in the frame, or only on its marks.
+  /// Starts a drag on a camera gizmo in the custom view and returns whether one was hit.
+  ///
+  /// - The camera's position handle orbits it around its point of interest, as in After Effects.
+  /// - A corner of the selected camera's frame resizes the frame, which sets the lens.
+  /// - The frame itself or the point of interest moves the camera.
+  ///
+  /// [inside] makes any point in the frame count as a hit, not only its handles.
   bool _gizmoDragStart(_View v, Offset local, {required bool inside}) {
     final ws = WsScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / Ws.fps;
     for (final id in scene.gizmos.keys) {
@@ -52,9 +53,8 @@ extension _StageViewCamera on _StageViewState {
       final String by;
       if (on(g[5], 10)) {
         by = 'gizmo orbit';
-        _orbitRate = g[4] == null
-            ? .25
-            : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60); // (a turn as far as the hand has gone on the circle it goes round)
+        // Degrees per pixel, so the camera turns as far as the pointer travels on the circle it orbits.
+        _orbitRate = g[4] == null ? .25 : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
         _orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
       } else if (widget.selected == id && frame.any((p) => on(p, 8)) && g[4] != null) {
         by = 'gizmo lens';

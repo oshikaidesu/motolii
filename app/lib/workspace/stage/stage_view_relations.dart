@@ -1,11 +1,12 @@
 // Part of stage_view.dart: what is picked together and the relation picked, over the stage.
 part of 'stage_view.dart';
 
-/// Joined: what is picked together and the relation picked, over the stage. Picked together: a ring each, and along the
-/// top of the stage what they may do together. A relation picked: its shape (a ring round its middle, a row's line, how
-/// far a push reaches), handles that carry its middle and size, a ring on each thing it moves with a small × that takes
-/// that one out, a crown on its leader (another's crown makes that one the leader), and along the top its name and
-/// Release. A thing picked: the relations it is in, beside it, as outlined tags.
+/// Marks drawn over the stage for the selected layers and the selected relation.
+/// - Several layers selected: a ring on each, and along the top the relations they can be given together.
+/// - A relation selected: its shape (a ring, a row's line, or how far a push reaches) and handles for its centre and size.
+///   Each layer it moves gets a ring and an x that removes it; the leader wears a crown, and another layer's crown makes it the leader.
+///   Along the top are its name and the Release button.
+/// - One layer selected: the relations it belongs to, as outlined tags beside it.
 class _RelationMarks extends StatelessWidget {
   const _RelationMarks({required this.scene, required this.v, required this.lasso});
   final ArtScene scene;
@@ -18,7 +19,7 @@ class _RelationMarks extends StatelessWidget {
       WsScope.read(context).on[WsAspect.document],
       WsScope.read(context).on[WsAspect.picked],
       WsScope.read(context).seen,
-    ]), // (where things are in the picture shown)
+    ]), // Where the layers are in the preview shown.
     builder: (context, _) {
       final ws = WsScope.read(context), m = ws.inside;
       Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(scene.box(id)!.c);
@@ -33,8 +34,8 @@ class _RelationMarks extends StatelessWidget {
         for (final id in wsMembersOf(ws))
           if (on(id) case final p?) (id, p),
       ];
-      final now = m?.now ?? 0; // (the moment of the picture shown)
-      // (a place of the stage in its own units, on the screen; and back)
+      final now = m?.now ?? 0;
+      // Converts between a point in stage units and a point on the screen.
       Offset screen(double x, double y) => v.toScreen(Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point));
       (double, double) units(Offset p) {
         final c = v.toComp(p);
@@ -48,13 +49,11 @@ class _RelationMarks extends StatelessWidget {
         double val(String n, [double or = 0]) => m.value(rel, n, now) ?? or;
         final off = val('visible', 1) <= .5;
         leader = val('leader') > 0 ? '${val('leader').round()}' : null;
-        final lead = kind == 'around' || kind == 'row'
-            ? int.tryParse(leader ?? '')
-            : null; // (a ring's or a row's middle is its leader's place and its centre a step from it)
+        // For a ring or a row, the middle is the leader's position and the centre is an offset from it.
+        final lead = kind == 'around' || kind == 'row' ? int.tryParse(leader ?? '') : null;
         final lx = lead == null ? 0.0 : m.shows(lead, 'x', now)?.$1 ?? 0, ly = lead == null ? 0.0 : m.shows(lead, 'y', now)?.$1 ?? 0;
         final cx = val('centre_x') + lx, cy = val('centre_y') + ly, mid = screen(cx, cy), px = m.point * v.s;
         Widget handle(String key, Offset at, void Function((double, double) u) dragUpdate) => Positioned(
-          // (the middle a cross, a size an arrow out)
           left: at.dx - 7,
           top: at.dy - 7,
           child: GestureDetector(
@@ -83,11 +82,12 @@ class _RelationMarks extends StatelessWidget {
           if (tilt.abs() < 1e-6 || members.length < 3) {
             shape.add(_Shape.ring(mid, r * px, off: off));
           } else {
-            // (tipped back, its things in depth: drawn through where the camera shows them, in its order, round)
+            // Tilted, the layers are spread in depth, so draw a line through their on-screen positions in order, closing the loop.
             for (var k = 0; k < members.length; k++) {
               shape.add(_Shape.line(members[k].$2, members[(k + 1) % members.length].$2, off: off));
             }
           }
+          // With a leader the leader is the centre, so there is no centre handle; the user drags the leader itself.
           handles
             ..addAll([
               if (lead == null)
@@ -98,7 +98,7 @@ class _RelationMarks extends StatelessWidget {
                     ..dragUpdate('centre_x', u.$1 - lx)
                     ..dragUpdate('centre_y', u.$2 - ly),
                 ),
-            ]) // (a leader is its middle: no handle over it, the leader itself is held)
+            ])
             ..add(
               handle(
                 'size',
@@ -108,8 +108,9 @@ class _RelationMarks extends StatelessWidget {
             );
         } else if (kind == 'row') {
           final gap = val('gap', .2), n = math.max(1, m.word(rel, 'members').split(' ').length), half = gap * (n - 1) / 2;
-          shape.add(_Shape.line(screen(cx - half, cy), screen(cx + half, cy), off: off)); // (a row about its middle)
-          const above = Offset(0, -30); // (its handles over the line, not on the things in it)
+          shape.add(_Shape.line(screen(cx - half, cy), screen(cx + half, cy), off: off));
+          // The handles sit above the line so they do not cover the layers in the row.
+          const above = Offset(0, -30);
           handles
             ..addAll([
               if (lead == null)
@@ -121,9 +122,7 @@ class _RelationMarks extends StatelessWidget {
                     ..dragUpdate('centre_y', u.$2 - (lift - zero) - ly);
                 }),
             ])
-            ..add(
-              handle('size', screen(cx + half, cy) + above, (u) => m.dragUpdate('gap', math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1))),
-            ); // (its right end out: wider both ways)
+            ..add(handle('size', screen(cx + half, cy) + above, (u) => m.dragUpdate('gap', math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1))));
         } else if (kind == 'push' && leader != null && on(leader) != null) {
           final l = on(leader)!, r = val('radius', .5);
           shape.add(_Shape.ring(l, r * px, off: off));
@@ -136,12 +135,13 @@ class _RelationMarks extends StatelessWidget {
         }
       }
       final tags = wsRelationsOf(ws), sel = ws.selected == null ? null : on(ws.selected!);
-      if (sel != null && m != null && !isRelation) // (a thing picked: the shape of each relation it is in, its leader's ring too, while it is carried)
+      // A layer is selected: draw the shape of each relation it belongs to, including its leader's ring while it is dragged.
+      if (sel != null && m != null && !isRelation)
         for (final r in tags.map(int.parse)) {
           double val(String n, [double or = 0]) => m.value(r, n, now) ?? or;
           final px = m.point * v.s, l = val('leader') > 0 ? on('${val('leader').round()}') : null, off = val('visible', 1) <= .5;
           switch (m.word(r, 'file')) {
-            case 'around': // (round its leader, if it has one; tipped back, through where its things show)
+            case 'around':
               final lid = val('leader') > 0 ? val('leader').round() : null,
                   lx = lid == null ? 0.0 : m.shows(lid, 'x', now)?.$1 ?? 0,
                   ly = lid == null ? 0.0 : m.shows(lid, 'y', now)?.$1 ?? 0;
@@ -174,7 +174,7 @@ class _RelationMarks extends StatelessWidget {
               left: p.dx + 12,
               top: p.dy - 24,
               child: Badge.round(WsT.accent, onTap: () => wsFree(ws, id), key: ValueKey('ws-free-$id'), mark: _GlyphPaint('x', WsT.onAccent)),
-            ), // (one taken out of it where it stands: the others stay)
+            ), // Removes this layer from the relation where it stands; the others stay.
             if ((kind == 'follow' || kind == 'push') && id != leader)
               Positioned(
                 left: p.dx - 24,
@@ -185,17 +185,16 @@ class _RelationMarks extends StatelessWidget {
                   key: ValueKey('ws-lead-$id'),
                   mark: _GlyphPaint('crown', Grey.g63),
                 ),
-              ), // (another's crown: that one leads, nothing moving)
+              ), // Makes this layer the leader without moving anything.
           ],
           if (on(leader ?? '') case final l? when leader != null)
             Positioned(
               left: l.dx - 24,
               top: l.dy - 24,
               child: Badge.round(WsT.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPaint('crown', WsT.onAccent)),
-            ), // (the leader)
-          if (isRelation &&
-              (kind == 'around' ||
-                  kind == 'row')) // (a ring's or a row's middle may be a thing: a faint crown on each other one, a touch puts the middle there)
+            ), // The leader.
+          // The middle of a ring or a row may be a layer: show a faint crown on each other layer, and clicking one makes it the middle.
+          if (isRelation && (kind == 'around' || kind == 'row'))
             for (final l in ws.layers)
               if (l.id != leader && l.id != '$rel' && !members.any((e) => e.$1 == l.id) && m.word(int.parse(l.id), 'kind') != 'behaviour' && on(l.id) != null)
                 Positioned(
@@ -208,16 +207,15 @@ class _RelationMarks extends StatelessWidget {
                     mark: _GlyphPaint('crown', Grey.g63),
                   ),
                 ),
-          if (!isRelation &&
-              ws.manyInOrder &&
-              ws.many.length > 1 &&
-              on(ws.many.first) != null) // (picked one by one: the first leads a Follow or a Push, shown before it is made)
+          // Selected one by one, the first layer will lead a Follow or a Push; show its crown before the relation exists.
+          if (!isRelation && ws.manyInOrder && ws.many.length > 1 && on(ws.many.first) != null)
             Positioned(
               left: on(ws.many.first)!.dx - 24,
               top: on(ws.many.first)!.dy - 24,
               child: Badge.round(WsT.body.withValues(alpha: .7), onTap: () {}, key: const ValueKey('ws-leader-to-be'), mark: _GlyphPaint('crown', Grey.g63)),
             ),
-          if (sel != null && tags.isNotEmpty) // (the relations the picked thing is in, the one on top first: a touch picks it)
+          // Tags for the relations the selected layer belongs to, the top one first. Clicking a tag selects that relation.
+          if (sel != null && tags.isNotEmpty)
             Positioned(
               left: sel.dx + 20,
               top: sel.dy + 18,
@@ -233,15 +231,16 @@ class _RelationMarks extends StatelessWidget {
                     ),
                 ],
               ),
-            ), // (filled: the one that shows; the rest under it, or switched off, outlined)
-          if (lasso == null && (together.length > 1 || isRelation)) // (along the top of the stage, never over a thing; what shows nothing at this moment counts: Motion takes what is picked in the layers or the timeline, and relate goes by values, not by the picture)
+            ), // The tag of the relation in effect is filled; the others, under it or switched off, are outlined.
+          // Along the top, never over a layer. Layers showing nothing now still count: a relation goes by property values.
+          if (lasso == null && (together.length > 1 || isRelation))
             Positioned(
               left: v.area.left,
               right: v.area.right - v.area.width,
               top: v.area.top + 8,
               child: Center(
                 child: Wrap(
-                  // (as many as there are files in relations/: a narrow stage folds them)
+                  // There is one chip per file in relations/; a narrow stage wraps them onto more lines.
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   runSpacing: Shape.s(4),
@@ -265,7 +264,7 @@ class _RelationMarks extends StatelessWidget {
                               fade: true,
                             ),
                             key: const ValueKey('ws-relation-switch'),
-                          ), // (its eye, as on its row: shut, what it is on top of shows)
+                          ), // The eye, as on the relation's row: when shut, what lies beneath shows.
                           Chip(
                             label: wsRelationWord('bake'),
                             look: ChipLook.relate,
@@ -284,7 +283,7 @@ class _RelationMarks extends StatelessWidget {
                                 ..reread(),
                             ),
                             key: const ValueKey('ws-relate-delete'),
-                          ), // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
+                          ), // Placed beside the bake chip as Blender places Apply and Delete. Bake keeps the layers where they show and removes the relation; delete returns them to their own values.
                         ],
                 ),
               ),
@@ -295,18 +294,19 @@ class _RelationMarks extends StatelessWidget {
   );
 }
 
-/// A relation's shape on the stage: a ring (its middle, how far) or a line.
+/// A relation's shape on the stage: a ring (centre and radius) or a line.
 class _Shape {
   _Shape.ring(this.a, this.r, {this.off = false}) : b = null;
   _Shape.line(this.a, Offset this.b, {this.off = false}) : r = 0;
   final Offset a;
   final Offset? b;
   final double r;
-  final bool off; // (its relation's eye shut: drawn faint)
+
+  /// True when the relation's eye is shut; the shape is drawn faint.
+  final bool off;
 }
 
-/// Drawn round: the line the hand drew; a ring round each thing picked together or moved by the relation picked; the
-/// relation's shape, thin and broken.
+/// Paints the lasso the user is drawing, a ring around each marked layer, and each relation shape as a thin dashed line.
 class _MarksPainter extends CustomPainter {
   _MarksPainter(this.lasso, this.at, this.shape);
   final List<Offset>? lasso;
@@ -338,15 +338,16 @@ class _MarksPainter extends CustomPainter {
   bool shouldRepaint(_MarksPainter o) => true;
 }
 
-/// The relations the picked thing is in, on top of its inspector, the one that shows first (as Blender stacks a thing's
-/// constraints): each its eye, its kind and leader, × to take the thing out; pressed, that relation picked.
+/// The relations the selected layer belongs to, at the top of its inspector, the one in effect first (as Blender stacks constraints).
+/// Each row shows an on/off dot, the relation's kind and its leader, and an x that removes the layer from the relation.
+/// Clicking a row selects that relation.
 class WsRelationStack extends StatelessWidget {
   const WsRelationStack({super.key});
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([WsScope.read(context).on[WsAspect.document], WsScope.read(context).on[WsAspect.picked]]),
     builder: (context, _) => _built(context),
-  ); // (its own: the inspector is not built again for a value of another thing)
+  ); // Listens on its own so the inspector is not rebuilt when a value of another layer changes.
 
   Widget _built(BuildContext context) {
     final ws = WsScope.read(context), m = ws.inside, t = ws.selected;
@@ -381,7 +382,7 @@ class WsRelationStack extends StatelessWidget {
                           border: Border.all(color: ink),
                           shape: BoxShape.circle,
                         ),
-                      ), // (lit: switched on; its eye is on the relation's own row and bar)
+                      ), // Filled when the relation is switched on. Its eye is on the relation's own row and bar.
                       SizedBox(width: Shape.s(8)),
                       Text('${kind[0].toUpperCase()}${kind.substring(1)}', style: T.label(ink)),
                       SizedBox(width: Shape.s(8)),
@@ -415,8 +416,7 @@ class WsRelationStack extends StatelessWidget {
   }
 }
 
-/// A small mark drawn, not a letter (no font has to carry it): a cross (a middle), an arrow out (a size), an x (out of
-/// it), a crown (the leader).
+/// A small mark drawn as a path so no font has to carry it: a cross (centre), an arrow (size), an x (remove) or a crown (leader).
 class _GlyphPaint extends CustomPainter {
   _GlyphPaint(this.what, this.ink);
   final String what;
@@ -463,7 +463,7 @@ class _GlyphPaint extends CustomPainter {
   bool shouldRepaint(_GlyphPaint o) => o.what != what || o.ink != ink;
 }
 
-/// The pill at the bottom-left of the viewport: zoom and where the pointer is, in composition px.
+/// The pill at the bottom-left of the viewport: the zoom and the pointer position in composition pixels.
 class _Hud extends StatelessWidget {
   _Hud({required this.scale, required this.cursor});
   final double scale;
@@ -503,13 +503,13 @@ class _Hud extends StatelessWidget {
   );
 }
 
-/// The navigator: the whole frame small, the part the viewport shows outlined in the accent. Shown only when zoomed past fit.
+/// The navigator: the whole frame in miniature, the part the viewport shows outlined. Shown only when zoomed past fit.
 class _Navigator extends StatelessWidget {
   const _Navigator({required this.scene, required this.view, this.texture});
   final ArtScene scene;
   final _View view;
 
-  /// Joined: the inside's own picture, the whole frame, under the outline (the same texture the stage shows).
+  /// The engine's preview of the whole frame, drawn under the outline. It is the same texture the stage shows.
   final int? texture;
   @override
   Widget build(BuildContext context) {
@@ -549,21 +549,21 @@ class _MapPainter extends CustomPainter {
   bool shouldRepaint(_MapPainter o) => o.scene != scene || o.shown != shown;
 }
 
-// ---- the picture and what sits on it ----------------------------------------------------------------------------------
+// ---- the preview and what sits on it ----------------------------------------------------------------------------------
 
 Paint _line(Color c, [double w = 1]) => Paint()
   ..style = PaintingStyle.stroke
   ..strokeWidth = w
   ..color = c;
 
-/// A line that reads on any artwork: a dark under-stroke, then the colour.
+/// Draws a line that reads on any artwork: a dark under-stroke, then the colour.
 void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {
   c.drawPath(p, _line(Grey.g00, w + 2));
   c.drawPath(p, _line(col, w));
 }
 
-/// What one painter draws: everything (the stand-in art too), or, when the inside's picture sits in the composition,
-/// what lies under it (the surround, the captions) and what lies over it (grid, guides, the selection).
+/// What one painter draws: everything (including the stand-in art), or one side of the engine's preview.
+/// With the preview in the composition, [under] is what lies beneath it (surround, captions), [over] what lies above (grid, guides, selection).
 enum _Part { all, under, over }
 
 class _PointsPainter extends CustomPainter {
@@ -574,7 +574,7 @@ class _PointsPainter extends CustomPainter {
   void paint(Canvas c, Size _) {
     final edge = _line(WsT.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
-      if ((h - o).distance < 1) continue; // (a handle lying on its point: none to see)
+      if ((h - o).distance < 1) continue;
       c
         ..drawLine(o, h, edge)
         ..drawCircle(h, 3, inside)

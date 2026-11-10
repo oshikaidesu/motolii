@@ -1,6 +1,6 @@
-// The timeline's tracks area as widgets: the rows painted, the hand on bars, keys, lanes and the box, the wheel and
-// pinch, the playhead over them.
-// (setState from an extension on the State itself: the analyzer allows it only in a class or mixin)
+// The timeline's tracks area as widgets: the painted rows, pointer handling on bars, keys, lanes and the selection box,
+// wheel and pinch gestures, and the playhead drawn over them.
+// setState is called from an extension on the State itself, which the analyzer only allows with this ignore.
 // ignore_for_file: invalid_use_of_protected_member
 part of 'timeline.dart';
 
@@ -23,7 +23,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                   key: const ValueKey('ws-tl-ruler'),
                   behavior: HitTestBehavior.opaque,
                   supportedDevices: wsPressing,
-                  onTapUp: (d) => _rulerTap(d.localPosition), // (Live's scrub area: timeline_asked.dart)
+                  onTapUp: (d) => _rulerTap(d.localPosition), // Like Ableton Live's scrub area.
                   onDoubleTapDown: (d) => _rulerDouble(d.localPosition),
                   onDoubleTap: () {},
                   onSecondaryTapDown: (d) => _rulerRight(d.localPosition),
@@ -45,7 +45,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                         tempo: ws.beats,
                         retimed: _retimedOf(ws),
                       ),
-                      foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // (the pictures kept on disk for playing)
+                      foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // Marks the frames cached on disk for playback.
                     ),
                   ),
                 ),
@@ -70,7 +70,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                         dragStartBehavior: DragStartBehavior.down,
                         onTapDown: (d) => _trackDown(d.localPosition),
                         onSecondaryTapDown: (d) => _trackRight(d.localPosition),
-                        onTapUp: (d) => _laneTap(d.localPosition), // (a lane's tap, once it is known not to be a drag)
+                        onTapUp: (d) => _laneTap(d.localPosition), // Only fires once the gesture is known not to be a drag.
                         onPanStart: (d) => _barDown(d.localPosition),
                         onPanUpdate: (d) => _barMove(d.localPosition),
                         onPanEnd: (_) => _barUp(),
@@ -106,7 +106,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                       frame: ws.frame,
                       headTop: WtM.band + 1,
                       moment: ws.moment,
-                    ), // (painted again as the playhead moves, nothing built)
+                    ), // Repainted as the playhead moves; no widgets are rebuilt.
                   ),
                 ),
               ),
@@ -124,7 +124,8 @@ extension _WsTimelineTracks on _WsTimelineState {
                 ),
               ),
             ),
-          if (_naming case (final at, _)?) // (the flag itself written in, as wide as its words, as Figma's layer name is written where it stands)
+          // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
+          if (_naming case (final at, _)?)
             Positioned(
               left: v.x((at * Ws.fps).round()).roundToDouble(),
               top: WtM.band + 2,
@@ -147,7 +148,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                     style: T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
                     cursorColor: Grey.g13,
                     backgroundCursorColor: Grey.g38,
-                    selectionColor: Grey.g13.withValues(alpha: .3), // (its words picked, seen as picked)
+                    selectionColor: Grey.g13.withValues(alpha: .3), // Highlight for selected text.
                     maxLines: 1,
                     onSubmitted: (_) => _markFocus.unfocus(),
                   ),

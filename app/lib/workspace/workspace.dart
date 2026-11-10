@@ -1,5 +1,6 @@
-// The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Tool Panel, rearrangeable.
-// Each panel is its own file and reads the shared Ws.
+// The whole window: the top bar above the panes (panes.dart).
+// The panes are the media shelves, Stage over Timeline, and Inspector over Tool Panel. The user can rearrange them.
+// Each panel lives in its own file and reads the shared Ws.
 import 'dock/dock_widgets.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;
@@ -48,15 +49,18 @@ part 'inspector_feed/values.dart';
 part 'inspector_feed/keyframe_marks.dart';
 part 'commands/menu_bar.dart';
 
+/// The app's main window: top bar, shelves, Stage, Timeline, Inspector and tool panels.
 class Workspace extends StatefulWidget {
   const Workspace({super.key, this.document, this.extra = const []});
 
-  /// A document of the inside (motolii.dart) to join the window to: its stage is then the inside's own picture.
-  /// null: the sample, with its stand-in art.
+  /// The path of the project to open in this window (the engine side is in motolii.dart).
+  /// When null, the window shows the sample with its placeholder art.
   final String? document;
 
-  /// Panes of your own, beside the window's: each joins the Inspector's tabs. A pane reads and changes the document
-  /// through [WsScope.of] (its `inside` is the document, `selected` the picked thing, `frame` the moment).
+  /// Extra panes that join the Inspector's tabs.
+  ///
+  /// A pane reads and changes the project through [WsScope.of]: `inside` is the engine's project,
+  /// `selected` the selected layer and `frame` the current time.
   final List<WsPane> extra;
   @override
   State<Workspace> createState() => _WorkspaceState();
@@ -65,22 +69,25 @@ class Workspace extends StatefulWidget {
 class _WorkspaceState extends State<Workspace> {
   late final _ws = Ws()..panes = [..._panes, ...widget.extra];
   Motolii? _inside;
-  StreamSubscription<FileSystemEvent>? _own; // (the maker's own folder watched: effect_tiles.dart)
+  // Watches the user's own effects folder (effect_tiles.dart).
+  StreamSubscription<FileSystemEvent>? _own;
 
-  String? _doc; // (the document that is open: the one the window was given, or one made or opened from the menu)
+  /// The path of the open project: the one passed in, or one created or opened from the menu.
+  String? _doc;
 
   @override
   void initState() {
     super.initState();
     FocusManager.instance.addListener(_keepKeys);
+    // The theme file is read again whenever it is written, and the window is rebuilt in place.
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
-    SkinParts.follow(); // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
-    _join(
-      widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii',
-    ); // (no document given: a new one, as After Effects opens an untitled project)
+    // Reads the theme's SVG parts from the folder the theme names.
+    SkinParts.follow();
+    // With no project given, start a new untitled one, as After Effects does.
+    _join(widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii');
   }
 
-  /// Another document in place of the open one (made, if there is none at that place).
+  /// Opens another project in place of the current one, creating it if it does not exist.
   Future<void> _open(String doc) {
     _ws.stageTexture = null;
     _inside?.close();
@@ -88,15 +95,17 @@ class _WorkspaceState extends State<Workspace> {
     return _join(doc);
   }
 
-  /// The open document's own picture kept in it as it is left for the list of them, and as the window closes (AbsentMotion
-  /// keeps a project's as its editor is closed for its home: MainActivity.kt saveThumbnail), at its playhead or at the
-  /// moment it was told (file.poster). Not as another is opened in its place: its last asks would go unanswered.
+  /// Saves the open project's thumbnail for the project list when the window closes.
+  ///
+  /// AbsentMotion does the same when its editor closes (MainActivity.kt saveThumbnail).
+  /// The thumbnail is taken at the playhead, or at the time set by file.poster.
+  /// It is not saved when another project is opened in place of this one, because its last requests would go unanswered.
   void _keepPoster() => _inside?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
 
-  /// The documents beside the open one listed over the window (AbsentMotion's home: home.dart).
+  /// Whether the project list is shown over the window (AbsentMotion's home screen; see home.dart).
   bool _home = false;
 
-  /// The documents beside the open one (read as one is opened), and a place for a new one there.
+  /// The projects in the open project's folder, read when a project is opened.
   List<String> _beside = const [];
   List<String> _documents() {
     final here = Directory(File(_doc!).parent.path);
@@ -106,19 +115,18 @@ class _WorkspaceState extends State<Workspace> {
     ]..sort();
   }
 
-  /// A text box has the keys: the act is its own, by Flutter's own text actions (true: it was given it).
-  /// Where a copied thing, or a copied look, is kept between windows (the inside's own document of it: document/presets.h).
+  /// The file where a copied layer or preset is kept between windows (the engine's own format: document/presets.h).
   static String _clipboard(String what) {
     final dir = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii')..createSync(recursive: true);
     return '${dir.path}/clipboard_$what.motolii';
   }
 
-  /// The things picked: together if more than one is, else the one.
+  /// The selected layers: all of the multi-selection if there is one, otherwise the single selected layer.
   List<int> _picked() => [
     for (final id in _ws.many.isNotEmpty ? _ws.many : {?_ws.selected}) ?int.tryParse(id),
   ];
 
-  /// One step for each picked thing told so, all of it one step to undo.
+  /// Applies [tell] to each selected layer, as a single undo step.
   void _eachPicked(int Function(int) tell) {
     final m = _inside, all = _picked();
     if (m == null || all.isEmpty) return;
@@ -129,7 +137,8 @@ class _WorkspaceState extends State<Workspace> {
     _ws.after(m.later('together'));
   }
 
-  /// The text the machine's clipboard held when something was last copied here: what was copied last is what is pasted.
+  /// The text on the system clipboard when something was last copied here.
+  /// It lets a paste tell whether the clipboard still holds this app's copy, so that what was copied last is what gets pasted.
   String? _textWhenCopied;
 
   void _copy(String call, String what) {
@@ -138,6 +147,8 @@ class _WorkspaceState extends State<Workspace> {
     if (_inside != null && t != null) _inside!.later(call, layer: t, word: _clipboard(what));
   }
 
+  /// Runs [act] on the focused text field if it handles that intent, so the field keeps its own keys.
+  /// Returns true if the field handled it. This uses Flutter's text actions.
   bool _typed<T extends Intent>(T act) {
     final box = primaryFocus?.context;
     if (box == null || Actions.maybeFind<T>(box, intent: act) == null) return false;
@@ -152,7 +163,7 @@ class _WorkspaceState extends State<Workspace> {
     }
   }
 
-  /// The document written as a film beside itself; the top bar says how it went.
+  /// Exports the project as a video file beside it. The top bar shows how it went.
   Future<bool> _render() async {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return false;
@@ -165,15 +176,18 @@ class _WorkspaceState extends State<Workspace> {
     return done;
   }
 
-  /// A film just written looked over for flashes that may cause seizures, as YouTube Studio's Checks look over a video
-  /// while it uploads and say "No issues found" or what and where (EA's IRIS: flashesOf); the top bar says it.
+  /// Checks a newly exported video for flashes that may cause seizures and shows the result in the top bar.
+  ///
+  /// YouTube Studio's Checks do the same while a video uploads (EA's IRIS: flashesOf).
   Future<void> _checkFlashes(Motolii m, String film) async {
     final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
     _ws.notice = checking;
     final fails = await flashesOf(m.libPath, film);
-    if (!mounted || _ws.notice != checking) return; // (something said meanwhile stands)
+    // If the notice changed in the meantime, the newer notice stays.
+    if (!mounted || _ws.notice != checking) return;
     String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
-    final name = film.split('/').last; // (what it found first, the name after: the bar's end is cut. NN/g's F-shaped reading, words that carry the news first)
+    // The result comes first and the name after, because the bar cuts off its end (NN/g: F-shaped reading).
+    final name = film.split('/').last;
     _ws.notice = switch (fails) {
       null => written,
       [] => 'Flash check: no issues found · $name',
@@ -182,9 +196,11 @@ class _WorkspaceState extends State<Workspace> {
     if (fails case [(final from, _), ...]) _ws.noticeGo = () => _ws.frame = (from * Ws.fps).floor();
   }
 
-  /// Documents of the list written out: one as AbsentMotion's list does it (opened, and its export settings asked:
-  /// MainActivity.kt exportFromList); more, each beside itself at its own settings, one after another as DaVinci Resolve's
-  /// Render Queue goes through other projects' jobs (opening each in turn), and the one that was open opened again.
+  /// Exports the listed projects.
+  ///
+  /// One project is opened and the user is asked for export settings, as AbsentMotion's list does (MainActivity.kt exportFromList).
+  /// Several are each exported beside themselves with their own settings, one after another, opening each in turn,
+  /// as DaVinci Resolve's Render Queue does. The project that was open is reopened at the end.
   Future<void> _exportFrom(List<String> docs) async {
     setState(() => _home = false);
     if (docs.length == 1) {
@@ -202,8 +218,8 @@ class _WorkspaceState extends State<Workspace> {
     if (mounted) _ws.notice = 'Written: $written of ${docs.length} films, each beside its document';
   }
 
-  /// The document and its media gathered into "<name> package" beside it, to be taken elsewhere whole (Alight Motion's
-  /// project package, After Effects' Collect Files); the top bar says so.
+  /// Gathers the project and its media into `<name> package` beside it, so it can be moved elsewhere whole
+  /// (Alight Motion's project package, After Effects' Collect Files). The top bar shows the result.
   void _package() {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
@@ -212,7 +228,7 @@ class _WorkspaceState extends State<Workspace> {
     _ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
-  /// The picture at the playhead written beside the document (Premiere Pro's Export Frame); the top bar says so.
+  /// Exports the frame at the playhead as a PNG beside the project (Premiere Pro's Export Frame). The top bar shows the result.
   void _exportFrame() {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
@@ -220,19 +236,17 @@ class _WorkspaceState extends State<Workspace> {
     _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
   }
 
-  /// The window's menus, in the system's own menu bar: what the sample window has no panel for (a new document,
-  /// another document, the film written out) and what the keyboard does elsewhere (undo, redo, take a thing out).
-  // The window holds the focus when nothing in it does (a field left, a pane closed): its keys are heard there.
+  /// Holds the focus when nothing else in the window does (a field was left or a pane closed), so the window's keys still work.
   final _windowFocus = FocusNode(debugLabel: 'window');
   void _keepKeys() {
     bool fallen() {
-      // (out of the window)
+      // True when the focus is outside the window.
       final now = FocusManager.instance.primaryFocus;
       return now == null || (now is FocusScopeNode && _windowFocus.ancestors.contains(now));
     }
 
     if (!mounted || !fallen() || _windowFocus.context == null) return;
-    // (once the frame's own asking is done: a field built in it asks for the keys after the frame, and was robbed of them: golf_noise.md (111))
+    // Wait until the frame's own focus requests are done. A field built in this frame requests focus after it, and would lose it to us.
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => scheduleMicrotask(() {
         if (mounted && fallen()) _windowFocus.requestFocus();
@@ -240,7 +254,7 @@ class _WorkspaceState extends State<Workspace> {
     );
   }
 
-  /// The window's commands by name (keymap.dart: the keys that say them, the window's own and the maker's file).
+  /// The window's commands by name, with the keys bound to them: the defaults and the user's own file (keymap.dart).
   late final _keymap = Keymap.load();
   Future<void> _join(String doc) async {
     final inside = Motolii.open(doc);
@@ -249,14 +263,15 @@ class _WorkspaceState extends State<Workspace> {
     _own = EffectTiles.watch(
       inside,
       () {
-        // (a file put in the maker's own folder: on the shelves at once; an element written over: followed where it is put in)
+        // A file put in the user's effects folder shows on the shelves at once. An element file that is overwritten is followed wherever it is used.
         if (mounted) _ws.after(inside.later('follow_elements'), (_, _) => _ws.reread());
       },
       program: (file) {
         if (mounted) _ws.after(inside.later('code', word: file), (_, _) => _ws.reread());
       },
     );
-    _ws.after(inside.later('follow_elements')); // (as the document is opened: AbsentMotion's elements followed as a project is loaded)
+    // Follow the elements when the project opens, as AbsentMotion does when a project loads.
+    _ws.after(inside.later('follow_elements'));
     _doc = doc;
     _beside = _documents();
     final id = await inside.texture();
@@ -268,16 +283,18 @@ class _WorkspaceState extends State<Workspace> {
       ..notice = null
       ..onRender = _render
       ..onSize = (wide, high) {
-        _ws.after(inside.later('size', word: '$wide $high')); // (without waiting: the document's picture then says it does not fit, and it is opened again)
+        // Not awaited: the project's image then reports that it does not fit, and the project is reopened.
+        _ws.after(inside.later('size', word: '$wide $high'));
       }
       ..refit = () {
-        // (a stage is opened at a size: the document closed and opened again, at the moment it was at)
+        // The stage was opened at a new size: close the project and reopen it at the current time.
         final at = inside.now;
         _open(doc);
         _inside?.at(at);
       }
       ..join(inside);
-    setState(() {}); // (the menus are the open document's)
+    // The menus belong to the open project.
+    setState(() {});
   }
 
   @override
@@ -291,15 +308,17 @@ class _WorkspaceState extends State<Workspace> {
     super.dispose();
   }
 
-  /// The panes drag their tabs on an overlay; the window brings its own so it works under any host.
+  /// The panes drag their tabs on an overlay. The window provides its own so this works under any host.
   late final _entry = OverlayEntry(
     maintainState: true,
     builder: (context) => LayoutBuilder(
       builder: (context, box) {
-        const window = _Window(); // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
+        // One widget instance, reused. Carrying a card or tab changes the overlay, and the whole window,
+        // including every shelf's tiles, used to be rebuilt each time (18,358 widgets, 90 ms per pick-up or drop).
+        const window = _Window();
         if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
         return FittedBox(
-          // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
+          // Laid out at no less than the minimum window size and shrunk only as far as needed, so a zoomed window stays zoomed.
           child: SizedBox(width: math.max(box.maxWidth, WsT.minWindow.width), height: math.max(box.maxHeight, WsT.minWindow.height), child: window),
         );
       },
@@ -341,7 +360,8 @@ class _WorkspaceState extends State<Workspace> {
         ),
       ),
     );
-    if (_ws.inside == null) return ColoredBox(color: WsT.ground); // (the document still opening: no panel is built on nothing)
+    // The project is still opening, so no panel is built yet.
+    if (_ws.inside == null) return ColoredBox(color: WsT.ground);
     return PlatformMenuBar(
       menus: _menus(),
       child: WsKeys(
@@ -388,22 +408,21 @@ final _panes = [
   WsPane('Align', DockG.align, AlignTool.new, at: WsAt.catalog, tone: Pop.toneLayout, acts: 'Selection'),
 ];
 
-/// A pane's tab strip, added on top of the reference heights so the panels keep theirs.
+/// Height of a pane's tab strip, added to the reference heights so the panels keep theirs.
 const _strip = 22.0;
 
-/// The reference arrangement: the browser shelves (one strip of tabs) | Stage over Timeline and Ease on the left, Inspector over Camera on the right.
-/// Side and lower panes start at their reference sizes in px and the panes without one share what is left.
-/// contract: give the filling panes no weight; `multi_split_view` turns sizes into weights and would scale them against any weight given.
+/// The default arrangement: the media shelves (one strip of tabs) and Stage over Timeline and Ease on the left,
+/// Inspector over Camera on the right.
+///
+/// Side and lower panes start at their reference sizes in px. The panes without a size share what is left.
+/// The filling panes must be given no weight: `multi_split_view` turns sizes into weights and would scale them against any weight given.
 DockingArea _preset(DockingArea Function(WsAt at, {double? size}) strip) => DockingRow([
   DockingColumn([
     DockingRow([strip(WsAt.shelves, size: WsT.dock), strip(WsAt.stage)]),
-    DockingRow([strip(WsAt.timeline), strip(WsAt.ease, size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
+    // Ease edits the easing between two keyframes, so it sits beside Timeline. It is never made shorter than 220,
+    // the height at which its seven shapes and curve stay readable. This is docking's own minimum, as in VS Code's views.
+    DockingRow([strip(WsAt.timeline), strip(WsAt.ease, size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220),
   ]),
-  DockingColumn(
-    [strip(WsAt.inspector), strip(WsAt.tools, size: WsT.lower + _strip)],
-    size: WsT.inspector,
-    minimalSize: 340,
-  ), // (the camera, whatever is picked)
+  // The lower strip holds the Camera tool, whatever is selected.
+  DockingColumn([strip(WsAt.inspector), strip(WsAt.tools, size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),
 ]);
-
-/// The paint each layer wears on the stage, so the Inspector's Fill names the colour you see.

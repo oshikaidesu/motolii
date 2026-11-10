@@ -1,13 +1,15 @@
-// Part of inspector_state.dart: the values the panel's cards edit (Doc), as the host gives them; none of its own.
+// Part of inspector_state.dart: the values the panel's cards edit (Doc). The caller supplies them; this file holds none of its own.
 part of 'inspector_state.dart';
 
-/// The picked thing's values as the panel edits them: the host's numbers, words and switches, keyed `v_` and the
-/// value's name as its cards declare them ([Fx]). It holds no value of its own: a card's default is its declaration's.
+/// The values of the selected layer as the inspector edits them: numbers, strings and switches.
+/// Keys are `v_` plus the value name as its card declares it ([Fx]).
+/// Doc keeps no values of its own; a card's default comes from its declaration.
 class Doc extends ChangeNotifier {
   Doc(this.kind, {this.cards = const []}) {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
-        paramDefaults(p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
+        // Start from the declaration's @default until the caller supplies the value.
+        paramDefaults(p).forEach((id, x) => v[id] = d[id] = x);
         if (p.look == ParamLook.color) s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
         if (p.look == ParamLook.choice) s2.putIfAbsent('v_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
       }
@@ -21,11 +23,11 @@ class Doc extends ChangeNotifier {
 
   final Map<String, bool> b = {};
 
-  /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); null: the sample's.
+  /// The caller's name for the layer kind where the six kinds have none, such as video, image or solid. Null uses the sample's name.
   String? kindWord;
 
-  /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
-  /// beyond the sample's cards.
+  /// Cards the caller supplies in addition to the sample's cards.
+  /// Each card's params become fields keyed `v_` plus the value name.
   final List<Fx> cards;
   bool animateAll = false;
 
@@ -37,7 +39,7 @@ class Doc extends ChangeNotifier {
     super.dispose();
   }
 
-  /// The selected layer's own name, when a host (the workspace) knows it.
+  /// The selected layer's name, when the caller knows it.
   String? title;
 
   String get name => title ?? '';
@@ -54,7 +56,7 @@ class Doc extends ChangeNotifier {
 
   Map<String, double>? _gesture;
 
-  /// A hand is on a value (between beginGesture and endGesture): what it shows is not settled yet.
+  /// Whether a drag is in progress, between [beginGesture] and [endGesture]. The values shown are not final yet.
   bool get inGesture => _gesture != null;
 
   void beginGesture() {
@@ -64,8 +66,8 @@ class Doc extends ChangeNotifier {
   void endGesture() {
     final before = _gesture;
     _gesture = null;
-    // (a hand let go: the host is told, but the inspector is not built again for it: the field under the hand already
-    //  shows its number, the rows of what moved are told alone, and the host's reading of the document follows)
+    // The drag ended. Listeners are notified, but the inspector does not rebuild: the field being dragged already shows its value.
+    // Only the rows of changed values are notified, and the caller then reads the document back.
     ending = true;
     notifyListeners();
     ending = false;
@@ -74,12 +76,12 @@ class Doc extends ChangeNotifier {
     }
   }
 
-  /// A hand letting go is being told (see [endGesture]).
+  /// True while the end of a drag is being notified (see [endGesture]).
   bool ending = false;
 
-  /// What the host has at a new moment, shown as it is (not a hand's change: no key, no undo step): only the fields
-  /// whose number or key mark moved are told (each watches its own), the inspector is not built again.
-  /// Whether a value changed that no field watches (a choice, a switch): then the panel is built again to show it.
+  /// Shows the caller's values at a new time without treating them as an edit: no key and no undo step.
+  /// Only the fields whose value or key mark changed are notified, since each watches its own; the inspector does not rebuild.
+  /// Returns true when a changed value has no watching field, such as a choice or a switch, so the caller must rebuild the panel.
   bool showAt(Map<String, double> values, Map<String, KeyS> marks) {
     var unwatched = false;
     for (final e in values.entries) {
@@ -100,7 +102,7 @@ class Doc extends ChangeNotifier {
     return unwatched;
   }
 
-  /// One value's own news ('key:' and its name: its key mark's), as [showAt] tells it.
+  /// One notifier per value id, or `key:` plus the property name for a key mark. [showAt] and [setKey] bump them.
   final _watched = <String, ValueNotifier<int>>{};
   ValueListenable<int> watch(String id) => _watched.putIfAbsent(id, () => ValueNotifier(0));
 
@@ -124,7 +126,8 @@ class Doc extends ChangeNotifier {
 
   void setKey(String prop, KeyS s) {
     keys[prop] = s;
-    _watched['key:$prop']?.value++; // (the field whose mark it is draws it now)
+    // Notify the field that draws this key mark.
+    _watched['key:$prop']?.value++;
     notifyListeners();
   }
 
@@ -140,7 +143,8 @@ class Doc extends ChangeNotifier {
 
   void poke() => notifyListeners();
 
-  /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
+  /// The fields selected together.
+  /// Shift-click selects a rectangle of [_grid], one row per card with its fields in order, like a spreadsheet.
   final Set<String> picked = {};
   String? _pickFrom;
   bool isPicked(String id) => picked.length > 1 && picked.contains(id);
@@ -159,8 +163,8 @@ class Doc extends ChangeNotifier {
       picked.add(id);
       _pickFrom = id;
     }
-    // (one field picked shows as nothing ([isPicked] is several): told only when the picking shows, before or after;
-    //  a press on a knob picked it and built the whole inspector again for no change)
+    // Selecting one field shows nothing, because [isPicked] needs several. Notify only when the selection was or becomes visible,
+    // otherwise pressing a parameter control rebuilt the whole inspector for no change.
     if (shown || picked.length > 1) notifyListeners();
   }
 
@@ -181,16 +185,25 @@ class Doc extends ChangeNotifier {
     return null;
   }
 
-  /// The host's cards that may be moved up or down (its effects, by their titles), and what moves one so many places.
+  /// Titles of the caller's cards that can move up or down (its effects), and the callback that moves one by that many places.
   List<String> movable = const [];
   void Function(String title, int by)? onCardMove;
-  List<String> moreCards = const []; // (the cards it may be given and is not shown)
+
+  /// Titles of cards the caller could add that are not shown yet.
+  List<String> moreCards = const [];
   void Function(String title)? onMoreCard;
-  VoidCallback? onAddEffect; // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
-  double? Function(String sum)? onSum; // (a sum typed in a number field worked out: null, it is not one)
+
+  /// Opens the effect shelf with its search focused, like Alight Motion's Add Effect.
+  VoidCallback? onAddEffect;
+
+  /// Evaluates an arithmetic expression typed into a number field. Returns null if the text is not one.
+  double? Function(String sum)? onSum;
   void Function(List<String> names)? onCardReset;
   void Function(String title)? onCardRemove;
-  Widget? Function(String title, List<String> names)? cardCode; // (a card's code as the host draws it, by its title and its values' names (two cards may share a title: ThorVG's Tint and an ISF Duotone): a script's, under its knobs, as After Effects' expression under its value)
+
+  /// Builds the code view of a card, found by its title and its value names, because two cards can share a title (ThorVG's Tint and an ISF Duotone).
+  /// It sits under the card's parameters, like After Effects' expression under its value.
+  Widget? Function(String title, List<String> names)? cardCode;
   void Function(String title)? onCardEye;
   void Function(String title, List<String> names)? onCardSave;
   void Function(String title)? onCardInfo;

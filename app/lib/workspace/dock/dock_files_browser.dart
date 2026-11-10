@@ -1,4 +1,4 @@
-// dock_files_browser.dart: the Media shelf as one browser: where it starts, the way to a folder, the tree, the folder rows, the crumbs, going and opening.
+// The Media shelf's browser: where it starts, the path to a folder, the tree, the folder rows, the breadcrumbs, and navigating and opening.
 part of 'dock_files.dart';
 
 class MediaShelf extends StatelessWidget {
@@ -18,7 +18,7 @@ class MediaShelf extends StatelessWidget {
           2 => false,
           _ => box.maxWidth >= _wide,
         }) {
-          // (the tree by the room, or where the hand put it)
+          // The tree side is chosen by the available room, or by where the user put it.
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -50,11 +50,12 @@ class MediaShelf extends StatelessWidget {
   }
 }
 
-/// The locations of a joined window: what the document is made of (its files, and the folders they are in), then the disk.
+/// The locations in the tree: the project's own files and the folders they are in, then the disk.
 List<FileNode> _rootsOf(DockCtx c) {
   final kindOf = c.ws.inside!.kindOf;
   _kindOfFile = (f) =>
-      f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f); // (CLIP STUDIO's, OpenToonz's timesheet: not a thing of the inside's, its columns are)
+      // CLIP STUDIO's and OpenToonz's timesheet is not a layer kind in the engine, but its columns are.
+      f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f);
   _thumbnailAtOf = c.ws.inside!.thumbnailAt;
   final files = _used(c.ws).keys.toList()..sort();
   return [
@@ -64,7 +65,7 @@ List<FileNode> _rootsOf(DockCtx c) {
       DockG.folder,
       kids: [
         for (final d in {?c.ws.documentFolder, for (final f in files) _dir(f)})
-          FileNode(d, _base(d), DockG.folder), // (the document's own folder first: a new document is one step from what lies beside it)
+          FileNode(d, _base(d), DockG.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
         for (final f in files)
           if (_glyphOf(f) case final g?) FileNode(f, _base(f), g),
       ],
@@ -73,7 +74,7 @@ List<FileNode> _rootsOf(DockCtx c) {
   ];
 }
 
-/// Root first, [id] last.
+/// The folders from the root down to [id], root first.
 List<FileNode> _pathOf(DockCtx c, String id) {
   final roots = _rootsOf(c);
   if (!id.startsWith('/')) return [roots.first];
@@ -85,17 +86,17 @@ List<FileNode> _pathOf(DockCtx c, String id) {
 }
 
 void _go(DockCtx c, String id) => c.set(() {
-  if (id.startsWith('/')) _read(id); // (a folder of the disk is read again each time it is gone to)
+  if (id.startsWith('/')) _read(id); // A folder on disk is read again each time it is opened.
   c.mem.folder = id;
-  // (only that folder opens: the same folder is listed under more than one place, and opening every place above it
-  //  moves the rows under the hand)
+  // Only that folder opens: the same folder is listed under more than one location,
+  // and opening every location above it would move the rows under the pointer.
   c.mem.open.add(id);
 });
 
 void _open(FileNode n, DockCtx c) {
   if (n.folder) return _go(c, n.id);
   if (DockHover.cmdAtPress && _kindOfFile(n.id).isNotEmpty) {
-    // (⌘: one more picked, or one less, as Finder)
+    // Cmd adds or removes one file from the selection, as in Finder.
     if (_filesPicked.isEmpty && c.sel != null && _kindOfFile(c.sel!).isNotEmpty) _filesPicked.add(c.sel!);
     _filesPicked.contains(n.id) ? _filesPicked.remove(n.id) : _filesPicked.add(n.id);
   } else {
@@ -149,7 +150,7 @@ class _Tree extends StatelessWidget {
   }
 }
 
-/// Where the contents come from: each step of the path opens that folder. While searching it names the location searched.
+/// Breadcrumbs for the open folder: each step opens that folder. While searching, they name the location searched.
 class _Crumbs extends StatelessWidget {
   const _Crumbs(this.path, this.c, {required this.searching});
   final List<FileNode> path;

@@ -1,13 +1,18 @@
-// Part of effect_tiles.dart: AbsentMotion's own table of how each of its effects is shown (tools/effect_showcase.json).
+// Part of effect_tiles.dart: AbsentMotion's table of how each of its effects is shown (tools/effect_showcase.json).
 part of 'effect_tiles.dart';
 
-/// What AbsentMotion shows each of its effects with (its tools/effect_showcase.json, Apache-2.0): the knobs that make
-/// the effect plain to see, and where its picture is split into before (left) and after. By the effect's name in the
-/// table, the file's own `am_<name>.wgsl`; each knob as from_absent.py named it (skslc's R_ before a name WGSL keeps for
-/// itself, origin_x and the like with _ after), a vector or a colour one knob each way; a moving line's list of numbers
-/// for one knob the stops it goes through ([sweeps]), its layer moved the sample's drift ([moves]), the words its
-/// text ones are shown on ([text], its "text" layout), its strokes drawn ([drawn], its "drawing" layout). An .am (one moved by its own motion.cpp) by its --absent: name.
-/// Null: a file the table has not.
+/// How AbsentMotion shows an effect, from its tools/effect_showcase.json (Apache-2.0).
+///
+/// The effect is looked up by name: the `am_<name>.wgsl` file name, or for an .am file (moved by its own motion.cpp)
+/// the name on its `--absent:` line. Returns null for a file the table does not list. The fields are:
+/// - knobs: parameter values that make the effect plain to see. Names are as from_absent.py made them: skslc's `R_`
+///   prefix for a name WGSL reserves, and a trailing `_` for names like origin_x. A vector or colour gives one
+///   parameter per component.
+/// - split: where the picture is split into before (left) and after.
+/// - sweeps: for a parameter given as a list of numbers, the stops it goes through.
+/// - moves: the layer is moved by the sample's drift.
+/// - text: the words a text effect is shown on (the "text" layout).
+/// - drawn: strokes are drawn for it (the "drawing" layout).
 ({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves, String? text, bool drawn})? showcase(
   String file,
   String head,
@@ -24,7 +29,7 @@ part of 'effect_tiles.dart';
   ].where(tracks.contains).firstOrNull;
   for (final MapEntry(key: p, :value) in ((show['params'] as Map<String, dynamic>?) ?? const {}).entries) {
     if (show.containsKey('animate') && value is List && value.every((x) => x is num)) {
-      // (effect_thumbs.py prop: its keys, evenly apart)
+      // A list of numbers is the keys of an animated property, evenly spaced, as effect_thumbs.py prop does.
       if (named(p, '') case final knob?) {
         sweeps['js_${stem}_$knob'] = [for (final x in value) (x as num).toDouble()];
         continue;
@@ -36,7 +41,7 @@ part of 'effect_tiles.dart';
       String v when RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(v) => [for (var i = 1; i < 7; i += 2) int.parse(v.substring(i, i + 2), radix: 16) / 255, 1.0],
       List v when v.length <= 4 && v.every((x) => x is num) => [
         for (final x in v) (x as num).toDouble(),
-      ], // (a vector; a longer list is not one: left as the file says)
+      ], // A vector. A longer list is not one and is left as the file has it.
       _ => const <double>[],
     };
     for (final (i, v) in parts.indexed) {
@@ -54,7 +59,7 @@ part of 'effect_tiles.dart';
   );
 }
 
-/// AbsentMotion's table, read once (in each isolate that draws): empty where the library has not got it.
+/// AbsentMotion's table, read once in each isolate that draws. Empty where the library does not have it.
 Map<String, dynamic> table(String dir) {
   try {
     return jsonDecode(File('$dir/third_party/AbsentMotion/tools/effect_showcase.json').readAsStringSync()) as Map<String, dynamic>;

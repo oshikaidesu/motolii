@@ -1,42 +1,47 @@
-// Part of state.dart: the workspace state every panel reads (Ws).
+// Part of state.dart: the workspace state that every panel reads (Ws).
 part of 'state.dart';
 
-/// A sound: a film whose file has no picture, hidden and heard (doc_add), Alight Motion's audio layer: docs/internal/reports/alight_motion/alight_ui.md 177.
+/// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
+/// Like Alight Motion's audio layer (docs/internal/reports/alight_motion/alight_ui.md).
 bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
+/// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
+/// Every panel listens to this and nothing else, and never keeps a copy of it.
+/// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
 class Ws extends ChangeNotifier {
-  /// Each aspect told on its own (a Flutter ValueNotifier: what listens to one hears only it).
+  /// One counter per aspect, so a listener of one aspect never hears the others.
   late final on = {for (final a in WsAspect.values) a: ValueNotifier<int>(0)};
   void _tell(WsAspect a) {
-    if (a == WsAspect.picked || a == WsAspect.document) _watch(); // (what the inside puts in the moment's picture follows what is picked)
+    if (a == WsAspect.picked || a == WsAspect.document) _watch();
     on[a]!.value++;
-    notifyListeners(); // (WsScope's own: it says which aspects to the parts below)
+    notifyListeners(); // WsScope passes the aspect on to the widgets below.
   }
 
   final layers = <WsLayer>[];
 
-  /// The composition's rate and length in frames (the sample's; a joined document's own length).
+  /// The composition's frame rate and length in frames. After [join] they come from the document.
   static int fps = 30, duration = 240;
 
-  /// The inside this window is joined to (motolii.dart), if it is: the layers are then the document's things, a
-  /// change is a call to it, and the playhead is its moment. null: the sample's mock document.
+  /// The engine this window is connected to (see motolii.dart), or null for the sample document.
+  /// When connected, the layers are the document's layers, a change is a call to the engine, and the playhead is its time.
   Motolii? _inside;
   Motolii? get inside => _inside;
+
   void join(Motolii inside) {
     _inside = inside;
-    inside.shaping; // (read once, at the opening: what a card is made by)
+    inside.shaping; // Read once at opening: it decides how cards are built.
     inside.listener = ({required document, required moment, required cache}) {
-      // (the inside's pictures are new: docs/app/BRIDGE.md)
+      // The engine has a new snapshot, see docs/app/BRIDGE.md.
       if (_gone) return;
       if (cache) this.kept.value = inside.cache;
       if (document) reread();
       if (moment) seen.value++;
     };
-    fps = _fpsOf(inside); // (a frame is the document's: the timeline counts what a written film has)
+    fps = _fpsOf(inside); // The timeline counts frames at the document's rate, as the exported video does.
     WsArt.comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
-    moment.value = (inside.now * fps).round(); // (the playhead is the inside's moment from the first)
+    moment.value = (inside.now * fps).round(); // The playhead starts at the engine's time.
     reread();
-    final kept = inside.settings; // (the choices kept with the document: its inks and fonts, golf (90))
+    final kept = inside.settings; // Choices saved with the document: its inks and fonts.
     _ink = kept['ink'] ?? '';
     _edge = kept['edge'] ?? '';
     _inkBlend = kept['ink_blend'] ?? '';
@@ -44,22 +49,22 @@ class Ws extends ChangeNotifier {
     _bodyFont = kept['body_font'] ?? '';
   }
 
-  /// Joined: the document's name, and how the window is told to open it again at another size (the host does it).
+  /// The document's name.
   String? document;
-  String? documentFolder; // (where the document's file is: the dock offers it, so a new document is one step from its footage)
+
+  /// The folder holding the document's file. The dock offers it, so a new document is one step from its footage.
+  String? documentFolder;
+
+  /// Host callbacks: reopen the document at another size, refit it, and export it as a video.
   void Function(int wide, int high)? onSize;
   VoidCallback? refit;
-
-  /// Joined: how the document is written as a film (the host does it), and what the window has to say about the
-  /// document just now (it is being written, where it was written, why something was not done); null: nothing.
   VoidCallback? onRender;
 
-  /// Where the next film is written (set by the settings window; the window's own default when null).
+  /// Where the next export is written. Set by the settings window; null means the window's default.
   String? renderTo;
 
-  /// Joined: the inks the drawing tools give a new thing (a fill word, a stroke colour; '': the document's own), and how
-  /// the ink's colours are mixed when it is a gradient (gradient_blend; '': sRGB). Kept with the document, not steps
-  /// of it, as a PowerPoint file keeps its theme's colours (the inside's setting: golf_noise.md (90), engine_needs.md E4).
+  /// The inks the drawing tools give a new layer: fill, stroke colour and gradient blend (gradient_blend).
+  /// An empty string means the document's own, or sRGB. Saved with the document but not undo steps, like a PowerPoint theme.
   String _ink = '', _edge = '', _inkBlend = '';
   String get ink => _ink;
   set ink(String v) => _ink = _kept('ink', _ink, v);
@@ -72,9 +77,9 @@ class Ws extends ChangeNotifier {
     return now;
   }
 
-  /// The fonts a title and a body text are set in as they are added, and which of the two the Fonts shelf sets now:
-  /// PowerPoint's theme fonts (Headings and Body, a text box in Body), Canva's brand fonts (a heading's, a body's).
-  /// '': the usual one (golf_noise.md ㉚). Kept with the document, as a PowerPoint file keeps its theme's fonts (golf (90)).
+  /// The fonts for a new title and a new body text, and which of the two the Fonts shelf sets ([fontRole]).
+  /// Modelled on PowerPoint's theme fonts and Canva's brand fonts. An empty string means the default font.
+  /// Saved with the document, like a PowerPoint theme.
   String _titleFont = '', _bodyFont = '', fontRole = 'title';
   String get titleFont => _titleFont;
   set titleFont(String v) => _titleFont = _kept('title_font', _titleFont, v);
@@ -86,21 +91,20 @@ class Ws extends ChangeNotifier {
   String? _notice;
   String? get notice => _notice;
   Timer? _noticeEnds;
-  List<int> strikes = const []; // (the sounds' strikes, in frames, as the timeline last had them: its Beats)
 
-  /// What a click on the notice does while it is said: a time it tells is a place to go, as a time written under a
-  /// YouTube video is a link to that moment.
+  /// The frames where sounds strike, as the timeline last computed them for its beats.
+  List<int> strikes = const [];
+
+  /// What clicking the notice does while it is shown. A time in it is a place to go to, like a YouTube timestamp.
   void Function()? noticeGo;
   set notice(String? said) {
     if (said == _notice) return;
     _notice = said;
     noticeGo = null;
     _noticeEnds?.cancel();
+    // Disappears after ten seconds like a Material snackbar, unless it ends in "…" (work still going on).
     if (said != null && !said.endsWith('…')) {
-      _noticeEnds = Timer(
-        const Duration(seconds: 10),
-        () => notice = null,
-      ); // (said for a moment, Material's snackbar: four to ten seconds; what is still going on, "…", stays)
+      _noticeEnds = Timer(const Duration(seconds: 10), () => notice = null);
     }
     _tell(WsAspect.notice);
   }
@@ -108,17 +112,15 @@ class Ws extends ChangeNotifier {
   /// How many times the document has been read again.
   int rev = 0;
 
-  /// How many times the document has been read again (not counting what a hand only carries): what is made from its
-  /// shape (the cards) is made again when this moves.
+  /// Like [rev] but without drags. Things built from the document's structure, such as the cards, rebuild when it changes.
   int reads = 0;
 
-  /// A part of the window's building, named in Flutter's own timeline.
   static T timed<T>(String name, T Function() does) => Timeline.timeSync(name, does);
 
-  /// Where a bar ends, in frames: a thing on for good runs to the document's end.
+  // A layer that lasts forever (negative [lasts]) runs to the document's end.
   static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
 
-  /// One thing's bar read again from the inside (while a hand carries it: what the inside says is what is drawn).
+  /// Reads layer [id]'s bar from the engine again, for example during a drag, so the drawn bar matches the engine.
   void respan(String id) {
     final m = _inside, l = layers.where((l) => l.id == id).firstOrNull, t = int.tryParse(id);
     if (m == null || l == null || t == null) return;
@@ -130,8 +132,7 @@ class Ws extends ChangeNotifier {
   bool _gone = false;
   final seen = ValueNotifier<int>(0);
 
-  /// The stage's pictures kept on disk for playing, as stretches of frames (the timeline marks them, as After Effects'
-  /// green line): told again by the inside when they change.
+  /// The frame ranges cached on disk for playback. The timeline marks them like After Effects' green line.
   final kept = ValueNotifier<List<(int, int)>>(const []);
 
   @override
@@ -147,31 +148,32 @@ class Ws extends ChangeNotifier {
     super.dispose();
   }
 
-  /// What the inside shows changed without the document changing (a thing held and carried): the panels look again.
+  /// Tells the panels to look again after the engine's view changed without the document changing, such as during a drag.
   void shown() {
-    lastChange = null; // (not a step of the document: what it changed is not known)
+    lastChange = null; // This is not an undo step, so what changed is unknown.
     rev++;
     _tell(WsAspect.document);
   }
 
-  /// The document read again, after any change to it: what the panels list is what the document holds.
-  /// The document's tempo, beats a minute (0: none), and its beats.
+  /// The document's tempo in beats per minute (0 for none), and its beat grid.
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
   WsBeats? get beats => bpm > 0 ? WsBeats((_inside?.value(0, 'bpm_from', 0) ?? 0) * Ws.fps, 60 / bpm * Ws.fps) : null;
 
-  /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
     > 0 && final r => r,
     _ => m.rate,
   };
-  void reread() => Timeline.timeSync('ws reread', _reread); // (named in Flutter's timeline)
+
+  /// Reads the document again after any change, so the panels list what the document holds.
+  void reread() => Timeline.timeSync('ws reread', _reread);
   void _reread() {
     final m = _inside;
     if (m == null) return;
-    if (!m.fits && refit != null) return refit!(); // (the document says another size, by a hand or by undo: the host opens it again, and that reads it)
+    // The document now has another size, from an edit or an undo. The host reopens it, which reads it again.
+    if (!m.fits && refit != null) return refit!();
     lastChange = m.changes();
     if (_fpsOf(m) != fps) {
-      // (the document's frame rate said again: the playhead kept where it is in time)
+      // The frame rate changed. Keep the playhead at the same time.
       final at = moment.value / fps;
       fps = _fpsOf(m);
       moment.value = (at * fps).round();
@@ -186,15 +188,15 @@ class Ws extends ChangeNotifier {
           if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1,
       });
     final tl = TimelineTask()..start('MARK layers');
-    final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
+    final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // The ids of layers that are parents.
     layers
       ..clear()
       ..addAll([
-        for (final t in m.layers.reversed) // (the sample's manner: the nearest thing is the top row)
+        for (final t in m.layers.reversed) // The topmost layer comes first, as in the sample.
           () {
             final kind = m.word(t, 'kind'), from = ((m.value(t, 'start', 0) ?? 0) * fps).round(), lasts = m.lasts(t);
-            final name = m.word(t, 'name'); // (what it is called is the inside's to say)
-            // (a key on any value of it that takes keys is a key on its bar: the inside says which those are)
+            final name = m.word(t, 'name');
+            // A keyframe on any animatable property shows as a keyframe on the bar. The engine says which properties those are.
             final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort();
             return WsLayer(
               '$t',
@@ -224,15 +226,17 @@ class Ws extends ChangeNotifier {
           }(),
       ]);
     if (_sel != null && layers.every((l) => l.id != _sel)) {
-      _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
+      // The selected layer is gone: select the first. With nothing selected, the selection stays empty.
+      _sel = layers.firstOrNull?.id;
     }
-    _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame))); // (a picked key stays picked while it is still there)
-    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from); // (and a picked stretch: to where that value's next key now is)
+    // A selected keyframe stays selected while it exists; a selected stretch moves to that property's next keyframe.
+    _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)));
+    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);
     tl.finish();
     _tell(WsAspect.document);
   }
 
-  /// The inside's own picture of the stage, as a Flutter texture, when the window is joined to it (null: the stand-in art).
+  /// The engine's preview as a Flutter texture id, when connected. Null means the stand-in artwork.
   int? _stageTexture;
   int? get stageTexture => _stageTexture;
   set stageTexture(int? id) {
@@ -241,8 +245,8 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.stage);
   }
 
-  /// The things whose moving values the window shows (told the inside: Motolii.subscribe): the picked one and those picked
-  /// with it, the cameras (the Depth tool panel's lens), the relations (the Relations tool panel's map), and a picked relation's things.
+  /// Tells the engine (Motolii.subscribe) which layers' changing values to report: the selected layers, the cameras for the
+  /// Depth tool panel, the relations for the Relations tool panel's map, and the members of a selected relation.
   void _watch() {
     final m = _inside;
     if (m == null) return;
@@ -254,36 +258,37 @@ class Ws extends ChangeNotifier {
         if (l.kind == WsKind.camera) ?int.tryParse(l.id),
       for (final l in layers)
         if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
-          t, // (the relations: the Relations tool panel draws each by its knobs, at the moment)
+          t, // Relations: the Relations tool panel draws each from its parameters at the current time.
       if (sel != null && m.word(sel, 'kind') == 'behaviour')
         for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
     });
   }
 
-  String? _sel; // (nothing picked, as a document opens)
+  String? _sel; // Nothing is selected when a document opens.
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
 
-  /// The things picked together (drawn round on the stage): what a relation is made of. Picking one alone clears them.
+  /// The layers selected together, outlined in the preview. A relation is made of them. Selecting one layer clears them.
+  /// [manyInOrder] is true when they were picked one by one, so the first leads; a box selection has no order.
   final many = <String>{};
-  bool manyInOrder = false; // (picked one by one, in that order: the first leads; drawn round, they have no order)
+  bool manyInOrder = false;
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
 
-  /// The stretch picked by its line, as Theatre.js's connector between two keyframes is pressed to edit its curve
-  /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
+  /// The stretch selected by clicking its line, like Theatre.js's connector between two keyframes
+  /// (BasicKeyframeConnector.tsx, Apache-2.0). It belongs to one property, whereas a keyframe covers every property at that time.
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
 
-  /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
-  /// the rest of the window is not built again as it moves.
+  /// The playhead frame. It is a separate notifier, so only widgets that show the current time listen to it
+  /// ([WsScope.frameOf]) and the rest of the window is not rebuilt as it moves.
   final moment = ValueNotifier<int>(112);
   int get frame => moment.value;
   set frame(int f) {
     final v = f.clamp(0, duration);
     if (v == moment.value) return;
     moment.value = v;
-    if (!_playing) _inside?.at(v / fps); // (standing: the stage goes to the moment the playhead is put at)
+    if (!_playing) _inside?.at(v / fps); // While stopped, the preview jumps to the new time.
   }
 
   bool _playing = false;
@@ -292,13 +297,13 @@ class Ws extends ChangeNotifier {
     if (p == _playing) return;
     _playing = p;
     if (p) _inside?.at(frame / fps);
-    _inside?.play(p); // (the inside keeps the clock; the playhead follows its moment: timeline.dart)
-    if (!p) _inside?.at(frame / fps); // (its clock runs ahead of a stage that is late with its pictures: stopped, it stands where the hand sees it)
+    _inside?.play(p); // The engine keeps the clock and the playhead follows it (see timeline.dart).
+    // The clock can run ahead of a preview that is late with its frames, so on stop it returns to the playhead.
+    if (!p) _inside?.at(frame / fps);
     _tell(WsAspect.playing);
   }
 
-  /// How the window looks, by name ('stage.tool', 'fold.Transform'...): what a pane keeps of itself that is not the
-  /// document's. Any pane may read it; the window opened again on the same document at the same view shows the same.
+  /// View state by name ('stage.tool', 'fold.Transform'): what a panel keeps of itself that is not part of the document.
   final view = <String, Object?>{};
   T viewOf<T>(String name, T otherwise) => view[name] as T? ?? otherwise;
   void setView(String name, Object? value) {
@@ -307,16 +312,16 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.view);
   }
 
-  /// Whether the stage is seen by the working eye, not the camera (AbsentMotion's cameraMode off): only a document with a camera has two eyes.
+  /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
   bool get freeEye => !viewOf('stage.camera', false) && layers.any((l) => l.kind == WsKind.camera);
 
-  /// Where the working eye stands round the world's middle: about, over, how far.
+  /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
 
-  /// What the user opened in the tool panel by hand; null lets the tool panel follow the selection.
+  /// The tool the user opened in the tool panel. Null lets the tool panel follow the selection.
   String? toolPanelManual;
 
-  /// Every tab the window has (set once, by Workspace); the tool panel's catalog is those that start on no strip.
+  /// Every tab in the window, set once by Workspace. The tool panel's catalog is the tabs that do not start in a strip.
   List<WsPane> panes = const [];
   List<WsPane> get tools => [
     for (final p in panes)
@@ -327,7 +332,7 @@ class Ws extends ChangeNotifier {
     front('Tool Panel');
   }
 
-  /// A pane brought to the front of its tabs (the panes follow: panes.dart).
+  /// Brings a panel to the front of its tabs (the panels follow, see panes.dart).
   void front(String pane) {
     fronted = (pane, (fronted?.$2 ?? 0) + 1);
     _tell(WsAspect.fronted);
@@ -335,12 +340,10 @@ class Ws extends ChangeNotifier {
 
   (String, int)? fronted;
 
-  /// What the tool panel holds: the tool opened by hand, else the Tools catalog.
   String get toolPanel => toolPanelManual ?? 'Tools';
 
-  /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
-  /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
-  /// (the strip rings the one aimed, the shelf's foot says where its colour goes).
+  /// The property that a colour picked on the Colors shelf is written to, on the selected layer or the canvas.
+  /// A card's colour link or the tool strip's ink or edge sets it; null means the fill. It notifies as a selection.
   String? _aim;
   String? get aim => _aim;
   set aim(String? to) {
@@ -349,10 +352,10 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.picked);
   }
 
-  /// A panel link elsewhere asked for a panel (fonts, colours, ease): the dock or tool panel shows it.
+  /// Handles a link from another panel to a panel (fonts, colours, ease): the dock or tool panel shows it.
   void route(String to) => front(to.split('›').last.trim());
 
-  /// The shelf's effects on the thing: those whose card the inside shows (an effect's card shows while it is on).
+  /// The shelf effects on layer [id]: those whose card the engine shows. An effect's card shows while the effect is on.
   List<String> fxOf(String? id) {
     final m = _inside, t = int.tryParse(id ?? '');
     if (m == null || t == null) return const [];
@@ -363,15 +366,14 @@ class Ws extends ChangeNotifier {
     ];
   }
 
-  /// Joined: whether every change a hand makes is keyed (the top bar's Animate, the inspector's Animate all: one truth, the inside's).
+  /// Whether every change the user makes is keyframed. The top bar's Animate and the inspector's Animate all share it; the engine owns it.
   bool get animating => _inside?.keyingNow ?? false;
 
-  /// Joined: the work area, the marks, the guides: the document's picture's.
   (double, double) get work => _inside!.work;
   List<(double, String)> get marks => _inside!.marks;
 
-  /// Where the hand comes to rest and J and K go: Alight Motion's snapTargets, the marks and the other things' ends and
-  /// keys; and a sound's strikes, the beat marks CapCut's bars snap to.
+  /// The frames that dragging snaps to and that J and K jump to, like Alight Motion's snapTargets: the marks, the
+  /// other layers' ends and keyframes, and a sound's strikes (the beat marks CapCut's bars snap to).
   Set<int> stops({Set<String> skip = const {}}) => {
     for (final (at, _) in marks) (at * fps).round(),
     for (final l in layers)
@@ -386,38 +388,38 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.animating);
   }
 
-  // Which things' keyed values stand in lanes under their rows: opened by hand (After Effects' twirl, Ableton's track
-  // unfolded), or, with Animate on, every thing's (golf ③), and then what is kept is the ones shut by hand.
+  // Which layers show their keyframed properties in lanes under their rows. The user opens them (After Effects' twirl,
+  // Ableton's unfolded track). With Animate on, every layer is open and only the ones the user shut are tracked.
   final _lanesOpen = <String>{}, _lanesShut = <String>{};
   bool lanesOpen(String id) => animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
-  bool aimsOpen(String id) =>
-      _lanesOpen.contains(id) && !_lanesShut.contains(id); // (what it aims at, opened by hand: Animate lays out keys, not every relation's things)
+  // Whether the user opened the lanes of what a relation aims at. Animate opens keyframe lanes only.
+  bool aimsOpen(String id) => _lanesOpen.contains(id) && !_lanesShut.contains(id);
   void twirl(Iterable<String> ids) {
     final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
     open == animating ? s.addAll(ids) : s.removeAll(ids);
     _tell(WsAspect.animating);
   }
 
-  // The groups stood open. A group is one row until it is opened, as a precomposed layer, a nest, a compound clip and
-  // Alight Motion's group are, so what holds 200 things is one row; the triangle is Apple Motion's and Cavalry's, whose
-  // tree folds rows and changes nothing else. Only the rows fold: the document does not know. (Not kept in the file.)
+  // The open groups. A closed group is one row, like a precomposed layer or Alight Motion's group (the triangle is
+  // Apple Motion's and Cavalry's). Only the rows fold; the document does not know and the file does not save it.
   final _groupsOpen = <String>{};
   bool groupOpen(String id) => _groupsOpen.contains(id);
   void turnGroup(String id) {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
-    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id); // (its own keys with them: one triangle to a row, Apple Motion's)
+    // The group's own keyframe lanes follow it: one triangle per row, as in Apple Motion.
+    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);
     _tell(WsAspect.animating);
   }
 
   Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
     var p = of[l.parent];
     for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {
-      // (64: as Group's walk up, stage_view_2.dart)
+      // The limit of 64 matches Group's walk up the parents in stage_view_2.dart.
       yield p;
     }
   }
 
-  /// Each thing folded away, with the row that stands for it: the outermost shut group over it (Cavalry marks that row).
+  /// Each layer hidden by a closed group, mapped to the row standing for it: the outermost closed group above it (Cavalry marks that row).
   Map<String, String> get foldedAway {
     final of = {for (final l in layers) l.id: l}, away = <String, String>{};
     for (final l in layers) {
@@ -428,7 +430,7 @@ class Ws extends ChangeNotifier {
     return away;
   }
 
-  /// What a group holds, however deep (nothing, for any other thing: the inside's doc_under).
+  /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
   List<String> under(String id) {
     final of = {for (final l in layers) l.id: l};
     if (of[id]?.kind != WsKind.group) return const [];
@@ -438,45 +440,44 @@ class Ws extends ChangeNotifier {
     ];
   }
 
-  /// How many groups a thing stands in: its row is set in by so many.
+  /// How many groups contain layer [l]. Its row is indented by that many levels.
   int depth(WsLayer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == WsKind.group).length;
 
-  /// Joined: a change asked without waiting ([Motolii.later]): looked at once a picture till the inside has done it, then
-  /// the document read again and [then] told (done or not, and why not). The window never stands still for the inside.
-  /// Joined: what the steps changed that the last reading of the document took in (null: not known, as after a hand's
-  /// carry): a panel that shows only some values builds itself again only when they are among these.
+  /// What the undo steps changed since the last read (null when unknown, as after a drag).
+  /// A panel showing only some properties rebuilds only when they are among these.
   ({bool layers, Set<(int, String)> values})? lastChange;
 
-  int _afters = 0; // (tickets still looked at: the document is read again once, when the last of them is done)
+  // Requests still pending. The document is read again once, when the last one finishes.
+  int _afters = 0;
 
-  /// Whether changes told to the inside are not all done yet (the window shows them before the document has them).
+  /// Whether requests sent to the engine are still pending. The window shows them before the document has them.
   bool get waiting => _afters > 0;
+
+  /// Waits without blocking for a request made with [Motolii.later], then reads the document again and calls
+  /// [then] with whether it succeeded and why not. [got] receives the answer, such as the id of a new layer.
   void after(int ticket, [void Function(bool done, String why)? then, void Function(int answer)? got]) {
     final m = _inside;
     if (m == null) return;
     _afters++;
     m.answered(ticket).then((r) {
-      // (told by the inside when it is done: nothing looked at each picture)
       final (a, why) = r;
       then?.call(a >= 1, why);
-      if (a >= 1) got?.call(a); // (an add's or a make's answer: the new thing)
-      _afters--; // (what it changed comes with the inside's next picture of the document)
+      if (a >= 1) got?.call(a);
+      _afters--; // What it changed arrives with the engine's next snapshot.
     });
   }
 
-  static final _files = RegExp(
-    r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
-  ); // (as the inside reads the list: a path, spaces and all, to its extension: script.h script_files)
-  /// The effect files a thing's fx says, in its order.
+  // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension (see script_files in script.h).
+  static final _files = RegExp(r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+');
+
   static List<String> fxFiles(String fx) => [
     for (final f in _files.allMatches(fx).map((m) => m[0]!))
       if (f != 'none') f,
   ];
 
-  /// Joined: an effect file shown on the picked thing while the hand is on its tile, not the document's, gone as the
-  /// hand leaves (null), as Final Cut Pro's effects browser shows the effect skimmed on the selected clip in the viewer
-  /// and DaVinci Resolve's Live Preview the one under the pointer (the inside's carry: doc_carry_effect). Nothing picked,
-  /// nothing shown. Let go before any put, the put reading the document as it is.
+  // Whether an effect is being previewed on the selected layer while the pointer is on its tile (see doc_carry_effect).
+  // The preview is not part of the document and ends when the pointer leaves, and before any apply. Final Cut Pro's
+  // effects browser and DaVinci Resolve's Live Preview work the same way. With nothing selected, nothing is shown.
   bool _trying = false;
   String timecode([int? f]) {
     final v = f ?? frame, s = v ~/ fps, fr = v % fps;
@@ -484,25 +485,24 @@ class Ws extends ChangeNotifier {
   }
 }
 
-/// The font a new text is set in, a font every machine of its kind has (one place: the Create shelf and the stage's tool).
+/// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
 final wsTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
 
-/// The chosen inks said to the thing just added (thing -1), wherever it was added from (P03: put after the key colours
-/// are chosen, it comes in them; the stage's drawing gave them, the Fonts and Create shelves did not: golf_noise.md ㉛).
-/// A text or a flat shape takes them, as the stage draws only those; a line its colour alone.
+/// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.
+/// A text or a flat shape takes all the inks, because the preview draws only those. A line takes its colour only.
 void wsInked(Ws ws, String kind, String shape) {
   final m = ws.inside;
   if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
   final line = shape == 'line';
   if (ws.ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ws.ink);
-  // (no ink chosen: a shape comes in a colour of its own, as Alight Motion's does: AbsentMotion's addShape, randomColor,
-  //  any hue, saturation 0.3 to 0.8, value 0.55 to 1; said, so the Inspector and the Colors shelf show it: golf (85))
+  // With no ink chosen, a shape gets a random colour as in Alight Motion (AbsentMotion's addShape, randomColor): any hue,
+  // saturation 0.3 to 0.8, value 0.55 to 1. It is written to the document so the Inspector and Colors shelf show it.
   if (ws.ink.isEmpty && kind == 'shape') {
     final r = math.Random(), c = HSVColor.fromAHSV(1, r.nextDouble() * 360, .3 + r.nextDouble() * .5, .55 + r.nextDouble() * .45).toColor();
     m.later('say', layer: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
   }
   if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
-    m.later('say', layer: -1, name: 'gradient_blend', word: ws.inkBlend); // (a gradient ink, mixed as it was chosen)
+    m.later('say', layer: -1, name: 'gradient_blend', word: ws.inkBlend); // A gradient ink is mixed as it was chosen.
   }
   if (ws.edge.isNotEmpty && !line) {
     m

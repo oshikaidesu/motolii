@@ -1,12 +1,13 @@
-// What the timeline's rows show of their media, asked of the inside once and kept: a sound's beats, the picked one's
-// retimed ends, a film's frames, a shape's form, a still, a sound's wave.
-// (setState from an extension on the State itself: the analyzer allows it only in a class or mixin)
+// What the timeline rows show of their media, requested from the engine once and cached: an audio layer's beats, the
+// selected layer's retimed ends, a video's frames, a shape's form, an image's thumbnail and an audio waveform.
+// setState is called from an extension on the State itself, which the analyzer only allows inside a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
 part of 'timeline.dart';
 
 extension _WsTimelineMedia on _WsTimelineState {
-  // The picked group's end of intro and start of outro, kept with it as an element (its Element card's End of intro,
-  // Start of outro: doc_element_clock), where they fall on the ruler.
+  /// Frames where the selected group's intro ends and its outro starts, for marking on the ruler.
+  ///
+  /// They are the End of intro and Start of outro values of the group's Element card (the engine's doc_element_clock).
   List<int> _retimedOf(Ws ws) {
     final m = ws.inside, t = int.tryParse(ws.selected ?? '');
     if (m == null || t == null) return const [];
@@ -17,6 +18,7 @@ extension _WsTimelineMedia on _WsTimelineState {
     ];
   }
 
+  /// Frames of the audio beats of every layer that has them, requested from the engine once per read of the project.
   List<int> _beatsOf(Ws ws) {
     final m = ws.inside;
     if (m == null) return const [];
@@ -25,7 +27,7 @@ extension _WsTimelineMedia on _WsTimelineState {
     final asks = <Future<List<double>>>[];
     for (final l in ws.layers) {
       final t = int.tryParse(l.id), rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
-      if (rise > 0 && _waveOf(ws, l) != null) asks.add(m.strikes(t!, rise)); // (only once its sound is read)
+      if (rise > 0 && _waveOf(ws, l) != null) asks.add(m.strikes(t!, rise)); // Only after its sound has been read.
     }
     final reads = _beatsAsked = ws.reads;
     Future.wait(asks).then(
@@ -44,6 +46,7 @@ extension _WsTimelineMedia on _WsTimelineState {
     return _beats?.$2 ?? const [];
   }
 
+  /// A few frames to draw along a video layer's bar, or the thumbnail of an image layer; null if there are none.
   List<ui.Image>? _framesOf(Ws ws, WsLayer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
@@ -57,7 +60,8 @@ extension _WsTimelineMedia on _WsTimelineState {
       final lasts = (l.outF - l.inF) / Ws.fps;
       final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
       Future.wait([for (final s in seconds) m.videoFrame(file, s)]).then((pngs) async {
-        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null; // (no pictures: its sound alone)
+        // No frames could be read: the file has sound only.
+        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null;
         final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
         if (mounted) setState(() => _frames[l.id] = (key, read));
       });
@@ -65,8 +69,8 @@ extension _WsTimelineMedia on _WsTimelineState {
     return _frames[l.id]?.$2;
   }
 
-  // A shape's form and its fill, as the document says them: its own small picture at the row's left.
-  // (no fill: its outline in its stroke's colour)
+  /// A shape's form name, colour and whether it is an outline, as stored in the project, for the small icon at the row's left.
+  /// With no fill, the outline is drawn in the stroke colour.
   (String, Color?, bool)? _formOf(Ws ws, WsLayer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
@@ -75,8 +79,8 @@ extension _WsTimelineMedia on _WsTimelineState {
     return (m.word(t, 'shape'), colour(m.word(t, outline ? 'stroke' : 'fill')), outline);
   }
 
-  // A photo on its bar: itself, read once small (as tall as a bar needs), laid along the bar again and again as
-  // Alight Motion's photo bar is (docs/internal/reports/alight_motion/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
+  /// The image of an image layer, decoded once at a small height and repeated along the bar as in Alight Motion
+  /// (see docs/internal/reports/alight_motion/alight_ui.md). Null if Flutter cannot decode the file.
   List<ui.Image>? _stillOf(String file, String id) {
     if (_frames[id] case (final k, final f) when k == file) return f;
     if (_framesAsked[id] != file) {
@@ -93,6 +97,7 @@ extension _WsTimelineMedia on _WsTimelineState {
     return _frames[id]?.$2;
   }
 
+  /// The loudness of a video layer's sound over its bar, or null while it is unknown or the layer has no sound.
   List<double>? _waveOf(Ws ws, WsLayer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
@@ -100,7 +105,7 @@ extension _WsTimelineMedia on _WsTimelineState {
     final had = _waves[l.id];
     if (had case (final r, final a, final b, final w) when (r, a, b) == key) return w;
     if (_waveAsked[l.id] != key) {
-      // (a question of the inside, another isolate: laid on the bar when it comes)
+      // The engine answers on another isolate; the waveform is drawn on the bar when the answer arrives.
       _waveAsked[l.id] = key;
       m.loudnessOver(t, l.inF / Ws.fps, l.outF / Ws.fps, l.outF - l.inF).then((w) {
         if (!mounted) return;
@@ -110,7 +115,7 @@ extension _WsTimelineMedia on _WsTimelineState {
         }
         setState(
           () => (_waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w), _beats = null, _beatsAsked = null),
-        ); // (its sound now read: the beats asked again)
+        ); // The sound has now been read, so the beats are requested again.
       });
     }
     return had?.$4;
