@@ -20,6 +20,7 @@ import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
@@ -299,15 +300,7 @@ class WorkspaceController extends ChangeNotifier {
             );
           }(),
       ]);
-    if (_sel != null && layers.every((l) => l.id != _sel)) {
-      // The selected layer is gone: select the first. With nothing selected, the selection stays empty.
-      _sel = layers.firstOrNull?.id;
-    }
-    // A selected keyframe stays selected while it exists; a selected stretch moves to that property's next keyframe.
-    _keys.removeWhere(
-      (k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)),
-    );
-    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);
+    selection.syncWithLayers();
     tl.finish();
     _tell(WorkspaceAspect.document);
   }
@@ -326,7 +319,7 @@ class WorkspaceController extends ChangeNotifier {
   void _watch() {
     final m = _inside;
     if (m == null) return;
-    final sel = int.tryParse(_sel ?? '');
+    final sel = int.tryParse(selected ?? '');
     m.subscribe({
       ?sel,
       for (final id in many) ?int.tryParse(id),
@@ -341,100 +334,32 @@ class WorkspaceController extends ChangeNotifier {
     });
   }
 
-  String? _sel; // Nothing is selected when a document opens.
-  String? get selected => _sel;
-  Layer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
-
-  /// The layers selected together, outlined in the preview. A relation is made of them. Selecting one layer clears them.
-  /// [manyInOrder] is true when they were picked one by one, so the first leads; a box selection has no order.
-  final many = <String>{};
-  bool manyInOrder = false;
-  final _keys = <SelectedKeyframe>{};
-  Set<SelectedKeyframe> get keys => _keys;
-
-  /// The stretch selected by clicking its line, like Theatre.js's connector between two keyframes
-  /// (BasicKeyframeConnector.tsx, Apache-2.0). It belongs to one property, whereas a keyframe covers every property at that time.
-  StretchPicked? _stretch;
-  StretchPicked? get stretch => _stretch;
-
-  /// Selects the layer [id], or clears the selection when null.
-  void select(String? id) {
-    if (id == _sel && many.isEmpty) return;
-    _sel = id;
-    many.clear();
-    _aim = null;
-    _keys.clear();
-    _stretch = null;
-    toolPanelManual = null;
-    _tell(WorkspaceAspect.picked);
-  }
-
-  /// Selects several layers. With [inOrder] the first one leads.
-  void pickMany(Iterable<String> ids, {bool inOrder = false}) {
-    many
-      ..clear()
-      ..addAll(ids);
-    manyInOrder = inOrder;
-    _tell(WorkspaceAspect.picked);
-  }
-
-  /// Selects one keyframe, or adds it to the selection when [add] is true.
-  void pickKey(SelectedKeyframe k, {bool add = false}) {
-    if (!add) _keys.clear();
-    _keys.add(k);
-    _stretch = null;
-    _sel = k.layer;
-    toolPanelManual = null;
-    _tell(WorkspaceAspect.picked);
-  }
-
-  /// Selects exactly these keyframes, for example after a box selection.
-  void pickKeys(Iterable<SelectedKeyframe> ks) {
-    _keys
-      ..clear()
-      ..addAll(ks);
-    _stretch = null;
-    if (_keys.isNotEmpty) _sel = _keys.first.layer;
-    toolPanelManual = null;
-    _tell(WorkspaceAspect.picked);
-  }
-
-  /// Deselects all keyframes and the selected stretch.
-  void clearKeys() {
-    if (_keys.isEmpty && _stretch == null) return;
-    _keys.clear();
-    _stretch = null;
-    _tell(WorkspaceAspect.picked);
-  }
-
-  StretchPicked? _stretchOf(String layer, String name, int from) {
-    final t = int.tryParse(layer),
-        at = t == null
-            ? const <double>[]
-            : _inside?.keyTimes(t, name) ?? const <double>[];
-    final i = at.indexWhere(
-      (s) => (s * WorkspaceController.fps).round() == from,
-    );
-    return i < 0 || i + 1 >= at.length
-        ? null
-        : (
-            layer: layer,
-            name: name,
-            at: at[i],
-            from: from,
-            to: (at[i + 1] * WorkspaceController.fps).round(),
-          );
-  }
-
-  /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
-  void pickStretch(String layer, String name, int from) {
-    _keys.clear();
-    _stretch = _stretchOf(layer, name, from);
-    _sel = layer;
-    toolPanelManual = null;
-    _tell(WorkspaceAspect.picked);
-    if (_stretch != null) front('Ease');
-  }
+  /// What is selected: a layer, the layers selected together, keyframes and a stretch between two keyframes.
+  late final selection = Selection(
+    engine: () => _inside,
+    layers: () => layers,
+    composition: _composition,
+    onChanged: () => _tell(WorkspaceAspect.picked),
+    onLayerSelected: () => toolPanelManual = null,
+    onStretchSelected: () => front('Ease'),
+  );
+  String? get selected => selection.selected;
+  Layer? get layer => selection.layer;
+  Set<String> get many => selection.many;
+  bool get manyInOrder => selection.manyInOrder;
+  Set<SelectedKeyframe> get keys => selection.keys;
+  StretchPicked? get stretch => selection.stretch;
+  void select(String? id) => selection.select(id);
+  void pickMany(Iterable<String> ids, {bool inOrder = false}) =>
+      selection.pickMany(ids, inOrder: inOrder);
+  void pickKey(SelectedKeyframe k, {bool add = false}) =>
+      selection.pickKey(k, add: add);
+  void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);
+  void clearKeys() => selection.clearKeys();
+  void pickStretch(String layer, String name, int from) =>
+      selection.pickStretch(layer, name, from);
+  String? get aim => selection.aim;
+  set aim(String? to) => selection.aim = to;
 
   /// The playhead frame. It is a separate notifier, so only widgets that show the current time listen to it
   /// ([WorkspaceScope.frameOf]) and the rest of the window is not rebuilt as it moves.
@@ -501,16 +426,6 @@ class WorkspaceController extends ChangeNotifier {
   (String, int)? fronted;
 
   String get toolPanel => toolPanelManual ?? 'Tools';
-
-  /// The property that a colour picked on the Colors shelf is written to, on the selected layer or the canvas.
-  /// A card's colour link or the tool strip's ink or edge sets it; null means the fill. It notifies as a selection.
-  String? _aim;
-  String? get aim => _aim;
-  set aim(String? to) {
-    if (to == _aim) return;
-    _aim = to;
-    _tell(WorkspaceAspect.picked);
-  }
 
   /// Handles a link from another panel to a panel (fonts, colours, ease): the dock or tool panel shows it.
   void route(String to) => front(to.split('›').last.trim());
