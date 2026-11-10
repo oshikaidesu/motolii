@@ -2,7 +2,7 @@
 
 [日本語](make_intro_movie.ja.md)
 
-How the 8 seconds at the top of the [guide](guide.md) were made. Once the engine is assembled (README, "Build and run"), paste the calls below into a shell at the repository's root. They write `~/Movies/Motolii/mv.mp4`.
+How the 8 seconds at the top of the [guide](guide.md) were made. Once the engine is built (README, "Build and run"), paste the calls below into a shell at the repository's root. They write `~/Movies/Motolii/mv.mp4`.
 
 ![Glowing text, a spinning pink ring, a line pattern, a colour shift](../pictures/mv.gif)
 

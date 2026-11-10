@@ -7,7 +7,7 @@ Motolii exists so that you can use an expression you found on the net in your ow
 
 - Each bundled work belongs to its author and follows its author's licence. Motolii's own licence does not cover these works.
 - Next to each work sit the author's licence text (`LICENSE` or similar) and where it was taken from (`SOURCE.txt` or `README.md`).
-- Where a work is modified, the changes are kept apart as patches (`.patch`) applied to the original, and the original source is fetched from the author's own distribution when the engine is assembled (see "Fetched at assembly time" below).
+- Where a work is modified, the changes are kept apart as patches (`.patch`) applied to the original, and the original source is fetched from the author's own distribution when the engine is built (see "Fetched at build time" below).
 - Works that are not stated to be free to redistribute are not bundled. Eight AviUtl2 packages, whose authors' distribution has no licence text and whose only basis was the licence listed in the catalogue, were removed from the bundle (2026-10-27).
 - The Windows binaries that came in AviUtl2 packages (.mod2, .aux2, .exe, .dll, the whole of Chromium Embedded Framework) are not bundled, because Motolii runs on macOS. What was left out is listed under "left out" in each folder's `SOURCE.txt`, and can be taken from the author's distribution.
 - Among the bundled works, those that are modified (for example shaders from three.js rewritten in WGSL) state the original and the changes on the first line of each file.
@@ -57,7 +57,7 @@ Motolii exists so that you can use an expression you found on the net in your ow
 | t-SNE of the shelf map: qdtsne v3.0.3, knncolle v3.1.2, aarand v1.1.0, subpar v0.5.2, sanisizer v0.2.2 | [libscran/qdtsne](https://github.com/libscran/qdtsne) and others (Copyright (c) Aaron Lun) | MIT | `engine/third_party/qdtsne/` (LICENSE.<名前>, SOURCE.txt) |
 | Grid of the shelf map: rectangular_lsap of SciPy v1.14.1 (the inside of linear_sum_assignment, by PM Larsen) | [scipy/scipy](https://github.com/scipy/scipy) (Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers) | BSD-3-Clause | `engine/third_party/scipy_lsap/` (LICENSE.scipy.txt, SOURCE.txt) |
 
-## 2. Fetched at assembly time (not in the repository)
+## 2. Fetched at build time (not in the repository)
 
 Each is fetched from the author's own distribution at a fixed version, and Motolii's patches (`.patch`), if any, are applied. Where it is fetched from and the version are at the top of each script.
 
