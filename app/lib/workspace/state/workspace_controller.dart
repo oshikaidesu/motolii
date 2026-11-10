@@ -1,18 +1,12 @@
 // The workspace state that every panel reads (WorkspaceController): the document's layers as rows, the selection, the playhead and the view.
-// What is applied to the canvas is in effects.dart.
-import 'dart:developer' show Timeline, TimelineTask;
+// It owns one class for each of those and the one channel they all notify through. What is applied to the canvas is in effects.dart.
+import 'dart:developer' show Timeline;
 
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/skin/layer_colors.dart';
-import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/drawing_inks.dart';
@@ -21,18 +15,20 @@ import 'package:motolii/workspace/state/notices.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/panel_layout.dart';
 import 'package:motolii/workspace/state/playhead.dart';
+import 'package:motolii/workspace/state/project_reader.dart';
 import 'package:motolii/workspace/state/row_folds.dart';
 import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
-/// Like Alight Motion's audio layer (docs/design/alight_motion_ui.md).
-bool isSoundLayer(Motolii m, int t) =>
-    m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
+bool isSoundLayer(Motolii m, int t) => ProjectReader.isSound(m, t);
 
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
 /// Every panel listens to this and nothing else, and never keeps a copy of it.
 /// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
+///
+/// The state itself is held by the classes this one owns ([project], [selection], [playhead], [layout], [notices],
+/// [inks], [folds]). Each tells its changes through this controller, and the members listed under each forward to it.
 class WorkspaceController extends ChangeNotifier {
   /// One counter per aspect, so a listener of one aspect never hears the others.
   late final on = {
@@ -44,8 +40,6 @@ class WorkspaceController extends ChangeNotifier {
     notifyListeners(); // WorkspaceScope passes the aspect on to the widgets below.
   }
 
-  final layers = <Layer>[];
-
   // One for the whole app, because widgets read the three getters below without a controller at hand.
   static final _composition = CompositionSettings();
 
@@ -56,30 +50,52 @@ class WorkspaceController extends ChangeNotifier {
   /// The composition's size in pixels. After [join] it is the document's own size.
   static Size get comp => _composition.size;
 
-  /// The engine this window is connected to (see motolii.dart), or null for the sample document.
-  /// When connected, the layers are the document's layers, a change is a call to the engine, and the playhead is its time.
-  Motolii? _inside;
-  Motolii? get inside => _inside;
+  /// What is read from the engine's document: the layers as rows, the marks, the guides and the tempo, and the
+  /// requests still on their way to the engine.
+  late final project = ProjectReader(
+    composition: _composition,
+    playhead: playhead,
+    onLayersRead: () => selection.syncWithLayers(),
+    onChanged: () => _tell(WorkspaceAspect.document),
+    onStageTextureChanged: () => _tell(WorkspaceAspect.stage),
+  );
+  List<Layer> get layers => project.layers;
+  Motolii? get inside => project.inside;
+  VoidCallback? get refit => project.refit;
+  set refit(VoidCallback? reopen) => project.refit = reopen;
+  int get rev => project.rev;
+  int get reads => project.reads;
+  void respan(String id) => project.respan(id);
+  ValueNotifier<int> get seen => project.seen;
+  ValueNotifier<List<(int, int)>> get kept => project.kept;
+  void shown() => project.shown();
+  double get bpm => project.bpm;
+  Beats? get beats => project.beats;
+  void reread() => project.reread();
+  int? get stageTexture => project.stageTexture;
+  set stageTexture(int? id) => project.stageTexture = id;
+  List<String> fxOf(String? id) => project.fxOf(id);
+  (double, double) get work => project.work;
+  List<(double, String)> get marks => project.marks;
+  Set<int> stops({Set<String> skip = const {}}) => project.stops(skip: skip);
+  Map<double, int> get markColors => project.markColors;
+  List<(String, double)> get guides => project.guides;
+  List<String> under(String id) => project.under(id);
+  int depth(Layer l) => project.depth(l);
+  ({bool layers, Set<(int, String)> values})? get lastChange =>
+      project.lastChange;
+  set lastChange(({bool layers, Set<(int, String)> values})? changed) =>
+      project.lastChange = changed;
+  bool get waiting => project.waiting;
+  void after(
+    int ticket, [
+    void Function(bool done, String why)? then,
+    void Function(int answer)? got,
+  ]) => project.after(ticket, then, got);
 
+  /// Connects the window to the engine [inside]: reads its document, then the inks and fonts saved with it.
   void join(Motolii inside) {
-    _inside = inside;
-    inside.shaping; // Read once at opening: it decides how cards are built.
-    inside.listener = ({required document, required moment, required cache}) {
-      // The engine has a new snapshot, see docs/app/BRIDGE.md.
-      if (_gone) return;
-      if (cache) kept.value = inside.cache;
-      if (document) reread();
-      if (moment) seen.value++;
-    };
-    // The timeline counts frames at the document's rate, as the exported video does.
-    _composition.frameRate = _fpsOf(inside);
-    _composition.size = Size(
-      inside.size.$1.toDouble(),
-      inside.size.$2.toDouble(),
-    );
-    moment.value = (inside.now * fps)
-        .round(); // The playhead starts at the engine's time.
-    reread();
+    project.join(inside);
     // Choices saved with the document: its inks and fonts.
     inks.restore(inside.settings);
   }
@@ -90,9 +106,8 @@ class WorkspaceController extends ChangeNotifier {
   /// The folder holding the document's file. The dock offers it, so a new document is one step from its footage.
   String? documentFolder;
 
-  /// Host callbacks: reopen the document at another size, refit it, and export it as a video.
+  /// Host callbacks: reopen the document at another size, and export it as a video.
   void Function(int wide, int high)? onSize;
-  VoidCallback? refit;
   VoidCallback? onRender;
 
   /// Where the next export is written. Set by the settings window; null means the window's default.
@@ -100,7 +115,7 @@ class WorkspaceController extends ChangeNotifier {
 
   /// The inks and fonts a new layer is given: fill, stroke colour and gradient blend, and the fonts for a new title and
   /// a new body text. Saved with the document but not undo steps, like a PowerPoint theme.
-  late final inks = DrawingInks(engine: () => _inside);
+  late final inks = DrawingInks(engine: () => inside);
   String get ink => inks.ink;
   set ink(String v) => inks.ink = v;
   String get edge => inks.edge;
@@ -123,43 +138,13 @@ class WorkspaceController extends ChangeNotifier {
   void Function()? get noticeGo => notices.noticeGo;
   set noticeGo(void Function()? go) => notices.noticeGo = go;
 
-  /// How many times the document has been read again.
-  int rev = 0;
-
-  /// Like [rev] but without drags. Things built from the document's structure, such as the cards, rebuild when it changes.
-  int reads = 0;
-
   static T timed<T>(String name, T Function() does) =>
       Timeline.timeSync(name, does);
 
-  // A layer that lasts forever (negative [lasts]) runs to the document's end.
-  static int _outF(int from, double lasts) => lasts < 0
-      ? duration
-      : (from + (lasts * fps).round()).clamp(from + 1, duration);
-
-  /// Reads layer [id]'s bar from the engine again, for example during a drag, so the drawn bar matches the engine.
-  void respan(String id) {
-    final m = _inside,
-        l = layers.where((l) => l.id == id).firstOrNull,
-        t = int.tryParse(id);
-    if (m == null || l == null || t == null) return;
-    l.inF = ((m.value(t, 'start', 0) ?? 0) * fps).round();
-    l.outF = _outF(l.inF, m.lasts(t));
-    shown();
-  }
-
-  bool _gone = false;
-  final seen = ValueNotifier<int>(0);
-
-  /// The frame ranges cached on disk for playback. The timeline marks them like After Effects' green line.
-  final kept = ValueNotifier<List<(int, int)>>(const []);
-
   @override
   void dispose() {
-    _gone = true;
+    project.dispose();
     notices.dispose();
-    seen.dispose();
-    kept.dispose();
     playhead.dispose();
     for (final n in on.values) {
       n.dispose();
@@ -167,133 +152,10 @@ class WorkspaceController extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Tells the panels to look again after the engine's view changed without the document changing, such as during a drag.
-  void shown() {
-    lastChange = null; // This is not an undo step, so what changed is unknown.
-    rev++;
-    _tell(WorkspaceAspect.document);
-  }
-
-  /// The document's tempo in beats per minute (0 for none), and its beat grid.
-  double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
-  Beats? get beats => bpm > 0
-      ? Beats(
-          (_inside?.value(0, 'bpm_from', 0) ?? 0) * WorkspaceController.fps,
-          60 / bpm * WorkspaceController.fps,
-        )
-      : null;
-
-  static int _fpsOf(Motolii m) =>
-      switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
-        > 0 && final r => r,
-        _ => m.rate,
-      };
-
-  /// Reads the document again after any change, so the panels list what the document holds.
-  void reread() => Timeline.timeSync('ws reread', _reread);
-  void _reread() {
-    final m = _inside;
-    if (m == null) return;
-    // The document now has another size, from an edit or an undo. The host reopens it, which reads it again.
-    if (!m.fits && refit != null) return refit!();
-    lastChange = m.changes();
-    if (_fpsOf(m) != fps) {
-      // The frame rate changed. Keep the playhead at the same time.
-      final at = moment.value / fps;
-      _composition.frameRate = _fpsOf(m);
-      moment.value = (at * fps).round();
-    }
-    rev++;
-    reads++;
-    _composition.duration = Timeline.timeSync(
-      'MARK seconds',
-      () => (m.seconds * fps).round().clamp(1, 1 << 20),
-    );
-    chosenLabelColors
-      ..clear()
-      ..addAll({
-        for (final t in m.layers)
-          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i
-              when i > 0)
-            '$t': i - 1,
-      });
-    final tl = TimelineTask()..start('MARK layers');
-    final holding = {
-      for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round(),
-    }; // The ids of layers that are parents.
-    layers
-      ..clear()
-      ..addAll([
-        for (final t
-            in m
-                .layers
-                .reversed) // The topmost layer comes first, as in the sample.
-          () {
-            final kind = m.word(t, 'kind'),
-                from = ((m.value(t, 'start', 0) ?? 0) * fps).round(),
-                lasts = m.lasts(t);
-            final name = m.word(t, 'name');
-            // A keyframe on any animatable property shows as a keyframe on the bar. The engine says which properties those are.
-            final keys = <int>{
-              for (final s in m.layerKeyTimes(t)) (s * fps).round(),
-            }.toList()..sort();
-            return Layer(
-              '$t',
-              name,
-              switch (kind) {
-                'text' => LayerKind.text,
-                'camera' => LayerKind.camera,
-                'film' when isSoundLayer(m, t) => LayerKind.audio,
-                'film' || 'picture' => LayerKind.image,
-                'shape'
-                    when m.word(t, 'shape') == 'null' && holding.contains(t) =>
-                  LayerKind.group,
-                _ => LayerKind.shape,
-              },
-              from,
-              _outF(from, lasts),
-              keys,
-              parent: switch ((m.value(t, 'parent', 0) ?? 0).round()) {
-                > 0 && final p => '$p',
-                _ => null,
-              },
-              lined:
-                  (kind == 'picture' || kind == 'solid') &&
-                  m.values(t).any((n) => n.startsWith('js_line_')),
-              hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
-              solo: (m.value(t, 'solo', 0) ?? 0) > .5,
-              locked: (m.value(t, 'lock', 0) ?? 0) > .5,
-              clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-              stretches: [
-                for (final (a, b, way) in m.layerStretches(t))
-                  (
-                    from: (a * fps).round(),
-                    to: (b * fps).round(),
-                    way: way,
-                    shape: easeCurve(way, m),
-                  ),
-              ],
-            );
-          }(),
-      ]);
-    selection.syncWithLayers();
-    tl.finish();
-    _tell(WorkspaceAspect.document);
-  }
-
-  /// The engine's preview as a Flutter texture id, when connected. Null means the stand-in artwork.
-  int? _stageTexture;
-  int? get stageTexture => _stageTexture;
-  set stageTexture(int? id) {
-    if (id == _stageTexture) return;
-    _stageTexture = id;
-    _tell(WorkspaceAspect.stage);
-  }
-
   /// Tells the engine (Motolii.subscribe) which layers' changing values to report: the selected layers, the cameras for the
   /// Depth tool panel, the relations for the Relations tool panel's map, and the members of a selected relation.
   void _watch() {
-    final m = _inside;
+    final m = inside;
     if (m == null) return;
     final sel = int.tryParse(selected ?? '');
     m.subscribe({
@@ -312,7 +174,7 @@ class WorkspaceController extends ChangeNotifier {
 
   /// What is selected: a layer, the layers selected together, keyframes and a stretch between two keyframes.
   late final selection = Selection(
-    engine: () => _inside,
+    engine: () => inside,
     layers: () => layers,
     composition: _composition,
     onChanged: () => _tell(WorkspaceAspect.picked),
@@ -339,7 +201,7 @@ class WorkspaceController extends ChangeNotifier {
 
   /// The playhead: the frame shown, and whether the preview is playing.
   late final playhead = Playhead(
-    engine: () => _inside,
+    engine: () => inside,
     composition: _composition,
     onPlayingChanged: () => _tell(WorkspaceAspect.playing),
   );
@@ -375,35 +237,10 @@ class WorkspaceController extends ChangeNotifier {
   String get toolPanel => layout.toolPanel;
   void route(String to) => layout.route(to);
 
-  /// The shelf effects on layer [id]: those whose card the engine shows. An effect's card shows while the effect is on.
-  List<String> fxOf(String? id) {
-    final m = _inside, t = int.tryParse(id ?? '');
-    if (m == null || t == null) return const [];
-    final shown = {for (final (title, _) in m.cards(t)) title};
-    return [
-      for (final (name, _) in m.layerEffects)
-        if (shown.contains(name)) name,
-    ];
-  }
-
   /// Whether every change the user makes is keyframed. The top bar's Animate and the inspector's Animate all share it; the engine owns it.
-  bool get animating => _inside?.keyingNow ?? false;
-
-  (double, double) get work => _inside!.work;
-  List<(double, String)> get marks => _inside!.marks;
-
-  /// The frames that dragging snaps to and that J and K jump to, like Alight Motion's snapTargets: the marks, the
-  /// other layers' ends and keyframes, and a sound's strikes (the beat marks CapCut's bars snap to).
-  Set<int> stops({Set<String> skip = const {}}) => {
-    for (final (at, _) in marks) (at * fps).round(),
-    for (final l in layers)
-      if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
-    ...strikes,
-  };
-  Map<double, int> get markColors => _inside!.markColors;
-  List<(String, double)> get guides => _inside!.guides;
+  bool get animating => inside?.keyingNow ?? false;
   set animating(bool on) {
-    _inside?.keying(on);
+    inside?.keying(on);
     if (!on) folds.forgetShut();
     _tell(WorkspaceAspect.animating);
   }
@@ -420,50 +257,6 @@ class WorkspaceController extends ChangeNotifier {
   bool groupOpen(String id) => folds.groupOpen(id);
   void turnGroup(String id) => folds.turnGroup(id);
   Map<String, String> get foldedAway => folds.foldedAway;
-
-  /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
-  List<String> under(String id) {
-    final of = {for (final l in layers) l.id: l};
-    if (of[id]?.kind != LayerKind.group) return const [];
-    return [
-      for (final l in layers)
-        if (l.ancestors(of).any((p) => p.id == id)) l.id,
-    ];
-  }
-
-  /// How many groups contain layer [l]. Its row is indented by that many levels.
-  int depth(Layer l) => l
-      .ancestors({for (final x in layers) x.id: x})
-      .where((p) => p.kind == LayerKind.group)
-      .length;
-
-  /// What the undo steps changed since the last read (null when unknown, as after a drag).
-  /// A panel showing only some properties rebuilds only when they are among these.
-  ({bool layers, Set<(int, String)> values})? lastChange;
-
-  // Requests still pending. The document is read again once, when the last one finishes.
-  int _afters = 0;
-
-  /// Whether requests sent to the engine are still pending. The window shows them before the document has them.
-  bool get waiting => _afters > 0;
-
-  /// Waits without blocking for a request made with [Motolii.later], then reads the document again and calls
-  /// [then] with whether it succeeded and why not. [got] receives the answer, such as the id of a new layer.
-  void after(
-    int ticket, [
-    void Function(bool done, String why)? then,
-    void Function(int answer)? got,
-  ]) {
-    final m = _inside;
-    if (m == null) return;
-    _afters++;
-    m.answered(ticket).then((r) {
-      final (a, why) = r;
-      then?.call(a >= 1, why);
-      if (a >= 1) got?.call(a);
-      _afters--; // What it changed arrives with the engine's next snapshot.
-    });
-  }
 
   // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension (see script_files in script.h).
   static final _files = RegExp(
