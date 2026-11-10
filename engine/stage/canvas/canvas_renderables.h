@@ -16,6 +16,8 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Builds a Canvas2D from a ThorVG paint. The paint is drawn into a texture on
 // Filament's device, and a flat sheet shows that texture. Shared by
 // image_canvas(), type() and flat(). Returns nullptr on failure, or when the
@@ -147,5 +149,7 @@ Canvas2D* flat(Stage& s, const char* form, float wide,
                filament::math::float4 edge = filament::math::float4{0.f},
                const Canvas2DFx& fx = {}, int points = 6, float inner = 0.5f,
                float round = 0.f);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_RENDERABLES_H_

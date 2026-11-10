@@ -14,6 +14,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 const char* const edge_seeds_wgsl = R"(
@@ -149,3 +151,5 @@ void edge_ask(Stage& s, Canvas2D* d, int reach) {
                   d->edgeH);
   };
 }
+
+}  // namespace motolii

@@ -46,6 +46,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Returns the first frame of a Lottie file, which is the "ip" key at the top
@@ -1044,3 +1046,5 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
       },
       place, high, float3{-1.f}, true, lay, fx);
 }
+
+}  // namespace motolii

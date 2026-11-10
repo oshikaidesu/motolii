@@ -39,6 +39,8 @@
 #include "include/utils/SkParsePath.h"
 #include "stage/canvas/path_operations.h"
 
+namespace motolii {
+
 static SkPath sk_of(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
                     const tvg::Point* pts) {
   SkPathBuilder b;
@@ -771,3 +773,5 @@ bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   if (far) *far = best;
   return path.contains(x, y);
 }
+
+}  // namespace motolii

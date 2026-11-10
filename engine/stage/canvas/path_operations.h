@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // Parses SVG path data into path commands and points. Returns false if the data
 // cannot be parsed or is empty.
 bool sk_svg(const char* data, std::vector<tvg::PathCommand>& cmds,
@@ -138,5 +140,7 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
               const tvg::Point* pts, uint32_t ptsCnt, float width, int cap,
               int join, float dash, float dashFrom, float from, float to,
               std::vector<float>& xy, std::vector<uint32_t>& idx);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_PATH_OPERATIONS_H_

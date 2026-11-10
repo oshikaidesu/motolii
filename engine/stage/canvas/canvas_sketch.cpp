@@ -23,6 +23,8 @@
 
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Creates a ThorVG gradient from the `many` numbers at `g`, which p5_stand.h
@@ -357,3 +359,5 @@ Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile,
   if (built) s.playing.erase(built);
   return built;
 }
+
+}  // namespace motolii

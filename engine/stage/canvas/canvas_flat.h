@@ -16,6 +16,8 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Creates a flat shape that Filament draws itself, like the scene's other
 // renderables. The path is built the way `flat` builds it, with ThorVG. It is
 // tessellated by libtess2, as Unity's vector shapes are, and tessellated again
@@ -75,5 +77,7 @@ void layer_at(Stage& s, Canvas2D* d, float frame);
 // the driver thread after every frame already sent that may still draw it,
 // since that thread runs its work in order.
 void canvas_off(Stage& s, Canvas2D* d);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_FLAT_H_

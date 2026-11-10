@@ -24,6 +24,8 @@
 #include "tvgLottieModifier.h"
 #include "tvgWgTessellator.h"
 
+namespace motolii {
+
 // Appends the path to `into` using cubic curves only, as an After Effects path
 // does. A line becomes a straight cubic and a closed path ends back at its
 // start. These are the only forms the operators understand.
@@ -216,3 +218,5 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   for (uint32_t i = 0; i < mesh.ibuffer.count; ++i)
     idx.push_back(mesh.ibuffer[i]);
 }
+
+}  // namespace motolii

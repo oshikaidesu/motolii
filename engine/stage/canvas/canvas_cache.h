@@ -35,6 +35,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Effects and drawing options of a flat layer drawn by ThorVG. Lengths are
 // fractions of the layer height unless noted; see over().
 //
@@ -456,5 +458,7 @@ void canvas_at(Stage& s, Canvas2D* d, float seconds);
 // cache. `many` is the most frames to start. Returns how many were started; 0
 // means nothing more can be done now.
 int frames_ahead(Stage& s, Canvas2D* d, int many);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_CACHE_H_

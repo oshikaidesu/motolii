@@ -33,6 +33,8 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Draws the commands in `o` onto the canvas of `d`. Nothing is drawn if `o` is
 // empty. The canvas is cleared first when o[0] is nonzero.
 void sketch_draw(Canvas2D* d, const std::vector<double>& o);
@@ -53,5 +55,7 @@ Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run,
 // canvas cannot be placed.
 Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile,
                          int pic, int wide, int high);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_SKETCH_H_

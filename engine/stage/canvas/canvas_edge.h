@@ -17,6 +17,8 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Its pictures, as large as it is: two the flood goes between, one the look
 // reads.
 void edge_make(Stage& s, Canvas2D* d, uint32_t w, uint32_t h);
@@ -24,5 +26,7 @@ void edge_off(Stage& s, Canvas2D* d);
 // Flooded as far as `reach` points, the steps halving from the power of two at
 // or past it, once in the next frame.
 void edge_ask(Stage& s, Canvas2D* d, int reach);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_CANVAS_EDGE_H_

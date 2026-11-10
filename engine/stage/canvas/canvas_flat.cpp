@@ -30,6 +30,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Builds the triangles of a flat shape for its current path and appends them to
@@ -612,3 +614,5 @@ void canvas_off(Stage& s, Canvas2D* d) {
   if (d->texture) s.engine->destroy(d->texture);
   interop::on_driver(s.engine, [d] { delete d; });
 }
+
+}  // namespace motolii

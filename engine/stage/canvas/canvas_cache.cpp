@@ -38,6 +38,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 std::atomic<int> cache_unwritten{0};
 std::atomic<long> films_cached{0}, films_disk{0}, films_rendered{0};
 
@@ -632,3 +634,5 @@ int frames_ahead(Stage& s, Canvas2D* d, int many) {
   }
   return begun;
 }
+
+}  // namespace motolii
