@@ -31,7 +31,7 @@ extension StageViewDrag on StageViewState {
   void _snapFrom(String id) {
     final boxes = widget.scene.boxes, m = WorkspaceScope.read(context).inside;
     final held = boxes[id];
-    if (!widget.snap || held == null || m == null) return snapTo = null;
+    if (!widget.tool.snap || held == null || m == null) return snapTo = null;
     int top(int t) {
       for (
         var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0;
@@ -87,10 +87,10 @@ extension StageViewDrag on StageViewState {
       return best == null ? (d, null) : (d + best.$1, best.$2);
     }
 
-    final (x, mx) = widget.axis == 2
+    final (x, mx) = widget.tool.axis == 2
         ? (by.dx, null)
         : one(to.box.left, to.box.width, by.dx, to.xs);
-    final (y, my) = widget.axis == 1
+    final (y, my) = widget.tool.axis == 1
         ? (by.dy, null)
         : one(to.box.top, to.box.height, by.dy, to.ys);
     met = (mx, my);
@@ -141,13 +141,13 @@ extension StageViewDrag on StageViewState {
   /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
   /// a camera gizmo, a guide, a layer, and otherwise a lasso.
   void dragStart(StageViewport v, Offset local) {
-    if (widget.make == 'camera') return camera.orbitDragStart(local);
-    if (widget.make == 'brush') {
+    if (widget.tool.make == 'camera') return camera.orbitDragStart(local);
+    if (widget.tool.make == 'brush') {
       setState(() => brush = [local]);
       return;
     }
-    if (widget.make != null) {
-      if (widget.make == 'pen') penWay = [local];
+    if (widget.tool.make != null) {
+      if (widget.tool.make == 'pen') penWay = [local];
       setState(() => drawFrom = local);
       return;
     }

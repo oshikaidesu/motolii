@@ -15,6 +15,7 @@ import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
+import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
@@ -261,46 +262,49 @@ class _StageState extends State<_Stage> {
                               onPoke: _focus.requestFocus,
                               texture: ws.stageTexture,
                               snapshot: _showing ? _shot : null,
-                              make: const [
-                                null,
-                                null,
-                                'rect',
-                                'circle',
-                                'pen',
-                                'text',
-                                'brush',
-                                'camera',
-                              ][_tool],
-                              brushSize: const [
-                                8.0,
-                                16.0,
-                                32.0,
-                              ][_opts['brush.size'] ?? 1],
-                              brushTool: const [
-                                1,
-                                0,
-                                2,
-                                3,
-                              ][_opts['brush.kind'] ?? 0],
-                              axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0,
-                              fromCentre: (_opts['ell.from'] ?? 0) == 1,
-                              snap:
-                                  _tool < 2 &&
-                                  (_opts[_tool == 0
-                                              ? 'sel.snap'
-                                              : 'move.snap'] ??
-                                          1) ==
-                                      1,
-                              pivots: (_opts['sel.pivot'] ?? 0) == 1,
-                              group:
-                                  _tool == 0 && (_opts['sel.level'] ?? 0) == 1,
-                              mask:
-                                  (_opts[_tool == 2
-                                              ? 'rect.mode'
-                                              : 'pen.mode'] ??
-                                          0) ==
-                                      1 &&
-                                  (_tool == 2 || _tool == 4),
+                              tool: StageTool(
+                                make: const [
+                                  null,
+                                  null,
+                                  'rect',
+                                  'circle',
+                                  'pen',
+                                  'text',
+                                  'brush',
+                                  'camera',
+                                ][_tool],
+                                brushSize: const [
+                                  8.0,
+                                  16.0,
+                                  32.0,
+                                ][_opts['brush.size'] ?? 1],
+                                brushTool: const [
+                                  1,
+                                  0,
+                                  2,
+                                  3,
+                                ][_opts['brush.kind'] ?? 0],
+                                axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0,
+                                fromCentre: (_opts['ell.from'] ?? 0) == 1,
+                                snap:
+                                    _tool < 2 &&
+                                    (_opts[_tool == 0
+                                                ? 'sel.snap'
+                                                : 'move.snap'] ??
+                                            1) ==
+                                        1,
+                                pivots: (_opts['sel.pivot'] ?? 0) == 1,
+                                group:
+                                    _tool == 0 &&
+                                    (_opts['sel.level'] ?? 0) == 1,
+                                mask:
+                                    (_opts[_tool == 2
+                                                ? 'rect.mode'
+                                                : 'pen.mode'] ??
+                                            0) ==
+                                        1 &&
+                                    (_tool == 2 || _tool == 4),
+                              ),
                             ),
                           ),
                         ],

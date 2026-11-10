@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 
@@ -42,46 +43,12 @@ class StageView extends StatefulWidget {
     required this.cursor,
     this.onPoke,
     this.texture,
-    this.make,
-    this.axis = 0,
-    this.fromCentre = false,
-    this.snap = false,
-    this.pivots = false,
-    this.group = false,
-    this.mask = false,
-    this.brushSize = 16,
-    this.brushTool = 1,
+    this.tool = const StageTool(),
     this.snapshot,
   });
 
-  /// How wide the Brush draws, in image points (perfect-freehand's size).
-  final double brushSize;
-
-  /// The brush kind, as in Alight Motion: 0 pen, 1 brush, 2 fill (doc_brush).
-  final int brushTool;
-
-  /// The Move tool's constraint: 0 free, 1 along x only, 2 along y only.
-  final int axis;
-
-  /// Whether an ellipse is drawn out from its centre.
-  final bool fromCentre;
-
-  /// Whether a dragged layer snaps to the edges of other layers, of the image, and to the guides.
-  final bool snap;
-
-  /// Whether every layer's pivot point is shown.
-  final bool pivots;
-
-  /// Whether a click selects the outermost group that contains the layer instead of the layer itself.
-  final bool group;
-
-  /// Whether a drawn shape cuts the selected layer: it is placed just behind that layer, which is clipped by it.
-  final bool mask;
-
-  /// What the selected tool creates when dragged across the stage (rect, circle, line, text, brush).
-  ///
-  /// Null means the user is selecting and moving layers instead.
-  final String? make;
+  /// The active tool and its options.
+  final StageTool tool;
 
   /// The engine's image of the stage as a Flutter texture id. When null, the stand-in art is painted.
   final int? texture;

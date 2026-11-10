@@ -55,7 +55,7 @@ extension StageViewDraw on StageViewState {
     final from = drawFrom,
         ws = WorkspaceScope.read(context),
         m = ws.inside,
-        kind = widget.make;
+        kind = widget.tool.make;
     drawFrom = null;
     setState(() {});
     if (from == null || m == null || kind == null) return;
@@ -64,13 +64,13 @@ extension StageViewDraw on StageViewState {
         p = m.point,
         c = ArtGeometry.comp;
     // Drawn out from its centre: twice the drag, centred on where the drag started.
-    final centred = kind == 'circle' && widget.fromCentre;
+    final centred = kind == 'circle' && widget.tool.fromCentre;
     final mid = centred ? a : (a + b) / 2,
         d = centred ? (b - a) * 2 : b - a,
         tiny = d.distance < 6 / v.scale;
     final x = ((kind == 'text' || tiny ? a.dx : mid.dx) - c.width / 2) / p,
         y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
-    final cut = widget.mask ? int.tryParse(ws.selected ?? '') : null;
+    final cut = widget.tool.mask ? int.tryParse(ws.selected ?? '') : null;
     // Queue everything as one undo step. Layer -1 refers to the layer just added, which is selected once it exists.
     final before = m.layers.length;
     m.later('together', number: 1);
@@ -189,7 +189,7 @@ extension StageViewDraw on StageViewState {
     setState(() => brush = null);
     if (way == null || way.length < 2 || m == null) return;
     final options = StrokeOptions(
-      size: widget.brushSize,
+      size: widget.tool.brushSize,
       simulatePressure: true,
       isComplete: true,
     );
@@ -206,7 +206,7 @@ extension StageViewDraw on StageViewState {
       for (final p in points)
         '${p.point.x} ${p.point.y} ${2 * getStrokeRadius(options.size, options.thinning, p.pressure, options.easing) / options.size}',
     ];
-    if (widget.brushTool == 3) {
+    if (widget.tool.brushTool == 3) {
       // The eraser removes from the selected drawing, as Alight Motion's eraser does from the drawing layer it is in.
       final into = int.tryParse(ws.selected ?? '');
       if (into == null) {
@@ -230,7 +230,7 @@ extension StageViewDraw on StageViewState {
     ws.after(
       m.later(
         'brush',
-        word: '${widget.brushTool} ${options.size} ${said.join(' ')}',
+        word: '${widget.tool.brushTool} ${options.size} ${said.join(' ')}',
       ),
       null,
       (t) => made = t,

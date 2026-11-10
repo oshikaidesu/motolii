@@ -142,7 +142,7 @@ class StageViewState extends State<StageView>
   void didUpdateWidget(StageView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.zoom != widget.zoom) _pan = Offset.zero;
-    if (oldWidget.make != widget.make) {
+    if (oldWidget.tool.make != widget.tool.make) {
       penning = false; // Another tool: the pen's next point starts a new shape.
     }
   }
@@ -239,7 +239,7 @@ class StageViewState extends State<StageView>
     final d = v.toComposition(local),
         id = ArtGeometry.hit(widget.scene, d),
         m = WorkspaceScope.read(context).inside;
-    if (widget.group && m != null && id != null) {
+    if (widget.tool.group && m != null && id != null) {
       // Grouping: pick the outermost ancestor by following parents.
       var t = int.parse(id);
       for (
@@ -405,9 +405,10 @@ class StageViewState extends State<StageView>
       return;
     }
     // The Move tool. Shift locks to horizontal or vertical, whichever the pointer has gone further, as in Illustrator and Figma.
-    final axis = widget.axis == 0 && HardwareKeyboard.instance.isShiftPressed
+    final axis =
+        widget.tool.axis == 0 && HardwareKeyboard.instance.isShiftPressed
         ? (all.dx.abs() >= all.dy.abs() ? 1 : 2)
-        : widget.axis;
+        : widget.tool.axis;
     final by = snapped(switch (axis) {
       1 => Offset(all.dx, 0),
       2 => Offset(0, all.dy),
@@ -477,7 +478,7 @@ class StageViewState extends State<StageView>
         key: _menu,
         child: TwoFingerGestures(
           onWheel: (d) =>
-              widget.make == 'camera' ? camera.dolly(d.dy) : _panBy(-d, v),
+              widget.tool.make == 'camera' ? camera.dolly(d.dy) : _panBy(-d, v),
           onPan: (by, _) => _panBy(by, v),
           child: MouseRegion(
             onHover: (e) {
@@ -506,17 +507,17 @@ class StageViewState extends State<StageView>
               },
               onTapUp: (d) {
                 widget.onPoke?.call();
-                if (widget.make == 'pen') {
+                if (widget.tool.make == 'pen') {
                   return _pen(
                     v,
                     d.localPosition,
                     d.localPosition,
                   ); // A click makes a corner point.
                 }
-                if (widget.make == 'brush') {
+                if (widget.tool.make == 'brush') {
                   return; // A stroke is drawn, not clicked.
                 }
-                if (widget.make != null) {
+                if (widget.tool.make != null) {
                   return draw(
                     v,
                     drawFrom = d.localPosition,
@@ -562,7 +563,7 @@ class StageViewState extends State<StageView>
                   : lasso != null
                   ? lassoDragEnd(v)
                   : drawFrom != null
-                  ? (widget.make == 'pen'
+                  ? (widget.tool.make == 'pen'
                         ? _pen(v, drawFrom!, _last ?? drawFrom!)
                         : draw(v, _last ?? drawFrom!))
                   : pulling != null
@@ -592,7 +593,7 @@ class StageViewState extends State<StageView>
                         part: widget.texture == null
                             ? ViewPart.all
                             : ViewPart.under,
-                        pivots: widget.pivots,
+                        pivots: widget.tool.pivots,
                         met: met,
                         trail: trail,
                         parent: parentOf(),
@@ -669,7 +670,7 @@ class StageViewState extends State<StageView>
                     ),
                   if (drawFrom case final from?
                       when _last != null &&
-                          widget.make == 'pen' &&
+                          widget.tool.make == 'pen' &&
                           penWay != null &&
                           _scribbled(
                             penWay!,
@@ -681,7 +682,7 @@ class StageViewState extends State<StageView>
                     )
                   else if (drawFrom case final from?
                       when _last != null &&
-                          widget.make ==
+                          widget.tool.make ==
                               'pen') // The pen's handle being pulled out, drawn through its point both ways.
                     IgnorePointer(
                       child: CustomPaint(
@@ -739,7 +740,7 @@ class StageViewState extends State<StageView>
                           grid: widget.grid,
                           safe: widget.safe,
                           part: ViewPart.over,
-                          pivots: widget.pivots,
+                          pivots: widget.tool.pivots,
                           met: met,
                           marked: _desk != null,
                           trail: trail,
