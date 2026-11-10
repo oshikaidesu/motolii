@@ -45,7 +45,7 @@ struct StageCache {
     filament::RenderTarget* target = nullptr;
     // The texture behind target.
     filament::Texture* into = nullptr;
-    // filament::Texture holding a cached frame while it is shown during playback.
+    // Texture holding a cached frame while it is shown during playback.
     filament::Texture* shown = nullptr;
     // Keys of the most recent documents that have cache files. Undoing back to one of them finds
     // its frames still on disk. Older ones are deleted.

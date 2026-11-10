@@ -39,7 +39,7 @@ struct Live {
     std::atomic<uint64_t> frames{0};
     // Seconds spent waiting for the GPU to finish frames. Used for measuring.
     double waited = 0;
-    // filament::Fence of the frame that has been started but that the GPU has not finished, or null.
+    // Fence of the frame that has been started but that the GPU has not finished, or null.
     filament::Fence* pending = nullptr;
     // Index of the buffer that the pending frame is drawn into, or -1 if it is not in this Live.
     int pendingIn = -1;
