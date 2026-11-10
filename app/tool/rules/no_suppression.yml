@@ -1,0 +1,10 @@
+# A rule here is not silenced from inside a file. Fix the code, or delete a line from the baseline of the rule.
+id: no-suppression
+language: dart
+severity: error
+message: Do not silence a rule with a comment; fix the code instead.
+rule:
+  kind: comment
+  regex: 'ast-grep-ignore'
+files:
+  - lib/**

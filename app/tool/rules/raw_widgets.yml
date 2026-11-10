@@ -1,13 +1,15 @@
-# Text input and buttons come from lib/widgets; a panel does not build its own from the raw widget.
+# Text input, buttons, switches and sliders come from lib/widgets; a panel does not build its own from a raw Flutter widget.
+# (GestureDetector is not listed: the stage and the graphs use it for dragging on a drawing, not as a button.)
 # `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
 # existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
 id: raw-widget
 language: dart
 severity: error
-message: Use the standard part in lib/widgets (TypedField for text, Pressable or Forms for buttons), not the raw widget.
+message: Use the standard part in lib/widgets (TypedField for text, Pressable or Forms for buttons and switches, MiniSlider for sliders), not a raw Flutter widget.
 rule:
-  kind: identifier
-  regex: '^(EditableText|NakedButton)$'
+  any:
+    - {kind: identifier, regex: '^(EditableText|NakedButton|TextField|TextFormField|CupertinoTextField|SelectableText|ElevatedButton|TextButton|IconButton|OutlinedButton|FilledButton|MaterialButton|CupertinoButton|InkWell|InkResponse|Switch|Slider|Checkbox)$'}
+    - {kind: type_identifier, regex: '^(EditableText|NakedButton|TextField|TextFormField|CupertinoTextField|SelectableText|ElevatedButton|TextButton|IconButton|OutlinedButton|FilledButton|MaterialButton|CupertinoButton|InkWell|InkResponse|Switch|Slider|Checkbox)$'}
 files:
   - lib/**
 ignores:
@@ -15,6 +17,7 @@ ignores:
   - lib/bridge/**
   - lib/skin/**
   # baseline
+  - lib/workspace/stage/stage_view.dart   # only asks whether the focus is inside an EditableText (findAncestorWidgetOfExactType); builds none
   - lib/workspace/dock/common/shelf_search_field.dart
   - lib/workspace/dock/effects/effect_places.dart
   - lib/workspace/shelf/effect_code.dart

@@ -1,13 +1,16 @@
-# A colour is written once, in lib/skin (a token) or in a data file of swatches; panels read it.
+# A colour is written once, in lib/skin, and panels read it. Not allowed in a panel: an 8-digit hex literal, Colors.*,
+# CupertinoColors.*, Color.fromARGB and Color.fromRGBO. (A decimal Color(123) or a hex built at run time is not seen.)
 # `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
 # existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
-id: hex-color
+id: color
 language: dart
 severity: error
-message: A colour is a token in lib/skin, not a hex literal in a panel.
+message: A colour is a token in lib/skin. Do not write a hex literal, Colors.*, CupertinoColors.* or Color.fromARGB/fromRGBO in a panel.
 rule:
-  kind: hex_integer_literal
-  regex: '^0[xX][0-9A-Fa-f]{8}$'
+  any:
+    - {kind: hex_integer_literal, regex: '^0[xX][0-9A-Fa-f]{8}$'}
+    - {kind: identifier, regex: '^(Colors|CupertinoColors|fromARGB|fromRGBO)$'}
+    - {kind: type_identifier, regex: '^(Colors|CupertinoColors)$'}
 files:
   - lib/**
 ignores:

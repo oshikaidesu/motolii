@@ -38,6 +38,7 @@ jobs:
       - run: pipx install ast-grep-cli==0.45.3   # the version the rules were written with
       - run: ast-grep scan
         working-directory: app
+      - run: "! grep -rn 'ast-grep-ignore' app/lib"   # a bare comment also silences no-suppression, so a rule cannot see it
   paths:
     runs-on: ubuntu-latest
     timeout-minutes: 5
