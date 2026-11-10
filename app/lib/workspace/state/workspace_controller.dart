@@ -1,6 +1,5 @@
 // The workspace state that every panel reads (WorkspaceController): the document's layers as rows, the selection, the playhead and the view.
 // What is applied to the canvas is in effects.dart.
-import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
 import 'dart:math' as math;
@@ -19,7 +18,9 @@ import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/notices.dart';
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/playhead.dart';
 import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
@@ -126,26 +127,12 @@ class WorkspaceController extends ChangeNotifier {
   String get bodyFace => bodyFont.isEmpty ? defaultTextFont : bodyFont;
   String get titleFace => titleFont.isEmpty ? bodyFace : titleFont;
 
-  String? _notice;
-  String? get notice => _notice;
-  Timer? _noticeEnds;
-
-  /// The frames where sounds strike, as the timeline last computed them for its beats.
-  List<int> strikes = const [];
-
-  /// What clicking the notice does while it is shown. A time in it is a place to go to, like a YouTube timestamp.
-  void Function()? noticeGo;
-  set notice(String? said) {
-    if (said == _notice) return;
-    _notice = said;
-    noticeGo = null;
-    _noticeEnds?.cancel();
-    // Disappears after ten seconds like a Material snackbar, unless it ends in "…" (work still going on).
-    if (said != null && !said.endsWith('…')) {
-      _noticeEnds = Timer(const Duration(seconds: 10), () => notice = null);
-    }
-    _tell(WorkspaceAspect.notice);
-  }
+  /// The one line the window tells the user, and what clicking it does.
+  late final notices = Notices(onChanged: () => _tell(WorkspaceAspect.notice));
+  String? get notice => notices.notice;
+  set notice(String? said) => notices.notice = said;
+  void Function()? get noticeGo => notices.noticeGo;
+  set noticeGo(void Function()? go) => notices.noticeGo = go;
 
   /// How many times the document has been read again.
   int rev = 0;
@@ -181,10 +168,10 @@ class WorkspaceController extends ChangeNotifier {
   @override
   void dispose() {
     _gone = true;
-    _noticeEnds?.cancel();
+    notices.dispose();
     seen.dispose();
     kept.dispose();
-    moment.dispose();
+    playhead.dispose();
     for (final n in on.values) {
       n.dispose();
     }
@@ -361,30 +348,20 @@ class WorkspaceController extends ChangeNotifier {
   String? get aim => selection.aim;
   set aim(String? to) => selection.aim = to;
 
-  /// The playhead frame. It is a separate notifier, so only widgets that show the current time listen to it
-  /// ([WorkspaceScope.frameOf]) and the rest of the window is not rebuilt as it moves.
-  final moment = ValueNotifier<int>(112);
-  int get frame => moment.value;
-  set frame(int f) {
-    final v = f.clamp(0, duration);
-    if (v == moment.value) return;
-    moment.value = v;
-    if (!_playing) {
-      _inside?.at(v / fps); // While stopped, the preview jumps to the new time.
-    }
-  }
-
-  bool _playing = false;
-  bool get playing => _playing;
-  set playing(bool p) {
-    if (p == _playing) return;
-    _playing = p;
-    if (p) _inside?.at(frame / fps);
-    _inside?.play(p); // The engine keeps the clock and the playhead follows it (see timeline.dart).
-    // The clock can run ahead of a preview that is late with its frames, so on stop it returns to the playhead.
-    if (!p) _inside?.at(frame / fps);
-    _tell(WorkspaceAspect.playing);
-  }
+  /// The playhead: the frame shown, and whether the preview is playing.
+  late final playhead = Playhead(
+    engine: () => _inside,
+    composition: _composition,
+    onPlayingChanged: () => _tell(WorkspaceAspect.playing),
+  );
+  ValueNotifier<int> get moment => playhead.moment;
+  int get frame => playhead.frame;
+  set frame(int f) => playhead.frame = f;
+  bool get playing => playhead.playing;
+  set playing(bool p) => playhead.playing = p;
+  List<int> get strikes => playhead.strikes;
+  set strikes(List<int> frames) => playhead.strikes = frames;
+  String timecode([int? f]) => playhead.timecode(f);
 
   /// View state by name ('stage.tool', 'fold.Transform'): what a panel keeps of itself that is not part of the document.
   final view = <String, Object?>{};
@@ -564,10 +541,6 @@ class WorkspaceController extends ChangeNotifier {
   // The preview is not part of the document and ends when the pointer leaves, and before any apply. Final Cut Pro's
   // effects browser and DaVinci Resolve's Live Preview work the same way. With nothing selected, nothing is shown.
   bool trying = false;
-  String timecode([int? f]) {
-    final v = f ?? frame, s = v ~/ fps, fr = v % fps;
-    return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}:${fr.toString().padLeft(2, '0')}';
-  }
 }
 
 /// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
