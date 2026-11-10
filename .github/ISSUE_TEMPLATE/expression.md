@@ -1,13 +1,19 @@
 ---
-name: この表現を使いたい / An expression I want to use
-about: ネットで見つけた表現を Motolii で使いたい / An expression found on the net you want in Motolii
+name: An expression I want to use
+about: An expression found on the net that you want to use in Motolii
 labels: expression
 ---
 
-**どこで見つけたか / Where**（URL）：
+日本語で書いても大丈夫です。
 
-**何が良いのか / What is good about it**：
+## Link
 
-**形式 / Format**（分かれば：ISF の .fs、WGSL、AviUtl2 のスクリプト、TSL、three.js、After Effects…）：
+Where you found it (URL).
 
-**ライセンス / Licence**（分かれば / if known）：
+## What is good about it
+
+## Format if known
+
+For example: ISF .fs, WGSL, AviUtl2 script, TSL, three.js, After Effects.
+
+## Licence if known

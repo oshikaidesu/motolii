@@ -1,20 +1,28 @@
 ---
-name: 不具合・組み立てで止まった / Bug or build failure
-about: 動かない、止まった、絵がおかしい / Something does not work
+name: Bug or build failure
+about: Something does not work, stopped, or looks wrong
 labels: bug
 ---
 
-**何をしたか / What you did**（走らせたコマンドや、窓での操作 / the command you ran or what you did in the window）
+日本語で書いても大丈夫です。
+
+## What happened
+
+Paste the output as it is.
 
 ```
 ```
 
-**出た事 / What happened**（出た文はそのまま貼ってください / paste the output as it is）
+## Steps to reproduce
+
+The command you ran, or what you did in the window.
 
 ```
 ```
 
-**こうなるはず / What you expected**
+## Expected
 
-**Mac**：チップ（M1 など）と macOS の版 / chip and macOS version：
-**Motolii の commit**：`git rev-parse --short HEAD` の答え：
+## Environment
+
+- Mac model (chip, for example M1) and macOS version:
+- Motolii commit (the output of `git rev-parse --short HEAD`):

@@ -1,8 +1,15 @@
-**何を変えたか / What changes**
+日本語で書いても大丈夫です。
 
-**借りた物と出所 / What was borrowed, from where**（URL・版かコミット・ライセンス。無ければ「なし」/ URL, version or commit, licence; or "none"）
+## What changed
 
-**確かめた事 / How it was checked**（走らせた物、見比べた絵など / what was run, pictures compared）
+## Why
 
-**まだの事 / Not done yet**
+## How it was tested
 
+What you ran, and which pictures you compared.
+
+## Third-party code added
+
+Source (URL), version or commit, and licence. Write "none" if there is none.
+
+## Not done yet
