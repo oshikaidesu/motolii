@@ -17,6 +17,6 @@ Every document under `docs/`, and who it is for. The entrance to the repository 
 | [`pictures/`](pictures/) | — | The pictures and films the README and the guides show |
 | [`design/`](design/) | Anyone changing the app or the engine | The notes that code comments cite for a decision: the Alight Motion handling the UI follows, the AviUtl2 converter, how the Create and Program shelves divide, the words that were renamed, test records. Most are in Japanese |
 
-Documents are in English; the pages a user opens first also have a Japanese translation beside them, named `X.ja.md`. The notes under `design/` are mostly in Japanese.
+Documents are in English; the pages a user opens first also have a Japanese translation beside them, named `X.ja.md`. The notes under `design/` are mostly in Japanese. They are dated records: the file names inside them are as they were on that day, and the path check does not follow them.
 
 How to contribute: [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md).

@@ -5,7 +5,7 @@ A design-system document for a coding agent, in the nine-section format of
 Scope is **one panel: the Timeline** of Motolii (a dark, dense motion-graphics editor, Flutter, desktop).
 
 How to read the values below. Each is tagged:
-- `[code]` read from the old Motolii's source, not this repository (`motolii/ui/lib/theme/metrics.dart`, `neutral.dart`, `identity.dart`, `timeline/timeline.dart`)
+- `[code]` read from the old Motolii's source, not this repository (files of the old Motolii's `ui/` folder, which is not in this repository)
 - `[concept]` measured on Motolii's concept art (`north-star-dark.png`, 1536 px wide; 1 art px = 1 logical px) and kept because it holds across the whole picture
 - `[decided]` chosen by the owner in review on 2026-10-01/02
 - `[open]` not decided. Do not invent a value: show 2-3 options and ask.
@@ -26,7 +26,7 @@ These are the default (Dark) look of today's app. The code is `app/lib/skin/toke
 - The reference is a professional motion tool (After Effects, Ableton), not a consumer app: rows are packed, nothing is decorative.
 - One idea per surface: **bars carry colour, everything else is grey.** Colour means a relation family (Scatter, Stagger, Along Path, Face, Follow, Attach); it is never used for decoration. `[code]`
 - Tone words: precise, calm, a little playful in colour. Not glossy, not flat-corporate.
-- **Direction `[open]` (owner, 2026-10-02): the entertainment-magazine / Persona / game-UI direction was tried and the owner then withdrew it** ("CoroCoro and Persona are different; my direction was off"). It is NOT a spec. What stays: the current calm tone (below). The research is kept as reference only: `research/pop-magazine.md`, `research/editorial.md` (both superseded as direction), and the `dose` Widgetbook component (a knob, default 0 = today's tone).
+- **Direction `[open]` (owner, 2026-10-02): the entertainment-magazine / Persona / game-UI direction was tried and the owner then withdrew it** ("CoroCoro and Persona are different; my direction was off"). It is NOT a spec. What stays: the current calm tone (below). The research notes on it (pop-magazine, editorial) were superseded as direction and are not kept. What remains of it is the `dose` Widgetbook component (a knob, default 0 = today's tone).
 - **Keep the current tone `[decided]` (owner, 2026-10-02):** the current greys, 1 px hairlines, type scale, row density and 'strength from fine detail, not weight' stay. Nothing is rebuilt for a new direction.
 - **Numbers become intent as hands-on GUI `[decided]` (owner, 2026-10-02):** the old Motolii's good idea was turning X/Y/Z-type numbers into a GUI (pad, dial, handles) instead of a table. Only the INTENT is kept; the old look is a counter-example. How the numbers and the GUI relate (which one leads) is `[open]`: three arrangements are compared in the Widgetbook component `inspector-gui` > 'Hierarchy options'.
 - **Process `[decided]`:** look at the real window -> name the problem -> research only what that problem needs -> compare 2-3 options in the same Widgetbook -> the owner decides. The owner's remarks are material for finding problems and intents, not design specs.
@@ -97,7 +97,7 @@ Relation families (bar colour = family `.t`, the Timeline tone) `[code]`
 
 **Symbols are few (owner, 2026-10-02) `[decided]`.** More symbols make the screen cluttered. The lab keeps one small, fixed set of line glyphs (`app/lib/widgets/glyphs.dart`, 15 now). A new glyph needs a reason that no existing glyph, a word, or a position/colour change can carry. State is shown by position, grey level or a word before it is shown by a new mark. Motolii's 49 glyphs are NOT the target: they are folded into this small set (several into one), and some become plain words.
 
-**The old Motolii is a counter-example, not a source (owner, 2026-10-02) `[decided]`.** Nothing of the old Motolii's UI is imported, and its UX is not copied either. It is studied only to learn what NOT to do (`research/old-motolii-complaints.md`, `research/anti-patterns.md`). This design (the lab) is the only reference for how Motolii looks and feels. What the product must be able to do (capabilities) comes from the product's purpose and from shipped precedents (After Effects, Ableton), never from how the old UI happened to do it.
+**The old Motolii is a counter-example, not a source (owner, 2026-10-02) `[decided]`.** Nothing of the old Motolii's UI is imported, and its UX is not copied either. It is studied only to learn what NOT to do (the notes on its complaints and anti-patterns are not kept in this repository). This design (the lab) is the only reference for how Motolii looks and feels. What the product must be able to do (capabilities) comes from the product's purpose and from shipped precedents (After Effects, Ableton), never from how the old UI happened to do it.
 
 ## 5. Layout Principles
 

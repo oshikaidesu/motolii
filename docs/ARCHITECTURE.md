@@ -47,7 +47,7 @@ flowchart TB
 
 | Boundary | Where | Rule |
 |---|---|---|
-| App entry | `app/lib/main.dart` opens `app/lib/workspace/workspace.dart` (`Workspace`: the whole window, opening a project, the menus). App state lives in `app/lib/workspace/state/workspace_state.dart` (`WorkspaceController`). | [`app/README.md`](../app/README.md) maps the app's files. A new panel is added through `Workspace`'s `extra` list of `Pane`s. |
+| App entry | `app/lib/main.dart` opens `app/lib/workspace/workspace.dart` (`Workspace`: the whole window, opening a project, the menus). App state lives in `app/lib/workspace/state/workspace_controller.dart` (`WorkspaceController`). | [`app/README.md`](../app/README.md) maps the app's files. A new panel is added through `Workspace`'s `extra` list of `Pane`s. |
 | App to engine | `engine/entry/motolii.h` (about 400 lines). On the Dart side: `app/lib/bridge/motolii.dart` and `motolii_bindings.dart`, which ffigen generates. | The app holds no values. It reads and changes everything through C calls, and the project is the source of truth. The contract is in [`app/BRIDGE.md`](app/BRIDGE.md). |
 | Inside the engine | `engine/entry/render_thread.h` | Only the render thread touches the project and the GPU. The app never waits for it: a write is queued and returns at once, and a read takes a snapshot the render thread built (rules 1, 3 and 6 in [`app/BRIDGE.md`](app/BRIDGE.md)). |
 | Engine to app (frames) | `engine/stage/live.h` | The preview is drawn into three CVPixelBuffers on IOSurfaces. Each is imported into Dawn as a texture and used as a Filament render target. The app (a Flutter external texture, `app/macos/Runner/MainFlutterWindow.swift`) reads the same buffers. |
@@ -95,8 +95,8 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 |---|---|---|
 | `effects/` | `document/scripts/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
 | `aviutl_scripts/` | `document/scripts/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
-| `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart`, `dock_make_create.dart` |
-| `expressions/` | `entry/calls.cpp` `motolii_animators` | `workspace/dock/dock_make_expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
+| `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
+| `expressions/` | `entry/calls.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
 | `relations/` | `entry/calls.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/edit/presets.h` | `bridge/motolii_shelves.dart` |
 | `solids/` | `community/three/solid_three.cpp` | none |
@@ -104,8 +104,8 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `skins/` | none | `skin/theme.dart` `ColorTheme.skinNames` |
 | `extensions/hydra/` | `document/scripts/adapter.h`, `community/hydra/hydra_isf.cpp` | none |
 | `engine/third_party/wordnet_ja/` (data, not a shelf) | `entry/calls_find.cpp` `find_english` (`doc_folders("words")`) | none |
-| `engine/third_party/noto_sans_jp/` (data, not a shelf) | `stage/canvas/canvas_renderables.h` `type_fallback` (`doc_folders("fonts")`) | `workspace/dock/dock_fonts.dart` |
-| `engine/third_party/gflanguages/` (data, not a shelf) | none | `workspace/dock/dock_fonts.dart` (`samples.json`) |
+| `engine/third_party/noto_sans_jp/` (data, not a shelf) | `stage/canvas/canvas_renderables.h` `type_fallback` (`doc_folders("fonts")`) | `workspace/dock/fonts/fonts_shelf.dart` |
+| `engine/third_party/gflanguages/` (data, not a shelf) | none | `workspace/dock/fonts/fonts_controller.dart` (`samples.json`) |
 
 ## Where things live
 

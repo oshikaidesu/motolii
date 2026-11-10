@@ -11,7 +11,9 @@
 #   shelves/... engine/... app/... docs/...     from the repository's root (a head saying where it was made from)
 # And every .md of our own (not in an aviutl_scripts/ nor engine/third_party/: their authors'): [text](path),
 # [name]: path and <img src="path">, from the .md's folder as GitHub resolves them ('/' from the root); a web address,
-# mailto: or #anchor alone is skipped, and so is what sits in `code`.
+# mailto: or #anchor alone is skipped. A file name in `code` (ending .dart .cpp .h .sh ...) must be the end of a tracked
+# path, so a renamed file cannot linger in a document. docs/design/ is exempt: its notes are dated records, and the
+# paths in them are as they were on that day.
 # What is fetched or made at build time is in path_check_allow.txt, each with why.
 #   pre-commit: the staged shelf files; all of them when a staged change deletes or renames anything.
 #   --all [--rev REV]: every shelf file (of REV's tree), for CI and for trying it on a commit from the past.
@@ -128,6 +130,10 @@ LINK = re.compile(r'\]\(\s*(<[^>]+>|[^)\s]+)|^\s{0,3}\[[^\]]+\]:\s*(\S+)|<img\b[
 WEB = re.compile(r'^[a-z][a-z0-9+.-]*:', re.I)   # (http:, https:, mailto:, data: ...)
 
 
+CODE_FILE = re.compile(r'`([A-Za-z0-9_./@+-]*[A-Za-z0-9_]\.(?:dart|cpp|h|mm|sh|py|ts|js|mjs|wgsl|md|json|txt|yaml|xml|svg|cmake))`')
+tails = {p[i:] for p in tree for i in [0] + [m.end() for m in re.finditer('/', p)]}   # (every path and every end of it that starts after a '/')
+
+
 def check_links(path, folder, text):
     fenced = False
     for n, line in enumerate(text.split('\n'), 1):
@@ -135,6 +141,13 @@ def check_links(path, folder, text):
             fenced = not fenced
         if fenced:
             continue
+        if not path.startswith('docs/design/'):
+            for written in CODE_FILE.findall(line):
+                relative = written.startswith('../')   # (read from the document's folder, the way a link is; a leading ./ is a command typed in the root)
+                written = written.removeprefix('./')
+                resolved = posixpath.normpath(posixpath.join(folder, written))
+                if (resolved not in files if relative else written not in tails) and not allowed(written, resolved):
+                    refuse(path, n, resolved, 'in `code`, the end of no tracked path')
         for found in LINK.findall(re.sub(r'`[^`]*`', '', line)):
             written = next(w for w in found if w).strip('<>')
             target = urllib.parse.unquote(written.split('#', 1)[0].split('?', 1)[0])

@@ -102,7 +102,7 @@ The shared numbers are meant to be written once, in a `Gestures` class in `app/l
 - `arrow.2` Items and time: one unit (1 frame, 1 row, the next tile). Shift moves `Gestures.nudgeShift` units. `[AE]`
 - `arrow.3` Choices, lists and menus: arrows only move the mark (and stop at the ends). Return or Space decides. Home and End go to the ends. `[other: W3C ARIA]`
 - `arrow.4` Sliders: one step is 1 px of the track. Shift and Cmd follow `mod.1`. Page moves a tenth of the width, Home and End go to the ends. `[common]`
-- `keys.1` A one-letter command (the tool keys V, M, R and so on) works anywhere the app holds the keys, except while typing text. A letter shown in a menu follows the key bindings (`keybindings.json`). `[AE]` `[other: VS Code]`
+- `keys.1` A one-letter command (the tool keys V, M, R and so on) works anywhere the app holds the keys, except while typing text. A letter shown in a menu follows the key bindings (the user's `~/.motolii/keybindings.json`). `[AE]` `[other: VS Code]`
 - `keys.2` Typing a digit, `.` or `-` on a number with the key focus starts typing with that character. `[common]`
 
 ## 10. Shift, Cmd and Option
@@ -202,14 +202,14 @@ Only things that have a reason from the side of the person using the app. Each r
 | The Relations map | A drag turns the view instead of panning it. Two fingers turn it too | "a trackpad's two fingers turn the view, as Blender's do" | `workspace/tool_panel/relations.dart` |
 | The Camera tool (drag) | The camera turns (0.25 degrees per px). With a free view only the view moves | "After Effects' Unified Camera tool: a drag turns the camera round where it looks" | `workspace/stage/camera_gestures.dart` |
 | The ends of the work-area band | Cannot be made shorter than 0.5 seconds (a bar can go down to 1 frame) | "never shut to nothing: half a second at least, so the document cannot be dragged out of sight" | `workspace/timeline/ruler_marks.dart` |
-| The angle dial | Turns with the angle of the pointer instead of scrubbing sideways | "one turn of the pointer is one turn of the value", After Effects' angle | `inspector/controls/inspector_param_controls_angle_dial.dart` |
-| The point and size pads | For a point, down increases. For a size, up increases | "Y follows the canvas (down is more) for a point, and up is more for a height" | `inspector/controls/inspector_param_controls_tile.dart` |
+| The angle dial | Turns with the angle of the pointer instead of scrubbing sideways | "one turn of the pointer is one turn of the value", After Effects' angle | `inspector/controls/angle_dial.dart` |
+| The point and size pads | For a point, down increases. For a size, up increases | "Y follows the canvas (down is more) for a point, and up is more for a height" | `inspector/controls/parameter_tile.dart` |
 | The turning mark of the camera gizmo | Turns the opposite way to the Camera tool, at a speed set by the size of the circle | "it goes the way the hand does; a turn as far as the hand has gone on the circle it goes round" | `workspace/stage/camera_gestures.dart` |
 | The Camera tool (wheel) | The camera moves closer or further instead of the view moving | "After Effects' Unified Camera tool's wheel: the camera nearer or further from where it looks" | `workspace/stage/camera_gestures.dart` |
-| A colour box in Colors (hover) | A hand over it puts a rainbow rim on every box of the same palette | "a rim, not the others darkened" | `workspace/dock/dock_make_colors.dart` |
-| The deck name field (Save Favorites…) | Saving under a name empties Favorites, and this cannot be undone | "as Lightroom's Clear Quick Collection After Saving" | `workspace/dock/dock_effect_places.dart` |
-| The menu of a number | Right pressing the same number again reopens the menu there without closing it | "right pressed here again: its place, as a Mac's" | `widgets/float_shut.dart` |
+| A colour box in Colors (hover) | A hand over it puts a rainbow rim on every box of the same palette | "a rim, not the others darkened" | `workspace/dock/colors/color_bento.dart` |
+| The deck name field (Save Favorites…) | Saving under a name empties Favorites, and this cannot be undone | "as Lightroom's Clear Quick Collection After Saving" | `workspace/dock/effects/effect_places.dart` |
+| The menu of a number | Right pressing the same number again reopens the menu there without closing it | "right pressed here again: its place, as a Mac's" | `inspector/controls/inspector_number_field.dart` |
 | Delete with a stretch selected | The stretch is not removed. Its easing returns to Linear | "a stretch picked: its way off, straight again, not the thing" | `workspace/commands/menu_bar.dart` |
 | The code field of Program | Does not add closing brackets. Undo belongs to the field, not to the project | "exactly what is typed" | `workspace/shelf/program_code.dart` |
-| The effect code of a card | The first edit copies the shelf's file and writes to the copy | "the shelf's file is never written over" | `workspace/shelf/fx_code.dart` |
+| The effect code of a card | The first edit copies the shelf's file and writes to the copy | "the shelf's file is never written over" | `workspace/shelf/effect_code.dart` |
 | Scrubbing on the ruler | Snapping is off by default and Shift turns it on (bars and keyframes are the other way round) | "After Effects': Shift held while the time indicator is dragged, it rests on what it passes" | `workspace/timeline/ruler_marks.dart` |

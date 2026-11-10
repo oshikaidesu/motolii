@@ -16,3 +16,12 @@ docs/ALIGHT_COMPATIBILITY.md  # inside AbsentMotion's checkout, named by scatter
 *reports/*.mp4          # (the same)
 *reports/*.gif          # (the same)
 *reports/*.webm         # (the same)
+X.ja.md                       # docs/README.md: "named X.ja.md", the pattern of a translation's name, not a file
+name.svg                      # shelves/skins: "name.svg", the pattern of a part's file name, not a file
+Fire.js                       # shelves/README: an example of a shelf file's name
+k.h                           # shelves/README: an example of a header's name in a code line
+app/build/*                   # what flutter writes while it runs (AGENTS.md 構成の目標 4)
+out/cmake/*                   # engine/README: what the builder writes under engine/out/
+engine/third_party/filament_src/*   # fetched by engine/deps/filament.sh; engine/.gitignore keeps third_party/* out
+webgpu.h                      # Dawn's header, named in docs/engine/WINDOWS.md as what Dawn offers on Windows
+dawn/native/*                 # Dawn's headers (the same)
