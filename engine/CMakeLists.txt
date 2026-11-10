@@ -247,6 +247,7 @@ target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motol
 # ThorVG: 2D drawings placed in the scene.
 add_library(motolii_stage_canvas STATIC
   stage/canvas/canvas_cache.cpp
+  stage/canvas/canvas_cut.cpp
   stage/canvas/canvas_edge.cpp
   stage/canvas/canvas_flat.cpp
   stage/canvas/canvas_ramp.cpp
