@@ -10,6 +10,7 @@ import 'package:motolii/inspector/controls/inspector_param_controls_angle_dial.d
 import 'package:motolii/inspector/controls/inspector_param_controls_gauge.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_words.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/tokens.dart';
 
 import 'package:motolii/widgets/two_fingers.dart';

@@ -4,7 +4,7 @@
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 
 export 'inspector_badges.dart';
 export 'inspector_choosers_header.dart';

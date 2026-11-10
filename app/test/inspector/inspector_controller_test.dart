@@ -6,6 +6,7 @@ import 'dart:ui' show Color;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/inspector_card.dart' show Fx;
 import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 
 // Two cards. The fields of the first, in order: v_amount, v_center.x, v_center.y, v_mode, v_x (a colour has no number).
 const _first = '''

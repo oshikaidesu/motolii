@@ -1,11 +1,3 @@
-import 'dart:math' as math;
-
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
-import 'package:flutter/widgets.dart';
-
-import 'package:motolii/inspector/inspector_parts.dart';
-part 'inspector_values.dart';
-
 enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, none }

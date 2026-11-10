@@ -4,6 +4,7 @@
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 
 /// Owns the panel's values ([Doc]) and provides them again whenever they change.
 /// A different kind makes a new document, so give the widget a key.

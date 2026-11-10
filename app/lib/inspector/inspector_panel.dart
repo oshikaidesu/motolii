@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
 
 // Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and

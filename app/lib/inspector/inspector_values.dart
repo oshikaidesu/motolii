@@ -1,5 +1,13 @@
-// Part of inspector_state.dart: the values the panel's cards edit (Doc). The caller supplies them; this file holds none of its own.
-part of 'inspector_state.dart';
+// The values the panel's cards edit (Doc). The caller supplies them; this file holds none of its own.
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/inspector/controls/inspector_param_controls.dart';
+import 'package:motolii/inspector/controls/param_infer.dart';
+import 'package:motolii/inspector/inspector_card.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 
 /// The values of the selected layer as the inspector edits them: numbers, strings and switches.
 /// Keys are `v_` plus the value name as its card declares it ([Fx]).
