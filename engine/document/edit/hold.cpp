@@ -26,10 +26,11 @@
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::float2;
+using filament::math::mat3;
+namespace math = filament::math;
 
 bool doc_hold(Doc& d, int layer) {
   if (!doc_knows(d, layer)) return false;

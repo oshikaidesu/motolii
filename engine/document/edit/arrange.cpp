@@ -23,10 +23,11 @@
 #include "document/undo.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::float2;
+using filament::math::mat4;
+namespace math = filament::math;
 
 namespace {
 

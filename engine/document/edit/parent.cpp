@@ -20,10 +20,10 @@
 #include "document/marks.h"
 #include "document/undo.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::mat4;
+namespace math = filament::math;
 
 bool doc_parent(Doc& d, int layer, double to) {
   if (!doc_knows(d, layer, "parent", &to)) return false;

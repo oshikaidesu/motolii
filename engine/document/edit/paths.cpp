@@ -30,10 +30,10 @@ extern "C" {
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/path_operations.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::mat4;
+namespace math = filament::math;
 
 DocPlane::DocPlane(Doc& d, int layer, double now) {
   const math::mat4 at = doc_shown_at(d, layer, now);
