@@ -1,12 +1,34 @@
 // The contents of the open folder in the Media shelf: tiles or rows, the in-use mark and the footer for the selected file.
-part of 'dock_files.dart';
+import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 
-class _Contents extends StatelessWidget {
-  const _Contents(this.c);
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiWrites, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
+import 'package:motolii/widgets/media.dart' show MiniSlider;
+import 'package:motolii/workspace/dock/dock_files.dart';
+import 'package:motolii/workspace/dock/dock_files_browser.dart';
+import 'package:motolii/workspace/dock/dock_files_used.dart';
+import 'package:motolii/workspace/dock/dock_folder_row.dart';
+import 'package:motolii/workspace/dock/dock_tags.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+
+class FolderContents extends StatelessWidget {
+  const FolderContents(this.c, {super.key});
   final DockCtx c;
   @override
   Widget build(BuildContext context) {
-    final path = _pathOf(c, c.mem.folder), here = path.last;
+    final path = folderPathOf(c, c.mem.folder), here = path.last;
     final root = here.disk ? here : path.first; // On the disk a search stays within the open folder.
     final searching = c.query.isNotEmpty;
     final List<FileNode> items;
@@ -33,7 +55,7 @@ class _Contents extends StatelessWidget {
         // Lists the files of the folder and of every folder below it together.
         final all = <FileNode>[];
         void below(FileNode f, int depth) {
-          if (f.disk && !f.listed && depth > 0) _read(f.id);
+          if (f.disk && !f.listed && depth > 0) readFolder(f.id);
           for (final k in f.kids) {
             if (k.folder) {
               if (depth < 4) below(k, depth + 1);
@@ -59,7 +81,7 @@ class _Contents extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Crumbs(path, c, searching: searching),
+        FolderCrumbs(path, c, searching: searching),
         DockChips([('All', items.length), for (final e in kinds.entries) (e.key, e.value)], active: chip, onPick: c.pickChip),
         Expanded(
           child: shown.isEmpty
@@ -68,7 +90,7 @@ class _Contents extends StatelessWidget {
                   shelfLooks['Media']!,
                   list: c.mem.mediaList,
                   count: shown.length,
-                  tile: (i) => _Tile(shown[i], c, list: c.mem.mediaList, where: searching ? (shown[i].disk ? _base(_dir(shown[i].id)) : '') : null),
+                  tile: (i) => _Tile(shown[i], c, list: c.mem.mediaList, where: searching ? (shown[i].disk ? basename(dirname(shown[i].id)) : '') : null),
                 ),
         ),
         if (sel != null) _Footer(sel, c),
@@ -76,6 +98,35 @@ class _Contents extends StatelessWidget {
     );
   }
 }
+
+String _kindOf(FileNode n) => switch (n.g) {
+  DockG.folder => 'Folders',
+  DockG.comp => 'Comps',
+  DockG.video => 'Video',
+  DockG.image => 'Images',
+  DockG.light => 'HDR',
+  DockG.audio => 'Audio',
+  DockG.font => 'Fonts',
+  DockG.shape => '3D',
+  _ => 'Docs',
+};
+
+MediaType? _typeOf(DockG g) => switch (g) {
+  DockG.video => MediaType.video,
+  DockG.image => MediaType.image,
+  DockG.light => MediaType.hdr,
+  DockG.audio => MediaType.audio,
+  _ => null,
+};
+
+String _metaOf(FileNode n) {
+  return n.folder ? (n.listed ? '${n.kids.length} items' : 'Folder') : n.meta;
+}
+
+/// The id of the layer that uses [n], or null.
+String? _layerOf(FileNode n, DockCtx c) => filesUsed(c.ws)[n.id];
+
+bool _inUse(FileNode n, DockCtx c) => _layerOf(n, c) != null;
 
 /// A file's thumbnail if it is media, otherwise a flat tile with its kind's mark.
 class _Art extends StatelessWidget {
@@ -95,7 +146,7 @@ class _Art extends StatelessWidget {
       );
       if (n.g == DockG.video) {
         return FutureBuilder<String?>(
-          future: _thumbnailAtOf?.call(n.id, step, 8),
+          future: thumbnailAtOf?.call(n.id, step, 8),
           builder: (context, made) => made.data == null
               ? flat
               : ColoredBox(
@@ -180,8 +231,8 @@ class _TileState extends State<_Tile> {
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.c, list = widget.list, sel = c.sel == n.id || (list ? false : _filesPicked.contains(n.id)), t = _typeOf(n.g);
-    final can = _kindOfFile(n.id).isNotEmpty, meta = widget.where == null ? _metaOf(n) : '${widget.where} · ${_metaOf(n)}';
+    final c = widget.c, list = widget.list, sel = c.sel == n.id || (list ? false : filesPicked.contains(n.id)), t = _typeOf(n.g);
+    final can = kindOfFile(n.id).isNotEmpty, meta = widget.where == null ? _metaOf(n) : '${widget.where} · ${_metaOf(n)}';
     return ShelfTile(
       ShelfItem(n.id, n.name, label: _kindOf(n), about: meta),
       shelfLooks['Media']!,
@@ -191,8 +242,8 @@ class _TileState extends State<_Tile> {
       bold: sel || n.folder,
       ink: list ? null : (n.folder ? Grey.g91 : Grey.g76),
       says: meta,
-      onTap: () => _open(n, c),
-      onApply: !list && can && !n.folder ? () => _place(c, n) : null, // Double-click or drag to the canvas places the file.
+      onTap: () => openNode(n, c),
+      onApply: !list && can && !n.folder ? () => placeFile(c, n) : null, // Double-click or drag to the canvas places the file.
       onMove: _film && !_playing
           ? (at) {
               final w = (context.size?.width ?? 1) * 1.0, k = (at.dx / math.max(1, w) * 8).floor().clamp(0, 7);
@@ -248,6 +299,28 @@ class _TileState extends State<_Tile> {
   }
 }
 
+/// Every layer that shows [file] (whole path), with the property that says so: its own file or a shape filled with it.
+List<(int, String)> _showing(Motolii m, String file) => [
+  for (final t in m.layers)
+    for (final w in const ['file', 'fill_media'])
+      if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file) (t, w),
+];
+
+/// Replaces what every entry of [all] shows with [file], in one undo step.
+///
+/// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
+/// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
+void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
+  final m = c.ws.inside!;
+  m.later('together', number: 1);
+  for (final (t, w) in all) {
+    c.ws.after(m.later('say', layer: t, name: w, word: file), (done, why) {
+      if (!done) c.ws.notice = 'Not replaced: $why';
+    });
+  }
+  c.ws.after(m.later('together'), (_, _) => c.ws.reread());
+}
+
 /// The footer for the selected file: a file the engine can show is placed, a folder is opened.
 class _Footer extends StatelessWidget {
   const _Footer(this.n, this.c);
@@ -256,20 +329,20 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // A file the engine can show can be placed any number of times, each as a new layer starting at the current time.
-    if (_filesPicked.length > 1) {
+    if (filesPicked.length > 1) {
       // Several files are selected: they are placed together.
       return DockFooter(
-        title: '${_filesPicked.length} files',
+        title: '${filesPicked.length} files',
         meta: 'Placed one after another, in the order picked',
-        action: 'Place ${_filesPicked.length}',
+        action: 'Place ${filesPicked.length}',
         fresh: true,
-        onAction: () => _placeAll(c, _filesPicked.toList()),
+        onAction: () => placeFiles(c, filesPicked.toList()),
       );
     }
-    final layer = _layerOf(n, c), can = _kindOfFile(n.id).isNotEmpty, m = c.ws.inside;
+    final layer = _layerOf(n, c), can = kindOfFile(n.id).isNotEmpty, m = c.ws.inside;
     // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
     final shape = int.tryParse(c.ws.selected ?? ''),
-        fills = m != null && shape != null && _kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
+        fills = m != null && shape != null && kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
     // An image or video layer is selected and a file of the same kind chosen: the layer shows that file instead and keeps
     // its position, size, keyframes and effects. This is After Effects' Replace Layer Source and Premiere Pro's Replace With Clip.
     final swaps =
@@ -278,7 +351,7 @@ class _Footer extends StatelessWidget {
         !fills &&
         layer != '$shape' &&
         const {'picture', 'film'}.contains(m.word(shape, 'kind')) &&
-        _kindOfFile(n.id) == m.word(shape, 'kind');
+        kindOfFile(n.id) == m.word(shape, 'kind');
     // The other layers that show the same file, which _replaceAll replaces together with this one.
     final all = swaps ? _showing(m, m.whole(m.word(shape, 'file'))) : const <(int, String)>[];
     return FutureBuilder<String>(
@@ -321,7 +394,7 @@ class _Footer extends StatelessWidget {
             : null,
         lasts: fills || swaps
             ? null
-            : switch (_kindOfFile(n.id)) {
+            : switch (kindOfFile(n.id)) {
                 'picture' => _StillSeconds(c),
                 'film' || 'sound' when m != null => _FilmRange(c, n.id, mediaSecondsOf(m.libPath, n.id)),
                 _ => null,
@@ -331,7 +404,7 @@ class _Footer extends StatelessWidget {
             : swaps
             ? c.ws.after(m.later('say', layer: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
             : can
-            ? _place(c, n)
+            ? placeFile(c, n)
             : c.ws.select(layer),
       ),
     );
@@ -345,10 +418,10 @@ class _StillSeconds extends StatelessWidget {
   final DockCtx c;
   @override
   Widget build(BuildContext context) {
-    final at = _stillSteps.indexOf(_stillSeconds), s = _stillSeconds;
+    final at = _stillSteps.indexOf(stillSeconds), s = stillSeconds;
     Widget step(String word, int by) => DockHover(
       key: ValueKey('media-still-$word'),
-      onTap: at + by < 0 || at + by >= _stillSteps.length ? null : () => c.set(() => _stillSeconds = _stillSteps[at + by]),
+      onTap: at + by < 0 || at + by >= _stillSteps.length ? null : () => c.set(() => stillSeconds = _stillSteps[at + by]),
       builder: (_, h) => Padding(
         padding: EdgeInsets.symmetric(horizontal: Shape.s(3)),
         child: Text(word == 'less' ? '−' : '+', style: T.label(h ? Grey.g95 : Grey.g63)),
@@ -379,7 +452,7 @@ class _FilmRange extends StatelessWidget {
     builder: (context, got) {
       final len = got.data ?? 0;
       if (len <= 0) return const SizedBox.shrink(); // Without a known length the whole video is used.
-      final (a, b) = _filmRanges[file] ?? (0.0, 1.0);
+      final (a, b) = filmRanges[file] ?? (0.0, 1.0);
       final w = Shape.z(84);
       String t(double f) => '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
       return Row(
@@ -401,7 +474,7 @@ class _FilmRange extends StatelessWidget {
             thumbRadius: 1,
             inset: 0,
             cursor: MouseCursor.defer,
-            onChanged: (v) => c.set(() => _filmRanges[file] = (v[0], v[1])),
+            onChanged: (v) => c.set(() => filmRanges[file] = (v[0], v[1])),
           ),
           SizedBox(width: Shape.s(4)),
           Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: T.label(Grey.g91)),
@@ -411,10 +484,7 @@ class _FilmRange extends StatelessWidget {
   );
 }
 
-final _filmRanges = <String, (double, double)>{};
-
 const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0]; // Seconds. 0 means until the end of the project.
-var _stillSeconds = 2.0;
 
 /// Plays a sound file before it is placed, as Alight Motion does before adding a song. Clicking plays it with macOS's
 /// afplay. Clicking again, or selecting another file, stops it.

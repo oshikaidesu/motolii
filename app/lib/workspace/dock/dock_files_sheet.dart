@@ -1,5 +1,13 @@
 // Places a timesheet on the canvas: each of its columns becomes a level timed by keyframes.
-part of 'dock_files.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math' as math;
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/workspace/dock/dock_files.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
 ///
@@ -36,6 +44,21 @@ part of 'dock_files.dart';
   }
 }
 
+/// Returns the drawings of one level, lowest number first, if [files] are all drawings of it, otherwise null.
+///
+/// The drawings are image files in one folder with the same name apart from a number at the end, such as
+/// animation_0001.png, which OpenToonz reads in tfilepath.cpp. At least [least] drawings are needed.
+List<(int, String)>? levelOf(List<String> files, {int least = 2}) {
+  final named = RegExp(r'^(.*?)(\d+)(\.[^./]+)$'), drawings = <(int, String)>[];
+  String? level;
+  for (final f in files) {
+    final m = named.firstMatch(f);
+    if (kindOfFile(f) != 'picture' || m == null || (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') return null;
+    drawings.add((int.parse(m[2]!), f));
+  }
+  return drawings.length < least ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
+}
+
 /// Finds the drawings of the level [name] for the timesheet file [sheet].
 ///
 /// A level's name is the part before the '.' or '_' and the number, as in OpenToonz's tfilepath.cpp getLevelNameW
@@ -45,9 +68,9 @@ List<(int, String)>? _levelNamed(String sheet, String name) {
   final here = File(sheet).parent.path, named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
     if (!Directory(folder).existsSync()) continue;
-    if (_level([
+    if (levelOf([
           for (final e in Directory(folder).listSync())
-            if (e is File && named.hasMatch(_base(e.path))) e.path,
+            if (e is File && named.hasMatch(basename(e.path))) e.path,
         ], least: 1)
         case final drawings?) {
       return drawings;
@@ -62,10 +85,10 @@ List<(int, String)>? _levelNamed(String sheet, String name) {
 /// the sheet. Each change gets a hold keyframe on the level's Drawing property at 24 frames per second, as DiTiS reads
 /// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
 /// Missing drawings and unsupported values are reported in the notice.
-Future<void> _placeSheet(DockCtx c, String file) async {
+Future<void> placeSheet(DockCtx c, String file) async {
   final sheet = _sheetOf(await File(file).readAsString().catchError((_) => ''));
   if (sheet == null) {
-    c.ws.notice = 'Not a timesheet: ${_base(file)}';
+    c.ws.notice = 'Not a timesheet: ${basename(file)}';
     return;
   }
   final m = c.ws.inside!, from = c.ws.frame / Ws.fps, missing = <String>[], made = <Future<int>>[];
@@ -99,5 +122,5 @@ Future<void> _placeSheet(DockCtx c, String file) async {
     if (missing.isNotEmpty) 'no drawings named ${missing.join(', ')} beside it',
     if (sheet.unread.isNotEmpty) 'not read: ${sheet.unread.join(', ')}',
   ];
-  c.ws.notice = 'Placed ${ids.length} of ${sheet.columns.length} columns of ${_base(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
+  c.ws.notice = 'Placed ${ids.length} of ${sheet.columns.length} columns of ${basename(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
 }

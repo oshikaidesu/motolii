@@ -1,5 +1,28 @@
 // The Media shelf's browser: where it starts, the path to a folder, the tree, the folder rows, the breadcrumbs, and navigating and opening.
-part of 'dock_files.dart';
+import 'dart:io';
+
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiQuestions, MotoliiShelves;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/workspace/dock/dock_files.dart';
+import 'package:motolii/workspace/dock/dock_files_contents.dart';
+import 'package:motolii/workspace/dock/dock_files_used.dart';
+import 'package:motolii/workspace/dock/dock_folder_row.dart';
+import 'package:motolii/workspace/dock/dock_resizable.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
+
+/// The tree band's height when the shelf is narrow. A double-click on its grip resets to this.
+const dockTreeHeight = 132.0;
+
+/// From this shelf width the tree stands beside the contents instead of above them.
+const _wide = 440.0;
+
+final _home = Platform.environment['HOME'] ?? '/';
 
 class MediaShelf extends StatelessWidget {
   const MediaShelf(this.c, {super.key});
@@ -27,7 +50,7 @@ class MediaShelf extends StatelessWidget {
                 color: WsT.ground,
                 child: SizedBox(width: WsT.gutter),
               ),
-              Expanded(child: _Contents(c)),
+              Expanded(child: FolderContents(c)),
             ],
           );
         }
@@ -42,7 +65,7 @@ class MediaShelf extends StatelessWidget {
               onHeight: (h) => c.set(() => c.mem.treeHeight = h),
               child: _Tree(c),
             ),
-            Expanded(child: _Contents(c)),
+            Expanded(child: FolderContents(c)),
           ],
         );
       },
@@ -53,21 +76,21 @@ class MediaShelf extends StatelessWidget {
 /// The locations in the tree: the project's own files and the folders they are in, then the disk.
 List<FileNode> _rootsOf(DockCtx c) {
   final kindOf = c.ws.inside!.kindOf;
-  _kindOfFile = (f) =>
+  kindOfFile = (f) =>
       // CLIP STUDIO's and OpenToonz's timesheet is not a layer kind in the engine, but its columns are.
       f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f);
-  _thumbnailAtOf = c.ws.inside!.thumbnailAt;
-  final files = _used(c.ws).keys.toList()..sort();
+  thumbnailAtOf = c.ws.inside!.thumbnailAt;
+  final files = filesUsed(c.ws).keys.toList()..sort();
   return [
     FileNode(
       'Project',
       'Project',
       DockG.folder,
       kids: [
-        for (final d in {?c.ws.documentFolder, for (final f in files) _dir(f)})
-          FileNode(d, _base(d), DockG.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
+        for (final d in {?c.ws.documentFolder, for (final f in files) dirname(f)})
+          FileNode(d, basename(d), DockG.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
         for (final f in files)
-          if (_glyphOf(f) case final g?) FileNode(f, _base(f), g),
+          if (glyphOf(f) case final g?) FileNode(f, basename(f), g),
       ],
     ),
     FileNode(_home, 'Home', DockG.folder),
@@ -75,32 +98,32 @@ List<FileNode> _rootsOf(DockCtx c) {
 }
 
 /// The folders from the root down to [id], root first.
-List<FileNode> _pathOf(DockCtx c, String id) {
+List<FileNode> folderPathOf(DockCtx c, String id) {
   final roots = _rootsOf(c);
   if (!id.startsWith('/')) return [roots.first];
   final out = <FileNode>[];
-  for (var at = id; ; at = _dir(at)) {
+  for (var at = id; ; at = dirname(at)) {
     if (at == _home || at == '/') return out..insert(0, FileNode(at, at == _home ? 'Home' : '/', DockG.folder));
-    out.insert(0, FileNode(at, _base(at), DockG.folder));
+    out.insert(0, FileNode(at, basename(at), DockG.folder));
   }
 }
 
 void _go(DockCtx c, String id) => c.set(() {
-  if (id.startsWith('/')) _read(id); // A folder on disk is read again each time it is opened.
+  if (id.startsWith('/')) readFolder(id); // A folder on disk is read again each time it is opened.
   c.mem.folder = id;
   // Only that folder opens: the same folder is listed under more than one location,
   // and opening every location above it would move the rows under the pointer.
   c.mem.open.add(id);
 });
 
-void _open(FileNode n, DockCtx c) {
+void openNode(FileNode n, DockCtx c) {
   if (n.folder) return _go(c, n.id);
-  if (DockHover.cmdAtPress && _kindOfFile(n.id).isNotEmpty) {
+  if (DockHover.cmdAtPress && kindOfFile(n.id).isNotEmpty) {
     // Cmd adds or removes one file from the selection, as in Finder.
-    if (_filesPicked.isEmpty && c.sel != null && _kindOfFile(c.sel!).isNotEmpty) _filesPicked.add(c.sel!);
-    _filesPicked.contains(n.id) ? _filesPicked.remove(n.id) : _filesPicked.add(n.id);
+    if (filesPicked.isEmpty && c.sel != null && kindOfFile(c.sel!).isNotEmpty) filesPicked.add(c.sel!);
+    filesPicked.contains(n.id) ? filesPicked.remove(n.id) : filesPicked.add(n.id);
   } else {
-    _filesPicked.clear();
+    filesPicked.clear();
   }
   c.pick(n.id);
 }
@@ -151,8 +174,8 @@ class _Tree extends StatelessWidget {
 }
 
 /// Breadcrumbs for the open folder: each step opens that folder. While searching, they name the location searched.
-class _Crumbs extends StatelessWidget {
-  const _Crumbs(this.path, this.c, {required this.searching});
+class FolderCrumbs extends StatelessWidget {
+  const FolderCrumbs(this.path, this.c, {super.key, required this.searching});
   final List<FileNode> path;
   final DockCtx c;
   final bool searching;
