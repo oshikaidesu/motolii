@@ -10,13 +10,11 @@ namespace motolii {
 
 std::string isf_wgsl(const std::string& text, const std::string& name,
                      std::string& why, std::string vertex) {
-  const size_t open = text.find("/*"), close = text.find("*/");
-  rapidjson::Document head;
-  if (open == std::string::npos || close == std::string::npos ||
-      head.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() ||
-      !head.IsObject())
+  IsfHead parsed;
+  if (!isf_read_head(text, parsed))
     return why = "no ISF head (a JSON comment at the top)", "";
-  std::string body = text.substr(close + 2);
+  const rapidjson::Value& head = parsed.json;
+  std::string body = parsed.body;
 
   std::vector<std::string> targets, passLines;
   // For each pass target: whether its width and its height are absolute sizes
@@ -40,13 +38,8 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
                           "," + (fine ? "1" : "0") + "," + w + "," + h);
     }
 
-  const rapidjson::Value none(rapidjson::kArrayType);
-  const rapidjson::Value& inputs =
-      head.HasMember("INPUTS") && head["INPUTS"].IsArray() ? head["INPUTS"]
-                                                           : none;
-  std::vector<std::string> imageNames;
-  for (const auto& i : inputs.GetArray())
-    if (isf_str(i, "TYPE") == "image") imageNames.push_back(isf_str(i, "NAME"));
+  const rapidjson::Value& inputs = *parsed.inputs;
+  const std::vector<std::string>& imageNames = parsed.images;
   // An ISF file without image inputs is a generator (ISF_Spec distinguishes
   // sources, filters and transitions). On a layer it paints only where the
   // layer is, like After Effects' Preserve Underlying Transparency. The layer's

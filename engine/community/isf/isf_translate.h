@@ -12,6 +12,23 @@
 
 namespace motolii {
 
+// The JSON head of an ISF file, read once: the object itself, the GLSL after
+// it, its inputs and passes (empty arrays when it has none), the names of the
+// image inputs, whether an input is a sound, and whether it is a transition
+// (ISF_Spec: it has startImage, endImage and a progress input).
+struct IsfHead {
+  rapidjson::Document json;
+  std::string body;
+  const rapidjson::Value* inputs = nullptr;
+  const rapidjson::Value* passes = nullptr;
+  std::vector<std::string> images;
+  bool sound = false, transition = false;
+};
+
+// Reads the head of the ISF text. Returns false when it has none (a JSON
+// comment at the top).
+bool isf_read_head(const std::string& text, IsfHead& head);
+
 // Converts the text of an ISF file into WGSL. `name` is used in the output
 // header and `vertex` is the source of an optional custom vertex shader.
 // Returns the WGSL, or "" with the reason in `why`.
@@ -31,9 +48,7 @@ bool isf_pass_size(const rapidjson::Value& p, const char* k, const char* side,
                    std::string& said);
 // The shelf an effect goes on, from the ISF categories, or nothing if the head
 // has none. `imageNames` and `inputs` tell whether it is a transition.
-std::optional<std::string> isf_shelf(const rapidjson::Value& head,
-                                     const std::vector<std::string>& imageNames,
-                                     const rapidjson::Value& inputs);
+std::optional<std::string> isf_shelf(const IsfHead& head);
 // Compiles the GLSL to SPIR-V with glslang and converts it to WGSL with Tint.
 // Returns the WGSL, or "" with the reason in `why`.
 std::string isf_compile(const std::string& glsl, std::string& why);

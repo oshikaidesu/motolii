@@ -44,38 +44,11 @@ std::string isf_tags(const std::string& file) {
   std::ifstream in(file);
   const std::string text = adapter_isf(std::string(
       (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
-  const size_t open = text.find("/*"), close = text.find("*/");
-  rapidjson::Document head;
-  if (open == std::string::npos || close == std::string::npos ||
-      head.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() ||
-      !head.IsObject())
-    return "";
-  const auto str = [](const rapidjson::Value& o, const char* k) {
-    return o.IsObject() && o.HasMember(k) && o[k].IsString()
-               ? std::string(o[k].GetString())
-               : std::string();
-  };
-  const rapidjson::Value none(rapidjson::kArrayType);
-  const rapidjson::Value& inputs =
-      head.HasMember("INPUTS") && head["INPUTS"].IsArray() ? head["INPUTS"]
-                                                           : none;
-  const rapidjson::Value& passes =
-      head.HasMember("PASSES") && head["PASSES"].IsArray() ? head["PASSES"]
-                                                           : none;
-  std::vector<std::string> imageNames;
-  bool sound = false, progress = false;
-  for (const auto& i : inputs.GetArray()) {
-    if (str(i, "TYPE") == "image") imageNames.push_back(str(i, "NAME"));
-    // Shadertoy's Sound Input.
-    sound = sound || str(i, "TYPE") == "audio" || str(i, "TYPE") == "audioFFT";
-    progress = progress || str(i, "NAME") == "progress";
-  }
-  const auto has = [&](const char* n) {
-    return std::find(imageNames.begin(), imageNames.end(), n) !=
-           imageNames.end();
-  };
-  // ISF_Spec's transitions, as the label in isf_wgsl reads them.
-  const bool transition = has("startImage") && has("endImage") && progress;
+  IsfHead head;
+  if (!isf_read_head(text, head)) return "";
+  const rapidjson::Value& passes = *head.passes;
+  const bool sound = head.sound, transition = head.transition;
+  const std::vector<std::string>& imageNames = head.images;
   // A pass kept from frame to frame: PERSISTENT in ISF_Spec, called Feedback by
   // Vidvox.
   bool feedback = false;
@@ -85,7 +58,7 @@ std::string isf_tags(const std::string& file) {
                                  ? p["PERSISTENT"].GetBool()
                                  : p["PERSISTENT"].IsNumber() &&
                                        p["PERSISTENT"].GetDouble() != 0));
-  const std::string body = text.substr(close + 2);
+  const std::string& body = head.body;
   // The uniforms of ISF_Spec's clock: a shader that reads them moves by itself.
   static const std::regex clock(R"(\b(TIME|TIMEDELTA|FRAMEINDEX|DATE)\b)");
   std::string tags;

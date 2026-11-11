@@ -81,9 +81,36 @@ bool isf_pass_size(const rapidjson::Value& p, const char* k, const char* side,
   return said = "a" + std::to_string((int)v), true;
 }
 
-std::optional<std::string> isf_shelf(const rapidjson::Value& head,
-                                     const std::vector<std::string>& imageNames,
-                                     const rapidjson::Value& inputs) {
+bool isf_read_head(const std::string& text, IsfHead& h) {
+  const size_t open = text.find("/*"), close = text.find("*/");
+  if (open == std::string::npos || close == std::string::npos ||
+      h.json.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() ||
+      !h.json.IsObject())
+    return false;
+  h.body = text.substr(close + 2);
+  static const rapidjson::Value none(rapidjson::kArrayType);
+  const auto array = [&](const char* k) -> const rapidjson::Value* {
+    return h.json.HasMember(k) && h.json[k].IsArray() ? &h.json[k] : &none;
+  };
+  h.inputs = array("INPUTS");
+  h.passes = array("PASSES");
+  bool progress = false;
+  for (const auto& i : h.inputs->GetArray()) {
+    if (isf_str(i, "TYPE") == "image") h.images.push_back(isf_str(i, "NAME"));
+    // Shadertoy's Sound Input.
+    h.sound = h.sound || isf_str(i, "TYPE") == "audio" ||
+              isf_str(i, "TYPE") == "audioFFT";
+    progress = progress || isf_str(i, "NAME") == "progress";
+  }
+  const auto has = [&](const char* n) {
+    return std::find(h.images.begin(), h.images.end(), n) != h.images.end();
+  };
+  h.transition = has("startImage") && has("endImage") && progress;
+  return true;
+}
+
+std::optional<std::string> isf_shelf(const IsfHead& h) {
+  const rapidjson::Value& head = h.json;
   // Shelf: uses the shelf's own category names where the ISF categories say the
   // same thing.
   if (head.HasMember("CATEGORIES") && head["CATEGORIES"].IsArray() &&
@@ -111,15 +138,7 @@ std::optional<std::string> isf_shelf(const rapidjson::Value& head,
     // one shelf whatever its wipe or dissolve style, as After Effects keeps its
     // transitions under Transition. Once applied, it runs from the playhead
     // (doc_fx_file).
-    if (std::find(imageNames.begin(), imageNames.end(), "startImage") !=
-            imageNames.end() &&
-        std::find(imageNames.begin(), imageNames.end(), "endImage") !=
-            imageNames.end() &&
-        std::any_of(inputs.GetArray().begin(), inputs.GetArray().end(),
-                    [&](const rapidjson::Value& i) {
-                      return isf_str(i, "NAME") == "progress";
-                    }))
-      shelf = "Transition";
+    if (h.transition) shelf = "Transition";
     return shelf;
   }
   return std::nullopt;
