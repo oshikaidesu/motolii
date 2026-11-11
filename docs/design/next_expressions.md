@@ -1,0 +1,206 @@
+# Next-generation expressions: the ideal
+
+*Status: an ideal, not a plan. It says what a user should be able to do and see. It chooses no library and no folder. Written on 2026-11-11 from a conversation with the author. Where it differs from an earlier note, the last section says so.*
+
+## 1. The aim
+
+Short code found on the net (an After Effects expression, Lua, a p5.js sketch, a Cavalry script, a Blender Python driver, TSL) is pasted and works. It runs as fast as a built-in effect, with a project of hundreds of layers open and the preview playing. Editing it is comfortable: save, and the frame under the playhead shows the new result.
+
+This is the aim in [AGENTS.md](../../AGENTS.md) (an expression found on the net, usable in your video at once) applied to the part of Motolii that runs code.
+
+## 2. One idea: code reads, and says what it reads
+
+Code is a function. Given a time, a copy number and its sliders, it returns values. It may read any property of any layer, and the value of any property at an earlier time.
+
+- Reading another layer is reading a property.
+- "State" (a spring, a trail, a sketch that never clears its background) is reading its own value at an earlier time.
+- There is no separate class of stateful code.
+- The only thing refused is a loop at one instant: A reads B and B reads A at the same time. It is reported as an error. Reading an earlier time is always allowed.
+- A long chain back in time can make the first jump to a distant frame wait. The wait shows its progress and never freezes the app.
+
+Everything below follows from this. What the code reads is known, so it can be listed, searched, shown, and used to recompute only what changed.
+
+## 3. What the user touches
+
+### 3.1 Two steps in
+
+- **Inspector:** a card, like an effect card, with sliders and an on/off switch. No code is visible.
+- **Edit:** a button on the card. It opens the Program tab on that code, at that line. Going back, the card already shows the change. There is no cliff.
+- If the user picks a target on the card (follow this layer's position), the app writes it as code. Pressing Edit later shows the few lines the app wrote. The card is never a second copy of the code ([AGENTS.md](../../AGENTS.md), principle 3).
+
+### 3.2 Getting code in
+
+Paste (⌘V), drop a file from a shelf, or type. All three give the same result. The language is recognised on paste and shown as a label. Clicking the label corrects it. There is no settings screen.
+
+### 3.3 What a property is made of
+
+A property is a number, keyframes or code. The timeline row draws a curve in all three cases. Code either sits on top of the keyframes (as in After Effects, where `value` is the keyframed value) or replaces them. The user chooses. Several pieces of code on one layer combine as they do today (positions add, size and opacity multiply).
+
+### 3.4 Sliders and code are one text
+
+A number in the code is a slider. Dragging it rewrites the number in the code. Editing the code moves the slider. There is one copy of the text. A slider's range is for display only; a typed value is not limited (principle 2).
+
+### 3.5 What the code reads, shown beside it
+
+- Chips beside the code: "← Leader · Position", "← itself, 0.1 s earlier". Clicking one jumps to that layer.
+- Selecting a property shows which code reads it.
+- Renaming a layer rewrites the name inside the code. The change is shown and one Undo reverses both.
+- A reference to something deleted turns red.
+- A pick whip: drag from any property field onto a card or the code to connect them.
+
+### 3.6 The result
+
+The timeline row shows the curve over the whole time range. An error marks its line red, and the last good result stays on screen. For code that makes many copies, the picture is open (section 9).
+
+### 3.7 Editing
+
+In the app, or in an outside editor and save. Either way the frame under the playhead updates at once. The playhead, the selection and the sliders stay. Only the edited code and what reads it are recomputed.
+
+## 4. The Program tab
+
+After Effects shows neither what can be written nor what can be connected. The Program tab has two lists that follow the project as it changes (layers added, removed or renamed; values at the playhead).
+
+| List | Holds |
+|---|---|
+| **Can read** | Every property of every layer (effect sliders, text, shapes, camera), time, frame, duration, project size, sound level, MIDI, and values other code makes. Filtered by the type the property being edited wants (a number lists numbers); "show all" removes the filter. Searchable. Pressing or dragging an item inserts it as the code's language says it: an After Effects expression gets After Effects' way, Lua gets Lua's. |
+| **Can return, can say** | The names this property accepts (`x`, `y`, `size`, `opacity`, …), lit when the code returns them. The sliders the code declares. The language's own words (`wiggle`, `linear`, …) with a short explanation and an example. |
+| **Who reads this** | For a selected property, the code that reads it. Known before a rename or a delete, not after something breaks. |
+
+```
+┌ Can read ───────┬ Code ────────────────────┬ Can return ───────┐
+│ search [pos   ] │ 1 const L = ...          │ x     ● returned  │
+│ ▾ Leader        │ 2 return ...             │ y     ○           │
+│    Position     │                          │ size  ○           │
+│    Opacity 100  │ ← Leader · Position      │ ── words ──       │
+│ ▸ Circle        │ ← itself, 0.1 s earlier  │ wiggle(freq,amp)  │
+│ ▸ Time, Sound   │                          │ linear(t,a,b,…)   │
+├─────────────────┴ Result: curve / errors ──┴───────────────────┤
+```
+
+## 5. Languages
+
+A language is only a way of writing. The meaning is shared.
+
+| Language | Notes |
+|---|---|
+| After Effects expression | The first target. |
+| Cavalry JavaScript | Called once per copy today; the copy number is an input. |
+| TSL | Already a graph of nodes. |
+| Lua | Operators can be overloaded, so it is straightforward. |
+| Blender Python | Operators can be overloaded. Scope is open (section 9). |
+| p5.js | Draws as it runs, so it is the hardest. Last. |
+
+Code never calls another language. An After Effects expression reads a Lua-driven property as a value. A property has one language. Languages meet through values.
+
+## 6. Speed
+
+### 6.1 When code is read and when it runs
+
+The text of the code is read once per edit. Running happens whenever an input changes. A keyframed slider changes every frame, so the compiled form runs every frame.
+
+The aim is therefore not "never evaluate each frame". It is: never read the text again each frame, never run what did not change, never run what is not seen, and where there are many copies do the work in bulk or on the GPU.
+
+### 6.2 Principles
+
+The cost follows what changed, not what exists. One frame at 60 fps is about 16.7 ms, drawing included.
+
+| Principle | What it means | What the user sees |
+|---|---|---|
+| Only what is drawn | Work back from the layers on screen. Code on a layer that is hidden, outside its time range or under a hidden parent does not run. | Hiding a layer makes the project lighter. |
+| Only what changed | If nothing it reads changed, reuse the last result. Code that reads only constants and sliders runs once. | A layer that does not move costs nothing. |
+| Identical code together | The same code on 100 layers runs once, for 100 sets of values. A copy and a layer are the same thing here. | Duplicating a layer does not make it heavier. |
+| Simple forms | Code that depends on time alone is turned into a curve and looked up. | Playback reads a table. |
+| Ahead of time | Code that does not depend on an earlier time is computed for the frames after the playhead, in spare time. | Playback does not stutter. |
+| Heavy work on the GPU | Positions of thousands of copies are computed on the GPU. The CPU hands over numbers. | A thousand copies stay light. |
+
+### 6.3 The code as written is the reference
+
+Code is first run as written, so it shows at once. A faster form is made in the background and replaces it only if it gives the same results. Code that cannot be made faster keeps running as written. Some code is fast and some is not, but no code fails to run. This is [AGENTS.md](../../AGENTS.md) principle 1: posted code is run as it is, not imitated.
+
+### 6.4 Cost is visible
+
+After Effects cannot say which expression is slow. Here, the layer list has a column for the cost of code (none, light, heavy), sortable. Each piece of code shows its time per frame ("0.3 ms"). The status bar warns when the total approaches the frame budget. A heavy piece of code says why, and how to write it so it is lighter.
+
+### 6.5 The scale to design for
+
+This is an estimate by the author and Claude, not a measurement: **200 layers with code, 10,000 copies, 60 fps**, with a few milliseconds a frame for all code together. 10,000 copies at 60 fps is 600,000 evaluations a second. A project with thousands of layers with code is unusual (templates, data-driven work). It need not be fast, but it must not break, and it must say it is heavy.
+
+## 7. The node graph
+
+The one intermediate form is a graph of nodes, as in TSL.
+
+```
+code (any language)
+  │  run once; the inputs are marks: time, copy number i, sliders, reads
+  ▼
+node graph  ── the only intermediate form
+  ├─ UI:       what it reads, sliders, types, who reads it, cost
+  ├─ GPU:      compiled to WGSL, computed in bulk
+  ├─ CPU:      computed in bulk
+  └─ check:    compared with the result of running the code as written
+```
+
+TSL works in two stages. JavaScript runs once and builds the graph of nodes, which is compiled to WGSL or GLSL. Only a few numbers (uniforms) change per frame, and the shader is not rebuilt. Keyframes on a slider move a uniform and nothing else.
+
+What follows from using a graph:
+
+| Decided earlier | In the graph |
+|---|---|
+| What the code reads; who reads it | Nodes that read a property. Count the leaves. |
+| Sliders, keyed over time | Uniform nodes. Only their values change. |
+| Lists filtered by type | Every node has a type. |
+| Identical code together | The same graph is the same graph. One build, one computation. |
+| Cost shown | The sum of the cost of the nodes. |
+| Hot reload | Rebuild the graph, swap what differs, reuse what did not change. |
+
+How each language gets into a graph: the code is run once, as written, with marks instead of numbers. An After Effects expression already has its `+ - * /` rewritten once, by `AE.compile`; that step would build nodes instead of numbers, and `if` and `?:` become `select`. Cavalry's `each(i, n, t, k)` gets `i` as the copy-number node, so all copies are computed at once. Lua and Python overload operators, so they need no rewrite.
+
+What falls outside, and keeps running as written, with the reason shown: loops whose count depends on a value, side effects inside an `if`, strings and objects (a node has a number, vector, colour, boolean or reference as its type), references built by calculation (treated as "may change", which is safe and slow), and recurrences on an earlier time (they run in order).
+
+The vocabulary of nodes is the meaning that every language shares. The proposal is TSL as the base, plus three nodes: read another property, read at another time, and copy number.
+
+The result is lightest when drawing reads per-copy values straight from a GPU buffer. The ideal includes that.
+
+## 8. Rules this ideal relies on
+
+From [AGENTS.md](../../AGENTS.md):
+
+1. Net expressions are not translated; the posted code is run as it is (sections 6.3 and 7).
+2. No value is fixed without a source; a slider's range is only for display (3.4).
+3. No web page inside the app; looks are read from the code and edits are written back; no second copy of the code (3.1, 3.4).
+5. Dart holds only the look; the lists, chips and curves are looks, and what they show comes from the engine (sections 3.5 and 4).
+
+## 9. Open questions
+
+1. **Node vocabulary:** TSL as the base with three nodes added, or Motolii's own?
+2. **Drawing:** may drawing read per-copy values from a GPU buffer, and is that part of the ideal?
+3. **Code and keyframes:** does code sit on top by default (the proposal) or replace?
+4. **Many copies:** a strip of copies against time, or one copy at a time?
+5. **Blender Python:** drivers only, or `bpy` and the objects it reaches?
+6. **p5.js:** later, as written; is that acceptable?
+
+Decided in the conversation: renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
+
+## 10. Relation to earlier notes
+
+[create_and_program_shelves.md](create_and_program_shelves.md) (9 November) says an After Effects expression lives only in the layer's detail panel and is not shown in the Program tab. This note proposes that the Inspector card stays the place for light use and that **Edit opens any code in the Program tab**. If this ideal is accepted, that line of the earlier note is to be revised. The names in that note ("Expression", the Create shelf) are not changed here.
+
+## Appendix: where the code stands (2026-11-11), kept apart from the ideal
+
+- `AE.compile` reads an expression once with acorn and rewrites `+ - * /` as vector-aware calls. Each frame the resulting function is called in QuickJS-ng ([ae_expr.h](../../engine/community/after_effects/ae_expr.h)).
+- `each()` is called once per copy per frame (`Script::ask` in [script_runner.cpp](../../engine/community/script_runner/script_runner.cpp)).
+- QuickJS-ng has no JIT. The note [sketch_import_test_record.md](sketch_import_test_record.md) says what that costs has not been measured. It did measure p5 sketches: a median of 0.8 ms a frame, and a median of 20 shapes a frame (at most 7,611). Copies of one solid are capped at 1000.
+- TSL: three.js's own node builder runs in QuickJS as a tool; only the resulting `.wgsl` files are on the shelf ([ARCHITECTURE.md](../ARCHITECTURE.md)).
+- Not measured: the cost of `each()` at 1,000 and at 10,000 copies. The engine builds on macOS only, so this was not measured in the session that wrote this note.
+
+Candidates for later, surveyed from documentation and not tried (none is part of the ideal): MLIR (an intermediate-form framework in LLVM; it does not read JavaScript or Python for you), tree-sitter (incremental parsing with byte positions), wasm3, WAMR and wasmtime (WebAssembly runtimes), Slang (shader language; WGSL and Metal output are experimental), NumExpr (a bytecode machine that runs an expression over chunks of 4096 values).
+
+Sources used for the outside facts:
+[MLIR users](https://mlir.llvm.org/users/) ·
+[MLIR Toy tutorial](https://mlir.llvm.org/docs/Tutorials/Toy/) ·
+[MLIR SPIR-V dialect](https://llvm.googlesource.com/llvm-project/+/a58dcc5e08665f2d58a28c9d4510cf94de6ed3bf/mlir/docs/Dialects/SPIR-V.md) ·
+[three.js TSL docs](https://threejs.org/docs/TSL.html) ·
+[three.js TSL wiki](https://github.com/mrdoob/three.js/wiki/./Three.js-Shading-Language) ·
+[NumExpr](https://numexpr.readthedocs.io/en/stable/intro.html) ·
+[WebAssembly runtimes compared (arXiv)](https://www.arxiv.org/pdf/2405.09213) ·
+[Slang compilation API](https://shader-slanggithubio-aidanfnv-wip.readthedocs.io/en/latest/compilation-api.html).
