@@ -50,16 +50,34 @@ const std::vector<float>* loudness_of(const std::string& file,
 
 }  // namespace motolii
 
+// The file of a video layer, or "" when the layer is not a video.
+static std::string video_file(Motolii* m, int layer) {
+  return by_look(m, [=] {
+    return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video"
+               ? doc_word(*m->d, layer, "file")
+               : std::string();
+  });
+}
+
+// When a video layer comes on, where in the video it starts playing, how fast
+// it plays, and how long it lasts (-1 for to the end): the numbers that map
+// the video's own time to project time.
+struct VideoClock {
+  double start, begin, speed, lasts;
+};
+static VideoClock video_clock(Doc& d, int layer) {
+  return {doc_number(d, layer, "start", 0, 0),
+          doc_number(d, layer, "begin", 0, 0),
+          doc_number(d, layer, "speed", 0, 1),
+          doc_number(d, layer, "duration", 0, -1)};
+}
+
 // Copies the loudness of a video layer's sound, in dB, to db: 100 samples per
 // second of the video's own time, at most room of them. Returns how many
 // samples the sound has, which can exceed room, or 0 if the layer is not a
 // video or has no sound. Reads the file on first use.
 int motolii_loudness(Motolii* m, int layer, float* db, int room) {
-  const std::string file = by_look(m, [=] {
-    return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video"
-               ? doc_word(*m->d, layer, "file")
-               : std::string();
-  });
+  const std::string file = video_file(m, layer);
   if (file.empty()) return 0;
   const std::vector<float>& all = *loudness_of(file);
   for (int i = 0; i < room && i < (int)all.size(); ++i) db[i] = all[(size_t)i];
@@ -71,11 +89,7 @@ int motolii_loudness(Motolii* m, int layer, float* db, int room) {
 // been read yet (motolii_loudness reads it), or 0 if the layer has no sound.
 int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
                           float* db) {
-  const std::string file = by_look(m, [=] {
-    return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video"
-               ? doc_word(*m->d, layer, "file")
-               : std::string();
-  });
+  const std::string file = video_file(m, layer);
   if (file.empty()) return 0;
   const std::vector<float>* all = loudness_of(file, false);
   if (!all) return -1;
@@ -85,10 +99,7 @@ int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
   // starts playing.
   return by_look(m, [&] {
     Doc& d = *m->d;
-    const double start = doc_number(d, layer, "start", 0, 0),
-                 begin = doc_number(d, layer, "begin", 0, 0),
-                 speed = doc_number(d, layer, "speed", 0, 1),
-                 lasts = doc_number(d, layer, "duration", 0, -1);
+    const auto [start, begin, speed, lasts] = video_clock(d, layer);
     for (int i = 0; i < n; ++i) {
       const double s = from + (to - from) * i / n,
                    own = begin + (s - start) * speed;
@@ -175,11 +186,7 @@ bool duck(Motolii* m, int layer) {
 // video.
 int motolii_strikes(Motolii* m, int layer, double rise, int own, double* at,
                     int room) {
-  const std::string file = by_look(m, [=] {
-    return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video"
-               ? doc_word(*m->d, layer, "file")
-               : std::string();
-  });
+  const std::string file = video_file(m, layer);
   if (file.empty()) return 0;
   const std::vector<double> struck =
       sound_strikes(*loudness_of(file), 100.0, rise);
@@ -194,10 +201,7 @@ int motolii_strikes(Motolii* m, int layer, double rise, int own, double* at,
   // lasts.
   return by_look(m, [&] {
     Doc& d = *m->d;
-    const double start = doc_number(d, layer, "start", 0, 0),
-                 begin = doc_number(d, layer, "begin", 0, 0),
-                 speed = doc_number(d, layer, "speed", 0, 1),
-                 lasts = doc_number(d, layer, "duration", 0, -1);
+    const auto [start, begin, speed, lasts] = video_clock(d, layer);
     int n = 0;
     for (const double t : struck) {
       const double when = speed == 0.0 ? -1.0 : start + (t - begin) / speed;
