@@ -145,6 +145,23 @@ String shelfAdd(
   return '';
 }
 
+/// Copies the images the header of the effect file [from] names (`--image@name:path`) from beside it to [dir], keeping their folders.
+/// A path that starts with / or is not there is left; with [overwrite] false a file already in [dir] is kept.
+void shelfCopyImages(String from, String dir, {bool overwrite = true}) {
+  final home = from.substring(0, from.lastIndexOf('/'));
+  for (final l in File(from).readAsLinesSync()) {
+    final image = RegExp(r'^//.*--image@[^:]*:(.+)$').firstMatch(l)?[1]?.trim();
+    if (image == null ||
+        image.startsWith('/') ||
+        !File('$home/$image').existsSync() ||
+        (!overwrite && File('$dir/$image').existsSync())) {
+      continue;
+    }
+    File('$dir/$image').parent.createSync(recursive: true);
+    File('$home/$image').copySync('$dir/$image');
+  }
+}
+
 /// Copies the files the engine reads beside an effect's file (see _beside in effect_code.dart).
 /// That is an ISF's .vs, its lines of first.tsv (under the new name, appended to the folder's), and the images its
 /// header names (copied only where none exists, so nothing is overwritten).
@@ -173,17 +190,7 @@ void _beside(String from, String to, String dir) {
           .writeAsStringSync('${lines.join('\n')}\n', mode: FileMode.append);
     }
   }
-  for (final l in File(from).readAsLinesSync()) {
-    final image = RegExp(r'^//.*--image@[^:]*:(.+)$').firstMatch(l)?[1]?.trim();
-    if (image == null ||
-        image.startsWith('/') ||
-        !File('$home/$image').existsSync() ||
-        File('$dir/$image').existsSync()) {
-      continue;
-    }
-    File('$dir/$image').parent.createSync(recursive: true);
-    File('$home/$image').copySync('$dir/$image');
-  }
+  shelfCopyImages(from, dir, overwrite: false);
 }
 
 /// Renames a file the user added to [to] by writing the name beside it. Returns why it failed, or '' on success.

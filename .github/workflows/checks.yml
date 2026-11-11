@@ -41,8 +41,8 @@ jobs:
       - run: ast-grep scan
         working-directory: app
       - run: "! grep -rn 'ast-grep-ignore' app/lib"   # a bare comment also silences no-suppression, so a rule cannot see it
-      # Copy-paste: jscpd at its own defaults (50 tokens, 5 lines). Measured 2026-11-11: 20 clones, 0.35% of lines. Lower the number as clones go.
-      - run: npx --yes jscpd@4.3.0 lib --format dart --formats-exts "dart:dart" --ignore "**/motolii_bindings.dart" --threshold 0.5 --reporters console
+      # Copy-paste: jscpd at its own defaults (50 tokens, 5 lines). Measured 2026-11-11: 20 clones, 0.35% of lines; after folding 3 clones, 0.05%. Lower the number as clones go.
+      - run: npx --yes jscpd@4.3.0 lib --format dart --formats-exts "dart:dart" --ignore "**/motolii_bindings.dart" --threshold 0.1 --reporters console
         working-directory: app
   paths:
     runs-on: ubuntu-latest

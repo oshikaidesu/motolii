@@ -250,18 +250,7 @@ class _EffectCodeState extends State<EffectCode> {
         File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n');
       }
     }
-    for (final l in File(from).readAsLinesSync()) {
-      final image = RegExp(r'^//.*--image@[^:]*:(.+)$')
-          .firstMatch(l)?[1]
-          ?.trim();
-      if (image == null ||
-          image.startsWith('/') ||
-          !File('$home/$image').existsSync()) {
-        continue;
-      }
-      File('$dir/$image').parent.createSync(recursive: true);
-      File('$home/$image').copySync('$dir/$image');
-    }
+    shelfCopyImages(from, dir);
   }
 
   // Adds the card's code to the shelf under [name]: an effect to the Effects shelf, an expression to Create's Copies
