@@ -1,18 +1,16 @@
 // The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
+import 'package:motolii/workspace/tool_panel/ease/ease_writer.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
-import 'dart:async' show scheduleMicrotask;
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_cards.dart';
@@ -39,12 +37,12 @@ bool easeJump = true;
 bool easeOvershoot = false;
 
 class EaseToolState extends State<EaseTool> with EaseEnds {
-  // While the pointer is down, each new ease is sent to the document so the canvas and the bars follow it.
-  // While one is in flight the next waits and any in between are skipped. The whole drag is one undo step.
-  bool _down = false, _open = false, _going = false;
-  Ease? _pending, _waiting;
-  // The ease sent to the document and not yet confirmed. It is shown meanwhile instead of the old one.
-  Ease? _told;
+  // What is written to the document, and how far the write has got (ease_writer.dart).
+  late final writer = EaseWriter(
+    alive: () => mounted,
+    rebuild: setState,
+    showTrouble: (why) => setState(() => trouble = why),
+  );
   // For layered cards, the card the graph shows. Below 0 means the whole stack. Another segment resets it to the first card.
   int _card = 0;
   String _cardOf = '';
@@ -52,8 +50,6 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   Ease? _held;
   // True after the user clicks the empty slot in the card flow: the next pick is added there, like Bitwig's + button.
   bool _adding = false;
-  // The easing before a preview started. The preview runs in an open undo step and is kept only if the tile is dropped there.
-  Ease? _base;
   // The shelf is open, and the shelf is built. It stays built until it has slid away.
   bool _shelf = false, _shelfShown = false;
   // Like AbsentMotion's lockOvershoot: once the graph shows past 0 and 1 it stays so, until the menu or another card or segment resets it.
@@ -83,170 +79,6 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     super.dispose();
   }
 
-  // The segments of every picked keyframe, on any layer, one for each property keyed there.
-  // A last keyframe has no segment after it, so the segment ending at it is used.
-  List<(int, String, double)> _stretches(WorkspaceController ws) => [
-    if (ws.stretch case final s?)
-      (int.parse(s.layer), s.name, s.at)
-    else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
-      if (easeSpan(ws) case final s?)
-        for (final at in keysAt(ws, s).entries)
-          (int.parse(s.layer.id), at.key, at.value),
-    for (final k in ws.keys)
-      if (ws.layers.where((l) => l.id == k.layer).firstOrNull case final l?)
-        for (final at in keysAt(ws, (
-          layer: l,
-          from: l.keys.any((f) => f > k.frame)
-              ? k.frame
-              : (l.keys
-                        .where((f) => f < k.frame)
-                        .fold<int?>(
-                          null,
-                          (a, f) => a == null || f > a ? f : a,
-                        ) ??
-                    k.frame),
-          to: k.frame,
-          picked: k.frame,
-        )).entries)
-          (int.parse(l.id), at.key, at.value),
-  ];
-
-  // Sends the newest ease while the pointer is down. The first call opens the undo step.
-  void _live(WorkspaceController ws, Ease e) {
-    final m = ws.inside!;
-    if (_going) {
-      _waiting = e;
-      return;
-    }
-    final all = _stretches(ws);
-    if (all.isEmpty) return;
-    if (!_open) {
-      m.later('together', number: 1);
-      _open = true;
-    }
-    _going = true;
-    var last = 0;
-    _define(m, said(e));
-    for (final (t, name, at) in all) {
-      last = m.later('easing', layer: t, name: name, number: at, word: said(e));
-    }
-    for (final t in {for (final (t, _, _) in all) t}) {
-      last = m.later('show', layer: t);
-    }
-    ws.after(last, (_, _) {
-      _going = false;
-      final next = _waiting;
-      _waiting = null;
-      if (next != null) _live(ws, next);
-    });
-  }
-
-  // Abandons a preview: the undo step it opened is removed whole.
-  void _giveUp(WorkspaceController ws) {
-    _waiting = null;
-    if (!_open) {
-      _base = null;
-      return;
-    }
-    _open = false;
-    ws.after(
-      ws.inside!.later('together', number: -1),
-      (_, _) => mounted ? setState(() => _base = null) : null,
-    );
-  }
-
-  void _define(Motolii m, String word) {
-    for (final (name, goes) in easeDefines(word)) {
-      m.later('define', name: name, word: goes);
-    }
-  }
-
-  void _settle(WorkspaceController ws, EaseSpan? span) {
-    final e = _pending;
-    _pending = null;
-    _waiting = null;
-    if (e == null && _base != null) {
-      // A tile was previewed and released. A drop on the graph or the flow is handled in this same event.
-      scheduleMicrotask(() => _pending == null && !_down ? _giveUp(ws) : null);
-      return;
-    }
-    _base = null;
-    if (e == null || span == null) return;
-    _told = e;
-    final m = ws.inside!, to = said(e);
-    final all = _stretches(ws);
-    // Segments that already have this easing are skipped, so numbers with no field here are not overwritten.
-    // If the drag already sent the ease, it is sent once more on release and the undo step is closed.
-    final told = [
-      for (final (t, name, at) in all)
-        if (_open || said(heard(m.easingOf(t, name, at))) != to) (t, name, at),
-    ];
-    if (_open) {
-      _open = false;
-      _define(m, to);
-      for (final (t, name, at) in told) {
-        m.later('easing', layer: t, name: name, number: at, word: to);
-      }
-      _define(m, to);
-      ws.after(
-        m.later('together'),
-        (done, why) =>
-            mounted ? setState(() => trouble = done ? null : why) : null,
-      );
-      return;
-    }
-    if (told.isEmpty) {
-      return setState(
-        () => trouble = all.isEmpty ? 'No key where the stretch begins' : null,
-      );
-    }
-    m.later('together', number: 1);
-    _define(m, to);
-    for (final (t, name, at) in told) {
-      m.later('easing', layer: t, name: name, number: at, word: to);
-    }
-    _define(m, to);
-    ws.after(
-      m.later('together'),
-      (done, why) =>
-          mounted ? setState(() => trouble = done ? null : why) : null,
-    );
-  }
-
-  // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
-  void _onEveryKey(WorkspaceController ws, Ease e) {
-    final m = ws.inside!,
-        layers = ws.keys.isNotEmpty
-            ? {for (final k in ws.keys) k.layer}
-            // Nothing picked: the layer of the segment the playhead is in.
-            : {if (easeSpan(ws) case final s?) s.layer.id};
-    m.later('together', number: 1);
-    _define(m, said(e));
-    for (final l in ws.layers.where((l) => layers.contains(l.id))) {
-      for (final f in l.keys) {
-        for (final at in keysAt(ws, (
-          layer: l,
-          from: f,
-          to: f,
-          picked: f,
-        )).entries) {
-          m.later(
-            'easing',
-            layer: int.parse(l.id),
-            name: at.key,
-            number: at.value,
-            word: said(e),
-          );
-        }
-      }
-    }
-    ws.after(
-      m.later('together'),
-      (done, why) =>
-          mounted ? setState(() => trouble = done ? null : why) : null,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.of(context, {
@@ -267,28 +99,29 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                 at.values.first,
               ),
             );
-      if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) {
-        _told = null;
+      if (writer.told case final t?
+          when !ws.waiting || said(t) == said(inDocument)) {
+        writer.told = null;
       }
-      var ease = _pending ?? _told ?? _base ?? inDocument;
+      var ease = writer.pending ?? writer.told ?? writer.base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {
         // There is no tile for this kind, so its curve is the one the engine computes for it now.
         ease = easeCard(said(ease), m);
       }
       void set(Ease e) {
-        setState(() => _pending = e);
-        _down ? _live(ws, e) : _settle(ws, span);
+        setState(() => writer.pending = e);
+        writer.down ? writer.live(ws, e) : writer.settle(ws, span);
       }
 
       return Listener(
-        onPointerDown: (_) => _down = true,
+        onPointerDown: (_) => writer.down = true,
         onPointerUp: (_) {
-          _down = false;
-          _settle(ws, span);
+          writer.down = false;
+          writer.settle(ws, span);
         },
         onPointerCancel: (_) {
-          _down = false;
-          setState(() => _pending = null);
+          writer.down = false;
+          setState(() => writer.pending = null);
         },
         child: _body(ws, span, ease, set),
       );
@@ -363,9 +196,9 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     void over(Ease? e) {
       setState(() => _held = e);
       if (ws.inside == null || span == null) return;
-      if (e == null) return _giveUp(ws);
-      _base ??= ease;
-      _live(ws, e);
+      if (e == null) return writer.giveUp(ws);
+      writer.base ??= ease;
+      writer.live(ws, e);
     }
 
     Future<void> paste(void Function(Ease) put) async {
@@ -462,7 +295,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                 (
                   'all',
                   'Paste Curve to All Keyframes',
-                  () => paste((e) => _onEveryKey(ws, e)),
+                  () => paste((e) => writer.onEveryKey(ws, e)),
                 ),
               (
                 'jump',
