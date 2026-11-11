@@ -6,8 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/workspace/workspace.dart';
-import 'package:motolii/workspace/commands/menu_bar.dart'
-    show WorkspaceMenus, workspaceAligns, workspaceTimes;
+import 'package:motolii/workspace/commands/command_arrange.dart'
+    show workspaceAligns, workspaceTimes;
+import 'package:motolii/workspace/commands/menu_bar.dart' show WorkspaceMenus;
 
 extension WorkspaceMenuItems on WorkspaceState {
   void _wear(String? skin) => setState(
