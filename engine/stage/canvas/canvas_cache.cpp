@@ -189,6 +189,9 @@ void cache_draw(Stage& s, Canvas2D* d, int at, bool keep,
                 const std::vector<double>* paints = nullptr) {
   if (paints)
     sketch_draw(d, *paints), d->targetAt = at;
+  else if (d->redraw)
+    d->redraw(at), d->canvas->update(), d->canvas->draw(true),
+        d->stale = true, d->canvas->sync(), d->targetAt = at;
   else if (d->film->frame(d->fromFrame + (float)at) == tvg::Result::Success ||
            d->targetAt != at) {
     // The 3D layers have sheets of their own and are not drawn flat here.

@@ -86,7 +86,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing, and subtitle files (ASS, SRT, LRC, WebVTT): recognised and handed to one of the above (`adapter.h`). |
 | `aviutl/` | AviUtl2 scripts, Lua and HLSL (`aviutl.h`). |
 | `subtitles/` | Subtitles and timed lyrics as they are written: FFmpeg tells them and writes SRT, LRC, WebVTT and the rest as ASS; libass draws ASS, karaoke and override tags included (`subtitles.h`). The sites adapter wraps a pasted file into a sketch that draws the moment asked. |
-| `css/` | CSS animations as posted on CodePen, moving a text layer's letters: the pen's page run by Blitz and Stylo, in Rust (`css.h`, `css.rs`). Motolii gives each letter's box and gets back how the CSS moves it. |
+| `css/` | CSS animations as posted, run by Blitz and Stylo, in Rust. A CodePen pen moving a text layer's letters (`css.h`, `css.rs`): Motolii gives each letter's box and gets back how the CSS moves it. An SVG moved by its own CSS (`svg.h`, `svg.rs`): written again for each frame with the values in its attributes, for ThorVG to draw. |
 | `absent_motion/` | AbsentMotion motion and text effects (`absent_motion.h`). |
 | `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. |
 

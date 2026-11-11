@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -24,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "community/css/svg.h"
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_edge.h"
@@ -239,9 +241,47 @@ Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place,
   if (!std::filesystem::is_regular_file(file)) return nullptr;
   const std::string ext = std::filesystem::path(file).extension().string();
   const bool lottie = ext == ".json" || ext == ".lot";
+  std::string text;
+  if (ext == ".svg") {
+    std::ifstream in(file, std::ios::binary);
+    text.assign(std::istreambuf_iterator<char>(in), {});
+  }
   Canvas2D* built = place_canvas(
       s,
       [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
+        // An SVG moved by CSS @keyframes, which ThorVG does not run: Blitz
+        // plays its CSS and writes the SVG again for each frame
+        // (community/css/svg.h). It lasts ten minutes at 60 frames a second,
+        // as a sketch does.
+        if (text.find("@keyframes") != std::string::npos) {
+          std::shared_ptr<MotoliiSvg> svg(motolii_svg_new(text.c_str()),
+                                          motolii_svg_free);
+          tvg::Picture* first = tvg::Picture::gen();
+          float fw = 0.f, fh = 0.f;
+          const bool read = svg && first->load(file) == tvg::Result::Success &&
+                            first->size(&fw, &fh) == tvg::Result::Success &&
+                            fw > 0.f && fh > 0.f;
+          tvg::Paint::rel(first);
+          if (read) {
+            const float fit = (float)std::max(s.w, s.h) / std::max(fw, fh);
+            *w = 2 * (int)std::lround(0.5f * fw * fit);
+            *h = 2 * (int)std::lround(0.5f * fh * fit);
+            tvg::Scene* scene = tvg::Scene::gen();
+            d->redraw = [svg, scene, w = (float)*w, h = (float)*h](int at) {
+              scene->remove();
+              const char* now = motolii_svg_at(svg.get(), at / 60.0);
+              tvg::Picture* one = tvg::Picture::gen();
+              if (now && one->load(now, (uint32_t)std::strlen(now), "svg",
+                                   nullptr, true) == tvg::Result::Success)
+                one->size(w, h), scene->add(one);
+              else
+                tvg::Paint::rel(one);
+            };
+            d->redraw(0);
+            d->frames = 36000.f, d->seconds = 600.f;
+            return scene;
+          }
+        }
         tvg::LottieAnimation* own =
             lottie ? tvg::LottieAnimation::gen() : nullptr;
         d->film = own ? own : tvg::Animation::gen();

@@ -162,6 +162,10 @@ struct Canvas2D {
   std::atomic<int> keepAge{0};
   // The animation. Driver thread only.
   tvg::Animation* film = nullptr;
+  // For a picture made again at each frame (an SVG moved by its CSS, see
+  // image_canvas): puts frame `at` of 60 a second in the paint the canvas
+  // holds. Driver thread.
+  std::function<void(int)> redraw;
   // For a 2D sketch: produces the paints of a frame on a canvas that holds
   // another canvas, from the script's paints. Main thread. See canvas_sketch.h.
   std::function<std::vector<double>(int, int)> sketch;

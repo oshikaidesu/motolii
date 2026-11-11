@@ -6,6 +6,8 @@
 //! animations; Motolii lays out and draws the letters, so it gives each letter's box, and gets back how the CSS moves it.
 //! Checked against Chrome: docs/design/next_expressions.md, Q7.
 
+pub mod svg;
+
 use std::collections::HashMap;
 use std::ffi::{CStr, c_char};
 
@@ -19,12 +21,40 @@ use style::values::computed::transform::{Matrix3D, Transform, TransformOperation
 use style::values::computed::{CSSPixelLength as Length, LengthPercentage, Rotate};
 use style::values::generics::transform::{GenericTransform, Scale, Translate};
 
-/// One pen's page, with one text layer's words in it.
-pub struct Page {
+/// A page Blitz plays: its document as at `now` seconds.
+pub(crate) struct Played {
     page: String,
     size: (u32, u32),
-    doc: HtmlDocument,
+    pub doc: HtmlDocument,
     now: f64,
+}
+
+impl Played {
+    pub fn new(page: String, size: (u32, u32)) -> Played {
+        let doc = Played::open(&page, size);
+        Played { page, size, doc, now: 0.0 }
+    }
+
+    fn open(page: &str, (w, h): (u32, u32)) -> HtmlDocument {
+        let config = DocumentConfig { viewport: Some(Viewport::new(w, h, 1.0, ColorScheme::Light)), ..Default::default() };
+        let mut doc = HtmlDocument::from_html(page, config);
+        doc.resolve(0.0);
+        doc
+    }
+
+    /// Plays to `t` seconds. Stylo moves an animation on by at most one iteration an update (iterate_if_necessary,
+    /// servo/animation.rs), as Servo updates once a frame: so the page goes forward a frame (1/60 s) at a time, and back
+    /// by starting again.
+    pub fn to(&mut self, t: f64) {
+        if t < self.now { self.doc = Played::open(&self.page, self.size); self.now = 0.0; }
+        while self.now + 1.0 / 60.0 < t { self.now += 1.0 / 60.0; self.doc.resolve(self.now); }
+        if t != self.now { self.now = t; self.doc.resolve(t); }
+    }
+}
+
+/// One pen's page, with one text layer's words in it.
+pub struct Page {
+    played: Played,
     /// The element each of Motolii's letters (or words) is, in its order; None for a space.
     letters: Vec<Option<NodeId>>,
 }
@@ -83,7 +113,8 @@ impl Page {
         let page = format!(
             "<!doctype html><html><head><meta charset=\"utf-8\"><style>{css}</style></head><body>{}</body></html>",
             markup(html, text, nth));
-        let doc = Page::open(&page, size);
+        let played = Played::new(page, size);
+        let doc = &played.doc;
         let pick = |sel: &str| doc.query_selector_all(sel).map(|v| v.to_vec()).unwrap_or_default();
         let (chars, words) = (pick("[data-motolii] .char"), pick("[data-motolii] .word"));
         // Motolii's letters are every character of the line, spaces too; its words are what lies between spaces
@@ -94,14 +125,7 @@ impl Page {
             let mut k = 0;
             text.chars().map(|c| if c.is_whitespace() { None } else { k += 1; chars.get(k - 1).copied() }).collect()
         };
-        Page { page, size, doc, now: 0.0, letters }
-    }
-
-    fn open(page: &str, (w, h): (u32, u32)) -> HtmlDocument {
-        let config = DocumentConfig { viewport: Some(Viewport::new(w, h, 1.0, ColorScheme::Light)), ..Default::default() };
-        let mut doc = HtmlDocument::from_html(page, config);
-        doc.resolve(0.0);
-        doc
+        Page { played, letters }
     }
 
     pub fn letters(&self) -> usize { self.letters.len() }
@@ -110,11 +134,8 @@ impl Page {
     /// middle, as the CSS at `t` seconds moves it with everything around it. `boxes` is each letter's box, x y w h on the
     /// page, as Motolii lays it out (a space's is not read).
     pub fn at(&mut self, t: f64, boxes: &[[f32; 4]]) -> Vec<[f64; 17]> {
-        // Stylo moves an animation on by at most one iteration an update (iterate_if_necessary, servo/animation.rs), as
-        // Servo updates once a frame: so the page goes forward a frame (1/60 s) at a time, and back by starting again.
-        if t < self.now { self.doc = Page::open(&self.page, self.size); self.now = 0.0; }
-        while self.now + 1.0 / 60.0 < t { self.now += 1.0 / 60.0; self.doc.resolve(self.now); }
-        if t != self.now { self.now = t; self.doc.resolve(t); }
+        self.played.to(t);
+        let doc = &self.played.doc;
         // Each element's box: a letter's as given, any other's around the letters inside it.
         let mut around: HashMap<NodeId, [f32; 4]> = HashMap::new();
         for (i, e) in self.letters.iter().enumerate() {
@@ -123,7 +144,7 @@ impl Page {
             while let Some(id) = node {
                 let r = around.entry(id).or_insert([f32::MAX, f32::MAX, f32::MIN, f32::MIN]);
                 *r = [r[0].min(b[0]), r[1].min(b[1]), r[2].max(b[0] + b[2]), r[3].max(b[1] + b[3])];
-                node = self.doc.get_node(id).and_then(|n| n.parent);
+                node = doc.get_node(id).and_then(|n| n.parent);
             }
         }
         self.letters.iter().enumerate().map(|(i, e)| {
@@ -131,10 +152,12 @@ impl Page {
             let (mut opacity, mut total) = (1.0, Transform3D::<f64>::identity());
             let mut node = *e;
             while let Some(id) = node {
-                let Some(n) = self.doc.get_node(id) else { break };
+                let Some(n) = doc.get_node(id) else { break };
                 if let (Some(styles), Some(r)) = (n.primary_styles(), around.get(&id)) {
                     opacity *= styles.get_effects().opacity as f64;
-                    total = total.then(&placed(&styles, r));
+                    // A plain inline box is not a transformable element (drafts.csswg.org/css-transforms-1/
+                    // #transformable-element): letters left inline, with no display set, do not move in a browser either.
+                    if !styles.get_box().display.is_inline_flow() { total = total.then(&placed(&styles, r)); }
                 }
                 node = n.parent;
             }
@@ -152,11 +175,8 @@ fn lp(px: f32) -> LengthPercentage { LengthPercentage::new_length(Length::new(px
 /// The element's current transformation matrix on the page, as CSS Transforms 2 §6 composes it: transform-origin,
 /// translate, rotate, scale, transform, back by the origin (drafts.csswg.org/css-transforms-2/#ctm; Blitz's own
 /// resolve_2d_transform does the same in 2D). `r` is its box, x0 y0 x1 y1 on the page.
-fn placed(styles: &ComputedValues, r: &[f32; 4]) -> Transform3D<f64> {
+pub(crate) fn placed(styles: &ComputedValues, r: &[f32; 4]) -> Transform3D<f64> {
     let b = styles.get_box();
-    // A plain inline box is not a transformable element (drafts.csswg.org/css-transforms-1/#transformable-element):
-    // letters left inline, with no display set, do not move in a browser either. Only its opacity counts.
-    if b.display.is_inline_flow() { return Transform3D::identity(); }
     if matches!(b.translate, Translate::None) && matches!(b.rotate, Rotate::None) && matches!(b.scale, Scale::None)
         && b.transform.0.is_empty() { return Transform3D::identity(); }
     let (w, h) = (r[2] - r[0], r[3] - r[1]);
