@@ -23,6 +23,10 @@ namespace motolii {
 
 struct Script::Own {
   Script::LayerReader reads;  // what layerValue() asks
+  Script::ImageSampler sample;  // what sampleImage() asks
+  Script::PointMapper point;    // what fromWorld() asks
+  bool asks = false;  // its text names one of those three: it asks the project,
+                      // which the thread that calls it holds
   JSRuntime* rt = nullptr;
   JSContext* cx = nullptr;
   JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
@@ -172,11 +176,6 @@ Script::Script(const std::string& file, const std::string& p5,
                       JS_NewCFunction(own->cx, text_read, "__text_read", 1));
     JS_SetPropertyStr(own->cx, g, "__jobs",
                       JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
-    JSValue reader = JS_NewInt64(own->cx, (int64_t)(intptr_t)&own->reads);
-    JS_SetPropertyStr(
-        own->cx, g, "layerValue",
-        JS_NewCFunctionData(own->cx, layer_value, 3, 0, 1, &reader));
-    JS_FreeValue(own->cx, reader);
     if (form == "subtitles") {
       own->subtitles = std::make_unique<Subtitles>(code.str());
       JSValue size = JS_NewArray(own->cx),
@@ -192,6 +191,22 @@ Script::Script(const std::string& file, const std::string& p5,
           JS_NewCFunctionData(own->cx, subtitles_frame, 2, 0, 1, &them));
       JS_FreeValue(own->cx, them);
     }
+    JS_FreeValue(own->cx, g);
+  }
+  {  // What any script may read of the project (script_runner.h): each
+     // function is handed the address of what answers it.
+    JSValue g = JS_GetGlobalObject(own->cx);
+    const auto give = [&](const char* name, JSCFunctionData* asks, int takes,
+                          void* answers) {
+      JSValue to = JS_NewInt64(own->cx, (int64_t)(intptr_t)answers);
+      JS_SetPropertyStr(own->cx, g, name,
+                        JS_NewCFunctionData(own->cx, asks, takes, 0, 1, &to));
+      JS_FreeValue(own->cx, to);
+      own->asks = own->asks || src.find(name) != std::string::npos;
+    };
+    give("layerValue", layer_value, 3, &own->reads);
+    give("sampleImage", sample_image, 5, &own->sample);
+    give("fromWorld", from_world, 3, &own->point);
     JS_FreeValue(own->cx, g);
   }
   std::string body = src;
@@ -244,6 +259,9 @@ Script::~Script() {
 }
 bool Script::ok() const { return own->trouble.empty(); }
 void Script::reads(LayerReader read) { own->reads = std::move(read); }
+void Script::reads_pictures(ImageSampler sample, PointMapper point) {
+  own->sample = std::move(sample), own->point = std::move(point);
+}
 bool Script::sketch() const { return own->sketch; }
 bool Script::lays() const {
   return own->cx && (own->relates || (!own->whole && !own->sketch));
@@ -411,7 +429,7 @@ std::vector<ScriptCopy> Script::copies(
     // document, held by this thread: both stay on this thread.
     constexpr int kCopiesAThread = 1000;
     int parts =
-        own->sketch || own->reads
+        own->sketch || own->asks
             ? 1
             : std::min<int>(
                   (int)std::max(1u, std::thread::hardware_concurrency()),

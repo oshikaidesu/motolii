@@ -16,6 +16,7 @@
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/scripts/script_reads.h"
 #include "document/scripts/scripts.h"
 #include "stage/render/render_stage.h"
 
@@ -223,6 +224,14 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // How long the project runs, so that a flow goes round a whole number of
     // times in it.
     numbers["round"] = d.on_stage.round;
+    // The layer's own number, as a relation's things have `id`: what an
+    // expression hands layerValue to ask where its own copies are.
+    numbers["id"] = layer;
+    // The project's second, After Effects' `time`: what layerValue, sampleImage
+    // and fromWorld are asked at. each()'s own t counts from where the layer
+    // begins.
+    numbers["time"] = said;
+    if (sc->run) doc_script_reads(d, *sc->run);
     // The fourth argument is the size of one project pixel in stage units at
     // the layer's depth. The last argument is the copies laid by the earlier
     // scripts, the fifth argument of each(); see script_runner.h.

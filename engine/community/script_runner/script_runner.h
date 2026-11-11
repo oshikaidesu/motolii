@@ -27,6 +27,7 @@
 // AE.compile(`...`) once, then AE.run(f, ...) in each(). The expression is
 // compiled once, not every frame. See ae_expr.h.
 
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -86,12 +87,29 @@ class Script {
   // Lets the sketch read the value of another layer: layerValue(id, name, t,
   // otherwise, copy) in its code gives what `read` answers, or NaN while none
   // is set. `copy` is which copy (a split text's letter) is read, -1 (left
-  // out) the layer itself. Only a relation written as a file uses it, see
-  // document/evaluate/world.h.
+  // out) the layer itself. What answers it from the project is
+  // document/scripts/script_reads.h.
   using LayerReader =
       std::function<double(int layer, const std::string& name, double t,
                            double otherwise, int copy)>;
   void reads(LayerReader read);
+  // Lets the script read the picture of another layer, under After Effects'
+  // names for it (ae-expressions.docsforadobe.dev/layer/general/ and
+  // /layer/space-transforms/), with the layer's number first as layerValue has
+  // it:
+  //   sampleImage(id, point, radius, postEffect, t) gives [red, green, blue,
+  //     alpha], each 0 to 1, of the rectangle `radius` ([x, y], left out: half
+  //     a pixel) around `point` in the layer's own pixels, at second t.
+  //   fromWorld(id, point, t) gives where a point of the stage is in the
+  //     layer's own pixels at second t, to be handed to sampleImage.
+  // While none is set the first gives [0, 0, 0, 0] and the second [NaN, NaN].
+  using ImageSampler =
+      std::function<std::array<double, 4>(int layer, double x, double y,
+                                          double rx, double ry,
+                                          bool post_effect, double t)>;
+  using PointMapper = std::function<std::array<double, 2>(
+      int layer, double x, double y, double z, double t)>;
+  void reads_pictures(ImageSampler sample, PointMapper point);
   // Returns the source lines of the sketch that draw, as sketch_marked reports
   // them.
   std::vector<int> lines() const;

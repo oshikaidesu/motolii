@@ -37,6 +37,11 @@
 //   AE.comp({ width, height, numLayers },
 //           [{ name, index, width, height, position: (t) => [x, y], controls
 //           }])
+//   // A layer may also be given sampleImage: (point, radius, postEffect, t) =>
+//   // [r, g, b, a] and fromWorld: (point, t) => [x, y]; they answer
+//   // thisComp.layer("...").sampleImage(), .fromComp() and .fromWorld(). A
+//   // script hands them the engine's functions of those names
+//   // (script_runner.h; shelves/expressions/away_from_dark.js).
 //   // Turns a parameter name into an identifier: AE.name("X Offset") is
 //   "X_Offset". AE.name("X Offset")
 //
@@ -122,6 +127,10 @@ inline const char ae_prelude[] = R"AEJS(
     L.position = new Prop(s.position || (() => [0, 0, 0]));
     L.transform = { position: L.position };
     L.effect = (n) => (m) => typeof L.controls === 'function' ? L.controls(n, m) : L.controls[n][m];
+    // The layer's picture, when the script gives what reads it: sampleImage(point, radius, postEffect, t) and a point brought into the
+    // layer's own pixels (fromComp, fromWorld), with After Effects' defaults: a radius of half a pixel, after effects, now.
+    L.sampleImage = (p, r, post, t) => s.sampleImage ? s.sampleImage(val(p), r === undefined ? [0.5, 0.5] : val(r), post === undefined ? true : post, t === undefined ? S.time : t) : [0, 0, 0, 0];
+    L.fromComp = L.fromWorld = (p, t) => s.fromWorld ? s.fromWorld(val(p), t === undefined ? S.time : t) : val(p);
     return L;
   };
   const makeComp = (o, specs) => {

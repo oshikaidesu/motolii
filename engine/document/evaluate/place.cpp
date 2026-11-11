@@ -2,6 +2,8 @@
 
 #include <filament/RenderableManager.h>
 
+#include <set>
+
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/shown.h"
 #include "document/marks.h"
@@ -96,6 +98,12 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     out.c = c, out.by = 1;
   } else if (const std::vector<DocScript*> scs = doc_placing_scs(d, layer);
              !scs.empty()) {
+    // An expression may ask where its own layer's copies are while they are
+    // being laid (layerValue with k.id and a copy:
+    // document/scripts/script_reads.h). It is told where they lie without the
+    // script and the expressions.
+    static std::set<int> laying;
+    if (laying.count(layer)) return out;
     DocPlaceCache::Scripted& kept = d.place_cache.scripted[layer];
     // `clock` is the layer's own time. A part after a cut continues from where
     // it was before the cut; see doc_own_clock.
@@ -111,7 +119,9 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
         kept.from != from) {
       kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d),
       kept.from = from;
+      laying.insert(layer);
       kept.copies = doc_expressions_lay(d, layer, scs, n, said, clock, gone);
+      laying.erase(layer);
     }
     const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
     out.c = c, out.by = 2;

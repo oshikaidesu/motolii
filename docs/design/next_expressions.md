@@ -429,11 +429,21 @@ The picture behind it is a spreadsheet: every property is a cell, an expression 
 
 Three things to build first, in this order, each a door like `layerValue` that every language gets at once:
 
-1. **Pixels.** After Effects' own `sampleImage(point, radius, postEffect, time)` returns the colour of another layer; take its name and arguments so posted expressions run. First demonstration: letters over a video, each reading the brightness under it and moving away from dark areas.
+1. **Pixels.** After Effects' own `sampleImage(point, radius, postEffect, time)` returns the colour of another layer; take its name and arguments so posted expressions run. First demonstration: letters over a video, each reading the brightness under it and moving away from dark areas. **Reached 2026-11-11 for the file of an image or video layer** (below).
 2. **Sound.** Bands and level as readable names.
 3. **Structure.** An expression that returns a range; rows of a CSV become layers.
 
 Then state with a cache, and the round trip between an expression and keyframes by curve fitting (a hand-made fix then lies on top of the code's motion as a correction).
+
+**The pixel door as it stands (2026-11-11).** Three functions, in any JavaScript on a layer (`each()`, `relate()`, a sketch), answered from the project by [script_reads.h](../../engine/document/scripts/script_reads.h):
+
+- `sampleImage(id, point, radius, postEffect, t)` and `fromWorld(id, point, t)`, After Effects' names and arguments with the layer's number first, as `layerValue` has it. An After Effects expression held by a script calls them as `thisComp.layer("Video").sampleImage(point)` and `.fromComp(point)`, with After Effects' defaults (a radius of half a pixel, after effects, now).
+- A video layer is read from the frame it shows at that second: GStreamer decodes it on the CPU and seeks accurately when the time asked is not the next one, so the same second gives the same frame.
+- An expression can ask where its own layer's letters are (`layerValue(k.id, 'x', k.time, 0, i)`), which After Effects' text selectors cannot.
+- **Shown:** [away_from_dark.js](../../shelves/expressions/away_from_dark.js) on seven rows of letters over a 10 s video of three dark discs. The share of letter pixels lying over the dark was 0.3698 with the engine before this (the expression threw; the letters stayed) and 0.0320 after, 95 % of the letter pixels still in the frame, and two exports the same in every frame. Stills taken at 7 s, 3 s and 7 s again put the letters where the film has them. The video and the measure were written by an agent that had not seen the engine's change (`docs/internal/sample_image/`, not in git).
+- **Cost:** the export took 20.6 s where it took 5.9 s: about 24 ms a frame for 71 letters reading 25 squares each, and the decode.
+- **Not done:** `postEffect` (the file is read, before masks, key and effects; any other kind of layer gives nothing); a bare `sampleImage(...)` on `thisLayer`, and the bare property names posted expressions lean on (`transform.position`, `width`); two times asked in one frame seek back and forth.
+- **Found on the way, not from this change:** a still taken right after a jump in time shows the video layer's frame from before the jump (`video_at` does not wait for a seek in flight). An export, which goes in order, does not.
 
 Fixed from the start: the same input gives the same output (an export must not change between runs); nothing is read from the network, only local files; the cost of an expression is always shown.
 
@@ -484,7 +494,7 @@ Easing is the example.
 - Before, the adapter for After Effects expressions computed its own easing in JavaScript, and ThorVG's expression runtime has a third. They did not agree: the adapter's `easeIn(0.5)` gave 0.125, and the one solver with lottie-web's control points gives 0.363 (commit 8516d84f2).
 - **Reached:** After Effects' `ease`, `easeIn` and `easeOut` are three sets of control points on that solver (the same commit).
 - **Not yet:** Stylo, the CSS engine of 5.4, still solves CSS curves with its own solver (question 7).
-- **`sampleImage`:** its arithmetic over a still picture is in the engine (commit c1db919c6), the first piece of section 11's pixels.
+- **`sampleImage`:** its arithmetic over a still picture is in the engine (commit c1db919c6), and since 2026-11-11 scripts and After Effects expressions call it on an image or video layer (section 11).
 - Posted code that carries its own easing inside it (anime.js code, a Lottie file) keeps it. That is the code as written.
 
 So making another tool's code run means bringing its names and its control points. It never means bringing a second solver.

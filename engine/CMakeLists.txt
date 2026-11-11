@@ -337,6 +337,7 @@ add_library(motolii_document STATIC
   document/match/match_video.cpp
   document/scripts/adapter.cpp
   document/scripts/expressions.cpp
+  document/scripts/script_reads.cpp
   document/scripts/folders.cpp
   document/scripts/recipes.cpp
   document/scripts/scripts.cpp

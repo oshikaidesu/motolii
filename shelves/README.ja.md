@@ -48,11 +48,12 @@ function each(i, n, t, k) {
 | `i` | このコピーの番号（0 から） |
 | `n` | コピーの数（文字を分けた文字なら、その数） |
 | `t` | レイヤーが始まってからの秒 |
-| `k` | 頭で宣言したつまみ。`--track` と `--check` は数（check は 0 か 1）、`--select` は選んだ言葉。ほかに `k.duration`（レイヤーの長さ・秒。0 以下は未設定）、`k.round`（プロジェクトの長さ・秒）、`k.px`（プロジェクトの 1 ピクセルのステージの単位） |
+| `k` | 頭で宣言したつまみ。`--track` と `--check` は数（check は 0 か 1）、`--select` は選んだ言葉。ほかに `k.duration`（レイヤーの長さ・秒。0 以下は未設定）、`k.round`（プロジェクトの長さ・秒）、`k.px`（プロジェクトの 1 ピクセルのステージの単位）、`k.id`（このレイヤーの番号）、`k.time`（プロジェクトの今の秒。`t` はレイヤーの始まりから数える） |
 | `at`（5 つ目。省略可） | `at.x`・`at.y`・`at.z`：このコピーが、このレイヤーのスクリプトと前の expression で、ここまでに置かれた場所（無ければ 0） |
 | 返す物 | オブジェクト。読む名前は `x`・`y`・`z`（ステージの単位）、`size`・`scale_x`・`scale_y`・`scale_z`（1 でそのまま）、`rotate`・`rotate_x`・`rotate_y`（度）、`opacity`（0〜1）、`colour`（立体のコピーの色）。書かなかった名前や数でない値は、そのままです |
 | ほかの expression と重なる時 | 位置と角度は足し、`size`・`scale_*`・`opacity` は掛けます。`colour` は最後に返した物 |
 | 使える関数 | `ease(名前, u)`（`u` は 0〜1。名前は `SlowIn` `SlowOut` `SlowInSlowOut` `VerySlowIn` `VerySlowOut` `SpringOut` `SmallSpringOut` `BounceOut` `Overshoot`。ほかの名前は `u` を返す）。`animate(i, n, t, k, a)`（Cavalry の Animator と同じ形。`a` は `{ what, from, to, way }`、ほかに `out`・`random`・`seed`。`k.length`・`k.delay` を読むので頭で宣言します。例：`expressions/fade_in.js`）。`cavalry.random(low, high, seed, sequence)`。After Effects の式は `AE.compile`・`AE.run`（例：`create/repeats/ae_stagger.js`） |
+| ほかのレイヤーを読む | `layerValue(id, 名前, t, 無い時の値, コピー)`：レイヤー `id` の値（`x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`）。`sampleImage(id, 点, 半径, postEffect, t)`：After Effects の `sampleImage`。レイヤー `id` の絵の、`点` のまわり `半径`（`[x, y]`。省くと半ピクセル）の四角の平均 `[赤, 緑, 青, アルファ]`（0〜1）。点はそのレイヤーのピクセル（`[0, 0]` は左上のピクセルの中心）。画像レイヤーはファイルを、動画レイヤーは `t` 秒に出ているコマを読みます。ほかのレイヤーと絵の外は `[0, 0, 0, 0]`。`postEffect` は受け取るだけで、まだ使いません（マスク・キー・エフェクトの前のファイルを読みます）。`fromWorld(id, 点, t)`：After Effects の `fromWorld`。ステージの点（ステージの単位）が、レイヤー `id` のどのピクセルかを返します。頭の `// --picture@video:Video` はカードで選ぶレイヤーで、`k.video` がその番号。`layerValue(k.id, 'x', k.time, 0, i)` は、このレイヤーのコピー `i` が、この expression が動かす前にいる場所です（例：`expressions/away_from_dark.js`。文字が下の動画を読みます）。この 3 つのどれかを書いたファイルは 1 スレッドで走ります |
 | 使えない物 | p5.js の関数と定数（`sin`・`PI`・`random`・`noise`・`createVector` など）。`Math.sin` のように書きます |
 
 ### 関係：`relations/`（`function relate` か `function force`）

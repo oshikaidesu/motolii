@@ -49,6 +49,14 @@ JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                         JSValueConst* data);
 JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
                     JSValueConst* data);
+// sampleImage(id, point, radius, postEffect, t) and fromWorld(id, point, t):
+// what the owner of the Script answers for the picture of another layer
+// (Script::reads_pictures); `data` holds the address of what answers. The
+// first gives an array of four numbers, the second of two.
+JSValue sample_image(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
+                     int, JSValueConst* data);
+JSValue from_world(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
+                   JSValueConst* data);
 
 }  // namespace motolii
 

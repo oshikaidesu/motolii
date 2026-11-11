@@ -24,6 +24,9 @@ struct FilmRead {
   // The frame read last, as RGBA. At the end of the video it stays as the last
   // frame.
   std::vector<uint8_t> last;
+  // Which frame `last` holds, in sixtieths of a second of the file; -1 before
+  // the first.
+  long frame = -1;
   ~FilmRead() {
     if (reader)
       gst_element_set_state(reader, GST_STATE_NULL), gst_object_unref(reader);
@@ -40,6 +43,12 @@ struct FilmRead {
   // holds a frame. At the end of the video or after a 5 s wait with no frame,
   // the previous frame is kept.
   bool next();
+  // Makes `last` the frame at `seconds` of the file, whatever was read before:
+  // the same time gives the same frame. Up to a second ahead of the frame held
+  // is read on, as playing and exporting ask; any other time is sought, flushed
+  // and accurate (GST_SEEK_FLAG_ACCURATE), as video_layer.cpp seeks. Returns
+  // false, and `last` is not to be read, when no frame comes for that time.
+  bool at(double seconds);
 };
 
 }  // namespace motolii

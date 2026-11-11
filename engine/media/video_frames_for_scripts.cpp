@@ -3,6 +3,8 @@
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <string>
 
@@ -42,7 +44,30 @@ bool FilmRead::next() {
     gst_buffer_unmap(b, &map);
   }
   gst_sample_unref(one);
+  ++frame;
   return true;
+}
+
+bool FilmRead::at(double seconds) {
+  if (!reader) return false;
+  const long want = std::max(0L, std::lround(seconds * 60.0));
+  if (want == frame) return !last.empty();
+  if (want < frame || want > frame + 60) {
+    if (!gst_element_seek_simple(
+            reader, GST_FORMAT_TIME,
+            (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE),
+            (gint64)want * GST_SECOND / 60))
+      return false;
+    frame = want - 1;
+    // The frame held is from another time: it must not answer for this one.
+    if (!next() || frame != want) return frame = -1, false;
+    return true;
+  }
+  // Read on. At the end of the video no more come and the last one stays, as
+  // next() keeps it.
+  for (long had = frame; frame < want; had = frame)
+    if (!next() || frame == had) break;
+  return !last.empty();
 }
 
 }  // namespace motolii

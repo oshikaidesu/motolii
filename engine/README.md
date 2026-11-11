@@ -53,7 +53,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `document/edit/` | Changes to the project: layers, keys, easings, effects, parents, relations, arrangement and time (`layer_edit.h`, `keys_put.h`, `fx_put.h`). |
 | `document/evaluate/` | Computing what a project shows at a given time: values between keys, effect lists, camera, world and materials (`evaluate.h`, `value_at.h`, `world.h`). |
 | `document/match/` | Rebuilding the preview stage to match the project, one step at a time: `match_<kind>.cpp` for each kind of layer (video, image, text, shape, models, light), `match_look.cpp`, `match_layers.cpp`, and `match_describe.cpp`, which writes the text that tells whether a layer must be rebuilt. `rebuild.h` holds what one call works out early. The steps are listed in `doc_match` (`document/match.cpp`). |
-| `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, and the shelf folder lists (`recipes.h`, `scripts.h`, `folders.h`). |
+| `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, the shelf folder lists, and what a script may read of other layers: their values and the pixels of their pictures (`recipes.h`, `scripts.h`, `folders.h`, `script_reads.h`). |
 | `shelf/` | Where the shelf folders are: the library's and the user's, and a count of changed files (`shelf_folders.h`). |
 | `stage/` | Drawing. `live.h` hands frames to the app. |
 | `stage/render/` | Drawing with Filament: engine, camera, lights, layers, glTF models and point clouds (`render.h`, `gltf_model.h`, `point_cloud.h`). |

@@ -3,6 +3,9 @@
 // run waiting jobs, read a picture and read another layer's value.
 #include "community/script_runner/script_natives.h"
 
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 
@@ -206,6 +209,62 @@ JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
                        : std::nan("");
   if (name) JS_FreeCString(cx, name);
   return JS_NewFloat64(cx, v);
+}
+
+namespace {
+// Reads up to `n` numbers of a JavaScript array into `to`; a single number is
+// taken for each of them. What is not a number leaves `to` as it came.
+void numbers_of(JSContext* cx, JSValueConst from, double* to, int n) {
+  if (JS_IsNumber(from)) {
+    double all = 0;
+    JS_ToFloat64(cx, &all, from);
+    std::fill(to, to + n, all);
+  }
+  if (!JS_IsObject(from)) return;
+  for (int i = 0; i < n; ++i) {
+    JSValue v = JS_GetPropertyUint32(cx, from, (uint32_t)i);
+    if (JS_IsNumber(v)) JS_ToFloat64(cx, &to[i], v);
+    JS_FreeValue(cx, v);
+  }
+}
+template <size_t N>
+JSValue array_of(JSContext* cx, const std::array<double, N>& all) {
+  JSValue out = JS_NewArray(cx);
+  for (uint32_t i = 0; i < N; ++i)
+    JS_SetPropertyUint32(cx, out, i, JS_NewFloat64(cx, all[i]));
+  return out;
+}
+}  // namespace
+
+JSValue sample_image(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
+                     int, JSValueConst* data) {
+  int64_t at = 0;
+  JS_ToInt64(cx, &at, data[0]);
+  const auto* sample = (const Script::ImageSampler*)at;
+  // The defaults are After Effects': a radius of half a pixel, after effects.
+  double layer = 0, point[2] = {0, 0}, radius[2] = {0.5, 0.5}, t = 0;
+  bool post_effect = true;
+  if (argc >= 1) JS_ToFloat64(cx, &layer, a[0]);
+  if (argc >= 2) numbers_of(cx, a[1], point, 2);
+  if (argc >= 3) numbers_of(cx, a[2], radius, 2);
+  if (argc >= 4 && !JS_IsUndefined(a[3])) post_effect = JS_ToBool(cx, a[3]) > 0;
+  if (argc >= 5) JS_ToFloat64(cx, &t, a[4]);
+  return array_of(cx, *sample ? (*sample)((int)layer, point[0], point[1],
+                                          radius[0], radius[1], post_effect, t)
+                              : std::array<double, 4>{0, 0, 0, 0});
+}
+JSValue from_world(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
+                   JSValueConst* data) {
+  int64_t at = 0;
+  JS_ToInt64(cx, &at, data[0]);
+  const auto* point = (const Script::PointMapper*)at;
+  double layer = 0, p[3] = {0, 0, 0}, t = 0;
+  if (argc >= 1) JS_ToFloat64(cx, &layer, a[0]);
+  if (argc >= 2) numbers_of(cx, a[1], p, 3);
+  if (argc >= 3) JS_ToFloat64(cx, &t, a[2]);
+  return array_of(cx, *point ? (*point)((int)layer, p[0], p[1], p[2], t)
+                             : std::array<double, 2>{std::nan(""),
+                                                     std::nan("")});
 }
 
 }  // namespace motolii
