@@ -135,48 +135,36 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
     if (const std::string s = motolii_shown(m, n.c_str()); !s.empty())
       w.Key(n.c_str()), w.String(s.c_str());
   w.EndObject();
-  // For each property that has keyframes, the times of those keyframes.
-  w.Key("keyTimes"), w.StartObject();
-  for (const std::string& n : names) {
-    double at[512];
-    const int k =
-        std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
-    if (k <= 0) continue;
-    w.Key(n.c_str()), w.StartArray();
-    for (int i = 0; i < k; ++i) w.Double(at[i]);
-    w.EndArray();
-  }
-  w.EndObject();
-  // For each property that has keyframes, the value at each keyframe.
-  w.Key("keyValues"), w.StartObject();
-  for (const std::string& n : names) {
-    double at[512];
-    const int k =
-        std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
-    if (k <= 0) continue;
-    w.Key(n.c_str()), w.StartArray();
-    for (int i = 0; i < k; ++i)
-      if (double v = 0; doc_value(*m->d, layer, n.c_str(), at[i], &v))
-        w.Double(v);
-      else
-        w.Null();
-    w.EndArray();
-  }
-  w.EndObject();
-  // For each property that has keyframes, the easing of the segment that starts
-  // at each keyframe, as text. An empty string means none.
-  w.Key("keyEasings"), w.StartObject();
-  for (const std::string& n : names) {
-    double at[512];
-    const int k =
-        std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
-    if (k <= 0) continue;
-    w.Key(n.c_str()), w.StartArray();
-    for (int i = 0; i < k; ++i)
-      w.String(motolii_easing_of(m, layer, n.c_str(), at[i]));
-    w.EndArray();
-  }
-  w.EndObject();
+  // For each property that has keyframes, an array with one entry for each
+  // keyframe, written by `one` from the property's name and the keyframe's
+  // time.
+  const auto per_key = [&](const char* key, const auto& one) {
+    w.Key(key), w.StartObject();
+    for (const std::string& n : names) {
+      double at[512];
+      const int k =
+          std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
+      if (k <= 0) continue;
+      w.Key(n.c_str()), w.StartArray();
+      for (int i = 0; i < k; ++i) one(n, at[i]);
+      w.EndArray();
+    }
+    w.EndObject();
+  };
+  // The times of those keyframes.
+  per_key("keyTimes", [&](const std::string&, double at) { w.Double(at); });
+  // The value at each keyframe.
+  per_key("keyValues", [&](const std::string& n, double at) {
+    if (double v = 0; doc_value(*m->d, layer, n.c_str(), at, &v))
+      w.Double(v);
+    else
+      w.Null();
+  });
+  // The easing of the segment that starts at each keyframe, as text. An empty
+  // string means none.
+  per_key("keyEasings", [&](const std::string& n, double at) {
+    w.String(motolii_easing_of(m, layer, n.c_str(), at));
+  });
   w.EndObject();
 }
 
