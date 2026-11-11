@@ -325,7 +325,7 @@ How each language gets into a graph: the code is run once, as written, with mark
 
 What falls outside, and keeps running as written, with the reason shown: loops whose count depends on a value, side effects inside an `if`, strings and objects (a node has a number, vector, colour, boolean or reference as its type), references built by calculation (treated as "may change", which is safe and slow), and recurrences on an earlier time (they run in order).
 
-The vocabulary of nodes is the meaning that every language shares. The proposal is TSL as the base, plus three nodes: read another property, read at another time, and copy number.
+The vocabulary of nodes is the meaning that every language shares. The proposal is TSL as the base, plus three nodes: read another property, read at another time, and copy number. Decided on 2026-11-11: the nodes are TSL's own, and the graph is never a condition for running (12.4).
 
 The result is lightest when drawing reads per-copy values straight from a GPU buffer. The ideal includes that.
 
@@ -340,7 +340,7 @@ From [AGENTS.md](../../AGENTS.md):
 
 ## 9. Open questions
 
-1. **Node vocabulary:** TSL as the base with three nodes added, or Motolii's own?
+1. **Node vocabulary:** TSL as the base with three nodes added, or Motolii's own? **Answered 2026-11-11:** TSL's own nodes, as three.js ships them. Motolii makes no form of its own in between (12.4).
 2. **Drawing:** may drawing read per-copy values from a GPU buffer, and is that part of the ideal?
 3. **Code and keyframes:** does code sit on top by default (the proposal) or replace? **Answered 2026-11-11:** on top. Cards act top to bottom and each gets what is above it as `value` (3.10); code that does not read `value` replaces it.
 4. **Many copies:** a strip of copies against time, or one copy at a time? For the layers of a group it is a table, one row per layer at the playhead (3.9); for the copies of one layer it is still open.
@@ -427,6 +427,86 @@ Three things to build first, in this order, each a door like `layerValue` that e
 Then state with a cache, and the round trip between an expression and keyframes by curve fitting (a hand-made fix then lies on top of the code's motion as a correction).
 
 Fixed from the start: the same input gives the same output (an export must not change between runs); nothing is read from the network, only local files; the cost of an expression is always shown.
+
+## 12. From a recording to code that stays editable
+
+*An ideal, added 2026-11-11 from a conversation with the author. Nothing in this section is reached unless it says so.*
+
+Until now, motion written as code could come into After Effects only as a screen recording. A recording brings the picture and leaves behind the code that makes it. This section says what is gained when the code itself comes in and stays editable, and how far that can go.
+
+### 12.1 What a recording loses
+
+| | A recording | The code itself |
+|---|---|---|
+| Size and frame rate | fixed when it was recorded | drawn again at the size and rate of each export |
+| Transparency | none; a black background has to be keyed out | there from the start |
+| A change afterwards | record again | edit the code, or drag a number in it as a slider (3.4) |
+| Length and loop | the length that was recorded | any length |
+| Timing with sound and cuts | lined up by hand | driven by keyframes or by sound |
+| Other layers | it lies on top of them | it reads them, and they read it |
+
+### 12.2 Five steps up from a recording
+
+| Step | What the user can do | Today | Where it is described |
+|---|---|---|---|
+| 1 | Paste code and it is a layer. Time belongs to the timeline (scrub, reverse, time remap). Blending modes, masks, track mattes and effects apply as to any layer. | Partly. Pasted CSS, SVG, subtitles and sketches become layers (5.3, 5.4, questions 7 and 9). | 3.2, 4.1 |
+| 2 | Touch what the code drew. A circle that a sketch drew is picked on the stage and dragged, and the code changes. A timing in the code is a keyframe on the timeline. A colour is a swatch. An ease is a curve in the graph editor. | Not reached. | 3.4 for numbers; the rest is new here |
+| 3 | Take only the motion and put it on your own material: the bounce of a CodePen on your own text layer, the scatter of a sketch's particles on the pieces of your own photo. | Reached where the code returns values: an `each()` or `relate()` file goes on any layer or group (5.2), and a pen's CSS on any text layer (question 7). Not reached where the code draws. | 3.9, 3.11, 5.2 |
+| 4 | Mix languages on one layer: a CSS selector picks every third letter, an After Effects expression moves them, a shader paints them. | Not checked. | 5.3 |
+| 5 | The project goes out as text and comes back. Another person or an LLM continues it. A video that has no code is shown to an LLM, which writes code for it. | Not reached. | 3.8, section 11 |
+
+**Step 3 is the centre.** The aim is "usable in your video". What a person wants is rarely the demo itself. It is that motion on their own logo. Step 1 puts someone else's demo in your video; step 3 makes someone else's motion yours.
+
+- Code that returns values (4.1) is at step 3 already: its values go to whatever layer or group its card is on. The CodePen bounce is this case.
+- A shader is there too, because it is an effect and an effect goes on any layer.
+- Code that draws its own picture (a p5.js sketch) is not. Its motion is inside the drawing, so it can be taken out only once the drawn shapes can be reached, which is step 2. The sketch's particles are this case.
+
+**Step 2 without translating.** Reading the code and writing it again in another form is translation (principle 1). So what the code drew is taken from running it, not from reading it. A p5.js sketch already reaches the engine this way: each frame the engine receives the shapes, triangles, lines and points the sketch drew ([sketch_import_test_record.md](sketch_import_test_record.md)). What the engine does not know yet is which line of the sketch drew which shape, and it needs that to change the code when a shape is dragged. Some posted code will not allow it, for example a shape whose place comes out of a long calculation. Such code stays an ordinary layer, as in step 1. It still runs.
+
+**Code written by an LLM from a video** is the LLM's guess. It is credited as that, not to the video's author.
+
+### 12.3 Any language; each shared name has one implementation
+
+A language is only a way of writing (5.3), so the language a person or an LLM writes in does not matter. What the languages share is a small set of names: time, the copy number, a layer's properties, `sampleImage`, the level of a sound, and easing. Each of them is implemented once, in Motolii. However a language writes it (`ease(...)` in an After Effects expression, `cubic-bezier(...)` in CSS), the same implementation answers.
+
+Easing is the example.
+
+- After Effects' `ease` and CSS's `cubic-bezier()` bring control points, which are data. One solver computes the curve: `interp_bezier` in [easing_curves.h](../../engine/motion/easing_curves.h).
+- Before, the adapter for After Effects expressions computed its own easing in JavaScript, and ThorVG's expression runtime has a third. They did not agree: the adapter's `easeIn(0.5)` gave 0.125, and the one solver with lottie-web's control points gives 0.363 (commit 8516d84f2).
+- **Reached:** After Effects' `ease`, `easeIn` and `easeOut` are three sets of control points on that solver (the same commit).
+- **Not yet:** Stylo, the CSS engine of 5.4, still solves CSS curves with its own solver (question 7).
+- **`sampleImage`:** its arithmetic over a still picture is in the engine (commit c1db919c6), the first piece of section 11's pixels.
+- Posted code that carries its own easing inside it (anime.js code, a Lottie file) keeps it. That is the code as written.
+
+So making another tool's code run means bringing its names and its control points. It never means bringing a second solver.
+
+### 12.4 Between the code and the GPU: TSL itself
+
+This answers question 1 of section 9.
+
+To run on the GPU, code has to be turned into a shader. Section 7 does it through a graph of nodes. TSL (three.js Shading Language) is three.js's way of building such a graph from JavaScript.
+
+- **Not a graph format of Motolii's own that resembles TSL.** With a format of our own, the step from each language into it would have to be written here, language by language. That is translation (principle 1), and all of it would be ours to maintain.
+- **TSL as three.js ships it.** Posted code is run once in QuickJS (the JavaScript engine Motolii already runs expressions in), with TSL nodes where the numbers would be. three.js's own `WGSLNodeBuilder` turns the resulting graph into WGSL, the shader language the GPU takes (section 7). A probe outside the engine got 24 of the shelf's 25 `each()` files through (appendix). It is not wired into the engine.
+- **The reads that section 7 adds** (another property, an earlier time, the copy number) go in as TSL's own input nodes. The probe did this for the copy number, time, the copy's place and the sliders. Reading another layer or an earlier time was not in the probe.
+- **A value and a picture are the same thing there.** A formula for a position and a formula for a pixel's colour are both graphs. The same graph can run on the CPU for one layer and on the GPU for 10,000 copies.
+- **It is a faster way to run code that already runs. It is never a condition for running** (6.3). Code that does not become a graph (a simulation that keeps state, a sketch that walks an array) runs as written. If the graph became a condition, each new expression would wait for a developer, which is what the aim forbids.
+- **Not every language passes through it.** CSS selectors, layout and delays are worked out by Stylo, which hands over values. The timing of subtitles is worked out by libass, the subtitle renderer, which hands over a picture today (5.4). What every language shares is the names of 12.3, not the graph.
+
+### 12.5 How progress is counted
+
+- **By works from the net, pasted unchanged.** The measure is how many public works (CodePen, Shadertoy, OpenProcessing) look in Motolii as they look where they were published. The picture to compare with is taken from the original running there, as questions 7 and 9 did with Chrome. Files written here in order to be tested do not count.
+- **The works that fail are the list of what to do next.** The count will be low at first, and it is shown as it is.
+- **Each step is shown first as one thing a user can see,** from paste to export: for example the letters that move away from the dark areas of a video (section 11).
+- **Motolii writes only the adapter for a language.** An adapter hands the code what it may read and takes what the code gives back. The engine that already exists for that language runs it: QuickJS for JavaScript, Stylo for CSS, libass for subtitles. An adapter should be small enough for someone outside the project to write one. Its test is the gallery of examples published for that language or library (p5.js's, three.js's), unchanged.
+
+### 12.6 Open
+
+1. **Easing on the GPU.** Run as written, code calls the one solver of 12.3. Turned into a graph, it must give the same curve, or the graph is not used (6.3). A second solver written in the shader would be a second implementation. The proposal is to compute the curve once with the one solver and hand it to the GPU as a table (6.2, "Simple forms"). Not decided.
+2. **CPU or GPU.** Where the line falls between running a graph on the CPU and on the GPU.
+3. **Step 2.** How a drawn shape is tied to the line of code that drew it without rewriting the code, and whether the way found for p5.js also serves three.js.
+4. **Code that needs a whole web page.** No web page is embedded (principle 3), so such code is not brought in whole. This is the part of "any code" that is furthest away.
+5. **The project as text (step 5).** A project is a SQLite database file today. What its text form is has not been looked at.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
