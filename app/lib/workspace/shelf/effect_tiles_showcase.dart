@@ -14,15 +14,16 @@ import 'dart:io';
 /// - moves: the layer is moved by the sample's drift.
 /// - text: the words a text effect is shown on (the "text" layout).
 /// - drawn: strokes are drawn for it (the "drawing" layout).
-({
+typedef TileShow = ({
   Map<String, double> knobs,
   double? split,
   Map<String, List<double>> sweeps,
   bool moves,
   String? text,
   bool drawn,
-})?
-showcase(String file, String head, Map<String, dynamic> table) {
+});
+
+TileShow? showcase(String file, String head, Map<String, dynamic> table) {
   final name =
       RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1) ??
       RegExp(
