@@ -107,6 +107,7 @@ std::string adapter_name(const std::string& form) {
       {"three", "three.js"},
       {"hydra", "Hydra"},
       {"dweet", "Dwitter"},
+      {"after_effects", "After Effects"},
       {"tixy", "tixy"},
       {"turtle", "Turtletoy"},
       {"two", "Two.js"},
@@ -147,6 +148,18 @@ std::string adapter_form(const std::string& t) {
   if (adapter_has(t, "\"ISFVSN\"") || adapter_has(t, "\"INPUTS\"") ||
       adapter_has(t, "\"CATEGORIES\"") || adapter_has(t, "function each"))
     return "";
+  // An After Effects expression as it is posted: a few lines that end in a
+  // value, with names only After Effects has
+  // (ae-expressions.docsforadobe.dev), or a head that says which property it
+  // is on (`// --property:rotation`). A file of ours that holds one says
+  // AE.compile itself and is run as it is.
+  static const std::regex after_effects(
+      R"(\b(wiggle|loopOut|loopIn|valueAtTime|seedRandom|posterizeTime)\s*\(|\bthisComp\b|\bthisLayer\b)");
+  if ((std::regex_search(t, after_effects) || adapter_has(t, "--property:")) &&
+      !adapter_has(t, "AE.compile") && !adapter_has(t, "function relate") &&
+      !adapter_has(t, "function force") && !adapter_has(t, "function draw") &&
+      !adapter_has(t, "function setup"))
+    return "after_effects";
   if (adapter_has(t, "mainImage")) return "shadertoy";
   if (adapter_has(t, "gl_FragColor") && adapter_has(t, "void main") &&
       std::regex_search(t, sandbox))
@@ -315,6 +328,49 @@ std::string adapter_js(const std::string& src, const std::string& form) {
            "p=__canvas.take()[1],a=new "
            "Float64Array(p.length+1);a[0]=1;a.set(p,1);return a}}function "
            "draw(){}\n";
+  // An After Effects expression: compiled once as it was posted (ae_expr.h) and
+  // called for each copy, on the property its head names
+  // (`// --property:position`, rotation, scale or opacity) or, with none named,
+  // on position when it gives a pair and rotation when it gives one number.
+  // After Effects counts in the composition's pixels from its top left corner,
+  // y down, turns clockwise, scale and opacity in percent: the copy's own
+  // values are handed over so, and what comes back is said as what `each`
+  // returns. A slider of the head is effect("Label")("Slider").
+  if (form == "after_effects") {
+    std::string text = "\"";
+    for (const char c : src) {
+      if (c == '\\' || c == '"') text += '\\';
+      if (c == '\n')
+        text += "\\n";
+      else if (c != '\r')
+        text += c;
+    }
+    text += '"';
+    static const std::regex named(R"(//\s*--property:\s*(\w+))");
+    std::smatch on;
+    const std::string property =
+        std::regex_search(src, on, named) ? on[1].str() : "";
+    return "const __ae=AE.compile(" + text + "),__ae_on='" + property +
+           "';let __ae_comp;\n"
+           "function each(i,n,t,k){const px=k.px||1,W=k.wide||1920,"
+           "H=k.high||1080,at=(name,or)=>layerValue(k.id,name,k.time,or,i),"
+           "x=at('x',0),y=at('y',0),turn=at('rotate',0),seen=at('opacity',1);\n"
+           "__ae_comp=__ae_comp||AE.comp({width:W,height:H},[]);\n"
+           "const c={index:i+1,textIndex:i+1,textTotal:n,time:k.time,"
+           "comp:__ae_comp,effect:name=>()=>k[AE.name(name).toLowerCase()]};\n"
+           "const run=value=>{c.value=value;return AE.run(__ae,c)},"
+           "one=r=>Array.isArray(r)?r[0]:r;\n"
+           "let on=__ae_on;if(!on)on=Array.isArray(run([W/2+x/px,H/2-y/px]))?"
+           "'position':'rotation';\n"
+           "if(on==='position'){const r=run([W/2+x/px,H/2-y/px]);"
+           "return{x:(r[0]-W/2)*px-x,y:(H/2-r[1])*px-y}}\n"
+           "if(on==='rotation')return{rotate:-one(run(-turn))-turn};\n"
+           "if(on==='scale'){const r=run([100,100]);"
+           "return{scale_x:r[0]/100,scale_y:(r.length>1?r[1]:r[0])/100}}\n"
+           "if(on==='opacity')return{opacity:seen?one(run(100*seen))/"
+           "(100*seen):1};\n"
+           "return{}}\n";
+  }
   if (form == "dweet")
     return "var "
            "c,x,S=Math.sin,C=Math.cos,T=Math.tan,R=(r,g,b,a)=>'rgba('+(r|0)+','"

@@ -13,6 +13,7 @@ Motolii に最初から入っている表現と、見つけた表現を置く場
 | 見つけた物 | 置く所 |
 |---|---|
 | ISF のシェーダー（`.fs`）、WGSL（`.wgsl`） | `effects/`（中の分類フォルダはどれでもよい） |
+| After Effects のエクスプレッション（`wiggle(2, 50)`、`thisComp...` など、貼られたままの形） | `expressions/`（式だけを書いた `.js`）。1 行目に `// --property:position`（または `rotation`、`scale`、`opacity`）と書くと、どの値に掛けるかが決まる。書かなければ、2 つ組は位置、数 1 つは回転 |
 | 1 つの動きを、コピーや文字を 1 つずつ（`i` 番目に）決める JavaScript（`function each`） | `expressions/` |
 | 文字を動かす CodePen のペンの CSS（`@keyframes`。Splitting.js の `.char`・`.word` を使うもの） | `expressions/`（`.css`。同じ名前の `.html` を隣に置くと、ペンの HTML として使う）。文字レイヤーに ⌘V で貼ってもよい |
 | 複数のレイヤーを、お互いの位置を見ながらまとめて動かす JavaScript（`function relate`・`function force`） | `relations/` |
@@ -172,6 +173,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 
 ### その他
 
+- `expressions/` の After Effects のエクスプレッション：ファイルは式だけ。コピーや文字 1 つずつに走る（`index` と `textIndex` は 1 から数える）。そのコピー自身の値を After Effects の数え方で受け取る：位置はプロジェクトの画素で左上から、y は下向き。回転は度で時計回り。スケールと不透明度は百分率。`effect("ラベル")("Slider")` は、頭の `--track@` のうち名前がそのラベル（小文字）の物を読む。まだ無い物：名前で他のレイヤーを読む、`loopOut`、裸の `position`。例：`wiggle(2, 50)` とだけ書いたファイル。
 - `solids/`：`export function solid(k)` が three.js の BufferGeometry を返します。`k` はつまみと、`k.w`・`k.h`（物の幅と高さ）です。見本：`solids/Box.js`。
 - `effects/` の `.wgsl`：頭の `--track@` でつまみを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で絵を返します。絵は `texture_2d<f32>`、つまみは 1 つの `var<uniform>` の構造体です。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があれば、ステージが入れます。見本：`effects/glitch/rgbshift.wgsl`。
 - `effects/` の `.fs`：ISF（Vidvox の形式）をそのまま置きます。

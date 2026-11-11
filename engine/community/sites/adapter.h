@@ -45,7 +45,7 @@ std::string adapter_name(const std::string& form);
 // Detects the form of pasted code. Returns "" for ISF, a p5.js sketch, one of
 // our own presets, or text that is not code. Otherwise returns one of:
 // shadertoy, sandbox, hydra, three, two, turtle, paper, canvas, bonzomatic,
-// twigl, dweet, tixy, subtitles, css.
+// twigl, dweet, tixy, subtitles, css, after_effects.
 std::string adapter_form(const std::string& t);
 
 // Returns the library a form runs on, as a path under third_party/js, or "" if

@@ -14,6 +14,7 @@ Take the first row that fits. The folder goes inside your own folder (above).
 |---|---|
 | An ISF shader (`.fs`) or a WGSL shader (`.wgsl`) | `effects/` (any category folder inside) |
 | JavaScript that decides, for one copy or letter at a time (the `i`-th), where it is and how (`function each`) | `expressions/` |
+| An After Effects expression, as it is posted (`wiggle(2, 50)`, `thisComp...`) | `expressions/`, as a `.js` holding nothing but the expression. A first line `// --property:position` (or `rotation`, `scale`, `opacity`) says what it is on; with none, a pair is a position and one number a rotation |
 | A CodePen pen's CSS that moves letters (`@keyframes`, with Splitting.js's `.char` and `.word`) | `expressions/` (a `.css`; an `.html` of the same name beside it is the pen's HTML). Or paste it on a text with ⌘V |
 | JavaScript that moves several layers together, looking at where the others are (`function relate`, `function force`) | `relations/` |
 | Something that builds a picture or shape in one go (a `.js` with `// make` lines), a script that lays out points, a p5.js sketch as a file | `create/` |
@@ -48,7 +49,7 @@ function each(i, n, t, k) {
 | `i` | This copy's number, from 0 |
 | `n` | How many copies. For a text it is how many pieces its Split makes: its letters, its words, or its lines (Lines: one copy for each line the text has, cut where the text itself breaks; a line turns and scales about its own middle) |
 | `t` | Seconds since the layer began |
-| `k` | The sliders the head declares. `--track` and `--check` are numbers (a check is 0 or 1); `--select` is the chosen word. Also `k.duration` (how long the layer lasts, in seconds; 0 or less means not set), `k.round` (how long the project runs, in seconds), `k.px` (one pixel of the project, in stage units), `k.id` (this layer's number) and `k.time` (the project's second now; `t` counts from where the layer begins) |
+| `k` | The sliders the head declares. `--track` and `--check` are numbers (a check is 0 or 1); `--select` is the chosen word. Also `k.duration` (how long the layer lasts, in seconds; 0 or less means not set), `k.round` (how long the project runs, in seconds), `k.px` (one pixel of the project, in stage units), `k.wide` and `k.high` (the project's size in pixels), `k.id` (this layer's number) and `k.time` (the project's second now; `t` counts from where the layer begins) |
 | `at` (fifth, optional) | `at.x`, `at.y`, `at.z`: where this layer's script and the expressions before this one have put the copy so far (0 if none) |
 | Returns | An object. The names read are `x`, `y`, `z` (stage units), `size`, `scale_x`, `scale_y`, `scale_z` (1 is unchanged), `rotate`, `rotate_x`, `rotate_y` (degrees), `opacity` (0 to 1), `colour` (a solid copy's own colour). A name you leave out, or a value that is not a number, stays as it was |
 | Several expressions on one layer | Positions and angles add. `size`, `scale_*` and `opacity` multiply. `colour` is the last one given |
@@ -177,6 +178,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 
 ### The others
 
+- An After Effects expression in `expressions/`: the file is the expression and nothing else; it runs for each copy or letter (`index` and `textIndex` count them from 1). It is given the copy's own value as After Effects counts it: position in the project's pixels from the top left, y down; rotation in degrees, clockwise; scale and opacity in percent. `effect("Label")("Slider")` reads a `--track@` line of the head whose name is the label in small letters. Not there yet: other layers by name, `loopOut`, bare `position`. Example: a file holding `wiggle(2, 50)`.
 - `solids/`: `export function solid(k)` returns a three.js BufferGeometry. `k` is the sliders plus `k.w` and `k.h` (the thing's width and height). Example: `solids/Box.js`.
 - `.wgsl` in `effects/`: declare sliders with `--track@` in the head, and return the picture from `fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f`. The picture is a `texture_2d<f32>`, the sliders one `var<uniform>` struct. If the struct has `time`, `frame`, `aspect`, `resolution`, `width` or `height`, the stage fills them in. Example: `effects/glitch/rgbshift.wgsl`.
 - `.fs` in `effects/`: ISF (Vidvox's format), placed as it is.

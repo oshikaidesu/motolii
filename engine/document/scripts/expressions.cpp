@@ -127,8 +127,8 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
   // The size the letters are drawn at, in project pixels: the page's em.
   const float font = (float)(sh->second.drawn->em * 2.0 * half.y / px);
   DocScript::Page& p = sc.pages[layer];
-  const std::string key = words + (by_words ? "\n1\n" : "\n0\n") +
-                          std::to_string(font);
+  const std::string key =
+      words + (by_words ? "\n1\n" : "\n0\n") + std::to_string(font);
   if (!p.page || p.made_for != key) {
     const double high = doc_number(d, 0, "high", 0, 1080);
     p.made_for = key;
@@ -144,8 +144,7 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
   // advance; up and down, the font's line (the content area, which css.rs
   // sizes to the pen's line-height). Its middle is not the letter's middle.
   const filament::math::float2 line = sh->second.drawn->line;
-  const std::vector<filament::math::float2>& across =
-      sh->second.drawn->boxes;
+  const std::vector<filament::math::float2>& across = sh->second.drawn->boxes;
   const auto box = [&](size_t i) {
     return i < across.size() ? across[i]
                              : filament::math::float2{
@@ -153,11 +152,10 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
   };
   for (size_t i = 0; i < m; ++i) {
     const filament::math::float2 b = box(i);
-    boxes.insert(boxes.end(),
-                 {(float)((b.x * 2.f - 1.f) * half.x / px),
-                  (float)((line.x * 2.f - 1.f) * half.y / px),
-                  (float)(b.y * 2.f * half.x / px),
-                  (float)((line.y - line.x) * 2.f * half.y / px)});
+    boxes.insert(boxes.end(), {(float)((b.x * 2.f - 1.f) * half.x / px),
+                               (float)((line.x * 2.f - 1.f) * half.y / px),
+                               (float)(b.y * 2.f * half.x / px),
+                               (float)((line.y - line.x) * 2.f * half.y / px)});
   }
   std::vector<double> out(m * 17);
   if (!p.page || motolii_css_at(p.page.get(), clock, boxes.data(), (int32_t)m,
@@ -173,7 +171,9 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
         (2.0 * b.x + b.y - letters[i].x - letters[i].y) * half.x / px;
     double* a = &out[i * 17 + 1];
     for (int row = 0; row < 3; ++row)
-      a[12 + row] += (row == 0 ? ox : row == 1 ? oy : 0.0) -
+      a[12 + row] += (row == 0   ? ox
+                      : row == 1 ? oy
+                                 : 0.0) -
                      a[row] * ox - a[4 + row] * oy;
   }
   // From CSS pixels, y down, to stage units, y up: each entry (row, column)
@@ -227,6 +227,10 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // The layer's own number, as a relation's things have `id`: what an
     // expression hands layerValue to ask where its own copies are.
     numbers["id"] = layer;
+    // The project's size in pixels, so an expression written in After Effects'
+    // pixels knows where its composition's corner is.
+    numbers["wide"] = doc_number(d, 0, "wide", 0, 1920);
+    numbers["high"] = doc_number(d, 0, "high", 0, 1080);
     // The project's second, After Effects' `time`: what layerValue, sampleImage
     // and fromWorld are asked at. each()'s own t counts from where the layer
     // begins.
@@ -242,10 +246,11 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // are laid at size 1 and the layer's size scales them afterwards, so
     // one such pixel is that many times smaller where they are laid.
     const std::vector<ScriptCopy> made =
-        sc->run ? sc->run->copies(n, clock, numbers, words, px, all)
-                : doc_css_lay(d, layer, *sc, n, clock,
-                              px / std::max(1e-6, doc_number(d, layer, "size",
-                                                             said, 1)));
+        sc->run
+            ? sc->run->copies(n, clock, numbers, words, px, all)
+            : doc_css_lay(
+                  d, layer, *sc, n, clock,
+                  px / std::max(1e-6, doc_number(d, layer, "size", said, 1)));
     if (all.empty())
       all = made;
     else
