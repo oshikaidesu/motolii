@@ -75,6 +75,15 @@ enum Glyphs implements GlyphKind {
   void draw(Canvas c, Size s, Paint st, Paint fl) {
     final w = s.width;
     Offset p(double x, double y) => Offset(x * w, y * w);
+    // The frame of a picture: image and media are both drawn in one.
+    void frame() => c.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6),
+        Radius.circular(w * .08),
+      ),
+      st,
+    );
+
     switch (this) {
       case Glyphs.select:
         c.drawPath(
@@ -150,13 +159,7 @@ enum Glyphs implements GlyphKind {
         c.drawLine(p(.5, .2), p(.5, .84), st);
         c.drawLine(p(.38, .84), p(.62, .84), st);
       case Glyphs.image:
-        c.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6),
-            Radius.circular(w * .08),
-          ),
-          st,
-        );
+        frame();
         c.drawPath(
           Path()
             ..moveTo(w * .2, w * .72)
@@ -192,13 +195,7 @@ enum Glyphs implements GlyphKind {
           st,
         );
       case Glyphs.media:
-        c.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6),
-            Radius.circular(w * .08),
-          ),
-          st,
-        );
+        frame();
         c.drawPath(
           Path()
             ..moveTo(w * .44, w * .38)

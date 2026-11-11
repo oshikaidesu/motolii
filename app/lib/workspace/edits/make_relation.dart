@@ -198,6 +198,14 @@ void releaseRelation(WorkspaceController ws) {
   });
 }
 
+/// The relation that lies under relation [r] for layer [t]: the one [t] is under in it, or 0 when there is none.
+int _below(Motolii m, int r, int t) {
+  final members = m.word(r, 'members').split(' '),
+      under = m.word(r, 'under').split(' '),
+      at = members.indexOf('$t');
+  return at >= 0 && at < under.length ? int.tryParse(under[at]) ?? 0 : 0;
+}
+
 /// The relation that takes effect for the selected layer: the uppermost one whose visibility is on, or null.
 String? relationInEffect(WorkspaceController ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
@@ -208,10 +216,7 @@ String? relationInEffect(WorkspaceController ws) {
     n++
   ) {
     if ((m.value(r, 'visible', 0) ?? 1) > .5) return '$r';
-    final members = m.word(r, 'members').split(' '),
-        under = m.word(r, 'under').split(' '),
-        at = members.indexOf('$t');
-    r = at >= 0 && at < under.length ? int.tryParse(under[at]) ?? 0 : 0;
+    r = _below(m, r, t);
   }
   return null;
 }
@@ -238,10 +243,7 @@ List<String> relationsOfSelected(WorkspaceController ws) {
         relationKinds.contains(m.word(r, 'file'));
   ) {
     if (!all.contains('$r')) all.add('$r');
-    final members = m.word(r, 'members').split(' '),
-        under = m.word(r, 'under').split(' '),
-        at = members.indexOf('$t');
-    r = at >= 0 && at < under.length ? int.tryParse(under[at]) ?? 0 : 0;
+    r = _below(m, r, t);
   }
   return all;
 }

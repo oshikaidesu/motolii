@@ -37,6 +37,17 @@ class _GaugePainter extends CustomPainter {
       ..color = Grey.g56
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
+    // The empty slot of a gauge, w by h about its middle.
+    Rect slot(double w, double h) {
+      final box = Rect.fromCenter(
+        center: o,
+        width: Shape.z(w),
+        height: Shape.z(h),
+      );
+      c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(2)), dim);
+      return box;
+    }
+
     switch (p.look) {
       case ParameterLook.percent:
         final r = Rect.fromCircle(center: o, radius: 8);
@@ -49,12 +60,7 @@ class _GaugePainter extends CustomPainter {
         c.drawArc(r, -math.pi / 2, 2 * math.pi * t.clamp(-1.0, 1.0), true, lit);
         if (t.abs() > 1) c.drawCircle(o, 8, line..color = Grey.g91);
       case ParameterLook.vertical:
-        final box = Rect.fromCenter(
-          center: o,
-          width: Shape.z(8),
-          height: Shape.z(18),
-        );
-        c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(2)), dim);
+        final box = slot(8, 18);
         final h = box.height * _t(v);
         final fill = Rect.fromLTRB(
           box.left,
@@ -67,12 +73,7 @@ class _GaugePainter extends CustomPainter {
         c.drawLine(Offset(o.dx - 2.5, tip + 2.5), Offset(o.dx, tip), line);
         c.drawLine(Offset(o.dx + 2.5, tip + 2.5), Offset(o.dx, tip), line);
       case ParameterLook.horizontal:
-        final box = Rect.fromCenter(
-          center: o,
-          width: Shape.z(18),
-          height: Shape.z(8),
-        );
-        c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(2)), dim);
+        final box = slot(18, 8);
         c.drawRRect(
           RRect.fromRectAndRadius(
             Rect.fromLTWH(box.left, box.top, box.width * _t(v), box.height),
@@ -81,12 +82,7 @@ class _GaugePainter extends CustomPainter {
           lit,
         );
       case ParameterLook.bipolar:
-        final box = Rect.fromCenter(
-          center: o,
-          width: Shape.z(18),
-          height: Shape.z(8),
-        );
-        c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(2)), dim);
+        final box = slot(18, 8);
         final z = box.left + box.width * _t(0),
             at = box.left + box.width * _t(v);
         c.drawRect(
