@@ -145,7 +145,10 @@ class _RelationsToolState extends State<RelationsTool> {
       final ws = WorkspaceScope.read(context),
           world = MapWorld.of(ws),
           together = relatableLayers(ws).length,
-          many = together > 1;
+          many = together > 1,
+              // One layer takes a relation too: on its copies, letters or words (putRelation).
+              can =
+              many || int.tryParse(ws.selected ?? '') != null;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -174,18 +177,22 @@ class _RelationsToolState extends State<RelationsTool> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    many ? '$together picked' : 'Pick two or more',
+                    many
+                        ? '$together picked'
+                        : can
+                        ? 'On its copies, letters or words'
+                        : 'Pick a layer',
                     style: TextStyles.micro(Grey.g63),
                   ),
                   for (final k in relationChoices(ws))
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
-                      onTap: many ? () => makeRelation(ws, k) : null,
+                      onTap: can ? () => putRelation(ws, k) : null,
                       child: IntrinsicWidth(
                         child: Chip(
                           label: relationLabel(k),
                           look: ChipLook.flat(
-                            many ? WindowTokens.accent : Grey.g38,
+                            can ? WindowTokens.accent : Grey.g38,
                           ),
                         ),
                       ),

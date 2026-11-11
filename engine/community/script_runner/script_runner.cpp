@@ -26,6 +26,8 @@ struct Script::Own {
   bool whole = false;   // no each(): the whole file says every copy at once, as
                         // a Canvalry distribution (a PointCloud)
   bool sketch = false;  // a p5.js sketch (p5_stand.h)
+  bool relates = false;  // a relation's relate() and no draw(): it lays copies
+                         // too, all at once (__copies_by_relate)
   FilmRead film;        // what its createCapture and createVideo see
   std::vector<SketchLine> lines;  // its lines that draw
   JSAtom said[12] = {};  // the names each() says a copy by, made atoms once
@@ -198,6 +200,8 @@ Script::Script(const std::string& file, const std::string& p5,
   own->each = JS_GetPropertyStr(own->cx, g, "each");
   JS_FreeValue(own->cx, g);
   own->whole = !JS_IsFunction(own->cx, own->each);
+  own->relates = src.find("function relate") != std::string::npos &&
+                 src.find("function draw") == std::string::npos;
   own->parameters = JS_NewObject(own->cx), own->at = JS_NewObject(own->cx);
 }
 Script::~Script() {
@@ -211,7 +215,9 @@ Script::~Script() {
 bool Script::ok() const { return own->trouble.empty(); }
 void Script::reads(LayerReader read) { own->reads = std::move(read); }
 bool Script::sketch() const { return own->sketch; }
-bool Script::lays() const { return own->cx && !own->whole && !own->sketch; }
+bool Script::lays() const {
+  return own->cx && (own->relates || (!own->whole && !own->sketch));
+}
 static std::string script_said(JSContext* cx, const char* js) {
   JS_UpdateStackTop(JS_GetRuntime(
       cx));  // (asked on whichever thread asks, as numbers() below: quickjs.h,
@@ -323,6 +329,34 @@ std::vector<ScriptCopy> Script::copies(
     const std::vector<ScriptCopy>& before) {
   std::vector<ScriptCopy> all((size_t)std::max(n, 0));
   if (!ok()) return all;
+  if (own->relates) {  // (a relation's relate(): the copies laid so far are
+                       // its things, told at once; what it says of each goes
+                       // on top of that copy, as each() does)
+    parameters(numbers, words);
+    JSValue g = JS_GetGlobalObject(own->cx);
+    JS_SetPropertyStr(own->cx, g, "__k", JS_DupValue(own->cx, own->parameters));
+    JS_FreeValue(own->cx, g);
+    std::ostringstream js;
+    js.precision(17);
+    js << "__copies_by_relate(" << n << ',' << t << ",__k,[";
+    for (int i = 0; i < n; ++i) {
+      const ScriptCopy c =
+          (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{};
+      js << c.x << ',' << c.y << ',' << c.z << ',' << c.size << ','
+         << c.rotate << ',' << c.rotate_x << ',' << c.rotate_y << ','
+         << c.opacity << ',';
+    }
+    js << "])";
+    const std::vector<double> said = this->numbers(js.str());
+    if (said.size() != (size_t)n * 8) return all;
+    for (size_t i = 0; i < (size_t)n; ++i) {
+      ScriptCopy& c = all[i];
+      const double* v = &said[i * 8];
+      c.x = v[0], c.y = v[1], c.z = v[2], c.size = v[3], c.rotate = v[4],
+      c.rotate_x = v[5], c.rotate_y = v[6], c.opacity = v[7];
+    }
+    return all;
+  }
   if (!own->whole) {  // (the parameters told once, then each copy asked)
     parameters(numbers, words);
     JS_SetPropertyStr(

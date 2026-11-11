@@ -415,5 +415,37 @@ TEST(RelateFiles, FieldChangesCopiesInsideItsRadiusAndNotOutside) {
   EXPECT_NEAR(c[0].rotate, 0.0, kNear);
 }
 
+// A file written for layers, with relate(things, t, k), runs on copies too:
+// the copies laid so far are its things, and what it says of each goes on top
+// of where that copy lies. Row.js is a p5.js sketch as relations are, so it is
+// read with p5. Its header: "the layers in a line, Gap apart, about a middle";
+// three copies at 0 with Gap 0.2 go to -0.2, 0 and 0.2, as three layers do in
+// RowLaysThreeLayersGapApartAboutTheCentre.
+TEST(RelateFiles, ARelationWrittenForLayersLaysCopiesInARowToo) {
+  Script row(Shelf("relations", "Row.js"),
+             (fs::path(__FILE__).parent_path().parent_path().parent_path() /
+              "third_party" / "js" / "p5" / "p5.min.js")
+                 .string());
+  ASSERT_TRUE(row.ok()) << row.trouble();
+  EXPECT_TRUE(row.lays());
+  const auto c = row.copies(3, 0.0,
+                            {{"gap", 0.2},
+                             {"centre_x", 0},
+                             {"centre_y", 0},
+                             {"rotate", 0},
+                             {"rotate_y", 0},
+                             {"lag", 0}},
+                            {}, 1.0, std::vector<ScriptCopy>(3));
+  ASSERT_EQ(c.size(), 3u);
+  EXPECT_NEAR(c[0].x, -0.2, kNear);
+  EXPECT_NEAR(c[1].x, 0.0, kNear);
+  EXPECT_NEAR(c[2].x, 0.2, kNear);
+  for (const ScriptCopy& one : c) {
+    EXPECT_NEAR(one.y, 0.0, kNear);
+    EXPECT_NEAR(one.size, 1.0, kNear);
+    EXPECT_NEAR(one.opacity, 1.0, kNear);
+  }
+}
+
 }  // namespace
 }  // namespace motolii

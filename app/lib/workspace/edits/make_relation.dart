@@ -10,6 +10,7 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
+import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the engine calls a relation's file: every relation is written as a file in relations/*.js.
@@ -59,6 +60,20 @@ List<String> expressionRow(WorkspaceController ws) {
       if (m.parentOf(t) == picked) '$t',
   ];
   return inside.length >= 2 ? inside : const [];
+}
+
+/// Puts relation [kind] where it can go.
+///
+/// Layers selected together, or the layers of the picked group, get a relation. One picked layer gets [kind] as an
+/// expression: its copies, letters or words are the things the relation lays, as layers are.
+void putRelation(WorkspaceController ws, String kind) {
+  if (relatableLayers(ws).length >= 2) return makeRelation(ws, kind);
+  if (expressionRow(ws) case final row when row.isNotEmpty) {
+    return makeRelation(ws, kind, of: row);
+  }
+  if (int.tryParse(ws.selected ?? '') != null) {
+    putEffectFile(ws, kind, expression: true);
+  }
 }
 
 /// Makes a relation of [kind] from the layers selected together, or from [of] when given.
