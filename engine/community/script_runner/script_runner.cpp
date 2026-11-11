@@ -60,6 +60,8 @@ Script::Script(const std::string& file, const std::string& p5,
   JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_prelude,
                                 std::char_traits<char>::length(cavalry_prelude),
                                 "cavalry", JS_EVAL_TYPE_GLOBAL));
+  JS_FreeValue(own->cx, JS_Eval(own->cx, rows_prelude, strlen(rows_prelude),
+                                "rows", JS_EVAL_TYPE_GLOBAL));
   JS_FreeValue(
       own->cx,
       JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva",

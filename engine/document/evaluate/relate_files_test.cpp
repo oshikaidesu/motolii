@@ -97,10 +97,10 @@ class Project {
   // the members in order, each having come from where it stands (unless
   // `knowsFrom` is false), with x and y connected to the relation.
   int Relation(const char* file, const std::vector<int>& members,
-               bool knowsFrom = true) {
+               bool knowsFrom = true, const char* folder = "relations") {
     const int by = next_++;
     Say(by, "kind", "behaviour"), Say(by, "file", "relate");
-    Say(by, "script", Shelf("relations", file));
+    Say(by, "script", Shelf(folder, file));
     Put(by, "strength", 1.0);
     std::ostringstream order, under, from;
     from.precision(17);
@@ -139,6 +139,10 @@ class Project {
   double Turn(int layer, double t = 0) {
     doc_forget(*d);
     return doc_literal(*d, layer, "rotate", t, 0.0);
+  }
+  double Opacity(int layer, double t = 0) {
+    doc_forget(*d);
+    return doc_literal(*d, layer, "opacity", t, 1.0);
   }
 
  private:
@@ -198,6 +202,26 @@ TEST(RelateFiles, GroupMovesEachLayerByXFromWhereItIs) {
   p.Put(p.Relation("Group.js", {a, b, c}), "js_x", 0.3);
   At(p, a, -0.7, 0), At(p, b, 0.3, 0), At(p, c, 1.3, 0);
   At(p, outside, 3, 4);
+}
+
+// A file written for copies, with each(i, n, t, k), runs on layers too: layer i
+// of the n in the relation is copy i of n. fade_in.js says "each letter comes
+// clear, one after another"; animate() (script_natives.cpp) starts copy i at
+// Delay * i / (n - 1) and takes Length to come clear. With its Length 0.67 and
+// Delay 0.33, the three start at 0, 0.165 and 0.33 seconds.
+TEST(RelateFiles, AnExpressionWrittenForCopiesFadesLayersInOneAfterAnother) {
+  Project p;
+  const int a = p.Layer(0, 0), b = p.Layer(0, 0), c = p.Layer(0, 0);
+  const int by = p.Relation("fade_in.js", {a, b, c}, true, "expressions");
+  for (const int t : {a, b, c}) p.Put(t, "opacity", 1), p.Put(t, "opacity_by", by);
+  for (const int t : {a, b, c})
+    EXPECT_NEAR(p.Opacity(t, 0), 0, kNear) << "layer " << t << " at 0";
+  EXPECT_GT(p.Opacity(a, 0.25), p.Opacity(b, 0.25));
+  EXPECT_GT(p.Opacity(b, 0.25), kNear);
+  EXPECT_NEAR(p.Opacity(c, 0.25), 0, kNear);
+  for (const int t : {a, b, c})
+    EXPECT_NEAR(p.Opacity(t, 1.1), 1, kNear) << "layer " << t << " at 1.1";
+  At(p, a, 0, 0, 0.25), At(p, c, 0, 0, 0.25);
 }
 
 TEST(RelateFiles, PushSendsALayerInsideTheRadiusOutToItsEdge) {

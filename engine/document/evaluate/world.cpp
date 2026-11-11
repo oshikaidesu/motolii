@@ -153,7 +153,7 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
   if (!sc || !sc->run || !sc->run->ok()) return k.values;
   if (k.solves < 0) {
     const std::vector<double> takes =
-        sc->run->numbers("Float64Array.of(relate.length)");
+        sc->run->numbers("Float64Array.of(__relate().length)");
     k.solves = !takes.empty() && takes[0] > 3;
   }
   const DocRelation& rel = doc_relation_of(d, by);

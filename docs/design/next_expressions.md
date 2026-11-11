@@ -100,6 +100,8 @@ In After Effects, a stagger across layers is written by hand from `index` in eve
 
 So text motion is born in the Program tab. A text layer split into letters is a row, and any language that speaks of rows moves it.
 
+Two ways of writing a row exist today: `each(i, n, t, k)`, asked once per copy, and a relation's `relate(things, t, k)`, given the whole array. Since 2026-11-11 a file with `each()` and no `relate()` also runs as a relation: layer i of the relation is copy i of n, and what `each()` says goes on top of the layer as it does on a copy (places and turns added, size and opacity multiplied). Pressing an Expression tile with several layers selected, or with a group picked, makes that relation; `fade_in.js` then fades the layers in one after another, unchanged. The other way round, a `relate()` file on copies or letters, is not done yet.
+
 ### 5.3 Languages
 
 A language is only a way of writing. The meaning is shared: read values, return values.

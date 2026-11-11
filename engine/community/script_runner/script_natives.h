@@ -12,6 +12,10 @@ namespace motolii {
 // What a Cavalry distribution asks of Cavalry's JavaScript (the four names its
 // 26 files use), so one runs as it is.
 extern const char* cavalry_prelude;
+// __relates() and __forces(): what a relation written as a file is told and
+// says, all its things at once. A file with each() and no relate() runs on the
+// layers as on copies.
+extern const char* rows_prelude;
 
 // ease(name, u): a way by its name (easing_names.h), the same expression as a
 // key's stretch; not one of them: as it is.

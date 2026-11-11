@@ -7,6 +7,7 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
+import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/state/effects.dart';
@@ -136,6 +137,10 @@ class CreateCommands {
           why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
     );
     c.set(() => c.mem.trouble.remove(name));
+    // Several layers, or the layers of a group, are a row as copies are: the expression moves layer i of n.
+    if (expressionRow(c.ws) case final row when row.isNotEmpty) {
+      return makeRelation(c.ws, file, of: row);
+    }
     if (t == null && tile.made) {
       // Created the same way as a script tile.
       return c.ws.after(

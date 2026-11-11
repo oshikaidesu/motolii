@@ -45,9 +45,29 @@ List<String> relatableLayers(WorkspaceController ws) => [
       id,
 ];
 
-/// Makes a relation of [kind], a file in relations/*.js, from the layers selected together.
-void makeRelation(WorkspaceController ws, String kind) {
-  final m = ws.inside, who = relatableLayers(ws), ordered = ws.manyInOrder;
+/// The layers an expression goes on as a row: the layers selected together, or the layers in the picked group.
+///
+/// Fewer than two means none: the expression goes on the picked layer, as a card of its own.
+List<String> expressionRow(WorkspaceController ws) {
+  final m = ws.inside, picked = int.tryParse(ws.selected ?? '');
+  if (relatableLayers(ws) case final many when many.length >= 2) return many;
+  if (m == null || picked == null || m.word(picked, 'shape') != 'null') {
+    return const [];
+  }
+  final inside = [
+    for (final t in m.layers)
+      if (m.parentOf(t) == picked) '$t',
+  ];
+  return inside.length >= 2 ? inside : const [];
+}
+
+/// Makes a relation of [kind] from the layers selected together, or from [of] when given.
+///
+/// [kind] is a file in relations/*.js, or any file with each(i, n, t, k): layer i of the row is then copy i of n.
+void makeRelation(WorkspaceController ws, String kind, {List<String>? of}) {
+  final m = ws.inside,
+      who = of ?? relatableLayers(ws),
+      ordered = of == null && ws.manyInOrder;
   if (m == null || who.length < 2) return;
   if (kind.endsWith('Group.js')) {
     return makeGroupMove(
