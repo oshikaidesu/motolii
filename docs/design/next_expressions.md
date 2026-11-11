@@ -400,6 +400,34 @@ Decided in the later conversation of 2026-11-11: the five rules at the head of s
 
 The same note says the Program tab holds closed packs only (p5.js, whole Cavalry scripts). There are no closed packs (4.1), and the Program tab is the editor for everything: text motion, CSS, subtitles and group layers come in through it (section 5). That note's split between Create and Program is dropped, and its table of recipes (which side each is on) no longer applies.
 
+## 11. Beyond After Effects: taking the walls down
+
+*An ideal, added 2026-11-11 from a conversation with the author. Nothing in this section is reached unless it says so.*
+
+Section 1 asks that posted code works. This section asks how far an expression can go once the walls of After Effects' expressions are gone.
+
+| Wall in After Effects | Taken down |
+|---|---|
+| An expression returns a value only | It may return a picture, a shape, text or a set of layers (the three rows of 4.1) |
+| Few things can be read | Sound, MIDI, CSV and JSON, other code's output, and the pixels of any layer (After Effects has only `sampleImage`) |
+| One property, alone | It sees every sibling and answers for all at once (`relate()`; layout; collisions; flocks) |
+| No state | A simulation is an expression; its state is saved at intervals so time can be jumped (Blender's point cache is the model) |
+| One language | Any language, meeting through values (section 5.3) |
+| Poor reuse | A part is a file on a shelf; its sliders are made from the file |
+| Invisible and slow | A tree of what reads what (4.4), cost shown (6.4), bulk work on the GPU (section 7) |
+
+The picture behind it is a spreadsheet: every property is a cell, an expression is its formula, and a formula that returns a range makes layers appear, as a spreadsheet's dynamic array spills (5.2, "a row is a row").
+
+Three things to build first, in this order, each a door like `layerValue` that every language gets at once:
+
+1. **Pixels.** After Effects' own `sampleImage(point, radius, postEffect, time)` returns the colour of another layer; take its name and arguments so posted expressions run. First demonstration: letters over a video, each reading the brightness under it and moving away from dark areas.
+2. **Sound.** Bands and level as readable names.
+3. **Structure.** An expression that returns a range; rows of a CSV become layers.
+
+Then state with a cache, and the round trip between an expression and keyframes by curve fitting (a hand-made fix then lies on top of the code's motion as a correction).
+
+Fixed from the start: the same input gives the same output (an export must not change between runs); nothing is read from the network, only local files; the cost of an expression is always shown.
+
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
 - `AE.compile` reads an expression once with acorn and rewrites `+ - * /` as vector-aware calls. Each frame the resulting function is called in QuickJS-ng ([ae_expr.h](../../engine/community/after_effects/ae_expr.h)).
