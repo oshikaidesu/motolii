@@ -8,6 +8,7 @@ struct Knobs {
 @group(0) @binding(4) var<storage, read_write> shape_uvs: array<f32>;
 @group(0) @binding(6) var<storage, read_write> points: array<f32>;
 @group(0) @binding(8) var<storage, read_write> shape_normals: array<f32>;
+@group(0) @binding(12) var<storage, read_write> shape_tangents: array<f32>;
 
 // structs
 
@@ -173,7 +174,7 @@ fn point_moved( position : vec3<f32>,
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3u) {
   let i = id.x;
-  if (3u * i + 2u >= arrayLength(&points) || 3u * i + 2u >= arrayLength(&shape_points) || 2u * i + 1u >= arrayLength(&shape_uvs) || 3u * i + 2u >= arrayLength(&shape_normals)) { return; }
+  if (3u * i + 2u >= arrayLength(&points) || 3u * i + 2u >= arrayLength(&shape_points) || 2u * i + 1u >= arrayLength(&shape_uvs) || 3u * i + 2u >= arrayLength(&shape_normals) || 4u * i + 3u >= arrayLength(&shape_tangents)) { return; }
   let p = point_moved(vec3f(shape_points[3u * i], shape_points[3u * i + 1u], shape_points[3u * i + 2u]), vec2f(shape_uvs[2u * i], shape_uvs[2u * i + 1u]));
   points[3u * i] = p.x; points[3u * i + 1u] = p.y; points[3u * i + 2u] = p.z;
 }

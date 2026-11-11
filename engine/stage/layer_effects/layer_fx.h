@@ -191,15 +191,19 @@ bool points_is(const std::string& file);
 // Runs the layer's points file on its solid: every point of the solid is
 // handed to the file's compute shader, and where the shader puts it is where
 // the solid is drawn this frame. The solid's normals stay as its shape script
-// made them, as three.js leaves them when a material moves points and gives no
-// normals. The file is a whole WGSL compute shader with these bindings in
-// group 0 (compute_interop.h: slot i is binding 2 * i):
+// made them unless the file writes them, as three.js leaves them when a
+// material moves points and gives no normals. The file is a whole WGSL compute
+// shader with these bindings in group 0 (compute_interop.h: slot i is binding 2
+// * i):
 //   0  uniform: a struct of f32, `time` first (seconds), then one for each
 //      `// --track` or `// --check` line of the file's head, in that order
 //   2  storage, array<f32>: the points as the shape made them, x y z each
 //   4  storage, array<f32>: the texture coordinates, u v each
 //   6  storage, array<f32>: the points to draw, x y z each, which it writes
 //   8  storage, array<f32>: the normals as the shape made them, x y z each
+//  10  storage, array<f32>: the normals to draw, x y z each, which it may
+//      write; a point whose normal it leaves at zero keeps the shape's
+//  12  storage, array<f32>: the tangents as the shape made them, x y z w each
 // It is run with 64 points to a workgroup, so its entry is
 // `@compute @workgroup_size(64)` and point i is global_invocation_id.x. The
 // buffers may be longer than the solid has points.

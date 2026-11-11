@@ -6,7 +6,7 @@ import "core-js/actual/url"
 import "core-js/actual/structured-clone"
 import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
-import { uniform, uv } from "three/tsl"
+import { uniform, uv, varying, vec3 } from "three/tsl"
 import * as T from "../../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
 import { madeText, parts } from "./write_shelf_file"
 import { pointsText } from "./write_shelf_points"
@@ -58,7 +58,19 @@ for (const [name, f] of Object.entries(T) as [string, any][]) {
       for (const [node, made] of of) of.set(node, made.map((m, i) => { const n = m.replace(/^knobs\.(\w+)\.(\w)$/, "$1_$2").replace(/^knobs\./, ""); return has.has(n) ? `knobs.${n}` : String(parts(node.value)![i]) }))
       const material: any = new THREE.MeshBasicNodeMaterial()
       material.positionNode = f(args)
-      const text = pointsText(new THREE.Mesh(new THREE.SphereGeometry(), material), [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)`, "// --label:3d"], tracks, of)
+      const ball = new THREE.SphereGeometry()
+      ball.computeTangents()
+      const head = [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)`, "// --label:3d"]
+      let text: string
+      try {
+        if (f.normal) material.colorNode = varying(vec3(f.normal(args)), "v_shape_normal")   // (the author's normals for the moved shape, "material.normalNode = rotator.normal ( {", docs/rotator.md:52)
+        text = pointsText(new THREE.Mesh(ball, material), head, tracks, of)
+      } catch (e: any) {   // (its normals do not build as WGSL: the points alone)
+        console.log(`${name}: without its normals, ${String(e?.message ?? e).slice(0, 100)}`)
+        const alone: any = new THREE.MeshBasicNodeMaterial()
+        alone.positionNode = f(args)
+        text = pointsText(new THREE.Mesh(ball, alone), head, tracks, of)
+      }
       std.open(`../../../shelves/effects/geometry/tt_${name.replace(/[A-Z]/g, c => "_" + c.toLowerCase())}_points.wgsl`, "w").puts(text)
       console.log(`${name}: a points file, ${tracks.length} sliders`)
       continue
