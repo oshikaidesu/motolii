@@ -179,20 +179,23 @@ JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                     JS_NewArrayBufferCopy(cx, f.rgba.data(), f.rgba.size()));
   return o;
 }
-// layerValue(id, name, t, otherwise): what the owner of the Script answers for
-// another layer's value at time t (Script::reads); `data` holds the address of
-// that reader. NaN when no reader is set.
+// layerValue(id, name, t, otherwise, copy): what the owner of the Script
+// answers for another layer's value at time t (Script::reads), of its copy
+// `copy` when given; `data` holds the address of that reader. NaN when no
+// reader is set.
 JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
                     JSValueConst* data) {
   int64_t at = 0;
   JS_ToInt64(cx, &at, data[0]);
   const auto* reads = (const Script::LayerReader*)at;
-  double layer = 0, t = 0, otherwise = 0;
+  double layer = 0, t = 0, otherwise = 0, copy = -1;
   const char* name = argc >= 3 ? JS_ToCString(cx, a[1]) : nullptr;
   if (argc >= 3) JS_ToFloat64(cx, &layer, a[0]), JS_ToFloat64(cx, &t, a[2]);
   if (argc >= 4) JS_ToFloat64(cx, &otherwise, a[3]);
-  const double v =
-      name && *reads ? (*reads)((int)layer, name, t, otherwise) : std::nan("");
+  if (argc >= 5) JS_ToFloat64(cx, &copy, a[4]);
+  const double v = name && *reads
+                       ? (*reads)((int)layer, name, t, otherwise, (int)copy)
+                       : std::nan("");
   if (name) JS_FreeCString(cx, name);
   return JS_NewFloat64(cx, v);
 }

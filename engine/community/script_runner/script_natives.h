@@ -28,9 +28,10 @@ JSValue jobs_run(JSContext* cx, JSValueConst, int, JSValueConst*);
 // A picture its sketch came with, by the name it gives it: only the last part
 // of that name, only from that folder.
 JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
-// layerValue(id, name, t, otherwise): what the owner of the Script answers for
-// another layer's value at time t (Script::reads); `data` holds the address of
-// that reader. NaN when no reader is set.
+// layerValue(id, name, t, otherwise, copy): what the owner of the Script
+// answers for another layer's value at time t (Script::reads), of its copy
+// `copy` when given; `data` holds the address of that reader. NaN when no
+// reader is set.
 // __text_read(name): a file its sketch came with, as text, by the last part of
 // the name it gives (as image_read reads its pictures), or null. What fetch()
 // reads in p5_stand.h, and so p5.js's loadTable, loadJSON and loadStrings.

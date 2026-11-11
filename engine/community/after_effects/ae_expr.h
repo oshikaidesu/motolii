@@ -166,7 +166,8 @@ inline const char ae_prelude[] = R"AEJS(
     const make = new Function('H', DECL + 'return function(index,time,value,thisComp,thisLayer,textIndex,textTotal,selectorValue,effect){S.time=time;S.value=value;' + head + emit(ast) + '\n};');
     return make(H);
   }
-  const run = (f, c) => { const r = f(c.index, c.time, c.value, c.comp, c.layer, c.textIndex, c.textTotal, c.selectorValue, c.effect); return r === undefined ? c.value : r; };
+  // A property left as the result gives its value, as After Effects takes thisComp.layer("Null 1").transform.position.
+  const run = (f, c) => { const r = f(c.index, c.time, c.value, c.comp, c.layer, c.textIndex, c.textTotal, c.selectorValue, c.effect); return r === undefined ? c.value : val(r); };
   G.AE = { compile, run, comp: makeComp, name: (s) => String(s).replace(/\W+/g, '_'), H };
 })(globalThis);
 )AEJS";

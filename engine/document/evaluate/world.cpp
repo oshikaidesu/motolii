@@ -158,25 +158,35 @@ const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
   }
   const DocRelation& rel = doc_relation_of(d, by);
   constexpr size_t many = std::size(doc_relate_names);
-  // layerValue(id, name, t, otherwise) in the script: what layer `id` shows for
-  // `name`, one of doc_relate_names, at time t, with any relations it is in.
-  // `otherwise` is given when the layer has no keyframes for it. The script
-  // runs on this thread inside the call that holds the project, so reading is
-  // safe; the lock is taken as well, as the render callback does. Limits how
-  // deeply layers read each other, so that a cycle of them terminates.
-  sc->run->reads(
-      [&d](int layer, const std::string& name, double at, double otherwise) {
-        static int depth = 0;
-        for (const char* known : doc_relate_names) {
-          if (name != known || depth >= 4) continue;
-          std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-          ++depth;
-          const double v = doc_literal(d, layer, known, at, otherwise);
-          --depth;
-          return v;
-        }
-        return std::nan("");
-      });
+  // layerValue(id, name, t, otherwise, copy) in the script: what layer `id`
+  // shows for `name`, one of doc_relate_names, at time t, with any relations
+  // it is in. `otherwise` is given when the layer has no keyframes for it.
+  // With `copy`, x, y and z are where the middle of that copy is, everything
+  // that places it taken in (a split text's letter as its CSS, its script or
+  // its delay moves it: doc_place, doc_letter_middle); the other names are the
+  // layer's. The script runs on this thread inside the call that holds the
+  // project, so reading is safe; the lock is taken as well, as the render
+  // callback does. Limits how deeply layers read each other, so that a cycle
+  // of them terminates.
+  sc->run->reads([&d](int layer, const std::string& name, double at,
+                      double otherwise, int copy) {
+    static int depth = 0;
+    for (const char* known : doc_relate_names) {
+      if (name != known || depth >= 4) continue;
+      std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+      ++depth;
+      double v;
+      if (copy >= 0 && name.size() == 1 && name[0] >= 'x')
+        v = (doc_place(d, layer, at, 1, copy, true) *
+             math::double4{doc_letter_middle(d, layer, copy), 0, 0,
+                           1})[name[0] - 'x'];
+      else
+        v = doc_literal(d, layer, known, at, otherwise);
+      --depth;
+      return v;
+    }
+    return std::nan("");
+  });
   const auto tell = [&](double at, size_t frame) {
     std::ostringstream js;
     js.precision(12);

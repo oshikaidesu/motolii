@@ -84,10 +84,13 @@ class Script {
   // __paints in p5_stand.h.
   std::vector<double> paints(int frame, int had, int pic = -1);
   // Lets the sketch read the value of another layer: layerValue(id, name, t,
-  // otherwise) in its code gives what `read` answers, or NaN while none is set.
-  // Only a relation written as a file uses it, see document/evaluate/world.h.
-  using LayerReader = std::function<double(int layer, const std::string& name,
-                                           double t, double otherwise)>;
+  // otherwise, copy) in its code gives what `read` answers, or NaN while none
+  // is set. `copy` is which copy (a split text's letter) is read, -1 (left
+  // out) the layer itself. Only a relation written as a file uses it, see
+  // document/evaluate/world.h.
+  using LayerReader =
+      std::function<double(int layer, const std::string& name, double t,
+                           double otherwise, int copy)>;
   void reads(LayerReader read);
   // Returns the source lines of the sketch that draw, as sketch_marked reports
   // them.
