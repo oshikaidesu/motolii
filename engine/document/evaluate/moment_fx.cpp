@@ -3,6 +3,8 @@
 #include <filament/TextureSampler.h>
 #include <filament/Viewport.h>
 
+#include <filesystem>
+
 #include "community/three/solid_three.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/fx_list.h"
@@ -10,6 +12,7 @@
 #include "document/evaluate/shown.h"
 #include "document/marks.h"
 #include "document/scripts/scripts.h"
+#include "shelf/shelf_folders.h"
 #include "stage/render/render_layers.h"
 
 namespace motolii {
@@ -38,7 +41,7 @@ bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
       doc_holds_fx(d, layer))
     return false;
   for (const std::string& w : doc_fx_list(d, layer))
-    if (solid_is(w)) return false;
+    if (solid_is(w) || points_is(w)) return false;
   const auto shown = d.on_stage.shown.find(layer);
   float2 half{0.f};
   float deep = 0.f;
@@ -49,7 +52,7 @@ bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
 bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
   thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, layer)));
   for (const std::string& w : doc_fx_list(d, layer))
-    if (solid_is(w)) return false;
+    if (solid_is(w) || points_is(w)) return false;
   const auto shown = d.on_stage.shown.find(layer);
   float2 half{0.f};
   float deep = 0.f;
@@ -85,6 +88,20 @@ void doc_layers_fx(Doc& d) {
     // If several are named, the last one is used.
     for (const std::string& w : doc_fx_list(d, layer))
       if (solid_is(w)) e.solidFile = w;
+    e.pointsFile.clear();
+    for (const std::string& w : doc_fx_list(d, layer))
+      if (points_is(w)) e.pointsFile = w;
+    // A flat layer has four corners and nothing between them to move: with a
+    // points file and no solid of its own, it is laid on the shelf's Plane, a
+    // sheet of many points (the user's own solids/Plane.js first).
+    if (e.solidFile.empty() && !e.pointsFile.empty()) {
+      std::string plane;
+      for (const std::filesystem::path& folder : doc_folders("solids"))
+        if (std::error_code wrong;
+            std::filesystem::exists(folder / "Plane.js", wrong))
+          plane = (folder / "Plane.js").string();
+      e.solidFile = plane;
+    }
     // If a solid is named, read its parameters as the document holds them now,
     // by their own names, and make the solid with them before the frame. If the
     // layer no longer names a solid, remove the old solid so that the layer's
@@ -111,9 +128,6 @@ void doc_layers_fx(Doc& d) {
                                             e.solidSaid.clear();
     // If the fx names a file that moves a solid's points, run it on the solid
     // with its numbers as the document holds them now.
-    e.pointsFile.clear();
-    for (const std::string& w : doc_fx_list(d, layer))
-      if (points_is(w)) e.pointsFile = w;
     if (const DocScript* sc =
             e.pointsFile.empty() ? nullptr : doc_script_of(d, e.pointsFile)) {
       e.pointsKnobs.clear();

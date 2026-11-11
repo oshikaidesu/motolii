@@ -23,6 +23,8 @@ struct PointsFx {
   // The vertex buffer `set` was made for. A mesh that outgrows its buffers gets
   // new ones.
   filament::VertexBuffer* vb = nullptr;
+  // The vertex buffer the mesh had in the pass before this one.
+  filament::VertexBuffer* seen = nullptr;
   uint32_t knobBytes = 0;
 };
 
@@ -137,6 +139,12 @@ void thing_fx_points(Stage& s, ThingFx& e) {
     }
   }
   if (!p.program) return;
+  // Buffers made in this pass are not on the GPU until a frame has begun with
+  // them (see thing_fx_solid): they are written from the next pass on.
+  if (p.seen != m->vb) {
+    p.seen = m->vb;
+    return;
+  }
   // time, then the file's own numbers in the order of its head.
   std::vector<float> knobs{(float)s.now};
   knobs.insert(knobs.end(), e.pointsKnobs.begin(), e.pointsKnobs.end());

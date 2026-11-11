@@ -175,7 +175,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 - `solids/`：`export function solid(k)` が three.js の BufferGeometry を返します。`k` はつまみと、`k.w`・`k.h`（物の幅と高さ）です。見本：`solids/Box.js`。
 - `effects/` の `.wgsl`：頭の `--track@` でつまみを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で絵を返します。絵は `texture_2d<f32>`、つまみは 1 つの `var<uniform>` の構造体です。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があれば、ステージが入れます。見本：`effects/glitch/rgbshift.wgsl`。
 - `effects/` の `.fs`：ISF（Vidvox の形式）をそのまま置きます。
-- `effects/` の `.wgsl` で計算シェーダー（`@compute`）を持つ物：同じレイヤーの立体（`solids/` の形）の点を、毎フレーム動かす。グループ 0 の並び：0 に `f32` だけの uniform 構造体（先頭が `time`、続けて頭の `--track@` を書いた順に 1 つずつ）、2 に形の点（`array<f32>`、x y z の順）、4 にテクスチャ座標（u v の順）、6 に描く点（ここへ書く）、8 に形の法線（x y z の順）、10 に描く法線（書いてもよい。0 のままの点は形の法線のまま）、12 に形の接線（x y z w の順）。使う物だけ宣言すればよい。入口は `@compute @workgroup_size(64)`、点 `i` は `global_invocation_id.x`。例：`effects/geometry/tg_simple_points.wgsl`。
+- `effects/` の `.wgsl` で計算シェーダー（`@compute`）を持つ物：同じレイヤーの立体（`solids/` の形）の点を、毎フレーム動かす。グループ 0 の並び：0 に `f32` だけの uniform 構造体（先頭が `time`、続けて頭の `--track@` を書いた順に 1 つずつ）、2 に形の点（`array<f32>`、x y z の順）、4 にテクスチャ座標（u v の順）、6 に描く点（ここへ書く）、8 に形の法線（x y z の順）、10 に描く法線（書いてもよい。0 のままの点は形の法線のまま）、12 に形の接線（x y z w の順）。使う物だけ宣言すればよい。立体を持たないレイヤー（平らな絵、文字）は、点の多い平面 `solids/Plane.js` に載せられる。入口は `@compute @workgroup_size(64)`、点 `i` は `global_invocation_id.x`。例：`effects/geometry/tg_simple_points.wgsl`。
 
 ## 頭の書き方
 
