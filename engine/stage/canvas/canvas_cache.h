@@ -323,13 +323,6 @@ struct Canvas2D {
   // For a text: how many times as tall as one line the text is. The size gives
   // the height of a line.
   float tallBy = 1.f;
-  // For a text: the outlines of its letters as ThorVG sets them
-  // (tvg_text_outline), in the layer's own units, where one line is 1 high,
-  // from the image's middle, y down; and the image's width in those units. A
-  // path shape is made of them (doc_to_path).
-  std::vector<tvg::PathCommand> outlineCmds;
-  std::vector<tvg::Point> outlinePts;
-  float outlineWide = 0.f;
   // For a text: the size its letters are set at, as a fraction of the image's
   // height (an em, which a pasted pen's lengths are measured in), and where
   // the font's line lies, from its ascent above the baseline to its descent

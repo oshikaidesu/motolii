@@ -521,18 +521,40 @@ To run on the GPU, code has to be turned into a shader. Section 7 does it throug
 
 The author's picture of what coexisting code is for: each engine does what it is best at, on the same material, one after another.
 
-| Step | Whose strength | Today |
+**The ideal: nothing is converted.** A text stays a text. A letter is one thing with four settings, and a layer is never made to stand for another.
+
+| Setting | Decided by | In After Effects |
 |---|---|---|
-| Lay out | CSS: flex and grid | Reached for the letters and words of a text layer (question 7). |
-| Delay, and the frames before | An `each()` expression; an effect that keeps the frames before | Reached on the same layer: the shelf's `slide_in.js` and Comet Tails over the flex layout (question 7). The echo is of the whole picture, not of each letter. |
-| Paths | ThorVG | Reached as After Effects' Create Shapes from Text: `outline` on a text layer makes a path shape of its letters above it and hides the text. Trim paths, strokes and the path operators then work on the letters. |
-| Points | Filament | Not reached. Points are drawn from `.ply` files only. `sk_resample` already gives points along a path. |
+| Where it is put | CSS: flex and grid | not there |
+| When it comes | A delay from letter to letter | `index * delay` in an expression |
+| How it is drawn | Fill, stroke or points | A shape's fill and stroke; points are not there |
+| What stays behind | An echo | Echo |
 
-**How the paths are had.** ThorVG draws a text from outlines it keeps inside (`tvgText.h`, `TextImpl`). `tvg_text_outline` hands them out, as the adapter already reaches ThorVG's own path operators. Nothing reads the font here.
+"How it is drawn" is a property of the layer. With a stroke, trim paths work; with points, points lie along the outlines. Typing the text again keeps all four. After Effects has Create Shapes from Text because text and shapes are two worlds there. That is its wall, not a feature to copy.
 
-**Checked** against the font's own outlines as fontTools reads the same file: the 9 contours of MOTOLII and the 23 of "Wavy Type & go 258" in Roboto-Medium, each contour's width, height, area and place across as fractions of the whole text; the worst difference is 0.0001. The check fails on a wrong text (0.108). Against the text's own picture, the path shape has the same ink box, and the two share 98 to 99 % of their lit pixels (the edges are smoothed differently: one is a texture, the other a mesh). One case is a test, `text_outline_test.cpp`; the rest is in `docs/internal/text_path/`.
+**Where the cut was wrong.** A text is drawn as a picture: one image, and a split letter is a strip of it as wide as the letter. So a letter has no path and no points of its own, and each wish for them needs a conversion. The ideal is the other way round: a letter is drawn from its outline from the start, so a text is a shape whose path comes from the font. Then the trim, the stroke and the path operators that shapes have act on letters, a split is the outlines taken letter by letter, and points are one more way to draw an outline. The code that measures where each strip lies would go.
 
-**Not yet joined.** The path shape is one layer, not letters. The flex layout, the delay from letter to letter and the echo act on a text layer; once `outline` has made the shape, they act on it as a whole. Keeping each letter apart as a path (step 2 of 12.2) is what would join them, and points along those paths would follow.
+| Part | Whose it is |
+|---|---|
+| The letters' outlines | The font, read by ThorVG |
+| The layout | The CSS engine (Blitz) |
+| Stroke, trim, path operators | ThorVG |
+| Points, 3D, the final picture | Filament |
+| Motolii | Handing one's result to the next |
+
+**Today.**
+
+| Setting | Today |
+|---|---|
+| Where it is put | Reached for the letters and words of a text layer (question 7). It acts only where the text itself, or a word, is a flex or grid container; that hidden condition is to go once letters are outlines. |
+| When it comes, what stays behind | Reached on the same layer: the shelf's `slide_in.js` and Comet Tails over the flex layout (question 7). The echo is of the whole picture, not of each letter. |
+| How it is drawn | Not reached. A text is still a picture. |
+
+**What was tried and taken out the same day.** `outline` on a text layer made a path shape of its letters above the text and hid the text, as Create Shapes from Text does (commit 647f5159e). It worked: the shape lay exactly where the text did, and trim paths drew the letters on. It was taken out because it is a conversion: the same letters were held twice, and typing the text again left the shape as it was. Letters apart and points would each have been one more copy.
+
+**What is kept from it.** `tvg_text_outline` hands out the outlines ThorVG keeps inside a text (`tvgText.h`, `TextImpl`), as the adapter already reaches ThorVG's own path operators. Nothing reads the font here. It was checked against the font's own outlines as fontTools reads the same file: the 9 contours of MOTOLII and the 23 of "Wavy Type & go 258" in Roboto-Medium, each contour's width, height, area and place across as fractions of the whole text, worst difference 0.0001 (0.108 on a wrong text). One case is a test, `text_outline_test.cpp`. Nothing in the engine calls the function yet.
+
+**Not known yet.** Whether what only a text has (rims, a colour ramp, wrapping, vertical writing) can be drawn the way shapes are; and whether letters drawn from outlines keep 60 fps at a thousand letters. A text may be a picture today because that is fast. These two are read and measured before anything is built, and if either fails the cut is thought over again.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
