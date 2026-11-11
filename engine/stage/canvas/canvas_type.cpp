@@ -14,6 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -251,10 +252,53 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         std::string line(words);
         while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
           line.pop_back();
+        // Split into lines: each line the text has of its own is cut halfway
+        // between where its letters can reach down and where the next line's
+        // can reach up. A line's base is one advance of the font (times the
+        // line spacing) below the one before, as ThorVG sets them.
+        if (tvg::TextMetrics lined;
+            fx.split && fx.splitLines && fx.wrapWidth <= 0.f &&
+            t->metrics(lined) == tvg::Result::Success) {
+          const float base = lined.ascent - y + 0.5f * outline,
+                      pitch = lined.advance * fx.lines;
+          const long many = 1 + std::count(line.begin(), line.end(), '\n');
+          float was = 0.f;
+          std::istringstream each(line);
+          for (long k = 0; k < many; ++k) {
+            const float cut =
+                k + 1 < many
+                    ? std::clamp((base + ((float)k + 0.5f) * pitch -
+                                  0.5f * (lined.ascent + lined.descent)) /
+                                     (float)*h,
+                                 was, 1.f)
+                    : 1.f;
+            d->letters.push_back(float2{was, cut});
+            // Its box across: as wide as the line alone is, set where the
+            // text's alignment sets it in the widest line's width.
+            std::string one;
+            std::getline(each, one);
+            float ux = 0.f, uy = 0.f, uw = 0.f, uh = 0.f;
+            tvg::Text* alone = text_new(fontFile, sized);
+            alone->spacing(fx.letters, fx.lines);
+            if (fx.italic > 0.f) alone->italic(fx.italic);
+            alone->text(one.c_str());
+            const float across =
+                !one.empty() &&
+                        alone->bounds(&ux, &uy, &uw, &uh) ==
+                            tvg::Result::Success
+                    ? std::min(1.f, (uw + outline) / (float)*w)
+                    : 0.f;
+            tvg::Paint::rel(alone);
+            d->boxes.push_back(
+                float2{std::max(0.f, align) * (1.f - across), across});
+            was = cut;
+          }
+          d->lettersDown = true, d->linePitch = pitch / (float)*h;
+        }
         // One line split into letters. Work out where each letter ends from the
         // width of the words up to it.
-        if (fx.split && line.find('\n') == std::string::npos &&
-            fx.wrapWidth <= 0.f) {
+        if (fx.split && !fx.splitLines &&
+            line.find('\n') == std::string::npos && fx.wrapWidth <= 0.f) {
           // Measures `some`. Returns in x where its ink ends and in y how wide
           // it is, both as fractions of the texture width.
           const auto across = [&](const std::string& some) {

@@ -99,7 +99,8 @@ void doc_script_reads(Doc& d, Script& run) {
       // doc_place, doc_letter_middle); the other names are the layer's.
       if (copy >= 0 && name.size() == 1 && name[0] >= 'x')
         v = (doc_place(d, layer, at, 1, copy, true) *
-             math::double4{doc_letter_middle(d, layer, copy), 0, 0,
+             math::double4{doc_letter_middle(d, layer, copy),
+                           doc_line_middle(d, layer, copy), 0,
                            1})[name[0] - 'x'];
       else
         v = doc_literal(d, layer, known, at, otherwise);

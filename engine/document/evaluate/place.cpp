@@ -282,11 +282,14 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   }
   own = own * math::mat4::scaling(math::double3{1.0, tall, 1.0});
   // The letters of a split text rotate and scale about their own middle, not
-  // the middle of the whole line.
+  // the middle of the whole line; the lines of one split into lines about
+  // their own middle, not the middle of the whole text.
   if (member)
-    if (const double middle = doc_letter_middle(d, layer, copy); middle != 0.0)
-      own = math::mat4::translation(math::double3{middle, 0, 0}) * own *
-            math::mat4::translation(math::double3{-middle, 0, 0});
+    if (const math::double3 middle{doc_letter_middle(d, layer, copy),
+                                   doc_line_middle(d, layer, copy), 0};
+        middle.x != 0.0 || middle.y != 0.0)
+      own = math::mat4::translation(middle) * own *
+            math::mat4::translation(-middle);
   // Copies placed evenly along another shape's outline, each rotated to follow
   // the direction of the outline there, like Cavalry's Duplicator on a shape.
   if (member)

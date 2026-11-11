@@ -575,7 +575,7 @@ inline const DocValue doc_values[] = {
     // One line split into its letters or its words, each a copy of its own.
     // They lie where they
     // are, and move, wave and are colored each in their order.
-    {"split", "text", 0, 0, false, "none letters words"},
+    {"split", "text", 0, 0, false, "none letters words lines"},
     {"letter_spacing", "text", 0, 10, false, nullptr},
     {"line_spacing", "text", 0, 10, false, nullptr},
     {"italic", "text", 0, 0.5, false, nullptr},

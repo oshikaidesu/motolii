@@ -27,7 +27,7 @@ material {
         { type : float4[8], name : ramp },   // its copies' colours from the first to the last (copy_fill), when they are drawn in one go
         { type : float4, name : rampOf },    // which copy the first of this one draw is, how many copies there are, how many colours, 1: one each in turn (0 copies: none)
         { type : float4, name : copyFade },  // the last copy's clearness, how many copies, which copy the first of this one draw is, 1: on (After Effects' Repeater, End Opacity)
-        { type : float4, name : window },    // the part of the picture across this copy shows, from x to y of its width, when z is 1 (a text's letter of its own)
+        { type : float4, name : window },    // the part of the picture this copy shows: from x to y of its width when z is 1 (a text's letter of its own), from x to y of its height from the top when z is 2 (a text's line of its own)
         { type : float4, name : key },       // a colour of the picture that is to be clear (a green screen), and how near to it counts (0: none)
         { type : float2, name : keySoft },   // how wide the edge of that is, and how far from it the key's colour is taken out of what stays
         { type : float, name : filmed },       // 1: the picture is a film's as its decoder left it, light in `picture` and colour in `colours`
@@ -87,7 +87,7 @@ fragment {
         return clamp((materialParams.filmRule * vec4(textureLod(materialParams_picture, uv, 0.0).r, textureLod(materialParams_colours, uv, 0.0).rg, 1.0)).rgb, 0.0, 1.0);
     }
     float deepThere(highp vec2 uv) {   // (how much of it is at a point of its picture: its own clearness, a film's where it is not keyed out, a letter's within its part)
-        if (materialParams.window.z > 0.5 && (uv.x < materialParams.window.x || uv.x >= materialParams.window.y)) return 0.0;
+        if (materialParams.window.z > 0.5) { float along = materialParams.window.z > 1.5 ? uv.y : uv.x; if (along < materialParams.window.x || along >= materialParams.window.y) return 0.0; }
         if (materialParams.filmed < 0.5) return textureLod(materialParams_picture, uv, 0.0).a;
         if (materialParams.key.a <= 0.0) return 1.0;
         vec3 c = filmAt(uv);
@@ -116,7 +116,7 @@ fragment {
         material.clearCoatNormal = transpose(shading_tangentToWorld) * (dot(shading_geometricNormal, shading_view) < 0.0 ? -shading_geometricNormal : shading_geometricNormal);
 #endif
         prepareMaterial(material);
-        if (materialParams.window.z > 0.5 && (uv.x < materialParams.window.x || uv.x >= materialParams.window.y)) discard;   // (a letter: its own part of the words only)
+        if (materialParams.window.z > 0.5) { float along = materialParams.window.z > 1.5 ? uv.y : uv.x; if (along < materialParams.window.x || along >= materialParams.window.y) discard; }   // (a letter or a line: its own part of the words only)
         vec4 drawn = textureLod(materialParams_picture, uv, 0.0);   // (a drawn picture says itself how clear each point is; a film's is all there)
         vec3 c = deepEdge >= 0.0 ? drawn.rgb / max(drawn.a, 1e-4) : drawn.rgb;   // (a ray takes its colour whole, as AbsentMotion's: its edge is told by `edge`)
         if (materialParams.filmed > 0.5) {

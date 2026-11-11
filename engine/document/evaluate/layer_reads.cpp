@@ -186,8 +186,35 @@ double doc_letter_middle(Doc& d, int layer, int copy) {
   float2 half{0.5f};
   float deep = 0.f;
   doc_half(d, layer, &half, &deep);
+  // A line's middle across is the middle of its own box.
+  if (sh->second.drawn->lettersDown) {
+    if ((size_t)copy >= sh->second.drawn->boxes.size()) return 0.0;
+    const float2 b = sh->second.drawn->boxes[(size_t)copy];
+    return ((double)b.x + (double)b.y * 0.5 - 0.5) * 2.0 * half.x;
+  }
   const float2 l = sh->second.drawn->letters[(size_t)copy];
   return ((double)(l.x + l.y) * 0.5 - 0.5) * 2.0 * half.x;
+}
+
+double doc_line_middle(Doc& d, int layer, int copy) {
+  const auto sh = d.on_stage.shown.find(layer);
+  if (copy < 0 || sh == d.on_stage.shown.end() || !sh->second.drawn ||
+      !sh->second.drawn->lettersDown ||
+      copy >= (int)sh->second.drawn->letters.size())
+    return 0.0;
+  float2 half{0.5f};
+  doc_half(d, layer, &half);
+  // A cut lies halfway between two lines, so a line's own middle is half a
+  // line's pitch from the cut above it (below it, for the first line, whose
+  // part of the image begins at the image's top). The cuts run down the image
+  // from its top; the stage's y runs up.
+  const Canvas2D& drawn = *sh->second.drawn;
+  const double pitch = drawn.linePitch,
+               down = drawn.letters.size() < 2 ? 0.5
+                      : copy == 0 ? (double)drawn.letters[0].y - 0.5 * pitch
+                                  : (double)drawn.letters[(size_t)copy].x +
+                                        0.5 * pitch;
+  return (0.5 - down) * 2.0 * half.y;
 }
 
 bool doc_staggered(Doc& d, int layer, double now) {

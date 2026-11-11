@@ -46,6 +46,9 @@ struct Canvas2DFx {
   // Splits a text into words instead of letters. Matches After Effects' Based
   // On Words and Alight Motion's Text Transform.
   bool splitWords = false;
+  // Splits a text into its lines, one copy a line, where the text has line
+  // breaks of its own. Matches After Effects' Based On Lines.
+  bool splitLines = false;
   // Draws all copies in one instanced draw, so no copy gets its own color or
   // clear. See add_parts in render.h.
   bool together = false;
@@ -313,10 +316,17 @@ struct Canvas2D {
   // Named sections of an After Effects file, which are ThorVG's Lottie markers.
   std::vector<std::string> markers;
   // For a text split into letters: where each letter lies across the image, as
-  // fractions of its width. Each copy shows one letter.
+  // fractions of its width. Each copy shows one letter. For a text split into
+  // lines (lettersDown), where each line lies down the image instead, as
+  // fractions of its height from the top.
   std::vector<filament::math::float2> letters;
+  bool lettersDown = false;
+  // For a text split into lines: how far one line's base lies below the one
+  // before, as a fraction of the image's height.
+  float linePitch = 0.f;
   // For each of them, its box across as a pasted pen lays it: from where the
   // letter is set to its advance (x and width, fractions of the image's width).
+  // For a line, from where the line begins to how wide it is.
   std::vector<filament::math::float2> boxes;
   // The section that plays when one is named, in frames of the file.
   float fromFrame = 0.f, toFrame = 0.f;

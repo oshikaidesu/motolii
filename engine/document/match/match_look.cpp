@@ -189,9 +189,10 @@ void look_text(LayerBuild& build) {
   const std::string split = build.word("split"),
                     script = build.word("script");
   fx.splitWords = split == "words";
+  fx.splitLines = split == "lines";
   // A text with a script or an expression moves letter by letter, as in
   // Cavalry, unless split is none.
-  fx.split = split == "letters" || fx.splitWords ||
+  fx.split = split == "letters" || fx.splitWords || fx.splitLines ||
              (split.empty() && ((!script.empty() && script != "none") ||
                                 !doc_expressions_fx(d, layer).empty()));
   // Maps to ThorVG's TextWrap. A wrap width without a wrap mode wraps by

@@ -369,11 +369,12 @@ void evaluate_copy_looks(Doc& d, int layer, DocShownLayer& t, const Mesh* m,
           own = MaterialInstance::duplicate(main),
           faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, own);
         copy_filled(looks, made, own);
-        // The copy's own letter.
+        // The copy's own letter, or its own line.
         if ((size_t)made.nth < letters.size())
           own->setParameter("window",
                             float4{letters[(size_t)made.nth].x,
-                                   letters[(size_t)made.nth].y, 1.f, 0.f});
+                                   letters[(size_t)made.nth].y,
+                                   t.drawn->lettersDown ? 2.f : 1.f, 0.f});
         const double clear =
             (scripted != d.place_cache.scripted.end() &&
                      (size_t)made.nth < scripted->second.copies.size()

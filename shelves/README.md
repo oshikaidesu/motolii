@@ -46,7 +46,7 @@ function each(i, n, t, k) {
 |---|---|
 | Function name | `each`. The file runs as a plain script, so `import` is not available |
 | `i` | This copy's number, from 0 |
-| `n` | How many copies (for text split into letters: how many letters) |
+| `n` | How many copies. For a text it is how many pieces its Split makes: its letters, its words, or its lines (Lines: one copy for each line the text has, cut where the text itself breaks; a line turns and scales about its own middle) |
 | `t` | Seconds since the layer began |
 | `k` | The sliders the head declares. `--track` and `--check` are numbers (a check is 0 or 1); `--select` is the chosen word. Also `k.duration` (how long the layer lasts, in seconds; 0 or less means not set), `k.round` (how long the project runs, in seconds), `k.px` (one pixel of the project, in stage units), `k.id` (this layer's number) and `k.time` (the project's second now; `t` counts from where the layer begins) |
 | `at` (fifth, optional) | `at.x`, `at.y`, `at.z`: where this layer's script and the expressions before this one have put the copy so far (0 if none) |

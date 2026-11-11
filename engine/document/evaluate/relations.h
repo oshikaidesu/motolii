@@ -181,8 +181,13 @@ double doc_delay(Doc& d, int layer, int nth);
 filament::math::mat4 doc_above(Doc& d, int layer, double now, int deeper = 0);
 // Returns where the middle of letter `copy` of a split text layer lies across
 // the layer, in the layer's own units. Returns 0 when `copy` is not a letter of
-// the layer.
+// the layer. For a text split into lines, the middle across of line `copy`
+// as it is set, short lines to the side their alignment puts them.
 double doc_letter_middle(Doc& d, int layer, int copy);
+// Returns where the middle of line `copy` of a text layer split into lines
+// lies up the layer, in the layer's own units (up is positive). Returns 0
+// when the layer is not split into lines or `copy` is not one of them.
+double doc_line_middle(Doc& d, int layer, int copy);
 // Returns whether the stage places a layer as a member of its copies, or as
 // itself. A member is delayed by its order, the first copy too, and laid out as
 // its expressions say. The stage and everyone who asks how the layer moves,
