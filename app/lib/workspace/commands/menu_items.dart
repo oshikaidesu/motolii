@@ -23,24 +23,31 @@ extension WorkspaceMenuItems on WorkspaceState {
       onSelected: does[command],
     );
     return [
-      PlatformMenu(
-        label: 'Motolii',
-        menus: [
-          // macOS's own About panel, which shows macos/Runner/Credits.rtf (FFmpeg's LGPL notice is there).
-          if (PlatformProvidedMenuItem.hasMenu(
-            PlatformProvidedMenuItemType.about,
-          ))
-            const PlatformProvidedMenuItem(
-              type: PlatformProvidedMenuItemType.about,
-            ),
-          if (PlatformProvidedMenuItem.hasMenu(
-            PlatformProvidedMenuItemType.quit,
-          ))
-            const PlatformProvidedMenuItem(
-              type: PlatformProvidedMenuItemType.quit,
-            ),
-        ],
-      ),
+      _motoliiMenu(),
+      _fileMenu(item),
+      _editMenu(item),
+      _markMenu(item),
+      _viewMenu(item),
+      _arrangeMenu(item),
+      _animationMenu(item),
+      _helpMenu(),
+    ];
+  }
+
+  PlatformMenu _motoliiMenu() => PlatformMenu(
+    label: 'Motolii',
+    menus: [
+      // macOS's own About panel, which shows macos/Runner/Credits.rtf (FFmpeg's LGPL notice is there).
+      if (PlatformProvidedMenuItem.hasMenu(PlatformProvidedMenuItemType.about))
+        const PlatformProvidedMenuItem(
+          type: PlatformProvidedMenuItemType.about,
+        ),
+      if (PlatformProvidedMenuItem.hasMenu(PlatformProvidedMenuItemType.quit))
+        const PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.quit),
+    ],
+  );
+
+  PlatformMenu _fileMenu(PlatformMenuItem Function(String, String) item) =>
       PlatformMenu(
         label: 'File',
         menus: [
@@ -68,7 +75,9 @@ extension WorkspaceMenuItems on WorkspaceState {
           item('Package Project', 'file.package'),
           item('Use Frame as Project Picture', 'file.poster'),
         ],
-      ),
+      );
+
+  PlatformMenu _editMenu(PlatformMenuItem Function(String, String) item) =>
       PlatformMenu(
         label: 'Edit',
         menus: [
@@ -115,10 +124,12 @@ extension WorkspaceMenuItems on WorkspaceState {
           item('Keyed Values', 'thing.lanes'),
           item('Deactivate', 'thing.deactivate'),
         ],
-      ),
-      // Modelled on Final Cut Pro's Mark menu: Go To Beginning and End, Previous and Next Frame, as its guide's
-      // "Navigate within your clips" names them. Ten frames and After Effects' J and K (previous and next visible item) sit beside them.
-      // Every command is in the menu bar so that the Help menu's search finds it by name (Apple's HIG).
+      );
+
+  // Modelled on Final Cut Pro's Mark menu: Go To Beginning and End, Previous and Next Frame, as its guide's
+  // "Navigate within your clips" names them. Ten frames and After Effects' J and K (previous and next visible item) sit beside them.
+  // Every command is in the menu bar so that the Help menu's search finds it by name (Apple's HIG).
+  PlatformMenu _markMenu(PlatformMenuItem Function(String, String) item) =>
       PlatformMenu(
         label: 'Mark',
         menus: [
@@ -150,87 +161,92 @@ extension WorkspaceMenuItems on WorkspaceState {
             'mark.animate',
           ), // Apple Motion's Mark > Record Animation.
         ],
+      );
+
+  PlatformMenu _viewMenu(
+    PlatformMenuItem Function(String, String) item,
+  ) => PlatformMenu(
+    label: 'View',
+    menus: [
+      PlatformMenuItemGroup(
+        // Live's View menu: zoom of the arrangement.
+        members: [
+          item('Zoom In', 'zoom.in'),
+          item('Zoom Out', 'zoom.out'),
+          item('Zoom to Selection', 'zoom.selection'),
+          item('Zoom Back', 'zoom.back'),
+          item('Optimize Width', 'zoom.width'),
+        ],
+      ),
+      PlatformMenuItemGroup(
+        members: [
+          item('Play / Stop', 'play.fromStart'),
+          item('Continue Play', 'play.continue'),
+          item('Loop', 'loop.toggle'),
+        ],
       ),
       PlatformMenu(
-        label: 'View',
+        label: 'Skin',
         menus: [
           PlatformMenuItemGroup(
-            // Live's View menu: zoom of the arrangement.
             members: [
-              item('Zoom In', 'zoom.in'),
-              item('Zoom Out', 'zoom.out'),
-              item('Zoom to Selection', 'zoom.selection'),
-              item('Zoom Back', 'zoom.back'),
-              item('Optimize Width', 'zoom.width'),
-            ],
-          ),
-          PlatformMenuItemGroup(
-            members: [
-              item('Play / Stop', 'play.fromStart'),
-              item('Continue Play', 'play.continue'),
-              item('Loop', 'loop.toggle'),
-            ],
-          ),
-          PlatformMenu(
-            label: 'Skin',
-            menus: [
-              PlatformMenuItemGroup(
-                members: [
-                  PlatformMenuItem(
-                    label: 'Default',
-                    onSelected: ColorTheme.skin == null
-                        ? null
-                        : () => _wear(null),
-                  ),
-                  for (final n in ColorTheme.skinNames())
-                    PlatformMenuItem(
-                      label: n,
-                      onSelected: n == ColorTheme.skin ? null : () => _wear(n),
-                    ),
-                ],
-              ),
               PlatformMenuItem(
-                label: 'Show Skins Folder',
-                onSelected: () => Process.run('open', [
-                  (Directory(
-                    ColorTheme.skins,
-                  )..createSync(recursive: true)).path,
-                ]),
+                label: 'Default',
+                onSelected: ColorTheme.skin == null ? null : () => _wear(null),
               ),
+              for (final n in ColorTheme.skinNames())
+                PlatformMenuItem(
+                  label: n,
+                  onSelected: n == ColorTheme.skin ? null : () => _wear(n),
+                ),
             ],
+          ),
+          PlatformMenuItem(
+            label: 'Show Skins Folder',
+            onSelected: () => Process.run('open', [
+              (Directory(ColorTheme.skins)..createSync(recursive: true)).path,
+            ]),
           ),
         ],
       ),
-      PlatformMenu(
-        label: 'Arrange', // Keynote's and Figma's Align, Alight Motion's Fit and Flip.
-        menus: [
-          PlatformMenuItemGroup(
-            members: [
-              for (final (label, how) in workspaceAligns)
-                item(label, 'arrange.$how'),
-            ],
-          ),
-          PlatformMenuItemGroup(
-            members: [
-              item('Fit to Picture', 'arrange.fit'),
-              item('Fill Picture', 'arrange.fill'),
-              item('Stretch to Picture', 'arrange.stretch'),
-            ],
-          ),
-          PlatformMenuItemGroup(
-            members: [
-              item('Flip Horizontal', 'arrange.flipX'),
-              item('Flip Vertical', 'arrange.flipY'),
-            ],
-          ),
-          PlatformMenuItemGroup(
-            members: [
-              item('Bring Forward', 'thing.forward'),
-              item('Send Backward', 'thing.backward'),
-            ],
-          ),
+    ],
+  );
+
+  PlatformMenu _arrangeMenu(
+    PlatformMenuItem Function(String, String) item,
+  ) => PlatformMenu(
+    label:
+        'Arrange', // Keynote's and Figma's Align, Alight Motion's Fit and Flip.
+    menus: [
+      PlatformMenuItemGroup(
+        members: [
+          for (final (label, how) in workspaceAligns)
+            item(label, 'arrange.$how'),
         ],
       ),
+      PlatformMenuItemGroup(
+        members: [
+          item('Fit to Picture', 'arrange.fit'),
+          item('Fill Picture', 'arrange.fill'),
+          item('Stretch to Picture', 'arrange.stretch'),
+        ],
+      ),
+      PlatformMenuItemGroup(
+        members: [
+          item('Flip Horizontal', 'arrange.flipX'),
+          item('Flip Vertical', 'arrange.flipY'),
+        ],
+      ),
+      PlatformMenuItemGroup(
+        members: [
+          item('Bring Forward', 'thing.forward'),
+          item('Send Backward', 'thing.backward'),
+        ],
+      ),
+    ],
+  );
+
+  PlatformMenu _animationMenu(PlatformMenuItem Function(String, String) item) =>
       PlatformMenu(
         label: 'Animation',
         menus: [
@@ -252,20 +268,18 @@ extension WorkspaceMenuItems on WorkspaceState {
             ],
           ),
         ],
+      );
+
+  // A menu titled Help: macOS puts its search of every menu item there (Apple's HIG, the Help menu),
+  // so a forgotten feature can be found by name. It also links the README, which lists what Motolii has.
+  PlatformMenu _helpMenu() => PlatformMenu(
+    label: 'Help',
+    menus: [
+      PlatformMenuItem(
+        label: 'Motolii (README)',
+        onSelected: () =>
+            Process.run('open', ['${File(motoliiDir).parent.path}/README.md']),
       ),
-      // A menu titled Help: macOS puts its search of every menu item there (Apple's HIG, the Help menu),
-      // so a forgotten feature can be found by name. It also links the README, which lists what Motolii has.
-      PlatformMenu(
-        label: 'Help',
-        menus: [
-          PlatformMenuItem(
-            label: 'Motolii (README)',
-            onSelected: () => Process.run('open', [
-              '${File(motoliiDir).parent.path}/README.md',
-            ]),
-          ),
-        ],
-      ),
-    ];
-  }
+    ],
+  );
 }
