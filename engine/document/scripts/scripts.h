@@ -15,6 +15,8 @@
 #include "document/kinds.h"
 #include "document/values.h"
 
+struct MotoliiCss;
+
 namespace motolii {
 
 // A script attached to a layer, see
@@ -52,6 +54,16 @@ struct DocScript {
   // each have a different opacity, so they are drawn one by one rather than all
   // at once.
   bool clears = false;
+  // A .css file: the pen's CSS, and the HTML of the .html file of the same
+  // name beside it, if any. It is run by community/css on the letters of the
+  // layers it is on, one page for each layer, kept with the words it was
+  // opened for (doc_expressions_lay).
+  std::string css, html;
+  struct Page {
+    std::shared_ptr<MotoliiCss> page;
+    std::string words;
+  };
+  std::map<int, Page> pages;
   // Whether the script is a relation that defines force() and no relate(), see
   // engine/document/evaluate/world.h. -1 means not asked yet.
   int pushes = -1;

@@ -212,7 +212,13 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                                math::double3{1, 0, 0}) *
           math::mat4::scaling(math::double3{laid.c.size * laid.c.scale_x,
                                             laid.c.size * laid.c.scale_y,
-                                            laid.c.size * laid.c.scale_z});
+                                            laid.c.size * laid.c.scale_z}) *
+          [&] {
+            const double* m = laid.c.matrix;
+            return math::mat4(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7],
+                              m[8], m[9], m[10], m[11], m[12], m[13], m[14],
+                              m[15]);
+          }();
   // Apply the motion of the layer's AbsentEffect list, in stack order, as
   // absent_motion.h does for Alight Motion.
   if (const std::vector<AbsentEffect> moving =

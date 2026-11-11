@@ -67,10 +67,14 @@ struct ScriptParameter {
   std::string by;
 };
 // The placement and look of one copy, as returned by each(). colour is the
-// copy's own color; -1 means the copy keeps the color of its solid.
+// copy's own color; -1 means the copy keeps the color of its solid. matrix is
+// applied after the rest, column by column in stage units, about the copy's
+// own middle: how a CSS page moves a letter (community/css/css.h), skew and
+// perspective kept.
 struct ScriptCopy {
   double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0,
          opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1;
+  double matrix[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 };
 
 // Returns the path of a shelf file that a project names where the file no

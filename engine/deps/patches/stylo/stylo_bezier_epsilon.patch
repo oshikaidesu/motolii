@@ -1,0 +1,13 @@
+--- a/servo/animation.rs
++++ b/servo/animation.rs
+@@ -62,7 +62,9 @@
+ 
+     /// The output of the timing function given the progress ration of this animation.
+     fn timing_function_output(&self, progress: f64) -> f64 {
+-        let epsilon = 1. / (200. * self.duration);
++        // Chromium solves every curve to 1e-7 (kBezierEpsilon, ui/gfx/geometry/cubic_bezier.cc); 1 / (200 * duration) is
++        // up to 5 ms of curve on a 1 s animation, a pixel on a large letter.
++        let epsilon = 1e-7;
+         // FIXME: Need to set the before flag correctly.
+         // In order to get the before flag, we have to know the current animation phase
+         // and whether the iteration is reversed. For now, we skip this calculation

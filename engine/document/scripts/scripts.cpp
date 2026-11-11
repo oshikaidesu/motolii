@@ -155,6 +155,21 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
     }
     // A Lottie file is read, not run.
     if (lottie) return &s;
+    // A .css file is read, not run here: community/css plays it on a text's
+    // letters (doc_expressions_lay), with the pen's HTML when it is beside it.
+    // Its letters may each have their own opacity.
+    if (ext == ".css") {
+      const auto read = [](const std::filesystem::path& f) {
+        std::ifstream in(f);
+        std::stringstream all;
+        all << in.rdbuf();
+        return all.str();
+      };
+      std::filesystem::path html = fx_source(file);
+      s.css = read(html), s.html = read(html.replace_extension(".html")),
+      s.clears = true;
+      return &s;
+    }
     // A .wgsl or ISF .fs file is drawn, not run, see
     // engine/stage/effects/screen_fx.h.
     if (!screen && runs)

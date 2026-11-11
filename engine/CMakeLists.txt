@@ -144,6 +144,13 @@ target_link_directories(motolii_community_subtitles PUBLIC ${HOMEBREW}/opt/libas
 target_link_libraries(motolii_community_subtitles PUBLIC ass)
 target_link_options(motolii_community_subtitles PUBLIC -Wl,-rpath,${HOMEBREW}/opt/libass/lib)
 
+# Adapter: CSS animations from CodePen on a text layer's letters. Blitz and Stylo, in Rust (community/css/Cargo.toml),
+# built by Cargo through Corrosion (corrosion-rs.github.io); Stylo is the patched copy deps/stylo.sh fetches.
+find_package(Corrosion REQUIRED)
+corrosion_import_crate(MANIFEST_PATH community/css/Cargo.toml CRATE_TYPES staticlib LOCKED)
+add_library(motolii_community_css INTERFACE)
+target_link_libraries(motolii_community_css INTERFACE motolii_css)
+
 # Adapter: after effects code run as it is.
 add_library(motolii_community_after_effects STATIC
   community/after_effects/lottie_slots.cpp)
@@ -333,7 +340,7 @@ add_library(motolii_document STATIC
   document/scripts/recipes.cpp
   document/scripts/scripts.cpp
   document/undo.cpp)
-target_link_libraries(motolii_document PUBLIC motolii_flags motolii_community_absent_motion motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
+target_link_libraries(motolii_document PUBLIC motolii_flags motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
 target_link_libraries(motolii_document PUBLIC ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 

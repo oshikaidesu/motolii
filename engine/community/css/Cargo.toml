@@ -1,0 +1,23 @@
+[package]
+name = "motolii_css"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "css.rs"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+blitz-dom = { version = "=0.3.0-beta.4", default-features = false }
+blitz-html = { version = "=0.3.0-beta.4", default-features = false }
+blitz-traits = { version = "=0.3.0-beta.4", default-features = false }
+style = { package = "stylo", version = "=0.22.0" }
+euclid = "0.22"
+
+# Stylo with one patch (deps/stylo.sh, deps/patches/stylo/).
+[patch.crates-io]
+stylo = { path = "../../third_party/stylo_src" }
+
+[profile.release]
+debug = false

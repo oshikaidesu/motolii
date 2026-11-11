@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "community/css/css.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
@@ -21,7 +22,11 @@
 namespace motolii {
 
 bool doc_expression(Doc& d, const std::string& file) {
-  if (std::filesystem::path(fx_source(file)).extension() != ".js") return false;
+  const std::filesystem::path ext =
+      std::filesystem::path(fx_source(file)).extension();
+  // A CSS page moves the letters of a split text (doc_css_lay).
+  if (ext == ".css") return true;
+  if (ext != ".js") return false;
   const DocScript* sc = doc_script_of(d, file);
   return sc && sc->run && sc->run->lays();
 }
@@ -37,7 +42,8 @@ std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer) {
   if (layer != 0)
     for (const std::string& file : doc_fx_list(d, layer))
       if (doc_expression(d, file))
-        if (DocScript* sc = doc_script_of(d, file); sc->run->ok())
+        if (DocScript* sc = doc_script_of(d, file);
+            sc && (sc->run ? sc->run->ok() : !sc->css.empty()))
           all.push_back(sc);
   return all;
 }
@@ -87,12 +93,69 @@ namespace {
 // Composes copy `o` onto copy `c`. This is how a layer's own placement applies
 // to its script's copy (doc_place): positions and rotations add, sizes, scales
 // and opacity multiply, and a color set by `o` replaces the color of `c`.
+// Matrices multiply, `o`'s applied first.
 void doc_expression_over(ScriptCopy& c, const ScriptCopy& o) {
+  double m[16] = {};
+  for (int col = 0; col < 4; ++col)
+    for (int row = 0; row < 4; ++row)
+      for (int k = 0; k < 4; ++k)
+        m[col * 4 + row] += c.matrix[k * 4 + row] * o.matrix[col * 4 + k];
+  std::copy(m, m + 16, c.matrix);
   c.x += o.x, c.y += o.y, c.z += o.z, c.rotate += o.rotate,
       c.rotate_x += o.rotate_x, c.rotate_y += o.rotate_y;
   c.size *= o.size, c.scale_x *= o.scale_x, c.scale_y *= o.scale_y,
       c.scale_z *= o.scale_z, c.opacity *= o.opacity;
   if (o.colour >= 0) c.colour = o.colour;
+}
+
+// The copies a .css expression lays: the letters (or words) of a split text,
+// moved as the pen's page moves them at `clock` seconds (community/css/css.h).
+// Its boxes are where the text lays its letters, in project pixels, one CSS
+// pixel each (`px` stage units); its y runs down, the stage's up.
+std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
+                                    double clock, double px) {
+  std::vector<ScriptCopy> made((size_t)std::max(0, n));
+  const auto sh = d.on_stage.shown.find(layer);
+  if (sh == d.on_stage.shown.end() || !sh->second.drawn) return made;
+  const std::vector<filament::math::float2>& letters =
+      sh->second.drawn->letters;
+  const std::string words = doc_word(d, layer, "text");
+  const bool by_words = doc_word(d, layer, "split") == "words";
+  DocScript::Page& p = sc.pages[layer];
+  if (!p.page || p.words != words + (by_words ? "\n1" : "\n0")) {
+    const double high = doc_number(d, 0, "high", 0, 1080);
+    p.words = words + (by_words ? "\n1" : "\n0");
+    p.page = std::shared_ptr<MotoliiCss>(
+        motolii_css_new(sc.css.c_str(), sc.html.c_str(), words.c_str(), 0,
+                        by_words, (uint32_t)(high * d.stage->w / d.stage->h),
+                        (uint32_t)high),
+        motolii_css_free);
+  }
+  filament::math::float2 half{0.5f};
+  doc_half(d, layer, &half);
+  const size_t m = std::min(made.size(), letters.size());
+  std::vector<float> boxes;
+  for (size_t i = 0; i < m; ++i)
+    boxes.insert(boxes.end(),
+                 {(float)((letters[i].x * 2.f - 1.f) * half.x / px),
+                  (float)(-half.y / px),
+                  (float)((letters[i].y - letters[i].x) * 2.f * half.x / px),
+                  (float)(2.f * half.y / px)});
+  std::vector<double> out(m * 17);
+  if (!p.page || motolii_css_at(p.page.get(), clock, boxes.data(), (int32_t)m,
+                                out.data()) != (int32_t)m)
+    return made;
+  // From CSS pixels, y down, to stage units, y up: each entry (row, column)
+  // times s[row] / s[column].
+  const double s[4] = {px, -px, px, 1};
+  for (size_t i = 0; i < m; ++i) {
+    made[i].opacity = out[i * 17];
+    for (int col = 0; col < 4; ++col)
+      for (int row = 0; row < 4; ++row)
+        made[i].matrix[col * 4 + row] =
+            out[i * 17 + 1 + col * 4 + row] * s[row] / s[col];
+  }
+  return made;
 }
 }  // namespace
 
@@ -133,11 +196,12 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // The fourth argument is the size of one project pixel in stage units at
     // the layer's depth. The last argument is the copies laid by the earlier
     // scripts, the fifth argument of each(); see script_runner.h.
-    const std::vector<ScriptCopy> made = sc->run->copies(
-        n, clock, numbers, words,
+    const double px =
         (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
-                                               doc_point(d, layer, said)),
-        all);
+                                               doc_point(d, layer, said));
+    const std::vector<ScriptCopy> made =
+        sc->run ? sc->run->copies(n, clock, numbers, words, px, all)
+                : doc_css_lay(d, layer, *sc, n, clock, px);
     if (all.empty())
       all = made;
     else

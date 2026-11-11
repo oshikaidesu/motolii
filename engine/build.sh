@@ -26,6 +26,7 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     ./deps/midi_roll.sh
     [ -f third_party/skia_src/out/path/libpathops.a ] || ./deps/skia.sh
     ./deps/absent_motion.sh
+    ./deps/stylo.sh
 
     ./materials/build.sh
     touch out/deps.stamp

@@ -1,9 +1,11 @@
-# What Motolii's build asks of Homebrew (Homebrew Bundle:  brew bundle).  Xcode, Python 3 and Flutter 3.47.2 are not from here.
+# What Motolii's build asks of Homebrew (Homebrew Bundle:  brew bundle).  Xcode, Python 3, Flutter 3.47.2 and Rust (cargo) are not from here.
 # To build: engine/build.sh
 brew "cmake"
 brew "ninja"
 brew "meson"
 brew "pkgconf"
+# What builds the Rust inside the engine from CMake (community/css: CSS animations, Blitz and Stylo)
+brew "corrosion"
 # What the editor links: films (GStreamer), the document (SQLite), AviUtl's scripts (LuaJIT), effects and recipes (QuickJS-ng).
 # (The shelves' maps telling how alike pictures look use ONNX Runtime, which engine/deps/onnxruntime.sh fetches.)
 brew "gstreamer"
