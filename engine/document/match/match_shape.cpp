@@ -43,6 +43,37 @@ void stage_sized_colour(LayerBuild& build) {
                     lay, float4{edge.xyz, edge.w / high}, fx.over(high));
 }
 
+// The numbers that shape a built-in shape, from the layer's values with the
+// defaults each shape has: how wide it is against its height, how many points
+// or turns it has, how deep its inner part is, and how round its corners are.
+struct ShapeNumbers {
+  float wide;
+  int points;
+  float inner, round;
+};
+ShapeNumbers shape_numbers(Doc& d, int layer, const std::string& shape,
+                           bool line, bool wave) {
+  return {(float)doc_number(d, layer, "wide", 0,
+                            line   ? 25
+                            : wave ? 10
+                                   : 1),
+          (int)doc_number(d, layer, "points", 0,
+                          shape == "star"       ? 5
+                          : shape == "arc"      ? 270
+                          : shape == "squircle" ? 4
+                          : shape == "cog"      ? 12
+                          : shape == "spiral"   ? 3
+                          : wave                ? 4
+                                                : 6),
+          (float)doc_number(d, layer, "inner", 0,
+                            shape == "cog"       ? 0.2
+                            : shape == "arc"     ? 0.3
+                            : shape == "spiral"  ? 0.1
+                            : shape == "chamfer" ? 0.3
+                                                 : 0.5),
+          (float)doc_number(d, layer, "round", 0, 0)};
+}
+
 // A plain shape, cut into triangles and drawn by Filament like the other
 // layers of the scene (flat_mesh).
 void mesh_shape(LayerBuild& build, const std::string& form, bool line,
@@ -56,24 +87,12 @@ void mesh_shape(LayerBuild& build, const std::string& form, bool line,
   const char* lay = build.lay;
   const float4 edge = build.edge;
   const Canvas2DFx& fx = build.fx;
-  made.drawn = flat_mesh(
-      s, form.c_str(), (float)doc_number(d, layer, "wide", 0, line ? 25 : 1),
-      mat4f{}, high, fill.empty() ? float3{0xd9, 0xd2, 0xc3} / 255.f : colour,
-      lay, float4{edge.xyz, edge.w / high}, fx.over(high),
-      (int)doc_number(d, layer, "points", 0,
-                      shape == "star"       ? 5
-                      : shape == "arc"      ? 270
-                      : shape == "squircle" ? 4
-                      : shape == "cog"      ? 12
-                      : shape == "spiral"   ? 3
-                                            : 6),
-      (float)doc_number(d, layer, "inner", 0,
-                        shape == "cog"       ? 0.2
-                        : shape == "arc"     ? 0.3
-                        : shape == "spiral"  ? 0.1
-                        : shape == "chamfer" ? 0.3
-                                             : 0.5),
-      (float)doc_number(d, layer, "round", 0, 0));
+  const ShapeNumbers n = shape_numbers(d, layer, shape, line, false);
+  made.drawn =
+      flat_mesh(s, form.c_str(), n.wide, mat4f{}, high,
+                fill.empty() ? float3{0xd9, 0xd2, 0xc3} / 255.f : colour, lay,
+                float4{edge.xyz, edge.w / high}, fx.over(high), n.points,
+                n.inner, n.round);
 }
 
 // A shape rendered on the CPU as a ThorVG image.
@@ -88,29 +107,11 @@ void canvas_shape(LayerBuild& build, const std::string& form, bool line,
   const char* lay = build.lay;
   const float4 edge = build.edge;
   const Canvas2DFx& fx = build.fx;
-  made.drawn = flat(s, form.c_str(),
-                    (float)doc_number(d, layer, "wide", 0,
-                                      line   ? 25
-                                      : wave ? 10
-                                             : 1),
-                    mat4f{}, high,
+  const ShapeNumbers n = shape_numbers(d, layer, shape, line, wave);
+  made.drawn = flat(s, form.c_str(), n.wide, mat4f{}, high,
                     fill.empty() ? float3{0xd9, 0xd2, 0xc3} / 255.f : colour,
                     lay, float4{edge.xyz, edge.w / high}, fx.over(high),
-                    (int)doc_number(d, layer, "points", 0,
-                                    shape == "star"       ? 5
-                                    : shape == "arc"      ? 270
-                                    : shape == "squircle" ? 4
-                                    : shape == "cog"      ? 12
-                                    : shape == "spiral"   ? 3
-                                    : wave                ? 4
-                                                          : 6),
-                    (float)doc_number(d, layer, "inner", 0,
-                                      shape == "cog"       ? 0.2
-                                      : shape == "arc"     ? 0.3
-                                      : shape == "spiral"  ? 0.1
-                                      : shape == "chamfer" ? 0.3
-                                                           : 0.5),
-                    (float)doc_number(d, layer, "round", 0, 0));
+                    n.points, n.inner, n.round);
 }
 
 // A built-in shape or a path, with its fill, as a mesh when it is plain and
@@ -140,8 +141,7 @@ void drawn_shape(LayerBuild& build) {
                            : drawn.empty() ? "M0 0"
                                            : drawn;
   const bool plain = !fx.thick && !wave && shape != "spiral" &&
-                     shape != "null" && fx.media.empty() &&
-                     fx.ramp.size() < 2;
+                     shape != "null" && fx.media.empty() && fx.ramp.size() < 2;
   if (plain)
     mesh_shape(build, form, line, high);
   else
