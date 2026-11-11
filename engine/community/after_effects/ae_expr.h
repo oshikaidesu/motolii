@@ -45,7 +45,10 @@
 //   // Turns a parameter name into an identifier: AE.name("X Offset") is
 //   "X_Offset". AE.name("X Offset")
 //
-// Not supported: bare property names (position, opacity), loopOut, the
+// Bare names of the layer (position, rotation, scale, opacity, transform) and
+// valueAtTime are read from c.layer and c.property when the caller gives them.
+//
+// Not supported: loopOut, the
 // operators + - * / on a vector in unary minus and +=, toWorld, and footage().
 //
 // wiggle and random do not reproduce After Effects' own random sequences, so
@@ -121,11 +124,14 @@ inline const char ae_prelude[] = R"AEJS(
     length: (a, b) => { const v = b === undefined ? a : $s(a, b); return Array.isArray(v) ? Math.hypot(...v) : Math.abs(v); },
   };
 
-  class Prop { constructor(f) { this.f = f; } valueAtTime(t) { return this.f(t); } get value() { return this.f(S.time); } }
+  // (a property read by its parts, position[0], as After Effects reads one)
+  class Prop { constructor(f) { this.f = f; } valueAtTime(t) { return this.f(t); } get value() { return this.f(S.time); } get 0() { return this.value[0]; } get 1() { return this.value[1]; } get 2() { return this.value[2]; } }
   const makeLayer = (s) => {
     const L = { name: s.name, index: s.index, width: s.width || 0, height: s.height || 0, controls: s.controls || {} };
     L.position = new Prop(s.position || (() => [0, 0, 0]));
+    // (the rest of its Transform, when the script says how each is read: rotation, scale, opacity, anchorPoint)
     L.transform = { position: L.position };
+    for (const name of ['rotation', 'scale', 'opacity', 'anchorPoint']) if (s[name]) L[name] = L.transform[name] = new Prop(s[name]);
     L.effect = (n) => (m) => typeof L.controls === 'function' ? L.controls(n, m) : L.controls[n][m];
     // The layer's picture, when the script gives what reads it: sampleImage(point, radius, postEffect, t) and a point brought into the
     // layer's own pixels (fromComp, fromWorld), with After Effects' defaults: a radius of half a pixel, after effects, now.
@@ -139,7 +145,9 @@ inline const char ae_prelude[] = R"AEJS(
       layer(a, rel) { return typeof a === 'string' ? layers.find((l) => l.name === a) : typeof a === 'number' ? layers.find((l) => l.index === a) : layers.find((l) => l.index === a.index + rel); } };
   };
 
-  const PARAMS = new Set(['index', 'time', 'value', 'thisComp', 'thisLayer', 'textIndex', 'textTotal', 'selectorValue', 'effect']);
+  const PARAMS = new Set(['index', 'time', 'value', 'thisComp', 'thisLayer', 'textIndex', 'textTotal', 'selectorValue', 'effect', 'thisProperty']);
+  // (what an expression names bare: After Effects looks a name up on the property it is on, then on its layer)
+  const LAYER = ['position', 'rotation', 'scale', 'opacity', 'anchorPoint', 'transform', 'name', 'width', 'height'];
   const RANDOMS = new Set(['random', 'seedRandom', 'wiggle', 'noise', 'gaussRandom']);
   const OPS = { '+': '$a', '-': '$s', '*': '$m', '/': '$d' };
   const DECL = 'var ' + Object.keys(H).map((k) => k + '=H.' + k).join(',') + ';';
@@ -154,14 +162,14 @@ inline const char ae_prelude[] = R"AEJS(
   };
   function compile(src) {
     const ast = acorn.parse(src, { ecmaVersion: 2020 });
-    const declared = new Set(), assigned = new Set();
+    const declared = new Set(), assigned = new Set(), named = new Set();
     let usesRandom = false;
     const walk = (n) => {
       if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier') declared.add(n.id.name);
       else if (n.type === 'FunctionDeclaration' || n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression') { if (n.id) declared.add(n.id.name); for (const p of n.params) if (p.type === 'Identifier') declared.add(p.name); }
       else if (n.type === 'AssignmentExpression' && n.left.type === 'Identifier') assigned.add(n.left.name);
       else if (n.type === 'UpdateExpression' && n.argument.type === 'Identifier') assigned.add(n.argument.name);
-      else if (n.type === 'Identifier' && RANDOMS.has(n.name)) usesRandom = true;
+      else if (n.type === 'Identifier') { named.add(n.name); if (RANDOMS.has(n.name)) usesRandom = true; }
       kids(n).forEach(walk);
     };
     walk(ast);
@@ -181,13 +189,16 @@ inline const char ae_prelude[] = R"AEJS(
       return out + src.slice(pos, n.end);
     };
     const vars = [...assigned].filter((v) => !declared.has(v) && !PARAMS.has(v));
-    const head = (vars.length ? 'var ' + vars.join(',') + ';' : '') + (usesRandom ? 'H.reset(index,time);' : '');
-    const make = new Function('H', DECL + 'return function(index,time,value,thisComp,thisLayer,textIndex,textTotal,selectorValue,effect){S.time=time;S.value=value;' + head + emit(ast) + '\n};');
+    const free = (v) => named.has(v) && !declared.has(v) && !assigned.has(v);
+    const bare = LAYER.filter(free).map((v) => v + '=thisLayer?thisLayer.' + v + ':undefined');
+    if (free('valueAtTime')) bare.push('valueAtTime=(t)=>thisProperty.valueAtTime(t)');
+    const head = (vars.length ? 'var ' + vars.join(',') + ';' : '') + (bare.length ? 'var ' + bare.join(',') + ';' : '') + (usesRandom ? 'H.reset(index,time);' : '');
+    const make = new Function('H', DECL + 'return function(index,time,value,thisComp,thisLayer,textIndex,textTotal,selectorValue,effect,thisProperty){S.time=time;S.value=value;' + head + emit(ast) + '\n};');
     return make(H);
   }
   // A property left as the result gives its value, as After Effects takes thisComp.layer("Null 1").transform.position.
-  const run = (f, c) => { const r = f(c.index, c.time, c.value, c.comp, c.layer, c.textIndex, c.textTotal, c.selectorValue, c.effect); return r === undefined ? c.value : val(r); };
-  G.AE = { compile, run, comp: makeComp, name: (s) => String(s).replace(/\W+/g, '_'), H };
+  const run = (f, c) => { const r = f(c.index, c.time, c.value, c.comp, c.layer, c.textIndex, c.textTotal, c.selectorValue, c.effect, c.property); return r === undefined ? c.value : val(r); };
+  G.AE = { compile, run, comp: makeComp, layer: makeLayer, name: (s) => String(s).replace(/\W+/g, '_'), H };
 })(globalThis);
 )AEJS";
 
