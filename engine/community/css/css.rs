@@ -18,7 +18,7 @@ use euclid::default::{Point2D, Rect, Size2D, Transform3D};
 use style::properties::ComputedValues;
 use style::values::animated::{Animate, Procedure};
 use style::values::computed::transform::{Matrix3D, Transform, TransformOperation};
-use style::values::computed::{CSSPixelLength as Length, LengthPercentage, Rotate};
+use style::values::computed::{CSSPixelLength as Length, LengthPercentage, LineHeight, Rotate};
 use style::values::generics::transform::{GenericTransform, Scale, Translate};
 
 /// A page Blitz plays: its document as at `now` seconds.
@@ -84,10 +84,10 @@ fn split(text: &str) -> (String, usize, usize) {
 /// The pen's HTML with the `nth` [data-splitting] element holding `text`, as Splitting.js leaves it: classes
 /// "words chars splitting" and the totals as custom properties (core/splitting.js, utils/css-vars.js). A page with no
 /// such element gets one, a div at the end. Only double-quoted class attributes are merged.
-fn markup(html: &str, text: &str, nth: usize) -> String {
+fn markup(html: &str, text: &str, nth: usize, font: f32) -> String {
     let in_tag = |at: usize| html[..at].rfind('<').map_or(false, |lt| html[..at].rfind('>').map_or(true, |gt| gt < lt));
     let Some(at) = html.match_indices("data-splitting").map(|(i, _)| i).filter(|&i| in_tag(i)).nth(nth) else {
-        return markup(&format!("{html}<div data-splitting></div>"), text, 0);
+        return markup(&format!("{html}<div data-splitting></div>"), text, 0, font);
     };
     let start = html[..at].rfind('<').unwrap();
     let name: String = html[start + 1..].chars().take_while(|c| c.is_alphanumeric() || *c == '-').collect();
@@ -101,18 +101,27 @@ fn markup(html: &str, text: &str, nth: usize) -> String {
         attrs.replace_range(c..(end + 1).min(attrs.len()), "");
     }
     let (body, words, chars) = split(text);
+    // The letters are drawn at the layer's size, so that is their font-size, and an em in the pen is as many pixels
+    // as the drawn letters' em (css-values-4 §6.1.1: em is the element's computed font-size).
+    let font = if font > 0.0 { format!(" font-size: {font}px;") } else { String::new() };
     format!(
-        r#"{}<{name}{attrs} data-motolii class="{classes}words chars splitting" style="--word-total: {words}; --char-total: {chars};">{body}{}"#,
+        r#"{}<{name}{attrs} data-motolii class="{classes}words chars splitting" style="--word-total: {words}; --char-total: {chars};{font}">{body}{}"#,
         &html[..start], &html[close..])
 }
 
+/// Splitting.js 1.1.0's stylesheet, as released (engine/third_party/splitting/).
+const SPLITTING: &str = include_str!("../../third_party/splitting/splitting.css");
+
 impl Page {
     /// `css` and `html` as posted (either may be empty); `text` the layer's words; `nth` which [data-splitting] element
-    /// the layer is; `by_words` when the layer is split into words, not letters; `size` the page, the project's size.
-    pub fn new(css: &str, html: &str, text: &str, nth: usize, by_words: bool, size: (u32, u32)) -> Page {
+    /// the layer is; `by_words` when the layer is split into words, not letters; `size` the page, the project's size;
+    /// `font` the size the layer's letters are drawn at, in pixels of the page (0: the pen's own).
+    pub fn new(css: &str, html: &str, text: &str, nth: usize, by_words: bool, size: (u32, u32), font: f32) -> Page {
+        // Splitting's recommended styles come first, as the pens that use it load them (inline-block letters, which
+        // can then be transformed); the pen's own rules, later, win.
         let page = format!(
-            "<!doctype html><html><head><meta charset=\"utf-8\"><style>{css}</style></head><body>{}</body></html>",
-            markup(html, text, nth));
+            "<!doctype html><html><head><meta charset=\"utf-8\"><style>{SPLITTING}</style><style>{css}</style></head><body>{}</body></html>",
+            markup(html, text, nth, font));
         let played = Played::new(page, size);
         let doc = &played.doc;
         let pick = |sel: &str| doc.query_selector_all(sel).map(|v| v.to_vec()).unwrap_or_default();
@@ -131,11 +140,23 @@ impl Page {
     pub fn letters(&self) -> usize { self.letters.len() }
 
     /// For each letter, its opacity and a 4 x 4 matrix (column-major, CSS pixels, y down) that moves it about its
-    /// middle, as the CSS at `t` seconds moves it with everything around it. `boxes` is each letter's box, x y w h on the
-    /// page, as Motolii lays it out (a space's is not read).
+    /// box's middle, as the CSS at `t` seconds moves it with everything around it. `boxes` is each letter's box, x y w h
+    /// on the page, as Motolii lays it out, up and down its font's content area (a space's is not read).
     pub fn at(&mut self, t: f64, boxes: &[[f32; 4]]) -> Vec<[f64; 17]> {
         self.played.to(t);
         let doc = &self.played.doc;
+        // A letter's box is as tall as its line-height, its half-leading above and below the content area
+        // (CSS 2.1 §10.8.1), so its middle stays; `normal` keeps the content area (the font's line gap is not known).
+        let boxes: Vec<[f32; 4]> = boxes.iter().zip(&self.letters).map(|(b, e)| {
+            let Some(s) = e.and_then(|e| doc.get_node(e)).and_then(|n| n.primary_styles()) else { return *b };
+            let f = s.get_font();
+            let h = match &f.line_height {
+                LineHeight::Normal => return *b,
+                LineHeight::Number(n) => n.0 * f.font_size.computed_size().px(),
+                LineHeight::Length(l) => l.0.px(),
+            };
+            [b[0], b[1] + 0.5 * (b[3] - h), b[2], h]
+        }).collect();
         // Each element's box: a letter's as given, any other's around the letters inside it.
         let mut around: HashMap<NodeId, [f32; 4]> = HashMap::new();
         for (i, e) in self.letters.iter().enumerate() {
@@ -221,9 +242,9 @@ unsafe fn text<'a>(p: *const c_char) -> &'a str {
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn motolii_css_new(css: *const c_char, html: *const c_char, words: *const c_char, nth: i32,
-                                         by_words: i32, width: u32, height: u32) -> *mut Page {
+                                         by_words: i32, width: u32, height: u32, font: f32) -> *mut Page {
     let (css, html, words) = unsafe { (text(css), text(html), text(words)) };
-    std::panic::catch_unwind(|| Page::new(css, html, words, nth.max(0) as usize, by_words != 0, (width, height)))
+    std::panic::catch_unwind(|| Page::new(css, html, words, nth.max(0) as usize, by_words != 0, (width, height), font))
         .map_or(std::ptr::null_mut(), |p| Box::into_raw(Box::new(p)))
 }
 

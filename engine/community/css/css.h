@@ -17,17 +17,22 @@ struct MotoliiCss;
 // `words` is the layer's text, `nth` which [data-splitting] element of the
 // HTML it is, from 0. `by_words` is nonzero when the layer is split into
 // words, not letters. The page is width x height pixels, the project's size.
+// `font` is the size the letters are drawn at, in those pixels: the font-size
+// of the split element, so that the pen's em is the drawn letters' em (0
+// leaves the pen's own).
 // Returns null if the page cannot be opened.
 MotoliiCss* motolii_css_new(const char* css, const char* html,
                             const char* words, int32_t nth, int32_t by_words,
-                            uint32_t width, uint32_t height);
+                            uint32_t width, uint32_t height, float font);
 // How many letters (or words) the page moves: every character of the words,
 // spaces too, as Motolii splits a text.
 int32_t motolii_css_letters(const MotoliiCss* page);
 // Plays the page to `t` seconds. `boxes` holds n boxes, x y w h in pixels on
-// the page, y down, one per letter. For each letter, `out` receives 17
+// the page, y down, one per letter: across, the letter; up and down, its
+// font's ascent to descent (the content area, which is made as tall as the
+// pen's line-height about the same middle). For each letter, `out` receives 17
 // numbers: its opacity, then a 4 x 4 matrix, column by column, that moves it
-// about its own middle in the same pixels. Returns how many were written.
+// about its box's middle in the same pixels. Returns how many were written.
 int32_t motolii_css_at(MotoliiCss* page, double t, const float* boxes,
                        int32_t n, double* out);
 void motolii_css_free(MotoliiCss* page);

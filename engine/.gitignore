@@ -12,6 +12,7 @@
 !/third_party/qdtsne/
 !/third_party/rapidfuzz/
 !/third_party/scipy_lsap/
+!/third_party/splitting/
 !/third_party/thermion_frame/
 !/third_party/wordnet_ja/
 !/third_party/ymm4-luascript/

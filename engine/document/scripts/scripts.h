@@ -56,12 +56,13 @@ struct DocScript {
   bool clears = false;
   // A .css file: the pen's CSS, and the HTML of the .html file of the same
   // name beside it, if any. It is run by community/css on the letters of the
-  // layers it is on, one page for each layer, kept with the words it was
-  // opened for (doc_expressions_lay).
+  // layers it is on, one page for each layer, kept with what it was opened
+  // for: the words, how they are split and the size they are drawn at
+  // (doc_expressions_lay).
   std::string css, html;
   struct Page {
     std::shared_ptr<MotoliiCss> page;
-    std::string words;
+    std::string made_for;
   };
   std::map<int, Page> pages;
   // Whether the script is a relation that defines force() and no relate(), see

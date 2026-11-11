@@ -121,30 +121,60 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
       sh->second.drawn->letters;
   const std::string words = doc_word(d, layer, "text");
   const bool by_words = doc_word(d, layer, "split") == "words";
+  filament::math::float2 half{0.5f};
+  doc_half(d, layer, &half);
+  // The size the letters are drawn at, in project pixels: the page's em.
+  const float font = (float)(sh->second.drawn->em * 2.0 * half.y / px);
   DocScript::Page& p = sc.pages[layer];
-  if (!p.page || p.words != words + (by_words ? "\n1" : "\n0")) {
+  const std::string key = words + (by_words ? "\n1\n" : "\n0\n") +
+                          std::to_string(font);
+  if (!p.page || p.made_for != key) {
     const double high = doc_number(d, 0, "high", 0, 1080);
-    p.words = words + (by_words ? "\n1" : "\n0");
+    p.made_for = key;
     p.page = std::shared_ptr<MotoliiCss>(
         motolii_css_new(sc.css.c_str(), sc.html.c_str(), words.c_str(), 0,
                         by_words, (uint32_t)(high * d.stage->w / d.stage->h),
-                        (uint32_t)high),
+                        (uint32_t)high, font),
         motolii_css_free);
   }
-  filament::math::float2 half{0.5f};
-  doc_half(d, layer, &half);
   const size_t m = std::min(made.size(), letters.size());
   std::vector<float> boxes;
-  for (size_t i = 0; i < m; ++i)
+  // Each letter's box as a pen lays it: across, from where it is set to its
+  // advance; up and down, the font's line (the content area, which css.rs
+  // sizes to the pen's line-height). Its middle is not the letter's middle.
+  const filament::math::float2 line = sh->second.drawn->line;
+  const std::vector<filament::math::float2>& across =
+      sh->second.drawn->boxes;
+  const auto box = [&](size_t i) {
+    return i < across.size() ? across[i]
+                             : filament::math::float2{
+                                   letters[i].x, letters[i].y - letters[i].x};
+  };
+  for (size_t i = 0; i < m; ++i) {
+    const filament::math::float2 b = box(i);
     boxes.insert(boxes.end(),
-                 {(float)((letters[i].x * 2.f - 1.f) * half.x / px),
-                  (float)(-half.y / px),
-                  (float)((letters[i].y - letters[i].x) * 2.f * half.x / px),
-                  (float)(2.f * half.y / px)});
+                 {(float)((b.x * 2.f - 1.f) * half.x / px),
+                  (float)((line.x * 2.f - 1.f) * half.y / px),
+                  (float)(b.y * 2.f * half.x / px),
+                  (float)((line.y - line.x) * 2.f * half.y / px)});
+  }
   std::vector<double> out(m * 17);
   if (!p.page || motolii_css_at(p.page.get(), clock, boxes.data(), (int32_t)m,
                                 out.data()) != (int32_t)m)
     return made;
+  // Each matrix moves the letter about its box's middle. Made about the
+  // letter's middle (doc_letter_middle) instead, the box's middle being `o`
+  // from it: T(o) M T(-o), which adds o - M o to the translation.
+  const double oy = (line.x + line.y - 1.0) * half.y / px;
+  for (size_t i = 0; i < m; ++i) {
+    const filament::math::float2 b = box(i);
+    const double ox =
+        (2.0 * b.x + b.y - letters[i].x - letters[i].y) * half.x / px;
+    double* a = &out[i * 17 + 1];
+    for (int row = 0; row < 3; ++row)
+      a[12 + row] += (row == 0 ? ox : row == 1 ? oy : 0.0) -
+                     a[row] * ox - a[4 + row] * oy;
+  }
   // From CSS pixels, y down, to stage units, y up: each entry (row, column)
   // times s[row] / s[column].
   const double s[4] = {px, -px, px, 1};

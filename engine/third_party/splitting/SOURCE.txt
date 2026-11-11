@@ -1,0 +1,3 @@
+Splitting 1.1.0, dist/splitting.css and LICENSE.md of the npm package splitting (https://www.npmjs.com/package/splitting/v/1.1.0), as released, unchanged.
+Source: https://github.com/shshaw/Splitting. Licence: MIT (LICENSE.md).
+The styles Splitting recommends with its markup, which pens load with it (unpkg.com/splitting/dist/splitting.css): put before a pasted pen's CSS by community/css/css.rs, which makes Splitting's markup in its place.

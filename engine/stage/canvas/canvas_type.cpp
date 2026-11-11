@@ -222,6 +222,18 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         t->translate(-x + 0.5f * outline, -y + 0.5f * outline);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
+        // ThorVG's size is in points, drawn at 96 / 72 pixels each
+        // (src/renderer/tvgLoader.h, FontLoader::DPI; sfnt loader's scale).
+        d->em = sized * (96.f / 72.f) / (float)*h;
+        // ThorVG sets the baseline the hhea ascent below the text's top
+        // (loaders/sfnt/tvgSfntLoader.cpp, SfntLoader::transform), and the text
+        // was moved by -y here.
+        tvg::TextMetrics font;
+        if (t->metrics(font) == tvg::Result::Success) {
+          const float base = font.ascent - y + 0.5f * outline;
+          d->line = {(base - font.ascent) / (float)*h,
+                     (base - font.descent) / (float)*h};
+        }
         // Keep the text object so the words can be changed in place (see
         // words_at). This works only for plain text without splitting,
         // wrapping, alignment or rims.
@@ -261,6 +273,21 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
               while (*next && *next != ' ') ++next;
             inks.push_back(float2{across(std::string(line.c_str(), next)).x,
                                   across(std::string(at, next)).y});
+            // Its box: the advances of its characters. The last one is set
+            // where its ink ends less how far that ink reaches past where it is
+            // set; the others before it.
+            tvg::GlyphMetrics g{};
+            float advance = 0.f;
+            for (const char* c = at; c < next;) {
+              const char* after = nullptr;
+              if (t->metrics(c, g, &after) != tvg::Result::Success || !after)
+                break;
+              advance += g.advance * fx.letters, c = after;
+            }
+            const float last = inks.back().x * (float)*w - g.max.x;
+            d->boxes.push_back(
+                float2{(last - (advance - g.advance * fx.letters)) / (float)*w,
+                       advance / (float)*w});
             at = next;
             if (fx.splitWords)
               while (*at == ' ') ++at;

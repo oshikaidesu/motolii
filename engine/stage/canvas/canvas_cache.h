@@ -315,11 +315,21 @@ struct Canvas2D {
   // For a text split into letters: where each letter lies across the image, as
   // fractions of its width. Each copy shows one letter.
   std::vector<filament::math::float2> letters;
+  // For each of them, its box across as a pasted pen lays it: from where the
+  // letter is set to its advance (x and width, fractions of the image's width).
+  std::vector<filament::math::float2> boxes;
   // The section that plays when one is named, in frames of the file.
   float fromFrame = 0.f, toFrame = 0.f;
   // For a text: how many times as tall as one line the text is. The size gives
   // the height of a line.
   float tallBy = 1.f;
+  // For a text: the size its letters are set at, as a fraction of the image's
+  // height (an em, which a pasted pen's lengths are measured in), and where
+  // the font's line lies, from its ascent above the baseline to its descent
+  // below, as fractions of the image's height from the top (the content area
+  // of CSS 2.1 §10.6.1, a pasted pen's letter box). The image is cut to the ink.
+  float em = 0.f;
+  filament::math::float2 line{0.f, 1.f};
   // The drawing options the layer was made with.
   Canvas2DFx fx;
   // The text's own words as a ThorVG text. Driver thread only. words_at updates
