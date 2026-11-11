@@ -1,5 +1,6 @@
 // The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
+import 'package:motolii/workspace/tool_panel/ease/ease_graph_panel.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_stack.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_writer.dart';
 import 'package:motolii/workspace/easing/ease.dart';
@@ -17,9 +18,7 @@ import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_ends.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_graph.dart';
-import 'package:motolii/workspace/tool_panel/ease/ease_numbers.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart';
-import 'package:motolii/workspace/tool_panel/ease/ease_trial.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_side.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -351,83 +350,16 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: ColoredBox(
-                    color: WindowTokens.well,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: span == null
-                              ? EaseTrial(
-                                  way: said(ease),
-                                  builder: (trial) => graph(ws.frame, trial),
-                                )
-                              : ValueListenableBuilder<int>(
-                                  valueListenable: ws.moment,
-                                  builder: (_, frame, _) => graph(frame),
-                                ),
-                        ),
-                        if (span == null && ws.inside != null)
-                          Positioned(
-                            left: Shape.s(6),
-                            top: Shape.s(4),
-                            right: Shape.s(6),
-                            child: IgnorePointer(
-                              child: Text(
-                                'Trying here. Pick a key to go on a stretch',
-                                key: const ValueKey('ease-no-span'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyles.micro(Grey.g63),
-                              ),
-                            ),
-                          ),
-                        if (trouble case final why?)
-                          Positioned(
-                            left: Shape.s(4),
-                            right: Shape.s(4),
-                            top: Shape.s(2),
-                            child: Text(
-                              why,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyles.label(Grey.g63),
-                            ),
-                          ),
-                        if (span case final s?)
-                          Positioned(
-                            left: Shape.s(6),
-                            top: Shape.s(4),
-                            right: Shape.s(6),
-                            child: IgnorePointer(
-                              child: Text(
-                                '${s.layer.name}  ${s.from} → ${s.to}',
-                                key: const ValueKey('ease-span'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyles.micro(Grey.g63),
-                              ),
-                            ),
-                          ),
-                        Positioned.fill(
-                          child: EaseNumbers(
-                            card: whole ? easeLaid(cards) : card,
-                            onChanged: put,
-                            overshoot: overshoot,
-                            onOvershoot: overshootSet,
-                          ),
-                        ),
-                        Positioned(
-                          left: Shape.s(2),
-                          bottom: Shape.s(2),
-                          child: EaseStep(span: span, back: true),
-                        ),
-                        Positioned(
-                          right: Shape.s(2),
-                          bottom: Shape.s(2),
-                          child: EaseStep(span: span, back: false),
-                        ),
-                      ],
-                    ),
+                  child: EaseGraphPanel(
+                    ws: ws,
+                    span: span,
+                    ease: ease,
+                    graph: graph,
+                    trouble: trouble,
+                    numbersCard: whole ? easeLaid(cards) : card,
+                    onChanged: put,
+                    overshoot: overshoot,
+                    onOvershoot: overshootSet,
                   ),
                 ),
                 SizedBox(
