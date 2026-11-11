@@ -1,0 +1,23 @@
+--- a/servo/animation.rs
++++ b/servo/animation.rs
+@@ -701,7 +701,10 @@
+     /// Whether or not the current iteration is over. Note that this method assumes that
+     /// the animation is still running.
+     fn iteration_over(&self, time: f64) -> bool {
+-        time > (self.started_at + self.current_iteration_duration())
++        // At the very end of an iteration that is not the last, the next one has begun, at its 0% (Web Animations 1,
++        // §4.8.4: floor(overall progress); the simple iteration progress is 1.0 only at the end of the active interval),
++        // within a microsecond, as Chromium compares times (TimeTolerance, blink/.../animation/timing_calculations.cc).
++        time >= (self.started_at + self.current_iteration_duration()) - 1e-6
+     }
+ 
+     /// Assuming this animation is running, whether or not it is on the last iteration.
+@@ -857,6 +860,8 @@
+             AnimationState::Paused(progress) => progress,
+             AnimationState::Canceled => return,
+         };
++        // A time within a microsecond of the start is the start (iteration_over above).
++        let progress = if progress < 0. && progress * self.duration > -1e-6 { 0. } else { progress };
+ 
+         if progress < 0.
+             && self.fill_mode != AnimationFillMode::Backwards
