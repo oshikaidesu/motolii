@@ -5,6 +5,7 @@
 import 'package:motolii/workspace/dock/effects/effect_entries.dart';
 import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
+import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/services.dart';
@@ -21,10 +22,7 @@ import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/effects/effect_places.dart';
 import 'package:motolii/workspace/dock/effects/effects_controller.dart';
-import 'package:motolii/workspace/dock/map/image_features.dart';
-import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
@@ -173,34 +171,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
       onApply: e.apply,
       onMenu: e.label == 'Not here' ? null : (at) => menuOn(e, at),
     );
-    // A deck's cover, as Spotify makes a playlist's cover: the images of its first four effects in a 2x2 grid,
-    // or the first one alone while it holds fewer than four.
-    Widget? cover(Iterable<String> ids) {
-      final f = [
-        for (final id in ids)
-          if (pic(id) case final p when p.isNotEmpty) p,
-      ].take(4).toList();
-      Widget one(String p) => TileMoving(p, playing: false);
-      return f.isEmpty
-          ? null
-          : f.length < 4
-          ? one(f.first)
-          : Column(
-              children: [
-                for (final r in const [0, 2])
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(child: one(f[r])),
-                        Expanded(child: one(f[r + 1])),
-                      ],
-                    ),
-                  ),
-              ],
-            );
-    }
-
     Widget list(bool narrow) => EffectPlaces(
       c,
       key: _places,
@@ -223,7 +193,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
       },
       mapped: c.mem.mapped.contains('Effects'),
       held: [for (final e in held) strip(e)],
-      covers: {for (final d in decks) '@${d.name}': ?cover(deckIds[d]!)},
+      covers: {
+        for (final d in decks) '@${d.name}': ?deckCover(deckIds[d]!, pic),
+      },
       put: (d, id) {
         if (every.where((e) => e.id == id).firstOrNull case final e?
             when !(deckIds[d]?.contains(id) ?? false)) {
@@ -290,36 +262,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             : 'Nothing here yet',
                       )
                     : c.mem.mapped.contains('Effects')
-                    ? ListenableBuilder(
-                        // Laid out by the tiles there are, and again once all are drawn; tiles drawn in between join then.
-                        listenable: EffectTiles.progress,
-                        builder: (context, _) {
-                          final map = widget.effects.map,
-                              drawing = EffectTiles.progress.value != null;
-                          final clip = likenessModel('clip_b32'); // Placed by how CLIP sees each tile's frames once the model is made, else by tiny colours.
-                          final drawn = [
-                            for (final e in every)
-                              if (pic(e.id).isNotEmpty) e,
-                          ];
-                          if (!drawing || map.places.value.isEmpty) {
-                            map.need(
-                              m,
-                              [for (final e in drawn) (e.id, pic(e.id))],
-                              (from) => widget.effects.numbersOf(m, clip, [
-                                for (final e in drawn) e.label,
-                              ], from),
-                              also: '${clip ?? ''} kinds',
-                            );
-                          }
-                          return ShelfMapView(
-                            map,
-                            [for (final e in listed) (e.id, tile(e, true))],
-                            picked: c.sel,
-                            press: c.pick,
-                            peek: (id) => TileMoving(pic(id), playing: true),
-                            names: {for (final e in every) e.id: e.name},
-                          );
-                        },
+                    ? EffectMapPane(
+                        widget.effects,
+                        m,
+                        every: every,
+                        listed: listed,
+                        picked: c.sel,
+                        press: c.pick,
+                        pic: pic,
+                        tile: (e) => tile(e, true),
                       )
                     : ShelfGrid(
                         look,
