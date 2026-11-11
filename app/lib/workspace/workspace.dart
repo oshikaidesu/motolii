@@ -20,6 +20,7 @@ import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/commands/menu_bar.dart';
+import 'package:motolii/workspace/commands/menu_items.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/state/pane.dart';
