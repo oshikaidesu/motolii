@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/card_words.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
@@ -78,18 +79,7 @@ class ValuesCard extends StatelessWidget {
                   ),
                 // A script is added like an effect and removed the same way.
                 if (card.name == 'Script' && doc.actions.onCardRemove != null)
-                  Pressable(
-                    key: const ValueKey('card-remove:Script'),
-                    onTap: () => doc.actions.onCardRemove!(card.name),
-                    builder: (_, h) => Padding(
-                      padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: glyph(
-                        Shape.z(12),
-                        (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
-                        h,
-                      ),
-                    ),
-                  ),
+                  _bin(doc.actions, card.name),
                 if (at >= 0) ...[
                   // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
                   if (doc.actions.onCardEye != null)
@@ -150,18 +140,7 @@ class ValuesCard extends StatelessWidget {
                     ],
                   ),
                   if (doc.actions.onCardRemove != null)
-                    Pressable(
-                      key: ValueKey('card-remove:${card.name}'),
-                      onTap: () => doc.actions.onCardRemove!(card.name),
-                      builder: (_, h) => Padding(
-                        padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: glyph(
-                          Shape.z(12),
-                          (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
-                          h,
-                        ),
-                      ),
-                    ),
+                    _bin(doc.actions, card.name),
                 ],
                 // The ≡ grip drags an effect up or down its stack, as in Alight Motion and After Effects' Effect Controls.
                 if (at >= 0 &&
@@ -313,3 +292,17 @@ void _drawBin(Canvas c, Size s, Color color) {
     p,
   );
 }
+
+/// The bin at the head of an effect's card: a press takes the card away.
+Widget _bin(CardActions actions, String name) => Pressable(
+  key: ValueKey('card-remove:$name'),
+  onTap: () => actions.onCardRemove!(name),
+  builder: (_, h) => Padding(
+    padding: EdgeInsets.only(right: Shape.s(6)),
+    child: glyph(
+      Shape.z(12),
+      (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
+      h,
+    ),
+  ),
+);

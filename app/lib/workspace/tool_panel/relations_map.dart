@@ -139,35 +139,33 @@ class RelationsMapPainter extends CustomPainter {
         }
       }
     }
+    // A layer's path as a thin line in its colour, and the points of it on the map.
+    (Color, List<Offset>) trace(String id, List<MapPoint3> way, double alpha) {
+      final hue = v.world.things[id]?.$2 ?? WindowTokens.accent,
+          pts = [for (final p in way) v.on(p)];
+      c.drawPath(
+        Path()..addPolygon(pts, false),
+        Paint()
+          ..color = hue.withValues(alpha: alpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+      return (hue, pts);
+    }
+
     // Each moving layer's path over the duration, in its colour, with a dot per step.
     // A morph from one relation to another shows as the paths bending from one shape into the other.
     // An easing shows as the dots bunching up and spreading out.
     for (final e in paths.entries) {
       // As in After Effects, only the picked layer's path, with a dot per step.
-      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent,
-          pts = [for (final p in e.value) v.on(p)];
-      c.drawPath(
-        Path()..addPolygon(pts, false),
-        Paint()
-          ..color = hue.withValues(alpha: .6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
+      final (hue, pts) = trace(e.key, e.value, .6);
       for (final p in pts) {
         c.drawCircle(p, 1.4, Paint()..color = hue);
       }
     }
     for (final e in stations.entries) {
       // For a picked relation: where each layer stands at each of its keyframes, joined by straight lines and ringed.
-      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent,
-          pts = [for (final p in e.value) v.on(p)];
-      c.drawPath(
-        Path()..addPolygon(pts, false),
-        Paint()
-          ..color = hue.withValues(alpha: .35)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
+      final (hue, pts) = trace(e.key, e.value, .35);
       for (final p in pts) {
         c.drawCircle(
           p,
