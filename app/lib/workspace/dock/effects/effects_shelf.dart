@@ -2,41 +2,33 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
+import 'package:motolii/workspace/dock/effects/effect_entries.dart';
 import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/services.dart';
-import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
-import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/workspace/dock/common/empty_shelf.dart';
 import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
-import 'package:motolii/workspace/dock/common/star_button.dart';
-import 'package:motolii/workspace/dock/effects/effect_drawings.dart';
 import 'package:motolii/workspace/dock/effects/effect_places.dart';
 import 'package:motolii/workspace/dock/effects/effects_controller.dart';
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
-import 'package:motolii/workspace/state/effects.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The Effects shelf: the list of places to look in, the tiles or the map of what is there, and the footer for the
 /// picked effect.
@@ -89,172 +81,20 @@ class _EffectsShelfState extends State<EffectsShelf> {
   Widget build(BuildContext context) {
     final ws = c.ws, m = ws.inside;
     if (m == null) return EmptyShelf(c.query);
-    final on = ws.fxOf(ws.selected),
-        screen = ws.screenFx,
-        picked = int.tryParse(ws.selected ?? '') != null;
+    final picked = int.tryParse(ws.selected ?? '') != null;
     final commands = EffectCommands(c, widget.effects);
     final look = shelfLooks['Effects']!;
-    // Overlays on a tile's image, none on a small tile.
-    // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
-    // and the star when starred or hovered.
-    List<Widget> Function(bool) marks(
-      String id,
-      bool small, {
-      String? on,
-      String? same,
-    }) =>
-        (h) => [
-          if (on != null && !small)
-            Positioned(
-              left: 3,
-              top: 3,
-              child: Chip(
-                label: on,
-                look: ChipLook.tag(WindowTokens.accent, edge: true),
-              ),
-            ),
-          if (same != null && !small)
-            Positioned(
-              left: 3,
-              bottom: 3,
-              child: Chip(
-                label: same,
-                look: ChipLook.tag(Grey.g63, edge: true),
-              ),
-            ), // Shows why the sample is unchanged: what it lacks, or that the engine does not draw it yet.
-          if (!small && (c.starred(id) || h))
-            Positioned(
-              right: 0,
-              top: 0,
-              child: StarButton(
-                key: ValueKey('ws-star-$id'),
-                on: c.starred(id),
-                onTap: () => c.star(id),
-              ),
-            ),
-        ];
-    // What the engine said about each effect, by id: a layer effect by its name, a file effect by its file.
-    final seen = <String, ShelfItem>{};
+    final entries = effectEntries(
+      c: c,
+      effects: widget.effects,
+      commands: commands,
+      tagging: _tagging,
+      renaming: _renaming,
+      tagged: _tagged,
+      renamed: _renamed,
+    );
+    final every = entries.every, seen = entries.seen;
     String pic(String id) => seen[id]?.picture ?? '';
-    // Builds one item for any of the three listings; only what really differs by listing is switched on its [from].
-    EffectEntry fx(String name, ShelfItem i) {
-      final thing = i.from == 'thing',
-          screened = i.from == 'screen',
-          id = thing ? i.name : i.id;
-      final lit = thing ? on.contains(id) : screened && screen.contains(id);
-      final apply = commands.chosen(
-        id,
-        thing
-            ? () => ws.fxToggle(id)
-            : (screened ? () => ws.screenPut(id) : () => ws.lookPut(id)),
-        taken: thing && lit,
-      );
-      seen[id] = i;
-      return (
-        id: id,
-        name: name,
-        label: thing || screened ? i.label : 'Look',
-        on: lit,
-        apply: apply,
-        said: thing
-            ? _said(ws, id)
-            : !screened
-            ? (picked
-                  ? 'A look for the picked thing'
-                  : 'A look, on a new board')
-            : i.same && TileReview.stopped(id).isNotEmpty
-            ? 'Stops here: ${TileReview.stopped(id)}'
-            : i.same && TileReview.lacks(id).isNotEmpty
-            ? 'Needs: ${TileReview.lacks(id)}'
-            : i.about.isEmpty
-            ? (picked ? 'On the picked thing' : 'On all under it')
-            : i.about,
-        tile: (small, menu) => ShelfTile(
-          ShelfItem(id, name, picture: i.picture),
-          look,
-          key: small || thing
-              ? null
-              : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
-          small: small,
-          art: thing && i.picture.isEmpty
-              ? paintedArt(Draw((c, _) => drawEffectLook(c, name), name))
-              : null, // Without an image, its small drawing.
-          picked: c.sel == id,
-          lit: lit,
-          onTap: () => c.pick(id),
-          onApply: apply,
-          onMenu: menu,
-          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (WorkspaceController.tryOn).
-          naming: _tagging == id
-              ? ShelfNameField(
-                  widget.effects.tags.ownOf('Effects', id).join(' '),
-                  (to) => _tagged(id, to),
-                )
-              : screened && _renaming == id
-              ? ShelfNameField(name, (to) => _renamed(id, name, to))
-              : null,
-          over: marks(
-            id,
-            small,
-            on: !lit
-                ? null
-                : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
-            same: screened && i.same ? TileReview.sameTag(id) : null,
-          ),
-        ),
-      );
-    }
-
-    // File effects sorted by name. One the user added and renamed shows the name written beside it (shelf_add.dart).
-    final screens = m.items('screen');
-    final lined = <(String, ShelfItem)>[
-      for (final i in m.items('thing')) (i.name, i),
-      ...(widget.effects.byName[screens] ??= ([
-        for (final i in screens) (shelfNamed(i.id) ?? i.name, i),
-      ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
-      // A saved preset by its name (Save Look). Applying it gives the selected layer its values, effects and keyframes.
-      for (final (_, f) in m.presets)
-        if (m.item(f) case final i?) (i.name, i),
-    ];
-    final every = <EffectEntry>[
-      // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_effect.dart).
-      (
-        id: 'empty:effect',
-        name: 'Empty',
-        label: '',
-        on: false,
-        apply: commands.chosen(
-          'empty:effect',
-          () => emptyPut(
-            ws,
-            expression: false,
-            told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why',
-          ),
-        ),
-        said: picked
-            ? 'An empty effect on the picked thing: paste ISF code into its card'
-            : 'An empty effect, on a new board: paste ISF code into its card',
-        tile: (small, menu) => ShelfTile(
-          ShelfItem('empty:effect', 'Empty'),
-          look,
-          small: small,
-          art: paintedArt(const EmptyLook()),
-          picked: c.sel == 'empty:effect',
-          onTap: () => c.pick('empty:effect'),
-          onApply: commands.chosen(
-            'empty:effect',
-            () => emptyPut(
-              ws,
-              expression: false,
-              told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why',
-            ),
-          ),
-          onMenu: menu,
-        ),
-      ),
-      for (final (n, i) in lined) fx(n, i),
-      // There are no motions here: they are expressions, in Create's Expression group.
-    ];
     final listing = effectListing(
       c: c,
       tags: widget.effects.tags,
@@ -280,39 +120,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     if (deck != null && deck.things.any((t) => !known.contains(t.id))) {
       deckSettle(deck, known);
     }
-    final lost = <EffectEntry>[
-      if (deck != null && c.query.isEmpty)
-        for (final t in deck.things)
-          if (!known.contains(t.id))
-            (
-              id: t.id,
-              name: t.name,
-              label: 'Not here',
-              on: true,
-              said: 'Not on this machine',
-              apply: () => c.set(() {
-                deck.things.remove(t);
-                effectDecksKeep();
-              }),
-              tile: (small, menu) => ShelfTile(
-                ShelfItem(t.id, t.name),
-                look,
-                picked: c.sel == t.id,
-                onTap: () => c.pick(t.id),
-                onMenu: menu,
-                over: (_) => [
-                  Positioned(
-                    left: 3,
-                    bottom: 3,
-                    child: Chip(
-                      label: 'NOT HERE',
-                      look: ChipLook.tag(Grey.g63, edge: true),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    ];
+    final lost = effectLost(c: c, deck: deck, known: known);
     // Up to ten recent effects show above the tiles while nothing narrows the list, as Alight Motion's effect browser opens on its last ten
     // at EffectBrowser.kt:217. A list out of sight is not revisited, so the recent ones stay in view.
     final inSight =
@@ -596,15 +404,4 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ),
     );
   }
-}
-
-/// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
-String _said(WorkspaceController ws, String name) {
-  final m = ws.inside!,
-      v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
-      t = int.tryParse(
-        ws.selected ?? '',
-      ); // The selected layer's id, or null when none is selected.
-  final now = t == null ? '' : m.word(t, v);
-  return now.isEmpty ? '$v · none on it' : '$v · $now';
 }
