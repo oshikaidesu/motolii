@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/dock/common/empty_shelf.dart';
@@ -51,13 +50,7 @@ class FontsShelf extends StatelessWidget {
           m.whole(m.word(int.parse(l.id), 'file')): l,
     };
     bool used(FontFile f) => setIn.containsKey(f.path);
-    Set<String> tagsOf(FontFile f) => controller.tags.of(
-      'Fonts',
-      f.family,
-      f.path == null
-          ? const <String>{}
-          : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
-    );
+    Set<String> tagsOf(FontFile f) => controller.tagsOf(f, c.ws.inside);
     var hits = fonts
         .where((f) => ShelfTags.hit(c.query, f.family, tagsOf(f)))
         .toList();

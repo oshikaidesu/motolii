@@ -1,5 +1,9 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/media.dart' show Draw;
+
 /// Draws the layer mark in [ink], for use as the child of a [Badge].
 ///
 /// The badge is 16 square and its corner radius is 0.32 of that.
@@ -22,3 +26,14 @@ void drawLayerMark(Canvas c, Size s, Color ink) {
   c.drawPath(dia(2.2), stroke(1.5));
   c.drawPath(dia(-1.8), fill);
 }
+
+/// The small round badge at the head of a card or a ghost of one: the layer mark in white on [tone].
+Widget layerBadge(Color tone) => Badge(
+  tone,
+  size: 16,
+  radius: const Radius.circular(16 * .32),
+  mark: Draw(
+    (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
+    InspectorSkin.onAccent,
+  ),
+);

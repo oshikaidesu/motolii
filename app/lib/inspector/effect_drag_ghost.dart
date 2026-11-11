@@ -5,8 +5,6 @@ import 'package:motolii/inspector/inspector_badges.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge;
-import 'package:motolii/widgets/media.dart' show Draw;
 
 /// The folded card head that follows the pointer while an effect is dragged.
 class EffectDragGhost extends StatelessWidget {
@@ -29,15 +27,7 @@ class EffectDragGhost extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Badge(
-          fx.tone,
-          size: 16,
-          radius: const Radius.circular(16 * .32),
-          mark: Draw(
-            (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
-            InspectorSkin.onAccent,
-          ),
-        ),
+        layerBadge(fx.tone),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,

@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
@@ -69,18 +68,7 @@ Widget fontTile(
 }) {
   final commands = FontCommands(c, controller);
   final sel = c.sel == f.family, star = c.starred(f.family);
-  final tags =
-      f.script ??
-      controller.tags
-          .of(
-            'Fonts',
-            f.family,
-            f.path == null
-                ? const <String>{}
-                : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
-          )
-          .take(2)
-          .join(' ');
+  final tags = f.script ?? controller.tagsOf(f, c.ws.inside).take(2).join(' ');
   return ShelfTile(
     ShelfItem(f.family, f.family, label: f.script ?? '', about: f.sample ?? ''),
     shelfLooks['Fonts']!,

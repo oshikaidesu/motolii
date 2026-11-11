@@ -1,5 +1,7 @@
 // What the Fonts shelf keeps while the window is open: the font files it offers, the fonts used lately, and the
 // fonts' dots on the map.
+import 'package:motolii/bridge/motolii_shelves.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -38,6 +40,15 @@ class FontsController {
 
   /// The tags of the fonts, which a search matches beside their names.
   final ShelfTags tags;
+
+  /// The tags of a font: the user's own if it has them, else the ones read from the font file by the engine ([m]).
+  Set<String> tagsOf(FontFile f, Motolii? m) => tags.of(
+    'Fonts',
+    f.family,
+    f.path == null
+        ? const <String>{}
+        : (m?.fontTags(f.path!) ?? const <String>{}),
+  );
 
   /// The shelf's map: where each font lies when the shelf is shown as a map.
   final map = ShelfMap('Fonts');

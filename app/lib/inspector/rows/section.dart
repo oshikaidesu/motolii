@@ -6,10 +6,9 @@ import 'package:motolii/inspector/inspector_badges.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Pressable;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/forms/forms.dart';
-import 'package:motolii/widgets/media.dart' show Draw;
 
 /// A card: a heading and its rows. Clicking the heading folds the card.
 ///
@@ -58,15 +57,7 @@ class Section extends StatelessWidget {
             // The mark is centred in its box and the gap after it equals the card's inset, so it has equal space on both sides.
             DisclosureTriangle(open: open, hot: h),
             SizedBox(width: InspectorSkin.inset),
-            Badge(
-              tone,
-              size: 16,
-              radius: const Radius.circular(16 * .32),
-              mark: Draw(
-                (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
-                InspectorSkin.onAccent,
-              ),
-            ),
+            layerBadge(tone),
             SizedBox(width: Shape.s(6)),
             Flexible(
               child: Text(
