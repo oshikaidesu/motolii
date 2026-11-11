@@ -84,10 +84,10 @@ void take_layer_off(Doc& d, Stage& s,
 void layer_words(LayerBuild& build) {
   Doc& d = build.d;
   const int layer = build.layer;
-  build.kind = doc_word(d, layer, "kind");
-  build.file = doc_word(d, layer, "file");
-  build.laid = doc_word(d, layer, "blend");
-  build.shape = doc_word(d, layer, "shape");
+  build.kind = build.word("kind");
+  build.file = build.word("file");
+  build.laid = build.word("blend");
+  build.shape = build.word("shape");
   const std::string& laid = build.laid;
   // A layer with effect files of its own is drawn alone as normal. Its blend
   // mode is applied once the effects are on (screen_fx.h).
@@ -125,15 +125,13 @@ bool effect_file_refuses(Rebuild& rebuild, LayerBuild& build) {
 
 // Keeps the units the layer is made in, and for a flat layer how it is placed.
 void layer_units_and_space(LayerBuild& build) {
-  Doc& d = build.d;
-  const int layer = build.layer;
   const std::string& kind = build.kind;
   DocShownLayer& made = build.made;
   const double units = build.units;
   made.units = units;
   if (doc_among("video image text shape", kind))
-    made.space = doc_word(d, layer, "space") == "2.5d" ? 25
-                 : doc_word(d, layer, "space") == "3d" ? 3
+    made.space = build.word("space") == "2.5d" ? 25
+                 : build.word("space") == "3d" ? 3
                                                        : 2;
 }
 
@@ -205,7 +203,7 @@ void layer_shadows(LayerBuild& build) {
   // A solid layer casts shadows from lights that throw them, and receives
   // them. The grains of a point cloud are their own light.
   if ((made.solid || made.shape) && !made.grains) {
-    const int group = (int)doc_number(d, layer, "light_group", 0, 0);
+    const int group = (int)build.number("light_group", 0);
     doc_parts(
         s, d.on_stage.shown[layer],
         [group](RenderableManager& faces, RenderableManager::Instance one) {

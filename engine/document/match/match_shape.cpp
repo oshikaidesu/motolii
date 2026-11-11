@@ -117,8 +117,6 @@ void canvas_shape(LayerBuild& build, const std::string& form, bool line,
 // A built-in shape or a path, with its fill, as a mesh when it is plain and
 // as a ThorVG image when it is not.
 void drawn_shape(LayerBuild& build) {
-  Doc& d = build.d;
-  const int layer = build.layer;
   const std::string &shape = build.shape, &fill = build.fill;
   Canvas2DFx& fx = build.fx;
   // By default a line is long and thin: 25 times as long as it is thick.
@@ -128,15 +126,15 @@ void drawn_shape(LayerBuild& build) {
   // No fill: only the edge is drawn, which gives a frame.
   fx.hollow = fill == "none";
   // Filled with an image file; see flat in canvas_renderables.h.
-  fx.media = doc_word(d, layer, "fill_media");
-  fx.evenOdd = doc_word(d, layer, "fill_rule") == "evenodd";
+  fx.media = build.word("fill_media");
+  fx.evenOdd = build.word("fill_rule") == "evenodd";
   const float high = line ? 0.04f : wave ? 0.3f : 1.f;
   // A plain shape with only an outline in one colour is cut into
   // triangles and drawn by Filament like the other layers of the scene
   // (flat_mesh). A shape with an edge, a ramp, a dash, effects, a trim or
   // a bend is rendered on the CPU as a ThorVG image. A path shape uses
   // its own path as its form. With no path yet it is an empty path.
-  const std::string drawn = doc_word(d, layer, "path"),
+  const std::string drawn = build.word("path"),
                     form = shape != "path" ? shape
                            : drawn.empty() ? "M0 0"
                                            : drawn;

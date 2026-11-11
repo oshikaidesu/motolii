@@ -80,7 +80,7 @@ void match_text(LayerBuild& build) {
                            : (fx.column ? doc_column(words) : words).c_str(),
              file.c_str(), mat4f{}, 1.f,
              fill.empty() ? float3{0x11 / 255.f} : colour, lay, edge,
-             fx.column ? .5f : (float)doc_number(d, layer, "align", 0, 0), fx);
+             fx.column ? .5f : (float)build.number("align", 0), fx);
 }
 
 }  // namespace motolii

@@ -61,18 +61,18 @@ ModelSurface model_surface(LayerBuild& build) {
   const bool glass = material == "glass",
              coloured = !fill.empty() && fill != "glass";
   const Surface surface{
-      (float)doc_number(d, layer, "metallic", 0, 0.08),
-      (float)doc_number(d, layer, "roughness", 0, 0.6),
-      (float)doc_number(d, layer, "reflectance", 0, 0.5),
-      (float)doc_number(d, layer, "clear_coat", 0, 0),
-      (float)doc_number(d, layer, "clear_coat_roughness", 0, 0),
-      (float)doc_number(d, layer, "emissive", 0, 0),
-      (float)doc_number(d, layer, "sheen", 0, 0),
-      (float)doc_number(d, layer, "anisotropy", 0, 0),
-      (float)doc_number(d, layer, "thickness", 0, 0.5)};
-  const std::string shading = doc_word(d, layer, "shading");
+      (float)build.number("metallic", 0.08),
+      (float)build.number("roughness", 0.6),
+      (float)build.number("reflectance", 0.5),
+      (float)build.number("clear_coat", 0),
+      (float)build.number("clear_coat_roughness", 0),
+      (float)build.number("emissive", 0),
+      (float)build.number("sheen", 0),
+      (float)build.number("anisotropy", 0),
+      (float)build.number("thickness", 0.5)};
+  const std::string shading = build.word("shading");
   // With clip on, use the material variant that a matte can cut.
-  const char* model = doc_number(d, layer, "clip", 0, 0) > 0.5 &&
+  const char* model = build.number("clip", 0) > 0.5 &&
                               (shading.empty() || shading == "lit")
                           ? "floor_lit_matte.filamat"
                           : surface_model(shading);
@@ -138,11 +138,11 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
       glass ? thick_glass(s, made.shape, {mat4f{}})
       : own && !made.sketch
           ? with_material(build, wear, made.shape,
-                          (int)doc_number(d, layer, "copies", 0, 1))
+                          (int)build.number("copies", 1))
           : add(s, made.shape, made.sketch ? "sketch.filamat" : model,
                 std::vector<mat4f>(
                     (size_t)std::max(1,
-                                     (int)doc_number(d, layer, "copies", 0, 1)),
+                                     (int)build.number("copies", 1)),
                     mat4f{}));
   made.look = look;
   if (look && glass) glassy(d, layer, look);
@@ -201,7 +201,7 @@ void file_model_with_material(LayerBuild& build, const ModelSurface& wear) {
       (made.shape = solid_mesh(file.c_str()))
           ? glass ? thick_glass(s, made.shape, {mat4f{}})
                   : with_material(build, wear, made.shape,
-                                  (int)doc_number(d, layer, "copies", 0, 1))
+                                  (int)build.number("copies", 1))
           : nullptr;
   made.look = look;
   if (!look)
@@ -213,9 +213,7 @@ void file_model_with_material(LayerBuild& build, const ModelSurface& wear) {
 }  // namespace
 
 void match_model(LayerBuild& build) {
-  Doc& d = build.d;
   Stage& s = build.s;
-  const int layer = build.layer;
   DocShownLayer& made = build.made;
   const std::string &file = build.file, &shape = build.shape;
   const long rgb = build.rgb;
@@ -241,7 +239,7 @@ void match_model(LayerBuild& build) {
   // Keep the file's own look unless a fill colour, a shading or a material
   // is given.
   else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f,
-                               (int)doc_number(d, layer, "copies", 0, 1))) &&
+                               (int)build.number("copies", 1))) &&
            (rgb >= 0 || !shading.empty()))
     solid_fill(s, made.solid,
                coloured ? colour : float3{0xd9, 0xd2, 0xc3} / 255.f, surface,

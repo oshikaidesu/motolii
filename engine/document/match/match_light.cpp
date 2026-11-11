@@ -22,9 +22,7 @@ using filament::LightManager;
 using filament::math::float3;
 
 void match_light(LayerBuild& build) {
-  Doc& d = build.d;
   Stage& s = build.s;
-  const int layer = build.layer;
   DocShownLayer& made = build.made;
   const std::string &file = build.file, &fill = build.fill;
   const float3 colour = build.colour;
@@ -41,20 +39,20 @@ void match_light(LayerBuild& build) {
     // and a bulb as large as the softness says.
     LightManager::ShadowOptions shade;
     shade.mapSize = 2048;
-    const float soft = (float)doc_number(d, layer, "shadow_softness", 0, 0);
+    const float soft = (float)build.number("shadow_softness", 0);
     shade.screenSpaceContactShadows =
-        doc_number(d, layer, "contact_shadows", 0, 0) > 0.5;
+        build.number("contact_shadows", 0) > 0.5;
     if (soft > 0.f)
       shade.shadowBulbRadius =
           type == LightManager::Type::SUN ? 0.05f * soft : 0.5f * soft;
     LightManager::Builder(type)
         .color(filament::Color::toLinear<filament::ACCURATE>(
             filament::sRGBColor{fill.empty() ? float3{1.f} : colour}))
-        .falloff((float)doc_number(d, layer, "falloff", 0, 10))
-        .castShadows(doc_number(d, layer, "shadows", 0, 0) > 0.5)
+        .falloff((float)build.number("falloff", 10))
+        .castShadows(build.number("shadows", 0) > 0.5)
         .shadowOptions(shade)
         .build(*s.engine, made.light);
-    if (const int group = (int)doc_number(d, layer, "light_group", 0, 0);
+    if (const int group = (int)build.number("light_group", 0);
         group > 0) {
       auto& lights = s.engine->getLightManager();
       lights.setLightChannel(lights.getInstance(made.light), 0, false),

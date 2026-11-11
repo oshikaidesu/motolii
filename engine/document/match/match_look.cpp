@@ -104,8 +104,6 @@ void look_material(LayerBuild& build) {
 
 // Reads how the colours of the layer's ramp are laid out.
 void look_ramp(LayerBuild& build) {
-  Doc& d = build.d;
-  const int layer = build.layer;
   const std::vector<float4>& ramp = build.ramp;
   std::vector<float>& rampAt = build.rampAt;
   Canvas2DFx& fx = build.fx;
@@ -121,11 +119,11 @@ void look_ramp(LayerBuild& build) {
     }
     fx.rampAt = rampAt;
   }
-  fx.radial = doc_word(d, layer, "gradient") == "radial",
-  fx.rampAngle = (float)doc_number(d, layer, "gradient_angle", 0, 0),
-  fx.rampScale = (float)doc_number(d, layer, "gradient_scale", 0, 1);
-  fx.spread = doc_word(d, layer, "gradient_spread") == "reflect"  ? 1
-              : doc_word(d, layer, "gradient_spread") == "repeat" ? 2
+  fx.radial = build.word("gradient") == "radial",
+  fx.rampAngle = (float)build.number("gradient_angle", 0),
+  fx.rampScale = (float)build.number("gradient_scale", 1);
+  fx.spread = build.word("gradient_spread") == "reflect"  ? 1
+              : build.word("gradient_spread") == "repeat" ? 2
                                                                   : 0;
 }
 
@@ -177,7 +175,7 @@ void look_copies(LayerBuild& build) {
       doc_absent_copies(d, layer, d.stage->now);
   // The number of copies is the number that the repeat effect lays down, if
   // there is one.
-  fx.copies = repeated.empty() ? (int)doc_number(d, layer, "copies", 0, 1)
+  fx.copies = repeated.empty() ? (int)build.number("copies", 1)
                                : (int)repeated.size();
   look_copies_together(build, repeated);
 }
@@ -187,9 +185,9 @@ void look_text(LayerBuild& build) {
   Doc& d = build.d;
   const int layer = build.layer;
   Canvas2DFx& fx = build.fx;
-  fx.wrapWidth = (float)doc_number(d, layer, "wrap_at", 0, 0);
-  const std::string split = doc_word(d, layer, "split"),
-                    script = doc_word(d, layer, "script");
+  fx.wrapWidth = (float)build.number("wrap_at", 0);
+  const std::string split = build.word("split"),
+                    script = build.word("script");
   fx.splitWords = split == "words";
   // A text with a script or an expression moves letter by letter, as in
   // Cavalry, unless split is none.
@@ -199,7 +197,7 @@ void look_text(LayerBuild& build) {
   // Maps to ThorVG's TextWrap. A wrap width without a wrap mode wraps by
   // words. Vertical wrapping makes a box one letter wide.
   {
-    const std::string w = doc_word(d, layer, "wrap");
+    const std::string w = build.word("wrap");
     fx.wrap = w == "character" || w == "vertical" ? 1
               : w == "word"                       ? 2
               : w == "smart"                      ? 3
@@ -208,9 +206,9 @@ void look_text(LayerBuild& build) {
                                                   : 0;
     if (w == "vertical") fx.wrapWidth = 1.f, fx.column = true;
   }
-  fx.letters = (float)doc_number(d, layer, "letter_spacing", 0, 1),
-  fx.lines = (float)doc_number(d, layer, "line_spacing", 0, 1),
-  fx.italic = (float)doc_number(d, layer, "italic", 0, 0);
+  fx.letters = (float)build.number("letter_spacing", 1),
+  fx.lines = (float)build.number("line_spacing", 1),
+  fx.italic = (float)build.number("italic", 0);
 }
 
 // Returns which of the space-separated `words` the layer's property `name` is,
@@ -240,7 +238,7 @@ void look_edge_ends(LayerBuild& build) {
   fx.rampBlend =
       std::max(0, which(d, layer, "gradient_blend", "rgb oklab hue steps"));
   fx.heads = std::max(0, which(d, layer, "heads", "none end start both")),
-  fx.headSize = (float)doc_number(d, layer, "head_size", 0, 4),
+  fx.headSize = (float)build.number("head_size", 4),
   fx.headShape = std::max(
       0, which(d, layer, "head_shape",
                "arrow circle box chevron bar t_line square square_filled "
@@ -251,8 +249,8 @@ void look_edge_ends(LayerBuild& build) {
             "arrow circle box chevron bar t_line square square_filled "
             "diamond diamond_filled arrow_hollow arrow_filled circle_hollow "
             "circle_filled teardrop_hollow teardrop_filled");
-  fx.dash = (float)(doc_number(d, layer, "dash", 0, 0) / units),
-  fx.dashFrom = (float)(doc_number(d, layer, "dash_offset", 0, 0) / units);
+  fx.dash = (float)(build.number("dash", 0) / units),
+  fx.dashFrom = (float)(build.number("dash_offset", 0) / units);
 }
 
 }  // namespace
@@ -278,9 +276,7 @@ int doc_bevel(Doc& d, int layer) {
 }
 
 void match_fill(LayerBuild& build) {
-  Doc& d = build.d;
-  const int layer = build.layer;
-  build.fill = doc_word(d, layer, "fill");
+  build.fill = build.word("fill");
   fill_colours(build.fill, build.ramp, build.rampAt, build.rgb);
   const long rgb = build.rgb;
   build.colour = float3{(float)((rgb >> 16) & 255), (float)((rgb >> 8) & 255),
@@ -289,13 +285,12 @@ void match_fill(LayerBuild& build) {
 }
 
 void match_stroke(LayerBuild& build) {
-  Doc& d = build.d;
   Stage& s = build.s;
   const int layer = build.layer;
   // The edge is ThorVG's stroke. Its colour is written like a fill. Its width
   // is converted from points of the image to a fraction of the layer's own
   // height, at scale 1 where layers start.
-  build.stroke = doc_word(d, layer, "stroke");
+  build.stroke = build.word("stroke");
   const std::string& stroke = build.stroke;
   build.edgeRgb = stroke.size() == 6 &&
                           stroke.find_first_not_of("0123456789abcdefABCDEF") ==
@@ -312,7 +307,7 @@ void match_stroke(LayerBuild& build) {
                                    (float)((edgeRgb >> 8) & 255),
                                    (float)(edgeRgb & 255)} /
                                 255.f,
-                            (float)(doc_number(d, layer, "stroke_width", 0, 0) /
+                            (float)(build.number("stroke_width", 0) /
                                     (0.5 * s.h * up.y / up.w))};
   if (!stroke.empty() && edgeRgb < 0)
     build.why = "a stroke is six digits, as ff3366";

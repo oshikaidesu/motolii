@@ -94,7 +94,7 @@ void piano_roll(LayerBuild& build, std::string& shown, float& rollHigh) {
   const std::string& file = build.file;
   std::string& why = build.why;
   if (std::filesystem::path(file).extension() == ".mid") {
-    const double speed = doc_number(d, layer, "speed", 0, 1);
+    const double speed = build.number("speed", 1);
     shown = midi_roll_file(
         file, speed == 1.0 ? 0.0 : midi_bpm(file.c_str()) * speed, why);
     // One point of the roll is one point of the document, as the 1920 x
@@ -217,9 +217,7 @@ long long doc_sketch_written(Doc& d, const std::string& file) {
 }
 
 void match_image(LayerBuild& build) {
-  Doc& d = build.d;
   Stage& s = build.s;
-  const int layer = build.layer;
   DocShownLayer& made = build.made;
   const std::string& file = build.file;
   const bool fxOk = build.fxOk;
@@ -231,14 +229,14 @@ void match_image(LayerBuild& build) {
   float rollHigh = 1.f;
   piano_roll(build, shown, rollHigh);
   const std::string ext = std::filesystem::path(file).extension().string();
-  const double cl = doc_number(d, layer, "crop_left", 0, 0),
-               ct = doc_number(d, layer, "crop_top", 0, 0),
-               cr = doc_number(d, layer, "crop_right", 0, 0),
-               cb = doc_number(d, layer, "crop_bottom", 0, 0);
+  const double cl = build.number("crop_left", 0),
+               ct = build.number("crop_top", 0),
+               cr = build.number("crop_right", 0),
+               cb = build.number("crop_bottom", 0);
   const bool cropped = cl + ct + cr + cb > 0.0;
   const float aspect =
       doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) &&
-              (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 ||
+              (edge.w > 0.f || build.number("round", 0) > 0.0 ||
                cropped)
           ? canvas_aspect(s, file.c_str())
           : 0.f;
@@ -249,7 +247,7 @@ void match_image(LayerBuild& build) {
   else if (fxOk && !shown.empty() &&
            (made.drawn = image_canvas(s, shown.c_str(), mat4f{}, rollHigh,
                                       float3{-1.f}, true, lay, fx,
-                                      doc_word(d, layer, "marker").c_str())))
+                                      build.word("marker").c_str())))
     s.playing.erase(made.drawn);
   deep_layers(build);
 }

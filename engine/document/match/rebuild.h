@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "document/evaluate/evaluate.h"
+#include "document/evaluate/value_at.h"
 #include "stage/canvas/canvas_cache.h"
 
 namespace motolii {
@@ -72,6 +73,13 @@ struct LayerBuild {
   // could be read.
   Canvas2DFx fx;
   bool fxOk = false;
+
+  // The layer's number `name` now (at time 0, as the stage is built for the
+  // moment it shows), or `fallback` when it has none; and its word.
+  double number(const char* name, double fallback) const {
+    return doc_number(d, layer, name, 0, fallback);
+  }
+  std::string word(const char* name) const { return doc_word(d, layer, name); }
 };
 
 }  // namespace motolii
