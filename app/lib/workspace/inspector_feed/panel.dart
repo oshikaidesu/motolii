@@ -125,38 +125,34 @@ class _InspectorPanelState extends State<InspectorPane> {
           was.$2 == _id(ws) &&
           was.$3 == ws.animating &&
           _onlyNumbers(ws)) {
-        _live.value = (
-          WorkspaceController.timed(
-            'transform',
-            () => layerTransform(ws, _layerOf(ws)?.id),
-          ),
-          WorkspaceController.timed(
-            'key marks',
-            () => keyframeMarks(ws, _layerOf(ws)?.id),
-          ),
-        );
+        _tellLive(ws);
         return;
       }
       if (mounted) setState(() {});
     } else if (ws.frame != _frame) {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
-      _live.value = (
-        WorkspaceController.timed(
-          'transform',
-          () => layerTransform(ws, _layerOf(ws)?.id),
-        ),
-        WorkspaceController.timed(
-          'key marks',
-          () => keyframeMarks(ws, _layerOf(ws)?.id),
-        ),
-      );
+      _tellLive(ws);
       _settle?.cancel();
       _settle = Timer(
         const Duration(milliseconds: 150),
         () => mounted ? setState(() {}) : null,
       ); // (the moment at rest: built once, whatever does not watch its own number shows it too)
     }
+  }
+
+  // Tells the fields that show them the picked layer's transform and key marks as they are now; nothing is built again.
+  void _tellLive(WorkspaceController ws) {
+    _live.value = (
+      WorkspaceController.timed(
+        'transform',
+        () => layerTransform(ws, _layerOf(ws)?.id),
+      ),
+      WorkspaceController.timed(
+        'key marks',
+        () => keyframeMarks(ws, _layerOf(ws)?.id),
+      ),
+    );
   }
 
   Timer? _settle;
@@ -168,16 +164,7 @@ class _InspectorPanelState extends State<InspectorPane> {
     if (_now(ws) != _seen || _id(ws) == null || ws.playing) {
       return; // (played: the moment's own reading above)
     }
-    _live.value = (
-      WorkspaceController.timed(
-        'transform',
-        () => layerTransform(ws, _layerOf(ws)?.id),
-      ),
-      WorkspaceController.timed(
-        'key marks',
-        () => keyframeMarks(ws, _layerOf(ws)?.id),
-      ),
-    );
+    _tellLive(ws);
   }
 
   // (the panel itself, made once a size: a new one each build would build its whole tree again, whatever changed)
