@@ -1,6 +1,8 @@
 // The stage's view: the composition centred on a dark surround, rulers and guides, overlays, the selection, the zoom
 // HUD and the navigator, and the pan, zoom, hover, key handling and pointer gestures over them.
 // It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
+import 'package:motolii/workspace/stage/stage_pointer.dart';
+
 import 'dart:async' show Timer;
 import 'dart:io' show File;
 import 'dart:ui' show PointMode;
@@ -95,6 +97,7 @@ class _StageViewState extends State<StageView>
   late final StageDrag _drag;
   late final CameraGestures _camera;
   late final DrawTools _draw;
+  late final StagePointer pointer;
 
   void _rebuild() => setState(() {});
 
@@ -175,6 +178,15 @@ class _StageViewState extends State<StageView>
     _drag = StageDrag(this)..addListener(_rebuild);
     _camera = CameraGestures(this, _drag)..addListener(_rebuild);
     _draw = DrawTools(this)..addListener(_rebuild);
+    pointer = StagePointer(
+      drag: _drag,
+      camera: _camera,
+      draw: _draw,
+      tool: () => widget.tool,
+      ws: () => WorkspaceScope.read(context),
+      hit: _hitLocal,
+      cursor: widget.cursor,
+    );
     HardwareKeyboard.instance.addHandler(_enter);
   }
 
@@ -302,55 +314,6 @@ class _StageViewState extends State<StageView>
       return '$t';
     }
     return id;
-  }
-
-  Offset? _last;
-
-  /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
-  /// a camera gizmo, a guide, a layer, and otherwise a lasso.
-  void _dragStart(StageViewport v, Offset local) {
-    if (widget.tool.make == 'camera') return _camera.orbitDragStart(local);
-    if (widget.tool.make == 'brush') {
-      _draw.brushDragStart(local);
-      return;
-    }
-    if (widget.tool.make != null) {
-      _draw.drawDragStart(local);
-      return;
-    }
-    final ws = WorkspaceScope.read(context), m = ws.inside;
-    if (_drag.handleDragStart(v, local)) return;
-    if (m != null && _camera.gizmoDragStart(v, local, inside: false)) return;
-    // Guides come after the handles, which lie over everything else.
-    if (_drag.guideDragStart(v, local)) return;
-    final id = m == null ? null : _hitLocal(v, local),
-        t = int.tryParse(id ?? '');
-    // Layers are tested first, then the camera frames they lie in.
-    if (m != null &&
-        t == null &&
-        _camera.gizmoDragStart(v, local, inside: true)) {
-      return;
-    }
-    if (m != null && t == null) {
-      // Nothing under the pointer: draw a lasso.
-      ws.select(null);
-      _draw.lassoDragStart(local);
-      return;
-    }
-    if (m == null || t == null) return;
-    _drag.layerDragStart(id!, local);
-  }
-
-  /// Carries the drag on to [local]: the camera's, when it is one, else the layer's or the handle's.
-  void _dragUpdate(StageViewport v, Offset local) {
-    if (_camera.dragUpdate(local)) return;
-    _drag.dragUpdate(v, local);
-  }
-
-  /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
-  void _dragEnd({bool keep = true}) {
-    _camera.dragEnd();
-    _drag.dragEnd(keep: keep);
   }
 
   /// The id of the selected layer's parent, or null if it has none.
@@ -488,44 +451,10 @@ class _StageViewState extends State<StageView>
                 if (crop != _cropping) setState(() => _cropping = crop);
               },
               dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
-              onPanStart: (d) => _dragStart(v, _last = d.localPosition),
-              onPanUpdate: (d) => _draw.brush != null
-                  ? _draw.brushDragUpdate(d.localPosition)
-                  : _draw.lasso != null
-                  ? _draw.lassoDragUpdate(d.localPosition)
-                  : _draw.drawFrom != null
-                  ? _draw.drawDragUpdate(
-                      _last = d.localPosition, // Record the pointer position for every tool, not only the pen.
-                    )
-                  : _drag.isPullingGuide
-                  ? (widget.cursor.value = v.toComposition(
-                      _last = d.localPosition,
-                    ))
-                  : _dragUpdate(v, _last = d.localPosition),
-              onPanEnd: (_) => _draw.brush != null
-                  ? _draw.brushDragEnd(v)
-                  : _draw.lasso != null
-                  ? _draw.lassoDragEnd(v)
-                  : _draw.drawFrom != null
-                  ? (widget.tool.make == 'pen'
-                        ? _draw.pen(
-                            v,
-                            _draw.drawFrom!,
-                            _last ?? _draw.drawFrom!,
-                          )
-                        : _draw.drawDragEnd(v, _last ?? _draw.drawFrom!))
-                  : _drag.isPullingGuide
-                  ? _drag.guideDragEnd(v, _last!)
-                  : _dragEnd(),
-              onPanCancel: () => _draw.brush != null
-                  ? _draw.brushDragCancel()
-                  : _draw.lasso != null
-                  ? _draw.lassoDragCancel()
-                  : _draw.drawFrom != null
-                  ? _draw.drawDragCancel()
-                  : _drag.isPullingGuide
-                  ? _drag.guideDragCancel()
-                  : _dragEnd(keep: false),
+              onPanStart: (d) => pointer.start(v, d.localPosition),
+              onPanUpdate: (d) => pointer.update(v, d.localPosition),
+              onPanEnd: (_) => pointer.end(v),
+              onPanCancel: pointer.cancel,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -617,19 +546,19 @@ class _StageViewState extends State<StageView>
                       ),
                     ),
                   if (_draw.drawFrom case final from?
-                      when _last != null &&
+                      when pointer.last != null &&
                           widget.tool.make == 'pen' &&
                           _draw.penWay != null &&
                           DrawTools.scribbled(
                             _draw.penWay!,
                             from,
-                            _last!,
+                            pointer.last!,
                           )) // A scribble is drawn thin like the brush and becomes a path on release.
                     IgnorePointer(
                       child: CustomPaint(painter: _BrushWay(_draw.penWay!)),
                     )
                   else if (_draw.drawFrom case final from?
-                      when _last != null &&
+                      when pointer.last != null &&
                           widget.tool.make ==
                               'pen') // The pen's handle being pulled out, drawn through its point both ways.
                     IgnorePointer(
@@ -637,14 +566,18 @@ class _StageViewState extends State<StageView>
                         size: Size.infinite,
                         painter: PointsPainter(
                           [from],
-                          [(_last!, from), (from * 2 - _last!, from)],
+                          [
+                            (pointer.last!, from),
+                            (from * 2 - pointer.last!, from),
+                          ],
                         ),
                       ),
                     )
                   else if (_draw.drawFrom case final from?
-                      when _last != null) // The box of the layer being drawn.
+                      when pointer.last !=
+                          null) // The box of the layer being drawn.
                     Positioned.fromRect(
-                      rect: Rect.fromPoints(from, _last!),
+                      rect: Rect.fromPoints(from, pointer.last!),
                       child: IgnorePointer(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
@@ -654,11 +587,11 @@ class _StageViewState extends State<StageView>
                       ),
                     ),
                   if (_drag.held
-                      case final h? when h.moved && _last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
+                      case final h? when h.moved && pointer.last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
                     if (_drag.heldSays(h.by) case final says?)
                       Positioned(
-                        left: _last!.dx + 16,
-                        top: _last!.dy + 16,
+                        left: pointer.last!.dx + 16,
+                        top: pointer.last!.dy + 16,
                         child: IgnorePointer(
                           child: Container(
                             key: const ValueKey('ws-held-says'),
