@@ -229,9 +229,14 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     const double px =
         (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
                                                doc_point(d, layer, said));
+    // A page's pixel is a project pixel as the letters are seen. The letters
+    // are laid at size 1 and the layer's size scales them afterwards, so
+    // one such pixel is that many times smaller where they are laid.
     const std::vector<ScriptCopy> made =
         sc->run ? sc->run->copies(n, clock, numbers, words, px, all)
-                : doc_css_lay(d, layer, *sc, n, clock, px);
+                : doc_css_lay(d, layer, *sc, n, clock,
+                              px / std::max(1e-6, doc_number(d, layer, "size",
+                                                             said, 1)));
     if (all.empty())
       all = made;
     else

@@ -5,7 +5,10 @@
 // (css.rs, in Rust: Blitz and Stylo run the page). The page is the pen's CSS
 // and HTML, and the layer's words stand in its [data-splitting] element, cut
 // into the markup Splitting.js makes. Motolii lays out the letters and gives
-// their boxes; the page says how its CSS moves each one.
+// their boxes; the page says how its CSS moves each one. Where the CSS makes
+// the text, or a word in it, a flex or grid container, the page also lays the
+// letters out: each goes where the page puts a box of its size, the whole
+// staying about the middle of the boxes as given.
 
 #include <stdint.h>
 
