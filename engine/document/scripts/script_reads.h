@@ -24,8 +24,8 @@
 //     of the stage, in stage units as layerValue gives x and y, is in the
 //     pixels of layer `id`.
 //
-//   getByteFrequencyData(id, array, t) and getFloatTimeDomainData(id, array,
-//     t): the Web's AnalyserNode methods (W3C Web Audio API 1.8) on the sound
+//   getByteFrequencyData, getFloatFrequencyData and getFloatTimeDomainData
+//     (id, array, t): the Web's AnalyserNode methods (W3C Web Audio API, section 1.8) on the sound
 //     of video layer `id`, a sound file being a video layer that is heard and
 //     not seen: how strong each pitch is, and the wave. The second of the file
 //     is the one the layer plays at t, as for its picture. The file's sound is
@@ -52,7 +52,7 @@ struct Doc;
 class Script;
 
 // Makes `run` ask the project `d` for layerValue, sampleImage, fromWorld and
-// the two that read sound.
+// the three that read sound.
 // `d` must outlive the calls of `run`, which are made on the thread that holds
 // it.
 void doc_script_reads(Doc& d, Script& run);

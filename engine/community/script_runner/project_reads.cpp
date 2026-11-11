@@ -84,13 +84,13 @@ JSValue from_world(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
                                                      std::nan("")});
 }
 
-// getByteFrequencyData (magic 0) and getFloatTimeDomainData (magic 1): fills
-// the typed array a[1] as the Web's AnalyserNode does. An array shorter than
-// what there is takes its first part; a longer one keeps the rest of what it
-// held (W3C Web Audio API 1.8.4). What is not the kind of array the method
-// takes is a TypeError, as on the Web.
+// getByteFrequencyData (`what` 0), getFloatTimeDomainData (1) and
+// getFloatFrequencyData (2): fills the typed array a[1] as the Web's
+// AnalyserNode does. An array shorter than what there is takes its first part;
+// a longer one keeps the rest of what it held (W3C Web Audio API, section 1.8.4). What
+// is not the kind of array the method takes is a TypeError, as on the Web.
 JSValue sound_data(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
-                   int samples, JSValueConst* data) {
+                   int what, JSValueConst* data) {
   int64_t at = 0;
   JS_ToInt64(cx, &at, data[0]);
   const auto* sound = (const Script::SoundReader*)at;
@@ -105,22 +105,31 @@ JSValue sound_data(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
   uint8_t* to = JS_GetArrayBuffer(cx, &all, held);
   JS_FreeValue(cx, held);
   const int kind = JS_GetTypedArrayType(a[1]);
-  if (!to || kind != (samples ? JS_TYPED_ARRAY_FLOAT32 : JS_TYPED_ARRAY_UINT8))
-    return JS_ThrowTypeError(cx, samples ? "a Float32Array is needed"
-                                         : "a Uint8Array is needed");
+  if (!to || kind != (what ? JS_TYPED_ARRAY_FLOAT32 : JS_TYPED_ARRAY_UINT8))
+    return JS_ThrowTypeError(cx, what ? "a Float32Array is needed"
+                                      : "a Uint8Array is needed");
   const std::vector<float> v =
-      *sound ? (*sound)((int)layer, !samples, t) : std::vector<float>();
+      *sound ? (*sound)((int)layer, what != 1, t) : std::vector<float>();
   const size_t n = std::min(bytes / each, v.size());
-  if (samples)
+  if (what)
     std::memcpy(to + from, v.data(), n * sizeof(float));
   else
     // 1.8.6: the byte is 255 / (maxDecibels - minDecibels) x (dB - minDecibels)
-    // cut to 0..255; what answers has scaled dB to 0..1 already.
-    for (size_t i = 0; i < n; ++i)
-      to[from + i] =
-          (uint8_t)std::clamp(std::floor(255.0 * (double)v[i]), 0.0, 255.0);
-  // No sound: silence, as an AnalyserNode nothing is connected to.
-  if (v.empty()) std::memset(to + from, 0, bytes);
+    // cut to 0..255, with the -100 and -30 an AnalyserNode starts with.
+    for (size_t i = 0; i < n; ++i) {
+      const double byte = std::floor(255.0 / 70.0 * ((double)v[i] + 100.0));
+      to[from + i] = (uint8_t)(byte > 0.0 ? std::min(byte, 255.0) : 0.0);
+    }
+  // No sound: silence, as an AnalyserNode nothing is connected to gives it:
+  // no samples, bytes of 0, and minus infinity decibels.
+  if (v.empty()) {
+    std::memset(to + from, 0, bytes);
+    if (what == 2)
+      for (size_t i = 0; i < bytes / each; ++i) {
+        const float none = -INFINITY;
+        std::memcpy(to + from + i * sizeof(float), &none, sizeof(float));
+      }
+  }
   return JS_UNDEFINED;
 }
 
@@ -143,6 +152,7 @@ bool project_reads_give(JSContext* cx, const std::string& src,
   give("fromWorld", from_world, 3, &answers->point);
   give("getByteFrequencyData", sound_data, 3, &answers->sound, 0);
   give("getFloatTimeDomainData", sound_data, 3, &answers->sound, 1);
+  give("getFloatFrequencyData", sound_data, 3, &answers->sound, 2);
   JS_FreeValue(cx, g);
   return named;
 }

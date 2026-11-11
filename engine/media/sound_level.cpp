@@ -19,17 +19,9 @@ namespace motolii {
 
 namespace {
 
-// Reads the sound of `file` once, decoding it at full speed.
-//
-// The wave is taken from appsink, whose gst_app_sink_pull_sample returns NULL
-// at the end of the stream. The spectrum is then worked out from the wave as
-// the Web's AnalyserNode works it out (W3C Web Audio API 1.8.6, "FFT windowing
-// and smoothing over time", which Shadertoy's sound also uses) for a page that
-// asks sound_rows times a second from the start of the sound: the latest
-// 2 x sound_bands samples under a Blackman window, their Fourier transform
-// divided by its length (the transform itself is GStreamer's gst_fft_f32),
-// each pitch smoothed over the askings with smoothingTimeConstant, then in
-// decibels, scaled from minDecibels to maxDecibels as 0 to 1.
+// Reads the sound of `file` once, decoding it at full speed: its wave, taken
+// from appsink, whose gst_app_sink_pull_sample returns NULL at the end of the
+// stream.
 SoundRead sound_read(const std::string& file) {
   static const bool started = (gst_init(nullptr, nullptr), true);
   (void)started;
@@ -61,37 +53,6 @@ SoundRead sound_read(const std::string& file) {
   }
   gst_element_set_state(reads, GST_STATE_NULL);
   gst_object_unref(out), gst_object_unref(reads);
-  // The defaults of AnalyserOptions: minDecibels, maxDecibels and
-  // smoothingTimeConstant. The window is the specification's, alpha 0.16.
-  const double low = -100.0, high = -30.0, tau = 0.8;
-  const int size = 2 * sound_bands;
-  std::vector<float> window((size_t)size), in((size_t)size);
-  for (int n = 0; n < size; ++n)
-    window[(size_t)n] = (float)(0.42 - 0.5 * std::cos(2.0 * M_PI * n / size) +
-                                0.08 * std::cos(4.0 * M_PI * n / size));
-  std::vector<GstFFTF32Complex> out_of((size_t)sound_bands + 1);
-  GstFFTF32* transform = gst_fft_f32_new(size, FALSE);
-  // The smoothed values of the asking before, zero at first.
-  std::vector<double> smooth((size_t)sound_bands, 0.0);
-  for (long end = 0; end <= (long)r.wave.size();
-       end += sound_rate / sound_rows) {
-    for (int n = 0; n < size; ++n) {
-      const long k = end - size + n;
-      in[(size_t)n] = k >= 0 ? r.wave[(size_t)k] * window[(size_t)n] : 0.f;
-    }
-    gst_fft_f32_fft(transform, in.data(), out_of.data());
-    for (int i = 0; i < sound_bands; ++i) {
-      double& x = smooth[(size_t)i];
-      x = tau * x + (1.0 - tau) *
-                        std::hypot((double)out_of[(size_t)i].r,
-                                   (double)out_of[(size_t)i].i) /
-                        size;
-      r.fft.push_back((float)std::clamp(
-          (20.0 * std::log10(std::max(x, 1e-12)) - low) / (high - low), 0.0,
-          1.0));
-    }
-  }
-  gst_fft_f32_free(transform);
   return r;
 }
 
@@ -182,31 +143,107 @@ const SoundRead* sound_of(const std::string& file, bool wait) {
              : nullptr;
 }
 
-std::vector<float> sound_raw(const SoundRead* r, bool fft, double at) {
-  const int raw = fft ? sound_bands : 2 * sound_bands;
-  if (!r || at < 0) return {};
-  std::vector<float> all((size_t)raw, 0.f);
-  if (fft) {
-    const long row = std::lround(at * sound_rows);
-    if ((row + 1) * sound_bands > (long)r->fft.size()) return {};
-    std::copy_n(r->fft.begin() + row * sound_bands, sound_bands, all.begin());
-  } else {
-    const long last = std::lround(at * sound_rate);
-    for (int i = 0; i < raw; ++i)
-      if (const long k = last - raw + 1 + i; k >= 0 && k < (long)r->wave.size())
-        all[(size_t)i] = r->wave[(size_t)k];
+void analyser_asked(const float* latest, int size, double tau,
+                    double* smooth) {
+  // One transform a size, kept: making one works out its table of sines.
+  struct Made {
+    GstFFTF32* transform;
+    std::vector<float> window, in;
+    std::vector<GstFFTF32Complex> out;
+  };
+  static auto& made = *new std::map<int, Made>;
+  static std::mutex one;
+  std::lock_guard<std::mutex> hold(one);
+  Made& m = made[size];
+  if (!m.transform) {
+    m.transform = gst_fft_f32_new(size, FALSE);
+    m.window.resize((size_t)size), m.in.resize((size_t)size);
+    m.out.resize((size_t)size / 2 + 1);
+    // The specification's Blackman window, alpha 0.16.
+    for (int n = 0; n < size; ++n)
+      m.window[(size_t)n] =
+          (float)(0.42 - 0.5 * std::cos(2.0 * M_PI * n / size) +
+                  0.08 * std::cos(4.0 * M_PI * n / size));
   }
-  return all;
+  for (int n = 0; n < size; ++n)
+    m.in[(size_t)n] = latest[n] * m.window[(size_t)n];
+  gst_fft_f32_fft(m.transform, m.in.data(), m.out.data());
+  for (int i = 0; i < size / 2; ++i) {
+    const double x = tau * smooth[i] +
+                     (1.0 - tau) *
+                         std::hypot((double)m.out[(size_t)i].r,
+                                    (double)m.out[(size_t)i].i) /
+                         size;
+    smooth[i] = std::isfinite(x) ? x : 0.0;
+  }
+}
+
+void sound_wave(const SoundRead* r, double at, float* to, int n) {
+  const long last = r ? std::lround(at * sound_rate) : 0;
+  for (int i = 0; i < n; ++i) {
+    const long k = last - n + 1 + i;
+    to[i] = r && k >= 0 && k < (long)r->wave.size() ? r->wave[(size_t)k] : 0.f;
+  }
+}
+
+std::vector<float> sound_raw(const SoundRead* r, bool fft, double at) {
+  if (!r || at < 0) return {};
+  if (!fft) {
+    std::vector<float> wave((size_t)sound_size);
+    sound_wave(r, at, wave.data(), sound_size);
+    return wave;
+  }
+  const long step = sound_rate / sound_rows, row = std::lround(at * sound_rows);
+  if (row * step > (long)r->wave.size()) return {};
+  // The row last worked out for each sound: one frame's letters all ask for
+  // the same one.
+  static auto& kept = *new std::map<const SoundRead*,
+                                    std::pair<long, std::vector<float>>>;
+  static std::mutex one;
+  std::lock_guard<std::mutex> hold(one);
+  auto& [held, decibels] = kept[r];
+  if (decibels.empty() || held != row) {
+    // What the askings before left has faded to under a millionth after
+    // sound_history of them (0.8 to that power), so the row is worked out from
+    // that many back, whichever second was asked before: the same second gives
+    // the same numbers.
+    std::vector<double> smooth((size_t)sound_size / 2, 0.0);
+    std::vector<float> latest((size_t)sound_size);
+    for (long k = std::max(0L, row - sound_history); k <= row; ++k) {
+      const long end = k * step;
+      for (int n = 0; n < sound_size; ++n) {
+        const long i = end - sound_size + n;
+        latest[(size_t)n] =
+            i >= 0 && i < (long)r->wave.size() ? r->wave[(size_t)i] : 0.f;
+      }
+      analyser_asked(latest.data(), sound_size, 0.8, smooth.data());
+    }
+    decibels.resize(smooth.size());
+    for (size_t i = 0; i < smooth.size(); ++i)
+      decibels[i] = (float)(20.0 * std::log10(smooth[i]));
+    held = row;
+  }
+  return decibels;
 }
 
 std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at) {
   const int raw = fft ? sound_bands : 2 * sound_bands;
   std::vector<float> v((size_t)std::clamp(wide > 0 ? wide : raw, 1, raw),
                        fft ? 0.f : 0.5f);
-  std::vector<float> all = sound_raw(r, fft, at);
-  if (all.empty()) return v;
-  if (!fft)
+  if (!r || at < 0) return v;
+  std::vector<float> all((size_t)raw);
+  if (fft) {
+    // The lowest sound_bands pitches, from minDecibels to maxDecibels as 0 to
+    // 1 (AnalyserOptions' defaults).
+    const std::vector<float> decibels = sound_raw(r, true, at);
+    if (decibels.empty()) return v;
+    for (int i = 0; i < raw; ++i)
+      all[(size_t)i] = std::clamp(
+          ((float)decibels[(size_t)i] + 100.f) / 70.f, 0.f, 1.f);
+  } else {
+    sound_wave(r, at, all.data(), raw);
     for (float& sample : all) sample = (sample * 4.f + 4.f) / 8.f;
+  }
   const int per = std::max(1, (int)std::lround((float)raw / (float)v.size()));
   for (int c = 0; c < (int)v.size(); ++c) {
     const int first = (c + 1) * per >= raw ? raw - per : c * per;

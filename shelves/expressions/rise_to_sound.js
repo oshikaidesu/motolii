@@ -4,7 +4,7 @@
 // --track@end:End Frequency,20,12000,2000,1
 // --track@height:Maximum Height,0,2000,480,1
 // The three sliders are those of After Effects' Audio Spectrum, which draws bars; here what rises is whatever the layer holds.
-// The sound is read as a Web page reads it, from an AnalyserNode (W3C Web Audio API 1.8): 512 pitches 23.4375 Hz apart, each 0 to 255.
+// The sound is read as a Web page reads it, from an AnalyserNode as it comes on a 48,000 Hz page (W3C Web Audio API, section 1.8): pitches 23.4375 Hz apart, each 0 to 255. The lowest 512 of its 1024 are taken, up to 12,000 Hz.
 const heard = new Uint8Array(512), apart = 12000 / 512;
 function each(i, n, t, k) {
   if (!k.sound) return {};

@@ -2,7 +2,8 @@
 #define MOTOLII_COMMUNITY_SCRIPT_RUNNER_PROJECT_READS_H_
 
 // The functions any script reads the rest of the project with: layerValue,
-// sampleImage, fromWorld, getByteFrequencyData and getFloatTimeDomainData.
+// sampleImage, fromWorld, getByteFrequencyData, getFloatFrequencyData and
+// getFloatTimeDomainData.
 // script_runner.h says what each takes and gives; the owner of the Script
 // supplies what answers them (Script::reads, reads_pictures, reads_sound).
 
@@ -20,7 +21,7 @@ struct ProjectReads {
   Script::LayerReader value;    // layerValue
   Script::ImageSampler sample;  // sampleImage
   Script::PointMapper point;    // fromWorld
-  Script::SoundReader sound;    // getByteFrequencyData, getFloatTimeDomainData
+  Script::SoundReader sound;    // getByteFrequencyData and the other two
 };
 
 // Gives the JavaScript of `cx` those functions, each bound to its member of

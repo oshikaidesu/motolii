@@ -27,24 +27,20 @@ std::vector<float> sound_loudness(const char* file, double rate);
 std::vector<double> sound_strikes(const std::vector<float>& db, double rate,
                                   double rise);
 
-// The sound of a file as ISF audio inputs take it, one channel for the whole
-// length of the file. In the ISF specification an audio input is an image with
-// one row per channel. In an "audio" input each column is one sample of the
-// wave, centered on 0.5. In an "audioFFT" input each column is one value of the
-// FFT. At each time the amount of data matches what VIDVOX's own ISF Editor
-// gives an ISF (VVISF-GL, AudioController: fftQuality 512, and the wave is
-// twice that). The spectrum is what the Web's AnalyserNode gives for the same
-// sound (W3C Web Audio API 1.8.6): an fftSize of 2 x sound_bands on sound read
-// at sound_rate, so pitch i is i x sound_rate / (2 x sound_bands) Hz, with
-// AnalyserOptions' defaults.
+// The sound of a file, one channel for the whole length of the file, read at
+// sound_rate, the rate a Web page's AudioContext runs at on most machines.
 struct SoundRead {
   // Samples of the wave, sound_rate per second, from -1 to 1.
   std::vector<float> wave;
-  // Spectrum rows of sound_bands values, sound_rows rows per second. Values go
-  // from 0 at minDecibels to 1 at maxDecibels.
-  std::vector<float> fft;
 };
-inline constexpr int sound_rate = 24000, sound_bands = 512, sound_rows = 60;
+// sound_size is the fftSize an AnalyserNode starts with, sound_rows how often
+// a page that draws every frame asks one, and sound_history how many askings
+// back a row of the spectrum is worked out from. sound_bands is what an ISF
+// audio input is given: VIDVOX's own ISF Editor gives an ISF that many values
+// of the spectrum and twice as many samples of the wave (VVISF-GL,
+// AudioController: fftQuality 512).
+inline constexpr int sound_rate = 48000, sound_size = 2048, sound_rows = 60,
+                     sound_history = 64, sound_bands = 512;
 
 // Returns the sound of `file`, read once in the background because reading
 // takes as long as decoding the file. Returns null until the read has finished;
@@ -55,20 +51,43 @@ inline constexpr int sound_rate = 24000, sound_bands = 512, sound_rows = 60;
 // sound.
 const SoundRead* sound_of(const std::string& file, bool wait = false);
 
-// Returns the sound at time `at`, in seconds of the file, as it was read: the
-// sound_bands values of the spectrum row shown then, each 0 to 1, or without
-// `fft` the 2 x sound_bands samples of the wave up to `at`, each -1 to 1 and 0
-// before the file begins. Returns an empty list when `r` is null, `at` is
-// negative, or the spectrum has no row for that time.
+// One asking of the Web's AnalyserNode (W3C Web Audio API, section 1.8.6, "FFT
+// windowing and smoothing over time"): `latest` holds the `size` samples heard last, the
+// oldest first, `size` a power of two. They are put under a Blackman window
+// and transformed (the transform is GStreamer's gst_fft_f32), each pitch's
+// size divided by `size` and smoothed with what the asking before left in
+// `smooth` (size / 2 values, zeros before the first asking) by `tau`, the
+// smoothingTimeConstant. `smooth` is left holding the result; 20 x log10 of a
+// value is its decibels.
+void analyser_asked(const float* latest, int size, double tau, double* smooth);
+
+// Fills `to` with the `n` samples of the wave up to time `at`, in seconds of
+// the file, the oldest first; zeros where the file has none, and for a null
+// `r`.
+void sound_wave(const SoundRead* r, double at, float* to, int n);
+
+// Returns the sound at time `at`, in seconds of the file, as an AnalyserNode
+// that is as it comes (an fftSize of sound_size, a smoothingTimeConstant of
+// 0.8) gives it to a page that has asked sound_rows times a second: with
+// `fft`, the decibels of its sound_size / 2 pitches, pitch i at
+// i x sound_rate / sound_size Hz (minus infinity for a pitch with no sound);
+// without, the sound_size samples of the wave up to `at`, each -1 to 1.
+// Returns an empty list when `r` is null, `at` is negative, or, with `fft`,
+// `at` is past the end of the sound.
 std::vector<float> sound_raw(const SoundRead* r, bool fft, double at);
 
 // Returns what an ISF audio input reads at time `at`, in seconds of the file.
-// `r` may be null. `fft` selects the spectrum; otherwise the wave is returned.
-// `wide` is the number of values wanted, which is the MAX of the input; 0 means
-// all of them. Follows VVISF-GL's AudioController. Each value is the mean of
-// the neighboring values it covers (valsPerAvg), with the last group kept
-// inside the range. The wave is the 1024 samples up to `at`, and each sample is
-// mapped by (sample * 4 + 4) / 8. Returns silence when there is no data.
+// In the ISF specification an audio input is an image with one row per
+// channel: in an "audio" input each column is one sample of the wave, centered
+// on 0.5, and in an "audioFFT" input each column is one value of the FFT. `r`
+// may be null. `fft` selects the spectrum: the lowest sound_bands pitches of
+// sound_raw, from 0 at -100 dB to 1 at -30 dB (an AnalyserNode's minDecibels
+// and maxDecibels as they come). Otherwise the wave: the 2 x sound_bands
+// samples up to `at`, each mapped by (sample * 4 + 4) / 8. `wide` is the
+// number of values wanted, which is the MAX of the input; 0 means all of
+// them. Follows VVISF-GL's AudioController: each value is the mean of the
+// neighboring values it covers (valsPerAvg), with the last group kept inside
+// the range. Returns silence when there is no data.
 std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at);
 
 }  // namespace motolii

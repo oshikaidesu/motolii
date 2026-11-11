@@ -111,21 +111,26 @@ class Script {
       int layer, double x, double y, double z, double t)>;
   void reads_pictures(ImageSampler sample, PointMapper point);
   // Lets the script read the sound of another layer, under the names and with
-  // the numbers of the Web's AnalyserNode (W3C Web Audio API 1.8,
+  // the numbers of the Web's AnalyserNode (W3C Web Audio API, section 1.8,
   // www.w3.org/TR/webaudio-1.1/#AnalyserNode), which p5.sound, three.js and
   // the visualizers posted as plain JavaScript all read. The layer's number
   // comes first and the second last:
-  //   getByteFrequencyData(id, array, t) fills a Uint8Array with how strong
-  //     each pitch is at second t, 0 to 255.
+  //   getFloatFrequencyData(id, array, t) fills a Float32Array with how strong
+  //     each pitch is at second t, in decibels.
+  //   getByteFrequencyData(id, array, t) fills a Uint8Array with the same as
+  //     bytes: 0 at -100 dB and under, 255 at -30 dB and over (the minDecibels
+  //     and maxDecibels an AnalyserNode starts with), the floor of
+  //     255 / 70 x (decibels + 100) between.
   //   getFloatTimeDomainData(id, array, t) fills a Float32Array with the
   //     samples of the wave up to second t, each -1 to 1.
-  // Both give undefined, and a TypeError for any other kind of array, as on
-  // the Web. `sound` answers with one number per pitch, 0 to 1 (`spectrum`:
-  // the byte is the floor of 255 times it, cut to 0 and 255), or with the
-  // samples, which arrive as they are. An array shorter than the answer takes
-  // its first part; a longer one keeps what it held in the rest. An empty
-  // answer says the layer has no sound: then, and while no `sound` is set, the
-  // whole array is filled with zeros.
+  // All three give undefined, and a TypeError for any other kind of array, as
+  // on the Web. `sound` answers with the decibels of each pitch (`spectrum`;
+  // minus infinity for a pitch with no sound) or with the samples; both arrive
+  // in a Float32Array as they are. An array shorter than the answer takes its
+  // first part; a longer one keeps what it held in the rest. An empty answer
+  // says the layer has no sound: then, and while no `sound` is set, the whole
+  // array is filled with silence: bytes and samples of 0, decibels of minus
+  // infinity.
   using SoundReader =
       std::function<std::vector<float>(int layer, bool spectrum, double t)>;
   void reads_sound(SoundReader sound);
