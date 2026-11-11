@@ -588,6 +588,8 @@ The line set before measuring was: a still frame inside 16.7 ms, and making it a
 - **Drawn by the engine:** MOTOLII, no fill, a white stroke, its trim keyed from 1 to 0 over 2 s: nothing at 0 s, then 25, 45, 73 and 100 % of its stroke lit at 0.5, 1, 1.5 and 2 s. The removed conversion, which drew the same outlines as a mesh, gave 25, 44, 72 and 100 %. The words typed again keep the stroke and the trim. There is one layer throughout.
 - A filled text is trimmed too, and so is a text split into letters. The second and third strokes are texts of their own under the first and are not trimmed.
 - `drawings_unchanged.sh` against the commit before matched every picture, and the cards' tests pass with Trim Paths now offered to a text.
+- **Together on one layer:** a flex CSS, the shelf's `slide_in.js`, the shelf's Comet Tails, and the stroke alone with its trim opening, all on one text layer, exported as a film. The letters come one after another to the places flex gives them, leave trails, and are drawn on. Nothing was added for this; it is what is already there, put on one layer. Of the four strengths, points are the one left.
+- A `stroke_width` is in pixels of the picture at size 1 (`match_look.cpp`, divided by the points to a stage unit): 4 is a thin line, 0.02 is not seen.
 
 So a text need not be drawn as a shape for a stroke and a trim. That cut is still what points along the letters, and letters as meshes, would need; the reading and the measurements above are for that day. `tvg_text_outline` still has no caller.
 
