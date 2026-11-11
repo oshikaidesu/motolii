@@ -76,18 +76,7 @@ class StageDrag extends ChangeNotifier {
     if (!_stage.tool.snap || grabbed == null || m == null) {
       return _snapTo = null;
     }
-    int top(int t) {
-      for (
-        var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0;
-        p > 0 && n < 64;
-        p = (m.value(t, 'parent', 0) ?? 0).round(), n++
-      ) {
-        t = p;
-      }
-      return t;
-    }
-
-    final mine = top(int.parse(id)), c = ArtGeometry.comp;
+    final mine = m.outermost(int.parse(id)), c = ArtGeometry.comp;
     final xs = <(double, double)>[(0, c.width)],
         ys = <(double, double)>[(0, c.height)];
     for (final g in _stage.scene.guidesX) {
@@ -97,7 +86,7 @@ class StageDrag extends ChangeNotifier {
       ys.add((g, g));
     }
     for (final MapEntry(:key, :value) in boxes.entries) {
-      if (top(int.parse(key)) == mine) continue;
+      if (m.outermost(int.parse(key)) == mine) continue;
       final r = _bounds(value);
       xs.add((r.left, r.right));
       ys.add((r.top, r.bottom));

@@ -233,15 +233,7 @@ class _StageViewState extends State<StageView>
         m = WorkspaceScope.read(context).inside;
     if (widget.tool.group && m != null && id != null) {
       // Grouping: pick the outermost ancestor by following parents.
-      var t = int.parse(id);
-      for (
-        var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0;
-        p > 0 && n < 64;
-        p = (m.value(t, 'parent', 0) ?? 0).round(), n++
-      ) {
-        t = p;
-      }
-      return '$t';
+      return '${m.outermost(int.parse(id))}';
     }
     return id;
   }
@@ -250,9 +242,7 @@ class _StageViewState extends State<StageView>
   String? _parentOf() {
     final m = WorkspaceScope.read(context).inside,
         t = int.tryParse(widget.selected ?? '');
-    final p = m == null || t == null
-        ? 0
-        : (m.value(t, 'parent', 0) ?? 0).round();
+    final p = m == null || t == null ? 0 : m.parentOf(t);
     return p > 0 ? '$p' : null;
   }
 

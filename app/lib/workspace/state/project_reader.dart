@@ -174,7 +174,7 @@ class ProjectReader {
       });
     final tl = TimelineTask()..start('MARK layers');
     final holding = {
-      for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round(),
+      for (final t in m.layers) m.parentOf(t),
     }; // The ids of layers that are parents.
     layers
       ..clear()
@@ -208,7 +208,7 @@ class ProjectReader {
               from,
               _outF(from, lasts),
               keys,
-              parent: switch ((m.value(t, 'parent', 0) ?? 0).round()) {
+              parent: switch (m.parentOf(t)) {
                 > 0 && final p => '$p',
                 _ => null,
               },

@@ -9,6 +9,17 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 
 extension MotoliiMoment on Motolii {
+  /// The layer that [t] is parented to, or 0 when it has none.
+  int parentOf(int t) => (value(t, 'parent', 0) ?? 0).round();
+
+  /// The outermost ancestor of [t] (itself when it has no parent), following the parents up to 64 steps.
+  int outermost(int t) {
+    for (var p = parentOf(t), n = 0; p > 0 && n < 64; p = parentOf(t), n++) {
+      t = p;
+    }
+    return t;
+  }
+
   Map<String, dynamic>? _momentOf(int layer) =>
       (momentSnapshot['layer'] as Map<String, dynamic>)['$layer']
           as Map<String, dynamic>?;

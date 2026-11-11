@@ -382,7 +382,7 @@ extension WorkspaceMenus on WorkspaceState {
         if (m == null || g == null || m.word(g, 'shape') != 'null') return;
         final kids = [
           for (final t in m.layers)
-            if ((m.value(t, 'parent', 0) ?? 0).round() == g) t,
+            if (m.parentOf(t) == g) t,
         ];
         m.later('together', number: 1);
         for (final t in kids) {
