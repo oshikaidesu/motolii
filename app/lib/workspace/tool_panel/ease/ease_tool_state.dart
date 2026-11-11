@@ -1,5 +1,6 @@
 // The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
+import 'package:motolii/workspace/tool_panel/ease/ease_stack.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_writer.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
@@ -144,19 +145,9 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     Ease ease,
     ValueChanged<Ease> set,
   ) {
-    final cards = easeIsLaid(said(ease))
-        ? [for (final c in easeCards(said(ease))) easeCard(c, ws.inside)]
-        : [ease];
-    // Over plain Linear there is nothing to layer onto, so the new easing replaces it.
-    Ease laidOn(Ease e) => said(ease) == 'Linear'
-        ? e
-        : easeLaid([
-            ...cards,
-            for (final c in easeCards(said(e))) easeCard(c, ws.inside),
-          ]);
-    final pile = _held == null
-        ? cards
-        : [for (final c in easeCards(said(_held!))) easeCard(c, ws.inside)];
+    final stack = EaseStack(ease, ws.inside),
+        cards = stack.cards,
+        pile = _held == null ? cards : EaseStack(_held!, ws.inside).cards;
     if (spanId(span) != _cardOf) {
       (_cardOf = spanId(span), _card = 0, _adding = false, _overLocked = false);
     }
@@ -164,9 +155,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         card = cards[at],
         laid = cards.length > 1,
         whole = laid && _card < 0;
-    void put(Ease e) => set(
-      laid ? easeLaid([...cards]..[at] = easeCard(said(e), ws.inside)) : e,
-    );
+    void put(Ease e) => set(stack.replaced(at, e));
     final bezier = easeIsBezier(card);
     final overshoot =
         bezier &&
@@ -190,7 +179,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     void add(Ease e) {
       _adding = false;
       _card = cards.length;
-      set(laidOn(e));
+      set(stack.laidOn(e));
     }
 
     void over(Ease? e) {
@@ -338,7 +327,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         );
         final target = DragTarget<Object>(
           onWillAcceptWithDetails: (d) {
-            if (d.data case final Ease e) over(laidOn(e));
+            if (d.data case final Ease e) over(stack.laidOn(e));
             return true; // A card from the flow is accepted too, and stays where it is.
           },
           onLeave: (d) => d is Ease ? over(null) : null,
@@ -347,7 +336,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
             if (d.data case final Ease e) {
               _card =
                   cards.length; // The card just added becomes the selected one.
-              set(laidOn(e));
+              set(stack.laidOn(e));
             }
           },
           builder: (_, hot, _) => DecoratedBox(
@@ -456,39 +445,18 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                     onPress: (i) => setState(
                       () => (_card = i, _adding = false, _overLocked = false),
                     ),
-                    onOff: (i) => set(
-                      cards.length > 1
-                          ? easeLaid([...cards]..removeAt(i))
-                          : easingPreset('Linear'),
-                    ),
+                    onOff: (i) => set(stack.without(i)),
                     onMove: (from, to) {
-                      final next = [...cards];
-                      next.insert(to, next.removeAt(from));
                       _card = to;
-                      set(easeLaid(next));
+                      set(stack.moved(from, to));
                     },
                     onLay: (e, i) {
                       _held = null;
                       _card = i;
-                      set(
-                        easeLaid(
-                          [...cards]..insertAll(i, [
-                            for (final c in easeCards(said(e)))
-                              easeCard(c, ws.inside),
-                          ]),
-                        ),
-                      );
+                      set(stack.inserted(i, e));
                     },
-                    onOver: (e, i) => over(
-                      e == null
-                          ? null
-                          : easeLaid(
-                              [...cards]..insertAll(i, [
-                                for (final c in easeCards(said(e)))
-                                  easeCard(c, ws.inside),
-                              ]),
-                            ),
-                    ),
+                    onOver: (e, i) =>
+                        over(e == null ? null : stack.inserted(i, e)),
                   ),
                 ),
               ],
