@@ -72,23 +72,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     // A solid's shape. The layer's image is laid on the solid, not run through
     // an effect; see thing_fx_solid.
     if (solid_is(file)) continue;
-    ScreenFx*& built = st.built[file];
-    if (!built) {
-      built = new ScreenFx;
-      built->file = file;
-      std::string code;
-      if (!screen_read(*built, code)) {
-        std::fprintf(stderr, "%s\n", built->trouble.c_str());
-        continue;
-      }
-      built->interop =
-          interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes,
-                          &built->trouble, built->textureCount, built->layered);
-      if (!built->interop)
-        std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(),
-                     built->trouble.c_str());
-      built->stamp = screen_stamp(file);
-    }
+    ScreenFx* built = screen_built(s, st, file);
     if (built->interop) st.fx.push_back(built), st.steps.push_back(0);
     // AbsentMotion's backdrop reads what is behind the layer, the stage drawn
     // without it; see screen_fx.h.

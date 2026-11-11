@@ -276,6 +276,11 @@ void screen_fresh(Stage& s, ScreenFx& fx);
 // Returns true if any effect file of the stack has been written over since the
 // effect was built. This is what wakes a stage that is not drawing.
 bool screen_moved(const ScreenStack& st);
+// Returns the effect of `file` in the stack, read and built the first time it
+// is asked for. A file that cannot be read or built is remembered with a null
+// interop and the reason in trouble (printed to stderr once), so it is not read
+// again each time.
+ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& file);
 // Sets the stack's effects to `files` (paths separated by spaces), building
 // those that are not built yet, and routes the stage's drawing through them.
 // Does nothing if `files` is unchanged.
@@ -287,14 +292,14 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
 // Builds the input textures of an effect for the current frame: image files
 // once, audio inputs again each frame.
 void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx);
-// Fills the parameter uniform struct of `fx` for one pass and uploads it. `pass`
-// is the pass index. pw and ph give the size of the image drawn into in pixels,
-// or 0 for the stage size.
+// Fills the parameter uniform struct of `fx` for one pass and uploads it.
+// `pass` is the pass index. pw and ph give the size of the image drawn into in
+// pixels, or 0 for the stage size.
 void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
                        int pass = 0, double pw = 0, double ph = 0);
 // Makes or drops the textures of the effect's targets. If `drop` is true the
-// textures are destroyed and not recreated. pw and ph give the size of the image
-// drawn into, or 0 for the stage size.
+// textures are destroyed and not recreated. pw and ph give the size of the
+// image drawn into, or 0 for the stage size.
 void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t pw = 0,
                     uint32_t ph = 0);
 

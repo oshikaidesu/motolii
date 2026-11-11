@@ -274,6 +274,28 @@ bool screen_moved(const ScreenStack& st) {
   return false;
 }
 
+ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& file) {
+  ScreenFx*& built = st.built[file];
+  if (built) return built;
+  built = new ScreenFx;
+  built->file = file;
+  std::string code;
+  // Keep the effect marked as not built (interop null), so that it is not read
+  // again each time.
+  if (!screen_read(*built, code)) {
+    std::fprintf(stderr, "%s\n", built->trouble.c_str());
+    return built;
+  }
+  built->interop =
+      interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes,
+                      &built->trouble, built->textureCount, built->layered);
+  if (!built->interop)
+    std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(),
+                 built->trouble.c_str());
+  built->stamp = screen_stamp(file);
+  return built;
+}
+
 void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
                     ScreenNumbers numbers) {
   if (st.files == files) return;
@@ -288,25 +310,7 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
     // viewer_settings.h.
     if (file == "none" || std::filesystem::path(file).extension() == ".json")
       continue;
-    ScreenFx*& built = st.built[file];
-    if (!built) {
-      built = new ScreenFx;
-      built->file = file;
-      std::string code;
-      // Keep the effect marked as not built, so that it is not read again each
-      // time.
-      if (!screen_read(*built, code)) {
-        std::fprintf(stderr, "%s\n", built->trouble.c_str());
-        continue;
-      }
-      built->interop =
-          interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes,
-                          &built->trouble, built->textureCount, built->layered);
-      if (!built->interop)
-        std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(),
-                     built->trouble.c_str());
-      built->stamp = screen_stamp(file);
-    }
+    ScreenFx* built = screen_built(s, st, file);
     if (built->interop) st.fx.push_back(built);
   }
   if (st.fx.empty()) return;
