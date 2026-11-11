@@ -7,6 +7,7 @@
 // Over the tiles, where the shelf is narrow, the list folds to a single row that says where the shelf is looking.
 // Clicking a place there gives the shelf to its contents, and clicking the row brings the list back.
 // Alight Motion's browser moves between its categories and a category's effects in the same way (EffectBrowser.kt: 105, 197, 247).
+import 'package:motolii/workspace/dock/effects/effect_places_menus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -146,121 +147,28 @@ class EffectPlacesState extends State<EffectPlaces> {
     naming(d);
   }
 
-  /// Adds a deck from a deck code copied from elsewhere. Effects this machine lacks are kept and marked,
-  /// as Hearthstone does when it reads a deck code.
-  Future<void> _paste() async {
-    final c = widget.c,
-        d = deckRead(
-          (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '',
-        );
-    if (d == null) {
-      c.ws.notice = 'No deck code to paste';
-      return;
-    }
-    deckSettle(d, widget.known);
-    final away = d.things.where((t) => !widget.known.contains(t.id)).length;
-    c.set(() {
-      d.name = deckName(d.name);
-      effectDecks().add(d);
-      effectDecksKeep();
-      c.mem.fxPlace = '@${d.name}';
-    });
-    c.ws.notice = away > 0
-        ? 'Added ${d.name}: $away not on this machine'
-        : 'Added ${d.name}';
-  }
-
   void _open(Offset at, List<ContextMenuItem> items) {
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
   }
 
-  /// The + at the head of the decks. It opens a menu, like Spotify's Create and Lightroom's Collections +.
-  void _plus(BuildContext at) {
-    final q = widget.c.query.trim();
-    _open((at.findRenderObject() as RenderBox).localToGlobal(Offset.zero), [
-      ContextMenuItem('New Deck', newDeck),
-      if (q.isNotEmpty)
-        ContextMenuItem('New Deck from “$q”', () => newDeck(words: q)),
-      ContextMenuItem('Paste Deck Code', _paste),
-    ]);
-  }
-
-  /// The menu item that sets the deck an effect's right-click adds to. It is on the row's own context menu.
-  /// Choosing it again returns the target to the Favorites. Lightroom Classic has the same Set as Target Collection
-  /// item, on the Quick Collection too, and unchecking it works the same way.
-  ContextMenuItem _aim(EffectDeck? d) => ContextMenuItem(
-    'Set as Target Deck',
-    () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)),
-    keys: effectTarget() == d ? '✓' : '',
+  /// The menus' items; this list opens them where the pointer was and owns the naming field.
+  late final menus = EffectPlacesMenus(
+    c: widget.c,
+    known: widget.known,
+    put: widget.put,
+    naming: naming,
+    newDeck: newDeck,
+    saving: (held) => _saving = held,
   );
 
-  /// The context menu of the Favorites row, modeled on Lightroom Classic's menu on the Quick Collection:
-  /// Set as Target Collection, Save Quick Collection… and Clear Quick Collection
-  /// (Adobe's "Work with photo collections"; Thomas Fitzgerald's "Quick Lightroom Tip: Clear Quick Collection", 2016).
-  ///
-  /// Save turns the starred effects into a deck, opens it, and starts editing its name, as New Deck from the + does.
-  /// Once the deck is named, the Favorites are emptied for the next batch, as Lightroom does while
-  /// "Clear Quick Collection After Saving" is on. Here the name is edited in the row, so there is no dialog to turn that off.
-  /// Escape cancels: no deck is made and the Favorites stay as they were.
-  /// The whole Favorites list is saved, whatever is searched, as Lightroom does from a filtered view.
-  /// Only this shelf's effects are used, because the Fonts shelf's stars are stored in the same file.
-  void _favoritesMenu(Offset at) {
-    final c = widget.c,
-        held = [
-          for (final id in c.mem.starred)
-            if (widget.known.contains(id)) id,
-        ];
-    _open(at, [
-      _aim(null),
-      const ContextMenuItem.rule(),
-      ContextMenuItem(
-        'Save Favorites…',
-        held.isEmpty
-            ? null
-            : () {
-                final d = EffectDeck(deckName('Deck'));
-                c.set(() {
-                  effectDecks().add(d);
-                  c.mem.fxPlace = '@${d.name}';
-                });
-                for (final id in held) {
-                  widget.put(d, id);
-                }
-                _saving = held;
-                naming(d);
-              },
-      ),
-      ContextMenuItem(
-        'Clear Favorites',
-        held.isEmpty ? null : () => c.unstar(held),
-      ),
-    ]);
-  }
+  void _openFavorites(Offset at) => _open(at, menus.favorites());
 
-  /// The context menu of a deck row, like Ableton's label menu (Rename, color) and Lightroom's Edit Smart Collection.
-  void _deckMenu(EffectDeck d, Offset at) {
-    final c = widget.c;
-    _open(at, [
-      _aim(d),
-      const ContextMenuItem.rule(),
-      ContextMenuItem('Rename…', () => naming(d)),
-      ContextMenuItem('Edit Search…', () => naming(d, search: true)),
-      ContextMenuItem('Copy Deck Code', () {
-        Clipboard.setData(ClipboardData(text: deckCode(d)));
-        c.ws.notice =
-            'Copied ${d.name}: Paste Deck Code on the + brings it back';
-      }),
-      const ContextMenuItem.rule(),
-      ContextMenuItem(
-        'Delete',
-        () => c.set(() {
-          effectDecks().remove(d);
-          effectDecksKeep();
-        }),
-      ),
-    ]);
-  }
+  /// The + at the head of the decks.
+  void _plus(BuildContext at) => _open(
+    (at.findRenderObject() as RenderBox).localToGlobal(Offset.zero),
+    menus.plus(),
+  );
 
   // The name field, edited inside the row as the Program shelf does for a tile's name.
   Widget _field(EffectDeck d) => CallbackShortcuts(
@@ -399,7 +307,7 @@ class EffectPlacesState extends State<EffectPlaces> {
       '@${d.name}',
       field: _naming == d ? _field(d) : null,
       lit: over,
-      menu: (at) => _deckMenu(d, at),
+      menu: (at) => _open(at, menus.deck(d)),
       cover: widget.covers['@${d.name}'],
     ),
   );
@@ -476,8 +384,8 @@ class EffectPlacesState extends State<EffectPlaces> {
                       lit: true,
                       onTap: () => c.set(() => c.mem.fxListOpen = true),
                       menu: (at) => deck == null
-                          ? _favoritesMenu(at)
-                          : _deckMenu(deck, at),
+                          ? _openFavorites(at)
+                          : _open(at, menus.deck(deck)),
                       cover: widget.covers[c.mem.fxPlace],
                     ),
                   ),
@@ -502,9 +410,9 @@ class EffectPlacesState extends State<EffectPlaces> {
                   lit: true,
                   onTap: () => c.set(() => c.mem.fxListOpen = true),
                   menu: deck != null
-                      ? (at) => _deckMenu(deck, at)
+                      ? (at) => _open(at, menus.deck(deck))
                       : c.mem.fxPlace == '★'
-                      ? (at) => _favoritesMenu(at)
+                      ? (at) => _openFavorites(at)
                       : null,
                 ),
               )
@@ -516,7 +424,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   _into(
                     null,
                     (over) =>
-                        _row('★', lit: over, menu: (at) => _favoritesMenu(at)),
+                        _row('★', lit: over, menu: (at) => _openFavorites(at)),
                   ),
                   if (widget.mapped && c.mem.fxPlace == '★') _held(null),
                   _row('In video'),
