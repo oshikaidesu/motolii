@@ -256,7 +256,13 @@ From [AGENTS.md](../../AGENTS.md):
    - **Written back:** each element's transform, made with its origin against the view box, agreed with Chrome's own (the parent's `getCTM()` inverse times the element's) on 501 of 501.
    - **Drawn by the engine:** an image layer of `3-dots-bounce.svg` and of `180-ring.svg`, stills at 0.3, 0.9 and 1.7 s. Each was compared with Chrome's picture of the same time: IoU of the drawn pixels was 0.955 to 0.981. Motolii's 0.3 s against Chrome's 0.9 s gave 0.064 and 0.410.
    - **Pasted (the same day):** SVG text, beginning with `<svg` or an XML declaration, is the form `svg` (`adapter_form`), told before CSS: until then a spinner with `@keyframes` was taken for a pen's CSS and refused. ⌘V keeps it in the Program shelf as a `.svg` file, byte for byte, and adds an image layer of it. The still of a pasted 3-dots-bounce at 0.3 s agreed with Chrome's at IoU 0.981.
-   - **Not yet:** SVG that moves by SMIL (`<animate>`). A spinner's frames are drawn for ten minutes at 60 a second, as a sketch's; a jump back replays the CSS from 0.
+   - **SMIL (`<animate>`, `<animateTransform>`), looked into the same day: not reached, for want of an engine outside the browsers.** 24 of svg-spinners' 46 SMIL files chain their animations (`begin="a.end"`, `begin="a.begin+0.2s"`), so SMIL's timing (syncbase) is needed, not only its values.
+     - anim_svg (github.com/robotoss/anim_svg, MIT, SVG to Lottie in Rust): no `begin` at all; its README lists explicit begin and end offsets as unsupported.
+     - smil2css (github.com/webframes/smil2css, MIT, last change 2015): converts only frame-by-frame animation.
+     - svg-rs (ginokent): no licence stated.
+     - Ladybird (LibWeb/SVG, BSD-2) runs SMIL as Web Animations (`SMILAnimation` is an `Animations::Animation`), the way to watch. It was written in 2026, and syncbase is still a FIXME (`SVGAnimationElement.cpp`, `begin_time_from_begin_attribute`).
+     - Turning SMIL into CSS keyframes for Stylo would be Motolii's own translation of the posted code (rule 1), so it is not done. svg-spinners has a CSS file for each SMIL one, which plays now.
+   - **Not yet:** A spinner's frames are drawn for ten minutes at 60 a second, as a sketch's; a jump back replays the CSS from 0.
    - The page, the probe and the Chrome measurements are in `docs/internal/svg_anim/`, which git ignores.
 
 Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
