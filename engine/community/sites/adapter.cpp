@@ -114,7 +114,8 @@ std::string adapter_name(const std::string& form) {
       {"canvas", "Canvas"},
       {"twigl", "twigl"},
       {"bonzomatic", "Bonzomatic"},
-      {"subtitles", "Subtitles"}};
+      {"subtitles", "Subtitles"},
+      {"css", "CSS"}};
   const auto at = names.find(form);
   return at == names.end() ? form : at->second;
 }
@@ -129,6 +130,11 @@ std::string adapter_form(const std::string& t) {
   // Subtitles and lyrics, as FFmpeg's own probe tells them
   // (community/subtitles).
   if (!subtitles_format(t).empty()) return "subtitles";
+  // CSS animations, as a CodePen pen's CSS is copied: keyframes, and no
+  // JavaScript around them (community/css moves a text's letters with it).
+  if (adapter_has(t, "@keyframes") && !adapter_has(t, "function") &&
+      !adapter_has(t, "=>"))
+    return "css";
   if (adapter_has(t, "\"ISFVSN\"") || adapter_has(t, "\"INPUTS\"") ||
       adapter_has(t, "\"CATEGORIES\"") || adapter_has(t, "function each"))
     return "";

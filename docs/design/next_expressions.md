@@ -244,7 +244,8 @@ From [AGENTS.md](../../AGENTS.md):
      - All 5 pens, dev_loop included, agree on 279 of 279 letter-times (0.5 px, 0.01). Before the rule below, MeriliVaziri was off on 24 of them.
      - **The rule:** a plain inline box is not a transformable element (CSS Transforms 1). MeriliVaziri's letters are left inline, so Chrome draws them unmoved and only fades them.
      - **Drawn by the engine:** a text layer "Backwards" with valhead's CSS, stills at 0.3, 0.9 and 1.7 s. Each letter rises by Chrome's fraction of its box times one height, 162 to 169 px for every letter, upward.
-     - **Not yet:** the shelf lists only `.js` as expressions, and pasting CSS is not recognised. Only a pen's first `[data-splitting]` element is used. The `perspective` property of a parent is not applied.
+     - **Pasted (the same day):** CSS with `@keyframes` and no JavaScript is the form `css` (`adapter_form`). ⌘V puts it on the selected text layer, kept in the Program shelf as a `.css` file, and splits the text into letters. Pasting valhead's CSS gives the same lifts as the file put on by hand. Before the change, the same paste was refused as "not code".
+     - **Not yet:** with no text layer selected, the paste is refused. A new text needs a font, and only the app knows its default font. The shelf lists only `.js` as expressions. Only a pen's first `[data-splitting]` element is used. A pasted HTML panel is not taken in. The `perspective` property of a parent is not applied.
 8. **ASS:** the picture is reached as it is (5.4). How large is the libass patch that hands out per-glyph values, and is it wanted before someone asks to put code on a karaoke letter?
 
 Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.

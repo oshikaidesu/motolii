@@ -247,6 +247,32 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // JavaScript form.
   const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text),
                     told = adapter_js(text, form);
+  // A pen's CSS moves the letters of the text layer picked (community/css).
+  // It is kept in the Program shelf as a .css file and put on the layer's
+  // effect list as an expression; a text not split yet is split into letters.
+  if (form == "css") {
+    if (!picked || doc_word(d, picked, "kind") != "text")
+      return d.error =
+                 "CSS moves the letters of a text: select a text layer "
+                 "and paste again",
+             0;
+    uint64_t mark = 1469598103934665603ull;
+    for (unsigned char c : text) mark = (mark ^ c) * 1099511628211ull;
+    char tail[16];
+    std::snprintf(tail, sizeof tail, "-%04llx",
+                  (unsigned long long)(mark & 0xffff));
+    std::filesystem::create_directories(folder, wrong);
+    const std::filesystem::path file =
+        kept ? std::filesystem::path(word)
+             : folder / (adapter_name(form) + tail + ".css");
+    if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
+    doc_act(d);
+    if (doc_word(d, picked, "split").empty() ||
+        doc_word(d, picked, "split") == "none")
+      doc_say(d, picked, "split", "letters");
+    doc_fx_file(d, picked, file.string().c_str(), d.stage->now);
+    return doc_acted(d) ? picked : 0;
+  }
   const bool hydra = form == "hydra",
              shader = hydra || form == "shadertoy" || form == "sandbox" ||
                       form == "twigl" || form == "bonzomatic";

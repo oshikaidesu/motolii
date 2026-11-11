@@ -23,6 +23,8 @@
 //   default shader.
 //   Subtitles and lyrics (ASS, SRT, LRC, WebVTT and the rest): what FFmpeg's
 //   probe reads as subtitles, drawn by libass (community/subtitles).
+//   CSS animations, as a CodePen pen's CSS: @keyframes and no JavaScript. They
+//   move the letters of a text layer (community/css).
 
 #include <filesystem>
 #include <functional>
@@ -43,7 +45,7 @@ std::string adapter_name(const std::string& form);
 // Detects the form of pasted code. Returns "" for ISF, a p5.js sketch, one of
 // our own presets, or text that is not code. Otherwise returns one of:
 // shadertoy, sandbox, hydra, three, two, turtle, paper, canvas, bonzomatic,
-// twigl, dweet, tixy.
+// twigl, dweet, tixy, subtitles, css.
 std::string adapter_form(const std::string& t);
 
 // Returns the library a form runs on, as a path under third_party/js, or "" if
