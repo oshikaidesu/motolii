@@ -31,8 +31,13 @@ JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
 // layerValue(id, name, t, otherwise): what the owner of the Script answers for
 // another layer's value at time t (Script::reads); `data` holds the address of
 // that reader. NaN when no reader is set.
-JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
-                    int, JSValueConst* data);
+// __subtitles_frame(ms): the frame of the subtitles `data` points at
+// (community/subtitles), as {x, y, w, h, data: RGBA}, or null when nothing is
+// shown then.
+JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
+                        JSValueConst* data);
+JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
+                    JSValueConst* data);
 
 }  // namespace motolii
 

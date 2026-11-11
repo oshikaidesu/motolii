@@ -5,6 +5,7 @@
 
 #include "community/script_runner/script_runner.h"
 #include "community/sites/adapter.h"
+#include "community/subtitles/subtitles.h"
 #include "media/video_frames_for_scripts.h"
 #include "motion/easing_names.h"
 namespace motolii {
@@ -142,6 +143,22 @@ JSValue image_read(
       JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f.h));
   JS_SetPropertyStr(cx, o, "data",
                     JS_NewArrayBufferCopy(cx, f.last.data(), f.last.size()));
+  return o;
+}
+JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
+                        JSValueConst* data) {
+  int64_t at = 0;
+  double ms = 0;
+  JS_ToInt64(cx, &at, data[0]), JS_ToFloat64(cx, &ms, a[0]);
+  const Subtitles::Frame f = ((const Subtitles*)at)->at((long long)ms);
+  if (f.rgba.empty()) return JS_NULL;
+  JSValue o = JS_NewObject(cx);
+  JS_SetPropertyStr(cx, o, "x", JS_NewInt32(cx, f.x)),
+      JS_SetPropertyStr(cx, o, "y", JS_NewInt32(cx, f.y)),
+      JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f.w)),
+      JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f.h));
+  JS_SetPropertyStr(cx, o, "data",
+                    JS_NewArrayBufferCopy(cx, f.rgba.data(), f.rgba.size()));
   return o;
 }
 // layerValue(id, name, t, otherwise): what the owner of the Script answers for

@@ -3,11 +3,11 @@
 // folder(), After Effects expressions, p5.js and the libraries a sketch names).
 #include "community/script_runner/script_runner.h"
 
-#include <thread>
 #include <algorithm>
-#include <memory>
 #include <fstream>
+#include <memory>
 #include <sstream>
+#include <thread>
 
 #include "community/after_effects/ae_expr.h"
 #include "community/p5/p5_mesh.h"
@@ -16,6 +16,7 @@
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/script_natives.h"
 #include "community/sites/adapter.h"
+#include "community/subtitles/subtitles.h"
 #include "media/video_frames_for_scripts.h"
 
 namespace motolii {
@@ -35,8 +36,9 @@ struct Script::Own {
   std::vector<std::unique_ptr<Script>> helpers;
   bool relates = false;  // a relation's relate() and no draw(): it lays copies
                          // too, all at once (__copies_by_relate)
-  FilmRead film;        // what its createCapture and createVideo see
-  std::vector<SketchLine> lines;  // its lines that draw
+  FilmRead film;         // what its createCapture and createVideo see
+  std::unique_ptr<Subtitles> subtitles;  // an .ass file's, drawn by libass
+  std::vector<SketchLine> lines;         // its lines that draw
   JSAtom said[12] = {};  // the names each() says a copy by, made atoms once
                          // (JS_GetPropertyStr makes and frees one at every
                          // read: quickjs-ng quickjs.c)
@@ -169,6 +171,21 @@ Script::Script(const std::string& file, const std::string& p5,
         own->cx, g, "layerValue",
         JS_NewCFunctionData(own->cx, layer_value, 3, 0, 1, &reader));
     JS_FreeValue(own->cx, reader);
+    if (form == "subtitles") {
+      own->subtitles = std::make_unique<Subtitles>(code.str());
+      JSValue size = JS_NewArray(own->cx),
+              them =
+                  JS_NewInt64(own->cx, (int64_t)(intptr_t)own->subtitles.get());
+      JS_SetPropertyUint32(own->cx, size, 0,
+                           JS_NewInt32(own->cx, own->subtitles->width()));
+      JS_SetPropertyUint32(own->cx, size, 1,
+                           JS_NewInt32(own->cx, own->subtitles->height()));
+      JS_SetPropertyStr(own->cx, g, "__subtitles_size", size);
+      JS_SetPropertyStr(
+          own->cx, g, "__subtitles_frame",
+          JS_NewCFunctionData(own->cx, subtitles_frame, 1, 0, 1, &them));
+      JS_FreeValue(own->cx, them);
+    }
     JS_FreeValue(own->cx, g);
   }
   std::string body = src;
@@ -349,9 +366,8 @@ std::vector<ScriptCopy> Script::copies(
     for (int i = 0; i < n; ++i) {
       const ScriptCopy c =
           (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{};
-      js << c.x << ',' << c.y << ',' << c.z << ',' << c.size << ','
-         << c.rotate << ',' << c.rotate_x << ',' << c.rotate_y << ','
-         << c.opacity << ',';
+      js << c.x << ',' << c.y << ',' << c.z << ',' << c.size << ',' << c.rotate
+         << ',' << c.rotate_x << ',' << c.rotate_y << ',' << c.opacity << ',';
     }
     js << "])";
     const std::vector<double> said = this->numbers(js.str());
@@ -376,9 +392,9 @@ std::vector<ScriptCopy> Script::copies(
     };
     const auto lay = [&](Script& s, int from, int to) {
       for (int i = from; i < to; ++i)
-        all[(size_t)i] = s.ask(
-            i, n, t,
-            (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
+        all[(size_t)i] =
+            s.ask(i, n, t,
+                  (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
     };
     tell(*this);
     // Many copies are shared among threads, each asking a Script of its own:
@@ -388,11 +404,12 @@ std::vector<ScriptCopy> Script::copies(
     // draw() made in order, and a script that reads other layers asks the
     // document, held by this thread: both stay on this thread.
     constexpr int kCopiesAThread = 1000;
-    int parts = own->sketch || own->reads
-                    ? 1
-                    : std::min<int>(
-                          (int)std::max(1u, std::thread::hardware_concurrency()),
-                          n / kCopiesAThread);
+    int parts =
+        own->sketch || own->reads
+            ? 1
+            : std::min<int>(
+                  (int)std::max(1u, std::thread::hardware_concurrency()),
+                  n / kCopiesAThread);
     while (parts > 1 && (int)own->helpers.size() < parts - 1)
       own->helpers.push_back(
           std::make_unique<Script>(own->file, own->made_p5, own->made_film));

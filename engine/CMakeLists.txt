@@ -134,6 +134,15 @@ target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs
 target_link_libraries(motolii_community_quickjs PUBLIC qjs)
 target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
 
+# Adapter: ASS and SSA subtitles drawn by libass as they are written.
+add_library(motolii_community_subtitles STATIC
+  community/subtitles/subtitles.cpp)
+target_link_libraries(motolii_community_subtitles PUBLIC motolii_flags)
+target_include_directories(motolii_community_subtitles PRIVATE ${HOMEBREW}/opt/libass/include)
+target_link_directories(motolii_community_subtitles PUBLIC ${HOMEBREW}/opt/libass/lib)
+target_link_libraries(motolii_community_subtitles PUBLIC ass)
+target_link_options(motolii_community_subtitles PUBLIC -Wl,-rpath,${HOMEBREW}/opt/libass/lib)
+
 # Adapter: after effects code run as it is.
 add_library(motolii_community_after_effects STATIC
   community/after_effects/lottie_slots.cpp)
@@ -243,7 +252,7 @@ add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
   community/script_runner/script_natives.cpp
   community/script_runner/script_runner.cpp)
-target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_media motolii_motion)
+target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_community_subtitles motolii_media motolii_motion)
 
 
 # ThorVG: 2D drawings placed in the scene.

@@ -21,6 +21,8 @@
 //   twigl: the variables r m t f s b and FC (src/fragmen.js in the twigl
 //   repository). Bonzomatic: fGlobalTime, v2Resolution and out_color, from its
 //   default shader.
+//   ASS and SSA subtitles: a file that begins with [Script Info], drawn by
+//   libass at its PlayResX x PlayResY (community/subtitles).
 
 #include <filesystem>
 #include <functional>

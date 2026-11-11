@@ -110,7 +110,7 @@ A language is only a way of writing. The meaning is shared: read values, return 
 |---|---|---|
 | Values over time | After Effects expression, Cavalry JavaScript, GSAP and anime.js timelines, Framer Motion springs | QuickJS (already) |
 | Values over time, as CSS | `@keyframes`, `transition`, `cubic-bezier`, `steps()`; per letter with Splitting.js's `--char-index` and `--char-total` | a CSS engine without a browser (5.4) |
-| Subtitles and karaoke | ASS override tags (`\k`, `\move`, `\t`, `\fad`), Aegisub's karaoke templater (Lua), LRC and SRT timed lyrics | an ASS library (5.4) |
+| Subtitles and karaoke | ASS override tags (`\k`, `\move`, `\t`, `\fad`), Aegisub's karaoke templater (Lua), LRC and SRT timed lyrics | libass, for a pasted .ass or .ssa (reached 2026-11-11, `engine/community/subtitles/`); the templater, LRC and SRT open |
 | Exported from After Effects | Lottie JSON, with expressions | ThorVG's Lottie loader, which already runs Lottie expressions in JerryScript (`src/loaders/lottie/tvgLottieExpressions.cpp`) |
 | Looks | CSS `text-shadow` stacked many times, `background-clip: text`, `filter`, `mix-blend-mode` (most CodePen text effects) | a CSS engine without a browser (5.4) |
 | Shapes | SVG paths, CSS `clip-path`, Paper.js | ThorVG's SVG loader (paths and a CSS subset; no `@keyframes`) |
@@ -131,7 +131,7 @@ No web page is embedded (principle 3). CSS and ASS are read as ways of writing v
 |---|---|---|---|
 | CSS at time t | Blitz (`blitz-dom`, MIT or Apache-2.0) on Servo's Stylo (MPL-2.0) | `BaseDocument::resolve(current_time_for_animations)` takes the time from the caller; Stylo samples `@keyframes` and transitions itself; `var()` and `calc()` per letter | seeking backwards (Stylo stamps a start on first resolve); whether `text-shadow` is computed though Blitz does not draw it; reading computed values without layout; the cost of a Rust build |
 | CSS in SVG | anim_svg (MIT) | SVG with `@keyframes` or SMIL turned into Lottie, which ThorVG plays | experimental; SVG only, not split HTML text |
-| ASS at time t | libass (ISC) | layout, `\t`, `\k` and `\move` done right | its public output is bitmaps only; the per-glyph values (`GlyphInfo` in `ass_render.h`) need a patch in `engine/deps/patches/libass/` |
+| ASS at time t | libass (ISC) | layout, `\t`, `\k` and `\move` done right | **Reached as a picture (2026-11-11):** a pasted .ass is recognised by `[Script Info]`, wrapped into a sketch, and libass's frame is put on its canvas (`engine/community/subtitles/`, test `subtitles_sketch_test.cpp`). Per-glyph values, for code or effects on each letter, still need a patch (`GlyphInfo` in `ass_render.h`) |
 | ASS as data | ass-compiler (MIT) | every tag typed, with times | the interpolation would be written by hand, which is translation; so libass is preferred |
 | Karaoke templates | aegisub-cli | runs Aegisub automation from the command line | licence not stated; last push 2020 |
 
@@ -224,7 +224,7 @@ From [AGENTS.md](../../AGENTS.md):
 5. **Blender Python:** drivers only, or `bpy` and the objects it reaches?
 6. **p5.js:** later, as written; is that acceptable?
 7. **CSS:** can Blitz sample `@keyframes` at any time, backwards included, and return values without drawing? If not, the cut of 5.4 is wrong.
-8. **ASS:** how large is the libass patch that hands out per-glyph values?
+8. **ASS:** the picture is reached as it is (5.4). How large is the libass patch that hands out per-glyph values, and is it wanted before someone asks to put code on a karaoke letter?
 
 Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
 

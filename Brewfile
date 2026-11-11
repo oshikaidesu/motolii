@@ -10,6 +10,8 @@ brew "gstreamer"
 brew "sqlite"
 brew "luajit"
 brew "quickjs-ng"
+# What pasted subtitles are drawn with: ASS and SSA, karaoke included (community/subtitles)
+brew "libass"
 # What the editor runs: writing a film (ffmpeg makes the mp4, render_draw.h's film)
 brew "ffmpeg"
 # (not the build: shelves/effects/sources/from_three.py, which makes effects from three.js shaders, wants naga on PATH: brew install naga-cli)
