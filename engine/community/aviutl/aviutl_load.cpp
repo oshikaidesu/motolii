@@ -22,6 +22,7 @@
 
 #include <lua.hpp>
 
+#include "base/default_font.h"
 #include "community/aviutl/aviutl_fx.h"
 #include "stage/render/render_stage.h"
 
@@ -154,11 +155,7 @@ std::string aviutl_font_file(const std::string& name, bool bold, bool italic,
   if (file.empty() ||
       (ext != ".ttf" && ext != ".otf" && ext != ".TTF" && ext != ".OTF") ||
       tvg::Text::load(file.c_str()) != tvg::Result::Success) {
-#ifdef _WIN32
-    file = "C:/Windows/Fonts/arial.ttf";
-#else
-    file = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf";
-#endif
+    file = default_font();
     sloped = italic;
   }
   return *slant = sloped, file;

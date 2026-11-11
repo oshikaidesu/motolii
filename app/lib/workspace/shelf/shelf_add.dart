@@ -23,7 +23,9 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 String get _ownEffects => '${EffectTiles.own}/effects';
 String get _ownExpressions => '${EffectTiles.own}/expressions';
 
-bool shelfIsExpression(String file) => file.endsWith('.js');
+/// A .js with each(), or a pen's CSS, which moves a text's letters (engine/community/css).
+bool shelfIsExpression(String file) =>
+    file.endsWith('.js') || file.endsWith('.css');
 
 /// The display name written beside a file the user added, or null if there is none or the file is not theirs.
 String? shelfNamed(String file) {

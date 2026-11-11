@@ -46,7 +46,7 @@ const char* motolii_presets(Motolii* m) {
 // Returns the names of the expression files, separated by spaces.
 const char* motolii_animators(Motolii* m) {
   return by_look(m, [=] {
-    return (said_word() = doc_folder_names("expressions", ".js")).c_str();
+    return (said_word() = doc_folder_names("expressions", ".js .css")).c_str();
   });
 }
 // Returns the names of the relation files, separated by spaces.

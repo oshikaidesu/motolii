@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/default_font.h"
 #include "community/hydra/hydra_isf.h"
 #include "community/isf/isf.h"
 #include "community/p5/adapter_p5_shader.h"
@@ -247,15 +248,11 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // JavaScript form.
   const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text),
                     told = adapter_js(text, form);
-  // A pen's CSS moves the letters of the text layer picked (community/css).
-  // It is kept in the Program shelf as a .css file and put on the layer's
-  // effect list as an expression; a text not split yet is split into letters.
+  // A pen's CSS moves the letters of the text layer picked, or of a new text
+  // when no text is picked (community/css). It is kept in the Program shelf as
+  // a .css file and put on the layer's effect list as an expression; a text
+  // not split yet is split into letters.
   if (form == "css") {
-    if (!picked || doc_word(d, picked, "kind") != "text")
-      return d.error =
-                 "CSS moves the letters of a text: select a text layer "
-                 "and paste again",
-             0;
     uint64_t mark = 1469598103934665603ull;
     for (unsigned char c : text) mark = (mark ^ c) * 1099511628211ull;
     char tail[16];
@@ -267,11 +264,14 @@ int doc_door(Doc& d, const std::string& said, int picked) {
              : folder / (adapter_name(form) + tail + ".css");
     if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
     doc_act(d);
-    if (doc_word(d, picked, "split").empty() ||
-        doc_word(d, picked, "split") == "none")
-      doc_say(d, picked, "split", "letters");
-    doc_fx_file(d, picked, file.string().c_str(), d.stage->now);
-    return doc_acted(d) ? picked : 0;
+    const int on = picked && doc_word(d, picked, "kind") == "text"
+                       ? picked
+                       : doc_add(d, "text", default_font());
+    if (!on) return d.act.ok = false, doc_acted(d), 0;
+    if (doc_word(d, on, "split").empty() || doc_word(d, on, "split") == "none")
+      doc_say(d, on, "split", "letters");
+    doc_fx_file(d, on, file.string().c_str(), d.stage->now);
+    return doc_acted(d) ? on : 0;
   }
   const bool hydra = form == "hydra",
              shader = hydra || form == "shadertoy" || form == "sandbox" ||

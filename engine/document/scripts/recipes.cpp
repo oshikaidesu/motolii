@@ -106,7 +106,8 @@ std::string doc_wgsl_tags(const std::filesystem::path& file) {
       }
       feedback = feedback || line.find("--history@") != std::string::npos;
       image = image || line.find("--picture@") != std::string::npos;
-      if (line.rfind("// --tag:", 0) == 0) said += (said.empty() ? "" : " ") + line.substr(9);
+      if (line.rfind("// --tag:", 0) == 0)
+        said += (said.empty() ? "" : " ") + line.substr(9);
     } else if (!clock &&
                (line.find("time") != std::string::npos ||
                 line.find("frame") != std::string::npos) &&
@@ -239,7 +240,10 @@ std::string doc_folder_names(const char* folder, const char* extension) {
     if (read.empty()) continue;
     std::ifstream in(read);
     std::string first, name = f.stem().string(), label, about;
-    if (std::getline(in, first) && first.rfind("// ", 0) == 0 &&
+    // (A CSS file, which has no // comments, gives its name as /* Name: ...
+    // */.)
+    if (std::getline(in, first) &&
+        (first.rfind("// ", 0) == 0 || first.rfind("/* ", 0) == 0) &&
         first.find(':') != std::string::npos)
       name = first.substr(3, first.find(':') - 3);
     for (std::string line;

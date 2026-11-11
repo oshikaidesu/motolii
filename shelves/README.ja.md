@@ -14,6 +14,7 @@ Motolii に最初から入っている表現と、見つけた表現を置く場
 |---|---|
 | ISF のシェーダー（`.fs`）、WGSL（`.wgsl`） | `effects/`（中の分類フォルダはどれでもよい） |
 | 1 つの動きを、コピーや文字を 1 つずつ（`i` 番目に）決める JavaScript（`function each`） | `expressions/` |
+| 文字を動かす CodePen のペンの CSS（`@keyframes`。Splitting.js の `.char`・`.word` を使うもの） | `expressions/`（`.css`。同じ名前の `.html` を隣に置くと、ペンの HTML として使う）。文字レイヤーに ⌘V で貼ってもよい |
 | 複数のレイヤーを、お互いの位置を見ながらまとめて動かす JavaScript（`function relate`・`function force`） | `relations/` |
 | 1 回で図形や絵を作る物（先頭に `// make` の行がある `.js`）、点を並べるスクリプト、p5.js のスケッチのファイル | `create/` |
 | 動きの緩急の式（`.way`） | `ease/` |

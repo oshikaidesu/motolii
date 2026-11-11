@@ -14,6 +14,7 @@ Take the first row that fits. The folder goes inside your own folder (above).
 |---|---|
 | An ISF shader (`.fs`) or a WGSL shader (`.wgsl`) | `effects/` (any category folder inside) |
 | JavaScript that decides, for one copy or letter at a time (the `i`-th), where it is and how (`function each`) | `expressions/` |
+| A CodePen pen's CSS that moves letters (`@keyframes`, with Splitting.js's `.char` and `.word`) | `expressions/` (a `.css`; an `.html` of the same name beside it is the pen's HTML). Or paste it on a text with ⌘V |
 | JavaScript that moves several layers together, looking at where the others are (`function relate`, `function force`) | `relations/` |
 | Something that builds a picture or shape in one go (a `.js` with `// make` lines), a script that lays out points, a p5.js sketch as a file | `create/` |
 | An easing formula (`.way`) | `ease/` |

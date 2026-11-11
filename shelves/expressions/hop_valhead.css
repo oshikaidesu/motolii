@@ -1,0 +1,40 @@
+/* Hop: each letter hops up and lands, one after another, running back along the word
+   From the CodePen pen "Backwards" by Val Head, https://codepen.io/valhead/pen/zYvxEVX, as its CSS panel is.
+   Public pens on CodePen are MIT licensed (blog.codepen.io/documentation/licensing): the notice and licence text are
+   in THIRD_PARTY_NOTICES.md. Pasting a pen's CSS with ⌘V does the same as this file. */
+:root {
+  --dur:2s;
+}
+body {
+  font-family: "Recursive VF", sans-serif;
+  background: #fbd6d7;
+  background: radial-gradient(circle, #fbd6d7 0%, #fcc5b6 100%);
+}
+h1 {
+  font-size: 10rem;
+  font-variation-settings: "MONO" 0, "CASL" 1, "CRSV" 0, "wght" 1000, "slnt" 0;
+  color: #2c003e;
+}
+.char {
+  display: inline-block;
+  text-shadow: -2px -2px 0 #FF727D, -4px -4px 0 #FFA372, -6px -6px 4px rgba(255, 114, 145, 0.4);
+  animation: hop var(--dur) infinite cubic-bezier(0.32, 0, 0.67, 0) both;
+  animation-delay: calc(1s - var(--char-index) * 0.1s);
+}
+@keyframes hop {
+  20% {
+    transform: translateY(-60%);
+    font-variation-settings: "MONO" 0, "CASL" 0, "CRSV" 0, "wght" 500, "slnt" 0;
+  }
+  40% {
+    transform: translateY(0);
+    font-variation-settings: "MONO" 0, "CASL" 1, "CRSV" 0, "wght" 1000, "slnt" 0;
+  }
+}
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+}
