@@ -2,10 +2,14 @@
   "private": true,
   "description": "TSL (three.js Shading Language) effects found on the net, turned to WGSL by three.js's own builder (see convert.ts) and written as effects shelf files (write_shelf_*.ts). Versions pinned: three.js as Shader Lab and the converted collections use it.",
   "dependencies": {
+    "@typegpu/noise": "0.12.1",
+    "@typegpu/three": "0.12.2",
     "core-js": "3.45.1",
-    "three": "0.185.1"
+    "three": "0.185.1",
+    "typegpu": "0.12.10"
   },
   "devDependencies": {
-    "esbuild": "0.25.0"
+    "esbuild": "0.25.0",
+    "unplugin-typegpu": "0.12.8"
   }
 }
