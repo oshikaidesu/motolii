@@ -90,6 +90,16 @@ inline const char* const doc_kinds =
     "video image text solid shape camera light";
 // The kinds of layer that are seen.
 inline const char* const doc_visible_kinds = "video image text solid shape";
+// Kinds that are placed in the scene: the visible kinds, the camera, the light
+// and a behaviour.
+inline const char* const doc_placed_kinds =
+    "video image text solid shape camera light behaviour";
+// The kinds ThorVG draws on a sheet.
+inline const char* const doc_sheet_kinds = "text shape image";
+// The sheet kinds and the solid.
+inline const char* const doc_sheet_solid_kinds = "image text shape solid";
+// The sheet kinds and the video.
+inline const char* const doc_video_sheet_kinds = "video image text shape";
 // The kinds of relation: a script file.
 inline const char* const doc_relations = "relate";
 // The built-in shapes a solid can have.
@@ -109,18 +119,13 @@ struct DocValue {
 };
 inline const DocValue doc_values[] = {
     // For a group, z is how far its layers are away when it is out.
-    {"x", "video image text solid shape camera light behaviour", -1e4, 1e4,
-     true, nullptr},
-    {"y", "video image text solid shape camera light behaviour", -1e4, 1e4,
-     true, nullptr},
+    {"x", doc_placed_kinds, -1e4, 1e4, true, nullptr},
+    {"y", doc_placed_kinds, -1e4, 1e4, true, nullptr},
     {"z", doc_kinds, -1e4, 1e4, true, nullptr},
     // For a relation, rotate is added to each of its layers in turn.
-    {"rotate", "video image text solid shape camera light behaviour", -1e6, 1e6,
-     true, nullptr},
-    {"rotate_x", "video image text solid shape camera light behaviour", -1e6,
-     1e6, true, nullptr},
-    {"rotate_y", "video image text solid shape camera light behaviour", -1e6,
-     1e6, true, nullptr},
+    {"rotate", doc_placed_kinds, -1e6, 1e6, true, nullptr},
+    {"rotate_x", doc_placed_kinds, -1e6, 1e6, true, nullptr},
+    {"rotate_y", doc_placed_kinds, -1e6, 1e6, true, nullptr},
     // Scale along each axis as a multiple of the size, each on its own as After
     // Effects' Scale.
     // Below 0 flips the layer. A flat layer's scale_z is its thickness: if not
@@ -132,7 +137,7 @@ inline const DocValue doc_values[] = {
     // a sheet again.
     {"scale_x", doc_visible_kinds, -1e4, 1e4, true, nullptr},
     {"scale_y", doc_visible_kinds, -1e4, 1e4, true, nullptr},
-    {"scale_z", "solid text shape image", -1e4, 1e4, true, nullptr},
+    {"scale_z", doc_sheet_solid_kinds, -1e4, 1e4, true, nullptr},
     // script: a preset as code, a JavaScript file that gives the position of
     // each copy (script_runner.h).
     // The parameters in its header are values of the layer, named js_ plus the
@@ -189,16 +194,15 @@ inline const DocValue doc_values[] = {
     // docs/design/alight_motion_ui.md.
     {"group_mask", "shape", 0, 0, false, "none mask exclude"},
     // A solid is cut by a box, not a matte.
-    {"clip_matte", "video image text shape", 0, 0, false, "alpha luma"},
-    {"clip_invert", "video image text shape", 0, 1, false, nullptr},
-    {"clip_feather", "video image text shape", 0, 500, false, nullptr},
+    {"clip_matte", doc_video_sheet_kinds, 0, 0, false, "alpha luma"},
+    {"clip_invert", doc_video_sheet_kinds, 0, 1, false, nullptr},
+    {"clip_feather", doc_video_sheet_kinds, 0, 500, false, nullptr},
     // After Effects' own: while any layer is solo only those layers are seen,
     // and a locked layer
     // cannot be changed.
     {"solo", doc_kinds, 0, 1, false, nullptr},
     {"lock", doc_kinds, 0, 1, false, nullptr},
-    {"visible", "video image text solid shape camera light behaviour", 0, 1,
-     false, nullptr},
+    {"visible", doc_placed_kinds, 0, 1, false, nullptr},
     {"order", doc_kinds, -1e9, 1e9, false, nullptr},
     {"wide", "shape", 1e-3, 1e3, false, nullptr},
     {"shape", "shape", 0, 0, false,
@@ -218,16 +222,16 @@ inline const DocValue doc_values[] = {
     {"crop_bottom", "image", 0, 0.95, false, nullptr},
     {"start", doc_kinds, 0, 1e6, false, nullptr},
     {"duration", doc_kinds, 1e-3, 1e6, false, nullptr},
-    {"begin", "video image text shape", 0, 1e6, false, nullptr},
-    {"speed", "video solid image text shape", -100, 100, false, nullptr},
+    {"begin", doc_video_sheet_kinds, 0, 1e6, false, nullptr},
+    {"speed", doc_visible_kinds, -100, 100, false, nullptr},
     {"keyed", "video", 0, 1, false, nullptr},
     // time_remap: the seconds of its own that a program is at, keyed like After
     // Effects' Time Remap
     // (doc_own_time). time_remap_loop: what happens past its last keyframe,
     // like loopOut
     // (doc_keys_at).
-    {"time_remap", "image text shape solid", 0, 1e6, true, nullptr},
-    {"time_remap_loop", "image text shape solid", 0, 0, false,
+    {"time_remap", doc_sheet_solid_kinds, 0, 1e6, true, nullptr},
+    {"time_remap_loop", doc_sheet_solid_kinds, 0, 0, false,
      "none cycle pingpong offset"},
     // The time in seconds at which the project's own image is drawn. Below 0
     // means where the
@@ -253,8 +257,7 @@ inline const DocValue doc_values[] = {
     // speed_hold: where the layer's Speed holds it in time, like After Effects'
     // Time Stretch: its
     // start, the playhead, or its end.
-    {"speed_hold", "video solid image text shape", 0, 0, false,
-     "start now end"},
+    {"speed_hold", doc_visible_kinds, 0, 0, false, "start now end"},
     // How loud the layer's sound is heard and exported: 1 as it comes, 0 none,
     // 2 twice as loud.
     // Alight Motion's Volume, 0 to 200%.
@@ -262,7 +265,7 @@ inline const DocValue doc_values[] = {
     // Where its sound strikes: the layer is louder by this many dB at once. 0
     // shows none.
     {"beats", "video", 0, 60, false, nullptr},
-    {"blend", "video image text shape", 0, 0, false,
+    {"blend", doc_video_sheet_kinds, 0, 0, false,
      "normal add multiply screen darken lighten overlay soft_light hard_light "
      "color_dodge color_burn difference exclusion hue saturation color "
      "luminosity linear_burn linear_light vivid_light pin_light darker_color "
@@ -284,8 +287,7 @@ inline const DocValue doc_values[] = {
     // What the layer is called where layers are listed, behaviors included. If
     // not set, it is named
     // by its kind.
-    {"name", "video image text solid shape camera light behaviour", 0, 0, false,
-     ""},
+    {"name", doc_placed_kinds, 0, 0, false, ""},
     // Its color on the timeline, chosen from Ableton Live's clip colors in the
     // window's order. auto
     // picks one by the layer's number.
@@ -368,7 +370,7 @@ inline const DocValue doc_values[] = {
     // front or behind by depth, always facing the viewer. 3d is filmed as it
     // is, with the camera
     // turning round it, as a solid is.
-    {"space", "video image text shape", 0, 0, false, "2d 2.5d 3d"},
+    {"space", doc_video_sheet_kinds, 0, 0, false, "2d 2.5d 3d"},
     // How the lines of a text lie one under another, ThorVG's own: 0 at the
     // left, 0.5 about the
     // middle, 1 at the right.
@@ -401,47 +403,47 @@ inline const DocValue doc_values[] = {
     // script: shelves/create/repeats/repeater.js lays them in rows, turns,
     // scales and scatters
     // them.
-    {"copies", "image text shape solid", 1, 1000, false, nullptr},
+    {"copies", doc_sheet_solid_kinds, 1, 1000, false, nullptr},
     // How much later the last copy moves than the first, in seconds. Each is as
     // late as its order
     // says.
-    {"stagger", "image text shape solid", 0, 1e3, false, nullptr},
+    {"stagger", doc_sheet_solid_kinds, 0, 1e3, false, nullptr},
     // Which copy moves first: the first, the middle one, the last, or the outer
     // ones.
-    {"stagger_from", "image text shape solid", 0, 0, false,
+    {"stagger_from", doc_sheet_solid_kinds, 0, 0, false,
      "start centre end edges"},
     // Its copies colored from the first color to the last, in their order, as
     // six hex digits each.
     // One color colors all of them. none means the copies are not colored
     // individually.
-    {"copy_fill", "image text shape", 0, 0, false, ""},
+    {"copy_fill", doc_sheet_kinds, 0, 0, false, ""},
     // ramp goes from the first color to the last across all the copies. cycle
     // gives each copy one
     // color in turn, round and round.
-    {"copy_fill_way", "image text shape", 0, 0, false, "ramp cycle"},
+    {"copy_fill_way", doc_sheet_kinds, 0, 0, false, "ramp cycle"},
     // How many times as tall as it is, its anchor staying where it is: a bar
     // growing up from its
     // foot.
-    {"tall", "image text shape", 0, 1e3, true, nullptr},
+    {"tall", doc_sheet_kinds, 0, 1e3, true, nullptr},
     // Its copies each so many times as tall again, in their order, going round:
     // numbers, such as
     // the data of a bar chart. none means all copies are equally tall.
-    {"copy_tall", "image text shape solid", 0, 0, false, ""},
+    {"copy_tall", doc_sheet_solid_kinds, 0, 0, false, ""},
     // Where along copy_fill each copy's color is, given by a behavior
     // (copy_fill_at_by): 0 is the
     // first color, 1 the last. If not given, the copies' order decides.
-    {"copy_fill_at", "image text shape", 0, 1, true, nullptr},
+    {"copy_fill_at", doc_sheet_kinds, 0, 1, true, nullptr},
     // The last copy is as transparent as this and the first as the layer
     // itself. After Effects'
     // Repeater, End Opacity.
-    {"copy_opacity_end", "image text shape", 0, 1, true, nullptr},
+    {"copy_opacity_end", doc_sheet_kinds, 0, 1, true, nullptr},
     // Its copies laid on another shape's outline, each turned the way the
     // outline goes, like
     // Cavalry's Duplicator on a shape. copy_on_offset slides them along it, as
     // a share of its
     // length.
-    {"copy_on", "image text shape solid", 0, 1e9, false, nullptr},
-    {"copy_on_offset", "image text shape solid", -1e4, 1e4, true, nullptr},
+    {"copy_on", doc_sheet_solid_kinds, 0, 1e9, false, nullptr},
+    {"copy_on_offset", doc_sheet_solid_kinds, -1e4, 1e4, true, nullptr},
     // The layer whose copies its own copies join, one each from one to another:
     // lines between dots.
     // 0 means none.
@@ -555,8 +557,8 @@ inline const DocValue doc_values[] = {
     {"stroke_3", "text", 0, 0, false, ""},
     {"stroke_3_width", "text", 0, 1000, false, nullptr},
     // Its edge: a color, and how wide it is in points of the image at size 1.
-    {"stroke", "text shape image", 0, 0, false, ""},
-    {"stroke_width", "text shape image", 0, 1000, false, nullptr},
+    {"stroke", doc_sheet_kinds, 0, 0, false, ""},
+    {"stroke_width", doc_sheet_kinds, 0, 1000, false, nullptr},
     // ThorVG's own: a text's letters and lines spaced so many times as far
     // apart as the font sets
     // them, and its slant. Also an edge's ends and corners, and dashes along it
@@ -597,21 +599,21 @@ inline const DocValue doc_values[] = {
     {"join", "shape", 0, 0, false, "miter round bevel"},
     // After Effects' Bevel Style and Depth. Ogee and Step are Easy
     // Typography's.
-    {"bevel", "text shape image", 0, 0, false,
+    {"bevel", doc_sheet_kinds, 0, 0, false,
      "none angular convex concave ogee step"},
-    {"bevel_depth", "text shape image", 0, 4096, true, nullptr},
+    {"bevel_depth", doc_sheet_kinds, 0, 4096, true, nullptr},
     // A thick layer's other faces, like After Effects' Bevel, Side and Back
     // Color, each with its
     // own metallic and roughness. If not set, they are as its front.
-    {"bevel_color", "text shape image", 0, 0, false, ""},
-    {"bevel_metallic", "text shape image", 0, 1, false, nullptr},
-    {"bevel_roughness", "text shape image", 0, 1, false, nullptr},
-    {"side_color", "text shape image", 0, 0, false, ""},
-    {"side_metallic", "text shape image", 0, 1, false, nullptr},
-    {"side_roughness", "text shape image", 0, 1, false, nullptr},
-    {"back_color", "text shape image", 0, 0, false, ""},
-    {"back_metallic", "text shape image", 0, 1, false, nullptr},
-    {"back_roughness", "text shape image", 0, 1, false, nullptr},
+    {"bevel_color", doc_sheet_kinds, 0, 0, false, ""},
+    {"bevel_metallic", doc_sheet_kinds, 0, 1, false, nullptr},
+    {"bevel_roughness", doc_sheet_kinds, 0, 1, false, nullptr},
+    {"side_color", doc_sheet_kinds, 0, 0, false, ""},
+    {"side_metallic", doc_sheet_kinds, 0, 1, false, nullptr},
+    {"side_roughness", doc_sheet_kinds, 0, 1, false, nullptr},
+    {"back_color", doc_sheet_kinds, 0, 0, false, ""},
+    {"back_metallic", doc_sheet_kinds, 0, 1, false, nullptr},
+    {"back_roughness", doc_sheet_kinds, 0, 1, false, nullptr},
     // Arrow heads on the open ends of its edge, like Cavalry's basicArrowHead:
     // which ends, and the
     // head's size as a multiple of the edge's length.
@@ -632,26 +634,25 @@ inline const DocValue doc_values[] = {
     // a clear coat over it and how rough that is, and how much it lights
     // itself. For emissive, 1 is
     // its color itself on the image and more is brighter still.
-    {"metallic", "solid text shape image video", 0, 1, false, nullptr},
-    {"roughness", "solid text shape image video", 0, 1, false, nullptr},
-    {"reflectance", "solid text shape image video", 0, 1, false, nullptr},
+    {"metallic", doc_visible_kinds, 0, 1, false, nullptr},
+    {"roughness", doc_visible_kinds, 0, 1, false, nullptr},
+    {"reflectance", doc_visible_kinds, 0, 1, false, nullptr},
     // A solid filled with glass, the render code's own: ior is how much it
     // bends light (index of
     // refraction), dispersion how far its colors part, swim how much what is
     // behind it swims, dark
     // how fast a long way through it goes dark, and vivid how vivid what is
     // seen through it is.
-    {"ior", "video image text shape solid", 1, 3, false, nullptr},
-    {"dispersion", "video image text shape solid", 0, 0.5, false, nullptr},
-    {"swim", "video image text shape solid", 0, 1, false, nullptr},
-    {"dark", "video image text shape solid", 0, 20, false, nullptr},
-    {"vivid", "video image text shape solid", 0, 3, false, nullptr},
-    {"clear_coat", "video image text shape solid", 0, 1, false, nullptr},
-    {"clear_coat_roughness", "video image text shape solid", 0, 1, false,
-     nullptr},
-    {"emissive", "video image text shape solid", 0, 20, true, nullptr},
+    {"ior", doc_visible_kinds, 1, 3, false, nullptr},
+    {"dispersion", doc_visible_kinds, 0, 0.5, false, nullptr},
+    {"swim", doc_visible_kinds, 0, 1, false, nullptr},
+    {"dark", doc_visible_kinds, 0, 20, false, nullptr},
+    {"vivid", doc_visible_kinds, 0, 3, false, nullptr},
+    {"clear_coat", doc_visible_kinds, 0, 1, false, nullptr},
+    {"clear_coat_roughness", doc_visible_kinds, 0, 1, false, nullptr},
+    {"emissive", doc_visible_kinds, 0, 20, true, nullptr},
     // Filament's velvet sheen at its rim, in its own color.
-    {"sheen", "video image text shape solid", 0, 1, false, nullptr},
+    {"sheen", doc_visible_kinds, 0, 1, false, nullptr},
     // The material the layer wears, for any layer that is seen (Create's
     // Material group,
     // doc_material). shading chooses among Filament's shading models: lit,
@@ -661,12 +662,12 @@ inline const DocValue doc_values[] = {
     // (thick_glass.mat); Filament's own glass (own_glass.mat); lacquer
     // (blade.mat); and a bubble
     // (bubble.mat). thickness is how thick it is to the light going through.
-    {"shading", "video image text shape solid", 0, 0, false,
+    {"shading", doc_visible_kinds, 0, 0, false,
      "lit cloth subsurface glass filament_glass lacquer bubble"},
-    {"thickness", "video image text shape solid", 0, 1, false, nullptr},
+    {"thickness", doc_visible_kinds, 0, 1, false, nullptr},
     // Highlights drawn out as on brushed metal. A negative value draws them out
     // the other way.
-    {"anisotropy", "video image text shape solid", -1, 1, false, nullptr},
+    {"anisotropy", doc_visible_kinds, -1, 1, false, nullptr},
     // A camera's lens, Filament's own: projection can be orthographic, drawn
     // without depth so that
     // far is as large as near, as in an axonometric drawing. shift_x and
