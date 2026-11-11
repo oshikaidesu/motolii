@@ -33,7 +33,10 @@ std::vector<double> sound_strikes(const std::vector<float>& db, double rate,
 // wave, centered on 0.5. In an "audioFFT" input each column is one value of the
 // FFT. At each time the amount of data matches what VIDVOX's own ISF Editor
 // gives an ISF (VVISF-GL, AudioController: fftQuality 512, and the wave is
-// twice that).
+// twice that). The spectrum is what the Web's AnalyserNode gives for the same
+// sound (W3C Web Audio API 1.8.6): an fftSize of 2 x sound_bands on sound read
+// at sound_rate, so pitch i is i x sound_rate / (2 x sound_bands) Hz, with
+// AnalyserOptions' defaults.
 struct SoundRead {
   // Samples of the wave, sound_rate per second, from -1 to 1.
   std::vector<float> wave;
@@ -47,8 +50,17 @@ inline constexpr int sound_rate = 24000, sound_bands = 512, sound_rows = 60;
 // takes as long as decoding the file. Returns null until the read has finished;
 // the caller should treat that as silence. Each read runs under std::async and
 // its future is kept. When the futures are destroyed at exit, each destructor
-// waits for its read to finish ([futures.async]).
-const SoundRead* sound_of(const std::string& file);
+// waits for its read to finish ([futures.async]). With `wait`, does not return
+// before the read has finished, so that the same time always gives the same
+// sound.
+const SoundRead* sound_of(const std::string& file, bool wait = false);
+
+// Returns the sound at time `at`, in seconds of the file, as it was read: the
+// sound_bands values of the spectrum row shown then, each 0 to 1, or without
+// `fft` the 2 x sound_bands samples of the wave up to `at`, each -1 to 1 and 0
+// before the file begins. Returns an empty list when `r` is null, `at` is
+// negative, or the spectrum has no row for that time.
+std::vector<float> sound_raw(const SoundRead* r, bool fft, double at);
 
 // Returns what an ISF audio input reads at time `at`, in seconds of the file.
 // `r` may be null. `fft` selects the spectrum; otherwise the wave is returned.

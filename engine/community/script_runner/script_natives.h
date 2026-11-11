@@ -34,10 +34,6 @@ JSValue bezier_ease(JSContext* cx, JSValueConst, int argc, JSValueConst* a);
 // A picture its sketch came with, by the name it gives it: only the last part
 // of that name, only from that folder.
 JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
-// layerValue(id, name, t, otherwise, copy): what the owner of the Script
-// answers for another layer's value at time t (Script::reads), of its copy
-// `copy` when given; `data` holds the address of that reader. NaN when no
-// reader is set.
 // __text_read(name): a file its sketch came with, as text, by the last part of
 // the name it gives (as image_read reads its pictures), or null. What fetch()
 // reads in p5_stand.h, and so p5.js's loadTable, loadJSON and loadStrings.
@@ -47,16 +43,6 @@ JSValue text_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
 // for, as {x, y, w, h, data: RGBA}, or null when nothing is shown then.
 JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                         JSValueConst* data);
-JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
-                    JSValueConst* data);
-// sampleImage(id, point, radius, postEffect, t) and fromWorld(id, point, t):
-// what the owner of the Script answers for the picture of another layer
-// (Script::reads_pictures); `data` holds the address of what answers. The
-// first gives an array of four numbers, the second of two.
-JSValue sample_image(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
-                     int, JSValueConst* data);
-JSValue from_world(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
-                   JSValueConst* data);
 
 }  // namespace motolii
 

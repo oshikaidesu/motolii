@@ -30,7 +30,7 @@ set(ABSENT_MOTION ${THIRD_PARTY}/AbsentMotion/app/src/main/cpp)
 set(IRIS ${THIRD_PARTY}/iris)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0)
+pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0 gstreamer-fft-1.0)
 # FFmpeg's libraries are the LGPL-only build deps/ffmpeg.sh makes, never Homebrew's (it has GPL parts: libx264, libx265).
 if(NOT EXISTS ${THIRD_PARTY}/ffmpeg_lgpl/lib/pkgconfig/libavcodec.pc)
   message(FATAL_ERROR "third_party/ffmpeg_lgpl is not built: run engine/deps/ffmpeg.sh")
@@ -258,6 +258,7 @@ target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_abse
 # Adapter: script runner code run as it is.
 add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
+  community/script_runner/project_reads.cpp
   community/script_runner/script_natives.cpp
   community/script_runner/script_runner.cpp)
 target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_community_subtitles motolii_media motolii_motion)

@@ -1,7 +1,7 @@
 #ifndef MOTOLII_DOCUMENT_SCRIPTS_SCRIPT_READS_H_
 #define MOTOLII_DOCUMENT_SCRIPTS_SCRIPT_READS_H_
 
-// What the JavaScript on a layer may read of the rest of the project. The three
+// What the JavaScript on a layer may read of the rest of the project. The
 // functions are declared in community/script_runner/script_runner.h; this is
 // what answers them from the open project.
 //
@@ -24,6 +24,16 @@
 //     of the stage, in stage units as layerValue gives x and y, is in the
 //     pixels of layer `id`.
 //
+//   getByteFrequencyData(id, array, t) and getFloatTimeDomainData(id, array,
+//     t): the Web's AnalyserNode methods (W3C Web Audio API 1.8) on the sound
+//     of video layer `id`, a sound file being a video layer that is heard and
+//     not seen: how strong each pitch is, and the wave. The second of the file
+//     is the one the layer plays at t, as for its picture. The file's sound is
+//     read whole the first time it is asked for, and that is waited for
+//     (media/sound_level.h, which says how the numbers are worked out). Before
+//     the layer comes on, after it has gone, and for any other layer: zeros.
+//     The layer's volume and its sound effects are not taken in.
+//
 // What a picture is read from, today:
 //   - An image layer: its file, drawn by ThorVG at its own size.
 //   - A video layer: the frame of its file that the layer shows at second t
@@ -41,7 +51,8 @@ namespace motolii {
 struct Doc;
 class Script;
 
-// Makes `run` ask the project `d` for layerValue, sampleImage and fromWorld.
+// Makes `run` ask the project `d` for layerValue, sampleImage, fromWorld and
+// the two that read sound.
 // `d` must outlive the calls of `run`, which are made on the thread that holds
 // it.
 void doc_script_reads(Doc& d, Script& run);

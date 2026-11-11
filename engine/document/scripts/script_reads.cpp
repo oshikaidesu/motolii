@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
@@ -18,6 +19,7 @@
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "media/sound_level.h"
 #include "media/video_frames_for_scripts.h"
 #include "media/video_layer.h"
 #include "stage/canvas/image_pixels.h"
@@ -37,28 +39,34 @@ struct Film {
   long held = -2;  // which frame of `read` is in `now`
 };
 
+// Gives the second of its file that video layer `layer` shows and sounds at
+// second `t`: how long the layer has been on (evaluate.cpp's `since`), round
+// its cut as video_at loops it, then into the file as video_from seeks it.
+// Returns false for a layer that is not a video on the stage.
+bool file_second(Doc& d, int layer, double t, double* second) {
+  if (doc_word(d, layer, "kind") != "video") return false;
+  const auto shown = d.on_stage.shown.find(layer);
+  const Video* v =
+      shown == d.on_stage.shown.end() ? nullptr : shown->second.video;
+  if (!v || v->seconds <= 0.f) return false;
+  const double since = doc_element_now(d, layer, t) -
+                       doc_number(d, layer, "start", 0, 0),
+               in = std::fmod(std::max(0.0, since), (double)v->seconds) *
+                    std::fabs((double)v->speed);
+  *second = v->speed > 0.f ? (double)v->from + in : (double)v->to - in;
+  return true;
+}
+
 // Returns the picture layer `layer` shows at second `t` as pixels, or null when
 // it has none to read (script_reads.h says which layers do). `keeps` holds a
 // still's pixels for as long as the caller reads them.
 const ImagePixels* layer_pixels(Doc& d, int layer, double t,
                                 std::shared_ptr<const ImagePixels>& keeps) {
-  const std::string kind = doc_word(d, layer, "kind"),
-                    file = doc_word(d, layer, "file");
-  if (kind == "image") return (keeps = image_pixels(file)).get();
-  if (kind != "video") return nullptr;
-  const auto shown = d.on_stage.shown.find(layer);
-  const Video* v =
-      shown == d.on_stage.shown.end() ? nullptr : shown->second.video;
-  if (!v || v->seconds <= 0.f) return nullptr;
-  // The second of the file the layer shows at t: how long the layer has been
-  // on (evaluate.cpp's `since`), round its cut as video_at loops it, then into
-  // the file as video_from seeks it.
-  const double since = doc_element_now(d, layer, t) -
-                       doc_number(d, layer, "start", 0, 0),
-               in = std::fmod(std::max(0.0, since), (double)v->seconds) *
-                    std::fabs((double)v->speed),
-               second = v->speed > 0.f ? (double)v->from + in
-                                       : (double)v->to - in;
+  const std::string file = doc_word(d, layer, "file");
+  if (doc_word(d, layer, "kind") == "image")
+    return (keeps = image_pixels(file)).get();
+  double second = 0;
+  if (!file_second(d, layer, t, &second)) return nullptr;
   // One reader a file, kept for as long as the program runs: its GStreamer
   // pipeline is not taken down while the program exits.
   static auto& films = *new std::map<std::string, Film>;
@@ -125,6 +133,20 @@ void doc_script_reads(Doc& d, Script& run) {
         return {(in.x / (double)half.x + 1.0) * 0.5 * picture->w - 0.5,
                 (1.0 - in.y / (double)half.y) * 0.5 * picture->h - 0.5};
       });
+  // The sound of a video layer, or of a sound file (a video layer that is
+  // heard and not seen), while the layer is on. The file is read whole the
+  // first time, and that is waited for: the same second gives the same sound.
+  run.reads_sound([&d](int layer, bool spectrum, double t) {
+    std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+    const double start = doc_number(d, layer, "start", 0, 0),
+                 lasts = doc_number(d, layer, "duration", 0, -1);
+    double second = 0;
+    if (t < start || (lasts > 0 && t >= start + lasts) ||
+        !file_second(d, layer, t, &second))
+      return std::vector<float>();
+    return sound_raw(sound_of(doc_word(d, layer, "file"), true), spectrum,
+                     second);
+  });
 }
 
 }  // namespace motolii

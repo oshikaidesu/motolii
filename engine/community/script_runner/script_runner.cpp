@@ -14,6 +14,7 @@
 #include "community/p5/p5_stand.h"
 #include "community/p5/p5_three.h"
 #include "community/quickjs/script_leva.h"
+#include "community/script_runner/project_reads.h"
 #include "community/script_runner/script_natives.h"
 #include "community/sites/adapter.h"
 #include "community/subtitles/subtitles.h"
@@ -22,11 +23,9 @@
 namespace motolii {
 
 struct Script::Own {
-  Script::LayerReader reads;  // what layerValue() asks
-  Script::ImageSampler sample;  // what sampleImage() asks
-  Script::PointMapper point;    // what fromWorld() asks
-  bool asks = false;  // its text names one of those three: it asks the project,
-                      // which the thread that calls it holds
+  ProjectReads project;  // what answers layerValue() and the like
+  bool asks = false;     // its text names one of them: it asks the project,
+                         // which the thread that calls it holds
   JSRuntime* rt = nullptr;
   JSContext* cx = nullptr;
   JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
@@ -193,22 +192,8 @@ Script::Script(const std::string& file, const std::string& p5,
     }
     JS_FreeValue(own->cx, g);
   }
-  {  // What any script may read of the project (script_runner.h): each
-     // function is handed the address of what answers it.
-    JSValue g = JS_GetGlobalObject(own->cx);
-    const auto give = [&](const char* name, JSCFunctionData* asks, int takes,
-                          void* answers) {
-      JSValue to = JS_NewInt64(own->cx, (int64_t)(intptr_t)answers);
-      JS_SetPropertyStr(own->cx, g, name,
-                        JS_NewCFunctionData(own->cx, asks, takes, 0, 1, &to));
-      JS_FreeValue(own->cx, to);
-      own->asks = own->asks || src.find(name) != std::string::npos;
-    };
-    give("layerValue", layer_value, 3, &own->reads);
-    give("sampleImage", sample_image, 5, &own->sample);
-    give("fromWorld", from_world, 3, &own->point);
-    JS_FreeValue(own->cx, g);
-  }
+  // What any script may read of the project (project_reads.h).
+  own->asks = project_reads_give(own->cx, src, &own->project);
   std::string body = src;
   if (sketch) {
     std::string marked = sketch_marked(src, &own->lines);
@@ -258,9 +243,13 @@ Script::~Script() {
   JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
 bool Script::ok() const { return own->trouble.empty(); }
-void Script::reads(LayerReader read) { own->reads = std::move(read); }
+void Script::reads(LayerReader read) { own->project.value = std::move(read); }
 void Script::reads_pictures(ImageSampler sample, PointMapper point) {
-  own->sample = std::move(sample), own->point = std::move(point);
+  own->project.sample = std::move(sample),
+  own->project.point = std::move(point);
+}
+void Script::reads_sound(SoundReader sound) {
+  own->project.sound = std::move(sound);
 }
 bool Script::sketch() const { return own->sketch; }
 bool Script::lays() const {

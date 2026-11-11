@@ -53,7 +53,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `document/edit/` | Changes to the project: layers, keys, easings, effects, parents, relations, arrangement and time (`layer_edit.h`, `keys_put.h`, `fx_put.h`). |
 | `document/evaluate/` | Computing what a project shows at a given time: values between keys, effect lists, camera, world and materials (`evaluate.h`, `value_at.h`, `world.h`). |
 | `document/match/` | Rebuilding the preview stage to match the project, one step at a time: `match_<kind>.cpp` for each kind of layer (video, image, text, shape, models, light), `match_look.cpp`, `match_layers.cpp`, and `match_describe.cpp`, which writes the text that tells whether a layer must be rebuilt. `rebuild.h` holds what one call works out early. The steps are listed in `doc_match` (`document/match.cpp`). |
-| `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, the shelf folder lists, and what a script may read of other layers: their values and the pixels of their pictures (`recipes.h`, `scripts.h`, `folders.h`, `script_reads.h`). |
+| `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, the shelf folder lists, and what a script may read of other layers: their values, the pixels of their pictures and their sound (`recipes.h`, `scripts.h`, `folders.h`, `script_reads.h`). |
 | `shelf/` | Where the shelf folders are: the library's and the user's, and a count of changed files (`shelf_folders.h`). |
 | `stage/` | Drawing. `live.h` hands frames to the app. |
 | `stage/render/` | Drawing with Filament: engine, camera, lights, layers, glTF models and point clouds (`render.h`, `gltf_model.h`, `point_cloud.h`). |
@@ -76,7 +76,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | Folder | Runs |
 |---|---|
 | `quickjs/` | The groundwork the adapters below build on: a script's parameters and copies as types, its header of AviUtl2-style or leva-style parameters, shelf files, and anime.js's easings on QuickJS-ng (`script.h`). It includes no other adapter. |
-| `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
+| `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), the functions it reads the rest of the project with (`project_reads.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
 | `after_effects/` | After Effects expressions (`ae_expr.h`) and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
 | `p5/` | p5.js sketches in p5.js itself, and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
 | `three/` | three.js: solid shapes (`solid_three.h`) and screen effects turned into ISF (`three_isf.h`). |
