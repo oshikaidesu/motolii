@@ -233,7 +233,12 @@ From [AGENTS.md](../../AGENTS.md):
    - **Result:** dev_loop is left out, because its pen leaves `.char` inline: Chrome does not transform an inline box, and splitting.css, which makes it inline-block, was not among the pen's files. Of 294 element-times in the other four, 264 agree within 0.01 and 0.5 px. valhead agrees everywhere. The 30 that do not have two causes, both in Stylo:
      - It solves `cubic-bezier` only to 1/(200 × duration) (`servo/animation.rs` line 65), up to 5 ms of curve on a 1 s animation: 0.6–1.3 px on a 128 px letter. Chrome's value agreed with the curve solved exactly (bisection, 100 steps) to six places.
      - Where keyframes list different functions (`rotateY(-25deg)` against `translateY(2%) rotateY(25deg)` in SRHubli's fall), Stylo keeps an `InterpolateMatrix` to be resolved once the box is known, and turning it into a matrix gave identity. Stylo's own matrix interpolation (decomposition, `animated/transform.rs`) can resolve it once the box is passed in.
-   - The pages, the Rust probe and the in-Chrome comparison are kept in `docs/internal/css_letters/`, which git ignores.
+   - **Both causes removed, the same day:** all 294 element-times agree, the worst by 0.036 px.
+     - The curve is solved to 1e-7, Chromium's `kBezierEpsilon` (`ui/gfx/geometry/cubic_bezier.cc`). This is a three-line patch to Stylo's `servo/animation.rs`.
+     - `InterpolateMatrix` is resolved the way Stylo's own TODO in `to_3d_matrix` (`values/generics/transform.rs`) describes. Each list is made a matrix against the box, the two are interpolated by Stylo's `Matrix3D::animate`, and the list is multiplied by Stylo's `to_transform_3d_matrix_f64`. It is about 15 lines outside Stylo; Stylo itself is untouched.
+     - The last 0.6 px was the checker's own: Chrome's `offsetHeight` rounds 77.5 px to 78. The box is now read from Chrome's computed width and height.
+     - So the piece the engine needs takes each letter's box from Motolii. It gives back the letter's opacity and its matrix, and moves the document on one frame at a time.
+   - The pages, the Rust probe, the patch and the in-Chrome comparison are kept in `docs/internal/css_letters/`, which git ignores.
 8. **ASS:** the picture is reached as it is (5.4). How large is the libass patch that hands out per-glyph values, and is it wanted before someone asks to put code on a karaoke letter?
 
 Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
