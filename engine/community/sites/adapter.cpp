@@ -115,7 +115,8 @@ std::string adapter_name(const std::string& form) {
       {"twigl", "twigl"},
       {"bonzomatic", "Bonzomatic"},
       {"subtitles", "Subtitles"},
-      {"css", "CSS"}};
+      {"css", "CSS"},
+      {"svg", "SVG"}};
   const auto at = names.find(form);
   return at == names.end() ? form : at->second;
 }
@@ -130,6 +131,14 @@ std::string adapter_form(const std::string& t) {
   // Subtitles and lyrics, as FFmpeg's own probe tells them
   // (community/subtitles).
   if (!subtitles_format(t).empty()) return "subtitles";
+  // An SVG file's text, as copied from a page's source or an icon site: it
+  // begins with its root element, or an XML declaration before it. Its own
+  // CSS may have keyframes (community/css plays them).
+  const size_t first = t.find_first_not_of(" \t\r\n\xEF\xBB\xBF");
+  if (first != std::string::npos &&
+      (t.compare(first, 4, "<svg") == 0 || t.compare(first, 5, "<?xml") == 0) &&
+      adapter_has(t, "</svg>"))
+    return "svg";
   // CSS animations, as a CodePen pen's CSS is copied: keyframes, and no
   // JavaScript around them (community/css moves a text's letters with it).
   if (adapter_has(t, "@keyframes") && !adapter_has(t, "function") &&

@@ -248,11 +248,11 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // JavaScript form.
   const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text),
                     told = adapter_js(text, form);
-  // A pen's CSS moves the letters of the text layer picked, or of a new text
-  // when no text is picked (community/css). It is kept in the Program shelf as
-  // a .css file and put on the layer's effect list as an expression; a text
-  // not split yet is split into letters.
-  if (form == "css") {
+  // Text kept in the Program shelf as a file of its own: named by its form and
+  // the FNV-1a hash of the text (its last four hex digits), so different code
+  // gets a different file, written once. Code already a file in the shelf is
+  // used as it is when `as_is`.
+  const auto stored = [&](const char* ext, bool as_is = true) {
     uint64_t mark = 1469598103934665603ull;
     for (unsigned char c : text) mark = (mark ^ c) * 1099511628211ull;
     char tail[16];
@@ -260,9 +260,25 @@ int doc_door(Doc& d, const std::string& said, int picked) {
                   (unsigned long long)(mark & 0xffff));
     std::filesystem::create_directories(folder, wrong);
     const std::filesystem::path file =
-        kept ? std::filesystem::path(word)
-             : folder / (adapter_name(form) + tail + ".css");
+        kept && as_is ? std::filesystem::path(word)
+                      : folder / (adapter_name(form) + tail + ext);
     if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
+    return file;
+  };
+  // An SVG is a picture: a new image layer of it, which plays its CSS
+  // animations if it has any (image_canvas).
+  if (form == "svg") {
+    const std::filesystem::path file = stored(".svg");
+    doc_act(d);
+    const int on = doc_add(d, "image", file.string().c_str());
+    return doc_acted(d) && on ? on : 0;
+  }
+  // A pen's CSS moves the letters of the text layer picked, or of a new text
+  // when no text is picked (community/css). It is kept in the Program shelf as
+  // a .css file and put on the layer's effect list as an expression; a text
+  // not split yet is split into letters.
+  if (form == "css") {
+    const std::filesystem::path file = stored(".css");
     doc_act(d);
     const int on = picked && doc_word(d, picked, "kind") == "text"
                        ? picked
@@ -288,24 +304,9 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   }
   if (!shader && !script_is_sketch(told))
     return d.error = "this is not code that Motolii can read", 0;
-  // The FNV-1a hash of the text, as its last four hex digits, is added to the
-  // file name so that different code gets a different file.
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : text) hash = (hash ^ c) * 1099511628211ull;
-  char tail[16];
-  std::snprintf(tail, sizeof tail, "-%04llx",
-                (unsigned long long)(hash & 0xffff));
+  // Hydra code is stored converted, even when it came from the shelf.
+  const std::filesystem::path file = stored(shader ? ".fs" : ".js", !hydra);
   const std::string name = adapter_name(form);
-  std::filesystem::create_directories(folder, wrong);
-  std::filesystem::path file =
-      folder / (name + tail + (shader ? ".fs" : ".js"));
-  // Code that is already a file in the shelf folder is used as it is, except
-  // Hydra code, which is stored converted. Other code is written to the shelf
-  // folder unless that file already exists.
-  if (kept && !hydra)
-    file = word;
-  else if (!std::filesystem::exists(file, wrong))
-    std::ofstream(file) << text;
   // The pictures and data that the code loads are copied from the place it came
   // from to beside the stored file.
   if (word != came && !kept)
