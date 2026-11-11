@@ -2,6 +2,7 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
+import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/services.dart';
@@ -20,7 +21,6 @@ import 'package:motolii/workspace/dock/common/empty_shelf.dart';
 import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
-import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/common/star_button.dart';
 import 'package:motolii/workspace/dock/effects/effect_drawings.dart';
 import 'package:motolii/workspace/dock/effects/effect_places.dart';
@@ -36,18 +36,6 @@ import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-
-/// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
-/// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.
-typedef _EffectEntry = ({
-  String id,
-  String name,
-  String label,
-  Widget Function(bool small, ValueChanged<Offset>? menu) tile,
-  bool on,
-  VoidCallback apply,
-  String said,
-});
 
 /// The Effects shelf: the list of places to look in, the tiles or the map of what is there, and the footer for the
 /// picked effect.
@@ -122,7 +110,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
     // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
     // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
-    VoidCallback? off(_EffectEntry e) =>
+    VoidCallback? off(EffectEntry e) =>
         screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final look = shelfLooks['Effects']!;
     // Overlays on a tile's image, none on a small tile.
@@ -168,7 +156,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final seen = <String, ShelfItem>{};
     String pic(String id) => seen[id]?.picture ?? '';
     // Builds one item for any of the three listings; only what really differs by listing is switched on its [from].
-    _EffectEntry fx(String name, ShelfItem i) {
+    EffectEntry fx(String name, ShelfItem i) {
       final thing = i.from == 'thing',
           screened = i.from == 'screen',
           id = thing ? i.name : i.id;
@@ -247,7 +235,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       for (final (_, f) in m.presets)
         if (m.item(f) case final i?) (i.name, i),
     ];
-    final every = <_EffectEntry>[
+    final every = <EffectEntry>[
       // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_effect.dart).
       (
         id: 'empty:effect',
@@ -286,118 +274,33 @@ class _EffectsShelfState extends State<EffectsShelf> {
       for (final (n, i) in lined) fx(n, i),
       // There are no motions here: they are expressions, in Create's Expression group.
     ];
-    // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
-    // It also matches the tags read from the effect (ShelfTags), each word on its own.
-    // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
-    Set<String> tagsOf(String id) =>
-        widget.effects.tags.of('Effects', id, seen[id]?.tags ?? const {});
-    bool found(String q, _EffectEntry e) =>
-        q.isEmpty ||
-        e.name.toLowerCase().contains(q.toLowerCase()) ||
-        (seen[e.id]?.about ?? '').toLowerCase().contains(q.toLowerCase()) ||
-        ShelfTags.hit(q, e.name, tagsOf(e.id));
-    final hits = [
-          for (final e in every)
-            if (c.hit(e.name) || (c.query.isNotEmpty && found(c.query, e))) e,
-        ],
-        hit = {for (final e in hits) e.id};
-    final near = c.query.trim().isEmpty || hits.isNotEmpty
-        ? const <String>[]
-        : m.find(c.query, [
-            for (final e in every)
-              if (!hit.contains(e.id))
-                (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
-          ]);
-    final first = widget.effects.tags.latched('Effects', c.query),
-        latched = every.where((e) => e.id == first).take(1).toList();
-    final all = [
-      ...latched,
-      for (final e in hits)
-        if (e.id != first) e,
-      for (final id in near)
-        if (id != first) ...every.where((e) => e.id == id).take(1),
-    ];
-    final byId = {for (final e in all) e.id: e},
-        recent = [for (final id in effectRecent()) ?byId[id]];
-    // The decks: what the user put in and what their words find, as one EffectDeck.
-    final decks = effectDecks(),
-        deckIds = {
-          for (final d in decks)
-            d: {
-              ...d.things.map((t) => t.id),
-              for (final e in all)
-                if (d.words.isNotEmpty && found(d.words, e)) e.id,
-            }.difference(d.without),
-        };
-    final used = ws.fxUsed, packs = <String, int>{};
-    for (final e in every) {
-      if (effectPack(e.id) case final p?) packs[p] = (packs[p] ?? 0) + 1;
-    }
-    // Every pack folder is listed, even with one effect, as sashimono-edit's add menu gives each folder its own submenu (add_menu.py:280).
-    final deck = decks.where((d) => '@${d.name}' == c.mem.fxPlace).firstOrNull;
-    final place = deck != null || !c.mem.fxPlace.startsWith('@')
-            ? c.mem.fxPlace
-            : 'All',
-        pack = place.startsWith('/') ? place.substring(1) : null;
-    // On the map, the map shows all effects and the selected deck sits beside it to add and remove effects, like Hearthstone's
-    // Collection Manager. Elsewhere a deck shows what it holds as tiles.
-    final building =
-        c.mem.mapped.contains('Effects') && (deck != null || place == '★');
-    // Recent lists the last effects applied, newest first, like the Fonts shelf's Recent. Alight Motion keeps forty (EffectBrowser.kt:117).
-    final here = place == 'Recent'
-        ? recent
-        : [
-            for (final e in all)
-              if (building ||
-                  switch (place) {
-                    '★' => c.starred(e.id),
-                    'In video' => used.contains(e.id),
-                    _ when deck != null => deckIds[deck]!.contains(e.id),
-                    _ when pack != null => effectPack(e.id) == pack,
-                    _ => true,
-                  })
-                e,
-          ];
-    final kinds = <String, int>{}, read = <String, int>{};
-    for (final e in here) {
-      if (e.label.isNotEmpty) kinds[e.label] = (kinds[e.label] ?? 0) + 1;
-      for (final t in tagsOf(e.id)) {
-        read[t] = (read[t] ?? 0) + 1;
-      }
-    }
-    // Tags read from the effects, most common first, as the Fonts shelf's tag chips do (fonts/fonts_shelf.dart).
-    // Each shows the # that is typed to search for it (ShelfTags). A kind with the same word is a different thing:
-    // VIDVOX's Feedback kind is not the feedback passes read from the shader.
-    // "transition" is left out because the Transition kind is read the same way (isf.cpp). Shadertoy's filters are read from the shaders.
-    final tagChips = [
-      for (final t
-          in (read.entries.where((t) => t.key != 'transition').toList()
-            ..sort((a, b) => b.value.compareTo(a.value))))
-        MapEntry('#${t.key}', t.value),
-    ]; // Most common first; the row scrolls, since all the kinds follow it.
-    final chip =
-        kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip)
-        ? c.chip
-        : 'All';
-    final shown = [
-      for (final e in here)
-        if (chip == 'All' ||
-            (chip.startsWith('#')
-                ? tagsOf(e.id).contains(chip.substring(1))
-                : e.label == chip))
-          e,
-    ];
-    // An effect the deck holds but the shelf does not: its name is kept and marked. Layer effects are excluded, since they wait for a layer.
-    final known = {
-      ...every.map((e) => e.id),
-      ...m.layerEffects.map((e) => e.$1),
-      ...m.presets.map((e) => e.$2),
-      ...m.animators.map((e) => e.$2),
-    };
+    final listing = effectListing(
+      c: c,
+      tags: widget.effects.tags,
+      every: every,
+      seen: seen,
+    );
+    final found = listing.found,
+        all = listing.all,
+        byId = listing.byId,
+        recent = listing.recent,
+        decks = listing.decks,
+        deckIds = listing.deckIds,
+        used = listing.used,
+        packs = listing.packs,
+        deck = listing.deck,
+        place = listing.place,
+        building = listing.building,
+        here = listing.here,
+        kinds = listing.kinds,
+        tagChips = listing.tagChips,
+        chip = listing.chip,
+        shown = listing.shown,
+        known = listing.known;
     if (deck != null && deck.things.any((t) => !known.contains(t.id))) {
       deckSettle(deck, known);
     }
-    final lost = <_EffectEntry>[
+    final lost = <EffectEntry>[
       if (deck != null && c.query.isEmpty)
         for (final t in deck.things)
           if (!known.contains(t.id))
@@ -438,7 +341,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             c.query.isEmpty &&
             !c.mem.mapped.contains('Effects')
         ? recent.take(10).toList()
-        : const <_EffectEntry>[]; // On the map only the map shows, as in XO's Space: the recent box took half the shelf.
+        : const <EffectEntry>[]; // On the map only the map shows, as in XO's Space: the recent box took half the shelf.
     final listed = building ? shown : [...shown, ...lost];
     // What the deck holds in the order added, then what its words find. Effects not on this machine come last.
     final holds = place == '★'
@@ -447,12 +350,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ? const <String>{}
         : deckIds[deck]!;
     final held = !building
-        ? const <_EffectEntry>[]
+        ? const <EffectEntry>[]
         : [
             for (final id in holds) ...every.where((e) => e.id == id).take(1),
             ...lost,
           ];
-    void put(EffectDeck d, _EffectEntry e) => c.set(() {
+    void put(EffectDeck d, EffectEntry e) => c.set(() {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
     });
@@ -460,9 +363,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // Lightroom Classic does the same with Add to Target Collection (B), using the Quick Collection until a target is set.
     final to = effectTarget(),
         aim = to != null && deckIds.containsKey(to) ? to : null;
-    bool aimed(_EffectEntry e) =>
+    bool aimed(EffectEntry e) =>
         aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
-    void target(_EffectEntry e) {
+    void target(EffectEntry e) {
       final was = aimed(e);
       aim != null ? put(aim, e) : c.star(e.id);
       ws.notice =
@@ -470,7 +373,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
 
     // Actions on an effect are in its right-click menu and the footer's three-dot button, as in Ableton's item menu.
-    void menuOn(_EffectEntry e, Offset at) {
+    void menuOn(EffectEntry e, Offset at) {
       final box = _menu.currentContext?.findRenderObject() as RenderBox?;
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
         if (off(e) case final o?) ...[
@@ -505,11 +408,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ]);
     }
 
-    Widget tile(_EffectEntry e, bool small) =>
+    Widget tile(EffectEntry e, bool small) =>
         e.tile(small, (at) => menuOn(e, at));
     // A strip for an effect the deck holds, under the deck's row, like a card in a Hearthstone deck list: its image and name.
     // A click selects it, a double-click applies it, a drop applies it where released, and a right-click opens its menu, as on its tile.
-    Widget strip(_EffectEntry e) => ShelfTile(
+    Widget strip(EffectEntry e) => ShelfTile(
       ShelfItem(e.id, e.name, picture: pic(e.id)),
       look,
       key: ValueKey('ws-fx-held-${e.id}'),
