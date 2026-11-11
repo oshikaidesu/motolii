@@ -199,6 +199,7 @@ bool points_is(const std::string& file);
 //   2  storage, array<f32>: the points as the shape made them, x y z each
 //   4  storage, array<f32>: the texture coordinates, u v each
 //   6  storage, array<f32>: the points to draw, x y z each, which it writes
+//   8  storage, array<f32>: the normals as the shape made them, x y z each
 // It is run with 64 points to a workgroup, so its entry is
 // `@compute @workgroup_size(64)` and point i is global_invocation_id.x. The
 // buffers may be longer than the solid has points.

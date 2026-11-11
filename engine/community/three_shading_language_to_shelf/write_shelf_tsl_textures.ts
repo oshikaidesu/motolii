@@ -8,7 +8,8 @@ import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
 import { uniform, uv } from "three/tsl"
 import * as T from "../../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
-import { madeText } from "./write_shelf_file"
+import { madeText, parts } from "./write_shelf_file"
+import { pointsText } from "./write_shelf_points"
 
 const root = "../../third_party/tsl/boytchev__tsl-textures/", dir = "../../../shelves/effects/generate"   // (its --label:Generate)
 const pages = (std.popen(`ls ${root}docs`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".md")).map(p => std.loadFile(`${root}docs/${p}`) ?? "")
@@ -18,7 +19,8 @@ const axes = "xyz"
 for (const [name, f] of Object.entries(T) as [string, any][]) {
   if (typeof f !== "function" || !f.defaults || (only.length && !only.includes(name))) continue
   const slots = new Set(pages.flatMap(t => [...t.matchAll(new RegExp(`material\\.(\\w+Node) = ${name}\\b`, "g"))].map(m => m[1])))
-  if (slots.size && !slots.has("colorNode")) { console.log(`${name}: left out, for ${[...slots].join(" ")}`); continue }
+  const moves = slots.has("positionNode") || f.defaults.$positionNode   // (it moves a shape's points: a points file, write_shelf_points.ts)
+  if (slots.size && !slots.has("colorNode") && !moves) { console.log(`${name}: left out, for ${[...slots].join(" ")}`); continue }
   if (name === "darthMaul") { console.log(`${name}: left out, a ball's stripes, on a sheet its usual distance leaves only the background`); continue }
   try {
     const page = std.loadFile(`${root}online/${name.replace(/[A-Z]/g, c => "-" + c.toLowerCase())}.html`) ?? ""
@@ -50,6 +52,16 @@ for (const [name, f] of Object.entries(T) as [string, any][]) {
         args[key] = uniform(value.clone()); fields.set(key, `vec${n}<f32>`); of.set(args[key], [...axes.slice(0, n)].map(a => `knobs.${key}.${a}`))
         for (const m of rows) lines.push([args[key], `// --track@${key}_${m[3]}:${label} ${m[3]},${m[4] ?? -4},${m[5] ?? 4},${value[m[3]]},${m[6] ?? 0.01}`])
       }
+    }
+    if (moves) {   // (a points file's sliders are single numbers: a vector's shown parts each one, the others as the author left them)
+      const tracks = lines.map(([, line]) => line), has = new Set(tracks.map(l => /@(\w+):/.exec(l)![1]))
+      for (const [node, made] of of) of.set(node, made.map((m, i) => { const n = m.replace(/^knobs\.(\w+)\.(\w)$/, "$1_$2").replace(/^knobs\./, ""); return has.has(n) ? `knobs.${n}` : String(parts(node.value)![i]) }))
+      const material: any = new THREE.MeshBasicNodeMaterial()
+      material.positionNode = f(args)
+      const text = pointsText(new THREE.Mesh(new THREE.SphereGeometry(), material), [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)`, "// --label:3d"], tracks, of)
+      std.open(`../../../shelves/effects/geometry/tt_${name.replace(/[A-Z]/g, c => "_" + c.toLowerCase())}_points.wgsl`, "w").puts(text)
+      console.log(`${name}: a points file, ${tracks.length} sliders`)
+      continue
     }
     if (f.defaults.$replaceExportUVS) args.uvs = uv()   // (the author's own word for a texture taken off its ball)
     const material: any = new THREE.MeshBasicNodeMaterial()

@@ -15,7 +15,7 @@ struct PointsFx {
   std::string file;
   std::filesystem::file_time_type stamp;
   interop::Program* program = nullptr;
-  interop::Buffer *knobs = nullptr, *from = nullptr;
+  interop::Buffer *knobs = nullptr, *from = nullptr, *normals = nullptr;
   interop::Set* set = nullptr;
   // The vertex buffer `set` was made for. A mesh that outgrows its buffers gets
   // new ones.
@@ -62,11 +62,11 @@ void thing_fx_points(Stage& s, ThingFx& e) {
     // compute_interop has no call that frees a program: the old one stays.
     p = PointsFx{};
     p.file = e.pointsFile, p.stamp = stamp;
-    const interop::Kind slots[4] = {
+    const interop::Kind slots[5] = {
         interop::Kind::UNIFORM, interop::Kind::STORAGE, interop::Kind::STORAGE,
-        interop::Kind::STORAGE};
+        interop::Kind::STORAGE, interop::Kind::STORAGE};
     p.program = interop::program(s.engine, "points",
-                                 points_text(e.pointsFile).c_str(), slots, 4);
+                                 points_text(e.pointsFile).c_str(), slots, 5);
   }
   if (!p.program) return;
   // time, then the file's own numbers in the order of its head.
@@ -80,14 +80,17 @@ void thing_fx_points(Stage& s, ThingFx& e) {
   if (p.vb != m->vb) {
     p.from = interop::buffer(s.engine, interop::Kind::STORAGE,
                              m->vbRoom * 3 * (uint32_t)sizeof(float));
-    interop::Buffer* const all[4] = {p.knobs, p.from,
-                                     interop::buffer(s.engine, m->object[2]),
-                                     interop::buffer(s.engine, m->object[0])};
+    p.normals = interop::buffer(s.engine, interop::Kind::STORAGE,
+                                m->vbRoom * 3 * (uint32_t)sizeof(float));
+    interop::Buffer* const all[5] = {
+        p.knobs, p.from, interop::buffer(s.engine, m->object[2]),
+        interop::buffer(s.engine, m->object[0]), p.normals};
     p.set = interop::set(s.engine, p.program, all);
     p.vb = m->vb;
   }
   const uint32_t n = (uint32_t)m->pos.size();
   interop::write(s.engine, p.from, m->pos.data(), n * 3 * sizeof(float));
+  interop::write(s.engine, p.normals, m->nrm.data(), n * 3 * sizeof(float));
   interop::write(s.engine, p.knobs, knobs.data(), knobBytes);
   interop::run(s.engine, p.program, p.set, (n + 63) / 64);
 }
