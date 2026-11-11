@@ -2,6 +2,7 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
+import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
@@ -91,27 +92,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final on = ws.fxOf(ws.selected),
         screen = ws.screenFx,
         picked = int.tryParse(ws.selected ?? '') != null;
-    // A layer's own effects, presets and motions go on the selected layer, or on a new layer when none is selected.
-    // Whole-screen effects go on the selected layer, or on the stage.
-    // Applying while words are typed in the search box latches the effect to those words, so it comes first next time.
-    VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
-      void go() {
-        // A closure of its own rather than a tear-off, because a dragged tile is identified by it.
-        widget.effects.tags.latch('Effects', c.query, id);
-        if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
-        ws.tryOn(null); // Stop previewing the hovered effect first: applying reads the document as it is.
-        put();
-      }
-
-      widget.effects.carried[go] = id;
-      return go;
-    }
-
-    // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
-    // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
-    // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
-    VoidCallback? off(EffectEntry e) =>
-        screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
+    final commands = EffectCommands(c, widget.effects);
     final look = shelfLooks['Effects']!;
     // Overlays on a tile's image, none on a small tile.
     // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
@@ -161,7 +142,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           screened = i.from == 'screen',
           id = thing ? i.name : i.id;
       final lit = thing ? on.contains(id) : screened && screen.contains(id);
-      final apply = chosen(
+      final apply = commands.chosen(
         id,
         thing
             ? () => ws.fxToggle(id)
@@ -242,7 +223,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         name: 'Empty',
         label: '',
         on: false,
-        apply: chosen(
+        apply: commands.chosen(
           'empty:effect',
           () => emptyPut(
             ws,
@@ -260,7 +241,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           art: paintedArt(const EmptyLook()),
           picked: c.sel == 'empty:effect',
           onTap: () => c.pick('empty:effect'),
-          onApply: chosen(
+          onApply: commands.chosen(
             'empty:effect',
             () => emptyPut(
               ws,
@@ -280,8 +261,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       every: every,
       seen: seen,
     );
-    final found = listing.found,
-        all = listing.all,
+    final all = listing.all,
         byId = listing.byId,
         recent = listing.recent,
         decks = listing.decks,
@@ -355,57 +335,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
             for (final id in holds) ...every.where((e) => e.id == id).take(1),
             ...lost,
           ];
-    void put(EffectDeck d, EffectEntry e) => c.set(() {
-      d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
-      effectDecksKeep();
-    });
-    // Where one press sends an effect, however many decks exist: the target deck, else Favorites. A notice says where it went.
-    // Lightroom Classic does the same with Add to Target Collection (B), using the Quick Collection until a target is set.
-    final to = effectTarget(),
-        aim = to != null && deckIds.containsKey(to) ? to : null;
-    bool aimed(EffectEntry e) =>
-        aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
-    void target(EffectEntry e) {
-      final was = aimed(e);
-      aim != null ? put(aim, e) : c.star(e.id);
-      ws.notice =
-          '${was ? 'Removed from' : 'Added to'} ${aim?.name ?? 'Favorites'}';
-    }
-
-    // Actions on an effect are in its right-click menu and the footer's three-dot button, as in Ableton's item menu.
     void menuOn(EffectEntry e, Offset at) {
       final box = _menu.currentContext?.findRenderObject() as RenderBox?;
-      _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-        if (off(e) case final o?) ...[
-          ContextMenuItem('Add Again', e.apply),
-          ContextMenuItem('Remove', o),
-        ] else
-          ContextMenuItem(e.on ? 'Remove' : 'Add', e.apply),
-        const ContextMenuItem.rule(),
-        ContextMenuItem(
-          '${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}',
-          () => target(e),
-          keys: 'B',
+      _menu.currentState?.show(
+        box?.globalToLocal(at) ?? Offset.zero,
+        commands.menuItems(
+          listing,
+          e,
+          tags: () => setState(() => _tagging = e.id),
+          rename: () => setState(() => _renaming = e.id),
+          newDeck: (thing) => _places.currentState?.newDeck(thing: thing),
         ),
-        ContextMenuItem(
-          'New Deck…',
-          () => _places.currentState?.newDeck(
-            thing: DeckThing(e.id, e.name, effectSum(e.id)),
-          ),
-        ),
-        ContextMenuItem('Tags…', () => setState(() => _tagging = e.id)),
-        if (shelfAdded(e.id)) ...[
-          const ContextMenuItem.rule(),
-          ContextMenuItem('Rename…', () => setState(() => _renaming = e.id)),
-        ],
-        if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[
-          const ContextMenuItem.rule(),
-          ContextMenuItem(
-            'Go to Pack: $p',
-            () => c.set(() => c.mem.fxPlace = '/$p'),
-          ),
-        ],
-      ]);
+      );
     }
 
     Widget tile(EffectEntry e, bool small) =>
@@ -478,7 +419,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       put: (d, id) {
         if (every.where((e) => e.id == id).firstOrNull case final e?
             when !(deckIds[d]?.contains(id) ?? false)) {
-          put(d, e); // A deck made a moment ago is not in the table yet (Save Favorites...).
+          commands.put(listing, d, e); // A deck made a moment ago is not in the table yet (Save Favorites...).
         }
       },
     );
@@ -519,7 +460,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             // B runs the target action on the selected effect, like the menu's single row, as in Lightroom's Library grid.
             bindings: {
               const SingleActivator(LogicalKeyboardKey.keyB): () =>
-                  sel == null ? null : target(sel),
+                  sel == null ? null : commands.target(listing, sel),
             },
             child: Focus(
               focusNode: _tileKeys,
@@ -535,7 +476,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                         said: c.query.isNotEmpty
                             ? null
                             : deck != null
-                            ? (identical(deck, aim)
+                            ? (identical(deck, commands.aim(listing))
                                   ? 'Drag an effect onto the deck, or right-click one'
                                   : 'Drag an effect onto the deck')
                             : 'Nothing here yet',
@@ -637,7 +578,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   : '${sel.label} · ${sel.said} · double-click to add', // A click selects, a double-click applies.
               action: sel.on ? 'Remove' : 'Add',
               fresh: !picked,
-              onAction: off(sel) ?? sel.apply,
+              onAction: commands.off(sel) ?? sel.apply,
               more: Builder(
                 builder: (b) => IconPress(
                   dockMark(AppGlyphs.more),
