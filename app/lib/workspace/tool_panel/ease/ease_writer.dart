@@ -139,11 +139,7 @@ class EaseWriter {
     ];
     if (open) {
       open = false;
-      define(m, to);
-      for (final (t, name, at) in toTell) {
-        m.later('easing', layer: t, name: name, number: at, word: to);
-      }
-      define(m, to);
+      send(m, to, toTell);
       close(ws, m);
       return;
     }
@@ -153,12 +149,17 @@ class EaseWriter {
       );
     }
     m.later('together', number: 1);
+    send(m, to, toTell);
+    close(ws, m);
+  }
+
+  // Defines the easing in the document and puts it on each of the segments (layer, property, time).
+  void send(Motolii m, String to, List<(int, String, double)> segments) {
     define(m, to);
-    for (final (t, name, at) in toTell) {
+    for (final (t, name, at) in segments) {
       m.later('easing', layer: t, name: name, number: at, word: to);
     }
     define(m, to);
-    close(ws, m);
   }
 
   // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.

@@ -21,6 +21,12 @@ class CreateCommands {
   /// The shelf's context: the project, the shelf's memory and a way to rebuild the shelf.
   final ShelfContext c;
 
+  /// What a create call does with its answer: forget the tile's trouble when it was done, or keep why it was not.
+  void Function(bool done, String why) _troubled(String name) =>
+      (done, why) => c.set(
+        () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+      );
+
   /// Runs a tile: it creates a new layer and selects it. A tile of copies lays out the picked layer instead, and a material changes it.
   /// On failure the reason is stored under the tile's name, and the footer shows it.
   void make(CreateTile tile) {
@@ -29,9 +35,7 @@ class CreateCommands {
       // A create script: one undo step, and the new layer is selected. It does not wait for the result.
       c.ws.after(
         m.later('create', word: name),
-        (done, why) => c.set(
-          () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
-        ),
+        _troubled(name),
         (made) => c.ws.select('$made'),
       );
       return;
@@ -55,9 +59,7 @@ class CreateCommands {
     if (shadingOfTile[name] case final wears?) {
       // Replaces the picked layer's material. With nothing picked, creates a ball wearing it and selects the ball.
       final t = int.tryParse(c.ws.selected ?? '');
-      void told(bool done, String why) => c.set(
-        () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
-      );
+      final told = _troubled(name);
       if (t != null) {
         if (!kindsThatWear.contains(m.word(t, 'kind'))) {
           return c.set(
@@ -91,9 +93,7 @@ class CreateCommands {
             word: e.$2,
             number: c.ws.frame / WorkspaceController.fps,
           ),
-          (done, why) => c.set(
-            () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
-          ),
+          _troubled(name),
           (made) => c.ws.select('$made'),
         );
       }
@@ -122,12 +122,7 @@ class CreateCommands {
       // As in After Effects, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
       m.later('set', layer: 0, name: 'environment', number: .3);
     }
-    c.ws.after(
-      m.later('together'),
-      (done, why) => c.set(
-        () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
-      ),
-    );
+    c.ws.after(m.later('together'), _troubled(name));
   }
 
   /// Puts an expression on the picked layer, or on a new layer when none is picked.
