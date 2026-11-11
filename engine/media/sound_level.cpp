@@ -179,9 +179,11 @@ void analyser_asked(const float* latest, int size, double tau,
 }
 
 void sound_wave(const SoundRead* r, double at, float* to, int n) {
-  const long last = r ? std::lround(at * sound_rate) : 0;
+  // At second `at` a page has been given the samples before it, not the one
+  // that begins there.
+  const long end = r ? std::lround(at * sound_rate) : 0;
   for (int i = 0; i < n; ++i) {
-    const long k = last - n + 1 + i;
+    const long k = end - n + i;
     to[i] = r && k >= 0 && k < (long)r->wave.size() ? r->wave[(size_t)k] : 0.f;
   }
 }

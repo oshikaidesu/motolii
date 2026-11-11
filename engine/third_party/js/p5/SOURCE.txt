@@ -1,3 +1,4 @@
 p5.js 1.11.13, lib/p5.min.js and license.txt of the npm package p5 (https://www.npmjs.com/package/p5/v/1.11.13), as released, unchanged.
 Source: https://github.com/processing/p5.js (tag v1.11.13). Licence: LGPL-2.1 (license.txt).
 It is a plain file read when a sketch is run (script.cpp, p5_stand.h): put another build of it here and that one runs.
+p5.sound is not kept here. When addons/p5.sound.min.js of the same distribution (p5.sound 1.0.1, MIT, https://github.com/processing/p5.js-sound) is put in addons/ beside p5.min.js, a sketch that names loadSound, p5.FFT, p5.Amplitude or an AudioContext is run with it (community/script_runner/script_natives.h, sketch_hears). Without it those names are there and silent.

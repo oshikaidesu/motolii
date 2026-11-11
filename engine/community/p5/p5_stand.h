@@ -186,7 +186,7 @@ function __timers_due() {
 }
 var __main = __element('main'), __ids = {};   // (a page's parts it asks for by name: there, and nothing comes of them. p5 counts up its own canvases' names until one is not there)
 var __page = { window: globalThis, self: globalThis, document: Object.assign(__element('document'), { readyState: 'complete', body: __element('body'), documentElement: __element('html'), head: __element('head'), createElement: __element, createElementNS: (_, t) => __element(t), createTextNode: () => __element('text'), getElementById: id => /^(defaultCanvas|p5_loading)/.test(id) ? null : __ids[id] = __ids[id] || Object.assign(__element('div'), { id, parentNode: __main }), getElementsByTagName: t => t === 'main' ? [__main] : [], hasFocus: () => true, fonts: __any('fonts'), hidden: false }),
-  location: { href: '', search: '', pathname: '/', hostname: 'localhost', protocol: 'file:' }, screen: { width: 1920, height: 1080 }, navigator: { userAgent: '', platform: '', language: 'en' },
+  location: { href: '', search: '', pathname: '/', hostname: 'localhost', protocol: 'file:', origin: 'file://' }, screen: { width: 1920, height: 1080 }, navigator: { userAgent: '', platform: '', language: 'en' },
   mocha: true,   // (p5 starts by itself after a promise, not when it is run under a test: new p5() below is the start)
   innerWidth: 1920, innerHeight: 1080, devicePixelRatio: 1, pageXOffset: 0, pageYOffset: 0, scrollX: 0, scrollY: 0,
   addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, getComputedStyle: () => ({ getPropertyValue: () => '' }), matchMedia: () => ({ matches: false, addListener() {}, addEventListener() {} }),
@@ -241,7 +241,7 @@ function __adapter_canvas() {
   document.getElementsByClassName = () => (given = true, [e]);
 }
 var tokenData = { hash: '0x' + '6b3d'.repeat(16), tokenId: '1000000' }, fxhash = 'oo' + 'Mot0lii'.repeat(7), fxrand = Math.random, $fx = { hash: fxhash, rand: fxrand, minter: 'tz1', iteration: 1, context: 'standalone', preview() {}, isPreview: false, features() {}, getFeature() {}, getFeatures: () => ({}), params() {}, getParam() {}, getParams: () => ({}), on() {}, emit() {} };   // (what Art Blocks' and fxhash's pages give a work: a seed, here always the same)
-// p5.sound is not here: what a sketch asks of it is there and silent, so that what it draws is drawn. It hears nothing yet.
+// p5.sound, when its file is not beside p5's (script_runner.cpp reads it from addons/): what a sketch asks of it is there and silent, so that what it draws is drawn.
 for (const k of ['SoundFile', 'FFT', 'Amplitude', 'Oscillator', 'SinOsc', 'TriOsc', 'SawOsc', 'SqrOsc', 'Noise', 'Envelope', 'Env', 'AudioIn', 'Reverb', 'Delay', 'Filter', 'LowPass', 'HighPass', 'BandPass', 'PeakDetect', 'Part', 'Phrase', 'Score', 'SoundLoop', 'Gain', 'Pulse', 'MonoSynth', 'PolySynth', 'Panner3D', 'Distortion', 'Compressor', 'EQ', 'Convolver', 'SoundRecorder', 'Signal', 'Effect'])
   p5[k] = p5[k] || function () { return __any('p5.' + k); };
 for (const k of ['loadSound', 'getAudioContext', 'userStartAudio', 'soundFormats', 'outputVolume', 'getOutputVolume', 'masterVolume', 'sampleRate'])
@@ -285,6 +285,7 @@ function __to(f) {
     if (q.length) __placed = [];
     if (__film) __film_step();
     __T += 1000 / 60, __Q = [];
+    if (globalThis.__audio_step) __audio_step();   // (what listens hears on: web_audio_stand.h)
     __timers_due();
     q.forEach(g => g(__T));
     __jobs();   // (what was awaiting them goes on)

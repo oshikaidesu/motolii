@@ -117,6 +117,11 @@ Script::Script(const std::string& file, const std::string& p5,
                                   "p5_before", JS_EVAL_TYPE_GLOBAL));
     JS_FreeValue(own->cx, JS_Eval(own->cx, p5js.c_str(), p5js.size(),
                                   "p5.min.js", JS_EVAL_TYPE_GLOBAL));
+    // p5.sound itself, for a sketch that listens (script_natives.h).
+    if (const std::string wrong =
+            sketch_hears(own->cx, src, p5, &own->made_film);
+        !wrong.empty())
+      own->trouble = wrong;
     for (const char* stand : {p5_after, p5_three, p5_mesh})
       JS_FreeValue(own->cx, JS_Eval(own->cx, stand,
                                     std::char_traits<char>::length(stand),

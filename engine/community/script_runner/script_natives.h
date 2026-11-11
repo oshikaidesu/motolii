@@ -44,6 +44,20 @@ JSValue text_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
 JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                         JSValueConst* data);
 
+// Gives a sketch that listens p5.sound itself: when the text `src` names
+// something of p5.sound or of Web Audio that hears (loadSound, p5.FFT,
+// p5.Amplitude, an AudioContext) and p5.sound's file lies where the p5
+// distribution has it, addons/p5.sound.min.js beside the p5.js at `p5`, that
+// file is run as it is on community/p5/web_audio_stand.h. What it hears is the
+// sound of the video or sound file at `*film` (empty: silence), which must
+// stay where it is for as long as `cx` lives; the file's sound is read whole
+// the first time it is asked for, and waited for. To be called after p5.js
+// has been run. Without the file, or for a sketch that names none of these,
+// nothing is done and p5_stand.h's silent names stand. Returns what went
+// wrong, or an empty string.
+std::string sketch_hears(JSContext* cx, const std::string& src,
+                         const std::string& p5, const std::string* film);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SCRIPT_RUNNER_SCRIPT_NATIVES_H_

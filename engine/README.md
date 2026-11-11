@@ -78,7 +78,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `quickjs/` | The groundwork the adapters below build on: a script's parameters and copies as types, its header of AviUtl2-style or leva-style parameters, shelf files, and anime.js's easings on QuickJS-ng (`script.h`). It includes no other adapter. |
 | `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), the functions it reads the rest of the project with (`project_reads.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
 | `after_effects/` | After Effects expressions (`ae_expr.h`) and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
-| `p5/` | p5.js sketches in p5.js itself, and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
+| `p5/` | p5.js sketches in p5.js itself (`p5_stand.h`), the Web Audio that p5.sound and a page that listens run on (`web_audio_stand.h`), and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
 | `three/` | three.js: solid shapes (`solid_three.h`) and screen effects turned into ISF (`three_isf.h`). |
 | `isf/` | ISF effects (`.fs`), translated to WGSL with glslang and Tint. Every shader entry ends here. |
 | `hydra/` | Hydra code, turned into GLSL by Hydra itself, then run as an ISF effect. |

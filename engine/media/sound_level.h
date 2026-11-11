@@ -61,9 +61,10 @@ const SoundRead* sound_of(const std::string& file, bool wait = false);
 // value is its decibels.
 void analyser_asked(const float* latest, int size, double tau, double* smooth);
 
-// Fills `to` with the `n` samples of the wave up to time `at`, in seconds of
-// the file, the oldest first; zeros where the file has none, and for a null
-// `r`.
+// Fills `to` with the `n` samples of the wave before time `at`, in seconds of
+// the file, the oldest first: the last is sample `at` x sound_rate - 1, as a
+// page that has run for that long has been given them. Zeros where the file
+// has none, and for a null `r`.
 void sound_wave(const SoundRead* r, double at, float* to, int n);
 
 // Returns the sound at time `at`, in seconds of the file, as an AnalyserNode

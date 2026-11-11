@@ -162,7 +162,7 @@ function draw() {
 - A 2D sketch becomes a picture, fitted to the project. In `WEBGL`, `box`, `sphere`, `plane`, `ellipsoid`, `cylinder`, `cone` and `torus` become copies of a 3D solid.
 - Each line that draws gets one slider for how strong that line's shapes are (named like `circle 3`).
 - A picture loaded with `loadImage` is read, by its file name only, from a folder named like the file beside it (`Fire/` for `Fire.js`).
-- p5.sound is silent.
+- p5.sound runs as it is when its file lies beside p5's (`engine/third_party/js/p5/addons/p5.sound.min.js`, from the same p5 distribution; it is not kept in this repository). A sketch then hears the video or sound layer under it: `loadSound` gives that sound whatever file it names, `p5.FFT` and `p5.Amplitude` read it with the numbers Chrome gives, and the sound is where the timeline is. A sketch that waits for a click to start its sound is clicked once. What a sketch plays is not heard in the export, and oscillators are silent. Without the file, p5.sound's names are there and silent.
 
 ### An easing: `ease/` (`.way`)
 
