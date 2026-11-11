@@ -1,34 +1,10 @@
 #include "media/video_layer.h"
 
-#include <CoreVideo/CoreVideo.h>
-#include <IOSurface/IOSurface.h>
-#include <filament/Engine.h>
-#include <filament/MaterialInstance.h>
-#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <gst/app/gstappsink.h>
-#include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
-#include <gst/video/video.h>
-#include <math/mat4.h>
-#include <math/vec2.h>
-#include <math/vec3.h>
-#include <math/vec4.h>
-#include <webgpu/webgpu.h>
-
-#include <algorithm>
-#include <atomic>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <map>
-#include <string>
 
 #include "gpu/gpu_interop.h"
 #include "stage/render/render_layers.h"
-#include "stage/render/render_stage.h"
 
 namespace motolii {
 
@@ -221,8 +197,9 @@ Video* video(Stage& s, const char* file, const mat4f& place, float high,
       g_signal_connect(reads, "autoplug-select",
                        G_CALLBACK(+[](GstElement*, GstPad*, GstCaps*,
                                       GstElementFactory* part, gpointer) {
-                         // Hardware decoders (vtdechw on a Mac, d3d11 / va / nv on other systems) carry
-                         // "Hardware" in their klass; the CPU path wants the software ones.
+                         // Hardware decoders (vtdechw on a Mac, d3d11 / va / nv
+                         // on other systems) carry "Hardware" in their klass;
+                         // the CPU path wants the software ones.
                          return gst_element_factory_list_is_type(
                                     part, GST_ELEMENT_FACTORY_TYPE_HARDWARE)
                                     ? 2 /* GST_AUTOPLUG_SELECT_SKIP */

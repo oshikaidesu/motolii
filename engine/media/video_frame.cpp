@@ -2,35 +2,11 @@
 // Filament without a copy, or copied when it cannot be shared, and the layer's
 // ground colour and key are read from it.
 
-#include "media/video_layer.h"
-
-#include <CoreVideo/CoreVideo.h>
-#include <IOSurface/IOSurface.h>
-#include <filament/Engine.h>
-#include <filament/MaterialInstance.h>
-#include <filament/Texture.h>
 #include <filament/TextureSampler.h>
-#include <gst/gst.h>
 #include <gst/video/video.h>
-#include <math/mat4.h>
-#include <math/vec2.h>
-#include <math/vec3.h>
-#include <math/vec4.h>
-#include <webgpu/webgpu.h>
-
-#include <algorithm>
-#include <atomic>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <map>
-#include <string>
 
 #include "gpu/gpu_interop.h"
-#include "stage/render/render_layers.h"
-#include "stage/render/render_stage.h"
+#include "media/video_layer.h"
 
 namespace motolii {
 
