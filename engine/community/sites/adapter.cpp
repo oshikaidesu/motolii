@@ -353,7 +353,9 @@ std::string adapter_js(const std::string& src, const std::string& form) {
     // After Effects runs an expression once for its layer; one letter at a time
     // only where it counts them (index, textIndex, textTotal). So an expression
     // that names none of those moves the layer whole: it is given the layer's
-    // own place, and every copy is moved by what it adds.
+    // own place, and every copy is moved by what it adds: a turn or a scale
+    // carries each copy round the layer's own point (ox, oy: how far the copy
+    // stands from it; 0 for an expression that counts).
     static const std::regex counts(R"(\b(index|textIndex|textTotal)\b)");
     const std::string each = std::regex_search(src, counts) ? "i" : "-1";
     return "const __ae=AE.compile(" + text + "),__ae_on='" + property +
@@ -389,9 +391,14 @@ std::string adapter_js(const std::string& src, const std::string& form) {
            "'position':'rotation';c.property=me[on];\n"
            "if(on==='position'){const r=run([W/2+x/px,H/2-y/px]);"
            "return{x:(r[0]-W/2)*px-x,y:(H/2-r[1])*px-y}}\n"
-           "if(on==='rotation')return{rotate:-one(run(-turn))-turn};\n"
-           "if(on==='scale'){const r=run([100,100]);"
-           "return{scale_x:r[0]/100,scale_y:(r.length>1?r[1]:r[0])/100}}\n"
+           "const ox=layerValue(k.id,'x',k.time,0,i)-x,"
+           "oy=layerValue(k.id,'y',k.time,0,i)-y;\n"
+           "if(on==='rotation'){const d=-one(run(-turn))-turn,"
+           "a=d*Math.PI/180,co=Math.cos(a),si=Math.sin(a);"
+           "return{rotate:d,x:ox*co-oy*si-ox,y:ox*si+oy*co-oy}}\n"
+           "if(on==='scale'){const r=run([100,100]),sx=r[0]/100,"
+           "sy=(r.length>1?r[1]:r[0])/100;"
+           "return{scale_x:sx,scale_y:sy,x:ox*(sx-1),y:oy*(sy-1)}}\n"
            "if(on==='opacity')return{opacity:seen?one(run(100*seen))/"
            "(100*seen):1};\n"
            "return{}}\n";

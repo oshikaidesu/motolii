@@ -289,6 +289,17 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     doc_fx_file(d, on, file.string().c_str(), d.stage->now);
     return doc_acted(d) ? on : 0;
   }
+  // An After Effects expression goes on the selected layer as one of its
+  // expressions, the text kept as it was posted (community/sites/adapter.cpp
+  // runs it). With no layer selected there is nothing for it to be on.
+  if (form == "after_effects") {
+    if (!picked)
+      return d.error = "select the layer this expression is for, then paste", 0;
+    const std::filesystem::path file = stored(".js");
+    doc_act(d);
+    doc_fx_file(d, picked, file.string().c_str(), d.stage->now);
+    return doc_acted(d) ? picked : 0;
+  }
   const bool hydra = form == "hydra",
              shader = hydra || form == "shadertoy" || form == "sandbox" ||
                       form == "twigl" || form == "bonzomatic";
