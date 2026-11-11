@@ -56,9 +56,37 @@ The timeline row shows the curve over the whole time range. An error marks its l
 
 In the app, or in an outside editor and save. Either way the frame under the playhead updates at once. The playhead, the selection and the sliders stay. Only the edited code and what reads it are recomputed.
 
-## 4. The Program tab
+## 4. One kind of thing, one editor, one list of what can be read
 
-After Effects shows neither what can be written nor what can be connected. The Program tab has two lists that follow the project as it changes (layers added, removed or renamed; values at the playhead).
+### 4.1 Code on a layer is one kind of thing
+
+Everything that is code on a layer is told apart by one fact, which is in the file: what it returns.
+
+| Returns | Is | Examples |
+|---|---|---|
+| a picture | an fx. With no input it is a source: it draws from time and its sliders alone (Effects already has a Generate category of pictures made from nothing) | a shader, a Shadertoy, a p5.js sketch |
+| values, per copy | an expression | an After Effects expression, Cavalry's `each()`, CSS keyframes |
+| layers | a script that makes things; an adapter turns what it made into ordinary layers | a three.js scene (solid layers), an SVG (an image layer) |
+
+There is no fourth kind, "a closed pack that holds its own things, motion and knobs". The 9 November split (Create for what the host holds, Program for packs that are closed) is dropped. A pack is code that has not yet been read as one of the three rows, and if some code cannot be, the cut is wrong and is rethought. Not yet checked: that every p5.js sketch and Cavalry script on the shelves reads as one of the rows. That check is the test of this cut.
+
+How much of the host a file reads (its own sliders, any property of any layer) is also a fact in the file (section 2). It is not a kind. Nothing else tells the rows apart: not the shelf that showed the file, not the tab it was pasted from.
+
+- **The kind is read from the file's content.** The engine already does this: `doc_expression` ([expressions.cpp](../../engine/document/scripts/expressions.cpp)) takes a `.css`, or a `.js` that lays copies, as an expression, and the rest of a layer's fx list is drawn. A shelf folder is for finding a file, not for deciding what it is.
+- **A layer has one list.** Today it has two places: the fx list, and a single `script` slot used by sketches. With no closed packs the slot holds nothing the list cannot, so it is folded into the list (at 2026-11-11 the word is in 37 places in 21 engine files). Until then an expression and a sketch cannot sit on one layer together.
+- **Where an fx and an expression cross:** an fx's sliders are names code can read, `effect("Blur")("Amount")` in After Effects' spelling. That one crossing is most of what "connecting" means in After Effects, and it is why the list in 4.3 holds fx sliders like any other property.
+
+### 4.2 One editor
+
+The Program tab is the editor that opens any item of a layer's list at its code. The Edit button on a card (3.1) opens it there, whether the card is an fx, an expression or a source. There is one editor, not one for each kind.
+
+There is no Program shelf of packs, because there are no packs (4.1). Today the shelf's tiles and the editor are one class ([program_shelf.dart](../../app/lib/workspace/dock/program/program_shelf.dart)). The tiles go with the packs and the editor stays.
+
+A file that came from outside by paste or drop belongs to the project, as a script in Blender's Text Editor belongs to the .blend. It is not a shelf item; a shelf is a library of other people's work that is copied into a project when used. (A design, not yet decided with the author.)
+
+### 4.3 What the editor shows beside the code
+
+After Effects shows neither what can be written nor what can be connected. The editor has three lists that follow the project as it changes (layers added, removed or renamed; values at the playhead).
 
 | List | Holds |
 |---|---|
@@ -73,9 +101,31 @@ After Effects shows neither what can be written nor what can be connected. The P
 │    Position     │                          │ size  ○           │
 │    Opacity 100  │ ← Leader · Position      │ ── words ──       │
 │ ▸ Circle        │ ← itself, 0.1 s earlier  │ wiggle(freq,amp)  │
-│ ▸ Time, Sound   │                          │ linear(t,a,b,…)   │
+│ ▸ Group (12)    │                          │ linear(t,a,b,…)   │
+│ ▸ Time, Sound   │                          │                   │
 ├─────────────────┴ Result: curve / errors ──┴───────────────────┤
 ```
+
+### 4.4 The list is a tree, not a flat list
+
+A project is built from groups, and the list must keep that.
+
+- **The root is the group the code sits in.** Its other members are one line each. The groups above it are one line each, up to the project. Names that belong to the whole project (time, frame, size, sound, MIDI) come first.
+- **A group is a row** (5.2). To code it is one line with a count, and it is read as `group[i]` of n. It is not n lines. The user steps into a group to see what is inside; nothing is expanded for them.
+- **Nothing is written by hand.** The tree is made from what the engine can resolve at that moment (principle 3). A hand-kept copy would drift from the engine, and a list that has drifted is worse than none, because a reader trusts it.
+- **The door exists; the list does not.** Code reads another layer today through `layerValue(id, name, t, otherwise, copy)` ([script_runner.h](../../engine/community/script_runner/script_runner.h)), by layer number, and only a relation written as a file uses it. It answers eight names: `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity` (`doc_relate_names`, [relations.h](../../engine/document/evaluate/relations.h)). An fx slider, a text, a group or a name like `layer("Leader")` is not among them. The tree is the listing of what that door answers, and it grows as the door does.
+
+### 4.5 The same tree goes to an LLM
+
+The list is also what a person or an LLM needs in order to write the code. After Effects shows it only through the pick whip, so it can be handed to neither. Here the tree is text in the spelling of the code's language: an After Effects expression is given `thisComp.layer("Leader").transform.position`, not a Motolii name for it (principle 1).
+
+- The string pressed in the list and the string given to the LLM are one string, from one place.
+- The LLM gets the tree from the selected property, one level deep: a group arrives as a name, a count and a type, and is opened only when asked. The whole project is never sent.
+- A name the LLM writes that is not in the tree is reported at once as unknown, so an invented layer name does not wait for playback to fail.
+
+### 4.6 Who reads this
+
+`AE.compile` already reads an expression once with acorn. A read written as a literal (`layer("Leader")`) is found there. A read built by calculation is marked "may change", which is safe and slow (section 7). Renaming a layer rewrites the literal ones (3.5).
 
 ## 5. What the Program tab takes
 
@@ -265,13 +315,13 @@ From [AGENTS.md](../../AGENTS.md):
    - **Not yet:** A spinner's frames are drawn for ten minutes at 60 a second, as a sketch's; a jump back replays the CSS from 0.
    - The page, the probe and the Chrome measurements are in `docs/internal/svg_anim/`, which git ignores.
 
-Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
+Decided in the conversation: there are no closed packs; code on a layer is told apart by what it returns, and a layer has one list (4.1); the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
 
 ## 10. Relation to earlier notes
 
 [create_and_program_shelves.md](create_and_program_shelves.md) (9 November) says an After Effects expression lives only in the layer's detail panel and is not shown in the Program tab. This note proposes that the Inspector card stays the place for light use and that **Edit opens any code in the Program tab**. If this ideal is accepted, that line of the earlier note is to be revised. The names in that note ("Expression", the Create shelf) are not changed here.
 
-The same note says the Program tab holds closed packs only (p5.js, whole Cavalry scripts). Section 5 widens it: the Program tab is the written face of everything, and text motion, CSS, subtitles and group layers come in through it. That line is also to be revised.
+The same note says the Program tab holds closed packs only (p5.js, whole Cavalry scripts). There are no closed packs (4.1), and the Program tab is the editor for everything: text motion, CSS, subtitles and group layers come in through it (section 5). That note's split between Create and Program is dropped, and its table of recipes (which side each is on) no longer applies.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
