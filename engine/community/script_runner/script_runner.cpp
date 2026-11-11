@@ -92,6 +92,10 @@ Script::Script(const std::string& file, const std::string& p5,
     if (!lib || acorn.empty())
       own->trouble = "acorn is not where it is stored: " + where.string();
     else {
+      JSValue g = JS_GetGlobalObject(own->cx);
+      JS_SetPropertyStr(own->cx, g, "__bezier",
+                        JS_NewCFunction(own->cx, bezier_ease, "__bezier", 5));
+      JS_FreeValue(own->cx, g);
       JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(),
                                     "acorn.js", JS_EVAL_TYPE_GLOBAL));
       JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude,

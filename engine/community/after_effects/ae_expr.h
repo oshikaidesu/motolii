@@ -45,6 +45,13 @@
 //
 // wiggle and random do not reproduce After Effects' own random sequences, so
 // values that depend on the exact numbers will not match After Effects.
+//
+// ease(), easeIn() and easeOut() are the Beziers lottie-web uses for them, a
+// re-implementation checked against After Effects by its users, not After
+// Effects itself; their solver is the engine's (__bezier, script_natives.cpp),
+// so there is one easing solver for keys, expressions and (to come) CSS.
+// Tested against numbers worked out outside the engine:
+// community/script_runner/ae_ease_test.cpp.
 
 namespace motolii {
 
@@ -86,6 +93,7 @@ inline const char ae_prelude[] = R"AEJS(
     return arr ? out : out[0];
   };
 
+  const bez = (x1, y1, x2, y2) => (u) => G.__bezier(x1, y1, x2, y2, u);
   const mix = (v1, v2, u) => Array.isArray(v1) ? v1.map((x, i) => x + (v2[i] - x) * u) : v1 + (v2 - v1) * u;
   const interp = (shape) => function (t, a, b, c, d) {
     let lo = 0, hi = 1, v1 = a, v2 = b;
@@ -97,9 +105,11 @@ inline const char ae_prelude[] = R"AEJS(
   const H = {
     S, reset, $a, $s, $m, $d, seedRandom, random, wiggle, add: $a, sub: $s, mul: $m, div: $d,
     linear: interp((u) => u),
-    ease: interp((u) => u * u * (3 - 2 * u)),   // (smooth at both ends, the middle halfway: the curve between is not checked against After Effects')
-    easeIn: interp((u) => u * u * u),           // (ThorVG's easeIn is this too)
-    easeOut: interp((u) => 1 - (1 - u) * (1 - u) * (1 - u)),
+    // The three curves as lottie-web draws them (player/js/utils/expressions/ExpressionManager.js): cubic Beziers, whose
+    // control points are all this file holds; the solver is motion/easing_curves.h's, given as __bezier.
+    ease: interp(bez(0.33, 0, 0.667, 1)),
+    easeIn: interp(bez(0.333, 0, 0.833, 0.833)),
+    easeOut: interp(bez(0.167, 0.167, 0.667, 1)),
     clamp: (v, lo, hi) => Array.isArray(v) ? v.map((x, i) => Math.min(Math.max(x, lo[i]), hi[i])) : Math.min(Math.max(v, lo), hi),
     degreesToRadians: (d) => d * Math.PI / 180, radiansToDegrees: (r) => r * 180 / Math.PI,
     noise: (x) => noise1(x, 0),

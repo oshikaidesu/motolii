@@ -25,6 +25,12 @@ std::string ways_prelude();
 JSValue film_next(JSContext* cx, JSValueConst, int, JSValueConst*);
 // What a promise was waiting on came: it goes on.
 JSValue jobs_run(JSContext* cx, JSValueConst, int, JSValueConst*);
+// __bezier(x1, y1, x2, y2, u): a cubic Bezier easing at progress u, solved by
+// the same interp_bezier as a key's stretch (motion/easing_curves.h). Given to
+// a script that holds an After Effects expression, so ae_expr.h's ease(),
+// easeIn() and easeOut() are three sets of control points and no solver of
+// their own.
+JSValue bezier_ease(JSContext* cx, JSValueConst, int argc, JSValueConst* a);
 // A picture its sketch came with, by the name it gives it: only the last part
 // of that name, only from that folder.
 JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
