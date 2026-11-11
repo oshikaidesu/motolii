@@ -77,20 +77,63 @@ After Effects shows neither what can be written nor what can be connected. The P
 ├─────────────────┴ Result: curve / errors ──┴───────────────────┤
 ```
 
-## 5. Languages
+## 5. What the Program tab takes
 
-A language is only a way of writing. The meaning is shared.
+### 5.1 The Inspector for one, the Program tab for many
 
-| Language | Notes |
-|---|---|
-| After Effects expression | The first target. |
-| Cavalry JavaScript | Called once per copy today; the copy number is an input. |
-| TSL | Already a graph of nodes. |
-| Lua | Operators can be overloaded, so it is straightforward. |
-| Blender Python | Operators can be overloaded. Scope is open (section 9). |
-| p5.js | Draws as it runs, so it is the hardest. Last. |
+The Inspector touches one value of one thing. The Program tab writes many at once. Text is the best interface for a row of things: one line says what a hundred sliders would.
 
-Code never calls another language. An After Effects expression reads a Lua-driven property as a value. A property has one language. Languages meet through values.
+Everything in Motolii therefore has two faces: a visual one (the Inspector, the timeline) and a written one (the Program tab). There is one copy of the truth (principle 3). The Program tab is not a place for p5.js sketches only. It is the way in for every expression that is written as text.
+
+### 5.2 A row is a row
+
+These are all the same thing to code: a row of n, each with its number i.
+
+- the copies of a layer
+- the letters, words or lines of a text layer (`split` already makes each one a copy)
+- the layers inside a group layer
+- the keyframes of a property
+- the rows of a data file (CSV, JSON)
+- the beats of a sound, the notes of a MIDI file, the lines of a timed lyric
+
+In After Effects, a stagger across layers is written by hand from `index` in every layer (`thisLayer.index - 1` times a delay). That is the sign of a row that cannot be written as a row. Here, one piece of code on the group reaches every child as copy i of n.
+
+So text motion is born in the Program tab. A text layer split into letters is a row, and any language that speaks of rows moves it.
+
+### 5.3 Languages
+
+A language is only a way of writing. The meaning is shared: read values, return values.
+
+| What is written | Forms found on the net | Run as it is, by |
+|---|---|---|
+| Values over time | After Effects expression, Cavalry JavaScript, GSAP and anime.js timelines, Framer Motion springs | QuickJS (already) |
+| Values over time, as CSS | `@keyframes`, `transition`, `cubic-bezier`, `steps()`; per letter with Splitting.js's `--char-index` and `--char-total` | a CSS engine without a browser (5.4) |
+| Subtitles and karaoke | ASS override tags (`\k`, `\move`, `\t`, `\fad`), Aegisub's karaoke templater (Lua), LRC and SRT timed lyrics | an ASS library (5.4) |
+| Exported from After Effects | Lottie JSON, with expressions | ThorVG's Lottie loader, which already runs Lottie expressions in JerryScript (`src/loaders/lottie/tvgLottieExpressions.cpp`) |
+| Looks | CSS `text-shadow` stacked many times, `background-clip: text`, `filter`, `mix-blend-mode` (most CodePen text effects) | a CSS engine without a browser (5.4) |
+| Shapes | SVG paths, CSS `clip-path`, Paper.js | ThorVG's SVG loader (paths and a CSS subset; no `@keyframes`) |
+| Pixels | GLSL, WGSL, ISF, Shadertoy, Hydra, TSL | the Effects shelf (already) |
+| Drawing | p5.js, Processing, Canvas 2D, Dwitter | as today |
+| Relations | springs, flocks, collisions | `shelves/relations/` (already) |
+| Data | CSV and JSON into bars, lists and names (After Effects' data-driven animation) | open |
+| A whole scene | Motion Canvas, Remotion, Manim: scenes and time written as code | open |
+| Lua, Blender Python | operators can be overloaded | scope open (section 9) |
+
+Code never calls another language. An After Effects expression reads a Lua-driven property as a value. A property has one language. Languages meet through values, so CSS can sit on letters that an `each()` already placed.
+
+### 5.4 CSS and ASS without a web page
+
+No web page is embedded (principle 3). CSS and ASS are read as ways of writing values, and Motolii draws the result. Running them as they are (principle 1) needs an outside engine that returns values at a time, not pictures. What was found (2026-11-11, from documentation and source, not tried):
+
+| Need | Candidate | What it gives | Not yet known |
+|---|---|---|---|
+| CSS at time t | Blitz (`blitz-dom`, MIT or Apache-2.0) on Servo's Stylo (MPL-2.0) | `BaseDocument::resolve(current_time_for_animations)` takes the time from the caller; Stylo samples `@keyframes` and transitions itself; `var()` and `calc()` per letter | seeking backwards (Stylo stamps a start on first resolve); whether `text-shadow` is computed though Blitz does not draw it; reading computed values without layout; the cost of a Rust build |
+| CSS in SVG | anim_svg (MIT) | SVG with `@keyframes` or SMIL turned into Lottie, which ThorVG plays | experimental; SVG only, not split HTML text |
+| ASS at time t | libass (ISC) | layout, `\t`, `\k` and `\move` done right | its public output is bitmaps only; the per-glyph values (`GlyphInfo` in `ass_render.h`) need a patch in `engine/deps/patches/libass/` |
+| ASS as data | ass-compiler (MIT) | every tag typed, with times | the interpolation would be written by hand, which is translation; so libass is preferred |
+| Karaoke templates | aegisub-cli | runs Aegisub automation from the command line | licence not stated; last push 2020 |
+
+If neither CSS nor ASS can be had as values from an outside engine, the cut is wrong and is to be rethought before anything is written by hand.
 
 ## 6. Speed
 
@@ -178,12 +221,16 @@ From [AGENTS.md](../../AGENTS.md):
 4. **Many copies:** a strip of copies against time, or one copy at a time?
 5. **Blender Python:** drivers only, or `bpy` and the objects it reaches?
 6. **p5.js:** later, as written; is that acceptable?
+7. **CSS:** can Blitz sample `@keyframes` at any time, backwards included, and return values without drawing? If not, the cut of 5.4 is wrong.
+8. **ASS:** how large is the libass patch that hands out per-glyph values?
 
-Decided in the conversation: renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
+Decided in the conversation: the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
 
 ## 10. Relation to earlier notes
 
 [create_and_program_shelves.md](create_and_program_shelves.md) (9 November) says an After Effects expression lives only in the layer's detail panel and is not shown in the Program tab. This note proposes that the Inspector card stays the place for light use and that **Edit opens any code in the Program tab**. If this ideal is accepted, that line of the earlier note is to be revised. The names in that note ("Expression", the Create shelf) are not changed here.
+
+The same note says the Program tab holds closed packs only (p5.js, whole Cavalry scripts). Section 5 widens it: the Program tab is the written face of everything, and text motion, CSS, subtitles and group layers come in through it. That line is also to be revised.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
@@ -196,6 +243,16 @@ Decided in the conversation: renaming a layer rewrites names in code (with Undo)
 Candidates for later, surveyed from documentation and not tried (none is part of the ideal): MLIR (an intermediate-form framework in LLVM; it does not read JavaScript or Python for you), tree-sitter (incremental parsing with byte positions), wasm3, WAMR and wasmtime (WebAssembly runtimes), Slang (shader language; WGSL and Metal output are experimental), NumExpr (a bytecode machine that runs an expression over chunks of 4096 values).
 
 Sources used for the outside facts:
+[Blitz CSS status](https://blitz.is/status/css) ·
+[Blitz](https://github.com/DioxusLabs/blitz) ·
+[Stylo animation.rs](https://docs.rs/stylo/0.18.0/src/style/servo/animation.rs.html) ·
+[Stylo TElement](https://docs.rs/stylo/latest/style/dom/trait.TElement.html) ·
+[anim_svg](https://pub.dev/documentation/anim_svg/latest/) ·
+[libass ass.h](https://github.com/libass/libass/blob/master/libass/ass.h) ·
+[libass ass_render.h](https://github.com/libass/libass/blob/master/libass/ass_render.h) ·
+[ass-compiler tags](https://github.com/weizhenye/ass-compiler/blob/master/types/tags.d.ts) ·
+[aegisub-cli](https://github.com/Myaamori/aegisub-cli) ·
+[Aegisub karaoke templater](https://aegisub.org/docs/latest/automation/karaoke_templater/code_execution_environment) ·
 [MLIR users](https://mlir.llvm.org/users/) ·
 [MLIR Toy tutorial](https://mlir.llvm.org/docs/Tutorials/Toy/) ·
 [MLIR SPIR-V dialect](https://llvm.googlesource.com/llvm-project/+/a58dcc5e08665f2d58a28c9d4510cf94de6ed3bf/mlir/docs/Dialects/SPIR-V.md) ·
