@@ -447,5 +447,27 @@ TEST(RelateFiles, ARelationWrittenForLayersLaysCopiesInARowToo) {
   }
 }
 
+// Many copies are laid on several threads, each with a Script of its own
+// (script_runner.cpp). Each copy must come out as if laid alone: Field.js
+// depends only on where a copy lies, so copy i of 5,000 equals that copy laid
+// by itself.
+TEST(RelateFiles, ManyCopiesLaidTogetherEqualEachLaidAlone) {
+  const std::map<std::string, double> field{
+      {"field_x", 0},       {"field_y", 0},     {"field_z", 0},
+      {"field_radius", 3},  {"field_band", 0},  {"field_size", 1},
+      {"field_rotate", 90}, {"field_push", 0.6}};
+  std::vector<math::double3> at;
+  for (int i = 0; i < 5000; ++i) at.push_back({i * 0.0006, 0, 0});
+  const std::vector<ScriptCopy> all = Lay("Field.js", field, {}, at);
+  ASSERT_EQ(all.size(), at.size());
+  for (const size_t i : {size_t{0}, size_t{999}, size_t{1000}, size_t{2501},
+                         size_t{4999}}) {
+    const std::vector<ScriptCopy> one = Lay("Field.js", field, {}, {at[i]});
+    EXPECT_NEAR(all[i].size, one[0].size, 1e-12) << "copy " << i;
+    EXPECT_NEAR(all[i].rotate, one[0].rotate, 1e-12) << "copy " << i;
+    EXPECT_NEAR(all[i].x, one[0].x, 1e-12) << "copy " << i;
+  }
+}
+
 }  // namespace
 }  // namespace motolii

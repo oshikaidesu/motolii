@@ -3,6 +3,9 @@
 // folder(), After Effects expressions, p5.js and the libraries a sketch names).
 #include "community/script_runner/script_runner.h"
 
+#include <thread>
+#include <algorithm>
+#include <memory>
 #include <fstream>
 #include <sstream>
 
@@ -26,6 +29,10 @@ struct Script::Own {
   bool whole = false;   // no each(): the whole file says every copy at once, as
                         // a Canvalry distribution (a PointCloud)
   bool sketch = false;  // a p5.js sketch (p5_stand.h)
+  std::string made_p5, made_film;  // what it was made with, for its helpers
+  // Scripts of the same file, one QuickJS runtime each, that lay a share of
+  // many copies on threads of their own (copies()).
+  std::vector<std::unique_ptr<Script>> helpers;
   bool relates = false;  // a relation's relate() and no draw(): it lays copies
                          // too, all at once (__copies_by_relate)
   FilmRead film;        // what its createCapture and createVideo see
@@ -55,7 +62,7 @@ Script::Script(const std::string& file, const std::string& p5,
                                   // rectangles a frame are 1.5 GB a second. It
                                   // stops with an error, not with the machine)
   own->cx = JS_NewContext(own->rt);
-  own->file = file, own->src = src;
+  own->file = file, own->src = src, own->made_p5 = p5, own->made_film = film;
   const std::string ways = ways_prelude();
   JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways",
                                 JS_EVAL_TYPE_GLOBAL));
@@ -358,17 +365,52 @@ std::vector<ScriptCopy> Script::copies(
     return all;
   }
   if (!own->whole) {  // (the parameters told once, then each copy asked)
-    parameters(numbers, words);
-    JS_SetPropertyStr(
-        own->cx, own->parameters, "px",
-        JS_NewFloat64(own->cx,
-                      unit));  // (k.px: a pixel of the document in the stage's
-                               // units, so an expression written in After
-                               // Effects' pixels says where)
-    for (int i = 0; i < n; ++i)
-      all[(size_t)i] =
-          ask(i, n, t,
-              (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
+    const auto tell = [&](Script& s) {
+      s.parameters(numbers, words);
+      JS_SetPropertyStr(
+          s.own->cx, s.own->parameters, "px",
+          JS_NewFloat64(s.own->cx,
+                        unit));  // (k.px: a pixel of the document in the
+                                 // stage's units, so an expression written in
+                                 // After Effects' pixels says where)
+    };
+    const auto lay = [&](Script& s, int from, int to) {
+      for (int i = from; i < to; ++i)
+        all[(size_t)i] = s.ask(
+            i, n, t,
+            (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
+    };
+    tell(*this);
+    // Many copies are shared among threads, each asking a Script of its own:
+    // one QuickJS runtime runs on one thread at a time. 1,000 copies take
+    // 0.6 ms on one thread (Apple M4, docs/design/next_expressions.md), so a
+    // thread gets at least that many. A sketch's each() reads the frames its
+    // draw() made in order, and a script that reads other layers asks the
+    // document, held by this thread: both stay on this thread.
+    constexpr int kCopiesAThread = 1000;
+    int parts = own->sketch || own->reads
+                    ? 1
+                    : std::min<int>(
+                          (int)std::max(1u, std::thread::hardware_concurrency()),
+                          n / kCopiesAThread);
+    while (parts > 1 && (int)own->helpers.size() < parts - 1)
+      own->helpers.push_back(
+          std::make_unique<Script>(own->file, own->made_p5, own->made_film));
+    for (int p = 1; p < parts; ++p)
+      if (!own->helpers[(size_t)p - 1]->ok()) parts = 1;
+    std::vector<std::thread> threads;
+    for (int p = 1; p < parts; ++p)
+      threads.emplace_back([&, p] {
+        Script& h = *own->helpers[(size_t)p - 1];
+        tell(h);
+        lay(h, n * p / parts, n * (p + 1) / parts);
+      });
+    lay(*this, 0, parts > 1 ? n / parts : n);
+    for (std::thread& one : threads) one.join();
+    for (int p = 1; p < parts; ++p)
+      if (const std::string& why = own->helpers[(size_t)p - 1]->trouble();
+          !why.empty())
+        own->trouble = why;
     return all;
   }
   JSContext* cx = own->cx;
