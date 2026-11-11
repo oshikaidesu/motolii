@@ -3,6 +3,7 @@
 // The stage: the mesh and Stage types, creating a Filament engine and stage,
 // and adding, reshaping and making meshes on it.
 #include <backend/BufferDescriptor.h>
+#include <filament/BufferObject.h>
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -71,6 +72,11 @@ struct Mesh {
   // How many points and indices the buffers hold. The buffers are written again
   // in place while the mesh fits.
   uint32_t vbRoom = 0, ibRoom = 0;
+  // True when the points, tangents and texture coordinates each have a buffer
+  // object of their own (`object`), so that a compute shader can write the
+  // points on the GPU; see layer_points.cpp. Such a mesh has no colours.
+  bool objects = false;
+  filament::BufferObject* object[3] = {nullptr, nullptr, nullptr};
 };
 
 // Gives a sheet depth: its four corners are duplicated in front of it and

@@ -59,7 +59,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `stage/render/` | Drawing with Filament: engine, camera, lights, layers, glTF models and point clouds (`render.h`, `gltf_model.h`, `point_cloud.h`). |
 | `stage/canvas/` | 2D art drawn with ThorVG and placed in the preview as a plane, plus path operations (`canvas.h`, `thorvg_path_operators.cpp`, `skia_path_operations.cpp`). |
 | `stage/effects/` | Effects over the whole screen, as one WGSL or ISF file each, and Filament viewer settings (`screen_fx.h`, `viewer_settings.h`). |
-| `stage/layer_effects/` | A layer's own effect stack: the layer is drawn alone, then its effects run in order, AviUtl2 scripts among them (`layer_fx.h`). It sits above `community/aviutl/`, which itself uses `stage/effects/`. |
+| `stage/layer_effects/` | A layer's own effect stack: the layer is drawn alone, then its effects run in order, AviUtl2 scripts among them (`layer_fx.h`); a compute shader file moves the points of the layer's solid (`layer_points.cpp`). It sits above `community/aviutl/`, which itself uses `stage/effects/`. |
 | `preview/` | Putting a project on the stage: the playback cache (`playback_cache.h`). |
 | `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.h`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
 | `motion/` | Motion: easing (`easing_curves.h`, `easing_names.h`, `easing_godot.h`) and Lottie motion solved by ThorVG (`lottie_motion.h`). |

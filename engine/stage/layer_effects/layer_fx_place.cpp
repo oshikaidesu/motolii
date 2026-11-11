@@ -153,6 +153,8 @@ void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
   e.solidSaid = said;
   if (anew && e.solid) take_off(s, e.solid), delete e.solid, e.solid = nullptr;
   Mesh* m = e.solid ? e.solid : new Mesh;
+  // A buffer object for each attribute, so that a points file can move it.
+  m->objects = true;
   m->pos.resize(built.pos.size() / 3), m->nrm.resize(built.pos.size() / 3),
       m->uv.resize(built.uv.size() / 2);
   std::memcpy(m->pos.data(), built.pos.data(),

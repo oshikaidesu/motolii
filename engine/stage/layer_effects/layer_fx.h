@@ -113,6 +113,11 @@ struct ThingFx {
   Mesh* solid = nullptr;
   filament::MaterialInstance* solidLook = nullptr;
   bool solidRepeat = false;
+  // A file that moves the solid's points (see thing_fx_points), the numbers of
+  // its head as set now, and what it was built into.
+  std::string pointsFile;
+  std::vector<float> pointsKnobs;
+  struct PointsFx* points = nullptr;
   // Coverage (alpha) sampled from the layer's image: a grid of `w` by `h` cells
   // in `a`, and the number of times it has been read back.
   struct Cover {
@@ -179,6 +184,25 @@ void thing_fx_stand(Stage& s, ThingFx& e, const filament::math::mat4& place,
 // not ready until the next frame, because Filament prepares every material as a
 // frame begins, in FEngine::prepare. So a new solid waits for the next frame.
 void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame);
+
+// Returns true if the file moves the points of a solid: a .wgsl file with a
+// compute shader (`@compute`).
+bool points_is(const std::string& file);
+// Runs the layer's points file on its solid: every point of the solid is
+// handed to the file's compute shader, and where the shader puts it is where
+// the solid is drawn this frame. The solid's normals stay as its shape script
+// made them, as three.js leaves them when a material moves points and gives no
+// normals. The file is a whole WGSL compute shader with these bindings in
+// group 0 (compute_interop.h: slot i is binding 2 * i):
+//   0  uniform: a struct of f32, `time` first (seconds), then one for each
+//      `// --track` or `// --check` line of the file's head, in that order
+//   2  storage, array<f32>: the points as the shape made them, x y z each
+//   4  storage, array<f32>: the texture coordinates, u v each
+//   6  storage, array<f32>: the points to draw, x y z each, which it writes
+// It is run with 64 points to a workgroup, so its entry is
+// `@compute @workgroup_size(64)` and point i is global_invocation_id.x. The
+// buffers may be longer than the solid has points.
+void thing_fx_points(Stage& s, ThingFx& e);
 
 // Reads back the coverage (alpha) of the layer's image, for a shape built from
 // its outline. Uses Filament's Renderer::readPixels, whose callback runs on a

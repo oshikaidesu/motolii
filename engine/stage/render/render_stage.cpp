@@ -1,5 +1,6 @@
 #include "stage/render/render_stage.h"
 
+#include <filament/BufferObject.h>
 #include <filament/IndirectLight.h>
 #include <filament/RenderableManager.h>
 #include <filament/TextureSampler.h>
@@ -14,6 +15,7 @@
 namespace motolii {
 
 using filament::Box;
+using filament::BufferObject;
 using filament::Engine;
 using filament::IndexBuffer;
 using filament::IndirectLight;
@@ -203,7 +205,7 @@ namespace {
 // Creates the vertex buffer of mesh `m` with room for `room` points. A mesh
 // with per-point colours has two more buffers, for the colours and the second
 // texture coordinates.
-VertexBuffer* mesh_buffers(Stage& s, const Mesh& m, uint32_t room) {
+VertexBuffer* mesh_buffers(Stage& s, Mesh& m, uint32_t room) {
   VertexBuffer::Builder make;
   make.vertexCount(room)
       .bufferCount(m.color.empty() ? 3 : 5)
@@ -217,11 +219,28 @@ VertexBuffer* mesh_buffers(Stage& s, const Mesh& m, uint32_t room) {
                    VertexBuffer::AttributeType::FLOAT4)
         .attribute(VertexAttribute::UV1, 4,
                    VertexBuffer::AttributeType::FLOAT2);
-  return make.build(*s.engine);
+  if (!m.objects) return make.build(*s.engine);
+  // One buffer object for each attribute. The caller destroys the old ones.
+  VertexBuffer* vb = make.enableBufferObjects().build(*s.engine);
+  const uint32_t bytes[3] = {sizeof(float3), sizeof(quatf), sizeof(float2)};
+  for (int i = 0; i < 3; ++i) {
+    m.object[i] = BufferObject::Builder()
+                      .size(room * bytes[i])
+                      .bindingType(BufferObject::BindingType::VERTEX)
+                      .build(*s.engine);
+    vb->setBufferObjectAt(*s.engine, i, m.object[i]);
+  }
+  return vb;
 }
 
 // Writes the first n points of `m` into the buffers of `vb`.
 void mesh_points(Stage& s, const Mesh& m, VertexBuffer* vb, size_t n) {
+  if (m.objects) {
+    m.object[0]->setBuffer(*s.engine, copied(m.pos.data(), n * sizeof(float3)));
+    m.object[1]->setBuffer(*s.engine, copied(m.quat.data(), n * sizeof(quatf)));
+    m.object[2]->setBuffer(*s.engine, copied(m.uv.data(), n * sizeof(float2)));
+    return;
+  }
   vb->setBufferAt(*s.engine, 0, copied(m.pos.data(), n * sizeof(float3)));
   vb->setBufferAt(*s.engine, 1, copied(m.quat.data(), n * sizeof(quatf)));
   vb->setBufferAt(*s.engine, 2, copied(m.uv.data(), n * sizeof(float2)));
@@ -408,8 +427,10 @@ void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     frames->getQuats(m->quat.data(), n);
     delete frames;
   }
+  filament::BufferObject* oldObject[3] = {nullptr, nullptr, nullptr};
   if (!m->vb || n > m->vbRoom) {
     oldVb = m->vb, m->vbRoom = (uint32_t)(n + n / 4 + 16);
+    std::copy(m->object, m->object + 3, oldObject);
     m->vb = mesh_buffers(s, *m, m->vbRoom);
   }
   if (!m->ib || m->idx.size() > m->ibRoom) {
@@ -435,6 +456,8 @@ void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     }
   }
   if (oldVb) s.engine->destroy(oldVb);
+  for (filament::BufferObject* o : oldObject)
+    if (o) s.engine->destroy(o);
   if (oldIb) s.engine->destroy(oldIb);
 }
 

@@ -109,6 +109,21 @@ void doc_layers_fx(Doc& d) {
     } else if (e.solid)
       take_off(s, e.solid), delete e.solid, e.solid = nullptr,
                                             e.solidSaid.clear();
+    // If the fx names a file that moves a solid's points, run it on the solid
+    // with its numbers as the document holds them now.
+    e.pointsFile.clear();
+    for (const std::string& w : doc_fx_list(d, layer))
+      if (points_is(w)) e.pointsFile = w;
+    if (const DocScript* sc =
+            e.pointsFile.empty() ? nullptr : doc_script_of(d, e.pointsFile)) {
+      e.pointsKnobs.clear();
+      for (size_t i = 0; i < sc->parameters.size(); ++i)
+        if (sc->parameters[i].kind != "select")
+          e.pointsKnobs.push_back(
+              (float)doc_number(d, layer, sc->names[i].c_str(), d.stage->now,
+                                sc->parameters[i].usual));
+      thing_fx_points(s, e);
+    }
     e.st.sounds = [&d, layer = layer](const std::string& file,
                                       const std::string& name, bool fft,
                                       int wide) {

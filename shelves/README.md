@@ -180,6 +180,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 - `solids/`: `export function solid(k)` returns a three.js BufferGeometry. `k` is the sliders plus `k.w` and `k.h` (the thing's width and height). Example: `solids/Box.js`.
 - `.wgsl` in `effects/`: declare sliders with `--track@` in the head, and return the picture from `fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f`. The picture is a `texture_2d<f32>`, the sliders one `var<uniform>` struct. If the struct has `time`, `frame`, `aspect`, `resolution`, `width` or `height`, the stage fills them in. Example: `effects/glitch/rgbshift.wgsl`.
 - `.fs` in `effects/`: ISF (Vidvox's format), placed as it is.
+- `.wgsl` in `effects/` with a compute shader (`@compute`): it moves the points of the layer's solid (a `solids/` shape on the same layer), every frame. Bindings in group 0: at 0 a uniform struct of `f32`, `time` first, then one for each `--track@` line in order; at 2 the shape's points (`array<f32>`, x y z each); at 4 its texture coordinates (u v each); at 6 the points to draw, which it writes. Its entry is `@compute @workgroup_size(64)`, point `i` is `global_invocation_id.x`. Example: `effects/geometry/tg_simple_points.wgsl`.
 
 ## How a file's head is written
 
