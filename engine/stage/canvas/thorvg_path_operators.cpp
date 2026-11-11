@@ -222,6 +222,17 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
     idx.push_back(mesh.ibuffer[i]);
 }
 
+tvg::Shape* tvg_text_shape(tvg::Text* text) {
+  return tvg::to<tvg::TextImpl>(text)->shape;
+}
+
+void tvg_text_shape_changed(tvg::Shape* shape) {
+  // (PAINT is ThorVG's macro for a paint's inner part: tvgPaint.h)
+  tvg::Paint* text = PAINT(shape)->parent;
+  if (text && text->type() == tvg::Type::Text)
+    PAINT(text)->mark(tvg::RenderUpdateFlag::Path);
+}
+
 bool tvg_text_outline(tvg::Text* text, std::vector<tvg::PathCommand>& cmds,
                       std::vector<tvg::Point>& pts) {
   cmds.clear(), pts.clear();

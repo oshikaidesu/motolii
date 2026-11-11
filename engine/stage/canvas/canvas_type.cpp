@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "stage/canvas/canvas_renderables.h"
+#include "stage/canvas/path_operations.h"
 // stb_truetype reports a malformed font by throwing instead of aborting the
 // program. One example is an OpenType cmap (format 4) whose last segment is not
 // 0xFFFF.
@@ -212,6 +213,12 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           }
           tvg::Paint::rel(line);
         }
+        // The shape ThorVG draws the letters from: trim_at trims it as it trims
+        // a shape's, and with no fill only the letters' edge shows.
+        d->shape = tvg_text_shape(t);
+        if (fx.hollow)
+          d->shape->fill(byte_of(colour.x), byte_of(colour.y),
+                         byte_of(colour.z), 0);
         const float stroke = edge.w * tall;
         if (stroke > 0.f)
           t->outline(stroke, byte_of(edge.x), byte_of(edge.y), byte_of(edge.z));

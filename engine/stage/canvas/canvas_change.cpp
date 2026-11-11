@@ -21,6 +21,7 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
   interop::on_driver(s.engine, [d, cut, begin, offset] {
     d->shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset,
                        1.f - std::clamp(cut, 0.f, 1.f) + offset);
+    tvg_text_shape_changed(d->shape);
     d->canvas->update();
     d->canvas->draw(true), d->stale = true;
     d->canvas->sync();

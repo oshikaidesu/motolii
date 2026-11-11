@@ -62,17 +62,19 @@ void match_text(LayerBuild& build) {
   const float3 colour = build.colour;
   const char* lay = build.lay;
   const float4 edge = build.edge;
-  const Canvas2DFx& fx = build.fx;
+  Canvas2DFx& fx = build.fx;
   std::string& why = build.why;
+  // No fill: only the stroke is drawn, as for a shape.
+  fx.hollow = fill == "none";
   // Words in a font, set by `say N text ...`. Until then the text is the
   // name of the font. The words as typed, or as the text effects show them
   // now.
   const std::string words = doc_text_shown(d, layer, s.now, &made.wordsMove);
   made.words = words;
-  if (!fill.empty() && fill != "behind" && rgb < 0)
+  if (!fill.empty() && fill != "behind" && !fx.hollow && rgb < 0)
     why =
-        "a text's fill is six digits, as ff3366, or behind (what is behind "
-        "it)";
+        "a text's fill is six digits, as ff3366, none, or behind (what is "
+        "behind it)";
   else if ((stroke.empty() || edgeRgb >= 0) && fxOk)
     made.drawn =
         type(s,

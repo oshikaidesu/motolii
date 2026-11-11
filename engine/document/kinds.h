@@ -378,12 +378,12 @@ inline const DocValue doc_values[] = {
     // trim: how much of its path is cut off the end, like After Effects' Trim
     // Paths and ThorVG's
     // trimpath.
-    {"trim", "shape", 0, 1, true, nullptr},
+    {"trim", "shape text", 0, 1, true, nullptr},
     // trim_begin cuts the same off the beginning. trim_offset slides the part
     // that is left along
     // the path, in turns.
-    {"trim_begin", "shape", 0, 1, true, nullptr},
-    {"trim_offset", "shape", -1e3, 1e3, true, nullptr},
+    {"trim_begin", "shape text", 0, 1, true, nullptr},
+    {"trim_offset", "shape text", -1e3, 1e3, true, nullptr},
     // The path bent, like After Effects' path operators and ThorVG's own. bloat
     // is pucker and
     // bloat: -1 in, 1 out. zigzag is its height as a share of the layer's

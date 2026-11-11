@@ -548,7 +548,7 @@ The author's picture of what coexisting code is for: each engine does what it is
 |---|---|
 | Where it is put | Reached for the letters and words of a text layer (question 7). It acts only where the text itself, or a word, is a flex or grid container; that hidden condition is to go once letters are outlines. |
 | When it comes, what stays behind | Reached on the same layer: the shelf's `slide_in.js` and Comet Tails over the flex layout (question 7). The echo is of the whole picture, not of each letter. |
-| How it is drawn | Not reached. A text is still a picture. |
+| How it is drawn | Stroke only, and trim paths, reached on a text layer (the lighter road, below). Points not reached. |
 
 **What was tried and taken out the same day.** `outline` on a text layer made a path shape of its letters above the text and hid the text, as Create Shapes from Text does (commit 647f5159e). It worked: the shape lay exactly where the text did, and trim paths drew the letters on. It was taken out because it is a conversion: the same letters were held twice, and typing the text again left the shape as it was. Letters apart and points would each have been one more copy.
 
@@ -581,6 +581,15 @@ The outlines carry no mark of where one letter ends: ThorVG appends each glyph's
 The line set before measuring was: a still frame inside 16.7 ms, and making it again no more than twice today's. Stills cannot tell the first apart from an empty project, for either way. The second passes at 100 letters and for filled letters at 1,000 (1.8 times), and misses for stroked ones (2.2 times). The path-shape figures are an upper bound: they include reading and storing 618 KB of path data as text, which letters drawn straight from ThorVG's outlines would not pass through. A thousand moving letters cost 21 ms a frame over the floor either way; that is the copies and the expression, not strips against meshes.
 
 **What this leaves.** The cut stands. Three things have to be dealt with, not lost: rims and the bevel's bands have no counterpart on shapes, and the words changed in place are a speed path of the picture. And one comment is wrong: `match_shape.cpp` says a shape with an edge, a dash, a trim or a bend is drawn as a ThorVG image, but the test under it (`plain`) asks only about depth, a wave, a spiral, a picture fill and a ramp, so those are drawn as meshes today.
+
+**A lighter road, taken first (the same day).** Before drawing texts another way, the lightest form was looked for, and it was already there. ThorVG's Text holds the shape it draws the letters from, and the engine already trims a canvas's shape each frame (`trim_at`). So a text's canvas names that shape (`tvg_text_shape`), a text takes `trim`, `trim_begin`, `trim_offset` and the fill `none`, and ThorVG is told when the shape changed, as its own `Text::outline` tells it (`tvg_text_shape_changed`). The text stays a picture and stays a text: about twenty lines.
+
+- **Before:** `say 1 fill none` and `key 1 trim` were refused on a text, and the picture was the same at every moment.
+- **Drawn by the engine:** MOTOLII, no fill, a white stroke, its trim keyed from 1 to 0 over 2 s: nothing at 0 s, then 25, 45, 73 and 100 % of its stroke lit at 0.5, 1, 1.5 and 2 s. The removed conversion, which drew the same outlines as a mesh, gave 25, 44, 72 and 100 %. The words typed again keep the stroke and the trim. There is one layer throughout.
+- A filled text is trimmed too, and so is a text split into letters. The second and third strokes are texts of their own under the first and are not trimmed.
+- `drawings_unchanged.sh` against the commit before matched every picture, and the cards' tests pass with Trim Paths now offered to a text.
+
+So a text need not be drawn as a shape for a stroke and a trim. That cut is still what points along the letters, and letters as meshes, would need; the reading and the measurements above are for that day. `tvg_text_outline` still has no caller.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
