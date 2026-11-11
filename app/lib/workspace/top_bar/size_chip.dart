@@ -1,10 +1,10 @@
 // The top bar's size chip: shows the project size, lets the user scrub or type it, and offers common shapes and resolutions.
+import 'package:motolii/widgets/modal_card.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
-
-import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
@@ -153,237 +153,156 @@ class _SizeChipState extends State<SizeChip> {
         },
         child: Focus(
           focusNode: _boxKeys,
-          child: Stack(
+          child: ModalCard(
+            title: 'Document',
+            onClose: _box.hide,
+            cardKey: const ValueKey('ws-size-box'),
             children: [
-              Positioned.fill(
-                child: NakedButton(
-                  onPressed: _box.hide,
-                  mouseCursor: SystemMouseCursors.basic,
-                  enableFeedback: false,
-                  child: const ColoredBox(color: Color(0x88000000)),
-                ),
-              ),
-              Center(
-                child: Container(
-                  key: const ValueKey('ws-size-box'),
-                  width: Shape.z(380),
-                  padding: EdgeInsets.all(Shape.s(16)),
-                  decoration: BoxDecoration(
-                    color: WindowTokens.card,
-                    borderRadius: BorderRadius.all(Shape.r(8)),
-                    border: Border.all(color: WindowTokens.line),
+              ChipGroup('Shape', [
+                for (final s in sizeShapes)
+                  Chip(
+                    key: ValueKey('size-${s.$1}'),
+                    label: s.$1,
+                    on: s == now,
+                    onTap: () => _to(ws, sizeOf(s, short)),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Document',
-                        style: TextStyles.title(Grey.g95)
-                            .copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      Text('Shape', style: TextStyles.label(Grey.g56)),
-                      SizedBox(height: Shape.s(6)),
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(6),
-                        children: [
-                          for (final s in sizeShapes)
-                            Chip(
-                              key: ValueKey('size-${s.$1}'),
-                              label: s.$1,
-                              on: s == now,
-                              onTap: () => _to(ws, sizeOf(s, short)),
-                            ),
-                          if (now == null)
-                            Chip(
-                              label: '$shownW:$shownH',
-                              on: true,
-                              onTap: () {},
-                            ), // A size the user typed.
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      Text('Resolution', style: TextStyles.label(Grey.g56)),
-                      SizedBox(height: Shape.s(6)),
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(6),
-                        children: [
-                          for (final p in sizeResolutions)
-                            Chip(
-                              key: ValueKey('size-${p}p'),
-                              label: '${p}p',
-                              on: p == short,
-                              onTap: () => _to(
-                                ws,
-                                now == null
-                                    ? (
-                                        (p * w0 / short).round(),
-                                        (p * h0 / short).round(),
-                                      )
-                                    : sizeOf(now, p),
-                              ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      // The ten frame rates of Alight Motion's new-project sheet.
-                      Text('Frame rate', style: TextStyles.label(Grey.g56)),
-                      SizedBox(height: Shape.s(6)),
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(6),
-                        children: [
-                          for (final r in const [
-                            12,
-                            15,
-                            18,
-                            20,
-                            24,
-                            25,
-                            30,
-                            48,
-                            50,
-                            60,
-                          ])
-                            Chip(
-                              key: ValueKey('size-${r}fps'),
-                              label: '$r',
-                              on: r == WorkspaceController.fps,
-                              onTap: ws.inside == null
-                                  ? null
-                                  : () => ws.after(
-                                      ws.inside!.later(
-                                        'set',
-                                        layer: 0,
-                                        name: 'frame_rate',
-                                        number: r == ws.inside!.rate
-                                            ? 0
-                                            : r.toDouble(),
-                                      ),
-                                      (_, _) => ws.reread(),
-                                    ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
-                      Text('Background', style: TextStyles.label(Grey.g56)),
-                      SizedBox(height: Shape.s(6)),
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(6),
-                        children: [
-                          for (final (label, hex) in const [
-                            ('Black', '000000'),
-                            ('White', 'ffffff'),
-                            ('Light Gray', 'd8d8d8'),
-                            ('Green', '00b140'),
-                            ('Blue', '0047bb'),
-                            ('Transparent', ''),
-                          ])
-                            Chip(
-                              key: ValueKey('size-bg-$label'),
-                              label: label,
-                              on:
-                                  (ws.inside?.word(0, 'background') ?? '') ==
-                                  hex,
-                              onTap: ws.inside == null
-                                  ? null
-                                  : () {
-                                      final m = ws.inside!;
-                                      m.later('together', number: 1);
-                                      m.later(
-                                        'say',
-                                        layer: 0,
-                                        name: 'background',
-                                        word: hex,
-                                      );
-                                      m.later(
-                                        'set',
-                                        layer: 0,
-                                        name: 'render_alpha',
-                                        number: hex.isEmpty ? 1 : 0,
-                                      );
-                                      ws.after(
-                                        m.later('together'),
-                                        (_, _) => ws.reread(),
-                                      );
-                                    },
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      // How long a new layer lasts, as Alight Motion's New Layer Length setting. End runs to the end of the project.
-                      Text(
-                        'New layer length',
-                        style: TextStyles.label(Grey.g56),
-                      ),
-                      SizedBox(height: Shape.s(6)),
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(6),
-                        children: [
-                          for (final n in const [
-                            0,
-                            1,
-                            2,
-                            3,
-                            4,
-                            5,
-                            6,
-                            7,
-                            8,
-                            9,
-                            10,
-                            15,
-                            20,
-                            25,
-                            30,
-                            45,
-                            60,
-                          ])
-                            Chip(
-                              key: ValueKey('size-len-$n'),
-                              label: n == 0 ? 'End' : '${n}s',
-                              on:
-                                  (ws.inside?.value(0, 'layer_length', 0) ?? 0)
-                                      .round() ==
-                                  n,
-                              onTap: ws.inside == null
-                                  ? null
-                                  : () => ws.after(
-                                      ws.inside!.later(
-                                        'set',
-                                        layer: 0,
-                                        name: 'layer_length',
-                                        number: n.toDouble(),
-                                      ),
-                                      (_, _) => ws.reread(),
-                                    ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(12)),
-                      Text(
-                        '$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second',
-                        style: TextStyles.value(Grey.g76),
-                      ),
-                      if (ws.inside case final m?) ...[
-                        // Alight Motion's Total Edit Time: how long the project has been worked on.
-                        SizedBox(height: Shape.s(6)),
-                        Text(
-                          'Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m',
-                          key: const ValueKey('size-edited'),
-                          style: TextStyles.value(Grey.g63),
-                        ),
-                      ],
-                    ],
+                if (now == null)
+                  Chip(
+                    label: '$shownW:$shownH',
+                    on: true,
+                    onTap: () {},
+                  ), // A size the user typed.
+              ]),
+              SizedBox(height: Shape.s(12)),
+              ChipGroup('Resolution', [
+                for (final p in sizeResolutions)
+                  Chip(
+                    key: ValueKey('size-${p}p'),
+                    label: '${p}p',
+                    on: p == short,
+                    onTap: () => _to(
+                      ws,
+                      now == null
+                          ? ((p * w0 / short).round(), (p * h0 / short).round())
+                          : sizeOf(now, p),
+                    ),
                   ),
-                ),
+              ]),
+              SizedBox(height: Shape.s(12)),
+              // The ten frame rates of Alight Motion's new-project sheet.
+              ChipGroup('Frame rate', [
+                for (final r in const [12, 15, 18, 20, 24, 25, 30, 48, 50, 60])
+                  Chip(
+                    key: ValueKey('size-${r}fps'),
+                    label: '$r',
+                    on: r == WorkspaceController.fps,
+                    onTap: ws.inside == null
+                        ? null
+                        : () => ws.after(
+                            ws.inside!.later(
+                              'set',
+                              layer: 0,
+                              name: 'frame_rate',
+                              number: r == ws.inside!.rate ? 0 : r.toDouble(),
+                            ),
+                            (_, _) => ws.reread(),
+                          ),
+                  ),
+              ]),
+              SizedBox(height: Shape.s(12)),
+              // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
+              ChipGroup('Background', [
+                for (final (label, hex) in const [
+                  ('Black', '000000'),
+                  ('White', 'ffffff'),
+                  ('Light Gray', 'd8d8d8'),
+                  ('Green', '00b140'),
+                  ('Blue', '0047bb'),
+                  ('Transparent', ''),
+                ])
+                  Chip(
+                    key: ValueKey('size-bg-$label'),
+                    label: label,
+                    on: (ws.inside?.word(0, 'background') ?? '') == hex,
+                    onTap: ws.inside == null
+                        ? null
+                        : () {
+                            final m = ws.inside!;
+                            m.later('together', number: 1);
+                            m.later(
+                              'say',
+                              layer: 0,
+                              name: 'background',
+                              word: hex,
+                            );
+                            m.later(
+                              'set',
+                              layer: 0,
+                              name: 'render_alpha',
+                              number: hex.isEmpty ? 1 : 0,
+                            );
+                            ws.after(
+                              m.later('together'),
+                              (_, _) => ws.reread(),
+                            );
+                          },
+                  ),
+              ]),
+              SizedBox(height: Shape.s(12)),
+              // How long a new layer lasts, as Alight Motion's New Layer Length setting. End runs to the end of the project.
+              ChipGroup('New layer length', [
+                for (final n in const [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  15,
+                  20,
+                  25,
+                  30,
+                  45,
+                  60,
+                ])
+                  Chip(
+                    key: ValueKey('size-len-$n'),
+                    label: n == 0 ? 'End' : '${n}s',
+                    on:
+                        (ws.inside?.value(0, 'layer_length', 0) ?? 0).round() ==
+                        n,
+                    onTap: ws.inside == null
+                        ? null
+                        : () => ws.after(
+                            ws.inside!.later(
+                              'set',
+                              layer: 0,
+                              name: 'layer_length',
+                              number: n.toDouble(),
+                            ),
+                            (_, _) => ws.reread(),
+                          ),
+                  ),
+              ]),
+              SizedBox(height: Shape.s(12)),
+              Text(
+                '$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second',
+                style: TextStyles.value(Grey.g76),
               ),
+              if (ws.inside case final m?) ...[
+                // Alight Motion's Total Edit Time: how long the project has been worked on.
+                SizedBox(height: Shape.s(6)),
+                Text(
+                  'Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m',
+                  key: const ValueKey('size-edited'),
+                  style: TextStyles.value(Grey.g63),
+                ),
+              ],
             ],
           ),
         ),
