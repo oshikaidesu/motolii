@@ -191,9 +191,16 @@ var __page = { window: globalThis, self: globalThis, document: Object.assign(__e
   innerWidth: 1920, innerHeight: 1080, devicePixelRatio: 1, pageXOffset: 0, pageYOffset: 0, scrollX: 0, scrollY: 0,
   addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, getComputedStyle: () => ({ getPropertyValue: () => '' }), matchMedia: () => ({ matches: false, addListener() {}, addEventListener() {} }),
   requestAnimationFrame: f => (__Q.push(f), __Q.length), cancelAnimationFrame() {}, setTimeout: (f, ms, ...a) => __later(f, ms, false, a), clearTimeout: __unlater, setInterval: (f, ms, ...a) => __later(f, ms, true, a), clearInterval: __unlater,
-  performance: { now: () => __T, mark() {}, measure() {} }, console: { log() {}, warn() {}, error() {}, info() {}, debug() {}, trace() {}, table() {}, group() {}, groupCollapsed() {}, groupEnd() {}, time() {}, timeEnd() {}, timeLog() {}, assert() {}, count() {}, countReset() {}, dir() {}, clear() {} }, URL: { createObjectURL: () => '' }, fetch: () => Promise.reject(new Error('no net')),
+  performance: { now: () => __T, mark() {}, measure() {} }, console: { log() {}, warn() {}, error() {}, info() {}, debug() {}, trace() {}, table() {}, group() {}, groupCollapsed() {}, groupEnd() {}, time() {}, timeEnd() {}, timeLog() {}, assert() {}, count() {}, countReset() {}, dir() {}, clear() {} }, URL: { createObjectURL: () => '' },
+  fetch: r => {   // (a file that came with it, by the last part of its name, as loadImage's: p5's loadTable, loadJSON and loadStrings, d3.csv and the like. No net)
+    const u = typeof r === 'string' ? r : r && r.url, t = typeof u === 'string' ? __text_read(u) : null;
+    if (t === null) return Promise.reject(new Error('no net: ' + u));
+    const bytes = () => Uint8Array.from(unescape(encodeURIComponent(t)), c => c.charCodeAt(0)).buffer;
+    return Promise.resolve({ ok: true, status: 200, url: u, body: t, headers: { get: () => null }, text: async () => t, json: async () => JSON.parse(t), arrayBuffer: async () => bytes(), clone() { return this; } });
+  },
+  Request: function (u, o) { this.url = u, Object.assign(this, o); },
   Image: function () { return __element('img'); } };
-for (const k of ['Request', 'Headers', 'Response', 'HTMLElement', 'HTMLCanvasElement', 'Element', 'Node', 'ImageData', 'FileReader', 'Blob', 'XMLHttpRequest', 'DOMMatrix', 'Path2D', 'WebGL2RenderingContext', 'WebGLRenderingContext', 'Event', 'MouseEvent', 'TouchEvent', 'KeyboardEvent', 'WheelEvent', 'CustomEvent', 'FontFace']) __page[k] = function () {};
+for (const k of ['Headers', 'Response', 'HTMLElement', 'HTMLCanvasElement', 'Element', 'Node', 'ImageData', 'FileReader', 'Blob', 'XMLHttpRequest', 'DOMMatrix', 'Path2D', 'WebGL2RenderingContext', 'WebGLRenderingContext', 'Event', 'MouseEvent', 'TouchEvent', 'KeyboardEvent', 'WheelEvent', 'CustomEvent', 'FontFace']) __page[k] = function () {};
 for (const k in __page) Object.defineProperty(globalThis, k, { value: __page[k], writable: true, configurable: true });
 )";
 
@@ -266,6 +273,7 @@ var OPC = new Proxy({}, { get(t, k) {
 
 inline const char* const p5_start = R"(
 new p5();
+__jobs();   // (the files preload() asked for, read at once: fetch above)
 if (!globalThis.frameCount && (p5.instance._preloadCount || globalThis._preloadCount)) p5.instance._preloadCount = globalThis._preloadCount = 0, p5.instance._runIfPreloadsAreDone();   // (what preload() asked of the net or of files does not come: on without it)
 var __frames = [], __from = [];
 Object.defineProperty(globalThis, '__2d', { get: () => !p5.instance._renderer.isP3D });   // (asked late: an async setup() makes its canvas after new p5())

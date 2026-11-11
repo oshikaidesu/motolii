@@ -31,6 +31,10 @@ JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
 // layerValue(id, name, t, otherwise): what the owner of the Script answers for
 // another layer's value at time t (Script::reads); `data` holds the address of
 // that reader. NaN when no reader is set.
+// __text_read(name): a file its sketch came with, as text, by the last part of
+// the name it gives (as image_read reads its pictures), or null. What fetch()
+// reads in p5_stand.h, and so p5.js's loadTable, loadJSON and loadStrings.
+JSValue text_read(JSContext* cx, JSValueConst, int, JSValueConst* a);
 // __subtitles_frame(ms, scale): the frame of the subtitles `data` points at
 // (community/subtitles), drawn `scale` times as large as the file is written
 // for, as {x, y, w, h, data: RGBA}, or null when nothing is shown then.

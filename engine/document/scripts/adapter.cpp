@@ -280,10 +280,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     file = word;
   else if (!std::filesystem::exists(file, wrong))
     std::ofstream(file) << text;
-  // Images that the code loads are copied from the place it came from to beside
-  // the stored file.
+  // The pictures and data that the code loads are copied from the place it came
+  // from to beside the stored file.
   if (word != came && !kept)
-    adapter_images(text, std::filesystem::path(word).parent_path(), file);
+    adapter_files(text, std::filesystem::path(word).parent_path(), file);
   // The code needs its libraries beside it, as it needs its images.
   for (const auto& [name, from] : libraries) {
     const std::filesystem::path to = file.parent_path() / file.stem();

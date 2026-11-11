@@ -117,7 +117,7 @@ A language is only a way of writing. The meaning is shared: read values, return 
 | Pixels | GLSL, WGSL, ISF, Shadertoy, Hydra, TSL | the Effects shelf (already) |
 | Drawing | p5.js, Processing, Canvas 2D, Dwitter | as today |
 | Relations | springs, flocks, collisions | `shelves/relations/` (already) |
-| Data | CSV and JSON into bars, lists and names (After Effects' data-driven animation) | open |
+| Data | CSV and JSON into bars, lists and names (After Effects' data-driven animation) | p5.js's own `loadTable`, `loadJSON`, `loadStrings` and `fetch`, reading the files that came with the sketch (reached 2026-11-11, `fetch` in `engine/community/p5/p5_stand.h`); After Effects' `footage().dataValue` open |
 | A whole scene | Motion Canvas, Remotion, Manim: scenes and time written as code | open |
 | Lua, Blender Python | operators can be overloaded | scope open (section 9) |
 

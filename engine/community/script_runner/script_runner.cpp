@@ -164,6 +164,8 @@ Script::Script(const std::string& file, const std::string& p5,
                       JS_NewCFunction(own->cx, film_next, "__film_next", 0));
     JS_SetPropertyStr(own->cx, g, "__image_read",
                       JS_NewCFunction(own->cx, image_read, "__image_read", 1));
+    JS_SetPropertyStr(own->cx, g, "__text_read",
+                      JS_NewCFunction(own->cx, text_read, "__text_read", 1));
     JS_SetPropertyStr(own->cx, g, "__jobs",
                       JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
     JSValue reader = JS_NewInt64(own->cx, (int64_t)(intptr_t)&own->reads);

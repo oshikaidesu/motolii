@@ -253,10 +253,10 @@ std::string adapter_shader_files(const std::string& text,
   return out + text.substr(at);
 }
 
-void adapter_images(const std::string& text,
-                    const std::filesystem::path& beside,
-                    const std::filesystem::path& saved) {
-  static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
+void adapter_files(const std::string& text, const std::filesystem::path& beside,
+                   const std::filesystem::path& saved) {
+  static const std::regex load(
+      R"re(\b(?:load(?:Image|Table|JSON|Strings|XML|Bytes)|fetch|d3\.(?:csv|tsv|json|text))\s*\(\s*['"`]([^'"`]+)['"`])re");
   std::error_code wrong;
   for (std::sregex_iterator m(text.begin(), text.end(), load), end; m != end;
        ++m) {

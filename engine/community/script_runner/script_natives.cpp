@@ -3,6 +3,9 @@
 // run waiting jobs, read a picture and read another layer's value.
 #include "community/script_runner/script_natives.h"
 
+#include <fstream>
+#include <sstream>
+
 #include "community/script_runner/script_runner.h"
 #include "community/sites/adapter.h"
 #include "community/subtitles/subtitles.h"
@@ -144,6 +147,20 @@ JSValue image_read(
   JS_SetPropertyStr(cx, o, "data",
                     JS_NewArrayBufferCopy(cx, f.last.data(), f.last.size()));
   return o;
+}
+JSValue text_read(JSContext* cx, JSValueConst, int, JSValueConst* a) {
+  const char* name = JS_ToCString(cx, a[0]);
+  const std::filesystem::path file =
+      std::filesystem::path(((FilmRead*)JS_GetContextOpaque(cx))->beside) /
+      std::filesystem::path(name ? name : "").filename();
+  JS_FreeCString(cx, name);
+  std::error_code wrong;
+  if (!std::filesystem::is_regular_file(file, wrong)) return JS_NULL;
+  std::ifstream in(file, std::ios::binary);
+  std::stringstream all;
+  all << in.rdbuf();
+  const std::string text = all.str();
+  return JS_NewStringLen(cx, text.data(), text.size());
 }
 JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                         JSValueConst* data) {

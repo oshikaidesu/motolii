@@ -72,13 +72,13 @@ std::vector<std::string> adapter_needs(const std::string& text);
 std::string adapter_shader_files(const std::string& text,
                                  const std::filesystem::path& beside);
 
-// Copies the images a sketch loads with loadImage from `beside` to a folder
-// next to `saved`, named after it, because a script has no files of its own
-// (see `beside` in media/video_frames_for_scripts.h). Missing files are
-// skipped.
-void adapter_images(const std::string& text,
-                    const std::filesystem::path& beside,
-                    const std::filesystem::path& saved);
+// Copies the files a sketch loads by name (its pictures with loadImage, its
+// data with loadTable, loadJSON, loadStrings, loadXML, loadBytes, fetch or
+// d3's csv, tsv, json and text) from `beside` to a folder next to `saved`,
+// named after it, because a script has no files of its own (see `beside` in
+// media/video_frames_for_scripts.h). Missing files are skipped.
+void adapter_files(const std::string& text, const std::filesystem::path& beside,
+                   const std::filesystem::path& saved);
 
 // Returns library source in a form a script can run. For three.js, the export
 // list of its ES module is rewritten into one globalThis.THREE object, the way
