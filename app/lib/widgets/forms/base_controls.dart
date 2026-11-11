@@ -49,6 +49,18 @@ abstract final class BaseControls {
     ),
   );
 
+  /// The press, the hover and the dimming of a switch that is off limits, shared by the skins that draw their own look.
+  /// [look] draws the switch; it is told whether the pointer is over it.
+  static Widget toggle(SwitchSpec s, Widget Function(bool hovered) look) =>
+      NakedToggle(
+        value: s.on,
+        asSwitch: true,
+        enabled: s.enabled,
+        onChanged: s.onChanged,
+        builder: (context, st, _) =>
+            Opacity(opacity: s.enabled ? 1 : .4, child: look(st.isHovered)),
+      );
+
   /// An on/off chip. When on, it is raised and the mark is drawn in the accent colour.
   static Widget flag(BuildContext context, FlagSpec f) => Pressable(
     onTap: f.onTap,

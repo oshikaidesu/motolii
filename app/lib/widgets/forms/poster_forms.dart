@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/forms/base_controls.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 
 const _red = Color(0xFFE5432D),
@@ -134,37 +135,31 @@ class PosterForms extends Forms {
   ///
   /// When on, the slot turns green and the disc rolls to the right.
   @override
-  Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
-    value: s.on,
-    asSwitch: true,
-    enabled: s.enabled,
-    onChanged: s.onChanged,
-    builder: (context, st, _) => Opacity(
-      opacity: s.enabled ? 1 : .4,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(s.on ? 'ON' : 'OFF', style: _word(_ink, 11)),
-          SizedBox(width: Shape.s(6)),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutBack,
-            width: Shape.z(36),
-            height: Shape.z(18),
-            color: s.on ? _green : _ink,
-            alignment: s.on ? Alignment.centerRight : Alignment.centerLeft,
-            child: SizedBox.square(
-              dimension: Shape.z(18),
-              child: CustomPaint(
-                painter: PosterShapePainter(
-                  PosterShapes.circle,
-                  st.isHovered ? _pink : _yellow,
-                ),
+  Widget onOff(BuildContext context, SwitchSpec s) => BaseControls.toggle(
+    s,
+    (hovered) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(s.on ? 'ON' : 'OFF', style: _word(_ink, 11)),
+        SizedBox(width: Shape.s(6)),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutBack,
+          width: Shape.z(36),
+          height: Shape.z(18),
+          color: s.on ? _green : _ink,
+          alignment: s.on ? Alignment.centerRight : Alignment.centerLeft,
+          child: SizedBox.square(
+            dimension: Shape.z(18),
+            child: CustomPaint(
+              painter: PosterShapePainter(
+                PosterShapes.circle,
+                hovered ? _pink : _yellow,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 

@@ -76,35 +76,29 @@ class SheetForms extends Forms {
 
   /// A switch drawn as the word On or Off and a circle. The accent colour appears only on hover.
   @override
-  Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
-    value: s.on,
-    asSwitch: true,
-    enabled: s.enabled,
-    onChanged: s.onChanged,
-    builder: (context, st, _) => Opacity(
-      opacity: s.enabled ? 1 : .4,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            s.on ? 'On' : 'Off',
-            style: TextStyles.name(
-              s.on ? Grey.g95 : Grey.g56,
-              11,
-              FontWeight.w500,
-              1.15,
-            ),
+  Widget onOff(BuildContext context, SwitchSpec s) => BaseControls.toggle(
+    s,
+    (hovered) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          s.on ? 'On' : 'Off',
+          style: TextStyles.name(
+            s.on ? Grey.g95 : Grey.g56,
+            11,
+            FontWeight.w500,
+            1.15,
           ),
-          SizedBox(width: Shape.s(6)),
-          SizedBox.square(
-            dimension: Shape.z(12),
-            child: _mark(
-              s.on ? _Mark.dot : _Mark.ring,
-              st.isHovered ? Accent.key : Grey.g95,
-            ),
+        ),
+        SizedBox(width: Shape.s(6)),
+        SizedBox.square(
+          dimension: Shape.z(12),
+          child: _mark(
+            s.on ? _Mark.dot : _Mark.ring,
+            hovered ? Accent.key : Grey.g95,
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 

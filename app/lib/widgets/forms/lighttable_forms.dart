@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/forms/base_controls.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/media.dart' show Draw;
 
@@ -181,26 +182,20 @@ class LightTableForms extends Forms {
 
   /// The word On or Off, with the pencil loop around it when on.
   @override
-  Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
-    value: s.on,
-    asSwitch: true,
-    enabled: s.enabled,
-    onChanged: s.onChanged,
-    builder: (context, st, _) => Opacity(
-      opacity: s.enabled ? 1 : .4,
-      child: _looped(
-        s.on,
-        5,
-        hand: st.isHovered,
-        Container(
-          width: Shape.z(40),
-          height: Shape.z(22),
-          alignment: Alignment.center,
-          child: Text(
-            s.on ? 'On' : 'Off',
-            maxLines: 1,
-            style: _mono(s.on ? _graphite : Grey.g56, 12),
-          ),
+  Widget onOff(BuildContext context, SwitchSpec s) => BaseControls.toggle(
+    s,
+    (hovered) => _looped(
+      s.on,
+      5,
+      hand: hovered,
+      Container(
+        width: Shape.z(40),
+        height: Shape.z(22),
+        alignment: Alignment.center,
+        child: Text(
+          s.on ? 'On' : 'Off',
+          maxLines: 1,
+          style: _mono(s.on ? _graphite : Grey.g56, 12),
         ),
       ),
     ),
