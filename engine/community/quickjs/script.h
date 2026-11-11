@@ -89,7 +89,8 @@ std::string script_shelf_file(const std::string& file);
 // stage's. A word containing "/" is a path and may itself contain spaces, as in
 // "Application Support" or an ISF effect's "Bad TV.fs". The path continues
 // until a word ends in .wgsl, .fs, .js, .mjs, .json (Filament's own settings),
-// .am (Alight Motion's own motion file), or names an AviUtl2 script
+// .am (Alight Motion's own motion file), .css (a pen's CSS on a text layer),
+// or names an AviUtl2 script
 // (.anm2 or .obj2, with "#name" after an @ file's). Any other word stands
 // alone. Each file goes through script_shelf_file.
 std::vector<std::string> script_files(const std::string& word);

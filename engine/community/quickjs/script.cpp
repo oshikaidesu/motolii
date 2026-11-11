@@ -81,7 +81,8 @@ std::vector<std::string> script_files(const std::string& word) {
     if (w.find(".anm2") != std::string::npos ||
         w.find(".obj2") != std::string::npos)
       return true;
-    for (const char* e : {".wgsl", ".fs", ".js", ".mjs", ".json", ".am"})
+    for (const char* e :
+         {".wgsl", ".fs", ".js", ".mjs", ".json", ".am", ".css"})
       if (w.size() >= strlen(e) &&
           w.compare(w.size() - strlen(e), std::string::npos, e) == 0)
         return true;
