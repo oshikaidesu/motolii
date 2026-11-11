@@ -1,14 +1,15 @@
 // The stage's view: the composition centred on a dark surround, rulers and guides, overlays, the selection, the zoom
 // HUD and the navigator, and the pan, zoom, hover, key handling and pointer gestures over them.
 // It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
+import 'package:motolii/workspace/stage/stage_previews.dart';
+import 'package:motolii/workspace/stage/stage_trail.dart';
+import 'package:motolii/workspace/stage/stage_desk.dart';
 import 'package:motolii/workspace/stage/stage_pointer.dart';
 
 import 'dart:async' show Timer;
 import 'dart:io' show File;
-import 'dart:ui' show PointMode;
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -16,10 +17,6 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
@@ -98,6 +95,8 @@ class _StageViewState extends State<StageView>
   late final CameraGestures _camera;
   late final DrawTools _draw;
   late final StagePointer pointer;
+  late final desk = StageDesk(alive: () => mounted, rebuild: setState);
+  late final trailOf = StageTrail(alive: () => mounted, rebuild: setState);
 
   void _rebuild() => setState(() {});
 
@@ -207,78 +206,9 @@ class _StageViewState extends State<StageView>
     }
   }
 
-  // When the engine draws the whole pane, the stage sits inside it where this view puts it. The engine is told again when
-  // that changes, after the frame, because it cannot be asked during build.
-  int? _desk;
-  StageViewport? _toldDesk;
-  Motolii? _deskOf;
-  double? _toldDpr;
-  void _deskTo(StageViewport v) {
-    final dpr = MediaQuery.devicePixelRatioOf(context),
-        m = WorkspaceScope.read(context).inside;
-    if (m != _deskOf) {
-      // A different project was opened: forget the old engine view and send it again.
-      _desk = null;
-      _toldDesk = null;
-      _toldPick = null;
-    }
-    if (widget.texture == null || (v == _toldDesk && dpr == _toldDpr)) {
-      return; // Also sent again when the window's pixel ratio changes.
-    }
-    _toldDesk = v;
-    _toldDpr = dpr;
-    if ((_deskOf = m) == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _toldDesk != v || _toldDpr != dpr) return;
-      final m = _deskOf!;
-      final ticket = m.desk(
-        (v.area.width * dpr).round(),
-        (v.area.height * dpr).round(),
-        (v.origin.dx - v.area.left) * dpr,
-        (v.origin.dy - v.area.top) * dpr,
-        v.scale * dpr,
-        dpr,
-      );
-      void look(Duration _) {
-        // Poll once per frame until the engine has drawn, so the window never blocks on it.
-        if (!mounted) return;
-        final a = m.answer(ticket);
-        if (a < 0) {
-          SchedulerBinding.instance.scheduleFrameCallback(look);
-          return;
-        }
-        if (a == 0) return;
-        _toldPick = null;
-        if (_desk == null) {
-          m.deskTexture().then(
-            (id) => mounted && id >= 0 ? setState(() => _desk = id) : null,
-          );
-        }
-      }
-
-      SchedulerBinding.instance
-        ..scheduleFrameCallback(look)
-        ..ensureVisualUpdate();
-    });
-  }
-
-  // With the engine drawing the pane: tells it which layer is selected and which is hovered whenever they change.
-  (int, int)? _toldPick;
-  void _pickTo() {
-    final m = _deskOf;
-    if (_desk == null || m == null) return;
-    final now = (
-      int.tryParse(widget.selected ?? '') ?? 0,
-      int.tryParse(_hover ?? '') ?? 0,
-    );
-    if (now == _toldPick) return;
-    _toldPick = now;
-    m.pick(now.$1, now.$2);
-  }
-
   @override
   void dispose() {
-    _deskOf?.desk(0, 0, 0, 0, 0, 0); // Back to the engine's own stage view.
+    desk.release();
     _camera.dispose();
     _drag.dispose();
     _draw.dispose();
@@ -332,45 +262,6 @@ class _StageViewState extends State<StageView>
     setState(() => _pan = v.clampPan(_pan + by));
   }
 
-  // The selected layer's motion path over time as the engine computes it (including its wave), in canvas points, drawn thin
-  // with direction arrows as in Alight Motion. Recomputed only when the document or the selection changes; null when the
-  // layer stays put.
-  (Object?, List<Offset>?) _trail = (null, null);
-  List<Offset>? _trailOf() {
-    final ws = WorkspaceScope.read(context),
-        m = ws.inside,
-        t = int.tryParse(widget.selected ?? '');
-    if (m == null ||
-        t == null ||
-        const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) {
-      return null;
-    }
-    final key = (ws.rev, t);
-    if (_trail.$1 != key) {
-      _trail = (key, null);
-      final start = m.value(t, 'start', 0) ?? 0,
-          lasts = m.lasts(t),
-          end = lasts > 0 ? start + lasts : m.seconds;
-      if (end > start) {
-        m.path(t, from: start, to: end, n: 90).then((p) {
-          if (!mounted || _trail.$1 != key || p == null) return;
-          final c = ArtGeometry.centre,
-              pts = [
-                for (var i = 0; i + 1 < p.length; i += 4)
-                  c + Offset(p[i], -p[i + 1]) * m.point,
-              ];
-          setState(
-            () => _trail = (
-              key,
-              pts.any((q) => (q - pts.first).distance > 1) ? pts : null,
-            ),
-          );
-        });
-      }
-    }
-    return _trail.$2;
-  }
-
   final _menu = GlobalKey<ContextMenuState>();
 
   @override
@@ -378,9 +269,32 @@ class _StageViewState extends State<StageView>
     builder: (context, box) {
       final v = _shown = _view(box.biggest),
           scene = widget.scene,
-          trail = _trailOf();
-      _deskTo(v);
-      _pickTo();
+          trail = trailOf.of(WorkspaceScope.read(context), widget.selected);
+      // What the stage paints around and over the preview: the one painter, once for all of it or once for each side of the engine's image.
+      ViewPainter painter(ViewPart part, {bool marked = false}) => ViewPainter(
+        scene,
+        v,
+        widget.selected,
+        _hover == widget.selected ? null : _hover,
+        grid: widget.grid,
+        safe: widget.safe,
+        part: part,
+        pivots: widget.tool.pivots,
+        met: _drag.met,
+        marked: marked,
+        trail: trail,
+        parent: _parentOf(),
+        grip: _drag.heldGrip,
+        form: _formOf(),
+        crop: _cropOf(),
+      );
+      desk.follow(
+        v,
+        dpr: MediaQuery.devicePixelRatioOf(context),
+        m: WorkspaceScope.read(context).inside,
+        textured: widget.texture != null,
+      );
+      desk.pick(widget.selected, _hover);
       return ContextMenu(
         key: _menu,
         child: TwoFingerGestures(
@@ -460,33 +374,19 @@ class _StageViewState extends State<StageView>
                 children: [
                   RepaintBoundary(
                     child: CustomPaint(
-                      painter: ViewPainter(
-                        scene,
-                        v,
-                        widget.selected,
-                        _hover == widget.selected ? null : _hover,
-                        grid: widget.grid,
-                        safe: widget.safe,
-                        part: widget.texture == null
-                            ? ViewPart.all
-                            : ViewPart.under,
-                        pivots: widget.tool.pivots,
-                        met: _drag.met,
-                        trail: trail,
-                        parent: _parentOf(),
-                        grip: _drag.heldGrip,
-                        form: _formOf(),
-                        crop: _cropOf(),
+                      painter: painter(
+                        widget.texture == null ? ViewPart.all : ViewPart.under,
                       ),
                     ),
                   ),
-                  if (_desk case final desk? when widget.texture != null) ...[
+                  if (desk.id case final deskId?
+                      when widget.texture != null) ...[
                     // The whole pane as the engine draws it: the area off the stage is half covered and the selected layer is marked.
                     Positioned.fromRect(
                       rect: v.area,
                       child: IgnorePointer(
                         child: Texture(
-                          textureId: desk,
+                          textureId: deskId,
                           filterQuality: FilterQuality.medium,
                         ),
                       ),
@@ -545,90 +445,18 @@ class _StageViewState extends State<StageView>
                         ),
                       ),
                     ),
-                  if (_draw.drawFrom case final from?
-                      when pointer.last != null &&
-                          widget.tool.make == 'pen' &&
-                          _draw.penWay != null &&
-                          DrawTools.scribbled(
-                            _draw.penWay!,
-                            from,
-                            pointer.last!,
-                          )) // A scribble is drawn thin like the brush and becomes a path on release.
-                    IgnorePointer(
-                      child: CustomPaint(painter: _BrushWay(_draw.penWay!)),
-                    )
-                  else if (_draw.drawFrom case final from?
-                      when pointer.last != null &&
-                          widget.tool.make ==
-                              'pen') // The pen's handle being pulled out, drawn through its point both ways.
-                    IgnorePointer(
-                      child: CustomPaint(
-                        size: Size.infinite,
-                        painter: PointsPainter(
-                          [from],
-                          [
-                            (pointer.last!, from),
-                            (from * 2 - pointer.last!, from),
-                          ],
-                        ),
-                      ),
-                    )
-                  else if (_draw.drawFrom case final from?
-                      when pointer.last !=
-                          null) // The box of the layer being drawn.
-                    Positioned.fromRect(
-                      rect: Rect.fromPoints(from, pointer.last!),
-                      child: IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: WindowTokens.accent),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (_drag.held
-                      case final h? when h.moved && pointer.last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
-                    if (_drag.heldSays(h.by) case final says?)
-                      Positioned(
-                        left: pointer.last!.dx + 16,
-                        top: pointer.last!.dy + 16,
-                        child: IgnorePointer(
-                          child: Container(
-                            key: const ValueKey('ws-held-says'),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: Shape.s(6),
-                              vertical: Shape.s(3),
-                            ),
-                            decoration: BoxDecoration(
-                              color: WindowTokens.raised,
-                              borderRadius: BorderRadius.all(Shape.r(3)),
-                            ),
-                            child: Text(
-                              says,
-                              style: TextStyles.micro(Grey.g95),
-                            ),
-                          ),
-                        ),
-                      ),
+                  ?stageDrawPreview(
+                    draw: _draw,
+                    last: pointer.last,
+                    make: widget.tool.make,
+                  ),
+                  ?stageHeldSays(drag: _drag, last: pointer.last),
                   if (widget.texture != null)
                     IgnorePointer(
                       child: CustomPaint(
-                        painter: ViewPainter(
-                          scene,
-                          v,
-                          widget.selected,
-                          _hover == widget.selected ? null : _hover,
-                          grid: widget.grid,
-                          safe: widget.safe,
-                          part: ViewPart.over,
-                          pivots: widget.tool.pivots,
-                          met: _drag.met,
-                          marked: _desk != null,
-                          trail: trail,
-                          parent: _parentOf(),
-                          grip: _drag.heldGrip,
-                          form: _formOf(),
-                          crop: _cropOf(),
+                        painter: painter(
+                          ViewPart.over,
+                          marked: desk.id != null,
                         ),
                       ),
                     ),
@@ -641,7 +469,7 @@ class _StageViewState extends State<StageView>
                   RelationMarks(scene: scene, v: v, lasso: _draw.lasso),
                   // The brush path so far, drawn thin; once released the stroke belongs to the engine.
                   if (_draw.brush case final way?)
-                    IgnorePointer(child: CustomPaint(painter: _BrushWay(way))),
+                    IgnorePointer(child: CustomPaint(painter: BrushWay(way))),
                   Positioned(
                     left: StageTokens.ruler + StageTokens.pad,
                     bottom: StageTokens.pad,
@@ -667,20 +495,4 @@ class _StageViewState extends State<StageView>
       );
     },
   );
-}
-
-class _BrushWay extends CustomPainter {
-  const _BrushWay(this.way);
-  final List<Offset> way;
-  @override
-  void paint(Canvas c, Size s) => c.drawPoints(
-    PointMode.polygon,
-    way,
-    Paint()
-      ..color = WindowTokens.accent
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round,
-  );
-  @override
-  bool shouldRepaint(_BrushWay o) => true;
 }
