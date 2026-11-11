@@ -554,7 +554,33 @@ The author's picture of what coexisting code is for: each engine does what it is
 
 **What is kept from it.** `tvg_text_outline` hands out the outlines ThorVG keeps inside a text (`tvgText.h`, `TextImpl`), as the adapter already reaches ThorVG's own path operators. Nothing reads the font here. It was checked against the font's own outlines as fontTools reads the same file: the 9 contours of MOTOLII and the 23 of "Wavy Type & go 258" in Roboto-Medium, each contour's width, height, area and place across as fractions of the whole text, worst difference 0.0001 (0.108 on a wrong text). One case is a test, `text_outline_test.cpp`. Nothing in the engine calls the function yet.
 
-**Not known yet.** Whether what only a text has (rims, a colour ramp, wrapping, vertical writing) can be drawn the way shapes are; and whether letters drawn from outlines keep 60 fps at a thousand letters. A text may be a picture today because that is fast. These two are read and measured before anything is built, and if either fails the cut is thought over again.
+**Read and measured before building (the same day).** Two things could have refuted the cut: what only a text can do today, and speed. Neither did. Nothing was added to the engine for this.
+
+*What a text can do today, set beside what a shape can* (read by an agent that knew nothing of this plan, from `canvas_type.cpp`, `match_shape.cpp`, `kinds.h` and ThorVG's `tvgSfntLoader.cpp`):
+
+| | What | Drawn as a shape |
+|---|---|---|
+| Carries over | Fill, one stroke, fill "behind", copies | Shapes have them |
+| Carries over | Letter and line spacing, wrapping, alignment, italics, vertical writing | Already in the outlines ThorVG hands out: it moves the points (italics through the shape's transform, which `tvg_text_outline` applies) |
+| Gained | Dashes, caps and joins, trim paths, round, bloat, zigzag, morph, rough, a picture as fill, the even-odd rule | Shapes have them and texts do not |
+| Depends on the route | A colour ramp, depth | Shapes have them, drawn as a ThorVG image, not as a mesh |
+| No counterpart | The second and third strokes (rims), the bevel's step bands, changing the words in place without making the picture again | Shapes have none of the three |
+| Same either way | Kerning (the `kern` table only), colour fonts (not read) | ThorVG's loader, on both sides |
+
+The outlines carry no mark of where one letter ends: ThorVG appends each glyph's contours one after another. A split by letter therefore needs the letters asked for one at a time, or a mark added. Today's split has its own limit: it measures each strip by setting the words again up to that letter, and works on one unwrapped line only.
+
+*Speed* (Apple M4; the outlines written from the font by fontTools as path data and said to a path shape; the shell's own times; a still of an empty project takes about 21 ms, which every figure includes):
+
+| | A text, as today | The same letters as a path shape |
+|---|---|---|
+| A frame with nothing changing, 1,000 letters | as an empty project | as an empty project |
+| A frame with every letter moving (the shelf's `fade_in.js`), 1,000 letters | 42.8 ms | 41.7 ms (1,000 copies of one outline) |
+| Making it again after the letters change, 100 letters | about 45 ms | about 22 ms |
+| Making it again after the letters change, 1,000 letters | about 49 ms | about 88 ms filled, 106 ms with a stroke and no fill |
+
+The line set before measuring was: a still frame inside 16.7 ms, and making it again no more than twice today's. Stills cannot tell the first apart from an empty project, for either way. The second passes at 100 letters and for filled letters at 1,000 (1.8 times), and misses for stroked ones (2.2 times). The path-shape figures are an upper bound: they include reading and storing 618 KB of path data as text, which letters drawn straight from ThorVG's outlines would not pass through. A thousand moving letters cost 21 ms a frame over the floor either way; that is the copies and the expression, not strips against meshes.
+
+**What this leaves.** The cut stands. Three things have to be dealt with, not lost: rims and the bevel's bands have no counterpart on shapes, and the words changed in place are a speed path of the picture. And one comment is wrong: `match_shape.cpp` says a shape with an edge, a dash, a trim or a bend is drawn as a ThorVG image, but the test under it (`plain`) asks only about depth, a wave, a spiral, a picture fill and a ramp, so those are drawn as meshes today.
 
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
