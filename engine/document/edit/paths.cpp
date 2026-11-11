@@ -2,6 +2,7 @@
 
 #include <math/mat4.h>
 #include <math/vec4.h>
+#include <sqlite3.h>
 #include <thorvg.h>
 
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -20,11 +22,14 @@ extern "C" {
 }
 
 #include "community/absent_motion/absent_motion.h"
+#include "document/card_table.h"
 #include "document/cards.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
+#include "document/edit/time_edit.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/kinds.h"
 #include "document/undo.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_renderables.h"
@@ -268,13 +273,86 @@ int doc_brush(Doc& d, const char* said, int into) {
   return doc_acted(d) ? layer : 0;
 }
 
+namespace {
+// A path as SVG path data, each point written by `at`.
+template <typename At>
+std::string path_data(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+                      const tvg::Point* pts, At at) {
+  std::string path;
+  for (uint32_t c = 0, p = 0; c < cmdsCnt; ++c) switch (cmds[c]) {
+      case tvg::PathCommand::MoveTo:
+        path += (path.empty() ? "M" : " M") + at(pts[p++]);
+        break;
+      case tvg::PathCommand::LineTo:
+        path += " L" + at(pts[p++]);
+        break;
+      case tvg::PathCommand::CubicTo:
+        path += " C" + at(pts[p]) + " " + at(pts[p + 1]) + " " + at(pts[p + 2]),
+            p += 3;
+        break;
+      case tvg::PathCommand::Close:
+        path += " Z";
+        break;
+    }
+  return path;
+}
+
+// A text layer made a path shape of its letters' outlines (doc_to_path).
+bool text_to_path(Doc& d, int layer) {
+  const auto shown = d.on_stage.shown.find(layer);
+  const Canvas2D* drawn =
+      shown == d.on_stage.shown.end() ? nullptr : shown->second.drawn;
+  if (!drawn || drawn->outlineCmds.empty())
+    return d.error = "the text shows no letters to make a path of", false;
+  const std::string path = path_data(
+      drawn->outlineCmds.data(), (uint32_t)drawn->outlineCmds.size(),
+      drawn->outlinePts.data(), [](const tvg::Point& p) {
+        char one[64];
+        std::snprintf(one, sizeof one, "%.5f %.5f", p.x, p.y);
+        return std::string(one);
+      });
+  const double wide = drawn->outlineWide;
+  // The values a text takes and a shape does not (kinds.h): the copy loses
+  // them.
+  const auto takes = [](const char* name, const char* kind) {
+    for (const DocValue& v : doc_values)
+      if (!strcmp(v.name, name) && doc_among(v.kinds, kind)) return true;
+    return false;
+  };
+  std::string only_text;
+  for (const DocValue& v : doc_values)
+    if (takes(v.name, "text") && !takes(v.name, "shape") &&
+        only_text.find("'" + std::string(v.name) + "'") == std::string::npos)
+      only_text += (only_text.empty() ? "'" : ", '") + std::string(v.name) + "'";
+  doc_act(d);
+  // After Effects' Create Shapes from Text: a new layer above the text, the
+  // text kept and hidden. The new layer is the text's copy, so it stands and
+  // moves as the text does.
+  const int made = doc_copy_above(d, layer);
+  const bool ok =
+      made &&
+      doc_change(d,
+                 sqlite3_mprintf(
+                     "delete from keyframe where layer = %d and name in (%s); "
+                     "update keyframe set value = 'shape' where layer = %d and "
+                     "name = 'kind'; insert into keyframe(layer, name, at, "
+                     "value) values(%d, 'shape', 0.0, 'path'), (%d, 'path', "
+                     "0.0, %Q);",
+                     made, only_text.c_str(), made, made, made, path.c_str())) &&
+      doc_set(d, made, "wide", wide) && doc_set(d, layer, "visible", 0);
+  if (!ok) d.act.ok = false;
+  return doc_acted(d) && ok;
+}
+}  // namespace
+
 bool doc_to_path(Doc& d, int layer) {
+  if (doc_word(d, layer, "kind") == "text") return text_to_path(d, layer);
   const std::string form = doc_word(d, layer, "shape");
   if (doc_word(d, layer, "kind") != "shape" || form.empty() || form == "path" ||
       form == "null" || form == "solid")
     return d.error =
-               "only a shape of a kind of its own is made a path (not a path, "
-               "a null or a solid)",
+               "only a text, or a shape of a kind of its own, is made a path "
+               "(not a path, a null or a solid)",
            false;
   const bool line = form == "line", wave = form == "wave";
   // The shape's height and width in its own units, with the defaults that
@@ -319,28 +397,13 @@ bool doc_to_path(Doc& d, int layer) {
   const tvg::Point* pts;
   uint32_t cmdsCnt = 0, ptsCnt = 0;
   shape->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
-  std::string path;
-  char one[96];
-  const auto at = [&](const tvg::Point& p) {
-    std::snprintf(one, sizeof one, "%.5f %.5f", (p.x - 0.5 * w) / h * high,
-                  (p.y - 0.5 * h) / h * high);
-    return std::string(one);
-  };
-  for (uint32_t c = 0, p = 0; c < cmdsCnt; ++c) switch (cmds[c]) {
-      case tvg::PathCommand::MoveTo:
-        path += (path.empty() ? "M" : " M") + at(pts[p++]);
-        break;
-      case tvg::PathCommand::LineTo:
-        path += " L" + at(pts[p++]);
-        break;
-      case tvg::PathCommand::CubicTo:
-        path += " C" + at(pts[p]) + " " + at(pts[p + 1]) + " " + at(pts[p + 2]),
-            p += 3;
-        break;
-      case tvg::PathCommand::Close:
-        path += " Z";
-        break;
-    }
+  const std::string path =
+      path_data(cmds, cmdsCnt, pts, [&](const tvg::Point& p) {
+        char one[96];
+        std::snprintf(one, sizeof one, "%.5f %.5f", (p.x - 0.5 * w) / h * high,
+                      (p.y - 0.5 * h) / h * high);
+        return std::string(one);
+      });
   tvg::Paint::rel(shape);
   if (path.empty())
     return d.error = "it has no outline to make a path of", false;

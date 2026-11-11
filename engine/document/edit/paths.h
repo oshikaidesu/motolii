@@ -99,8 +99,13 @@ int doc_brush(Doc& d, const char* said, int into = 0);
 // the round corners, bloat, zigzag and offset, as cut_at does. The points are
 // then stored in the path's own units, 1 high from the middle, with y down as
 // in SVG. Those operators are set to 0 afterwards, because they are now part of
-// the path. The fill, the edge and everything else stay as they were. Returns
-// false, with d.error set, if the shape cannot be converted.
+// the path. The fill, the edge and everything else stay as they were.
+// For a text layer, a path shape of the outlines of its letters is made above
+// it, and the text is kept and hidden, as After Effects' Create Shapes from
+// Text does. The outlines are the ones ThorVG draws the text from
+// (tvg_text_outline). The new layer is a copy of the text without the values
+// only a text takes, so it lies where the letters lay and moves as the text
+// did. Returns false, with d.error set, if the layer cannot be converted.
 bool doc_to_path(Doc& d, int layer);
 
 }  // namespace motolii

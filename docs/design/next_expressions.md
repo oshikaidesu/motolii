@@ -517,6 +517,23 @@ To run on the GPU, code has to be turned into a shader. Section 7 does it throug
 4. **Code that needs a whole web page.** No web page is embedded (principle 3), so such code is not brought in whole. This is the part of "any code" that is furthest away.
 5. **The project as text (step 5).** A project is a SQLite database file today. What its text form is has not been looked at.
 
+### 12.7 Four strengths in one chain (tried 2026-11-11)
+
+The author's picture of what coexisting code is for: each engine does what it is best at, on the same material, one after another.
+
+| Step | Whose strength | Today |
+|---|---|---|
+| Lay out | CSS: flex and grid | Reached for the letters and words of a text layer (question 7). |
+| Delay, and the frames before | An `each()` expression; an effect that keeps the frames before | Reached on the same layer: the shelf's `slide_in.js` and Comet Tails over the flex layout (question 7). The echo is of the whole picture, not of each letter. |
+| Paths | ThorVG | Reached as After Effects' Create Shapes from Text: `outline` on a text layer makes a path shape of its letters above it and hides the text. Trim paths, strokes and the path operators then work on the letters. |
+| Points | Filament | Not reached. Points are drawn from `.ply` files only. `sk_resample` already gives points along a path. |
+
+**How the paths are had.** ThorVG draws a text from outlines it keeps inside (`tvgText.h`, `TextImpl`). `tvg_text_outline` hands them out, as the adapter already reaches ThorVG's own path operators. Nothing reads the font here.
+
+**Checked** against the font's own outlines as fontTools reads the same file: the 9 contours of MOTOLII and the 23 of "Wavy Type & go 258" in Roboto-Medium, each contour's width, height, area and place across as fractions of the whole text; the worst difference is 0.0001. The check fails on a wrong text (0.108). Against the text's own picture, the path shape has the same ink box, and the two share 98 to 99 % of their lit pixels (the edges are smoothed differently: one is a texture, the other a mesh). One case is a test, `text_outline_test.cpp`; the rest is in `docs/internal/text_path/`.
+
+**Not yet joined.** The path shape is one layer, not letters. The flex layout, the delay from letter to letter and the echo act on a text layer; once `outline` has made the shape, they act on it as a whole. Keeping each letter apart as a path (step 2 of 12.2) is what would join them, and points along those paths would follow.
+
 ## Appendix: where the code stands (2026-11-11), kept apart from the ideal
 
 - `AE.compile` reads an expression once with acorn and rewrites `+ - * /` as vector-aware calls. Each frame the resulting function is called in QuickJS-ng ([ae_expr.h](../../engine/community/after_effects/ae_expr.h)).

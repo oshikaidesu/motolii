@@ -9,6 +9,8 @@
 // tvg_edge turns the outline of a shape into triangles the way ThorVG's WebGPU
 // engine strokes it.
 //
+// tvg_text_outline hands out the outlines ThorVG's own text holds.
+//
 // This file is separate from the rest of the canvas code because ThorVG's
 // internal headers declare many names that would clash with ours. Only the two
 // functions declared in path_operations.h are visible to the rest of the
@@ -22,6 +24,7 @@
 #include "stage/canvas/path_operations.h"
 #include "tvgGpuCommon.h"
 #include "tvgLottieModifier.h"
+#include "tvgText.h"
 #include "tvgWgTessellator.h"
 
 namespace motolii {
@@ -217,6 +220,21 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
     xy.push_back(mesh.vbuffer[i].x), xy.push_back(mesh.vbuffer[i].y);
   for (uint32_t i = 0; i < mesh.ibuffer.count; ++i)
     idx.push_back(mesh.ibuffer[i]);
+}
+
+bool tvg_text_outline(tvg::Text* text, std::vector<tvg::PathCommand>& cmds,
+                      std::vector<tvg::Point>& pts) {
+  cmds.clear(), pts.clear();
+  tvg::TextImpl* impl = tvg::to<tvg::TextImpl>(text);
+  // load() sets the words with the font's loader into the shape's path, and
+  // the loader's transform (font units to points, the baseline, the italic
+  // shear) on the shape.
+  if (!impl->load()) return false;
+  const tvg::RenderPath& path = tvg::to<tvg::ShapeImpl>(impl->shape)->rs.path;
+  const tvg::Matrix placed = text->transform() * impl->shape->transform();
+  cmds.assign(path.cmds.begin(), path.cmds.end());
+  for (const tvg::Point& p : path.pts) pts.push_back(p * placed);
+  return !cmds.empty();
 }
 
 }  // namespace motolii

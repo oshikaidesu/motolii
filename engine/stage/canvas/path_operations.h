@@ -141,6 +141,14 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
               int join, float dash, float dashFrom, float from, float to,
               std::vector<float>& xy, std::vector<uint32_t>& idx);
 
+// The outlines of a text's letters as ThorVG sets them, with its layout,
+// spacing, wrapping and italics: the path of the shape a Text holds inside
+// (ThorVG's tvgText.h, TextImpl), taken through that shape's transform and the
+// text's own, so the points are where the text is drawn. Returns false if
+// the text has no outline (no font, or no words).
+bool tvg_text_outline(tvg::Text* text, std::vector<tvg::PathCommand>& cmds,
+                      std::vector<tvg::Point>& pts);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_PATH_OPERATIONS_H_

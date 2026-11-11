@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "stage/canvas/canvas_renderables.h"
+#include "stage/canvas/path_operations.h"
 // stb_truetype reports a malformed font by throwing instead of aborting the
 // program. One example is an OpenType cmap (format 4) whose last segment is not
 // 0xFFFF.
@@ -222,6 +223,15 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         t->translate(-x + 0.5f * outline, -y + 0.5f * outline);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
+        // The letters' outlines, from the image's points to the layer's units.
+        if (std::vector<tvg::Point> at;
+            tvg_text_outline(t, d->outlineCmds, at)) {
+          const float unit = d->tallBy / (float)*h;
+          for (const tvg::Point& p : at)
+            d->outlinePts.push_back(
+                {(p.x - 0.5f * (float)*w) * unit, (p.y - 0.5f * (float)*h) * unit});
+          d->outlineWide = (float)*w * unit;
+        }
         // ThorVG's size is in points, drawn at 96 / 72 pixels each
         // (src/renderer/tvgLoader.h, FontLoader::DPI; sfnt loader's scale).
         d->em = sized * (96.f / 72.f) / (float)*h;
