@@ -22,11 +22,19 @@ Everything below follows from this. What the code reads is known, so it can be l
 
 ## 3. What the user touches
 
+Every choice in this section and the next is judged by five rules:
+
+1. The person writing never has to go to another screen or web page to find out what can be written.
+2. Every list is made from what runs. No list is kept by hand.
+3. No value is fixed or greyed out (principle 2).
+4. There is one kind of card. Effects, expressions and relations are items of the same list.
+5. A person and an LLM are shown the same lists.
+
 ### 3.1 Two steps in
 
 - **Inspector:** a card, like an effect card, with sliders and an on/off switch. No code is visible.
 - **Edit:** a button on the card. It opens the Program tab on that code, at that line. Going back, the card already shows the change. There is no cliff.
-- If the user picks a target on the card (follow this layer's position), the app writes it as code. Pressing Edit later shows the few lines the app wrote. The card is never a second copy of the code ([AGENTS.md](../../AGENTS.md), principle 3).
+- A target (follow this layer) is a slider that holds a layer, declared in the code like any other slider. Picking another layer changes the slider, not the code. The card is never a second copy of the code ([AGENTS.md](../../AGENTS.md), principle 3).
 
 ### 3.2 Getting code in
 
@@ -38,7 +46,7 @@ A property is a number, keyframes or code. The timeline row draws a curve in all
 
 ### 3.4 Sliders and code are one text
 
-A number in the code is a slider. Dragging it rewrites the number in the code. Editing the code moves the slider. There is one copy of the text. A slider's range is for display only; a typed value is not limited (principle 2).
+A number in the code is a slider. Dragging it rewrites the number in the code. Editing the code moves the slider. There is one copy of the text. A slider's range is for display only; a typed value is not limited (principle 2). Once a slider has keyframes, they live on the card, as an effect slider's do, and the number in the code is its value where there are none.
 
 ### 3.5 What the code reads, shown beside it
 
@@ -55,6 +63,61 @@ The timeline row shows the curve over the whole time range. An error marks its l
 ### 3.7 Editing
 
 In the app, or in an outside editor and save. Either way the frame under the playhead updates at once. The playhead, the selection and the sliders stay. Only the edited code and what reads it are recomputed.
+
+There is no Apply button: the picture follows the code as it is typed. One Undo step ends where typing pauses.
+
+### 3.8 Writing with an LLM
+
+The person says what they want, for example "this layer gathers toward the middle of that layer", and an LLM writes the code.
+
+- **The intent is a sentence.** The layers in it are not typed. They are picked by clicking on the stage or in the layer list, and each becomes a small tag in the sentence. A tag holds the layer's name as the code's language spells it (`thisComp.layer("B")`), so the LLM cannot invent a layer that does not exist.
+- **Pressing the LLM button gives five things:**
+
+| What | Example |
+|---|---|
+| One line saying what was understood | "A gathers toward the middle of B." It is read before any code. |
+| The motion | The layer moves on the stage; play and scrub work. |
+| Sliders | Whatever is a matter of taste: Amount, Spread. |
+| The code | In the Program tab. Read it only if you want to. |
+| What it decided | As sliders that pick from words, not as sentences (below). |
+
+- **Anything a person may want to change later is a slider:** time, amount, direction, and the layer it acts on. No number in the code is a timing. "Over two seconds" is two keyframes on an Amount slider (0 to 100 %), which the LLM places as a start and the person moves on the timeline. Easing is the curve of those keyframes. This is After Effects' usual pairing: a Slider Control with keyframes, and an expression that reads it.
+
+```
+Gather
+  Toward     [ B ▾ ]                  ← a slider that holds a layer
+  Amount     ◆──────────◆  0 → 100 %   ← keyframes
+  Middle     [ middle of what is drawn ▾ ]
+```
+
+- **A choice the LLM made** (that "middle" means the middle of what is drawn, not the anchor point) is a slider that picks from words. It is changed by picking, and the screen does not fill with sentences.
+- **The LLM asks nothing back.** It decides and shows what it decided, because changing a slider is quicker than answering a question.
+- **Asking again** ("a little slower") edits the same code; it does not write new code. Each change is one Undo step. What a slider can do does not call the LLM.
+- **What cannot be read yet** (a name not in the tree of 4.4) is said plainly, "cannot read X yet", instead of being faked.
+
+### 3.9 Code on a group
+
+- **What a card acts on is the layer it is on.** On one layer it acts on that layer. On a group it acts on every layer inside, and the code receives them as an array in the order of the layer list. Dragging a layer up or down the list changes its number.
+- **This is what a relation is.** The user does not tell an expression and a relation apart. Layers that should act together are grouped, and the card goes on the group; a single other layer is picked with a layer slider. (The Relations tab and the relation marks on the stage were removed on 2026-11-11; relation files are Expression tiles in the Create tab.)
+- **One set of keyframes, many layers.** A Delay slider (seconds per layer) makes layer i read the same curve i × Delay later, so moving one curve changes every layer. An Order slider picks top first, bottom first, middle out or random, as Cavalry's Stagger does.
+- **Beside the code, a table with one row per layer** shows the value the code gives each layer at the playhead, with a small bar. Pointing at a row lights that layer on the stage. After Effects' timeline and node tools show only the result, not the array; code shows the array, so it is shown.
+- A group inside a group stays a tree (4.4).
+- If the layer a slider picks is inside the same group, it does not move toward itself. It stays where it is, without a warning.
+- The sliders are on the card only. They are not repeated on the group or on its layers.
+
+### 3.10 Cards in order
+
+- Cards act from top to bottom, as an effect stack does. A card receives the result of those above it as `value`, as After Effects gives an expression the keyframed value.
+- A property moved by code is not locked or greyed out. Its keyframes stay editable, and the code gets them as `value`.
+- The property's row shows a mark that code moves it. Pressing the mark goes to the card. This is the "who reads this" of 4.3, seen from the other end.
+
+### 3.11 Keeping it on a shelf and using it again
+
+- **Dragging a card to a shelf saves it:** the code, its sliders with their values, and their keyframes. There is no dialog; the name is the card's. The tile's picture is a few seconds of the motion, recorded, and it plays when pointed at.
+- **The layers it was pointed at are not saved.** Those sliders are left empty, and the tile shows how many layers it needs.
+- **Dropping it on a layer or a group** puts the card in. Its first empty layer slider lights, ready as a pick whip: clicking a layer fills it, and then the next one lights. Until they are filled, the layers stay as they are, with no error and nothing greyed out; the card says "pick a layer to start".
+- **The tile and the card it came from are separate from then on**, as an After Effects animation preset is. A shelf is a library that is copied into a project when used (4.2).
+- A file opened from a shelf only to be read is not yet decided (9).
 
 ## 4. One kind of thing, one editor, one list of what can be read
 
@@ -86,24 +149,32 @@ A file that came from outside by paste or drop belongs to the project, as a scri
 
 ### 4.3 What the editor shows beside the code
 
-After Effects shows neither what can be written nor what can be connected. The editor has three lists that follow the project as it changes (layers added, removed or renamed; values at the playhead).
+After Effects shows neither what can be written nor what can be connected. Its expression language menu (the arrow button beside an expression) lists functions apart from the code being written, and is little used. Here every list is tied to the code, to the cursor and to the value now, and follows the project as it changes (layers added, removed or renamed; values at the playhead).
 
-| List | Holds |
+**The Program tab holds the code and nothing else.** What is shown beside it is in panels of their own. They follow the selected card and can be placed anywhere, as Blender's Properties editor follows the active object. A new use adds a panel; the tab itself does not change. On first opening only the code and its result are shown: the lists come up anyway as suggestions while typing.
+
+| Where | What |
 |---|---|
-| **Can read** | Every property of every layer (effect sliders, text, shapes, camera), time, frame, duration, project size, sound level, MIDI, and values other code makes. Filtered by the type the property being edited wants (a number lists numbers); "show all" removes the filter. Searchable. Pressing or dragging an item inserts it as the code's language says it: an After Effects expression gets After Effects' way, Lua gets Lua's. |
-| **Can return, can say** | The names this property accepts (`x`, `y`, `size`, `opacity`, …), lit when the code returns them. The sliders the code declares. The language's own words (`wiggle`, `linear`, …) with a short explanation and an example. |
-| **Who reads this** | For a selected property, the code that reads it. Known before a rename or a delete, not after something breaks. |
+| **At the cursor, while typing** | Suggestions. After `thisComp.layer(`, the layers of this project; after `.`, what that layer can be read for (position, opacity, effect sliders). Each shows its value at the playhead. The nearest come first: the layers of the same group, then the group above it, then the project; a search covers the whole project. |
+| **On the word under the cursor** | A short explanation and a small picture: the curve of `ease`, the shake of `wiggle`, the value now of a name. |
+| **Under the code** | The result over time as a curve; on a group, the table of 3.9. An error is shown on its line in plain words, and the last good result stays on screen (3.6). |
+| **Panel: Can read** | The tree of 4.4: every property of every layer (effect sliders, text, shapes, camera), time, frame, duration, project size, sound level, MIDI, and values other code makes. Searchable. Filtered by the type the property being edited wants (a number lists numbers); "show all" removes the filter. Pressing an item inserts it at the cursor as the code's language says it: an After Effects expression gets After Effects' way, Lua gets Lua's. |
+| **Panel: Functions** | Grouped by what they are for, not by name: Shake, Ease between, Read another layer, Shift in time, Random. Each has one line and a small moving picture. Pressing one inserts it with blanks to fill. The list is made from what the runtime answers, not written by hand. An After Effects function that does not run yet is listed too, marked "does not run yet" and last in its group: posted code uses it, and this list is the order in which to make them run. |
+| **Can return** | The names this property accepts (`x`, `y`, `size`, `opacity`, …), lit when the code returns them, and the sliders the code declares. Shown on the card. |
+| **Who reads this** | Not a panel. A mark on the property's row in the Inspector (3.10), and the chips beside the code (3.5). The stage draws nothing about relations. |
+| **Sending to an LLM** | Not a panel. A button that sends the code with the lists of 4.5 (3.8). |
 
 ```
-┌ Can read ───────┬ Code ────────────────────┬ Can return ───────┐
-│ search [pos   ] │ 1 const L = ...          │ x     ● returned  │
-│ ▾ Leader        │ 2 return ...             │ y     ○           │
-│    Position     │                          │ size  ○           │
-│    Opacity 100  │ ← Leader · Position      │ ── words ──       │
-│ ▸ Circle        │ ← itself, 0.1 s earlier  │ wiggle(freq,amp)  │
-│ ▸ Group (12)    │                          │ linear(t,a,b,…)   │
-│ ▸ Time, Sound   │                          │                   │
-├─────────────────┴ Result: curve / errors ──┴───────────────────┤
+┌ Program ─────────────────────┐ ┌ Can read ──────┐ ┌ Functions ────────────┐
+│ 1 const B = thisComp.layer(  │ │ search [     ] │ │ search [            ] │
+│   ┌──────────────────────┐   │ │ ▾ Leader       │ │ ▾ Shake               │
+│   │ "B"     960, 540     │   │ │    Position    │ │    wiggle(speed, amt) │
+│   │ "Leader" 200, 300    │   │ │    Opacity 100 │ │ ▾ Ease between        │
+│   └──────────────────────┘   │ │ ▸ Circle       │ │    ease(t, a, b, …)   │
+│ ← B · Position               │ │ ▸ Group (12)   │ │    linear(t, a, b, …) │
+├ Result: curve / errors ──────┤ │ ▸ Time, Sound  │ │ ▸ Read another layer  │
+│  ╭──╮___╭─                   │ │                │ │ ▸ (does not run yet)  │
+└──────────────────────────────┘ └────────────────┘ └───────────────────────┘
 ```
 
 ### 4.4 The list is a tree, not a flat list
@@ -271,8 +342,8 @@ From [AGENTS.md](../../AGENTS.md):
 
 1. **Node vocabulary:** TSL as the base with three nodes added, or Motolii's own?
 2. **Drawing:** may drawing read per-copy values from a GPU buffer, and is that part of the ideal?
-3. **Code and keyframes:** does code sit on top by default (the proposal) or replace?
-4. **Many copies:** a strip of copies against time, or one copy at a time?
+3. **Code and keyframes:** does code sit on top by default (the proposal) or replace? **Answered 2026-11-11:** on top. Cards act top to bottom and each gets what is above it as `value` (3.10); code that does not read `value` replaces it.
+4. **Many copies:** a strip of copies against time, or one copy at a time? For the layers of a group it is a table, one row per layer at the playhead (3.9); for the copies of one layer it is still open.
 5. **Blender Python:** drivers only, or `bpy` and the objects it reaches?
 6. **p5.js:** later, as written; is that acceptable?
 7. **CSS:** can Blitz sample `@keyframes` at any time, backwards included, and return values without drawing? **Answered 2026-11-11, tried:** yes, without a patch. Forward, `resolve(t)` gives each letter's opacity and transform as Stylo computes them (`calc(var(--char-index) * 100ms)` delays and `cubic-bezier` agree with each other to six places). Backward it does not: a finished animation stays finished, and a new document stamps its start at its first `resolve`. A seek is therefore a new document resolved at 0 and then at t, which gives the forward values exactly: 0.19 ms a seek, 0.0035 ms a frame played forward (blitz-dom and blitz-html 0.3.0-beta.4, release build, first build 1 min 3 s).
@@ -317,7 +388,11 @@ From [AGENTS.md](../../AGENTS.md):
    - **Not yet:** A spinner's frames are drawn for ten minutes at 60 a second, as a sketch's; a jump back replays the CSS from 0.
    - The page, the probe and the Chrome measurements are in `docs/internal/svg_anim/`, which git ignores.
 
+10. **A shelf file opened to be read:** how it looks while it is only being read, beside the person's own code (3.11).
+
 Decided in the conversation: there are no closed packs; code on a layer is told apart by what it returns, and a layer has one list (4.1); the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
+
+Decided in the later conversation of 2026-11-11: the five rules at the head of section 3; the Program tab holds only the code, and the lists are panels beside it (4.3); an LLM is given an intent with picked layers and turns timing and choices into sliders (3.8); code on a group is what a relation is (3.9); cards act in order (3.10); a card is saved to a shelf with its sliders and keyframes, its layers left empty, and is separate from then on (3.11).
 
 ## 10. Relation to earlier notes
 
