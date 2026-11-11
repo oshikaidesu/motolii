@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "community/sites/adapter_shadertoy.h"
+#include "community/subtitles/subtitles.h"
 #include "third_party/js/twigl/noise.h"
 
 namespace motolii {
@@ -113,7 +114,7 @@ std::string adapter_name(const std::string& form) {
       {"canvas", "Canvas"},
       {"twigl", "twigl"},
       {"bonzomatic", "Bonzomatic"},
-      {"subtitles", "ASS subtitles"}};
+      {"subtitles", "Subtitles"}};
   const auto at = names.find(form);
   return at == names.end() ? form : at->second;
 }
@@ -125,9 +126,9 @@ std::string adapter_form(const std::string& t) {
       member(R"(\b[xc]\.\w|\bwith\s*\(\s*x\s*\))"), tixy(R"(\b[tixy]\b)"),
       paper(
           R"(\bnew\s+(Path|Point|Group|Raster|PointText|Layer|Size)\b|\bview\.|\bfunction\s+onFrame\b|\bproject\.)");
-  // An .ass or .ssa file begins with this section (the ASS specification,
-  // "[Script Info]"; libass's ass.c reads it the same way).
-  if (t.find("[Script Info]") < 64) return "subtitles";
+  // Subtitles and lyrics, as FFmpeg's own probe tells them
+  // (community/subtitles).
+  if (!subtitles_format(t).empty()) return "subtitles";
   if (adapter_has(t, "\"ISFVSN\"") || adapter_has(t, "\"INPUTS\"") ||
       adapter_has(t, "\"CATEGORIES\"") || adapter_has(t, "function each"))
     return "";
@@ -282,14 +283,23 @@ std::string adapter_library_text(const std::string& form, std::string text) {
 std::string adapter_js(const std::string& src, const std::string& form) {
   const std::string body = "function __adapter_body(){" + src +
                            "\n;return typeof walk=='function'?walk:null}\n";
-  if (form == "subtitles")  // (libass draws the frame: community/subtitles. The
-                            // file itself is read in C++, not run as script)
-    return "function "
-           "setup(){createCanvas(__subtitles_size[0],__subtitles_size[1])}"
-           "function draw(){clear();const "
-           "f=__subtitles_frame((frameCount-1)*1000/60);if(f)drawingContext."
-           "putImageData({width:f.w,height:f.h,data:new "
-           "Uint8ClampedArray(f.data)},f.x,f.y)}\n";
+  // Subtitles: libass draws any moment on its own, so __paints asks it for
+  // frame f alone and keeps no frames (community/subtitles; p5_stand.h's
+  // __paints draws every frame up to f). Set in setup(), which runs after
+  // p5_stand.h is read. Drawn so that the canvas's long side
+  // is 1920, a new project's (app/lib/bridge/motolii.dart, entry/edit.cpp):
+  // pixelDensity() lets the stage place it at its size (canvas_sketch.cpp).
+  if (form == "subtitles")
+    return "function setup(){const "
+           "w=__subtitles_size[0],h=__subtitles_size[1];createCanvas(w,h);"
+           "pixelDensity(Math.max(1,1920/Math.max(w,h)));__paints=f=>{__"
+           "canvas.take();const "
+           "o=__subtitles_frame(f*1000/60,pixelDensity());if(o)drawingContext."
+           "putImageData({width:o.w,height:o.h,data:new "
+           "Uint8ClampedArray(o.data)},o.x,o.y);const "
+           "p=__canvas.take()[1],a=new "
+           "Float64Array(p.length+1);a[0]=1;a.set(p,1);return a}}function "
+           "draw(){}\n";
   if (form == "dweet")
     return "var "
            "c,x,S=Math.sin,C=Math.cos,T=Math.tan,R=(r,g,b,a)=>'rgba('+(r|0)+','"

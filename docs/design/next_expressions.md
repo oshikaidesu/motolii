@@ -110,7 +110,7 @@ A language is only a way of writing. The meaning is shared: read values, return 
 |---|---|---|
 | Values over time | After Effects expression, Cavalry JavaScript, GSAP and anime.js timelines, Framer Motion springs | QuickJS (already) |
 | Values over time, as CSS | `@keyframes`, `transition`, `cubic-bezier`, `steps()`; per letter with Splitting.js's `--char-index` and `--char-total` | a CSS engine without a browser (5.4) |
-| Subtitles and karaoke | ASS override tags (`\k`, `\move`, `\t`, `\fad`), Aegisub's karaoke templater (Lua), LRC and SRT timed lyrics | libass, for a pasted .ass or .ssa (reached 2026-11-11, `engine/community/subtitles/`); the templater, LRC and SRT open |
+| Subtitles and karaoke | ASS override tags (`\k`, `\move`, `\t`, `\fad`), Aegisub's karaoke templater (Lua), LRC and SRT timed lyrics | pasted .ass, .srt, .lrc, .vtt and the other text formats FFmpeg reads, drawn by libass (reached 2026-11-11, `engine/community/subtitles/`); word-timed LRC and the templater open |
 | Exported from After Effects | Lottie JSON, with expressions | ThorVG's Lottie loader, which already runs Lottie expressions in JerryScript (`src/loaders/lottie/tvgLottieExpressions.cpp`) |
 | Looks | CSS `text-shadow` stacked many times, `background-clip: text`, `filter`, `mix-blend-mode` (most CodePen text effects) | a CSS engine without a browser (5.4) |
 | Shapes | SVG paths, CSS `clip-path`, Paper.js | ThorVG's SVG loader (paths and a CSS subset; no `@keyframes`) |
@@ -131,7 +131,7 @@ No web page is embedded (principle 3). CSS and ASS are read as ways of writing v
 |---|---|---|---|
 | CSS at time t | Blitz (`blitz-dom`, MIT or Apache-2.0) on Servo's Stylo (MPL-2.0) | `BaseDocument::resolve(current_time_for_animations)` takes the time from the caller; Stylo samples `@keyframes` and transitions itself; `var()` and `calc()` per letter | seeking backwards (Stylo stamps a start on first resolve); whether `text-shadow` is computed though Blitz does not draw it; reading computed values without layout; the cost of a Rust build |
 | CSS in SVG | anim_svg (MIT) | SVG with `@keyframes` or SMIL turned into Lottie, which ThorVG plays | experimental; SVG only, not split HTML text |
-| ASS at time t | libass (ISC) | layout, `\t`, `\k` and `\move` done right | **Reached as a picture (2026-11-11):** a pasted .ass is recognised by `[Script Info]`, wrapped into a sketch, and libass's frame is put on its canvas (`engine/community/subtitles/`, test `subtitles_sketch_test.cpp`). Per-glyph values, for code or effects on each letter, still need a patch (`GlyphInfo` in `ass_render.h`) |
+| ASS at time t | libass (ISC) | layout, `\t`, `\k` and `\move` done right | **Reached as a picture (2026-11-11):** FFmpeg's own probe tells a pasted text is subtitles (none of 10,394 shelf and library scripts was taken for one), FFmpeg writes SRT, LRC, WebVTT and the rest as ASS, and the text is wrapped into a sketch whose `__paints` asks libass for that one moment, so a song minutes long keeps no frames (`engine/community/subtitles/`, test `subtitles_sketch_test.cpp`). Per-glyph values, for code or effects on each letter, still need a patch (`GlyphInfo` in `ass_render.h`) |
 | ASS as data | ass-compiler (MIT) | every tag typed, with times | the interpolation would be written by hand, which is translation; so libass is preferred |
 | Karaoke templates | aegisub-cli | runs Aegisub automation from the command line | licence not stated; last push 2020 |
 

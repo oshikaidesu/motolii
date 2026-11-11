@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <cmath>
 #include <cstdarg>
 #include <cstdio>
 
@@ -13,6 +14,7 @@ struct Subtitles::Own {
   ASS_Library* library = nullptr;
   ASS_Renderer* renderer = nullptr;
   ASS_Track* track = nullptr;
+  double scale = 1;
 };
 
 Subtitles::Subtitles(const std::string& text) : own(new Own) {
@@ -28,7 +30,9 @@ Subtitles::Subtitles(const std::string& text) : own(new Own) {
       },
       nullptr);
   own->renderer = ass_renderer_init(own->library);
-  std::string copy = text;  // (ass_read_memory takes a char*)
+  std::string copy = subtitles_as_ass(text);  // (and ass_read_memory takes a
+                                              // char*)
+  if (copy.empty()) return;
   own->track = ass_read_memory(own->library, copy.data(), copy.size(), nullptr);
   if (!own->track)
     return;  // (a file with no PlayRes is 384 x 288 by now:
@@ -51,9 +55,15 @@ bool Subtitles::read() const { return own->track != nullptr; }
 int Subtitles::width() const { return own->track ? own->track->PlayResX : 0; }
 int Subtitles::height() const { return own->track ? own->track->PlayResY : 0; }
 
-Subtitles::Frame Subtitles::at(long long ms) const {
+Subtitles::Frame Subtitles::at(long long ms, double scale) const {
   Frame f;
   if (!own->track) return f;
+  // Larger than the file is written for, as players draw at the video's size
+  // and keep the file's own as the storage size (vf_subtitles.c in FFmpeg).
+  if (scale != own->scale && scale > 0)
+    own->scale = scale,
+    ass_set_frame_size(own->renderer, (int)std::lround(width() * scale),
+                       (int)std::lround(height() * scale));
   ASS_Image* first = ass_render_frame(own->renderer, own->track, ms, nullptr);
   int x0 = INT_MAX, y0 = INT_MAX, x1 = INT_MIN, y1 = INT_MIN;
   for (ASS_Image* i = first; i; i = i->next)

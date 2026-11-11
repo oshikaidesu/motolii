@@ -183,7 +183,7 @@ Script::Script(const std::string& file, const std::string& p5,
       JS_SetPropertyStr(own->cx, g, "__subtitles_size", size);
       JS_SetPropertyStr(
           own->cx, g, "__subtitles_frame",
-          JS_NewCFunctionData(own->cx, subtitles_frame, 1, 0, 1, &them));
+          JS_NewCFunctionData(own->cx, subtitles_frame, 2, 0, 1, &them));
       JS_FreeValue(own->cx, them);
     }
     JS_FreeValue(own->cx, g);

@@ -83,9 +83,9 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `isf/` | ISF effects (`.fs`), translated to WGSL with glslang and Tint. Every shader entry ends here. |
 | `hydra/` | Hydra code, turned into GLSL by Hydra itself, then run as an ISF effect. |
 | `playcanvas/` | PlayCanvas Gaussian-splat effects (`splatfx.h`). |
-| `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing, and ASS subtitle files: recognised and handed to one of the above (`adapter.h`). |
+| `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing, and subtitle files (ASS, SRT, LRC, WebVTT): recognised and handed to one of the above (`adapter.h`). |
 | `aviutl/` | AviUtl2 scripts, Lua and HLSL (`aviutl.h`). |
-| `subtitles/` | ASS and SSA subtitles, karaoke and override tags included, drawn by libass (`subtitles.h`). The sites adapter wraps a pasted file into a sketch that puts each frame on its canvas. |
+| `subtitles/` | Subtitles and timed lyrics as they are written: FFmpeg tells them and writes SRT, LRC, WebVTT and the rest as ASS; libass draws ASS, karaoke and override tags included (`subtitles.h`). The sites adapter wraps a pasted file into a sketch that draws the moment asked. |
 | `absent_motion/` | AbsentMotion motion and text effects (`absent_motion.h`). |
 | `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. |
 

@@ -134,10 +134,11 @@ target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs
 target_link_libraries(motolii_community_quickjs PUBLIC qjs)
 target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
 
-# Adapter: ASS and SSA subtitles drawn by libass as they are written.
+# Adapter: subtitles and lyrics as they are written: FFmpeg reads them, libass draws them.
 add_library(motolii_community_subtitles STATIC
-  community/subtitles/subtitles.cpp)
-target_link_libraries(motolii_community_subtitles PUBLIC motolii_flags)
+  community/subtitles/subtitles.cpp
+  community/subtitles/subtitles_from_ffmpeg.cpp)
+target_link_libraries(motolii_community_subtitles PUBLIC motolii_flags PkgConfig::FFMPEG)
 target_include_directories(motolii_community_subtitles PRIVATE ${HOMEBREW}/opt/libass/include)
 target_link_directories(motolii_community_subtitles PUBLIC ${HOMEBREW}/opt/libass/lib)
 target_link_libraries(motolii_community_subtitles PUBLIC ass)
@@ -162,7 +163,7 @@ add_library(motolii_community_sites STATIC
   community/sites/adapter_net.cpp
   community/sites/adapter_shadertoy.cpp
   community/sites/adapter_shadertoy_json.cpp)
-target_link_libraries(motolii_community_sites PUBLIC motolii_flags motolii_base)
+target_link_libraries(motolii_community_sites PUBLIC motolii_flags motolii_base motolii_community_subtitles)
 target_link_libraries(motolii_community_sites PUBLIC PkgConfig::GSTREAMER)   # adapter_net.cpp fetches with GLib
 
 # Adapter: three code run as it is.

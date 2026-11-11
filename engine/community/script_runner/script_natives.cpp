@@ -148,9 +148,10 @@ JSValue image_read(
 JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
                         JSValueConst* data) {
   int64_t at = 0;
-  double ms = 0;
-  JS_ToInt64(cx, &at, data[0]), JS_ToFloat64(cx, &ms, a[0]);
-  const Subtitles::Frame f = ((const Subtitles*)at)->at((long long)ms);
+  double ms = 0, scale = 1;
+  JS_ToInt64(cx, &at, data[0]), JS_ToFloat64(cx, &ms, a[0]),
+      JS_ToFloat64(cx, &scale, a[1]);
+  const Subtitles::Frame f = ((const Subtitles*)at)->at((long long)ms, scale);
   if (f.rgba.empty()) return JS_NULL;
   JSValue o = JS_NewObject(cx);
   JS_SetPropertyStr(cx, o, "x", JS_NewInt32(cx, f.x)),

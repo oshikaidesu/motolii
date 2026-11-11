@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -73,8 +74,62 @@ TEST(PastedSubtitles,
   EXPECT_EQ(early.pink, 0);
   EXPECT_EQ(sung.orange, 0) << "by 2 s every syllable is sung";
   EXPECT_GT(sung.pink, 2000) << "\\t turned \\1c to pink by 2.6 s";
-  EXPECT_EQ(s.said("__to(200),'drawn'"), "drawn");
   fs::remove(file);
+}
+
+// A song minutes long: a frame late in it is drawn alone, as libass can draw
+// any moment, not after every frame before it (p5_stand.h's __paints keeps
+// them all, 10,800 frames for three minutes).
+TEST(PastedSubtitles, AFrameMinutesInIsDrawnAloneAndNothingIsKept) {
+  const fs::path file = fs::temp_directory_path() / "motolii_song.srt";
+  std::ofstream(file) << "1\n00:02:59,000 --> 00:03:01,000\nthe last line\n";
+  Script s(file.string(), P5());
+  ASSERT_TRUE(s.ok()) << s.trouble();
+  const std::vector<double> late = s.paints(3 * 60 * 60, -1, -1);
+  ASSERT_GT(late.size(), 1u);
+  EXPECT_EQ(late[1], 4.0) << "a bitmap, what putImageData lays";
+  EXPECT_EQ(s.said("__frames.length"), "0");
+  fs::remove(file);
+}
+
+// Timed lyrics and subtitles in other formats: FFmpeg reads them and writes
+// them as ASS (community/subtitles). Expected from the files by hand: nothing
+// before the first line at 0.5 s, then "Motolii sings", then from 2 s the
+// longer "every line on time", so its box is wider.
+constexpr const char* kLyrics =
+    "[ti:Demo]\n[00:00.50]Motolii sings\n[00:02.00]every line on "
+    "time\n[00:04.00]\n";
+constexpr const char* kSubRip =
+    "1\n00:00:00,500 --> 00:00:02,000\nMotolii sings\n\n2\n00:00:02,000 --> "
+    "00:00:04,000\n<i>every line</i> on time\n";
+
+// The width of the box drawn at `ms`, 0 when nothing is.
+int Wide(Script& s, int ms) {
+  return std::atoi(
+      s.said("(__subtitles_frame(" + std::to_string(ms) + ")||{w:0}).w")
+          .c_str());
+}
+
+void LinesComeOnTime(const char* text, const char* name) {
+  const fs::path file = fs::temp_directory_path() / name;
+  std::ofstream(file) << text;
+  Script s(file.string(), P5());
+  ASSERT_TRUE(s.ok()) << s.trouble();
+  ASSERT_TRUE(s.sketch());
+  EXPECT_EQ(Wide(s, 200), 0) << name;
+  const int first = Wide(s, 1000), second = Wide(s, 3000);
+  EXPECT_GT(first, 0) << name;
+  EXPECT_GT(second, first) << name;
+  EXPECT_EQ(Wide(s, 4500), 0) << name;
+  fs::remove(file);
+}
+
+TEST(PastedSubtitles, LrcLyricsComeLineByLineOnTime) {
+  LinesComeOnTime(kLyrics, "motolii_lyrics.lrc");
+}
+
+TEST(PastedSubtitles, SrtSubtitlesComeLineByLineOnTime) {
+  LinesComeOnTime(kSubRip, "motolii_subtitles.srt");
 }
 
 }  // namespace
