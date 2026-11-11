@@ -22,6 +22,25 @@ using filament::math::mat4f;
 
 namespace {
 
+// The outline's path as ThorVG's arrays, to hand to the path operators.
+struct OutlinePath {
+  const tvg::PathCommand* cmds = nullptr;
+  const tvg::Point* pts = nullptr;
+  uint32_t cmdsCnt = 0, ptsCnt = 0;
+};
+OutlinePath outline_path(tvg::Shape* o) {
+  OutlinePath r;
+  o->path(&r.cmds, &r.cmdsCnt, &r.pts, &r.ptsCnt);
+  return r;
+}
+
+// Replaces the outline's path by `c` and `p`.
+void outline_put(tvg::Shape* o, const std::vector<tvg::PathCommand>& c,
+                 const std::vector<tvg::Point>& p) {
+  o->reset();
+  o->appendPath(c.data(), (uint32_t)c.size(), p.data(), (uint32_t)p.size());
+}
+
 // Bytes held by all cached cuts, and the limit of 256 MiB.
 std::atomic<size_t> cuts_held{0};
 constexpr size_t cuts_most = 256ull << 20;
@@ -143,25 +162,17 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
       // Roughen like Illustrator's Roughen and After Effects' Roughen Edges,
       // using Skia's own discrete path effect. bend[6] is how far points move
       // out and bend[7] how far apart they are, both in shares of the height.
-      const tvg::PathCommand* cmds;
-      const tvg::Point* pts;
-      uint32_t cmdsCnt = 0, ptsCnt = 0;
-      d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+      const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       if (sk_rough(cmds, cmdsCnt, pts, std::max(bend[7], 0.005f) * high,
                    std::min(bend[6], 0.5f) * high, 0, c, p))
-        d->outline->reset(),
-            d->outline->appendPath(c.data(), (uint32_t)c.size(), p.data(),
-                                   (uint32_t)p.size());
+        outline_put(d->outline, c, p);
     }
     if (morph.much > 0.f) {
       // Morph toward the other path by morph.much, like Cavalry's Morph. Both
       // paths are walked at even steps and matched point to point.
-      const tvg::PathCommand* cmds;
-      const tvg::Point* pts;
-      uint32_t cmdsCnt = 0, ptsCnt = 0;
-      d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+      const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       if (morph.how > 1) {
@@ -175,45 +186,34 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
                        (float)k / (float)(morph.how - 1), c, p))
             all.insert(all.end(), c.begin(), c.end()),
                 at.insert(at.end(), p.begin(), p.end());
-        if (!all.empty())
-          d->outline->reset(),
-              d->outline->appendPath(all.data(), (uint32_t)all.size(),
-                                     at.data(), (uint32_t)at.size());
+        if (!all.empty()) outline_put(d->outline, all, at);
       } else if (sk_morph(cmds, cmdsCnt, pts, morph.by.data(),
                           (uint32_t)morph.by.size(), morph.at.data(),
                           std::min(morph.much, 1.f), c, p))
-        d->outline->reset(),
-            d->outline->appendPath(c.data(), (uint32_t)c.size(), p.data(),
-                                   (uint32_t)p.size());
+        outline_put(d->outline, c, p);
     }
     if (join.how >= 0) {
-      const tvg::PathCommand* cmds;
-      const tvg::Point* pts;
-      uint32_t cmdsCnt = 0, ptsCnt = 0;
-      d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+      const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       sk_op(join.how, cmds, cmdsCnt, pts, join.by.data(),
             (uint32_t)join.by.size(), join.at.data(), c, p);
-      d->outline->reset();
-      if (!c.empty())
-        d->outline->appendPath(c.data(), (uint32_t)c.size(), p.data(),
-                               (uint32_t)p.size());
+      if (c.empty())
+        d->outline->reset();
+      else
+        outline_put(d->outline, c, p);
     }
     if (bend[9] > 0.f) {
       // Voxelize into squares of side bend[9] times the height, last of all,
       // like Cavalry's Voxelize.
-      const tvg::PathCommand* cmds;
-      const tvg::Point* pts;
-      uint32_t cmdsCnt = 0, ptsCnt = 0;
-      d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+      const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       sk_voxel(cmds, cmdsCnt, pts, bend[9] * high, c, p);
-      d->outline->reset();
-      if (!c.empty())
-        d->outline->appendPath(c.data(), (uint32_t)c.size(), p.data(),
-                               (uint32_t)p.size());
+      if (c.empty())
+        d->outline->reset();
+      else
+        outline_put(d->outline, c, p);
     }
   }
   const float from = std::clamp(trim.y, 0.f, 1.f) + trim.z,
@@ -223,10 +223,7 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
   // Remember this cut while there is room, dropping the oldest cuts of this
   // shape first.
   Canvas2D::Cut c;
-  const tvg::PathCommand* cmds;
-  const tvg::Point* pts;
-  uint32_t cmdsCnt = 0, ptsCnt = 0;
-  d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+  const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
   const Mesh& m = *d->sheet;
   c.bytes = cmdsCnt * sizeof *cmds + ptsCnt * sizeof *pts +
             m.pos.size() * (sizeof(float3) + sizeof(float2)) +
