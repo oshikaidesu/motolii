@@ -187,6 +187,8 @@ No web page is embedded (principle 3). CSS and ASS are read as ways of writing v
 
 If neither CSS nor ASS can be had as values from an outside engine, the cut is wrong and is to be rethought before anything is written by hand.
 
+**Half-transparent letters stay lighter than in Chrome, on purpose (decided 2026-11-11).** Motolii blends layers in linear light (Filament), and a browser blends sRGB values. So opacity 0.5 of black over white shows as #BB in Motolii and #80 in Chrome. This was measured on the CSS stills; place, turn and size agree within 1.4 px. No opacity correction can close the gap. To match Chrome, black over white needs 0.78, but white over black needs 0.22: the needed value depends on both colours. Matching it would mean blending those layers in sRGB, so linear blending would be given up. Linear is kept for every layer, and fades are left as they are. Blender and Nuke make the same choice. At 0 and 1 the two agree.
+
 ## 6. Speed
 
 ### 6.1 When code is read and when it runs
