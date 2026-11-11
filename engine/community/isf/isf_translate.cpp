@@ -323,42 +323,8 @@ std::string isf_wgsl(const std::string& text, const std::string& name,
                     ", made WGSL in Motolii (glslang, Tint)\n";
   // Shelf: uses the shelf's own category names where the ISF categories say the
   // same thing.
-  if (head.HasMember("CATEGORIES") && head["CATEGORIES"].IsArray() &&
-      !head["CATEGORIES"].Empty() && head["CATEGORIES"][0].IsString()) {
-    std::string all, shelf = head["CATEGORIES"][0].GetString();
-    for (const auto& c : head["CATEGORIES"].GetArray())
-      if (c.IsString()) all += std::string(c.GetString()) + " ";
-    for (const char* own :
-         {"Glitch", "Distort", "Color", "Film", "Light", "Time", "Stylize"})
-      if (all.find(own) != std::string::npos) {
-        shelf = own;
-        break;
-      }
-    // Vidvox names such as "Geometry Adjustment" and "Halftone Effect" are
-    // shortened to "Geometry" and "Halftone", like the other names. The shelf
-    // mapping above already turns "Distortion Effect" into Distort. Tabs are
-    // removed so that each kind is one chip.
-    shelf.erase(0, shelf.find_first_not_of(" \t")),
-        shelf.erase(shelf.find_last_not_of(" \t") + 1);
-    for (const std::string tail : {" Effect", " Adjustment"})
-      if (shelf.size() > tail.size() &&
-          shelf.compare(shelf.size() - tail.size(), tail.size(), tail) == 0)
-        shelf.resize(shelf.size() - tail.size());
-    // A transition (ISF_Spec: it has startImage, endImage and progress) goes on
-    // one shelf whatever its wipe or dissolve style, as After Effects keeps its
-    // transitions under Transition. Once applied, it runs from the playhead
-    // (doc_fx_file).
-    if (std::find(imageNames.begin(), imageNames.end(), "startImage") !=
-            imageNames.end() &&
-        std::find(imageNames.begin(), imageNames.end(), "endImage") !=
-            imageNames.end() &&
-        std::any_of(inputs.GetArray().begin(), inputs.GetArray().end(),
-                    [&](const rapidjson::Value& i) {
-                      return isf_str(i, "NAME") == "progress";
-                    }))
-      shelf = "Transition";
-    top += "// --label:" + shelf + "\n";
-  }
+  if (const auto shelf = isf_shelf(parsed))
+    top += "// --label:" + *shelf + "\n";
   // The description is kept so that the shelf can find the effect by it.
   if (std::string about = isf_str(head, "DESCRIPTION"); !about.empty()) {
     std::replace(about.begin(), about.end(), '\n', ' ');
