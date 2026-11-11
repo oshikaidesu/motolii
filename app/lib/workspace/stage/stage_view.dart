@@ -30,7 +30,7 @@ import 'package:motolii/workspace/stage/stage_drag.dart';
 import 'package:motolii/workspace/stage/stage_navigator.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
-import 'package:motolii/workspace/stage/stage_view_relations.dart';
+import 'package:motolii/workspace/stage/pick_marks.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/stage/ruler_painter.dart';
 import 'package:motolii/workspace/stage/view_painter.dart';
@@ -455,8 +455,7 @@ class _StageViewState extends State<StageView>
                       painter: RulerPainter(v, widget.cursor, scene),
                     ),
                   ),
-                  // Marks for the lasso, the layers picked together and the picked relation: its shape, handles and what it moves.
-                  RelationMarks(scene: scene, v: v, lasso: _draw.lasso),
+                  PickMarks(scene: scene, v: v, lasso: _draw.lasso),
                   // The brush path so far, drawn thin; once released the stroke belongs to the engine.
                   if (_draw.brush case final way?)
                     IgnorePointer(child: CustomPaint(painter: BrushWay(way))),

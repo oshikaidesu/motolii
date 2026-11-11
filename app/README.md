@@ -74,7 +74,7 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/workspace/dock/` | The shelf panels on the left: `shelf_pane.dart` (`ShelfPane`: header, search field, body), one folder per shelf (`create/`, `effects/`, `media/`, `fonts/`, `colors/`, `program/`), `map/` (a shelf shown as a map of similar items) and `common/` (widgets the shelves share). |
 | `lib/workspace/stage/` | The preview: the engine's picture and the drags on top of it. |
 | `lib/workspace/timeline/` | The timeline. |
-| `lib/workspace/tool_panel/` | The tool panel under the Inspector (Ease, Align, Blend, Depth, Relations). |
+| `lib/workspace/tool_panel/` | The tool panel under the Inspector (Ease, Align, Blend, Depth). |
 | `lib/workspace/top_bar/` | The bar at the top: size, zoom readout, engine timings. |
 | `lib/workspace/window/` | The window frame: `panes.dart` (pane layout), `home.dart` (project chooser), `zoom.dart`. |
 | `test/` | Unit and widget tests, laid out like `lib/` (`inspector/`, `skin/`, `widgets/`, `workspace/`), plus `skin_folders_test.dart` and `accessibility_guidelines_test.dart`. They pin what the code returns now, so a change of value fails them. |

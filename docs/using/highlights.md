@@ -34,7 +34,7 @@ Where it stops: scripts that need a Windows DLL do not run, and not every other 
 
 ## Relations: one script moves a whole group of layers
 
-Select several layers and apply a relation. A relation is a short script that sees all the selected layers at once and moves them together. Around, Row, Follow, Push and Move in are files on the shelf like the nine others. A script can also call the `d3-force` physics-style forces (collision, attraction) and read what it did on the last frame.
+Pick a group, or select several layers, and press a relation's tile under Expression in the Create tab. A relation is a short script that sees all the selected layers at once and moves them together. Around, Row, Follow, Push and Move in are files on the shelf like the nine others. A script can also call the `d3-force` physics-style forces (collision, attraction) and read what it did on the last frame.
 
 Where it stops: this is scripting, not node wiring. If you want to connect two properties by dragging, Motolii does not have that.
 

@@ -11,9 +11,10 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 // ---- The Expression group: every JS file that goes on a layer and moves its values (docs/design/create_and_program_shelves.md).
-// It gathers three kinds in one place:
+// It gathers four kinds in one place:
 // - scripts with each(): the Repeater, After Effects expressions, Maze, Sunflower and others
 // - motions: Cavalry's Animators, in expressions/
+// - relations, in relations/: on a group or on layers picked together they move those layers as one
 // - the user's own, added with Add to shelf (shelf_add.dart)
 // Each is added to the picked layer as a card of its own, as many times as wanted (fx_file, empty_effect.dart putEffectFile).
 // With nothing picked, a script creates its own layer as its head says, and the others go on a new layer.
@@ -70,6 +71,15 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
         'A motion, on the picked thing, a card of its own (nothing picked: on a new board)',
         file: file,
       ),
+  for (final (name, file) in ws.inside?.relations ?? const <(String, String)>[])
+    CreateTile(
+      name,
+      AppGlyphs.copies,
+      InspectorSkin.tonePlace,
+      '',
+      'On a group, or on layers picked together, moves them as one (one picked layer: its copies or letters)',
+      file: file,
+    ),
   for (final (name, file) in shelfExpressions())
     CreateTile(
       name,

@@ -131,7 +131,7 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
 6. **Ease**: how a value moves between keyframes; the column on the right holds ready-made curves.
-7. **[Bottom-right tabs](screen_tour.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
+7. **[Bottom-right tabs](screen_tour.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools).
 
 Each tab, with pictures and how to use it: [The tabs](screen_tour.md).
 

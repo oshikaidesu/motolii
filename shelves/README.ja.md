@@ -202,7 +202,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 - `effects/`：Effects タブにタイルが出ます。レイヤーを選び、タイルを押して **Add**。
 - `create/`：Create タブにタイルが出ます。押して **Create**。
 - `expressions/`：Create タブの Expression。レイヤーを選んでタイルを押し、**Put on**（そのレイヤーに 1 枚のカードとして付き、つまみはインスペクターに出ます）。何も選ばなければ、新しい物を作ります。
-- `relations/`：右下の Relations タブ。レイヤーを 2 つ以上選んで、関係を押します。
+- `relations/`：Create タブの Expression に、エクスプレッションと並んで出ます。グループを選ぶか、レイヤーを 2 つ以上選んで、タイルを押すと、まとめて動きます。1 つのレイヤーなら、そのコピーや文字が動きます。
 
 
 ## フォルダの一覧
@@ -213,7 +213,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 | `aviutl_scripts/` | Effects タブのタイル。パッケージ名がチップになる | AviUtl2 のパッケージ（`.anm2`・`.obj2`・`@` ファイル）をフォルダごと、手を入れずに | スクリプトの名前と `--label:`。パッケージ名はフォルダの `__` の後ろ |
 | `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックは Program タブに出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
 | `expressions/` | Create タブの Expression（文字やレイヤーの出入りの動き、コピーを順に揺らす波。Cavalry の Animators と oscillator） | `.js`（`function each`） | 1 行目の `// 名前:` |
-| `relations/` | プレビューの上と Relations タブのチップ（たくさんのレイヤーを一度に動かす） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
+| `relations/` | Create タブの Expression に、エクスプレッションと並んで出る（たくさんのレイヤーを一度に動かす。グループか、いっしょに選んだレイヤーに付ける） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
 | `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
 | `solids/` | レイヤーの効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、プロジェクトが名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
 | `ease/` | 下の Ease のタイル（キーとキーの間の動き方） | `.way`（式 1 行） | 1 行目の `// 名前:`、無ければファイル名 |

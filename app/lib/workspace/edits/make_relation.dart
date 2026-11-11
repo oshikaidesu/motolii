@@ -10,19 +10,12 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
-import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the engine calls a relation's file: every relation is written as a file in relations/*.js.
 const relationKinds = ['relate'];
 
-/// The relations the user can choose: each file in relations/*.js.
-/// The files come from the library and from the user, so a file added there shows up here.
-List<String> relationChoices(WorkspaceController ws) => [
-  for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2,
-];
-
-/// The label of a relation file in the menu.
+/// The label of a relation file, as its row and card are named.
 String relationLabel(String kind) {
   final name = kind.endsWith('Group.js')
       ? 'Move in'
@@ -60,20 +53,6 @@ List<String> expressionRow(WorkspaceController ws) {
       if (m.parentOf(t) == picked) '$t',
   ];
   return inside.length >= 2 ? inside : const [];
-}
-
-/// Puts relation [kind] where it can go.
-///
-/// Layers selected together, or the layers of the picked group, get a relation. One picked layer gets [kind] as an
-/// expression: its copies, letters or words are the things the relation lays, as layers are.
-void putRelation(WorkspaceController ws, String kind) {
-  if (relatableLayers(ws).length >= 2) return makeRelation(ws, kind);
-  if (expressionRow(ws) case final row when row.isNotEmpty) {
-    return makeRelation(ws, kind, of: row);
-  }
-  if (int.tryParse(ws.selected ?? '') != null) {
-    putEffectFile(ws, kind, expression: true);
-  }
 }
 
 /// Makes a relation of [kind] from the layers selected together, or from [of] when given.
@@ -167,18 +146,6 @@ List<(String, String)> linkTargets(WorkspaceController ws, String id) {
   ];
 }
 
-/// Makes the layer [id] the leader of the selected relation without moving anything. The old leader stays among the relation's layers.
-void makeRelationLeader(WorkspaceController ws, String id) {
-  final m = ws.inside,
-      by = int.tryParse(ws.selected ?? ''),
-      t = int.tryParse(id);
-  if (m == null || by == null || t == null) return;
-  ws.after(
-    m.later('lead', layer: by, number: t.toDouble()),
-    (_, _) => ws.reread(),
-  );
-}
-
 /// Adds [id] to the layers selected together (Shift or Cmd with a click). A layer that was selected alone joins it.
 void selectAlso(WorkspaceController ws, String id) {
   if (ws.many.contains(id)) {
@@ -208,29 +175,6 @@ void selectRange(WorkspaceController ws, String id) {
     a <= b ? ids.sublist(a, b + 1) : ids.sublist(b, a + 1).reversed,
     inOrder: true,
   );
-}
-
-/// Takes the layer [id] out of the selected relation, leaving it where it shows now. The other layers stay in.
-void freeFromRelation(WorkspaceController ws, String id) {
-  final m = ws.inside,
-      by = int.tryParse(ws.selected ?? ''),
-      t = int.tryParse(id);
-  if (m == null || by == null || t == null) return;
-  ws.after(
-    m.later('free', layer: t, number: by.toDouble()),
-    (done, _) => done ? ws.reread() : null,
-  );
-}
-
-/// Releases the selected relation: each of its layers stays where it shows now and the relation is deleted.
-void releaseRelation(WorkspaceController ws) {
-  final m = ws.inside, by = int.tryParse(ws.selected ?? '');
-  if (m == null || by == null) return;
-  ws.after(m.later('release', layer: by), (done, _) {
-    if (!done) return;
-    ws.reread();
-    ws.select(null);
-  });
 }
 
 /// The relation that lies under relation [r] for layer [t]: the one [t] is under in it, or 0 when there is none.
@@ -281,18 +225,4 @@ List<String> relationsOfSelected(WorkspaceController ws) {
     r = _below(m, r, t);
   }
   return all;
-}
-
-/// Turns the selected relation on or off by setting its strength to 1 or 0. When it is off, what lies under it shows,
-/// like the switch on an expression in After Effects. No layer is released.
-void toggleRelation(WorkspaceController ws) {
-  final m = ws.inside, by = int.tryParse(ws.selected ?? '');
-  if (m == null || by == null) return;
-  final on =
-      (m.value(by, 'visible', 0) ?? 1) >
-      .5; // Its visibility, as for any row, which holds the strength it had.
-  ws.after(
-    m.later('set', layer: by, name: 'visible', number: on ? 0 : 1),
-    (_, _) => ws.reread(),
-  );
 }

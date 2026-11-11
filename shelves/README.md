@@ -204,7 +204,7 @@ Save it and it shows at once (no restart). Save it again and the picture follows
 - `effects/`: a tile in the Effects tab. Select a layer, press the tile, press **Add**.
 - `create/`: a tile in the Create tab. Press it, then **Create**.
 - `expressions/`: under Expression in the Create tab. Select a layer, press the tile, then **Put on** (it goes on that layer as a card of its own; its sliders show in the Inspector). With nothing selected it makes a new thing.
-- `relations/`: the Relations tab at the lower right. Select two or more layers and press the relation.
+- `relations/`: under Expression in the Create tab, with the expressions. Pick a group, or select two or more layers, and press the tile: they move as one. On one picked layer it moves that layer's copies or letters.
 
 
 ## The folders
@@ -215,7 +215,7 @@ Save it and it shows at once (no restart). Save it again and the picture follows
 | `aviutl_scripts/` | Effects tab tiles; the package name is a chip | An AviUtl2 package (`.anm2`, `.obj2`, `@` files), the folder as its author ships it | The script's name and `--label:`; the package name is what follows `__` in the folder name |
 | `create/` | Create tab, Recipes (a picture in one call). One with `function each` shows under Expression; closed packs (`--label:Cavalry`…) in the Program tab | `.js` | The first line's `// Name: what it makes`; a p5 sketch with no head: its file name |
 | `expressions/` | Create tab, Expression (letters or layers coming in and going out, a wave through a layer's copies; Cavalry's Animators and its oscillator) | `.js` (`function each`) | The first line's `// Name:` |
-| `relations/` | Chips on the preview and in the Relations tab (many layers moved at once) | `.js` | The first line's `// Name:`, else the file name |
+| `relations/` | Create tab, Expression, with the expressions (many layers moved at once: put on a group, or on layers selected together) | `.js` | The first line's `// Name:`, else the file name |
 | `looks/` | Effects tab, look tiles (a layer's values, effects and keys saved under a name) | `.motolii` + its tile picture `.png` | The file name as it is (spaces and capitals kept) |
 | `solids/` | A 3D shape on a layer's effect card (Alight Motion's Box, Torus…). No tile yet; it shows when a project names it | `.js` (`export function solid` returning a three.js BufferGeometry) | The first line's `// Name:` |
 | `ease/` | Ease tiles, below (how a stretch between keys moves) | `.way` (one expression) | The first line's `// Name:`, else the file name |

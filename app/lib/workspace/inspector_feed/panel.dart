@@ -21,10 +21,9 @@ import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
+import 'package:motolii/workspace/inspector_feed/relation_stack.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
-import 'package:motolii/workspace/stage/stage_view_relations.dart'
-    show RelationStack;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';

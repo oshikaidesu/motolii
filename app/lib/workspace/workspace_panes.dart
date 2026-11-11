@@ -14,7 +14,6 @@ import 'package:motolii/workspace/tool_panel/align.dart';
 import 'package:motolii/workspace/tool_panel/blend.dart';
 import 'package:motolii/workspace/tool_panel/depth.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
-import 'package:motolii/workspace/tool_panel/relations.dart';
 
 final workspacePanes = [
   Pane(
@@ -118,13 +117,6 @@ final workspacePanes = [
     'Tool Panel',
     AppGlyphs.toolPanel,
     () => const ToolPanel(),
-    at: PaneStrip.tools,
-    minSize: WindowTokens.lower,
-  ),
-  Pane(
-    'Relations',
-    AppGlyphs.toolPanel,
-    () => const RelationsTool(),
     at: PaneStrip.tools,
     minSize: WindowTokens.lower,
   ),
