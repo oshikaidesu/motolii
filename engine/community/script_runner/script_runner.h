@@ -103,13 +103,23 @@ class Script {
   //   fromWorld(id, point, t) gives where a point of the stage is in the
   //     layer's own pixels at second t, to be handed to sampleImage.
   // While none is set the first gives [0, 0, 0, 0] and the second [NaN, NaN].
-  using ImageSampler =
-      std::function<std::array<double, 4>(int layer, double x, double y,
-                                          double rx, double ry,
-                                          bool post_effect, double t)>;
+  using ImageSampler = std::function<std::array<double, 4>(
+      int layer, double x, double y, double rx, double ry, bool post_effect,
+      double t)>;
   using PointMapper = std::function<std::array<double, 2>(
       int layer, double x, double y, double z, double t)>;
   void reads_pictures(ImageSampler sample, PointMapper point);
+  // Lets the script ask which keyframes a layer has and which layer has a
+  // name:
+  //   layerKeys(id, name) gives the seconds of the keyframes layer `id` has
+  //     for `name` (layerValue's names), in order; [] for none.
+  //   layerNamed(name) gives the number of the layer called `name`, 0 for
+  //     none.
+  // While none is set they give [] and 0.
+  using KeyReader =
+      std::function<std::vector<double>(int layer, const std::string& name)>;
+  using LayerFinder = std::function<int(const std::string& name)>;
+  void reads_keys(KeyReader keys, LayerFinder named);
   // Lets the script read the sound of another layer, under the names and with
   // the numbers of the Web's AnalyserNode (W3C Web Audio API, section 1.8,
   // www.w3.org/TR/webaudio-1.1/#AnalyserNode), which p5.sound, three.js and

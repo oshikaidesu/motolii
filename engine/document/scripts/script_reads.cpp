@@ -109,6 +109,21 @@ void doc_script_reads(Doc& d, Script& run) {
     }
     return std::nan("");
   });
+  run.reads_keys(
+      [&d](int layer, const std::string& name) -> std::vector<double> {
+        for (const char* known : doc_relate_names) {
+          if (name != known) continue;
+          std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+          return doc_keys_of(d, layer, known).at;
+        }
+        return {};
+      },
+      [&d](const std::string& name) {
+        std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+        for (const int layer : doc_layers(d))
+          if (doc_word(d, layer, "name") == name) return layer;
+        return 0;
+      });
   run.reads_pictures(
       [&d](int layer, double x, double y, double rx, double ry, bool,
            double t) -> std::array<double, 4> {
@@ -129,8 +144,8 @@ void doc_script_reads(Doc& d, Script& run) {
           return {std::nan(""), std::nan("")};
         // The layer's own box runs from -half to +half, y up. Its picture's
         // pixels run from the upper left, [0, 0] the centre of the first.
-        const math::double4 in = inverse(doc_place(d, layer, t, 1)) *
-                                 math::double4{x, y, z, 1};
+        const math::double4 in =
+            inverse(doc_place(d, layer, t, 1)) * math::double4{x, y, z, 1};
         return {(in.x / (double)half.x + 1.0) * 0.5 * picture->w - 0.5,
                 (1.0 - in.y / (double)half.y) * 0.5 * picture->h - 0.5};
       });

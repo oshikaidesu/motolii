@@ -253,6 +253,9 @@ void Script::reads_pictures(ImageSampler sample, PointMapper point) {
   own->project.sample = std::move(sample),
   own->project.point = std::move(point);
 }
+void Script::reads_keys(KeyReader keys, LayerFinder named) {
+  own->project.keys = std::move(keys), own->project.named = std::move(named);
+}
 void Script::reads_sound(SoundReader sound) {
   own->project.sound = std::move(sound);
 }

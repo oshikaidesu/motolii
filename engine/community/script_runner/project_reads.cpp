@@ -31,6 +31,34 @@ JSValue layer_value(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
   return JS_NewFloat64(cx, v);
 }
 
+JSValue layer_keys(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
+                   JSValueConst* data) {
+  int64_t at = 0;
+  JS_ToInt64(cx, &at, data[0]);
+  const auto* reads = (const Script::KeyReader*)at;
+  double layer = 0;
+  const char* name = argc >= 2 ? JS_ToCString(cx, a[1]) : nullptr;
+  if (argc >= 2) JS_ToFloat64(cx, &layer, a[0]);
+  const std::vector<double> keys =
+      name && *reads ? (*reads)((int)layer, name) : std::vector<double>{};
+  if (name) JS_FreeCString(cx, name);
+  JSValue out = JS_NewArray(cx);
+  for (size_t i = 0; i < keys.size(); ++i)
+    JS_SetPropertyUint32(cx, out, (uint32_t)i, JS_NewFloat64(cx, keys[i]));
+  return out;
+}
+
+JSValue layer_named(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
+                    JSValueConst* data) {
+  int64_t at = 0;
+  JS_ToInt64(cx, &at, data[0]);
+  const auto* finds = (const Script::LayerFinder*)at;
+  const char* name = argc >= 1 ? JS_ToCString(cx, a[0]) : nullptr;
+  const int layer = name && *finds ? (*finds)(name) : 0;
+  if (name) JS_FreeCString(cx, name);
+  return JS_NewInt32(cx, layer);
+}
+
 // Reads up to `n` numbers of a JavaScript array into `to`; a single number is
 // taken for each of them. What is not a number leaves `to` as it came.
 void numbers_of(JSContext* cx, JSValueConst from, double* to, int n) {
@@ -79,16 +107,17 @@ JSValue from_world(JSContext* cx, JSValueConst, int argc, JSValueConst* a, int,
   if (argc >= 1) JS_ToFloat64(cx, &layer, a[0]);
   if (argc >= 2) numbers_of(cx, a[1], p, 3);
   if (argc >= 3) JS_ToFloat64(cx, &t, a[2]);
-  return array_of(cx, *point ? (*point)((int)layer, p[0], p[1], p[2], t)
-                             : std::array<double, 2>{std::nan(""),
-                                                     std::nan("")});
+  return array_of(cx, *point
+                          ? (*point)((int)layer, p[0], p[1], p[2], t)
+                          : std::array<double, 2>{std::nan(""), std::nan("")});
 }
 
 // getByteFrequencyData (`what` 0), getFloatTimeDomainData (1) and
 // getFloatFrequencyData (2): fills the typed array a[1] as the Web's
 // AnalyserNode does. An array shorter than what there is takes its first part;
-// a longer one keeps the rest of what it held (W3C Web Audio API, section 1.8.4). What
-// is not the kind of array the method takes is a TypeError, as on the Web.
+// a longer one keeps the rest of what it held (W3C Web Audio API,
+// section 1.8.4). What is not the kind of array the method takes is a
+// TypeError, as on the Web.
 JSValue sound_data(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
                    int what, JSValueConst* data) {
   int64_t at = 0;
@@ -98,16 +127,16 @@ JSValue sound_data(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
   if (argc >= 1) JS_ToFloat64(cx, &layer, a[0]);
   if (argc >= 3) JS_ToFloat64(cx, &t, a[2]);
   size_t from = 0, bytes = 0, each = 0, all = 0;
-  JSValue held = argc >= 2 ? JS_GetTypedArrayBuffer(cx, a[1], &from, &bytes,
-                                                    &each)
-                           : JS_ThrowTypeError(cx, "an array is needed");
+  JSValue held = argc >= 2
+                     ? JS_GetTypedArrayBuffer(cx, a[1], &from, &bytes, &each)
+                     : JS_ThrowTypeError(cx, "an array is needed");
   if (JS_IsException(held)) return held;
   uint8_t* to = JS_GetArrayBuffer(cx, &all, held);
   JS_FreeValue(cx, held);
   const int kind = JS_GetTypedArrayType(a[1]);
   if (!to || kind != (what ? JS_TYPED_ARRAY_FLOAT32 : JS_TYPED_ARRAY_UINT8))
-    return JS_ThrowTypeError(cx, what ? "a Float32Array is needed"
-                                      : "a Uint8Array is needed");
+    return JS_ThrowTypeError(
+        cx, what ? "a Float32Array is needed" : "a Uint8Array is needed");
   const std::vector<float> v =
       *sound ? (*sound)((int)layer, what != 1, t) : std::vector<float>();
   const size_t n = std::min(bytes / each, v.size());
@@ -148,6 +177,8 @@ bool project_reads_give(JSContext* cx, const std::string& src,
     named = named || src.find(name) != std::string::npos;
   };
   give("layerValue", layer_value, 3, &answers->value);
+  give("layerKeys", layer_keys, 2, &answers->keys);
+  give("layerNamed", layer_named, 1, &answers->named);
   give("sampleImage", sample_image, 5, &answers->sample);
   give("fromWorld", from_world, 3, &answers->point);
   give("getByteFrequencyData", sound_data, 3, &answers->sound, 0);

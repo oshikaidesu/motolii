@@ -173,7 +173,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 
 ### その他
 
-- `expressions/` の After Effects のエクスプレッション：ファイルは式だけ。コピーや文字 1 つずつに走る（`index` と `textIndex` は 1 から数える）。そのコピー自身の値を After Effects の数え方で受け取る：位置はプロジェクトの画素で左上から、y は下向き。回転は度で時計回り。スケールと不透明度は百分率。`effect("ラベル")("Slider")` は、頭の `--track@` のうち名前がそのラベル（小文字）の物を読む。自分のレイヤーの `position`、`rotation`、`scale`、`opacity`、`transform` は裸の名前で書ける。`valueAtTime(t)` は、掛けている値の別の秒を読む。まだ無い物：名前で他のレイヤーを読む、`loopOut`。例：`wiggle(2, 50)` とだけ書いたファイル。
+- `expressions/` の After Effects のエクスプレッション：ファイルは式だけ。`index` と `textIndex` はコピーや文字を 1 から数える。そのコピー自身の値を After Effects の数え方で受け取る：位置はプロジェクトの画素で左上から、y は下向き。回転は度で時計回り。スケールと不透明度は百分率。`effect("ラベル")("Slider")` は、頭の `--track@` のうち名前がそのラベル（小文字）の物を読む。自分のレイヤーの `position`、`rotation`、`scale`、`opacity`、`transform` は裸の名前で書ける。`valueAtTime(t)` は、掛けている値の別の秒を読む。`loopOut()` と `loopIn()` は、その値のキーフレームをもう一度たどる（`cycle`、`pingpong`、`offset`、`continue`）。`thisComp.layer("名前")` はその名前のレイヤー（`transform`、`sampleImage`、`fromWorld`）。何も数えない式（`index`、`textIndex`、`textTotal` を書かない式）は After Effects と同じくレイヤーを丸ごと動かし、数える式は文字やコピーを 1 つずつ動かす。例：`wiggle(2, 50)` とだけ書いたファイル。
 - `solids/`：`export function solid(k)` が three.js の BufferGeometry を返します。`k` はつまみと、`k.w`・`k.h`（物の幅と高さ）です。見本：`solids/Box.js`。
 - `effects/` の `.wgsl`：頭の `--track@` でつまみを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で絵を返します。絵は `texture_2d<f32>`、つまみは 1 つの `var<uniform>` の構造体です。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があれば、ステージが入れます。見本：`effects/glitch/rgbshift.wgsl`。
 - `effects/` の `.fs`：ISF（Vidvox の形式）をそのまま置きます。

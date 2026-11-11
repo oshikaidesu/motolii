@@ -48,7 +48,11 @@
 // Bare names of the layer (position, rotation, scale, opacity, transform) and
 // valueAtTime are read from c.layer and c.property when the caller gives them.
 //
-// Not supported: loopOut, the
+// loopOut and loopIn go by the keyframe seconds the caller gives a layer (keys),
+// and thisComp.layer("name") asks the composition's `find` for a layer it was
+// not given.
+//
+// Not supported: the
 // operators + - * / on a vector in unary minus and +=, toWorld, and footage().
 //
 // wiggle and random do not reproduce After Effects' own random sequences, so
@@ -125,13 +129,37 @@ inline const char ae_prelude[] = R"AEJS(
   };
 
   // (a property read by its parts, position[0], as After Effects reads one)
-  class Prop { constructor(f) { this.f = f; } valueAtTime(t) { return this.f(t); } get value() { return this.f(S.time); } get 0() { return this.value[0]; } get 1() { return this.value[1]; } get 2() { return this.value[2]; } }
+  class Prop {
+    constructor(f, keys) { this.f = f; this.keys = keys || []; }
+    valueAtTime(t) { return this.f(t); }
+    get value() { return this.f(S.time); }
+    get 0() { return this.value[0]; } get 1() { return this.value[1]; } get 2() { return this.value[2]; }
+    get numKeys() { return this.keys.length; }
+    // loopOut and loopIn (ae-expressions.docsforadobe.dev/property/#loopout): past the last keyframe, or before the first, the keys are
+    // gone through again: 'cycle', 'pingpong', 'offset' (each round starts where the one before ended) or 'continue' (on at the speed it
+    // ended with). The span is all the keys, or the last (first) numKeyframes segments. The same rounds as the engine's own repeat of
+    // keys (document/evaluate/value_at.cpp doc_keys_at).
+    loop(type, n, out) {
+      const k = this.keys, t = S.time;
+      if (k.length < 2) return this.f(t);
+      const a = out ? k[n > 0 ? Math.max(0, k.length - 1 - n) : 0] : k[0], b = out ? k[k.length - 1] : k[n > 0 ? Math.min(k.length - 1, n) : k.length - 1];
+      if (out ? t <= b : t >= a) return this.f(t);
+      const span = b - a, edge = out ? b : a;
+      if (type === 'continue') { const step = out ? -0.001 : 0.001; return $a(this.f(edge), $m($d($s(this.f(edge), this.f(edge + step)), -step), t - edge)); }
+      const rounds = Math.floor((t - a) / span), left = t - a - rounds * span;
+      const at = this.f(type === 'pingpong' && rounds % 2 ? b - left : a + left);
+      return type === 'offset' ? $a(at, $m($s(this.f(b), this.f(a)), rounds)) : at;
+    }
+    loopOut(type, n) { return this.loop(type || 'cycle', n || 0, true); }
+    loopIn(type, n) { return this.loop(type || 'cycle', n || 0, false); }
+  }
   const makeLayer = (s) => {
     const L = { name: s.name, index: s.index, width: s.width || 0, height: s.height || 0, controls: s.controls || {} };
-    L.position = new Prop(s.position || (() => [0, 0, 0]));
+    const keys = s.keys || {};   // (the seconds of each property's keyframes, when the script gives them)
+    L.position = new Prop(s.position || (() => [0, 0, 0]), keys.position);
     // (the rest of its Transform, when the script says how each is read: rotation, scale, opacity, anchorPoint)
     L.transform = { position: L.position };
-    for (const name of ['rotation', 'scale', 'opacity', 'anchorPoint']) if (s[name]) L[name] = L.transform[name] = new Prop(s[name]);
+    for (const name of ['rotation', 'scale', 'opacity', 'anchorPoint']) if (s[name]) L[name] = L.transform[name] = new Prop(s[name], keys[name]);
     L.effect = (n) => (m) => typeof L.controls === 'function' ? L.controls(n, m) : L.controls[n][m];
     // The layer's picture, when the script gives what reads it: sampleImage(point, radius, postEffect, t) and a point brought into the
     // layer's own pixels (fromComp, fromWorld), with After Effects' defaults: a radius of half a pixel, after effects, now.
@@ -142,7 +170,13 @@ inline const char ae_prelude[] = R"AEJS(
   const makeComp = (o, specs) => {
     const layers = specs.map(makeLayer);
     return { width: o.width, height: o.height, frameDuration: o.frameDuration || 1 / 60, numLayers: o.numLayers || layers.length, layers,
-      layer(a, rel) { return typeof a === 'string' ? layers.find((l) => l.name === a) : typeof a === 'number' ? layers.find((l) => l.index === a) : layers.find((l) => l.index === a.index + rel); } };
+      layer(a, rel) {
+        const one = typeof a === 'string' ? layers.find((l) => l.name === a) : typeof a === 'number' ? layers.find((l) => l.index === a) : layers.find((l) => l.index === a.index + rel);
+        if (one || !o.find || typeof a === 'object') return one;
+        const spec = o.find(a);   // (a layer the script did not list: asked of whoever made the composition, once)
+        if (spec) layers.push(makeLayer(spec));
+        return spec ? layers[layers.length - 1] : undefined;
+      } };
   };
 
   const PARAMS = new Set(['index', 'time', 'value', 'thisComp', 'thisLayer', 'textIndex', 'textTotal', 'selectorValue', 'effect', 'thisProperty']);
@@ -192,6 +226,8 @@ inline const char ae_prelude[] = R"AEJS(
     const free = (v) => named.has(v) && !declared.has(v) && !assigned.has(v);
     const bare = LAYER.filter(free).map((v) => v + '=thisLayer?thisLayer.' + v + ':undefined');
     if (free('valueAtTime')) bare.push('valueAtTime=(t)=>thisProperty.valueAtTime(t)');
+    for (const v of ['loopOut', 'loopIn']) if (free(v)) bare.push(v + '=(a,b)=>thisProperty.' + v + '(a,b)');
+    if (free('numKeys')) bare.push('numKeys=thisProperty.numKeys');
     const head = (vars.length ? 'var ' + vars.join(',') + ';' : '') + (bare.length ? 'var ' + bare.join(',') + ';' : '') + (usesRandom ? 'H.reset(index,time);' : '');
     const make = new Function('H', DECL + 'return function(index,time,value,thisComp,thisLayer,textIndex,textTotal,selectorValue,effect,thisProperty){S.time=time;S.value=value;' + head + emit(ast) + '\n};');
     return make(H);

@@ -350,18 +350,37 @@ std::string adapter_js(const std::string& src, const std::string& form) {
     std::smatch on;
     const std::string property =
         std::regex_search(src, on, named) ? on[1].str() : "";
+    // After Effects runs an expression once for its layer; one letter at a time
+    // only where it counts them (index, textIndex, textTotal). So an expression
+    // that names none of those moves the layer whole: it is given the layer's
+    // own place, and every copy is moved by what it adds.
+    static const std::regex counts(R"(\b(index|textIndex|textTotal)\b)");
+    const std::string each = std::regex_search(src, counts) ? "i" : "-1";
     return "const __ae=AE.compile(" + text + "),__ae_on='" + property +
            "';let __ae_comp;\n"
            "function each(i,n,t,k){const px=k.px||1,W=k.wide||1920,"
-           "H=k.high||1080,at=(name,or)=>layerValue(k.id,name,k.time,or,i),"
+           "H=k.high||1080,at=(name,or)=>layerValue(k.id,name,k.time,or," +
+           each +
+           "),"
            "x=at('x',0),y=at('y',0),turn=at('rotate',0),seen=at('opacity',1);\n"
-           "__ae_comp=__ae_comp||AE.comp({width:W,height:H},[]);\n"
-           "const me=AE.layer({name:'',index:i+1,width:W,height:H,"
-           "position:u=>[W/2+layerValue(k.id,'x',u,0,i)/px,"
-           "H/2-layerValue(k.id,'y',u,0,i)/px],"
-           "rotation:u=>-layerValue(k.id,'rotate',u,0,i),scale:()=>[100,100],"
-           "opacity:u=>100*layerValue(k.id,'opacity',u,1,i)});\n"
-           "const c={index:i+1,textIndex:i+1,textTotal:n,time:k.time,layer:me,"
+           "const spec=(id,copy,name)=>({name,index:id,width:W,height:H,"
+           "position:u=>[W/2+layerValue(id,'x',u,0,copy)/px,"
+           "H/2-layerValue(id,'y',u,0,copy)/px],"
+           "rotation:u=>-layerValue(id,'rotate',u,0),scale:()=>[100,100],"
+           "opacity:u=>100*layerValue(id,'opacity',u,1),"
+           "keys:{position:[...new Set([...layerKeys(id,'x'),"
+           "...layerKeys(id,'y')])].sort((a,b)=>a-b),"
+           "rotation:layerKeys(id,'rotate'),opacity:layerKeys(id,'opacity')},"
+           "sampleImage:(p,r,post,u)=>sampleImage(id,p,r,post,u),"
+           "fromWorld:(p,u)=>fromWorld(id,p,u)});\n"
+           "__ae_comp=__ae_comp||AE.comp({width:W,height:H,find:a=>{const "
+           "id=typeof a==='string'?layerNamed(a):a;"
+           "return id?spec(id,-1,String(a)):null}},[]);\n"
+           "const me=AE.layer(spec(k.id," +
+           each + ",''));me.index=" + each +
+           "+1||1;\n"
+           "const "
+           "c={index:me.index,textIndex:i+1,textTotal:n,time:k.time,layer:me,"
            "comp:__ae_comp,effect:name=>()=>k[AE.name(name).toLowerCase()]};\n"
            "const run=value=>{c.value=value;return AE.run(__ae,c)},"
            "one=r=>Array.isArray(r)?r[0]:r;\n"
