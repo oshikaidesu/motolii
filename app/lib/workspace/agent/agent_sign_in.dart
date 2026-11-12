@@ -119,7 +119,13 @@ Widget signInCard(BuildContext context, AcpChatSession talk) => Container(
       ),
       if (talk.signingIn) ...[
         SizedBox(height: Shape.s(6)),
-        Forms.worn.action(context, ActionSpec('Cancel', talk.stopSignIn)),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Forms.worn.action(
+            context,
+            ActionSpec('Cancel', talk.stopSignIn),
+          ),
+        ),
       ] else ...[
         SizedBox(height: Shape.s(6)),
         for (final w in talk.ways)
@@ -134,7 +140,13 @@ Widget signInCard(BuildContext context, AcpChatSession talk) => Container(
                 SizedBox(width: Shape.s(8)),
                 Expanded(
                   child: Text(
-                    [w.about, if (w.terminal) 'Opens a terminal.'].join(' '),
+                    [
+                      if (w.about.isNotEmpty)
+                        RegExp(r'[.!?]$').hasMatch(w.about)
+                            ? w.about
+                            : '${w.about}.',
+                      if (w.terminal) 'Opens a terminal.',
+                    ].join(' '),
                     style: TextStyles.label(Grey.g56),
                   ),
                 ),

@@ -48,6 +48,8 @@ class _AgentComposerState extends State<AgentComposer> {
     final talk = widget.talk;
     final hint = talk.ready
         ? 'Ask ${talk.agentName}'
+        : talk.needsSignIn
+        ? 'Sign in above, then ask'
         : talk.starting
         ? 'Starting ${talk.agentName}'
         : 'Not started';
