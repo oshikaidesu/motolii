@@ -202,6 +202,21 @@ class _CodeFieldState extends State<CodeField> {
       _soon?.cancel();
       _soon = Timer(const Duration(milliseconds: 400), _save);
     },
+    // A line longer than the cell shows its scrollbar, as VS Code does with its lines not wrapped; re_editor shows the
+    // sideways one only while scrolling, so a cut-off line gave no sign that more of it was there.
+    scrollbarBuilder: (context, child, details) => details.controller == null
+        ? child
+        : RawScrollbar(
+            controller: details.controller,
+            thumbVisibility: true,
+            scrollbarOrientation: details.direction == AxisDirection.right
+                ? ScrollbarOrientation.bottom
+                : ScrollbarOrientation.right,
+            thickness: Shape.s(5),
+            radius: Shape.r(3),
+            thumbColor: Grey.g38,
+            child: child,
+          ),
     indicatorBuilder: (context, editing, chunks, notifier) =>
         DefaultCodeLineNumber(controller: editing, notifier: notifier),
     style: CodeEditorStyle(
