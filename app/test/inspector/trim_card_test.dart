@@ -121,4 +121,15 @@ void main() {
     expect(last().containsKey('v_trim_begin'), isFalse);
     expect(last().containsKey('v_trim'), isFalse);
   });
+
+  // With the whole path cut away the two knobs lie on one spot, as After Effects' Trim Paths is at Start = End. The
+  // knob taken is the one that can go the way the hand goes, or the drag would do nothing.
+  testWidgets('knobs on one spot: taking them forward brings the end out', (
+    tester,
+  ) async {
+    await mount(tester, numbers: {'v_trim': 100});
+    await tester.dragFrom(on(tester, 0), on(tester, .5) - on(tester, 0));
+    await tester.pump();
+    expect(last()['v_trim'], lessThan(80));
+  });
 }

@@ -28,7 +28,8 @@ class TrimPath extends StatefulWidget {
   State<TrimPath> createState() => _TrimPathState();
 }
 
-enum _Part { begin, end, slide }
+// both: the two knobs on one spot, until the hand's first move says which.
+enum _Part { begin, end, both, slide }
 
 class _TrimPathState extends State<TrimPath> {
   _Part? _held, _near;
@@ -54,10 +55,11 @@ class _TrimPathState extends State<TrimPath> {
               slide: (doc.get('v_trim_offset') ?? 0) / 100,
             );
             _Part? pick(Offset p) {
-              if ((p - g.at(g.begin + g.slide)).distance <= 9) {
-                return _Part.begin;
-              }
-              if ((p - g.at(g.end + g.slide)).distance <= 9) return _Part.end;
+              final b = (p - g.at(g.begin + g.slide)).distance <= 9,
+                  e = (p - g.at(g.end + g.slide)).distance <= 9;
+              if (b && e) return _Part.both;
+              if (b) return _Part.begin;
+              if (e) return _Part.end;
               final u = g.along(p);
               return (p - g.at(u)).distance <= 10 && g.kept(u)
                   ? _Part.slide
@@ -103,6 +105,9 @@ class _TrimPathState extends State<TrimPath> {
   }
 
   void _move(InspectorValues doc, TrimView g, double u) {
+    if (_held == _Part.both && u != _from) {
+      _held = u > _from ? _Part.end : _Part.begin;
+    }
     switch (_held) {
       case _Part.begin:
         doc.set(
@@ -121,7 +126,7 @@ class _TrimPathState extends State<TrimPath> {
           (doc.get('v_trim_offset') ?? 0) + (u - _from) * 100,
         );
         _from = u;
-      case null:
+      case _Part.both || null:
     }
   }
 
@@ -221,10 +226,11 @@ class _TrimPaint extends CustomPainter {
       (_Part.begin, g.begin + g.slide),
       (_Part.end, g.end + g.slide),
     ]) {
+      final on = lit == k || lit == _Part.both;
       c.drawCircle(
         g.at(u),
-        lit == k ? 6.5 : 5,
-        Paint()..color = lit == k ? Accent.fill : TransformZone.lift.color,
+        on ? 6.5 : 5,
+        Paint()..color = on ? Accent.fill : TransformZone.lift.color,
       );
     }
     // Which end is the start: a ring round it.
