@@ -9,6 +9,15 @@ import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
+/// Shift is finer and Cmd or Ctrl is ten times coarser, as in Ableton Live (manual, section 42.6).
+/// The same keys apply to a scrub, a wheel, the arrow keys and a drag on a picture of the value.
+double dragRate() {
+  final k = HardwareKeyboard.instance;
+  if (k.isShiftPressed) return .1;
+  if (k.isMetaPressed || k.isControlPressed) return 10;
+  return 1;
+}
+
 class NumberFieldState extends State<NumberField> {
   final _node = FocusNode(debugLabel: 'num');
   late final FocusNode _ef = FocusNode(
@@ -61,15 +70,6 @@ class NumberFieldState extends State<NumberField> {
     super.dispose();
   }
 
-  /// Shift is finer and Cmd or Ctrl is ten times coarser, as in Ableton Live (manual, section 42.6).
-  /// The same keys apply to a scrub, a wheel and the arrow keys.
-  double _mult() {
-    final k = HardwareKeyboard.instance;
-    if (k.isShiftPressed) return .1;
-    if (k.isMetaPressed || k.isControlPressed) return 10;
-    return 1;
-  }
-
   double _tidy(double v) => double.parse(v.toStringAsFixed(6));
   double _reach(double to, [double? from]) =>
       widget.reach?.call(to, from) ?? to;
@@ -112,7 +112,7 @@ class NumberFieldState extends State<NumberField> {
       widget.onGrab?.call();
       setState(() => _moved = true);
     }
-    final d = e.delta.dx * widget.perPx! * _mult();
+    final d = e.delta.dx * widget.perPx! * dragRate();
     if (widget.value() == null) {
       _sum += d;
       widget.onBy?.call(d);
@@ -158,7 +158,7 @@ class NumberFieldState extends State<NumberField> {
     GestureBinding.instance.pointerSignalResolver.register(
       e,
       (ev) => _by(
-        (ev as PointerScrollEvent).scrollDelta.dx * widget.perPx! * _mult(),
+        (ev as PointerScrollEvent).scrollDelta.dx * widget.perPx! * dragRate(),
       ),
     );
   }
@@ -166,7 +166,7 @@ class NumberFieldState extends State<NumberField> {
   void _onPan(PointerPanZoomUpdateEvent e) {
     if (_editing || widget.perPx == null) return;
     final d = e.localPanDelta;
-    if (d.dx.abs() > d.dy.abs()) _by(d.dx * widget.perPx! * _mult());
+    if (d.dx.abs() > d.dy.abs()) _by(d.dx * widget.perPx! * dragRate());
   }
 
   void _by(double d) {
@@ -208,7 +208,7 @@ class NumberFieldState extends State<NumberField> {
         when up ||
             k == LogicalKeyboardKey.arrowDown ||
             k == LogicalKeyboardKey.arrowLeft) {
-      _by((up ? 1 : -1) * step * _mult());
+      _by((up ? 1 : -1) * step * dragRate());
       return KeyEventResult.handled;
     }
     if (k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter) {
@@ -279,7 +279,10 @@ class NumberFieldState extends State<NumberField> {
       final t = double.tryParse(halfWidth(_ctl.text).trim()) ?? widget.value();
       if (t == null) return KeyEventResult.handled;
       final up = e.logicalKey == LogicalKeyboardKey.arrowUp ? 1 : -1;
-      _ctl.text = widget.text(_reach(t + up * step * _mult()), double.infinity);
+      _ctl.text = widget.text(
+        _reach(t + up * step * dragRate()),
+        double.infinity,
+      );
       _ctl.selection = TextSelection(
         baseOffset: 0,
         extentOffset: _ctl.text.length,

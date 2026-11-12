@@ -127,9 +127,13 @@ class InspectorValues extends ChangeNotifier {
   ValueListenable<int> watch(String id) =>
       _watched.putIfAbsent(id, () => ValueNotifier(0));
 
+  /// Sets [xs] and tells the fields that show them, so a field follows a value moved from elsewhere (the Transform
+  /// preview, the other picked fields) while the drag goes on.
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
+      if (numbers[e.key] == e.value) continue;
       numbers[e.key] = e.value;
+      _watched[e.key]?.value++;
     }
     notifyListeners();
   }

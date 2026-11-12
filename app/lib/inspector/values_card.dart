@@ -6,6 +6,7 @@ import 'package:motolii/inspector/card_words.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_grid.dart';
 import 'package:motolii/inspector/effect_drag_ghost.dart';
+import 'package:motolii/inspector/host_cards.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/rows/section.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
@@ -28,9 +29,11 @@ class ValuesCard extends StatelessWidget {
         k = 'v.${card.name}',
         adv = doc.flags['$k.adv'] ?? false,
         past = doc.flags['$k.past'] ?? false;
+    // A card the window draws itself shows its picture first; its values the picture does not hold stay blocks.
+    final host = hostCards[card.name];
     final heroes = [
           for (final p in card.params)
-            if (!p.advanced) p,
+            if (!p.advanced && !(host?.drawn.contains(p.id) ?? false)) p,
         ],
         rest = [
           for (final p in card.params)
@@ -168,7 +171,8 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
-        ParameterGrid(heroes),
+        ?host?.body(card),
+        if (heroes.isNotEmpty) ParameterGrid(heroes),
         if (rest.isNotEmpty) ...[
           _FoldRow(
             rest.first.fold ?? 'Advanced',

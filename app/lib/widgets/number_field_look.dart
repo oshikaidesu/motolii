@@ -136,7 +136,13 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
           Positioned.fill(
             child: Padding(
               padding: n.inline
-                  ? EdgeInsets.symmetric(horizontal: n.pad)
+                  // An inline field keeps the key mark's room at its right end, so the number never covers it.
+                  ? EdgeInsets.fromLTRB(
+                      n.pad,
+                      0,
+                      n.keyDot != null ? n.pad + Shape.z(9) : n.pad,
+                      0,
+                    )
                   : EdgeInsets.fromLTRB(
                       n.pad,
                       Shape.s(4),

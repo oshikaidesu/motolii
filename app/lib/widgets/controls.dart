@@ -383,10 +383,15 @@ class Segmented extends StatelessWidget {
     required this.items,
     required this.index,
     required this.onChanged,
+    this.glyphs,
   });
   final List<String> items;
   final int index;
   final ValueChanged<int> onChanged;
+
+  /// A picture for each option, drawn in a 16 x 14 box before its word with the given stroke, so the option reads
+  /// by its shape (Transform's flat square, tilted card and cube for 2D, 2.5D and 3D).
+  final List<void Function(Canvas c, Paint stroke)>? glyphs;
 
   // Every selected state uses this one style: a g20 pill with g95 text and a 1 px underline in the selection colour.
   @override
@@ -412,12 +417,24 @@ class Segmented extends StatelessWidget {
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(
-            items[i].toUpperCase(),
-            maxLines: 1,
-            softWrap: false,
-            style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63)
-                .copyWith(letterSpacing: .4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (glyphs?.elementAtOrNull(i) case final g?) ...[
+                CustomPaint(
+                  size: const Size(16, 14),
+                  painter: _StrokeGlyph(g, i == index ? Grey.g95 : Grey.g63),
+                ),
+                SizedBox(width: Shape.s(6)),
+              ],
+              Text(
+                items[i].toUpperCase(),
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63)
+                    .copyWith(letterSpacing: .4),
+              ),
+            ],
           ),
         ),
       ),
@@ -442,4 +459,22 @@ class Segmented extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StrokeGlyph extends CustomPainter {
+  const _StrokeGlyph(this.draw, this.ink);
+  final void Function(Canvas c, Paint stroke) draw;
+  final Color ink;
+  @override
+  void paint(Canvas c, Size s) => draw(
+    c,
+    Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round,
+  );
+  @override
+  bool shouldRepaint(_StrokeGlyph o) => o.ink != ink || o.draw != draw;
 }

@@ -24,6 +24,8 @@ class InspectorNumberField extends StatefulWidget {
     this.glyph,
     this.glyphOwnsPointer = false,
     this.glyphTall = false,
+    this.compact = false,
+    this.onSet,
   });
 
   /// The parameter as its card declares it. [InspectorNumberFieldState] reads its unit, decimal places and range from it.
@@ -45,6 +47,12 @@ class InspectorNumberField extends StatefulWidget {
 
   /// Whether the glyph spans the block's full height on the right (stacked buttons) instead of sitting in the corner.
   final bool glyphTall;
+
+  /// One row high, the number alone, for a row of axes under a header that names them (Transform's X, Y, Z).
+  final bool compact;
+
+  /// Sets a new value in place of setting this field's own id alone, for fields that move together (linked Scale).
+  final ValueChanged<double>? onSet;
   @override
   State<InspectorNumberField> createState() => InspectorNumberFieldState();
 }
@@ -146,6 +154,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       });
       return;
     }
+    if (widget.onSet case final set?) return set(c);
     _x.doc.set(widget.id, c);
   }
 
@@ -245,13 +254,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     }
     if (_marked &&
         e.buttons == kPrimaryButton &&
-        (e.localPosition -
-                    Offset(
-                      w - InspectorSkin.tilePad - 3,
-                      InspectorSkin.tile - 10,
-                    ))
-                .distance <=
-            9) {
+        (e.localPosition - Offset(w - _pad - 3, _height - 10)).distance <= 9) {
       // Read the document's current state, because the field may not have been rebuilt since an undo.
       final now = _x.doc.keys[widget.id] ?? _keys;
       // Pressing the mark adds a keyframe at this time or removes it.
@@ -272,6 +275,10 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     if (!doc.fields.isPicked(widget.id)) doc.fields.pick(widget.id);
     return null;
   }
+
+  double get _height =>
+      widget.compact ? InspectorSkin.cell : InspectorSkin.tile;
+  double get _pad => widget.compact ? 7 : InspectorSkin.tilePad;
 
   KeyEventResult _key(KeyEvent e) {
     if (e.logicalKey != LogicalKeyboardKey.escape ||
@@ -318,7 +325,8 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
       value: () => _x.doc.get(widget.id),
       text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
-      unit: (v, w) => w < unitMinWidth
+      // A compact field's row names the unit once, before its cells.
+      unit: (v, w) => w < unitMinWidth || widget.compact
           ? ''
           : (_turns && v.abs() >= 360 && w >= 120
                 ? '° ${(v / 360).truncate()}x ${formatNumber(v.remainder(360), 0)}'
@@ -343,7 +351,8 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       min: _p.min,
       max: _p.max,
       bipolar: _p.look == ParameterLook.bipolar,
-      caption: widget.caption,
+      caption: widget.compact ? null : widget.caption,
+      inline: widget.compact,
       glyph: widget.glyph,
       glyphTall: widget.glyphTall,
       glyphBox: InspectorSkin.glyph,
@@ -356,8 +365,8 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
                       : Grey.g56)),
       keyEmpty: ks == KeyframeState.off,
       picked: x.doc.fields.isPicked(widget.id),
-      height: InspectorSkin.tile,
-      pad: InspectorSkin.tilePad,
+      height: _height,
+      pad: _pad,
     );
   }
 }
