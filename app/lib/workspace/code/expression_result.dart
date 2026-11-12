@@ -76,7 +76,9 @@ class _ExpressionResultState extends State<ExpressionResult> {
         .askScript(
           widget.file,
           '(() => { const a = globalThis.__ae_at, v = a && a.get($ms), l = globalThis.__ae_last; '
-          'return JSON.stringify(v || (l && l.error ? l : null)); })()',
+          // (NaN and Infinity as JavaScript writes them, as a console shows them: JSON would make them null)
+          'return JSON.stringify(v || (l && l.error ? l : null), '
+          '(k, x) => typeof x === "number" && !isFinite(x) ? String(x) : x); })()',
         )
         .then((said) {
           _asking = false;
