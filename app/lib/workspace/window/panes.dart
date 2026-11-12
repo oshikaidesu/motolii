@@ -3,10 +3,13 @@
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
 // Colors come from WindowTokens, so both the light and dark shades apply.
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:docking/docking.dart';
 
+import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -22,17 +25,9 @@ class Panes extends StatefulWidget {
   final List<Pane> panes;
 
   /// The arrangements the window switches between by name (the view state `workspace`), the first one at the start,
-  /// each with the pane it brings to the front.
-  final Map<
-    String,
-    (
-      DockingArea Function(
-        DockingArea Function(PaneStrip at, {double? size}) strip,
-      ),
-      String?,
-    )
-  >
-  workspaces;
+  /// each with the panes it brings to the front. An arrangement is written in code, or (null) it is the file
+  /// `shelves/workspaces/NAME.layout` (NAME in lower case), a layout as docking writes it: the same text as one kept below.
+  final Map<String, (Arrangement?, List<String>)> workspaces;
   @override
   State<Panes> createState() => _PanesState();
 }
@@ -40,7 +35,7 @@ class Panes extends StatefulWidget {
 class _PanesState extends State<Panes> {
   late String _shown = widget.workspaces.keys.first;
   late final _layout = DockingLayout(
-    root: widget.workspaces[_shown]!.$1(_strip),
+    root: widget.workspaces[_shown]!.$1!(_strip),
   );
   WorkspaceController? _ws;
 
@@ -49,19 +44,31 @@ class _PanesState extends State<Panes> {
   final _kept = <String, String>{};
   static const _ids = _Ids();
 
+  /// The layout a workspace ships as, if it ships as a file.
+  String? _shipped(String name) {
+    final file = File(
+      '$motoliiShelves/workspaces/${name.toLowerCase()}.layout',
+    );
+    return file.existsSync() ? file.readAsStringSync().trim() : null;
+  }
+
   void _switch() {
     final name = _ws!.viewOf('workspace', widget.workspaces.keys.first);
     final to = widget.workspaces[name];
     if (name == _shown || to == null) return;
+    final kept = _kept[name],
+        text = kept ?? (to.$1 == null ? _shipped(name) : null);
+    if (text == null && to.$1 == null) return; // a file that is not there
     _kept[_shown] = _layout.stringify(parser: _ids);
     _shown = name;
-    if (_kept[name] case final kept?) {
-      _layout.load(layout: kept, parser: _ids, builder: _Areas(this));
+    if (text != null) {
+      _layout.load(layout: text, parser: _ids, builder: _Areas(this));
     } else {
-      _layout.root = to.$1(_strip);
-      // Only a workspace's first opening brings its pane to the front; after that it is as it was left.
-      if (to.$2 case final pane?) _toFront(pane);
+      _layout.root = to.$1!(_strip);
     }
+    // Only a workspace's first opening brings its panes to the front (a written layout does not say which tab is in
+    // front); after that it is as it was left.
+    if (kept == null) to.$2.forEach(_toFront);
   }
 
   @override

@@ -224,6 +224,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 | `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
 | `solids/` | レイヤーの効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、プロジェクトが名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
 | `ease/` | 下の Ease のタイル（キーとキーの間の動き方） | `.way`（式 1 行） | 1 行目の `// 名前:`、無ければファイル名 |
+| `workspaces/` | 上のバーの Code ワークスペース（パネルの並べ方） | `code.layout`（`docking` の書き出す並べ方の文字列） | 常に Code。ワークスペースはこういうファイル。Standard はまだコード（`app/lib/workspace/workspace_panes.dart`）に書いてある |
 | `skins/` | View › Skin の一覧（アプリの見た目の着せ替え） | フォルダごと（`theme.xml` と、あれば絵・書体）。作り方は [`skins/README.md`](skins/README.md) | フォルダ名 |
 | `extensions/` | 項目としては出ない。Hydra のコードを貼る前に 1 回だけ使う | `hydra/get.sh` | — |
 

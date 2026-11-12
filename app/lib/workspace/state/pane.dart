@@ -1,10 +1,17 @@
 // One tab of the window: its name, the glyph on its tab, its body and the strip it starts on.
+import 'package:docking/docking.dart' show DockingArea;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
 
 /// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.
 enum PaneStrip { shelves, stage, timeline, ease, inspector, tools, catalog }
+
+/// The panes that start on a strip, as one docking area ([size] px along its split).
+typedef StripBuilder = DockingArea Function(PaneStrip at, {double? size});
+
+/// An arrangement of the panes written in code, given the way to take a strip.
+typedef Arrangement = DockingArea Function(StripBuilder strip);
 
 /// One pane: its name (also its id), the glyph on its tab, and how to build its body.
 ///
