@@ -3,6 +3,7 @@ import 'package:docking/docking.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/agent/agent_pane.dart';
 import 'package:motolii/workspace/code/code_pane.dart';
 import 'package:motolii/workspace/dock/shelf_pane.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart';
@@ -85,6 +86,8 @@ final workspacePanes = [
     () => const InspectorPane(),
     minSize: 200,
   ),
+  // Any agent of the ACP registry, writing the code a layer runs (agent/agent_pane.dart).
+  Pane('Agent', null, () => const AgentPane(), minSize: 240),
   Pane(
     'Timeline',
     AppGlyphs.timeline,
@@ -185,5 +188,5 @@ DockingArea workspacePreset(
 /// shelves/workspaces/code.layout (null here), the arrangement the author made by dragging the panes in the window.
 const Map<String, (Arrangement?, List<String>)> workspaces = {
   'Standard': (workspacePreset, <String>[]),
-  'Code': (null, <String>['Inspector', 'Ease']),
+  'Code': (null, <String>['Agent', 'Ease']),
 };
