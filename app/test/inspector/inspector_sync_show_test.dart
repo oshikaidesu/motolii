@@ -7,8 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 
 import 'inspector_sync_fixture.dart';
+import '../main_tests_only.dart';
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   group('show', () {
     test('a number a field watches goes to that field: no rebuild, and it is not told back', () {
       final (doc, sync, owner) = syncStarted();

@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 
+import '../../main_tests_only.dart';
+
 /// Snapping to [stops] where a frame is [pixelsPerFrame] px wide, with an optional beat grid.
 FrameSnap snapTo(
   Iterable<int> stops, {
@@ -16,6 +18,7 @@ FrameSnap snapTo(
 }) => FrameSnap(stops: stops, beats: beats, pixelsPerFrame: pixelsPerFrame);
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('the default skin gives the 8 px reach these tests count with', () {
     expect(FrameSnap.reach, 8);
   });

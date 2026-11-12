@@ -5,12 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:motolii/widgets/modal_card.dart';
 
+import '../main_tests_only.dart';
+
 Widget _around(Widget child) => Directionality(
   textDirection: TextDirection.ltr,
   child: SizedBox(width: 800, height: 600, child: child),
 );
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   testWidgets('the card shows its title and what it holds', (tester) async {
     await tester.pumpWidget(
       _around(

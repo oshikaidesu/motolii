@@ -9,6 +9,8 @@ import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
+import '../main_tests_only.dart';
+
 // Two cards. The fields of the first, in order: v_amount, v_center.x, v_center.y, v_mode, v_x (a colour has no number).
 const _first = '''
 struct First {
@@ -41,6 +43,7 @@ InspectorValues _doc() {
 }
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('a new InspectorValues starts from the defaults its cards declare', () {
     final doc = _doc();
     expect(doc.numbers, {

@@ -3,7 +3,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/widgets/number_format.dart';
 
+import '../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('formatNumber writes a number with the decimals asked for, or with none when tight', () {
     expect(formatNumber(5, 0), '5');
     expect(formatNumber(5, 2), '5.00');

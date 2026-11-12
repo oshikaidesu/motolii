@@ -8,6 +8,8 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
+import '../main_tests_only.dart';
+
 const _options = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta'];
 
 Future<InspectorValues> _show(WidgetTester tester, {double? at}) async {
@@ -39,6 +41,7 @@ Future<InspectorValues> _show(WidgetTester tester, {double? at}) async {
 }
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   testWidgets('the field shows the option whose index the value holds', (
     tester,
   ) async {

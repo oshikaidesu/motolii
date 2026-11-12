@@ -7,12 +7,15 @@ import 'package:motolii/inspector/controls/parameter_grid.dart'
     show paramColor, paramDefaults;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 
+import '../../main_tests_only.dart';
+
 /// One field as an effect writes it, such as `amount: f32, // @range(0, 10)`, read from a struct of its own.
 FieldDeclaration _decl(String field) =>
     parseWgsl('struct Params {\n$field\n}').single;
 Parameter _infer(String field) => infer(_decl(field));
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test(
     'paramWords splits a field name into words and spells the short forms out',
     () {

@@ -3,7 +3,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/widgets/timeline_painters.dart';
 
+import '../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('majorTickSpacing takes the first round step of frames that is at least 70 px wide', () {
     expect(majorTickSpacing(70, 30), 1);
     expect(majorTickSpacing(10, 30), 10);

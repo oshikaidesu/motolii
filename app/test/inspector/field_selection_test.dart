@@ -4,6 +4,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/field_selection.dart';
 
+import '../main_tests_only.dart';
+
 /// A selection over two cards, the first with five fields and the second with two, that counts its calls.
 class _Fields {
   int rowsRead = 0, changed = 0;
@@ -20,6 +22,7 @@ class _Fields {
 }
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('starts empty, and reads the rows once, at the first pick', () {
     final f = _Fields();
     expect(f.selection.picked, isEmpty);

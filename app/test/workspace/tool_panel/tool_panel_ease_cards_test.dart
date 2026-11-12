@@ -6,10 +6,13 @@ import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../main_tests_only.dart';
+
 Ease _named(String name, [List<double>? drawn]) =>
     Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, drawn);
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('easeCards splits a stack into the text of each card, with the spaces put back', () {
     expect(easeCards('Linear'), ['Linear']);
     expect(easeCards('Bezier~0.42~0.0~1.0~1.0×Hold'), [

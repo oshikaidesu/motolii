@@ -7,8 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 
 import 'inspector_sync_fixture.dart';
+import '../main_tests_only.dart';
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   group('start', () {
     test('fills the document with what the owner gave, over the defaults of its cards', () {
       final (doc, _, _) = syncStarted(

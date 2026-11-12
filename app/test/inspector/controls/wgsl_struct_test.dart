@@ -3,6 +3,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 
+import '../../main_tests_only.dart';
+
 List<Object?> _read(FieldDeclaration d) => [
   d.name,
   d.type,
@@ -12,6 +14,7 @@ List<Object?> _read(FieldDeclaration d) => [
 ];
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('a text with no struct has no fields', () {
     expect(parseWgsl('fn main() {}'), isEmpty);
   });

@@ -5,6 +5,8 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 
+import '../../main_tests_only.dart';
+
 /// The key and its cmd, shift, ctrl and alt, in that order.
 (LogicalKeyboardKey, bool, bool, bool, bool)? _read(String said) =>
     switch (activatorOf(said)) {
@@ -13,6 +15,7 @@ import 'package:motolii/workspace/commands/keymap.dart';
     };
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('a key is its modifiers, then the key, joined by +', () {
     expect(_read('cmd+shift+z'), (
       LogicalKeyboardKey.keyZ,

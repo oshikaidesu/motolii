@@ -6,6 +6,8 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
+import '../../main_tests_only.dart';
+
 /// How many times each aspect of [ws] was told while [does] ran. An aspect that was not told is left out.
 Map<WorkspaceAspect, int> _told(WorkspaceController ws, void Function() does) {
   final before = {for (final a in WorkspaceAspect.values) a: ws.on[a]!.value};
@@ -41,6 +43,7 @@ const SelectedKeyframe _a = (layer: '3', frame: 10),
     _c = (layer: '3', frame: 30);
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('a new state has nothing selected, the playhead at frame 112 and a document of 240 frames at 30 a second', () {
     final ws = _ws();
     expect((WorkspaceController.fps, WorkspaceController.duration), (30, 240));

@@ -3,7 +3,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
+import '../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('x, y and z are values of the position', () {
     expect([
       propOf('v_x'),

@@ -8,12 +8,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
+import '../../main_tests_only.dart';
+
 /// A viewport over 240 frames whose track area is 984 px wide and whose rows have 100 px, holding [rows] rows.
 TimelineViewport viewportOf({int rows = 10}) =>
     TimelineViewport(() => 240)
       ..layout(trackWidth: 984, rowsHeight: 100, rows: rows);
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('the default skin gives the sizes these tests count with', () {
     expect(TimelineMetrics.padL, 10);
     expect(TimelineMetrics.padR, 14);

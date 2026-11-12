@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 
+import '../../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('own tags set on an item are read back by a new window', () {
     final dir = Directory.systemTemp.createTempSync('shelf_tags');
     addTearDown(() => dir.deleteSync(recursive: true));

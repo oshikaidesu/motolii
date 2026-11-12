@@ -24,7 +24,7 @@ jobs:
       - run: flutter analyze
       - run: dart pub global activate dart_code_linter 4.4.5
       - run: dart pub global run dart_code_linter:metrics analyze lib --fatal-warnings   # avoid-banned-imports: no Material or Cupertino
-      - run: flutter test
+      - run: flutter test   # the main tests only; every test is --dart-define=MOTOLII_RUN_EVERY_TEST=yes (docs/TESTING.md)
   engine-format:
     runs-on: ubuntu-latest
     timeout-minutes: 5

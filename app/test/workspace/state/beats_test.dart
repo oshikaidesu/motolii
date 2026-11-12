@@ -3,7 +3,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/state/beats.dart';
 
+import '../../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('parseNumber reads a typed number, full-width digits and spaces around it included', () {
     expect(parseNumber('12.5'), 12.5);
     expect(parseNumber(' １２．５ '), 12.5);

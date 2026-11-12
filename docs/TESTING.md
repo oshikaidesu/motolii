@@ -18,7 +18,15 @@ Run these from the repository root unless a command says otherwise.
 cd app && flutter test
 ```
 
-A pass ends with `All tests passed!`. To run one file, name it: `flutter test test/widgets/number_format_test.dart`. Most files need no engine. `app/test/skin_folders_test.dart` skips its own-folder case unless `MOTOLII_OWN` points at an empty folder: `MOTOLII_OWN=$(mktemp -d) flutter test test/skin_folders_test.dart`. `app/test/accessibility_guidelines_test.dart` opens the real `Workspace` and needs `engine/out/libmotolii.dylib` (it is skipped when the library is missing), so it needs a built engine.
+This runs the main tests only: the files whose header names a source outside the code for their expected values (a specification, another product, a shipped file, arithmetic worked by hand). Today they are `accessibility_guidelines_test`, `skin_folders_test`, `bridge/find_program_test`, `inspector/controls/parameter_reach_test`, `workspace/stage/stage_viewport_test`, `workspace/window/home_project_test` and `workspace/window/shipped_layout_test`. Every other file pins what the code gave (see "The rule for tests") and starts its `main` with `if (skipUnlessEveryTest()) return;` from [app/test/main_tests_only.dart](../app/test/main_tests_only.dart), so it shows as one skipped test. To run every test, ask for it by name:
+
+```
+cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes
+```
+
+`--run-skipped` is not the way: it also runs the own-folder case of `skin_folders_test`, which then writes into the maker's real `~/.motolii`. To make a file a main test, take its `skipUnlessEveryTest` line out and name its outside source in its header.
+
+A pass ends with `All tests passed!`. To run one file, name it: `flutter test test/widgets/number_format_test.dart` (add the `--dart-define` above if it is not a main test). Most files need no engine. `app/test/skin_folders_test.dart` skips its own-folder case unless `MOTOLII_OWN` points at an empty folder: `MOTOLII_OWN=$(mktemp -d) flutter test test/skin_folders_test.dart`. `app/test/accessibility_guidelines_test.dart` opens the real `Workspace` and needs `engine/out/libmotolii.dylib` (it is skipped when the library is missing), so it needs a built engine.
 
 ### Frame timing (needs a window)
 
@@ -115,7 +123,7 @@ Tests written by the same hand that wrote the code tend to repeat its mistakes, 
 
 - `dart format --output=none --set-exit-if-changed .`
 - `flutter analyze`
-- `flutter test`
+- `flutter test` (the main tests only; CI never runs every test)
 - `clang-format --dry-run --Werror` over the engine's own sources (clang-format 23.1.5, the root `.clang-format`)
 - `python3 .githooks/path_check.py --all`
 

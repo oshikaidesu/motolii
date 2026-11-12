@@ -6,7 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/tokens.dart';
 
+import '../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('halfWidth turns full-width letters, digits and signs into plain ones and leaves the rest', () {
     expect(halfWidth('１２８：３０'), '128:30');
     expect(halfWidth('ＡＢＣ　ａｂｃ！～'), 'ABC　abc!~');

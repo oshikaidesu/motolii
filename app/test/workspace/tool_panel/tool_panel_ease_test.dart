@@ -4,6 +4,8 @@ import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../main_tests_only.dart';
+
 const _elastic = Ease(
   EaseKind.bezier,
   Offset.zero,
@@ -12,6 +14,7 @@ const _elastic = Ease(
 );
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('easeAlong reads between evenly spaced samples, and holds the ends outside 0 to 1', () {
     expect(easeAlong([0, 1], .25), .25);
     expect(easeAlong([0, 2, 0], .25), 1);

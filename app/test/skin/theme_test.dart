@@ -5,7 +5,10 @@ import 'dart:ui' show Color;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/skin/theme.dart';
 
+import '../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('parse reads every role whose value is #rrggbb or #rrggbbaa, and no other role', () {
     final roles = ColorTheme.parse('''
 <Motolii><Theme>

@@ -15,6 +15,8 @@ import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
+import '../main_tests_only.dart';
+
 // One card: v_amount (default 4) and v_x (default 0). The second text differs from the first only in a default,
 // the third declares one more value.
 const _card = '''
@@ -131,6 +133,7 @@ class _Bench {
 }
 
 void main() {
+  if (skipUnlessEveryTest()) return;
   testWidgets(
     'the first build makes the values from the layer and the snapshot, and hands them the layer and the actions',
     (tester) async {

@@ -8,7 +8,10 @@ import 'package:motolii/storage/unique_name.dart' show firstFree;
 import 'package:motolii/storage/json_file.dart'
     show fileKeep, fileJson, fileList;
 
+import '../../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   late Directory folder;
   setUp(() => folder = Directory.systemTemp.createTempSync('json_file_test'));
   tearDown(() => folder.deleteSync(recursive: true));

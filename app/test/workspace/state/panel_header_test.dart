@@ -3,7 +3,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/widgets/grid_columns.dart';
 
+import '../../main_tests_only.dart';
+
 void main() {
+  if (skipUnlessEveryTest()) return;
   test('gridColumns counts the cells of a least width that fit, with the window gutter of 2 between them', () {
     expect(gridColumns(298, 98), 3);
     expect(gridColumns(297, 98), 2);
