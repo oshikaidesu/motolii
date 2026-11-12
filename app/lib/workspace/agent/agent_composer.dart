@@ -1,6 +1,5 @@
-// Where a request is written, laid out as the Claude app's message box: one well with the text on top and, under it,
-// the agent's own settings on the left and, on the right, how much of the context is in use, the usage limit the
-// agent reported, and Send (Stop while the agent works). The text is naked_ui's NakedTextField (EditableText with
+// Where a request is written, laid out as the Claude app's message box: one well with the text on top and, under it
+// at the right, the agent's settings and usage (agent_settings.dart) and Send (Stop while the agent works). The text is naked_ui's NakedTextField (EditableText with
 // Flutter TextField's gestures, IME and keys), so Motolii draws only its looks. Enter sends; Shift-Enter starts a line.
 import 'package:flutter/services.dart' show LogicalKeyboardKey, TextInputAction;
 import 'package:flutter/widgets.dart';
@@ -117,11 +116,9 @@ class _AgentComposerState extends State<AgentComposer> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(child: AgentSettings(talk)),
-                if (_usage(talk) case final u when u.isNotEmpty) ...[
-                  Text(u, style: TextStyles.label()),
-                  SizedBox(width: Shape.s(8)),
-                ],
+                const Spacer(),
+                AgentSettings(talk),
+                SizedBox(width: Shape.s(8)),
                 _button(talk),
               ],
             ),
@@ -166,27 +163,4 @@ class _AgentComposerState extends State<AgentComposer> {
 
 class _NewLine extends Intent {
   const _NewLine();
-}
-
-/// How much of the context is in use and of each usage limit, as the agent reported them: `4% context · 7-day 5%`.
-String _usage(AcpChatSession talk) {
-  final (used, size) = (talk.used, talk.size);
-  final windows = talk.limit['unifiedWindows'];
-  return [
-    if (used != null && size != null && size > 0)
-      '${(used * 100 / size).round()}% context',
-    if (windows is Map)
-      for (final MapEntry(:key, :value) in windows.entries)
-        if (value is Map && value['utilization'] is num)
-          '${_window('$key')} ${((value['utilization'] as num) * 100).round()}%',
-  ].join(' · ');
-}
-
-/// A limit window's name as people say it: `seven_day` is 7-day, `five_hour` is 5-hour.
-String _window(String key) {
-  const numbers = {'one': '1', 'five': '5', 'seven': '7'};
-  final parts = key.split('_');
-  return parts.length == 2 && numbers[parts[0]] != null
-      ? '${numbers[parts[0]]}-${parts[1]}'
-      : key.replaceAll('_', ' ');
 }
