@@ -1,4 +1,5 @@
 // The shelf's search field, and a way for other panels to focus it.
+import 'package:flutter/services.dart' show LogicalKeyboardKey, TextInputAction;
 import 'package:flutter/widgets.dart';
 
 import 'package:naked_ui/naked_ui.dart';
@@ -12,14 +13,23 @@ import 'package:motolii/workspace/commands/panel_requests.dart'
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
+///
+/// The same well is the Agent pane's message field: no [glyph], up to [maxLines] lines, Enter calls [onSubmitted].
+/// A field with [onSubmitted] sends rather than searches, so ⌘F does not go to it.
 class ShelfSearchField extends StatefulWidget {
   const ShelfSearchField({
     super.key,
     required this.controller,
     required this.hint,
+    this.glyph = AppGlyphs.search,
+    this.maxLines = 1,
+    this.onSubmitted,
   });
   final TextEditingController controller;
   final String hint;
+  final AppGlyphs? glyph;
+  final int maxLines;
+  final ValueChanged<String>? onSubmitted;
   @override
   State<ShelfSearchField> createState() => _ShelfSearchFieldState();
 }
@@ -30,6 +40,8 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
   void initState() {
     super.initState();
     _focus.addListener(_r);
+    widget.controller.addListener(_r);
+    if (widget.onSubmitted != null) return;
     dockSearchAsked.addListener(_asked);
     if (dockSearchAwaited) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
@@ -57,6 +69,7 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
   @override
   void dispose() {
     dockSearchAsked.removeListener(_asked);
+    widget.controller.removeListener(_r);
     _focus.dispose();
     super.dispose();
   }
@@ -71,8 +84,11 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
       child: AnimatedContainer(
         duration: Motion.dur,
         curve: Motion.ease,
-        height: Shape.z(24),
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
+        constraints: BoxConstraints(minHeight: Shape.z(24)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(7),
+          vertical: widget.maxLines > 1 ? Shape.s(5) : 0,
+        ),
         decoration: BoxDecoration(
           color: WindowTokens.well,
           borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
@@ -82,12 +98,14 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
         ),
         child: Row(
           children: [
-            Glyph(
-              AppGlyphs.search,
-              size: Shape.z(11),
-              color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56,
-            ),
-            SizedBox(width: Shape.s(6)),
+            if (widget.glyph case final g?) ...[
+              Glyph(
+                g,
+                size: Shape.z(11),
+                color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56,
+              ),
+              SizedBox(width: Shape.s(6)),
+            ],
             Expanded(
               child: Stack(
                 alignment: Alignment.centerLeft,
@@ -101,18 +119,33 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
                         style: TextStyles.name(Grey.g56),
                       ),
                     ),
-                  TextGestures(
-                    field: (k) => EditableText(
-                      key: k,
-                      rendererIgnoresPointer: true,
-                      controller: c,
-                      focusNode: _focus,
-                      style: TextStyles.name(Grey.g95),
-                      cursorColor: WindowTokens.accent,
-                      backgroundCursorColor: Grey.g44,
-                      selectionColor: Grey.g38,
-                      cursorWidth: 1.5,
-                      maxLines: 1,
+                  // Enter goes to the platform's text input (which sends), as Flutter's own text fields leave it:
+                  // the NakedButton around the well would take it as a press.
+                  Shortcuts(
+                    shortcuts: const {
+                      SingleActivator(LogicalKeyboardKey.enter):
+                          DoNothingAndStopPropagationTextIntent(),
+                      SingleActivator(LogicalKeyboardKey.numpadEnter):
+                          DoNothingAndStopPropagationTextIntent(),
+                    },
+                    child: TextGestures(
+                      field: (k) => EditableText(
+                        key: k,
+                        rendererIgnoresPointer: true,
+                        controller: c,
+                        focusNode: _focus,
+                        style: TextStyles.name(Grey.g95),
+                        cursorColor: WindowTokens.accent,
+                        backgroundCursorColor: Grey.g44,
+                        selectionColor: Grey.g38,
+                        cursorWidth: 1.5,
+                        minLines: 1,
+                        maxLines: widget.maxLines,
+                        textInputAction: widget.onSubmitted == null
+                            ? null
+                            : TextInputAction.send,
+                        onSubmitted: widget.onSubmitted,
+                      ),
                     ),
                   ),
                 ],

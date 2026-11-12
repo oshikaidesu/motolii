@@ -28,9 +28,7 @@ dependencies:
   widgetbook: ^3.25.0
   acpd: ^1.0.0
   acpd_io: ^1.0.0
-  ianvs_agent_chat: ^0.3.1
-  ianvs_agent_core: ^0.1.0
-
+  flutter_markdown_plus: ^1.0.12
 dev_dependencies:
   flutter_test:
     sdk: flutter

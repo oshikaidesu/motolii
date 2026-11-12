@@ -14,7 +14,7 @@ The app's window and its panels. `Workspace` (`workspace.dart`) is opened by `ap
 | `inspector_feed/` | What the project hands to the Inspector (`../inspector/`): `panel.dart`, `cards.dart`, `values.dart`, `keyframe_marks.dart`. |
 | `dock/` | The shelf panels on the left. `shelf_pane.dart` (`ShelfPane`) is one pane: header, search field and the shelf's body. One folder per shelf: `create/`, `effects/`, `media/`, `fonts/`, `colors/`. In each, `*_shelf.dart` is the widget, `*_controller.dart` what the shelf keeps while the window is open, and `*_commands.dart` its calls to the engine. `map/` shows a shelf as a map of similar items (Effects, Fonts); `common/` holds the widgets the shelves share (footer, section header, filter chips, search field). |
 | `code/` | The Code tab beside the Timeline: `code_pane.dart` (`CodePane`) shows the selected layer's code, one cell for each card that has code (the card's own code, `shelf/effect_code.dart`). |
-| `agent/` | The Agent pane: any agent of the ACP registry (`agent_registry.dart`), talked to through the pub packages `acpd`/`acpd_io` (`acp_chat_session.dart`) and shown by `ianvs_agent_chat` (`agent_pane.dart`). It works in the own folder, where the code a layer runs is kept. |
+| `agent/` | The Agent pane: any agent of the ACP registry (`agent_registry.dart`), talked to through the pub packages `acpd`/`acpd_io` (`acp_chat_session.dart`), drawn with the app's own parts and replies laid out by `flutter_markdown_plus` (`agent_pane.dart`). It works in the own folder, where the code a layer runs is kept. |
 | `shelf/` | Tiles shown in shelves (effects, scripts, materials). |
 | `stage/` | The preview: the engine's picture and the drags on top of it. |
 | `timeline/` | The timeline. |

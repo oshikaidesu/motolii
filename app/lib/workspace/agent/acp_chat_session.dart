@@ -1,14 +1,24 @@
 // One conversation with an agent that speaks the Agent Client Protocol (agentclientprotocol.com), as Zed's agent panel
-// holds one. acpd_io starts the agent and acpd speaks the protocol (fluttercandies/acpd, Apache-2.0). What the agent
-// sends is handed to ianvs_agent_chat (robinfai/ianvs-acp, Apache-2.0) as it came: a tool call stays its ACP JSON,
-// whose title, status, kind, content (diffs as oldText/newText) and locations ianvs reads itself.
+// holds one. acpd_io starts the agent and acpd speaks the protocol (fluttercandies/acpd, Apache-2.0). A tool call is
+// kept as the ACP JSON it came as (title, status, kind, content with diffs, locations); the pane reads those fields.
 import 'dart:async';
 
 import 'package:acpd/acpd.dart';
 import 'package:acpd_io/acpd_io.dart';
-import 'package:ianvs_agent_core/ianvs_agent_core.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier;
 
-class AcpChatSession extends ChatSession {
+/// Who said a line of the conversation.
+enum Said { you, agent, tool, error }
+
+/// One line of the conversation: [text], or for a tool call its ACP JSON in [call].
+class Entry {
+  Entry(this.who, this.text, [this.call = const {}]);
+  final Said who;
+  String text;
+  Map<String, Object?> call;
+}
+
+class AcpChatSession extends ChangeNotifier {
   AcpChatSession(this.agentName, this._config, this.folder);
 
   final String agentName;
@@ -17,33 +27,19 @@ class AcpChatSession extends ChatSession {
   /// The folder the agent works in: the user's own folder, where the code a layer runs is kept.
   final String folder;
 
+  final entries = <Entry>[];
+  var starting = true, sending = false;
+
+  /// What the agent asks leave for, and the answers it offers; null when it asks nothing.
+  RequestPermissionRequest? asked;
+
   AcpAgent? _agent;
   ClientConnection? _client;
   String? _session;
-  final _messages = <ChatMessageData>[];
-  final _toolAt = <String, int>{};
-  var _revision = 0, _loading = true, _sending = false;
-  String? _error;
-  ChatPermissionRequest? _permission;
-  List<PermissionOption> _options = const [];
+  final _toolAt = <String, Entry>{};
   Completer<RequestPermissionOutcome>? _answer;
 
-  @override
-  ChatSessionState get state => ChatSessionState(
-    identity: this,
-    agentName: agentName,
-    messages: List.unmodifiable(_messages),
-    messagesRevision: _revision,
-    isLoading: _loading,
-    enabled: !_loading && _session != null,
-    isSending: _sending,
-    capabilities: const ChatCapabilities(tools: true, permissions: true),
-    permission: _permission,
-    workspaceRoots: [folder],
-    error: _error,
-  );
-
-  /// Starts the agent and opens a session in [folder]. A failure is shown in the panel with the agent's last words.
+  /// Starts the agent and opens a session in [folder]. A failure is shown in the pane with the agent's last words.
   Future<void> start() async {
     try {
       final agent = _agent = await AcpAgent.start(_config);
@@ -67,23 +63,25 @@ class AcpChatSession extends ChatSession {
         NewSessionRequest(cwd: folder),
       )).sessionId;
     } catch (e) {
-      _error = '$agentName did not start: $e\n${_agent?.stderrTail ?? ''}'
-          .trim();
+      entries.add(
+        Entry(
+          Said.error,
+          '$agentName did not start: $e\n${_agent?.stderrTail ?? ''}'.trim(),
+        ),
+      );
     }
-    _loading = false;
-    _changed();
+    starting = false;
+    notifyListeners();
   }
 
-  @override
-  Future<void> send(
-    String text, {
-    List<PromptAttachment> attachments = const [],
-  }) async {
+  bool get ready => !starting && _session != null;
+
+  Future<void> send(String text) async {
     final client = _client, session = _session;
     if (client == null || session == null || text.trim().isEmpty) return;
-    _messages.add(_message(ChatMessageRole.user, text));
-    _sending = true;
-    _changed();
+    entries.add(Entry(Said.you, text));
+    sending = true;
+    notifyListeners();
     try {
       await client.client.prompt(
         PromptRequest(
@@ -92,46 +90,35 @@ class AcpChatSession extends ChatSession {
         ),
       );
     } catch (e) {
-      _messages.add(_message(ChatMessageRole.error, '$e'));
+      entries.add(Entry(Said.error, '$e'));
     }
-    _sending = false;
-    _changed();
+    sending = false;
+    notifyListeners();
   }
 
-  @override
-  Future<void> stop() async {
+  void stop() {
     if (_session case final s?) _client?.client.cancel(s);
-    _settle(const PermissionCancelled());
+    answer(null);
   }
 
-  @override
-  Future<void> selectPermissionOption(String optionId) async =>
-      _settle(PermissionSelected(optionId: optionId));
-
-  @override
-  Future<void> resolvePermission(ChatPermissionDecision decision) async {
-    final want = decision == ChatPermissionDecision.allow
-        ? const [
-            PermissionOptionKind.allowOnce,
-            PermissionOptionKind.allowAlways,
-          ]
-        : const [
-            PermissionOptionKind.rejectOnce,
-            PermissionOptionKind.rejectAlways,
-          ];
-    final o = decision == ChatPermissionDecision.cancel
-        ? null
-        : _options.where((o) => want.contains(o.kind)).firstOrNull;
-    _settle(
-      o == null
-          ? const PermissionCancelled()
-          : PermissionSelected(optionId: o.optionId),
-    );
+  /// Answers what the agent asked with one of its options, or cancels it with null.
+  void answer(String? optionId) {
+    final a = _answer;
+    _answer = null;
+    asked = null;
+    if (a != null && !a.isCompleted) {
+      a.complete(
+        optionId == null
+            ? const PermissionCancelled()
+            : PermissionSelected(optionId: optionId),
+      );
+    }
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    _settle(const PermissionCancelled());
+    answer(null);
     unawaited(_client?.close());
     unawaited(_agent?.close());
     super.dispose();
@@ -139,15 +126,14 @@ class AcpChatSession extends ChatSession {
 
   void _take(SessionUpdate u) {
     switch (u) {
-      case AgentMessageChunk(:final chunk):
-        final text = chunk.content is TextContentBlock
-            ? (chunk.content as TextContentBlock).text
-            : '';
-        final last = _messages.lastOrNull;
-        if (last != null && last.role == ChatMessageRole.assistant) {
-          _messages.last = last.copyWith(text: last.text + text);
+      case AgentMessageChunk(
+        chunk: ContentChunk(content: TextContentBlock(:final text)),
+      ):
+        final last = entries.lastOrNull;
+        if (last != null && last.who == Said.agent) {
+          last.text += text;
         } else {
-          _messages.add(_message(ChatMessageRole.assistant, text));
+          entries.add(Entry(Said.agent, text));
         }
       case ToolCallUpdateSession(:final toolCall):
         _tool(toolCall.toolCallId, toolCall.toJson());
@@ -156,73 +142,24 @@ class AcpChatSession extends ChatSession {
       default:
         return;
     }
-    _changed();
+    notifyListeners();
   }
 
-  /// A tool call's row: its ACP fields, each update laid over the last.
+  /// A tool call's line: its ACP fields, each update laid over the last.
   void _tool(String id, Map<String, Object?> json) {
-    final at = _toolAt[id];
-    if (at == null) {
-      _toolAt[id] = _messages.length;
-      _messages.add(
-        _message(ChatMessageRole.tool, '${json['title'] ?? ''}', json),
-      );
+    final e = _toolAt[id];
+    if (e == null) {
+      entries.add(_toolAt[id] = Entry(Said.tool, '', json));
     } else {
-      final m = _messages[at];
-      _messages[at] = m.copyWith(metadata: {...m.metadata, ...json});
+      e.call = {...e.call, ...json};
     }
   }
 
   Future<RequestPermissionResponse> _ask(RequestPermissionRequest r) async {
-    _settle(const PermissionCancelled());
-    final answer = _answer = Completer();
-    _options = r.options;
-    final title = r.toolCall.title ?? 'Tool call';
-    _permission = ChatPermissionRequest(
-      id: r.toolCall.toolCallId,
-      title: title,
-      rationale: '',
-      sessionId: r.sessionId,
-      toolName: title,
-      options: [for (final o in r.options) o.name],
-      choices: [
-        for (final o in r.options)
-          ChatPermissionChoice(
-            optionId: o.optionId,
-            name: o.name,
-            kind: o.kind.toJson(),
-          ),
-      ],
-      requestedAt: DateTime.now(),
-      metadata: r.toolCall.toJson(),
-    );
-    _changed();
-    return RequestPermissionResponse(outcome: await answer.future);
-  }
-
-  void _settle(RequestPermissionOutcome outcome) {
-    final answer = _answer;
-    _answer = null;
-    if (answer == null || answer.isCompleted) return;
-    _permission = null;
-    _options = const [];
-    answer.complete(outcome);
-    _changed();
-  }
-
-  ChatMessageData _message(
-    ChatMessageRole role,
-    String text, [
-    Map<String, Object?> metadata = const {},
-  ]) => ChatMessageData(
-    id: '${_messages.length}',
-    role: role,
-    text: text,
-    metadata: metadata,
-  );
-
-  void _changed() {
-    _revision++;
-    notifySessionChanged();
+    answer(null);
+    final a = _answer = Completer();
+    asked = r;
+    notifyListeners();
+    return RequestPermissionResponse(outcome: await a.future);
   }
 }
