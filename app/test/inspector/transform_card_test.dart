@@ -1,7 +1,9 @@
 // The Transform card holds a small preview of the layer that is pulled to edit it, as it did before 52289b693
 // (the author, 2026-11-12: "トランスフォームはちっさなプレビューがあってそのままさわれたはずなんだ").
 // Expected: dragging the box to the right moves Position X right and leaves Y; the rows sit under one X / Y / Z
-// heading; a value the inside does not draw is still on the card. Needs no engine.
+// heading; a value the inside does not draw is still on the card. The Anchor fold holds the layer as a box with 27
+// points, as it did before 52289b693: a click on the front top-left corner puts the anchor there, as After Effects'
+// Anchor Point at 0, 0 of the layer, nearest the viewer. Needs no engine.
 import 'package:flutter/widgets.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:motolii/inspector/inspector_host.dart';
 import 'package:motolii/inspector/inspector_panel.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/transform/anchor_box.dart' show AnchorView;
 
 // Transform as workspace/inspector_feed/cards.dart writes it from engine/document/card_table.h, plus one value the
 // inside does not draw (Wobble).
@@ -44,6 +47,8 @@ struct Params {
   anchor_x: f32,
   /// @label(Anchor Y) @ui(bar) @range(0, 100) @unit(%) @default(50)
   anchor_y: f32,
+  /// @label(Anchor Z) @ui(bipolar) @range(-50, 50) @unit(%) @default(0)
+  anchor_z: f32,
 }
 ''';
 
@@ -165,4 +170,25 @@ void main() {
     expect(find.descendant(of: x, matching: find.text('960')), findsNothing);
     await g.up();
   });
+
+  testWidgets(
+    'a click on the front top-left point of the Anchor box puts the anchor there',
+    (tester) async {
+      await mount(tester);
+      await tester.tap(find.text('Anchor'));
+      await tester.pumpAndSettle();
+      final box = find.byKey(const ValueKey('anchor-box'));
+      expect(box, findsOneWidget);
+      final view = AnchorView(tester.getSize(box));
+      await tester.tapAt(tester.getTopLeft(box) + view.at(0, 0, -50));
+      // Past the double-click wait, which squares the view again.
+      await tester.pump(const Duration(milliseconds: 400));
+      final last = told.lastWhere((t) => t.containsKey('v_anchor_x'));
+      expect(
+        (last['v_anchor_x'], last['v_anchor_y'], last['v_anchor_z']),
+        (0, 0, -50),
+      );
+      expect(find.text('Top left · Front'), findsOneWidget);
+    },
+  );
 }

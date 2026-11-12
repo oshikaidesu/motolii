@@ -38,6 +38,10 @@ class ValuesCard extends StatelessWidget {
         rest = [
           for (final p in card.params)
             if (p.advanced) p,
+        ],
+        folded = [
+          for (final p in rest)
+            if (!(host?.drawn.contains(p.id) ?? false)) p,
         ];
     // The main params show first. The advanced ones are folded under a row named for what they are.
     // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack, as in After Effects.
@@ -179,7 +183,8 @@ class ValuesCard extends StatelessWidget {
             adv,
             () => doc.flag('$k.adv', !adv),
           ),
-          if (adv) ParameterGrid(rest),
+          if (adv) ?host?.fold?.call(card),
+          if (adv && folded.isNotEmpty) ParameterGrid(folded),
         ],
         if (doc.actions.cardEdit?.call(card.name, [
               for (final p in card.params) p.id,

@@ -66,7 +66,7 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/inspector/` | The Inspector on the right. Cards come from the engine's declarations (`../engine/document/card_table.h`), and `values_card.dart` (`ValuesCard`) draws every one of them. `host_cards.dart` lists the few whose inside the window draws as a picture you pull. |
 | `lib/inspector/controls/` | Controls per kind of value: number, angle, color, text, link. |
 | `lib/inspector/rows/` | Rows and the frame of a card. |
-| `lib/inspector/transform/` | The Transform card's inside: Space, a small preview of the layer whose box and handles are pulled to move, scale, turn and re-anchor it, and the rows under one X / Y / Z heading. |
+| `lib/inspector/transform/` | The Transform card's inside: Space, a small preview of the layer whose box and handles are pulled to move, scale, turn and re-anchor it, and the rows under one X / Y / Z heading; in its Anchor fold, the layer as a box whose 27 points are clicked to put the anchor on. |
 | `lib/workspace/` | The window itself and its panels. `workspace.dart` holds `Workspace`. See [`lib/workspace/README.md`](lib/workspace/README.md). |
 | `lib/workspace/state/` | State every panel reads: `workspace_controller.dart` (`WorkspaceController`), `workspace_scope.dart` (`WorkspaceScope`), `pane.dart` (`Pane`). |
 | `lib/workspace/easing/` | Easing: `ease.dart` (`Ease` and presets), `ease_text.dart` (the text written into a project). |
