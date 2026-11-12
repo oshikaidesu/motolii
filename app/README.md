@@ -21,6 +21,8 @@ It opens `~/Movies/Motolii/Untitled.motolii`. Set `MOTOLII_DOC=/path/to.motolii`
 
 To build the app without running it: `flutter build macos --profile`.
 
+The app to open by hand is `app/build/Motolii.app`, copied there by every build of `lib/main.dart`. An integration test builds `MotoliiTest.app` instead, which waits for its test and shows a black window, so nothing named Motolii is ever a test build.
+
 ## Test and check
 
 Run these in `app/`. The full procedure is in [`../docs/TESTING.md`](../docs/TESTING.md).

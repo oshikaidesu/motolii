@@ -23,6 +23,24 @@
             </ActionContent>
          </ExecutionAction>
       </PreActions>
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Copy the app people open to app/build/Motolii.app"
+               scriptText = "# Only a build of lib/main.dart, after signing. An integration test&apos;s build (MotoliiTest.app, AppInfo.xcconfig) never&#10;# reaches this copy, and Xcode, which removes the outputs of earlier builds, does not know of it.&#10;if [ &quot;$(basename &quot;$FLUTTER_TARGET&quot; .dart)&quot; = main ]; then&#10;  rsync -a --delete &quot;$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/&quot; &quot;$FLUTTER_APPLICATION_PATH/build/Motolii.app/&quot;&#10;fi&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+                     BuildableName = "Motolii.app"
+                     BlueprintName = "Runner"
+                     ReferencedContainer = "container:Runner.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"

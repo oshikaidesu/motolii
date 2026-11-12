@@ -5,7 +5,12 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = Motolii
+// A build whose Dart entry is not lib/main.dart (an integration test's) is named MotoliiTest: a test build waits for its
+// test and shows a black window, so nothing named Motolii may be one. flutter finds whichever name in
+// Flutter/ephemeral/.app_filename, which the Bundle Framework phase writes from PRODUCT_NAME. The app people open is
+// app/build/Motolii.app, copied by the scheme's build post-action (Runner.xcscheme) from each lib/main.dart build.
+MOTOLII_APP_main = Motolii
+PRODUCT_NAME = $(MOTOLII_APP_$(FLUTTER_TARGET:base:c99extidentifier):default=MotoliiTest)
 
 // The application's bundle identifier
 PRODUCT_BUNDLE_IDENTIFIER = dev.lab.labBook
