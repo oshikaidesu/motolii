@@ -27,7 +27,16 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 /// What the expression of the code file [file] gives at the playhead. Nothing is shown for code that is not an After
 /// Effects expression. [write] writes new code for the cell, for a quick fix.
 class ExpressionResult extends StatefulWidget {
-  const ExpressionResult(this.file, {super.key, this.write, this.mark});
+  const ExpressionResult(this.file, {super.key, this.write, this.mark})
+    : onlyError = false;
+
+  /// Only a red "Error" when the expression fails, for a folded cell's head, as After Effects puts a warning beside
+  /// the property in the Timeline and VS Code marks a file's tab.
+  const ExpressionResult.mark(this.file, {super.key})
+    : write = null,
+      mark = null,
+      onlyError = true;
+  final bool onlyError;
   final String file;
   final ValueChanged<String>? write;
 
@@ -113,6 +122,18 @@ class _ExpressionResultState extends State<ExpressionResult> {
     });
     final last = _last;
     if (last == null) return const SizedBox.shrink();
+    if (widget.onlyError) {
+      return last['error'] == null
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: EdgeInsets.only(right: Shape.s(8)),
+              child: Text(
+                'Error',
+                key: const ValueKey('code-head-error'),
+                style: TextStyles.micro(Role.error),
+              ),
+            );
+    }
     final on = '${last['on'] ?? ''}';
     final error = last['error'];
     if (error != null) return _error('$error');

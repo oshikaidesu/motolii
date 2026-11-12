@@ -17,6 +17,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/code/functions_panel.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
@@ -224,6 +225,7 @@ class _Cell extends StatelessWidget {
               SizedBox(width: Shape.s(6)),
               Text(title, style: TextStyles.name(hot ? Grey.g95 : Grey.g91)),
               const Spacer(),
+              if (!open) ExpressionResult.mark(EffectCode.source(code.word)),
               Text(_on, style: TextStyles.micro(Grey.g56)),
             ],
           ),
