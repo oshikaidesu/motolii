@@ -14,9 +14,25 @@ const _registry =
     'https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json';
 
 class AgentEntry {
-  const AgentEntry(this.id, this.name, this.config);
+  const AgentEntry(this.id, this.name, this.line, this.env);
   final String id, name;
-  final AcpAgentConfig config;
+
+  /// The agent's command, word by word, and its env, as the registry gives them.
+  final List<String> line;
+  final Map<String, String> env;
+
+  /// How the agent is started: the command in the login shell (cmd on Windows).
+  AcpAgentConfig get config {
+    if (Platform.isWindows) {
+      return AcpAgentConfig(command: 'cmd', args: ['/c', ...line], env: env);
+    }
+    final quoted = line.map((w) => "'${w.replaceAll("'", r"'\''")}'").join(' ');
+    return AcpAgentConfig(
+      command: Platform.environment['SHELL'] ?? '/bin/sh',
+      args: ['-lc', 'exec $quoted'],
+      env: env,
+    );
+  }
 }
 
 /// Every agent in the registry this machine can start, newest list first, the kept copy when offline.
@@ -38,12 +54,12 @@ Future<List<AgentEntry>> agentRegistry() async {
   final agents = (jsonDecode(text) as Map)['agents'] as List;
   return [
     for (final a in agents.cast<Map>())
-      if (_command(a['distribution'] as Map) case final c?)
-        AgentEntry('${a['id']}', '${a['name']}', c),
+      if (_command(a['distribution'] as Map) case (final line, final env))
+        AgentEntry('${a['id']}', '${a['name']}', line, env),
   ];
 }
 
-AcpAgentConfig? _command(Map d) {
+(List<String>, Map<String, String>)? _command(Map d) {
   final (List<String> line, Map? env) = switch (d) {
     {'npx': final Map n} => (
       ['npx', '-y', '${n['package']}', ..._words(n['args'])],
@@ -63,21 +79,9 @@ AcpAgentConfig? _command(Map d) {
     _ => (const <String>[], null),
   };
   if (line.isEmpty) return null;
-  final environment = {
-    for (final e in (env ?? const {}).entries) '${e.key}': '${e.value}',
-  };
-  if (Platform.isWindows) {
-    return AcpAgentConfig(
-      command: 'cmd',
-      args: ['/c', ...line],
-      env: environment,
-    );
-  }
-  final quoted = line.map((w) => "'${w.replaceAll("'", r"'\''")}'").join(' ');
-  return AcpAgentConfig(
-    command: Platform.environment['SHELL'] ?? '/bin/sh',
-    args: ['-lc', 'exec $quoted'],
-    env: environment,
+  return (
+    line,
+    {for (final e in (env ?? const {}).entries) '${e.key}': '${e.value}'},
   );
 }
 

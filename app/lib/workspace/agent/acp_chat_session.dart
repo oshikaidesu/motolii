@@ -7,6 +7,8 @@ import 'package:acpd/acpd.dart';
 import 'package:acpd_io/acpd_io.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
+import 'package:motolii/workspace/agent/agent_sign_in.dart';
+
 /// Who said a line of the conversation.
 enum Said { you, agent, tool, error }
 
@@ -21,10 +23,26 @@ class Entry {
 }
 
 class AcpChatSession extends ChangeNotifier {
-  AcpChatSession(this.agentName, this._config, this.folder);
+  AcpChatSession(
+    this.agentName,
+    this._config,
+    this.folder, {
+    this.line = const [],
+    this.env = const {},
+  });
 
   final String agentName;
   final AcpAgentConfig _config;
+
+  /// The agent's own command and env, as the registry gives them: a terminal sign-in runs it again with more words.
+  final List<String> line;
+  final Map<String, String> env;
+
+  /// The ways to sign in the agent offered (ACP authMethods), shown while [needsSignIn]; [signInWhy] says what the
+  /// agent or the last try said, and [signingIn] is true while a way is under way.
+  var ways = <SignInWay>[];
+  var needsSignIn = false, signingIn = false;
+  var signInWhy = '';
 
   /// The folder the agent works in: the user's own folder, where the code a layer runs is kept.
   final String folder;
@@ -70,17 +88,28 @@ class AcpChatSession extends ChangeNotifier {
                 })
                 ..onRequestPermission((_, r, _) => _ask(r)))
               .connect(agent.transport);
-      await client.client.initialize(
-        const InitializeRequest(
-          protocolVersion: ProtocolVersion.v1,
-          clientInfo: Implementation(name: 'Motolii', version: '0'),
-        ),
+      // Sent as JSON so the ways keep their type and args, which acpd's typed reply leaves out. The terminal
+      // capability says Motolii can run the agent's command in a terminal (ACP AuthCapabilities).
+      final hello = const InitializeRequest(
+        protocolVersion: ProtocolVersion.v1,
+        clientInfo: Implementation(name: 'Motolii', version: '0'),
+      ).toJson();
+      final said = await client.connection.sendRequest(
+        InitializeRequest.methodName,
+        params: {
+          ...hello,
+          'clientCapabilities': {
+            ...?hello['clientCapabilities'] as Map<String, Object?>?,
+            'auth': {'terminal': line.isNotEmpty},
+          },
+        },
+        mapResult: (r) => r is Map ? r : const {},
       );
-      final session = await client.client.newSession(
-        NewSessionRequest(cwd: folder),
-      );
-      _session = session.sessionId;
-      options = session.configOptions;
+      ways = [
+        for (final m in (said['authMethods'] as List?) ?? const [])
+          if (m is Map) SignInWay(m),
+      ];
+      await _open();
     } catch (e) {
       entries.add(
         Entry(
@@ -93,7 +122,73 @@ class AcpChatSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get ready => !starting && _session != null;
+  bool get ready => !starting && _session != null && !needsSignIn;
+
+  /// Opens the session; an agent that wants sign-in first answers auth_required, and the pane offers its ways.
+  Future<void> _open() async {
+    final client = _client;
+    if (client == null) return;
+    try {
+      final session = await client.client.newSession(
+        NewSessionRequest(cwd: folder),
+      );
+      _session = session.sessionId;
+      options = session.configOptions;
+      needsSignIn = false;
+    } on RpcError catch (e) {
+      if (e.code != ErrorCode.authRequired.code) rethrow;
+      needsSignIn = true;
+      signInWhy = e.message;
+    }
+  }
+
+  /// Signs in by [way], then opens the session (or carries on with the open one).
+  Future<void> signIn(SignInWay way) async {
+    final client = _client;
+    if (client == null || signingIn) return;
+    signingIn = true;
+    notifyListeners();
+    try {
+      if (way.terminal) {
+        final status = await signInInTerminal(
+          line,
+          env,
+          way,
+          folder,
+          () => signingIn,
+        );
+        if (status != 0) {
+          signInWhy = status == null
+              ? 'The sign-in window was closed or did not open.'
+              : 'Sign-in ended without signing in (exit status $status).';
+          return;
+        }
+      } else {
+        await client.client.authenticate(AuthenticateRequest(methodId: way.id));
+      }
+      if (_session == null) {
+        await _open();
+      } else {
+        needsSignIn = false;
+      }
+      final again = _again;
+      if (!needsSignIn && again != null) {
+        _again = null;
+        unawaited(again());
+      }
+    } catch (e) {
+      signInWhy = e is RpcError ? e.message : '$e';
+    } finally {
+      signingIn = false;
+      notifyListeners();
+    }
+  }
+
+  /// Stops waiting for a sign-in in a terminal, as when its window was closed before it ended.
+  void stopSignIn() {
+    signingIn = false;
+    notifyListeners();
+  }
 
   /// Sends [text] with [more] (such as the selected layer's files), noted on the line as [note].
   Future<void> send(
@@ -101,9 +196,17 @@ class AcpChatSession extends ChangeNotifier {
     List<ContentBlock> more = const [],
     String note = '',
   }) async {
-    final client = _client, session = _session;
-    if (client == null || session == null || text.trim().isEmpty) return;
+    if (_client == null || _session == null || text.trim().isEmpty) return;
     entries.add(Entry(Said.you, text, const {}, note));
+    await _prompt(text, more);
+  }
+
+  /// A request the agent refused for want of sign-in, sent again once signed in.
+  Future<void> Function()? _again;
+
+  Future<void> _prompt(String text, List<ContentBlock> more) async {
+    final client = _client, session = _session;
+    if (client == null || session == null) return;
     sending = true;
     notifyListeners();
     try {
@@ -116,6 +219,15 @@ class AcpChatSession extends ChangeNotifier {
           ],
         ),
       );
+    } on RpcError catch (e) {
+      // Not signed in, or the sign-in ran out: the pane offers the ways, and the request goes again after.
+      if (e.code == ErrorCode.authRequired.code) {
+        needsSignIn = true;
+        signInWhy = e.message;
+        _again = () => _prompt(text, more);
+      } else {
+        entries.add(Entry(Said.error, e.message));
+      }
     } catch (e) {
       entries.add(Entry(Said.error, '$e'));
     }
