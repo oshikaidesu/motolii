@@ -7,7 +7,7 @@ export '../../bridge/motolii.dart' show ShelfItem;
 
 /// The three forms a tile can take.
 ///
-/// - [under]: the name in a bar under the image (Effects, Program, Media).
+/// - [under]: the name in a bar under the image (Effects, Code, Media).
 /// - [over]: the name laid over the image (Create).
 /// - [words]: the art is text set in a typeface (Fonts).
 enum ShelfForm { under, over, words }
@@ -77,7 +77,7 @@ const _square = ShelfLook(
 /// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
-  'Program': _square,
+  'Code': _square,
   'Media': ShelfLook(
     ShelfForm.under,
     cell: 76,

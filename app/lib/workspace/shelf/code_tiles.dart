@@ -1,7 +1,7 @@
-// The tile for a program, using the numbers AbsentMotion uses for its animated tiles
+// The tile for a code file, using the numbers AbsentMotion uses for its animated tiles
 // (tools/effect_thumbs.py, Apache-2.0). Frames are rendered at 384 and stored at 192 as one looping file that plays
 // by itself, 1.33 seconds at 24 frames a second (not 12, which looks stepped).
-// AbsentMotion makes its tiles once on an emulator from a hand-written table with one line per effect. A program moves
+// AbsentMotion makes its tiles once on an emulator from a hand-written table with one line per effect. A code file moves
 // by itself, so it needs no table line and no sample, and its author needs no developer.
 // Tiles are drawn on a separate document in another isolate, one after another like effect_tiles.dart's, and again
 // once the file has changed.
@@ -18,20 +18,20 @@ import 'package:motolii/workspace/shelf/copies_tiles.dart'
 import 'package:motolii/workspace/shelf/effect_tiles_difference.dart'
     show ffmpeg;
 
-abstract final class ProgramTiles {
+abstract final class CodeTiles {
   static const _render = 384,
       _keep = 192,
       _pictures = 32,
       _perSecond = 24,
       _from = 1.0;
-  // Four at a time, so a program that crashes the app loses at most four.
+  // Four at a time, so a code file that crashes the app loses at most four.
   static final _tiles = TileQueue<(String, String)>(_draw, batch: 4);
 
-  /// The cache path of a program's tile. There is one path per program, so the last tile drawn shows until the next one is ready.
+  /// The cache path of a code file's tile. There is one path per code file, so the last tile drawn shows until the next one is ready.
   static String home(String file) => tileHome('program24', file);
 
-  /// Queues the programs whose tile has not been drawn since the file last changed.
-  /// A program that crashed the app (its .trying marker was left behind) waits until its file changes.
+  /// Queues the code files whose tile has not been drawn since the file last changed.
+  /// A code file that crashed the app (its .trying marker was left behind) waits until its file changes.
   static void ask(Iterable<String> files, void Function() changed) {
     // Same as EffectTiles.ask.
     if (Platform.environment['FLUTTER_TEST'] == 'true') return;

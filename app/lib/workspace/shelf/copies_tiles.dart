@@ -12,7 +12,7 @@
 // pixels of a composition, here a 1080 square. The file's expression (fx_file) is then applied to that layer.
 // If the engine rejects the expression (a SyntaxError), the tile is marked and keeps its glyph.
 //
-// A closed pack on the Program shelf (dock_program.dart) is drawn the same way, but it is created by name, as the
+// A closed pack on the Code shelf (dock/code/code_shelf.dart) is drawn the same way, but it is created by name, as the
 // shelf creates it.
 import 'dart:async';
 import 'dart:io';
@@ -202,7 +202,7 @@ abstract final class CopiesTiles {
       drawTiles(dir, 'motolii_copies', files, (j) => j.$2, (m, job, home) {
         // Each tile gets its own project, so the parameter values one expression sets (js_<name>) do not reach the next.
         final (f, _, make) = job;
-        // A pack is created by name, as the Program shelf creates it.
+        // A pack is created by name, as the Code shelf creates it.
         final on = make != null
             ? _answer(m, m.later('create', word: make)) >= 1
             : _put(m, f);

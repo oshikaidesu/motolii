@@ -1,4 +1,4 @@
-// A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Program or Presets.
+// A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Code or Presets.
 // It has a header, a search field and a body. Each shelf is one tab of the window's panes.
 // Media is the one file browser, for the project and the disk (media/media_shelf.dart).
 import 'package:flutter/scheduler.dart';
@@ -23,7 +23,7 @@ import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/dock/media/media_shelf.dart';
-import 'package:motolii/workspace/dock/program/program_shelf.dart';
+import 'package:motolii/workspace/dock/code/code_shelf.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
@@ -198,16 +198,16 @@ class _ShelfPaneState extends State<ShelfPane> {
                 onTap: () =>
                     setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
               ), // Cycles the folder tree between automatic, left and above.
-            ] else if (name == 'Program') ...[
+            ] else if (name == 'Code') ...[
               IconPress(
                 dockMark(AppGlyphs.list),
-                on: !_mem.programCode,
-                onTap: () => setState(() => _mem.programCode = false),
+                on: !_mem.codeOpen,
+                onTap: () => setState(() => _mem.codeOpen = false),
               ),
               IconPress(
-                dockMark(AppGlyphs.program),
-                on: _mem.programCode,
-                onTap: () => setState(() => _mem.programCode = true),
+                dockMark(AppGlyphs.code),
+                on: _mem.codeOpen,
+                onTap: () => setState(() => _mem.codeOpen = true),
               ),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
@@ -324,7 +324,7 @@ class _ShelfPaneState extends State<ShelfPane> {
               'Fonts' => FontsShelf(c, _fonts),
               'Colors' => ColorsShelf(c, _colors),
               'Create' => CreateShelf(c),
-              'Program' => ProgramShelf(c),
+              'Code' => CodeShelf(c),
               'Presets' => Padding(
                 padding: EdgeInsets.all(Shape.s(24)),
                 child: Text(

@@ -33,7 +33,7 @@ Every choice in this section and the next is judged by five rules:
 ### 3.1 Two steps in
 
 - **Inspector:** a card, like an effect card, with sliders and an on/off switch. No code is visible.
-- **Edit:** a button on the card. It opens the Program tab on that code, at that line. Going back, the card already shows the change. There is no cliff.
+- **Edit:** a button on the card. It opens the Code tab on that code, at that line. Going back, the card already shows the change. There is no cliff.
 - A target (follow this layer) is a slider that holds a layer, declared in the code like any other slider. Picking another layer changes the slider, not the code. The card is never a second copy of the code ([AGENTS.md](../../AGENTS.md), principle 3).
 
 ### 3.2 Getting code in
@@ -78,7 +78,7 @@ The person says what they want, for example "this layer gathers toward the middl
 | One line saying what was understood | "A gathers toward the middle of B." It is read before any code. |
 | The motion | The layer moves on the stage; play and scrub work. |
 | Sliders | Whatever is a matter of taste: Amount, Spread. |
-| The code | In the Program tab. Read it only if you want to. |
+| The code | In the Code tab. Read it only if you want to. |
 | What it decided | As sliders that pick from words, not as sentences (below). |
 
 - **Anything a person may want to change later is a slider:** time, amount, direction, and the layer it acts on. No number in the code is a timing. "Over two seconds" is two keyframes on an Amount slider (0 to 100 %), which the LLM places as a start and the person moves on the timeline. Easing is the curve of those keyframes. This is After Effects' usual pairing: a Slider Control with keyframes, and an expression that reads it.
@@ -141,9 +141,9 @@ How much of the host a file reads (its own sliders, any property of any layer) i
 
 ### 4.2 One editor
 
-The Program tab is the editor that opens any item of a layer's list at its code. The Edit button on a card (3.1) opens it there, whether the card is an fx, an expression or a source. There is one editor, not one for each kind.
+The Code tab is the editor that opens any item of a layer's list at its code. The Edit button on a card (3.1) opens it there, whether the card is an fx, an expression or a source. There is one editor, not one for each kind.
 
-There is no Program shelf of packs, because there are no packs (4.1). Today the shelf's tiles and the editor are one class ([program_shelf.dart](../../app/lib/workspace/dock/program/program_shelf.dart)). The tiles go with the packs and the editor stays.
+There is no Code shelf of packs, because there are no packs (4.1). Today the shelf's tiles and the editor are one class ([code_shelf.dart](../../app/lib/workspace/dock/code/code_shelf.dart)). The tiles go with the packs and the editor stays.
 
 A file that came from outside by paste or drop belongs to the project, as a script in Blender's Text Editor belongs to the .blend. It is not a shelf item; a shelf is a library of other people's work that is copied into a project when used. (A design, not yet decided with the author.)
 
@@ -151,7 +151,7 @@ A file that came from outside by paste or drop belongs to the project, as a scri
 
 After Effects shows neither what can be written nor what can be connected. Its expression language menu (the arrow button beside an expression) lists functions apart from the code being written, and is little used. Here every list is tied to the code, to the cursor and to the value now, and follows the project as it changes (layers added, removed or renamed; values at the playhead).
 
-**The Program tab holds the code and nothing else.** What is shown beside it is in panels of their own. They follow the selected card and can be placed anywhere, as Blender's Properties editor follows the active object. A new use adds a panel; the tab itself does not change. On first opening only the code and its result are shown: the lists come up anyway as suggestions while typing.
+**The Code tab holds the code and nothing else.** What is shown beside it is in panels of their own. They follow the selected card and can be placed anywhere, as Blender's Properties editor follows the active object. A new use adds a panel; the tab itself does not change. On first opening only the code and its result are shown: the lists come up anyway as suggestions while typing.
 
 | Where | What |
 |---|---|
@@ -165,7 +165,7 @@ After Effects shows neither what can be written nor what can be connected. Its e
 | **Sending to an LLM** | Not a panel. A button that sends the code with the lists of 4.5 (3.8). |
 
 ```
-┌ Program ─────────────────────┐ ┌ Can read ──────┐ ┌ Functions ────────────┐
+┌ Code ────────────────────────┐ ┌ Can read ──────┐ ┌ Functions ────────────┐
 │ 1 const B = thisComp.layer(  │ │ search [     ] │ │ search [            ] │
 │   ┌──────────────────────┐   │ │ ▾ Leader       │ │ ▾ Shake               │
 │   │ "B"     960, 540     │   │ │    Position    │ │    wiggle(speed, amt) │
@@ -198,13 +198,13 @@ The list is also what a person or an LLM needs in order to write the code. After
 
 `AE.compile` already reads an expression once with acorn. A read written as a literal (`layer("Leader")`) is found there. A read built by calculation is marked "may change", which is safe and slow (section 7). Renaming a layer rewrites the literal ones (3.5).
 
-## 5. What the Program tab takes
+## 5. What the Code tab takes
 
-### 5.1 The Inspector for one, the Program tab for many
+### 5.1 The Inspector for one, the Code tab for many
 
-The Inspector touches one value of one thing. The Program tab writes many at once. Text is the best interface for a row of things: one line says what a hundred sliders would.
+The Inspector touches one value of one thing. The Code tab writes many at once. Text is the best interface for a row of things: one line says what a hundred sliders would.
 
-Everything in Motolii therefore has two faces: a visual one (the Inspector, the timeline) and a written one (the Program tab). There is one copy of the truth (principle 3). The Program tab is not a place for p5.js sketches only. It is the way in for every expression that is written as text.
+Everything in Motolii therefore has two faces: a visual one (the Inspector, the timeline) and a written one (the Code tab). There is one copy of the truth (principle 3). The Code tab is not a place for p5.js sketches only. It is the way in for every expression that is written as text.
 
 ### 5.2 A row is a row
 
@@ -219,7 +219,7 @@ These are all the same thing to code: a row of n, each with its number i.
 
 In After Effects, a stagger across layers is written by hand from `index` in every layer (`thisLayer.index - 1` times a delay). That is the sign of a row that cannot be written as a row. Here, one piece of code on the group reaches every child as copy i of n.
 
-So text motion is born in the Program tab. A text layer split into letters is a row, and any language that speaks of rows moves it.
+So text motion is born in the Code tab. A text layer split into letters is a row, and any language that speaks of rows moves it.
 
 Two ways of writing a row exist today: `each(i, n, t, k)`, asked once per copy, and a relation's `relate(things, t, k)`, given the whole array. Since 2026-11-11 a file with `each()` and no `relate()` also runs as a relation: layer i of the relation is copy i of n, and what `each()` says goes on top of the layer as it does on a copy (places and turns added, size and opacity multiplied). Pressing an Expression tile with several layers selected, or with a group picked, makes that relation; `fade_in.js` then fades the layers in one after another, unchanged. The other way round works too: a `relate()` file in a layer's effect list gets the copies, letters or words laid so far as its things, and what it says of each goes on top of that copy. `turns.js`, written for a lyric line of separate word layers, brings in the words of one text split into words, unchanged. The Relations tab took one picked layer too; the tab was removed on 2026-11-11, and the relation files are now tiles under Expression in the Create tab.
 
@@ -367,7 +367,7 @@ From [AGENTS.md](../../AGENTS.md):
      - All 5 pens, dev_loop included, agree on 279 of 279 letter-times (0.5 px, 0.01). Before the rule below, MeriliVaziri was off on 24 of them.
      - **The rule:** a plain inline box is not a transformable element (CSS Transforms 1). MeriliVaziri's letters are left inline, so Chrome draws them unmoved and only fades them.
      - **Drawn by the engine:** a text layer "Backwards" with valhead's CSS, stills at 0.3, 0.9 and 1.7 s. Each letter rises by Chrome's fraction of its box times one height, 162 to 169 px for every letter, upward.
-     - **Pasted (the same day):** CSS with `@keyframes` and no JavaScript is the form `css` (`adapter_form`). ⌘V puts it on the selected text layer, kept in the Program shelf as a `.css` file, and splits the text into letters. Pasting valhead's CSS gives the same lifts as the file put on by hand. Before the change, the same paste was refused as "not code".
+     - **Pasted (the same day):** CSS with `@keyframes` and no JavaScript is the form `css` (`adapter_form`). ⌘V puts it on the selected text layer, kept in the Code shelf as a `.css` file, and splits the text into letters. Pasting valhead's CSS gives the same lifts as the file put on by hand. Before the change, the same paste was refused as "not code".
      - **Laid out by the pen (the same day):** where the CSS makes the text, or a word in it, a flex or grid container, the letters go where the page lays them out.
        - Blitz has no font here, so each letter stands in the page as an empty box of the size Motolii draws it at, and Taffy (Blitz's layout) arranges the boxes. The pen arranges the letters among themselves; the arrangement is set about the middle of the text as Motolii laid it. A container around the text, which a pen uses to centre it on its page, is not followed.
        - **Measured against Chrome** (headless, a page 1280 × 633), each letter's own box, from the middle of all of them: the 5 pens above (all centre their text with flex), and 12 pages that each put one value listed in css-flexbox-1 or css-grid-2 on Splitting's markup (`justify-content` five ways, `gap`, `row-reverse`, `column`, wrapped letters, wrapped words, two grids). The 12 pages were written here. No public pen that lays split letters out with flex or grid was found: CodePen refuses automated fetching (403), and of 14 public GitHub stylesheets that use Splitting.js beside flex, none puts it on the letters. Chrome is the outside judge.
@@ -387,7 +387,7 @@ From [AGENTS.md](../../AGENTS.md):
      - Stylo kept the ending iteration on the exact boundary. Motolii's 1/60 s frames land on it every loop of a 0.75 s spinner. It is now patched to Web Animations §4.8.4 within Chromium's one microsecond (`engine/deps/patches/stylo/stylo_iteration_boundary.patch`). The Q7 letters stay 279 of 279.
    - **Written back:** each element's transform, made with its origin against the view box, agreed with Chrome's own (the parent's `getCTM()` inverse times the element's) on 501 of 501.
    - **Drawn by the engine:** an image layer of `3-dots-bounce.svg` and of `180-ring.svg`, stills at 0.3, 0.9 and 1.7 s. Each was compared with Chrome's picture of the same time: IoU of the drawn pixels was 0.955 to 0.981. Motolii's 0.3 s against Chrome's 0.9 s gave 0.064 and 0.410.
-   - **Pasted (the same day):** SVG text, beginning with `<svg` or an XML declaration, is the form `svg` (`adapter_form`), told before CSS: until then a spinner with `@keyframes` was taken for a pen's CSS and refused. ⌘V keeps it in the Program shelf as a `.svg` file, byte for byte, and adds an image layer of it. The still of a pasted 3-dots-bounce at 0.3 s agreed with Chrome's at IoU 0.981.
+   - **Pasted (the same day):** SVG text, beginning with `<svg` or an XML declaration, is the form `svg` (`adapter_form`), told before CSS: until then a spinner with `@keyframes` was taken for a pen's CSS and refused. ⌘V keeps it in the Code shelf as a `.svg` file, byte for byte, and adds an image layer of it. The still of a pasted 3-dots-bounce at 0.3 s agreed with Chrome's at IoU 0.981.
    - **SMIL (`<animate>`, `<animateTransform>`), looked into the same day: not reached, for want of an engine outside the browsers.** 24 of svg-spinners' 46 SMIL files chain their animations (`begin="a.end"`, `begin="a.begin+0.2s"`), so SMIL's timing (syncbase) is needed, not only its values.
      - anim_svg (github.com/robotoss/anim_svg, MIT, SVG to Lottie in Rust): no `begin` at all; its README lists explicit begin and end offsets as unsupported.
      - smil2css (github.com/webframes/smil2css, MIT, last change 2015): converts only frame-by-frame animation.
@@ -399,15 +399,15 @@ From [AGENTS.md](../../AGENTS.md):
 
 10. **A shelf file opened to be read:** how it looks while it is only being read, beside the person's own code (3.11).
 
-Decided in the conversation: there are no closed packs; code on a layer is told apart by what it returns, and a layer has one list (4.1); the Program tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
+Decided in the conversation: there are no closed packs; code on a layer is told apart by what it returns, and a layer has one list (4.1); the Code tab is the way in for every written expression, and a row (copies, letters, the layers of a group, data rows) is one thing to code (section 5); renaming a layer rewrites names in code (with Undo); a pick whip is wanted; a reason is shown when code cannot be made fast.
 
-Decided in the later conversation of 2026-11-11: the five rules at the head of section 3; the Program tab holds only the code, and the lists are panels beside it (4.3); an LLM is given an intent with picked layers and turns timing and choices into sliders (3.8); code on a group is what a relation is (3.9); cards act in order (3.10); a card is saved to a shelf with its sliders and keyframes, its layers left empty, and is separate from then on (3.11).
+Decided in the later conversation of 2026-11-11: the five rules at the head of section 3; the Code tab holds only the code, and the lists are panels beside it (4.3); an LLM is given an intent with picked layers and turns timing and choices into sliders (3.8); code on a group is what a relation is (3.9); cards act in order (3.10); a card is saved to a shelf with its sliders and keyframes, its layers left empty, and is separate from then on (3.11).
 
 ## 10. Relation to earlier notes
 
-[create_and_program_shelves.md](create_and_program_shelves.md) (9 November) says an After Effects expression lives only in the layer's detail panel and is not shown in the Program tab. This note proposes that the Inspector card stays the place for light use and that **Edit opens any code in the Program tab**. If this ideal is accepted, that line of the earlier note is to be revised. The names in that note ("Expression", the Create shelf) are not changed here.
+[create_and_program_shelves.md](create_and_program_shelves.md) (9 November) says an After Effects expression lives only in the layer's detail panel and is not shown in the Code tab. This note proposes that the Inspector card stays the place for light use and that **Edit opens any code in the Code tab**. If this ideal is accepted, that line of the earlier note is to be revised. The names in that note ("Expression", the Create shelf) are not changed here.
 
-The same note says the Program tab holds closed packs only (p5.js, whole Cavalry scripts). There are no closed packs (4.1), and the Program tab is the editor for everything: text motion, CSS, subtitles and group layers come in through it (section 5). That note's split between Create and Program is dropped, and its table of recipes (which side each is on) no longer applies.
+The same note says the Program tab (the Code tab since 2026-11-12) holds closed packs only (p5.js, whole Cavalry scripts). There are no closed packs (4.1), and the Code tab is the editor for everything: text motion, CSS, subtitles and group layers come in through it (section 5). That note's split between Create and Program is dropped, and its table of recipes (which side each is on) no longer applies.
 
 ## 11. Beyond After Effects: taking the walls down
 

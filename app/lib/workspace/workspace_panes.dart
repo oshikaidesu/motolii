@@ -57,9 +57,9 @@ final workspacePanes = [
     iconOnly: true,
   ),
   Pane(
-    'Program',
-    AppGlyphs.program,
-    () => const ShelfPane('Program', 'Search code'),
+    'Code',
+    AppGlyphs.code,
+    () => const ShelfPane('Code', 'Search code'),
     at: PaneStrip.shelves,
     minSize: 240,
     iconOnly: true,

@@ -15,7 +15,7 @@ enum AppGlyphs implements GlyphKind {
   colors,
   files,
   create,
-  program,
+  code,
   search,
   close,
   chevron,
@@ -152,7 +152,7 @@ enum AppGlyphs implements GlyphKind {
         cv.drawLine(p(.84, .1), p(.82, .34), st);
         cv.drawLine(p(.82, .34), p(.58, .3), st);
       // Code's angle brackets with a slash.
-      case AppGlyphs.program:
+      case AppGlyphs.code:
         cv.drawLine(p(.34, .3), p(.12, .5), st);
         cv.drawLine(p(.12, .5), p(.34, .7), st);
         cv.drawLine(p(.66, .3), p(.88, .5), st);

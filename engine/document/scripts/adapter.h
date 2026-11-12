@@ -3,7 +3,7 @@
 
 // adapter.h: imports code found on the net into the project.
 // The code (a shader, a p5.js sketch, a three.js scene, Hydra code, or a file
-// of any of them) is read as what it is, stored unchanged in the Program shelf
+// of any of them) is read as what it is, stored unchanged in the Code shelf
 // folder so that it also appears on the shelf, and placed on the canvas. A
 // shader that reads an image becomes an effect on the selected layer. A shader
 // that makes its own pixels becomes a layer that fills the canvas. A p5.js

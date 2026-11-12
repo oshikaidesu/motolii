@@ -96,7 +96,7 @@ abstract final class EffectTiles {
   static StreamSubscription<FileSystemEvent>? watch(
     Motolii m,
     void Function() changed, {
-    void Function(String file)? program,
+    void Function(String file)? codeFile,
   }) {
     ask(m, changed);
     final dir = Directory('$own/effects');
@@ -124,12 +124,12 @@ abstract final class EffectTiles {
     ]);
     final told = <String, Timer>{};
     return merged.stream.listen((e) {
-      if (program != null && e.path.startsWith('$own/programs/')) {
-        // A program's file: what is made from it follows, and no shelf is read again.
+      if (codeFile != null && e.path.startsWith('$own/programs/')) {
+        // A code file: what is made from it follows, and no shelf is read again.
         told[e.path]?.cancel();
         told[e.path] = Timer(
           const Duration(milliseconds: 300),
-          () => program(e.path),
+          () => codeFile(e.path),
         );
         return;
       }

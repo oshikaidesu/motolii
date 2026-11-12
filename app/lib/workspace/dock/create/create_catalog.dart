@@ -23,7 +23,7 @@ String createFact(WorkspaceController ws) {
 (String, List<CreateTile>) recipeGroup(WorkspaceController ws) {
   // Scripts that are expressions are left out: their tiles are in the Expression group.
   final expressions = {for (final (name, _) in expressionRecipes()) name};
-  // Closed packs are left out too: they belong to the Program shelf (program/program_shelf.dart).
+  // Closed packs are left out too: they belong to the Code shelf (code/code_shelf.dart).
   final packs = {for (final (name, _) in ws.inside!.packs) name};
   return (
     'Recipes',

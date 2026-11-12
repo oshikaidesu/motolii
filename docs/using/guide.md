@@ -126,7 +126,7 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 ![The app's seven areas, numbered](../pictures/panels.jpg)
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
-2. **[Left tabs](screen_tour.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
+2. **[Left tabs](screen_tour.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Code (pasted code), Presets (combinations you saved; not usable yet).
 3. **[Preview (Stage)](screen_tour.md#preview-tabs)**: place and move layers while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
@@ -162,7 +162,7 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 
 WGSL (`.wgsl`), Create tiles (`.js` in `create/`), Expression tiles (`.js` in `expressions/`), relations (`.js` in `relations/`), Ease presets (`.way` in `ease/`), skins (the folder, in `skins/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
-p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Program tab.
+p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Code tab.
 
 ### Next: your own media
 

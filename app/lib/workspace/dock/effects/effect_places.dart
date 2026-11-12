@@ -170,7 +170,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     menus.plus(),
   );
 
-  // The name field, edited inside the row as the Program shelf does for a tile's name.
+  // The name field, edited inside the row as the Code shelf does for a tile's name.
   Widget _field(EffectDeck d) => CallbackShortcuts(
     bindings: {
       const SingleActivator(LogicalKeyboardKey.escape): () {

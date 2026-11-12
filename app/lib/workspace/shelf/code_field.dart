@@ -1,4 +1,4 @@
-// An editor for a program's code, coloured by re_highlight. The Program shelf and a layer's script card both use it.
+// An editor for code, coloured by re_highlight. The Code shelf and a layer's script card both use it.
 import 'dart:async';
 import 'dart:io';
 
@@ -12,22 +12,22 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
-/// An editor for a program's code.
+/// An editor for code.
 ///
-/// Typed text is passed to [write] shortly after the last key. The shelf writes it over the program's file. A layer's
+/// Typed text is passed to [write] shortly after the last key. The shelf writes it over the file. A layer's
 /// script on its card writes it to the layer's own copy instead (EffectCode).
-class ProgramCode extends StatefulWidget {
-  const ProgramCode(this.file, this.write, {super.key, this.keep = false});
+class CodeField extends StatefulWidget {
+  const CodeField(this.file, this.write, {super.key, this.keep = false});
   final String file;
   final void Function(String text) write;
 
   /// Whether the typed text is kept as it is, without reading the file back. EffectCode uses this while a script is being made.
   final bool keep;
   @override
-  State<ProgramCode> createState() => _ProgramCodeState();
+  State<CodeField> createState() => _CodeFieldState();
 }
 
-class _ProgramCodeState extends State<ProgramCode> {
+class _CodeFieldState extends State<CodeField> {
   late String _written = File(widget.file).readAsStringSync();
   late final _text = CodeLineEditingController.fromText(_written);
   Timer? _soon;
@@ -38,7 +38,7 @@ class _ProgramCodeState extends State<ProgramCode> {
   }
 
   @override
-  void didUpdateWidget(ProgramCode old) {
+  void didUpdateWidget(CodeField old) {
     super.didUpdateWidget(old);
     final now = File(widget.file).readAsStringSync();
     if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {

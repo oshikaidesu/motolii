@@ -208,6 +208,6 @@ Only things that have a reason from the side of the person using the app. Each r
 | The deck name field (Save Favorites…) | Saving under a name empties Favorites, and this cannot be undone | "as Lightroom's Clear Quick Collection After Saving" | `workspace/dock/effects/effect_places.dart` |
 | The menu of a number | Right pressing the same number again reopens the menu there without closing it | "right pressed here again: its place, as a Mac's" | `inspector/controls/inspector_number_field.dart` |
 | Delete with a stretch selected | The stretch is not removed. Its easing returns to Linear | "a stretch picked: its way off, straight again, not the thing" | `workspace/commands/menu_bar.dart` |
-| The code field of Program | Does not add closing brackets. Undo belongs to the field, not to the project | "exactly what is typed" | `workspace/shelf/program_code.dart` |
+| The code field of the Code tab | Does not add closing brackets. Undo belongs to the field, not to the project | "exactly what is typed" | `workspace/shelf/code_field.dart` |
 | The effect code of a card | The first edit copies the shelf's file and writes to the copy | "the shelf's file is never written over" | `workspace/shelf/effect_code.dart` |
 | Scrubbing on the ruler | Snapping is off by default and Shift turns it on (bars and keyframes are the other way round) | "After Effects': Shift held while the time indicator is dragged, it rests on what it passes" | `workspace/timeline/ruler_marks.dart` |

@@ -5,7 +5,7 @@
 // An expression (a .js with each()) goes in expressions/, the Expression group's folder. The engine also reads it
 // as a motion, but Create shows it only once, as the user's (dock_make_expressions.dart).
 // Nothing is overwritten: a name already on the shelf, or an existing file of that name, is refused.
-// A rename writes the name beside the file (<file>.name, as the Program shelf does: Program.rename in dock_program.dart).
+// A rename writes the name beside the file (<file>.name, as the Code shelf does: CodeFile.rename in dock/code/code_file.dart).
 // The file stays where it is, so documents that use it still find it.
 import 'dart:io';
 

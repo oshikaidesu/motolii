@@ -126,7 +126,7 @@ app/tool/live.sh
 ![画面の 7 つの区画に番号を付けた図](../pictures/panels.jpg)
 
 1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
-2. **[左のタブ](screen_tour.ja.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
+2. **[左のタブ](screen_tour.ja.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Code（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
 3. **[プレビュー（Stage）](screen_tour.ja.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
 4. **インスペクタ**：選んだレイヤーの値（Transform・Anchor・Blend・Fill など）。上に、そのレイヤーにかかっている関係が並びます。
 5. **タイムライン**：レイヤーとキーフレーム、再生、マーカー、BPM。
@@ -162,7 +162,7 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 
 WGSL（`.wgsl`）、Create のタイル（`.js` を `create/` に）、Expression のタイル（`.js` を `expressions/` に）、関係（`.js` を `relations/` に）、Ease のプリセット（`.way` を `ease/` に）、スキン（フォルダごと `skins/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
-p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Program タブに残ります。
+p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Code タブに残ります。
 
 ### 次に：自分の素材で
 

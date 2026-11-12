@@ -285,7 +285,7 @@ class WorkspaceState extends State<Workspace> {
           ws.after(inside.later('follow_elements'), (_, _) => ws.reread());
         }
       },
-      program: (file) {
+      codeFile: (file) {
         if (mounted) {
           ws.after(inside.later('code', word: file), (_, _) => ws.reread());
         }

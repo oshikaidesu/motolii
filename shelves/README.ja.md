@@ -23,8 +23,8 @@ Motolii に最初から入っている表現と、見つけた表現を置く場
 | 3D の形（`export function solid` を持つ `.js`） | `solids/` |
 | アプリの見た目 | `skins/`（フォルダごと） |
 | AviUtl2 のパッケージ | `aviutl_scripts/`（フォルダごと） |
-| TSL で書かれた three.js のページ（材質に `colorNode` や `positionNode` がある物） | **貼る。** 色はエフェクトに、点を動かす部分は点を動かすファイルになり、選んでいるレイヤーに掛かる。何も選んでいなければ、キャンバスいっぱいの四角に掛かる。できたファイルは Program タブに残る |
-| Shadertoy・GLSL Sandbox・twigl・Bonzomatic のシェーダー、p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra などのコード | **置かずに貼る**。コードをコピーして、アプリで ⌘V。Program タブに残ります（Hydra は先に `extensions/hydra/get.sh`） |
+| TSL で書かれた three.js のページ（材質に `colorNode` や `positionNode` がある物） | **貼る。** 色はエフェクトに、点を動かす部分は点を動かすファイルになり、選んでいるレイヤーに掛かる。何も選んでいなければ、キャンバスいっぱいの四角に掛かる。できたファイルは Code タブに残る |
+| Shadertoy・GLSL Sandbox・twigl・Bonzomatic のシェーダー、p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra などのコード | **置かずに貼る**。コードをコピーして、アプリで ⌘V。Code タブに残ります（Hydra は先に `extensions/hydra/get.sh`） |
 
 ファイルは頭の数行で自分の名前とつまみを言います。下の「頭の書き方」を見てください。
 
@@ -217,7 +217,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)
 |---|---|---|---|
 | `effects/` | Effects タブのタイル（レイヤーの効果・画面全体の効果） | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament の設定） | 1 行目の `// 名前:`、無ければファイル名。`.fs` はファイル名そのまま |
 | `aviutl_scripts/` | Effects タブのタイル。パッケージ名がチップになる | AviUtl2 のパッケージ（`.anm2`・`.obj2`・`@` ファイル）をフォルダごと、手を入れずに | スクリプトの名前と `--label:`。パッケージ名はフォルダの `__` の後ろ |
-| `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックは Program タブに出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
+| `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックは Code タブに出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
 | `expressions/` | Create タブの Expression（文字やレイヤーの出入りの動き、コピーを順に揺らす波。Cavalry の Animators と oscillator） | `.js`（`function each`） | 1 行目の `// 名前:` |
 | `relations/` | Create タブの Expression に、エクスプレッションと並んで出る（たくさんのレイヤーを一度に動かす。グループか、いっしょに選んだレイヤーに付ける） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
 | `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |

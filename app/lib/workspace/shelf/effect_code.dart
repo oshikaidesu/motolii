@@ -19,7 +19,7 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/shelf/program_code.dart';
+import 'package:motolii/workspace/shelf/code_field.dart';
 
 class EffectCode extends StatefulWidget {
   const EffectCode(
@@ -327,7 +327,7 @@ class _EffectCodeState extends State<EffectCode> {
             ),
           ),
         Expanded(
-          child: ProgramCode(
+          child: CodeField(
             EffectCode.source(_mine ?? widget.word),
             _write,
             keep: _making,

@@ -296,7 +296,7 @@ const char* motolii_cards_more(Motolii* m, int layer);
 const char* motolii_shown(Motolii* m, const char* name);
 /* Returns the create scripts, one per line, "name\twhat it makes". A closed
    pack gives "name\twhat\tprogram\tpath": what it was written for and its file,
-   which the Program shelf shows. Valid until the next call. */
+   which the Code shelf shows. Valid until the next call. */
 const char* motolii_create_scripts(Motolii* m);
 /* Returns the shelf's presets, one per line, "name\tpath\tlabel\timage". A
    preset is a layer's properties, effects and keyframes, except what kind of
