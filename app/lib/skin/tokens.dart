@@ -184,16 +184,29 @@ abstract final class TextStyles {
   // In the light shade, text paler than Grey.g56 is darkened to it.
   // Dark ink (g00 to g20, such as the text on a light fill like the playhead head) is left alone,
   // because lifting it to g56 made it unreadable.
+  // A colour keeps its hue: only its lightness is moved to the floor, so an error stays red. Replaced by grey, every
+  // error in the window was grey.
 
   /// The colour [c] for text, raised to the minimum brightness described above.
   static Color ink(Color c) => _floor(c);
   static Color _floor(Color c) {
     if (c.a < .5) return c;
     final l = c.computeLuminance();
-    if (Grey.light) {
-      return l <= Grey.g56.computeLuminance() || l > .6 ? c : Grey.g56;
+    final floor = Grey.light ? Grey.g56 : DarkGrey.g56,
+        at = floor.computeLuminance();
+    if (Grey.light ? (l <= at || l > .6) : (l >= at || l < .04)) return c;
+    final h = HSLColor.fromColor(c);
+    if (h.saturation < .15) return floor;
+    for (var i = 1; i <= 50; i++) {
+      final t = (h.lightness + (Grey.light ? -i : i) * .02).clamp(0.0, 1.0);
+      final m = h.withLightness(t).toColor();
+      if (Grey.light
+          ? m.computeLuminance() <= at
+          : m.computeLuminance() >= at) {
+        return m;
+      }
     }
-    return l >= DarkGrey.g56.computeLuminance() || l < .04 ? c : DarkGrey.g56;
+    return floor;
   }
 
   static TextStyle _sans(
