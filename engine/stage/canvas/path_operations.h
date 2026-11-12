@@ -141,23 +141,6 @@ void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
               int join, float dash, float dashFrom, float from, float to,
               std::vector<float>& xy, std::vector<uint32_t>& idx);
 
-// The shape a text is drawn from, which ThorVG's Text holds inside (tvgText.h,
-// TextImpl) and owns. Through it a text takes what ThorVG gives a shape and
-// not a text: a trim (trim_at), and no fill.
-tvg::Shape* tvg_text_shape(tvg::Text* text);
-// Tells the text that `shape`, if it is a text's own, has changed, so that
-// ThorVG draws the text again: a change made to the shape alone is not seen
-// (ThorVG's own Text::outline marks the text the same way, tvgText.cpp).
-void tvg_text_shape_changed(tvg::Shape* shape);
-
-// The outlines of a text's letters as ThorVG sets them, with its layout,
-// spacing, wrapping and italics: the path of the shape a Text holds inside
-// (ThorVG's tvgText.h, TextImpl), taken through that shape's transform and the
-// text's own, so the points are where the text is drawn. Returns false if
-// the text has no outline (no font, or no words).
-bool tvg_text_outline(tvg::Text* text, std::vector<tvg::PathCommand>& cmds,
-                      std::vector<tvg::Point>& pts);
-
 }  // namespace motolii
 
 #endif  // MOTOLII_STAGE_CANVAS_PATH_OPERATIONS_H_

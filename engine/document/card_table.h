@@ -60,8 +60,8 @@ inline const DocCard doc_cards[] = {
     // expression sit with the rest of the text, as After Effects' Character and
     // Paragraph panels do.
     {"Text",
-     "text file size letter_spacing line_spacing align split italic wrap "
-     "wrap_at",
+     "text text_styles file size letter_spacing line_spacing align split "
+     "italic wrap wrap_at",
      "kind", "text"},
     // After Effects' Polystar: the number of points and how far in between them
     // the star goes.

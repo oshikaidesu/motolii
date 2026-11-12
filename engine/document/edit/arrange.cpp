@@ -284,11 +284,14 @@ double doc_usual(Doc& d, const char* name) {
   return doc_among(
              "parent_rotate parent_size scale_x scale_y scale_z size speed "
              "volume opacity wide tall visible distance zoom copies "
-             "blur_levelletter_spacing line_spacing environment "
+             "blur_level environment "
              "gradient_scale strength",
              name)
              ? 1.0
          : !strcmp(name, "duration") ? -1.0
+         // CSS's usual line height: the 1.2 Blitz takes for line-height: normal
+         // (blitz-dom stylo_to_parley.rs).
+         : !strcmp(name, "line_spacing") ? 1.2
          // Defaults of a solid's material and of the sun.
          : !strcmp(name, "metallic") ||
                  doc_among("bevel_metallic side_metallic back_metallic", name)

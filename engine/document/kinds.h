@@ -273,6 +273,9 @@ inline const DocValue doc_values[] = {
     {"file", "video image solid text", 0, 0, false, ""},
     {"shape", "solid", 0, 0, false, doc_shapes},
     {"text", "text", 0, 0, false, ""},
+    // Ranges of a text's characters with CSS of their own, one a line: "start
+    // count declarations", as community/css/text.h reads them.
+    {"text_styles", "text", 0, 0, false, ""},
     {"fill", "text solid shape light", 0, 0, false, ""},
     {"fill_media", "shape", 0, 0, false, ""},
     // A level's: which of its drawings is shown, by the number in its file name
@@ -559,16 +562,10 @@ inline const DocValue doc_values[] = {
     // Its edge: a color, and how wide it is in points of the image at size 1.
     {"stroke", doc_sheet_kinds, 0, 0, false, ""},
     {"stroke_width", doc_sheet_kinds, 0, 1000, false, nullptr},
-    // ThorVG's own: a text's letters and lines spaced so many times as far
-    // apart as the font sets
-    // them, and its slant. Also an edge's ends and corners, and dashes along it
-    // that long, with
-    // gaps as long, begun so far along.
-    // Its lines broken in a box that many times as wide as its letters are
-    // high, using ThorVG's
-    // layout and wrap. A text's size is the height of all its lines, so this
-    // goes with the letters,
-    // not the image.
+    // A text's lines broken in a box that many times as wide as its letters
+    // are high, as CSS breaks them (community/css/text.h): between words, or
+    // between any letters (character). A text's size is the height of one
+    // line, so this goes with the letters, not the image.
     {"wrap", "text", 0, 0, false,
      "none character word smart ellipsis vertical"},
     {"wrap_at", "text", 0, 1000, false, nullptr},
@@ -576,9 +573,12 @@ inline const DocValue doc_values[] = {
     // They lie where they
     // are, and move, wave and are colored each in their order.
     {"split", "text", 0, 0, false, "none letters words lines"},
-    {"letter_spacing", "text", 0, 10, false, nullptr},
-    {"line_spacing", "text", 0, 10, false, nullptr},
-    {"italic", "text", 0, 0.5, false, nullptr},
+    // After Effects' Tracking, in thousandths of an em, over the range its
+    // Character panel takes; CSS's line-height <number>, never below 0
+    // (css-inline-3); CSS's font-style: oblique angle (css-fonts-4).
+    {"letter_spacing", "text", -1000, 10000, false, nullptr},
+    {"line_spacing", "text", 0, 1e4, false, nullptr},
+    {"italic", "text", -90, 90, false, nullptr},
     // A fill of two colors or more: across (linear, ThorVG's linear gradient)
     // or from the middle
     // out (radial, ThorVG's radial gradient). gradient_angle turns it, in

@@ -139,12 +139,12 @@ int main(int argc, char** argv) {
           std::this_thread::sleep_for(std::chrono::milliseconds(2));
       }
       // A text layer's words are the rest of the line. With none the word is
-      // empty. A call is one line, so in a text the two characters \n stand
-      // for a line break.
+      // empty. A call is one line, so in a text or its styles the two
+      // characters \n stand for a line break.
       else if (call == "say" && w.size() >= 3) {
         const int n = layer();
         std::string said = w.size() > 3 ? rest(3) : "";
-        if (w[2] == "text")
+        if (w[2] == "text" || w[2] == "text_styles")
           for (size_t at = 0; (at = said.find("\\n", at)) != std::string::npos;)
             said.replace(at, 2, "\n");
         if (numbers) ok = motolii_say(m, n, w[2].c_str(), said.c_str());

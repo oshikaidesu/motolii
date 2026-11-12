@@ -139,7 +139,8 @@ void doc_evaluate(Doc& d, double now);
 // doc_carry uses the list too.
 inline const char* const doc_making =
     "'kind','file','shape','path','blend','fx','fx_off','keyed','space','begin'"
-    ",'duration','speed','text','fill','fill_media','fill_rule','wide','points'"
+    ",'duration','speed','text','text_styles','fill','fill_media','fill_rule'"
+    ",'wide','points'"
     ",'inner','round','crop_left','crop_top','crop_right','crop_bottom','bloat'"
     ",'zigzag','offset','warp','clip','stroke','stroke_width','stroke_2','"
     "stroke_2_width','stroke_3','stroke_3_width','align','copies','letter_"

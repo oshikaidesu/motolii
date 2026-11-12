@@ -69,10 +69,11 @@ struct Canvas2DFx {
   std::vector<filament::math::float4> rims;
   // Stacks the letters vertically, one letter height apart.
   bool column = false;
-  // A text's lines are broken in a box wrapWidth letter heights wide, using
-  // ThorVG's text layout and wrap. wrap 0 keeps the text as typed. letters and
-  // italic correspond to ThorVG's Text::spacing and Text::italic.
-  float letters = 1.f, lines = 1.f, italic = 0.f, wrapWidth = 0.f;
+  // A text's lines are broken in a box wrapWidth letter heights wide (wrap 0
+  // keeps the text as typed). letters is After Effects' Tracking (thousandths
+  // of an em), lines CSS's line-height <number> and italic CSS's oblique angle
+  // in degrees (community/css/text.h).
+  float letters = 0.f, lines = 1.2f, italic = 0.f, wrapWidth = 0.f;
   int wrap = 0;
   // Stroke options passed to ThorVG's Shape::strokeDash, strokeCap and
   // strokeJoin. -1 for cap and join keeps ThorVG's default.
@@ -220,6 +221,9 @@ struct Canvas2D {
   float starts = 0.f;
   // A flat shape's own path. Driver thread only.
   tvg::Shape* shape = nullptr;
+  // A text's outline drawn again over a sheet of colours, trimmed with
+  // `shape`. Driver thread only.
+  tvg::Shape* letterEdge = nullptr;
   // As last trimmed: how much was cut off the end, off the beginning, and the
   // offset along the path.
   filament::math::float3 trimmed{0.f};
@@ -342,9 +346,10 @@ struct Canvas2D {
   filament::math::float2 line{0.f, 1.f};
   // The drawing options the layer was made with.
   Canvas2DFx fx;
-  // The text's own words as a ThorVG text. Driver thread only. words_at updates
-  // it in place. Null when the text is split, wrapped or aligned.
-  tvg::Text* text = nullptr;
+  // Sets other words in place of the text's own, into `shape`. Driver thread
+  // only; words_at calls it. Empty when the text is split, wrapped, aligned or
+  // has ranges of its own.
+  std::function<void(const std::string&)> retype;
   // As last set.
   std::string words;
   // The font file the words are set in. Words that contain letters it lacks are

@@ -1,9 +1,12 @@
 // Text on the stage: finding which characters a font lacks, choosing a
-// fallback font, and setting the words with ThorVG into a canvas.
+// fallback font, and setting the words into a canvas: Blitz and Parley lay the
+// letters out, with CSS on ranges of them (community/css/text.h), and ThorVG
+// draws their outlines.
 
 #include <thorvg.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -20,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "community/css/text.h"
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/path_operations.h"
 // stb_truetype reports a malformed font by throwing instead of aborting the
@@ -43,13 +47,42 @@ using filament::math::float4;
 using filament::math::mat4f;
 
 namespace {
-// A ThorVG text in the font of `fontFile` at `size`. ThorVG names a font by its
-// file.
-tvg::Text* text_new(const char* fontFile, float size) {
-  tvg::Text* t = tvg::Text::gen();
-  t->font(std::filesystem::path(fontFile).stem().string().c_str());
-  t->size(size);
-  return t;
+// ThorVG's size is in points, drawn at 96 / 72 pixels each
+// (src/renderer/tvgLoader.h, FontLoader::DPI); a text's size keeps that sense.
+constexpr float kPixelsPerPoint = 96.f / 72.f;
+
+// The letters of a text as text.h sets them, freed when it goes.
+struct Set {
+  MotoliiText* t = nullptr;
+  explicit Set(MotoliiText* t) : t(t) {}
+  Set(const Set&) = delete;
+  Set& operator=(const Set&) = delete;
+  ~Set() {
+    if (t) motolii_text_free(t);
+  }
+  template <int N>
+  std::vector<std::array<float, N>> get(int32_t (*of)(const MotoliiText*,
+                                                      float*)) const {
+    std::vector<std::array<float, N>> all((size_t)of(t, nullptr));
+    of(t, all.empty() ? nullptr : all[0].data());
+    return all;
+  }
+};
+
+// Puts the outlines of all the letters of `t` into `shape`.
+void draw_letters(const MotoliiText* t, tvg::Shape* shape) {
+  const uint8_t* verbs = nullptr;
+  const float* points = nullptr;
+  int32_t verbCount = 0, pointCount = 0;
+  motolii_text_path(t, &verbs, &verbCount, &points, &pointCount);
+  static constexpr tvg::PathCommand kinds[] = {
+      tvg::PathCommand::MoveTo, tvg::PathCommand::LineTo,
+      tvg::PathCommand::CubicTo, tvg::PathCommand::Close};
+  std::vector<tvg::PathCommand> cmds;
+  for (int32_t i = 0; i < verbCount; ++i) cmds.push_back(kinds[verbs[i] & 3]);
+  shape->appendPath(cmds.data(), (uint32_t)cmds.size(),
+                    reinterpret_cast<const tvg::Point*>(points),
+                    (uint32_t)pointCount);
 }
 }  // namespace
 
@@ -135,224 +168,205 @@ std::string type_fallback(const std::string& fontFile,
 
 bool type_sets(const char* fontFile, const char* words) {
   if (!std::filesystem::is_regular_file(fontFile) ||
-      !type_lacks(fontFile, words).empty() ||
-      tvg::Text::load(fontFile) != tvg::Result::Success)
+      !type_lacks(fontFile, words).empty())
     return false;
-  tvg::Text* t = text_new(fontFile, 100.f);
-  t->text(words);
-  float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
-  const bool sets = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success &&
-                    wide > 0.f && tall > 0.f;
-  tvg::Paint::rel(t);
-  // ThorVG counts each load. Unload a font that was only asked about, or memory
-  // grows (543 MB over the shelf). A font in use stays loaded.
-  tvg::Text::unload(fontFile);
-  return sets;
+  const Set set(
+      motolii_text_new(words, nullptr, fontFile, 100.f, 1.2f, 0.f, 0.f, 0.f, 0,
+                       0.f));
+  if (!set.t) return false;
+  const uint8_t* verbs = nullptr;
+  const float* points = nullptr;
+  int32_t verbCount = 0, pointCount = 0;
+  motolii_text_path(set.t, &verbs, &verbCount, &points, &pointCount);
+  return verbCount > 0;
 }
 
 Canvas2D* type(Stage& s, const char* words, const char* fontFile,
-               const mat4f& place, float high, float3 colour, const char* lay,
-               float4 edge, float align, const Canvas2DFx& fx) {
+               const char* styles, const mat4f& place, float high,
+               float3 colour, const char* lay, float4 edge, float align,
+               const Canvas2DFx& fx) {
   if (!std::filesystem::is_regular_file(fontFile)) return nullptr;
-  // If the font lacks characters, use the fallback for all of them. The
-  // inspector reports this (motolii_font_lacks).
-  const std::string fell = type_fallback(fontFile, words);
-  if (!fell.empty()) fontFile = fell.c_str();
+  // Letters the font lacks are set in the fallback font, letter by letter. The
+  // inspector reports them (motolii_font_lacks).
+  std::string fonts = fontFile;
+  if (const std::string fell = type_fallback(fontFile, words); !fell.empty())
+    fonts += "\n" + fell;
+  // Letter height in points, about an eighth of the stage's longer side.
+  const float fine = 0.12f * (float)std::max(s.w, s.h);
+  const std::string ranges = styles ? styles : "";
+  // ThorVG's wrap modes (tvg::TextWrap): 1 breaks between any two letters.
+  const auto set = [fonts, ranges, fine, align, lines = fx.lines,
+                    tracking = fx.letters, slant = fx.italic,
+                    wrap = fx.wrapWidth,
+                    breakAll = fx.wrap == 1](const char* some, float sized) {
+    return motolii_text_new(some, ranges.c_str(), fonts.c_str(),
+                            sized * kPixelsPerPoint, lines, tracking, slant,
+                            wrap > 0.f ? wrap * fine : 0.f, breakAll, align);
+  };
   return place_canvas(
       s,
       [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
-        if (tvg::Text::load(fontFile) != tvg::Result::Success) return nullptr;
-        float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
-        // Letter height in points, about an eighth of the stage's longer side.
-        const float fine = 0.12f * (float)std::max(s.w, s.h);
-        // The size as set. ThorVG does not report it back.
+        // The size as set.
         float sized = fine;
-        tvg::Text* t = text_new(fontFile, sized);
-        t->text(words);
-        t->spacing(fx.letters, fx.lines);
-        if (fx.italic > 0.f) t->italic(fx.italic);
-        // In a layout box ThorVG breaks the text into lines.
-        if (fx.wrapWidth > 0.f)
-          t->layout(fx.wrapWidth * fine, 0.f),
-              t->wrap((tvg::TextWrap)std::clamp(fx.wrap, 0, 4)),
-              t->align(align, 0.f);
-        t->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z));
-        bool measured =
-            t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success &&
-            wide > 0.f && tall > 0.f;
+        auto t = std::make_unique<Set>(set(words, sized));
+        if (!t->t) return nullptr;
+        tvg::Shape* shape = tvg::Shape::gen();
+        draw_letters(t->t, shape);
+        // The text's box: from the first line's top to the last line's bottom
+        // and across the widest line, and wherever its ink reaches past them.
+        float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
+        auto lined = t->get<5>(motolii_text_lines);
+        const auto measure = [&] {
+          if (lined.empty()) return false;
+          float x0 = 0.f, y0 = 0.f, x1 = 0.f, y1 = 0.f, ix = 0.f, iy = 0.f,
+                iw = 0.f, ih = 0.f;
+          x0 = lined[0][3], x1 = x0, y0 = lined[0][0] - lined[0][1];
+          y1 = lined.back()[0] + lined.back()[2];
+          for (const auto& l : lined)
+            x0 = std::min(x0, l[3]), x1 = std::max(x1, l[3] + l[4]);
+          if (shape->bounds(&ix, &iy, &iw, &ih) == tvg::Result::Success &&
+              iw > 0.f && ih > 0.f)
+            x0 = std::min(x0, ix), y0 = std::min(y0, iy),
+            x1 = std::max(x1, ix + iw), y1 = std::max(y1, iy + ih);
+          x = x0, y = y0, wide = x1 - x0, tall = y1 - y0;
+          return wide > 0.f && tall > 0.f;
+        };
+        bool measured = measure();
         // A line too long for one texture is set smaller.
         if (measured && wide > 4096.f) {
-          t->size(sized = fine * 4096.f / wide);
-          measured = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success;
+          t = std::make_unique<Set>(set(words, sized = fine * 4096.f / wide));
+          if (!t->t) return tvg::Paint::rel(shape), nullptr;
+          shape->reset();
+          draw_letters(t->t, shape);
+          lined = t->get<5>(motolii_text_lines);
+          measured = measure();
         }
-        if (!measured) return tvg::Paint::rel(t), nullptr;
-        // Align the lines in a box as wide as the widest line, using ThorVG's
-        // layout and align.
-        if (align > 0.f && fx.wrapWidth <= 0.f) {
-          t->layout(wide, 0.f);
-          t->align(align, 0.f);
-          measured = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success;
-        }
-        // A size means one line's height, as a font size does in After Effects
-        // and Alight Motion (Font Size). With more lines the sheet becomes
-        // taller, so measure one line to get the ratio.
-        if (strchr(words, '\n') || fx.wrapWidth > 0.f) {
-          std::string one(words);
-          one.erase(std::remove(one.begin(), one.end(), '\n'), one.end());
-          tvg::Text* line = text_new(fontFile, sized);
-          line->text(one.c_str());
-          float lineX, lineY, lineWide, lineTall;
-          if (line->bounds(&lineX, &lineY, &lineWide, &lineTall) ==
-                  tvg::Result::Success &&
-              lineTall > 0.f) {
-            tvg::TextMetrics font;
-            if (fx.column && t->metrics(font) == tvg::Result::Success &&
-                font.advance > 0.f)
-              t->spacing(fx.letters, fx.lines * lineTall / font.advance),
-                  t->bounds(&x, &y, &wide, &tall);
-            d->tallBy = tall / lineTall;
-          }
-          tvg::Paint::rel(line);
-        }
-        // The shape ThorVG draws the letters from: trim_at trims it as it trims
+        if (!measured) return tvg::Paint::rel(shape), nullptr;
+        // A size means one line's height in the layer's font, as a font size
+        // does in After Effects and Alight Motion (Font Size), whatever the
+        // ranges set: more lines, or larger letters, make the sheet taller.
+        float ascent = 0.f, descent = 0.f;
+        motolii_text_font(t->t, &ascent, &descent);
+        if (ascent + descent > 0.f) d->tallBy = tall / (ascent + descent);
+        // The shape the letters are drawn from: trim_at trims it as it trims
         // a shape's, and with no fill only the letters' edge shows.
-        d->shape = tvg_text_shape(t);
-        if (fx.hollow)
-          d->shape->fill(byte_of(colour.x), byte_of(colour.y),
-                         byte_of(colour.z), 0);
+        d->shape = shape, d->letterEdge = nullptr;
+        shape->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z),
+                    fx.hollow ? 0 : 255);
         const float stroke = edge.w * tall;
         if (stroke > 0.f)
-          t->outline(stroke, byte_of(edge.x), byte_of(edge.y), byte_of(edge.z));
+          shape->strokeWidth(stroke),
+              shape->strokeFill(byte_of(edge.x), byte_of(edge.y),
+                                byte_of(edge.z));
         // Half of the outline lies outside the letters, so the texture grows by
         // that much on all sides.
         float outline = stroke;
         for (const float4& rim : fx.rims) outline += 2.f * rim.w * tall;
-        t->translate(-x + 0.5f * outline, -y + 0.5f * outline);
+        const float dx = -x + 0.5f * outline, dy = -y + 0.5f * outline;
+        shape->translate(dx, dy);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
-        // ThorVG's size is in points, drawn at 96 / 72 pixels each
-        // (src/renderer/tvgLoader.h, FontLoader::DPI; sfnt loader's scale).
-        d->em = sized * (96.f / 72.f) / (float)*h;
-        // ThorVG sets the baseline the hhea ascent below the text's top
-        // (loaders/sfnt/tvgSfntLoader.cpp, SfntLoader::transform), and the text
-        // was moved by -y here.
-        tvg::TextMetrics font;
-        if (t->metrics(font) == tvg::Result::Success) {
-          const float base = font.ascent - y + 0.5f * outline;
-          d->line = {(base - font.ascent) / (float)*h,
-                     (base - font.descent) / (float)*h};
+        d->em = sized * kPixelsPerPoint / (float)*h;
+        const float base = lined[0][0] + dy;
+        d->line = {(base - ascent) / (float)*h, (base + descent) / (float)*h};
+        const auto colored = t->get<8>(motolii_text_colors);
+        // Keep a way to set other words in place (see words_at). This works
+        // only for plain text without splitting, wrapping, alignment, rims or
+        // ranges.
+        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f &&
+            fx.rims.empty() && ranges.empty()) {
+          d->words = words, d->textFont = fontFile,
+          d->textWide = (float)*w, d->textAt = dy;
+          d->retype = [d, set, sized](const std::string& now) {
+            const Set again(set(now.c_str(), sized));
+            if (!again.t) return;
+            d->shape->translate(0.f, 0.f);
+            d->shape->reset();
+            draw_letters(again.t, d->shape);
+            float ix = 0.f, iy = 0.f, iw = 0.f, ih = 0.f;
+            if (d->shape->bounds(&ix, &iy, &iw, &ih) != tvg::Result::Success)
+              return;
+            d->outgrown = iw > d->textWide + 0.5f;
+            d->shape->translate(0.5f * (d->textWide - iw) - ix, d->textAt);
+          };
         }
-        // Keep the text object so the words can be changed in place (see
-        // words_at). This works only for plain text without splitting,
-        // wrapping, alignment or rims.
-        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f && fx.rims.empty())
-          d->text = t, d->words = words, d->textFont = fontFile,
-          d->textWide = (float)*w, d->textAt = -y + 0.5f * outline;
         // A trailing newline after the words does not make an empty last line.
         std::string line(words);
         while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
           line.pop_back();
-        // Split into lines: each line the text has of its own is cut halfway
-        // between where its letters can reach down and where the next line's
-        // can reach up. A line's base is one advance of the font (times the
-        // line spacing) below the one before, as ThorVG sets them.
-        if (tvg::TextMetrics lined;
-            fx.split && fx.splitLines && fx.wrapWidth <= 0.f &&
-            t->metrics(lined) == tvg::Result::Success) {
-          const float base = lined.ascent - y + 0.5f * outline,
-                      pitch = lined.advance * fx.lines;
-          const long many = 1 + std::count(line.begin(), line.end(), '\n');
+        // Split into lines: each line is cut halfway between where its letters
+        // reach down and where the next line's reach up.
+        if (fx.split && fx.splitLines && fx.wrapWidth <= 0.f) {
+          const size_t many = std::min(
+              lined.size(),
+              (size_t)(1 + std::count(line.begin(), line.end(), '\n')));
           float was = 0.f;
-          std::istringstream each(line);
-          for (long k = 0; k < many; ++k) {
+          for (size_t k = 0; k < many; ++k) {
             const float cut =
                 k + 1 < many
-                    ? std::clamp((base + ((float)k + 0.5f) * pitch -
-                                  0.5f * (lined.ascent + lined.descent)) /
+                    ? std::clamp((0.5f * (lined[k][0] + lined[k][2] +
+                                          lined[k + 1][0] - lined[k + 1][1]) +
+                                  dy) /
                                      (float)*h,
                                  was, 1.f)
                     : 1.f;
             d->letters.push_back(float2{was, cut});
-            // Its box across: as wide as the line alone is, set where the
-            // text's alignment sets it in the widest line's width.
-            std::string one;
-            std::getline(each, one);
-            float ux = 0.f, uy = 0.f, uw = 0.f, uh = 0.f;
-            tvg::Text* alone = text_new(fontFile, sized);
-            alone->spacing(fx.letters, fx.lines);
-            if (fx.italic > 0.f) alone->italic(fx.italic);
-            alone->text(one.c_str());
-            const float across =
-                !one.empty() &&
-                        alone->bounds(&ux, &uy, &uw, &uh) ==
-                            tvg::Result::Success
-                    ? std::min(1.f, (uw + outline) / (float)*w)
-                    : 0.f;
-            tvg::Paint::rel(alone);
-            d->boxes.push_back(
-                float2{std::max(0.f, align) * (1.f - across), across});
+            // Its box across: where the line is set and how wide it is.
+            d->boxes.push_back(float2{
+                std::max(0.f, (lined[k][3] + dx - 0.5f * outline) / (float)*w),
+                std::min(1.f, (lined[k][4] + outline) / (float)*w)});
             was = cut;
           }
-          d->lettersDown = true, d->linePitch = pitch / (float)*h;
+          d->lettersDown = true,
+          d->linePitch = (lined.size() > 1 ? lined[1][0] - lined[0][0]
+                                           : sized * kPixelsPerPoint * fx.lines) /
+                         (float)*h;
         }
-        // One line split into letters. Work out where each letter ends from the
-        // width of the words up to it.
+        // One line split into letters, or words: each is cut halfway across
+        // the gap between its ink and the next one's, so that neither holds
+        // an edge of its neighbor; its box is where it is set and its advance.
         if (fx.split && !fx.splitLines &&
             line.find('\n') == std::string::npos && fx.wrapWidth <= 0.f) {
-          // Measures `some`. Returns in x where its ink ends and in y how wide
-          // it is, both as fractions of the texture width.
-          const auto across = [&](const std::string& some) {
-            tvg::Text* up = text_new(fontFile, sized);
-            up->spacing(fx.letters, fx.lines);
-            if (fx.italic > 0.f) up->italic(fx.italic);
-            up->text(some.c_str());
-            float ux = 0.f, uy = 0.f, uw = 0.f, uh = 0.f;
-            const bool ok =
-                up->bounds(&ux, &uy, &uw, &uh) == tvg::Result::Success;
-            tvg::Paint::rel(up);
-            return float2{ok ? (ux + uw - x + 0.5f * outline) / (float)*w : 0.f,
-                          ok ? (uw + outline) / (float)*w : 0.f};
-          };
-          // For each letter, x is where the words up to and including it end,
-          // and y is its width alone.
+          const auto each = t->get<5>(motolii_text_letters);
+          // For each letter, x is where the ink of the words up to and
+          // including it ends, and y how wide its own ink is.
           std::vector<float2> inks;
-          for (const char* at = line.c_str(); *at;) {
-            const char* next = at + 1;
-            // Advance over one UTF-8 character, however many bytes it has.
-            while (*next && ((unsigned char)*next & 0xC0) == 0x80) ++next;
+          float reach = 0.f;
+          size_t i = 0;
+          for (const char* at = line.c_str(); *at && i < each.size();) {
+            const auto one = [&] {
+              const char* next = at + 1;
+              // Over one UTF-8 character, however many bytes it has.
+              while (*next && ((unsigned char)*next & 0xC0) == 0x80) ++next;
+              at = next;
+              return each[i++];
+            };
+            const auto first = one();
+            auto last = first;
+            float from = first[2], to = first[3];
             if (fx.splitWords)
-              while (*next && *next != ' ') ++next;
-            inks.push_back(float2{across(std::string(line.c_str(), next)).x,
-                                  across(std::string(at, next)).y});
-            // Its box: the advances of its characters. The last one is set
-            // where its ink ends less how far that ink reaches past where it is
-            // set; the others before it.
-            tvg::GlyphMetrics g{};
-            float advance = 0.f;
-            for (const char* c = at; c < next;) {
-              const char* after = nullptr;
-              if (t->metrics(c, g, &after) != tvg::Result::Success || !after)
-                break;
-              advance += g.advance * fx.letters, c = after;
-            }
-            const float last = inks.back().x * (float)*w - g.max.x;
-            d->boxes.push_back(
-                float2{(last - (advance - g.advance * fx.letters)) / (float)*w,
-                       advance / (float)*w});
-            at = next;
+              while (*at && *at != ' ' && i < each.size())
+                if (last = one(); last[3] > last[2])
+                  from = to > from ? std::min(from, last[2]) : last[2],
+                  to = std::max(to, last[3]);
+            if (to > from) reach = std::max(reach, to);
+            inks.push_back(
+                float2{(reach + dx + 0.5f * outline) / (float)*w,
+                       to > from ? (to - from + outline) / (float)*w : 0.f});
+            d->boxes.push_back(float2{
+                (first[0] + dx) / (float)*w,
+                (last[0] + last[1] - first[0]) / (float)*w});
             if (fx.splitWords)
-              while (*at == ' ') ++at;
+              while (*at == ' ') ++at, ++i;
           }
-          // Cut halfway across the gap between one letter's ink and the next,
-          // so that neither includes an edge of its neighbor.
           float was = 0.f;
-          for (size_t i = 0; i < inks.size(); ++i) {
-            const float end = std::max(was, inks[i].x);
+          for (size_t k = 0; k < inks.size(); ++k) {
+            const float end = std::max(was, inks[k].x);
             const float cut =
-                i + 1 < inks.size()
+                k + 1 < inks.size()
                     ? std::max(end,
-                               0.5f * (end + std::max(end, inks[i + 1].x -
-                                                               inks[i + 1].y)))
+                               0.5f * (end + std::max(end, inks[k + 1].x -
+                                                               inks[k + 1].y)))
                     : 1.f;
             d->letters.push_back(float2{was, cut});
             was = cut;
@@ -363,7 +377,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           ends.push_back((ends.empty() ? 0.f : ends.back()) + rim->w * tall);
         if (stroke > 0.f)
           ends.push_back((ends.empty() ? 0.f : ends.back()) + stroke);
-        for (size_t i = 0; i < ends.size() && i < 3; ++i) d->bands[i] = ends[i];
+        for (size_t k = 0; k < ends.size() && k < 3; ++k) d->bands[k] = ends[k];
         d->bands.w = (float)std::min<size_t>(ends.size(), 3);
         std::vector<tvg::Paint*> under;
         float wider = stroke;
@@ -371,8 +385,9 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           wider += 2.f * rim.w * tall;
           const uint8_t r = byte_of(rim.x), g = byte_of(rim.y),
                         b = byte_of(rim.z);
-          tvg::Text* round = (tvg::Text*)t->duplicate();
-          round->fill(r, g, b), round->outline(wider, r, g, b);
+          tvg::Shape* round = (tvg::Shape*)shape->duplicate();
+          round->fill(r, g, b), round->strokeWidth(wider),
+              round->strokeFill(r, g, b);
           under.push_back(round);
         }
         const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
@@ -383,18 +398,37 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           all->add(top);
           return all;
         };
-        if (fx.ramp.size() < 2) return over_rims(t);
-        // With a color ramp, draw a rect as large as the text, filled with the
-        // ramp, and show it only where the letters are, using ThorVG's alpha
-        // mask. ThorVG counts a text's own gradient in the font's units, which
-        // are not available from outside.
-        tvg::Shape* ramp = tvg::Shape::gen();
-        ramp->appendRect(0.f, 0.f, (float)*w, (float)*h);
-        ramp->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial,
-                           fx.rampAngle, fx.rampScale, fx.spread, fx.rampAt,
-                           fx.rampBlend));
-        ramp->mask(t, tvg::MaskMethod::Alpha);
-        return over_rims(ramp);
+        if (fx.ramp.size() < 2 && colored.empty()) return over_rims(shape);
+        // With a color ramp, or ranges of their own color, draw a sheet as
+        // large as the text in the fill, the ramp and the ranges' colors, and
+        // show it only where the letters are, using ThorVG's alpha mask.
+        tvg::Scene* sheet = tvg::Scene::gen();
+        tvg::Shape* ground = tvg::Shape::gen();
+        ground->appendRect(0.f, 0.f, (float)*w, (float)*h);
+        if (fx.ramp.size() >= 2)
+          ground->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial,
+                               fx.rampAngle, fx.rampScale, fx.spread,
+                               fx.rampAt, fx.rampBlend));
+        else
+          ground->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z));
+        sheet->add(ground);
+        for (const auto& c : colored) {
+          tvg::Shape* piece = tvg::Shape::gen();
+          piece->appendRect(c[0] + dx, c[1] + dy, c[2], c[3]);
+          piece->fill(byte_of(c[4]), byte_of(c[5]), byte_of(c[6]),
+                      byte_of(c[7]));
+          sheet->add(piece);
+        }
+        sheet->mask(shape, tvg::MaskMethod::Alpha);
+        if (stroke <= 0.f) return over_rims(sheet);
+        // The mask shows the sheet's colours on the outline too, so the
+        // outline is drawn again over the sheet, as a fill and stroke show.
+        tvg::Shape* edged = (tvg::Shape*)shape->duplicate();
+        edged->fill(0, 0, 0, 0);
+        d->letterEdge = edged;
+        tvg::Scene* top = tvg::Scene::gen();
+        top->add(sheet), top->add(edged);
+        return over_rims(top);
       },
       place, high, float3{-1.f}, true, lay, fx);
 }

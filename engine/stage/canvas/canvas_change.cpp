@@ -19,9 +19,10 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
   d->trimmed = is;
   cache_drop(s, d);
   interop::on_driver(s.engine, [d, cut, begin, offset] {
-    d->shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset,
-                       1.f - std::clamp(cut, 0.f, 1.f) + offset);
-    tvg_text_shape_changed(d->shape);
+    for (tvg::Shape* shape : {d->shape, d->letterEdge})
+      if (shape)
+        shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset,
+                        1.f - std::clamp(cut, 0.f, 1.f) + offset);
     d->canvas->update();
     d->canvas->draw(true), d->stale = true;
     d->canvas->sync();
@@ -101,19 +102,14 @@ void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
 }
 
 bool words_at(Stage& s, Canvas2D* d, const std::string& words) {
-  if (!d->text || d->outgrown) return false;
+  if (!d->retype || d->outgrown) return false;
   if (words == d->words) return true;
   // The font lacks a letter. The text is made again with the fallback font.
   if (!type_lacks(d->textFont, words).empty()) return false;
   d->words = words;
   cache_drop(s, d);
   interop::on_driver(s.engine, [d, words] {
-    d->text->translate(0.f, 0.f);
-    d->text->text(words.c_str());
-    float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
-    if (d->text->bounds(&x, &y, &wide, &tall) != tvg::Result::Success) return;
-    d->outgrown = wide > d->textWide + 0.5f;
-    d->text->translate(0.5f * (d->textWide - wide) - x, d->textAt);
+    d->retype(words);
     d->canvas->update();
     d->canvas->draw(true), d->stale = true;
     d->canvas->sync();

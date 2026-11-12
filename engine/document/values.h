@@ -31,6 +31,7 @@ struct DocShown {
 // none). The slider range is for display only; typed values may go beyond it.
 inline const DocShown doc_shown[] = {
     {"text", "words", "", "Text", 0, 0, nullptr},
+    {"text_styles", "words", "", "Styles", 0, 0, nullptr},
     {"file", "file", "", "Font", 0, 0, nullptr},
     // An image that fills a shape, as in Alight Motion's Fill > Media. It is
     // chosen from the Fill button of the Media shelf.
@@ -45,9 +46,9 @@ inline const DocShown doc_shown[] = {
     {"stroke_3", "colour", "", "Stroke 3", 0, 0, nullptr},
     {"stroke_3_width", "", "px", "Width 3", 0, 40, nullptr},
     {"split", "", "", "Split", 0, 0, nullptr},
-    {"letter_spacing", "", "×", "Tracking", 0, 3, nullptr},
-    {"line_spacing", "", "×", "Line gap", 0, 3, nullptr},
-    {"italic", "share", "%", "Slant", 0, 0.5, nullptr},
+    {"letter_spacing", "", "", "Tracking", -100, 500, nullptr},
+    {"line_spacing", "", "×", "Line height", 0.5, 3, nullptr},
+    {"italic", "", "°", "Slant", 0, 20, nullptr},
     {"wrap", "", "", "Wrap", 0, 0, nullptr},
     {"wrap_at", "", "×", "Wrap at", 0, 40, nullptr},
     {"gradient", "", "", "Gradient", 0, 0, nullptr},

@@ -116,17 +116,20 @@ std::string type_fallback(const std::string& fontFile,
 // type_lacks() is checked first. Any thread may call this once ThorVG is
 // initialized, because ThorVG's font loader holds a lock.
 bool type_sets(const char* fontFile, const char* words);
-// Adds `words` to the scene, set by ThorVG in the font of `fontFile` (a .ttf).
-// Each line is a sheet `high` tall and as wide as its words, centered at
-// `place`. If the font lacks some characters, the whole text is set in a
-// fallback font instead, chosen by type_fallback. colour: Fill color. edge:
+// Adds `words` to the scene, set in the font of `fontFile` (a .ttf) by Blitz
+// and Parley and drawn by ThorVG (community/css/text.h). `styles` gives ranges
+// of the characters CSS declarations of their own, as text.h reads them (may
+// be null). Each line is a sheet `high` tall and as wide as its words, centered
+// at `place`. Characters the font lacks are set in a fallback font, chosen by
+// type_fallback. colour: Fill color. edge:
 // ThorVG outline around the letters. xyz is its color and w its width as a
 // fraction of the text height. 0 means none. align: How lines align under one
 // another, as ThorVG does: 0 left, 1 right. fx.rims: Further outlines, each
 // outside the last. The letters are drawn again beneath, each with a wider
 // outline. The words may contain \n to break lines.
 Canvas2D* type(Stage& s, const char* words, const char* fontFile,
-               const filament::math::mat4f& place, float high,
+               const char* styles, const filament::math::mat4f& place,
+               float high,
                filament::math::float3 colour = filament::math::float3{0.f},
                const char* lay = nullptr,
                filament::math::float4 edge = filament::math::float4{0.f},

@@ -8,6 +8,7 @@
 //! letters' sizes, and the letters go where it puts them. Checked against Chrome: docs/design/next_expressions.md, Q7.
 
 pub mod svg;
+pub mod text;
 
 use std::collections::HashMap;
 use std::ffi::{CStr, c_char};

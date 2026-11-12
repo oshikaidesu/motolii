@@ -14,6 +14,10 @@ blitz-html = { version = "=0.3.0-beta.4", default-features = false }
 blitz-traits = { version = "=0.3.0-beta.4", default-features = false }
 style = { package = "stylo", version = "=0.22.0" }
 euclid = "0.22"
+# A text layer's letters laid out with CSS on ranges of them (text.rs): Parley as Blitz uses it, and skrifa for the
+# outlines, both at the versions Blitz already brings.
+parley = { version = "=0.12.0", default-features = false, features = ["std"] }
+skrifa = { version = "=0.44.0", default-features = false, features = ["std"] }
 # The SVG's own text and its transform attribute, read as resvg reads them (svg.rs).
 roxmltree = "0.20"
 svgtypes = "0.16"

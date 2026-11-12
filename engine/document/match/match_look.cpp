@@ -207,8 +207,8 @@ void look_text(LayerBuild& build) {
                                                   : 0;
     if (w == "vertical") fx.wrapWidth = 1.f, fx.column = true;
   }
-  fx.letters = (float)build.number("letter_spacing", 1),
-  fx.lines = (float)build.number("line_spacing", 1),
+  fx.letters = (float)build.number("letter_spacing", 0),
+  fx.lines = (float)build.number("line_spacing", 1.2),
   fx.italic = (float)build.number("italic", 0);
 }
 
