@@ -59,6 +59,22 @@
             "type": "command",
             "command": "jq -c 'select((.duration_ms // 0) >= 30000) | {hookSpecificOutput:{hookEventName:.hook_event_name,additionalContext:(\"The previous \"+.tool_name+\" call took \"+((.duration_ms/1000)|floor|tostring)+\" s.\")}}'",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "jq -c 'select((.tool_input.command // \"\") | test(\"git commit\")) | {hookSpecificOutput:{hookEventName:\"PostToolUse\",additionalContext:\"区切りです(コミットした)。次に進む前に、コードを読まずに「理想：…」を、使う人に見える形で 1〜2 行書くこと。コードの都合で理想を削らない。今できない事は、差として挙げて埋める。\"}}' 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{hookSpecificOutput:{hookEventName:\"UserPromptSubmit\",additionalContext:\"新しい依頼です。コードを読む前に「理想：…」を、使う人に見える形で 1〜2 行書くこと。コードの都合で理想を削らない。今できない事は、差として挙げて埋める。\"}}' 2>/dev/null || true",
+            "timeout": 5
           }
         ]
       }
