@@ -53,7 +53,15 @@ class ColorCommands {
   }
 
   /// Sets the fill of the selected layer to [word] (six hex digits or a material name). On failure the shelf footer shows why.
-  void fill(String word) {
+  /// During a drag on the wheel each colour is a step of [WorkspaceController.live]: the stage and the panels follow it.
+  void fill(String word) => _dragged
+      ? c.ws.live.move((_) {
+          _fillNow(word);
+          return [colored ?? 0];
+        })
+      : _fillNow(word);
+
+  void _fillNow(String word) {
     final m = c.ws.inside!, t = colored;
     if ((c.ws.aim == null || c.ws.aim == 'fill') &&
         RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(word)) {
@@ -209,11 +217,17 @@ class ColorCommands {
     colors.saved.keep();
   }
 
-  /// Starts one undo step: what is changed until [endUndoStep] is undone together, as a drag on the wheel is.
-  void beginUndoStep() => c.ws.inside!.later('together', number: 1);
+  // Whether a drag on the wheel or a gradient stop is in progress.
+  bool _dragged = false;
 
-  /// Ends the undo step [beginUndoStep] started.
-  void endUndoStep() => c.ws.after(c.ws.inside!.later('together'));
+  /// Starts a drag: the colours [fill] is given until [endUndoStep] are shown as they come and undone together.
+  void beginUndoStep() => _dragged = true;
+
+  /// Ends the drag [beginUndoStep] started, as one undo step.
+  void endUndoStep() {
+    _dragged = false;
+    c.ws.live.done();
+  }
 
   /// Sets how the gradient being edited is mixed to [blend]: on the picked layer when its fill ([name] is 'fill') is
   /// the target, otherwise on the ink of the next layer drawn.

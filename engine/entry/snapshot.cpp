@@ -108,10 +108,19 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
   w.Key("value"), w.StartObject();
   // A parameter driven by a macro is written as the macro produces it (see
   // document/scripts/expressions.h).
+  // A value held by a drag and without keyframes is written as it is held, so
+  // the bars and numbers follow the drag as the stage does (doc_number reads it
+  // the same way).
+  const DocHeld& held = m->d->held;
   for (const std::string& n : names)
-    if (double v = 0; doc_value(*m->d, layer, n.c_str(), 0, &v))
+    if (double v = 0; doc_value(*m->d, layer, n.c_str(), 0, &v)) {
+      if (const auto t = held.tried.find(n);
+          held.layer == layer && t != held.tried.end() &&
+          doc_key_times(*m->d, layer, n.c_str()).empty())
+        v = t->second;
       doc_macro_over(*m->d, layer, n.c_str(), 0, &v), w.Key(n.c_str()),
           w.Double(v);
+    }
   w.EndObject();
   w.Key("range"), w.StartObject();
   for (const std::string& n : names)

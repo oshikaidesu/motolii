@@ -5,6 +5,7 @@
 // waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -15,8 +16,14 @@ void slideKeyframes(
   Iterable<SelectedKeyframe> keys,
   int by,
 ) {
-  final m = ws.inside;
-  if (m == null || by == 0 || keys.isEmpty) return;
+  if (by == 0 || keys.isEmpty) return;
+  ws.live.done((m) => slideWrites(m, keys, by), (_) => ws.reread());
+}
+
+/// Writes the move of [slideKeyframes] and returns the layers it changed. A drag on the timeline gives it to
+/// [WorkspaceController.live] at each step, so the keyframes, the stage and the panels follow the hand.
+Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
+  if (by == 0) return const [];
   final moves =
       <
         (int, String, double, double, double, String)
@@ -37,8 +44,6 @@ void slideKeyframes(
       moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
-  if (moves.isEmpty) return;
-  m.later('together', number: 1);
   for (final (t, n, at, _, _, _) in moves) {
     m.later('unkey', layer: t, name: n, number: at); // All are removed first so that a keyframe slid onto another's old time is not lost.
   }
@@ -48,7 +53,7 @@ void slideKeyframes(
       m.later('easing', layer: t, name: n, number: to, word: way);
     }
   }
-  ws.after(m.later('together'), (_, _) => ws.reread());
+  return {for (final (t, _, _, _, _, _) in moves) t};
 }
 
 /// Removes the selected keyframes, and those of the other properties of the layer at the same time, as one undo step.

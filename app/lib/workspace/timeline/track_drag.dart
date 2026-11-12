@@ -73,6 +73,8 @@ class TrackDrag extends ChangeNotifier {
 
   // The keyframe being dragged, together with the other selected keyframes. They slide in time while the playhead shows the position.
   ({List<SelectedKeyframe> keys, int grab, int by})? _slide;
+  // How far the slide has been written into the document so far, in frames.
+  int _slid = 0;
   // When and where a lane was last clicked, to detect a double-click.
   DateTime? _lanePressed;
   Offset _laneAt = Offset.zero;
@@ -147,6 +149,16 @@ class TrackDrag extends ChangeNotifier {
         s.grab,
       ]);
       _slide = (keys: s.keys, grab: s.grab, by: by);
+      // Each step goes into the drag's undo step from where the keyframes now are, so a step skipped on the way
+      // loses nothing.
+      workspace!.live.move((m) {
+        final step = by - _slid;
+        final now = [
+          for (final k in s.keys) (layer: k.layer, frame: k.frame + _slid),
+        ];
+        _slid = by;
+        return slideWrites(m, now, step);
+      });
       notifyListeners();
       workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
@@ -188,9 +200,11 @@ class TrackDrag extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_slide case final s?) {
+    if (_slide != null) {
       _slide = null;
-      if (keep) slideKeyframes(workspace!, s.keys, s.by);
+      _slid = 0;
+      final ws = workspace!;
+      keep ? ws.live.done(null, (_) => ws.reread()) : ws.live.cancel();
       return;
     }
     final h = _bar, ws = workspace!, m = ws.inside;

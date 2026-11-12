@@ -121,6 +121,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         },
         onPointerCancel: (_) {
           writer.down = false;
+          writer.giveUp(ws);
           setState(() => writer.pending = null);
         },
         child: _body(ws, span, ease, set),

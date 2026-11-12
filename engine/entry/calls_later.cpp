@@ -94,8 +94,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
                                          number)));
         // number: nonzero keeps what was dragged as one undo step, 0 gives it
         // up.
-        else if (c == "drag_end")
+        else if (c == "drag_end") {
+          // A drag given up changes no row, so the previews that followed it
+          // are made again as the project is.
+          const int held = doc(m).held.layer;
           ok = changes(m, (int)doc_let_go(doc(m), number != 0.0));
+          if (number == 0.0 && held >= 0)
+            m->d->changes.changed.insert({held, ""}), snapshot_update(m);
+        }
         // Audacity's Auto Duck: the layer's volume is keyed down under the
         // other sounds.
         else if (c == "duck")

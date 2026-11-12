@@ -1,6 +1,5 @@
 #include "entry/calls.h"
 
-
 #include <regex>
 
 #include "document/cards.h"
@@ -241,7 +240,10 @@ int motolii_drag_start(Motolii* m, int layer) {
 // is reported when the drag ends.
 int motolii_drag_update(Motolii* m, const char* by, double a, double b) {
   return posted(m, std::string("carry ") + by, [m, by = std::string(by), a, b] {
-    doc_carry(doc(m), by.c_str(), a, b);
+    Doc& d = doc(m);
+    // The app's previews of the held layer follow too, as `show` makes them.
+    if (doc_carry(d, by.c_str(), a, b))
+      d.changes.changed.insert({d.held.layer, ""}), snapshot_update(m);
   });
 }
 // Reads the work area into *from and *to. Returns 1.

@@ -11,6 +11,7 @@ import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/drawing_inks.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/live_edit.dart';
 import 'package:motolii/workspace/state/notices.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/panel_layout.dart';
@@ -52,6 +53,9 @@ class WorkspaceController extends ChangeNotifier {
 
   /// What is read from the engine's document: the layers as rows, the marks, the guides and the tempo, and the
   /// requests still on their way to the engine.
+  /// The gesture in progress: what a drag, typing or a wheel writes while it lasts, shown at once, one undo step.
+  late final live = LiveEdit(this);
+
   late final project = ProjectReader(
     composition: _composition,
     playhead: playhead,
