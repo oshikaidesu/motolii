@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:re_editor/re_editor.dart';
@@ -13,6 +14,10 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/code/expression_prompts.dart';
+
+/// A stretch of code that is wrong: its line, counted from 1, and its columns. It is underlined with a red wave, as
+/// VS Code underlines an error where it is in the code.
+typedef CodeMark = ({int line, int from, int to});
 
 /// An editor for code.
 ///
@@ -26,8 +31,12 @@ class CodeField extends StatefulWidget {
     this.keep = false,
     this.fit = false,
     this.prompts,
+    this.mark,
   });
   final String file;
+
+  /// What to underline as wrong, if anything.
+  final ValueListenable<CodeMark?>? mark;
 
   /// The names completed as they are typed (IntelliSense), for an After Effects expression; null for other code.
   final ExpressionPrompts? prompts;
@@ -56,7 +65,50 @@ class CodeField extends StatefulWidget {
 
 class _CodeFieldState extends State<CodeField> {
   late String _written = File(widget.file).readAsStringSync();
-  late final _text = CodeLineEditingController.fromText(_written);
+  late final _text = CodeLineEditingController(
+    codeLines: CodeLines.fromText(_written),
+    spanBuilder: _marked,
+  );
+
+  /// The line as re_editor coloured it, with the marked columns underlined.
+  TextSpan _marked({
+    required BuildContext context,
+    required int index,
+    required CodeLine codeLine,
+    required TextSpan textSpan,
+    required TextStyle style,
+  }) {
+    final m = widget.mark?.value;
+    if (m == null || m.line != index + 1) return textSpan;
+    var at = 0;
+    InlineSpan cut(InlineSpan span) {
+      if (span is! TextSpan) return span;
+      final text = span.text ?? '', from = at, to = at += text.length;
+      final kids = span.children?.map(cut).toList();
+      final a = m.from.clamp(from, to) - from, b = m.to.clamp(from, to) - from;
+      if (a == b) {
+        return TextSpan(text: text, style: span.style, children: kids);
+      }
+      final wave = (span.style ?? style).copyWith(
+        decoration: TextDecoration.underline,
+        decorationStyle: TextDecorationStyle.wavy,
+        decorationColor: Role.error,
+      );
+      return TextSpan(
+        style: span.style,
+        children: [
+          TextSpan(text: text.substring(0, a)),
+          TextSpan(text: text.substring(a, b), style: wave),
+          TextSpan(text: text.substring(b)),
+          ...?kids,
+        ],
+      );
+    }
+
+    return cut(textSpan) as TextSpan;
+  }
+
+  void _remark() => _text.forceRepaint();
   Timer? _soon;
 
   void _save() {
@@ -77,6 +129,7 @@ class _CodeFieldState extends State<CodeField> {
   void dispose() {
     if (_soon?.isActive ?? false) _save();
     _soon?.cancel();
+    widget.mark?.removeListener(_remark);
     if (identical(CodeField._last, _text)) CodeField._last = null;
     _focus.dispose();
     _text.dispose();
@@ -107,6 +160,7 @@ class _CodeFieldState extends State<CodeField> {
   void initState() {
     super.initState();
     if (widget.fit) _text.addListener(_counted);
+    widget.mark?.addListener(_remark);
   }
 
   @override

@@ -17,6 +17,7 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip;
 import 'package:motolii/widgets/number_field.dart' show NumberField;
+import 'package:motolii/workspace/shelf/code_field.dart' show CodeMark;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -24,9 +25,12 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 /// What the expression of the code file [file] gives at the playhead. Nothing is shown for code that is not an After
 /// Effects expression. [write] writes new code for the cell, for a quick fix.
 class ExpressionResult extends StatefulWidget {
-  const ExpressionResult(this.file, {super.key, this.write});
+  const ExpressionResult(this.file, {super.key, this.write, this.mark});
   final String file;
   final ValueChanged<String>? write;
+
+  /// Set to the name that is not defined, where it is in the code, for the editor to underline it.
+  final ValueNotifier<CodeMark?>? mark;
   @override
   State<ExpressionResult> createState() => _ExpressionResultState();
 }
@@ -78,6 +82,7 @@ class _ExpressionResultState extends State<ExpressionResult> {
           final last = said.isEmpty ? null : jsonDecode(said);
           if (last is Map<String, dynamic>) {
             setState(() => _last = last);
+            _markMissing();
           } else if (tries < 10 && File(widget.file).existsSync()) {
             // The engine has not run that time yet: what was shown stays, and it is asked again.
             _again?.cancel();
@@ -87,6 +92,7 @@ class _ExpressionResultState extends State<ExpressionResult> {
             return;
           } else {
             setState(() => _last = null);
+            _markMissing();
           }
           // The playhead moved, or the code was written, while the question was out.
           if (_key(ws.frame) != key) _ask(ws, ws.frame);
@@ -122,14 +128,27 @@ class _ExpressionResultState extends State<ExpressionResult> {
     );
   }
 
+  String get _code => File(widget.file).existsSync()
+      ? File(widget.file).readAsStringSync()
+      : '';
+
+  /// The name the error says is not defined.
+  static String? _missing(Object? error) => error == null
+      ? null
+      : RegExp(r"""^ReferenceError: '?([A-Za-z_$][\w$]*)'? is not defined""")
+            .firstMatch('$error')
+            ?.group(1);
+
+  void _markMissing() {
+    final mark = widget.mark;
+    if (mark == null) return;
+    final missing = _missing(_last?['error']);
+    mark.value = missing == null ? null : _whereIn(_code, missing);
+  }
+
   Widget _error(String error) {
-    final code = File(widget.file).existsSync()
-        ? File(widget.file).readAsStringSync()
-        : '';
-    final missing = RegExp(
-      r"""^ReferenceError: '?([A-Za-z_$][\w$]*)'? is not defined""",
-    ).firstMatch(error)?.group(1);
-    final line = missing == null ? null : _lineOf(code, missing);
+    final code = _code, missing = _missing(error);
+    final line = missing == null ? null : _whereIn(code, missing)?.line;
     final write = widget.write;
     return Padding(
       padding: EdgeInsets.only(top: Shape.s(4)),
@@ -168,11 +187,14 @@ RegExp _named(String name) =>
 
 bool _comment(String line) => line.trimLeft().startsWith('//');
 
-/// The line, counted from 1, where [name] is first named outside a comment.
-int? _lineOf(String code, String name) {
+/// Where [name] is first named outside a comment: the line, counted from 1, and its columns.
+CodeMark? _whereIn(String code, String name) {
   final lines = const LineSplitter().convert(code);
   for (var i = 0; i < lines.length; i++) {
-    if (!_comment(lines[i]) && _named(name).hasMatch(lines[i])) return i + 1;
+    if (_comment(lines[i])) continue;
+    if (_named(name).firstMatch(lines[i]) case final m?) {
+      return (line: i + 1, from: m.start, to: m.end);
+    }
   }
   return null;
 }

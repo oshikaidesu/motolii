@@ -223,6 +223,14 @@ class _EffectCodeState extends State<EffectCode> {
   // The names completed in the editor, asked of the running expression once for each file.
   ExpressionPrompts? _prompts;
   String? _promptsFor;
+  // Where the running expression is wrong, underlined in the editor.
+  final _mark = ValueNotifier<CodeMark?>(null);
+
+  @override
+  void dispose() {
+    _mark.dispose();
+    super.dispose();
+  }
 
   void _askPrompts(String file) {
     final m = widget.ws.inside;
@@ -403,6 +411,7 @@ class _EffectCodeState extends State<EffectCode> {
             keep: _making,
             fit: true,
             prompts: _prompts,
+            mark: _mark,
           )
         else
           Expanded(
@@ -411,12 +420,14 @@ class _EffectCodeState extends State<EffectCode> {
               _write,
               keep: _making,
               prompts: _prompts,
+              mark: _mark,
             ),
           ),
         // What the expression gives at the playhead, under it as After Effects puts an expression's error.
         ExpressionResult(
           EffectCode.source(_mine ?? widget.word),
           write: _write,
+          mark: _mark,
         ),
         if (widget.shelf)
           Padding(
