@@ -2,6 +2,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
 import 'package:motolii/inspector/transform/transform_body.dart';
 
@@ -22,5 +23,10 @@ final hostCards =
         drawn: {...TransformBody.drawn, ...AnchorFold.drawn},
         body: (card) => TransformBody(card),
         fold: (card) => AnchorFold(card),
+      ),
+      'Text': (
+        drawn: TextBody.drawn,
+        body: (card) => TextBody(card),
+        fold: null,
       ),
     };

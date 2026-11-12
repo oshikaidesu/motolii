@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/widgets/text_gestures.dart' show wordsPicked;
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
 import 'package:motolii/workspace/dock/colors/colors_controller.dart';
@@ -25,16 +26,14 @@ class ColorCommands {
   final ColorsController colors;
 
   /// The range of letters selected in the selected text layer, as letter indexes, or null.
-  /// It is null unless the selection still matches the layer's text and the text is a single line,
-  /// because splitting a text into letters works on one line only. Indexes count characters, not bytes.
+  /// It is null unless the selection still matches the layer's text. Indexes count characters, not bytes.
   (int, int)? lettersPicked(int? t) {
     final m = c.ws.inside, p = wordsPicked.value;
     if (m == null ||
         t == null ||
         p == null ||
         m.word(t, 'kind') != 'text' ||
-        m.word(t, 'text') != p.text ||
-        p.text.contains('\n')) {
+        m.word(t, 'text') != p.text) {
       return null;
     }
     return (
@@ -44,33 +43,19 @@ class ColorCommands {
   }
 
   /// Colors some letters of a text layer and leaves the rest alone, as Figma, Canva, PowerPoint, Keynote
-  /// and After Effects' Character panel do for selected characters.
-  /// The engine does it by splitting the text into letters and giving each one a color in turn with copy_fill
-  /// (each copy's wash is the color itself, see engine/materials/flat.mat).
+  /// and After Effects' Character panel do for selected characters: one range of the layer's text_styles
+  /// sets their CSS color (see inspector/text/text_ranges.dart).
   void _fillLetters(int t, (int, int) at, String word) {
-    final m = c.ws.inside!, n = m.word(t, 'text').runes.length;
-    final had = m
-        .word(t, 'copy_fill')
-        .split(' ')
-        .where((w) => w.isNotEmpty)
-        .toList();
-    final base = m.word(t, 'fill').split(' ').first.split('@').first;
-    final each = [
-      for (var i = 0; i < n; i++)
-        i >= at.$1 && i < at.$2
-            ? word
-            : had.length == n
-            ? had[i]
-            : (base.isEmpty || base == 'none' ? 'ffffff' : base),
-    ];
-    m.later('together', number: 1); // One undo step.
-    if (m.word(t, 'split') != 'letters') {
-      m.later('say', layer: t, name: 'split', word: 'letters');
-    }
-    m.later('say', layer: t, name: 'copy_fill', word: each.join(' '));
-    m.later('say', layer: t, name: 'copy_fill_way', word: 'cycle');
+    final m = c.ws.inside!;
+    final styles = styleRange(
+      m.word(t, 'text_styles'),
+      at.$1,
+      at.$2 - at.$1,
+      'color',
+      '#$word',
+    );
     c.ws.after(
-      m.later('together'),
+      m.later('say', layer: t, name: 'text_styles', word: styles),
       (done, why) => c.set(
         () => done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why,
       ),

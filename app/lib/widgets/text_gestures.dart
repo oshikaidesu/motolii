@@ -60,6 +60,7 @@ class TypedField extends StatefulWidget {
     this.escapes = false,
     this.hold,
     this.onPick,
+    this.styled,
   });
   final String text;
   final TextStyle style;
@@ -82,12 +83,16 @@ class TypedField extends StatefulWidget {
 
   /// Called while the field has focus with its text and selection.
   final ValueChanged<TextEditingValue>? onPick;
+
+  /// Sets the text in spans of their own styles, as a rich text box does; the text typed stays plain.
+  /// With it, Return starts a new line and only leaving the field reports the text.
+  final InlineSpan Function(String text, TextStyle style)? styled;
   @override
   State<TypedField> createState() => TypedFieldState();
 }
 
 class TypedFieldState extends State<TypedField> {
-  late final TextEditingController _c = TextEditingController(text: widget.text)
+  late final TextEditingController _c = _Styled(this, widget.text)
     ..addListener(() => _f.hasFocus ? widget.onPick?.call(_c.value) : null);
   late final FocusNode _f = FocusNode()..addListener(_moved);
   // The text when the user entered the field. Null while the field is not focused.
@@ -159,8 +164,9 @@ class TypedFieldState extends State<TypedField> {
         cursorWidth: w.cursorWidth,
         textAlign: w.align,
         minLines: w.lines,
-        maxLines: w.lines,
-        onSubmitted: (_) => _leave(true),
+        maxLines: w.styled == null ? w.lines : null,
+        keyboardType: w.styled == null ? null : TextInputType.multiline,
+        onSubmitted: w.styled == null ? (_) => _leave(true) : null,
       ),
     );
     return w.escapes
@@ -173,6 +179,28 @@ class TypedFieldState extends State<TypedField> {
           )
         : field;
   }
+}
+
+/// The field's text, set in the spans [TypedField.styled] gives.
+class _Styled extends TextEditingController {
+  _Styled(this.of, String text) : super(text: text);
+  final TypedFieldState of;
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) => switch (of.widget.styled) {
+    final styled? when !value.composing.isValid || !withComposing => TextSpan(
+      style: style,
+      children: [styled(text, style ?? const TextStyle())],
+    ),
+    _ => super.buildTextSpan(
+      context: context,
+      style: style,
+      withComposing: withComposing,
+    ),
+  };
 }
 
 /// The selection in an item's text, kept after the field loses focus so a colour can be applied to it.
