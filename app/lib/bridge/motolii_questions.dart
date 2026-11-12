@@ -327,15 +327,22 @@ extension MotoliiQuestions on Motolii {
           steps,
         );
 
-  /// Completes with a ticket's answer when it arrives, and with the reason if it was refused.
+  /// Completes with a ticket's answer when it arrives, and with its words: the reason if it was refused, what the
+  /// script answered for `ask`, and '' otherwise.
   ///
   /// Like Thermion's VoidCallbackRegistry, it keeps a Completer per ticket and completes it when the engine reports an
   /// answer (motolii_add_listener, flag 8). Nothing polls.
   Future<(int, String)> answered(int ticket) {
     final a = answer(ticket);
-    if (a >= 0) return Future.value((a, a >= 1 ? '' : answerWhy));
+    if (a >= 0) return Future.value((a, answerWhy));
     return (waiting[ticket] ??= Completer<(int, String)>()).future;
   }
+
+  /// Asks the running script of the code file [file] the JavaScript [js], as a browser's console is asked, and completes
+  /// with what it answers as text ('' if the file is not a script that runs). The lists the Code tab shows beside the
+  /// code are asked this way, so none of them is kept by hand. Nothing of the project is changed.
+  Future<String> askScript(String file, String js) async =>
+      (await answered(later('ask', name: file, word: js))).$2;
 
   /// A ticket's answer: -1 if not done yet, 0 if refused ([answerWhy] says why), 1 if done. Each answer is reported once.
   int answer(int ticket) {

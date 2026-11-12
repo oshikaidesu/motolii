@@ -5,6 +5,8 @@
 // one text, and typing here moves the card's sliders. A cell is as tall as its code and the tab scrolls, as a
 // notebook's cells do (Jupyter). Any number of cells stay open; pressing a cell's head folds it.
 // "Edit code" on a card in the Inspector unfolds its cell and scrolls to it (EffectCode.show).
+// Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
+// first one open. The word "Functions" in the head hides and shows it.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
@@ -13,6 +15,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/workspace/code/functions_panel.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
@@ -74,6 +77,14 @@ class _CodePaneState extends State<CodePane> {
       _shown = asked;
       if (_cells['$t/${asked.$1}'] case final cell?) _scrollTo(cell);
     }
+    // The cell the lists beside the code are for: the one last asked for if it is open, else the first open one.
+    final open = [
+      for (final (title, code) in cells)
+        if (!folded.contains(title)) (title, code),
+    ];
+    final beside =
+        open.where((c) => c.$1 == asked?.$1).firstOrNull ?? open.firstOrNull;
+    final lists = ws.viewOf('code.functions', true);
     void add() {
       setState(() => _why = '');
       emptyPut(
@@ -96,33 +107,59 @@ class _CodePaneState extends State<CodePane> {
               1 => '1 card with code',
               final n => '$n cards with code',
             }, style: TextStyles.label(Grey.g56)),
+            SizedBox(width: Shape.s(10)),
+            Pressable(
+              onTap: () => ws.setView('code.functions', !lists),
+              builder: (_, hot) => Text(
+                'Functions',
+                key: const ValueKey('code-functions-toggle'),
+                style: TextStyles.label(lists || hot ? Grey.g95 : Grey.g56)
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (cells.isEmpty)
-                  const _Said(
-                    'Nothing on this layer has code yet. Put an expression or an effect on it from Create or Effects, paste code, or start an empty expression below.',
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (cells.isEmpty)
+                        const _Said(
+                          'Nothing on this layer has code yet. Put an expression or an effect on it from Create or Effects, paste code, or start an empty expression below.',
+                        ),
+                      for (final (title, code) in cells)
+                        _Cell(
+                          title,
+                          code,
+                          key: _cells.putIfAbsent('$t/$title', GlobalKey.new),
+                          open: !folded.contains(title),
+                          onFold: () => ws.setView(
+                            EffectCode.folded,
+                            folded.contains(title)
+                                ? ({...folded}..remove(title))
+                                : {...folded, title},
+                          ),
+                        ),
+                      _AddRow('New expression', _why, add),
+                    ],
                   ),
-                for (final (title, code) in cells)
-                  _Cell(
-                    title,
-                    code,
-                    key: _cells.putIfAbsent('$t/$title', GlobalKey.new),
-                    open: !folded.contains(title),
-                    onFold: () => ws.setView(
-                      EffectCode.folded,
-                      folded.contains(title)
-                          ? ({...folded}..remove(title))
-                          : {...folded, title},
-                    ),
+                ),
+              ),
+              if (lists) ...[
+                Container(width: 1, color: WindowTokens.line),
+                SizedBox(
+                  width: Shape.z(300),
+                  child: FunctionsPanel(
+                    beside == null ? null : EffectCode.source(beside.$2.word),
                   ),
-                _AddRow('New expression', _why, add),
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ],

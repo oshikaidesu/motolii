@@ -355,9 +355,12 @@ const char* motolii_shaping(Motolii* m);
    its layers stays where it shows now. key           a keyframe of `name` at
    the time in word, holding number. A layer of -1 means the layer the last add
    made. set with word "last_added" sets a property that names a layer to that
-   layer, and number is that layer. motolii_answer returns -1 if the call is not
-   done yet, 0 if it was refused (motolii_answer_why says why, until the next
-   answer), and 1 if it is done. An answer is returned once. */
+   layer, and number is that layer. ask           name is a code file the
+   project runs and word is JavaScript: the file's running script evaluates it,
+   as a browser's console does, and motolii_answer_why gives the result as
+   text; nothing of the project is changed. motolii_answer returns -1 if the
+   call is not done yet, 0 if it was refused (motolii_answer_why says why, until
+   the next answer), and 1 if it is done. An answer is returned once. */
 int motolii_later(Motolii* m, const char* call, int layer, const char* name,
                   const char* word, double number);
 int motolii_answer(Motolii* m, int ticket);

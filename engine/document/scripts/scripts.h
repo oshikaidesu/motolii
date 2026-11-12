@@ -119,6 +119,12 @@ std::string doc_screen_parameter(const std::string& file,
 // cannot be read. When `runs` is false the code is not compiled. The file is
 // checked for changes only once for each value of files_changed().
 DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = true);
+// Returns what the running script of `file` answers to the JavaScript `js`, as
+// text (Script::answers): what the code of that file can name and what each
+// name is now. The lists the app shows beside the code are asked this way, so
+// that none is kept by hand. Returns "" if the file is not a script that runs.
+std::string doc_script_asked(Doc& d, const std::string& file,
+                             const std::string& js);
 // Sets d.solver.exact for the lifetime of the object and restores the previous
 // value afterwards.
 struct DocExact {

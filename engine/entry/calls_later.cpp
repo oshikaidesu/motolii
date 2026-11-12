@@ -32,6 +32,7 @@
 #include "document/scripts/adapter.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/recipes.h"
+#include "document/scripts/scripts.h"
 #include "document/undo.h"
 #include "entry/calls.h"
 #include "entry/calls_sound.h"
@@ -48,8 +49,8 @@ using namespace motolii;
 // ticket at once, so that the app's UI thread never waits for the render
 // thread. motolii_answer returns the result for a ticket: -1 if the change is
 // not done yet, 0 if it was refused, and 1 if it is done. After a refusal
-// motolii_answer_why returns the reason. For add and create the result is the
-// new layer.
+// motolii_answer_why returns the reason, and after `ask` what the script
+// answered. For add and create the result is the new layer.
 //
 // `call` selects the change and `layer`, `name`, `word` and `number` are its
 // arguments. Their meaning depends on the call and is given beside each call
@@ -70,6 +71,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
       if (layer == -1) layer = m->later.last_added;
       const long rows = sqlite3_total_changes(m->d->file);
       int ok = 0;
+      // What a call that asks gives back as words (ask).
+      std::string said;
       // A call that throws is refused with the text of the exception. That
       // keeps one bad call from ending the render thread; the app waits on its
       // ticket.
@@ -144,6 +147,11 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           m->revision.fetch_add(1, std::memory_order_release),
               snapshot_update(m), snapshot_time(m);
         }
+        // name: a code file the project runs. word: JavaScript. The file's
+        // running script evaluates it and the result, as text, is the answer's
+        // words (motolii_answer_why). Nothing of the project is changed.
+        else if (c == "ask")
+          said = doc_script_asked(doc(m), n, w), ok = 1;
         // The result is the new layer.
         else if (c == "duplicate")
           ok = m->later.last_added = changes(m, doc_copy_above(doc(m), layer));
@@ -415,7 +423,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
               "outline, copy, paste, copy_style, paste_style, keep_preset, "
               "remove, mark, guide, work, raise, sequence, key_here, unkey, "
               "stay, easing, effect, fx_file, fx_visible, fx_move, size, "
-              "watch, pick, desk, live, relate, lead, free, release, setting";
+              "watch, pick, desk, live, relate, lead, free, release, setting, "
+              "ask";
       } catch (const std::exception& e) {
         ok = 0;
         std::fprintf(stderr, "motolii: %s threw: %s\n", c.c_str(), e.what());
@@ -429,8 +438,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
       m->render_thread.changed = true;
       {
         std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
-        m->later.answers[ticket] = {
-            ok, ok ? std::string() : std::string(motolii_why(m))};
+        m->later.answers[ticket] = {ok,
+                                    ok ? said : std::string(motolii_why(m))};
       }
       // Notify the app that an answer is there, see motolii_add_listener, as
       // Thermion's registry is notified when a request is done.

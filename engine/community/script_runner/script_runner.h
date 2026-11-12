@@ -74,6 +74,11 @@ class Script {
   int height();
   // Evaluates js in the sketch and returns the result as a string.
   std::string said(const std::string& js);
+  // Evaluates js in the script, whatever kind it is, and returns the result as
+  // a string, as a browser's console answers what is typed in it: the code sees
+  // what the file's own code sees. Returns "" if the file did not run or js
+  // threw.
+  std::string answers(const std::string& js);
   // Evaluates js in the sketch and returns the contents of __bytes that it
   // leaves.
   std::vector<uint8_t> bytes(const std::string& js);

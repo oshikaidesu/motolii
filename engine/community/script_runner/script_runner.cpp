@@ -49,9 +49,9 @@ struct Script::Own {
 // The last five are a rigid body's, by Jolt Physics' names (script.h); force
 // is a pair.
 static const char* const script_copy_names[17] = {
-    "x",        "y",       "z",       "size",          "rotate",
+    "x",        "y",        "z",      "size",          "rotate",
     "rotate_x", "rotate_y", "colour", "opacity",       "scale_x",
-    "scale_y",  "scale_z", "mass",    "gravityFactor", "restitution",
+    "scale_y",  "scale_z",  "mass",   "gravityFactor", "restitution",
     "friction", "force"};
 
 Script::Script(const std::string& file, const std::string& p5,
@@ -71,6 +71,14 @@ Script::Script(const std::string& file, const std::string& p5,
                                   // rectangles a frame are 1.5 GB a second. It
                                   // stops with an error, not with the machine)
   own->cx = JS_NewContext(own->rt);
+  // What JavaScript itself has is noted before anything of ours is added, so
+  // that a script can be asked what its runtime adds (Script::answers).
+  {
+    const char plain[] =
+        "globalThis.__plain = Object.getOwnPropertyNames(globalThis)";
+    JS_FreeValue(own->cx, JS_Eval(own->cx, plain, strlen(plain), "plain",
+                                  JS_EVAL_TYPE_GLOBAL));
+  }
   own->file = file, own->src = src, own->made_p5 = p5, own->made_film = film;
   const std::string ways = ways_prelude();
   JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways",
@@ -290,6 +298,9 @@ static std::string script_said(JSContext* cx, const char* js) {
 }
 std::string Script::said(const std::string& js) {
   return own->sketch && ok() ? script_said(own->cx, js.c_str()) : "";
+}
+std::string Script::answers(const std::string& js) {
+  return own->cx && ok() ? script_said(own->cx, js.c_str()) : "";
 }
 std::vector<uint8_t> Script::bytes(const std::string& js) {
   std::vector<uint8_t> out;
@@ -541,14 +552,11 @@ ScriptCopy Script::ask(
     JS_FreeCString(cx, s), JS_FreeValue(cx, e);
     return c;
   }
-  double* const to[16] = {&c.x,          &c.y,
-                          &c.z,          &c.size,
-                          &c.rotate,     &c.rotate_x,
-                          &c.rotate_y,   &c.colour,
-                          &c.opacity,    &c.scale_x,
-                          &c.scale_y,    &c.scale_z,
-                          &c.mass,       &c.gravity_factor,
-                          &c.restitution, &c.friction};
+  double* const to[16] = {
+      &c.x,        &c.y,        &c.z,      &c.size,           &c.rotate,
+      &c.rotate_x, &c.rotate_y, &c.colour, &c.opacity,        &c.scale_x,
+      &c.scale_y,  &c.scale_z,  &c.mass,   &c.gravity_factor, &c.restitution,
+      &c.friction};
   for (int k = 0; k < 16; ++k) {
     JSValue v = JS_GetProperty(cx, out, own->said[k]);
     if (JS_IsNumber(v)) JS_ToFloat64(cx, to[k], v);

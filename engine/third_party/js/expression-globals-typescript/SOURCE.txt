@@ -1,0 +1,3 @@
+expression-globals-typescript 3.3.3, dist/index.d.ts and LICENSE of the npm package expression-globals-typescript (https://www.npmjs.com/package/expression-globals-typescript/v/3.3.3), as released, unchanged.
+Source: https://github.com/timhaywood/expression-globals-typescript. Licence: MIT (LICENSE).
+Read by the app's Code tab (app/lib/workspace/code/expression_reference.dart): the names of After Effects' expression language with the line that says what each does and its arguments. It is the list of what an expression may say; which of them run here is asked of the engine's own runtime (motolii_later "ask"), not written down. Nothing of it is compiled or run.

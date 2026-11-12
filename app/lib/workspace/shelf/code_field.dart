@@ -34,6 +34,17 @@ class CodeField extends StatefulWidget {
 
   /// Whether the typed text is kept as it is, without reading the file back. EffectCode uses this while a script is being made.
   final bool keep;
+
+  /// The editor that last had the keys, so that a list beside the code can write into it.
+  static CodeLineEditingController? _last;
+
+  /// Writes [text] where the cursor is in the editor that last had the keys, over what is selected there.
+  /// Returns false if no editor has had the keys yet.
+  static bool insert(String text) {
+    _last?.replaceSelection(text);
+    return _last != null;
+  }
+
   @override
   State<CodeField> createState() => _CodeFieldState();
 }
@@ -61,6 +72,8 @@ class _CodeFieldState extends State<CodeField> {
   void dispose() {
     if (_soon?.isActive ?? false) _save();
     _soon?.cancel();
+    if (identical(CodeField._last, _text)) CodeField._last = null;
+    _focus.dispose();
     _text.dispose();
     super.dispose();
   }
@@ -79,6 +92,11 @@ class _CodeFieldState extends State<CodeField> {
     }
     setState(() => _lines = _text.lineCount);
   }
+
+  late final FocusNode _focus = FocusNode()
+    ..addListener(() {
+      if (_focus.hasFocus) CodeField._last = _text;
+    });
 
   @override
   void initState() {
@@ -102,6 +120,7 @@ class _CodeFieldState extends State<CodeField> {
 
   Widget _editor(double size, double pad) => CodeEditor(
     controller: _text,
+    focusNode: _focus,
     // In a narrow place a line pushed sideways would be out of sight, so it is wrapped there.
     wordWrap: !widget.fit,
     padding: EdgeInsets.all(pad),

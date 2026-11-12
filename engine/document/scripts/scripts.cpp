@@ -195,6 +195,12 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
   return &s;
 }
 
+std::string doc_script_asked(Doc& d, const std::string& file,
+                             const std::string& js) {
+  DocScript* s = doc_script_of(d, file);
+  return s && s->run ? s->run->answers(js) : "";
+}
+
 std::vector<DocScript*> doc_scripts_on(Doc& d, int layer) {
   const std::string said = doc_word(d, layer, "script");
   std::vector<DocScript*> all;

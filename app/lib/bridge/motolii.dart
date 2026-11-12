@@ -300,7 +300,7 @@ class Motolii {
       // An answer is ready: check each change that was waiting.
       for (final t in [...waiting.keys]) {
         final a = _answer(handle, t);
-        if (a >= 0) waiting.remove(t)!.complete((a, a >= 1 ? '' : answerWhy));
+        if (a >= 0) waiting.remove(t)!.complete((a, answerWhy));
       }
     }
     if (which & 7 != 0) {
