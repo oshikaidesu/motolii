@@ -3,20 +3,31 @@
 // It is drawn with the app's own parts: PanelHeader, the shelf's search field (also the message field), DockHover
 // rows, the skin's Forms for the agent's questions. A reply is Markdown, laid out by flutter_markdown_plus (BSD-3,
 // the Flutter authors' flutter_markdown carried on) in the app's text styles.
-import 'package:acpd/acpd.dart' show RequestPermissionRequest;
+import 'dart:io';
+
+import 'package:acpd/acpd.dart'
+    show ContentBlock, RequestPermissionRequest, ResourceLink;
 import 'package:acpd_io/acpd_io.dart' show AcpAgentConfig;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn;
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
 import 'package:motolii/workspace/agent/agent_registry.dart';
+import 'package:motolii/workspace/agent/agent_settings.dart';
+import 'package:motolii/workspace/agent/layer_code.dart';
+import 'package:motolii/workspace/agent/magpie.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
+import 'package:motolii/workspace/shelf/empty_effect.dart' show putEffectFile;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The conversation outlives the pane, as a docked tab is rebuilt when it is moved or brought back.
 final _talk = ValueNotifier<AcpChatSession?>(null);
@@ -55,10 +66,60 @@ class _AgentPaneState extends State<AgentPane> {
     setState(() => _choosing = false);
   }
 
-  void _send(AcpChatSession talk, String text) {
+  /// Sends [text] with the selected layer (layer_code.dart), each code file first made the layer's own. Each time a
+  /// tool call ends, a file sent whose time changed is read again, and a file new in the request's folder is put on
+  /// the layer as a new card, whatever tool wrote it.
+  Future<void> _send(AcpChatSession talk, String text) async {
     if (!talk.ready || talk.sending || text.trim().isEmpty) return;
     _say.clear();
-    talk.send(text);
+    final ws = WorkspaceScope.read(context), code = layerCode(ws);
+    final fresh = newFolder();
+    final more = code == null
+        ? const <ContentBlock>[]
+        : await ownedFor(ws, code, fresh);
+    DateTime? time(String f) =>
+        File(f).existsSync() ? File(f).lastModifiedSync() : null;
+    final seen = <String, DateTime?>{
+      for (final b in more)
+        if (b is ResourceLink)
+          Uri.parse(b.uri).toFilePath(): time(Uri.parse(b.uri).toFilePath()),
+    };
+    talk.settled = () {
+      final folder = Directory(fresh);
+      for (final f in [
+        if (folder.existsSync())
+          for (final e in folder.listSync().whereType<File>()) e.path,
+      ]) {
+        if (!seen.containsKey(f)) {
+          seen[f] = time(f);
+          _put(ws, talk, f);
+        }
+      }
+      for (final f in seen.keys) {
+        if (time(f) case final t when t != seen[f]) {
+          seen[f] = t;
+          _read(ws, talk, f);
+        }
+      }
+    };
+    talk.send(text, more: more, note: code?.line ?? '');
+  }
+
+  /// Puts a new file the agent wrote on the selected layer, as the Effects shelf puts an empty one (empty_effect.dart).
+  void _put(WorkspaceController ws, AcpChatSession talk, String file) {
+    if (!RegExp(r'\.(fs|js)$').hasMatch(file)) return;
+    putEffectFile(
+      ws,
+      file,
+      expression: file.endsWith('.js'),
+      told: (why) {
+        if (why.isNotEmpty) {
+          talk.tell(
+            '${file.split('/').last} was not put on the layer: ${why.trim()}',
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -83,11 +144,14 @@ class _AgentPaneState extends State<AgentPane> {
               ],
             ),
             if (listing) ...[
+              if (talk == null) _intro(choose: true),
               ShelfSearchField(controller: _find, hint: 'Search agents'),
               Expanded(child: _list()),
             ] else ...[
+              if (talk.options.isNotEmpty) AgentSettings(talk),
               Expanded(child: _conversation(talk)),
               if (talk.asked case final r?) _question(context, talk, r),
+              _with(context, talk),
               ShelfSearchField(
                 controller: _say,
                 hint: talk.ready
@@ -105,6 +169,52 @@ class _AgentPaneState extends State<AgentPane> {
       },
     ),
   );
+
+  /// Has the engine read a file the agent wrote, as a cell's save does (EffectCode._saved): the engine looks at a
+  /// file's time only when told (files_changed), so a write from outside the app is otherwise not seen.
+  void _read(WorkspaceController ws, AcpChatSession talk, String file) {
+    final m = ws.inside;
+    if (m == null || !RegExp(r'\.(wgsl|fs|js)$').hasMatch(file)) return;
+    ws.after(m.later('code', word: file), (done, why) {
+      if (!done) {
+        talk.tell('${file.split('/').last} does not run: ${why.trim()}');
+      }
+      ws.reread();
+    });
+  }
+
+  /// What a request will carry: the selected layer and its cards with code, read as the selection changes.
+  Widget _with(BuildContext context, AcpChatSession talk) {
+    final code = layerCode(
+      WorkspaceScope.of(context, {
+        WorkspaceAspect.picked,
+        WorkspaceAspect.document,
+      }),
+    );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset,
+        Shape.s(6),
+        WindowTokens.inset,
+        0,
+      ),
+      // The magpie is the agent's face: it hops while the agent works, which Stop in the header also says.
+      child: Row(
+        children: [
+          Magpie(dot: Shape.s(2), hopping: talk.sending),
+          SizedBox(width: Shape.s(6)),
+          Expanded(
+            child: Text(
+              code == null ? 'No layer selected' : 'With ${code.line}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyles.label(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _link(String label, VoidCallback onTap) => DockHover(
     onTap: onTap,
@@ -154,17 +264,45 @@ class _AgentPaneState extends State<AgentPane> {
   );
 
   /// What was said, newest at the bottom, kept in view as it grows.
-  Widget _conversation(AcpChatSession talk) => ListView(
-    reverse: true,
+  /// What the pane is for, under the magpie: shown before an agent is chosen and while nothing has been said.
+  Widget _intro({bool choose = false}) => Padding(
     padding: EdgeInsets.all(WindowTokens.inset),
-    children: [
-      for (final e in talk.entries.reversed)
-        Padding(
-          padding: EdgeInsets.only(top: Shape.s(8)),
-          child: _line(e),
-        ),
-    ],
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Magpie(),
+        SizedBox(height: Shape.s(10)),
+        for (final line in [
+          'Pick a layer, then ask in your own words.',
+          'The agent knows the layer\'s cards and code. It writes its '
+              'expressions and effects, and the picture changes as it saves.',
+          'Something new comes as a new card. Code already there is changed '
+              'only when you ask for it.',
+          if (choose)
+            'Choose an agent below. Every agent of the ACP registry works the '
+                'same way.',
+        ])
+          Padding(
+            padding: EdgeInsets.only(bottom: Shape.s(4)),
+            child: Text(line, style: TextStyles.name(Grey.g76, 11, null, 1.4)),
+          ),
+      ],
+    ),
   );
+
+  Widget _conversation(AcpChatSession talk) => talk.entries.isEmpty
+      ? Align(alignment: Alignment.topLeft, child: _intro())
+      : ListView(
+          reverse: true,
+          padding: EdgeInsets.all(WindowTokens.inset),
+          children: [
+            for (final e in talk.entries.reversed)
+              Padding(
+                padding: EdgeInsets.only(top: Shape.s(8)),
+                child: _line(e),
+              ),
+          ],
+        );
 
   Widget _line(Entry e) => switch (e.who) {
     Said.you => Container(
@@ -173,7 +311,16 @@ class _AgentPaneState extends State<AgentPane> {
         color: WindowTokens.card,
         borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
       ),
-      child: Text(e.text, style: TextStyles.name(Grey.g95, 11, null, 1.4)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(e.text, style: TextStyles.name(Grey.g95, 11, null, 1.4)),
+          if (e.note.isNotEmpty) ...[
+            SizedBox(height: Shape.s(4)),
+            Text(e.note, style: TextStyles.label()),
+          ],
+        ],
+      ),
     ),
     Said.agent => MarkdownBody(data: e.text, styleSheet: _markdown),
     Said.tool => _tool(e.call),

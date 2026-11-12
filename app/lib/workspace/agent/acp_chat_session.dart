@@ -10,12 +10,14 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 /// Who said a line of the conversation.
 enum Said { you, agent, tool, error }
 
-/// One line of the conversation: [text], or for a tool call its ACP JSON in [call].
+/// One line of the conversation: [text], or for a tool call its ACP JSON in [call]. A request's [note] says what was
+/// sent with it.
 class Entry {
-  Entry(this.who, this.text, [this.call = const {}]);
+  Entry(this.who, this.text, [this.call = const {}, this.note = '']);
   final Said who;
   String text;
   Map<String, Object?> call;
+  final String note;
 }
 
 class AcpChatSession extends ChangeNotifier {
@@ -29,6 +31,14 @@ class AcpChatSession extends ChangeNotifier {
 
   final entries = <Entry>[];
   var starting = true, sending = false;
+
+  /// Called when a tool call ends and when the agent's turn ends: a file may have been written, by whatever tool
+  /// (an edit, or a shell command the agent ran), so the pane looks at the files.
+  void Function()? settled;
+
+  /// The settings the agent offers for this session (ACP session config options: model, effort, mode…), as it
+  /// declared them; each [choose] sends one back. Motolii keeps no list of its own.
+  var options = <SessionConfigOption>[];
 
   /// What the agent asks leave for, and the answers it offers; null when it asks nothing.
   RequestPermissionRequest? asked;
@@ -59,9 +69,11 @@ class AcpChatSession extends ChangeNotifier {
           clientInfo: Implementation(name: 'Motolii', version: '0'),
         ),
       );
-      _session = (await client.client.newSession(
+      final session = await client.client.newSession(
         NewSessionRequest(cwd: folder),
-      )).sessionId;
+      );
+      _session = session.sessionId;
+      options = session.configOptions;
     } catch (e) {
       entries.add(
         Entry(
@@ -76,23 +88,46 @@ class AcpChatSession extends ChangeNotifier {
 
   bool get ready => !starting && _session != null;
 
-  Future<void> send(String text) async {
+  /// Sends [text] with [more] (such as the selected layer's files), noted on the line as [note].
+  Future<void> send(
+    String text, {
+    List<ContentBlock> more = const [],
+    String note = '',
+  }) async {
     final client = _client, session = _session;
     if (client == null || session == null || text.trim().isEmpty) return;
-    entries.add(Entry(Said.you, text));
+    entries.add(Entry(Said.you, text, const {}, note));
     sending = true;
     notifyListeners();
     try {
       await client.client.prompt(
         PromptRequest(
           sessionId: session,
-          prompt: [TextContentBlock(text: text)],
+          prompt: [
+            TextContentBlock(text: text),
+            ...more,
+          ],
         ),
       );
     } catch (e) {
       entries.add(Entry(Said.error, '$e'));
     }
+    settled?.call();
     sending = false;
+    notifyListeners();
+  }
+
+  /// Sets the agent's setting [id] to [value]; the agent answers with all its settings as they now are.
+  Future<void> choose(String id, String value) async {
+    final client = _client, session = _session;
+    if (client == null || session == null) return;
+    try {
+      options = (await client.client.setSessionConfigOption(
+        SetValueIdConfigOption(sessionId: session, configId: id, value: value),
+      )).configOptions;
+    } catch (e) {
+      entries.add(Entry(Said.error, '$e'));
+    }
     notifyListeners();
   }
 
@@ -135,6 +170,8 @@ class AcpChatSession extends ChangeNotifier {
         } else {
           entries.add(Entry(Said.agent, text));
         }
+      case ConfigOptionSessionUpdate(:final configOptions):
+        options = configOptions;
       case ToolCallUpdateSession(:final toolCall):
         _tool(toolCall.toolCallId, toolCall.toJson());
       case ToolCallStatusUpdate(:final update):
@@ -153,6 +190,13 @@ class AcpChatSession extends ChangeNotifier {
     } else {
       e.call = {...e.call, ...json};
     }
+    if (json['status'] case 'completed' || 'failed') settled?.call();
+  }
+
+  /// Adds a line saying what went wrong outside the agent, such as code the engine refused.
+  void tell(String why) {
+    entries.add(Entry(Said.error, why));
+    notifyListeners();
   }
 
   Future<RequestPermissionResponse> _ask(RequestPermissionRequest r) async {

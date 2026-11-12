@@ -204,6 +204,50 @@ class EffectCode extends StatefulWidget {
   static String source(String w) => File(w).existsSync()
       ? w
       : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
+
+  /// Whether the file [word] of the layer [thing] belongs to that card alone: one of the user's own copies, used by
+  /// no other card on any layer.
+  static bool alone(
+    WorkspaceController ws,
+    int thing,
+    String word,
+    String slot,
+  ) {
+    final m = ws.inside!, file = source(word);
+    if (!file.startsWith('${EffectTiles.own}/programs/$slot/')) return false;
+    for (final t in m.layers) {
+      for (final w in WorkspaceController.fxFiles(m.word(t, slot))) {
+        if (!(t == thing && w == word) && source(w) == file) return false;
+      }
+    }
+    return true;
+  }
+
+  /// Gives the card's file [word] a copy of its own, as its first edit does: the file and the ones the engine reads
+  /// beside it go to `programs/<slot>/<stamp>/`, and the layer's slot names the copy. Returns the copy as the slot
+  /// names it, the copied file, and the engine's ticket for reading it.
+  static (String, String, int) copyOwn(
+    WorkspaceController ws,
+    int thing,
+    String word,
+    String slot,
+  ) {
+    final m = ws.inside!, file = source(word);
+    final dir =
+            '${EffectTiles.own}/programs/$slot/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
+        to = '$dir/${file.split('/').last}',
+        said = '$dir/${word.split('/').last}';
+    Directory(dir).createSync(recursive: true);
+    _EffectCodeState._beside(file, word, dir);
+    File(file).copySync(to);
+    // Joined the way doc_fx_join does.
+    final fx = [
+      for (final w in WorkspaceController.fxFiles(m.word(thing, slot)))
+        w == word ? said : w,
+    ].join(' ');
+    m.later('say', layer: thing, name: slot, word: fx);
+    return (said, to, m.later('code', word: to));
+  }
 }
 
 class _EffectCodeState extends State<EffectCode> {
@@ -245,22 +289,6 @@ class _EffectCodeState extends State<EffectCode> {
     });
   }
 
-  String get _own => '${EffectTiles.own}/programs/${widget.slot}/';
-
-  /// Whether the file belongs to this card alone: one of its own copies, used by no other card on any layer.
-  bool _alone(String word) {
-    final m = widget.ws.inside!, file = EffectCode.source(word);
-    if (!file.startsWith(_own)) return false;
-    for (final t in m.layers) {
-      for (final w in WorkspaceController.fxFiles(m.word(t, widget.slot))) {
-        if (!(t == widget.thing && w == word) && EffectCode.source(w) == file) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
   // The copy is first made from the original and accepted by the engine, then overwritten with the typed text.
   // A half-typed effect or expression then keeps showing the last version the engine accepted, which a copy
   // that was never accepted could not (isf.cpp, doc_script_of).
@@ -270,32 +298,22 @@ class _EffectCodeState extends State<EffectCode> {
       return;
     }
     final ws = widget.ws,
-        m = ws.inside!,
         word = _mine ?? widget.word,
         file = EffectCode.source(word);
-    if (_alone(word)) {
+    if (EffectCode.alone(ws, widget.thing, word, widget.slot)) {
       File(file).writeAsStringSync(text);
       return _saved(file);
     }
-    final dir =
-            '$_own${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
-        to = '$dir/${file.split('/').last}',
-        said = '$dir/${word.split('/').last}';
-    Directory(dir).createSync(recursive: true);
-    _beside(file, word, dir);
-    File(file).copySync(to);
+    final (said, to, read) = EffectCode.copyOwn(
+      ws,
+      widget.thing,
+      word,
+      widget.slot,
+    );
     _mine = said;
     _making = true;
     _typed = text;
-    // Joined the way doc_fx_join does.
-    final fx = [
-      for (final w in WorkspaceController.fxFiles(
-        m.word(widget.thing, widget.slot),
-      ))
-        w == word ? said : w,
-    ].join(' ');
-    m.later('say', layer: widget.thing, name: widget.slot, word: fx);
-    ws.after(m.later('code', word: to), (_, _) {
+    ws.after(read, (_, _) {
       _making = false;
       File(to).writeAsStringSync(_typed!);
       _typed = null;
