@@ -12,6 +12,7 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/code/expression_prompts.dart';
 
 /// An editor for code.
 ///
@@ -24,8 +25,12 @@ class CodeField extends StatefulWidget {
     super.key,
     this.keep = false,
     this.fit = false,
+    this.prompts,
   });
   final String file;
+
+  /// The names completed as they are typed (IntelliSense), for an After Effects expression; null for other code.
+  final ExpressionPrompts? prompts;
   final void Function(String text) write;
 
   /// Whether the editor is as tall as its code, with one more line to type on, and not as tall as the room it is given.
@@ -107,7 +112,19 @@ class _CodeFieldState extends State<CodeField> {
   @override
   Widget build(BuildContext context) {
     final size = TextStyles.value().fontSize!, pad = Shape.s(6);
-    final editor = _editor(size, pad);
+    final prompts = widget.prompts, plain = _editor(size, pad);
+    final editor = prompts == null
+        ? plain
+        : CodeAutocomplete(
+            viewBuilder: (context, notifier, onSelected) =>
+                expressionPromptsView(context, notifier, onSelected, prompts),
+            promptsBuilder: DefaultCodeAutocompletePromptsBuilder(
+              language: langJavascript,
+              directPrompts: prompts.direct,
+              relatedPrompts: prompts.related,
+            ),
+            child: plain,
+          );
     return widget.fit
         ? SizedBox(
             height: (_lines + 1) * size * _lineHeight + 2 * pad,

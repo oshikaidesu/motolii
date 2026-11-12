@@ -10,6 +10,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
 
 /// One name of the reference: a function or a value of [owner].
 class ReferenceEntry {
@@ -219,3 +221,25 @@ String runsHere(List<ReferenceEntry> reference) {
 const String runtimeAdds = '''
 (() => JSON.stringify(Object.getOwnPropertyNames(globalThis).filter((n) =>
   typeof __plain === 'object' && !__plain.includes(n) && !n.startsWith('__') && typeof globalThis[n] === 'function')))()''';
+
+final _asked = <String, Future<Map<String, String>?>>{};
+
+/// What the running expression of the code file [file] has of the reference (`Layer.wiggle` to `bare` or `member`),
+/// asked once for each time the file is written; null for code that is not an After Effects expression. The Functions
+/// list and the editor's completion both read it, so they cannot disagree.
+Future<Map<String, String>?> supportedIn(Motolii m, String file) {
+  final f = File(file);
+  final key =
+      '$file ${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}';
+  return _asked[key] ??= m
+      .askScript(file, runsHere(expressionReference))
+      .then(
+        (said) => said.isEmpty
+            ? null
+            : {
+                for (final e
+                    in (jsonDecode(said) as Map<String, dynamic>).entries)
+                  e.key: e.value as String,
+              },
+      );
+}

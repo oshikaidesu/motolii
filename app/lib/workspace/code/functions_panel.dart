@@ -50,26 +50,17 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
     final key = '$file ${File(file).lastModifiedSync().microsecondsSinceEpoch}';
     if (key == _askedFor) return;
     _askedFor = key;
-    Future.wait([
-      m.askScript(file, runsHere(expressionReference)),
-      m.askScript(file, runtimeAdds),
-    ]).then((said) {
+    Future.wait([supportedIn(m, file), m.askScript(file, runtimeAdds)]).then((
+      said,
+    ) {
       if (!mounted || _askedFor != key) return;
+      final adds = said[1] as String;
       setState(() {
         _answered = true;
-        _runs = said[0].isEmpty
-            ? null
-            : {
-                for (final e
-                    in (jsonDecode(said[0]) as Map<String, dynamic>).entries)
-                  e.key: e.value as String,
-              };
-        _adds = said[1].isEmpty
+        _runs = said[0] as Map<String, String>?;
+        _adds = adds.isEmpty
             ? const []
-            : [
-                for (final n in jsonDecode(said[1]) as List<dynamic>)
-                  n as String,
-              ];
+            : [for (final n in jsonDecode(adds) as List<dynamic>) n as String];
       });
     });
   }

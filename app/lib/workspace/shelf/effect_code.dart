@@ -20,6 +20,9 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/code/expression_prompts.dart';
+import 'package:motolii/workspace/code/expression_reference.dart'
+    show supportedIn;
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
 
@@ -217,6 +220,22 @@ class _EffectCodeState extends State<EffectCode> {
   // The result of the last "Add to shelf": why it failed, or where it went.
   String _added = '';
   bool _addedOk = false;
+  // The names completed in the editor, asked of the running expression once for each file.
+  ExpressionPrompts? _prompts;
+  String? _promptsFor;
+
+  void _askPrompts(String file) {
+    final m = widget.ws.inside;
+    if (m == null || file == _promptsFor) return;
+    _promptsFor = file;
+    supportedIn(m, file).then((runs) {
+      if (mounted && _promptsFor == file) {
+        setState(
+          () => _prompts = runs == null ? null : ExpressionPrompts.of(runs),
+        );
+      }
+    });
+  }
 
   String get _own => '${EffectTiles.own}/programs/${widget.slot}/';
 
@@ -362,6 +381,7 @@ class _EffectCodeState extends State<EffectCode> {
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
+    _askPrompts(EffectCode.source(_mine ?? widget.word));
     return Column(
       mainAxisSize: widget.fit ? MainAxisSize.min : MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -382,6 +402,7 @@ class _EffectCodeState extends State<EffectCode> {
             _write,
             keep: _making,
             fit: true,
+            prompts: _prompts,
           )
         else
           Expanded(
@@ -389,6 +410,7 @@ class _EffectCodeState extends State<EffectCode> {
               EffectCode.source(_mine ?? widget.word),
               _write,
               keep: _making,
+              prompts: _prompts,
             ),
           ),
         // What the expression gives at the playhead, under it as After Effects puts an expression's error.
