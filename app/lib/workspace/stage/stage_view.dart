@@ -329,6 +329,9 @@ class _StageViewState extends State<StageView>
                 if (widget.tool.make == 'brush') {
                   return; // A stroke is drawn, not clicked.
                 }
+                if (widget.tool.make == 'camera') {
+                  return; // After Effects' Unified Camera tool makes nothing on a click; it only drags and wheels.
+                }
                 if (widget.tool.make != null) {
                   return _draw.drawAt(
                     v,
