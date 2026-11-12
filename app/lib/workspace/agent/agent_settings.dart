@@ -5,12 +5,12 @@
 import 'package:acpd/acpd.dart'
     show
         SessionConfigGroupedOptions,
+        SessionConfigOptionCategory,
         SessionConfigSelectOptionValue,
         SessionConfigUngroupedOptions;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
@@ -26,28 +26,28 @@ class AgentSettings extends StatefulWidget {
 class _AgentSettingsState extends State<AgentSettings> {
   final _menu = GlobalKey<ContextMenuState>();
 
-  /// The settings the agent offers (model, effort, mode…), each as its name and current choice; a click opens its
-  /// choices in the app's menu. They are the agent's own (ACP session config options), as Zed's agent panel shows them.
+  /// The settings the agent offers (model, effort, mode…), each as its current choice; a click opens its choices in
+  /// the app's menu. They are the agent's own (ACP session config options), as Zed's agent panel shows them.
   @override
   Widget build(BuildContext context) => ContextMenu(
     key: _menu,
-    child: Padding(
-      padding: EdgeInsets.fromLTRB(
-        WindowTokens.inset,
-        Shape.s(4),
-        WindowTokens.inset,
-        Shape.s(2),
-      ),
-      child: Wrap(
-        spacing: Shape.s(12),
-        runSpacing: Shape.s(4),
-        children: [
-          for (final o in widget.talk.options)
-            if (o is SessionConfigSelectOptionValue) _setting(o),
-        ],
-      ),
+    child: Wrap(
+      spacing: Shape.s(10),
+      runSpacing: Shape.s(4),
+      children: [
+        for (final o in widget.talk.options)
+          if (o is SessionConfigSelectOptionValue) _setting(o),
+      ],
     ),
   );
+
+  /// A model, an effort or a mode is known by its choice alone, as the Claude app shows "Opus 5.5" and "High";
+  /// any other setting also says its name ("Ultracode Off").
+  static final _bare = {
+    SessionConfigOptionCategory.model,
+    SessionConfigOptionCategory.thoughtLevel,
+    SessionConfigOptionCategory.mode,
+  };
 
   Widget _setting(SessionConfigSelectOptionValue o) {
     final choices = switch (o.options) {
@@ -75,7 +75,8 @@ class _AgentSettingsState extends State<AgentSettings> {
         builder: (context, h) => Text.rich(
           TextSpan(
             children: [
-              TextSpan(text: '${o.name} ', style: TextStyles.label()),
+              if (!_bare.contains(o.category))
+                TextSpan(text: '${o.name} ', style: TextStyles.label()),
               TextSpan(
                 text: '$now ▾',
                 style: TextStyles.label(h ? Grey.g95 : Grey.g76),

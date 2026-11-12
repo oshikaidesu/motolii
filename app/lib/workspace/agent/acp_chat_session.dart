@@ -40,6 +40,13 @@ class AcpChatSession extends ChangeNotifier {
   /// declared them; each [choose] sends one back. Motolii keeps no list of its own.
   var options = <SessionConfigOption>[];
 
+  /// The session's context as the agent last told it (ACP usage_update): tokens in use and the window's size.
+  int? used, size;
+
+  /// What the agent said of its usage limit, as it sent it in usage_update's free-form _meta (Claude Agent:
+  /// `_claude/rateLimit` with each window's utilization); empty when it said nothing.
+  Map<String, Object?> limit = const {};
+
   /// What the agent asks leave for, and the answers it offers; null when it asks nothing.
   RequestPermissionRequest? asked;
 
@@ -172,6 +179,12 @@ class AcpChatSession extends ChangeNotifier {
         }
       case ConfigOptionSessionUpdate(:final configOptions):
         options = configOptions;
+      case UsageSessionUpdate(used: final u, size: final z, :final meta):
+        used = u ?? used;
+        size = z ?? size;
+        if (meta['_claude/rateLimit'] case final Map<String, Object?> l) {
+          limit = l;
+        }
       case ToolCallUpdateSession(:final toolCall):
         _tool(toolCall.toolCallId, toolCall.toJson());
       case ToolCallStatusUpdate(:final update):

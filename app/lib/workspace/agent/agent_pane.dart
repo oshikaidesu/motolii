@@ -19,7 +19,7 @@ import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
 import 'package:motolii/workspace/agent/agent_registry.dart';
-import 'package:motolii/workspace/agent/agent_settings.dart';
+import 'package:motolii/workspace/agent/agent_composer.dart';
 import 'package:motolii/workspace/agent/layer_code.dart';
 import 'package:motolii/workspace/agent/magpie.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
@@ -135,7 +135,6 @@ class _AgentPaneState extends State<AgentPane> {
             PanelHeader(
               talk?.agentName ?? 'Agent',
               trailing: [
-                if (talk != null && talk.sending) _link('Stop', talk.stop),
                 if (talk != null)
                   _link(
                     _choosing ? 'Back' : 'Agents',
@@ -148,20 +147,13 @@ class _AgentPaneState extends State<AgentPane> {
               ShelfSearchField(controller: _find, hint: 'Search agents'),
               Expanded(child: _list()),
             ] else ...[
-              if (talk.options.isNotEmpty) AgentSettings(talk),
               Expanded(child: _conversation(talk)),
               if (talk.asked case final r?) _question(context, talk, r),
               _with(context, talk),
-              ShelfSearchField(
+              AgentComposer(
+                talk: talk,
                 controller: _say,
-                hint: talk.ready
-                    ? 'Ask ${talk.agentName}'
-                    : (talk.starting
-                          ? 'Starting ${talk.agentName}'
-                          : 'Not started'),
-                glyph: null,
-                maxLines: 6,
-                onSubmitted: (t) => _send(talk, t),
+                onSend: (t) => _send(talk, t),
               ),
             ],
           ],
