@@ -7,6 +7,8 @@
 // "Edit code" on a card in the Inspector unfolds its cell and scrolls to it (EffectCode.show).
 // Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
 // first one open. The word "Functions" in the head hides and shows it.
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
@@ -167,7 +169,7 @@ class _CodePaneState extends State<CodePane> {
   }
 }
 
-/// One cell: a head with the card's title and the language of its code, and under it the code, unless folded.
+/// One cell: a head with the card's title and what its code is on or written in, and under it the code, unless folded.
 class _Cell extends StatelessWidget {
   const _Cell(
     this.title,
@@ -181,12 +183,24 @@ class _Cell extends StatelessWidget {
   final bool open;
   final VoidCallback onFold;
 
-  /// What the code is written in, said by the file's ending.
-  String get _language => switch (code.word.split('.').last) {
-    'wgsl' => 'WGSL',
-    'fs' => 'GLSL',
-    _ => 'JavaScript',
-  };
+  /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
+  /// names it under the layer (`// --property:rotation` says Rotation, read as engine/community/sites/adapter.cpp
+  /// reads it); for any other code, what it is written in, said by the file's ending.
+  String get _on {
+    final file = File(EffectCode.source(code.word));
+    final text = file.existsSync() ? file.readAsStringSync() : '';
+    final named = RegExp(r'//\s*--property:\s*(\w+)')
+        .firstMatch(text)
+        ?.group(1);
+    if (named != null && named.isNotEmpty) {
+      return named[0].toUpperCase() + named.substring(1);
+    }
+    return switch (code.word.split('.').last) {
+      'wgsl' => 'WGSL',
+      'fs' => 'GLSL',
+      _ => 'JavaScript',
+    };
+  }
 
   @override
   Widget build(BuildContext context) => Column(
@@ -208,7 +222,7 @@ class _Cell extends StatelessWidget {
               SizedBox(width: Shape.s(6)),
               Text(title, style: TextStyles.name(hot ? Grey.g95 : Grey.g91)),
               const Spacer(),
-              Text(_language, style: TextStyles.micro(Grey.g56)),
+              Text(_on, style: TextStyles.micro(Grey.g56)),
             ],
           ),
         ),

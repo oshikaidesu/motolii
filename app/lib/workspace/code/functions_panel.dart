@@ -111,7 +111,7 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Search((q) => setState(() => _query = q)),
+        _Search(_query, (q) => setState(() => _query = q)),
         Expanded(
           child: widget.file == null
               ? const _Note('Open a cell to see what its code may say.')
@@ -179,7 +179,7 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
         owner,
         here.length == all.length
             ? '${all.length}'
-            : '${here.length} of ${all.length} run',
+            : '${here.length} of ${all.length} supported',
         open: open,
         onTap: () => setState(() {
           // A group with nothing that runs starts folded.
@@ -206,7 +206,8 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
 
 /// The search field over the list, the app's standard text field in a well.
 class _Search extends StatelessWidget {
-  const _Search(this.onQuery);
+  const _Search(this.query, this.onQuery);
+  final String query;
   final ValueChanged<String> onQuery;
   @override
   Widget build(BuildContext context) => Padding(
@@ -228,14 +229,21 @@ class _Search extends StatelessWidget {
           Glyph(AppGlyphs.search, size: Shape.z(11), color: Grey.g56),
           SizedBox(width: Shape.s(6)),
           Expanded(
-            child: TypedField(
-              key: const ValueKey('code-functions-search'),
-              text: '',
-              style: TextStyles.name(Grey.g95),
-              cursor: WindowTokens.accent,
-              standing: true,
-              onDone: (_) {},
-              onPick: (v) => onQuery(v.text),
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                if (query.isEmpty)
+                  Text('Search functions', style: TextStyles.name(Grey.g44)),
+                TypedField(
+                  key: const ValueKey('code-functions-search'),
+                  text: '',
+                  style: TextStyles.name(Grey.g95),
+                  cursor: WindowTokens.accent,
+                  standing: true,
+                  onDone: (_) {},
+                  onPick: (v) => onQuery(v.text),
+                ),
+              ],
             ),
           ),
         ],
@@ -244,7 +252,7 @@ class _Search extends StatelessWidget {
   );
 }
 
-/// A group's head: its name, how many of its names run, and a triangle that folds it.
+/// A group's head: its name, how many of its names are supported here, and a triangle that folds it.
 class _Head extends StatelessWidget {
   const _Head(
     this.title,
@@ -279,7 +287,7 @@ class _Head extends StatelessWidget {
   );
 }
 
-/// One name: how it is written, and under it what it does. A name that does not run yet is dim and says so.
+/// One name: how it is written, and under it what it does. A name not supported yet is dim and says so.
 class _Row extends StatelessWidget {
   const _Row(this.signature, this.about, {required this.runs, this.onTap});
   final String signature, about;
@@ -312,7 +320,7 @@ class _Row extends StatelessWidget {
                 ),
               ),
               if (!runs)
-                Text('does not run yet', style: TextStyles.micro(Grey.g56)),
+                Text('not supported yet', style: TextStyles.micro(Grey.g56)),
             ],
           ),
           if (about.isNotEmpty)
