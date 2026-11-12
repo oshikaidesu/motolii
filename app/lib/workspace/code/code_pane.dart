@@ -184,7 +184,7 @@ class _Cell extends StatelessWidget {
   final VoidCallback onFold;
 
   /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
-  /// names it under the layer (`// --property:rotation` says Rotation, read as engine/community/sites/adapter.cpp
+  /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
   /// reads it); for any other code, what it is written in, said by the file's ending.
   String get _on {
     final file = File(EffectCode.source(code.word));
@@ -193,7 +193,9 @@ class _Cell extends StatelessWidget {
         .firstMatch(text)
         ?.group(1);
     if (named != null && named.isNotEmpty) {
-      return named[0].toUpperCase() + named.substring(1);
+      // As After Effects' Timeline names an expression's row under its property, "Expression: Rotation"; a bare
+      // "Rotation" beside other cells' "JavaScript" read as a language.
+      return 'Expression: ${named[0].toUpperCase()}${named.substring(1)}';
     }
     return switch (code.word.split('.').last) {
       'wgsl' => 'WGSL',
