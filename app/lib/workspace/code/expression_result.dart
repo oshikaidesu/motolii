@@ -16,6 +16,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip;
+import 'package:motolii/widgets/number_field.dart' show NumberField;
+import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -41,10 +43,19 @@ class _ExpressionResultState extends State<ExpressionResult> {
     super.dispose();
   }
 
-  /// The frame and the time the code was written: the answer changes when either does.
+  /// The frame, how many times the document was read and the time the code was written: the answer changes when any
+  /// does (a slider typed into changes the document, not the frame). Not each new snapshot: asking makes one.
   String _key(int frame) {
     final f = File(widget.file);
-    return '$frame ${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}';
+    return '$frame $_reads ${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}';
+  }
+
+  int _reads = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reads++;
   }
 
   void _ask(WorkspaceController ws, int frame, [int tries = 0]) {
@@ -86,6 +97,7 @@ class _ExpressionResultState extends State<ExpressionResult> {
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.read(context),
         frame = WorkspaceScope.frameOf(context);
+    WorkspaceScope.of(context, {WorkspaceAspect.document});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _ask(ws, frame);
     });
@@ -137,7 +149,11 @@ class _ExpressionResultState extends State<ExpressionResult> {
             Chip(
               key: const ValueKey('code-fix'),
               label: 'Add slider "$missing"',
-              onTap: () => write(withSlider(code, missing)),
+              onTap: () {
+                write(withSlider(code, missing));
+                // The new slider's value takes the cursor, so that its first number is typed at once.
+                NumberField.typeInto('js_$missing');
+              },
             ),
           ],
         ],
@@ -161,22 +177,22 @@ int? _lineOf(String code, String name) {
   return null;
 }
 
-/// [code] with a slider named [name] added to its head and every [name] in it reading that slider, as After Effects'
-/// pick whip writes `effect("Slider Control")("Slider")`. The head line is the one Motolii reads for a slider
-/// (`// --track@name:label,min,max,start,step`, AviUtl2's form; engine/community/quickjs/script.h); 0 to 100 starting
-/// at 0 is a new Slider Control's own range in After Effects.
+/// [code] with a slider named [name]: the head line Motolii reads for a slider (`// --track@name:label,min,max,start,step`,
+/// AviUtl2's form; engine/community/quickjs/script.h), and above the code one line that reads it into [name], as After
+/// Effects tutorials write `var amp = effect("amp")("Slider");` and VS Code's "Declare variable" fix adds one line.
+/// The posted lines are left as they are (the code is run as posted, not rewritten). 0 to 100 starting at 0 is a new
+/// Slider Control's own range in After Effects.
 String withSlider(String code, String name) {
   final lines = const LineSplitter().convert(code);
   var head = 0;
   while (head < lines.length && lines[head].trimLeft().startsWith('//')) {
     head++;
   }
-  final read = 'effect("$name")("Slider")';
   return [
     ...lines.take(head),
     '// --track@$name:$name,0,100,0,1',
-    for (final l in lines.skip(head))
-      _comment(l) ? l : l.replaceAll(_named(name), read),
+    'var $name = effect("$name")("Slider");',
+    ...lines.skip(head),
   ].join('\n');
 }
 

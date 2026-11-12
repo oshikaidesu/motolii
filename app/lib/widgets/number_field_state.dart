@@ -35,7 +35,26 @@ class NumberFieldState extends State<NumberField> {
       : 0;
 
   @override
+  void initState() {
+    super.initState();
+    NumberField.asked.addListener(_askedToType);
+    _askedToType();
+  }
+
+  void _askedToType() {
+    final asked = NumberField.asked.value, name = widget.name;
+    if (asked == null || name == null || asked.$1 != name) return;
+    NumberField.asked.value = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(context, alignment: .5);
+      _startEdit();
+    });
+  }
+
+  @override
   void dispose() {
+    NumberField.asked.removeListener(_askedToType);
     _ef.dispose();
     _node.dispose();
     _ctl.dispose();

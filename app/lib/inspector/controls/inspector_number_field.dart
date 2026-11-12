@@ -314,6 +314,8 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
     return NumberField(
+      // (the engine's name for the value, as code names it: a card's value is `v_` and that name here)
+      name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
       value: () => _x.doc.get(widget.id),
       text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
       unit: (v, w) => w < unitMinWidth

@@ -7,6 +7,8 @@
 // - How far the value may go is up to the caller through [NumberField.reach], together with the source of that limit.
 // - It paints with the skin's form (lib/widgets/number_field_look.dart) or with the caller's [NumberField.paint].
 //   A panel normally supplies only value, text and onChange.
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
@@ -90,6 +92,7 @@ class NumberField extends StatefulWidget {
     this.accent,
     this.editorKey,
     this.paint,
+    this.name,
   });
 
   /// Returns the current value. It is read each time it is needed, so the caller need not rebuild during a drag.
@@ -166,6 +169,25 @@ class NumberField extends StatefulWidget {
 
   /// Key given to the editor while the user is typing.
   final Key? editorKey;
+
+  /// What the field shows, by name (the Inspector's document name, `js_amp`), so that it can be asked to open for
+  /// typing from elsewhere through [typeInto].
+  final Object? name;
+
+  /// Asks the field named [name] to come into view and open for typing, as Tab opens the next field: one that is on
+  /// screen now or appears within five seconds (a slider that the code just declared appears once the engine has
+  /// read the code). After a quick fix declares a slider, the cursor is put in its value, as VS Code puts the cursor
+  /// in what a fix just made.
+  static void typeInto(Object name) {
+    final at = DateTime.now();
+    asked.value = (name, at);
+    Timer(const Duration(seconds: 5), () {
+      if (asked.value?.$2 == at) asked.value = null;
+    });
+  }
+
+  /// The name asked to open for typing, with when; null again once it opened or five seconds passed.
+  static final asked = ValueNotifier<(Object, DateTime)?>(null);
 
   /// Replaces the skin's picture, for example with a quiet readout. It receives the number as text or, while `typing`, the editor.
   final Widget Function(BuildContext context, Widget shown, bool typing)? paint;
