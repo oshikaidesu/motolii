@@ -17,6 +17,8 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip;
 import 'package:motolii/widgets/number_field.dart' show NumberField;
+import 'package:motolii/workspace/code/expression_reference.dart'
+    show expressionReference;
 import 'package:motolii/workspace/shelf/code_field.dart' show CodeMark;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -150,20 +152,24 @@ class _ExpressionResultState extends State<ExpressionResult> {
     final code = _code, missing = _missing(error);
     final line = missing == null ? null : _whereIn(code, missing)?.line;
     final write = widget.write;
+    // A name After Effects has (the reference) is not the user's own slip: no slider is offered for it.
+    final theirs =
+        missing != null && expressionReference.any((e) => e.name == missing);
     return Padding(
       padding: EdgeInsets.only(top: Shape.s(4)),
       child: Row(
         children: [
           Flexible(
             child: Text(
-              line == null ? 'Error: $error' : 'Error at line $line: $error',
+              '${line == null ? 'Error' : 'Error at line $line'}: $error'
+              '${theirs ? ' (After Effects has $missing; Motolii does not run it yet)' : ''}',
               key: const ValueKey('code-result'),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyles.label(Role.error),
             ),
           ),
-          if (missing != null && write != null) ...[
+          if (missing != null && !theirs && write != null) ...[
             SizedBox(width: Shape.s(8)),
             Chip(
               key: const ValueKey('code-fix'),
