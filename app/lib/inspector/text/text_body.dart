@@ -415,17 +415,10 @@ Parameter _like(Parameter p, {required double def}) => Parameter(
   open: true,
 );
 
-/// One axis of a variable font, its range the font's own (its fvar table).
+/// One axis of a variable font, its name and range the font's own (its fvar and name tables).
 Parameter _axis(FontAxis a) => Parameter(
   id: 'axis_${a.tag}',
-  label: switch (a.tag) {
-    'wght' => 'Weight',
-    'wdth' => 'Width',
-    'slnt' => 'Slant',
-    'ital' => 'Italic',
-    'opsz' => 'Optical Size',
-    final t => t,
-  },
+  label: a.name,
   look: ParameterLook.bar,
   min: a.min,
   max: a.max,
