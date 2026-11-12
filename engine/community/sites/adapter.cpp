@@ -391,13 +391,16 @@ std::string adapter_js(const std::string& src, const std::string& form) {
            "const "
            "c={index:me.index,textIndex:i+1,textTotal:n,time:k.time,layer:me,"
            "comp:__ae_comp,effect:name=>()=>k[AE.name(name).toLowerCase()]};\n"
-           // What the expression last gave, or threw, is kept for the Code
-           // tab, as After Effects shows an expression's error under it.
+           // What the expression gave at each time, or threw, is kept for the
+           // Code tab (the last 3600 times, a minute at 60 fps), as After
+           // Effects shows an expression's value and error under it; the
+           // engine also runs times other than the playhead's.
+           "const keep=v=>{globalThis.__ae_last=v;const a=globalThis.__ae_at||"
+           "(globalThis.__ae_at=new Map());a.set(Math.round(v.time*1000),v);"
+           "if(a.size>3600)a.delete(a.keys().next().value)};\n"
            "const run=value=>{c.value=value;try{const r=AE.run(__ae,c);"
-           "globalThis.__ae_last={on,time:k.time,value:r};return r}catch(e){"
-           "globalThis.__ae_last={on,time:k.time,error:String(e&&e.message||e)}"
-           ";"
-           "throw e}},"
+           "keep({on,time:k.time,value:r});return r}catch(e){"
+           "keep({on,time:k.time,error:String(e)});throw e}},"
            "one=r=>Array.isArray(r)?r[0]:r;\n"
            "c.property=me[__ae_on||'position'];\n"
            "let on=__ae_on;if(!on)on=Array.isArray(run([W/2+x/px,H/2-y/px]))?"

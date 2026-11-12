@@ -392,7 +392,10 @@ class _EffectCodeState extends State<EffectCode> {
             ),
           ),
         // What the expression gives at the playhead, under it as After Effects puts an expression's error.
-        ExpressionResult(EffectCode.source(_mine ?? widget.word)),
+        ExpressionResult(
+          EffectCode.source(_mine ?? widget.word),
+          write: _write,
+        ),
         if (widget.shelf)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),

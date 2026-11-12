@@ -70,7 +70,7 @@ class _InspectorPanelState extends State<InspectorPane> {
         const {},
       ));
   int? _frame;
-  String? _titles; // (the picked thing's cards' titles as last read)
+  String? _cards; // (the picked thing's cards, titles and values, as last read)
   Object _now(WorkspaceController ws) => (ws.rev, _id(ws), ws.animating);
 
   // (the reading of the document changed only numbers of what is picked, none that changes its cards: they are told
@@ -86,10 +86,11 @@ class _InspectorPanelState extends State<InspectorPane> {
         const bool.fromEnvironment('NOPOUR')) {
       return false;
     }
-    final titles = [for (final (title, _) in m.cards(t)) title].join(';');
-    if (titles != _titles) {
-      // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset)
-      _titles = titles;
+    final cards = '${m.cards(t)}';
+    if (cards != _cards) {
+      // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset;
+      //  or a card's own values changed under the same title, as a slider is added to an expression's head in the Code tab)
+      _cards = cards;
       return false;
     }
     for (final (thing, name) in c.values) {
