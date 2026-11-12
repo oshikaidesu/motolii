@@ -7,6 +7,7 @@
 // An error is written as After Effects writes it, "Error at line 3: ReferenceError: amp is not defined". For a name
 // that is not defined there is a quick fix, as VS Code puts one beside an error: Add slider "amp" does what After
 // Effects' Slider Control and pick whip do, a slider named amp that the expression reads.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -32,6 +33,13 @@ class _ExpressionResultState extends State<ExpressionResult> {
   Map<String, dynamic>? _last;
   bool _asking = false;
   String? _askedFor;
+  Timer? _again;
+
+  @override
+  void dispose() {
+    _again?.cancel();
+    super.dispose();
+  }
 
   /// The frame and the time the code was written: the answer changes when either does.
   String _key(int frame) {
@@ -61,7 +69,8 @@ class _ExpressionResultState extends State<ExpressionResult> {
             setState(() => _last = last);
           } else if (tries < 10 && File(widget.file).existsSync()) {
             // The engine has not run that time yet: what was shown stays, and it is asked again.
-            Future.delayed(const Duration(milliseconds: 100), () {
+            _again?.cancel();
+            _again = Timer(const Duration(milliseconds: 100), () {
               if (mounted && _askedFor == key) _ask(ws, frame, tries + 1);
             });
             return;
