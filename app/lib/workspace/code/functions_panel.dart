@@ -99,10 +99,15 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
     _ask();
     final runs = _runs;
     final roots = referenceRoots(expressionReference);
-    final owners = <String>[];
+    // First what the expression is handed, in the order After Effects looks a bare name up: its property, then its
+    // layer (ae-expressions.docsforadobe.dev), then the comp; then the other objects in the reference's order. A group
+    // with nothing that runs here goes last.
+    final all = <String>['Property', 'Layer', 'Comp'];
     for (final e in expressionReference) {
-      if (!owners.contains(e.owner)) owners.add(e.owner);
+      if (!all.contains(e.owner)) all.add(e.owner);
     }
+    bool some(String o) => runs?.keys.any((k) => k.startsWith('$o.')) ?? true;
+    final owners = [...all.where(some), ...all.where((o) => !some(o))];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
