@@ -5,6 +5,7 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
 import 'package:motolii/inspector/transform/transform_body.dart';
+import 'package:motolii/inspector/trim/trim_path.dart';
 
 /// A card is here only when the window can show its values as a picture that is pulled to edit them, which a block
 /// per value cannot (the author's rule, 2026-11-12). The card keeps its standard frame; [drawn] names the values the
@@ -27,6 +28,11 @@ final hostCards =
       'Text': (
         drawn: TextBody.drawn,
         body: (card) => TextBody(card),
+        fold: null,
+      ),
+      'Trim Paths': (
+        drawn: const {},
+        body: (card) => TrimPath(card),
         fold: null,
       ),
     };
