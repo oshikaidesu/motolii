@@ -288,23 +288,32 @@ bool writeFlags(WorkspaceController ws, String? id, Map<String, bool> changed) {
   return false;
 }
 
+/// Whether words are being dragged in the inspector (a text range's Size, say), with their undo step open.
+bool _wordsDragged = false;
+
 /// Writes words chosen in the inspector to the document. Returns false when no layer is selected.
+/// While [live], a drag is in progress: the stage shows each step at once, and the steps up to the last word, which
+/// comes with [live] false, are one undo step, as a dragged number's are (the engine's together nests).
 bool writeWords(
   WorkspaceController ws,
   String? id,
-  Map<String, String> changed,
-) {
+  Map<String, String> changed, {
+  bool live = false,
+}) {
   final m = ws.inside!, t = int.tryParse(id ?? '');
   if (t == null) return false;
   // One undo step, requested without waiting: the app carries on while the engine works, then reads the result.
   // If the engine refuses, the words return to the document's own when it is read again.
-  m.later('together', number: 1);
+  if (!_wordsDragged) m.later('together', number: 1);
+  _wordsDragged = live;
   for (final e in changed.entries) {
     if (!e.key.startsWith('v_')) continue;
     final n = e.key.substring(2);
     m.later('say', layer: t, name: n, word: e.value);
   }
-  ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
+  if (!live) {
+    ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
+  }
   return true;
 }
 

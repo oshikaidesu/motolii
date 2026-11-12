@@ -29,7 +29,7 @@ class SyncOwner {
           told.add([live ? 'values, live' : 'values', Map.of(changed)]),
       onDrop: () => told.add('drop'),
       onKey: (prop, mark) => told.add(['key', prop, mark]),
-      onWords: (changed) {
+      onWords: (changed, {required live}) {
         told.add(['words', Map.of(changed)]);
         return takesWords;
       },

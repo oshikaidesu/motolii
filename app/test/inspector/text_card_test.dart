@@ -40,10 +40,12 @@ struct Params {
 void main() {
   late List<Map<String, double>> numbers;
   late List<Map<String, String>> words;
+  late List<bool> stylesLive;
 
   Future<void> mount(WidgetTester tester, {String styles = ''}) async {
     numbers = [];
     words = [];
+    stylesLive = [];
     wordsPicked.value = null;
     tester.view.physicalSize = const Size(372, 900);
     tester.view.devicePixelRatio = 1;
@@ -80,8 +82,9 @@ void main() {
                   numbers.add(Map.of(changed)),
               onDrop: () {},
               onKey: (_, _) {},
-              onWords: (changed) {
+              onWords: (changed, {required live}) {
                 words.add(Map.of(changed));
+                if (changed.containsKey('v_text_styles')) stylesLive.add(live);
                 return true;
               },
               onAnimateAll: (_) {},
@@ -120,6 +123,9 @@ void main() {
       expect(m, isNotNull, reason: styles);
       expect(double.parse(m![1]!), greaterThan(100));
       expect(numbers.any((n) => n.containsKey('v_size')), isFalse);
+      // The stage follows the drag: its steps come live, and only the last one closes it (one undo step).
+      expect(stylesLive.where((l) => l), isNotEmpty);
+      expect(stylesLive.last, isFalse);
     },
   );
 
@@ -143,8 +149,9 @@ void main() {
     text.visitChildren((span) {
       if (span is TextSpan &&
           span.text != null &&
-          span.style?.color == const Color(0xffff0000))
+          span.style?.color == const Color(0xffff0000)) {
         red.add(span.text!);
+      }
       return true;
     });
     expect(red, ['el']);

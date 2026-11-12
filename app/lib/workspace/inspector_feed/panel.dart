@@ -384,7 +384,8 @@ class _InspectorPanelState extends State<InspectorPane> {
         onAim: (at) => ws.aim = at.startsWith('v_')
             ? at.substring(2)
             : null, // (a colour link of a card is aimed at that value)
-        onWords: (changed) => writeWords(ws, l?.id, changed),
+        onWords: (changed, {required live}) =>
+            writeWords(ws, l?.id, changed, live: live),
         onAnimateAll: (on) => ws.animating = on,
         onFlags: own ? (changed) => writeFlags(ws, l?.id, changed) : null,
         onValues: (changed, {required live}) =>

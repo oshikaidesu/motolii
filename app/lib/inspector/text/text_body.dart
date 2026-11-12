@@ -162,7 +162,8 @@ class _TextBodyState extends State<TextBody> {
   }
 
   /// The values of [letters] as text_styles sets them: Size as a share of the layer's, Fill, Tracking, Baseline and
-  /// the font's axes. A change to one writes it to text_styles for those letters; a drag writes once, when it ends.
+  /// the font's axes. A change to one writes it to text_styles for those letters; a drag writes each step, and the layer's
+  /// values are in the drag with it, so the stage follows and the drag is one undo step.
   InspectorValues _values(
     InspectorValues doc,
     String styles,
@@ -193,7 +194,7 @@ class _TextBodyState extends State<TextBody> {
               '',
         ),
     ];
-    final range = InspectorValues(doc.kind)..actions = doc.actions;
+    final range = _RangeValues(doc)..actions = doc.actions;
     range.numbers
       ..['v_size'] = number(at('font-size', '100%'), (v) => v) ?? double.nan
       ..['v_letter_spacing'] =
@@ -220,7 +221,6 @@ class _TextBodyState extends State<TextBody> {
     }
     final shown = Map.of(range.numbers);
     range.addListener(() {
-      if (range.inGesture) return;
       var next = styles;
       for (final e in range.numbers.entries) {
         if (shown[e.key] == e.value) continue;
@@ -309,6 +309,26 @@ class _TextBodyState extends State<TextBody> {
       );
     }
     doc.str('v_text', said);
+  }
+}
+
+/// The values of some letters, made from [whole]'s ranges. A drag of one is a drag of [whole]'s too.
+class _RangeValues extends InspectorValues {
+  _RangeValues(this.whole) : super(whole.kind);
+  final InspectorValues whole;
+
+  @override
+  void beginGesture() {
+    whole.beginGesture();
+    super.beginGesture();
+  }
+
+  // The letters' last step is written while the layer's drag still goes on; the layer's drag then ends and tells it
+  // as settled, which closes the undo step.
+  @override
+  void endGesture() {
+    super.endGesture();
+    whole.endGesture();
   }
 }
 

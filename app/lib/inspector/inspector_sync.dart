@@ -16,6 +16,8 @@ class InspectorSync {
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
+  // The strings a drag in progress has told live. When it ends they are told once more as settled, even unchanged.
+  final _liveWords = <String, String>{};
   bool _animating = false;
 
   /// Fills a new [doc] with the owner's [snapshot], which is then what the owner is known to have seen.
@@ -71,12 +73,14 @@ class InspectorSync {
       edits.onKey(e.key, e.value);
     }
     final words = {
+      if (!live) ..._liveWords,
       for (final e in doc.strings.entries)
         if (e.key != 'route' &&
             e.key != 'route.at' &&
             _seenWords[e.key] != e.value)
           e.key: e.value,
     };
+    live ? _liveWords.addAll(words) : _liveWords.clear();
     if (edits.onFlags case final tell?) {
       final flags = {
         for (final e in doc.flags.entries)
@@ -95,7 +99,7 @@ class InspectorSync {
       }
     }
     if (words.isEmpty) return;
-    if (edits.onWords(words)) {
+    if (edits.onWords(words, live: live)) {
       _seenWords.addAll(words);
     } else {
       for (final id in words.keys) {

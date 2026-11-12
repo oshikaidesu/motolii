@@ -27,9 +27,11 @@ class InspectorEdits {
   /// A property's key mark was changed in the inspector.
   final void Function(String prop, KeyframeState mark) onKey;
 
-  /// Strings changed in the inspector, such as a text's content or a chooser's choice.
+  /// Strings changed in the inspector, such as a text's content or a chooser's choice. [live] is true while a drag
+  /// that changes them is still in progress (a text range's Size); the drag's last strings come with it false.
   /// Returns false if the caller did not take them, and the fields go back to their previous strings.
-  final bool Function(Map<String, String> changed) onWords;
+  final bool Function(Map<String, String> changed, {required bool live})
+  onWords;
 
   /// On/off properties changed in the inspector, such as Clip to below. Null when the caller owns none.
   /// Returns false if the caller did not take the change (nothing is behind that switch), and the switch goes back.

@@ -68,7 +68,7 @@ void main() {
               onValues: (changed, {required live}) => told.add(Map.of(changed)),
               onDrop: () {},
               onKey: (_, _) {},
-              onWords: (_) => true,
+              onWords: (_, {required live}) => true,
               onAnimateAll: (_) {},
               together: (tells) => tells(),
               onRoute: (_) {},
