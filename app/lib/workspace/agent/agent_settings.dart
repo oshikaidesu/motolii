@@ -36,7 +36,7 @@ class _AgentSettingsState extends State<AgentSettings> {
       if (o is SessionConfigSelectOptionValue) o,
   ];
 
-  static List<({String value, String name})> _choices(
+  static List<({String value, String name, String? about})> _choices(
     SessionConfigSelectOptionValue o,
   ) => [
     for (final c in switch (o.options) {
@@ -45,8 +45,20 @@ class _AgentSettingsState extends State<AgentSettings> {
         for (final g in groups) ...g.options,
       ],
     })
-      (value: c.value, name: c.name),
+      (value: c.value, name: c.name, about: c.description),
   ];
+
+  /// Whether choice [i] shows before "more": not when it says the same as a choice above, as an older one of it does
+  /// (Claude Agent lists Opus 4.8 after Opus 5.5 in the same words, and its /model shows only the first). The current
+  /// choice always shows.
+  static bool _first(
+    List<({String value, String name, String? about})> all,
+    int i,
+    String now,
+  ) =>
+      all[i].value == now ||
+      all[i].about == null ||
+      !all.take(i).any((c) => c.about == all[i].about);
 
   static String _now(SessionConfigSelectOptionValue o) =>
       _choices(o).where((c) => c.value == o.currentValue).firstOrNull?.name ??
@@ -62,7 +74,7 @@ class _AgentSettingsState extends State<AgentSettings> {
         _now(o),
   ].join(' · ');
 
-  void _open(Offset global) {
+  void _open(Offset global, {Set<String> more = const {}}) {
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
     final talk = widget.talk;
@@ -70,14 +82,7 @@ class _AgentSettingsState extends State<AgentSettings> {
       for (final (i, o) in _selects.indexed) ...[
         if (i > 0) const ContextMenuItem.rule(),
         ContextMenuItem(o.name, null, id: 'agent-${o.id}'),
-        for (final c in _choices(o))
-          ContextMenuItem(
-            '  ${c.name}',
-            () => talk.choose(o.id, c.value),
-            keys: c.value == o.currentValue ? '✓' : '',
-            // Two settings may offer the same name (Default), so a row is named by its setting and value.
-            id: 'agent-${o.id}-${c.value}',
-          ),
+        ..._rows(o, more, (more) => _open(global, more: more)),
       ],
       if (_usage(talk) case final rows when rows.isNotEmpty) ...[
         const ContextMenuItem.rule(),
@@ -85,6 +90,37 @@ class _AgentSettingsState extends State<AgentSettings> {
           ContextMenuItem(name, null, why: said, id: 'agent-usage-$name'),
       ],
     ]);
+  }
+
+  /// One setting's choices, the current one ticked; older ones fold into a last "N more" row that opens the menu again
+  /// with them shown.
+  List<ContextMenuItem> _rows(
+    SessionConfigSelectOptionValue o,
+    Set<String> more,
+    void Function(Set<String>) reopen,
+  ) {
+    final all = _choices(o);
+    final shown = [
+      for (var k = 0; k < all.length; k++)
+        if (more.contains(o.id) || _first(all, k, o.currentValue)) all[k],
+    ];
+    return [
+      for (final c in shown)
+        ContextMenuItem(
+          '  ${c.name}',
+          () => widget.talk.choose(o.id, c.value),
+          keys: c.value == o.currentValue ? '✓' : '',
+          // Two settings may offer the same name (Default), so a row is named by its setting and value.
+          id: 'agent-${o.id}-${c.value}',
+        ),
+      if (shown.length < all.length)
+        ContextMenuItem(
+          '  ${all.length - shown.length} more',
+          () => reopen({...more, o.id}),
+          keys: '▸',
+          id: 'agent-${o.id}-more',
+        ),
+    ];
   }
 
   @override
