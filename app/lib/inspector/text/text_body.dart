@@ -92,11 +92,18 @@ class _TextBodyState extends State<TextBody> {
             backgroundCursor: Grey.g20,
             selection: Role.selected.withValues(alpha: .4),
             styled: (t, style) => _spans(t, styles, style),
-            onDone: (said) => said == null ? null : _retype(doc, text, said),
-            onPick: (v) => wordsPicked.value =
-                v.selection.isValid && !v.selection.isCollapsed
-                ? (text: v.text, start: v.selection.start, end: v.selection.end)
-                : null,
+            onDone: (said) => _typed(doc, text, said),
+            onPick: (v) {
+              _typing(doc, text, v.text);
+              wordsPicked.value =
+                  v.selection.isValid && !v.selection.isCollapsed
+                  ? (
+                      text: v.text,
+                      start: v.selection.start,
+                      end: v.selection.end,
+                    )
+                  : null;
+            },
           ),
         ),
         SizedBox(height: Shape.s(6)),
@@ -286,7 +293,37 @@ class _TextBodyState extends State<TextBody> {
     return _range = range;
   }
 
-  /// Writes the typed text, moving the ranges so each keeps its letters. One write, so one undo step.
+  // The text when typing began, and the text last written, while the stage follows the keys.
+  String? _before;
+  String _sent = '';
+
+  /// Each key typed is written as a step of a drag, as After Effects' stage shows text while it is typed; leaving the
+  /// box ends the drag, so the typing is one undo step.
+  void _typing(InspectorValues doc, String text, String now) {
+    final was = _before == null ? text : _sent;
+    if (now == was) return;
+    if (_before == null) {
+      _before = text;
+      doc.beginGesture();
+    }
+    _retype(doc, was, now);
+    _sent = now;
+  }
+
+  /// The box was left with [said], or with null when Escape took the typing back.
+  void _typed(InspectorValues doc, String text, String? said) {
+    final before = _before;
+    if (before == null) {
+      if (said != null) _retype(doc, text, said);
+      return;
+    }
+    _before = null;
+    final last = said ?? before;
+    if (last != _sent) _retype(doc, _sent, last);
+    doc.endGesture();
+  }
+
+  /// Writes the typed text, moving the ranges so each keeps its letters.
   void _retype(InspectorValues doc, String was, String said) {
     final a = was.runes.toList(), b = said.runes.toList();
     var head = 0;

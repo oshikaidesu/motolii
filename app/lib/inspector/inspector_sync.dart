@@ -65,7 +65,8 @@ class InspectorSync {
     } else if (_live && !live) {
       edits.onDrop();
     }
-    _live = live;
+    // Only a drag that told numbers has one held to drop: a drag of words alone (a text range, typing) holds none.
+    _live = live && (_live || changed.isNotEmpty);
     for (final e in doc.keys.entries.toList()) {
       // While a drag is in progress nothing is settled; the key is reported when the drag ends.
       if (live || _seenKeys[e.key] == e.value) continue;

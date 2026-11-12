@@ -41,11 +41,15 @@ void main() {
   late List<Map<String, double>> numbers;
   late List<Map<String, String>> words;
   late List<bool> stylesLive;
+  late List<bool> textLive;
+  late int drops;
 
   Future<void> mount(WidgetTester tester, {String styles = ''}) async {
     numbers = [];
     words = [];
     stylesLive = [];
+    textLive = [];
+    drops = 0;
     wordsPicked.value = null;
     tester.view.physicalSize = const Size(372, 900);
     tester.view.devicePixelRatio = 1;
@@ -80,11 +84,12 @@ void main() {
             edits: InspectorEdits(
               onValues: (changed, {required live}) =>
                   numbers.add(Map.of(changed)),
-              onDrop: () {},
+              onDrop: () => drops++,
               onKey: (_, _) {},
               onWords: (changed, {required live}) {
                 words.add(Map.of(changed));
                 if (changed.containsKey('v_text_styles')) stylesLive.add(live);
+                if (changed.containsKey('v_text')) textLive.add(live);
                 return true;
               },
               onAnimateAll: (_) {},
@@ -126,6 +131,9 @@ void main() {
       // The stage follows the drag: its steps come live, and only the last one closes it (one undo step).
       expect(stylesLive.where((l) => l), isNotEmpty);
       expect(stylesLive.last, isFalse);
+      // No number was held, so no drop is told: an engine drops a held value, and with none held it refuses, which
+      // undoes the step the words were told in.
+      expect(drops, 0);
     },
   );
 
@@ -155,6 +163,29 @@ void main() {
       return true;
     });
     expect(red, ['el']);
+  });
+
+  testWidgets('the stage follows each key typed in the box, one undo step', (
+    tester,
+  ) async {
+    await mount(tester);
+    final box = find.descendant(
+      of: find.byKey(const ValueKey('text:box')),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(box, 'Hallo');
+    await tester.pump();
+    final typed = [
+      for (final w in words)
+        if (w['v_text'] != null) w['v_text'],
+    ];
+    expect(typed, contains('Hallo'), reason: 'told before the box is left');
+    expect(textLive.last, isTrue);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(words.last['v_text'], 'Hallo');
+    expect(textLive.last, isFalse);
+    expect(drops, 0);
   });
 
   testWidgets(
