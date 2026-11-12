@@ -300,7 +300,9 @@ std::string Script::said(const std::string& js) {
   return own->sketch && ok() ? script_said(own->cx, js.c_str()) : "";
 }
 std::string Script::answers(const std::string& js) {
-  return own->cx && ok() ? script_said(own->cx, js.c_str()) : "";
+  // Also once the script has failed: its context is still there, and what it
+  // last did is what the Code tab asks of a failed expression.
+  return own->cx ? script_said(own->cx, js.c_str()) : "";
 }
 std::vector<uint8_t> Script::bytes(const std::string& js) {
   std::vector<uint8_t> out;

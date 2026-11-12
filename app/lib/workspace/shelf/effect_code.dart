@@ -20,6 +20,7 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
 
 class EffectCode extends StatefulWidget {
@@ -390,6 +391,8 @@ class _EffectCodeState extends State<EffectCode> {
               keep: _making,
             ),
           ),
+        // What the expression gives at the playhead, under it as After Effects puts an expression's error.
+        ExpressionResult(EffectCode.source(_mine ?? widget.word)),
         if (widget.shelf)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),

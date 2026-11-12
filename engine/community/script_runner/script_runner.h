@@ -76,8 +76,8 @@ class Script {
   std::string said(const std::string& js);
   // Evaluates js in the script, whatever kind it is, and returns the result as
   // a string, as a browser's console answers what is typed in it: the code sees
-  // what the file's own code sees. Returns "" if the file did not run or js
-  // threw.
+  // what the file's own code sees, also after the file has failed. Returns ""
+  // if js threw.
   std::string answers(const std::string& js);
   // Evaluates js in the sketch and returns the contents of __bytes that it
   // leaves.

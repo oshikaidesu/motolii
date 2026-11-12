@@ -391,7 +391,13 @@ std::string adapter_js(const std::string& src, const std::string& form) {
            "const "
            "c={index:me.index,textIndex:i+1,textTotal:n,time:k.time,layer:me,"
            "comp:__ae_comp,effect:name=>()=>k[AE.name(name).toLowerCase()]};\n"
-           "const run=value=>{c.value=value;return AE.run(__ae,c)},"
+           // What the expression last gave, or threw, is kept for the Code
+           // tab, as After Effects shows an expression's error under it.
+           "const run=value=>{c.value=value;try{const r=AE.run(__ae,c);"
+           "globalThis.__ae_last={on,time:k.time,value:r};return r}catch(e){"
+           "globalThis.__ae_last={on,time:k.time,error:String(e&&e.message||e)}"
+           ";"
+           "throw e}},"
            "one=r=>Array.isArray(r)?r[0]:r;\n"
            "c.property=me[__ae_on||'position'];\n"
            "let on=__ae_on;if(!on)on=Array.isArray(run([W/2+x/px,H/2-y/px]))?"
