@@ -18,21 +18,51 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 class Panes extends StatefulWidget {
-  const Panes({super.key, required this.panes, required this.preset});
+  const Panes({super.key, required this.panes, required this.workspaces});
   final List<Pane> panes;
 
-  /// Builds the arrangement a new window starts with.
-  final DockingArea Function(
-    DockingArea Function(PaneStrip at, {double? size}) strip,
-  )
-  preset;
+  /// The arrangements the window switches between by name (the view state `workspace`), the first one at the start,
+  /// each with the pane it brings to the front.
+  final Map<
+    String,
+    (
+      DockingArea Function(
+        DockingArea Function(PaneStrip at, {double? size}) strip,
+      ),
+      String?,
+    )
+  >
+  workspaces;
   @override
   State<Panes> createState() => _PanesState();
 }
 
 class _PanesState extends State<Panes> {
-  late final _layout = DockingLayout(root: widget.preset(_strip));
+  late String _shown = widget.workspaces.keys.first;
+  late final _layout = DockingLayout(
+    root: widget.workspaces[_shown]!.$1(_strip),
+  );
   WorkspaceController? _ws;
+
+  // What the user made of each workspace left, as docking writes a layout: going back finds it as it was left, as
+  // After Effects keeps the changes made to a workspace.
+  final _kept = <String, String>{};
+  static const _ids = _Ids();
+
+  void _switch() {
+    final name = _ws!.viewOf('workspace', widget.workspaces.keys.first);
+    final to = widget.workspaces[name];
+    if (name == _shown || to == null) return;
+    _kept[_shown] = _layout.stringify(parser: _ids);
+    _shown = name;
+    if (_kept[name] case final kept?) {
+      _layout.load(layout: kept, parser: _ids, builder: _Areas(this));
+    } else {
+      _layout.root = to.$1(_strip);
+      // Only a workspace's first opening brings its pane to the front; after that it is as it was left.
+      if (to.$2 case final pane?) _toFront(pane);
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -40,12 +70,16 @@ class _PanesState extends State<Panes> {
     final ws = WorkspaceScope.read(context);
     if (ws == _ws) return;
     _ws?.on[WorkspaceAspect.fronted]!.removeListener(_follow);
-    _ws = ws..on[WorkspaceAspect.fronted]!.addListener(_follow);
+    _ws?.on[WorkspaceAspect.view]!.removeListener(_switch);
+    _ws = ws
+      ..on[WorkspaceAspect.fronted]!.addListener(_follow)
+      ..on[WorkspaceAspect.view]!.addListener(_switch);
   }
 
   @override
   void dispose() {
     _ws?.on[WorkspaceAspect.fronted]!.removeListener(_follow);
+    _ws?.on[WorkspaceAspect.view]!.removeListener(_switch);
     super.dispose();
   }
 
@@ -79,7 +113,7 @@ class _PanesState extends State<Panes> {
         : DockingTabs([for (final p in here) _item(p)], size: size);
   }
 
-  DockingItem _item(Pane p, {double? size}) {
+  DockingItem _item(Pane p, {double? size, double? weight}) {
     final name = p.name;
     return DockingItem(
       id: name,
@@ -109,6 +143,7 @@ class _PanesState extends State<Panes> {
       ),
       widget: Panel(child: p.build()),
       size: size,
+      weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
       // Nothing can reopen a closed pane yet, so panes cannot be closed.
@@ -194,4 +229,24 @@ TabbedViewThemeData _tabs() {
     ..decoration = BoxDecoration(color: WindowTokens.body)
     ..padding = EdgeInsets.zero;
   return t;
+}
+
+/// A pane's name is its id in a written layout.
+class _Ids with LayoutParserMixin {
+  const _Ids();
+}
+
+/// Builds a written layout's panes back from their names.
+class _Areas with AreaBuilderMixin {
+  _Areas(this._panes);
+  final _PanesState _panes;
+  @override
+  DockingItem buildDockingItem({
+    required dynamic id,
+    required double? weight,
+    required bool maximized,
+  }) => _panes._item(
+    _panes.widget.panes.firstWhere((p) => p.name == id),
+    weight: weight,
+  );
 }

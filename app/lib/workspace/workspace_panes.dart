@@ -176,3 +176,24 @@ DockingArea workspacePreset(
     minimalSize: 340,
   ),
 ]);
+
+/// For writing code, as Blender's Scripting workspace gives code most of the window: Code (with Timeline behind it)
+/// on the left, Stage over Inspector on the right, so that a value typed in the Inspector is seen beside the line
+/// under the code. The shelves, Ease and the tool panel are left out, as After Effects' workspaces leave panels out;
+/// Standard brings them back.
+DockingArea codeWorkspacePreset(
+  DockingArea Function(PaneStrip at, {double? size}) strip,
+) => DockingRow([
+  strip(PaneStrip.timeline),
+  DockingColumn([
+    strip(PaneStrip.stage),
+    strip(PaneStrip.inspector),
+  ], size: WindowTokens.inspector * 1.6),
+]);
+
+/// The workspaces the top bar switches between, as After Effects' Window > Workspace and Blender's tabs: each a
+/// starting arrangement, the first the window opens with, and the pane each brings to the front.
+const workspaces = {
+  'Standard': (workspacePreset, null),
+  'Code': (codeWorkspacePreset, 'Code'),
+};

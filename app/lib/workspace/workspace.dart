@@ -412,7 +412,7 @@ class _Window extends StatelessWidget {
       Expanded(
         child: Panes(
           panes: WorkspaceScope.read(context).panes,
-          preset: workspacePreset,
+          workspaces: workspaces,
         ),
       ),
     ],

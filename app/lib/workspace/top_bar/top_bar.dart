@@ -18,6 +18,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/top_bar/size_chip.dart';
 import 'package:motolii/workspace/top_bar/timings.dart';
+import 'package:motolii/workspace/top_bar/workspace_switch.dart';
 import 'package:motolii/workspace/top_bar/zoom_readout.dart';
 
 class TopBar extends StatelessWidget {
@@ -65,6 +66,8 @@ class TopBar extends StatelessWidget {
             look: ChipLook.readout(ink: Grey.g76),
           ),
           const Spacer(),
+          const WorkspaceSwitch(),
+          SizedBox(width: Shape.s(10)),
           const ZoomReadout(),
           const _ShadeSwitch(),
           SizedBox(width: Shape.s(10)),
