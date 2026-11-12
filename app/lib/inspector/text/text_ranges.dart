@@ -3,6 +3,24 @@
 // counts them, and the declarations are CSS ones, which the engine hands to Blitz (engine/community/css/text.rs).
 // A later line wins where ranges overlap, as a later CSS rule does.
 
+/// The letters selected in [text], as the start and count text_styles takes, or null when nothing is selected or
+/// the selection [picked] was made in another text. Text fields count UTF-16 units; text_styles counts characters.
+({int start, int count})? pickedLetters(
+  String text,
+  ({String text, int start, int end})? picked,
+) => picked == null || picked.text != text || picked.start >= picked.end
+    ? null
+    : (
+        start: text.substring(0, picked.start).runes.length,
+        count: text.substring(picked.start, picked.end).runes.length,
+      );
+
+/// The font file a CSS font-family names first, as ranges name a font file (`'/path/font.ttf'`), or null.
+String? fontFileOf(String? fontFamily) {
+  final f = fontFamily?.split(',').first.trim().replaceAll(RegExp('[\'"]'), '');
+  return f == null || f.isEmpty ? null : f;
+}
+
 /// One line of `text_styles`: the characters from [start], [count] of them, and their CSS declarations by property.
 typedef TextRange = ({int start, int count, Map<String, String> sets});
 

@@ -1,6 +1,8 @@
 // What the Fonts shelf asks the engine to do: set a text layer's font, or add a text layer in a font.
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/inspector/text/text_ranges.dart';
+import 'package:motolii/widgets/text_gestures.dart' show wordsPicked;
 import 'package:motolii/workspace/dock/fonts/font_file.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
@@ -18,7 +20,7 @@ class FontCommands {
   /// The fonts used lately are noted here.
   final FontsController fonts;
 
-  /// Sets the font on the selected text layer. With no text layer selected, adds a new text layer in that font.
+  /// Sets the font on the selected text layer, or on its selected letters. With no text layer selected, adds a new text layer in that font.
   void setFont(FontFile f) {
     fonts.used(f.family);
     final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? '');
@@ -27,6 +29,25 @@ class FontCommands {
           done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why,
     );
     if (t != null && m.word(t, 'kind') == 'text') {
+      // Letters selected in the text take the font as a range of their own, as a word processor's font menu sets
+      // the selection's font; the range names the file as its font-family (inspector/text/text_ranges.dart).
+      if (pickedLetters(m.word(t, 'text'), wordsPicked.value) case final at?) {
+        return c.ws.after(
+          m.later(
+            'say',
+            layer: t,
+            name: 'text_styles',
+            word: styleRange(
+              m.word(t, 'text_styles'),
+              at.start,
+              at.count,
+              'font-family',
+              "'${f.path!}'",
+            ),
+          ),
+          told,
+        );
+      }
       return c.ws.after(
         m.later('say', layer: t, name: 'file', word: f.path!),
         told,

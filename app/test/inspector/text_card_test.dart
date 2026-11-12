@@ -26,6 +26,8 @@ struct Params {
   text: vec3<f32>,
   /// @label(Styles) @unit(words)
   text_styles: vec3<f32>,
+  /// @label(Font) @unit(file)
+  file: vec3<f32>,
   /// @label(Size) @ui(bar) @range(0, 2) @unit(px) @default(0.08)
   size: f32,
   /// @label(Tracking) @ui(bipolar) @range(-100, 500) @unit() @default(0)
@@ -147,4 +149,15 @@ void main() {
     });
     expect(red, ['el']);
   });
+
+  testWidgets(
+    'with letters selected, Font shows the font file their range names',
+    (tester) async {
+      await mount(tester, styles: "1 2 font-family: '/fonts/Range.ttf'");
+      expect(find.textContaining('/fonts/Range.ttf'), findsNothing);
+      wordsPicked.value = (text: 'Hello', start: 1, end: 3);
+      await tester.pump();
+      expect(find.textContaining('/fonts/Range.ttf'), findsOneWidget);
+    },
+  );
 }

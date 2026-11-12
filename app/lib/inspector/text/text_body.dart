@@ -41,8 +41,18 @@ class _TextBodyState extends State<TextBody> {
   // what it shows changes, which [_made] names.
   InspectorValues? _range;
   String? _made;
-  List<FontAxis> _axes = const [];
-  String? _axesOf;
+  final _axesBy = <String, List<FontAxis>>{};
+
+  /// The variable-font axes of the font file [file], read once; none until they are read.
+  List<FontAxis> _axesOf(String file) {
+    if (file.isEmpty) return const [];
+    if (_axesBy[file] case final a?) return a;
+    _axesBy[file] = const [];
+    fontFileAxes(file).then((a) {
+      if (mounted) setState(() => _axesBy[file] = a);
+    });
+    return const [];
+  }
 
   @override
   void dispose() {
@@ -56,15 +66,6 @@ class _TextBodyState extends State<TextBody> {
     final text = doc.strings['v_text'] ?? '',
         styles = doc.strings['v_text_styles'] ?? '',
         file = doc.strings['v_file'] ?? '';
-    if (file != _axesOf) {
-      _axesOf = file;
-      _axes = const [];
-      if (file.isNotEmpty) {
-        fontFileAxes(file).then((a) {
-          if (mounted && _axesOf == file) setState(() => _axes = a);
-        });
-      }
-    }
     final base = TextStyles.name(Grey.g95).copyWith(
       fontWeight: FontWeight.w400,
       fontFamily: file.isEmpty ? null : fontFileFamily(file),
@@ -102,16 +103,31 @@ class _TextBodyState extends State<TextBody> {
         ValueListenableBuilder(
           valueListenable: wordsPicked,
           builder: (context, p, _) {
-            final picked = p == null || p.text != text
-                ? null
-                : (
-                    start: text.substring(0, p.start).runes.length,
-                    count: text.substring(p.start, p.end).runes.length,
-                  );
+            final picked = pickedLetters(text, p);
             final all = (start: 0, count: text.runes.length);
-            final range = _values(doc, styles, picked ?? all, picked != null);
+            final letters = picked ?? all;
+            // The letters' font: the file their ranges name, else the layer's; null where they differ.
+            final font = fontFileOf(
+              rangeValue(
+                styles,
+                letters.start,
+                letters.count,
+                'font-family',
+                otherwise: "'$file'",
+              ),
+            );
+            final axes = _axesOf(font ?? '');
+            final range = _values(
+              doc,
+              styles,
+              letters,
+              picked != null,
+              axes,
+              font,
+            );
             final own = [
               if (picked != null) ...[
+                ?layer['file'],
                 _size,
                 const Parameter(
                   id: 'fill',
@@ -122,18 +138,16 @@ class _TextBodyState extends State<TextBody> {
                   _like(t, def: doc.get('v_letter_spacing') ?? 0),
               ],
               _baseline,
-              for (final a in _axes) _axis(a),
+              for (final a in axes) _axis(a),
             ];
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ParameterGrid([
-                  for (final id in [
-                    'file',
-                    if (picked == null) ...['size', 'letter_spacing'],
-                  ])
-                    ?layer[id],
-                ]),
+                if (picked == null)
+                  ParameterGrid([
+                    for (final id in ['file', 'size', 'letter_spacing'])
+                      ?layer[id],
+                  ]),
                 InspectorScope(
                   doc: range,
                   tick: x.tick,
@@ -154,9 +168,11 @@ class _TextBodyState extends State<TextBody> {
     String styles,
     _Letters letters,
     bool picked,
+    List<FontAxis> axes,
+    String? font,
   ) {
     final made =
-        '$styles|${letters.start}|${letters.count}|$picked|${_axes.length}';
+        '$styles|${letters.start}|${letters.count}|$picked|$font|${axes.length}';
     if (_range != null && made == _made) return _range!;
     _range?.dispose();
     _made = made;
@@ -167,9 +183,8 @@ class _TextBodyState extends State<TextBody> {
       property,
       otherwise: otherwise,
     );
-    double? number(String? css, double Function(double) scale) => css == null
-        ? null
-        : double.tryParse(css.replaceAll(RegExp(r'[^-0-9.]'), '')).let(scale);
+    double? number(String? css, double Function(double) scale) =>
+        _number(css).let(scale);
     // Each letter's axes as its ranges set them; an axis is Mixed only where the letters differ on that axis.
     final axesOf = [
       for (var i = letters.start; i < letters.start + letters.count; i++)
@@ -186,13 +201,14 @@ class _TextBodyState extends State<TextBody> {
           (doc.get('v_letter_spacing') ?? 0)
       ..['v_baseline'] =
           number(at('baseline-shift', '0em'), (v) => v) ?? double.nan;
-    for (final a in _axes) {
+    for (final a in axes) {
       final each = {for (final m in axesOf) m[a.tag] ?? a.def};
       range.numbers['v_axis_${a.tag}'] = each.length == 1
           ? each.first
           : double.nan;
     }
     range.numbers.removeWhere((_, v) => v.isNaN); // Mixed.
+    if (font != null) range.strings['v_file'] = font;
     // Letters no range colors take the layer's fill.
     switch (at('color', 'fill')) {
       case 'fill':
@@ -236,7 +252,7 @@ class _TextBodyState extends State<TextBody> {
       }
       // A changed axis is set on each letter, its other axes kept: the letters are written again as runs of equal axes.
       final changed = {
-        for (final a in _axes)
+        for (final a in axes)
           if (range.numbers['v_axis_${a.tag}'] case final v?
               when v != shown['v_axis_${a.tag}'])
             a.tag: v,
@@ -320,18 +336,27 @@ InlineSpan _spans(String text, String styles, TextStyle base) {
   return TextSpan(style: base, children: runs);
 }
 
+/// The number in a CSS value, its unit dropped: `150%` is 150, `0.2em` is 0.2.
+double? _number(String? css) => css == null
+    ? null
+    : double.tryParse(css.replaceAll(RegExp(r'[^-0-9.]'), ''));
+
 bool _same<V>(Map<String, V> a, Map<String, V> b) =>
     a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
 
 TextStyle _style(TextStyle base, Map<String, String> sets) {
-  double? of(String? css) => css == null
-      ? null
-      : double.tryParse(css.replaceAll(RegExp(r'[^-0-9.]'), ''));
-  final size = (base.fontSize ?? 15) * ((of(sets['font-size']) ?? 100) / 100);
+  final size =
+      (base.fontSize ?? 15) * ((_number(sets['font-size']) ?? 100) / 100);
+  final font = fontFileOf(sets['font-family']);
   return base.copyWith(
+    // A range's own font file, the layer's font after it for letters it lacks, as CSS falls back.
+    fontFamily: font == null ? null : fontFileFamily(font),
+    fontFamilyFallback: font == null || base.fontFamily == null
+        ? null
+        : [base.fontFamily!],
     fontSize: size,
     color: colorOfHex(sets['color'] ?? ''),
-    letterSpacing: of(sets['letter-spacing']).let((em) => em * size),
+    letterSpacing: _number(sets['letter-spacing']).let((em) => em * size),
     fontVariations: [
       for (final e in _variations(
         sets['font-variation-settings'] ?? '',

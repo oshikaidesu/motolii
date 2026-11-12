@@ -25,32 +25,22 @@ class ColorCommands {
   /// The color on the picker, the stop it edits and the user's saved colors.
   final ColorsController colors;
 
-  /// The range of letters selected in the selected text layer, as letter indexes, or null.
-  /// It is null unless the selection still matches the layer's text. Indexes count characters, not bytes.
-  (int, int)? lettersPicked(int? t) {
-    final m = c.ws.inside, p = wordsPicked.value;
-    if (m == null ||
-        t == null ||
-        p == null ||
-        m.word(t, 'kind') != 'text' ||
-        m.word(t, 'text') != p.text) {
-      return null;
-    }
-    return (
-      p.text.substring(0, p.start).runes.length,
-      p.text.substring(0, p.end).runes.length,
-    );
+  /// The letters selected in the selected text layer's text, or null.
+  ({int start, int count})? lettersPicked(int? t) {
+    final m = c.ws.inside;
+    if (m == null || t == null || m.word(t, 'kind') != 'text') return null;
+    return pickedLetters(m.word(t, 'text'), wordsPicked.value);
   }
 
   /// Colors some letters of a text layer and leaves the rest alone, as Figma, Canva, PowerPoint, Keynote
   /// and After Effects' Character panel do for selected characters: one range of the layer's text_styles
   /// sets their CSS color (see inspector/text/text_ranges.dart).
-  void _fillLetters(int t, (int, int) at, String word) {
+  void _fillLetters(int t, ({int start, int count}) at, String word) {
     final m = c.ws.inside!;
     final styles = styleRange(
       m.word(t, 'text_styles'),
-      at.$1,
-      at.$2 - at.$1,
+      at.start,
+      at.count,
       'color',
       '#$word',
     );

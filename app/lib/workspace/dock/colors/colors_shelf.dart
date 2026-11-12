@@ -136,7 +136,7 @@ class ColorsShelf extends StatelessWidget {
                         : null;
                     final who = at == null
                         ? whom
-                        : '“${String.fromCharCodes(m.word(t!, 'text').runes.toList().sublist(at.$1, at.$2))}” in $whom';
+                        : '“${String.fromCharCodes(m.word(t!, 'text').runes.toList().sublist(at.start, at.start + at.count))}” in $whom';
                     return Text(
                       '${name == 'fill'
                           ? 'Fill'

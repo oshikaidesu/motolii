@@ -34,16 +34,37 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
+/// The font files ranges name as their font-family, `font-family: '/path/font.ttf'`, as the app names a font file it
+/// loads (Flutter's FontLoader with the path as the family).
+fn range_fonts(styles: &str) -> Vec<String> {
+    let mut files: Vec<String> = styles
+        .split(['\n', ';'])
+        .filter_map(|d| d.trim().split_once(':').filter(|(k, _)| k.trim().ends_with("font-family")))
+        .filter_map(|(_, v)| v.split(',').next())
+        .map(|f| f.trim().trim_matches(['\'', '"']).to_string())
+        .filter(|f| !f.is_empty())
+        .collect();
+    files.sort();
+    files.dedup();
+    files
+}
+
 /// The words as HTML: each run of characters that the same ranges cover, in a span with their declarations in order.
-fn spans(words: &str, styles: &str) -> String {
+/// A range's font-family is followed by `fallback`, the layer's fonts, for the letters its font lacks.
+fn spans(words: &str, styles: &str, fallback: &str) -> String {
     let n = words.chars().count();
-    let ranges: Vec<(usize, usize, &str)> = styles
+    let ranges: Vec<(usize, usize, String)> = styles
         .lines()
         .filter_map(|l| {
             let mut it = l.trim().splitn(3, char::is_whitespace);
             let start: usize = it.next()?.parse().ok()?;
             let count: usize = it.next()?.parse().ok()?;
-            Some((start.min(n), (start + count).min(n), it.next().unwrap_or("").trim()))
+            let css = it.next().unwrap_or("").trim().split(';').map(|d| {
+                let d = d.trim();
+                if d.split_once(':').is_some_and(|(k, _)| k.trim() == "font-family") { format!("{d}, {fallback}") }
+                else { d.to_string() }
+            });
+            Some((start.min(n), (start + count).min(n), css.collect::<Vec<_>>().join("; ")))
         })
         .filter(|r| r.0 < r.1 && !r.2.is_empty())
         .collect();
@@ -54,7 +75,7 @@ fn spans(words: &str, styles: &str) -> String {
     let mut html = String::new();
     for w in cuts.windows(2) {
         let piece: String = chars[w[0]..w[1]].iter().collect();
-        let css: Vec<&str> = ranges.iter().filter(|r| r.0 <= w[0] && w[1] <= r.1).map(|r| r.2).collect();
+        let css: Vec<&str> = ranges.iter().filter(|r| r.0 <= w[0] && w[1] <= r.1).map(|r| r.2.as_str()).collect();
         if css.is_empty() {
             html += &escape(&piece);
         } else {
@@ -127,6 +148,13 @@ pub fn set(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, t
             families.push(format!("'{name}'"));
         }
     }
+    // Each font file a range names, registered under its path, so the range's declaration names it as it stands.
+    for file in range_fonts(styles) {
+        if let Ok(bytes) = std::fs::read(&file) {
+            let info = FontInfoOverride { family_name: Some(&file), ..Default::default() };
+            ctx.collection.register_fonts(Blob::new(Arc::new(bytes)), Some(info));
+        }
+    }
     let width = if wrap > 0.0 { format!("width: {wrap}px; white-space: pre-wrap;") } else {
         "width: max-content; white-space: pre;".into()
     };
@@ -135,7 +163,7 @@ pub fn set(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, t
     let tracking = tracking / 1000.0;
     let page = format!(
         r#"<html><body style="margin: 0"><div id="motolii-text" style="font-family: {}; font-size: {size}px; line-height: {line}; letter-spacing: {tracking}em; font-style: oblique {slant}deg; color: {UNSET}; {width} {breaks}">{}</div></body></html>"#,
-        families.join(", "), spans(words, styles));
+        families.join(", "), spans(words, styles, &families.join(", ")));
     let config = DocumentConfig {
         viewport: Some(Viewport::new(1 << 15, 1 << 15, 1.0, ColorScheme::Light)),
         font_ctx: Some(ctx),
@@ -296,5 +324,22 @@ mod tests {
         assert!((c[0] - l[4][0]).abs() < 0.5 && (c[2] - 300.0).abs() < 0.5, "{c:?}");
         assert!((c[4] - 1.0).abs() < 0.01 && (c[5] - 138.0 / 255.0).abs() < 0.01 && (c[6] - 61.0 / 255.0).abs() < 0.01);
         assert!(t.verbs.len() > 20 && l[4][3] > l[4][2]);
+    }
+
+    // A range names a font file as its font-family, the way the app names a font file it loads (Flutter's FontLoader
+    // with the path as the family): "M" in Roboto takes Roboto's advance, not Noto Sans JP's, and a letter Roboto lacks
+    // ("あ") is still drawn, in the layer's font after it, as CSS falls back along font-family.
+    #[test]
+    fn a_range_sets_its_letters_in_a_font_file() {
+        let jp = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../third_party/noto_sans_jp/NotoSansJP-Regular.otf"))
+            .unwrap();
+        let roboto = concat!(env!("CARGO_MANIFEST_DIR"), "/../../third_party/filament_src/assets/fonts/Roboto-Medium.ttf");
+        let plain = set("MMあ", "", std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 0.0, false, 0.0).unwrap();
+        let t = set("MMあ", &format!("1 2 font-family: '{roboto}'"), &[jp], 100.0, 1.2, 0.0, 0.0, 0.0, false, 0.0)
+            .unwrap();
+        let (a, b) = (&plain.letters, &t.letters);
+        assert!((a[0][1] - b[0][1]).abs() < 0.5, "{a:?} {b:?}");
+        assert!((a[1][1] - b[1][1]).abs() > 1.0, "{a:?} {b:?}");
+        assert!(b[2][3] > b[2][2], "{b:?}");
     }
 }
