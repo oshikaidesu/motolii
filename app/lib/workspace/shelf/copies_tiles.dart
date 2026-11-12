@@ -11,9 +11,6 @@
 // header lines change it: "// make shape", "// set size" and "// set copies". After Effects expressions work in the
 // pixels of a composition, here a 1080 square. The file's expression (fx_file) is then applied to that layer.
 // If the engine rejects the expression (a SyntaxError), the tile is marked and keeps its glyph.
-//
-// A closed pack on the Code shelf (dock/code/code_shelf.dart) is drawn the same way, but it is created by name, as the
-// shelf creates it.
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
@@ -170,42 +167,31 @@ List<String> drawTiles<T>(
 
 /// Tiles for the Copies entries on the Create shelf.
 abstract final class CopiesTiles {
-  static final _tiles = TileQueue<(String, String, String?)>(
-    draw,
-    moving: true,
-  );
+  static final _tiles = TileQueue<(String, String)>(draw, moving: true);
 
   /// Notifies after a batch is drawn, so the tiles redraw.
   static final drawn = _tiles.drawn;
 
   /// The cache path of [file]'s tile, named by its path and modification time, as the engine's doc_tile names an effect's.
-  static String home(String file, {String? make}) {
+  static String home(String file) {
     final at = File(file).existsSync()
         ? File(file).lastModifiedSync().microsecondsSinceEpoch
         : 0;
-    return tileHome(
-      'copies',
-      '$file|$at|${make == null ? 'copies 5' : 'make $make'}',
-    );
+    return tileHome('copies', '$file|$at|copies 5');
   }
 
   /// Returns [file]'s tile, or '' when it is not drawn yet or the engine rejects the file. It is requested once.
-  ///
-  /// With [make], the recipe of that name is created from [file] as it is (a pack).
-  static String of(String file, {String? make}) {
-    final h = home(file, make: make);
-    return _tiles.of(h, (file, h, make));
+  static String of(String file) {
+    final h = home(file);
+    return _tiles.of(h, (file, h));
   }
 
   /// Draws each file's tile at its cache path and returns the paths drawn.
-  static List<String> draw(String dir, List<(String, String, String?)> files) =>
+  static List<String> draw(String dir, List<(String, String)> files) =>
       drawTiles(dir, 'motolii_copies', files, (j) => j.$2, (m, job, home) {
         // Each tile gets its own project, so the parameter values one expression sets (js_<name>) do not reach the next.
-        final (f, _, make) = job;
-        // A pack is created by name, as the Code shelf creates it.
-        final on = make != null
-            ? _answer(m, m.later('create', word: make)) >= 1
-            : _put(m, f);
+        final (f, _) = job;
+        final on = _put(m, f);
         final base = home.substring(0, home.length - 4);
         final pictures = [
           if (on)

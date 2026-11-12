@@ -6,6 +6,7 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
+import 'package:motolii/workspace/dock/create/code_file.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
@@ -41,6 +42,7 @@ class CreateCommands {
       );
       return;
     }
+    if (tile.pasted) return _createFromCode(tile);
     if (tile.file != null) return _putExpression(tile);
     // After Effects: New > Adjustment Layer.
     if (name == 'Adjustment') return c.ws.adjustment();
@@ -124,6 +126,28 @@ class CreateCommands {
       m.later('set', layer: 0, name: 'environment', number: .3);
     }
     c.ws.after(m.later('together'), _troubled(name));
+  }
+
+  /// Makes a layer from a pasted code file through the adapter of what it was written for, names it and selects it.
+  void _createFromCode(CreateTile tile) {
+    final m = c.ws.inside!, code = CodeFile(tile.file!);
+    c.ws.after(
+      m.later(
+        'adapter',
+        layer: int.tryParse(c.ws.selected ?? '') ?? 0,
+        word: code.file,
+      ),
+      _troubled(tile.name),
+      (made) {
+        if (made <= 0) return;
+        if (code.name != code.plain) {
+          c.ws.after(
+            m.later('say', layer: made, name: 'name', word: code.name),
+          );
+        }
+        c.ws.select('$made');
+      },
+    );
   }
 
   /// Puts an expression on the picked layer, or on a new layer when none is picked.

@@ -14,6 +14,7 @@ class CreateTile {
     this.recipe = false,
     this.file,
     this.made = false,
+    this.pasted = false,
   });
   final String name, key, what;
   final AppGlyphs g;
@@ -28,10 +29,14 @@ class CreateTile {
 
   /// True for an expression whose head makes its own layer (a script's "// make" line). With nothing picked, that layer is created.
   final bool made;
+
+  /// True for code that came from outside by paste or drop, kept as written in [file] (code_file.dart). It makes a
+  /// layer of its own through the adapter of what it was written for.
+  final bool pasted;
   String get id => file ?? (recipe ? 'recipe:$name' : name);
 
   /// True if the tile goes on the picked layer, or on a new layer when none is picked.
-  bool get onPicked => file != null || _onPicked.contains(name);
+  bool get onPicked => (file != null && !pasted) || _onPicked.contains(name);
 }
 
 // Tiles that go on the picked layer, or on a new layer when none is picked (empty_effect.dart).

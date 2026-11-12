@@ -3,6 +3,7 @@ import 'package:docking/docking.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/code/code_pane.dart';
 import 'package:motolii/workspace/dock/shelf_pane.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart';
 import 'package:motolii/workspace/stage/stage.dart';
@@ -57,14 +58,6 @@ final workspacePanes = [
     iconOnly: true,
   ),
   Pane(
-    'Code',
-    AppGlyphs.code,
-    () => const ShelfPane('Code', 'Search code'),
-    at: PaneStrip.shelves,
-    minSize: 240,
-    iconOnly: true,
-  ),
-  Pane(
     'Presets',
     AppGlyphs.files,
     () => const ShelfPane('Presets', 'Search presets'),
@@ -96,6 +89,14 @@ final workspacePanes = [
     'Timeline',
     AppGlyphs.timeline,
     () => const TimelinePane(),
+    at: PaneStrip.timeline,
+    minSize: 160,
+  ),
+  // Beside the Timeline: the preview stays in sight above the code, and a line has the width of the window.
+  Pane(
+    'Code',
+    AppGlyphs.code,
+    () => const CodePane(),
     at: PaneStrip.timeline,
     minSize: 160,
   ),
@@ -141,7 +142,7 @@ final workspacePanes = [
 /// Height of a pane's tab strip, added to the reference heights so the panels keep theirs.
 const _strip = 22.0;
 
-/// The default arrangement: the media shelves (one strip of tabs) and Stage over Timeline and Ease on the left,
+/// The default arrangement: the media shelves (one strip of tabs) and Stage over Timeline (with Code behind it) and Ease on the left,
 /// Inspector over Camera on the right.
 ///
 /// Side and lower panes start at their reference sizes in px. The panes without a size share what is left.

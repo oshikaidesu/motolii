@@ -209,7 +209,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     text = all.str();
   }
   const std::filesystem::path folder = doc_folders("programs").back();
-  // True when the code is already a file in the Code shelf folder. It is
+  // True when the code is already a file in the programs/ folder. It is
   // then used where it is and not stored again.
   const bool kept = std::filesystem::path(word).parent_path() == folder;
   // Libraries that the page loads: each file's name and the place it was
@@ -249,7 +249,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // JavaScript form.
   const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text),
                     told = adapter_js(text, form);
-  // Text kept in the Code shelf as a file of its own: named by its form and
+  // Text kept in programs/ as a file of its own: named by its form and
   // the FNV-1a hash of the text (its last four hex digits), so different code
   // gets a different file, written once. Code already a file in the shelf is
   // used as it is when `as_is`.
@@ -275,7 +275,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     return doc_acted(d) && on ? on : 0;
   }
   // A pen's CSS moves the letters of the text layer picked, or of a new text
-  // when no text is picked (community/css). It is kept in the Code shelf as
+  // when no text is picked (community/css). It is kept in programs/ as
   // a .css file and put on the layer's effect list as an expression; a text
   // not split yet is split into letters.
   if (form == "css") {
@@ -356,7 +356,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
         from, to / name, std::filesystem::copy_options::skip_existing, wrong);
   }
   // The Hydra code as it was written is kept beside the converted effect. The
-  // Code shelf shows this file.
+  // Create tab lists this file under Code.
   if (hydra)
     std::ofstream(file.parent_path() / (file.stem().string() + ".hydra"))
         << came;

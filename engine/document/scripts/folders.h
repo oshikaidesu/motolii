@@ -24,9 +24,8 @@
 
 namespace motolii {
 
-// `program` is the program a closed pack was written for. Such a recipe is
-// listed on the Code shelf instead of Create; it is "" for the recipes of
-// Create.
+// `program` is the program a closed pack was written for. It is "" for
+// the other recipes. Both are listed in the Create tab.
 struct DocRecipe {
   std::string name, what, path, program;
   std::vector<std::string> lines;

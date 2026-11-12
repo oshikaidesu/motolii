@@ -162,7 +162,7 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 
 WGSL（`.wgsl`）、Create のタイル（`.js` を `create/` に）、Expression のタイル（`.js` を `expressions/` に）、関係（`.js` を `relations/` に）、Ease のプリセット（`.way` を `ease/` に）、スキン（フォルダごと `skins/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
-p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Code タブに残ります。
+p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。貼ったコードは Create タブの Code に残り、できたレイヤーのコードは、タイムラインの隣の Code タブで開きます。
 
 ### 次に：自分の素材で
 

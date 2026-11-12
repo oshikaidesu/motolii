@@ -52,7 +52,7 @@ Counter: §6. A count with ¹ includes the plain-English or third-party sense to
 | 34 | 書類 | the `.motolii` file | プロジェクト / project | AE "project" (composition basics [ae-comp]) | docs only | no |
 | 35 | 場面 | the preview | プレビュー / preview (`Stage` stays, §2 d) | AE composition panel [ae-panel] | docs only | no |
 | 36 | 棚 / shelf | the left tab of effects, presets… | **kept**: `shelf` | Blender "Asset Shelf" (manual, *regions*) [bl-shelf] | — | — |
-| 37 | Program (tab, shelf, `Program*` in the app) | the left tab that keeps pasted code and shows it for editing | `Code` (`CodeShelf`, `CodeFile`, `CodeField`) | Decided by the author on 2026-11-12: what the tab holds and edits is code, and "program" also means an executable (`findProgram`). GitHub names a repository's tab of files "Code" | 8 comments / 16 files / 13 files, renamed 2026-11-12 | **yes**: the folder `programs/` in the user's own folder keeps its name, because projects store paths into it |
+| 37 | Program (tab, shelf, `Program*` in the app) | the tab that shows a layer's code for editing (beside the Timeline since 2026-11-12; pasted code is kept under Code in the Create tab) | `Code` (`CodePane`, `CodeFile`, `CodeField`) | Decided by the author on 2026-11-12: what the tab holds and edits is code, and "program" also means an executable (`findProgram`). GitHub names a repository's tab of files "Code" | 8 comments / 16 files / 13 files, renamed 2026-11-12 | **yes**: the folder `programs/` in the user's own folder keeps its name, because projects store paths into it |
 
 **door does not survive**: rows 22–23. AGENTS.md rule 5 names it as its example of a house word; the docs batch
 rewrites that line with `adapter`.

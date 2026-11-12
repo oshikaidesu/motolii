@@ -54,7 +54,7 @@ void emptyPut(
   putEffectFile(ws, file, expression: expression, told: told, open: true);
 }
 
-/// Puts an effect file (an expression file if [expression]) on the selected layer. [open] opens its code on the card.
+/// Puts an effect file (an expression file if [expression]) on the selected layer. [open] opens its code in the Code tab.
 /// With no layer selected, an effect goes on a new adjustment layer and an expression on a new layer of its own.
 /// [told] receives the reason it was refused, or '' once it was taken.
 void putEffectFile(
@@ -68,10 +68,7 @@ void putEffectFile(
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
   final (word, title) = _said(t == null ? '' : m.word(t, 'fx'), file);
-  if (open) {
-    ws.view['inspector.v.$title.code'] =
-        true; // Opens the Code section of its card.
-  }
+  if (open) EffectCode.show(ws, title); // (its cell in the Code tab)
   if (t == null) {
     return expression
         ? ws.whole('rect', (m) => m.later('fx_file', layer: -1, word: word))

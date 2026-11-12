@@ -1,26 +1,18 @@
-// A code file on the Code shelf: code that came from outside, kept as written.
+// A pasted code file on the Create shelf: code that came from outside, kept as written (the group Code).
 import 'dart:io';
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 
 /// One code file on the shelf: its path, what it was written for, and the hash that tells it from the others of those.
 class CodeFile {
-  CodeFile(this.file, {this.recipe, this.kind});
+  CodeFile(this.file);
   final String file;
 
-  /// [recipe] is the name of a closed pack from the library: a whole Cavalry script or a p5.js sketch as it came
-  /// (CREATE_PROGRAM.md). It is created by that name, as Create does (doc_make).
-  ///
-  /// [kind] is what the code file was written for, as the engine reports it. A pack's file is never overwritten.
-  final String? recipe, kind;
   String get stem =>
       file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
   String get form =>
-      kind ??
-      (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
+      stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem;
   String get tail =>
       stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
 
@@ -31,7 +23,6 @@ class CodeFile {
   ///
   /// That is the site title adapter_net.h wrote at the head of the file, or the description of a multi-tab file.
   String get name {
-    if (recipe case final r?) return r;
     try {
       if (shelfSidecar(file).existsSync()) {
         return shelfSidecar(file).readAsStringSync().trim();
@@ -106,22 +97,4 @@ List<CodeFile> codeFiles() {
   final kept = all.where((f) => !made.contains(f.path)).toList()
     ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
   return [for (final f in kept) CodeFile(f.path)];
-}
-
-/// The user's code files, then the library's packs that are not among them.
-///
-/// A pack that was also put in from the web and kept appears only once.
-List<CodeFile> codeFilesAndPacks(Motolii? m) {
-  final own = codeFiles(),
-      stems = {for (final p in own) p.stem},
-      kinds = {
-        for (final (name, kind) in m?.packKinds ?? const <(String, String)>[])
-          name: kind,
-      };
-  return [
-    ...own,
-    for (final (name, file) in m?.packs ?? const <(String, String)>[])
-      if (!stems.contains(name))
-        CodeFile(file, recipe: name, kind: kinds[name]),
-  ];
 }

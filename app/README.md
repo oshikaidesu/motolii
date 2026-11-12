@@ -71,7 +71,8 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/workspace/commands/` | Named commands with their keys and menus: `keymap.dart`, `menu_bar.dart`. |
 | `lib/workspace/inspector_feed/` | What the project hands to the Inspector: `cards.dart`, `values.dart`. |
 | `lib/workspace/shelf/` | Tiles shown in shelves (effects, scripts, materials): `shelf_tile.dart`, `effect_tiles.dart`. |
-| `lib/workspace/dock/` | The shelf panels on the left: `shelf_pane.dart` (`ShelfPane`: header, search field, body), one folder per shelf (`create/`, `effects/`, `media/`, `fonts/`, `colors/`, `code/`), `map/` (a shelf shown as a map of similar items) and `common/` (widgets the shelves share). |
+| `lib/workspace/dock/` | The shelf panels on the left: `shelf_pane.dart` (`ShelfPane`: header, search field, body), one folder per shelf (`create/`, `effects/`, `media/`, `fonts/`, `colors/`), `map/` (a shelf shown as a map of similar items) and `common/` (widgets the shelves share). |
+| `lib/workspace/code/` | The Code tab beside the Timeline: `code_pane.dart` (`CodePane`), the selected layer's code as one cell for each card that has code. |
 | `lib/workspace/stage/` | The preview: the engine's picture and the drags on top of it. |
 | `lib/workspace/timeline/` | The timeline. |
 | `lib/workspace/tool_panel/` | The tool panel under the Inspector (Ease, Align, Blend, Depth). |
@@ -105,7 +106,7 @@ Dependencies run one way: from the panels down to the border to the engine (`bri
 | `workspace/commands/` | `workspace/edits/` and what it may import, `widgets/` |
 | `workspace/shelf/` | `workspace/commands/` and what it may import. Never `inspector/`. |
 | `workspace/inspector_feed/` | `workspace/shelf/` and what it may import, `inspector/` |
-| `workspace/dock/`, `stage/`, `timeline/`, `tool_panel/`, `top_bar/`, `window/` | `workspace/inspector_feed/` and what it may import. These six do not import each other. |
+| `workspace/dock/`, `code/`, `stage/`, `timeline/`, `tool_panel/`, `top_bar/`, `window/` | `workspace/inspector_feed/` and what it may import. These seven do not import each other. |
 | `workspace/*.dart` (the whole window) | Anything |
 | `panel.dart` | Anything; it contains only `export` lines. |
 | `main.dart` | `workspace/*.dart` and `bridge/` |

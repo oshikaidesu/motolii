@@ -38,9 +38,9 @@ inline bool adapter_has(const std::string& t, const char* word) {
   return t.find(word) != std::string::npos;
 }
 
-// Returns the display name of a form, as shown on the Code shelf chips and
-// used in the names of program files. A form with no known name is returned as
-// it is.
+// Returns the display name of a form, as used in the names of the kept code
+// files (programs/, listed under Code in the Create tab). A form with no known
+// name is returned as it is.
 std::string adapter_name(const std::string& form);
 // Detects the form of pasted code. Returns "" for ISF, a p5.js sketch, one of
 // our own presets, or text that is not code. Otherwise returns one of:

@@ -162,7 +162,7 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 
 WGSL (`.wgsl`), Create tiles (`.js` in `create/`), Expression tiles (`.js` in `expressions/`), relations (`.js` in `relations/`), Ease presets (`.way` in `ease/`), skins (the folder, in `skins/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
-p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Code tab.
+p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The pasted code is kept under Code in the Create tab, and the code of the layer it made opens in the Code tab, beside the Timeline.
 
 ### Next: your own media
 

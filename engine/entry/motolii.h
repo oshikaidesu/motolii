@@ -295,8 +295,8 @@ const char* motolii_cards_more(Motolii* m, int layer);
    lies in on its card, or empty if it is not folded. */
 const char* motolii_shown(Motolii* m, const char* name);
 /* Returns the create scripts, one per line, "name\twhat it makes". A closed
-   pack gives "name\twhat\tprogram\tpath": what it was written for and its file,
-   which the Code shelf shows. Valid until the next call. */
+   pack gives "name\twhat\tprogram\tpath": what it was written for and its
+   file. Valid until the next call. */
 const char* motolii_create_scripts(Motolii* m);
 /* Returns the shelf's presets, one per line, "name\tpath\tlabel\timage". A
    preset is a layer's properties, effects and keyframes, except what kind of
@@ -457,8 +457,8 @@ void motolii_finished(Motolii* m, void (*listener)(void*), void* with);
 const char* motolii_cache(Motolii* m);
 /* Returns the titles of a layer's effect cards in the order its effects are
    laid, separated by
-   ";", or "" if there are none. Move one with motolii_later "fx_move" (word: a title, number: how many
-   places, up when less than 0). */
+   ";", or "" if there are none. Move one with motolii_later "fx_move" (word: a
+   title, number: how many places, up when less than 0). */
 const char* motolii_fx_titles(Motolii* m, int layer);
 /* Starts playback (playing nonzero), in which time goes on by the clock and
    goes round again at the end, or stops it. */

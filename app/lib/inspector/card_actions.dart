@@ -10,7 +10,7 @@ class CardActions {
     this.onSum,
     this.onCardReset,
     this.onCardRemove,
-    this.cardCode,
+    this.cardEdit,
     this.onCardEye,
     this.onCardSave,
     this.onCardInfo,
@@ -37,9 +37,9 @@ class CardActions {
   /// Removes an effect (the bin on the card head).
   final void Function(String title)? onCardRemove;
 
-  /// Builds the code view of a card, found by its title and its value names, because two cards can share a title.
-  /// It sits under the card's parameters. Null from the builder means the card has no code.
-  final Widget? Function(String title, List<String> names)? cardCode;
+  /// What opens a card's code in the Code tab. The card is found by its title and its value names, because two cards
+  /// can share a title. Null from the builder means the card has no code, and the row is not shown.
+  final VoidCallback? Function(String title, List<String> names)? cardEdit;
 
   /// Turns an effect off or on again, keeping its values (the eye on the card head).
   final void Function(String title)? onCardEye;

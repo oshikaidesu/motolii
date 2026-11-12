@@ -1,5 +1,5 @@
-// The Create shelf: its tiles in groups (layers, shapes, expressions, solids, materials, lights), and the footer for
-// the picked tile.
+// The Create shelf: its tiles in groups (layers, shapes, expressions, solids, materials, lights, pasted code), and the
+// footer for the picked tile.
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 
@@ -18,10 +18,12 @@ import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/common/shelf_masonry.dart';
 import 'package:motolii/workspace/dock/common/shelf_section.dart';
 import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
+import 'package:motolii/workspace/dock/create/code_file.dart';
 import 'package:motolii/workspace/dock/create/create_catalog.dart';
 import 'package:motolii/workspace/dock/create/create_commands.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/dock/create/expressions.dart';
+import 'package:motolii/workspace/shelf/code_tiles.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
 import 'package:motolii/workspace/shelf/create_preview.dart';
 import 'package:motolii/workspace/shelf/material_tiles.dart';
@@ -47,7 +49,13 @@ class CreateShelf extends StatelessWidget {
       solidGroup,
       materialGroup,
       lightGroup,
+      codeGroup(),
     ].where((e) => e.$2.isNotEmpty).toList();
+    // A pasted code file's tile is drawn again when the file has changed since (code_tiles.dart).
+    CodeTiles.ask([
+      for (final m in makes.last.$2)
+        if (m.pasted) m.file!,
+    ], () => codeTilesDrawn.value++);
     var groups = [
       for (final (g, items) in makes)
         if (c.chip == 'All' || c.chip == g)
@@ -119,7 +127,8 @@ class CreateShelf extends StatelessWidget {
                                 count: items.length,
                                 tile: (i) {
                                   final m = items[i];
-                                  return m.file != null && shelfAdded(m.file!)
+                                  return m.file != null &&
+                                          (m.pasted || shelfAdded(m.file!))
                                       ? _OwnTile(
                                           m,
                                           c,
@@ -176,6 +185,7 @@ Widget _makeTile(
           : layerOfTile.containsKey(m.name) ||
                 shadingOfTile.containsKey(m.name) ||
                 m.onPicked ||
+                m.pasted ||
                 inside.elements.any((e) => e.$1 == m.name));
   return ShelfTile(
     ShelfItem(m.id, m.name, about: m.what),
@@ -211,6 +221,27 @@ Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
   if (m.recipe && _isRecipe(c, m.name)) {
     // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.
     return Positioned.fill(child: RecipeMotionView(m.name));
+  }
+  if (m.pasted) {
+    // Pasted code: a few seconds of what it draws, as one looping file (code_tiles.dart). The key holds the time it was
+    // drawn, because an Image keeps showing the old picture of a file of the same name.
+    return Positioned.fill(
+      child: ValueListenableBuilder(
+        valueListenable: codeTilesDrawn,
+        builder: (_, _, _) {
+          final drawn = File(CodeTiles.home(m.file!));
+          return drawn.existsSync()
+              ? TileMoving(
+                  drawn.path,
+                  playing: true,
+                  key: ValueKey(
+                    '${drawn.path} ${drawn.lastModifiedSync().millisecondsSinceEpoch}',
+                  ),
+                )
+              : mark();
+        },
+      ),
+    );
   }
   if (m.file case final f?) {
     // An expression: the copies it lays out, drawn by the engine like an effect's tile and played while visible (copies_tiles.dart).
@@ -251,7 +282,8 @@ bool _isRecipe(ShelfContext c, String name) {
   return true;
 }
 
-/// A tile for an item the user added, with Rename… on its menu (library tiles have none).
+/// A tile for an item the user added or pasted, with Rename… on its menu (library tiles have none), and for pasted
+/// code a way to its file, as Live's browser has (Live 12 manual, 4.2.1, 4.5 and 4.7.7).
 /// The new name is stored beside the file and never changes the file (shelf_add.dart shelfRename).
 class _OwnTile extends StatefulWidget {
   const _OwnTile(this.m, this.c, {super.key});
@@ -269,6 +301,10 @@ class _OwnTileState extends State<_OwnTile> {
     setState(() => _naming = false);
     final m = widget.m, ws = widget.c.ws;
     if (to == null || to.trim() == m.name) return;
+    if (m.pasted) {
+      CodeFile(m.file!).rename(to);
+      return widget.c.set(() {});
+    }
     final why = shelfRename(
       ws,
       m.file!,
@@ -289,6 +325,15 @@ class _OwnTileState extends State<_OwnTile> {
         final box = _menu.currentContext?.findRenderObject() as RenderBox?;
         _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
           ContextMenuItem('Rename…', () => setState(() => _naming = true)),
+          if (widget.m.pasted)
+            ContextMenuItem(
+              Platform.isWindows ? 'Show in Explorer' : 'Show in Finder',
+              () => Platform.isWindows
+                  ? Process.run('explorer', [
+                      '/select,${widget.m.file!.replaceAll('/', r'\')}',
+                    ])
+                  : Process.run('open', ['-R', widget.m.file!]),
+            ),
         ]);
       },
     ),

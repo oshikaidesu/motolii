@@ -77,7 +77,6 @@ const _square = ShelfLook(
 /// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
-  'Code': _square,
   'Media': ShelfLook(
     ShelfForm.under,
     cell: 76,

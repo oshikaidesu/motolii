@@ -143,7 +143,7 @@ How much of the host a file reads (its own sliders, any property of any layer) i
 
 The Code tab is the editor that opens any item of a layer's list at its code. The Edit button on a card (3.1) opens it there, whether the card is an fx, an expression or a source. There is one editor, not one for each kind.
 
-There is no Code shelf of packs, because there are no packs (4.1). Today the shelf's tiles and the editor are one class ([code_shelf.dart](../../app/lib/workspace/dock/code/code_shelf.dart)). The tiles go with the packs and the editor stays.
+There is no Code shelf of packs, because there are no packs (4.1). Since 2026-11-12 the editor is the Code tab beside the Timeline ([code_pane.dart](../../app/lib/workspace/code/code_pane.dart)): one cell for each card of the selected layer that has code, each as tall as its code. The tiles of pasted code moved to the Create tab (the group Code), and the closed packs are listed with its Recipes until each is read as one of the three rows.
 
 A file that came from outside by paste or drop belongs to the project, as a script in Blender's Text Editor belongs to the .blend. It is not a shelf item; a shelf is a library of other people's work that is copied into a project when used. (A design, not yet decided with the author.)
 

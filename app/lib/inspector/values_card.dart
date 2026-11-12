@@ -177,20 +177,17 @@ class ValuesCard extends StatelessWidget {
           ),
           if (adv) ParameterGrid(rest),
         ],
-        if (doc.actions.cardCode?.call(card.name, [
+        if (doc.actions.cardEdit?.call(card.name, [
               for (final p in card.params) p.id,
             ])
-            case final code?) ...[
-          // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
+            case final edit?)
+          // The card's code is in the Code tab, one text for both. The sliders are what is edited here and the code is what they drive.
           _FoldRow(
-            'Code',
-            doc.flags['$k.code'] ?? false,
-            () => doc.flag('$k.code', !(doc.flags['$k.code'] ?? false)),
+            'Edit code',
+            false,
+            edit,
             key: ValueKey('card-code:${card.name}'),
           ),
-          if (doc.flags['$k.code'] ?? false)
-            SizedBox(height: Shape.z(360), child: code),
-        ],
       ],
     );
     final shown = PastRange(flag: '$k.past', child: sect);

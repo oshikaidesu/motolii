@@ -11,22 +11,6 @@ extension MotoliiShelves on Motolii {
     () => [for (final l in _createScriptLines) (l[0], l[1])],
   );
 
-  /// The closed packs among the create scripts. They belong to the Code shelf, not Create (docs/design/create_and_program_shelves.md).
-  /// Each is a name and file. [packKinds] gives what each was written for, such as Cavalry or p5.js.
-  List<(String, String)> get packs => folders.putIfAbsent(
-    'packs',
-    () => [
-      for (final l in _createScriptLines)
-        if (l.length > 3) (l[0], l[3]),
-    ],
-  );
-  List<(String, String)> get packKinds => folders.putIfAbsent(
-    'packKinds',
-    () => [
-      for (final l in _createScriptLines)
-        if (l.length > 3) (l[0], l[2]),
-    ],
-  );
   List<List<String>> get _createScriptLines => [
     for (final line
         in bindings.motolii_create_scripts(handle).toDartString().split('\n'))

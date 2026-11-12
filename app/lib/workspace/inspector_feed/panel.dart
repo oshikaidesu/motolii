@@ -295,20 +295,12 @@ class _InspectorPanelState extends State<InspectorPane> {
                     : m.later('fx_out', layer: int.parse(l!.id), word: title),
                 (_, _) => ws.reread(),
               ),
-        cardCode: int.tryParse(l?.id ?? '') == null
+        cardEdit: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title, names) => title == 'Script'
-                  ? (m.word(int.parse(l!.id), 'script').endsWith('.js')
-                        ? EffectCode(
-                            ws,
-                            int.parse(l.id),
-                            m.word(int.parse(l.id), 'script'),
-                            slot: 'script',
-                            shelf: false,
-                            key: ValueKey('script-code-${l.id}'),
-                          )
-                        : null)
-                  : EffectCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: effect_code.dart)
+            : (title, names) =>
+                  EffectCode.ofCard(ws, int.parse(l!.id), title, names) == null
+                  ? null
+                  : () => EffectCode.show(ws, title), // (a card's code is a cell of the Code tab: workspace/code/code_pane.dart)
         onCardEye: int.tryParse(l?.id ?? '') == null
             ? null
             : (title) => ws.after(

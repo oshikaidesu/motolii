@@ -1,4 +1,5 @@
-// The code editor on an effect's card, below its parameters, like the Script card's (slot: 'script').
+// The code of one card of a layer: an effect's, an expression's, or the Script card's (slot: 'script'). The Code tab
+// shows it as a cell (workspace/code/code_pane.dart), and "Edit code" on the card in the Inspector opens that cell.
 // It edits a .wgsl, an ISF .fs, or an expression (a .js with each() among its fx: document/scripts/expressions.h).
 // Typing affects only this layer's effect. The shelf's file is never overwritten: the first edit copies it to a folder
 // of the user's own (programs/fx/<stamp>/) under the same file name, and the layer's fx points at the copy.
@@ -28,6 +29,7 @@ class EffectCode extends StatefulWidget {
     this.word, {
     this.slot = 'fx',
     this.shelf = true,
+    this.fit = false,
     super.key,
   });
   final WorkspaceController ws;
@@ -42,30 +44,70 @@ class EffectCode extends StatefulWidget {
 
   /// Whether to show "Add to shelf" under the editor: for an effect, not for a script.
   final bool shelf;
+
+  /// Whether the editor is as tall as its code (CodeField.fit), not as tall as the room it is given.
+  final bool fit;
   @override
   State<EffectCode> createState() => _EffectCodeState();
 
   // Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
   static final _code = RegExp(r'\.(wgsl|fs|js)$');
 
-  /// Finds the code file behind a layer's effect card, or null if the card is not a code effect.
+  /// The view state the Code tab keeps: the titles of the cards whose cell is folded, and the card last asked for
+  /// with a count, so that asking for the same card again is heard.
+  static const folded = 'code.folded', asked = 'code.asked';
+
+  /// Opens the Code tab on the card [title]: its cell is unfolded and scrolled into sight.
+  static void show(WorkspaceController ws, String title) {
+    ws.setView(folded, {...ws.viewOf(folded, const <String>{})}..remove(title));
+    ws.setView(asked, (
+      title,
+      (ws.viewOf<(String, int)?>(asked, null)?.$2 ?? 0) + 1,
+    ));
+    ws.front('Code');
+  }
+
+  /// The code of the card [title] of the layer [thing], or null if the card has no code.
   ///
-  /// The match uses the card's parameter [names], not the title alone, because two cards can share a title.
+  /// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
+  /// not by the title alone, because two cards can share a title.
   /// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
   /// (`js_<stem>_<param>`, document/scripts/scripts.h doc_script_of), so the file is the one whose name they all begin with.
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
   /// If two files fit, the one whose title matches the card wins, then the longer name.
-  /// A card with no parameters (the engine still gives it a card, doc_cards_of) is matched by title alone.
-  static EffectCode? of(
+  /// A card with no parameters of its own (the engine still gives it a card, doc_cards_of) is matched by title alone.
+  static EffectCode? ofCard(
     WorkspaceController ws,
     int thing,
     String title,
-    List<String> names,
-  ) {
-    final word = fileOf(ws.inside!.word(thing, 'fx'), title, names);
+    List<String> names, {
+    bool fit = false,
+  }) {
+    final m = ws.inside!;
+    if (title == 'Script') {
+      final script = m.word(thing, 'script');
+      return script.endsWith('.js')
+          ? EffectCode(
+              ws,
+              thing,
+              script,
+              slot: 'script',
+              shelf: false,
+              fit: fit,
+              key: ValueKey('script-code-$thing'),
+            )
+          : null;
+    }
+    final word = fileOf(m.word(thing, 'fx'), title, names);
     return word == null
         ? null
-        : EffectCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
+        : EffectCode(
+            ws,
+            thing,
+            word,
+            fit: fit,
+            key: ValueKey('fx-code-$thing-$title'),
+          );
   }
 
   /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
@@ -78,13 +120,19 @@ class EffectCode extends StatefulWidget {
           titled = titleOf(w) == title;
       // A three.js effect is run as a scene once saved (doc_three_saved).
       if (w.endsWith('.js') && _three(file)) continue;
-      if (names.isEmpty) {
+      // A card's own parameters begin with js_. The first card with code on a layer also shows values of the layer
+      // itself (How many copies), which no file declares, so those do not decide.
+      final own = [
+        for (final n in names)
+          if (n.startsWith('js_')) n,
+      ];
+      if (own.isEmpty) {
         if (titled) return w;
         continue;
       }
       final fits = w.endsWith('.js') && file == w
-          ? names.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains)
-          : names.every((n) => n.startsWith('js_${stem}_'));
+          ? own.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains)
+          : own.every((n) => n.startsWith('js_${stem}_'));
       if (!fits) continue;
       final score = (titled ? 1000 : 0) + stem.length;
       if (best == null || score > best.$2) best = (w, score);
@@ -314,6 +362,7 @@ class _EffectCodeState extends State<EffectCode> {
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
     return Column(
+      mainAxisSize: widget.fit ? MainAxisSize.min : MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_why.isNotEmpty)
@@ -326,13 +375,21 @@ class _EffectCodeState extends State<EffectCode> {
               style: TextStyles.label(Role.error),
             ),
           ),
-        Expanded(
-          child: CodeField(
+        if (widget.fit)
+          CodeField(
             EffectCode.source(_mine ?? widget.word),
             _write,
             keep: _making,
+            fit: true,
+          )
+        else
+          Expanded(
+            child: CodeField(
+              EffectCode.source(_mine ?? widget.word),
+              _write,
+              keep: _making,
+            ),
           ),
-        ),
         if (widget.shelf)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),

@@ -23,8 +23,8 @@ Take the first row that fits. The folder goes inside your own folder (above).
 | A 3D shape (a `.js` with `export function solid`) | `solids/` |
 | The look of the app | `skins/` (the whole folder) |
 | An AviUtl2 package | `aviutl_scripts/` (the whole folder) |
-| A three.js page written in TSL (its material has `colorNode` or `positionNode`) | **Paste it.** Its colour becomes an effect and what moves its points a points file, on the selected layer, or on a rectangle over the canvas with none selected. The files stay in the Code tab |
-| A Shadertoy, GLSL Sandbox, twigl or Bonzomatic shader; p5.js, Dwitter, tixy, Turtletoy, Two.js, Paper.js or Hydra code | **Paste it, do not place it.** Copy the code and press ⌘V in the app. It stays in the Code tab. (Hydra first needs `extensions/hydra/get.sh`.) |
+| A three.js page written in TSL (its material has `colorNode` or `positionNode`) | **Paste it.** Its colour becomes an effect and what moves its points a points file, on the selected layer, or on a rectangle over the canvas with none selected. The files are kept in the `programs/` folder of your own folder |
+| A Shadertoy, GLSL Sandbox, twigl or Bonzomatic shader; p5.js, Dwitter, tixy, Turtletoy, Two.js, Paper.js or Hydra code | **Paste it, do not place it.** Copy the code and press ⌘V in the app. It is kept under Code in the Create tab. (Hydra first needs `extensions/hydra/get.sh`.) |
 
 A file says its name and its sliders in its first lines. See "How a file's head is written" below.
 
@@ -224,7 +224,7 @@ Save it and it shows at once (no restart). Save it again and the picture follows
 |---|---|---|---|
 | `effects/` | Effects tab tiles (a layer's effect, or the whole screen's) | `.fs` (ISF), `.wgsl`, `.js` (three.js), `.mjs`, `.json` (Filament settings) | The first line's `// Name:`, else the file name. A `.fs`: its file name |
 | `aviutl_scripts/` | Effects tab tiles; the package name is a chip | An AviUtl2 package (`.anm2`, `.obj2`, `@` files), the folder as its author ships it | The script's name and `--label:`; the package name is what follows `__` in the folder name |
-| `create/` | Create tab, Recipes (a picture in one call). One with `function each` shows under Expression; closed packs (`--label:Cavalry`…) in the Code tab | `.js` | The first line's `// Name: what it makes`; a p5 sketch with no head: its file name |
+| `create/` | Create tab, Recipes (a picture in one call). One with `function each` shows under Expression; closed packs (`--label:Cavalry`…) are among the Recipes too | `.js` | The first line's `// Name: what it makes`; a p5 sketch with no head: its file name |
 | `expressions/` | Create tab, Expression (letters or layers coming in and going out, a wave through a layer's copies; Cavalry's Animators and its oscillator) | `.js` (`function each`) | The first line's `// Name:` |
 | `relations/` | Create tab, Expression, with the expressions (many layers moved at once: put on a group, or on layers selected together) | `.js` | The first line's `// Name:`, else the file name |
 | `looks/` | Effects tab, look tiles (a layer's values, effects and keys saved under a name) | `.motolii` + its tile picture `.png` | The file name as it is (spaces and capitals kept) |
