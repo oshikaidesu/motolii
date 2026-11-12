@@ -19,6 +19,7 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     meson configure $THORVG/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # meson falls back to the CPU engine alone when it reconfigures itself
     ninja -C $THORVG/build_dawn > /dev/null
     ./deps/libtess2.sh
+    ./deps/jolt.sh
     ./deps/curve_fit_nd.sh
     ./deps/ffmpeg.sh
     ./deps/onnxruntime.sh

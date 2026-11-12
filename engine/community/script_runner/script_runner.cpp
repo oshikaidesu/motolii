@@ -42,13 +42,17 @@ struct Script::Own {
   FilmRead film;         // what its createCapture and createVideo see
   std::unique_ptr<Subtitles> subtitles;  // an .ass file's, drawn by libass
   std::vector<SketchLine> lines;         // its lines that draw
-  JSAtom said[12] = {};  // the names each() says a copy by, made atoms once
+  JSAtom said[17] = {};  // the names each() says a copy by, made atoms once
                          // (JS_GetPropertyStr makes and frees one at every
                          // read: quickjs-ng quickjs.c)
 };
-static const char* const script_copy_names[12] = {
-    "x",        "y",      "z",       "size",    "rotate",  "rotate_x",
-    "rotate_y", "colour", "opacity", "scale_x", "scale_y", "scale_z"};
+// The last five are a rigid body's, by Jolt Physics' names (script.h); force
+// is a pair.
+static const char* const script_copy_names[17] = {
+    "x",        "y",       "z",       "size",          "rotate",
+    "rotate_x", "rotate_y", "colour", "opacity",       "scale_x",
+    "scale_y",  "scale_z", "mass",    "gravityFactor", "restitution",
+    "friction", "force"};
 
 Script::Script(const std::string& file, const std::string& p5,
                const std::string& film)
@@ -520,7 +524,7 @@ ScriptCopy Script::ask(
   JSContext* cx = own->cx;
   JS_UpdateStackTop(own->rt);
   if (own->said[0] == JS_ATOM_NULL)
-    for (int k = 0; k < 12; ++k)
+    for (int k = 0; k < 17; ++k)
       own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
   JS_SetProperty(cx, own->at, own->said[0], JS_NewFloat64(cx, at.x)),
       JS_SetProperty(cx, own->at, own->said[1], JS_NewFloat64(cx, at.y)),
@@ -537,14 +541,29 @@ ScriptCopy Script::ask(
     JS_FreeCString(cx, s), JS_FreeValue(cx, e);
     return c;
   }
-  double* const to[12] = {&c.x,       &c.y,        &c.z,        &c.size,
-                          &c.rotate,  &c.rotate_x, &c.rotate_y, &c.colour,
-                          &c.opacity, &c.scale_x,  &c.scale_y,  &c.scale_z};
-  for (int k = 0; k < 12; ++k) {
+  double* const to[16] = {&c.x,          &c.y,
+                          &c.z,          &c.size,
+                          &c.rotate,     &c.rotate_x,
+                          &c.rotate_y,   &c.colour,
+                          &c.opacity,    &c.scale_x,
+                          &c.scale_y,    &c.scale_z,
+                          &c.mass,       &c.gravity_factor,
+                          &c.restitution, &c.friction};
+  for (int k = 0; k < 16; ++k) {
     JSValue v = JS_GetProperty(cx, out, own->said[k]);
     if (JS_IsNumber(v)) JS_ToFloat64(cx, to[k], v);
     JS_FreeValue(cx, v);
   }
+  JSValue force = JS_GetProperty(cx, out, own->said[16]);
+  if (JS_IsObject(force)) {
+    double* const pair[2] = {&c.force_x, &c.force_y};
+    for (uint32_t k = 0; k < 2; ++k) {
+      JSValue v = JS_GetPropertyUint32(cx, force, k);
+      if (JS_IsNumber(v)) JS_ToFloat64(cx, pair[k], v);
+      JS_FreeValue(cx, v);
+    }
+  }
+  JS_FreeValue(cx, force);
   JS_FreeValue(cx, out);
   return c;
 }

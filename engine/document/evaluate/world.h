@@ -6,12 +6,16 @@
 #include <chrono>
 #include <cstddef>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace motolii {
 
 struct Doc;
+class RigidBodies;
 
 // The relations whose result is worked out frame after frame and kept: a
 // relation written as a file, and the world of the relations that push.
@@ -57,6 +61,23 @@ struct DocSolver {
   // Set while the world is being worked out. What it asks of itself then comes
   // from the frames it already has.
   bool walking = false;
+  // The rigid bodies of the project (bodies.h). layers: the layers that have
+  // bodies and how many copies each. first: where a layer's first body lies in
+  // a frame. metre: one metre in stage units. jolt: Jolt's world, standing at
+  // frame `at`. states: Jolt's state after each frame, to go on from any of
+  // them. kept: where the bodies are, frame by frame. walking: set while the
+  // frames are being made.
+  struct Bodies {
+    std::vector<std::pair<int, int>> layers;
+    std::map<int, size_t> first;
+    double metre = 1;
+    std::shared_ptr<RigidBodies> jolt;
+    long at = -1;
+    std::vector<std::string> states;
+    RelatedKept kept;
+    bool walking = false;
+  };
+  Bodies bodies;
 };
 
 // Returns the values that relation `by`, written as a script file, gives all

@@ -5,6 +5,7 @@
 #include <set>
 
 #include "document/edit/layer_edit.h"
+#include "document/evaluate/bodies.h"
 #include "document/evaluate/shown.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
@@ -26,6 +27,9 @@ double doc_scale_z(Doc& d, int layer, double now) {
   const double z = doc_literal(d, layer, "scale_z", now, 1);
   return z == 0 && doc_word(d, layer, "kind") != "solid" ? 1e-3 : z;
 }
+// The layers whose copies are being laid right now (doc_laid,
+// doc_copies_laid).
+std::set<int> doc_laying;
 // Where a script, or the notes of a MIDI file, put one copy of a layer: its
 // position, rotation and size. `by` says what produced it: 0 for neither, 1 for
 // a MIDI file's note, 2 for a script's each().
@@ -102,7 +106,7 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     // being laid (layerValue with k.id and a copy:
     // document/scripts/script_reads.h). It is told where they lie without the
     // script and the expressions.
-    static std::set<int> laying;
+    std::set<int>& laying = doc_laying;
     if (laying.count(layer)) return out;
     DocPlaceCache::Scripted& kept = d.place_cache.scripted[layer];
     // `clock` is the layer's own time. A part after a cut continues from where
@@ -125,10 +129,26 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     }
     const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
     out.c = c, out.by = 2;
+    // A copy with a mass is a rigid body: it lies where Jolt has it (bodies.h).
+    if (out.c.mass >= 0) doc_body_over(d, layer, copy, said, out.c);
   }
   return out;
 }
 }  // namespace
+
+std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n,
+                                        double said) {
+  const std::vector<DocScript*> scs = doc_placing_scs(d, layer);
+  if (scs.empty() || doc_laying.count(layer)) return {};
+  const double gone = doc_literal(d, layer, "begin", 0, 0),
+               begins = doc_literal(d, layer, "start", 0, 0) - gone;
+  doc_laying.insert(layer);
+  std::vector<ScriptCopy> all = doc_expressions_lay(
+      d, layer, scs, n, said, doc_own_time(d, layer, said, said - begins),
+      gone);
+  doc_laying.erase(layer);
+  return all;
+}
 
 math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                      bool member) {

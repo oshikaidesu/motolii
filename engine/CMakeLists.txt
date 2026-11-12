@@ -256,6 +256,16 @@ add_library(motolii_motion STATIC
   motion/lottie_motion.cpp)
 target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_absent_motion)
 
+# Adapter: rigid bodies moved by Jolt Physics as it is (deps/jolt.sh builds it and installs its CMake package).
+if(NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/libJolt.a)
+  message(FATAL_ERROR "third_party/physics/JoltPhysics is not built: run engine/deps/jolt.sh")
+endif()
+find_package(Jolt REQUIRED CONFIG PATHS ${THIRD_PARTY}/physics/JoltPhysics/Build/install NO_DEFAULT_PATH)
+add_library(motolii_community_jolt STATIC
+  community/jolt/rigid_bodies.cpp)
+target_link_libraries(motolii_community_jolt PUBLIC motolii_flags)
+target_link_libraries(motolii_community_jolt PRIVATE Jolt::Jolt)
+
 # Adapter: script runner code run as it is.
 add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
@@ -305,6 +315,7 @@ add_library(motolii_document STATIC
   document/edit/presets.cpp
   document/edit/relate.cpp
   document/edit/time_edit.cpp
+  document/evaluate/bodies.cpp
   document/evaluate/camera.cpp
   document/evaluate/evaluate.cpp
   document/evaluate/evaluate_camera.cpp
@@ -346,6 +357,7 @@ add_library(motolii_document STATIC
   document/scripts/scripts.cpp
   document/undo.cpp)
 target_link_libraries(motolii_document PUBLIC motolii_flags motolii_base motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
+target_link_libraries(motolii_document PUBLIC motolii_community_jolt)
 target_link_libraries(motolii_document PUBLIC ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 
@@ -501,7 +513,7 @@ if(BUILD_TESTING)
   foreach(folder base shelf motion media preview stage entry)
     motolii_module_tests(motolii_${folder} ${folder}/*_test.cpp)
   endforeach()
-  foreach(folder absent_motion after_effects aviutl hydra isf p5 playcanvas quickjs script_runner sites three)
+  foreach(folder absent_motion after_effects aviutl hydra isf jolt p5 playcanvas quickjs script_runner sites three)
     motolii_module_tests(motolii_community_${folder} community/${folder}/*_test.cpp)
   endforeach()
   foreach(folder render canvas effects layer_effects)

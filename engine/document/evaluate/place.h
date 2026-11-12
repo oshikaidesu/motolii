@@ -88,6 +88,11 @@ struct DocPlaceCache {
 // keyed as the older `anchor` property was.
 filament::math::mat4 doc_place(Doc& d, int layer, double now, int deeper = 0,
                                int copy = 0, bool member = false);
+// Returns the `n` copies of `layer` as its script and expressions lay them at
+// time `said`, asked anew: nothing is kept, and a rigid body is where its
+// expressions put it, not where it has fallen to (bodies.h asks this for
+// every frame). Empty when the layer has no expressions, or is being laid.
+std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n, double said);
 // Returns one matrix per line that joins copies of the layer named by "connect"
 // to copies of the layer named by "connect_to", or to other copies of the same
 // layer. Each line is stretched along the direction between the two copies and

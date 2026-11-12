@@ -37,6 +37,7 @@
 // See script_leva.h.
 
 #include <iosfwd>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -75,6 +76,13 @@ struct ScriptCopy {
   double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0,
          opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1;
   double matrix[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+  // A copy whose each() says a mass is a rigid body, moved by Jolt Physics
+  // (community/jolt/rigid_bodies.h); these are what it tells Jolt, under
+  // Jolt's own names: mass, gravityFactor, restitution, friction, and force,
+  // a pair. mass below 0: not a body. NaN: not said, left as Jolt has it.
+  double mass = -1, gravity_factor = kNotSaid, restitution = kNotSaid,
+         friction = kNotSaid, force_x = 0, force_y = 0;
+  static constexpr double kNotSaid = std::numeric_limits<double>::quiet_NaN();
 };
 
 // Returns the path of a shelf file that a project names where the file no

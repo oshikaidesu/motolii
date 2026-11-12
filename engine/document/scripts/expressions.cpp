@@ -1,6 +1,7 @@
 #include "document/scripts/expressions.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <map>
@@ -107,6 +108,12 @@ void doc_expression_over(ScriptCopy& c, const ScriptCopy& o) {
   c.size *= o.size, c.scale_x *= o.scale_x, c.scale_y *= o.scale_y,
       c.scale_z *= o.scale_z, c.opacity *= o.opacity;
   if (o.colour >= 0) c.colour = o.colour;
+  // A rigid body's values: what a later file says replaces, forces add.
+  if (o.mass >= 0) c.mass = o.mass;
+  if (!std::isnan(o.gravity_factor)) c.gravity_factor = o.gravity_factor;
+  if (!std::isnan(o.restitution)) c.restitution = o.restitution;
+  if (!std::isnan(o.friction)) c.friction = o.friction;
+  c.force_x += o.force_x, c.force_y += o.force_y;
 }
 
 // The copies a .css expression lays: the letters (or words) of a split text,
