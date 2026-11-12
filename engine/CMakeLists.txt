@@ -176,7 +176,8 @@ target_link_libraries(motolii_community_sites PUBLIC PkgConfig::GSTREAMER)   # a
 # Adapter: three code run as it is.
 add_library(motolii_community_three STATIC
   community/three/solid_three.cpp
-  community/three/three_isf.cpp)
+  community/three/three_isf.cpp
+  community/three/tsl_shelf.cpp)
 target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base)
 
 # Adapter: isf code run as it is.

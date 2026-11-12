@@ -108,6 +108,7 @@ std::string adapter_name(const std::string& form) {
       {"hydra", "Hydra"},
       {"dweet", "Dwitter"},
       {"after_effects", "After Effects"},
+      {"tsl", "TSL"},
       {"tixy", "tixy"},
       {"turtle", "Turtletoy"},
       {"two", "Two.js"},
@@ -160,6 +161,12 @@ std::string adapter_form(const std::string& t) {
       !adapter_has(t, "function force") && !adapter_has(t, "function draw") &&
       !adapter_has(t, "function setup"))
     return "after_effects";
+  // three.js Shading Language: a page's script whose material is made of
+  // nodes (community/three/tsl_shelf.h writes it as shelf files). Before
+  // "three", which is a scene of plain materials.
+  if (adapter_has(t, "three/tsl") || adapter_has(t, "NodeMaterial") ||
+      adapter_has(t, "colorNode") || adapter_has(t, "positionNode"))
+    return "tsl";
   if (adapter_has(t, "mainImage")) return "shadertoy";
   if (adapter_has(t, "gl_FragColor") && adapter_has(t, "void main") &&
       std::regex_search(t, sandbox))

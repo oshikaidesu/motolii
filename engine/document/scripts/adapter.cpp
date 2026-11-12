@@ -22,6 +22,7 @@
 #include "community/sites/adapter.h"
 #include "community/sites/adapter_net.h"
 #include "community/sites/adapter_shadertoy_json.h"
+#include "community/three/tsl_shelf.h"
 #include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/fx_put.h"
@@ -299,6 +300,31 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     doc_act(d);
     doc_fx_file(d, picked, file.string().c_str(), d.stage->now);
     return doc_acted(d) ? picked : 0;
+  }
+  // three.js Shading Language is written as shelf files by three.js's own
+  // builder (community/three/tsl_shelf.h): the colour as an effect, on the
+  // selected layer or on a rectangle over the canvas, and what moves the
+  // mesh's points as a points file on the same layer.
+  if (form == "tsl") {
+    std::string effect, points, why;
+    if (!tsl_shelf(
+            doc_engine("third_party/js/three").string(),
+            doc_engine("community/three_shading_language_to_shelf").string(),
+            came, adapter_name(form), effect, points, why))
+      return d.error = why, 0;
+    std::filesystem::path made[2];
+    if (!effect.empty()) text = effect, made[0] = stored(".wgsl", false);
+    if (!points.empty()) text = points, made[1] = stored(".wgsl", false);
+    doc_act(d);
+    int layer = picked;
+    if (!layer && (layer = doc_add(d, "shape", "rect")) &&
+        doc_say(d, layer, "name", adapter_name(form).c_str()))
+      doc_fit(d, layer, "stretch");
+    if (!layer) return d.act.ok = false, doc_acted(d), 0;
+    for (const std::filesystem::path& file : made)
+      if (!file.empty())
+        doc_fx_file(d, layer, file.string().c_str(), d.stage->now);
+    return doc_acted(d) ? layer : 0;
   }
   const bool hydra = form == "hydra",
              shader = hydra || form == "shadertoy" || form == "sandbox" ||

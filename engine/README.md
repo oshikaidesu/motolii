@@ -79,7 +79,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), the functions it reads the rest of the project with (`project_reads.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
 | `after_effects/` | After Effects expressions (`ae_expr.h`) and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
 | `p5/` | p5.js sketches in p5.js itself (`p5_stand.h`), the Web Audio that p5.sound and a page that listens run on (`web_audio_stand.h`), and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
-| `three/` | three.js: solid shapes (`solid_three.h`) and screen effects turned into ISF (`three_isf.h`). |
+| `three/` | three.js: solid shapes (`solid_three.h`), screen effects turned into ISF (`three_isf.h`), and pasted three.js Shading Language written as shelf files (`tsl_shelf.h`). |
 | `isf/` | ISF effects (`.fs`), translated to WGSL with glslang and Tint. Every shader entry ends here. |
 | `hydra/` | Hydra code, turned into GLSL by Hydra itself, then run as an ISF effect. |
 | `playcanvas/` | PlayCanvas Gaussian-splat effects (`splatfx.h`). |
@@ -88,7 +88,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `subtitles/` | Subtitles and timed lyrics as they are written: FFmpeg tells them and writes SRT, LRC, WebVTT and the rest as ASS; libass draws ASS, karaoke and override tags included (`subtitles.h`). The sites adapter wraps a pasted file into a sketch that draws the moment asked. |
 | `css/` | CSS animations as posted, run by Blitz and Stylo, in Rust. A CodePen pen moving a text layer's letters (`css.h`, `css.rs`): Motolii gives each letter's box and gets back how the CSS moves it. An SVG moved by its own CSS (`svg.h`, `svg.rs`): written again for each frame with the values in its attributes, for ThorVG to draw. |
 | `absent_motion/` | AbsentMotion motion and text effects (`absent_motion.h`). |
-| `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. |
+| `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. Its plain `.js` files (`three_builder.js`, `write_shelf_file.js`, `write_shelf_points.js`, `from_page.js`) are also read as they are by `three/tsl_shelf.cpp` when TSL is pasted in the app. |
 
 ## Layer order
 

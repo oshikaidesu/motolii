@@ -23,6 +23,7 @@ Motolii に最初から入っている表現と、見つけた表現を置く場
 | 3D の形（`export function solid` を持つ `.js`） | `solids/` |
 | アプリの見た目 | `skins/`（フォルダごと） |
 | AviUtl2 のパッケージ | `aviutl_scripts/`（フォルダごと） |
+| TSL で書かれた three.js のページ（材質に `colorNode` や `positionNode` がある物） | **貼る。** 色はエフェクトに、点を動かす部分は点を動かすファイルになり、選んでいるレイヤーに掛かる。何も選んでいなければ、キャンバスいっぱいの四角に掛かる。できたファイルは Program タブに残る |
 | Shadertoy・GLSL Sandbox・twigl・Bonzomatic のシェーダー、p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra などのコード | **置かずに貼る**。コードをコピーして、アプリで ⌘V。Program タブに残ります（Hydra は先に `extensions/hydra/get.sh`） |
 
 ファイルは頭の数行で自分の名前とつまみを言います。下の「頭の書き方」を見てください。
