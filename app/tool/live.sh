@@ -4,11 +4,12 @@
 # (effects .wgsl, scripts .js). A rebuilt engine (../engine/build.sh lib) is a hot restart: the window stays open and
 # the project is opened again in the new engine. Ends when the window is closed.
 #   tool/live.sh                   (opens ~/Movies/Motolii/Untitled.motolii; MOTOLII_DOC=/path/to.motolii for another document)
-# Opening takes about 5 s: Xcode builds the app only when the native side changed (macos/, pubspec.yaml, pubspec.lock)
-# or there is none yet. Otherwise only the Dart part is built, by the step Xcode itself runs (flutter assemble, with
-# the settings flutter build last wrote to Flutter-Generated.xcconfig), and put into the app the way Flutter's
-# xcode_backend.dart embeds it (rsync App.framework, then codesign). The app is started directly and flutter attach
-# joins it for the reloads.
+# Opening takes about 3 s: Xcode builds the app only when the native side changed (macos/, pubspec.yaml, pubspec.lock)
+# other than the Swift of macos/Runner, or there is none yet; that Swift alone is built again by Xcode's own commands,
+# kept from its last log (swift_only). Dart alone is compiled by Flutter's own compiler (dart_only); with assets, by
+# the step Xcode itself runs (flutter assemble, with the settings flutter build last wrote to Flutter-Generated.xcconfig),
+# put into the app the way Flutter's xcode_backend.dart embeds it (rsync App.framework, then codesign). The app is
+# started directly and flutter attach joins it for the reloads.
 cd "$(dirname "$0")/.."   # (app/: lib/, build/ and ../engine are read from there)
 source ../engine/tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
 FLUTTER="${FLUTTER:-flutter}"
@@ -26,6 +27,7 @@ dart_only() {
     local blob="$app/Contents/Frameworks/App.framework/Resources/flutter_assets/kernel_blob.bin"
     local registrant="$PWD/.dart_tool/flutter_build/dart_plugin_registrant.dart"
     [ -f "$dill" ] && [ -f "$blob" ] && [ -f "$registrant" ] && [ -z "$(find assets pubspec.yaml -newer "$blob" -print -quit)" ] || return 1
+    [ -z "$(find lib .dart_tool/package_config.json -newer "$blob" -print -quit)" ] && return 0   # (no Dart newer than the app's)
     for d in ${(s:,:)$(setting DART_DEFINES)}; do defs+=(-D"$(print -r -- $d | base64 -d)"); done
     "$root/bin/cache/dart-sdk/bin/dartaotruntime" "$root/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot" \
         --sdk-root "$root/bin/cache/artifacts/engine/common/flutter_patched_sdk/" --target=flutter --no-print-incremental-dependencies \
@@ -36,9 +38,27 @@ dart_only() {
         mv "$dill.next" "$dill" && cp -c "$dill" "$blob"
 }
 
-if [ ! -x "$app/Contents/MacOS/Motolii" ] || [ ! -f "$xcconfig" ] ||
-   [ -n "$(find macos pubspec.yaml pubspec.lock -path macos/Flutter -prune -o -type f -newer "$app/Contents/MacOS/Motolii" -print -quit)" ]; then
-    "$FLUTTER" build macos --debug $defines || exit 1
+# The native side through Xcode. Its own commands for the Swift of macos/Runner (compile, link Motolii.debug.dylib,
+# sign) are kept from its log in build/live.swift.sh, and swift_only runs them again when only that Swift changed:
+# the build log replayed, as InjectionIII does. A build that compiled no Swift keeps the ones kept before.
+xcode() {
+    "$FLUTTER" build macos --debug -v $defines > build/live.xcode.log 2>&1 || { tail -40 build/live.xcode.log; return 1; }
+    local step=(grep -A2 -E) at=(sed -E 's/^\[ *\] +//')
+    { echo 'cd macos'
+      $step '\] SwiftDriver Runner normal' build/live.xcode.log | tail -1 | $at | sed 's/^builtin-SwiftDriver -- //'
+      $step '\] Ld .*/Motolii\.debug\.dylib normal' build/live.xcode.log | tail -1 | $at
+      grep -E '/usr/bin/codesign .*(Motolii\.debug\.dylib|Motolii\.app)$' build/live.xcode.log | $at
+    } > build/live.swift.next
+    [ $(grep -c . build/live.swift.next) -ge 4 ] && mv build/live.swift.next build/live.swift.sh
+    touch "$native"
+}
+swift_only() { [ -f build/live.swift.sh ] && zsh -e build/live.swift.sh > /dev/null 2>&1 && touch "$native"; }
+
+native="build/live.native" changed=()
+[ -f "$native" ] && changed=(${(f)"$(find macos pubspec.yaml pubspec.lock -path macos/Flutter -prune -o -type f -newer "$native" -print)"})
+if [ ! -x "$app/Contents/MacOS/Motolii" ] || [ ! -f "$xcconfig" ] || [ ! -f "$native" ] ||
+   [ -n "${changed:#macos/Runner/*.swift}" ] || { (( $#changed )) && ! swift_only }; then
+    xcode || exit 1
 elif ! dart_only; then
     "$FLUTTER" assemble --no-version-check --output="$PWD/$products/" -dTargetPlatform=darwin -dTargetFile="$(setting FLUTTER_TARGET)" \
         -dBuildMode=debug -dConfiguration=Debug -dDarwinArchs="$(uname -m)" -dSdkRoot="$(xcrun --sdk macosx --show-sdk-path)" \
