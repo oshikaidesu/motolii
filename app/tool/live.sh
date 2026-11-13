@@ -2,22 +2,26 @@
 # The window with Flutter's own
 # hot reload: a .dart under lib/ saved shows in the open window in a
 # moment, its state kept (flutter run reloads when sent SIGUSR1, restarts on SIGUSR2; r and R still work here too).
-# The inside's own files reload by themselves (effects .wgsl, scripts .js). Ends when the window is closed.
+# The inside's own files reload by themselves (effects .wgsl, scripts .js). A rebuilt engine (../engine/build.sh lib)
+# is a hot restart: the window stays open and the project is opened again in the new engine. Ends when the window is closed.
 #   tool/live.sh                   (opens ~/Movies/Motolii/Untitled.motolii; MOTOLII_DOC=/path/to.motolii for another document)
 cd "$(dirname "$0")/.."   # (app/: lib/, build/ and ../engine are read from there)
 source ../engine/tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
 FLUTTER="${FLUTTER:-flutter}"
-pid="build/live.pid" seen="build/live.seen"
+pid="build/live.pid" seen="build/live.seen" engine="build/live.engine"
 : ${MOTOLII_DOC:=$HOME/Movies/Motolii/Untitled.motolii}   # (the document, and beside it what Render writes and File › New makes; MOTOLII_DOC=… for another)
 mkdir -p "${MOTOLII_DOC:h}"
-mkdir -p build && rm -f "$pid" && touch "$seen"
+mkdir -p build && rm -f "$pid" && touch "$seen" "$engine"
 "$FLUTTER" run -d macos --pid-file "$pid" --dart-define=MOTOLII_DIR="${MOTOLII_DIR:-${PWD:h}/engine}" ${MOTOLII_DOC:+--dart-define=MOTOLII_DOC="$MOTOLII_DOC"} "$@" &
 run=$!
 trap 'kill $run 2>/dev/null' EXIT INT TERM
 while kill -0 $run 2>/dev/null; do   # (once a second: a .dart newer than the last reload, then reload)
     sleep 1
     [ -f "$pid" ] && build_unlock   # (the window is open: what it builds from here is its own)
-    if [ -f "$pid" ] && [ -n "$(find lib -name '*.dart' -newer "$seen" | head -1)" ]; then
+    if [ -f "$pid" ] && [ ../engine/out/libmotolii.dylib -nt "$engine" ]; then   # (the engine rebuilt: a hot restart opens the new one, see Motolii._liveCopy)
+        touch "$seen" "$engine"
+        kill -USR2 "$(cat "$pid")" 2>/dev/null && echo "live.sh: engine rebuilt, restarted"
+    elif [ -f "$pid" ] && [ -n "$(find lib -name '*.dart' -newer "$seen" | head -1)" ]; then
         touch "$seen"
         kill -USR1 "$(cat "$pid")" 2>/dev/null && echo "live.sh: reloaded"
     fi

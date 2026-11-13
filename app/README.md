@@ -15,7 +15,7 @@ cd app
 tool/live.sh
 ```
 
-`tool/live.sh` opens the app with `flutter run -d macos` and sends a hot reload each time a `.dart` file under `lib/` is saved, so the open window updates with its state kept. The engine's own files (effect `.wgsl`, script `.js`) reload by themselves. The script ends when the window is closed. It takes the machine's build lock (`../engine/tools/build_lock.sh`) until the window is open.
+`tool/live.sh` opens the app with `flutter run -d macos` and sends a hot reload each time a `.dart` file under `lib/` is saved, so the open window updates with its state kept. The engine's own files (effect `.wgsl`, script `.js`) reload by themselves. When `../engine/build.sh lib` rebuilds the engine, it sends a hot restart: the window stays open and the project is opened again in the new engine (the app opens a copy of the library named after its build time, so the new one is loaded). The script ends when the window is closed. It takes the machine's build lock (`../engine/tools/build_lock.sh`) until the window is open.
 
 It opens `~/Movies/Motolii/Untitled.motolii`. Set `MOTOLII_DOC=/path/to.motolii` to open another project, and `MOTOLII_DIR` to point at another engine folder.
 

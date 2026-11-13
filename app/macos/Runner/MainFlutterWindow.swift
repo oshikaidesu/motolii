@@ -128,6 +128,7 @@ enum StageTexture {
         if let t = dlsym(h, "motolii_finished") {
           unsafeBitCast(t, to: FinishedFn.self)(inside, { _ in DispatchQueue.main.async { StageTexture.shared.values.forEach { $0.check() } } }, nil)
         }
+        shared[frontName]?.check()   // (a picture finished before the listener above was set would otherwise wait for the next one)
       }
       result(shared[frontName]?.id ?? -1)
     }

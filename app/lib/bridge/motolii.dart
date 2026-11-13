@@ -146,7 +146,7 @@ class Motolii {
     String? dir,
   }) {
     dir ??= motoliiDir;
-    final path = '$dir/out/libmotolii.dylib';
+    final path = _liveCopy('$dir/out/libmotolii.dylib');
     final DynamicLibrary lib;
     try {
       lib = DynamicLibrary.open(path);
@@ -162,6 +162,29 @@ class Motolii {
       ..free(doc);
     if (m == nullptr) return null;
     return Motolii._(lib, m, path, '$dir/out/filament_webgpu').._listen();
+  }
+
+  /// A copy of the [built] library named after its build time, in out/live/, so that a rebuilt library is a new path.
+  /// dyld returns the image it already loaded for a path, so without a new name a hot restart would keep the old engine.
+  /// With it, a hot restart (tool/live.sh sends one when the library is rebuilt) runs the new engine in the open window.
+  /// This is the usual way to reload native code live: Handmade Hero days 21-23, fungos/cr.h.
+  /// Copies of older builds are deleted; a process that still has one loaded keeps it mapped.
+  static String _liveCopy(String built) {
+    final from = File(built);
+    if (!from.existsSync()) return built;
+    final live = Directory('${from.parent.path}/live')
+      ..createSync(recursive: true);
+    final copy =
+        '${live.path}/libmotolii-${from.lastModifiedSync().microsecondsSinceEpoch}.dylib';
+    if (File(copy).existsSync()) return copy;
+    for (final old in live.listSync()) {
+      try {
+        old.deleteSync();
+      } on FileSystemException catch (_) {}
+    }
+    from.copySync('$copy.part');
+    File('$copy.part').renameSync(copy);
+    return copy;
   }
 
   // ---- snapshots (docs/app/BRIDGE.md)
