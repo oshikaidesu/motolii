@@ -380,7 +380,19 @@ void snapshot_notify(Motolii* m) {
   if (const long k = m->playback.cache.told.load();
       k != m->snapshots.cacheNotified)
     pending |= 4, m->snapshots.cacheNotified = k;
-  if (pending && m->snapshots.listener) m->snapshots.listener(pending);
+  if (!pending || !m->snapshots.post) return;
+  // A Dart_CObject of type Dart_CObject_kInt64 (dart_native_api.h): the type,
+  // then the value at the union's 8-byte alignment.
+  struct {
+    int32_t type = 3;
+    int64_t as_int64;
+  } said{.as_int64 = pending};
+  if (m->snapshots.post(m->snapshots.port, &said)) return;
+  // The port is closed: whoever listened is gone and will never close this
+  // engine, so it ends as motolii_close would have it end.
+  m->snapshots.post = nullptr;
+  std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+  m->render_thread.closing = true;
 }
 
 }  // namespace motolii

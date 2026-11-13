@@ -71,8 +71,6 @@ void motolii_close(Motolii* m) {
   }
   m->render_thread.asked_now.notify_one();
   m->render_thread.thread.join();
-  if (m->display.beat) m->display.beat->stop();
-  if (m->d) sqlite3_close(m->d->file);
 }
 
 namespace motolii {

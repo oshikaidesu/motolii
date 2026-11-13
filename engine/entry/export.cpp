@@ -136,7 +136,8 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
   *version = m->snapshots.version;
   return strdup((all + "}}").c_str());
 }
-// Sets the app's one listener, which is called when new snapshots exist.
-void motolii_add_listener(Motolii* m, void (*listener)(int which)) {
-  m->snapshots.listener = listener;
+// Sets the app's one listener, which is posted to when new snapshots exist.
+void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),
+                          int64_t port) {
+  m->snapshots.post = post, m->snapshots.port = port;
 }

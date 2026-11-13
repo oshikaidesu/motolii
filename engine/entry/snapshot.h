@@ -44,8 +44,9 @@ struct Snapshots {
   int pending = 0;
   // What of the cached frames the window was last told about.
   long cacheNotified = 0;
-  // The window's single listener.
-  void (*listener)(int) = nullptr;
+  // The window's single listener: Dart_PostCObject and the port it posts to.
+  bool (*post)(int64_t port, void* message) = nullptr;
+  int64_t port = 0;
 };
 
 // Rebuilds the parts of the document snapshot that changed. Runs on the render

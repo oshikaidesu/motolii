@@ -13,6 +13,8 @@
 
    The names of a layer's properties are ThorVG's own where ThorVG has one (x,
    y, rotate, size, blend, text, fill, begin). document/kinds.h lists them. */
+#include <stdbool.h>
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -411,11 +413,15 @@ int motolii_rate(Motolii* m);
    The result is JSON in a copy that the caller frees with free(). *version is
    set to the version the snapshot is as of. */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);
-/* Sets the app's one listener. It is called from the render thread when new
-   snapshots exist, with a bit mask: 1 the project's snapshot, 2 the time
-   snapshot, 4 the cached frames (motolii_cache), 8 an answer to a change queued
-   with motolii_later (motolii_answer). */
-void motolii_add_listener(Motolii* m, void (*listener)(int which));
+/* Sets the app's one listener: a Dart port, posted to from the render thread
+   with Dart's own Dart_PostCObject (dart_native_api.h; Dart's NativeApi.postCObject)
+   when new snapshots exist, the message an integer bit mask: 1 the project's
+   snapshot, 2 the time snapshot, 4 the cached frames (motolii_cache), 8 an
+   answer to a change queued with motolii_later (motolii_answer). A post that
+   fails means the port is closed, its isolate gone (a hot restart): the engine
+   then closes itself, as motolii_close does. post NULL: no listener. */
+void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),
+                          int64_t port);
 /* While on, the app's main thread must not wait on the render thread. A change
    it waits for, or a read that waits on the project for more than 2 ms, is
    recorded. Watching is on from the time the project is opened. */

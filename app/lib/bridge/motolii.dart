@@ -194,7 +194,10 @@ class Motolii {
   // and nothing waits for the render thread.
   late final _snapshot = bindings.motolii_snapshot;
   late final _addListener = bindings.motolii_add_listener;
-  NativeCallable<Void Function(Int)>? _listenerCallable;
+  // Where the engine posts which snapshots are new (Dart_PostCObject, see motolii_add_listener). A port and not a
+  // NativeCallable: an engine left behind by a hot restart posts to a closed port, which fails and closes it, where a
+  // NativeCallable of the ended isolate would be called freed.
+  final _told = ReceivePort();
   // The project-wide part of the project snapshot.
   Map<String, dynamic> documentSnapshot = const {};
   // Each layer's part of the project snapshot, as of the version it arrived with.
@@ -278,10 +281,12 @@ class Motolii {
       Uri.directory(home).resolveUri(Uri.file(file)).toFilePath();
 
   void _listen() {
-    _listenerCallable = NativeCallable<Void Function(Int)>.listener(
-      takeSnapshots,
+    _told.listen((which) => takeSnapshots(which as int));
+    _addListener(
+      handle,
+      NativeApi.postCObject.cast(),
+      _told.sendPort.nativePort,
     );
-    _addListener(handle, _listenerCallable!.nativeFunction);
     takeSnapshots(7);
   }
 
@@ -346,8 +351,8 @@ class Motolii {
       using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)]));
 
   void close() {
-    _addListener(handle, nullptr);
-    _listenerCallable?.close();
+    _addListener(handle, nullptr, 0);
+    _told.close();
     _close(handle);
   }
 }

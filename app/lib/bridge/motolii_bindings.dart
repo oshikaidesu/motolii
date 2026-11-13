@@ -50,9 +50,15 @@ class MotoliiBindings {
 
   void motolii_add_listener(
     ffi.Pointer<Motolii> m,
-    ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>> listener,
+    ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Bool Function(ffi.Int64 port, ffi.Pointer<ffi.Void> message)
+      >
+    >
+    post,
+    int port,
   ) {
-    return _motolii_add_listener(m, listener);
+    return _motolii_add_listener(m, post, port);
   }
 
   late final _motolii_add_listenerPtr =
@@ -60,7 +66,12 @@ class MotoliiBindings {
         ffi.NativeFunction<
           ffi.Void Function(
             ffi.Pointer<Motolii>,
-            ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>>,
+            ffi.Pointer<
+              ffi.NativeFunction<
+                ffi.Bool Function(ffi.Int64 port, ffi.Pointer<ffi.Void> message)
+              >
+            >,
+            ffi.Int64,
           )
         >
       >('motolii_add_listener');
@@ -68,7 +79,12 @@ class MotoliiBindings {
       .asFunction<
         void Function(
           ffi.Pointer<Motolii>,
-          ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>>,
+          ffi.Pointer<
+            ffi.NativeFunction<
+              ffi.Bool Function(ffi.Int64 port, ffi.Pointer<ffi.Void> message)
+            >
+          >,
+          int,
         )
       >();
 

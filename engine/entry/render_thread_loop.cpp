@@ -471,6 +471,9 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
     }
   }
   for (auto& [who, h] : m->playback.heard) heard_off(h);
+  // Closed by motolii_close, or because its listener is gone (snapshot_notify).
+  if (m->display.beat) m->display.beat->stop();
+  if (m->d) sqlite3_close(m->d->file);
 }
 
 }  // namespace motolii
