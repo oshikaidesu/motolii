@@ -1,23 +1,66 @@
 #!/bin/zsh
-# The window with Flutter's own
-# hot reload: a .dart under lib/ saved shows in the open window in a
-# moment, its state kept (flutter run reloads when sent SIGUSR1, restarts on SIGUSR2; r and R still work here too).
-# The inside's own files reload by themselves (effects .wgsl, scripts .js). A rebuilt engine (../engine/build.sh lib)
-# is a hot restart: the window stays open and the project is opened again in the new engine. Ends when the window is closed.
+# The window with Flutter's own hot reload: a .dart under lib/ saved shows in the open window in a moment, its state
+# kept (flutter attach reloads when sent SIGUSR1, restarts on SIGUSR2). The inside's own files reload by themselves
+# (effects .wgsl, scripts .js). A rebuilt engine (../engine/build.sh lib) is a hot restart: the window stays open and
+# the project is opened again in the new engine. Ends when the window is closed.
 #   tool/live.sh                   (opens ~/Movies/Motolii/Untitled.motolii; MOTOLII_DOC=/path/to.motolii for another document)
+# Opening takes about 5 s: Xcode builds the app only when the native side changed (macos/, pubspec.yaml, pubspec.lock)
+# or there is none yet. Otherwise only the Dart part is built, by the step Xcode itself runs (flutter assemble, with
+# the settings flutter build last wrote to Flutter-Generated.xcconfig), and put into the app the way Flutter's
+# xcode_backend.dart embeds it (rsync App.framework, then codesign). The app is started directly and flutter attach
+# joins it for the reloads.
 cd "$(dirname "$0")/.."   # (app/: lib/, build/ and ../engine are read from there)
 source ../engine/tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
 FLUTTER="${FLUTTER:-flutter}"
-pid="build/live.pid" seen="build/live.seen" engine="build/live.engine"
-: ${MOTOLII_DOC:=$HOME/Movies/Motolii/Untitled.motolii}   # (the document, and beside it what Render writes and File › New makes; MOTOLII_DOC=… for another)
-mkdir -p "${MOTOLII_DOC:h}"
-mkdir -p build && rm -f "$pid" && touch "$seen" "$engine"
-"$FLUTTER" run -d macos --pid-file "$pid" --dart-define=MOTOLII_DIR="${MOTOLII_DIR:-${PWD:h}/engine}" ${MOTOLII_DOC:+--dart-define=MOTOLII_DOC="$MOTOLII_DOC"} "$@" &
+pid="build/live.pid" seen="build/live.seen" engine="build/live.engine" said="build/live.app.log"
+products="build/macos/Build/Products/Debug" xcconfig="macos/Flutter/ephemeral/Flutter-Generated.xcconfig"
+app="$products/Motolii.app" defines=(--dart-define=MOTOLII_DIR="${MOTOLII_DIR:-${PWD:h}/engine}")
+export MOTOLII_DOC="${MOTOLII_DOC:-$HOME/Movies/Motolii/Untitled.motolii}"   # (read by the app at launch: the document, and beside it what Render writes and File › New makes)
+mkdir -p "${MOTOLII_DOC:h}" build && rm -f "$pid" && touch "$seen" "$engine"
+
+setting() { sed -n "s/^$1=//p" "$xcconfig"; }
+# Only Dart changed: the compiler Flutter itself runs (frontend_server, with the arguments flutter assemble gives it,
+# from the last app.dill) writes the program, and it replaces the app's kernel_blob.bin. Assets and plugins untouched.
+dart_only() {
+    local root=$(setting FLUTTER_ROOT) dill=$(ls -t .dart_tool/flutter_build/*/app.dill 2> /dev/null | head -1) d defs=()
+    local blob="$app/Contents/Frameworks/App.framework/Resources/flutter_assets/kernel_blob.bin"
+    local registrant="$PWD/.dart_tool/flutter_build/dart_plugin_registrant.dart"
+    [ -f "$dill" ] && [ -f "$blob" ] && [ -f "$registrant" ] && [ -z "$(find assets pubspec.yaml -newer "$blob" -print -quit)" ] || return 1
+    for d in ${(s:,:)$(setting DART_DEFINES)}; do defs+=(-D"$(print -r -- $d | base64 -d)"); done
+    "$root/bin/cache/dart-sdk/bin/dartaotruntime" "$root/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot" \
+        --sdk-root "$root/bin/cache/artifacts/engine/common/flutter_patched_sdk/" --target=flutter --no-print-incremental-dependencies \
+        $defs -Ddart.vm.profile=false -Ddart.vm.product=false --enable-asserts --track-widget-creation \
+        --packages .dart_tool/package_config.json --output-dill "$dill.next" --incremental --initialize-from-dill "$dill" \
+        --source "file://$registrant" --source package:flutter/src/dart_plugin_registrant.dart \
+        -Dflutter.dart_plugin_registrant="file://$registrant" --verbosity=error package:motolii/main.dart < /dev/null | tail -1 | grep -q "app.dill.next 0$" &&
+        mv "$dill.next" "$dill" && cp -c "$dill" "$blob"
+}
+
+if [ ! -x "$app/Contents/MacOS/Motolii" ] || [ ! -f "$xcconfig" ] ||
+   [ -n "$(find macos pubspec.yaml pubspec.lock -path macos/Flutter -prune -o -type f -newer "$app/Contents/MacOS/Motolii" -print -quit)" ]; then
+    "$FLUTTER" build macos --debug $defines || exit 1
+elif ! dart_only; then
+    "$FLUTTER" assemble --no-version-check --output="$PWD/$products/" -dTargetPlatform=darwin -dTargetFile="$(setting FLUTTER_TARGET)" \
+        -dBuildMode=debug -dConfiguration=Debug -dDarwinArchs="$(uname -m)" -dSdkRoot="$(xcrun --sdk macosx --show-sdk-path)" \
+        -dTreeShakeIcons="$(setting TREE_SHAKE_ICONS)" -dTrackWidgetCreation="$(setting TRACK_WIDGET_CREATION)" \
+        -dDartObfuscation="$(setting DART_OBFUSCATION)" -dAction=build --DartDefines="$(setting DART_DEFINES)" \
+        -dSrcRoot="$PWD/macos" debug_macos_bundle_flutter_assets > /dev/null || exit 1
+    rsync -a --delete "$products/App.framework" "$app/Contents/Frameworks/"
+    codesign --force --sign - --timestamp=none "$app/Contents/Frameworks/App.framework/App" 2> /dev/null
+fi
+
+"$app/Contents/MacOS/Motolii" > "$said" 2>&1 &
+window=$!
+trap 'kill $window $run 2>/dev/null' EXIT INT TERM
+until url=$(grep -o 'http://127.0.0.1:[0-9]*/[^ ]*/' "$said" | head -1); [ -n "$url" ]; do
+    kill -0 $window 2>/dev/null || { cat "$said"; exit 1; }
+    sleep 0.1
+done
+build_unlock   # (the window is open: what it builds from here is its own)
+"$FLUTTER" attach -d macos --debug-url "$url" --pid-file "$pid" $defines < /dev/null &
 run=$!
-trap 'kill $run 2>/dev/null' EXIT INT TERM
-while kill -0 $run 2>/dev/null; do   # (once a second: a .dart newer than the last reload, then reload)
+while kill -0 $window 2>/dev/null; do   # (once a second: a .dart newer than the last reload, then reload)
     sleep 1
-    [ -f "$pid" ] && build_unlock   # (the window is open: what it builds from here is its own)
     if [ -f "$pid" ] && [ ../engine/out/libmotolii.dylib -nt "$engine" ]; then   # (the engine rebuilt: a hot restart opens the new one, see Motolii._liveCopy)
         touch "$seen" "$engine"
         kill -USR2 "$(cat "$pid")" 2>/dev/null && echo "live.sh: engine rebuilt, restarted"

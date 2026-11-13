@@ -29,10 +29,16 @@ String get motoliiOwn =>
     Platform.environment['MOTOLII_OWN'] ??
     '${Platform.environment['HOME']}/Library/Application Support/Motolii';
 
-/// The project the app opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or else engine/out/skin.motolii.
+/// The project the app opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or the MOTOLII_DOC environment variable of
+/// the launch (so a built app opens any project without being built again), or else engine/out/skin.motolii.
 String get motoliiDoc {
   const given = String.fromEnvironment('MOTOLII_DOC');
-  return given.isNotEmpty ? given : '$motoliiDir/out/skin.motolii';
+  final launched = Platform.environment['MOTOLII_DOC'] ?? '';
+  return given.isNotEmpty
+      ? given
+      : launched.isNotEmpty
+      ? launched
+      : '$motoliiDir/out/skin.motolii';
 }
 
 /// The full path of the program [name], found the way execvp does: the first regular file named [name] with an execute
