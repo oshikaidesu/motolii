@@ -7,6 +7,10 @@
 #   A heavy check (dart analyze, flutter analyze, dart or flutter test, engine/check_syntax.sh, shape_check.sh --all):
 #     one at a time on the whole machine. While one runs, the next is refused and told to come back; the lock is a
 #     folder, taken before the command and let go after it (PostToolUse), and broken when three minutes old.
+#   Looking at the app goes one way, the fast one: app/tool/live.sh, run in the background (it stays while the window is
+#     open; about 3 s from closed, a saved .dart reloads in a moment, engine/build.sh lib restarts it in place). flutter
+#     run, a debug flutter build macos and opening a built Motolii.app are refused with that said; so is live.sh in the
+#     foreground, which would hold the call until the window closes.
 # Source: code.claude.com/docs/en/hooks (PreToolUse deny and its reason; PostToolUse; agent_id is present only when
 # the hook fires in a subagent; tool_input.command, cwd).
 # Never in the way by accident: any error here exits 0 and the command goes ahead.
@@ -24,6 +28,16 @@ def deny(reason):
                                              'permissionDecisionReason': reason}}))
 
 
+LIVE = ('Look at the app with app/tool/live.sh, run in the background (run_in_background): about 3 s from closed, '
+        'and it stays open. A .dart saved under app/lib reloads in the open window in a moment, state kept; '
+        'engine/build.sh lib restarts it in place in about a second; a Swift change of macos/Runner needs it opened again '
+        '(close the window, run live.sh again). When it prints "live.sh: open", look (a screenshot of the Motolii window). '
+        'Running it again while the window is open only says so. ')
+RUN = r'(?:^|[;&|(]|\b(?:then|do|else)\b)\s*(?:\w+=\S*\s+)*(?:(?:ba|z)?sh\s+)?'   # (where a command starts, not inside cat or grep)
+SLOW = re.compile(RUN + r'(?:flutter\s+run\b|flutter\s+build\s+macos\b(?![^;&|]*--(?:profile|release))|open\s[^;&|]*Motolii\.app)')
+LIVE_SH = re.compile(RUN + r'\S*live\.sh\b')
+
+
 def main():
     said = json.load(sys.stdin)
     command = str((said.get('tool_input') or {}).get('command', ''))
@@ -32,6 +46,11 @@ def main():
             try: os.rmdir(LOCK)
             except OSError: pass
         return
+    if not said.get('agent_id') and 'MOTOLII_BUILD_DRY=' not in command:
+        if SLOW.search(command):
+            return deny('This is the slow way to see the app (16-27 s, each time). ' + LIVE)
+        if LIVE_SH.search(command) and not (said.get('tool_input') or {}).get('run_in_background'):
+            return deny('live.sh runs until the window is closed, so in the foreground it holds this call and is cut off with the app. ' + LIVE)
     if BUILD.search(command) and 'MOTOLII_BUILD_DRY=' not in command:
         top = subprocess.run(['git', '-C', said.get('cwd') or os.getcwd(), 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout
         if said.get('agent_id') or '/.claude/worktrees/' in top:

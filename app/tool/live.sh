@@ -2,7 +2,9 @@
 # The window with Flutter's own hot reload: a .dart under lib/ saved shows in the open window in a moment, its state
 # kept (flutter attach reloads when sent SIGUSR1, restarts on SIGUSR2). The inside's own files reload by themselves
 # (effects .wgsl, scripts .js). A rebuilt engine (../engine/build.sh lib) is a hot restart: the window stays open and
-# the project is opened again in the new engine. Ends when the window is closed.
+# the project is opened again in the new engine. Ends when the window is closed. It says "live.sh: open" once the
+# window is up; run again while it is open, it says so and opens nothing. (Claude Code's hook, .claude/hooks/
+# heavy_ops.py, sends flutter run, a debug flutter build macos and live.sh in the foreground here, to the background.)
 #   tool/live.sh                   (opens ~/Movies/Motolii/Untitled.motolii; MOTOLII_DOC=/path/to.motolii for another document)
 # Opening takes about 3 s: Xcode builds the app only when the native side changed (macos/, pubspec.yaml, pubspec.lock)
 # other than the Swift of macos/Runner, or there is none yet; that Swift alone is built again by Xcode's own commands,
@@ -11,9 +13,13 @@
 # put into the app the way Flutter's xcode_backend.dart embeds it (rsync App.framework, then codesign). The app is
 # started directly and flutter attach joins it for the reloads.
 cd "$(dirname "$0")/.."   # (app/: lib/, build/ and ../engine are read from there)
+pid="build/live.pid" seen="build/live.seen" engine="build/live.engine" said="build/live.app.log"
+if [ -f "$pid" ] && kill -0 "$(cat "$pid")" 2>/dev/null; then   # (one window: a second run opens nothing)
+    echo "live.sh: open already: what is saved shows in it (a .dart reloads, engine/build.sh lib restarts it); close it to open again"
+    exit 0
+fi
 source ../engine/tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
 FLUTTER="${FLUTTER:-flutter}"
-pid="build/live.pid" seen="build/live.seen" engine="build/live.engine" said="build/live.app.log"
 products="build/macos/Build/Products/Debug" xcconfig="macos/Flutter/ephemeral/Flutter-Generated.xcconfig"
 app="$products/Motolii.app" defines=(--dart-define=MOTOLII_DIR="${MOTOLII_DIR:-${PWD:h}/engine}")
 export MOTOLII_DOC="${MOTOLII_DOC:-$HOME/Movies/Motolii/Untitled.motolii}"   # (read by the app at launch: the document, and beside it what Render writes and File › New makes)
@@ -79,6 +85,8 @@ done
 build_unlock   # (the window is open: what it builds from here is its own)
 "$FLUTTER" attach -d macos --debug-url "$url" --pid-file "$pid" $defines < /dev/null &
 run=$!
+until [ -f "$pid" ] || ! kill -0 $run 2>/dev/null; do sleep 0.1; done
+echo "live.sh: open (pid $window): a saved .dart reloads in it, engine/build.sh lib restarts it; close the window to end"
 while kill -0 $window 2>/dev/null; do   # (once a second: a .dart newer than the last reload, then reload)
     sleep 1
     if [ -f "$pid" ] && [ ../engine/out/libmotolii.dylib -nt "$engine" ]; then   # (the engine rebuilt: a hot restart opens the new one, see Motolii._liveCopy)
