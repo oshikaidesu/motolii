@@ -13,6 +13,7 @@
 //   Time snapshot: rebuilt with each frame. It holds where each layer is and
 //   what moves, at the
 //     time that was drawn.
+#include <chrono>
 #include <map>
 #include <mutex>
 #include <string>
@@ -47,6 +48,8 @@ struct Snapshots {
   // The window's single listener: Dart_PostCObject and the port it posts to.
   bool (*post)(int64_t port, void* message) = nullptr;
   int64_t port = 0;
+  // When it was last posted to.
+  std::chrono::steady_clock::time_point posted_at{};
 };
 
 // Rebuilds the parts of the document snapshot that changed. Runs on the render

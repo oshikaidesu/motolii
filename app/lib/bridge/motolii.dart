@@ -281,7 +281,12 @@ class Motolii {
       Uri.directory(home).resolveUri(Uri.file(file)).toFilePath();
 
   void _listen() {
-    _told.listen((which) => takeSnapshots(which as int));
+    _told.listen((which) {
+      if (which is int)
+        takeSnapshots(
+          which,
+        ); // (a null: the engine asking whether anyone is listening)
+    });
     _addListener(
       handle,
       NativeApi.postCObject.cast(),

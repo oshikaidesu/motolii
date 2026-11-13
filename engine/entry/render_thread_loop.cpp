@@ -474,6 +474,16 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   // Closed by motolii_close, or because its listener is gone (snapshot_notify).
   if (m->display.beat) m->display.beat->stop();
   if (m->d) sqlite3_close(m->d->file);
+  // Filament's own teardown, on the thread that built the engine (open_stage):
+  // Engine::destroy frees whatever the stage still holds, its job threads and
+  // GPU memory. Its shutdown destroys leftover materials before their leftover
+  // instances (FEngine::shutdown), which a debug build of Filament would stop
+  // at; that check is Filament's feature flag, turned off for the teardown.
+  if (m->s && m->s->engine) {
+    m->s->engine->setFeatureFlag(
+        "engine.debug.assert_destroy_material_before_material_instance", false);
+    filament::Engine::destroy(&m->s->engine);
+  }
 }
 
 }  // namespace motolii

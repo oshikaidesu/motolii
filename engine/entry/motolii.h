@@ -417,7 +417,8 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version);
    with Dart's own Dart_PostCObject (dart_native_api.h; Dart's NativeApi.postCObject)
    when new snapshots exist, the message an integer bit mask: 1 the project's
    snapshot, 2 the time snapshot, 4 the cached frames (motolii_cache), 8 an
-   answer to a change queued with motolii_later (motolii_answer). A post that
+   answer to a change queued with motolii_later (motolii_answer); with nothing
+   new, a null once a second. A post that
    fails means the port is closed, its isolate gone (a hot restart): the engine
    then closes itself, as motolii_close does. post NULL: no listener. */
 void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),

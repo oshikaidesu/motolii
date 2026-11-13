@@ -380,13 +380,19 @@ void snapshot_notify(Motolii* m) {
   if (const long k = m->playback.cache.told.load();
       k != m->snapshots.cacheNotified)
     pending |= 4, m->snapshots.cacheNotified = k;
-  if (!pending || !m->snapshots.post) return;
-  // A Dart_CObject of type Dart_CObject_kInt64 (dart_native_api.h): the type,
-  // then the value at the union's 8-byte alignment.
+  if (!m->snapshots.post) return;
+  // With nothing new, a null is posted once a second all the same: only a post
+  // tells whether the port is still open.
+  const auto now = std::chrono::steady_clock::now();
+  if (!pending && now - m->snapshots.posted_at < std::chrono::seconds(1))
+    return;
+  m->snapshots.posted_at = now;
+  // A Dart_CObject (dart_native_api.h): its type, Dart_CObject_kInt64 (3) or
+  // Dart_CObject_kNull (0), then the value at the union's 8-byte alignment.
   struct {
-    int32_t type = 3;
+    int32_t type;
     int64_t as_int64;
-  } said{.as_int64 = pending};
+  } said{pending ? 3 : 0, pending};
   if (m->snapshots.post(m->snapshots.port, &said)) return;
   // The port is closed: whoever listened is gone and will never close this
   // engine, so it ends as motolii_close would have it end.
