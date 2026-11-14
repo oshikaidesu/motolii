@@ -61,10 +61,6 @@ inline const DocCard doc_cards[] = {
      "text text_styles file size letter_spacing line_spacing align split "
      "italic wrap wrap_at",
      "kind", "text"},
-    // After Effects' Polystar: the number of points and how far in between them
-    // the star goes.
-    {"Star", "points inner", "shape", "star"},
-    {"Polygon", "points", "shape", "polygon"},
     // After Effects' Fill and Stroke and Cavalry's Fill and Stroke: a color,
     // colors along a
     // gradient, or the glass material, plus the stroke and its width. A text
@@ -97,6 +93,14 @@ inline const DocCard doc_cards[] = {
     {"Time Remap", "time_remap time_remap_loop", nullptr, nullptr, true},
     // The drawings of an animation level: an image that has a drawing is one.
     {"Drawing", "cel", "cel", "!0"},
+    // After Effects' shape operators, as ThorVG provides them, plus Polystar's
+    // own points: the number of corners and how far in the star goes. Shown for
+    // shape layers without being asked, as a path's corners are part of what it
+    // is. Trim is here too, for drawing a line along the path.
+    {"Paths",
+     "points inner round bloat offset zigzag zigzag_ridges zigzag_smooth "
+     "trim trim_begin trim_offset",
+     "kind", "shape"},
     // Where in its file a video starts (Premiere Pro's Slip), how loud it is
     // heard and exported, and the beats the timeline's ruler marks.
     {"Media", "begin volume beats", "kind", "video"},
@@ -115,10 +119,6 @@ inline const DocCard doc_cards[] = {
     // end.
     {"Line", "cap join dash dash_offset heads head_shape head_start head_size",
      nullptr, nullptr, true},
-    // The path is rebuilt: After Effects' shape operators, as ThorVG provides
-    // them.
-    {"Path", "round bloat offset zigzag zigzag_ridges zigzag_smooth", "kind",
-     "shape", true},
     // A photo's rectangle, as Alight Motion's Edit Shape and AbsentMotion's
     // Shape Options: cut in
     // from its sides, what is left stays where it was, and the corners are
@@ -158,8 +158,6 @@ inline const DocCard doc_cards[] = {
     // Any behaviour with a file. A behaviour shows only such cards, see
     // doc_cards_of.
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},
-    // After Effects' shape operator, added from the shelf.
-    {"Trim Paths", "trim trim_begin trim_offset", nullptr, nullptr, true},
     // The compressed images of a video, see media/video_datamosh.h.
     {"Datamosh", "mosh_with mosh_at", nullptr, nullptr, true},
     // A point cloud's own, see stage/render/point_cloud.h.

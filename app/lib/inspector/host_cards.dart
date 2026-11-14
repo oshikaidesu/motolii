@@ -51,5 +51,6 @@ final hostCards =
         fold: null,
       ),
       'Play': (drawn: const {}, body: (card) => PlayGraph(card), fold: null),
+      'Paths': (drawn: const {}, body: (card) => TrimPath(card), fold: null),
       'Media': (drawn: const {}, body: (card) => FilmStrip(card), fold: null),
     };
