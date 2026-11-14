@@ -2,7 +2,6 @@
 //
 // - Zoom, loop and rename requests come from command_actions.dart and follow Ableton Live. The timeline keeps its own view state.
 // - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -56,15 +55,12 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   /// The marker whose name is being edited in its flag, or null.
   (double, String)? naming;
 
-  /// The text of the marker name being edited.
-  final markWords = TextEditingController();
+  /// The text of the marker name being edited, as it is typed, for the flag to be as wide as it.
+  final markText = ValueNotifier<String>('');
 
-  /// The focus of the marker name field. The name is committed when the field loses focus.
-  late final FocusNode markFocus = FocusNode()
-    ..addListener(() => markFocus.hasFocus ? null : _named());
-
-  void _named() {
-    final was = naming, ws = workspace!, words = markWords.text.trim();
+  /// Commits the marker name typed in its flag ([said] is null when Esc cancelled it).
+  void nameDone(String? said) {
+    final was = naming, ws = workspace!, words = said?.trim() ?? '';
     if (was == null) return;
     setState(() => naming = null);
     if (words.isNotEmpty && words != was.$2 && ws.inside != null) {
@@ -76,9 +72,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   (double, double)? _before;
   // The id of the layer row being renamed with Cmd+R, as in Live.
   String? _renaming;
-  final _renameWords = TextEditingController();
-  late final FocusNode _renameFocus = FocusNode()
-    ..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
   /// Starts listening for the requests of the app's commands. Called from initState.
   void listenForRequests() {
@@ -90,10 +83,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   void disposeRequests() {
     timelineRequest.removeListener(_heard);
     renameRequested.removeListener(_rename);
-    _renameWords.dispose();
-    _renameFocus.dispose();
-    markWords.dispose();
-    markFocus.dispose();
+    markText.dispose();
   }
 
   void _heard() {
@@ -314,28 +304,16 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     if (!mounted || ws == null) return;
     if (selectedMarker.value case final flag?) {
       // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
+      markText.value = flag.$2;
       setState(() => naming = flag);
-      markWords
-        ..text = flag.$2
-        ..selection = TextSelection(
-          baseOffset: 0,
-          extentOffset: flag.$2.length,
-        );
-      return markFocus.requestFocus();
+      return;
     }
     if (ws.layer == null) return;
     setState(() => _renaming = ws.layer!.id);
-    _renameWords.text = ws.layer!.name;
-    _renameWords.selection = TextSelection(
-      baseOffset: 0,
-      extentOffset: _renameWords.text.length,
-    );
-    _renameFocus.requestFocus();
   }
 
-  void _renamed() {
-    final id = _renaming, ws = workspace, words = _renameWords.text.trim();
-    if (id == null) return;
+  void _renamed(String id, String? said) {
+    final ws = workspace, words = said?.trim() ?? '';
     setState(() => _renaming = null);
     final t = int.tryParse(id),
         was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
@@ -353,37 +331,25 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
           right: Shape.s(4),
           top: top + Shape.s(4),
           height: TimelineMetrics.row - Shape.s(8),
-          child: CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.escape): () {
-                _renameWords.text =
-                    workspace?.layers
-                        .where((l) => l.id == id)
-                        .firstOrNull
-                        ?.name ??
-                    '';
-                _renameFocus.unfocus();
-              },
-            },
-            child: Container(
-              color: Grey.g91,
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-              alignment: Alignment.centerLeft,
-              child: TextGestures(
-                key: ValueKey('ws-tl-rename-$id'),
-                field: (k) => EditableText(
-                  key: k,
-                  rendererIgnoresPointer: true,
-                  controller: _renameWords,
-                  focusNode: _renameFocus,
-                  style: TextStyles.label(Grey.g13)
-                      .copyWith(fontWeight: FontWeight.w700),
-                  cursorColor: Grey.g13,
-                  backgroundCursorColor: Grey.g38,
-                  maxLines: 1,
-                  onSubmitted: (_) => _renameFocus.unfocus(),
-                ),
-              ),
+          child: Container(
+            color: Grey.g91,
+            padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
+            alignment: Alignment.centerLeft,
+            // The app's one text field: it takes the focus with the name selected, Return or clicking away says the name, Esc says null.
+            child: TypedField(
+              key: ValueKey('ws-tl-rename-$id'),
+              text:
+                  workspace?.layers
+                      .where((l) => l.id == id)
+                      .firstOrNull
+                      ?.name ??
+                  '',
+              style: TextStyles.label(Grey.g13)
+                  .copyWith(fontWeight: FontWeight.w700),
+              cursor: Grey.g13,
+              take: true,
+              escapes: true,
+              onDone: (said) => _renamed(id, said),
             ),
           ),
         );

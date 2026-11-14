@@ -188,30 +188,25 @@ mixin TimelineTracksView<T extends StatefulWidget>
               top: TimelineMetrics.band + 2,
               height: 12,
               child: ListenableBuilder(
-                listenable: markWords,
+                listenable: markText,
                 builder: (_, child) => Container(
-                  width: markerFlagWidth('${markWords.text}  '),
+                  width: markerFlagWidth('${markText.value}  '),
                   color: WindowTokens.toneText,
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: child,
                 ),
-                child: TextGestures(
+                // The app's one text field: Return or clicking away says the name, Esc says null.
+                child: TypedField(
                   key: const ValueKey('ws-tl-mark-name'),
-                  field: (k) => EditableText(
-                    key: k,
-                    rendererIgnoresPointer: true,
-                    controller: markWords,
-                    focusNode: markFocus,
-                    style: TextStyles.micro(Grey.g13)
-                        .copyWith(fontWeight: FontWeight.w700),
-                    cursorColor: Grey.g13,
-                    backgroundCursorColor: Grey.g38,
-                    selectionColor: Grey.g13.withValues(
-                      alpha: .3,
-                    ), // Highlight for selected text.
-                    maxLines: 1,
-                    onSubmitted: (_) => markFocus.unfocus(),
-                  ),
+                  text: markText.value,
+                  style: TextStyles.micro(Grey.g13)
+                      .copyWith(fontWeight: FontWeight.w700),
+                  cursor: Grey.g13,
+                  selection: Grey.g13.withValues(alpha: .3),
+                  take: true,
+                  escapes: true,
+                  onPick: (v) => markText.value = v.text,
+                  onDone: nameDone,
                 ),
               ),
             ),
