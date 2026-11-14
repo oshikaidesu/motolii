@@ -314,6 +314,7 @@ add_library(motolii_document STATIC
   document/edit/elements.cpp
   document/edit/presets.cpp
   document/edit/relate.cpp
+  document/edit/stroke_put.cpp
   document/edit/time_edit.cpp
   document/evaluate/bodies.cpp
   document/evaluate/camera.cpp

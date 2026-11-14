@@ -554,11 +554,11 @@ inline const DocValue doc_values[] = {
     // middle, with y pointing down as in SVG.
     {"path", "shape", 0, 0, false, ""},
     // More edges, each outside the last: Alight Motion's Add Border,
-    // Illustrator's Appearance.
-    {"stroke_2", "text", 0, 0, false, ""},
-    {"stroke_2_width", "text", 0, 1000, false, nullptr},
-    {"stroke_3", "text", 0, 0, false, ""},
-    {"stroke_3_width", "text", 0, 1000, false, nullptr},
+    // Illustrator's Appearance. Each extra stroke is one entry of this
+    // property, "<id>:", with its colour and width keyed under
+    // "<id>:stroke" and "<id>:stroke_width". See engine/document/edit/
+    // stroke_put.h for the mechanism, shared with the fx instance IDs.
+    {"strokes", doc_sheet_kinds, 0, 0, false, ""},
     // Its edge: a color, and how wide it is in points of the image at size 1.
     {"stroke", doc_sheet_kinds, 0, 0, false, ""},
     {"stroke_width", doc_sheet_kinds, 0, 1000, false, nullptr},

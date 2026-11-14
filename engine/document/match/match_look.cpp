@@ -17,6 +17,7 @@
 #include "document/card_table.h"
 #include "document/cards.h"
 #include "document/document.h"
+#include "document/edit/stroke_put.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"
 #include "document/evaluate/relations.h"
@@ -89,17 +90,19 @@ void look_material(LayerBuild& build) {
   // lit.
   fx.wear = doc_sheet_material(d, layer);
   if (!fx.wear.empty() && fx.wear != "glass") fx.lit = true;
-  for (const std::string rim : {"stroke_2", "stroke_3"})
-    if (const std::string word = doc_word(d, layer, rim.c_str());
-        word.size() == 6) {
-      const long hex = std::strtol(word.c_str(), nullptr, 16);
-      const double wide =
-          doc_number(d, layer, (rim + "_width").c_str(), 0, 0) / units;
-      if (wide > 0.0)
-        fx.rims.push_back(float4{(float)((hex >> 16) & 255) / 255.f,
-                                 (float)((hex >> 8) & 255) / 255.f,
-                                 (float)(hex & 255) / 255.f, (float)wide});
-    }
+  for (const std::string& entry : doc_stroke_list(d, layer)) {
+    const std::string id = fx_entry_id(entry);
+    if (id.empty()) continue;
+    const std::string word = doc_word(d, layer, (id + ":stroke").c_str());
+    if (word.size() != 6) continue;
+    const long hex = std::strtol(word.c_str(), nullptr, 16);
+    const double wide =
+        doc_number(d, layer, (id + ":stroke_width").c_str(), 0, 0) / units;
+    if (wide > 0.0)
+      fx.rims.push_back(float4{(float)((hex >> 16) & 255) / 255.f,
+                               (float)((hex >> 8) & 255) / 255.f,
+                               (float)(hex & 255) / 255.f, (float)wide});
+  }
 }
 
 // Reads how the colours of the layer's ramp are laid out.

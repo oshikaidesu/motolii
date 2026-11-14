@@ -25,6 +25,7 @@
 #include "document/edit/paths.h"
 #include "document/edit/presets.h"
 #include "document/edit/relate.h"
+#include "document/edit/stroke_put.h"
 #include "document/edit/time_edit.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -289,6 +290,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "fx_move")
           ok = changes(m, (int)doc_fx_move(doc(m), layer, w.c_str(),
                                            (int)std::lround(number)));
+        // Adds a new stroke slot to the layer. The slot carries its own colour
+        // and width, keyed by a 6-hex id so the same layer can wear several
+        // strokes.
+        else if (c == "stroke_add")
+          ok = changes(m, (int)doc_stroke_add(doc(m), layer));
+        // word: the id of a stroke slot. The slot is removed.
+        else if (c == "stroke_out")
+          ok = changes(m, (int)doc_stroke_out(doc(m), layer, w.c_str()));
         // Make `number` the leader of the relation `layer`, with nothing
         // moving.
         else if (c == "lead")
@@ -428,7 +437,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
               "time_align, reset, fit, flip, extract_sound, freehand, brush, "
               "outline, copy, paste, copy_style, paste_style, keep_preset, "
               "remove, mark, guide, work, raise, sequence, key_here, unkey, "
-              "stay, easing, effect, fx_file, fx_visible, fx_move, size, "
+              "stay, easing, effect, fx_file, fx_visible, fx_move, "
+              "stroke_add, stroke_out, size, "
               "watch, pick, desk, live, relate, lead, free, release, setting, "
               "ask";
       } catch (const std::exception& e) {

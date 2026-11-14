@@ -291,15 +291,46 @@ class _InspectorPanelState extends State<InspectorPane> {
               },
         onCardRemove: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title) => ws.after(
-                title == 'Script'
-                    ? m.later(
-                        'say',
+            : (title, names) {
+                // A Stroke card's parameter ids read as "<6-hex>:stroke" and
+                // "<6-hex>:stroke_width"; the id in front of the colon is the
+                // instance's handle. The bin takes that one slot out.
+                if (title == 'Stroke' && names.isNotEmpty) {
+                  final head = names.first.split(':');
+                  if (head.length == 2 && head[0].length == 6) {
+                    ws.after(
+                      m.later(
+                        'stroke_out',
                         layer: int.parse(l!.id),
-                        name: 'script',
-                        word: '',
-                      )
-                    : m.later('fx_out', layer: int.parse(l!.id), word: title),
+                        word: head[0],
+                      ),
+                      (_, _) => ws.reread(),
+                    );
+                    return;
+                  }
+                }
+                ws.after(
+                  title == 'Script'
+                      ? m.later(
+                          'say',
+                          layer: int.parse(l!.id),
+                          name: 'script',
+                          word: '',
+                        )
+                      : m.later('fx_out', layer: int.parse(l!.id), word: title),
+                  (_, _) => ws.reread(),
+                );
+              },
+        onAddStroke:
+            int.tryParse(l?.id ?? '') == null ||
+                !const {
+                  LayerKind.text,
+                  LayerKind.shape,
+                  LayerKind.image,
+                }.contains(l?.kind)
+            ? null
+            : () => ws.after(
+                m.later('stroke_add', layer: int.parse(l!.id)),
                 (_, _) => ws.reread(),
               ),
         cardEdit: int.tryParse(l?.id ?? '') == null

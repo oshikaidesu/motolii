@@ -10,6 +10,7 @@ class CardActions {
     this.onSum,
     this.onCardReset,
     this.onCardRemove,
+    this.onAddStroke,
     this.cardEdit,
     this.onCardEye,
     this.onCardSave,
@@ -35,8 +36,14 @@ class CardActions {
   /// Resets a card's values to their defaults (Reset on the card head).
   final void Function(List<String> names)? onCardReset;
 
-  /// Removes an effect (the bin on the card head).
-  final void Function(String title)? onCardRemove;
+  /// Removes an effect (the bin on the card head). The card's value names are
+  /// passed too, because several cards can share a title (e.g. per-instance
+  /// Stroke cards): the handler reads the instance id off the names.
+  final void Function(String title, List<String> names)? onCardRemove;
+
+  /// Adds a stroke slot to the layer (the "+ Stroke" chip in the Add Effect
+  /// row). Null when the layer cannot wear extra strokes.
+  final VoidCallback? onAddStroke;
 
   /// What opens a card's code in the Code tab. The card is found by its title and its value names, because two cards
   /// can share a title. Null from the builder means the card has no code, and the row is not shown.

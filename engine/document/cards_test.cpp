@@ -80,7 +80,8 @@ TEST(Cards, AFlatLayerIsOfferedNoSurfaceUntilItIsPlacedInDepth) {
 }
 
 // After Effects' Character and Paragraph panels are one place for text: the splitting, slant and wrapping are on the Text card,
-// the extra outlines on the Fill card, and there is no card of their own for either.
+// extra strokes live on their own Stroke cards (added as the user asks for them), and there is no card of their own for the
+// Character/Paragraph split.
 TEST(Cards, ATextLayerKeepsItsSplitSlantAndWrapOnTheTextCard) {
   Layer text("text");
   const std::string cards = text.Cards();
@@ -91,14 +92,20 @@ TEST(Cards, ATextLayerKeepsItsSplitSlantAndWrapOnTheTextCard) {
   EXPECT_FALSE(Has(cards, "Type")) << cards;
 }
 
-TEST(Cards, ATextLayerKeepsItsExtraOutlinesOnTheFillCard) {
+// Each extra stroke on a text has its own Stroke card, keyed by a per-instance id so the same layer can wear several.
+TEST(Cards, ATextLayerGetsAStrokeCardPerInstanceInItsStrokesList) {
   Layer text("text");
+  EXPECT_FALSE(Has(text.Cards(), "Stroke")) << text.Cards();
+  text.Say("strokes", "a1b2c3: d4e5f6:");
   const std::string cards = text.Cards();
-  const size_t at = cards.find("Fill:");
-  ASSERT_NE(at, std::string::npos) << cards;
-  const std::string line = cards.substr(at, cards.find(';', at) - at);
-  EXPECT_NE(line.find(" stroke_2"), std::string::npos) << line;
-  EXPECT_FALSE(Has(cards, "Strokes")) << cards;
+  const size_t first = cards.find("Stroke:");
+  ASSERT_NE(first, std::string::npos) << cards;
+  const std::string one = cards.substr(first, cards.find(';', first) - first);
+  EXPECT_NE(one.find("a1b2c3:stroke"), std::string::npos) << one;
+  EXPECT_NE(one.find("a1b2c3:stroke_width"), std::string::npos) << one;
+  const size_t second = cards.find("Stroke:", first + 1);
+  ASSERT_NE(second, std::string::npos) << cards;
+  EXPECT_NE(cards.find("d4e5f6:stroke", second), std::string::npos) << cards;
 }
 
 TEST(Cards, TrimPathsShowsOnceTheShapeTrims) {

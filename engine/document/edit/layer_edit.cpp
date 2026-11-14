@@ -146,10 +146,14 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
              false;
   }
   // One color: six hex digits.
+  // A per-instance extra stroke is keyed as "<id>:stroke"; treat it as a
+  // colour too. The storage key always ends with ":stroke" exactly.
+  const bool is_extra_stroke =
+      std::string(name).size() > 7 &&
+      std::string(name).substr(std::string(name).size() - 7) == ":stroke";
   if (word && *word &&
-      (doc_among("background bevel_color side_color back_color stroke_2 "
-                 "stroke_3",
-                 name) ||
+      (doc_among("background bevel_color side_color back_color", name) ||
+       is_extra_stroke ||
        (!strcmp(name, "fill") && kind == "light")))
     if (strlen(word) != 6 || strspn(word, "0123456789abcdefABCDEF") != 6)
       return d.error = std::string(name) + " is six digits, as ff3366", false;

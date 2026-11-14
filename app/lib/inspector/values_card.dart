@@ -86,7 +86,9 @@ class ValuesCard extends StatelessWidget {
                   ),
                 // A script is added like an effect and removed the same way.
                 if (card.name == 'Script' && doc.actions.onCardRemove != null)
-                  _bin(doc.actions, card.name),
+                  _bin(doc.actions, card.name, [
+                    for (final p in card.params) p.id,
+                  ]),
                 if (at >= 0) ...[
                   // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
                   if (doc.actions.onCardEye != null)
@@ -147,7 +149,9 @@ class ValuesCard extends StatelessWidget {
                     ],
                   ),
                   if (doc.actions.onCardRemove != null)
-                    _bin(doc.actions, card.name),
+                    _bin(doc.actions, card.name, [
+                      for (final p in card.params) p.id,
+                    ]),
                 ],
                 // The ≡ grip drags an effect up or down its stack, as in Alight Motion and After Effects' Effect Controls.
                 if (at >= 0 &&
@@ -300,9 +304,9 @@ void _drawBin(Canvas c, Size s, Color color) {
 }
 
 /// The bin at the head of an effect's card: a press takes the card away.
-Widget _bin(CardActions actions, String name) => Pressable(
+Widget _bin(CardActions actions, String name, List<String> params) => Pressable(
   key: ValueKey('card-remove:$name'),
-  onTap: () => actions.onCardRemove!(name),
+  onTap: () => actions.onCardRemove!(name, params),
   builder: (_, h) => Padding(
     padding: EdgeInsets.only(right: Shape.s(6)),
     child: glyph(

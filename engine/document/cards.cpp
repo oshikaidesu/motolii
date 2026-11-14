@@ -20,6 +20,7 @@
 #include "document/edit/arrange.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"
+#include "document/edit/stroke_put.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"
 #include "document/evaluate/shown.h"
@@ -341,6 +342,15 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
       card = doc_fx_title(w) + ": " + card;
       all += (all.empty() ? "" : "; ") + card;
     }
+  // Per-instance Stroke cards: one for each entry in the "strokes" word
+  // property. Each card carries the colour and width keyed by the instance id.
+  if (layer != 0)
+    for (const std::string& entry : doc_stroke_list(d, layer)) {
+      const std::string id = fx_entry_id(entry);
+      if (id.empty()) continue;
+      all += (all.empty() ? "" : "; ") + std::string("Stroke: ") + id +
+             ":stroke " + id + ":stroke_width";
+    }
   if (!besides.empty()) all += (all.empty() ? "" : "; ") + besides;
   if (doc_among("image text shape solid stage behaviour",
                 doc_word(d, layer, "kind")))
@@ -384,6 +394,10 @@ bool doc_range(Doc& d, int layer, const char* name, double* low, double* high) {
       return *low = one.low, *high = one.high, true;
   if (const DocValue* v = doc_script_value(d, layer, name); v && !v->words)
     return *low = v->low, *high = v->high, true;
+  // Per-instance names carry an "id:" prefix; all instances share the same
+  // range. See doc_shown_of for the same fall-through.
+  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+    return doc_range(d, layer, base.c_str(), low, high);
   return false;
 }
 

@@ -67,9 +67,7 @@ inline const DocCard doc_cards[] = {
     // has more outlines, each outside the last, drawn with the text (Alight
     // Motion's Border): they stand in the text's depth, unlike Multi-Border's,
     // which sit on its image.
-    {"Fill",
-     "fill fill_media stroke stroke_width stroke_2 stroke_2_width stroke_3 "
-     "stroke_3_width"},
+    {"Fill", "fill fill_media stroke stroke_width"},
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread",
      nullptr, nullptr, true},
     // There is no Copies card. The number of copies and the copies' own values

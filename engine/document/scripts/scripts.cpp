@@ -36,6 +36,11 @@ const DocShown* doc_shown_of(Doc& d, const char* name) {
   for (const auto& [file, script] : doc_scripts(d))
     for (const DocShown& one : script.shown)
       if (!strcmp(one.name, name)) return &one;
+  // Per-instance stored names carry a 6-hex instance-ID prefix, as in
+  // "a1b2c3:stroke_width" (fx effects, extra strokes). The display metadata is
+  // the same for every instance of a property, so fall back to the base name.
+  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+    return doc_shown_of(d, base.c_str());
   return nullptr;
 }
 
