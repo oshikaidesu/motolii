@@ -110,6 +110,7 @@ class FolderContents extends StatelessWidget {
                     shown[i],
                     c,
                     media,
+                    shown: shown,
                     list: c.mem.mediaList,
                     where: searching
                         ? (shown[i].disk ? basename(dirname(shown[i].id)) : '')

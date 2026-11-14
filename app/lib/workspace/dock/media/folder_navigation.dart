@@ -58,12 +58,18 @@ void openFolder(ShelfContext c, MediaController media, String id) => c.set(() {
   c.mem.open.add(id);
 });
 
-/// What a press on [n] does: a folder is opened, a file is picked. With Cmd held, a file joins or leaves the files
-/// picked together.
-void openNode(FileNode n, ShelfContext c, MediaController media) {
+/// What a press on [n] does: a folder is opened, a file is picked by the rule of picks.dart. Cmd (Ctrl) adds or removes a
+/// file, and Shift takes the files from the last one picked to [n], in the order of [shown], the nodes on screen.
+void openNode(
+  FileNode n,
+  ShelfContext c,
+  MediaController media,
+  List<FileNode> shown,
+) {
   if (n.folder) return openFolder(c, media, n.id);
-  if (DockHover.cmdAtPress && media.kindOf(n.id).isNotEmpty) {
-    // Cmd adds or removes one file from the selection, as in Finder (the rule of picks.dart). The file selected alone joins first.
+  final keys = DockHover.keysAtPress;
+  if ((keys.add || keys.span) && media.kindOf(n.id).isNotEmpty) {
+    // The file selected alone joins the files picked first.
     final lone = c.sel != null && media.kindOf(c.sel!).isNotEmpty
         ? c.sel
         : null;
@@ -71,13 +77,19 @@ void openNode(FileNode n, ShelfContext c, MediaController media) {
       now: media.picked.isEmpty && lone != null ? {lone} : media.picked,
       lead: lone,
       id: n.id,
-      add: true,
+      order: [
+        for (final k in shown)
+          if (!k.folder && media.kindOf(k.id).isNotEmpty) k.id,
+      ],
+      add: keys.add,
+      span: keys.span,
     );
     media.picked
       ..clear()
       ..addAll(r.picked);
+    if (r.lead != null) c.pick(r.lead!);
   } else {
     media.picked.clear();
+    c.pick(n.id);
   }
-  c.pick(n.id);
 }

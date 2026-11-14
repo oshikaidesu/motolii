@@ -113,6 +113,7 @@ class FileTile extends StatefulWidget {
     this.c,
     this.media, {
     super.key,
+    required this.shown,
     this.list = false,
     this.where,
   });
@@ -125,6 +126,9 @@ class FileTile extends StatefulWidget {
 
   /// What the shelf keeps between builds: the files picked, the folders read.
   final MediaController media;
+
+  /// Everything the shelf lists, in the order shown: a Shift-click takes the files from the last one picked to this one.
+  final List<FileNode> shown;
 
   /// Whether the shelf shows rows, not tiles.
   final bool list;
@@ -180,7 +184,9 @@ class _FileTileState extends State<FileTile> {
     final c = widget.c,
         media = widget.media,
         list = widget.list,
-        sel = c.sel == n.id || (list ? false : media.picked.contains(n.id)),
+        sel = list || media.picked.isEmpty
+            ? c.sel == n.id
+            : media.picked.contains(n.id),
         t = mediaTypeOf(n.g);
     final can = media.kindOf(n.id).isNotEmpty,
         meta = widget.where == null
@@ -195,7 +201,7 @@ class _FileTileState extends State<FileTile> {
       bold: sel || n.folder,
       ink: list ? null : (n.folder ? Grey.g91 : Grey.g76),
       says: meta,
-      onTap: () => openNode(n, c, media),
+      onTap: () => openNode(n, c, media, widget.shown),
       onApply: !list && can && !n.folder
           ? () => MediaCommands(c, media).placeFile(n)
           : null, // Double-click or drag to the canvas places the file.

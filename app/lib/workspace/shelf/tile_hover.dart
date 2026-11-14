@@ -2,11 +2,11 @@
 import 'dart:async';
 
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout, kPrimaryButton;
-import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/picks.dart' show clickKeys;
 
 /// Hover and tap handling for a tile. It rebuilds only when the pointer enters or leaves.
 class DockHover extends StatefulWidget {
@@ -21,8 +21,9 @@ class DockHover extends StatefulWidget {
     this.onMove,
   });
 
-  /// Whether Cmd was held when the last tile was pressed.
-  static bool cmdAtPress = false;
+  /// The selection keys held when the last tile was pressed: [add] is Cmd (Ctrl on Windows and Linux), [span] is Shift.
+  /// A tap is resolved after the double-tap wait, when the keys may have been let go, so they are read at the press.
+  static ({bool add, bool span}) keysAtPress = (add: false, span: false);
 
   /// True after a tile with a double-click action was pressed, while a second press may still come (see [ShelfContext.foot]).
   static final secondMayCome = ValueNotifier(false);
@@ -73,7 +74,7 @@ class _DockHoverState extends State<DockHover> {
   // Waiting until a second press could no longer come (Flutter's tap waits kDoubleTapTimeout beside a double tap)
   // left the shelf's button acting on the previously selected tile. The second press belongs to the double-click.
   void _down(PointerDownEvent e) {
-    DockHover.cmdAtPress = HardwareKeyboard.instance.isMetaPressed;
+    DockHover.keysAtPress = clickKeys();
     if (!widget.picks ||
         widget.onDoubleTap == null ||
         widget.onTap == null ||
