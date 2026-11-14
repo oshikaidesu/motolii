@@ -14,11 +14,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
-import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/code/expression_reference.dart';
+import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -42,7 +41,24 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
   List<String> _adds = const [];
   bool _answered = false;
   String _query = '';
+  final _search = TextEditingController();
   final _folded = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(_searched);
+  }
+
+  void _searched() {
+    if (_search.text != _query) setState(() => _query = _search.text);
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   void _ask() {
     final m = WorkspaceScope.read(context).inside, file = widget.file;
@@ -102,7 +118,7 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Search(_query, (q) => setState(() => _query = q)),
+        ShelfSearchField(controller: _search, hint: 'Search functions'),
         Expanded(
           child: widget.file == null
               ? const _Note('Open a cell to see what its code may say.')
@@ -193,54 +209,6 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
       ],
     ];
   }
-}
-
-/// The search field over the list, the app's standard text field in a well.
-class _Search extends StatelessWidget {
-  const _Search(this.query, this.onQuery);
-  final String query;
-  final ValueChanged<String> onQuery;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(
-      WindowTokens.inset,
-      Shape.s(6),
-      WindowTokens.inset,
-      Shape.s(4),
-    ),
-    child: Container(
-      height: Shape.z(24),
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-      decoration: BoxDecoration(
-        color: WindowTokens.well,
-        borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
-      ),
-      child: Row(
-        children: [
-          Glyph(AppGlyphs.search, size: Shape.z(11), color: Grey.g56),
-          SizedBox(width: Shape.s(6)),
-          Expanded(
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                if (query.isEmpty)
-                  Text('Search functions', style: TextStyles.name(Grey.g44)),
-                TypedField(
-                  key: const ValueKey('code-functions-search'),
-                  text: '',
-                  style: TextStyles.name(Grey.g95),
-                  cursor: WindowTokens.accent,
-                  standing: true,
-                  onDone: (_) {},
-                  onPick: (v) => onQuery(v.text),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 /// A group's head: its name, how many of its names are supported here, and a triangle that folds it.

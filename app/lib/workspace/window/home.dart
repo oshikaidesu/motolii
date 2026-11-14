@@ -19,7 +19,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/bridge/motolii.dart' show docFactsOf;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 
 class HomeWindow extends StatefulWidget {
   const HomeWindow({
@@ -70,13 +70,17 @@ class _HomeWindowState extends State<HomeWindow> {
   @override
   void initState() {
     super.initState();
+    _findText.addListener(_found);
     _read();
+  }
+
+  void _found() {
+    if (_findText.text != _find) setState(() => _find = _findText.text);
   }
 
   @override
   void dispose() {
     _findText.dispose();
-    _findFocus.dispose();
     try {
       _pictures.deleteSync(recursive: true);
     } catch (_) {}
@@ -237,28 +241,9 @@ class _HomeWindowState extends State<HomeWindow> {
                 const Spacer(),
                 SizedBox(
                   width: 180,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: WindowTokens.inset,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: WindowTokens.card,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: TextGestures(
-                      key: const ValueKey('home-find'),
-                      field: (k) => EditableText(
-                        key: k,
-                        rendererIgnoresPointer: true,
-                        controller: _findText,
-                        focusNode: _findFocus,
-                        style: TextStyles.label(Grey.g91),
-                        cursorColor: WindowTokens.accent,
-                        backgroundCursorColor: Grey.g63,
-                        onChanged: (v) => setState(() => _find = v),
-                      ),
-                    ),
+                  child: ShelfSearchField(
+                    controller: _findText,
+                    hint: 'Search',
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -300,5 +285,4 @@ class _HomeWindowState extends State<HomeWindow> {
   }
 
   final _findText = TextEditingController();
-  final _findFocus = FocusNode();
 }
