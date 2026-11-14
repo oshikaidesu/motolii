@@ -42,10 +42,8 @@ inline const DocCard doc_cards[] = {
     // After Effects' camera: where it is, how it is turned and how far its eye
     // is from what it
     // looks at.
-    {"Camera", "parent x y z rotate_x rotate_y rotate distance", "kind",
+    {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom focus aperture", "kind",
      "camera"},
-    // After Effects' Camera Options: Zoom, Focus Distance and Aperture.
-    {"Camera Options", "zoom focus aperture", "kind", "camera"},
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over
     // what lies below as the mode says, or only inside the layer before it.
@@ -99,13 +97,9 @@ inline const DocCard doc_cards[] = {
     {"Time Remap", "time_remap time_remap_loop", nullptr, nullptr, true},
     // The drawings of an animation level: an image that has a drawing is one.
     {"Drawing", "cel", "cel", "!0"},
-    // Where in its file a video starts, as Premiere Pro's Slip. A number typed
-    // here works like
-    // dragging in the timeline, whose pale bar shows the same value.
-    {"Source", "begin", "kind", "video"},
-    // Volume, and the beats that the timeline's ruler shows where the sound
-    // strikes.
-    {"Sound", "volume beats", "kind", "video"},
+    // Where in its file a video starts (Premiere Pro's Slip), how loud it is
+    // heard and exported, and the beats the timeline's ruler marks.
+    {"Video", "begin volume beats", "kind", "video"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
     // size the layer takes,
     // and rolling like a wheel. Shown while the layer has a parent.
