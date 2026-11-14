@@ -34,7 +34,6 @@ class TransformBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
     final params = {for (final p in card.params) 'v_${p.id}': p};
-    bool has(String id) => params.containsKey(id);
     final space = params['v_space'];
     final linked = doc.flags['transform.link'] ?? true;
     Widget field(String id, {ValueChanged<double>? onSet}) =>
@@ -53,10 +52,7 @@ class TransformBody extends StatelessWidget {
           (doc.get('v_space') ?? 0).round(),
         );
         final deep = word != null && word.toLowerCase() != '2d';
-        final scale = [
-          for (final a in const ['x', 'y', 'z'])
-            if (has('v_scale_$a') && (a != 'z' || deep)) 'v_scale_$a',
-        ];
+        final scale = ['v_scale_x', 'v_scale_y', if (deep) 'v_scale_z'];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -80,68 +76,61 @@ class TransformBody extends StatelessWidget {
             TransformCanvas(params: params, deep: deep, linked: linked),
             SizedBox(height: InspectorSkin.titleGap),
             const AxisHeader(),
-            if (has('v_x'))
-              TransformRow(
-                mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
-                hot: TransformZone.move,
-                label: 'Position',
-                unit: params['v_x']!.unit,
-                cells: [
-                  for (final a in const ['x', 'y', 'z'])
-                    if (has('v_$a')) field('v_$a'),
-                ],
+            TransformRow(
+              mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
+              hot: TransformZone.move,
+              label: 'Position',
+              unit: params['v_x']!.unit,
+              cells: [field('v_x'), field('v_y'), field('v_z')],
+            ),
+            TransformRow(
+              mark: (c, s) => drawScale(
+                c,
+                s,
+                _lit(TransformZone.scale),
+                doc.get('v_scale_x') ?? 100,
+                doc.get('v_scale_y') ?? 100,
               ),
-            if (scale.isNotEmpty)
-              TransformRow(
-                mark: (c, s) => drawScale(
-                  c,
-                  s,
-                  _lit(TransformZone.scale),
-                  doc.get('v_scale_x') ?? 100,
-                  doc.get('v_scale_y') ?? 100,
-                ),
-                hot: TransformZone.scale,
-                label: 'Scale',
-                unit: params[scale.first]!.unit,
-                trail: _Link(
-                  on: linked,
-                  onTap: () => doc.flag('transform.link', !linked),
-                ),
-                cells: [
-                  for (final id in scale)
-                    field(
-                      id,
-                      onSet: linked
-                          ? (v) => _scaleLinked(doc, scale, id, v, params)
-                          : null,
-                    ),
-                ],
+              hot: TransformZone.scale,
+              label: 'Scale',
+              unit: params['v_scale_x']!.unit,
+              trail: _Link(
+                on: linked,
+                onTap: () => doc.flag('transform.link', !linked),
               ),
-            if (has('v_rotate'))
-              TransformRow(
-                mark: (c, s) => drawRotation(
-                  c,
-                  s,
-                  _lit(TransformZone.rotate),
-                  doc.get('v_rotate') ?? 0,
-                ),
-                hot: TransformZone.rotate,
-                label: 'Rotation',
-                unit: params['v_rotate']!.unit,
-                cells: [
-                  for (final a in const ['v_rotate_x', 'v_rotate_y'])
-                    if (has(a)) field(a),
-                  field('v_rotate'),
-                ],
+              cells: [
+                for (final id in scale)
+                  field(
+                    id,
+                    onSet: linked
+                        ? (v) => _scaleLinked(doc, scale, id, v, params)
+                        : null,
+                  ),
+              ],
+            ),
+            TransformRow(
+              mark: (c, s) => drawRotation(
+                c,
+                s,
+                _lit(TransformZone.rotate),
+                doc.get('v_rotate') ?? 0,
               ),
-            if (has('v_opacity'))
-              TransformRow(
-                mark: (c, s) =>
-                    drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
-                label: 'Opacity',
-                unit: params['v_opacity']!.unit,
-                cells: [field('v_opacity')],
-              ),
+              hot: TransformZone.rotate,
+              label: 'Rotation',
+              unit: params['v_rotate']!.unit,
+              cells: [
+                field('v_rotate_x'),
+                field('v_rotate_y'),
+                field('v_rotate'),
+              ],
+            ),
+            TransformRow(
+              mark: (c, s) =>
+                  drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
+              label: 'Opacity',
+              unit: params['v_opacity']!.unit,
+              cells: [field('v_opacity')],
+            ),
             if (params['v_parent'] case final p?)
               TransformRow(
                 mark: (c, s) => drawChain(
