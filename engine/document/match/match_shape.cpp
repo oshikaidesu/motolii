@@ -59,6 +59,7 @@ ShapeNumbers shape_numbers(Doc& d, int layer, const std::string& shape,
                                    : 1),
           (int)doc_number(d, layer, "points", 0,
                           shape == "star"       ? 5
+                          : shape == "rect"     ? 4
                           : shape == "arc"      ? 270
                           : shape == "squircle" ? 4
                           : shape == "cog"      ? 12

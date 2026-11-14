@@ -147,8 +147,11 @@ void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h,
         : shape->moveTo(cx + rx * r * std::cos(a0), cy + ry * r * std::sin(a0));
     }
     shape->close();
-  } else if (!strcmp(form, "polygon") || !strcmp(form, "star")) {
-    const bool star = !strcmp(form, "star");
+  } else if (!strcmp(form, "polygon") || !strcmp(form, "star") ||
+             (!strcmp(form, "rect") && (points != 4 || inner > 0.f))) {
+    // rect with points != 4 is a polygon; with inner > 0 it is a star.
+    const bool star = !strcmp(form, "star") ||
+                      (!strcmp(form, "rect") && inner > 0.f);
     const int n = std::clamp(points, 3, 100) * (star ? 2 : 1);
     for (int k = 0; k < n; ++k) {
       // The first point is straight up.
