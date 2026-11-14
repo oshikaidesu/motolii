@@ -9,6 +9,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/host_cards.dart';
 import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_host.dart';
@@ -228,13 +229,17 @@ class _InspectorPanelState extends State<InspectorPane> {
       layer: InspectedLayer(
         kind: k,
         kindWord: _kindWord(ws, l?.id),
-        cards: WorkspaceController.timed(
-          'value cards',
-          () => valueCards(
+        cards: WorkspaceController.timed('value cards', () {
+          final all = valueCards(
             ws,
             l?.id,
-          )?.where((c) => own || widget.only!.contains(c.name)).toList(),
-        ),
+          )?.where((c) => own || widget.only!.contains(c.name)).toList();
+          if (all == null) return null;
+          return [
+            ...all.where((c) => hostCards.containsKey(c.name)),
+            ...all.where((c) => !hostCards.containsKey(c.name)),
+          ];
+        }),
         title: l?.name,
         movable: !own || int.tryParse(l?.id ?? '') == null
             ? const []

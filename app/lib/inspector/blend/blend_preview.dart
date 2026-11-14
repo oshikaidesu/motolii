@@ -26,9 +26,6 @@ class BlendPreview extends StatefulWidget {
   const BlendPreview(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The value the preview reads and owns. It is listed as drawn so the tile below is suppressed.
-  static const pulls = ['v_blend'];
-
   static double get height => Shape.z(52);
 
   @override

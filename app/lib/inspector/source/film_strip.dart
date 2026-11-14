@@ -13,9 +13,6 @@ class FilmStrip extends StatefulWidget {
   const FilmStrip(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The value the strip shows. Its tile stays on the card, so it is not listed as drawn.
-  static const pulls = ['v_begin'];
-
   static double get height => Shape.z(44);
 
   @override

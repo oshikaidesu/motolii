@@ -18,8 +18,6 @@ import 'package:motolii/widgets/text_gestures.dart';
 // written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.
 // No card is named in this file.
 
-// Where the Add Effect row goes: after the last card that is an effect, as Alight Motion's list ends.
-// doc_cards_of lays the effects out before the other cards. With no effect, it goes at the end.
 int _addAt(InspectorValues doc) {
   final at =
       doc.cards.lastIndexWhere((c) => doc.layer.movable.contains(c.name)) + 1;

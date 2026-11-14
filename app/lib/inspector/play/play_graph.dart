@@ -14,9 +14,6 @@ class PlayGraph extends StatefulWidget {
   const PlayGraph(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The values the graph reads. Their tiles stay on the card, so none is listed as drawn.
-  static const pulls = ['v_speed', 'v_speed_hold'];
-
   static double get height => Shape.z(64);
 
   @override
