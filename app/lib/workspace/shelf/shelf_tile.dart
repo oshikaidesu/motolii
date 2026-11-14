@@ -6,7 +6,6 @@ import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -28,10 +27,10 @@ export '../../bridge/motolii.dart' show ShelfItem;
 /// - the name bar, with [naming] in its place while a name is being edited. [ink] and [bold] style the name unless it is picked.
 /// With [small] only the image is drawn.
 ///
-/// [ShelfForm.over] in the grid: [art] is added to the tile's Stack as it is (Positioned.fill or Align), then [over],
-/// then the name at the bottom left, with [naming] in its place.
+/// The Create tile is the same [ShelfForm.under]: its glyph or motion is the [art], its shortcut key an [over] child,
+/// and its name sits in the bar like the others.
 ///
-/// [ShelfForm.under] and [ShelfForm.over] as a row: the image at the look's rowArt size, the name, [says] under it
+/// [ShelfForm.under] as a row: the image at the look's rowArt size, the name, [says] under it
 /// when given, then [after] at the end of the row. [ink] also colours the name in a row; if null, it is g91 rather than
 /// the bar's g76. [indent] is added on the left.
 ///
@@ -99,7 +98,6 @@ class ShelfTile extends StatelessWidget {
       ShelfForm.words => list ? _wordsRow(h) : _wordsCard(h),
       _ when list => _row(h),
       ShelfForm.under => _under(h),
-      ShelfForm.over => _over(h),
     },
   );
 
@@ -179,37 +177,6 @@ class ShelfTile extends StatelessWidget {
               ),
         ),
     ],
-  );
-
-  Widget _over(bool h) => _box(
-    padding: EdgeInsets.all(Shape.s(7)),
-    color: picked
-        ? WindowTokens.accent
-        : (h ? WindowTokens.raised : WindowTokens.card),
-    child: Stack(
-      children: [
-        if (art case final a?)
-          a(h)
-        else if (_image(h) case final p?)
-          Positioned.fill(child: p),
-        ...?over?.call(h),
-        Align(
-          alignment: Alignment.bottomLeft,
-          child:
-              naming ??
-              AutoSizeText(
-                // A long name wraps onto two lines at word boundaries, as Finder's icons do. It shrinks rather than break a word.
-                item.name,
-                maxLines: 2,
-                wrapWords: false,
-                minFontSize: 6,
-                stepGranularity: .5,
-                style: TextStyles.name(dockInk(picked, ink ?? Grey.g95))
-                    .copyWith(fontWeight: FontWeight.w700),
-              ),
-        ),
-      ],
-    ),
   );
 
   Widget _row(bool h) {

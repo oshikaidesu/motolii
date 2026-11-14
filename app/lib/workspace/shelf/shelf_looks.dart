@@ -5,12 +5,11 @@ import 'package:motolii/skin/tokens.dart';
 
 export '../../bridge/motolii.dart' show ShelfItem;
 
-/// The three forms a tile can take.
+/// The two forms a tile can take.
 ///
-/// - [under]: the name in a bar under the image (Effects, Code, Media).
-/// - [over]: the name laid over the image (Create).
+/// - [under]: the name in a bar under the 16:9 image (Effects, Create, Media).
 /// - [words]: the art is text set in a typeface (Fonts).
-enum ShelfForm { under, over, words }
+enum ShelfForm { under, words }
 
 /// How one shelf's tiles look: an entry of [shelfLooks].
 ///
@@ -64,26 +63,21 @@ class ShelfLook {
   final bool eased;
 }
 
-const _square = ShelfLook(
+/// The one look the picture shelves share: a 16:9 image with the name in a bar under it.
+/// Effects, Create and Media are the same, so one change here moves all three (uat 25).
+const _tile = ShelfLook(
   ShelfForm.under,
-  cell: 84,
+  cell: 76,
   sized: true,
-  row: 22,
-  rowArt: Size(18, 18),
-  rowGap: 6,
-  eased: false,
+  min: 2,
+  aspect: 16 / 9,
+  top: WindowTokens.gutter,
 );
 
 /// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
 const shelfLooks = <String, ShelfLook>{
-  'Effects': _square,
-  'Media': ShelfLook(
-    ShelfForm.under,
-    cell: 76,
-    min: 2,
-    aspect: 16 / 9,
-    top: WindowTokens.gutter,
-  ),
-  'Create': ShelfLook(ShelfForm.over, cell: 74, min: 2, height: 70),
+  'Effects': _tile,
+  'Media': _tile,
+  'Create': _tile,
   'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
 };
