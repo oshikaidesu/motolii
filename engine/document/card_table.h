@@ -99,7 +99,7 @@ inline const DocCard doc_cards[] = {
     {"Drawing", "cel", "cel", "!0"},
     // Where in its file a video starts (Premiere Pro's Slip), how loud it is
     // heard and exported, and the beats the timeline's ruler marks.
-    {"Video", "begin volume beats", "kind", "video"},
+    {"Media", "begin volume beats", "kind", "video"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
     // size the layer takes,
     // and rolling like a wheel. Shown while the layer has a parent.
