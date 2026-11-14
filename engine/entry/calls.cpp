@@ -464,9 +464,14 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
 const char* motolii_shape_svg(Motolii* m, int layer) {
   return by_look(m, [=] {
     Doc& d = *m->d;
-    const std::string form = doc_word(d, layer, "shape");
-    if (doc_word(d, layer, "kind") != "shape" || form.empty() ||
-        form == "path" || form == "null" || form == "solid")
+    const std::string kind = doc_word(d, layer, "kind");
+    // Text has no shape form, so preview it as a plain square. The letter
+    // outlines read as noise at this size; a square shows the path operators
+    // (round/bloat/zigzag/offset) clearly, which is what the Paths card is for.
+    const bool text = kind == "text";
+    const std::string form = text ? std::string("rect") : doc_word(d, layer, "shape");
+    if (!text && (kind != "shape" || form.empty() ||
+                  form == "path" || form == "null" || form == "solid"))
       return (said_word() = "").c_str();
     const bool line = form == "line", wave = form == "wave";
     const double high = line ? 0.04 : wave ? 0.3 : 1.0,
