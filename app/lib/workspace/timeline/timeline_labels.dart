@@ -49,6 +49,7 @@ class TimelineLabelHeader extends StatelessWidget {
         TimelineGlyphs.eye,
         TimelineGlyphs.solo,
         TimelineGlyphs.lock,
+        TimelineGlyphs.clip,
       ])
         SizedBox(
           width: Shape.z(20),
@@ -81,12 +82,14 @@ class TimelineLabelRow extends StatefulWidget {
     required this.onEye,
     required this.onSolo,
     required this.onLock,
+    required this.clip,
+    required this.onClip,
   });
   final int index, depth;
   final TimelineRow row;
-  final bool hidden, solo;
+  final bool hidden, solo, clip;
   final bool? lanes; // Whether its keyframed properties are expanded; null if the layer has no keyframes.
-  final VoidCallback onLanes, onSelect, onEye, onSolo, onLock;
+  final VoidCallback onLanes, onSelect, onEye, onSolo, onLock, onClip;
   @override
   State<TimelineLabelRow> createState() => _LabelRowState();
 }
@@ -143,6 +146,12 @@ class _LabelRowState extends State<TimelineLabelRow> {
             lit: r.locked || _h || sel,
             strong: r.locked,
             onTap: widget.onLock,
+          ),
+          clip: _Toggle(
+            TimelineGlyphs.clip,
+            on: widget.clip,
+            lit: widget.clip || _h || sel,
+            onTap: widget.onClip,
           ),
         ),
       ),

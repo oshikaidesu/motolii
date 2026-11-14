@@ -207,6 +207,7 @@ abstract final class BaseControls {
           t.eye,
           t.solo,
           t.lock,
+          t.clip,
         ],
       ),
     );

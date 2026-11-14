@@ -120,12 +120,13 @@ class TrackSpec {
     required this.eye,
     required this.solo,
     required this.lock,
+    required this.clip,
   });
   final int index;
   final String name;
   final bool selected, dim, hot;
   final VoidCallback onSelect;
-  final Widget kind, eye, solo, lock;
+  final Widget kind, eye, solo, lock, clip;
 }
 
 /// How a skin draws the app's controls.

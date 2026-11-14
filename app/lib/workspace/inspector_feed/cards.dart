@@ -111,7 +111,9 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
     for (final (title, names) in m.cards(t))
       // A sound layer has a volume and nothing to place on the canvas, as in Alight Motion's audio layer
       // (docs/design/alight_motion_ui.md).
-      if (title == 'Sound' || !isSoundLayer(m, t))
+      // The Matte card is shown only when the layer is clipped (clip=1): the clip toggle is in the timeline.
+      if ((title == 'Sound' || !isSoundLayer(m, t)) &&
+          (title != 'Matte' || (m.value(t, 'clip', 0) ?? 0) > .5))
         CardDeclaration(
           title,
           'struct Params {\n${[

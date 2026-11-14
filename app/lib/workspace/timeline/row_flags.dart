@@ -38,6 +38,23 @@ class RowFlags {
   bool isLocked(String id) =>
       workspace.layers.any((l) => l.id == id && l.locked);
 
+  /// Whether the layer [id] is clipped to the layer below it.
+  bool isClipped(String id) =>
+      workspace.layers.any((l) => l.id == id && l.clipped);
+
+  /// Clips the layer [id] to the layer below it, or removes the clip. It is one undo step.
+  void toggleClipped(String id) {
+    final m = workspace.inside!;
+    workspace.after(
+      m.later(
+        'set',
+        layer: int.parse(id),
+        name: 'clip',
+        number: isClipped(id) ? 0 : 1,
+      ),
+    );
+  }
+
   /// Whether any layer is solo.
   bool get anySolo => workspace.layers.any((l) => isSolo(l.id));
 

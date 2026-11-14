@@ -54,6 +54,7 @@ enum TimelineGlyphs implements GlyphKind {
   solo,
   lock,
   unlock,
+  clip,
   caretR,
   caretD,
   play,
@@ -124,6 +125,17 @@ enum TimelineGlyphs implements GlyphKind {
           );
         if (this == TimelineGlyphs.lock) sh.lineTo(2.3, 0);
         c.drawPath(sh, line);
+      case TimelineGlyphs.clip:
+        // ↳ bent-arrow: "this layer is clipped to the one below."
+        c.drawLine(const Offset(-3.5, -4.5), const Offset(-3.5, 1), line);
+        c.drawLine(const Offset(-3.5, 1), const Offset(3, 1), line);
+        c.drawPath(
+          Path()
+            ..moveTo(1, -1.5)
+            ..lineTo(3.5, 1)
+            ..lineTo(1, 3.5),
+          line,
+        );
       case TimelineGlyphs.caretR:
         c.drawPath(tri(-2, -3.6, 2.8, 0, -2, 3.6), fill);
       case TimelineGlyphs.caretD:

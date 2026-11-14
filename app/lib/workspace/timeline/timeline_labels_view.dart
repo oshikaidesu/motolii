@@ -162,6 +162,8 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                 onEye: () => RowFlags(ws).toggleHidden(l.id),
                                 onSolo: () => RowFlags(ws).toggle('solo', l.id),
                                 onLock: () => RowFlags(ws).toggle('lock', l.id),
+                                clip: l.clipped,
+                                onClip: () => RowFlags(ws).toggleClipped(l.id),
                               ),
                             ),
                           ),
