@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "document/document.h"
+#include "gpu/screen_interop.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -480,6 +481,13 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   // instances (FEngine::shutdown), which a debug build of Filament would stop
   // at; that check is Filament's feature flag, turned off for the teardown.
   if (m->s && m->s->engine) {
+    // Drop interop::Screen objects before Engine::destroy; they are not
+    // Filament-owned and must be released explicitly with the engine alive.
+    for (interop::Screen* sc : m->s->edge_screens)
+      if (sc) interop::drop(m->s->engine, sc);
+    if (m->s->place_copy) interop::drop(m->s->engine, m->s->place_copy);
+    for (int k = 0; k < 2; ++k)
+      if (m->s->place_tone[k]) interop::drop(m->s->engine, m->s->place_tone[k]);
     m->s->engine->setFeatureFlag(
         "engine.debug.assert_destroy_material_before_material_instance", false);
     filament::Engine::destroy(&m->s->engine);

@@ -27,9 +27,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <array>
 #include <map>
 #include <string>
 #include <vector>
+
+namespace interop {
+struct Screen;
+}  // namespace interop
 
 namespace motolii {
 
@@ -217,6 +222,12 @@ struct Stage {
   // another in the same program has its own. Each material file, read and built
   // once.
   std::map<std::string, filament::Material*> materials;
+  // screen_place's copy shader. One per stage; not Filament-owned.
+  interop::Screen* place_copy = nullptr;
+  // screen_tone's shaders: index 0 = sRGB→linear, 1 = linear→sRGB.
+  interop::Screen* place_tone[2] = {nullptr, nullptr};
+  // canvas_edge's three processing screens: seeds, flood, length.
+  std::array<interop::Screen*, 3> edge_screens = {nullptr, nullptr, nullptr};
   // Filament's reader of 3D files and its reader of their images, see
   // gltf_model.h.
   void* solids = nullptr;

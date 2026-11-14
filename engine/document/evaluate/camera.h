@@ -6,9 +6,12 @@
 #include <math/mat4.h>
 #include <math/vec3.h>
 
+#include <map>
 #include <string>
+#include <vector>
 
 namespace filament {
+class IndirectLight;
 class Skybox;
 }  // namespace filament
 
@@ -27,6 +30,13 @@ struct DocLook {
   float roomLight = 0.f;
   // Which room lights the stage now (see doc_look).
   std::string roomIs;
+  // Each room's IndirectLight, keyed by room name. Owned by the engine;
+  // lives and dies with the Doc.
+  std::map<std::string, filament::IndirectLight*> rooms;
+  // Each room's Skybox, keyed by room name. Owned by the engine.
+  std::map<std::string, filament::Skybox*> skies;
+  // The KTX bytes each skybox texture keeps a pointer into.
+  std::vector<std::vector<uint8_t>> skyBytes;
   // The room behind everything, once one is set.
   filament::Skybox* sky = nullptr;
   // The color behind everything: a flat color as large as the stage, drawn

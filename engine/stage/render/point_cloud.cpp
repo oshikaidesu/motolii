@@ -436,8 +436,7 @@ Material* points_effect(Stage& s, const std::string& file,
                         std::shared_ptr<SplatEffect>& fx, std::string& why) {
   fx = std::make_shared<SplatEffect>(file);
   if (!fx->ok()) return why = fx->trouble(), fx.reset(), nullptr;
-  static std::map<std::string, Material*> built;
-  Material*& m = built[fx->glsl()];
+  Material*& m = s.materials["splat:" + fx->glsl()];
   if (m) return m;
   const std::filesystem::path source = doc_engine("materials/points.mat");
   std::ifstream in(source);

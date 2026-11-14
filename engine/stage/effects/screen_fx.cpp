@@ -66,8 +66,7 @@ interop::Screen* screen_copy(Stage& s, ScreenStack& st) {
 
 void screen_place(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
                   uint32_t h, const int* at) {
-  static std::map<Engine*, interop::Screen*> copies;
-  interop::Screen*& copy = copies[s.engine];
+  interop::Screen*& copy = s.place_copy;
   if (!copy) {
     static const char* const same =
         "@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) "
@@ -82,8 +81,7 @@ void screen_place(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
 
 void screen_tone(Stage& s, Texture* from, RenderTarget* to, uint32_t w,
                  uint32_t h, bool toSrgb) {
-  static std::map<Engine*, interop::Screen*> interops[2];
-  interop::Screen*& one = interops[toSrgb ? 1 : 0][s.engine];
+  interop::Screen*& one = s.place_tone[toSrgb ? 1 : 0];
   if (!one) {
     const std::string code =
         std::string(

@@ -129,8 +129,7 @@ void edge_off(Stage& s, Canvas2D* d) {
 void edge_ask(Stage& s, Canvas2D* d, int reach) {
   d->stale = false;
   s.once[d] = [&s, d, reach] {
-    static std::map<Engine*, std::array<interop::Screen*, 3>> interops;
-    auto& built = interops[s.engine];
+    auto& built = s.edge_screens;
     if (!built[0])
       built = {interop::screen(s.engine, "edge seeds", edge_seeds_wgsl, 0),
                interop::screen(s.engine, "edge flood", edge_flood_wgsl, 16),

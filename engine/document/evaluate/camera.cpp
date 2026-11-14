@@ -203,7 +203,7 @@ void doc_look(Doc& d) {
   // Another room: its light is made once from its file and then reused. Every
   // image laid over the canvas is lit by it too.
   if (which != d.look.roomIs) {
-    static std::map<std::string, IndirectLight*> made;
+    auto& made = d.look.rooms;
     // The first time, register the light in use under the current room name, so
     // that the canvas can switch back to it.
     if (!d.look.roomIs.empty() || made.empty())
@@ -269,11 +269,11 @@ void doc_look(Doc& d) {
   // The room itself is shown behind everything, as bright as it lights the
   // canvas. Its sky image is made once for each room.
   if (doc_word(d, 0, "behind") == "room") {
-    static std::map<std::string, Skybox*> shown;
+    auto& shown = d.look.skies;
     Skybox*& sky = shown[d.look.roomIs];
     if (!sky) {
       // The sky image refers to this memory, so it must stay alive.
-      static std::vector<std::vector<uint8_t>> kept;
+      auto& kept = d.look.skyBytes;
       kept.push_back(load_file(
           ("out/" + d.look.roomIs + "/" + d.look.roomIs + "_skybox.ktx")
               .c_str()));
