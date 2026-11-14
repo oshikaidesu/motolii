@@ -100,9 +100,19 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
           ? doc_word(d, layer, "clip_matte") + " " + std::to_string(invert) +
                 " " + std::to_string(doc_number(d, layer, "clip_feather", 0, 0))
           : std::string();
-  // When the clipping layer or the way of cutting changed, the matte takes
-  // the shape of that layer's image, at that layer's place.
-  if (shaped && (cut.from != by || cut.by != a->drawn || cut.how != how)) {
+  // The matte cuts by the post-effect image of the source layer when it has
+  // effects, so that blurs, glows and other effects on the matte shape are
+  // honoured. Without effects the base texture is used as before.
+  const auto fx_by = d.effects.layerFx.find(by);
+  filament::Texture* const pic =
+      fx_by != d.effects.layerFx.end()
+          ? thing_fx_seen(fx_by->second.st)
+          : (a->drawn->texture ? a->drawn->texture : white_point(s));
+  // When the clipping layer, the way of cutting, or the matte texture changed,
+  // the matte takes the shape of that layer's image, at that layer's place.
+  if (shaped &&
+      (cut.from != by || cut.by != a->drawn || cut.how != how ||
+       cut.tex != pic)) {
     // Release what cut the material before.
     unmatte(s, cut.look, cut.look == base || cut.look == own);
     if (cut.matte >= 0) {
@@ -111,11 +121,11 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
         return sc->hasEntity(made.thing);
       });
     }
-    cut.matte =
-        matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))},
-              a->drawn->texture ? a->drawn->texture : white_point(s),
-              doc_word(d, layer, "clip_matte") == "luma", 1.f, cut.matte);
-    cut.from = by, cut.by = a->drawn, cut.look = nullptr, cut.how = how;
+    cut.matte = matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))}, pic,
+                      doc_word(d, layer, "clip_matte") == "luma", 1.f,
+                      cut.matte);
+    cut.from = by, cut.by = a->drawn, cut.tex = pic, cut.look = nullptr,
+    cut.how = how;
   }
   if (shaped && cut.look != own && own && cut.matte >= 0) {
     // The material was made again, or its effects came or went. Release what

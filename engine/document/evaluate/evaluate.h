@@ -102,6 +102,7 @@ struct DocOnStage {
   struct Cut {
     int matte = -1, from = 0;
     const Canvas2D* by = nullptr;
+    filament::Texture* tex = nullptr;
     filament::MaterialInstance* look = nullptr;
     std::string how;
   };
