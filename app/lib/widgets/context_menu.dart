@@ -239,10 +239,10 @@ class MenuHost extends StatelessWidget {
     controller: controller,
     positioning: positioning,
     useRootOverlay: useRootOverlay,
-    // Closing is done by [_Outside], which also keeps the closing press from reaching what is under it.
+    // Closing is done by [PressOutside], which also keeps the closing press from reaching what is under it.
     closeOnClickOutside: false,
     consumeOutsideTaps: false,
-    overlayBuilder: (context, info) => _Outside(
+    overlayBuilder: (context, info) => PressOutside(
       group: info.tapRegionGroupId,
       shut: controller.close,
       child: ContextMenuList(
@@ -256,11 +256,13 @@ class MenuHost extends StatelessWidget {
   );
 }
 
-/// Closes the menu on a press outside it. A left press does nothing else, as outside a macOS or Windows menu;
+/// Closes a floating list on a press outside it. Every menu and select uses it (see [MenuHost], and the Inspector's Chooser).
+/// A left press does nothing else, as outside a macOS or Windows menu;
 /// a right press still reaches what is under it, so a right-click elsewhere opens a menu there.
 /// (TapRegion.consumeOutsideTaps takes every button, so it is not used.)
-class _Outside extends StatelessWidget {
-  const _Outside({
+class PressOutside extends StatelessWidget {
+  const PressOutside({
+    super.key,
     required this.group,
     required this.shut,
     required this.child,

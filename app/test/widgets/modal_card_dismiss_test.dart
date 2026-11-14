@@ -15,6 +15,7 @@ class _Host extends StatefulWidget {
 class _HostState extends State<_Host> {
   bool open = false;
   final before = FocusNode();
+  void show() => setState(() => open = true);
   @override
   Widget build(BuildContext context) => Stack(
     children: [
@@ -39,7 +40,7 @@ Future<_HostState> _opened(WidgetTester tester) async {
   final host = tester.state<_HostState>(find.byType(_Host));
   host.before.requestFocus();
   await tester.pump();
-  host.setState(() => host.open = true);
+  host.show();
   await tester.pumpAndSettle();
   return host;
 }
