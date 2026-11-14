@@ -1,18 +1,22 @@
 // The workspace's right-click menu.
 //
 // It lists what can be done to the item under the pointer, so the mouse alone is enough (Ableton Live's context menus, Figma's right-click).
-// Flutter's RawMenuAnchor opens it at the pointer and closes it on a click outside.
+// naked_ui's NakedMenu (on Flutter's RawMenuAnchor) places the panel, flipping and shifting it at the window's edge, moves between rows with the arrow keys,
+// closes on Esc and on a resize. Every menu is a [MenuHost] around it: this one, the ⋮ of a card (more_menu.dart) and the right-click of a number.
 // A row is a label. A disabled row shows why it cannot be done, and the keyboard shortcut is dimmed on the right.
-// It behaves as the menus of macOS and Windows do, the same on every system: the arrow keys move between rows and Return runs one,
-// a right press held down and let go over a row runs it, and it closes when the window goes to the back, is resized or scrolls.
-import 'dart:math' as math;
-
-import 'package:flutter/gestures.dart' show GestureBinding, HitTestResult;
+// What the two libraries lack is written once, below: a right press held down and let go over a row runs it,
+// a left press outside closes the menu and does nothing else, and the menu closes when the window goes to the back.
+import 'package:flutter/gestures.dart'
+    show
+        GestureArenaMember,
+        GestureBinding,
+        GestureDisposition,
+        HitTestResult,
+        kPrimaryButton;
 import 'package:flutter/rendering.dart' show RenderMetaData;
-import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart' show NakedMenu, OverlayPositionConfig;
 
-import 'package:motolii/widgets/dismiss_region.dart' show DismissRegion;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
@@ -209,32 +213,81 @@ class ContextMenuList extends StatelessWidget {
   );
 }
 
-/// The arrow keys of a menu, around its [DismissRegion].
+/// A menu: the one wrapper around naked_ui's [NakedMenu] that every menu in the app is made with, so they all behave alike.
 ///
-/// Down and up move between the rows in reading order, as in the menus of macOS and Windows; each row is a NakedButton,
-/// which runs on Return or Space while it has the focus. It sits outside the DismissRegion because the region holds the focus
-/// when the menu opens, and keys go outward from the focus. The workspace's own arrow keys (nudging the layer) do not run meanwhile.
-class MenuKeys extends StatelessWidget {
-  const MenuKeys({super.key, required this.child});
+/// [child] is what the menu is attached to; [positioning] says where the panel sits against it.
+/// A press on [child] toggles the menu (NakedMenu's trigger); a [SizedBox.shrink] makes it a point, as the right-click menu does.
+class MenuHost extends StatelessWidget {
+  const MenuHost({
+    super.key,
+    required this.controller,
+    required this.items,
+    required this.width,
+    required this.child,
+    this.positioning = const OverlayPositionConfig(),
+    this.useRootOverlay = false,
+  });
+  final MenuController controller;
+  final List<ContextMenuItem> items;
+  final double width;
+  final Widget child;
+  final OverlayPositionConfig positioning;
+  final bool useRootOverlay;
+
+  @override
+  Widget build(BuildContext context) => NakedMenu<void>(
+    controller: controller,
+    positioning: positioning,
+    useRootOverlay: useRootOverlay,
+    // Closing is done by [_Outside], which also keeps the closing press from reaching what is under it.
+    closeOnClickOutside: false,
+    consumeOutsideTaps: false,
+    overlayBuilder: (context, info) => _Outside(
+      group: info.tapRegionGroupId,
+      shut: controller.close,
+      child: ContextMenuList(
+        items: items,
+        close: controller.close,
+        max: info.overlaySize.height * .5,
+        width: width,
+      ),
+    ),
+    child: child,
+  );
+}
+
+/// Closes the menu on a press outside it. A left press does nothing else, as outside a macOS or Windows menu;
+/// a right press still reaches what is under it, so a right-click elsewhere opens a menu there.
+/// (TapRegion.consumeOutsideTaps takes every button, so it is not used.)
+class _Outside extends StatelessWidget {
+  const _Outside({
+    required this.group,
+    required this.shut,
+    required this.child,
+  });
+  final Object group;
+  final VoidCallback shut;
   final Widget child;
   @override
-  Widget build(BuildContext context) => Focus(
-    canRequestFocus: false,
-    skipTraversal: true,
-    onKeyEvent: (node, e) {
-      if (e is! KeyDownEvent) return KeyEventResult.ignored;
-      final at = FocusManager.instance.primaryFocus;
-      if (e.logicalKey == LogicalKeyboardKey.arrowDown) {
-        at?.nextFocus();
-      } else if (e.logicalKey == LogicalKeyboardKey.arrowUp) {
-        at?.previousFocus();
-      } else {
-        return KeyEventResult.ignored;
+  Widget build(BuildContext context) => TapRegion(
+    groupId: group,
+    onTapOutside: (e) {
+      shut();
+      if (e.buttons & kPrimaryButton != 0) {
+        GestureBinding.instance.gestureArena
+            .add(e.pointer, _Swallow())
+            .resolve(GestureDisposition.accepted);
       }
-      return KeyEventResult.handled;
     },
     child: child,
   );
+}
+
+class _Swallow extends GestureArenaMember {
+  @override
+  void acceptGesture(int pointer) {}
+  @override
+  void rejectGesture(int pointer) {}
 }
 
 class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
@@ -256,12 +309,18 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
   ///
   /// Another menu that is open closes first: only one is open at a time.
   void show(Offset at, List<ContextMenuItem> items) {
-    setState(() => _items = items);
+    setState(() {
+      _items = items;
+      _at = at;
+    });
     final box = context.findRenderObject() as RenderBox?;
     _from = box?.localToGlobal(at);
     if (!_listening) GestureBinding.instance.pointerRouter.addGlobalRoute(_let);
     _listening = true;
-    _m.open(position: at);
+    // After the frame that moves the point, so the menu is placed against the new one.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _m.open();
+    });
   }
 
   // The first release after opening: over an enabled row, and away from where the menu opened, it runs that row.
@@ -285,10 +344,6 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
     }
   }
 
-  void _shut() {
-    if (_m.isOpen) _m.close();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -302,64 +357,38 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // The window went to the back or was hidden.
+  // The window went to the back or was hidden. (RawMenuAnchor itself closes on a resize and on a scroll above the anchor.)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) _shut();
+    if (state != AppLifecycleState.resumed && _m.isOpen) _m.close();
   }
 
-  // The window was resized or moved to another screen.
-  @override
-  void didChangeMetrics() => _shut();
+  // Where the menu was opened, within the child. The menu is attached to a point there, so it opens at the pointer.
+  Offset _at = Offset.zero;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => NotificationListener<ScrollNotification>(
-    // What the menu was opened on scrolled away.
-    onNotification: (_) {
-      _shut();
-      return false;
-    },
-    child: RawMenuAnchor(
-      controller: _m,
-      overlayBuilder: (context, info) {
-        final w = Shape.z(220), pad = Shape.s(4);
-        final h =
-            math.min(
-              info.overlaySize.height * .5,
-              [for (final it in _items) ContextMenuList.high(it)]
-                  .fold(0.0, (a, b) => a + b),
-            ) +
-            pad * 2;
-        final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
-        return Positioned(
-          left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
-          // Opens downward from the pointer, or upward where there is no room.
-          top: at.dy + h <= info.overlaySize.height
-              ? at.dy
-              : math.max(0.0, at.dy - h),
-          child: NotificationListener<ScrollNotification>(
-            // The menu's own scrolling does not close it.
-            onNotification: (_) => true,
-            child: MenuKeys(
-              child: DismissRegion(
-                // The anchor only closes on a left press outside it and the widget it was opened on, which is the whole stage or timeline.
-                // DismissRegion closes on any press outside the menu itself, and on Esc, like every floating panel.
-                shut: _m.close,
-                swallow: true,
-                child: ContextMenuList(
-                  items: _items,
-                  close: _m.close,
-                  max: info.overlaySize.height * .5,
-                  width: w,
-                ),
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollNotification>(
+        // What the menu was opened on scrolled away: a scroll inside the child, which RawMenuAnchor does not see.
+        onNotification: (_) {
+          if (_m.isOpen) _m.close();
+          return false;
+        },
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            widget.child,
+            Positioned(
+              left: _at.dx,
+              top: _at.dy,
+              child: MenuHost(
+                controller: _m,
+                items: _items,
+                width: Shape.z(220),
+                child: const SizedBox.shrink(),
               ),
             ),
-          ),
-        );
-      },
-      child: widget.child,
-    ),
-  );
+          ],
+        ),
+      );
 }

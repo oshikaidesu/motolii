@@ -10,7 +10,8 @@ import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/menu_at_pointer.dart';
+import 'package:motolii/widgets/context_menu.dart'
+    show ContextMenu, ContextMenuItem, ContextMenuState;
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_format.dart';
 
@@ -91,11 +92,7 @@ const unitMinWidth = 72.0, decimalsMinWidth = 60.0;
 /// [NumberField] handles dragging and typing. This state adds the document it reads and writes, the range it holds the value to,
 /// multi-selection of fields, the keyframe mark and the right-click menu.
 class InspectorNumberFieldState extends State<InspectorNumberField> {
-  final _menu = ContextMenuController();
-  Offset _menuAt = Offset.zero;
-
-  /// The pointer id of the right-click press that opened a field's menu, so the surrounding row does not handle it too.
-  static int rightAt = -1;
+  final _menu = GlobalKey<ContextMenuState>();
 
   InspectorScope get _x => InspectorScope.read(context);
   Parameter get _p => widget.p;
@@ -130,7 +127,6 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   void dispose() {
     _watch?.removeListener(_retold);
     _keyWatch?.removeListener(_retold);
-    _menu.remove();
     super.dispose();
   }
 
@@ -222,34 +218,16 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   bool _marked = false;
   KeyframeState _keys = KeyframeState.off;
 
-  bool _inMe(Offset at) {
-    final box = context.findRenderObject() as RenderBox?;
-    return box != null &&
-        (box.localToGlobal(Offset.zero) & box.size).contains(at);
-  }
-
   // Handles a pointer-down before the field starts a drag.
   // True means handled here, false means handled as a selection, and null leaves it to the field.
   bool? _press(PointerDownEvent e, double w) {
     if (e.buttons == kSecondaryButton) {
       // A right click on a value opens its menu, as in After Effects and Blender. It works for every number, with the mouse alone.
-      rightAt = e.pointer;
-      _menuAt = e.position;
-      _menu.show(
-        context: context,
-        contextMenuBuilder: (_) => TinyMenuAt(
-          at: _menuAt,
-          name: 'num',
-          of: widget.id,
-          items: _menuItems(),
-          hide: _menu.remove,
-          // A second right press on this field keeps the menu open, as on macOS.
-          keep: (e) =>
-              e.pointer == rightAt &&
-              e.buttons == kSecondaryButton &&
-              _inMe(e.position),
-        ),
-      );
+      // The same menu as every other right-click (context_menu.dart).
+      _menu.currentState?.show(e.localPosition, [
+        for (final (k, l, f) in _menuItems())
+          ContextMenuItem(l, f, id: 'num-$k:${widget.id}'),
+      ]);
       return true;
     }
     if (_marked &&
@@ -320,53 +298,56 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     // This follows Alight Motion's diamond beside each value and the stopwatch in After Effects and Premiere Pro.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
-    return NumberField(
-      // (the engine's name for the value, as code names it: a card's value is `v_` and that name here)
-      name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
-      value: () => _x.doc.get(widget.id),
-      text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
-      // A compact field's row names the unit once, before its cells.
-      unit: (v, w) => w < unitMinWidth || widget.compact
-          ? ''
-          : (_turns && v.abs() >= 360 && w >= 120
-                ? '° ${(v / 360).truncate()}x ${formatNumber(v.remainder(360), 0)}'
-                : _p.unit),
-      keys: true,
-      typeOnTap: false,
-      perPx: _p.perPx,
-      step: _p.dec > 0 ? _p.step * 10 : 1,
-      reach: (to, from) =>
-          from == null ? _p.typed(to) : _p.scrubbed(to, from, past: _going),
-      parse: _typed,
-      onGrab: () => _x.doc.beginGesture(),
-      onChange: _apply,
-      onBy: (d) => _x.doc.delta(widget.id, d),
-      onType: (v) => _apply(v, same: true),
-      onDrop: () => _x.doc.endGesture(),
-      onReset: _reset,
-      onPress: _press,
-      ownsPress: _inGlyph,
-      onKey: _key,
-      past: _past,
-      min: _p.min,
-      max: _p.max,
-      bipolar: _p.look == ParameterLook.bipolar,
-      caption: widget.compact ? null : widget.caption,
-      inline: widget.compact,
-      glyph: widget.glyph,
-      glyphTall: widget.glyphTall,
-      glyphBox: InspectorSkin.glyph,
-      keyDot: !_marked
-          ? null
-          : (ks == KeyframeState.at
-                ? InspectorSkin.keyDot
-                : (ks == KeyframeState.anim
-                      ? InspectorSkin.keyDot.withValues(alpha: .5)
-                      : Grey.g56)),
-      keyEmpty: ks == KeyframeState.off,
-      picked: x.doc.fields.isPicked(widget.id),
-      height: _height,
-      pad: _pad,
+    return ContextMenu(
+      key: _menu,
+      child: NumberField(
+        // (the engine's name for the value, as code names it: a card's value is `v_` and that name here)
+        name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
+        value: () => _x.doc.get(widget.id),
+        text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
+        // A compact field's row names the unit once, before its cells.
+        unit: (v, w) => w < unitMinWidth || widget.compact
+            ? ''
+            : (_turns && v.abs() >= 360 && w >= 120
+                  ? '° ${(v / 360).truncate()}x ${formatNumber(v.remainder(360), 0)}'
+                  : _p.unit),
+        keys: true,
+        typeOnTap: false,
+        perPx: _p.perPx,
+        step: _p.dec > 0 ? _p.step * 10 : 1,
+        reach: (to, from) =>
+            from == null ? _p.typed(to) : _p.scrubbed(to, from, past: _going),
+        parse: _typed,
+        onGrab: () => _x.doc.beginGesture(),
+        onChange: _apply,
+        onBy: (d) => _x.doc.delta(widget.id, d),
+        onType: (v) => _apply(v, same: true),
+        onDrop: () => _x.doc.endGesture(),
+        onReset: _reset,
+        onPress: _press,
+        ownsPress: _inGlyph,
+        onKey: _key,
+        past: _past,
+        min: _p.min,
+        max: _p.max,
+        bipolar: _p.look == ParameterLook.bipolar,
+        caption: widget.compact ? null : widget.caption,
+        inline: widget.compact,
+        glyph: widget.glyph,
+        glyphTall: widget.glyphTall,
+        glyphBox: InspectorSkin.glyph,
+        keyDot: !_marked
+            ? null
+            : (ks == KeyframeState.at
+                  ? InspectorSkin.keyDot
+                  : (ks == KeyframeState.anim
+                        ? InspectorSkin.keyDot.withValues(alpha: .5)
+                        : Grey.g56)),
+        keyEmpty: ks == KeyframeState.off,
+        picked: x.doc.fields.isPicked(widget.id),
+        height: _height,
+        pad: _pad,
+      ),
     );
   }
 }

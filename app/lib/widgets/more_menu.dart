@@ -1,10 +1,11 @@
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart'
+    show OverlayAlignment, OverlayPositionConfig, OverlaySide;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
-import 'package:motolii/widgets/dismiss_region.dart';
 import 'package:motolii/widgets/context_menu.dart'
-    show ContextMenuItem, ContextMenuList, MenuKeys;
+    show ContextMenuItem, MenuHost;
 
 /// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
 ///
@@ -29,83 +30,42 @@ class CardMore extends StatefulWidget {
 }
 
 class _CardMoreState extends State<CardMore> {
-  final _link = LayerLink();
-  final _portal = OverlayPortalController();
-  // Opened upward because there is no room below, as TinyMenuAt does.
-  bool _up = false;
-
-  void _open() {
-    final box = context.findRenderObject()! as RenderBox;
-    final foot = box.localToGlobal(box.size.bottomLeft(Offset.zero)).dy;
-    setState(
-      () => _up =
-          foot + widget.items.length * Shape.z(22) + 2 * Shape.s(3) + 2 >
-          MediaQuery.sizeOf(context).height,
-    );
-    _portal.toggle();
-  }
+  final _m = MenuController();
 
   @override
-  Widget build(BuildContext context) => CompositedTransformTarget(
-    link: _link,
-    child: OverlayPortal(
-      overlayLocation: OverlayChildLocation.rootOverlay,
-      controller: _portal,
-      overlayChildBuilder: (_) => Align(
-        alignment: Alignment.topLeft,
-        child: CompositedTransformFollower(
-          link: _link,
-          targetAnchor: widget.above
-              ? Alignment.topLeft
-              : _up
-              ? Alignment.topRight
-              : Alignment.bottomRight,
-          followerAnchor: widget.above
-              ? Alignment.bottomLeft
-              : _up
-              ? Alignment.bottomRight
-              : Alignment.topRight,
-          child: MenuKeys(
-            child: DismissRegion(
-              swallow: true,
-              shut: _portal.hide,
-              group: _link,
-              child: ContextMenuList(
-                items: [
-                  for (final (k, l, f) in widget.items)
-                    ContextMenuItem(l, f, id: 'card-$k:${widget.name}'),
-                ],
-                close: _portal.hide,
-                max: MediaQuery.sizeOf(context).height * .5,
-                width: Shape.z(150),
+  Widget build(BuildContext context) => MenuHost(
+    controller: _m,
+    useRootOverlay: true,
+    items: [
+      for (final (k, l, f) in widget.items)
+        ContextMenuItem(l, f, id: 'card-$k:${widget.name}'),
+    ],
+    width: Shape.z(150),
+    // Below the button with the right edges together, or above it for a button at the foot of the window; the library flips it where there is no room.
+    positioning: OverlayPositionConfig(
+      side: widget.above ? OverlaySide.top : OverlaySide.bottom,
+      alignment: widget.above ? OverlayAlignment.start : OverlayAlignment.end,
+    ),
+    child: Pressable(
+      key: ValueKey('card-more:${widget.name}'),
+      onTap: widget.items.isEmpty
+          ? null
+          : () => _m.isOpen ? _m.close() : _m.open(),
+      builder: (_, h) => Padding(
+        padding: EdgeInsets.only(right: Shape.s(6)),
+        child: Text(
+          widget.word,
+          style:
+              TextStyles.label(
+                h
+                    ? Grey.g95
+                    : widget.big
+                    ? Grey.g76
+                    : Grey.g56,
+              ).copyWith(
+                fontSize: widget.big ? TextStyles.px(20) : null,
+                fontWeight: widget.big ? FontWeight.w700 : null,
               ),
-            ),
-          ),
-        ),
-      ),
-      child: TapRegion(
-        // A press on the ⋮ itself is not an outside tap, so the ⋮ closes the list instead of it closing and reopening.
-        groupId: _link,
-        child: Pressable(
-          key: ValueKey('card-more:${widget.name}'),
-          onTap: widget.items.isEmpty ? null : _open,
-          builder: (_, h) => Padding(
-            padding: EdgeInsets.only(right: Shape.s(6)),
-            child: Text(
-              widget.word,
-              style:
-                  TextStyles.label(
-                    h
-                        ? Grey.g95
-                        : widget.big
-                        ? Grey.g76
-                        : Grey.g56,
-                  ).copyWith(
-                    fontSize: widget.big ? TextStyles.px(20) : null,
-                    fontWeight: widget.big ? FontWeight.w700 : null,
-                  ),
-            ),
-          ),
         ),
       ),
     ),
