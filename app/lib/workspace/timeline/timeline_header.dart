@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
+import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
@@ -73,12 +74,14 @@ class TimelineHeader extends StatelessWidget {
               _RoundButton(
                 TimelineGlyphs.toStart,
                 key: const ValueKey('ws-tl-start'),
+                tip: 'Go to Start',
                 onTap: () => onStep(-ws.frame),
               ),
               SizedBox(width: Shape.s(2)),
               _RoundButton(
                 TimelineGlyphs.stepBack,
                 key: const ValueKey('ws-tl-back'),
+                tip: 'Step Back',
                 onTap: () => onStep(-1),
               ),
               SizedBox(width: Shape.s(2)),
@@ -88,6 +91,8 @@ class TimelineHeader extends StatelessWidget {
                 builder: (_, _, _) => _RoundButton(
                   ws.playing ? TimelineGlyphs.pause : TimelineGlyphs.play,
                   key: const ValueKey('ws-tl-play'),
+                  tip: ws.playing ? 'Pause' : 'Play',
+                  keys: keysOf(context, 'play.fromStart'),
                   width: Shape.z(34),
                   on: ws.playing,
                   rest: WindowTokens.accent,
@@ -98,12 +103,14 @@ class TimelineHeader extends StatelessWidget {
               _RoundButton(
                 TimelineGlyphs.stepFwd,
                 key: const ValueKey('ws-tl-fwd'),
+                tip: 'Step Forward',
                 onTap: () => onStep(1),
               ),
               SizedBox(width: Shape.s(2)),
               _RoundButton(
                 TimelineGlyphs.loop,
                 key: const ValueKey('ws-tl-loop'),
+                tip: 'Loop',
                 on: loop,
                 onTap: onLoop,
               ),
@@ -120,6 +127,7 @@ class TimelineHeader extends StatelessWidget {
                       ? TimelineGlyphs.minus
                       : TimelineGlyphs.plus,
                   key: const ValueKey('ws-tl-mark'),
+                  tip: 'Add or Remove a Marker at the Playhead',
                   width: Shape.z(66),
                   label: 'Marker',
                   onTap: onMark,
@@ -196,6 +204,7 @@ class TimelineHeader extends StatelessWidget {
               _RoundButton(
                 TimelineGlyphs.minus,
                 key: const ValueKey('ws-tl-zoom-out'),
+                tip: 'Zoom Out',
                 size: Shape.z(22),
                 onTap: () => onZoom(zoom / 1.5),
               ),
@@ -221,6 +230,7 @@ class TimelineHeader extends StatelessWidget {
               _RoundButton(
                 TimelineGlyphs.plus,
                 key: const ValueKey('ws-tl-zoom-in'),
+                tip: 'Zoom In',
                 size: Shape.z(22),
                 onTap: () => onZoom(zoom * 1.5),
               ),
@@ -228,6 +238,7 @@ class TimelineHeader extends StatelessWidget {
               _RoundButton(
                 TimelineGlyphs.fit,
                 key: const ValueKey('ws-tl-fit'),
+                tip: 'Fit the Project',
                 size: Shape.z(22),
                 width: Shape.z(46),
                 label: 'Fit',
@@ -283,7 +294,10 @@ class _RoundButton extends StatelessWidget {
     this.width,
     this.rest,
     this.label,
+    this.tip = '',
+    this.keys = '',
   });
+  final String tip, keys;
   final TimelineGlyphs g;
   final VoidCallback? onTap;
   final bool on, lit;
@@ -315,6 +329,8 @@ class _RoundButton extends StatelessWidget {
       ],
     ),
     onTap: onTap,
+    tip: tip,
+    keys: keys,
     on: on,
     lit: lit,
     size: size,

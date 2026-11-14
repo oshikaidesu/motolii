@@ -222,6 +222,7 @@ class PaletteDetails extends StatelessWidget {
 Widget _colourDice(VoidCallback onTap) => IconPress(
   (k) => glyph(Shape.z(22), DicePainter(k, 5, filled: false).paint, k),
   key: const ValueKey('colour-dice'),
+  tip: 'Throw the Shapes Again',
   onTap: onTap,
   size: Shape.z(22),
   rest: WindowTokens.well,

@@ -342,6 +342,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                 builder: (b) => IconPress(
                   dockMark(AppGlyphs.more),
                   key: const ValueKey('ws-fx-more'),
+                  tip: 'More',
                   onTap: () => menuOn(
                     sel,
                     (b.findRenderObject() as RenderBox).localToGlobal(

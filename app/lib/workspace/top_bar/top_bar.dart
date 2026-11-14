@@ -1,4 +1,5 @@
 // The app's top bar: wordmark, project name, selected layer, size, light or dark mode, and the Render button.
+import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
 import 'package:motolii/workspace/top_bar/render_button.dart';
 
 import 'dart:io';
@@ -154,6 +155,8 @@ class _UndoRedo extends StatelessWidget {
             ),
           ),
           key: ValueKey(flip ? 'ws-redo' : 'ws-undo'),
+          tip: flip ? 'Redo' : 'Undo',
+          keys: keysOf(context, flip ? 'edit.redo' : 'edit.undo'),
           size: Shape.z(24),
           rest: const Color(0x00000000),
           ink: Grey.g63,
@@ -212,6 +215,7 @@ class _ShadeSwitch extends StatelessWidget {
   Widget build(BuildContext context) => IconPress(
     (c) => glyph(12, (cv, s) => _drawShade(cv, s, c), c),
     key: const ValueKey('ws-shade'),
+    tip: 'Light or Dark',
     onTap: flip,
     size: Shape.z(24),
     rest: const Color(0x00000000),

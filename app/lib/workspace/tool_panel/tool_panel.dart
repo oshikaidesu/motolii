@@ -75,6 +75,7 @@ class _ToolHeader extends StatelessWidget {
               rest: WindowTokens.well,
               ink: Grey.g76,
               size: 20,
+              tip: 'Tools',
               on: name == 'Tools',
               onTap: () =>
                   ws.openToolPanel(name == 'Tools' && pinned ? null : 'Tools'),

@@ -434,6 +434,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                       builder: (b) => IconPress(
                         dockMark(AppGlyphs.plus),
                         key: const ValueKey('ws-fx-deck-new'),
+                        tip: 'New Deck',
                         onTap: () => _plus(b),
                       ),
                     ),

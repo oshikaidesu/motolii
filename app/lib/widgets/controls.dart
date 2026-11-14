@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/tip.dart';
 
 /// The app's basic press target, built on naked_ui's [NakedButton].
 class Pressable extends StatelessWidget {
@@ -14,7 +15,12 @@ class Pressable extends StatelessWidget {
     required this.builder,
     this.cursor = SystemMouseCursors.click,
     this.onTap,
+    this.tip = '',
+    this.keys = '',
   });
+
+  /// The tooltip: what it does, and the key bound to it. A button with only a mark on it gives one.
+  final String tip, keys;
 
   /// Builds the child. The bool is true while the pointer hovers, or while it has the keyboard focus (the arrow keys in a menu).
   final Widget Function(BuildContext, bool) builder;
@@ -23,11 +29,16 @@ class Pressable extends StatelessWidget {
   /// Called on a press.
   final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => NakedButton(
-    onPressed: onTap,
-    mouseCursor: cursor,
-    enableFeedback: false,
-    builder: (context, st, _) => builder(context, st.isHovered || st.isFocused),
+  Widget build(BuildContext context) => Tip(
+    tip,
+    keys: keys,
+    child: NakedButton(
+      onPressed: onTap,
+      mouseCursor: cursor,
+      enableFeedback: false,
+      builder: (context, st, _) =>
+          builder(context, st.isHovered || st.isFocused),
+    ),
   );
 }
 
@@ -47,7 +58,12 @@ class IconPress extends StatelessWidget {
     this.width,
     this.rest,
     this.ink,
+    this.tip = '',
+    this.keys = '',
   });
+
+  /// The tooltip: what it does, and the key bound to it (see [Pressable]).
+  final String tip, keys;
 
   /// Builds the glyph in the ink for the current state: resting, hovered or on.
   final Widget Function(Color ink) glyph;
@@ -66,6 +82,8 @@ class IconPress extends StatelessWidget {
     return Pressable(
       // An empty callback keeps the hover state working when there is no [onTap].
       onTap: onTap ?? () {},
+      tip: tip,
+      keys: keys,
       cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       builder: (context, h) => AnimatedContainer(
         duration: tile ? Duration.zero : Motion.dur,

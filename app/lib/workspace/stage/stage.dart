@@ -4,6 +4,7 @@ import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
 import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -376,6 +377,11 @@ class _ToolColumn extends StatelessWidget {
                   (ink) =>
                       Glyph(stageTools[i].$1, size: Shape.z(16), color: ink),
                   key: ValueKey('ws-tool-$i'),
+                  tip: stageTools[i].$2,
+                  keys: keysOf(
+                    context,
+                    'tool.${stageTools[i].$2.toLowerCase()}',
+                  ),
                   size: Shape.z(28),
                   rest: WindowTokens.body,
                   ink: Grey.g63,

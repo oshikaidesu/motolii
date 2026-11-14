@@ -213,6 +213,7 @@ class EaseStep extends StatelessWidget {
             rest: WindowTokens.well,
             ink: Grey.g76,
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
+            tip: back ? 'Previous Easing' : 'Next Easing',
             size: Shape.z(18),
             onTap: () => ws.pickKey((layer: s!.layer.id, frame: to)),
           );

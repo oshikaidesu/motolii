@@ -301,6 +301,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
       IconPress(
         dockMark(AppGlyphs.more),
         key: ValueKey('ws-map-$_name-forces'),
+        tip: 'Forces',
         on: _forces,
         onTap: () => setState(() => _forces = !_forces),
       ),
@@ -404,6 +405,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
       child: IconPress(
         dockMark(AppGlyphs.chevron),
         key: ValueKey('ws-map-$_name-$key'),
+        tip: by < 0 ? 'Previous' : 'Next',
         onTap: () => _step(list, by),
       ),
     );
@@ -434,6 +436,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
           IconPress(
             dockMark(AppGlyphs.reload),
             key: ValueKey('ws-map-$_name-refresh'),
+            tip: 'Reload',
             on: i > 0,
             onTap: () => setState(() => _from = widget.picked),
           ),
