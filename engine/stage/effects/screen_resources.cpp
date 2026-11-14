@@ -179,10 +179,10 @@ void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
       // seconds (clip_length: the layer's, or the document's). Block Noise's
       // blocks are a share of `layer`.
       if (f.name == "duration")
-        v[0] = (float)numbers(fx.file, "clip_length", 0);
+        v[0] = (float)numbers(fx.numbers_key(), "clip_length", 0);
       else
-        v[0] = (float)std::max(1.0, numbers(fx.file, "layerRect_z", w)),
-        v[1] = (float)std::max(1.0, numbers(fx.file, "layerRect_w", h));
+        v[0] = (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_z", w)),
+        v[1] = (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_w", h));
     } else if ((f.name == "width" || f.name == "height") &&
                std::none_of(fx.fields.begin(), fx.fields.end(),
                             [](const ScreenFx::Field& g) {
@@ -220,7 +220,7 @@ void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
         double usual = 0;
         for (const ScriptParameter& one : fx.parameters)
           if (one.name == k) usual = one.usual;
-        v[i] = (float)numbers(fx.file, k, usual);
+        v[i] = (float)numbers(fx.numbers_key(), k, usual);
       }
     for (uint32_t i = 0; i < f.floats; ++i) {
       if (f.whole) {

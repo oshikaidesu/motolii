@@ -251,6 +251,17 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         // The shape the letters are drawn from: trim_at trims it as it trims
         // a shape's, and with no fill only the letters' edge shows.
         d->shape = shape, d->letterEdge = nullptr;
+        // Save the letter outlines so bend_at can apply path operators
+        // (round, bloat, zigzag, offset) to text, the same way shapes use
+        // d->plain.
+        {
+          const tvg::PathCommand* cmds = nullptr;
+          const tvg::Point* pts = nullptr;
+          uint32_t nc = 0, np = 0;
+          shape->path(&cmds, &nc, &pts, &np);
+          d->plain.assign(cmds, cmds + nc);
+          d->plainAt.assign(pts, pts + np);
+        }
         shape->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z),
                     fx.hollow ? 0 : 255);
         const float stroke = edge.w * tall;
@@ -267,6 +278,9 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
         d->em = sized * kPixelsPerPoint / (float)*h;
+        d->plainHigh = (float)*h;
+        d->plainSide = (float)std::min(*w, *h);
+        d->fine = -(float)*h / 64.f;
         const float base = lined[0][0] + dy;
         d->line = {(base - ascent) / (float)*h, (base + descent) / (float)*h};
         const auto colored = t->get<8>(motolii_text_colors);

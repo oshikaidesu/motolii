@@ -111,9 +111,12 @@ const DocShown* doc_shown_of(Doc& d, const char* name);
 // effects can lie on one stage and two can have a parameter of the same name.
 // The gamma of Posterize and the gamma of Boxinator are not one value. A
 // property name is one word, so an ISF file named "Frosted Glass" gives
-// Frosted_Glass.
+// Frosted_Glass. When `instance_id` is non-empty (a 6-hex-char instance ID),
+// the returned name is prefixed "id:js_Stem_param" so each instance stores its
+// parameters independently.
 std::string doc_screen_parameter(const std::string& file,
-                                 const std::string& parameter);
+                                 const std::string& parameter,
+                                 const std::string& instance_id = "");
 // Returns the script loaded from `file`, loading it again when the file has
 // changed. Returns null when `file` is empty, "none" or a MIDI file, or when it
 // cannot be read. When `runs` is false the code is not compiled. The file is

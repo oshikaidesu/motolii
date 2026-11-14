@@ -144,6 +144,9 @@ std::string doc_has(Doc& d, int layer) {
 }
 
 std::string doc_fx_title(const std::string& name) {
+  // Strip instance-ID prefix before any path operations.
+  const std::string path = fx_entry_path(name);
+  if (path != name) return doc_fx_title(path);
   if (const std::string source = fx_source(name); source != name) {
     // An effect duplicated from another: the title of its source plus its
     // number, such as "Glow 2". It has its own card.
@@ -322,13 +325,16 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
   // One card per effect, in effect order. Effects that are turned off are
   // included because their values are kept.
   if (layer != 0)
-    for (const std::string& w : doc_fx_list(d, layer, true)) {
+    for (const std::string& entry : doc_fx_list(d, layer, true)) {
       // A file effect, with or without parameters. Its card is where the user
       // reaches its visibility toggle, its bin and its code.
+      const std::string id = fx_entry_id(entry);
+      const std::string w = fx_entry_path(entry);
       std::string card;
       if (const DocScript* sc = doc_script_of(d, w))
         for (const DocValue& one : sc->values)
-          card += (card.empty() ? "" : " ") + std::string(one.name);
+          card += (card.empty() ? "" : " ") +
+                  (id.empty() ? std::string(one.name) : id + ":" + one.name);
       if (!copies && doc_expression(d, w))
         card = "copies" + std::string(card.empty() ? "" : " ") + card + copied,
         copies = true;

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <random>
 #include <sstream>
 #include <system_error>
 
@@ -96,7 +97,7 @@ bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list) {
   // styles.cpp, both in engine/third_party/AbsentMotion/app/src/main/cpp/.
   if (doc_word(d, layer, "kind") == "camera")
     for (const std::string& w : list)
-      if (std::filesystem::path(w).extension() != ".am")
+      if (std::filesystem::path(fx_entry_path(w)).extension() != ".am")
         return d.error =
                    "a camera takes motions only (it has no picture of its "
                    "own): " +
@@ -110,25 +111,34 @@ bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list) {
                         layer));
 }
 
+namespace {
+// Generates a 6-hex-char instance ID that is unique in `list`.
+std::string make_instance_id(const std::vector<std::string>& list) {
+  std::mt19937 rng(std::random_device{}());
+  std::uniform_int_distribution<unsigned> dist(0, 0xFFFFFF);
+  char buf[7];
+  for (;;) {
+    std::snprintf(buf, sizeof(buf), "%06x", dist(rng));
+    const std::string id(buf, 6);
+    if (std::none_of(list.begin(), list.end(), [&](const std::string& e) {
+          return fx_entry_id(e) == id;
+        }))
+      return id;
+  }
+}
+}  // namespace
+
 bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
   std::vector<std::string> list = doc_fx_list(d, layer, true);
-  const auto at = std::find(list.begin(), list.end(), file);
-  const bool out = at != list.end();
-  if (out)
-    list.erase(at);
-  else
-    list.push_back(file);
+  // Always add a new instance with a unique ID; never toggle. The same effect
+  // may appear on a layer more than once with independent parameters, as in
+  // After Effects.
+  const std::string id = make_instance_id(list);
+  const std::string entry = id + ":" + file;
+  list.push_back(entry);
   doc_act(d);
   if (!doc_fx_say(d, layer, list)) d.act.ok = false;
-  if (const DocScript* sc = out ? doc_script_of(d, file) : nullptr)
-    for (const std::string& n : sc->names)
-      if (!doc_change(d,
-                      sqlite3_mprintf(
-                          "delete from keyframe where layer = %d and name = %Q",
-                          layer, n.c_str())))
-        d.act.ok = false;
-  // A transition put on at the layer's own start comes in instead of going out:
-  // its progress runs from 1 to 0, and what is under the layer gives way to it.
+  // A transition put on at the layer's own start comes in instead of going out.
   // Premiere Pro does the same: a transition on the head edge of a clip brings
   // the clip in, and one on its tail edge takes it out. "At the start" means
   // within half a frame at the stage's 60 frames per second; see RATE in
@@ -136,17 +146,18 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
   const bool in =
       !std::isnan(now) &&
       std::fabs(now - doc_number(d, layer, "start", 0, 0)) < 0.5 / 60.0;
-  if (const DocScript* sc =
-          !out && !std::isnan(now) ? doc_script_of(d, file) : nullptr)
-    if (std::any_of(
-            sc->parameters.begin(), sc->parameters.end(),
-            [](const ScriptParameter& k) { return k.name == "endImage"; }))
-      for (size_t i = 0; i < sc->parameters.size(); ++i)
-        if (sc->parameters[i].name == "progress" &&
-            !(doc_key(d, layer, sc->names[i].c_str(), now, in ? 1.0 : 0.0) &&
-              doc_key(d, layer, sc->names[i].c_str(), now + 1.0,
-                      in ? 0.0 : 1.0)))
-          d.act.ok = false;
+  if (!std::isnan(now))
+    if (const DocScript* sc = doc_script_of(d, file))
+      if (std::any_of(
+              sc->parameters.begin(), sc->parameters.end(),
+              [](const ScriptParameter& k) { return k.name == "endImage"; }))
+        for (size_t i = 0; i < sc->parameters.size(); ++i)
+          if (sc->parameters[i].name == "progress") {
+            const std::string key = id + ":" + sc->names[i];
+            if (!(doc_key(d, layer, key.c_str(), now, in ? 1.0 : 0.0) &&
+                  doc_key(d, layer, key.c_str(), now + 1.0, in ? 0.0 : 1.0)))
+              d.act.ok = false;
+          }
   return doc_acted(d);
 }
 
@@ -253,15 +264,31 @@ bool doc_fx_eye(Doc& d, int layer, const char* title) {
 }
 
 bool doc_fx_out(Doc& d, int layer, const char* name) {
-  const std::vector<std::string> list = doc_fx_list(d, layer, true);
-  auto at = std::find(list.begin(), list.end(), name);
-  if (at == list.end())
-    at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
-      return doc_fx_title(w) == name;
-    });
+  std::vector<std::string> list = doc_fx_list(d, layer, true);
+  // Find the first entry whose title matches; titles are compared without the
+  // instance-ID prefix, so "Blur" removes the first blur regardless of its ID.
+  const auto at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
+    return doc_fx_title(w) == name;
+  });
   if (at == list.end())
     return d.error = std::string(name) + " is not among its effects", false;
-  return doc_fx_file(d, layer, at->c_str());
+  const std::string removed = *at;
+  list.erase(at);
+  doc_act(d);
+  if (!doc_fx_say(d, layer, list)) d.act.ok = false;
+  // Clean up the instance-keyed parameters so the same ID can be reused later.
+  const std::string id = fx_entry_id(removed);
+  const std::string file = fx_entry_path(removed);
+  if (const DocScript* sc = doc_script_of(d, file))
+    for (const std::string& n : sc->names) {
+      const std::string key = id.empty() ? n : id + ":" + n;
+      if (!doc_change(d,
+                      sqlite3_mprintf(
+                          "delete from keyframe where layer = %d and name = %Q",
+                          layer, key.c_str())))
+        d.act.ok = false;
+    }
+  return doc_acted(d);
 }
 
 }  // namespace motolii

@@ -215,7 +215,7 @@ inline const DocValue doc_values[] = {
     // star's points, a star's inner points, and its rounded corners.
     {"points", "shape", 3, 360, false, nullptr},
     {"inner", "shape", 0.01, 1, false, nullptr},
-    {"round", "shape image", 0, 0.5, true, nullptr},
+    {"round", "shape text image", 0, 0.5, true, nullptr},
     {"crop_left", "image", 0, 0.95, false, nullptr},
     {"crop_top", "image", 0, 0.95, false, nullptr},
     {"crop_right", "image", 0, 0.95, false, nullptr},
@@ -394,11 +394,11 @@ inline const DocValue doc_values[] = {
     // number of ridges a side, and zigzag_smooth chooses smooth or sharp.
     // offset offsets the path,
     // out or in, as a share of its height.
-    {"bloat", "shape", -1, 1, true, nullptr},
-    {"zigzag", "shape", -10, 10, true, nullptr},
-    {"zigzag_ridges", "shape", 0, 100, true, nullptr},
-    {"zigzag_smooth", "shape", 0, 1, true, nullptr},
-    {"offset", "shape", -10, 10, true, nullptr},
+    {"bloat", "shape text", -1, 1, true, nullptr},
+    {"zigzag", "shape text", -10, 10, true, nullptr},
+    {"zigzag_ridges", "shape text", 0, 100, true, nullptr},
+    {"zigzag_smooth", "shape text", 0, 1, true, nullptr},
+    {"offset", "shape text", -10, 10, true, nullptr},
     // copies: how many copies there are. Each copy is the one before moved,
     // turned about its anchor
     // and scaled by the same amount, like After Effects' Repeater. Where each

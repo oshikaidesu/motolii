@@ -19,6 +19,19 @@
 
 namespace motolii {
 
+std::string fx_entry_id(const std::string& entry) {
+  if (entry.size() <= 7 || entry[6] != ':') return "";
+  for (int i = 0; i < 6; ++i) {
+    const char c = entry[i];
+    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";
+  }
+  return entry.substr(0, 6);
+}
+
+std::string fx_entry_path(const std::string& entry) {
+  return fx_entry_id(entry).empty() ? entry : entry.substr(7);
+}
+
 std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
   std::vector<std::string> said, all;
   const std::string hidden =
@@ -40,6 +53,14 @@ std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
       all.push_back(e->second);
   return all;
 }
+
+std::vector<std::pair<std::string, std::string>> doc_fx_instances(
+    Doc& d, int layer, bool off) {
+  std::vector<std::pair<std::string, std::string>> result;
+  for (const std::string& w : doc_fx_list(d, layer, off))
+    result.emplace_back(fx_entry_id(w), fx_entry_path(w));
+  return result;
+}
 bool doc_fx_files(const std::vector<std::string>& list) {
   // These file types are not effect files. A splat effect belongs to the point
   // cloud's own look. The motion of AbsentMotion moves the layer; see
@@ -50,16 +71,29 @@ bool doc_fx_files(const std::vector<std::string>& list) {
     return ext != ".mjs" && ext != ".am" && ext != ".json";
   });
 }
-std::vector<std::string> doc_fx_steps(Doc& d, int layer) {
-  // Expressions are not drawn; see expressions.h.
-  std::vector<std::string> steps = doc_fx_drawn(d, doc_fx_list(d, layer));
-  for (std::string& w : steps)
-    if (std::filesystem::path(w).extension() == ".am")
-      if (const DocScript* sc = doc_script_of(d, w);
+std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
+  // Like doc_fx_steps but preserves instance-ID prefixes in each entry.
+  std::vector<std::string> result;
+  for (const std::string& w : doc_fx_list(d, layer)) {
+    const std::string id = fx_entry_id(w);
+    std::string path = fx_entry_path(w);
+    if (doc_expression(d, path)) continue;
+    if (std::filesystem::path(path).extension() == ".am")
+      if (const DocScript* sc = doc_script_of(d, path);
           sc && (sc->absent == "motionblur" || sc->absent == "shutterblur"))
-        w = (std::filesystem::path(w).parent_path() / "am_directionalblur.wgsl")
+        path =
+            (std::filesystem::path(path).parent_path() / "am_directionalblur.wgsl")
                 .string();
-  return steps;
+    result.push_back(id.empty() ? path : id + ":" + path);
+  }
+  return result;
+}
+
+std::vector<std::string> doc_fx_steps(Doc& d, int layer) {
+  std::vector<std::string> result;
+  for (const std::string& w : doc_fx_steps_with_ids(d, layer))
+    result.push_back(fx_entry_path(w));
+  return result;
 }
 std::string doc_fx_join(const std::vector<std::string>& list) {
   std::string all;

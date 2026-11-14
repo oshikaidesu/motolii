@@ -47,7 +47,13 @@ using ScreenTextures = std::function<filament::Texture*(
 // uniform layout, GPU objects and per-frame state. `trouble` holds the text of
 // the last error, empty when none.
 struct ScreenFx {
-  std::string file, trouble;
+  std::string file, instance_id, trouble;
+  // Returns the key passed to the ScreenNumbers callback. When this instance
+  // has an ID ("a1b2c3"), the key is "a1b2c3:file" so the callback can look up
+  // parameters keyed to this specific instance.
+  std::string numbers_key() const {
+    return instance_id.empty() ? file : instance_id + ":" + file;
+  }
   std::vector<ScriptParameter> parameters;
   // A member of the parameter struct: its name, byte offset, number of floats,
   // and whether it is an integer type (i32 or u32) and so is stored as an

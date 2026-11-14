@@ -40,7 +40,8 @@ const DocShown* doc_shown_of(Doc& d, const char* name) {
 }
 
 std::string doc_screen_parameter(const std::string& file,
-                                 const std::string& parameter) {
+                                 const std::string& parameter,
+                                 const std::string& instance_id) {
   std::string stem = std::filesystem::path(file).stem().string();
   // Replace byte by byte, ASCII letters and digits are kept. std::isalnum
   // depends on the locale and takes the byte of a UTF-8 character for a letter,
@@ -50,7 +51,8 @@ std::string doc_screen_parameter(const std::string& file,
     if (!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'Z') &&
         !(c >= 'a' && c <= 'z') && c != '_')
       c = '_';
-  return "js_" + stem + "_" + parameter;
+  const std::string base = "js_" + stem + "_" + parameter;
+  return instance_id.empty() ? base : instance_id + ":" + base;
 }
 
 DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {

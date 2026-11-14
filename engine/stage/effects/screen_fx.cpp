@@ -274,11 +274,25 @@ bool screen_moved(const ScreenStack& st) {
   return false;
 }
 
-ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& file) {
-  ScreenFx*& built = st.built[file];
+ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& entry) {
+  // The entry may be "id:file" or just "file". Compile using the actual path;
+  // cache by the full entry so two instances of the same file are independent.
+  // Parse inline to avoid a circular dependency on motolii_document.
+  const auto parse_id = [](const std::string& e) -> std::string {
+    if (e.size() <= 7 || e[6] != ':') return "";
+    for (int i = 0; i < 6; ++i) {
+      const char c = e[i];
+      if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";
+    }
+    return e.substr(0, 6);
+  };
+  const std::string id = parse_id(entry);
+  const std::string file = id.empty() ? entry : entry.substr(7);
+  ScreenFx*& built = st.built[entry];
   if (built) return built;
   built = new ScreenFx;
   built->file = file;
+  built->instance_id = id;
   std::string code;
   // Keep the effect marked as not built (interop null), so that it is not read
   // again each time.

@@ -36,7 +36,7 @@ bool doc_own_fx(Doc& d, int layer) {
   return doc_fx_files(doc_fx_steps(d, layer));
 }
 bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
-  thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, layer)));
+  thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps_with_ids(d, layer)));
   if (e.st.readsBehind || e.st.wide || !e.st.aviutl.empty() ||
       doc_holds_fx(d, layer))
     return false;
@@ -50,7 +50,7 @@ bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
          deep == 0.f;
 }
 bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
-  thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, layer)));
+  thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps_with_ids(d, layer)));
   for (const std::string& w : doc_fx_list(d, layer))
     if (solid_is(w) || points_is(w)) return false;
   const auto shown = d.on_stage.shown.find(layer);
@@ -82,7 +82,7 @@ void doc_layers_fx(Doc& d) {
   // before the stage's own view. See engine/stage/layer_effects/layer_fx.h.
   for (const auto& [deep, layer] : order) {
     ThingFx& e = d.effects.layerFx.at(layer);
-    thing_effects(s, e.st, doc_fx_join(doc_fx_steps(d, layer)));
+    thing_effects(s, e.st, doc_fx_join(doc_fx_steps_with_ids(d, layer)));
     e.solidFile.clear();
     // If the fx names a solid's shape, the layer's image is laid on that solid.
     // If several are named, the last one is used.
@@ -238,7 +238,13 @@ void doc_layers_fx(Doc& d) {
         return name == "blurLength" ? ppp * std::hypot(dx, dy)
                                     : std::atan2(-dy, -dx) * 180.0 / M_PI;
       }
-      return doc_number(d, layer, doc_screen_parameter(file, name).c_str(),
+      // `file` is the numbers_key() — either "id:path" or just "path".
+      // Extract the instance ID so the parameter is looked up under the
+      // instance-keyed name ("a1b2c3:js_blur_intensity") when present.
+      return doc_number(d, layer,
+                        doc_screen_parameter(fx_entry_path(file), name,
+                                             fx_entry_id(file))
+                            .c_str(),
                         d.stage->now, usual);
     };
     // Before the frame: works out where the layer is seen, what its images are,
