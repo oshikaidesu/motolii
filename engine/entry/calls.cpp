@@ -1,6 +1,11 @@
 #include "entry/calls.h"
 
 #include <regex>
+#include <thorvg.h>
+
+#include <algorithm>
+#include <cstdio>
+#include <string>
 
 #include "document/cards.h"
 #include "document/edit/arrange.h"
@@ -8,10 +13,13 @@
 #include "document/edit/layer_edit.h"
 #include "document/edit/relate.h"
 #include "document/evaluate/shown.h"
+#include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "entry/on_render_thread.h"
 #include "media/midi_notes.h"
+#include "stage/canvas/canvas_renderables.h"
+#include "stage/canvas/path_operations.h"
 
 using filament::math::mat4;
 namespace math = filament::math;
@@ -448,5 +456,82 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
     char line[64];
     std::snprintf(line, sizeof line, "%.17g %.17g", times, from);
     return (said_word() = line).c_str();
+  });
+}
+// Returns the SVG path of a shape layer's outline at the current time, with
+// all path operators applied. Coordinates are centred at the origin, 1 unit
+// high (-0.5..+0.5 in y, -0.5*wide..+0.5*wide in x). "" if not a shape.
+const char* motolii_shape_svg(Motolii* m, int layer) {
+  return by_look(m, [=] {
+    Doc& d = *m->d;
+    const std::string form = doc_word(d, layer, "shape");
+    if (doc_word(d, layer, "kind") != "shape" || form.empty() ||
+        form == "path" || form == "null" || form == "solid")
+      return (said_word() = "").c_str();
+    const bool line = form == "line", wave = form == "wave";
+    const double high = line ? 0.04 : wave ? 0.3 : 1.0,
+                 wide = doc_number(d, layer, "wide", 0,
+                                   line ? 25 : wave ? 10 : 1);
+    const int h = 1024, w = std::max(2, (int)std::lround(1024.0 * wide));
+    Canvas2D made;
+    tvg::Shape* shape = tvg::Shape::gen();
+    flat_path(&made, shape, form.c_str(), w, h, 0.f,
+              (int)doc_number(d, layer, "points", 0,
+                              form == "star"       ? 5
+                              : form == "rect"     ? 4
+                              : form == "arc"      ? 270
+                              : form == "squircle" ? 4
+                              : form == "cog"      ? 12
+                              : form == "spiral"   ? 3
+                              : wave               ? 4
+                                                   : 6),
+              (float)doc_number(d, layer, "inner", 0,
+                                form == "cog"       ? 0.2
+                                : form == "arc"     ? 0.3
+                                : form == "spiral"  ? 0.1
+                                : form == "chamfer" ? 0.3
+                                : form == "rect"    ? 0.0
+                                                    : 0.5),
+              0.f, 0.f);
+    const double at = d.stage->now;
+    const auto num = [&](const char* name, double usual) {
+      return (float)doc_number(d, layer, name, at, usual);
+    };
+    tvg_bend(shape, made.plain.data(), (uint32_t)made.plain.size(),
+             made.plainAt.data(), (uint32_t)made.plainAt.size(),
+             line ? 0.f : std::clamp(num("round", 0), 0.f, 0.5f) * made.plainSide,
+             100.f * std::clamp(num("bloat", 0), -1.f, 1.f),
+             num("zigzag", 0) * (float)h,
+             (int)std::clamp(num("zigzag_ridges", 5), 0.f, 100.f),
+             num("zigzag_smooth", 0) > 0.5f, num("offset", 0) * (float)h, 0.f);
+    const tvg::PathCommand* cmds;
+    const tvg::Point* pts;
+    uint32_t cmdsCnt = 0, ptsCnt = 0;
+    shape->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
+    std::string path;
+    char one[96];
+    const auto pos = [&](const tvg::Point& p) {
+      std::snprintf(one, sizeof one, "%.5f %.5f", (p.x - 0.5 * w) / h,
+                    (p.y - 0.5 * h) / h);
+      return std::string(one);
+    };
+    for (uint32_t c = 0, p = 0; c < cmdsCnt; ++c) switch (cmds[c]) {
+        case tvg::PathCommand::MoveTo:
+          path += (path.empty() ? "M" : " M") + pos(pts[p++]);
+          break;
+        case tvg::PathCommand::LineTo:
+          path += " L" + pos(pts[p++]);
+          break;
+        case tvg::PathCommand::CubicTo:
+          path += " C" + pos(pts[p]) + " " + pos(pts[p + 1]) + " " +
+                  pos(pts[p + 2]);
+          p += 3;
+          break;
+        case tvg::PathCommand::Close:
+          path += " Z";
+          break;
+      }
+    tvg::Paint::rel(shape);
+    return (said_word() = path).c_str();
   });
 }

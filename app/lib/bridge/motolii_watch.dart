@@ -7,6 +7,12 @@ import 'package:motolii/bridge/motolii.dart';
 extension MotoliiWatch on Motolii {
   String get error => bindings.motolii_error(handle).toDartString();
 
+  /// The SVG path of a shape layer's outline at the current time, with all path
+  /// operators applied. Coordinates are centred at the origin, 1 unit high.
+  /// Empty when the layer is not a drawable shape.
+  String shapeSvg(int layer) =>
+      bindings.motolii_shape_svg(handle, layer).toDartString();
+
   /// The project's frame rate in frames per second.
   int get rate => bindings.motolii_rate(handle);
 

@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/host_cards.dart';
@@ -368,6 +369,9 @@ class _InspectorPanelState extends State<InspectorPane> {
                       (_, _) => ws.reread(),
                     )
                   : null,
+        shapeSvg: int.tryParse(l?.id ?? '') == null
+            ? null
+            : () => m.shapeSvg(int.parse(l!.id)),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(

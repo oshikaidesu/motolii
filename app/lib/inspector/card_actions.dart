@@ -17,6 +17,7 @@ class CardActions {
     this.onCardDuplicate,
     this.onCardCopy,
     this.onCardPaste,
+    this.shapeSvg,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -58,4 +59,8 @@ class CardActions {
 
   /// Pastes the copied card values (Paste on the card head).
   final VoidCallback? onCardPaste;
+
+  /// The SVG path of the selected shape layer's outline at the current time, with all path
+  /// operators applied. Empty when the layer is not a drawable shape.
+  final String Function()? shapeSvg;
 }

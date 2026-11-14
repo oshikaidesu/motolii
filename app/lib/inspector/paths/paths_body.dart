@@ -161,6 +161,7 @@ class _PathsBodyState extends State<PathsBody> {
         final points = (doc.get('v_points') ?? 4).round();
         final inner = doc.get('v_inner') ?? 0;
         final shape = doc.strings['shape'] ?? '';
+        final svgPath = doc.actions.shapeSvg?.call() ?? '';
         return Padding(
           padding: EdgeInsets.only(bottom: Shape.s(6)),
           child: Column(
@@ -172,6 +173,7 @@ class _PathsBodyState extends State<PathsBody> {
                 points: points,
                 inner: inner,
                 shape: shape,
+                svgPath: svgPath,
               ),
               SizedBox(height: Shape.s(8)),
               if (_stack.isNotEmpty) _buildStack(doc, params),
@@ -414,11 +416,13 @@ class _Preview extends StatelessWidget {
     required this.points,
     required this.inner,
     required this.shape,
+    required this.svgPath,
   });
   final double round;
   final int points;
   final double inner;
   final String shape;
+  final String svgPath;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
@@ -429,6 +433,7 @@ class _Preview extends StatelessWidget {
       points: points,
       inner: inner,
       shape: shape,
+      svgPath: svgPath,
     ),
   );
 }
@@ -439,23 +444,53 @@ class _PreviewPaint extends CustomPainter {
     required this.points,
     required this.inner,
     required this.shape,
+    required this.svgPath,
   });
   final double round;
   final int points;
   final double inner;
   final String shape;
+  final String svgPath;
 
-  @override
-  void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
-    final cx = s.width / 2, cy = s.height / 2;
-    final r = math.min(s.width, s.height) * 0.32;
+  // Parses the engine's M/L/C/Z SVG (coordinates centred at origin, 1 unit high)
+  // into a Flutter Path scaled to fit within [r] centred at ([cx], [cy]).
+  Path _parseSvg(double cx, double cy, double r) {
     final path = Path();
-    // Mirror engine logic (canvas_shape.cpp): rect with points==4 and inner==0
-    // falls through to appendRect; anything else is polygon/star.
+    final tokens = svgPath.split(' ');
+    final scale = r * 2; // y ∈ -0.5..+0.5 → height = 1 → scale = 2r
+    int i = 0;
+    double px(int idx) => double.parse(tokens[idx]) * scale + cx;
+    double py(int idx) => double.parse(tokens[idx]) * scale + cy;
+    while (i < tokens.length) {
+      switch (tokens[i]) {
+        case 'M':
+          path.moveTo(px(i + 1), py(i + 2));
+          i += 3;
+        case 'L':
+          path.lineTo(px(i + 1), py(i + 2));
+          i += 3;
+        case 'C':
+          path.cubicTo(
+            px(i + 1),
+            py(i + 2),
+            px(i + 3),
+            py(i + 4),
+            px(i + 5),
+            py(i + 6),
+          );
+          i += 7;
+        case 'Z':
+          path.close();
+          i += 1;
+        default:
+          i += 1;
+      }
+    }
+    return path;
+  }
+
+  Path _fallbackPath(double cx, double cy, double r) {
+    final path = Path();
     final isRect = shape == 'rect' && points == 4 && inner <= 0;
     if (points == 0 || points >= 50) {
       path.addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
@@ -476,20 +511,31 @@ class _PreviewPaint extends CustomPainter {
         final x = cx + r * math.cos(a), y = cy + r * math.sin(a);
         if (i == 0) {
           path.moveTo(x, y);
+        } else if (rr > 0) {
+          final prev = start + step * (i - 1);
+          final mx = cx + r * math.cos(prev + step / 2) * 0.95;
+          final my = cy + r * math.sin(prev + step / 2) * 0.95;
+          path.quadraticBezierTo(mx, my, x, y);
         } else {
-          if (rr > 0) {
-            final prev = start + step * (i - 1);
-            final mx = cx + r * math.cos(prev + step / 2) * 0.95;
-            final my = cy + r * math.sin(prev + step / 2) * 0.95;
-            path.quadraticBezierTo(mx, my, x, y);
-          } else {
-            path.lineTo(x, y);
-          }
+          path.lineTo(x, y);
         }
       }
       path.close();
     }
+    return path;
+  }
 
+  @override
+  void paint(Canvas c, Size s) {
+    c.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
+      Paint()..color = Grey.g07,
+    );
+    final cx = s.width / 2, cy = s.height / 2;
+    final r = math.min(s.width, s.height) * 0.32;
+    final path = svgPath.isNotEmpty
+        ? _parseSvg(cx, cy, r)
+        : _fallbackPath(cx, cy, r);
     c.drawPath(
       path,
       Paint()
@@ -510,5 +556,6 @@ class _PreviewPaint extends CustomPainter {
       o.round != round ||
       o.points != points ||
       o.inner != inner ||
-      o.shape != shape;
+      o.shape != shape ||
+      o.svgPath != svgPath;
 }

@@ -1981,6 +1981,24 @@ class MotoliiBindings {
         )
       >();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_shape_svg(
+    ffi.Pointer<Motolii> m,
+    int layer,
+  ) {
+    return _motolii_shape_svg(m, layer);
+  }
+
+  late final _motolii_shape_svgPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)
+        >
+      >('motolii_shape_svg');
+  late final _motolii_shape_svg = _motolii_shape_svgPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_words(
     ffi.Pointer<Motolii> m,
     int layer,

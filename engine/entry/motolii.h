@@ -218,6 +218,11 @@ int motolii_shows(Motolii* m, int layer, const char* name, double at,
    a property, and none if the property has none. */
 int motolii_layers(Motolii* m, int* layers, int room);
 const char* motolii_word(Motolii* m, int layer, const char* name);
+/* The SVG path of a shape layer's outline at the current time, with all path
+   operators (round, bloat, zigzag, offset) applied. Coordinates are centred at
+   the origin, 1 unit high (-0.5..+0.5 in y, -0.5*wide..+0.5*wide in x). Returns
+   "" when the layer is not a drawable shape. Valid until the next call. */
+const char* motolii_shape_svg(Motolii* m, int layer);
 double motolii_lasts(Motolii* m, int layer);
 int motolii_key_times(Motolii* m, int layer, const char* name, double* at,
                       int room);
