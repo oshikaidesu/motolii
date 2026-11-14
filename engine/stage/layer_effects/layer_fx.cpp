@@ -34,13 +34,17 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   st.steps.clear();
   st.readsBehind = false, st.wide = false;
   std::vector<std::shared_ptr<AviutlRun>> scripts;
-  for (const std::string& file : script_files(files)) {
-    if (file == "none") continue;
+  for (const std::string& entry : script_files(files)) {
+    if (entry == "none") continue;
+    // Each entry may carry a per-instance ID prefix ("a1b2c3:blur.wgsl"); the
+    // bare path is what the file-type gates and filesystem look-ups need, while
+    // screen_built keyes its cache on the whole entry to keep instances apart.
+    const std::string path = screen_fx_entry_path(entry);
     // An AviUtl2 script. It runs each frame on the layer's image.
-    if (aviutl_is(file)) {
+    if (aviutl_is(path)) {
       const auto found =
           std::find_if(st.aviutl.begin(), st.aviutl.end(),
-                       [&](const auto& r) { return r->file == file; });
+                       [&](const auto& r) { return r->file == path; });
       // All scripts of a layer share one Lua state. AviUtl2 runs an object's
       // effects one after another in one Lua, so a global set by one script is
       // read by the next. For example the CrEasy background blur reads the ox
@@ -50,7 +54,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
                                               : nullptr;
       scripts.push_back(found != st.aviutl.end()
                             ? *found
-                            : aviutl_open(s, file, first ? first->L : nullptr)),
+                            : aviutl_open(s, path, first ? first->L : nullptr)),
           st.steps.push_back('a');
       // A script that reads its frame needs what is behind the layer: the stage
       // drawn without this layer's own sheet.
@@ -61,20 +65,20 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
       continue;
     }
     // A splat effect. The point cloud applies it; see render/point_cloud.h.
-    if (std::filesystem::path(file).extension() == ".mjs") continue;
+    if (std::filesystem::path(path).extension() == ".mjs") continue;
     // .am is AbsentMotion's own motion that moves the layer; see
     // absent_motion.h. .json is Filament's settings for the stage; see
     // viewer_settings.h. Neither is an effect here.
     if (const std::string ext =
-            std::filesystem::path(file).extension().string();
+            std::filesystem::path(path).extension().string();
         ext == ".am" || ext == ".json")
       continue;
     // A solid's shape. The layer's image is laid on the solid, not run through
     // an effect; see thing_fx_solid.
-    if (solid_is(file)) continue;
+    if (solid_is(path)) continue;
     // A file that moves the solid's points; see thing_fx_points.
-    if (points_is(file)) continue;
-    ScreenFx* built = screen_built(s, st, file);
+    if (points_is(path)) continue;
+    ScreenFx* built = screen_built(s, st, entry);
     if (built->interop) st.fx.push_back(built), st.steps.push_back(0);
     // AbsentMotion's backdrop reads what is behind the layer, the stage drawn
     // without it; see screen_fx.h.
@@ -83,18 +87,19 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
       st.readsBehind = true;
   }
   // Returns the effect's name: for an @ file the part after '#', otherwise the
-  // file stem.
-  const auto nameOf = [](const std::string& file) {
-    const size_t hash = file.rfind('#');
+  // file stem. Entries may carry an instance-ID prefix, so strip it first.
+  const auto nameOf = [](const std::string& entry) {
+    const std::string path = screen_fx_entry_path(entry);
+    const size_t hash = path.rfind('#');
     return hash != std::string::npos
-               ? aviutl_unword(file.substr(hash + 1))
-               : std::filesystem::path(file).stem().string();
+               ? aviutl_unword(path.substr(hash + 1))
+               : std::filesystem::path(path).stem().string();
   };
   // The effect names in order. A script can ask for its neighbours with
   // obj.getoption("script_name").
   std::vector<std::string> names;
-  for (const std::string& file : script_files(files))
-    if (file != "none") names.push_back(nameOf(file));
+  for (const std::string& entry : script_files(files))
+    if (entry != "none") names.push_back(nameOf(entry));
   for (const auto& r : scripts)
     r->chain = names,
     r->at = (int)(std::find(names.begin(), names.end(), nameOf(r->file)) -
