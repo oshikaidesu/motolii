@@ -56,7 +56,6 @@ class TransformBody extends StatelessWidget {
           for (final a in const ['x', 'y', 'z'])
             if (has('v_scale_$a') && (a != 'z' || deep)) 'v_scale_$a',
         ];
-        final tilted = deep;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -129,10 +128,8 @@ class TransformBody extends StatelessWidget {
                 label: 'Rotation',
                 unit: params['v_rotate']!.unit,
                 cells: [
-                  if (tilted) ...[
-                    for (final a in const ['v_rotate_x', 'v_rotate_y'])
-                      if (has(a)) field(a),
-                  ],
+                  for (final a in const ['v_rotate_x', 'v_rotate_y'])
+                    if (has(a)) field(a),
                   field('v_rotate'),
                 ],
               ),
