@@ -54,6 +54,30 @@
 4. 小さい頼みは、Motolii に既にある仕組みでそのまま済ませて止める。外の調べ物は、Motolii に何も無い時だけ（2026-11-09）。
 5. Dart は見た目だけを持つ。押し・重ね・選択・OS との受け渡しは、外のライブラリに任せる。自前で書くより外に頼れる物は頼り、依存を足してよい（2026-11-13）。ただし 1 つの役目に 1 つのライブラリ。同じ役目を 2 つのライブラリや手書きで二重に持たない。足すときは `pubspec.yaml` のその行に、何の役目かを書く。同じ手書きが何度も出るのは、分けたのではなく写しである。インスペクターではエフェクトのカード（`ValuesCard`）が正本で、それ以外のカード・数値・チップ・スイッチの手書きはそこへ畳む。まとめられるものはまとめ、消してよい。戻すなら git。5000 行は見た目の分量の目安であり、目標ではない（2026-11-10）。
 
+## 足さない
+
+Claude は頼まれていない仕組み（鍵・検査・抽象・予備の処理）を足しがちだと、作り手の Anthropic 自身が書いている。その対策として公式が配っている文を、そのまま使う（[Prompting best practices, Overeagerness](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)）。
+
+```text
+Avoid over-engineering. Only make changes that are directly requested or clearly
+necessary. Keep solutions simple and focused:
+
+- Scope: Don't add features, refactor code, or make "improvements" beyond what was
+asked. A bug fix doesn't need surrounding code cleaned up. A simple feature doesn't need
+extra configurability.
+
+- Documentation: Don't add docstrings, comments, or type annotations to code you didn't
+change. Only add comments where the logic isn't self-evident.
+
+- Defensive coding: Don't add error handling, fallbacks, or validation for scenarios
+that can't happen. Trust internal code and framework guarantees. Only validate at system
+boundaries (user input, external APIs).
+
+- Abstractions: Don't create helpers, utilities, or abstractions for one-time
+operations. Don't design for hypothetical future requirements. The right amount of
+complexity is the minimum needed for the current task.
+```
+
 ## 後始末
 
 初めて来た人が 3 分で読めない物は、置いた者の負債。どれも実際に起きた散らかしから決めた。
