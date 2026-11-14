@@ -1,7 +1,10 @@
 // The cards whose inside the window draws itself, by the engine's card name.
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/inspector/blend/blend_preview.dart';
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/play/play_graph.dart';
+import 'package:motolii/inspector/source/film_strip.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
 import 'package:motolii/inspector/transform/transform_body.dart';
@@ -35,4 +38,12 @@ final hostCards =
         body: (card) => TrimPath(card),
         fold: null,
       ),
+      // The optional cards keep their number tiles below the picture, as Trim Paths does.
+      'Blending': (
+        drawn: const {'blend'},
+        body: (card) => BlendPreview(card),
+        fold: null,
+      ),
+      'Play': (drawn: const {}, body: (card) => PlayGraph(card), fold: null),
+      'Source': (drawn: const {}, body: (card) => FilmStrip(card), fold: null),
     };
