@@ -29,6 +29,7 @@
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_edge.h"
+#include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -99,15 +100,47 @@ Canvas2D* place_canvas(
     // Scale the sheet for multi-line text, so that `high` stays the height of
     // one line.
     high *= d->tallBy, own = high;
-    if (fx.reach > 0.f) {
-      // Add a margin for effects that reach beyond the content. fx.reach is a
-      // fraction of its height.
-      const float room = std::ceil(fx.reach * (float)h);
-      p->translate(room, room);
-      // Enlarge the sheet by the same ratio as the texture, so the content
-      // keeps its size.
-      high *= ((float)h + 2.f * room) / (float)h;
-      w += 2 * (int)room, h += 2 * (int)room;
+    // Fit the image around the bent outline. A path operator can push the
+    // outline past its plain box -- an offset outward, a bloat on a lopsided
+    // letter, a zigzag. Bend a copy of the plain path by the operators at their
+    // largest, measure how far it reaches past the plain outline on any side,
+    // and grow the image by that much all round so the bend is never cut by the
+    // box. The content keeps its size and stays centered, so the layer does not
+    // shift. Shapes with no path of their own (images, films) are left as they
+    // are.
+    if (!d->plain.empty() &&
+        (fx.round != 0.f || fx.bloat != 0.f || fx.zigzag != 0.f ||
+         fx.offset != 0.f)) {
+      const float plainHigh = d->plainHigh, side = d->plainSide;
+      tvg::Shape* probe = tvg::Shape::gen();
+      float px, py, pw, ph, bx, by, bw, bh;
+      // The plain outline, unbent, as the image was sized to hold.
+      tvg_bend(probe, d->plain.data(), (uint32_t)d->plain.size(),
+               d->plainAt.data(), (uint32_t)d->plainAt.size(), 0.f, 0.f, 0.f, 0,
+               false, 0.f, d->fine);
+      const bool okP = probe->bounds(&px, &py, &pw, &ph) == tvg::Result::Success;
+      // The same outline bent by the operators at their largest, with the clamps
+      // bend_at uses, so the margin matches what is actually drawn.
+      tvg_bend(probe, d->plain.data(), (uint32_t)d->plain.size(),
+               d->plainAt.data(), (uint32_t)d->plainAt.size(),
+               std::clamp(fx.round, 0.f, 0.5f) * side,
+               100.f * std::clamp(fx.bloat, -1.f, 1.f),
+               std::clamp(fx.zigzag, -4.f, 4.f) * plainHigh,
+               (int)std::clamp(fx.ridges, 0.f, 100.f), fx.smooth > 0.5f,
+               std::clamp(fx.offset, -4.f, 4.f) * plainHigh, d->fine);
+      const bool okB = probe->bounds(&bx, &by, &bw, &bh) == tvg::Result::Success;
+      if (okP && okB) {
+        const float over = std::max({0.f, px - bx, (bx + bw) - (px + pw),
+                                     py - by, (by + bh) - (py + ph)});
+        if (const float room = std::ceil(over); room > 0.f) {
+          p->translate(room, room);
+          // Enlarge the sheet by the same ratio as the texture, so the content
+          // keeps its size.
+          high *= ((float)h + 2.f * room) / (float)h;
+          w += 2 * (int)room, h += 2 * (int)room;
+        }
+      }
+      tvg::Paint::rel(probe);
     }
     d->canvasHigh = (float)h;
     // Limit the texture to 4096 points on its longer side, which leaves room to

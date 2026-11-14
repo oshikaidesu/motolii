@@ -130,9 +130,16 @@ bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
     else if (isf_file(w).empty())
       ok = false, why = "the ISF effect could not be made WGSL: " + w;
   }
-  fx.reach =
-      (float)(std::max(0.0, num("offset", 0)) + std::fabs(num("zigzag", 0)) +
-              0.5 * std::max(0.0, num("bloat", 0)));
+  // Carry the path operators at their largest. place_canvas bends the real path
+  // by these and fits the image to where the bent outline reaches, so the box
+  // follows the geometry itself -- every operator, present or future, lopsided
+  // or not -- instead of a guess made from the values here.
+  fx.round = (float)num("round", 0);
+  fx.bloat = (float)num("bloat", 0);
+  fx.zigzag = (float)num("zigzag", 0);
+  fx.ridges = (float)num("zigzag_ridges", 5);
+  fx.smooth = (float)num("zigzag_smooth", 0);
+  fx.offset = (float)num("offset", 0);
   return ok;
 }
 

@@ -107,9 +107,14 @@ struct Canvas2DFx {
   // Where outlines overlap, leaves a hole every other time, like SVG's
   // fill-rule evenodd. Otherwise the fill rule is nonzero.
   bool evenOdd = false;
-  // The most a bent shape extends past its box, as a fraction of its height.
-  // See bend_at. The image is made larger on all sides by this amount.
-  float reach = 0.f;
+  // The path operators at their largest over the animation, in bend_at's units
+  // before its clamps (round, bloat, zigzag with its ridges and smooth, and
+  // offset). See bend_at. place_canvas bends a copy of the plain path by these
+  // once and enlarges the image to hold wherever the bent outline reaches past
+  // its box, so a bend is never cut by the box. 0 for all leaves the image its
+  // plain size.
+  float round = 0.f, bloat = 0.f, zigzag = 0.f;
+  float ridges = 5.f, smooth = 0.f, offset = 0.f;
   // radial selects ThorVG's radial gradient, from the middle outward, instead
   // of a linear one. rampAngle is the rotation, clockwise. rampScale is the
   // length as a fraction of reach. spread is how the gradient continues past
