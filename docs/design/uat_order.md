@@ -21,7 +21,7 @@
 | 段 | まとまり | 通す行 | 直す 1 か所 | 通りそう |
 |---|---|---|---|---|
 | 1 | 動きの決まりの文書を、コードに合わせる | 188–191 | `docs/app/GESTURES.md`（文書だけ） | — |
-| 2 | 右クリックのメニュー | 153 155 157 160 161 162（149 159 は要確認） | `widgets/context_menu.dart`・`widgets/dismiss_region.dart` | 152 154 156 158 410 |
+| 2 | 右クリックのメニュー | 153 155 157 160 161 162（149 159 は要確認） | `widgets/context_menu.dart`（`PressOutside` ほか） | 152 154 156 158 410 |
 | 3 | 棚のタイルを 1 つの見た目に | 129 279–287 | `shelf/shelf_looks.dart` の `shelfLooks`・`shelf/shelf_tile.dart` | — |
 | 4 | セーフエリアを各サービスの形で | 217 374 375 | `stage/view_painter.dart` の `_safe` | — |
 | 5 | ツールチップとタブのアイコン | 139 411 435–441 | `widgets/controls.dart` の `IconPress`・`window/panes.dart` の `leading` | — |

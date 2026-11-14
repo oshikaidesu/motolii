@@ -266,7 +266,7 @@ OpenProcessing・Shadertoy・twigl（#つぶやきGLSL）・CodePen・Hydra な�
 
 **理想**：Mac の普通のメニューと同じに振る舞う。外を押すと閉じ、その 1 回は下の物に効かない。Esc で閉じる。マウスの位置に開き、画面の端では内側に折り返す。矢印キーで動き、Return で決まる。まだ選んでいない物を右クリックすると先にそれが選ばれ、選んでいる物の 1 つを右クリックすると、選んでいる全部に効く。メニューは 1 つしか開かない。
 
-今のメニューは `app/lib/widgets/context_menu.dart`（Flutter の `RawMenuAnchor`）。閉じるのは `app/lib/widgets/dismiss_region.dart`（Flutter の `TapRegion`）。
+今のメニューは `app/lib/widgets/context_menu.dart`（naked_ui の `NakedMenu`、Flutter の `RawMenuAnchor` の上）。外を押して閉じるのは同じファイルの `PressOutside`（Flutter の `TapRegion`）で、Chooser とブレンドのプレビューも同じ物を使う。
 
 | # | シナリオ |
 |---|---|
