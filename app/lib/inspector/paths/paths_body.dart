@@ -189,6 +189,9 @@ class _PathsBodyState extends State<PathsBody> {
 
   Widget _buildStack(InspectorValues doc, Map<String, Parameter> params) {
     final itemH = Shape.z(34);
+    // ReorderableList builds items through SliverChildBuilderDelegate; during drag they move into an Overlay
+    // which doesn't inherit our InspectorScope. Capture the scope and re-provide it to each item.
+    final scope = InspectorScope.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -204,12 +207,16 @@ class _PathsBodyState extends State<PathsBody> {
             },
             itemBuilder: (ctx, i) {
               final id = _stack[i];
-              return _StackItem(
+              return InspectorScope(
                 key: ValueKey(id),
-                id: id,
-                param: params[id],
-                doc: doc,
-                onRemove: () => _remove(doc, id),
+                doc: scope.doc,
+                tick: scope.tick,
+                child: _StackItem(
+                  id: id,
+                  param: params[id],
+                  doc: doc,
+                  onRemove: () => _remove(doc, id),
+                ),
               );
             },
           ),
@@ -339,7 +346,6 @@ class _PathsBodyState extends State<PathsBody> {
 
 class _StackItem extends StatelessWidget {
   const _StackItem({
-    super.key,
     required this.id,
     required this.param,
     required this.doc,
