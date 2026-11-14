@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/dismiss_region.dart';
 import 'package:motolii/widgets/context_menu.dart'
-    show ContextMenuItem, ContextMenuList;
+    show ContextMenuItem, ContextMenuList, MenuKeys;
 
 /// A short menu at the pointer position, kept inside the window. It is the right-click menu of a number.
 ///
@@ -49,17 +49,20 @@ class TinyMenuAt extends StatelessWidget {
           left: at.dx.clamp(0, math.max(0, room.width - wide)).toDouble(),
           top: (at.dy + high <= room.height ? at.dy : math.max(0, at.dy - high))
               .toDouble(),
-          child: DismissRegion(
-            shut: hide,
-            keep: keep,
-            child: ContextMenuList(
-              items: [
-                for (final (k, l, f) in items)
-                  ContextMenuItem(l, f, id: '$name-$k:$of'),
-              ],
-              close: hide,
-              max: room.height * .5,
-              width: wide,
+          child: MenuKeys(
+            child: DismissRegion(
+              swallow: true,
+              shut: hide,
+              keep: keep,
+              child: ContextMenuList(
+                items: [
+                  for (final (k, l, f) in items)
+                    ContextMenuItem(l, f, id: '$name-$k:$of'),
+                ],
+                close: hide,
+                max: room.height * .5,
+                width: wide,
+              ),
             ),
           ),
         ),

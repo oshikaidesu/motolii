@@ -4,7 +4,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/dismiss_region.dart';
 import 'package:motolii/widgets/context_menu.dart'
-    show ContextMenuItem, ContextMenuList;
+    show ContextMenuItem, ContextMenuList, MenuKeys;
 
 /// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
 ///
@@ -65,17 +65,20 @@ class _CardMoreState extends State<CardMore> {
               : _up
               ? Alignment.bottomRight
               : Alignment.topRight,
-          child: DismissRegion(
-            shut: _portal.hide,
-            group: _link,
-            child: ContextMenuList(
-              items: [
-                for (final (k, l, f) in widget.items)
-                  ContextMenuItem(l, f, id: 'card-$k:${widget.name}'),
-              ],
-              close: _portal.hide,
-              max: MediaQuery.sizeOf(context).height * .5,
-              width: Shape.z(150),
+          child: MenuKeys(
+            child: DismissRegion(
+              swallow: true,
+              shut: _portal.hide,
+              group: _link,
+              child: ContextMenuList(
+                items: [
+                  for (final (k, l, f) in widget.items)
+                    ContextMenuItem(l, f, id: 'card-$k:${widget.name}'),
+                ],
+                close: _portal.hide,
+                max: MediaQuery.sizeOf(context).height * .5,
+                width: Shape.z(150),
+              ),
             ),
           ),
         ),

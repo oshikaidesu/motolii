@@ -16,7 +16,7 @@ class Pressable extends StatelessWidget {
     this.onTap,
   });
 
-  /// Builds the child. The bool is true while the pointer hovers.
+  /// Builds the child. The bool is true while the pointer hovers, or while it has the keyboard focus (the arrow keys in a menu).
   final Widget Function(BuildContext, bool) builder;
   final MouseCursor cursor;
 
@@ -27,7 +27,7 @@ class Pressable extends StatelessWidget {
     onPressed: onTap,
     mouseCursor: cursor,
     enableFeedback: false,
-    builder: (context, st, _) => builder(context, st.isHovered),
+    builder: (context, st, _) => builder(context, st.isHovered || st.isFocused),
   );
 }
 

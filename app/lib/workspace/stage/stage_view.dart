@@ -310,12 +310,13 @@ class _StageViewState extends State<StageView>
                 final ws = WorkspaceScope.read(context),
                     id = _hitLocal(v, d.localPosition),
                     l = ws.layers.where((l) => l.id == id).firstOrNull;
-                if (l != null) {
-                  _menu.currentState?.show(
-                    d.localPosition,
-                    layerContextMenu(context, ws, l),
-                  );
-                }
+                // On the empty stage, what can be done there.
+                _menu.currentState?.show(
+                  d.localPosition,
+                  l != null
+                      ? layerContextMenu(context, ws, l)
+                      : emptyContextMenu(context, ws),
+                );
               },
               onTapUp: (d) {
                 widget.onPoke?.call();

@@ -138,11 +138,11 @@ extension LayerCommands on WorkspaceState {
         );
       },
       'thing.deactivate': () {
-        final t = int.tryParse(ws.selected ?? '');
-        if (t == null) return;
+        // Every selected layer takes the state opposite to the one clicked or first selected, as Live's 0 on several clips.
         final hidden = ws.layers.any((l) => l.id == ws.selected && l.hidden);
-        ws.after(
-          m.later('set', layer: t, name: 'visible', number: hidden ? 1 : 0),
+        eachPicked(
+          (t) =>
+              m.later('set', layer: t, name: 'visible', number: hidden ? 1 : 0),
         );
       },
       'thing.remove': () {

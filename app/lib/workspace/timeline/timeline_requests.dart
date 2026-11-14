@@ -11,6 +11,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
+import 'package:motolii/workspace/commands/keymap.dart' show keyLabel;
+import 'package:motolii/workspace/workspace.dart' show WorkspaceState;
 import 'package:motolii/workspace/commands/panel_requests.dart'
     show timelineRequest, renameRequested, requestTimeline, selectedMarker;
 import 'package:motolii/workspace/state/layer.dart';
@@ -191,7 +193,15 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       return rulerMenu.currentState?.show(p, [
-        ContextMenuItem('Rename…', _rename, keys: '⌘R'),
+        ContextMenuItem(
+          'Rename…',
+          _rename,
+          keys: keyLabel(
+            context.findAncestorStateOfType<WorkspaceState>()?.keymap.keyOf(
+              'thing.rename',
+            ),
+          ),
+        ),
         ContextMenuItem(
           'Play from Here',
           () => _playAt((flag.$1 * WorkspaceController.fps).round()),
@@ -247,8 +257,13 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   /// A right-click on a layer's bar opens the layer's context menu.
   void trackRight(Offset p) {
     final ws = workspace, r = rows.rowAt(p.dy);
-    // Below the rows, or on a property lane, there is no bar.
-    if (ws == null || r == null || r.value != null) return;
+    if (ws == null) return;
+    // Below the rows, what can be done there. On a property lane there is no bar.
+    if (r == null) {
+      trackMenu.currentState?.show(p, emptyContextMenu(context, ws));
+      return;
+    }
+    if (r.value != null) return;
     final l = r.l, f = viewport.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;

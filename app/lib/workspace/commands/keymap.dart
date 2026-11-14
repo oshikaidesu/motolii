@@ -141,14 +141,58 @@ SingleActivator? activatorOf(String said) {
           : null);
   if (key == null) return null;
   final mods = parts.sublist(0, parts.length - 1).toSet();
+  // cmd is the Mac's Command key and Ctrl on Windows and Linux, as VS Code's "cmd" and "ctrl" bindings pair up.
+  final cmd = mods.contains('cmd');
   return SingleActivator(
     key,
-    meta: mods.contains('cmd') || mods.contains('meta'),
+    meta: (cmd && Platform.isMacOS) || mods.contains('meta'),
     shift: mods.contains('shift'),
-    control: mods.contains('ctrl') || mods.contains('control'),
+    control:
+        (cmd && !Platform.isMacOS) ||
+        mods.contains('ctrl') ||
+        mods.contains('control'),
     alt: mods.contains('alt') || mods.contains('option'),
   );
 }
+
+/// How [a] is written beside a menu row: ⌃⌥⇧⌘R on the Mac (Apple's order for the modifier symbols),
+/// Ctrl+Alt+Shift+R on Windows and Linux (Microsoft's order). Empty when nothing is bound.
+String keyLabel(SingleActivator? a) {
+  if (a == null) return '';
+  final k = a.trigger;
+  if (Platform.isMacOS) {
+    return '${a.control ? '⌃' : ''}${a.alt ? '⌥' : ''}${a.shift ? '⇧' : ''}${a.meta ? '⌘' : ''}'
+        '${_macKeys[k] ?? k.keyLabel.toUpperCase()}';
+  }
+  return [
+    if (a.control) 'Ctrl',
+    if (a.alt) 'Alt',
+    if (a.shift) 'Shift',
+    if (a.meta) 'Win',
+    _otherKeys[k] ?? k.keyLabel.toUpperCase(),
+  ].join('+');
+}
+
+// The Mac's menu symbols for keys without a letter (Apple's Human Interface Guidelines, Keyboards).
+final _macKeys = {
+  LogicalKeyboardKey.backspace: '⌫',
+  LogicalKeyboardKey.delete: '⌦',
+  LogicalKeyboardKey.enter: '↩',
+  LogicalKeyboardKey.escape: '⎋',
+  LogicalKeyboardKey.tab: '⇥',
+  LogicalKeyboardKey.space: 'Space',
+  LogicalKeyboardKey.arrowLeft: '←',
+  LogicalKeyboardKey.arrowRight: '→',
+  LogicalKeyboardKey.arrowUp: '↑',
+  LogicalKeyboardKey.arrowDown: '↓',
+};
+final _otherKeys = {
+  LogicalKeyboardKey.backspace: 'Backspace',
+  LogicalKeyboardKey.delete: 'Del',
+  LogicalKeyboardKey.enter: 'Enter',
+  LogicalKeyboardKey.escape: 'Esc',
+  LogicalKeyboardKey.space: 'Space',
+};
 
 const _keys = {
   'space': LogicalKeyboardKey.space,
