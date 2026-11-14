@@ -99,7 +99,8 @@ inline const DocCard doc_cards[] = {
     // is. Trim is here too, for drawing a line along the path.
     {"Paths",
      "points inner round bloat offset zigzag zigzag_ridges zigzag_smooth "
-     "trim trim_begin trim_offset morph morph_to morph_steps",
+     "trim trim_begin trim_offset morph morph_to morph_steps "
+     "resample rough rough_detail fill_rule trail trail_length",
      "kind", "shape"},
     // Where in its file a video starts (Premiere Pro's Slip), how loud it is
     // heard and exported, and the beats the timeline's ruler marks.
