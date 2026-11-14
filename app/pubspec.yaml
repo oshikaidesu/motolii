@@ -21,6 +21,7 @@ dependencies:
       ref: 8a8d868d9f83159f17d5213a61168c7d889b9250
   material_color_utilities: any   # (Google's HCT colours, already in Flutter: a skin's greys made from its Background and Foreground)
   naked_ui: ^1.2.1   # (the behaviour of buttons and menus, with no look of its own: press, hover, focus, and the placing, arrow keys and Esc of every menu in widgets/context_menu.dart)
+  path_parsing: ^1.1.0   # (an SVG path's text read into a Path: the Paths card draws the outline the engine gives it, motolii_shape_svg)
   perfect_freehand: ^2.5.2+1
   re_editor: ^0.10.0
   re_highlight: ^0.0.3

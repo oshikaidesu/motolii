@@ -2,8 +2,10 @@
 // and a picker grouped by kind to add more. The stack's order is display only; the engine applies them in its own
 // fixed order. Points and inner sit below the stack as they define the shape, not an operator added on top.
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
+import 'package:path_parsing/path_parsing.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
@@ -458,41 +460,19 @@ class _PreviewPaint extends CustomPainter {
   final String shape;
   final String svgPath;
 
-  // Parses the engine's M/L/C/Z SVG (coordinates centred at origin, 1 unit high)
-  // into a Flutter Path scaled to fit within [r] centred at ([cx], [cy]).
-  Path _parseSvg(double cx, double cy, double r) {
-    final path = Path();
-    final tokens = svgPath.split(' ');
-    final scale = r * 2; // y ∈ -0.5..+0.5 → height = 1 → scale = 2r
-    int i = 0;
-    double px(int idx) => double.parse(tokens[idx]) * scale + cx;
-    double py(int idx) => double.parse(tokens[idx]) * scale + cy;
-    while (i < tokens.length) {
-      switch (tokens[i]) {
-        case 'M':
-          path.moveTo(px(i + 1), py(i + 2));
-          i += 3;
-        case 'L':
-          path.lineTo(px(i + 1), py(i + 2));
-          i += 3;
-        case 'C':
-          path.cubicTo(
-            px(i + 1),
-            py(i + 2),
-            px(i + 3),
-            py(i + 4),
-            px(i + 5),
-            py(i + 6),
-          );
-          i += 7;
-        case 'Z':
-          path.close();
-          i += 1;
-        default:
-          i += 1;
-      }
+  // The engine's outline (motolii_shape_svg: SVG path data, centred at the origin and 1 unit high) as a Path that is
+  // 2 [r] high about ([cx], [cy]). Null when it is not path data.
+  Path? _parseSvg(double cx, double cy, double r) {
+    final unit = Path();
+    try {
+      writeSvgPathDataToPath(svgPath, _IntoPath(unit));
+    } catch (_) {
+      return null;
     }
-    return path;
+    final k = r * 2;
+    return unit.transform(
+      Float64List.fromList([k, 0, 0, 0, 0, k, 0, 0, 0, 0, 1, 0, cx, cy, 0, 1]),
+    );
   }
 
   Path _fallbackPath(double cx, double cy, double r) {
@@ -539,9 +519,9 @@ class _PreviewPaint extends CustomPainter {
     );
     final cx = s.width / 2, cy = s.height / 2;
     final r = math.min(s.width, s.height) * 0.32;
-    final path = svgPath.isNotEmpty
-        ? _parseSvg(cx, cy, r)
-        : _fallbackPath(cx, cy, r);
+    final path =
+        (svgPath.isNotEmpty ? _parseSvg(cx, cy, r) : null) ??
+        _fallbackPath(cx, cy, r);
     c.drawPath(
       path,
       Paint()
@@ -564,4 +544,25 @@ class _PreviewPaint extends CustomPainter {
       o.inner != inner ||
       o.shape != shape ||
       o.svgPath != svgPath;
+}
+
+/// What path_parsing reads of an SVG path, drawn into a Flutter [Path].
+class _IntoPath extends PathProxy {
+  _IntoPath(this.path);
+  final Path path;
+  @override
+  void moveTo(double x, double y) => path.moveTo(x, y);
+  @override
+  void lineTo(double x, double y) => path.lineTo(x, y);
+  @override
+  void cubicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  ) => path.cubicTo(x1, y1, x2, y2, x3, y3);
+  @override
+  void close() => path.close();
 }
