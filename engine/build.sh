@@ -33,7 +33,9 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     touch out/deps.stamp
 fi
 
-cmake -S . -B out/cmake -G Ninja > /dev/null
+# Only the first time (no build.ninja yet). After that cmake --build (ninja) re-runs CMake itself when a
+# CMakeLists.txt is newer, and re-globs the CONFIGURE_DEPENDS headers, so configuring again here is redundant.
+[ -f out/cmake/build.ninja ] || cmake -S . -B out/cmake -G Ninja > /dev/null
 case "$1" in
   lib)  cmake --build out/cmake --target motolii ;;
   test) cmake --build out/cmake && ctest --test-dir out/cmake --output-on-failure ;;
