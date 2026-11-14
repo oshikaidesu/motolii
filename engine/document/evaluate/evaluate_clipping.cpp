@@ -104,10 +104,18 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   // effects, so that blurs, glows and other effects on the matte shape are
   // honoured. Without effects the base texture is used as before.
   const auto fx_by = d.effects.layerFx.find(by);
-  filament::Texture* const pic =
-      fx_by != d.effects.layerFx.end()
-          ? thing_fx_seen(fx_by->second.st)
-          : (a->drawn->texture ? a->drawn->texture : white_point(s));
+  // pic is only used when `shaped` is true (a && a->drawn), so guard here to
+  // avoid dereferencing null a when clipped is false. thing_fx_seen can also
+  // return null when the effect has not rendered yet, so fall back to the base
+  // texture in that case.
+  filament::Texture* const pic = [&]() -> filament::Texture* {
+    if (!a || !a->drawn) return nullptr;
+    if (fx_by != d.effects.layerFx.end()) {
+      filament::Texture* t = thing_fx_seen(fx_by->second.st);
+      return t ? t : (a->drawn->texture ? a->drawn->texture : white_point(s));
+    }
+    return a->drawn->texture ? a->drawn->texture : white_point(s);
+  }();
   // When the clipping layer, the way of cutting, or the matte texture changed,
   // the matte takes the shape of that layer's image, at that layer's place.
   if (shaped &&
