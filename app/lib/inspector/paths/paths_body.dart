@@ -9,7 +9,9 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
@@ -302,18 +304,24 @@ class _PathsBodyState extends State<PathsBody> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (pointsP != null)
-          InspectorNumberField(
-            pointsP,
-            key: const ValueKey('paths:points'),
-            id: 'v_points',
-            caption: 'Points',
+          RowInfo(
+            keys: doc.keys['v_points'] ?? KeyframeState.off,
+            child: InspectorNumberField(
+              pointsP,
+              key: const ValueKey('paths:points'),
+              id: 'v_points',
+              caption: 'Points',
+            ),
           ),
         if (innerP != null)
-          InspectorNumberField(
-            innerP,
-            key: const ValueKey('paths:inner'),
-            id: 'v_inner',
-            caption: 'Inner',
+          RowInfo(
+            keys: doc.keys['v_inner'] ?? KeyframeState.off,
+            child: InspectorNumberField(
+              innerP,
+              key: const ValueKey('paths:inner'),
+              id: 'v_inner',
+              caption: 'Inner',
+            ),
           ),
       ],
     );
@@ -356,12 +364,15 @@ class _StackItem extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: InspectorNumberField(
-              p,
-              key: ValueKey('paths:$id'),
-              id: 'v_$id',
-              caption: id.replaceAll('_', ' '),
-              compact: true,
+            child: RowInfo(
+              keys: doc.keys['v_$id'] ?? KeyframeState.off,
+              child: InspectorNumberField(
+                p,
+                key: ValueKey('paths:$id'),
+                id: 'v_$id',
+                caption: id.replaceAll('_', ' '),
+                compact: true,
+              ),
             ),
           ),
           Pressable(
