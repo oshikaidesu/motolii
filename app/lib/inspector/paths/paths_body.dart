@@ -159,13 +159,20 @@ class _PathsBodyState extends State<PathsBody> {
       builder: (context, _) {
         final round = doc.get('v_round') ?? 0;
         final points = (doc.get('v_points') ?? 4).round();
+        final inner = doc.get('v_inner') ?? 0;
+        final shape = doc.strings['shape'] ?? '';
         return Padding(
           padding: EdgeInsets.only(bottom: Shape.s(6)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Preview(round: round, points: points),
+              _Preview(
+                round: round,
+                points: points,
+                inner: inner,
+                shape: shape,
+              ),
               SizedBox(height: Shape.s(8)),
               if (_stack.isNotEmpty) _buildStack(doc, params),
               _buildAddButton(doc, params),
@@ -402,22 +409,41 @@ class _StackItem extends StatelessWidget {
 }
 
 class _Preview extends StatelessWidget {
-  const _Preview({required this.round, required this.points});
+  const _Preview({
+    required this.round,
+    required this.points,
+    required this.inner,
+    required this.shape,
+  });
   final double round;
   final int points;
+  final double inner;
+  final String shape;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
     key: const ValueKey('paths-preview'),
     size: Size.fromHeight(Shape.z(60)),
-    painter: _PreviewPaint(round: round, points: points),
+    painter: _PreviewPaint(
+      round: round,
+      points: points,
+      inner: inner,
+      shape: shape,
+    ),
   );
 }
 
 class _PreviewPaint extends CustomPainter {
-  const _PreviewPaint({required this.round, required this.points});
+  const _PreviewPaint({
+    required this.round,
+    required this.points,
+    required this.inner,
+    required this.shape,
+  });
   final double round;
   final int points;
+  final double inner;
+  final String shape;
 
   @override
   void paint(Canvas c, Size s) {
@@ -428,9 +454,12 @@ class _PreviewPaint extends CustomPainter {
     final cx = s.width / 2, cy = s.height / 2;
     final r = math.min(s.width, s.height) * 0.32;
     final path = Path();
+    // Mirror engine logic (canvas_shape.cpp): rect with points==4 and inner==0
+    // falls through to appendRect; anything else is polygon/star.
+    final isRect = shape == 'rect' && points == 4 && inner <= 0;
     if (points == 0 || points >= 50) {
       path.addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-    } else if (points < 3) {
+    } else if (isRect || points < 3) {
       final rr = math.min(round * r * 2, r * 0.49);
       path.addRRect(
         RRect.fromRectAndRadius(
@@ -477,5 +506,9 @@ class _PreviewPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PreviewPaint o) => o.round != round || o.points != points;
+  bool shouldRepaint(_PreviewPaint o) =>
+      o.round != round ||
+      o.points != points ||
+      o.inner != inner ||
+      o.shape != shape;
 }

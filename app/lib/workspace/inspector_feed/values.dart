@@ -239,6 +239,8 @@ Map<String, String> layerWords(WorkspaceController ws, String? id) {
     if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'),
     // Letters the font lacks, which are drawn in another font. Shown under the text.
     if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t),
+    // The shape type (rect, polygon, star, …) so the Paths preview matches the engine's rendering.
+    'shape': m.word(t, 'shape'),
   };
 }
 
