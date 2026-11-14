@@ -22,8 +22,9 @@ class TransformBody extends StatelessWidget {
   const TransformBody(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The values drawn here. A 2D layer's Scale Z and X and Y Rotation stay out of sight until they are set or the layer
-  /// leaves 2D, as in After Effects' Transform of a 2D layer.
+  /// The values drawn here. Scale Z is hidden in 2D (screen-attached, no world depth) and shown in 2.5D and 3D.
+  /// X/Y Rotation is always shown: 2D rotates in screen space, 2.5D overrides its default camera-facing, 3D turns freely.
+  /// (space semantics: kinds.h — 2d not in world; 2.5d a sheet in world, always facing viewer; 3d filmed by camera.)
   static const drawn = {
     'space', 'parent', 'x', 'y', 'z', 'scale_x', 'scale_y', 'scale_z', //
     'rotate_x', 'rotate_y', 'rotate', 'opacity',
