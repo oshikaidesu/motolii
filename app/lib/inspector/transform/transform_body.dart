@@ -34,133 +34,134 @@ class TransformBody extends StatelessWidget {
     final doc = InspectorScope.of(context).doc;
     final params = {for (final p in card.params) 'v_${p.id}': p};
     bool has(String id) => params.containsKey(id);
-    bool moved(String id) =>
-        (doc.get(id) ?? 0) != (doc.numberDefaults[id] ?? 0);
     final space = params['v_space'];
-    final word = space?.options.elementAtOrNull(
-      (doc.get('v_space') ?? 0).round(),
-    );
-    final deep = word != null && word.toLowerCase() != '2d';
     final linked = doc.flags['transform.link'] ?? true;
-    final scale = [
-      for (final a in const ['x', 'y', 'z'])
-        if (has('v_scale_$a') && (a != 'z' || deep || moved('v_scale_z')))
-          'v_scale_$a',
-    ];
-    final tilted = deep || moved('v_rotate_x') || moved('v_rotate_y');
     Widget field(String id, {ValueChanged<double>? onSet}) =>
         axisField(params, doc, id, onSet: onSet);
     return ListenableBuilder(
       // The marks follow the values while a field or the preview is dragged.
+      // v_space is watched so deep/tilted/scale recompute as soon as the mode changes.
       listenable: Listenable.merge([
         for (final id in TransformLayout.watched) doc.watch(id),
         doc.watch('v_opacity'),
         doc.watch('v_parent'),
+        doc.watch('v_space'),
       ]),
-      builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (space != null)
-            TransformRow(
-              label: 'Space',
-              cells: [
-                Segmented(
-                  key: const ValueKey('choice:v_space'),
-                  items: space.options,
-                  index: (doc.get('v_space') ?? 0).round().clamp(
-                    0,
-                    space.options.length - 1,
+      builder: (context, _) {
+        final word = space?.options.elementAtOrNull(
+          (doc.get('v_space') ?? 0).round(),
+        );
+        final deep = word != null && word.toLowerCase() != '2d';
+        final scale = [
+          for (final a in const ['x', 'y', 'z'])
+            if (has('v_scale_$a') && (a != 'z' || deep)) 'v_scale_$a',
+        ];
+        final tilted = deep;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (space != null)
+              TransformRow(
+                label: 'Space',
+                cells: [
+                  Segmented(
+                    key: const ValueKey('choice:v_space'),
+                    items: space.options,
+                    index: (doc.get('v_space') ?? 0).round().clamp(
+                      0,
+                      space.options.length - 1,
+                    ),
+                    onChanged: (i) => doc.set('v_space', i.toDouble()),
+                    glyphs: [for (final o in space.options) _spaceGlyph(o)],
                   ),
-                  onChanged: (i) => doc.set('v_space', i.toDouble()),
-                  glyphs: [for (final o in space.options) _spaceGlyph(o)],
-                ),
-              ],
-            ),
-          TransformCanvas(params: params, deep: deep, linked: linked),
-          SizedBox(height: InspectorSkin.titleGap),
-          const AxisHeader(),
-          if (has('v_x'))
-            TransformRow(
-              mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
-              hot: TransformZone.move,
-              label: 'Position',
-              unit: params['v_x']!.unit,
-              cells: [
-                for (final a in const ['x', 'y', 'z'])
-                  if (has('v_$a')) field('v_$a'),
-              ],
-            ),
-          if (scale.isNotEmpty)
-            TransformRow(
-              mark: (c, s) => drawScale(
-                c,
-                s,
-                _lit(TransformZone.scale),
-                doc.get('v_scale_x') ?? 100,
-                doc.get('v_scale_y') ?? 100,
-              ),
-              hot: TransformZone.scale,
-              label: 'Scale',
-              unit: params[scale.first]!.unit,
-              trail: _Link(
-                on: linked,
-                onTap: () => doc.flag('transform.link', !linked),
-              ),
-              cells: [
-                for (final id in scale)
-                  field(
-                    id,
-                    onSet: linked
-                        ? (v) => _scaleLinked(doc, scale, id, v, params)
-                        : null,
-                  ),
-              ],
-            ),
-          if (has('v_rotate'))
-            TransformRow(
-              mark: (c, s) => drawRotation(
-                c,
-                s,
-                _lit(TransformZone.rotate),
-                doc.get('v_rotate') ?? 0,
-              ),
-              hot: TransformZone.rotate,
-              label: 'Rotation',
-              unit: params['v_rotate']!.unit,
-              cells: [
-                if (tilted) ...[
-                  for (final a in const ['v_rotate_x', 'v_rotate_y'])
-                    if (has(a)) field(a),
                 ],
-                field('v_rotate'),
-              ],
-            ),
-          if (has('v_opacity'))
-            TransformRow(
-              mark: (c, s) =>
-                  drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
-              label: 'Opacity',
-              unit: params['v_opacity']!.unit,
-              cells: [field('v_opacity')],
-            ),
-          if (params['v_parent'] case final p?)
-            TransformRow(
-              mark: (c, s) => drawChain(
-                c,
-                s,
-                (doc.get('v_parent') ?? 0) > 0 ? Grey.g76 : Grey.g44,
               ),
-              label: 'Parent',
-              cells: [
-                SizedBox(
-                  height: InspectorSkin.cell,
-                  child: Chooser(id: 'v_parent', options: p.options),
+            TransformCanvas(params: params, deep: deep, linked: linked),
+            SizedBox(height: InspectorSkin.titleGap),
+            const AxisHeader(),
+            if (has('v_x'))
+              TransformRow(
+                mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
+                hot: TransformZone.move,
+                label: 'Position',
+                unit: params['v_x']!.unit,
+                cells: [
+                  for (final a in const ['x', 'y', 'z'])
+                    if (has('v_$a')) field('v_$a'),
+                ],
+              ),
+            if (scale.isNotEmpty)
+              TransformRow(
+                mark: (c, s) => drawScale(
+                  c,
+                  s,
+                  _lit(TransformZone.scale),
+                  doc.get('v_scale_x') ?? 100,
+                  doc.get('v_scale_y') ?? 100,
                 ),
-              ],
-            ),
-        ],
-      ),
+                hot: TransformZone.scale,
+                label: 'Scale',
+                unit: params[scale.first]!.unit,
+                trail: _Link(
+                  on: linked,
+                  onTap: () => doc.flag('transform.link', !linked),
+                ),
+                cells: [
+                  for (final id in scale)
+                    field(
+                      id,
+                      onSet: linked
+                          ? (v) => _scaleLinked(doc, scale, id, v, params)
+                          : null,
+                    ),
+                ],
+              ),
+            if (has('v_rotate'))
+              TransformRow(
+                mark: (c, s) => drawRotation(
+                  c,
+                  s,
+                  _lit(TransformZone.rotate),
+                  doc.get('v_rotate') ?? 0,
+                ),
+                hot: TransformZone.rotate,
+                label: 'Rotation',
+                unit: params['v_rotate']!.unit,
+                cells: [
+                  if (tilted) ...[
+                    for (final a in const ['v_rotate_x', 'v_rotate_y'])
+                      if (has(a)) field(a),
+                  ],
+                  field('v_rotate'),
+                ],
+              ),
+            if (has('v_opacity'))
+              TransformRow(
+                mark: (c, s) =>
+                    drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
+                label: 'Opacity',
+                unit: params['v_opacity']!.unit,
+                cells: [field('v_opacity')],
+              ),
+            if (params['v_parent'] case final p?)
+              TransformRow(
+                mark: (c, s) => drawChain(
+                  c,
+                  s,
+                  (doc.get('v_parent') ?? 0) > 0 ? Grey.g76 : Grey.g44,
+                ),
+                label: 'Parent',
+                cells: [
+                  SizedBox(
+                    height: InspectorSkin.cell,
+                    child: Chooser(id: 'v_parent', options: p.options),
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 
