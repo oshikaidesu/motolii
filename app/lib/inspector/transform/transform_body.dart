@@ -80,7 +80,7 @@ class TransformBody extends StatelessWidget {
               mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
               hot: TransformZone.move,
               label: 'Position',
-              unit: params['v_x']!.unit,
+              unit: params['v_x']?.unit ?? '',
               cells: [field('v_x'), field('v_y'), field('v_z')],
             ),
             TransformRow(
@@ -93,7 +93,7 @@ class TransformBody extends StatelessWidget {
               ),
               hot: TransformZone.scale,
               label: 'Scale',
-              unit: params['v_scale_x']!.unit,
+              unit: params['v_scale_x']?.unit ?? '',
               trail: _Link(
                 on: linked,
                 onTap: () => doc.flag('transform.link', !linked),
@@ -124,13 +124,14 @@ class TransformBody extends StatelessWidget {
                 field('v_rotate'),
               ],
             ),
-            TransformRow(
-              mark: (c, s) =>
-                  drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
-              label: 'Opacity',
-              unit: params['v_opacity']!.unit,
-              cells: [field('v_opacity')],
-            ),
+            if (params['v_opacity'] case final op?)
+              TransformRow(
+                mark: (c, s) =>
+                    drawOpacity(c, s, Grey.g76, doc.get('v_opacity') ?? 100),
+                label: 'Opacity',
+                unit: op.unit,
+                cells: [field('v_opacity')],
+              ),
             if (params['v_parent'] case final p?)
               TransformRow(
                 mark: (c, s) => drawChain(
