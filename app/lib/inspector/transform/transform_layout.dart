@@ -60,17 +60,11 @@ class TransformHome {
 /// The preview of [values] on a canvas of [size], seen from the front.
 ///
 /// The layer is drawn from its [home]: in the middle and at the usual size there, so what moved or grew since shows as far
-/// as it went. Its turn and the ratio of its sides are its own. Outside 2D a nearer layer is drawn larger.
+/// as it went. Its turn and the ratio of its sides are its own. A nearer layer is drawn larger, in every space.
 class TransformLayout {
-  TransformLayout(
-    this.size,
-    this.values, {
-    required this.deep,
-    required this.home,
-  });
+  TransformLayout(this.size, this.values, {required this.home});
   final Size size;
   final Map<String, double> values;
-  final bool deep;
   final TransformHome home;
 
   /// Every value the preview edits.
@@ -99,8 +93,7 @@ class TransformLayout {
 
   // A composition-wide camera distance, so Z -1000 reads clearly larger without leaving the frame.
   static const _camera = 2400.0;
-  double depthScale(double zc) =>
-      deep ? _camera / math.max(300, _camera + zc) : 1;
+  double depthScale(double zc) => _camera / math.max(300, _camera + zc);
   Offset _project(Offset flat, double zc) =>
       frame.center + (flat - frame.center) * depthScale(zc);
 
@@ -174,13 +167,10 @@ class TransformLayout {
   /// The part under [p], with the handle's index for scale and rotation, front to back.
   (TransformZone, int)? pick(Offset p) {
     if ((p - knob).distance <= 8) return (TransformZone.rotate, 0);
-    // A 2D layer has no depth to pull: its order in the stack says what is in front.
-    if (deep && (p - liftKnob).distance <= 8) return (TransformZone.lift, 0);
-    if (deep) {
-      for (final axis in const [1, 2]) {
-        if ((p - tiltKnob(axis)).distance <= 7) {
-          return (TransformZone.rotate, axis);
-        }
+    if ((p - liftKnob).distance <= 8) return (TransformZone.lift, 0);
+    for (final axis in const [1, 2]) {
+      if ((p - tiltKnob(axis)).distance <= 7) {
+        return (TransformZone.rotate, axis);
       }
     }
     if ((p - pivot).distance <= 7) return (TransformZone.pivot, 0);

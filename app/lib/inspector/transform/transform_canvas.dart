@@ -21,15 +21,11 @@ class TransformCanvas extends StatefulWidget {
   const TransformCanvas({
     super.key,
     required this.params,
-    required this.deep,
     required this.linked,
   });
 
   /// The card's parameters by value id; a dragged value goes only as far as a typed one may.
   final Map<String, Parameter> params;
-
-  /// Whether the layer is in 2.5D or 3D, where Z and the tilts can be pulled.
-  final bool deep;
 
   /// Whether a corner scales both sides by one factor.
   final bool linked;
@@ -118,12 +114,8 @@ class _TransformCanvasState extends State<TransformCanvas> {
             _home = null;
             _homeOf = doc.name;
           }
-          TransformLayout at(TransformHome home) => TransformLayout(
-            box.biggest,
-            values,
-            deep: widget.deep,
-            home: home,
-          );
+          TransformLayout at(TransformHome home) =>
+              TransformLayout(box.biggest, values, home: home);
           var g = at(_home ??= TransformHome.of(values));
           // Gone out of the frame: back in the middle.
           if (_grab == null && g.away) g = at(_home = TransformHome.of(values));
@@ -286,7 +278,7 @@ class _PreviewPaint extends CustomPainter {
       Offset(x + 3, size.height / 2),
       line(Grey.g38),
     );
-    final end = line(g.deep ? Grey.g56 : Grey.g26);
+    final end = line(Grey.g56);
     c.drawRect(
       Rect.fromCenter(center: Offset(x, top), width: 8, height: 8),
       end,
@@ -295,7 +287,6 @@ class _PreviewPaint extends CustomPainter {
       Rect.fromCenter(center: Offset(x, bottom), width: 3, height: 3),
       end,
     );
-    if (!g.deep) return; // In 2D there is no depth to pull; the rail only shows where it would be.
     final lift = ink(TransformZone.lift);
     c.drawLine(Offset(x, size.height / 2), g.liftKnob, line(lift, 2));
     c.drawCircle(g.liftKnob, hot == TransformZone.lift ? 6 : 5, fill(lift));
@@ -353,10 +344,8 @@ class _PreviewPaint extends CustomPainter {
         fill(scale),
       );
     }
-    if (g.deep) {
-      tilt(c, 1);
-      tilt(c, 2);
-    }
+    tilt(c, 1);
+    tilt(c, 2);
 
     final rotate = tiltInk(0);
     c.drawLine(g.stemBase, g.knob, line(rotate, 1.5));
@@ -404,7 +393,6 @@ class _PreviewPaint extends CustomPainter {
   bool shouldRepaint(_PreviewPaint old) =>
       !mapEquals(old.g.values, g.values) ||
       old.g.size != g.size ||
-      old.g.deep != g.deep ||
       old.hot != hot ||
       old.hotIndex != hotIndex ||
       old.linked != linked;

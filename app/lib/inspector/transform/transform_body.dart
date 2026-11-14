@@ -22,9 +22,10 @@ class TransformBody extends StatelessWidget {
   const TransformBody(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The values drawn here. Scale Z is hidden in 2D (screen-attached, no world depth) and shown in 2.5D and 3D.
-  /// X/Y Rotation is always shown: 2D rotates in screen space, 2.5D overrides its default camera-facing, 3D turns freely.
-  /// (space semantics: kinds.h — 2d not in world; 2.5d a sheet in world, always facing viewer; 3d filmed by camera.)
+  /// The values drawn here. Position, Scale and Rotation have X, Y and Z in every space: the space says what the layer
+  /// is placed against, not which of its values exist (place.cpp turns and sizes a layer the same way in all three).
+  /// (space semantics: kinds.h — 2d stuck to the camera; 2.5d a sheet in the world, always facing the viewer; 3d filmed
+  /// as it is.)
   static const drawn = {
     'space', 'parent', 'x', 'y', 'z', 'scale_x', 'scale_y', 'scale_z', //
     'rotate_x', 'rotate_y', 'rotate', 'opacity',
@@ -40,7 +41,6 @@ class TransformBody extends StatelessWidget {
         axisField(params, doc, id, onSet: onSet);
     return ListenableBuilder(
       // The marks follow the values while a field or the preview is dragged.
-      // v_space is watched so deep/tilted/scale recompute as soon as the mode changes.
       listenable: Listenable.merge([
         for (final id in TransformLayout.watched) doc.watch(id),
         doc.watch('v_opacity'),
@@ -48,11 +48,10 @@ class TransformBody extends StatelessWidget {
         doc.watch('v_space'),
       ]),
       builder: (context, _) {
-        final word = space?.options.elementAtOrNull(
-          (doc.get('v_space') ?? 0).round(),
-        );
-        final deep = word != null && word.toLowerCase() != '2d';
-        final scale = ['v_scale_x', 'v_scale_y', if (deep) 'v_scale_z'];
+        final scale = [
+          for (final id in const ['v_scale_x', 'v_scale_y', 'v_scale_z'])
+            if (params.containsKey(id)) id,
+        ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -73,7 +72,7 @@ class TransformBody extends StatelessWidget {
                   ),
                 ],
               ),
-            TransformCanvas(params: params, deep: deep, linked: linked),
+            TransformCanvas(params: params, linked: linked),
             SizedBox(height: InspectorSkin.titleGap),
             const AxisHeader(),
             TransformRow(
