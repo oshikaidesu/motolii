@@ -1,8 +1,19 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__computer-use__app_screenshot",
+      "mcp__computer-use__app_click",
+      "mcp__computer-use__app_zoom",
+      "mcp__computer-use__app_scroll",
+      "mcp__computer-use__request_access",
+      "mcp__computer-use__app_key",
+      "mcp__computer-use__app_type"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|mcp__terminal__run_in_terminal",
         "hooks": [
           {
             "type": "command",

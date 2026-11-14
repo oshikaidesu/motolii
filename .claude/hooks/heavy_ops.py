@@ -13,6 +13,7 @@ import json, os, re, subprocess, sys
 
 BUILD = re.compile(r'(^|[\s;&|(/])(build\.sh|edit\.sh|drawings_unchanged\.sh|filament_webgpu\.sh|live\.sh)\b|engine/deps/\w+\.sh'
                    r'|\bflutter\s+(build|run)\b|\bxcodebuild\b|\bcmake\s+--build\b|(^|[\s;&|(])ninja\b')
+FLUTTER_DIRECT = re.compile(r'\bflutter\s+(build|run)\b')
 
 
 def deny(reason):
@@ -30,6 +31,11 @@ def main():
                         'Do not build and do not wait for one. What is not a build: engine/check_syntax.sh, (cd app && dart analyze lib), '
                         '.githooks/shape_check.sh, python3 .githooks/*.py. If your task cannot be judged without a build, say in your report '
                         'what the build was to show; the lead decides.')
+        if FLUTTER_DIRECT.search(command):
+            return deny('flutter run / flutter build ではなく app/tool/live.sh を使う。'
+                        'Dart だけの変更なら 3 秒でウィンドウが開く。'
+                        'ネイティブ（macos/、pubspec）が変わった時だけ Xcode が動く。'
+                        'ホットリロードは SIGUSR1、ホットリスタートは SIGUSR2 を build/live.pid の PID に送る。')
         return
 
 try:
