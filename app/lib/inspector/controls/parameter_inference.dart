@@ -135,8 +135,10 @@ class Parameter {
 }
 
 final _structRe = RegExp(r'struct\s+\w+\s*\{([\s\S]*?)\}');
+// A field's name may have the ID of the one use of an effect or a stroke it belongs to in front of it, six hex digits
+// and a colon, as the engine names such a value ("a1b2c3:js_blur_size", fx_entry_id in script.h).
 final _fieldRe = RegExp(
-  r'^\s*(?:@\w+(?:\([^)]*\))?\s*)*(\w+)\s*:\s*([\w<>]+)\s*,?\s*(?://(.*))?$',
+  r'^\s*(?:@\w+(?:\([^)]*\))?\s*)*((?:[0-9a-f]{6}:)?\w+)\s*:\s*([\w<>]+)\s*,?\s*(?://(.*))?$',
 );
 final _attrRe = RegExp(r'@(\w+)(?:\(([^)]*)\))?');
 

@@ -336,8 +336,14 @@ void layer_at(Stage& s, Canvas2D* d, float frame) {
 void canvas_off(Stage& s, Canvas2D* d) {
   s.playing.erase(d);
   edge_off(s, d);
+  // take_off destroys the sheet's first material with its entities. The edge's
+  // is the second, and goes here: left alive, Filament still hands it the
+  // pictures it was last given (the edge's, what is behind the layer) at the
+  // next frame, after those are destroyed.
+  filament::MaterialInstance* const edge = d->edgeLook;
   take_off(s, d->sheet);
-  d->look = nullptr;
+  if (edge) s.engine->destroy(edge);
+  d->look = nullptr, d->edgeLook = nullptr;
   cache_drop(s, d);
   // ThorVG releases its texture before Filament destroys it.
   interop::on_driver(s.engine, [d] {

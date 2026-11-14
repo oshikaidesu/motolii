@@ -39,6 +39,9 @@ namespace {
 // Returns the layer's script parameter called "name", or nullptr. Script
 // parameter names start with "js_".
 const DocValue* doc_script_value(Doc& d, int layer, const char* name) {
+  // One use's own value ("a1b2c3:js_blur_size") is what the file declares
+  // under the name without the ID.
+  if (!fx_entry_id(name).empty()) name += 7;
   if (strncmp(name, "js_", 3)) return nullptr;
   for (const DocScript* sc : doc_scripts_on(d, layer))
     for (const DocValue& one : sc->values)
@@ -176,12 +179,13 @@ std::string doc_fx_title(const std::string& name) {
 }
 
 std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title) {
-  std::vector<std::string> list = script_files(doc_word(d, layer, "fx"));
+  std::vector<std::string> list = doc_fx_entries(d, layer, true);
   const auto at = std::find_if(
       list.begin(), list.end(),
       [&](const std::string& w) { return doc_fx_title(w) == title; });
   if (at == list.end()) return d.error = "no effect of that name is on it", "";
-  const std::string word = *at;
+  // The file, and the ID its values are kept under (doc_fx_values_id).
+  const std::string word = fx_entry_path(*at), own = doc_fx_values_id(d, *at);
   const std::filesystem::path source(fx_source(word));
   if (source.extension() != ".fs" && source.extension() != ".wgsl" &&
       !doc_expression(d, word))
@@ -190,9 +194,12 @@ std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title) {
                "so far",
            "";
   std::string made;
-  for (int n = 2;
-       made.empty() || std::find(list.begin(), list.end(), made) != list.end();
-       ++n)
+  const auto there = [&] {
+    return std::any_of(list.begin(), list.end(), [&](const std::string& w) {
+      return fx_entry_path(w) == made;
+    });
+  };
+  for (int n = 2; made.empty() || there(); ++n)
     made = (source.parent_path() /
             (source.stem().string() + "~" + std::to_string(n) +
              source.extension().string()))
@@ -215,7 +222,10 @@ std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title) {
                    "value, easing from keyframe where layer = %d and name = %Q",
                    doc_screen_parameter(made, script->parameters[i].name)
                        .c_str(),
-                   layer, script->names[i].c_str()));
+                   layer,
+                   (own.empty() ? script->names[i]
+                                : own + ":" + script->names[i])
+                       .c_str()));
   return doc_acted(d) && ok ? made : "";
 }
 
@@ -326,10 +336,11 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
   // One card per effect, in effect order. Effects that are turned off are
   // included because their values are kept.
   if (layer != 0)
-    for (const std::string& entry : doc_fx_list(d, layer, true)) {
+    for (const std::string& entry : doc_fx_entries(d, layer, true)) {
       // A file effect, with or without parameters. Its card is where the user
-      // reaches its visibility toggle, its bin and its code.
-      const std::string id = fx_entry_id(entry);
+      // reaches its visibility toggle, its bin and its code. Its values are
+      // named as what draws it reads them (doc_fx_values_id).
+      const std::string id = doc_fx_values_id(d, entry);
       const std::string w = fx_entry_path(entry);
       std::string card;
       if (const DocScript* sc = doc_script_of(d, w))

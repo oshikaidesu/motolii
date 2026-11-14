@@ -11,6 +11,7 @@
 #include <cstring>
 #include <utility>
 
+#include "community/quickjs/script.h"
 #include "document/card_table.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
@@ -274,6 +275,9 @@ int doc_outline(Doc& d, int layer, double now, double* xy) {
 }
 
 double doc_usual(Doc& d, const char* name) {
+  // One use's own value ("a1b2c3:js_blur_size", "a1b2c3:stroke_width") starts
+  // where the value its name without the ID does.
+  if (!fx_entry_id(name).empty()) name += 7;
   // A script parameter: its default is declared in the head of the script.
   if (!strncmp(name, "js_", 3))
     for (const auto& [file, sc] : doc_scripts(d))

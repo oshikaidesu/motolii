@@ -85,6 +85,14 @@ struct ScriptCopy {
   static constexpr double kNotSaid = std::numeric_limits<double>::quiet_NaN();
 };
 
+// An entry of a layer's effect list may carry the ID of that one use of the
+// file in front of it: six hex digits and a colon, as in "a1b2c3:blur.wgsl".
+// The same file put on a layer twice is then two effects, each with values of
+// its own. An entry written before the IDs has none. fx_entry_id returns the
+// ID, or "" when the entry has none; fx_entry_path returns the file without it.
+std::string fx_entry_id(const std::string& entry);
+std::string fx_entry_path(const std::string& entry);
+
 // Returns the path of a shelf file that a project names where the file no
 // longer is. The shelf folders have moved: first engine/effects/, then
 // shelves/effects/<source>/. If file contains a
@@ -100,7 +108,8 @@ std::string script_shelf_file(const std::string& file);
 // .am (Alight Motion's own motion file), .css (a pen's CSS on a text layer),
 // or names an AviUtl2 script
 // (.anm2 or .obj2, with "#name" after an @ file's). Any other word stands
-// alone. Each file goes through script_shelf_file.
+// alone. Each file goes through script_shelf_file; an entry's ID (fx_entry_id)
+// stays in front of the file it found.
 std::vector<std::string> script_files(const std::string& word);
 
 // Returns true if src is a relation that pushes layers: it defines force() and

@@ -2,7 +2,7 @@
 
 #include <backend/DriverEnums.h>
 #include <backend/PixelBufferDescriptor.h>
-#include <dlfcn.h>
+#include "shelf/shelf_folders.h"
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -439,15 +439,7 @@ Material* points_effect(Stage& s, const std::string& file,
   static std::map<std::string, Material*> built;
   Material*& m = built[fx->glsl()];
   if (m) return m;
-  Dl_info lib{};
-  dladdr((const void*)&points_effect, &lib);
-  std::error_code wrong;
-  const std::filesystem::path source =
-      std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".",
-                                        wrong)
-          .parent_path()
-          .parent_path() /
-      "materials" / "points.mat";
+  const std::filesystem::path source = doc_engine("materials/points.mat");
   std::ifstream in(source);
   std::stringstream text;
   text << in.rdbuf();

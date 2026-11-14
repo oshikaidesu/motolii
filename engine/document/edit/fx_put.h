@@ -22,13 +22,11 @@ std::string doc_effect_names();
 // false and sets d.error when the layer is a camera and `list` holds anything
 // other than a .am motion.
 bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list);
-// Puts an effect file at the end of the layer's effect list, or takes it out if
-// it is already in the list. This is one undo step.
-//
-// Taking an effect out also deletes the keyframes and values of its parameters,
-// as deleting an effect does in After Effects and Alight Motion, so that
-// putting it on again starts fresh. Turning the effect off with its eye,
-// fx_off, keeps them, as in Alight Motion.
+// Puts an effect file at the end of the layer's effect list, as one undo step.
+// A file that is there already is put on once more, as After Effects does: each
+// use gets an ID of its own in front of its file (fx_entry_id in script.h), and
+// a shader's values are kept under it (doc_fx_values_id). doc_fx_out takes one
+// out.
 //
 // `now` is the time at which a transition is put on, or NAN when there is none.
 // A transition runs from that time: its progress is keyed 0 then and 1 a second
@@ -53,10 +51,12 @@ bool doc_effect(Doc& d, int layer, const char* name, double at);
 // Turns one of the layer's effects off, or back on, like the eye on an effect
 // in Alight Motion. The effect is named by its card title. Its values are kept.
 bool doc_fx_eye(Doc& d, int layer, const char* title);
-// Takes one of the layer's effects off, named by its card title or its own
-// name. This is what the shelf does when the effect is pressed again, and what
-// Delete does on an effect card in Alight Motion. The effect file is removed
-// from the list, see doc_fx_file. This is one undo step.
+// Takes one of the layer's effects off: the first of that card title, or of
+// that file. This is what Remove on the shelf does, and what Delete does on an
+// effect card in Alight Motion. Its keyframes and values go with it, as when an
+// effect is deleted in After Effects and Alight Motion, so that putting it on
+// again starts fresh. Turning the effect off with its eye, fx_off, keeps them,
+// as in Alight Motion. This is one undo step.
 bool doc_fx_out(Doc& d, int layer, const char* name);
 
 }  // namespace motolii

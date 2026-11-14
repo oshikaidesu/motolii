@@ -4,7 +4,7 @@
 // does, using IRIS's own settings in config/appsettings.json.
 #include "media/video_flash_check.h"
 
-#include <dlfcn.h>
+#include "shelf/shelf_folders.h"
 
 #include <filesystem>
 #include <mutex>
@@ -19,16 +19,9 @@ namespace motolii {
 const char* video_flash_check(const char* film, const char* folder) {
   static thread_local std::string out;
   out.clear();
-  Dl_info lib{};
-  // The settings are found beside the library, the same way doc_folders finds
+  // The settings are in the engine's own folder, found as doc_folders finds
   // the library's own.
-  dladdr((const void*)&video_flash_check, &lib);
-  std::error_code wrong;
-  const auto settings = std::filesystem::weakly_canonical(
-                            lib.dli_fname ? lib.dli_fname : ".", wrong)
-                            .parent_path()
-                            .parent_path() /
-                        "third_party" / "iris" / "IRIS" / "config" / "";
+  const auto settings = doc_engine("third_party/iris/IRIS/config") / "";
   if (!film || !folder || !std::filesystem::is_regular_file(film) ||
       !std::filesystem::is_regular_file(settings / "appsettings.json"))
     return out.c_str();

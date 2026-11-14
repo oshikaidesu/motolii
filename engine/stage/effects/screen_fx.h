@@ -282,12 +282,6 @@ void screen_fresh(Stage& s, ScreenFx& fx);
 // Returns true if any effect file of the stack has been written over since the
 // effect was built. This is what wakes a stage that is not drawing.
 bool screen_moved(const ScreenStack& st);
-// An effect entry ("a1b2c3:blur.wgsl") may carry a 6-hex instance-ID prefix.
-// Returns the bare file path (what the filesystem sees) or the ID; the ID is
-// empty when the entry has no prefix. Defined in screen_fx.cpp.
-std::string screen_fx_entry_path(const std::string& entry);
-std::string screen_fx_entry_id(const std::string& entry);
-
 // Returns the effect of `file` in the stack, read and built the first time it
 // is asked for. A file that cannot be read or built is remembered with a null
 // interop and the reason in trouble (printed to stderr once), so it is not read

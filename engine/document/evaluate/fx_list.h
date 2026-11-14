@@ -7,35 +7,35 @@
 #include <utility>
 #include <vector>
 
+#include "community/quickjs/script.h"
 #include "stage/canvas/canvas_cache.h"
 
 namespace motolii {
 
 struct Doc;
 
-// Returns the instance ID of an fx entry. An entry may carry a 6-hex-char
-// prefix: "a1b2c3:blur.js" → "a1b2c3". An old entry without a prefix returns
-// "". Each instance of the same file on a layer gets its own ID so their
-// parameters are stored separately.
-std::string fx_entry_id(const std::string& entry);
-// Returns the file path of an fx entry, stripping the instance-ID prefix.
-// "a1b2c3:blur.js" → "blur.js". "blur.js" → "blur.js".
-std::string fx_entry_path(const std::string& entry);
-
-// Returns the layer's effects in the order they are laid, like the effect stack
-// of After Effects. Each entry may carry an instance-ID prefix
-// ("a1b2c3:blur.js"); callers that need the file path use fx_entry_path().
+// Returns the files of the layer's effects in the order they are laid, like
+// the effect stack of After Effects. The "fx" property names them in order;
+// each is the file alone, without the ID an entry may carry (fx_entry_id in
+// script.h), so the same file put on twice is here twice.
 //
-// The "fx" property names the effects in order.
-//
-// With `off` set, effects that are turned off are included, as the effect cards
-// list them (fx_off, the eye on an effect in Alight Motion). Otherwise only
-// effects that are on are returned.
+// When `off` is true the list includes the effects that are turned off, as
+// cards list them (fx_off, the eye on an effect in Alight Motion). Otherwise
+// only effects that are on are returned, and after them the effect being tried
+// on the layer (doc_carry_effect).
 std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off = false);
-// Like doc_fx_list() but returns (instance_id, file_path) pairs. id is ""
-// for old entries that have no instance prefix.
-std::vector<std::pair<std::string, std::string>> doc_fx_instances(
-    Doc& d, int layer, bool off = false);
+// The same effects as the "fx" property names them: an entry is the file with
+// its ID in front where it has one ("a1b2c3:blur.wgsl"). For what changes the
+// list and writes it back (doc_fx_say), and for what reads an effect's own
+// values.
+std::vector<std::string> doc_fx_entries(Doc& d, int layer, bool off = false);
+// Returns the ID an entry's values are kept under, or "" when they are kept
+// under the file's own names. A shader (a .wgsl or an ISF file) reads its
+// values by its ID (doc_layers_fx), so two of the same file are turned apart.
+// What is not drawn as a shader reads the file's names whichever entry names
+// it: a motion, an expression, a solid's shape, a splat effect, an AviUtl2
+// script, Filament's settings.
+std::string doc_fx_values_id(Doc& d, const std::string& entry);
 // Returns whether any effect in `list` is a file. Then all of them run in
 // order in the camera view; see thing_effects_draw in
 // engine/stage/layer_effects/layer_fx.h.
@@ -48,8 +48,8 @@ bool doc_fx_files(const std::vector<std::string>& list);
 // and, for the quick smear, SmearFilter in DrawShuttered in
 // engine/third_party/AbsentMotion/app/src/main/cpp/styles.cpp.
 std::vector<std::string> doc_fx_steps(Doc& d, int layer);
-// Like doc_fx_steps() but preserves instance-ID prefixes in each entry so the
-// GPU draw path can pass each instance's ID to the numbers callback.
+// The same steps as their entries, each with its ID in front where it has one,
+// so that what draws them reads each one's own values.
 std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer);
 // Returns the effect names joined with single spaces.
 std::string doc_fx_join(const std::vector<std::string>& list);

@@ -39,7 +39,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     // Each entry may carry a per-instance ID prefix ("a1b2c3:blur.wgsl"); the
     // bare path is what the file-type gates and filesystem look-ups need, while
     // screen_built keyes its cache on the whole entry to keep instances apart.
-    const std::string path = screen_fx_entry_path(entry);
+    const std::string path = fx_entry_path(entry);
     // An AviUtl2 script. It runs each frame on the layer's image.
     if (aviutl_is(path)) {
       const auto found =
@@ -89,7 +89,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   // Returns the effect's name: for an @ file the part after '#', otherwise the
   // file stem. Entries may carry an instance-ID prefix, so strip it first.
   const auto nameOf = [](const std::string& entry) {
-    const std::string path = screen_fx_entry_path(entry);
+    const std::string path = fx_entry_path(entry);
     const size_t hash = path.rfind('#');
     return hash != std::string::npos
                ? aviutl_unword(path.substr(hash + 1))

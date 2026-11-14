@@ -34,6 +34,7 @@
 #include "community/quickjs/script.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
+#include "document/evaluate/fx_list.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
@@ -110,7 +111,8 @@ void doc_look(Doc& d) {
            });
   for (const int h : holders)
     for (const std::string& file :
-         script_files(doc_word(d, h, h == 0 ? "script" : "fx")))
+         h == 0 ? script_files(doc_word(d, 0, "script"))
+                : doc_fx_list(d, h, true))
       if (DocScript* sc = doc_script_of(d, file); sc && sc->viewer)
         told.push_back(viewer_said(file, sc->parameters, [&](size_t k) {
           return doc_number(d, h, sc->names[k].c_str(), s.now,

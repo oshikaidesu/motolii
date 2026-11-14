@@ -240,10 +240,12 @@ class EffectCode extends StatefulWidget {
     Directory(dir).createSync(recursive: true);
     _EffectCodeState._beside(file, word, dir);
     File(file).copySync(to);
-    // Joined the way doc_fx_join does.
+    // Joined the way doc_fx_join does. An entry keeps the ID in front of its file, which its values are kept under.
     final fx = [
-      for (final w in WorkspaceController.fxFiles(m.word(thing, slot)))
-        w == word ? said : w,
+      for (final e in WorkspaceController.fxEntries(m.word(thing, slot)))
+        WorkspaceController.fxFile(e) == word
+            ? '${e.substring(0, e.length - word.length)}$said'
+            : e,
     ].join(' ');
     m.later('say', layer: thing, name: slot, word: fx);
     return (said, to, m.later('code', word: to));

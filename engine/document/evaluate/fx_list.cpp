@@ -9,6 +9,7 @@
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
+#include "community/three/solid_three.h"
 #include "document/cards.h"
 #include "document/document.h"
 #include "document/edit/keys_put.h"
@@ -16,23 +17,11 @@
 #include "document/evaluate/value_at.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
+#include "stage/layer_effects/layer_fx.h"
 
 namespace motolii {
 
-std::string fx_entry_id(const std::string& entry) {
-  if (entry.size() <= 7 || entry[6] != ':') return "";
-  for (int i = 0; i < 6; ++i) {
-    const char c = entry[i];
-    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";
-  }
-  return entry.substr(0, 6);
-}
-
-std::string fx_entry_path(const std::string& entry) {
-  return fx_entry_id(entry).empty() ? entry : entry.substr(7);
-}
-
-std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
+std::vector<std::string> doc_fx_entries(Doc& d, int layer, bool off) {
   std::vector<std::string> said, all;
   const std::string hidden =
       off ? std::string() : ";" + doc_word(d, layer, "fx_off") + ";";
@@ -49,18 +38,30 @@ std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
   if (!off && d.held.layer == layer)
     if (const auto e = d.held.said.find(" effect");
         e != d.held.said.end() &&
-        std::find(all.begin(), all.end(), e->second) == all.end())
+        std::none_of(all.begin(), all.end(), [&](const std::string& w) {
+          return fx_entry_path(w) == e->second;
+        }))
       all.push_back(e->second);
   return all;
 }
 
-std::vector<std::pair<std::string, std::string>> doc_fx_instances(
-    Doc& d, int layer, bool off) {
-  std::vector<std::pair<std::string, std::string>> result;
-  for (const std::string& w : doc_fx_list(d, layer, off))
-    result.emplace_back(fx_entry_id(w), fx_entry_path(w));
-  return result;
+std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
+  std::vector<std::string> all = doc_fx_entries(d, layer, off);
+  for (std::string& w : all) w = fx_entry_path(w);
+  return all;
 }
+
+std::string doc_fx_values_id(Doc& d, const std::string& entry) {
+  const std::string id = fx_entry_id(entry), file = fx_entry_path(entry);
+  if (id.empty() || doc_expression(d, file)) return "";
+  // As thing_effects (layer_fx.cpp) chooses what it builds as a shader.
+  const std::string ext = std::filesystem::path(file).extension().string();
+  return aviutl_is(file) || ext == ".mjs" || ext == ".am" || ext == ".json" ||
+                 solid_is(file) || points_is(file)
+             ? ""
+             : id;
+}
+
 bool doc_fx_files(const std::vector<std::string>& list) {
   // These file types are not effect files. A splat effect belongs to the point
   // cloud's own look. The motion of AbsentMotion moves the layer; see
@@ -72,10 +73,10 @@ bool doc_fx_files(const std::vector<std::string>& list) {
   });
 }
 std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
-  // Like doc_fx_steps but preserves instance-ID prefixes in each entry.
+  // An entry keeps its ID only where what draws it reads its values by it.
   std::vector<std::string> result;
-  for (const std::string& w : doc_fx_list(d, layer)) {
-    const std::string id = fx_entry_id(w);
+  for (const std::string& w : doc_fx_entries(d, layer)) {
+    const std::string id = doc_fx_values_id(d, w);
     std::string path = fx_entry_path(w);
     if (doc_expression(d, path)) continue;
     if (std::filesystem::path(path).extension() == ".am")

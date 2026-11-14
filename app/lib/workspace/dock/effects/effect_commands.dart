@@ -41,7 +41,7 @@ class EffectCommands {
   // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
   // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
   VoidCallback? off(EffectEntry e) =>
-      ws.screenFx.contains(e.id) ? () => ws.screenToggle(e.id) : null;
+      ws.screenFx.contains(e.id) ? () => ws.screenOff(e.id) : null;
 
   /// Puts the effect in the deck, or takes it out.
   void put(EffectListing l, EffectDeck d, EffectEntry e) => c.set(() {

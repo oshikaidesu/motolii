@@ -262,14 +262,25 @@ class WorkspaceController extends ChangeNotifier {
   void turnGroup(String id) => folds.turnGroup(id);
   Map<String, String> get foldedAway => folds.foldedAway;
 
-  // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension (see script_files in script.h).
+  // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension, with the ID of that
+  // one use in front where it has one, "a1b2c3:/…/blur.wgsl" (see script_files and fx_entry_id in script.h).
   static final _files = RegExp(
-    r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
+    r'(?:[0-9a-f]{6}:)?/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
   );
+  static final _useId = RegExp(r'^[0-9a-f]{6}:(?=.)');
 
-  static List<String> fxFiles(String fx) => [
+  /// The entries of an effect list as the engine keeps them, each with its ID where it has one. For writing a list back.
+  static List<String> fxEntries(String fx) => [
     for (final f in _files.allMatches(fx).map((m) => m[0]!))
       if (f != 'none') f,
+  ];
+
+  /// The file an entry names, without its ID (fx_entry_path).
+  static String fxFile(String entry) => entry.replaceFirst(_useId, '');
+
+  /// The files of an effect list, in order. The same file put on twice is here twice.
+  static List<String> fxFiles(String fx) => [
+    for (final e in fxEntries(fx)) fxFile(e),
   ];
 
   // Whether an effect is being previewed on the selected layer while the pointer is on its tile (see doc_carry_effect).

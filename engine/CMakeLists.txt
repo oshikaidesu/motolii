@@ -129,7 +129,7 @@ target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
 add_library(motolii_community_quickjs STATIC
   community/quickjs/script.cpp
   community/quickjs/script_leva.cpp)
-target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags)
+target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags motolii_shelf)
 target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)
 target_link_libraries(motolii_community_quickjs PUBLIC qjs)
 target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)

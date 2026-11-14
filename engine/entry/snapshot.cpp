@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "base/json.h"
+#include "community/quickjs/script.h"
 #include "document/card_table.h"
 #include "document/document.h"
 #include "document/edit/arrange.h"
@@ -60,8 +61,11 @@ std::vector<std::string> snapshot_names(Motolii* m, int layer) {
     all.insert(n);
   for (std::string n : snapshot_words(motolii_cards(m, layer))) {
     if (!n.empty() && n.back() == ';') n.pop_back();
-    // A card's own name ends in ':'.
-    if (n.empty() || n.back() == ':' || !std::islower((unsigned char)n[0]))
+    // A card's own name ends in ':'. A value's begins with a small letter,
+    // after the ID of the one use it belongs to where it has one
+    // ("a1b2c3:js_blur_size").
+    if (n.empty() || n.back() == ':' ||
+        !std::islower((unsigned char)fx_entry_path(n)[0]))
       continue;
     all.insert(n);
   }

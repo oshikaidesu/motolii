@@ -2,7 +2,6 @@
 // the header read for parameters, and anime.js's easings on QuickJS-ng.
 #include "community/quickjs/script.h"
 
-#include <dlfcn.h>
 #include <quickjs.h>
 #include <sys/stat.h>
 
@@ -22,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "shelf/shelf_folders.h"
+
 namespace motolii {
 
 static std::vector<std::string> split(const std::string& s, char by) {
@@ -34,6 +35,19 @@ static std::vector<std::string> split(const std::string& s, char by) {
   return out;
 }
 
+std::string fx_entry_id(const std::string& entry) {
+  if (entry.size() <= 7 || entry[6] != ':') return "";
+  for (int i = 0; i < 6; ++i) {
+    const char c = entry[i];
+    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";
+  }
+  return entry.substr(0, 6);
+}
+
+std::string fx_entry_path(const std::string& entry) {
+  return fx_entry_id(entry).empty() ? entry : entry.substr(7);
+}
+
 std::string script_shelf_file(const std::string& file) {
   std::error_code wrong;
   if (file.find('/') == std::string::npos ||
@@ -41,6 +55,10 @@ std::string script_shelf_file(const std::string& file) {
     return file;
   // For each shelf kind, a map from file name to full path. Filled on first
   // use.
+  // The app has more than one engine at work in one process (the workspace's
+  // and the tile studio's), each on a thread of its own.
+  static std::mutex one;
+  std::lock_guard<std::mutex> hold(one);
   static std::map<std::string, std::map<std::string, std::string>> by;
   for (std::filesystem::path p = std::filesystem::path(file).parent_path();
        !p.empty() && p != p.parent_path(); p = p.parent_path()) {
@@ -55,14 +73,10 @@ std::string script_shelf_file(const std::string& file) {
                             : kind == "animators" ? "expressions"
                                                   : kind;
     if (!by.count(now)) {
-      Dl_info lib{};
-      dladdr((const void*)&script_shelf_file, &lib);
-      const auto shelf = std::filesystem::weakly_canonical(
-                             lib.dli_fname ? lib.dli_fname : ".", wrong)
-                             .parent_path()
-                             .parent_path()
-                             .parent_path() /
-                         "shelves" / now;
+      // Found as doc_folders finds it, so the open app's hot-swapped copy of
+      // the library (out/live/) reaches the same shelves.
+      const auto shelf =
+          (doc_engine("..") / "shelves" / now).lexically_normal();
       auto& names = by[now];
       for (const auto& e :
            std::filesystem::recursive_directory_iterator(shelf, wrong))
@@ -95,7 +109,12 @@ std::vector<std::string> script_files(const std::string& word) {
     else
       all.push_back(w);
   }
-  for (std::string& f : all) f = script_shelf_file(f);
+  // An effect's own ID stays in front of its file, which is found without it.
+  for (std::string& f : all)
+    if (const std::string id = fx_entry_id(f); id.empty())
+      f = script_shelf_file(f);
+    else
+      f = id + ":" + script_shelf_file(f.substr(id.size() + 1));
   return all;
 }
 

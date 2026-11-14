@@ -39,9 +39,13 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
   if (kind.empty())
     return d.error = "there is no layer " + std::to_string(layer), false;
   if (!name) return true;
+  // A value of one use of an effect, or of one stroke, is kept with that use's
+  // ID in front of its name ("a1b2c3:js_blur_size", fx_entry_id in script.h).
+  // It is the value its name without the ID is.
+  const char* const base = fx_entry_id(name).empty() ? name : name + 7;
   const DocValue* v = nullptr;
   for (const DocValue& one : doc_values)
-    if (!strcmp(one.name, name) && doc_among(one.kinds, kind)) {
+    if (!strcmp(one.name, base) && doc_among(one.kinds, kind)) {
       v = &one;
       break;
     }
@@ -73,11 +77,11 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
     d.error.clear();
   }
   // A parameter of the layer's script, or of a camera's motion.
-  if (!v && !strncmp(name, "js_", 3) &&
+  if (!v && !strncmp(base, "js_", 3) &&
       doc_among("video image text shape solid stage camera behaviour", kind))
     for (const DocScript* sc : doc_scripts_on(d, layer))
       for (const DocValue& one : sc->values)
-        if (!strcmp(one.name, name)) v = &one;
+        if (!strcmp(one.name, base)) v = &one;
   // Returns the names the kind has, or only those that can move. Used only to
   // explain a refused call.
   const auto said = [&](bool moves) {
@@ -406,8 +410,11 @@ bool doc_say(Doc& d, int layer, const char* name, const char* word) {
   if (!strcmp(name, "script") && word && layer != 0 &&
       doc_among("image text shape solid", doc_word(d, layer, "kind")) &&
       doc_expression(d, word)) {
-    std::vector<std::string> list = doc_fx_list(d, layer, true);
-    if (std::find(list.begin(), list.end(), word) != list.end()) return true;
+    std::vector<std::string> list = doc_fx_entries(d, layer, true);
+    if (std::any_of(list.begin(), list.end(), [&](const std::string& w) {
+          return fx_entry_path(w) == word;
+        }))
+      return true;
     list.push_back(word);
     return doc_fx_say(d, layer, list);
   }

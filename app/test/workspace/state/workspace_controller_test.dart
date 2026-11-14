@@ -350,6 +350,29 @@ void main() {
         '/y/z.js',
       ]);
     });
+
+    // The two lists are what the engine wrote as a layer's fx after `fx_file` (edit.sh's `list`, 2026-11-14): each use of
+    // a file has six hex digits and a colon in front of it.
+    test('fxFiles gives the files of a list whose entries carry IDs, and fxEntries the entries as they are', () {
+      const one =
+          'b8222e:/Users/me/motolii/shelves/effects/distort/am_reorient360.wgsl';
+      const two =
+          '22b5b4:/Users/me/motolii/shelves/effects/stylize/ASCII Art.fs '
+          'aaaaaa:/lib/am_halftone.wgsl /lib/am_halftone~2.wgsl';
+      expect(WorkspaceController.fxFiles(one), [
+        '/Users/me/motolii/shelves/effects/distort/am_reorient360.wgsl',
+      ]);
+      expect(WorkspaceController.fxFiles(two), [
+        '/Users/me/motolii/shelves/effects/stylize/ASCII Art.fs',
+        '/lib/am_halftone.wgsl',
+        '/lib/am_halftone~2.wgsl',
+      ]);
+      expect(WorkspaceController.fxEntries(two), [
+        '22b5b4:/Users/me/motolii/shelves/effects/stylize/ASCII Art.fs',
+        'aaaaaa:/lib/am_halftone.wgsl',
+        '/lib/am_halftone~2.wgsl',
+      ]);
+    });
   });
 
   test('dispose shuts the playhead and the counter of every aspect', () {

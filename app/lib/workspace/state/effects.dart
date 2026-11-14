@@ -71,23 +71,30 @@ extension WorkspaceEffects on WorkspaceController {
     if (file != null) m.later('fx_file', layer: -1, word: file);
   });
 
-  /// Adds effect [file] after the others on the selected layer, or removes it. Either is one undo step.
+  /// Adds effect [file] after the others on the selected layer, as one undo step.
   /// With no layer selected it creates a new adjustment layer carrying the effect, as Photoshop's Adjustments panel does.
-  bool screenToggle(String file) {
+  bool _screenAdd(String file) {
     final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return false;
     if (t == null) {
       adjustment(file);
       return true;
     }
-    // The engine puts it at the end of the list or removes it. If refused, say why; a camera accepts motions only.
-    after(
-      m.later('fx_file', layer: t, word: file),
-      (done, why) => done || why.isEmpty
-          ? null
-          : notice = 'Not taken: ${why.split(':').first}',
-    );
+    // The engine puts it at the end of the list (doc_fx_file). If refused, say why; a camera accepts motions only.
+    after(m.later('fx_file', layer: t, word: file), _refused);
     return true;
+  }
+
+  /// Takes effect [file] off the selected layer, as one undo step, as the bin on its card does (doc_fx_out).
+  bool screenOff(String file) {
+    final m = inside, t = int.tryParse(selected ?? '');
+    if (m == null || t == null) return false;
+    after(m.later('fx_out', layer: t, word: file), _refused);
+    return true;
+  }
+
+  void _refused(bool done, String why) {
+    if (!done && why.isNotEmpty) notice = 'Not taken: ${why.split(':').first}';
   }
 
   /// Adds effect [file] after the others on the selected layer. If it is already there, adds another copy, as After
@@ -95,14 +102,14 @@ extension WorkspaceEffects on WorkspaceController {
   /// ("Glow~2.fs", see doc_fx_duplicate), which works for ISF and .wgsl files only.
   bool screenPut(String file) {
     final had = screenFx, dot = file.lastIndexOf('.');
-    if (!had.contains(file)) return screenToggle(file);
+    if (!had.contains(file)) return _screenAdd(file);
     if (!file.endsWith('.fs') && !file.endsWith('.wgsl')) {
       // The wording comes from the engine, see doc_fx_duplicate.
       notice =
           'Not taken: only an ISF or a .wgsl effect is put on again so far';
       return false;
     }
-    return screenToggle(
+    return _screenAdd(
       firstFree(
         file,
         had.contains,

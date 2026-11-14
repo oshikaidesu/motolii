@@ -274,27 +274,11 @@ bool screen_moved(const ScreenStack& st) {
   return false;
 }
 
-std::string screen_fx_entry_id(const std::string& entry) {
-  // An entry is either "id:path" (6 lowercase hex chars then a colon) or a
-  // bare path. We parse here instead of calling motolii_document to avoid a
-  // circular module dependency.
-  if (entry.size() <= 7 || entry[6] != ':') return "";
-  for (int i = 0; i < 6; ++i) {
-    const char c = entry[i];
-    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";
-  }
-  return entry.substr(0, 6);
-}
-
-std::string screen_fx_entry_path(const std::string& entry) {
-  return screen_fx_entry_id(entry).empty() ? entry : entry.substr(7);
-}
-
 ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& entry) {
   // The entry may be "id:file" or just "file". Compile using the actual path;
   // cache by the full entry so two instances of the same file are independent.
-  const std::string id = screen_fx_entry_id(entry);
-  const std::string file = screen_fx_entry_path(entry);
+  const std::string id = fx_entry_id(entry);
+  const std::string file = fx_entry_path(entry);
   ScreenFx*& built = st.built[entry];
   if (built) return built;
   built = new ScreenFx;

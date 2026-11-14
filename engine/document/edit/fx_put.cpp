@@ -129,7 +129,7 @@ std::string make_instance_id(const std::vector<std::string>& list) {
 }  // namespace
 
 bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
-  std::vector<std::string> list = doc_fx_list(d, layer, true);
+  std::vector<std::string> list = doc_fx_entries(d, layer, true);
   // Always add a new instance with a unique ID; never toggle. The same effect
   // may appear on a layer more than once with independent parameters, as in
   // After Effects.
@@ -153,7 +153,9 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
               [](const ScriptParameter& k) { return k.name == "endImage"; }))
         for (size_t i = 0; i < sc->parameters.size(); ++i)
           if (sc->parameters[i].name == "progress") {
-            const std::string key = id + ":" + sc->names[i];
+            const std::string own = doc_fx_values_id(d, entry),
+                              key = own.empty() ? sc->names[i]
+                                                : own + ":" + sc->names[i];
             if (!(doc_key(d, layer, key.c_str(), now, in ? 1.0 : 0.0) &&
                   doc_key(d, layer, key.c_str(), now + 1.0, in ? 0.0 : 1.0)))
               d.act.ok = false;
@@ -162,8 +164,10 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
 }
 
 bool doc_fx_move(Doc& d, int layer, const char* name, int by) {
-  std::vector<std::string> list = doc_fx_list(d, layer, true);
-  auto at = std::find(list.begin(), list.end(), name);
+  std::vector<std::string> list = doc_fx_entries(d, layer, true);
+  auto at = std::find_if(
+      list.begin(), list.end(),
+      [&](const std::string& w) { return w == name || fx_entry_path(w) == name; });
   if (at == list.end())
     at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
       return doc_fx_title(w) == name;
@@ -264,22 +268,29 @@ bool doc_fx_eye(Doc& d, int layer, const char* title) {
 }
 
 bool doc_fx_out(Doc& d, int layer, const char* name) {
-  std::vector<std::string> list = doc_fx_list(d, layer, true);
-  // Find the first entry whose title matches; titles are compared without the
-  // instance-ID prefix, so "Blur" removes the first blur regardless of its ID.
-  const auto at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
-    return doc_fx_title(w) == name;
-  });
+  std::vector<std::string> list = doc_fx_entries(d, layer, true);
+  // The first entry of that title, as its card names it, or of that file, as
+  // the shelf names it; either is compared without the entry's ID.
+  const auto at =
+      std::find_if(list.begin(), list.end(), [&](const std::string& w) {
+        return doc_fx_title(w) == name || fx_entry_path(w) == name;
+      });
   if (at == list.end())
     return d.error = std::string(name) + " is not among its effects", false;
   const std::string removed = *at;
   list.erase(at);
   doc_act(d);
   if (!doc_fx_say(d, layer, list)) d.act.ok = false;
-  // Clean up the instance-keyed parameters so the same ID can be reused later.
-  const std::string id = fx_entry_id(removed);
+  // Its own values go with it. Values kept under the file's own names stay
+  // while the file is still on the layer once more.
+  const std::string id = doc_fx_values_id(d, removed);
   const std::string file = fx_entry_path(removed);
-  if (const DocScript* sc = doc_script_of(d, file))
+  const bool shared =
+      id.empty() &&
+      std::any_of(list.begin(), list.end(), [&](const std::string& w) {
+        return fx_entry_path(w) == file;
+      });
+  if (const DocScript* sc = shared ? nullptr : doc_script_of(d, file))
     for (const std::string& n : sc->names) {
       const std::string key = id.empty() ? n : id + ":" + n;
       if (!doc_change(d,
