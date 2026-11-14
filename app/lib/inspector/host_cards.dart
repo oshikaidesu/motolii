@@ -3,12 +3,12 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/blend/blend_preview.dart';
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/paths/paths_body.dart';
 import 'package:motolii/inspector/play/play_graph.dart';
 import 'package:motolii/inspector/source/film_strip.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
 import 'package:motolii/inspector/transform/transform_body.dart';
-import 'package:motolii/inspector/trim/trim_path.dart';
 
 /// A card is here only when the window can show its values as a picture that is pulled to edit them, which a block
 /// per value cannot (the author's rule, 2026-11-12). The card keeps its standard frame; [drawn] names the values the
@@ -33,12 +33,7 @@ final hostCards =
         body: (card) => TextBody(card),
         fold: null,
       ),
-      'Trim Paths': (
-        drawn: const {},
-        body: (card) => TrimPath(card),
-        fold: null,
-      ),
-      // The optional cards keep their number tiles below the picture, as Trim Paths does.
+      // The optional cards keep their number tiles below the picture, as Trim Paths did.
       'Blending': (
         drawn: const {
           'blend',
@@ -51,6 +46,10 @@ final hostCards =
         fold: null,
       ),
       'Play': (drawn: const {}, body: (card) => PlayGraph(card), fold: null),
-      'Paths': (drawn: const {}, body: (card) => TrimPath(card), fold: null),
+      'Paths': (
+        drawn: PathsBody.drawn,
+        body: (card) => PathsBody(card),
+        fold: null,
+      ),
       'Media': (drawn: const {}, body: (card) => FilmStrip(card), fold: null),
     };

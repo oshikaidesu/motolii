@@ -205,15 +205,15 @@ inline const DocValue doc_values[] = {
     {"visible", doc_placed_kinds, 0, 1, false, nullptr},
     {"order", doc_kinds, -1e9, 1e9, false, nullptr},
     {"wide", "shape", 1e-3, 1e3, false, nullptr},
-    {"shape", "shape", 0, 0, false,
-     "rect circle solid polygon star line wave null ring arc arrow squircle "
-     "cog path spiral chamfer"},
+    // rect: a rectangle whose corner count is set by points (3 = triangle,
+    // 4 = quad, inner > 0 = star). circle: a circle.
+    {"shape", "shape", 0, 0, false, "rect circle"},
     // crop_left, crop_top, crop_right and crop_bottom cut a photo in from each
     // side, as a share of
     // its width or height, like Alight Motion's crop. points, inner and round
     // are a polygon's or
     // star's points, a star's inner points, and its rounded corners.
-    {"points", "shape", 1, 360, false, nullptr},
+    {"points", "shape", 3, 360, false, nullptr},
     {"inner", "shape", 0.01, 1, false, nullptr},
     {"round", "shape image", 0, 0.5, true, nullptr},
     {"crop_left", "image", 0, 0.95, false, nullptr},
