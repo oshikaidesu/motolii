@@ -292,6 +292,7 @@ bool doc_to_path(Doc& d, int layer) {
   flat_path(&made, shape, form.c_str(), w, h, 0.f,
             (int)doc_number(d, layer, "points", 0,
                             form == "star"       ? 5
+                            : form == "rect"     ? 4
                             : form == "arc"      ? 270
                             : form == "squircle" ? 4
                             : form == "cog"      ? 12
@@ -303,6 +304,7 @@ bool doc_to_path(Doc& d, int layer) {
                               : form == "arc"     ? 0.3
                               : form == "spiral"  ? 0.1
                               : form == "chamfer" ? 0.3
+                              : form == "rect"    ? 0.0
                                                   : 0.5),
             0.f, 0.f);
   const auto num = [&](const char* name, double usual) {

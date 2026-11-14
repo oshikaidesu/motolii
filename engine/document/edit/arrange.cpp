@@ -320,8 +320,11 @@ double doc_usual(Doc& d, const char* name) {
 double doc_usual_on(Doc& d, int layer, const char* name) {
   return !strcmp(name, "scale_z") && doc_word(d, layer, "kind") != "solid" ? 0.0
          : !strcmp(name, "points")
-             ? (doc_word(d, layer, "shape") == "star" ? 5.0 : 6.0)
-         : !strcmp(name, "inner") ? 0.5
+             ? (doc_word(d, layer, "shape") == "star"   ? 5.0
+                : doc_word(d, layer, "shape") == "rect" ? 4.0
+                                                        : 6.0)
+         : !strcmp(name, "inner")
+             ? (doc_word(d, layer, "shape") == "rect" ? 0.0 : 0.5)
                                   : doc_usual(d, name);
 }
 
