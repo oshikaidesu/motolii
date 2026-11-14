@@ -8,7 +8,6 @@
 // Clicking a place there gives the shelf to its contents, and clicking the row brings the list back.
 // Alight Motion's browser moves between its categories and a category's effects in the same way (EffectBrowser.kt: 105, 197, 247).
 import 'package:motolii/workspace/dock/effects/effect_places_menus.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -16,7 +15,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/controls.dart' show IconPress;
-import 'package:motolii/widgets/text_gestures.dart' show TextGestures;
+import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 import 'package:motolii/workspace/dock/common/folder_row.dart';
 import 'package:motolii/workspace/dock/common/shelf_section.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
@@ -85,14 +84,12 @@ class EffectPlacesState extends State<EffectPlaces> {
   bool _search = false, _folded = false;
   // The Favorites going into the deck being named. They are cleared once it is named, as in Lightroom's Save.
   List<String>? _saving;
-  final _words = TextEditingController();
-  late final FocusNode _focus = FocusNode()
-    ..addListener(() => _focus.hasFocus ? null : _named());
+  // What is typed in the field right now, so the hint can show while it is empty.
+  final _typed = ValueNotifier<String>('');
 
   @override
   void dispose() {
-    _focus.dispose();
-    _words.dispose();
+    _typed.dispose();
     super.dispose();
   }
 
@@ -100,16 +97,19 @@ class EffectPlacesState extends State<EffectPlaces> {
     final now = search ? d.words : d.name, c = widget.c;
     _folded = !c.mem.fxListOpen;
     c.set(() => (_naming = d, _search = search, c.mem.fxListOpen = true));
-    _words
-      ..text = now
-      ..selection = TextSelection(baseOffset: 0, extentOffset: now.length);
-    // The text field exists from the next frame on.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    _typed.value = now;
   }
 
-  void _named() {
-    final d = _naming, c = widget.c, now = _words.text.trim();
+  /// Commits what the field said ([said] is null when Esc cancelled it).
+  void _named(String? said) {
+    final d = _naming, c = widget.c;
     if (d == null || !mounted) return;
+    if (said == null && _saving != null) {
+      // Escape during Save Favorites… cancels it.
+      c.set(() => (effectDecks().remove(d), c.mem.fxPlace = '★'));
+      _saving = null;
+    }
+    final now = (said ?? (_search ? d.words : d.name)).trim();
     c.set(() {
       if (_search) {
         d.words = now;
@@ -171,57 +171,40 @@ class EffectPlacesState extends State<EffectPlaces> {
   );
 
   // The name field, edited inside the row as the Create shelf does for a tile's name.
-  Widget _field(EffectDeck d) => CallbackShortcuts(
-    bindings: {
-      const SingleActivator(LogicalKeyboardKey.escape): () {
-        if (_saving != null) {
-          // Escape during Save Favorites… cancels it.
-          widget.c.set(
-            () => (effectDecks().remove(d), widget.c.mem.fxPlace = '★'),
-          );
-          _saving = null;
-        }
-        _words.text = _search ? d.words : d.name;
-        _focus.unfocus();
-      },
-    },
-    child: Container(
-      color: Grey.g91,
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
+  Widget _field(EffectDeck d) => Container(
+    color: Grey.g91,
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
+    alignment: Alignment.centerLeft,
+    child: Stack(
       alignment: Alignment.centerLeft,
-      child: Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          if (_search)
-            ListenableBuilder(
-              listenable: _words,
-              builder: (_, _) => _words.text.isEmpty
-                  ? IgnorePointer(
-                      child: Text(
-                        'Search words, #tags',
-                        maxLines: 1,
-                        style: TextStyles.name(Grey.g56),
-                      ),
-                    )
-                  : const SizedBox(),
-            ),
-          TextGestures(
-            key: const ValueKey('ws-fx-naming'),
-            field: (k) => EditableText(
-              key: k,
-              rendererIgnoresPointer: true,
-              controller: _words,
-              focusNode: _focus,
-              style: TextStyles.name(Grey.g13),
-              cursorColor: Grey.g13,
-              backgroundCursorColor: Grey.g38,
-              selectionColor: Grey.g63,
-              maxLines: 1,
-              onSubmitted: (_) => _focus.unfocus(),
-            ),
+      children: [
+        if (_search)
+          ValueListenableBuilder(
+            valueListenable: _typed,
+            builder: (_, text, _) => text.isEmpty
+                ? IgnorePointer(
+                    child: Text(
+                      'Search words, #tags',
+                      maxLines: 1,
+                      style: TextStyles.name(Grey.g56),
+                    ),
+                  )
+                : const SizedBox(),
           ),
-        ],
-      ),
+        // The app's one text field: it takes the focus with the text selected, Return or clicking away says the text, Esc says null.
+        TypedField(
+          key: const ValueKey('ws-fx-naming'),
+          text: _search ? d.words : d.name,
+          style: TextStyles.name(Grey.g13),
+          cursor: Grey.g13,
+          backgroundCursor: Grey.g38,
+          selection: Grey.g63,
+          take: true,
+          escapes: true,
+          onPick: (v) => _typed.value = v.text,
+          onDone: _named,
+        ),
+      ],
     ),
   );
 
