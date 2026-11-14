@@ -71,6 +71,7 @@ ShapeNumbers shape_numbers(Doc& d, int layer, const std::string& shape,
                             : shape == "arc"     ? 0.3
                             : shape == "spiral"  ? 0.1
                             : shape == "chamfer" ? 0.3
+                            : shape == "rect"    ? 0.0
                                                  : 0.5),
           (float)doc_number(d, layer, "round", 0, 0)};
 }
