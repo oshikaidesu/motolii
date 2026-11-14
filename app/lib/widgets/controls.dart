@@ -424,14 +424,8 @@ class Segmented extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: i == index ? Grey.g20 : null,
+          color: i == index ? Accent.fill : null,
           borderRadius: BorderRadius.all(Shape.r(5)),
-          border: Border(
-            bottom: BorderSide(
-              color: i == index ? Role.selected : const Color(0x00000000),
-              width: 1,
-            ),
-          ),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -441,7 +435,7 @@ class Segmented extends StatelessWidget {
               if (glyphs?.elementAtOrNull(i) case final g?) ...[
                 CustomPaint(
                   size: const Size(16, 14),
-                  painter: _StrokeGlyph(g, i == index ? Grey.g95 : Grey.g63),
+                  painter: _StrokeGlyph(g, i == index ? Accent.on : Grey.g63),
                 ),
                 SizedBox(width: Shape.s(6)),
               ],
@@ -449,7 +443,7 @@ class Segmented extends StatelessWidget {
                 items[i].toUpperCase(),
                 maxLines: 1,
                 softWrap: false,
-                style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63)
+                style: TextStyles.micro(i == index ? Accent.on : Grey.g63)
                     .copyWith(letterSpacing: .4),
               ),
             ],
