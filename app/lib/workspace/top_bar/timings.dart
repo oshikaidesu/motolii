@@ -19,7 +19,6 @@ import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// A red dot with a count of problems, shown only when there are any.
@@ -33,7 +32,7 @@ class Waited extends StatefulWidget {
 }
 
 class _WaitedState extends State<Waited> {
-  final _open = OverlayPortalController(), _at = LayerLink();
+  final _m = MenuController();
   late final Timer _look;
   final _born = Stopwatch()..start();
   // The number shown on the dot.
@@ -56,8 +55,6 @@ class _WaitedState extends State<Waited> {
   Object? _of;
   // The project whose problems are counted. A different project starts again from 0.
   String? _doc;
-  // The dot and its list form one tap region, so a tap outside both closes the list.
-  final _group = Object();
   // True if playback ran, or a pointer was down or scrolling, since the last frame timings arrived.
   bool _moved = false;
   // The app's own slow frames, each with a time stamp. Only the last 200 are kept.
@@ -148,15 +145,10 @@ class _WaitedState extends State<Waited> {
   void _recount() {
     final all = _insideSeen + _lateCount;
     // While the list is open, every line in it counts as seen.
-    if (_open.isShowing) _seen = all;
+    if (_m.isOpen) _seen = all;
     final n = all - _seen;
     // While the list is open, rebuild so new lines appear as they come.
-    if ((n != _count || _open.isShowing) && mounted) setState(() => _count = n);
-  }
-
-  void _show(bool open) {
-    setState(open ? _open.show : _open.hide);
-    _recount();
+    if ((n != _count || _m.isOpen) && mounted) setState(() => _count = n);
   }
 
   @override
@@ -169,96 +161,78 @@ class _WaitedState extends State<Waited> {
 
   @override
   Widget build(BuildContext context) {
-    if (_count == 0 && !_open.isShowing) return const SizedBox.shrink();
-    // The engine's and the app's lines, newest first. Each line starts with its clock time.
-    final lines = _open.isShowing
-        ? ([
-            ...(WorkspaceScope.read(context).inside?.broken ?? '')
-                .split('\n')
-                .where((l) => l.isNotEmpty),
-            ..._late,
-          ]..sort((a, b) => b.compareTo(a))).take(40).toList()
-        : const <String>[];
-    return CompositedTransformTarget(
-      link: _at,
-      child: OverlayPortal(
-        controller: _open,
-        overlayChildBuilder: (overlay) => CompositedTransformFollower(
-          link: _at,
-          targetAnchor: Alignment.bottomRight,
-          followerAnchor: Alignment.topRight,
-          offset: const Offset(0, 6),
-          child: Align(
-            alignment: Alignment.topRight,
-            child: TapRegion(
-              // A tap anywhere else closes the list, like a transient NSPopover on macOS, and still reaches what is under it.
-              groupId: _group,
-              onTapOutside: (_) => _show(false),
-              child: NakedButton(
-                enableFeedback: false,
-                onPressed: () => _show(false),
-                mouseCursor: SystemMouseCursors.basic,
-                child: Container(
-                  width: Shape.z(520),
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(overlay).height * .7,
-                  ), // Lines wrap rather than being cut, and a long list scrolls.
-                  padding: EdgeInsets.all(Shape.s(10)),
-                  decoration: BoxDecoration(
-                    color: WindowTokens.card,
-                    borderRadius: BorderRadius.all(Shape.r(6)),
-                    border: Border.all(color: Grey.g26),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final l in lines)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: Shape.s(3)),
-                            child: Text(
-                              l,
-                              softWrap: true,
-                              style: TextStyles.micro(Grey.g76),
-                            ),
-                          ),
-                      ],
+    if (_count == 0 && !_m.isOpen) return const SizedBox.shrink();
+    // naked_ui's NakedPopover owns the open and shut state: a press on the dot toggles it, a press elsewhere or Esc closes it,
+    // and a tap elsewhere still reaches what is under it, like a transient NSPopover on macOS.
+    return NakedPopover(
+      controller: _m,
+      consumeOutsideTaps: false,
+      positioning: OverlayPositionConfig(
+        side: OverlaySide.bottom,
+        alignment: OverlayAlignment.end,
+        sideOffset: Shape.s(6),
+      ),
+      onOpen: _recount,
+      onClose: _recount,
+      popoverBuilder: (context, info) {
+        // The engine's and the app's lines, newest first. Each line starts with its clock time.
+        final lines = ([
+          ...(WorkspaceScope.read(context).inside?.broken ?? '')
+              .split('\n')
+              .where((l) => l.isNotEmpty),
+          ..._late,
+        ]..sort((a, b) => b.compareTo(a))).take(40).toList();
+        return Container(
+          width: Shape.z(520),
+          constraints: BoxConstraints(
+            maxHeight: info.overlaySize.height * .7,
+          ), // Lines wrap rather than being cut, and a long list scrolls.
+          padding: EdgeInsets.all(Shape.s(10)),
+          decoration: BoxDecoration(
+            color: WindowTokens.card,
+            borderRadius: BorderRadius.all(Shape.r(6)),
+            border: Border.all(color: Grey.g26),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final l in lines)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: Shape.s(3)),
+                    child: Text(
+                      l,
+                      softWrap: true,
+                      style: TextStyles.micro(Grey.g76),
                     ),
                   ),
-                ),
-              ),
+              ],
             ),
           ),
-        ),
-        child: TapRegion(
-          groupId: _group,
-          child: Pressable(
-            onTap: () => _show(!_open.isShowing),
-            builder: (_, h) => Padding(
-              padding: EdgeInsets.only(right: Shape.s(10)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: Shape.z(6),
-                    height: Shape.z(6),
-                    decoration: BoxDecoration(
-                      color: ColorTheme.of('Alert', const Color(0xFFE5484D)),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  if (_count > 0) ...[
-                    SizedBox(width: Shape.s(5)),
-                    Text(
-                      '$_count',
-                      style: TextStyles.label(h ? Grey.g91 : Grey.g63),
-                    ),
-                  ],
-                ],
+        );
+      },
+      builder: (_, st, _) => Padding(
+        padding: EdgeInsets.only(right: Shape.s(10)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: Shape.z(6),
+              height: Shape.z(6),
+              decoration: BoxDecoration(
+                color: ColorTheme.of('Alert', const Color(0xFFE5484D)),
+                shape: BoxShape.circle,
               ),
             ),
-          ),
+            if (_count > 0) ...[
+              SizedBox(width: Shape.s(5)),
+              Text(
+                '$_count',
+                style: TextStyles.label(st.isHovered ? Grey.g91 : Grey.g63),
+              ),
+            ],
+          ],
         ),
       ),
     );

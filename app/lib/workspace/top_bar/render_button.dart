@@ -4,7 +4,6 @@ import 'package:motolii/widgets/modal_card.dart';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -130,201 +129,190 @@ class _RenderState extends State<RenderButton> {
           ),
         );
         Text fact(String v) => Text(v, style: TextStyles.value(Grey.g91));
-        // Esc and Cmd+. cancel, as a Mac dialog's Cancel does. The keys arrive from the name field, which holds focus.
-        return CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape): _open.hide,
-            const SingleActivator(LogicalKeyboardKey.period, meta: true):
-                _open.hide,
-          },
-          child: ModalCard(
-            title: 'Render',
-            onClose: _open.hide,
-            across: CrossAxisAlignment.stretch,
-            children: [
-              row(
-                'File',
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: Shape.s(8),
-                    vertical: Shape.s(5),
-                  ),
-                  decoration: BoxDecoration(
-                    color: WindowTokens.well,
-                    borderRadius: BorderRadius.all(Shape.r(4)),
-                  ),
-                  child: TextGestures(
-                    field: (k) => EditableText(
-                      key: k,
-                      rendererIgnoresPointer: true,
-                      controller: _name,
-                      focusNode: _focus,
-                      style: TextStyles.value(Grey.g95),
-                      cursorColor: WindowTokens.accent,
-                      backgroundCursorColor: Grey.g38,
-                      maxLines: 1,
-                      onSubmitted: (_) => _go(ws),
-                    ),
+        return ModalCard(
+          title: 'Render',
+          onClose: _open.hide,
+          across: CrossAxisAlignment.stretch,
+          children: [
+            row(
+              'File',
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(8),
+                  vertical: Shape.s(5),
+                ),
+                decoration: BoxDecoration(
+                  color: WindowTokens.well,
+                  borderRadius: BorderRadius.all(Shape.r(4)),
+                ),
+                child: TextGestures(
+                  field: (k) => EditableText(
+                    key: k,
+                    rendererIgnoresPointer: true,
+                    controller: _name,
+                    focusNode: _focus,
+                    style: TextStyles.value(Grey.g95),
+                    cursorColor: WindowTokens.accent,
+                    backgroundCursorColor: Grey.g38,
+                    maxLines: 1,
+                    onSubmitted: (_) => _go(ws),
                   ),
                 ),
               ),
-              row(
-                'Folder',
-                Text(
-                  '${ws.documentFolder ?? ''}${_free.isEmpty ? '' : '  ·  $_free'}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyles.label(Grey.g76),
-                ),
+            ),
+            row(
+              'Folder',
+              Text(
+                '${ws.documentFolder ?? ''}${_free.isEmpty ? '' : '  ·  $_free'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.label(Grey.g76),
               ),
-              row(
-                'Range',
-                fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames'),
+            ),
+            row(
+              'Range',
+              fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames'),
+            ),
+            row(
+              'Size',
+              fact(
+                '${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}',
               ),
-              row(
-                'Size',
-                fact(
-                  '${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}',
-                ),
-              ),
-              // Export settings, stored in the project as in Alight Motion. A value of 0 matches the preview.
-              for (final (label, name, choices) in [
-                (
-                  'Resolution',
-                  'render_height',
-                  [
-                    (0, 'Full'),
-                    for (final p in sizeResolutions)
-                      if (p <
-                          math.min(
-                            ArtGeometry.comp.width,
-                            ArtGeometry.comp.height,
-                          ))
-                        (p, '${p}p'),
-                  ],
-                ),
-                (
-                  'Rate',
-                  'render_rate',
-                  [
-                    (0, '${WorkspaceController.fps}'),
-                    for (final r in const [30, 24, 15])
-                      if (r < WorkspaceController.fps) (r, '$r'),
-                  ],
-                ),
-                (
-                  'Quality',
-                  'render_mbps',
-                  [
-                    (0, 'Auto'),
-                    for (final b in const [4, 8, 16, 32]) (b, '$b Mbps'),
-                  ],
-                ),
-                (
-                  'Motion blur',
-                  'render_blur',
-                  const [(0, 'Off'), (8, 'On')],
-                ), // Eight samples per frame, like After Effects' 180° shutter.
-                // Clear leaves empty areas transparent. PNG, GIF and HEVC in .mov keep it (see render_draw.h).
-                (
-                  'Background',
-                  'render_alpha',
-                  const [(0, 'Solid'), (1, 'Clear')],
-                ),
-              ])
-                row(
-                  label,
-                  StatefulBuilder(
-                    builder: (context, again) {
-                      final m = ws.inside,
-                          now = (m?.value(0, name, 0) ?? 0).round();
-                      return Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(4),
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          for (final (v, said) in choices)
-                            Chip(
-                              key: ValueKey('render-$name-$v'),
-                              label: said,
-                              on: now == v,
-                              onTap: m == null
-                                  ? null
-                                  : () => ws.after(
-                                      m.later(
-                                        'set',
-                                        layer: 0,
-                                        name: name,
-                                        number: v.toDouble(),
-                                      ),
-                                      (_, _) => mounted ? again(() {}) : null,
-                                    ),
-                            ),
-                          if (name == 'render_mbps' && now > 0)
-                            Text(
-                              'about ${(now * (to - from) / 8).toStringAsFixed(1)} MB',
-                              key: const ValueKey('render-estimate'),
-                              style: TextStyles.label(Grey.g76),
-                            ), // Megabits per second times the duration, as Alight Motion estimates it.
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              row(
-                'Format',
-                StatefulBuilder(
-                  builder: (context, again) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: Shape.s(6),
-                        runSpacing: Shape.s(4),
-                        children: [
-                          for (final (label, ending, _) in _formats)
-                            Chip(
-                              key: ValueKey('render-$label'),
-                              label: label,
-                              on: _ending == ending,
-                              onTap: () => again(() => _as(ending)),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: Shape.s(4)),
-                      Text(
-                        _formats.firstWhere((f) => f.$2 == _ending).$3,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyles.label(Grey.g76),
-                      ), // On its own line under the chips, because five chips leave no room beside it.
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: Shape.s(4)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Pressable(
-                    cursor: MouseCursor.defer,
-                    onTap: _open.hide,
-                    builder: (_, _) => Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: Shape.s(12),
-                        vertical: Shape.s(6),
-                      ),
-                      child: Text('Cancel', style: TextStyles.name(Grey.g76)),
-                    ),
-                  ),
-                  SizedBox(width: Shape.s(6)),
-                  Forms.worn.action(
-                    context,
-                    ActionSpec('Render', () => _go(ws)),
-                  ),
+            ),
+            // Export settings, stored in the project as in Alight Motion. A value of 0 matches the preview.
+            for (final (label, name, choices) in [
+              (
+                'Resolution',
+                'render_height',
+                [
+                  (0, 'Full'),
+                  for (final p in sizeResolutions)
+                    if (p <
+                        math.min(
+                          ArtGeometry.comp.width,
+                          ArtGeometry.comp.height,
+                        ))
+                      (p, '${p}p'),
                 ],
               ),
-            ],
-          ),
+              (
+                'Rate',
+                'render_rate',
+                [
+                  (0, '${WorkspaceController.fps}'),
+                  for (final r in const [30, 24, 15])
+                    if (r < WorkspaceController.fps) (r, '$r'),
+                ],
+              ),
+              (
+                'Quality',
+                'render_mbps',
+                [
+                  (0, 'Auto'),
+                  for (final b in const [4, 8, 16, 32]) (b, '$b Mbps'),
+                ],
+              ),
+              (
+                'Motion blur',
+                'render_blur',
+                const [(0, 'Off'), (8, 'On')],
+              ), // Eight samples per frame, like After Effects' 180° shutter.
+              // Clear leaves empty areas transparent. PNG, GIF and HEVC in .mov keep it (see render_draw.h).
+              (
+                'Background',
+                'render_alpha',
+                const [(0, 'Solid'), (1, 'Clear')],
+              ),
+            ])
+              row(
+                label,
+                StatefulBuilder(
+                  builder: (context, again) {
+                    final m = ws.inside,
+                        now = (m?.value(0, name, 0) ?? 0).round();
+                    return Wrap(
+                      spacing: Shape.s(6),
+                      runSpacing: Shape.s(4),
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        for (final (v, said) in choices)
+                          Chip(
+                            key: ValueKey('render-$name-$v'),
+                            label: said,
+                            on: now == v,
+                            onTap: m == null
+                                ? null
+                                : () => ws.after(
+                                    m.later(
+                                      'set',
+                                      layer: 0,
+                                      name: name,
+                                      number: v.toDouble(),
+                                    ),
+                                    (_, _) => mounted ? again(() {}) : null,
+                                  ),
+                          ),
+                        if (name == 'render_mbps' && now > 0)
+                          Text(
+                            'about ${(now * (to - from) / 8).toStringAsFixed(1)} MB',
+                            key: const ValueKey('render-estimate'),
+                            style: TextStyles.label(Grey.g76),
+                          ), // Megabits per second times the duration, as Alight Motion estimates it.
+                      ],
+                    );
+                  },
+                ),
+              ),
+            row(
+              'Format',
+              StatefulBuilder(
+                builder: (context, again) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: Shape.s(6),
+                      runSpacing: Shape.s(4),
+                      children: [
+                        for (final (label, ending, _) in _formats)
+                          Chip(
+                            key: ValueKey('render-$label'),
+                            label: label,
+                            on: _ending == ending,
+                            onTap: () => again(() => _as(ending)),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: Shape.s(4)),
+                    Text(
+                      _formats.firstWhere((f) => f.$2 == _ending).$3,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.label(Grey.g76),
+                    ), // On its own line under the chips, because five chips leave no room beside it.
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: Shape.s(4)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Pressable(
+                  cursor: MouseCursor.defer,
+                  onTap: _open.hide,
+                  builder: (_, _) => Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Shape.s(12),
+                      vertical: Shape.s(6),
+                    ),
+                    child: Text('Cancel', style: TextStyles.name(Grey.g76)),
+                  ),
+                ),
+                SizedBox(width: Shape.s(6)),
+                Forms.worn.action(context, ActionSpec('Render', () => _go(ws))),
+              ],
+            ),
+          ],
         );
       },
       child: Forms.worn.action(
