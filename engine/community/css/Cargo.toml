@@ -28,3 +28,7 @@ stylo = { path = "../../third_party/stylo_src" }
 
 [profile.release]
 debug = false
+# With no debug info there is nothing to strip, but cargo still calls rust-objcopy, which SIGABRTs on this
+# toolchain (its rust-objcopy cannot load libLLVM.dylib). strip = false skips that call; the warning made
+# every clean build look as if it had failed.
+strip = false
