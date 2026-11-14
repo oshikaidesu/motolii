@@ -61,10 +61,6 @@
 
 足りない物：`footage().dataValue`（`engine/community/after_effects/ae_expr.h:56` で未対応）、CSV から行ごとのレイヤー。
 
-### 11. スマホの縦動画にテロップ
-
-回転タグを当てる（`engine/media/video_layer.cpp:293`）。書き出しも同じステージを描く。
-
 ### 12. SVG のロゴ、Shadertoy の背景、透過付き .mov
 
 背景を「Clear」にして .mov。エンジンは ProRes 4444 で書く（`engine/stage/render/render_draw.h:51`）。ただし画面には「HEVC in .mov で透過が残る」と書かれていて、エンジンと食い違っている。
