@@ -283,7 +283,7 @@ The cost follows what changed, not what exists. One frame at 60 fps is about 16.
 
 ### 6.3 The code as written is the reference
 
-Code is first run as written, so it shows at once. A faster form is made in the background and replaces it only if it gives the same results. Code that cannot be made faster keeps running as written. Some code is fast and some is not, but no code fails to run. This is [AGENTS.md](../../AGENTS.md) principle 1: posted code is run as it is, not imitated.
+Code is first run as written, so it shows at once. A faster form is made in the background and replaces it only if it gives the same results. Code that cannot be made faster keeps running as written. Some code is fast and some is not, but no code fails to run. This is [AGENTS.md](../../AGENTS.md) principle 2: posted code is run as it is, not imitated.
 
 ### 6.4 Cost is visible
 
@@ -333,10 +333,10 @@ The result is lightest when drawing reads per-copy values straight from a GPU bu
 
 From [AGENTS.md](../../AGENTS.md):
 
-1. Net expressions are not translated; the posted code is run as it is (sections 6.3 and 7).
-2. No value is fixed without a source; a slider's range is only for display (3.4).
+1. No value is fixed without a source; a slider's range is only for display (3.4).
+2. Net expressions are not translated; the posted code is run as it is (sections 6.3 and 7).
 3. No web page inside the app; looks are read from the code and edits are written back; no second copy of the code (3.1, 3.4).
-5. Dart holds only the look; the lists, chips and curves are looks, and what they show comes from the engine (sections 3.5 and 4).
+4. Dart holds only the look; the lists, chips and curves are looks, and what they show comes from the engine (sections 3.5 and 4).
 
 ## 9. Open questions
 
