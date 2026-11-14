@@ -357,10 +357,18 @@ class _StackItem extends StatelessWidget {
           ReorderableDragStartListener(
             index: 0,
             child: SizedBox(
-              width: Shape.z(24),
+              width: Shape.z(28),
               child: Center(
-                child: Text('⠿', style: TextStyles.label(Grey.g38)),
+                child: Text('⠿', style: TextStyles.label(Grey.g56)),
               ),
+            ),
+          ),
+          SizedBox(
+            width: Shape.z(68),
+            child: Text(
+              id.replaceAll('_', ' '),
+              style: TextStyles.label(Grey.g76),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -382,7 +390,7 @@ class _StackItem extends StatelessWidget {
               child: Center(
                 child: Text(
                   '×',
-                  style: TextStyles.label(hot ? Grey.g76 : Grey.g38),
+                  style: TextStyles.label(hot ? Grey.g76 : Grey.g44),
                 ),
               ),
             ),
