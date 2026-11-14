@@ -192,8 +192,8 @@ class WorkspaceController extends ChangeNotifier {
   Set<SelectedKeyframe> get keys => selection.keys;
   StretchPicked? get stretch => selection.stretch;
   void select(String? id) => selection.select(id);
-  void pickMany(Iterable<String> ids, {bool inOrder = false}) =>
-      selection.pickMany(ids, inOrder: inOrder);
+  void pickMany(Iterable<String> ids, {bool inOrder = false, String? lead}) =>
+      selection.pickMany(ids, inOrder: inOrder, lead: lead);
   void pickKey(SelectedKeyframe k, {bool add = false}) =>
       selection.pickKey(k, add: add);
   void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);

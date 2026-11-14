@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/widgets/picks.dart' show clickKeys;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
@@ -246,8 +247,10 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       return true;
     }
     final doc = _x.doc;
-    if (HardwareKeyboard.instance.isShiftPressed) {
-      doc.fields.pick(widget.id, span: true);
+    final k = clickKeys();
+    if (k.add || k.span) {
+      // Shift spans a rectangle of fields, Cmd adds or removes this one (the rule of picks.dart).
+      doc.fields.pick(widget.id, span: k.span, add: k.add);
       return false;
     }
     if (!doc.fields.isPicked(widget.id)) doc.fields.pick(widget.id);

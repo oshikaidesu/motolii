@@ -7,13 +7,13 @@
 // projects are grouped under the day they were last changed, newest first, or listed by name.
 // Clicking a card opens it. Its menu can select, export, duplicate, or move it to the Trash after a confirmation.
 // The thumbnail, size and length come from what the project last saved (Motolii.poster), read without opening it.
+import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/window/home_project.dart';
 import 'package:motolii/workspace/window/home_card.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:io';
 
-import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
@@ -61,6 +61,8 @@ class _HomeWindowState extends State<HomeWindow> {
   // Selected projects, as in Alight Motion's menu "Select" or Cmd-click in the Finder.
   // While any is selected, a click toggles selection instead of opening.
   final _picked = <String>{};
+  // The project the last pick was on, where a Shift range starts.
+  String? _lead;
   late final Directory _pictures = Directory.systemTemp.createTempSync(
     'motolii_home',
   );
@@ -134,12 +136,27 @@ class _HomeWindowState extends State<HomeWindow> {
             picked: _picked.contains(d.path),
             menu: _menu == d.path,
             asking: _asking == d.path,
-            onTap: () =>
-                _picked.isNotEmpty || HardwareKeyboard.instance.isMetaPressed
-                ? setState(() {
-                    if (!_picked.remove(d.path)) _picked.add(d.path);
-                  })
-                : widget.onOpen(d.path),
+            // A press opens the project; with some picked, or with Cmd or Shift held, it picks by the rule of picks.dart.
+            onTap: () {
+              final k = clickKeys();
+              if (_picked.isEmpty && !k.add && !k.span) {
+                return widget.onOpen(d.path);
+              }
+              final r = pickOnClick(
+                now: _picked,
+                lead: _lead,
+                id: d.path,
+                order: [for (final e in docs) e.path],
+                add: k.add || !k.span,
+                span: k.span,
+              );
+              setState(() {
+                _picked
+                  ..clear()
+                  ..addAll(r.picked);
+                _lead = r.lead;
+              });
+            },
             onMore: () =>
                 setState(() => _menu = _menu == d.path ? null : d.path),
             onOpen: () => widget.onOpen(d.path),

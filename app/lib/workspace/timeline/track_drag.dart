@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout;
 import 'package:flutter/services.dart';
 
+import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
@@ -295,10 +296,19 @@ class TrackDrag extends ChangeNotifier {
         }
       }
       if (best != null) {
-        return ws.pickKey((
-          layer: l.id,
-          frame: best,
-        ), add: HardwareKeyboard.instance.isShiftPressed);
+        // A plain click picks this key; Cmd or Shift adds it, or removes it if picked (the rule of picks.dart).
+        final SelectedKeyframe key = (layer: l.id, frame: best);
+        final k = clickKeys();
+        return k.add || k.span
+            ? ws.pickKeys(
+                pickOnClick<SelectedKeyframe>(
+                  now: ws.keys,
+                  lead: null,
+                  id: key,
+                  add: true,
+                ).picked,
+              )
+            : ws.pickKey(key);
       }
     }
     final f = v.frameAt(p.dx);

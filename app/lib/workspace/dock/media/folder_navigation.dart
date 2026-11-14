@@ -1,6 +1,7 @@
 // Where the Media shelf's tree starts, the path from there to a folder, and opening a folder or a file.
 import 'dart:io';
 
+import 'package:motolii/widgets/picks.dart' show pickOnClick;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
@@ -62,15 +63,19 @@ void openFolder(ShelfContext c, MediaController media, String id) => c.set(() {
 void openNode(FileNode n, ShelfContext c, MediaController media) {
   if (n.folder) return openFolder(c, media, n.id);
   if (DockHover.cmdAtPress && media.kindOf(n.id).isNotEmpty) {
-    // Cmd adds or removes one file from the selection, as in Finder.
-    if (media.picked.isEmpty &&
-        c.sel != null &&
-        media.kindOf(c.sel!).isNotEmpty) {
-      media.picked.add(c.sel!);
-    }
-    media.picked.contains(n.id)
-        ? media.picked.remove(n.id)
-        : media.picked.add(n.id);
+    // Cmd adds or removes one file from the selection, as in Finder (the rule of picks.dart). The file selected alone joins first.
+    final lone = c.sel != null && media.kindOf(c.sel!).isNotEmpty
+        ? c.sel
+        : null;
+    final r = pickOnClick(
+      now: media.picked.isEmpty && lone != null ? {lone} : media.picked,
+      lead: lone,
+      id: n.id,
+      add: true,
+    );
+    media.picked
+      ..clear()
+      ..addAll(r.picked);
   } else {
     media.picked.clear();
   }

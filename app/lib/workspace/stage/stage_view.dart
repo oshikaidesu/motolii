@@ -1,6 +1,7 @@
 // The stage's view: the composition centred on a dark surround, rulers and guides, overlays, the selection, the zoom
 // HUD and the navigator, and the pan, zoom, hover, key handling and pointer gestures over them.
 // It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
+import 'package:motolii/widgets/picks.dart' show clickKeys;
 import 'package:motolii/workspace/stage/stage_previews.dart';
 import 'package:motolii/workspace/stage/stage_trail.dart';
 import 'package:motolii/workspace/stage/stage_desk.dart';
@@ -342,9 +343,9 @@ class _StageViewState extends State<StageView>
                 final hit = _hitLocal(v, d.localPosition),
                     ws = WorkspaceScope.read(context),
                     m = ws.inside;
-                if (HardwareKeyboard.instance.isShiftPressed ||
-                    HardwareKeyboard.instance.isMetaPressed) {
-                  return hit == null ? null : selectAlso(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
+                final keys = clickKeys();
+                if (keys.add || keys.span) {
+                  return hit == null ? null : clickLayer(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
                 }
                 final twice = hit != null && hit == _tapped;
                 _tapWait?.cancel();

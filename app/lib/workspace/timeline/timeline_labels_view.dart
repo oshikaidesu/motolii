@@ -1,7 +1,6 @@
 // The column of layer names beside the timeline's tracks: a row for each layer (its eye, solo and lock, its number and name, its twirl), the
 // lanes of properties under a layer, the targets of a relation, and the rename field. Dragging a row reorders the layer.
 import 'package:flutter/gestures.dart' show DragStartBehavior;
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
@@ -154,14 +153,12 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                 onLanes: () => l.kind == LayerKind.group
                                     ? ws.turnGroup(l.id)
                                     : ws.twirl([l.id]),
-                                onSelect: () =>
-                                    HardwareKeyboard.instance.isShiftPressed
-                                    // Shift selects every row from the last picked one to this one, as in After Effects.
-                                    ? selectRange(ws, l.id)
-                                    : HardwareKeyboard.instance.isMetaPressed
-                                    ? selectAlso(ws, l.id)
-                                    // Cmd adds this layer to the selection, or removes it.
-                                    : ws.select(l.id),
+                                // Shift takes the rows from the last one picked, as in After Effects; Cmd adds or removes this layer.
+                                onSelect: () => clickLayer(
+                                  ws,
+                                  l.id,
+                                  order: [for (final k in ws.layers) k.id],
+                                ),
                                 onEye: () => RowFlags(ws).toggleHidden(l.id),
                                 onSolo: () => RowFlags(ws).toggle('solo', l.id),
                                 onLock: () => RowFlags(ws).toggle('lock', l.id),

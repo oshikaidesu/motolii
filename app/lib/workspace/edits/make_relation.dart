@@ -9,6 +9,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/widgets/picks.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -146,35 +147,35 @@ List<(String, String)> linkTargets(WorkspaceController ws, String id) {
   ];
 }
 
-/// Adds [id] to the layers selected together (Shift or Cmd with a click). A layer that was selected alone joins it.
-void selectAlso(WorkspaceController ws, String id) {
-  if (ws.many.contains(id)) {
-    return ws.pickMany(
-      {...ws.many}..remove(id),
-      inOrder: true,
-    ); // Already selected, so it is removed.
-  }
-  ws.pickMany({
-    ...ws.many,
-    if (ws.selected case final s?
-        when !relationMembers(ws).contains(s) &&
-            ws.many.isEmpty &&
-            int.tryParse(s) != null)
-      s,
-    id,
-  }, inOrder: true);
-}
-
-/// Selects the layers from the one selected last to [id], in row order (Shift on a row, as in After Effects).
-void selectRange(WorkspaceController ws, String id) {
-  final ids = [for (final l in ws.layers) l.id],
-      from = ws.many.isNotEmpty ? ws.many.last : ws.selected;
-  final a = from == null ? -1 : ids.indexOf(from), b = ids.indexOf(id);
-  if (a < 0 || b < 0) return selectAlso(ws, id);
-  ws.pickMany(
-    a <= b ? ids.sublist(a, b + 1) : ids.sublist(b, a + 1).reversed,
-    inOrder: true,
+/// What a click on layer [id] does to the layers selected together, by the one rule of every selection (picks.dart):
+/// a plain click selects it alone, Command (Ctrl) adds or removes it, Shift takes the rows from the last one picked to it.
+/// [order] is the rows in reading order; leave it empty where there are no rows (the stage), and Shift adds like Command.
+/// A layer that was selected alone joins what is picked.
+void clickLayer(
+  WorkspaceController ws,
+  String id, {
+  List<String> order = const [],
+}) {
+  final (:add, :span) = clickKeys();
+  if (!add && !span) return ws.select(id);
+  final alone = ws.selected;
+  final now = ws.many.isNotEmpty
+      ? {...ws.many}
+      : {
+          if (alone != null &&
+              !relationMembers(ws).contains(alone) &&
+              int.tryParse(alone) != null)
+            alone,
+        };
+  final r = pickOnClick(
+    now: now,
+    lead: ws.selection.lead ?? (ws.many.isNotEmpty ? ws.many.last : alone),
+    id: id,
+    order: order,
+    add: add,
+    span: span,
   );
+  ws.pickMany(r.picked, inOrder: true, lead: r.lead);
 }
 
 /// The relation that lies under relation [r] for layer [t]: the one [t] is under in it, or 0 when there is none.

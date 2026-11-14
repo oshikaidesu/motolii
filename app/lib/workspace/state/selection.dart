@@ -39,6 +39,9 @@ class Selection {
   /// The layers selected together, outlined in the preview. A relation is made of them. Selecting one layer clears them.
   final many = <String>{};
 
+  /// The layer the last click picked, which a Shift-click's range starts from (see pickOnClick). Null after a plain selection.
+  String? lead;
+
   /// Whether [many] were picked one by one, so that the first leads. A box selection has no order.
   bool manyInOrder = false;
   final _keys = <SelectedKeyframe>{};
@@ -58,6 +61,7 @@ class Selection {
     if (id == _selected && many.isEmpty) return;
     _selected = id;
     many.clear();
+    lead = null;
     _aim = null;
     _keys.clear();
     _stretch = null;
@@ -66,11 +70,12 @@ class Selection {
   }
 
   /// Selects several layers. With [inOrder] the first one leads.
-  void pickMany(Iterable<String> ids, {bool inOrder = false}) {
+  void pickMany(Iterable<String> ids, {bool inOrder = false, String? lead}) {
     many
       ..clear()
       ..addAll(ids);
     manyInOrder = inOrder;
+    this.lead = lead;
     _onChanged();
   }
 

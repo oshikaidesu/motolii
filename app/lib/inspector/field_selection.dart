@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show VoidCallback;
 
+import 'package:motolii/widgets/picks.dart' show pickOnClick;
+
 /// The number fields of the Inspector that are selected together, so that an edit of one changes them all.
 ///
 /// Shift-click selects a rectangle of the grid of fields, one row per card with its fields in order, like a spreadsheet.
@@ -22,14 +24,16 @@ class FieldSelection {
   /// Whether the field [id] shows as selected, which takes more than one selected field.
   bool isPicked(String id) => picked.length > 1 && picked.contains(id);
 
-  /// Selects the field [id] alone, or with [span] the rectangle of fields from the one selected alone last to this one.
-  void pick(String id, {bool span = false}) {
+  /// Selects the field [id] alone. With [add] it joins the selected fields, or leaves them if it was one (the rule of picks.dart).
+  /// With [span] the rectangle of fields from the one selected alone last to this one is selected, which is how a grid is spanned;
+  /// with [span] and [add] that rectangle joins the selected fields.
+  void pick(String id, {bool span = false, bool add = false}) {
     final from = _pickFrom,
         a = from == null ? null : _cell(from),
         b = _cell(id),
         shown = picked.length > 1;
-    picked.clear();
     if (span && a != null && b != null) {
+      if (!add) picked.clear();
       for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {
         final row = _grid[r];
         for (
@@ -41,8 +45,12 @@ class FieldSelection {
         }
       }
     } else {
-      picked.add(id);
-      _pickFrom = id;
+      // A span with no field picked first, or to a field that is in no row, picks that field as a plain click does (as a spreadsheet's does).
+      final r = pickOnClick(now: picked, lead: from, id: id, add: add);
+      picked
+        ..clear()
+        ..addAll(r.picked);
+      _pickFrom = r.lead;
     }
     // Selecting one field shows nothing, because [isPicked] needs several. Notify only when the selection was or becomes visible,
     // otherwise pressing a parameter control rebuilt the whole inspector for no change.
