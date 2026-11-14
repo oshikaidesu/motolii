@@ -131,53 +131,72 @@ class ShelfTile extends StatelessWidget {
           child: child,
         );
 
-  Widget _under(bool h) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      AspectRatio(
-        aspectRatio: look.aspect,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColoredBox(color: WindowTokens.card),
-            ?(art?.call(h) ?? _image(h)),
-            ...?over?.call(h),
-            // The border is drawn over everything but ignores presses, so the star under it can still be pressed.
-            if (lit || picked || h)
-              IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: lit || picked ? WindowTokens.accentInk : Grey.g76,
-                      width: lit || picked ? 2 : 1,
-                    ),
+  Widget _under(bool h) {
+    final round = BorderRadius.all(Shape.r(WindowTokens.radius));
+    return Stack(
+      children: [
+        // The tile's body is one rounded card: the image, then the name bar.
+        ClipRRect(
+          borderRadius: round,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: look.aspect,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(color: WindowTokens.well),
+                    ?(art?.call(h) ?? _image(h)),
+                    ...?over?.call(h),
+                  ],
+                ),
+              ),
+              if (!small)
+                _box(
+                  height: Shape.z(bar),
+                  padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+                  alignment: Alignment.centerLeft,
+                  color: dockFill(picked, h, WindowTokens.card),
+                  // A name wider than its tile is drawn smaller, never cut.
+                  child:
+                      naming ??
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          item.name,
+                          maxLines: 1,
+                          style: TextStyles.micro(
+                            dockInk(picked, ink ?? Grey.g76),
+                          ).copyWith(fontWeight: bold ? FontWeight.w700 : null),
+                        ),
+                      ),
+                ),
+            ],
+          ),
+        ),
+        // The ring is drawn over everything but ignores presses, so the star under it can still be pressed.
+        // It eases from clear, to a soft grey on hover, to the accent when lit or picked.
+        if (lit || picked || h)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedContainer(
+                duration: Motion.dur,
+                curve: Motion.ease,
+                decoration: BoxDecoration(
+                  borderRadius: round,
+                  border: Border.all(
+                    color: lit || picked ? WindowTokens.accentInk : Grey.g38,
+                    width: lit || picked ? 2 : 1,
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-      if (!small)
-        _box(
-          height: Shape.z(bar),
-          padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-          alignment: Alignment.centerLeft,
-          color: dockFill(picked, h, WindowTokens.card),
-          // A name wider than its tile is drawn smaller, never cut.
-          child:
-              naming ??
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  item.name,
-                  maxLines: 1,
-                  style: TextStyles.micro(dockInk(picked, ink ?? Grey.g76))
-                      .copyWith(fontWeight: bold ? FontWeight.w700 : null),
-                ),
-              ),
-        ),
-    ],
-  );
+            ),
+          ),
+      ],
+    );
+  }
 
   Widget _row(bool h) {
     final name =
