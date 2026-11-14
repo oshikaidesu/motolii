@@ -49,7 +49,7 @@ inline const DocCard doc_cards[] = {
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over
     // what lies below as the mode says, or only inside the layer before it.
-    {"Blending", "blend clip"},
+    {"Blending", "blend clip clip_matte clip_invert clip_feather"},
     // After Effects' Source Text and Character panels and Cavalry's Text shape:
     // what the text says,
     // its font, its size and its alignment.
@@ -106,7 +106,6 @@ inline const DocCard doc_cards[] = {
     // Volume, and the beats that the timeline's ruler shows where the sound
     // strikes.
     {"Sound", "volume beats", "kind", "video"},
-    {"Matte", "clip_matte clip_invert clip_feather", "clip", "1"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
     // size the layer takes,
     // and rolling like a wheel. Shown while the layer has a parent.

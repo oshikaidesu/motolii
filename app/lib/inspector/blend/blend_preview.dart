@@ -15,11 +15,16 @@ import 'package:naked_ui/naked_ui.dart'
     show NakedSelect, NakedSelectOption, OverlayPositionConfig;
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/inspector_number_field.dart';
+import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart' show PressOutside;
+import 'package:motolii/widgets/controls.dart' show Pressable, Segmented;
 import 'package:motolii/widgets/disclosure_triangle.dart';
+import 'package:motolii/widgets/switch_track.dart';
 
 /// The Blending card's inside (see host_cards.dart).
 class BlendPreview extends StatefulWidget {
@@ -49,151 +54,237 @@ class _BlendPreviewState extends State<BlendPreview> {
   @override
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
-    final blend = {for (final p in widget.card.params) p.id: p}['blend'];
+    final params = {for (final p in widget.card.params) p.id: p};
+    final blend = params['blend'];
     final opts = blend?.options ?? const [];
     if (opts.isEmpty) return const SizedBox.shrink();
     return ListenableBuilder(
-      listenable: doc.watch('v_blend'),
-      builder: (context, _) => Padding(
-        padding: EdgeInsets.only(bottom: Shape.s(6)),
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final h = BlendPreview.height, w = box.maxWidth;
-            final actualI = (doc.get('v_blend') ?? 0).round().clamp(
-              0,
-              opts.length - 1,
-            );
-            // The schematic box ends here; the mode-name trigger starts.
-            final textLeft = 8.0 + h * 1.6 + 12.0;
+      listenable: Listenable.merge([
+        doc.watch('v_blend'),
+        doc.watch('v_clip'),
+        doc.watch('v_clip_matte'),
+        doc.watch('v_clip_invert'),
+      ]),
+      builder: (context, _) {
+        final clipped = (doc.get('v_clip') ?? 0) > 0.5;
+        return Padding(
+          padding: EdgeInsets.only(bottom: Shape.s(6)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LayoutBuilder(
+                builder: (context, box) {
+                  final h = BlendPreview.height, w = box.maxWidth;
+                  final actualI = (doc.get('v_blend') ?? 0).round().clamp(
+                    0,
+                    opts.length - 1,
+                  );
+                  // The schematic box ends here; the mode-name trigger starts.
+                  final textLeft = 8.0 + h * 1.6 + 12.0;
 
-            void scrub(double x) {
-              // Wraps around so every mode is reachable by dragging far enough.
-              final raw = _fromI + ((x - _fromX) / 20).round();
-              final n = ((raw % opts.length) + opts.length) % opts.length;
-              if (n != (doc.get('v_blend') ?? 0).round()) {
-                doc.set('v_blend', n.toDouble());
-              }
-            }
+                  void scrub(double x) {
+                    // Wraps around so every mode is reachable by dragging far enough.
+                    final raw = _fromI + ((x - _fromX) / 20).round();
+                    final n = ((raw % opts.length) + opts.length) % opts.length;
+                    if (n != (doc.get('v_blend') ?? 0).round()) {
+                      doc.set('v_blend', n.toDouble());
+                    }
+                  }
 
-            return SizedBox(
-              width: w,
-              height: h,
-              child: Stack(
-                children: [
-                  // Layer 1: schematic canvas. Scrubbing it cycles through modes.
-                  ValueListenableBuilder<int?>(
-                    valueListenable: _pending,
-                    builder: (_, pending, _) => Listener(
-                      onPointerDown: (e) {
-                        if (e.buttons != kPrimaryButton) return;
-                        if (e.localPosition.dx >= textLeft) return;
-                        _fromX = e.localPosition.dx;
-                        _fromI = actualI;
-                        _moved = false;
-                        doc.beginGesture();
-                        setState(() => _held = true);
-                      },
-                      onPointerMove: (e) {
-                        if (!_held) return;
-                        if ((e.localPosition.dx - _fromX).abs() > 4) {
-                          _moved = true;
-                        }
-                        if (_moved) scrub(e.localPosition.dx);
-                      },
-                      onPointerUp: (_) => _let(),
-                      onPointerCancel: (_) => _let(),
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.resizeLeftRight,
-                        child: CustomPaint(
-                          key: const ValueKey('blend-preview'),
-                          size: Size(w, h),
-                          painter: _BlendPaint(
-                            word: opts[pending ?? actualI],
-                            lit: _held || pending != null,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Layer 2: mode-name trigger. Clicking opens the list; hovering a list item
-                  // sets _pending, which layer 1 reads to preview the mode in the schematic.
-                  Positioned(
-                    left: textLeft,
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: NakedSelect<int>(
-                      value: actualI,
-                      useRootOverlay: true,
-                      closeOnClickOutside: false,
-                      consumeOutsideTaps: false,
-                      positioning: OverlayPositionConfig(
-                        sideOffset: Shape.s(4),
-                      ),
-                      onChanged: (i) {
-                        _pending.value = null;
-                        if (i != null) {
-                          doc.beginGesture();
-                          doc.set('v_blend', i.toDouble());
-                          doc.endGesture();
-                        }
-                      },
-                      overlayBuilder: (context, info) => PressOutside(
-                        group: info.tapRegionGroupId,
-                        shut: () {
-                          _pending.value = null;
-                          MenuController.maybeOf(context)?.close();
-                        },
-                        child: MouseRegion(
-                          onExit: (_) => _pending.value = null,
-                          child: SizedBox(
-                            width: math.max(
-                              info.anchorRect.width + textLeft,
-                              160,
-                            ),
-                            child: _listWidget(actualI, opts),
-                          ),
-                        ),
-                      ),
-                      builder: (_, st, _) => ValueListenableBuilder<int?>(
-                        valueListenable: _pending,
-                        builder: (_, pending, _) => Container(
-                          padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-                          decoration: BoxDecoration(
-                            color: st.isOpen || st.isHovered ? Grey.g10 : null,
-                            borderRadius: BorderRadius.only(
-                              topRight: Shape.r(8),
-                              bottomRight: Shape.r(8),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  opts[pending ?? actualI].replaceAll('_', ' '),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyles.name(
-                                    _held || pending != null
-                                        ? Grey.g95
-                                        : st.isOpen || st.isHovered
-                                        ? Grey.g91
-                                        : Grey.g76,
-                                  ),
+                  return SizedBox(
+                    width: w,
+                    height: h,
+                    child: Stack(
+                      children: [
+                        // Layer 1: schematic canvas. Scrubbing it cycles through modes.
+                        ValueListenableBuilder<int?>(
+                          valueListenable: _pending,
+                          builder: (_, pending, _) => Listener(
+                            onPointerDown: (e) {
+                              if (e.buttons != kPrimaryButton) return;
+                              if (e.localPosition.dx >= textLeft) return;
+                              _fromX = e.localPosition.dx;
+                              _fromI = actualI;
+                              _moved = false;
+                              doc.beginGesture();
+                              setState(() => _held = true);
+                            },
+                            onPointerMove: (e) {
+                              if (!_held) return;
+                              if ((e.localPosition.dx - _fromX).abs() > 4) {
+                                _moved = true;
+                              }
+                              if (_moved) scrub(e.localPosition.dx);
+                            },
+                            onPointerUp: (_) => _let(),
+                            onPointerCancel: (_) => _let(),
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.resizeLeftRight,
+                              child: CustomPaint(
+                                key: const ValueKey('blend-preview'),
+                                size: Size(w, h),
+                                painter: _BlendPaint(
+                                  word: opts[pending ?? actualI],
+                                  lit: _held || pending != null,
                                 ),
                               ),
-                              DisclosureTriangle(open: true, hot: st.isOpen),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        // Layer 2: mode-name trigger. Clicking opens the list; hovering a list item
+                        // sets _pending, which layer 1 reads to preview the mode in the schematic.
+                        Positioned(
+                          left: textLeft,
+                          top: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: NakedSelect<int>(
+                            value: actualI,
+                            useRootOverlay: true,
+                            closeOnClickOutside: false,
+                            consumeOutsideTaps: false,
+                            positioning: OverlayPositionConfig(
+                              sideOffset: Shape.s(4),
+                            ),
+                            onChanged: (i) {
+                              _pending.value = null;
+                              if (i != null) {
+                                doc.beginGesture();
+                                doc.set('v_blend', i.toDouble());
+                                doc.endGesture();
+                              }
+                            },
+                            overlayBuilder: (context, info) => PressOutside(
+                              group: info.tapRegionGroupId,
+                              shut: () {
+                                _pending.value = null;
+                                MenuController.maybeOf(context)?.close();
+                              },
+                              child: MouseRegion(
+                                onExit: (_) => _pending.value = null,
+                                child: SizedBox(
+                                  width: math.max(
+                                    info.anchorRect.width + textLeft,
+                                    160,
+                                  ),
+                                  child: _listWidget(actualI, opts),
+                                ),
+                              ),
+                            ),
+                            builder: (_, st, _) => ValueListenableBuilder<int?>(
+                              valueListenable: _pending,
+                              builder: (_, pending, _) => Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: Shape.s(8),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: st.isOpen || st.isHovered
+                                      ? Grey.g10
+                                      : null,
+                                  borderRadius: BorderRadius.only(
+                                    topRight: Shape.r(8),
+                                    bottomRight: Shape.r(8),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        opts[pending ?? actualI].replaceAll(
+                                          '_',
+                                          ' ',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyles.name(
+                                          _held || pending != null
+                                              ? Grey.g95
+                                              : st.isOpen || st.isHovered
+                                              ? Grey.g91
+                                              : Grey.g76,
+                                        ),
+                                      ),
+                                    ),
+                                    DisclosureTriangle(
+                                      open: true,
+                                      hot: st.isOpen,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
+                  );
+                },
+              ),
+              if (clipped) _matteControls(doc, params),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _matteControls(InspectorValues doc, Map<String, Parameter> params) {
+    final matteP = params['clip_matte'];
+    final featherP = params['clip_feather'];
+    final matteOpts = matteP?.options ?? const ['alpha', 'luma'];
+    final matteI = (doc.get('v_clip_matte') ?? 0).round().clamp(
+      0,
+      matteOpts.length - 1,
+    );
+    final inverted = (doc.get('v_clip_invert') ?? 0) > 0.5;
+    return Padding(
+      padding: EdgeInsets.only(top: Shape.s(6)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: Shape.z(26),
+            child: Segmented(
+              key: const ValueKey('choice:clip_matte'),
+              items: matteOpts,
+              index: matteI,
+              onChanged: (i) {
+                doc.beginGesture();
+                doc.set('v_clip_matte', i.toDouble());
+                doc.endGesture();
+              },
+            ),
+          ),
+          SizedBox(height: Shape.s(4)),
+          Pressable(
+            onTap: () {
+              doc.beginGesture();
+              doc.set('v_clip_invert', inverted ? 0 : 1);
+              doc.endGesture();
+            },
+            builder: (_, _) => Padding(
+              padding: EdgeInsets.only(bottom: Shape.s(3)),
+              child: Row(
+                children: [
+                  PopSwitch(on: inverted),
+                  SizedBox(width: Shape.s(6)),
+                  Text(
+                    inverted ? 'On' : 'Off',
+                    style: TextStyles.label(Grey.g76),
                   ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          ),
+          if (featherP != null)
+            InspectorNumberField(
+              featherP,
+              key: const ValueKey('feather:clip_feather'),
+              id: 'v_clip_feather',
+              caption: 'Feather',
+            ),
+        ],
       ),
     );
   }

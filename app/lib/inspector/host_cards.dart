@@ -40,7 +40,13 @@ final hostCards =
       ),
       // The optional cards keep their number tiles below the picture, as Trim Paths does.
       'Blending': (
-        drawn: const {'blend', 'clip'},
+        drawn: const {
+          'blend',
+          'clip',
+          'clip_matte',
+          'clip_invert',
+          'clip_feather',
+        },
         body: (card) => BlendPreview(card),
         fold: null,
       ),
