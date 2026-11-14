@@ -64,7 +64,7 @@ The shared numbers are meant to be written once, in a `Gestures` class in `app/l
 
 - `wheel.1` Numbers: without pressing, a horizontal wheel turn or a two-finger horizontal slide over the number changes it at the same speed as scrubbing. Vertical scrolls the panel. `[common]`
 - `wheel.2` A run of wheel or slide events that changes a value is one undo step. It closes when the hand has rested for `Gestures.burstRest`. `[AE]`
-- `wheel.3` Views: the wheel pans (vertical; horizontal, or Shift+wheel, for sideways). Zoom is Cmd+wheel, centred under the pointer, by a factor of 1.0015 per tick. `[Mac]` `[common]`
+- `wheel.3` Views: the wheel pans (vertical; horizontal, or Shift+wheel, for sideways). Zoom is Cmd+wheel, centred under the pointer, by a factor of 1.0015 per tick. On the timeline it zooms around the playhead instead, since the wheel carries no pointer frame there (`timeline.dart`). `[Mac]` `[common]`
 - `wheel.4` Views: two fingers carry what is visible with the fingers (1 px per 1 px). Pinching zooms around the fingers. `[Mac]`
 - `wheel.5` Lists, menus and rows of chips: the wheel scrolls (a horizontal row scrolls with a horizontal slide or Shift+wheel). No row is ever cut off. `[Mac]`
 - `wheel.6` Two fingers are not a press. They never drag a value, handle or bar; they only pan or rotate the view. Only a mouse, a finger or a pen presses (`wsPressing`). `[other: Blender]`
@@ -107,7 +107,7 @@ The shared numbers are meant to be written once, in a `Gestures` class in `app/l
 
 ## 10. Shift, Cmd and Option
 
-- `mod.1` Values (scrub, wheel, slide, arrows; numbers and sliders alike): Shift is 10 times, Cmd is a tenth. They are read each time, so pressing or releasing one mid-gesture is fine. `[AE]`
+- `mod.1` Values (scrub, wheel, slide, arrows; numbers and sliders alike): Shift is a tenth (finer), Cmd is 10 times (coarser). They are read each time, so pressing or releasing one mid-gesture is fine. `[other: Ableton Live]`
 - `mod.2` Selecting: Shift+press selects from the last selected row to here in a list, and adds in the preview, bars and keyframes (or removes, if already selected). Cmd+press adds or removes one. A marquee adds in the same way. `[AE]` `[Mac]`
 - `mod.3` Dragging items and handles: Shift constrains (aspect ratio, one axis, 15 degree steps). Option resizes from the centre. `[other: Illustrator, Figma]`
 - `mod.4` Cmd during a drag turns off snapping to stopping points. `[other: Ableton Live]`
@@ -168,9 +168,9 @@ The values for the `Gestures` class. Parts and panels read them by these names a
 | `doubleTapSlop` | 100 px | `[other: Flutter]` `kDoubleTapSlop` |
 | `longPress` | 500 ms | `[other: Flutter]` `kLongPressTimeout` |
 | `grab` | 8 px (around a point, keyframe, handle or edge) | `[common]` The preview's handles and keyframes use this value |
-| `snap` | 8 px | `[Alight]` Stops at the nearest point within 8 points |
-| `coarse` | 10 times (Shift on a value) | `[AE]` Shift makes scrubbing 10 times faster (community.adobe.com/t5/after-effects-discussions/shortcut-for-scale-dragging/m-p/9417731) |
-| `fine` | one tenth (Cmd or Ctrl on a value) | `[AE]` Same source: Command and Control divide by 10 |
+| `snap` | 8 px on the timeline; 6 px for a layer on the stage | `[Alight]` `[Maintainer]` The timeline stops within 8 points (Alight); on the stage a layer snaps to edges and guides within 6 screen px (`stage_drag.dart`) |
+| `coarse` | 10 times (Cmd or Ctrl on a value) | `[other: Ableton Live]` Cmd or Ctrl makes scrubbing 10 times coarser (Live manual, section 42.6) |
+| `fine` | one tenth (Shift on a value) | `[other: Ableton Live]` Shift makes scrubbing one tenth, for fine control (Live manual, section 42.6) |
 | `nudgeShift` | 10 (Shift+arrow on items and time) | `[AE]` Shift+arrow moves by 10 |
 | `hover` | 0 ms | `[common]` |
 | `change` | 120 ms (`Motion.dur`) | `[DESIGN]` The one motion |
