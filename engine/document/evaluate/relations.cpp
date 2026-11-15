@@ -7,6 +7,8 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include "base/file_read.h"
 #include "document/marks.h"
@@ -22,21 +24,31 @@ using filament::math::float2;
 
 namespace {
 
-// The 4 built-in behaviours (stagger / oscillator / noise / random) are now
-// shelves/behaviours/*.js. They each export `at(copy, n, t, k)` and return a
-// number in [0, 1]. QuickJS runs them; the hash they share is the same uint32
-// mixer as the engine had, bit for bit through Math.imul.
+// The 4 built-in behaviours (stagger / oscillator / noise / random) are
+// shelves/behaviours/*.js. Each exports `all(n, t, k)` and returns a
+// Float64Array of n values (one per copy) in [0, 1]. The engine calls that
+// function once per behaviour layer per frame; `doc_behaviour_at(copy, ...)`
+// reads out[copy] from the cached array. This stays one QuickJS call per
+// frame no matter how many copies the layer has, so the per-copy work is
+// plain C++. A TSL compute node will replace the JS call itself later.
 //
-// Loaded on first use, kept while the engine runs. All calls go through one
-// mutex because QuickJS is not thread-safe: every path that reaches a
-// behaviour's value (evaluate layer, sketch, scripts...) can touch it.
+// The JS runtime loads on first use and stays while the engine runs. All
+// calls take a mutex because QuickJS is not thread-safe: every path that
+// reaches a behaviour value (evaluate layer, sketch, scripts...) can touch
+// it. seed is passed as a signed int32 whose bit pattern matches the engine's
+// uint32 seed so Math.imul in the JS hashes the same 32 bits.
 struct BehaviourRun {
   JSRuntime* rt = nullptr;
   JSContext* cx = nullptr;
-  std::map<std::string, JSValue> fns;  // type name -> `at` function
+  std::map<std::string, JSValue> fns;  // type name -> `all` function
+  // Cached array per (behaviour layer, t, n, offset, frequency, apart, seed).
+  // The tuple catches every parameter the JS sees, so a changed parameter
+  // (e.g. the user dragged the frequency slider) misses and recomputes.
+  using Key = std::tuple<int, double, int, double, double, double, uint32_t>;
+  std::map<Key, std::vector<double>> cache;
   std::mutex lock;
 
-  // Returns the `at` function for `type`, loading its JS file on first use.
+  // Returns the `all` function for `type`, loading its JS file on first use.
   // JS_UNDEFINED when the file is not there or does not compile.
   JSValue fn_of(const std::string& type) {
     if (!rt) rt = JS_NewRuntime(), cx = JS_NewContext(rt);
@@ -44,11 +56,9 @@ struct BehaviourRun {
     if (it != fns.end()) return it->second;
     const std::filesystem::path p = std::filesystem::absolute(
         doc_engine("..") / "shelves" / "behaviours" / (type + ".js"));
-    // Load the module: import its `at`, hang it off globalThis so we can read
-    // it back as a plain JSValue.
-    const std::string key = "__at_" + type;
-    const std::string wrap = "import { at } from '" + p.string() +
-                             "';\nglobalThis['" + key + "'] = at;\n";
+    const std::string key = "__all_" + type;
+    const std::string wrap = "import { all } from '" + p.string() +
+                             "';\nglobalThis['" + key + "'] = all;\n";
     JSValue ran = JS_Eval(cx, wrap.c_str(), wrap.size(),
                           (type + ".behaviour").c_str(), JS_EVAL_TYPE_MODULE);
     JSValue fn = JS_UNDEFINED;
@@ -65,6 +75,46 @@ struct BehaviourRun {
     }
     JS_FreeValue(cx, ran);
     return fns[type] = fn;
+  }
+
+  // Returns the Float64Array for `type` at these parameters: the cached entry,
+  // or a fresh one computed by a single JS_Call. The cache holds at most a few
+  // entries per behaviour layer (current frame plus any older ones) and is
+  // kept small by dropping anything with a different t when a new t arrives.
+  const std::vector<double>& all_of(const std::string& type, int by, int n,
+                                     double t, double offset, double frequency,
+                                     double apart, uint32_t seed) {
+    const Key k{by, t, n, offset, frequency, apart, seed};
+    if (const auto it = cache.find(k); it != cache.end()) return it->second;
+    // Drop older entries for this layer so the map does not grow across frames.
+    std::erase_if(cache, [by](const auto& kv) {
+      return std::get<0>(kv.first) == by;
+    });
+    std::vector<double>& out = cache[k];
+    const JSValue fn = fn_of(type);
+    if (!JS_IsFunction(cx, fn) || n <= 0) return out;
+    JSValue kObj = JS_NewObject(cx);
+    JS_SetPropertyStr(cx, kObj, "offset", JS_NewFloat64(cx, offset));
+    JS_SetPropertyStr(cx, kObj, "frequency", JS_NewFloat64(cx, frequency));
+    JS_SetPropertyStr(cx, kObj, "apart", JS_NewFloat64(cx, apart));
+    JS_SetPropertyStr(cx, kObj, "seed", JS_NewInt32(cx, (int32_t)seed));
+    JSValue args[3] = {JS_NewInt32(cx, n), JS_NewFloat64(cx, t), kObj};
+    JSValue result = JS_Call(cx, fn, JS_UNDEFINED, 3, args);
+    for (int i = 0; i < 3; ++i) JS_FreeValue(cx, args[i]);
+    // The JS returns a Float64Array. Pull the bytes out in one copy.
+    if (!JS_IsException(result)) {
+      size_t from = 0, bytes = 0, each = 0, size = 0;
+      JSValue buffer = JS_GetTypedArrayBuffer(cx, result, &from, &bytes, &each);
+      if (const uint8_t* p = JS_IsException(buffer)
+                                 ? nullptr
+                                 : JS_GetArrayBuffer(cx, &size, buffer)) {
+        const double* ds = (const double*)(p + from);
+        out.assign(ds, ds + bytes / sizeof(double));
+      }
+      JS_FreeValue(cx, buffer);
+    }
+    JS_FreeValue(cx, result);
+    return out;
   }
 };
 BehaviourRun& behaviour_run() {
@@ -97,27 +147,14 @@ double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
   const double frequency = parameter("frequency", 1),
                apart = parameter("stagger", 0) / 360.0;
   const uint32_t seed = (uint32_t)doc_number(d, by, "seed", 0, 0);
-  // Dispatch to the JS shelf file. The hash, the sine, the fade: all in JS.
+  // One JS call per behaviour layer per frame: the array for every copy is
+  // computed in that call and cached. Out-of-range copy indices read 0.
   BehaviourRun& run = behaviour_run();
   std::lock_guard<std::mutex> hold(run.lock);
-  const JSValue fn = run.fn_of(type);
-  double u = 0.0;
-  if (JS_IsFunction(run.cx, fn)) {
-    JSValue k = JS_NewObject(run.cx);
-    JS_SetPropertyStr(run.cx, k, "offset", JS_NewFloat64(run.cx, offset));
-    JS_SetPropertyStr(run.cx, k, "frequency",
-                      JS_NewFloat64(run.cx, frequency));
-    JS_SetPropertyStr(run.cx, k, "apart", JS_NewFloat64(run.cx, apart));
-    // seed is a uint32 in the engine; pass its bit pattern as a signed int32,
-    // which Math.imul in the JS reads as the same 32 bits.
-    JS_SetPropertyStr(run.cx, k, "seed", JS_NewInt32(run.cx, (int32_t)seed));
-    JSValue args[4] = {JS_NewInt32(run.cx, copy), JS_NewInt32(run.cx, n),
-                       JS_NewFloat64(run.cx, t), k};
-    JSValue result = JS_Call(run.cx, fn, JS_UNDEFINED, 4, args);
-    for (int i = 0; i < 4; ++i) JS_FreeValue(run.cx, args[i]);
-    if (!JS_IsException(result)) JS_ToFloat64(run.cx, &u, result);
-    JS_FreeValue(run.cx, result);
-  }
+  const std::vector<double>& all =
+      run.all_of(type, by, n, t, offset, frequency, apart, seed);
+  const double u =
+      copy >= 0 && copy < (int)all.size() ? all[(size_t)copy] : 0.0;
   // Round to a multiple of `step` when it is positive.
   const double step = parameter("step", 0), v = lo + (hi - lo) * u;
   return step > 0.0 ? std::round(v / step) * step : v;
