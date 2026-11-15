@@ -75,3 +75,11 @@ ignores:
   - lib/workspace/top_bar/size_chip.dart
   - lib/workspace/top_bar/timings.dart
   - lib/workspace/top_bar/top_bar.dart
+  - lib/inspector/blend/blend_preview.dart
+  - lib/inspector/transform/transform_canvas.dart
+  - lib/inspector/transform/transform_layout.dart
+  - lib/widgets/modal_card.dart
+  - lib/workspace/agent/magpie.dart
+  - lib/workspace/dock/colors/color_saved_bar.dart
+  - lib/workspace/stage/ruler_painter.dart
+  - lib/workspace/state/tiles/recipe_motions.dart

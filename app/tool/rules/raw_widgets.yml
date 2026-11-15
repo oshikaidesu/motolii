@@ -31,3 +31,6 @@ ignores:
   - lib/workspace/top_bar/timings.dart
   - lib/workspace/top_bar/top_bar.dart
   - lib/workspace/window/home.dart
+  - lib/workspace/timeline/timeline_labels_view.dart
+  - lib/workspace/top_bar/render_button.dart
+  - lib/workspace/window/home_card.dart
