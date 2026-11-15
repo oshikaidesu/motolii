@@ -14,4 +14,15 @@
 
 ---
 
-確かめ方・後始末：始める前に `git config core.hooksPath .githooks`。Dart は `cd app && dart analyze lib`、C++ は `./engine/check_syntax.sh`、テストは [docs/TESTING.md](docs/TESTING.md)。組み立て・調査の出力は `engine/out/`・`app/build/`・`docs/internal/` の外に出さない。ビルドは 1 本ずつ（同時だと機械が落ちる）。手を止める前にコミットし、取り込み終わった worktree とブランチはその場で消す。
+確かめ方・後始末：始める前に `git config core.hooksPath .githooks`。組み立て・調査の出力は `engine/out/`・`app/build/`・`docs/internal/` の外に出さない。ビルドは 1 本ずつ（同時だと機械が落ちる）。手を止める前にコミットし、取り込み終わった worktree とブランチはその場で消す。
+
+確かめる順番：
+
+| いつ | コマンド |
+|---|---|
+| 常時（Dart を触ったら） | `cd app && dart analyze lib` |
+| 常時（C++ を触ったら） | `./engine/check_syntax.sh` |
+| コミット前 | `cd app && flutter test` |
+| 全テストを走らせたい時 | `cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes` |
+| フレームレートを測りたい時 | [docs/TESTING.md](docs/TESTING.md) の「Frame timing」 |
+| C++ ユニットテスト | `engine/build.sh test`（重い・エンジンビルドを含む） |
