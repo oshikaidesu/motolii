@@ -1,5 +1,6 @@
 // Counts slow frames and engine errors, and lists them from the top bar.
 import 'dart:async';
+import 'dart:developer' show log;
 import 'dart:math' as math;
 import 'dart:ui' show FramePhase, FrameTiming;
 
@@ -89,7 +90,11 @@ class _WaitedState extends State<Waited> {
         _ => true,
       };
       // Count engine errors only while the window is shown.
-      if (shown) _insideSeen += math.max(0, n - _inside);
+      final newBroken = math.max(0, n - _inside);
+      if (shown && newBroken > 0) {
+        log(engineBroken(ws) ?? '', name: 'engine.waited');
+      }
+      if (shown) _insideSeen += newBroken;
       _inside = n;
       _recount();
     });
@@ -132,10 +137,11 @@ class _WaitedState extends State<Waited> {
         if (build > _beat) "the window's build ${ms(build)} ms",
         if (raster > _beat) "the window's raster ${ms(raster)} ms",
       ].join(', ');
-      _late.add(
-        '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}:${at.second.toString().padLeft(2, '0')}.${at.millisecond.toString().padLeft(3, '0')} '
-        '$slow (build ${ms(build)}, raster ${ms(raster)}, all ${ms(f.totalSpan.inMicroseconds)})${kDebugMode ? ', a debug build: slower than the app' : ''}',
-      );
+      final line =
+          '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}:${at.second.toString().padLeft(2, '0')}.${at.millisecond.toString().padLeft(3, '0')} '
+          '$slow (build ${ms(build)}, raster ${ms(raster)}, all ${ms(f.totalSpan.inMicroseconds)})${kDebugMode ? ', a debug build: slower than the app' : ''}';
+      _late.add(line);
+      log(line, name: 'timings.slow');
       if (_late.length > 200) _late.removeAt(0);
       _lateCount++;
     }

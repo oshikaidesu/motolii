@@ -5,6 +5,7 @@
 // macOS and Debug builds only: the Debug entitlements turn the sandbox off so the library can be loaded.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' show log;
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
@@ -122,7 +123,13 @@ Future<List<(double, double)>?> flashesOf(String lib, String video) async {
       }
     }
     return fails;
-  } catch (_) {
+  } catch (e, stack) {
+    log(
+      'flashesOf: failed to parse IRIS result for $video: $e',
+      name: 'motolii',
+      error: e,
+      stackTrace: stack,
+    );
     return null;
   }
 }
@@ -150,7 +157,13 @@ class Motolii {
     final DynamicLibrary lib;
     try {
       lib = DynamicLibrary.open(path);
-    } catch (_) {
+    } catch (e, stack) {
+      log(
+        'engine library failed to open at $path: $e',
+        name: 'motolii',
+        error: e,
+        stackTrace: stack,
+      );
       return null;
     }
     final home = '$dir/out/filament_webgpu'.toNativeUtf8(),
@@ -180,7 +193,9 @@ class Motolii {
     for (final old in live.listSync()) {
       try {
         old.deleteSync();
-      } on FileSystemException catch (_) {}
+      } on FileSystemException catch (_) {
+        // Expected: an older engine build still has this file mapped. dyld keeps it; we move on.
+      }
     }
     from.copySync('$copy.part');
     File('$copy.part').renameSync(copy);
@@ -301,8 +316,21 @@ class Motolii {
     if (which & 8 != 0) which |= 3;
     final version = malloc<Long>();
     if (which & 1 != 0) {
-      final p = _snapshot(handle, 1, _documentAt, version),
-          all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+      final p = _snapshot(handle, 1, _documentAt, version);
+      final Map<String, dynamic> all;
+      try {
+        all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+      } catch (e, stack) {
+        malloc.free(p);
+        malloc.free(version);
+        log(
+          'document snapshot: JSON parse failed: $e',
+          name: 'motolii',
+          error: e,
+          stackTrace: stack,
+        );
+        return;
+      }
       malloc.free(p);
       // Same version as before: not new, so nothing is reported.
       if (version.value == _documentAt) which &= ~1;
@@ -324,7 +352,16 @@ class Motolii {
         // Same version as before: not new.
         which &= ~2;
       } else {
-        momentSnapshot = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+        try {
+          momentSnapshot = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+        } catch (e, stack) {
+          log(
+            'moment snapshot: JSON parse failed: $e',
+            name: 'motolii',
+            error: e,
+            stackTrace: stack,
+          );
+        }
         _momentAt = version.value;
       }
       malloc.free(p);
