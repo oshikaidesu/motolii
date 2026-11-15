@@ -1,9 +1,17 @@
 #include "document/evaluate/relations.h"
 
 #include <filament/RenderableManager.h>
+#include <quickjs.h>
 
+#include <filesystem>
+#include <map>
+#include <mutex>
+#include <string>
+
+#include "base/file_read.h"
 #include "document/marks.h"
 #include "document/scripts/scripts.h"
+#include "shelf/shelf_folders.h"
 #include "stage/canvas/path_operations.h"
 
 namespace motolii {
@@ -11,6 +19,60 @@ namespace motolii {
 namespace math = filament::math;
 using filament::MaterialInstance;
 using filament::math::float2;
+
+namespace {
+
+// The 4 built-in behaviours (stagger / oscillator / noise / random) are now
+// shelves/behaviours/*.js. They each export `at(copy, n, t, k)` and return a
+// number in [0, 1]. QuickJS runs them; the hash they share is the same uint32
+// mixer as the engine had, bit for bit through Math.imul.
+//
+// Loaded on first use, kept while the engine runs. All calls go through one
+// mutex because QuickJS is not thread-safe: every path that reaches a
+// behaviour's value (evaluate layer, sketch, scripts...) can touch it.
+struct BehaviourRun {
+  JSRuntime* rt = nullptr;
+  JSContext* cx = nullptr;
+  std::map<std::string, JSValue> fns;  // type name -> `at` function
+  std::mutex lock;
+
+  // Returns the `at` function for `type`, loading its JS file on first use.
+  // JS_UNDEFINED when the file is not there or does not compile.
+  JSValue fn_of(const std::string& type) {
+    if (!rt) rt = JS_NewRuntime(), cx = JS_NewContext(rt);
+    auto it = fns.find(type);
+    if (it != fns.end()) return it->second;
+    const std::filesystem::path p = std::filesystem::absolute(
+        doc_engine("..") / "shelves" / "behaviours" / (type + ".js"));
+    // Load the module: import its `at`, hang it off globalThis so we can read
+    // it back as a plain JSValue.
+    const std::string key = "__at_" + type;
+    const std::string wrap = "import { at } from '" + p.string() +
+                             "';\nglobalThis['" + key + "'] = at;\n";
+    JSValue ran = JS_Eval(cx, wrap.c_str(), wrap.size(),
+                          (type + ".behaviour").c_str(), JS_EVAL_TYPE_MODULE);
+    JSValue fn = JS_UNDEFINED;
+    if (!JS_IsException(ran)) {
+      for (JSContext* job; JS_ExecutePendingJob(rt, &job) > 0;) {
+      }
+      JSValue g = JS_GetGlobalObject(cx);
+      fn = JS_GetPropertyStr(cx, g, key.c_str());
+      JS_FreeValue(cx, g);
+      if (!JS_IsFunction(cx, fn)) JS_FreeValue(cx, fn), fn = JS_UNDEFINED;
+    } else {
+      JSValue e = JS_GetException(cx);
+      JS_FreeValue(cx, e);
+    }
+    JS_FreeValue(cx, ran);
+    return fns[type] = fn;
+  }
+};
+BehaviourRun& behaviour_run() {
+  static BehaviourRun r;
+  return r;
+}
+
+}  // namespace
 
 double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
   // Limits how deeply behaviours can drive each other, so that a cycle of them
@@ -35,35 +97,27 @@ double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
   const double frequency = parameter("frequency", 1),
                apart = parameter("stagger", 0) / 360.0;
   const uint32_t seed = (uint32_t)doc_number(d, by, "seed", 0, 0);
-  // Returns a deterministic number from 0 to 1 for the seed and the integer
-  // `k`.
-  const auto hash = [&](int64_t k) {
-    uint32_t h = seed * 0x9E3779B9u ^ (uint32_t)k * 0x85EBCA6Bu ^ 0xC2B2AE35u;
-    h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu,
-        h ^= h >> 16;
-    return (double)h / 4294967295.0;
-  };
+  // Dispatch to the JS shelf file. The hash, the sine, the fade: all in JS.
+  BehaviourRun& run = behaviour_run();
+  std::lock_guard<std::mutex> hold(run.lock);
+  const JSValue fn = run.fn_of(type);
   double u = 0.0;
-  // Stagger: the copy's position in the order, from 0 for the first copy to 1
-  // for the last, shifted by the offset.
-  if (type == "stagger")
-    u = std::clamp((n > 1 ? (double)copy / (n - 1) : 0.0) + offset, 0.0, 1.0);
-  // Oscillator: a sine wave over time, mapped to the range 0 to 1. `apart` is
-  // the phase shift per copy in turns.
-  else if (type == "oscillator")
-    u = 0.5 +
-        0.5 * std::sin((double)TAU * (frequency * t + offset + apart * copy));
-  // Noise: smooth interpolation between hashed values at whole positions along
-  // time. Each copy starts further along.
-  else if (type == "noise") {
-    const double x = frequency * t + offset + apart * copy * 4.0,
-                 f = std::floor(x),
-                 e = (x - f) * (x - f) * (3.0 - 2.0 * (x - f));
-    u = hash((int64_t)f) * (1.0 - e) + hash((int64_t)f + 1) * e;
+  if (JS_IsFunction(run.cx, fn)) {
+    JSValue k = JS_NewObject(run.cx);
+    JS_SetPropertyStr(run.cx, k, "offset", JS_NewFloat64(run.cx, offset));
+    JS_SetPropertyStr(run.cx, k, "frequency",
+                      JS_NewFloat64(run.cx, frequency));
+    JS_SetPropertyStr(run.cx, k, "apart", JS_NewFloat64(run.cx, apart));
+    // seed is a uint32 in the engine; pass its bit pattern as a signed int32,
+    // which Math.imul in the JS reads as the same 32 bits.
+    JS_SetPropertyStr(run.cx, k, "seed", JS_NewInt32(run.cx, (int32_t)seed));
+    JSValue args[4] = {JS_NewInt32(run.cx, copy), JS_NewInt32(run.cx, n),
+                       JS_NewFloat64(run.cx, t), k};
+    JSValue result = JS_Call(run.cx, fn, JS_UNDEFINED, 4, args);
+    for (int i = 0; i < 4; ++i) JS_FreeValue(run.cx, args[i]);
+    if (!JS_IsException(result)) JS_ToFloat64(run.cx, &u, result);
+    JS_FreeValue(run.cx, result);
   }
-  // Random: a fixed value for each copy, determined by the seed.
-  else if (type == "random")
-    u = hash(copy + 1);
   // Round to a multiple of `step` when it is positive.
   const double step = parameter("step", 0), v = lo + (hi - lo) * u;
   return step > 0.0 ? std::round(v / step) * step : v;
