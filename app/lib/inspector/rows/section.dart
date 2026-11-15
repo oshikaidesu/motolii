@@ -59,7 +59,7 @@ class Section extends StatelessWidget {
             SizedBox(width: InspectorSkin.inset),
             layerBadge(tone),
             SizedBox(width: Shape.s(6)),
-            Flexible(
+            Expanded(
               child: Text(
                 title,
                 maxLines: 1,
@@ -70,7 +70,6 @@ class Section extends StatelessWidget {
                 ),
               ),
             ),
-            const Expanded(child: SizedBox()),
             ?trailing,
           ],
         ),
