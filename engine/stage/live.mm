@@ -243,12 +243,18 @@ void live_close(Stage& s, Live* l) {
 
 void live_draw(Stage& s, Live* l) {
   Live* desk = l->desk && s.desk.w ? l->desk : nullptr;
-  // With effects, whether full-screen or on a single layer, the stage is drawn the way an
-  // exported video frame is drawn and then placed in the editing window where the stage lies.
-  // An effect belongs to the frame, so the area outside the stage is not part of it. This is
-  // the usual post-processing arrangement: render the scene into an offscreen target, apply
-  // the effect to that, then present.
-  const bool placed = desk && (s.over || !s.before.empty());
+  // A full-screen effect reads the whole frame, so the stage is drawn the way an exported
+  // video frame is drawn -- into an offscreen comp-sized target -- and then placed in the
+  // editing window where the stage lies. This is the usual post-processing arrangement:
+  // render the scene into an offscreen target, apply the effect to that, then present.
+  //
+  // A per-layer effect does not need this: its own image is drawn ahead of the frame (see
+  // s.before / layer_fx.h), and the result is a sheet in the scene. So in the editor it draws
+  // straight into the desk, the same path as a plain layer, and what falls outside the comp
+  // frame is kept rather than clipped at the comp buffer's edge (the desk shows off-stage; see
+  // render_stage.h). Export has no desk, so `placed` is false there and the comp target is used
+  // either way -- its frame is the comp, as it should be.
+  const bool placed = desk && s.over;
   s.out = desk && !placed ? desk->target[desk->next] : l->target[l->next];
   if (desk && !placed) desk_lay(s, true);
   // The texture the views draw into, for a view that reads what is beneath it (see render.h).
