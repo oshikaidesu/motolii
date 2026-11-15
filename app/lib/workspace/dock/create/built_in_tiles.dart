@@ -39,12 +39,14 @@ final builtInGroups = <(String, List<CreateTile>)>[
   (
     'Shapes',
     [
+      // Square, polygon and star are one shape now: Sides turns it into a
+      // polygon, Inner into a star, Roundness rounds the corners (Paths card).
       CreateTile(
         'Rectangle',
         AppGlyphs.rect,
         WindowTokens.toneShape,
         'R',
-        'Rounded corners',
+        'Sides · Inner · Roundness',
       ),
       CreateTile(
         'Ellipse',
@@ -52,20 +54,6 @@ final builtInGroups = <(String, List<CreateTile>)>[
         WindowTokens.toneShape,
         'E',
         'Circle with ⇧',
-      ),
-      CreateTile(
-        'Polygon',
-        AppGlyphs.polygon,
-        WindowTokens.toneShape,
-        '',
-        'Sides · Roundness',
-      ),
-      CreateTile(
-        'Star',
-        AppGlyphs.star,
-        WindowTokens.toneShape,
-        '',
-        'Points · Inner radius',
       ),
       CreateTile(
         'Line',
@@ -236,8 +224,6 @@ final layerOfTile = {
   'Solid': ('shape', 'solid'),
   'Rectangle': ('shape', 'rect'),
   'Ellipse': ('shape', 'circle'),
-  'Polygon': ('shape', 'polygon'),
-  'Star': ('shape', 'star'),
   'Line': ('shape', 'line'),
   // Invisible: other layers can be parented to it.
   'Null': ('shape', 'null'),
