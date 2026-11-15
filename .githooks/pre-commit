@@ -1,4 +1,6 @@
 #!/bin/sh
-# Refuses a commit whose staged Dart files are not as `dart format` leaves them (format_check.py).
+# Refuses a commit whose staged Dart files are not as `dart format` leaves them (format_check.py), or whose app imports
+# reach past the window outside import_rules.txt (import_check.py).
 # Optional. Enable once per clone:  git config core.hooksPath .githooks
-exec python3 "$(git rev-parse --show-toplevel)/.githooks/format_check.py"
+hooks="$(git rev-parse --show-toplevel)/.githooks"
+python3 "$hooks/format_check.py" && exec python3 "$hooks/import_check.py"
