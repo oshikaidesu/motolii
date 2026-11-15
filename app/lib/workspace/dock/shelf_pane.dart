@@ -107,12 +107,12 @@ class _ShelfPaneState extends State<ShelfPane> {
       ws.fxOf(ws.selected).join(' '),
     ),
     'Create' => ws.layers.map((l) => '${l.id} ${l.name}').join(' '),
-    _ => ws.rev,
+    _ => ws.reads,
   };
   void _later() {
     final ws = _ws!;
-    if (ws.rev != _rev) {
-      _rev = ws.rev;
+    if (ws.reads != _rev) {
+      _rev = ws.reads;
       final shows = _showing(ws);
       if (shows != _shows) {
         _shows = shows;
@@ -138,10 +138,7 @@ class _ShelfPaneState extends State<ShelfPane> {
     super.didChangeDependencies();
     final ws = WorkspaceScope.read(context);
     if (ws != _ws) {
-      for (final a in const [
-        WorkspaceAspect.document,
-        WorkspaceAspect.picked,
-      ]) {
+      for (final a in const [WorkspaceAspect.layers, WorkspaceAspect.picked]) {
         _ws?.on[a]!.removeListener(_later);
         ws.on[a]!.addListener(_later);
       }
@@ -151,7 +148,7 @@ class _ShelfPaneState extends State<ShelfPane> {
 
   @override
   void dispose() {
-    for (final a in const [WorkspaceAspect.document, WorkspaceAspect.picked]) {
+    for (final a in const [WorkspaceAspect.layers, WorkspaceAspect.picked]) {
       _ws?.on[a]!.removeListener(_later);
     }
     _search.dispose();
