@@ -58,16 +58,22 @@ void unmatte(Stage& s, MaterialInstance* look, bool there) {
   if (there) look->setParameter("matteUse", float4{0.f});
 }
 
+// Clears the shapes doc_unshape made that live in the matte's own scene, so a
+// new matte can take its place. The matte index must be >= 0.
+void drop_matte_shapes(Stage& s, int matte) {
+  Scene* sc = s.mattes[(size_t)matte].scene;
+  doc_unshape(s, [sc](const Stage::Renderable& made) {
+    return sc->hasEntity(made.thing);
+  });
+}
+
 // Releases the matte of a layer that is no longer cut.
 void matte_released(Stage& s, DocOnStage::Cut& cut, MaterialInstance* own) {
   std::erase_if(s.cuts,
                 [&](const Stage::Cut& c) { return c.look == cut.look; });
   if (cut.look == own) cut.look->setParameter("matteUse", float4{0.f});
   cut.look = nullptr, cut.from = 0, cut.by = nullptr;
-  Scene* sc = s.mattes[(size_t)cut.matte].scene;
-  doc_unshape(s, [sc](const Stage::Renderable& made) {
-    return sc->hasEntity(made.thing);
-  });
+  drop_matte_shapes(s, cut.matte);
 }
 
 // Cuts a layer by the image of the layer `by` when that layer clips it and is a
@@ -129,12 +135,7 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
     }
     // Release what cut the material before.
     unmatte(s, cut.look, cut.look == base || cut.look == own);
-    if (cut.matte >= 0) {
-      Scene* sc = s.mattes[(size_t)cut.matte].scene;
-      doc_unshape(s, [sc](const Stage::Renderable& made) {
-        return sc->hasEntity(made.thing);
-      });
-    }
+    if (cut.matte >= 0) drop_matte_shapes(s, cut.matte);
     cut.matte = matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))}, pic,
                       doc_word(d, layer, "clip_matte") == "luma", 1.f,
                       cut.matte);
@@ -180,12 +181,7 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
         unmatte(s, look, true);
       });
       cut.look = nullptr, cut.from = 0, cut.by = nullptr;
-      if (cut.matte >= 0) {
-        Scene* sc = s.mattes[(size_t)cut.matte].scene;
-        doc_unshape(s, [sc](const Stage::Renderable& made) {
-          return sc->hasEntity(made.thing);
-        });
-      }
+      if (cut.matte >= 0) drop_matte_shapes(s, cut.matte);
     } else {
       matte_released(s, cut, own);
     }
