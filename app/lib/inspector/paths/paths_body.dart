@@ -190,39 +190,37 @@ class _PathsBodyState extends State<PathsBody> {
   }
 
   Widget _buildStack(InspectorValues doc, Map<String, Parameter> params) {
-    final itemH = Shape.z(34);
-    // ReorderableList builds items through SliverChildBuilderDelegate; during drag they move into an Overlay
-    // which doesn't inherit our InspectorScope. Capture the scope and re-provide it to each item.
+    // ReorderableListView measures item heights itself; no SizedBox needed.
+    // Items that move into an Overlay during drag still need their InspectorScope.
     final scope = InspectorScope.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: _stack.length * itemH,
-          child: ReorderableList(
-            itemCount: _stack.length,
-            onReorderItem: (from, to) {
-              setState(() {
-                final item = _stack.removeAt(from);
-                _stack.insert(to, item);
-              });
-            },
-            itemBuilder: (ctx, i) {
-              final id = _stack[i];
-              return InspectorScope(
-                key: ValueKey(id),
-                doc: scope.doc,
-                tick: scope.tick,
-                child: _StackItem(
-                  index: i,
-                  id: id,
-                  param: params[id],
-                  doc: doc,
-                  onRemove: () => _remove(doc, id),
-                ),
-              );
-            },
-          ),
+        ReorderableList(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _stack.length,
+          onReorderItem: (from, to) {
+            setState(() {
+              final item = _stack.removeAt(from);
+              _stack.insert(to, item);
+            });
+          },
+          itemBuilder: (ctx, i) {
+            final id = _stack[i];
+            return InspectorScope(
+              key: ValueKey(id),
+              doc: scope.doc,
+              tick: scope.tick,
+              child: _StackItem(
+                index: i,
+                id: id,
+                param: params[id],
+                doc: doc,
+                onRemove: () => _remove(doc, id),
+              ),
+            );
+          },
         ),
         SizedBox(height: Shape.s(2)),
       ],
