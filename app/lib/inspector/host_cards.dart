@@ -2,6 +2,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/blend/blend_preview.dart';
+import 'package:motolii/inspector/camera/camera_view.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/paths/paths_body.dart';
 import 'package:motolii/inspector/play/play_graph.dart';
@@ -52,4 +53,9 @@ final hostCards =
         fold: null,
       ),
       'Media': (drawn: const {}, body: (card) => FilmStrip(card), fold: null),
+      'Camera': (
+        drawn: CameraBody.drawn,
+        body: (card) => CameraBody(card),
+        fold: null,
+      ),
     };
