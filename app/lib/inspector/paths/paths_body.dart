@@ -67,27 +67,18 @@ class PathsBody extends StatefulWidget {
     'trim_offset': 0.0,
   };
 
-  // Operators that carry sub-parameters: adding the parent lays its subs right
-  // below it, and they move and are removed with it as a set. The parent's name
-  // prefixes each sub, so this is the one place the dependency is written.
-  static const _subs = <String, List<String>>{
-    'zigzag': ['zigzag_ridges', 'zigzag_smooth'],
-    'rough': ['rough_detail'],
-    'morph': ['morph_to', 'morph_steps'],
-    'trail': ['trail_length'],
-    'trim': ['trim_begin', 'trim_offset'],
-  };
-
-  // Every sub-parameter, kept out of the picker and the top-level stack order.
-  static final _allSubs = {for (final subs in _subs.values) ...subs};
-
-  // The parents and standalone operators the picker offers, grouped. Subs are
-  // not here; they come with their parent.
+  // The order operators appear in the picker, grouped. A sub-parameter (one the
+  // engine folds under another, carried by Parameter.fold — in Paths only Zig
+  // zag's Ridges and Smooth) is left out of the picker and shown under its
+  // parent instead; the rest stand on their own.
   static const _groups = [
-    ('Deform', ['round', 'bloat', 'offset', 'zigzag']),
-    ('Texture', ['rough', 'resample', 'fill_rule']),
-    ('Path', ['morph', 'trail']),
-    ('Animate', ['trim']),
+    (
+      'Deform',
+      ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
+    ),
+    ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
+    ('Path', ['morph', 'morph_to', 'morph_steps', 'trail', 'trail_length']),
+    ('Animate', ['trim', 'trim_begin', 'trim_offset']),
   ];
 
   // All stackable operators in their default order.
@@ -127,6 +118,21 @@ class _PathsBodyState extends State<PathsBody> {
     for (final p in widget.card.params) p.id: p,
   };
 
+  // The sub-parameters the engine folds under [id] (Parameter.fold == its label):
+  // in Paths, Zig zag's Ridges and Smooth. Empty for an operator that stands alone.
+  List<String> _subsOf(String id) {
+    final label = _params[id]?.label;
+    if (label == null) return const [];
+    return [
+      for (final p in widget.card.params)
+        if (p.fold == label) p.id,
+    ];
+  }
+
+  // A sub folds under another operator, so it never sits on the stack or shows
+  // in the picker on its own; it rides under its parent.
+  bool _isSub(String id) => _params[id]?.fold != null;
+
   void _init(InspectorValues doc) {
     if (_initialized) return;
     _initialized = true;
@@ -134,16 +140,16 @@ class _PathsBodyState extends State<PathsBody> {
     // its parent, so an orphan sub left in the document is ignored here.
     _order = [
       for (final id in PathsBody._stackable)
-        if (!PathsBody._allSubs.contains(id) && (doc.get('v_$id') ?? 0) != 0.0)
-          id,
+        if (!_isSub(id) && (doc.get('v_$id') ?? 0) != 0.0) id,
     ];
   }
 
-  // Adding a parent turns on its subs too, each at its default, as one gesture.
+  // Adding an operator turns on its folded subs too, each at its default, as one
+  // gesture (only Zig zag has any; everything else adds just itself).
   void _add(InspectorValues doc, String id) {
     if (_order.contains(id)) return;
     doc.beginGesture();
-    for (final x in [id, ...?PathsBody._subs[id]]) {
+    for (final x in [id, ..._subsOf(id)]) {
       doc.set('v_$x', PathsBody._defaults[x] ?? 1.0);
     }
     doc.endGesture();
@@ -153,10 +159,10 @@ class _PathsBodyState extends State<PathsBody> {
     });
   }
 
-  // Removing a parent turns off its subs with it.
+  // Removing an operator turns off its folded subs with it.
   void _remove(InspectorValues doc, String id) {
     doc.beginGesture();
-    for (final x in [id, ...?PathsBody._subs[id]]) {
+    for (final x in [id, ..._subsOf(id)]) {
       doc.set('v_$x', 0.0);
     }
     doc.endGesture();
@@ -246,7 +252,7 @@ class _PathsBodyState extends State<PathsBody> {
                     doc: doc,
                     onRemove: () => _remove(doc, id),
                   ),
-                  for (final sub in PathsBody._subs[id] ?? const <String>[])
+                  for (final sub in _subsOf(id))
                     _StackItem(
                       index: i,
                       id: sub,
@@ -321,7 +327,7 @@ class _PathsBodyState extends State<PathsBody> {
   ) {
     final available = [
       for (final id in ids)
-        if (!_order.contains(id)) id,
+        if (!_order.contains(id) && !_isSub(id)) id,
     ];
     if (available.isEmpty) return [];
     return [
