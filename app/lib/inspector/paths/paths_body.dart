@@ -67,17 +67,30 @@ class PathsBody extends StatefulWidget {
     'trim_offset': 0.0,
   };
 
-  // The order operators appear in the picker, grouped. A sub-parameter (one the
-  // engine folds under another, carried by Parameter.fold — in Paths only Zig
-  // zag's Ridges and Smooth) is left out of the picker and shown under its
-  // parent instead; the rest stand on their own.
+  // Functional dependencies: a value the engine only reads when its owner is on
+  // (an `if` guard in evaluate_shape.cpp), so on its own it does nothing. The
+  // engine does not fold these (Parameter.fold is null), so they are named here.
+  // Morph and Trail reach for another layer, so they are kept off the picker
+  // entirely (not in _groups); they still fold their own subs when already set.
+  static const _funcDeps = <String, List<String>>{
+    'rough': ['rough_detail'],
+    'trim': ['trim_offset'],
+    'morph': ['morph_to', 'morph_steps'],
+    'trail': ['trail_length'],
+  };
+  static final _funcSubs = {for (final subs in _funcDeps.values) ...subs};
+
+  // The order operators appear in the picker, grouped. Morph and Trail are left
+  // out (they need another layer). A sub — folded by the engine (Parameter.fold,
+  // e.g. Zig zag's Ridges/Smooth) or depending on its owner (_funcDeps) — is
+  // left out of the picker and shown under its parent. Trim start stays on its
+  // own, since it trims on its own.
   static const _groups = [
     (
       'Deform',
       ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
     ),
     ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
-    ('Path', ['morph', 'morph_to', 'morph_steps', 'trail', 'trail_length']),
     ('Animate', ['trim', 'trim_begin', 'trim_offset']),
   ];
 
@@ -118,20 +131,24 @@ class _PathsBodyState extends State<PathsBody> {
     for (final p in widget.card.params) p.id: p,
   };
 
-  // The sub-parameters the engine folds under [id] (Parameter.fold == its label):
-  // in Paths, Zig zag's Ridges and Smooth. Empty for an operator that stands alone.
+  // The subs shown under [id]: those the engine folds under it (Parameter.fold ==
+  // its label, e.g. Zig zag's Ridges/Smooth) plus its functional dependents
+  // (PathsBody._funcDeps). Empty for an operator that stands on its own.
   List<String> _subsOf(String id) {
     final label = _params[id]?.label;
-    if (label == null) return const [];
-    return [
-      for (final p in widget.card.params)
-        if (p.fold == label) p.id,
-    ];
+    final byFold = label == null
+        ? const <String>[]
+        : [
+            for (final p in widget.card.params)
+              if (p.fold == label) p.id,
+          ];
+    return [...byFold, ...?PathsBody._funcDeps[id]];
   }
 
-  // A sub folds under another operator, so it never sits on the stack or shows
-  // in the picker on its own; it rides under its parent.
-  bool _isSub(String id) => _params[id]?.fold != null;
+  // A sub rides under another operator — folded by the engine or depending on it
+  // — so it never sits on the stack or shows in the picker on its own.
+  bool _isSub(String id) =>
+      _params[id]?.fold != null || PathsBody._funcSubs.contains(id);
 
   void _init(InspectorValues doc) {
     if (_initialized) return;
