@@ -9,13 +9,14 @@
 
 namespace motolii {
 
-// What a Cavalry distribution asks of Cavalry's JavaScript (the four names its
-// 26 files use), so one runs as it is.
-extern const char* cavalry_prelude;
+// cavalry_prelude.js and rows_prelude.js sit beside script_natives.cpp. They
+// are loaded by community/script_runner/script_runner.cpp when a QuickJS
+// context is opened; the engine ships no Cavalry- or row-related JavaScript
+// as C++ string literals. cavalry_prelude.js is the four names a Cavalry
+// distribution's 26 files use, so one runs as it is. rows_prelude.js is
 // __relates() and __forces(): what a relation written as a file is told and
-// says, all its things at once. A file with each() and no relate() runs on the
-// layers as on copies.
-extern const char* rows_prelude;
+// says, all its things at once. A file with each() and no relate() runs on
+// the layers as on copies.
 
 // ease(name, u): a way by its name (easing_names.h), the same expression as a
 // key's stretch; not one of them: as it is.

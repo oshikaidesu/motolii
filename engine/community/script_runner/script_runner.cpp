@@ -17,6 +17,7 @@
 #include "community/sites/adapter.h"
 #include "community/subtitles/subtitles.h"
 #include "media/video_frames_for_scripts.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 
@@ -79,11 +80,15 @@ Script::Script(const std::string& file, const std::string& p5,
   const std::string ways = ways_prelude();
   JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways",
                                 JS_EVAL_TYPE_GLOBAL));
-  JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_prelude,
-                                std::char_traits<char>::length(cavalry_prelude),
-                                "cavalry", JS_EVAL_TYPE_GLOBAL));
-  JS_FreeValue(own->cx, JS_Eval(own->cx, rows_prelude, strlen(rows_prelude),
-                                "rows", JS_EVAL_TYPE_GLOBAL));
+  // Motolii's own stand-ins for Cavalry and for a script written as a row of
+  // numbers, loaded from the .js beside their call sites so engine does not
+  // ship JavaScript as C++ string literals.
+  for (const char* prelude : {"cavalry_prelude", "rows_prelude"}) {
+    const std::string js = read_text(doc_engine(
+        ("community/script_runner/" + std::string(prelude) + ".js").c_str()));
+    JS_FreeValue(own->cx, JS_Eval(own->cx, js.c_str(), js.size(), prelude,
+                                  JS_EVAL_TYPE_GLOBAL));
+  }
   JS_FreeValue(
       own->cx,
       JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva",
