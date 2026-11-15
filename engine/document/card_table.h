@@ -102,7 +102,7 @@ inline const DocCard doc_cards[] = {
      "points inner round bloat offset zigzag zigzag_ridges zigzag_smooth "
      "trim trim_begin trim_offset morph morph_to morph_steps "
      "resample rough rough_detail fill_rule trail trail_length",
-     "kind", "text shape"},
+     "kind", "text shape image"},
     // Where in its file a video starts (Premiere Pro's Slip), how loud it is
     // heard and exported, and the beats the timeline's ruler marks.
     {"Media", "begin volume beats", "kind", "video"},
@@ -121,13 +121,12 @@ inline const DocCard doc_cards[] = {
     // end.
     {"Line", "cap join dash dash_offset heads head_shape head_start head_size",
      nullptr, nullptr, true},
-    // A photo's rectangle, as Alight Motion's Edit Shape and AbsentMotion's
-    // Shape Options: cut in
-    // from its sides, what is left stays where it was, and the corners are
-    // rounded. It is drawn as
-    // a rectangle that its file fills, see doc_match.
-    {"Edit Shape", "crop_left crop_top crop_right crop_bottom round", "kind",
-     "image"},
+    // Cut the layer in from its sides; what is left stays where it was, as
+    // Alight Motion's crop. Any placed layer is cut, by Filament's scissor on
+    // its own box (evaluate_clipping); a photo is cut to a rectangle its file
+    // fills, see doc_match, so its rounded corners (round, on the Paths card)
+    // follow the cut.
+    {"Crop", "crop_left crop_top crop_right crop_bottom"},
     {"Bevel", "bevel bevel_depth bevel_color bevel_metallic bevel_roughness",
      nullptr, nullptr, true},
     // After Effects' Side and Back Color: the other faces of a thick layer.

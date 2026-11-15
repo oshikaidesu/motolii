@@ -245,7 +245,36 @@ void layer_clipped(Doc& d, int layer, DocShownLayer& t,
                        (grouped || doc_number(d, layer, "clip", 0, 0) > 0.5) &&
                        doc_covers(d, by, now, box);
   const bool shaped = layer_matted(d, layer, t, by, clipped, invert, now);
-  layer_scissored(*d.stage, t, shaped, clipped, box);
+  // Crop: cut the layer in from each side, as a share of its own upright box.
+  // A photo bakes its crop into the rectangle its file fills (t.cropPath), so
+  // it is not cut again here. The crop rectangle is intersected with the clip
+  // above when the layer is both clipped and cropped.
+  double crop[4];
+  bool cropped = false;
+  if (!t.cropPath) {
+    const double cl = doc_number(d, layer, "crop_left", 0, 0),
+                 ct = doc_number(d, layer, "crop_top", 0, 0),
+                 cr = doc_number(d, layer, "crop_right", 0, 0),
+                 cb = doc_number(d, layer, "crop_bottom", 0, 0);
+    if (cl + ct + cr + cb > 0 && doc_covers(d, layer, now, crop)) {
+      crop[0] += cl * crop[2];
+      crop[1] += ct * crop[3];
+      crop[2] = std::max(0.0, crop[2] * (1 - cl - cr));
+      crop[3] = std::max(0.0, crop[3] * (1 - ct - cb));
+      cropped = true;
+    }
+  }
+  if (cropped && clipped) {
+    const double right = std::min(box[0] + box[2], crop[0] + crop[2]),
+                 low = std::min(box[1] + box[3], crop[1] + crop[3]);
+    box[0] = std::max(box[0], crop[0]);
+    box[1] = std::max(box[1], crop[1]);
+    box[2] = std::max(0.0, right - box[0]);
+    box[3] = std::max(0.0, low - box[1]);
+  } else if (cropped) {
+    box[0] = crop[0], box[1] = crop[1], box[2] = crop[2], box[3] = crop[3];
+  }
+  layer_scissored(*d.stage, t, shaped, clipped || cropped, box);
 }
 
 }  // namespace

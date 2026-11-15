@@ -15,7 +15,6 @@ import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/widgets/context_menu.dart';
@@ -139,18 +138,24 @@ class _StageViewState extends State<StageView>
     if (m == null ||
         t == null ||
         _cropping != widget.selected ||
-        !_photo(m, t)) {
+        !_croppable(widget.selected)) {
       return const [];
     }
     return [for (final n in cropSides) m.value(t, n, 0) ?? 0];
   }
 
-  static bool _photo(Motolii m, int t) =>
-      m.word(t, 'kind') == 'picture' &&
-      RegExp(
-        r'\.(jpe?g|png|webp|bmp)$',
-        caseSensitive: false,
-      ).hasMatch(m.word(t, 'file'));
+  /// Any placed, visible layer can be cropped — a photo, a video, text, a solid or a shape — as in Google Slides.
+  /// Groups, particles, audio, the camera and the background are left out.
+  bool _croppable(String? id) {
+    if (id == null || id == 'bg') return false;
+    final l = widget.scene.layer(id);
+    return l != null &&
+        const {
+          LayerKind.shape,
+          LayerKind.text,
+          LayerKind.image,
+        }.contains(l.kind);
+  }
 
   // Double-clicking a selected image starts cropping: bars appear on its sides until a click elsewhere or Enter.
   // Figma's Crop and Keynote's image editing work this way.
@@ -341,8 +346,7 @@ class _StageViewState extends State<StageView>
                   ); // A click creates one layer there.
                 }
                 final hit = _hitLocal(v, d.localPosition),
-                    ws = WorkspaceScope.read(context),
-                    m = ws.inside;
+                    ws = WorkspaceScope.read(context);
                 final keys = clickKeys();
                 if (keys.add || keys.span) {
                   return hit == null ? null : clickLayer(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
@@ -354,9 +358,7 @@ class _StageViewState extends State<StageView>
                   _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
                 }
                 ws.select(hit);
-                final crop = twice && m != null && _photo(m, int.parse(hit))
-                    ? hit
-                    : null;
+                final crop = twice && _croppable(hit) ? hit : null;
                 if (crop != _cropping) setState(() => _cropping = crop);
               },
               dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.

@@ -240,6 +240,9 @@ void match_image(LayerBuild& build) {
                cropped)
           ? canvas_aspect(s, file.c_str())
           : 0.f;
+  // A photo bakes its crop into the filled rectangle below; any other image
+  // (a sketch, a plain canvas) is cut by the scissor in evaluate_clipping.
+  made.cropPath = fxOk && aspect > 0.f && cropped;
   if (ext == ".js")
     sketch_picture(build);
   else if (fxOk && aspect > 0.f)

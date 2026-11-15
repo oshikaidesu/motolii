@@ -203,18 +203,19 @@ inline const DocValue doc_values[] = {
     // rect: a rectangle whose corner count is set by points (3 = triangle,
     // 4 = quad, inner > 0 = star). circle: a circle.
     {"shape", "shape", 0, 0, false, "rect circle"},
-    // crop_left, crop_top, crop_right and crop_bottom cut a photo in from each
+    // crop_left, crop_top, crop_right and crop_bottom cut the layer in from each
     // side, as a share of
-    // its width or height, like Alight Motion's crop. points, inner and round
-    // are a polygon's or
-    // star's points, a star's inner points, and its rounded corners.
+    // its width or height, like Alight Motion's crop. Any placed layer is cut,
+    // by Filament's scissor on its own box (evaluate_clipping), as a photo is
+    // cut to a rectangle its file fills. points, inner and round are a polygon's
+    // or star's points, a star's inner points, and its rounded corners.
     {"points", "shape", 3, 360, false, nullptr},
     {"inner", "shape", 0.01, 1, false, nullptr},
     {"round", "shape text image", 0, 0.5, true, nullptr},
-    {"crop_left", "image", 0, 0.95, false, nullptr},
-    {"crop_top", "image", 0, 0.95, false, nullptr},
-    {"crop_right", "image", 0, 0.95, false, nullptr},
-    {"crop_bottom", "image", 0, 0.95, false, nullptr},
+    {"crop_left", doc_visible_kinds, 0, 0.95, false, nullptr},
+    {"crop_top", doc_visible_kinds, 0, 0.95, false, nullptr},
+    {"crop_right", doc_visible_kinds, 0, 0.95, false, nullptr},
+    {"crop_bottom", doc_visible_kinds, 0, 0.95, false, nullptr},
     {"start", doc_kinds, 0, 1e6, false, nullptr},
     {"duration", doc_kinds, 1e-3, 1e6, false, nullptr},
     {"begin", doc_video_sheet_kinds, 0, 1e6, false, nullptr},

@@ -41,6 +41,9 @@ struct DocShownLayer {
   Solid* solid = nullptr;
   Mesh* shape = nullptr;
   bool in = true, clipped = false, camera = false, behaviour = false, grains = false;
+  // A photo bakes its crop into the rectangle its file fills (edged_photo), so
+  // evaluate_clipping does not cut it again with a scissor.
+  bool cropPath = false;
   std::shared_ptr<SplatEffect> splatFx;
   std::string splatFxFile;
   filament::MaterialInstance* splatPlain = nullptr;
