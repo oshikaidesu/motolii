@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "base/cache_folder.h"
 #include "base/hash.h"
 #include "media/midi_notes.h"
 
@@ -138,10 +139,7 @@ std::string midi_roll_file(const std::string& file, double bpm,
   if (auto at = std::filesystem::last_write_time(file, e); !e)
     key += "|" + std::to_string((long long)at.time_since_epoch().count());
   const uint64_t hash = fnv1a64(key);
-  const char* home = std::getenv("HOME");
-  const std::filesystem::path dir =
-      std::filesystem::path(home ? home : "/tmp") /
-      "Library/Caches/Motolii/midi";
+  const std::filesystem::path dir = cache_folder("midi");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.svg", (unsigned long long)hash);
   const std::string out = (dir / name).string();

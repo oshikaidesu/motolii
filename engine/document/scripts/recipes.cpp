@@ -12,6 +12,7 @@
 #include <system_error>
 #include <utility>
 
+#include "base/cache_folder.h"
 #include "base/file_read.h"
 #include "base/hash.h"
 #include "community/aviutl/aviutl.h"
@@ -63,12 +64,9 @@ std::string doc_tile(const std::string& ref,
   // every tile again.
   key += "|tiles 3";
   const uint64_t hash = fnv1a64(key);
-  const char* home = std::getenv("HOME");
   char name[24];
   std::snprintf(name, sizeof name, "%016llx.png", (unsigned long long)hash);
-  const std::string drawn = (std::filesystem::path(home ? home : "/tmp") /
-                             "Library/Caches/Motolii/tiles" / name)
-                                .string();
+  const std::string drawn = (cache_folder("tiles") / name).string();
   const std::string picture =
       std::filesystem::exists(drawn, wrong) ? drawn
       : !beside.empty() && std::filesystem::exists(beside, wrong)

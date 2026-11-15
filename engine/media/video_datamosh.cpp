@@ -1,5 +1,6 @@
 #include "media/video_datamosh.h"
 
+#include "base/cache_folder.h"
 #include "base/hash.h"
 #include "base/video_encoder.h"
 
@@ -44,10 +45,7 @@ std::string mosh_file(const std::string& film, double at,
              std::to_string(st.st_size);
   }
   const uint64_t hash = fnv1a64(key);
-  const char* home = std::getenv("HOME");
-  const std::filesystem::path dir =
-      std::filesystem::path(home ? home : "/tmp") /
-      "Library/Caches/Motolii/mosh";
+  const std::filesystem::path dir = cache_folder("mosh");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.mp4", (unsigned long long)hash);
   const std::string out = (dir / name).string();

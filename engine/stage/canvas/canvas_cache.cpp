@@ -5,6 +5,7 @@
 
 #include <thread>
 
+#include "base/cache_folder.h"
 #include "base/hash.h"
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_sketch.h"
@@ -244,10 +245,7 @@ void cache_draw(Stage& s, Canvas2D* d, int at, bool keep,
 
 const std::filesystem::path& cache_dir() {
   static const std::filesystem::path dir = [] {
-    const char* home = std::getenv("HOME");
-    const std::filesystem::path p =
-        std::filesystem::path(home ? home : "/tmp") /
-        "Library/Caches/Motolii/frames";
+    const std::filesystem::path p = cache_folder("frames");
     std::error_code e;
     std::filesystem::create_directories(p, e);
     std::thread([p] {
