@@ -48,7 +48,10 @@ inline const DocShown doc_shown[] = {
     {"wrap", "", "", "Wrap", 0, 0, nullptr},
     {"wrap_at", "", "×", "Wrap at", 0, 40, nullptr},
     {"gradient", "", "", "Gradient", 0, 0, nullptr},
-    {"gradient_angle", "angle", "°", "Angle", -180, 180, nullptr},
+    // The gradient's own settings fold under it (Gradient), so the Fill card
+    // groups them from this, not from a list named in the UI (match_look.cpp
+    // reads them; app/.../fill_body.dart shows them while a gradient is chosen).
+    {"gradient_angle", "angle", "°", "Angle", -180, 180, "Gradient"},
     {"points", "count", "", "Points", 3, 32, nullptr},
     {"inner", "share", "%", "Inner radius", 0.05, 1, nullptr},
     {"round", "share", "%", "Round", 0, 0.5, nullptr},
@@ -60,8 +63,8 @@ inline const DocShown doc_shown[] = {
     {"zigzag", "", "", "Zig zag", -0.3, 0.3, nullptr},
     {"zigzag_ridges", "count", "", "Ridges", 0, 20, "Zig zag"},
     {"zigzag_smooth", "onoff", "", "Smooth", 0, 1, "Zig zag"},
-    {"gradient_scale", "", "×", "Stretch", 0.1, 4, nullptr},
-    {"gradient_spread", "", "", "Past end", 0, 0, nullptr},
+    {"gradient_scale", "", "×", "Stretch", 0.1, 4, "Gradient"},
+    {"gradient_spread", "", "", "Past end", 0, 0, "Gradient"},
     {"copies", "count", "", "How many", 1, 200, nullptr},
     {"stagger", "", "s", "Delay", 0, 3, "Copies"},
     {"copy_fill", "colours", "", "Colours", 0, 0, "Copies"},

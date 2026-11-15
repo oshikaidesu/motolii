@@ -181,7 +181,11 @@ class ValuesCard extends StatelessWidget {
       children: [
         ?host?.body(card),
         if (heroes.isNotEmpty) ParameterGrid(heroes),
-        if (rest.isNotEmpty) ...[
+        // The fold row shows only when something sits under it: the card's own
+        // fold widget, or folded values the body does not draw itself. A card
+        // whose advanced values are all drawn by its body (the gradient's
+        // settings in Fill, Zig zag's in Paths) shows them there, not an empty row.
+        if (rest.isNotEmpty && (folded.isNotEmpty || host?.fold != null)) ...[
           _FoldRow(
             rest.first.fold ?? 'Advanced',
             adv,

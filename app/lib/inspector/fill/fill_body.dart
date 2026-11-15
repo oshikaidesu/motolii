@@ -11,7 +11,10 @@ import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// The Fill card's inside (see host_cards.dart).
 ///
-/// Gradient controls are shown inline when gradient is not the first option.
+/// The gradient's own settings are whichever params the engine folds under the
+/// gradient (Parameter.fold == its label, set in values.h), not a list named
+/// here — the engine's fold is the source of truth for the grouping, as in the
+/// Paths card. They show inline while a gradient is chosen.
 /// Absorbed Stroke cards appear as removable rows below the fill section.
 class FillBody extends StatelessWidget {
   const FillBody(this.card, {super.key});
@@ -38,12 +41,12 @@ class FillBody extends StatelessWidget {
       for (final p in card.params)
         if (p.id == 'gradient') p,
     ];
+    // The gradient's settings are the params the engine folds under it
+    // (fold == the gradient's label), so the grouping lives in values.h, not here.
+    final gradLabel = gradParam.isEmpty ? null : gradParam.first.label;
     final gradSubParams = [
       for (final p in card.params)
-        if (p.id == 'gradient_angle' ||
-            p.id == 'gradient_scale' ||
-            p.id == 'gradient_spread')
-          p,
+        if (gradLabel != null && p.fold == gradLabel) p,
     ];
     final strokeCards = [
       for (final c in doc.cards)
