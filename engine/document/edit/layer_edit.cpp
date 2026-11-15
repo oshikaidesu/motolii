@@ -295,6 +295,16 @@ int doc_add(Doc& d, const char* kind, const char* file) {
                          "order by id desc limit 1; insert into "
                          "keyframe(layer, name, at, value) select id, 'fill', "
                          "0.0, '7f7f7f' from layer order by id desc limit 1") +
+               // Every visible layer starts in 2.5d: a sheet or a solid in
+               // the world, facing the viewer, so the first camera move reads
+               // as depth, not a flat sticker. The switch (kinds.h space) still
+               // offers 2d and 3d. The value lives here, the one place, so the
+               // card and the render agree.
+               (doc_among("video image text solid shape", kind)
+                    ? "; insert into keyframe(layer, name, at, value) select "
+                      "id, 'space', 0.0, '2.5d' from layer order by id desc "
+                      "limit 1"
+                    : "") +
                // The layer lasts as long as the project's layer_length
                // setting says, if it is set: AbsentMotion's New Layer
                // Length, see its StructureActions.kt and TextActions.kt

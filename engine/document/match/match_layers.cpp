@@ -129,10 +129,14 @@ void layer_units_and_space(LayerBuild& build) {
   DocShownLayer& made = build.made;
   const double units = build.units;
   made.units = units;
-  if (doc_among("video image text shape", kind))
-    made.space = build.word("space") == "2.5d" ? 25
-                 : build.word("space") == "3d" ? 3
-                                                       : 2;
+  // Every visible layer chooses its space, a sheet and a solid alike, so the
+  // camera reveals or flattens it. Unset falls to 2.5d (25): a billboard in the
+  // world facing the viewer, not stuck to the screen. doc_add writes 2.5d on a
+  // new layer; a layer saved before this read none here and falls to the same.
+  if (doc_among("video image text solid shape", kind)) {
+    const std::string space = build.word("space");
+    made.space = space == "2d" ? 2 : space == "3d" ? 3 : 25;
+  }
 }
 
 // Builds what the layer is on the stage, as its kind says. When nothing can be

@@ -368,12 +368,14 @@ inline const DocValue doc_values[] = {
     {"mosh", "video", 0, 1, false, nullptr},
     {"mosh_with", "video", 0, 1e9, false, nullptr},
     {"mosh_at", "video", 0, 1e6, false, nullptr},
-    // space: 2d is not in the world and lies by the order alone. 2.5d is a
-    // sheet in the world, in
-    // front or behind by depth, always facing the viewer. 3d is filmed as it
-    // is, with the camera
-    // turning round it, as a solid is.
-    {"space", doc_video_sheet_kinds, 0, 0, false, "2d 2.5d 3d"},
+    // space: 2d is not in the world and lies by the order alone. 2.5d is in
+    // the world, in front or behind by depth, always facing the viewer. 3d is
+    // filmed as it is, with the camera turning round it. Every visible layer
+    // chooses, a sheet and a solid alike: as the camera moves it is
+    // screen-stuck (2d), a billboard facing the viewer (2.5d) or turned round
+    // by the camera (3d). Every one's own default is 2.5d (layer_edit.cpp,
+    // doc_add writes it on a new layer).
+    {"space", doc_visible_kinds, 0, 0, false, "2d 2.5d 3d"},
     // How the lines of a text lie one under another, ThorVG's own: 0 at the
     // left, 0.5 about the
     // middle, 1 at the right.
