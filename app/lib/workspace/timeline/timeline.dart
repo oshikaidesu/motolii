@@ -90,6 +90,9 @@ class _TimelinePaneState extends State<TimelinePane>
   );
   int _lastFrame = -1;
 
+  /// The width of the layer-name column, dragged by the divider between the names and the tracks.
+  late double _labelWidth = TimelineMetrics.label;
+
   @override
   void initState() {
     super.initState();
@@ -265,13 +268,14 @@ class _TimelinePaneState extends State<TimelinePane>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(
-                      width: TimelineMetrics.label,
-                      child: labels(ws, drawn),
-                    ),
-                    SizedBox(
-                      width: TimelineMetrics.divider,
-                      child: ColoredBox(color: WindowTokens.ground),
+                    SizedBox(width: _labelWidth, child: labels(ws, drawn)),
+                    _ColumnDivider(
+                      onDrag: (dx) => setState(
+                        () => _labelWidth = (_labelWidth + dx).clamp(
+                          TimelineMetrics.labelMin,
+                          TimelineMetrics.labelMax,
+                        ),
+                      ),
                     ),
                     Expanded(child: tracks(ws, drawn)),
                   ],
@@ -283,4 +287,58 @@ class _TimelinePaneState extends State<TimelinePane>
       ),
     );
   }
+}
+
+/// The divider between the layer names and the tracks. Its handle sits in the header (the "LAYER n" row), lit on hover,
+/// and is dragged left or right to resize the name column, as a table column is resized by its heading. Below the header
+/// it is a plain hairline, so the drag is only where the heading is.
+class _ColumnDivider extends StatefulWidget {
+  const _ColumnDivider({required this.onDrag});
+
+  /// The pointer's horizontal movement during a drag, in logical pixels.
+  final ValueChanged<double> onDrag;
+  @override
+  State<_ColumnDivider> createState() => _ColumnDividerState();
+}
+
+class _ColumnDividerState extends State<_ColumnDivider> {
+  bool _hot = false;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: TimelineMetrics.grip,
+    child: Column(
+      // The children fill the grip's full width, so the whole handle is grabbable, not just the hairline at its centre.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MouseRegion(
+          cursor: SystemMouseCursors.resizeColumn,
+          onEnter: (_) => setState(() => _hot = true),
+          onExit: (_) => setState(() => _hot = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragUpdate: (d) => widget.onDrag(d.delta.dx),
+            child: SizedBox(
+              height: TimelineMetrics.ruler,
+              child: Center(
+                child: Container(
+                  width: _hot ? 2.0 : TimelineMetrics.divider,
+                  height: double.infinity,
+                  color: _hot ? WindowTokens.accentInk : WindowTokens.ground,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: SizedBox(
+              width: TimelineMetrics.divider,
+              height: double.infinity,
+              child: ColoredBox(color: WindowTokens.ground),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

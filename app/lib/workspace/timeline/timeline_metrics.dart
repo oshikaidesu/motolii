@@ -6,6 +6,14 @@ abstract final class TimelineMetrics {
   static const divider = 1.0;
   static double get header => Shape.z(32.0);
   static double get label => Shape.z(200.0);
+
+  /// The draggable name-column width is kept between these. The low end is where the header's "# LAYER n" and its
+  /// four icons still fit without overflowing; the rows below clip, so only the header sets the floor.
+  static double get labelMin => Shape.z(180.0);
+  static double get labelMax => Shape.z(420.0);
+
+  /// The width of the divider's grab area between the names and the tracks.
+  static double get grip => Shape.z(8.0);
   static double get ruler => Shape.z(30.0);
   static double get row => Shape.z(24.0);
   static double get overview => Shape.z(12.0);
