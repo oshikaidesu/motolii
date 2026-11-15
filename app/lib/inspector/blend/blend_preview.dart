@@ -19,8 +19,8 @@ import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart' show PressOutside;
 import 'package:motolii/widgets/controls.dart' show Pressable, Segmented;
 import 'package:motolii/widgets/disclosure_triangle.dart';
@@ -295,13 +295,7 @@ class _BlendPreviewState extends State<BlendPreview> {
       color: Grey.g15,
       borderRadius: Shape.round(8),
       border: Border.all(color: Grey.g26),
-      boxShadow: [
-        BoxShadow(
-          color: ColorTheme.of('Shadow', const Color(0x99000000)),
-          blurRadius: 16,
-          offset: const Offset(0, 6),
-        ),
-      ],
+      boxShadow: WindowTokens.lift,
     ),
     child: ConstrainedBox(
       constraints: BoxConstraints(maxHeight: 10 * 22.0),

@@ -345,9 +345,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
           builder: (_, hot, _) => DecoratedBox(
             position: DecorationPosition.foreground,
             decoration: BoxDecoration(
-              border: hot.isEmpty
-                  ? null
-                  : Border.all(color: WindowTokens.accent, width: 2),
+              border: hot.isEmpty ? null : WindowTokens.chosen,
             ),
             child: Flex(
               direction: tall ? Axis.vertical : Axis.horizontal,

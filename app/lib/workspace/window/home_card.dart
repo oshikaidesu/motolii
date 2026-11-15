@@ -75,9 +75,7 @@ class HomeCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: WindowTokens.card,
                 borderRadius: Shape.round(8),
-                border: open
-                    ? Border.all(color: WindowTokens.accent, width: 2)
-                    : null,
+                border: open ? WindowTokens.chosen : null,
               ),
               clipBehavior: Clip.antiAlias,
               child: Stack(

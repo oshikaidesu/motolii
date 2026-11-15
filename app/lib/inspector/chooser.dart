@@ -7,8 +7,8 @@ import 'package:naked_ui/naked_ui.dart'
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart' show PressOutside;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 
@@ -38,13 +38,7 @@ class ChooserState extends State<Chooser> {
       color: Grey.g15,
       borderRadius: Shape.round(8),
       border: Border.all(color: Grey.g26),
-      boxShadow: [
-        BoxShadow(
-          color: ColorTheme.of('Shadow', const Color(0x99000000)),
-          blurRadius: 16,
-          offset: const Offset(0, 6),
-        ),
-      ],
+      boxShadow: WindowTokens.lift,
     ),
     child: ConstrainedBox(
       constraints: BoxConstraints(maxHeight: _maxItems * _itemH),

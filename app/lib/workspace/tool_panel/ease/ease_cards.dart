@@ -130,9 +130,7 @@ class EaseCards extends StatelessWidget {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: Shape.round(5),
-          border: hot.isEmpty
-              ? null
-              : Border.all(color: WindowTokens.accent, width: 2),
+          border: hot.isEmpty ? null : WindowTokens.chosen,
         ),
         child: child,
       ),

@@ -108,7 +108,7 @@ class EaseShelf extends StatelessWidget {
           color: WindowTokens.card,
           border: hot.isEmpty
               ? Border(left: BorderSide(color: Grey.g38))
-              : Border.all(color: WindowTokens.accent, width: 2),
+              : WindowTokens.chosen,
         ),
         child: CustomScrollView(
           slivers: [

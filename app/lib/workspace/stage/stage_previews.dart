@@ -38,9 +38,7 @@ Widget? stageDrawPreview({
     rect: Rect.fromPoints(from, last),
     child: IgnorePointer(
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: WindowTokens.accent),
-        ),
+        decoration: BoxDecoration(border: WindowTokens.chosen),
       ),
     ),
   );

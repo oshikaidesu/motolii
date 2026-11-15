@@ -40,6 +40,21 @@ abstract final class WindowTokens {
   /// Round things you touch: fields, chips, tabs, buttons.
   static const radius = 6.0, chipRadius = 4.0;
 
+  /// The outline that marks a selected card, tile or preview. One width across the
+  /// whole app, so a chosen item reads the same wherever it sits.
+  static Border get chosen => Border.all(color: accent, width: 2);
+
+  /// The shadow a card, preview or menu casts when it rides above the body
+  /// (chooser, blend preview, effect drag ghost). One shadow across the app, so
+  /// the raised layer reads the same depth everywhere.
+  static List<BoxShadow> get lift => [
+    BoxShadow(
+      color: ColorTheme.of('Shadow', const Color(0x99000000)),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
+  ];
+
   /// Paddings inside a panel.
   static double get inset => Shape.s(8);
   static double get gap => Shape.s(4);

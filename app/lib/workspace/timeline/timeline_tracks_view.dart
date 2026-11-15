@@ -39,178 +39,179 @@ mixin TimelineTracksView<T extends StatefulWidget>
 
   // The tracks area: the ruler, the painted rows with their pointer handling, the overview strip, and the playhead
   // drawn over them.
-  Widget tracks(
-    WorkspaceController ws,
-    List<TimelineRow> drawn,
-  ) => LayoutBuilder(
-    builder: (context, box) {
-      viewport.layout(
-        trackWidth: box.maxWidth,
-        rowsHeight: math.max(
-          0,
-          box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
-        ),
-        rows: drawn.length,
-      );
-      final v = viewport.view;
-      return Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget tracks(WorkspaceController ws, List<TimelineRow> drawn) =>
+      LayoutBuilder(
+        builder: (context, box) {
+          viewport.layout(
+            trackWidth: box.maxWidth,
+            rowsHeight: math.max(
+              0,
+              box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
+            ),
+            rows: drawn.length,
+          );
+          final v = viewport.view;
+          return Stack(
             children: [
-              ContextMenu(
-                key: rulerMenu,
-                child: GestureDetector(
-                  key: const ValueKey('ws-tl-ruler'),
-                  behavior: HitTestBehavior.opaque,
-                  supportedDevices: pressingDevices,
-                  onTapUp: (d) => rulerTap(
-                    d.localPosition,
-                  ), // Like Ableton Live's scrub area.
-                  onDoubleTapDown: (d) => rulerDouble(d.localPosition),
-                  onDoubleTap: () {},
-                  onSecondaryTapDown: (d) => rulerRight(d.localPosition),
-                  onPanDown: (d) => ruler.down(d.localPosition),
-                  onPanUpdate: (d) => ruler.move(d.localPosition),
-                  onPanEnd: (_) => ruler.end(),
-                  onPanCancel: ruler.end,
-                  child: SizedBox(
-                    height: TimelineMetrics.ruler,
-                    child: CustomPaint(
-                      painter: TimelineRulerPainter(
-                        view: v,
-                        fps: WorkspaceController.fps,
-                        workIn: ruler.workIn,
-                        workOut: ruler.workOut,
-                        markers: ruler.markers,
-                        markColors: ruler.markerColors,
-                        beats: media.beatsOf(ws),
-                        tempo: ws.beats,
-                        retimed: ruler.retimed,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ContextMenu(
+                    key: rulerMenu,
+                    child: GestureDetector(
+                      key: const ValueKey('ws-tl-ruler'),
+                      behavior: HitTestBehavior.opaque,
+                      supportedDevices: pressingDevices,
+                      onTapUp: (d) => rulerTap(
+                        d.localPosition,
+                      ), // Like Ableton Live's scrub area.
+                      onDoubleTapDown: (d) => rulerDouble(d.localPosition),
+                      onDoubleTap: () {},
+                      onSecondaryTapDown: (d) => rulerRight(d.localPosition),
+                      onPanDown: (d) => ruler.down(d.localPosition),
+                      onPanUpdate: (d) => ruler.move(d.localPosition),
+                      onPanEnd: (_) => ruler.end(),
+                      onPanCancel: ruler.end,
+                      child: SizedBox(
+                        height: TimelineMetrics.ruler,
+                        child: CustomPaint(
+                          painter: TimelineRulerPainter(
+                            view: v,
+                            fps: WorkspaceController.fps,
+                            workIn: ruler.workIn,
+                            workOut: ruler.workOut,
+                            markers: ruler.markers,
+                            markColors: ruler.markerColors,
+                            beats: media.beatsOf(ws),
+                            tempo: ws.beats,
+                            retimed: ruler.retimed,
+                          ),
+                          foregroundPainter: TimelineCachePainter(
+                            view: v,
+                            kept: ws.kept,
+                          ), // Marks the frames cached on disk for playback.
+                        ),
                       ),
-                      foregroundPainter: TimelineCachePainter(
-                        view: v,
-                        kept: ws.kept,
-                      ), // Marks the frames cached on disk for playback.
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: MouseRegion(
-                  cursor: drag.cursor,
-                  onHover: (e) => drag.hover(e.localPosition),
-                  child: TwoFingerGestures(
-                    onWheel: scrollBy,
-                    onPan: fingers,
-                    onPinch: pinch,
-                    child: ContextMenu(
-                      key: trackMenu,
-                      child: GestureDetector(
-                        key: const ValueKey('ws-tl-tracks'),
-                        behavior: HitTestBehavior.opaque,
-                        supportedDevices: pressingDevices,
-                        dragStartBehavior: DragStartBehavior.down,
-                        onTapDown: (d) => drag.tapDown(d.localPosition),
-                        onSecondaryTapDown: (d) => trackRight(d.localPosition),
-                        onTapUp: (d) => drag.tapUp(d.localPosition), // Only fires once the gesture is known not to be a drag.
-                        onPanStart: (d) => drag.down(d.localPosition),
-                        onPanUpdate: (d) => drag.move(d.localPosition),
-                        onPanEnd: (_) => drag.up(),
-                        onPanCancel: () => drag.up(keep: false),
-                        child: RepaintBoundary(
-                          child: CustomPaint(
-                            size: Size.infinite,
-                            painter: TimelineTracksPainter(
-                              rows: drawn,
-                              view: v,
-                              fps: WorkspaceController.fps,
-                              vscroll: viewport.verticalScroll,
-                              restAt: drag.snappedAt,
+                  Expanded(
+                    child: MouseRegion(
+                      cursor: drag.cursor,
+                      onHover: (e) => drag.hover(e.localPosition),
+                      child: TwoFingerGestures(
+                        onWheel: scrollBy,
+                        onPan: fingers,
+                        onPinch: pinch,
+                        child: ContextMenu(
+                          key: trackMenu,
+                          child: GestureDetector(
+                            key: const ValueKey('ws-tl-tracks'),
+                            behavior: HitTestBehavior.opaque,
+                            supportedDevices: pressingDevices,
+                            dragStartBehavior: DragStartBehavior.down,
+                            onTapDown: (d) => drag.tapDown(d.localPosition),
+                            onSecondaryTapDown: (d) =>
+                                trackRight(d.localPosition),
+                            onTapUp: (d) => drag.tapUp(d.localPosition), // Only fires once the gesture is known not to be a drag.
+                            onPanStart: (d) => drag.down(d.localPosition),
+                            onPanUpdate: (d) => drag.move(d.localPosition),
+                            onPanEnd: (_) => drag.up(),
+                            onPanCancel: () => drag.up(keep: false),
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size.infinite,
+                                painter: TimelineTracksPainter(
+                                  rows: drawn,
+                                  view: v,
+                                  fps: WorkspaceController.fps,
+                                  vscroll: viewport.verticalScroll,
+                                  restAt: drag.snappedAt,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                  ValueListenableBuilder<int>(
+                    valueListenable: ws.moment,
+                    builder: (_, frame, _) => TimelineOverview(
+                      from: viewport.scroll,
+                      to: viewport.scroll + viewport.visible,
+                      frame: frame,
+                      onDrag: (p) => overviewTo(p, box.maxWidth),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: TimelineMetrics.overview,
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: ClipRect(
+                      child: CustomPaint(
+                        painter: TimelinePlayheadPainter(
+                          view: v,
+                          frame: ws.frame,
+                          headTop: TimelineMetrics.band + 1,
+                          moment: ws.moment,
+                        ), // Repainted as the playhead moves; no widgets are rebuilt.
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              ValueListenableBuilder<int>(
-                valueListenable: ws.moment,
-                builder: (_, frame, _) => TimelineOverview(
-                  from: viewport.scroll,
-                  to: viewport.scroll + viewport.visible,
-                  frame: frame,
-                  onDrag: (p) => overviewTo(p, box.maxWidth),
+              if (drag.selectionBox case (final a, final b)?)
+                Positioned.fromRect(
+                  rect: Rect.fromPoints(
+                    a,
+                    b,
+                  ).shift(Offset(0, TimelineMetrics.ruler)),
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: WindowTokens.accent.withAlpha(36),
+                        border: WindowTokens.chosen,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
+              if (naming case (final at, _)?)
+                Positioned(
+                  left: v
+                      .x((at * WorkspaceController.fps).round())
+                      .roundToDouble(),
+                  top: TimelineMetrics.band + 2,
+                  height: 12,
+                  child: ListenableBuilder(
+                    listenable: markText,
+                    builder: (_, child) => Container(
+                      width: markerFlagWidth('${markText.value}  '),
+                      color: WindowTokens.toneText,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: child,
+                    ),
+                    // The app's one text field: Return or clicking away says the name, Esc says null.
+                    child: TypedField(
+                      key: const ValueKey('ws-tl-mark-name'),
+                      text: markText.value,
+                      style: TextStyles.micro(Grey.g13).bold,
+                      cursor: Grey.g13,
+                      selection: Grey.g13.withValues(alpha: .3),
+                      take: true,
+                      escapes: true,
+                      onPick: (v) => markText.value = v.text,
+                      onDone: nameDone,
+                    ),
+                  ),
+                ),
             ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: TimelineMetrics.overview,
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                child: ClipRect(
-                  child: CustomPaint(
-                    painter: TimelinePlayheadPainter(
-                      view: v,
-                      frame: ws.frame,
-                      headTop: TimelineMetrics.band + 1,
-                      moment: ws.moment,
-                    ), // Repainted as the playhead moves; no widgets are rebuilt.
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (drag.selectionBox case (final a, final b)?)
-            Positioned.fromRect(
-              rect: Rect.fromPoints(
-                a,
-                b,
-              ).shift(Offset(0, TimelineMetrics.ruler)),
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: WindowTokens.accent.withAlpha(36),
-                    border: Border.all(color: WindowTokens.accent, width: 1),
-                  ),
-                ),
-              ),
-            ),
-          // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
-          if (naming case (final at, _)?)
-            Positioned(
-              left: v.x((at * WorkspaceController.fps).round()).roundToDouble(),
-              top: TimelineMetrics.band + 2,
-              height: 12,
-              child: ListenableBuilder(
-                listenable: markText,
-                builder: (_, child) => Container(
-                  width: markerFlagWidth('${markText.value}  '),
-                  color: WindowTokens.toneText,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: child,
-                ),
-                // The app's one text field: Return or clicking away says the name, Esc says null.
-                child: TypedField(
-                  key: const ValueKey('ws-tl-mark-name'),
-                  text: markText.value,
-                  style: TextStyles.micro(Grey.g13).bold,
-                  cursor: Grey.g13,
-                  selection: Grey.g13.withValues(alpha: .3),
-                  take: true,
-                  escapes: true,
-                  onPick: (v) => markText.value = v.text,
-                  onDone: nameDone,
-                ),
-              ),
-            ),
-        ],
+          );
+        },
       );
-    },
-  );
 }

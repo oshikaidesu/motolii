@@ -132,9 +132,7 @@ class _StageState extends State<_Stage> {
       builder: (context, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
-          border: hot.isEmpty
-              ? null
-              : Border.all(color: WindowTokens.accent, width: 2),
+          border: hot.isEmpty ? null : WindowTokens.chosen,
         ),
         child: Focus(
           focusNode: _focus,
@@ -407,7 +405,7 @@ class _Swatches extends StatelessWidget {
                 borderRadius: BorderRadius.all(
                   Shape.r(WindowTokens.chipRadius),
                 ),
-                border: Border.all(color: WindowTokens.accent),
+                border: WindowTokens.chosen,
               )
             : null,
         decoration: look,
