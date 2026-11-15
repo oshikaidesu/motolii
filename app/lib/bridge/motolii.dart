@@ -282,10 +282,11 @@ class Motolii {
 
   void _listen() {
     _told.listen((which) {
-      if (which is int)
+      if (which is int) {
         takeSnapshots(
           which,
         ); // (a null: the engine asking whether anyone is listening)
+      }
     });
     _addListener(
       handle,
