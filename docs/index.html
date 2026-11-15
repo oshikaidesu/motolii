@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Motolii</title>
+<meta name="description" content="ネットで見つけた表現を、すぐ自分の映像に。オープンソースのモーショングラフィックス編集ソフト Motolii。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Motolii">
+<meta property="og:description" content="ネットで見つけた表現を、すぐ自分の映像に。オープンソースのモーショングラフィックス編集ソフト。">
+<meta property="og:url" content="https://oshikaidesu.github.io/motolii/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Reset */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  img { max-width: 100%; display: block; }
+
+  /* Layout: left-aligned editorial hero with a floating app-window mock; centered content column (max ~1080px);
+     responsive feature grid; a full-bleed numbers band. Brand triad = the app's own param-weight tints (青磁/撫子/浅黄). */
+  :root {
+    color-scheme: light;
+    --bg: #f5f7f6;
+    --surface: #ffffff;
+    --surface-2: #eceff0;
+    --well: #e7ebea;
+    --line: #dfe4e2;
+    --line-strong: #cdd4d1;
+    --fg: #151917;
+    --fg-dim: #566160;
+    --fg-faint: #8a938f;
+    --accent: #2c8781;      /* seiji, darkened for text on light */
+    --accent-soft: rgba(105,176,172,.16);
+    --seiji: #69B0AC;
+    --nadeshiko: #DC9FB4;
+    --usuki: #E8B64A;       /* usuki, darkened for text on light */
+    --seiji-ink: #1f6f6a;
+    --nadeshiko-ink: #a85b77;
+    --usuki-ink: #8a6a16;
+    --shadow: 0 1px 2px rgba(20,30,28,.05), 0 18px 48px -24px rgba(20,40,38,.22);
+    --radius: 14px;
+    --font-display: 'Space Grotesk', 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Inter', 'Noto Sans JP', ui-sans-serif, system-ui, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c0e0d;
+      --surface: #151917;
+      --surface-2: #1b201e;
+      --well: #10140f;
+      --line: #262d2a;
+      --line-strong: #323a36;
+      --fg: #e9ece9;
+      --fg-dim: #9aa39e;
+      --fg-faint: #69716d;
+      --accent: #7cc0bb;
+      --accent-soft: rgba(124,192,187,.14);
+      --seiji: #69B0AC;
+      --nadeshiko: #DC9FB4;
+      --usuki: #FAD689;
+      --seiji-ink: #8ccac5;
+      --nadeshiko-ink: #e7b6c6;
+      --usuki-ink: #f6dd9a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px -28px rgba(0,0,0,.7);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0e0d;
+    --surface: #151917;
+    --surface-2: #1b201e;
+    --well: #10140f;
+    --line: #262d2a;
+    --line-strong: #323a36;
+    --fg: #e9ece9;
+    --fg-dim: #9aa39e;
+    --fg-faint: #69716d;
+    --accent: #7cc0bb;
+    --accent-soft: rgba(124,192,187,.14);
+    --seiji: #69B0AC;
+    --nadeshiko: #DC9FB4;
+    --usuki: #FAD689;
+    --seiji-ink: #8ccac5;
+    --nadeshiko-ink: #e7b6c6;
+    --usuki-ink: #f6dd9a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px -28px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { width: 100%; max-width: 1080px; margin-inline: auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  a { color: var(--accent); text-decoration: none; }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+  p { margin: 0; }
+
+  .eyebrow { font-family: var(--font-display); font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+
+  /* top bar */
+  header.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+  .bar .wrap { display: flex; align-items: center; gap: 18px; padding-block: 13px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; letter-spacing: -.02em; color: var(--fg); }
+  .brand .mark { width: 20px; height: 20px; border-radius: 6px; background: conic-gradient(from 210deg, var(--seiji), var(--nadeshiko), var(--usuki), var(--seiji)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .bar nav { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .bar nav a { color: var(--fg-dim); font-size: .86rem; padding: 7px 10px; border-radius: 8px; }
+  .bar nav a:hover { color: var(--fg); background: var(--surface-2); }
+  .bar nav a.ghb { color: var(--fg); border: 1px solid var(--line-strong); }
+  .toggle { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg-dim); cursor: pointer; font-size: .95rem; }
+  .toggle:hover { color: var(--fg); }
+
+  /* hero */
+  .hero { padding-block: clamp(48px, 9vw, 92px) clamp(32px, 6vw, 56px); }
+  .hero .status { display: inline-flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--fg-dim); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px 5px 10px; margin-bottom: 22px; }
+  .hero .status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--usuki); box-shadow: 0 0 0 3px color-mix(in srgb, var(--usuki) 28%, transparent); }
+  .hero h1 { font-size: clamp(2.3rem, 6.4vw, 4rem); font-weight: 700; line-height: 1.04; letter-spacing: -.03em; }
+  .hero h1 .soft { color: var(--fg-dim); }
+  .hero .lede { margin-top: 20px; max-width: 46ch; font-size: clamp(1rem, 1.6vw, 1.14rem); color: var(--fg-dim); }
+  .hero .cta { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: .92rem; padding: 11px 18px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; }
+  .btn.primary { background: var(--fg); color: var(--bg); }
+  .btn.primary:hover { opacity: .9; }
+  .btn.sub { background: var(--surface); color: var(--fg); border-color: var(--line-strong); }
+  .btn.sub:hover { background: var(--surface-2); }
+
+  /* mock app window */
+  .mock { margin-top: clamp(40px, 6vw, 60px); border: 1px solid var(--line-strong); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+  .mock .title { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-size: .76rem; color: var(--fg-faint); }
+  .mock .lights { display: flex; gap: 6px; }
+  .mock .lights i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+  .mock .grid { display: grid; grid-template-columns: 150px 1fr 190px; grid-template-rows: 1fr auto; min-height: 340px; }
+  .mock .panel { padding: 12px; }
+  .mock .shelf { border-right: 1px solid var(--line); }
+  .mock .inspector { border-left: 1px solid var(--line); }
+  .mock .plabel { font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-faint); margin-bottom: 10px; font-family: var(--font-display); font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line); overflow: hidden; position: relative; }
+  .tile::after { content: ""; position: absolute; inset: 0; background: var(--g); background-size: 220% 220%; animation: drift 7s ease-in-out infinite; }
+  .tile:nth-child(1){ --g: radial-gradient(circle at 30% 30%, var(--seiji), transparent 60%), radial-gradient(circle at 70% 70%, var(--nadeshiko), transparent 55%), var(--well); }
+  .tile:nth-child(2){ --g: conic-gradient(from 90deg at 50% 50%, var(--usuki), var(--seiji), var(--usuki)); animation-delay: -2s; }
+  .tile:nth-child(3){ --g: radial-gradient(circle at 60% 40%, var(--nadeshiko), transparent 65%), var(--well); animation-delay: -4s; }
+  .tile:nth-child(4){ --g: repeating-linear-gradient(45deg, var(--seiji) 0 7px, var(--well) 7px 15px); animation-delay: -1s; }
+  @keyframes drift { 0%,100%{ background-position: 0% 50%; } 50%{ background-position: 100% 50%; } }
+  .preview { display: grid; place-items: center; background:
+      radial-gradient(120% 120% at 50% 0%, color-mix(in srgb, var(--seiji) 10%, transparent), transparent 60%), var(--well); }
+  .preview .stage { width: 76%; aspect-ratio: 16/10; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; box-shadow: var(--shadow); }
+  .preview .glyph { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 5vw, 2.6rem); background: linear-gradient(120deg, var(--seiji), var(--nadeshiko) 55%, var(--usuki)); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -.02em; }
+  /* inspector cards: name + control + weight tint (青磁/撫子/浅黄) */
+  .card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 8px 9px; margin-bottom: 8px; }
+  .card .cn { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint); font-family: var(--font-display); font-weight: 600; margin-bottom: 7px; }
+  .prow { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .pchip { flex: 1; display: flex; align-items: center; justify-content: space-between; font-size: .66rem; padding: 4px 7px; border-radius: 6px; background: var(--well); color: var(--fg-dim); border: 1px solid var(--line); }
+  .pchip.w1 { background: color-mix(in srgb, var(--seiji) 18%, var(--surface)); color: var(--seiji-ink); border-color: color-mix(in srgb, var(--seiji) 40%, transparent); }
+  .pchip.w2 { background: color-mix(in srgb, var(--nadeshiko) 18%, var(--surface)); color: var(--nadeshiko-ink); border-color: color-mix(in srgb, var(--nadeshiko) 40%, transparent); }
+  .pchip.w3 { background: color-mix(in srgb, var(--usuki) 20%, var(--surface)); color: var(--usuki-ink); border-color: color-mix(in srgb, var(--usuki) 42%, transparent); }
+  .pchip b { font-family: var(--font-mono); font-weight: 500; }
+  .timeline { grid-column: 1 / -1; border-top: 1px solid var(--line); padding: 12px; background: var(--surface); }
+  .trow { display: grid; grid-template-columns: 76px 1fr; align-items: center; gap: 10px; height: 26px; }
+  .trow .tn { font-size: .66rem; color: var(--fg-dim); }
+  .track { position: relative; height: 10px; border-radius: 5px; background: var(--well); }
+  .span { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(90deg, color-mix(in srgb,var(--seiji) 55%, transparent), color-mix(in srgb,var(--nadeshiko) 55%, transparent)); }
+  .kf { position: absolute; top: 50%; width: 7px; height: 7px; transform: translate(-50%,-50%) rotate(45deg); background: var(--fg); border-radius: 1px; }
+
+  /* sections */
+  section { padding-block: clamp(44px, 7vw, 72px); }
+  .sec-head { max-width: 60ch; margin-bottom: 30px; }
+  .sec-head h2 { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 700; margin-top: 10px; }
+  .sec-head p { margin-top: 12px; color: var(--fg-dim); }
+
+  /* numbers band */
+  .numbers { background: var(--surface); border-block: 1px solid var(--line); }
+  .numbers .wrap { padding-block: clamp(36px, 5vw, 52px); }
+  .ngrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 20px; }
+  .num { text-align: left; }
+  .num .v { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 5vw, 2.9rem); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .num:nth-child(1) .v { color: var(--seiji-ink); } .num:nth-child(2) .v { color: var(--nadeshiko-ink); }
+  .num:nth-child(3) .v { color: var(--usuki-ink); } .num:nth-child(4) .v { color: var(--seiji-ink); }
+  .num .k { font-size: .8rem; color: var(--fg-dim); margin-top: 4px; }
+
+  /* build */
+  .build .wrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 36px; align-items: start; }
+  .reqs { list-style: none; padding: 0; margin: 18px 0 0; display: flex; flex-direction: column; gap: 10px; }
+  .reqs li { display: flex; gap: 10px; font-size: .9rem; color: var(--fg-dim); }
+  .reqs li span { color: var(--seiji-ink); }
+  .code { background: var(--well); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .code .ch { padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: .72rem; color: var(--fg-faint); font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; }
+  .code pre { margin: 0; padding: 16px 14px; overflow-x: auto; }
+  .code code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.9; color: var(--fg); }
+  .code .c { color: var(--fg-faint); }
+  .code .p { color: var(--accent); }
+
+  /* footer */
+  footer { border-top: 1px solid var(--line); padding-block: 40px 56px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 28px 40px; justify-content: space-between; }
+  footer .col h4 { font-family: var(--font-display); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-faint); margin: 0 0 12px; }
+  footer .col a { display: block; color: var(--fg-dim); font-size: .88rem; padding: 3px 0; }
+  footer .col a:hover { color: var(--fg); }
+  footer .note { max-width: 30ch; color: var(--fg-faint); font-size: .8rem; line-height: 1.6; }
+  footer .note .brand { font-size: 1rem; margin-bottom: 8px; }
+
+  /* thesis band — 持たざる、という設計 */
+  .thesis { background: var(--surface); border-block: 1px solid var(--line); }
+  .thesis .wrap { padding-block: clamp(46px, 7vw, 82px); display: grid; grid-template-columns: auto 1fr; gap: clamp(26px, 5vw, 60px); align-items: center; }
+  .thesis .zwrap { text-align: center; }
+  .thesis .zero { font-family: var(--font-display); font-weight: 700; font-size: clamp(6rem, 17vw, 11.5rem); line-height: .78; letter-spacing: -.05em; background: linear-gradient(135deg, var(--seiji), var(--nadeshiko) 55%, var(--usuki)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .thesis .zlabel { font-family: var(--font-display); font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); margin-top: 6px; }
+  .thesis h2 { font-size: clamp(1.5rem, 3.4vw, 2.2rem); font-weight: 700; letter-spacing: -.02em; }
+  .thesis .tbody p { margin-top: 15px; color: var(--fg-dim); max-width: 52ch; font-size: 1.02rem; }
+  .thesis .tbody p + p { margin-top: 10px; }
+
+  /* 悩み → 解決 の「悩み」行 */
+  .before { font-size: .82rem; color: var(--fg-faint); border-left: 2px solid var(--line-strong); padding-left: 11px; line-height: 1.5; }
+  .sp-body .before, .big .before { margin-bottom: 2px; }
+
+  /* spotlight (大) */
+  .spotlight { display: grid; grid-template-columns: 1.12fr .88fr; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); margin-bottom: 16px; }
+  .sp-body { padding: clamp(24px, 3.4vw, 40px); display: flex; flex-direction: column; gap: 13px; }
+  .chip-new { align-self: flex-start; font-family: var(--font-display); font-size: .66rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--seiji-ink); background: color-mix(in srgb, var(--seiji) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--seiji) 38%, transparent); padding: 4px 11px; border-radius: 999px; }
+  .sp-body h3 { font-size: clamp(1.45rem, 2.7vw, 2rem); font-weight: 700; letter-spacing: -.02em; }
+  .sp-body p { color: var(--fg-dim); font-size: 1rem; }
+  .sp-body .sp-note { font-size: .86rem; color: var(--fg-faint); }
+  .sp-visual { background: var(--well); border-left: 1px solid var(--line); padding: 22px; display: flex; align-items: center; }
+  .chat { width: 100%; display: flex; flex-direction: column; gap: 9px; }
+  .chat .msg { font-size: .8rem; line-height: 1.5; padding: 9px 11px; border-radius: 10px; max-width: 92%; }
+  .chat .you { align-self: flex-end; background: var(--surface-2); color: var(--fg); border: 1px solid var(--line); }
+  .chat .agent { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); color: var(--fg-dim); display: flex; gap: 8px; }
+  .chat .mag { flex: none; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--seiji); box-shadow: 0 0 0 3px color-mix(in srgb, var(--seiji) 26%, transparent); }
+  .chat .diff { align-self: flex-start; font-family: var(--font-mono); font-size: .72rem; padding: 7px 10px; border-radius: 8px; background: color-mix(in srgb, var(--seiji) 12%, var(--surface)); color: var(--seiji-ink); border: 1px solid color-mix(in srgb, var(--seiji) 28%, transparent); }
+
+  /* trio (中) */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 44px; }
+  .big { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .big .tag { width: 26px; height: 4px; border-radius: 3px; }
+  .big.t0 .tag { background: var(--seiji); } .big.t1 .tag { background: var(--nadeshiko); } .big.t2 .tag { background: var(--usuki); }
+  .big h3 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; }
+  .big p { font-size: .9rem; color: var(--fg-dim); line-height: 1.6; }
+  .big .stat { margin-top: auto; font-family: var(--font-mono); font-size: .74rem; color: var(--fg-faint); padding-top: 4px; }
+
+  /* more (小) — 罫線で区切った密なリスト */
+  .more-h { font-family: var(--font-display); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-faint); margin: 0 0 16px; }
+  .mlist { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--line); }
+  .mitem { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 5px; }
+  .mitem h4 { font-family: var(--font-body); font-size: .95rem; font-weight: 600; margin: 0; color: var(--fg); display: flex; align-items: center; gap: 9px; }
+  .mitem h4::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 1px; transform: rotate(45deg); background: var(--dot, var(--fg-faint)); }
+  .mitem p { font-size: .83rem; color: var(--fg-dim); line-height: 1.55; margin: 0; }
+  .mitem .ms { margin-top: 2px; font-family: var(--font-mono); font-size: .71rem; color: var(--fg-faint); }
+
+  @media (max-width: 860px) {
+    .spotlight { grid-template-columns: 1fr; }
+    .sp-visual { border-left: 0; border-top: 1px solid var(--line); }
+    .trio { grid-template-columns: 1fr; gap: 12px; }
+    .mlist { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 760px) {
+    .mock .grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+    .mock .shelf, .mock .inspector { border: 0; border-bottom: 1px solid var(--line); }
+    .mock .preview { min-height: 180px; }
+    .build .wrap { grid-template-columns: 1fr; gap: 24px; }
+    .bar nav a.navlink { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="brand"><span class="mark"></span>Motolii</div>
+    <nav>
+      <a class="navlink" href="#features">特長</a>
+      <a class="navlink" href="#build">ビルド</a>
+      <a class="ghb" href="https://github.com/oshikaidesu/motolii" target="_blank" rel="noopener">GitHub</a>
+      <button class="toggle" id="themeBtn" aria-label="ダーク／ライトを切り替え" title="テーマ切り替え">◐</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="status"><span class="dot"></span>開発中。いまは Apple Silicon の Mac だけで動きます（M4 / macOS 15.5 で確認）</div>
+      <h1>ネットで見つけた表現を、<br><span class="soft">すぐ自分の映像に。</span></h1>
+      <p class="lede">気に入ったシェーダーやスクリプトを見つけたとき、対応プラグインが出るのを待たなくていい。Web にある表現をそのまま動かせる、MV・モーショングラフィックス向けのオープンソース動画編集ソフトです。</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/oshikaidesu/motolii" target="_blank" rel="noopener">GitHub で見る →</a>
+        <a class="btn sub" href="#build">ビルドして動かす</a>
+      </div>
+
+      <!-- 仮組みのアプリ画面モック（実スクショは後日差し替え） -->
+      <div class="mock" aria-label="アプリ画面のイメージ（仮）">
+        <div class="title"><span class="lights"><i></i><i></i><i></i></span>Untitled.motolii — 画面イメージ（仮）</div>
+        <div class="grid">
+          <div class="panel shelf">
+            <div class="plabel">Effects</div>
+            <div class="tiles"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+          </div>
+          <div class="panel preview">
+            <div class="stage"><span class="glyph">モ</span></div>
+          </div>
+          <div class="panel inspector">
+            <div class="plabel">Inspector</div>
+            <div class="card">
+              <div class="cn">Transform</div>
+              <div class="prow"><div class="pchip w1"><span>Position</span><b>960, 540</b></div></div>
+              <div class="prow"><div class="pchip w2"><span>Scale</span><b>120%</b></div></div>
+              <div class="prow"><div class="pchip"><span>Opacity</span><b>100</b></div></div>
+            </div>
+            <div class="card">
+              <div class="cn">Glow</div>
+              <div class="prow"><div class="pchip w3"><span>Amount</span><b>0.62</b></div></div>
+              <div class="prow"><div class="pchip"><span>Radius</span><b>18</b></div></div>
+            </div>
+          </div>
+          <div class="panel timeline">
+            <div class="trow"><div class="tn">Text</div><div class="track"><div class="span" style="left:14%;right:52%"></div><div class="kf" style="left:14%"></div><div class="kf" style="left:48%"></div></div></div>
+            <div class="trow"><div class="tn">Shape</div><div class="track"><div class="span" style="left:34%;right:18%"></div><div class="kf" style="left:34%"></div><div class="kf" style="left:82%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="thesis">
+    <div class="wrap">
+      <div class="zwrap">
+        <div class="zero">0</div>
+        <div class="zlabel">内蔵エフェクト</div>
+      </div>
+      <div class="tbody">
+        <span class="eyebrow">持たない、という設計</span>
+        <h2 style="margin-top:10px;">ぼかしも、影も、組み込んでいません。</h2>
+        <p>Motolii にはエフェクトが一つも内蔵されていません。ぼかしも、ドロップシャドウも、グラデーションマップも、ぜんぶただのファイルです。</p>
+        <p>だから開いて中が見られるし、写して直せるし、気に入らなければ差し替えられる。ソフトが抱え込まないぶん、表現は全部あなたの手に残ります。</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">特長</span>
+        <h2>その「面倒」、だいたい無くしました</h2>
+        <p>ほかのソフトで表現を持ち込もうとすると、どこかで必ず詰まる。その詰まりどころを、一つずつ外しています。</p>
+      </div>
+
+      <!-- 大：AI スポットライト -->
+      <div class="spotlight">
+        <div class="sp-body">
+          <span class="chip-new">新機能</span>
+          <div class="before">「こう動かしたい」はあるのに、式の書き方が分からない。</div>
+          <h3>AI に頼むと、式もエフェクトも書いてくれる</h3>
+          <p>レイヤーを選んで、やりたいことを言葉で書くだけ。エージェントが After Effects の式や ISF エフェクトを書いて、保存した瞬間にプレビューが変わります。新しい動きは新しいカードで増え、いまあるコードは頼んだときだけ直します。</p>
+          <p class="sp-note">ACP 対応なので、Claude Code でも Gemini でも、好きなエージェントをそのまま使えます。</p>
+        </div>
+        <div class="sp-visual">
+          <div class="chat">
+            <div class="msg you">タイトルを下からふわっと出して</div>
+            <div class="msg agent"><span class="mag"></span>position と opacity に式を書きました。確認してください。</div>
+            <div class="diff">+ fade_in.js を新しいカードに追加</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中：主役3つ -->
+      <div class="trio">
+        <article class="big t0">
+          <span class="tag"></span>
+          <div class="before">欲しいエフェクトが、プラグインの対応待ち。</div>
+          <h3>シェーダーは、置くだけ</h3>
+          <p>ISF や WGSL のファイルをフォルダに入れる。それだけでエフェクト一覧に並びます。再起動も変換もインストールもいりません。タイルはそのエフェクトが実際に動くプレビュー。</p>
+          <div class="stat">.fs 420 ／ .wgsl 273</div>
+        </article>
+        <article class="big t1">
+          <span class="tag"></span>
+          <div class="before">拾った式を、毎回コピペし直している。</div>
+          <h3>式は、1 枚のカード</h3>
+          <p>wiggle や thisComp… を貼ると、レイヤーに式カードがつきます。コピーを 1 つずつ動かす each、複数レイヤーをまとめる relate・force も、同じ仲間です。</p>
+          <div class="stat">式 21 ＋ 関係 17</div>
+        </article>
+        <article class="big t2">
+          <span class="tag"></span>
+          <div class="before">イージングを当てたら、キーフレームが焼かれて直せない。</div>
+          <h3>イージングは区間に、重ねて</h3>
+          <p>キーフレームの間にカードで付くから、後からいくらでも変えられます。焼き固めないので、重ねてもそのままのカーブ。当てたあとで気が変わっても大丈夫。</p>
+          <div class="stat">後からいつでも調整</div>
+        </article>
+      </div>
+
+      <!-- 小：ほかにも -->
+      <h3 class="more-h">ほかにも</h3>
+      <div class="mlist" id="moreList"></div>
+    </div>
+  </section>
+
+  <div class="numbers">
+    <div class="wrap">
+      <div class="ngrid">
+        <div class="num"><div class="v">420</div><div class="k">同梱 ISF <code>.fs</code></div></div>
+        <div class="num"><div class="v">273</div><div class="k">同梱 WGSL <code>.wgsl</code></div></div>
+        <div class="num"><div class="v">180</div><div class="k">AviUtl2 パッケージ</div></div>
+        <div class="num"><div class="v">6</div><div class="k">同梱スキン</div></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="build" class="build">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">ビルドして動かす</span>
+        <h2 style="font-size:clamp(1.6rem,3.6vw,2.3rem);font-weight:700;margin-top:10px;">ソースから、1 行ずつ</h2>
+        <p style="margin-top:12px;color:var(--fg-dim);">配布用のアプリはまだありません。いまはソースからビルドして動かします。まっさらな状態からだと 1〜2 時間ほど。できあがったものは、ビルドした Mac でだけ動きます。</p>
+        <ul class="reqs">
+          <li><span>◇</span>Apple Silicon の Mac（確認は M4 / macOS 15.5）</li>
+          <li><span>◇</span>App Store の Xcode ＋ Homebrew</li>
+          <li><span>◇</span>Flutter 3.47.2（stable）、Python 3</li>
+          <li><span>◇</span>空き容量 約 10 GB</li>
+        </ul>
+      </div>
+      <div class="code">
+        <div class="ch"><span>Terminal</span><span>macOS</span></div>
+        <pre><code><span class="c"># クローンして入る</span>
+git clone https://github.com/oshikaidesu/motolii.git
+<span class="p">cd</span> motolii
+
+<span class="c"># 部品を入れる（GStreamer・ffmpeg など）</span>
+brew bundle
+
+<span class="c"># エンジンをビルド（初回 約5分）</span>
+engine/build.sh
+
+<span class="c"># アプリを開く</span>
+app/tool/live.sh</code></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="note">
+      <div class="brand"><span class="mark"></span>Motolii</div>
+      オープンソースのモーショングラフィックス編集ソフト。Apache-2.0 または MIT のデュアルライセンス。
+    </div>
+    <div class="col">
+      <h4>プロジェクト</h4>
+      <a href="https://github.com/oshikaidesu/motolii" target="_blank" rel="noopener">GitHub リポジトリ</a>
+      <a href="https://github.com/oshikaidesu/motolii/discussions" target="_blank" rel="noopener">Discussions</a>
+      <a href="https://github.com/oshikaidesu/motolii/issues" target="_blank" rel="noopener">Issues</a>
+    </div>
+    <div class="col">
+      <h4>文書</h4>
+      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/using/highlights.ja.md" target="_blank" rel="noopener">特長</a>
+      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/using/guide.ja.md" target="_blank" rel="noopener">ガイド</a>
+      <a href="https://github.com/oshikaidesu/motolii/blob/main/README.ja.md" target="_blank" rel="noopener">README</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ほかにも（docs/using/highlights.ja.md 準拠）
+  var MORE = [
+    ["名前だけじゃ、何が起きるか分からない", "エフェクトのタイルは、実際に当てて 16 枚撮った動くプレビュー。総当たりで試さなくても、見れば分かります。", "16 枚で自動生成"],
+    ["パラメータが多すぎて、どこを触ればいいか", "値はカードで並び、よく効くものほど色がつきます。見た目でアタリがつくから、迷いません。", "青磁・撫子・浅黄"],
+    ["Shadertoy や p5.js は、動画に持ち込めない", "コードを貼るだけで出所を見分けてレイヤーに。ブラウザも環境構築もいりません。", "13+ サイト"],
+    ["AviUtl2 のスクリプトは、Windows 専用", "豊富な Lua・HLSL スクリプトが、Mac でそのまま動きます。", "180 パッケージ"],
+    ["大量のエフェクトから、似たものを探せない", "見た目の近さで並ぶ地図表示。1 つ押すと近い順に出ます。フォントにも同じ地図。", "フォントにも"],
+    ["レイヤーが増えると、すぐ散らかる", "入れ子にまとめて、三角で開け閉め。Apple Motion と同じ感覚で整理できます。", "グループレイヤー"],
+    ["配色を決めるのに、いちいち迷う", "色の棚は写真から配色を抜き出せます。スキンでアプリの見た目ごと着替えも。", "スキン 6 種"],
+    ["内蔵エフェクトは、中身が見えない", "Motolii のエフェクトは全部ファイル。開いて仕組みを見て、写して自分用に直せます。", "全部ファイル"]
+  ];
+  var dots = ["var(--seiji)", "var(--nadeshiko)", "var(--usuki)"];
+  var list = document.getElementById("moreList");
+  MORE.forEach(function (f, i) {
+    var el = document.createElement("div");
+    el.className = "mitem";
+    el.style.setProperty("--dot", dots[i % 3]);
+    el.innerHTML = '<h4>' + f[0] + '</h4><p>' + f[1] + '</p><div class="ms">' + f[2] + '</div>';
+    list.appendChild(el);
+  });
+
+  // テーマ切り替え（システム追従 → 明示切り替え、localStorage に保存）
+  var root = document.documentElement, btn = document.getElementById("themeBtn");
+  try { var saved = localStorage.getItem("motolii-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  function curDark() {
+    var t = root.getAttribute("data-theme");
+    if (t) return t === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function sync() { btn.textContent = curDark() ? "☀" : "☾"; }
+  btn.addEventListener("click", function () {
+    var next = curDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("motolii-theme", next); } catch (e) {}
+    sync();
+  });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sync);
+  sync();
+</script>
+</body>
+</html>

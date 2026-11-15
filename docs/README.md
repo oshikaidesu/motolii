@@ -4,6 +4,7 @@ Every document under `docs/`, and who it is for. The entrance to the repository 
 
 | Document | For | What it is |
 |---|---|---|
+| [`index.html`](index.html) | People meeting Motolii for the first time | The landing page served by GitHub Pages (Japanese), built from the highlights. `.nojekyll` beside it keeps the page static |
 | [`using/highlights.md`](using/highlights.md) ([日本語](using/highlights.ja.md)) | People deciding whether to try the app | What Motolii does today that is hard to get elsewhere, where each one stops, and what is not ready |
 | [`using/specifications.md`](using/specifications.md) ([日本語](using/specifications.ja.md)) | People deciding whether it fits their system | The system it needs, the formats it runs with the counts we took, what it exports, speed |
 | [`using/guide.md`](using/guide.md) ([日本語](using/guide.ja.md)) | People using the app | The long tour: what Motolii does, the formats it runs, building step by step, a first piece, how it compares |
