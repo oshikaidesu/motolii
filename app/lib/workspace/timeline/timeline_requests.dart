@@ -349,8 +349,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
                       .firstOrNull
                       ?.name ??
                   '',
-              style: TextStyles.label(Grey.g13)
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: TextStyles.label(Grey.g13).bold,
               cursor: Grey.g13,
               take: true,
               escapes: true,

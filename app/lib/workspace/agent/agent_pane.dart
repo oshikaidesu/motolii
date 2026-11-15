@@ -299,7 +299,7 @@ class _AgentPaneState extends State<AgentPane> {
       padding: EdgeInsets.all(Shape.s(6)),
       decoration: BoxDecoration(
         color: WindowTokens.card,
-        borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+        borderRadius: Shape.round(WindowTokens.radius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,13 +431,13 @@ class _AgentPaneState extends State<AgentPane> {
     final body = TextStyles.name(Grey.g91, 11, null, 1.45);
     final block = BoxDecoration(
       color: WindowTokens.well,
-      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+      borderRadius: Shape.round(WindowTokens.radius),
     );
     return MarkdownStyleSheet(
       p: body,
       listBullet: body,
       tableBody: body,
-      tableHead: body.copyWith(fontWeight: FontWeight.w700),
+      tableHead: body.bold,
       h1: TextStyles.title(),
       h2: TextStyles.title(),
       h3: TextStyles.name(Grey.g95, 11, FontWeight.w700),

@@ -70,7 +70,7 @@ class _RowState extends State<_Row> {
       padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
       decoration: BoxDecoration(
         color: widget.picked ? WindowTokens.well : null,
-        borderRadius: BorderRadius.all(Shape.r(5)),
+        borderRadius: Shape.round(5),
       ),
       child: Row(
         children: [
@@ -79,7 +79,7 @@ class _RowState extends State<_Row> {
             height: Shape.z(18),
             decoration: BoxDecoration(
               color: layerKindColor(l.kind),
-              borderRadius: BorderRadius.all(Shape.r(2)),
+              borderRadius: Shape.round(2),
             ),
           ),
           SizedBox(width: Shape.s(8)),

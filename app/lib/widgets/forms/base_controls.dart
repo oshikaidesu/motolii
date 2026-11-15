@@ -15,7 +15,7 @@ abstract final class BaseControls {
     padding: EdgeInsets.all(Shape.s(2)),
     decoration: BoxDecoration(
       color: WindowTokens.well,
-      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+      borderRadius: Shape.round(WindowTokens.radius),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -73,7 +73,7 @@ abstract final class BaseControls {
           color: f.on
               ? Grey.g26
               : (h ? WindowTokens.raised : WindowTokens.well),
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+          borderRadius: Shape.round(WindowTokens.radius),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -290,7 +290,7 @@ class _PathsBodyState extends State<PathsBody> {
             height: Shape.z(28),
             decoration: BoxDecoration(
               color: hot ? Grey.g15 : null,
-              borderRadius: BorderRadius.all(Shape.r(6)),
+              borderRadius: Shape.round(6),
               border: Border.all(
                 color: _picking ? Grey.g38 : Grey.g20,
                 strokeAlign: BorderSide.strokeAlignInside,
@@ -314,7 +314,7 @@ class _PathsBodyState extends State<PathsBody> {
       padding: EdgeInsets.all(Shape.s(4)),
       decoration: BoxDecoration(
         color: Grey.g10,
-        borderRadius: BorderRadius.all(Shape.r(8)),
+        borderRadius: Shape.round(8),
         border: Border.all(color: Grey.g20),
       ),
       child: Column(
@@ -354,7 +354,7 @@ class _PathsBodyState extends State<PathsBody> {
             padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
             decoration: BoxDecoration(
               color: hot ? Grey.g20 : null,
-              borderRadius: BorderRadius.all(Shape.r(5)),
+              borderRadius: Shape.round(5),
             ),
             alignment: Alignment.centerLeft,
             child: Text(
@@ -395,10 +395,7 @@ class _StackItem extends StatelessWidget {
     return Container(
       height: Shape.z(32),
       margin: EdgeInsets.only(bottom: Shape.s(2)),
-      decoration: BoxDecoration(
-        color: Grey.g10,
-        borderRadius: BorderRadius.all(Shape.r(6)),
-      ),
+      decoration: BoxDecoration(color: Grey.g10, borderRadius: Shape.round(6)),
       child: Row(
         children: [
           // The parent drags the whole set; a sub has no handle of its own.

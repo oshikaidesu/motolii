@@ -250,7 +250,7 @@ class ChipLook {
     fill: tone,
     ink: WindowTokens.onAccent,
     press: false,
-    text: (c) => TextStyles.micro(c).copyWith(fontWeight: FontWeight.w700),
+    text: (c) => TextStyles.micro(c).bold,
   );
 
   /// The dock's tag: filled with [hue] and dark ink, or a quiet raised grey when [hue] is null.
@@ -265,8 +265,8 @@ class ChipLook {
     edge: edge ? WindowTokens.onAccent : null,
     edgeWidth: 1.5,
     press: false,
-    text: (c) => TextStyles.micro(c)
-        .copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
+    text: (c) =>
+        TextStyles.micro(c).bold.copyWith(letterSpacing: .4, height: 1),
   );
 
   /// A bare grey word that brightens on hover, such as Copy, Paste or Reset: no fill and no padding.
@@ -350,7 +350,7 @@ class Chip extends StatelessWidget {
           border: l.edge != null && !on
               ? Border.all(color: l.edge!, width: l.edgeWidth)
               : null,
-          borderRadius: BorderRadius.all(Shape.r(l.radius)),
+          borderRadius: Shape.round(l.radius),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -425,7 +425,7 @@ class Segmented extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: i == index ? Accent.fill : null,
-          borderRadius: BorderRadius.all(Shape.r(5)),
+          borderRadius: Shape.round(5),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -459,7 +459,7 @@ class Segmented extends StatelessWidget {
         padding: EdgeInsets.all(Shape.s(2)),
         decoration: BoxDecoration(
           color: Grey.g07,
-          borderRadius: BorderRadius.all(Shape.r(7)),
+          borderRadius: Shape.round(7),
         ),
         child: Flex(
           direction: Axis.horizontal,

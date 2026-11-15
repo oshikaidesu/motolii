@@ -73,7 +73,7 @@ class _ResizableBandState extends State<ResizableBand> {
                 height: Shape.z(3),
                 decoration: BoxDecoration(
                   color: lit ? WindowTokens.accent : Grey.g38,
-                  borderRadius: BorderRadius.all(Shape.r(1.5)),
+                  borderRadius: Shape.round(1.5),
                 ),
               ),
             ),

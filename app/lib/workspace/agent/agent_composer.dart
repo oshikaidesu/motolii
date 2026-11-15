@@ -69,7 +69,7 @@ class _AgentComposerState extends State<AgentComposer> {
         ),
         decoration: BoxDecoration(
           color: WindowTokens.well,
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius * 2)),
+          borderRadius: Shape.round(WindowTokens.radius * 2),
           border: Border.all(
             color: _focus.hasFocus ? WindowTokens.accentInk : WindowTokens.well,
           ),

@@ -17,7 +17,7 @@ class PopSwitch extends StatelessWidget {
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
     decoration: BoxDecoration(
       color: on ? InspectorSkin.accent : Grey.g26,
-      borderRadius: BorderRadius.all(Shape.r(8)),
+      borderRadius: Shape.round(8),
     ),
     child: Container(
       width: Shape.z(12),

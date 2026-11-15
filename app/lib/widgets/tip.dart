@@ -37,7 +37,7 @@ class Tip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: Grey.g13,
-          borderRadius: BorderRadius.all(Shape.r(4)),
+          borderRadius: Shape.round(4),
           border: Border.all(color: Grey.g26),
         ),
         child: Row(

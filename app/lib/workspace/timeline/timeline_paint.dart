@@ -119,11 +119,7 @@ class TimelineRow {
 
 /// The width of a marker's flag on the ruler, which holds its name. Used both to draw the flag and to hit-test it.
 double markerFlagWidth(String name) =>
-    lineText(
-      name,
-      TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
-    ).width +
-    8;
+    lineText(name, TextStyles.micro(Grey.g13).bold).width + 8;
 
 /// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
 ///
@@ -249,7 +245,7 @@ class TimelineThumbnail extends StatelessWidget {
     final r = row;
     if (r.frames case final f? when f.isNotEmpty) {
       return ClipRRect(
-        borderRadius: BorderRadius.all(Shape.r(3)),
+        borderRadius: Shape.round(3),
         child: SizedBox.square(
           dimension: TimelineMetrics.chip,
           child: RawImage(
@@ -267,7 +263,7 @@ class TimelineThumbnail extends StatelessWidget {
         height: TimelineMetrics.chip,
         decoration: BoxDecoration(
           color: Grey.g20,
-          borderRadius: BorderRadius.all(Shape.r(3)),
+          borderRadius: Shape.round(3),
         ),
         child: CustomPaint(
           painter: _FormPainter(

@@ -85,7 +85,7 @@ Widget easeHeld(Widget card, double side) {
           width: w,
           height: h,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+            borderRadius: Shape.round(WindowTokens.radius),
             boxShadow: easeShadow,
           ),
           child: card,

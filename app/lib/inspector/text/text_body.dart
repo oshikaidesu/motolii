@@ -80,7 +80,7 @@ class _TextBodyState extends State<TextBody> {
           padding: EdgeInsets.all(Shape.s(8)),
           decoration: BoxDecoration(
             color: InspectorSkin.well,
-            borderRadius: BorderRadius.all(Shape.r(6)),
+            borderRadius: Shape.round(6),
           ),
           child: TypedField(
             key: const ValueKey('text:box'),

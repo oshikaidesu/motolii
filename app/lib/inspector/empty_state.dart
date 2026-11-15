@@ -36,7 +36,7 @@ class EmptyState extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: h ? Grey.g20 : InspectorSkin.well,
-              borderRadius: BorderRadius.all(Shape.r(6)),
+              borderRadius: Shape.round(6),
             ),
             child: Text(
               'Stage settings',

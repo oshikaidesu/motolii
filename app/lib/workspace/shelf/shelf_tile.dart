@@ -132,7 +132,7 @@ class ShelfTile extends StatelessWidget {
         );
 
   Widget _under(bool h) {
-    final round = BorderRadius.all(Shape.r(WindowTokens.radius));
+    final round = Shape.round(WindowTokens.radius);
     return Stack(
       children: [
         // The tile's body is one rounded card: the image, then the name bar.

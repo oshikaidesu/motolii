@@ -150,6 +150,13 @@ abstract final class Shape {
   /// A corner radius of [x] px, scaled by the skin's `Corner`.
   static Radius r(double x) => Radius.circular(x * corner);
 
+  /// A [BorderRadius] with every corner at [x] px, scaled by the skin's `Corner`.
+  ///
+  /// Shorthand for the `Shape.round(x)` written at every rounded
+  /// decoration, so the whole app rounds its corners the same way and a skin's
+  /// `Corner` number moves them together.
+  static BorderRadius round(double x) => BorderRadius.all(r(x));
+
   /// A margin of [x] px, scaled by the skin's `Spacing`.
   ///
   /// Spacing is limited to twice the default, because more than that pushes the dock's tabs out of the window.
@@ -248,6 +255,16 @@ abstract final class TextStyles {
   );
   static TextStyle title([Color? c]) =>
       _sans(c, Grey.g95, 13, FontWeight.w600, 1.1);
+}
+
+/// Shorthand boldness for the app's text styles.
+///
+/// A header, a tab label or a card title that reads heavier than the surrounding
+/// text uses `TextStyles.name(c).bold` rather than copying the font weight by
+/// hand, so every "stronger" word across the app sits at the same w700 weight.
+extension BoldStyle on TextStyle {
+  /// This style with [FontWeight.w700] instead of its default weight.
+  TextStyle get bold => copyWith(fontWeight: FontWeight.w700);
 }
 
 /// Typed text with the full-width letters and digits of a Japanese input method turned into plain ones.

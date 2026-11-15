@@ -119,10 +119,7 @@ class TimelineRulerPainter extends CustomPainter {
     for (final (f, name) in markers) {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
-      final t = lineText(
-        name,
-        TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
-      );
+      final t = lineText(name, TextStyles.micro(Grey.g13).bold);
       flags.add((
         Rect.fromLTWH(
           x,

@@ -227,7 +227,7 @@ class _FileTileState extends State<FileTile> {
                 height: Shape.z(16),
                 decoration: BoxDecoration(
                   color: const Color(0xAA000000),
-                  borderRadius: BorderRadius.all(Shape.r(8)),
+                  borderRadius: Shape.round(8),
                 ),
                 child: Center(
                   child: Text(
@@ -280,7 +280,7 @@ class _FileTileState extends State<FileTile> {
                 height: Shape.z(16),
                 decoration: BoxDecoration(
                   color: const Color(0xAA000000),
-                  borderRadius: BorderRadius.all(Shape.r(8)),
+                  borderRadius: Shape.round(8),
                 ),
                 child: Center(
                   child: dockBadge(

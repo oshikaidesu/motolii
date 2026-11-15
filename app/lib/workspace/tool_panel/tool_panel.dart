@@ -146,7 +146,7 @@ class _ToolTile extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: h ? WindowTokens.raised : WindowTokens.card,
-        borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+        borderRadius: Shape.round(WindowTokens.radius),
       ),
       child: LayoutBuilder(
         builder: (context, box) => Column(

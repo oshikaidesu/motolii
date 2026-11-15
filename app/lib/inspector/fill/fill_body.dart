@@ -91,7 +91,7 @@ class _StrokeRow extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Grey.g10,
-          borderRadius: BorderRadius.all(Shape.r(6)),
+          borderRadius: Shape.round(6),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -144,7 +144,7 @@ class _AddStrokeButton extends StatelessWidget {
         height: Shape.z(28),
         decoration: BoxDecoration(
           color: hot ? Grey.g15 : null,
-          borderRadius: BorderRadius.all(Shape.r(6)),
+          borderRadius: Shape.round(6),
           border: Border.all(
             color: Grey.g20,
             strokeAlign: BorderSide.strokeAlignInside,

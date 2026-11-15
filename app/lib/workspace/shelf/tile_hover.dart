@@ -140,7 +140,7 @@ class _DockHoverState extends State<DockHover> {
               height: Shape.z(22),
               decoration: BoxDecoration(
                 color: WindowTokens.accent,
-                borderRadius: BorderRadius.all(Shape.r(4)),
+                borderRadius: Shape.round(4),
               ),
             ),
           ),

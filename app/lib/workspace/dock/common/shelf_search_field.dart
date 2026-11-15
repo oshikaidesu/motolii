@@ -75,7 +75,7 @@ class _ShelfSearchFieldState extends State<ShelfSearchField> {
         padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
         decoration: BoxDecoration(
           color: WindowTokens.well,
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+          borderRadius: Shape.round(WindowTokens.radius),
           border: Border.all(
             color: _focus.hasFocus ? WindowTokens.accentInk : WindowTokens.well,
           ),

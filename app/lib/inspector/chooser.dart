@@ -36,7 +36,7 @@ class ChooserState extends State<Chooser> {
     padding: EdgeInsets.all(Shape.s(3)),
     decoration: BoxDecoration(
       color: Grey.g15,
-      borderRadius: BorderRadius.all(Shape.r(8)),
+      borderRadius: Shape.round(8),
       border: Border.all(color: Grey.g26),
       boxShadow: [
         BoxShadow(
@@ -61,7 +61,7 @@ class ChooserState extends State<Chooser> {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
               decoration: BoxDecoration(
                 color: on ? Grey.g26 : (sel ? Grey.g20 : null),
-                borderRadius: BorderRadius.all(Shape.r(5)),
+                borderRadius: Shape.round(5),
               ),
               alignment: Alignment.centerLeft,
               child: Row(
@@ -119,7 +119,7 @@ class ChooserState extends State<Chooser> {
         padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
         decoration: BoxDecoration(
           color: st.isHovered || st.isOpen ? Grey.g10 : InspectorSkin.well,
-          borderRadius: BorderRadius.all(Shape.r(6)),
+          borderRadius: Shape.round(6),
           border: Border.all(
             color: st.isOpen ? Grey.g63 : const Color(0x00000000),
           ),

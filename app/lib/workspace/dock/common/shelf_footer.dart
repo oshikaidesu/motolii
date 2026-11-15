@@ -100,7 +100,7 @@ class ShelfFooter extends StatelessWidget {
                         height: Shape.z(6),
                         decoration: BoxDecoration(
                           color: layerKindColor(l.kind),
-                          borderRadius: BorderRadius.all(Shape.r(1)),
+                          borderRadius: Shape.round(1),
                         ),
                       ),
                       SizedBox(width: Shape.s(4)),
@@ -150,7 +150,7 @@ class ShelfFooter extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: done ? WindowTokens.raised : WindowTokens.accent,
-                borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+                borderRadius: Shape.round(WindowTokens.radius),
                 border: Border.all(
                   color: h && !done ? Grey.g95 : const Color(0x00000000),
                 ),
@@ -158,7 +158,7 @@ class ShelfFooter extends StatelessWidget {
               child: Text(
                 done ? doneLabel : action,
                 style: TextStyles.name(done ? Grey.g76 : WindowTokens.onAccent)
-                    .copyWith(fontWeight: FontWeight.w700),
+                    .bold,
               ),
             ),
           ),

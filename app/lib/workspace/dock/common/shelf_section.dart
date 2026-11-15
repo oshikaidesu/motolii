@@ -50,7 +50,7 @@ class ShelfSection extends StatelessWidget {
             height: Shape.z(8),
             decoration: BoxDecoration(
               color: hue ?? Grey.g56,
-              borderRadius: BorderRadius.all(Shape.r(2)),
+              borderRadius: Shape.round(2),
             ),
           ),
           SizedBox(width: Shape.s(6)),
@@ -59,8 +59,8 @@ class ShelfSection extends StatelessWidget {
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.micro(Grey.g91)
-                  .copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
+              style: TextStyles.micro(Grey.g91).bold
+                  .copyWith(letterSpacing: .9),
             ),
           ),
           // The trailing widget is scaled down in a narrow shelf, never clipped.

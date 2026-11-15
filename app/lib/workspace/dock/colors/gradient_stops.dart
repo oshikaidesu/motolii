@@ -119,7 +119,7 @@ class _GradientStopsState extends State<GradientStops> {
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Shape.r(3)),
+                      borderRadius: Shape.round(3),
                       gradient: LinearGradient(
                         colors: [for (final e in sorted) e.$1],
                         stops: [for (final e in sorted) e.$2],
@@ -160,7 +160,7 @@ class _GradientStopsState extends State<GradientStops> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: col,
-                        borderRadius: BorderRadius.all(Shape.r(2)),
+                        borderRadius: Shape.round(2),
                         border: Border.all(
                           color: i == widget.colors.stop ? Grey.g95 : Grey.g44,
                           width: i == widget.colors.stop ? 2 : 1,

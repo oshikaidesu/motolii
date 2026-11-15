@@ -218,7 +218,7 @@ class _ColorBox extends StatelessWidget {
           final box = Container(
             decoration: BoxDecoration(
               color: col,
-              borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
+              borderRadius: Shape.round(over == b.group ? 3 : 5),
               border:
                   colors.wheelFrom == hexOfColor(col).substring(1).toLowerCase()
                   ? Border.all(color: Grey.g95, width: 2)
@@ -231,7 +231,7 @@ class _ColorBox extends StatelessWidget {
                   key: const ValueKey('colour-rim'),
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Shape.r(5)),
+                    borderRadius: Shape.round(5),
                     gradient: const SweepGradient(colors: _rainbow),
                   ),
                   child: box,
@@ -288,7 +288,7 @@ class _GradientTile extends StatelessWidget {
         builder: (context, h) => Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: look, stops: at),
-            borderRadius: BorderRadius.all(Shape.r(5)),
+            borderRadius: Shape.round(5),
             border: colors.wheelFrom == word
                 ? Border.all(color: Grey.g95, width: 2)
                 : (h ? Border.all(color: Grey.g76) : null),

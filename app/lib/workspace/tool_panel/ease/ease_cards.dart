@@ -129,7 +129,7 @@ class EaseCards extends StatelessWidget {
       builder: (_, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.all(Shape.r(5)),
+          borderRadius: Shape.round(5),
           border: hot.isEmpty
               ? null
               : Border.all(color: WindowTokens.accent, width: 2),
@@ -165,8 +165,7 @@ class EaseCards extends StatelessWidget {
         child: Center(
           child: Text(
             how == EaseBy.times ? '×' : '+',
-            style: TextStyles.micro(Grey.g76)
-                .copyWith(fontWeight: FontWeight.w700, height: 1),
+            style: TextStyles.micro(Grey.g76).bold.copyWith(height: 1),
           ),
         ),
       ),
@@ -267,8 +266,8 @@ class EaseOff extends StatelessWidget {
       ),
       child: Text(
         '×',
-        style: TextStyles.micro(over ? Grey.g13 : Grey.g95)
-            .copyWith(fontWeight: FontWeight.w700, height: 1),
+        style: TextStyles.micro(over ? Grey.g13 : Grey.g95).bold
+            .copyWith(height: 1),
       ),
     ),
   );

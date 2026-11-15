@@ -115,7 +115,7 @@ class _SizeChipState extends State<SizeChip> {
         alignment: Alignment.centerLeft,
         decoration: BoxDecoration(
           color: WindowTokens.well,
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          borderRadius: Shape.round(WindowTokens.chipRadius),
           border: Border.all(color: WindowTokens.accent),
         ),
         child: TypedField(

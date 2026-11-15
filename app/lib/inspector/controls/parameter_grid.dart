@@ -119,7 +119,7 @@ class Swatch extends StatelessWidget {
             ? null
             : LinearGradient(colors: [for (final h in ramp!) hexControls(h)!]),
         color: ramp == null ? hexControls(hex) ?? Grey.g26 : null,
-        borderRadius: BorderRadius.all(Shape.r(4)),
+        borderRadius: Shape.round(4),
         border: Border.all(color: Grey.g38),
       ),
     ),
@@ -143,12 +143,11 @@ class Steps extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: h ? Grey.g38 : Grey.g20,
-          borderRadius: BorderRadius.all(Shape.r(4)),
+          borderRadius: Shape.round(4),
         ),
         child: Text(
           s,
-          style: TextStyles.label(Grey.g91)
-              .copyWith(fontWeight: FontWeight.w700, height: 1),
+          style: TextStyles.label(Grey.g91).bold.copyWith(height: 1),
         ),
       ),
     );

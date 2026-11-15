@@ -322,8 +322,7 @@ class _RoundButton extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.micro(ink)
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: TextStyles.micro(ink).bold,
             ),
           ),
         ],

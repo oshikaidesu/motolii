@@ -240,8 +240,7 @@ class OptionsStrip extends StatelessWidget {
             width: Shape.z(62),
             child: Text(
               stageTools[tool].$2.toUpperCase(),
-              style: TextStyles.micro(Grey.g56)
-                  .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1),
+              style: TextStyles.micro(Grey.g56).bold.copyWith(letterSpacing: 1),
             ),
           ),
           for (var i = 0; i < items.length; i++) ...[
@@ -286,7 +285,7 @@ class _Field extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
     decoration: BoxDecoration(
       color: WindowTokens.well,
-      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+      borderRadius: Shape.round(WindowTokens.radius),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -297,10 +296,7 @@ class _Field extends StatelessWidget {
           Container(
             width: Shape.z(22),
             height: Shape.z(12),
-            decoration: BoxDecoration(
-              color: s,
-              borderRadius: BorderRadius.all(Shape.r(3)),
-            ),
+            decoration: BoxDecoration(color: s, borderRadius: Shape.round(3)),
           )
         else
           Text(value ?? '', style: TextStyles.value(Grey.g91)),

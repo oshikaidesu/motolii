@@ -137,8 +137,7 @@ class AxisHeader extends StatelessWidget {
           child: Text(
             a,
             textAlign: TextAlign.center,
-            style: TextStyles.micro(Color.lerp(color, Grey.g100, .3)!)
-                .copyWith(fontWeight: FontWeight.w700),
+            style: TextStyles.micro(Color.lerp(color, Grey.g100, .3)!).bold,
           ),
         ),
       ],

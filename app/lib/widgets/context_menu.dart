@@ -114,7 +114,7 @@ class ContextMenuList extends StatelessWidget {
                     height: _swatch,
                     decoration: BoxDecoration(
                       color: it.colors[k],
-                      borderRadius: BorderRadius.all(Shape.r(3)),
+                      borderRadius: Shape.round(3),
                       border: Border.all(
                         color: k == it.picked || h
                             ? Grey.g95
@@ -152,7 +152,7 @@ class ContextMenuList extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
               decoration: BoxDecoration(
                 color: h && it.go != null ? Grey.g20 : null,
-                borderRadius: BorderRadius.all(Shape.r(4)),
+                borderRadius: Shape.round(4),
               ),
               child: Row(
                 children: [
@@ -187,7 +187,7 @@ class ContextMenuList extends StatelessWidget {
     padding: EdgeInsets.all(Shape.s(4)),
     decoration: BoxDecoration(
       color: Grey.g13,
-      borderRadius: BorderRadius.all(Shape.r(6)),
+      borderRadius: Shape.round(6),
       border: Border.all(color: Grey.g26),
       boxShadow: [
         BoxShadow(

@@ -118,8 +118,7 @@ class FileFooter extends StatelessWidget {
                   ),
                   child: Text(
                     'All ${all.length}',
-                    style: TextStyles.name(Grey.g91)
-                        .copyWith(fontWeight: FontWeight.w700),
+                    style: TextStyles.name(Grey.g91).bold,
                   ),
                 ),
               )

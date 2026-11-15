@@ -133,8 +133,7 @@ class HomeCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               d.name,
-              style: TextStyles.name(Grey.g91)
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: TextStyles.name(Grey.g91).bold,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

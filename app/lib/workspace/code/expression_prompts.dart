@@ -80,7 +80,7 @@ PreferredSizeWidget expressionPromptsView(
           decoration: BoxDecoration(
             color: WindowTokens.raised,
             border: Border.all(color: WindowTokens.line),
-            borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+            borderRadius: Shape.round(WindowTokens.radius),
           ),
           child: ValueListenableBuilder<CodeAutocompleteEditingValue>(
             valueListenable: notifier,

@@ -64,7 +64,7 @@ Widget? stageHeldSays({required StageDrag drag, required Offset? last}) {
         ),
         decoration: BoxDecoration(
           color: WindowTokens.raised,
-          borderRadius: BorderRadius.all(Shape.r(3)),
+          borderRadius: Shape.round(3),
         ),
         child: Text(says, style: TextStyles.micro(Grey.g95)),
       ),

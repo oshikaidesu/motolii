@@ -272,7 +272,7 @@ class ColorsShelf extends StatelessWidget {
                 height: Shape.z(22),
                 decoration: BoxDecoration(
                   color: colors.wheelColor.toColor(),
-                  borderRadius: BorderRadius.all(Shape.r(4)),
+                  borderRadius: Shape.round(4),
                   border: Border.all(color: Grey.g26),
                 ),
               ),

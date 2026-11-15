@@ -16,7 +16,7 @@ class Hud extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
     decoration: BoxDecoration(
       color: WindowTokens.card,
-      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+      borderRadius: Shape.round(WindowTokens.radius),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,

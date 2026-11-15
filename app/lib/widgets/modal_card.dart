@@ -101,18 +101,14 @@ class _ModalCardState extends State<ModalCard> {
                 padding: EdgeInsets.all(Shape.s(16)),
                 decoration: BoxDecoration(
                   color: WindowTokens.card,
-                  borderRadius: BorderRadius.all(Shape.r(8)),
+                  borderRadius: Shape.round(8),
                   border: Border.all(color: WindowTokens.line),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: widget.across,
                   children: [
-                    Text(
-                      widget.title,
-                      style: TextStyles.title(Grey.g95)
-                          .copyWith(fontWeight: FontWeight.w700),
-                    ),
+                    Text(widget.title, style: TextStyles.title(Grey.g95).bold),
                     SizedBox(height: Shape.s(12)),
                     ...widget.children,
                   ],

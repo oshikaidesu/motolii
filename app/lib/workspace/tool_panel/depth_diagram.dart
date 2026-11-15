@@ -314,8 +314,7 @@ class _DepthPainter extends CustomPainter {
       c,
       'CAM',
       e + const Offset(14, 9),
-      TextStyles.micro(Grey.g63)
-          .copyWith(fontWeight: FontWeight.w700, letterSpacing: 1),
+      TextStyles.micro(Grey.g63).bold.copyWith(letterSpacing: 1),
       ay: .5,
     );
   }

@@ -199,8 +199,7 @@ mixin TimelineTracksView<T extends StatefulWidget>
                 child: TypedField(
                   key: const ValueKey('ws-tl-mark-name'),
                   text: markText.value,
-                  style: TextStyles.micro(Grey.g13)
-                      .copyWith(fontWeight: FontWeight.w700),
+                  style: TextStyles.micro(Grey.g13).bold,
                   cursor: Grey.g13,
                   selection: Grey.g13.withValues(alpha: .3),
                   take: true,

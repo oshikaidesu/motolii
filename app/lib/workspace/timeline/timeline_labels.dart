@@ -186,7 +186,7 @@ class _Toggle extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: on ? WindowTokens.accent : (strong ? Grey.g26 : null),
-            borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+            borderRadius: Shape.round(WindowTokens.chipRadius),
           ),
           child: Glyph(
             g,

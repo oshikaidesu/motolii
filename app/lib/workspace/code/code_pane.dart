@@ -117,7 +117,7 @@ class _CodePaneState extends State<CodePane> {
                 'Functions',
                 key: const ValueKey('code-functions-toggle'),
                 style: TextStyles.label(lists || hot ? Grey.g95 : Grey.g56)
-                    .copyWith(fontWeight: FontWeight.w700),
+                    .bold,
               ),
             ),
           ],

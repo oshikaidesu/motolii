@@ -139,7 +139,7 @@ class _RenderState extends State<RenderButton> {
                 ),
                 decoration: BoxDecoration(
                   color: WindowTokens.well,
-                  borderRadius: BorderRadius.all(Shape.r(4)),
+                  borderRadius: Shape.round(4),
                 ),
                 child: TextGestures(
                   field: (k) => EditableText(

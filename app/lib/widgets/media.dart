@@ -102,7 +102,7 @@ class MiniSlider extends StatelessWidget {
           height: Shape.z(groove),
           decoration: BoxDecoration(
             color: c,
-            borderRadius: BorderRadius.all(Shape.r(groove / 2)),
+            borderRadius: Shape.round(groove / 2),
           ),
         );
         return SizedBox(

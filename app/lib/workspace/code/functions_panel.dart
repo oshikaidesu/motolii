@@ -232,11 +232,7 @@ class _Head extends StatelessWidget {
         children: [
           DisclosureTriangle(open: open, hot: hot),
           SizedBox(width: Shape.s(6)),
-          Text(
-            title,
-            style: TextStyles.label(hot ? Grey.g95 : Grey.g91)
-                .copyWith(fontWeight: FontWeight.w700),
-          ),
+          Text(title, style: TextStyles.label(hot ? Grey.g95 : Grey.g91).bold),
           const Spacer(),
           Text(count, style: TextStyles.micro(Grey.g56)),
         ],

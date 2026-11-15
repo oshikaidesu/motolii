@@ -23,7 +23,7 @@ class OwnForms extends Forms {
       hover: h,
       usual: BoxDecoration(
         color: h ? WindowTokens.accentHot : WindowTokens.accent,
-        borderRadius: BorderRadius.all(Shape.r(13)),
+        borderRadius: Shape.round(13),
       ),
       child: Container(
         height: Shape.z(26),

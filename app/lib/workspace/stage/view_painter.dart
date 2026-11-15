@@ -184,10 +184,7 @@ class ViewPainter extends CustomPainter {
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
-    final l = lineText(
-          scene.title,
-          TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700),
-        ),
+    final l = lineText(scene.title, TextStyles.micro(Grey.g76).bold),
         d = lineText(
           '${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps',
           TextStyles.micro(Grey.g56),
@@ -458,10 +455,7 @@ class ViewPainter extends CustomPainter {
     Color ink,
     Color? pip,
   ) {
-    final tp = lineText(
-      text,
-      TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700),
-    );
+    final tp = lineText(text, TextStyles.micro(ink).bold);
     final w = tp.width + 12 + (pip == null ? 0 : 10);
     var o = Offset(at.dx, at.dy - StageTokens.tagH - 4);
     o = Offset(

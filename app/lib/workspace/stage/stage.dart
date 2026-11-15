@@ -420,7 +420,7 @@ class _Swatches extends StatelessWidget {
         'stroke',
         BoxDecoration(
           color: WindowTokens.body,
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          borderRadius: Shape.round(WindowTokens.chipRadius),
           border: Border.all(color: stroke, width: 3),
         ),
       ),
@@ -432,7 +432,7 @@ class _Swatches extends StatelessWidget {
         'fill',
         BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+          borderRadius: Shape.round(WindowTokens.chipRadius),
           border: Border.all(color: WindowTokens.body),
         ),
       ),

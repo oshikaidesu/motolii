@@ -129,7 +129,7 @@ class ParameterTile extends StatelessWidget {
             : InspectorSkin.tile,
         decoration: BoxDecoration(
           color: h && onTap != null ? Grey.g20 : InspectorSkin.well,
-          borderRadius: BorderRadius.all(Shape.r(6)),
+          borderRadius: Shape.round(6),
         ),
         child: Stack(
           children: [
@@ -343,7 +343,7 @@ class _PadGlyphState extends State<_PadGlyph> {
           height: InspectorSkin.tile,
           decoration: BoxDecoration(
             color: _drag || _hot ? Grey.g20 : InspectorSkin.well,
-            borderRadius: BorderRadius.all(Shape.r(6)),
+            borderRadius: Shape.round(6),
           ),
           child: FittedBox(
             child: Gauge(null, p, x: doc.get(ix), y: doc.get(iy)),

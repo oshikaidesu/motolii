@@ -42,7 +42,7 @@ class InspectorHeader extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: InspectorSkin.accent,
-              borderRadius: BorderRadius.all(Shape.r(6)),
+              borderRadius: Shape.round(6),
             ),
             child: glyph == null
                 ? null

@@ -236,8 +236,7 @@ class EaseGraphPainter extends CustomPainter {
             c,
             '$frame',
             Offset(x, bottom + 6),
-            TextStyles.micro(WindowTokens.playhead)
-                .copyWith(fontWeight: FontWeight.w700),
+            TextStyles.micro(WindowTokens.playhead).bold,
             ax: .5,
           );
         }
@@ -248,8 +247,7 @@ class EaseGraphPainter extends CustomPainter {
           c,
           before ? '‹ $frame' : '$frame ›',
           Offset(g.center.dx, bottom + 6),
-          TextStyles.micro(WindowTokens.playhead)
-              .copyWith(fontWeight: FontWeight.w700),
+          TextStyles.micro(WindowTokens.playhead).bold,
           ax: .5,
         );
       }

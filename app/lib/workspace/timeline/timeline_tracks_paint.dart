@@ -257,10 +257,7 @@ class TimelineTracksPainter extends CustomPainter {
       );
     }
     final nameX = math.max(x0 + 8, 6.0) + (r.clipped ? 12 : 0);
-    final t = lineText(
-      r.name,
-      TextStyles.name(ink).copyWith(fontWeight: FontWeight.w700),
-    );
+    final t = lineText(r.name, TextStyles.name(ink).bold);
     if (nameX + 20 < x1) {
       if (r.wave != null || r.frames != null) {
         c.drawRRect(

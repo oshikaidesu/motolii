@@ -51,7 +51,7 @@ class ColorSamples extends StatelessWidget {
                       height: Shape.z(18),
                       decoration: BoxDecoration(
                         color: Color(0xFF000000 | rgb),
-                        borderRadius: BorderRadius.all(Shape.r(3)),
+                        borderRadius: Shape.round(3),
                         border: Border.all(color: h ? Grey.g95 : Grey.g26),
                       ),
                     ),

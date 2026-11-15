@@ -198,7 +198,7 @@ class _WaitedState extends State<Waited> {
           padding: EdgeInsets.all(Shape.s(10)),
           decoration: BoxDecoration(
             color: WindowTokens.card,
-            borderRadius: BorderRadius.all(Shape.r(6)),
+            borderRadius: Shape.round(6),
             border: Border.all(color: Grey.g26),
           ),
           child: SingleChildScrollView(
