@@ -260,9 +260,10 @@ std::string sketch_hears(JSContext* cx, const std::string& src,
   for (const char* heard : {"loadSound", "p5.SoundFile", "p5.FFT",
                             "p5.Amplitude", "p5.PeakDetect", "AudioContext"})
     names = names || src.find(heard) != std::string::npos;
-  const std::string sound = read_text(std::filesystem::path(p5).parent_path() /
-                                      "addons" / "p5.sound.min.js");
-  if (!names || sound.empty()) return "";
+  const std::filesystem::path p5Dir = std::filesystem::path(p5).parent_path();
+  const std::string sound = read_text(p5Dir / "addons" / "p5.sound.min.js");
+  const std::string webAudio = read_text(p5Dir / "stand" / "web_audio_stand.js");
+  if (!names || sound.empty() || webAudio.empty()) return "";
   JSValue g = JS_GetGlobalObject(cx),
           of = JS_NewInt64(cx, (int64_t)(intptr_t)film);
   JS_SetPropertyStr(cx, g, "__sound_wave",
@@ -284,8 +285,7 @@ std::string sketch_hears(JSContext* cx, const std::string& src,
     }
     JS_FreeValue(cx, ran);
   };
-  run(web_audio_stand, std::char_traits<char>::length(web_audio_stand),
-      "web_audio_stand");
+  run(webAudio.c_str(), webAudio.size(), "web_audio_stand");
   run(sound.c_str(), sound.size(), "p5.sound.min.js");
   return wrong;
 }
