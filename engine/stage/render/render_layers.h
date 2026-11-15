@@ -71,6 +71,12 @@ int matte(Stage& s, Mesh* m, std::vector<filament::math::mat4f> places,
           filament::Texture* frameTexture = nullptr, bool byLight = false,
           float strength = 1.f, int into = -1, const Mesh* on = nullptr);
 
+// Frees the GPU resources of a matte slot (its scene, view, offscreen texture
+// and the camera it owns) and marks the slot as free, so a later matte() call
+// may reuse its index. Does nothing when `slot` is -1 or already free. The slot
+// stays in s.mattes so other cuts' matte indices past it remain valid.
+void release_matte(Stage& s, int slot);
+
 // Cuts the layer with material instance `look` by matte number `matte`. The
 // layer is visible only inside the matte, or only outside it when `inside` is
 // false. soft: how far the edge is blurred, in screen pixels, or in pixels of

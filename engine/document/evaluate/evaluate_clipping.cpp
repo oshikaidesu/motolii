@@ -67,13 +67,17 @@ void drop_matte_shapes(Stage& s, int matte) {
   });
 }
 
-// Releases the matte of a layer that is no longer cut.
+// Releases the matte of a layer that is no longer cut: clears the matte's own
+// shapes, frees the matte slot (scene, view, offscreen texture, and any camera
+// the matte made for itself), and leaves the cut record pointing at no slot.
+// A later re-cut allocates a fresh slot, reusing the one just freed.
 void matte_released(Stage& s, DocOnStage::Cut& cut, MaterialInstance* own) {
   std::erase_if(s.cuts,
                 [&](const Stage::Cut& c) { return c.look == cut.look; });
   if (cut.look == own) cut.look->setParameter("matteUse", float4{0.f});
-  cut.look = nullptr, cut.from = 0, cut.by = nullptr;
   drop_matte_shapes(s, cut.matte);
+  release_matte(s, cut.matte);
+  cut.look = nullptr, cut.from = 0, cut.by = nullptr, cut.matte = -1;
 }
 
 // Cuts a layer by the image of the layer `by` when that layer clips it and is a

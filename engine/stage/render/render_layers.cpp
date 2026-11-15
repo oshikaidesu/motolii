@@ -204,6 +204,24 @@ MaterialInstance* thick_glass(Stage& s, Mesh* m, std::vector<mat4f> places) {
   return front;
 }
 
+void release_matte(Stage& s, int slot) {
+  if (slot < 0 || slot >= (int)s.mattes.size()) return;
+  Stage::Matte& m = s.mattes[(size_t)slot];
+  if (!m.scene) return;  // already free
+  // RenderTarget attached to the view: setRenderTarget(nullptr) destroys the
+  // previous one, and destroyView then frees the view itself.
+  if (m.view) m.view->setRenderTarget(nullptr), s.engine->destroy(m.view);
+  if (m.frameTexture) s.engine->destroy(m.frameTexture);
+  if (m.scene) s.engine->destroy(m.scene);
+  // The camera this matte made for itself (one riding on a mesh). The project
+  // camera (eye == s.film) is not the matte's to destroy.
+  if (m.eye && m.eye != s.film && !m.eyeOwned.isNull()) {
+    s.engine->destroyCameraComponent(m.eyeOwned);
+    utils::EntityManager::get().destroy(m.eyeOwned);
+  }
+  m = Stage::Matte{};  // scene = nullptr marks the slot free for reuse.
+}
+
 int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture,
           bool byLight, float strength, int into, const Mesh* on) {
   auto& tm = s.engine->getTransformManager();
@@ -227,6 +245,7 @@ int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture,
       tm.create(e, tm.getInstance(d.thing),
                 mat4f::translation(float3{0.f, 0.f, high.z + 1.f}));
       built.eye = s.engine->createCamera(e);
+      built.eyeOwned = e;
       built.eye->setProjection(Camera::Projection::ORTHO, low.x, high.x, low.y,
                                high.y, 0.1, double(high.z - low.z) + 2.0);
       // Pixels per unit chosen so that the longer side has the screen's
@@ -260,8 +279,22 @@ int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture,
             .texture(RenderTarget::AttachmentPoint::COLOR, built.frameTexture)
             .build(*s.engine));
     built.view->setPostProcessingEnabled(false);
-    s.mattes.push_back(built);
-    into = (int)s.mattes.size() - 1;
+    // Reuse the first free slot a release_matte left behind, else grow the
+    // vector. Existing cuts' matte indices past a free slot stay valid because
+    // the slot keeps its index, only its contents change.
+    int free = -1;
+    for (int i = 0; i < (int)s.mattes.size(); ++i)
+      if (!s.mattes[(size_t)i].scene) {
+        free = i;
+        break;
+      }
+    if (free >= 0) {
+      s.mattes[(size_t)free] = built;
+      into = free;
+    } else {
+      s.mattes.push_back(built);
+      into = (int)s.mattes.size() - 1;
+    }
   }
   Stage::Matte& to = s.mattes[(size_t)into];
   MaterialInstance* shape = add(s, m, "matte.filamat", places);

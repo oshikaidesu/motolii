@@ -192,7 +192,11 @@ struct Stage {
   };
   // A matte: its own scene, view and image, the camera that takes it, and the
   // entity it rides on with that entity's transform. soft: whether some layer
-  // reads it blurred.
+  // reads it blurred. eyeOwned is the entity that holds the camera when the
+  // camera is one the matte made for itself (eye != s.film); otherwise it is
+  // null and the camera is not the matte's to destroy. A slot whose scene is
+  // null is free: release_matte left it there so its index stays valid for
+  // other cuts that still point past it, and a new matte reuses it.
   struct Matte {
     filament::Scene* scene;
     filament::View* view;
@@ -201,9 +205,11 @@ struct Stage {
     filament::Camera* eye;
     utils::Entity on;
     filament::math::mat4f onPlace;
+    utils::Entity eyeOwned;
   };
   // The mattes. Each is an image taken by its own camera and drawn before
-  // everything else, see matte.
+  // everything else, see matte. A slot with scene == nullptr has been released
+  // and a new matte may reuse it; see release_matte.
   std::vector<Matte> mattes;
   // Records that one material instance reads one matte. slot: which matte slot
   // of the instance. matte: the index into `mattes`. use: 1 for inside, -1 for

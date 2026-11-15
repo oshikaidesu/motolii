@@ -45,6 +45,14 @@ namespace {
 // its matte shape, and whatever was made for its kind.
 void take_layer_off(Doc& d, Stage& s,
                     std::map<int, DocShownLayer>::iterator it) {
+  // If this layer was cut by a matte, free that matte's slot too so the
+  // engine's s.mattes vector does not grow by one each time a cut layer
+  // is deleted. The cut record itself is removed from d.on_stage.cuts.
+  if (const auto cut = d.on_stage.cuts.find(it->first);
+      cut != d.on_stage.cuts.end()) {
+    if (cut->second.matte >= 0) release_matte(s, cut->second.matte);
+    d.on_stage.cuts.erase(cut);
+  }
   // Remove it from the scene of its run first, because the removal code below
   // takes layers only out of the stage's own scene.
   if (it->second.scene && it->second.scene != s.scene)
