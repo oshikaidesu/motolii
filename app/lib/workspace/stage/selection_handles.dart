@@ -59,7 +59,7 @@ Map<String, Offset> selectionHandles(
       'cog',
     ].contains(form))
       'round': gripOf(c).roundAt(round),
-    if (const ['polygon', 'star', 'cog'].contains(form))
+    if (const ['rect', 'polygon', 'star', 'cog'].contains(form))
       'points': (c[1] + c[2]) / 2 + gripOf(c).u * 18,
     if (crop.length == 4) ...{
       'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
