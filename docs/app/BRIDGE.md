@@ -7,7 +7,7 @@ In short: writes are recorded and return at once, questions are answered later, 
 ## Rules
 
 1. **The app never waits for the engine.** No path calls the engine from an app thread and blocks until it answers.
-2. **The app never calls the engine inside a widget's `build`.** It reads only the snapshots the engine handed over.
+2. **The app never calls the engine inside a widget's `build`.** It reads only the snapshots the engine handed over. Only `app/lib/bridge/`, `main.dart` and the window state (`app/lib/workspace/state/`) hold the engine handle; a panel reads its state. The ast-grep rules `app/tool/rules/import_engine.yml` (import), `import_disk.yml` (`dart:io`/`dart:ffi`) and `engine_only_in_state.yml` (the handle) make this a build break.
 3. **There are two snapshots.** The engine's render thread builds each while it holds the project lock, then swaps in the finished object whole. A snapshot is immutable and carries a version number.
    - **Project snapshot.** Built only when the project changes. It holds the list of layers and, for each layer: kind, name, length, key positions, ranges, cards, word choices, how it is shown, the effect list and the resting values. For the whole project it holds markers, guides, the work range, length, size and the list of easings. Each layer has its own version. A layer that did not change is the same object as before, so the app can compare with `identical`.
    - **Frame snapshot.** Built for every frame drawn. It holds the time, the values that are moving, each layer's bounds and visible rectangle, the carried values (`shows`), and for the selected layer whether it has keys, its points and its handles.
