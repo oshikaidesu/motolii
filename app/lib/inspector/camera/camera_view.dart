@@ -99,8 +99,8 @@ class _CamBox extends StatefulWidget {
 }
 
 class _CamBoxState extends State<_CamBox> {
-  // Initial viewpoint: from the right, slightly above and behind the camera.
-  double _yaw = 2.5, _pitch = 0.35;
+  // Initial viewpoint: front-right, slightly above — camera body left, frustum right.
+  double _yaw = 0.65, _pitch = 0.35;
   bool _dragging = false;
 
   static double get height => Shape.z(110);
@@ -113,7 +113,7 @@ class _CamBoxState extends State<_CamBox> {
         final size = Size(box.maxWidth, height);
         return GestureDetector(
           onDoubleTap: () => setState(() {
-            _yaw = 2.5;
+            _yaw = 0.65;
             _pitch = 0.35;
           }),
           child: Listener(
@@ -137,7 +137,6 @@ class _CamBoxState extends State<_CamBox> {
               child: CustomPaint(
                 size: size,
                 painter: _CamPaint(
-                  size: size,
                   yaw: _yaw,
                   pitch: _pitch,
                   posX: widget.posX,
@@ -166,7 +165,6 @@ class _CamBoxState extends State<_CamBox> {
 
 class _CamPaint extends CustomPainter {
   const _CamPaint({
-    required this.size,
     required this.yaw,
     required this.pitch,
     required this.posX,
@@ -183,22 +181,11 @@ class _CamPaint extends CustomPainter {
     required this.aperture,
   });
 
-  final Size size;
   final double yaw, pitch;
   final double posX, posY, posZ;
   final double rotateX, rotateY, rotate;
   final double focalMm, shiftX, shiftY, focusPx, aperture;
   final bool ortho;
-
-  // Orthographic projection of a 3-D point into screen space.
-  // Same maths as AnchorView: yaw around Y then pitch around X.
-  Offset _p(double x, double y, double z) {
-    final rx = x * math.cos(yaw) + z * math.sin(yaw);
-    final rz = -x * math.sin(yaw) + z * math.cos(yaw);
-    final ry = y * math.cos(pitch) - rz * math.sin(pitch);
-    const scale = 22.0;
-    return size.center(Offset.zero) + Offset(rx, ry) * scale;
-  }
 
   Paint _line(Color col, [double w = 1.0]) => Paint()
     ..color = col
@@ -210,16 +197,25 @@ class _CamPaint extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size s) {
+    final scale = s.height / 7.0;
+    final centre = s.center(Offset.zero);
+    Offset p(double x, double y, double z) {
+      final rx = x * math.cos(yaw) + z * math.sin(yaw);
+      final rz = -x * math.sin(yaw) + z * math.cos(yaw);
+      final ry = y * math.cos(pitch) - rz * math.sin(pitch);
+      return centre + Offset(rx, ry) * scale;
+    }
+
     // Ground grid on the XZ plane.
     for (int i = -3; i <= 3; i++) {
       canvas.drawLine(
-        _p(i.toDouble(), 0, -3),
-        _p(i.toDouble(), 0, 3),
+        p(i.toDouble(), 0, -3),
+        p(i.toDouble(), 0, 3),
         _line(Grey.g15),
       );
       canvas.drawLine(
-        _p(-3, 0, i.toDouble()),
-        _p(3, 0, i.toDouble()),
+        p(-3, 0, i.toDouble()),
+        p(3, 0, i.toDouble()),
         _line(Grey.g15),
       );
     }
@@ -270,10 +266,10 @@ class _CamPaint extends CustomPainter {
       final hw = (ortho ? tanH : tanH * d);
       final hv = (ortho ? tanV : tanV * d);
       return [
-        _camPt(cam, fwd, rt, upV, d, -hw + sx, -hv + sy),
-        _camPt(cam, fwd, rt, upV, d, hw + sx, -hv + sy),
-        _camPt(cam, fwd, rt, upV, d, hw + sx, hv + sy),
-        _camPt(cam, fwd, rt, upV, d, -hw + sx, hv + sy),
+        _camPt(p, cam, fwd, rt, upV, d, -hw + sx, -hv + sy),
+        _camPt(p, cam, fwd, rt, upV, d, hw + sx, -hv + sy),
+        _camPt(p, cam, fwd, rt, upV, d, hw + sx, hv + sy),
+        _camPt(p, cam, fwd, rt, upV, d, -hw + sx, hv + sy),
       ];
     }
 
@@ -281,7 +277,7 @@ class _CamPaint extends CustomPainter {
     final farPts = plane(farD);
     final focPts = plane(focusD);
 
-    final camPt = _p(cam.$1, cam.$2, cam.$3);
+    final camPt = p(cam.$1, cam.$2, cam.$3);
     final accentCol = Accent.fill;
     final coneCol = Grey.g38;
 
@@ -315,11 +311,12 @@ class _CamPaint extends CustomPainter {
     _quad(canvas, farPts, _line(coneCol.withValues(alpha: .35)));
 
     // Camera body: a small box with a lens dot, honoring roll.
-    _drawBody(canvas, cam, fwd, rt, upV);
+    _drawBody(p, canvas, cam, fwd, rt, upV);
   }
 
   // 3-D point on the frustum at depth d, offset (u, v) in the focal plane.
   Offset _camPt(
+    Offset Function(double, double, double) proj,
     (double, double, double) o,
     (double, double, double) f,
     (double, double, double) r,
@@ -327,7 +324,7 @@ class _CamPaint extends CustomPainter {
     double d,
     double uh,
     double vh,
-  ) => _p(
+  ) => proj(
     o.$1 + f.$1 * d + r.$1 * uh + u.$1 * vh,
     o.$2 + f.$2 * d + r.$2 * uh + u.$2 * vh,
     o.$3 + f.$3 * d + r.$3 * uh + u.$3 * vh,
@@ -356,22 +353,23 @@ class _CamPaint extends CustomPainter {
 
   // Camera body icon: rectangle (body) + dot (lens front).
   void _drawBody(
+    Offset Function(double, double, double) proj,
     Canvas c,
     (double, double, double) pos,
     (double, double, double) fwd,
     (double, double, double) rt,
     (double, double, double) upV,
   ) {
-    final o = _p(pos.$1, pos.$2, pos.$3);
+    final o = proj(pos.$1, pos.$2, pos.$3);
     final u =
-        _p(
+        proj(
           pos.$1 + upV.$1 * .15,
           pos.$2 + upV.$2 * .15,
           pos.$3 + upV.$3 * .15,
         ) -
         o;
     final r =
-        _p(pos.$1 + rt.$1 * .22, pos.$2 + rt.$2 * .22, pos.$3 + rt.$3 * .22) -
+        proj(pos.$1 + rt.$1 * .22, pos.$2 + rt.$2 * .22, pos.$3 + rt.$3 * .22) -
         o;
     final corners = [o - u + r, o + u + r, o + u - r, o - u - r];
     final body = Path()..addPolygon(corners, true);
@@ -385,7 +383,7 @@ class _CamPaint extends CustomPainter {
     );
 
     // Lens dot in front of the body.
-    final lens = _p(
+    final lens = proj(
       pos.$1 + fwd.$1 * .25,
       pos.$2 + fwd.$2 * .25,
       pos.$3 + fwd.$3 * .25,
