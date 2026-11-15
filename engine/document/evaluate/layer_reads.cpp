@@ -88,9 +88,9 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer,
   // AbsentMotion measures time in milliseconds.
   k.copies =
       absent_copies(doc_absent_on(d, layer, now), layer, 1000.0 * begins,
-                    1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))),
-                    1000.0 * now, (float)(d.stage->w * k2), (float)high,
-                    (float)at.x, (float)at.y, (float)reach);
+                    1000.0 * doc_layer_ends(d, layer), 1000.0 * now,
+                    (float)(d.stage->w * k2), (float)high, (float)at.x,
+                    (float)at.y, (float)reach);
   return k.copies;
 }
 
@@ -101,21 +101,18 @@ std::string doc_text_shown(Doc& d, int layer, double now, bool* moves) {
   const std::vector<AbsentEffect> on = doc_absent_on(d, layer, now);
   if (!absent_text_on(on)) return typed;
   if (moves) *moves = true;
-  const double begins = doc_literal(d, layer, "start", 0, 0),
-               lasts = doc_literal(d, layer, "duration", 0, -1);
+  const double begins = doc_literal(d, layer, "start", 0, 0);
   return absent_text(on, layer, 1000.0 * begins,
-                     1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))),
-                     1000.0 * now, 60, typed);
+                     1000.0 * doc_layer_ends(d, layer), 1000.0 * now, 60,
+                     typed);
 }
 
 bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
   if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return false;
-  const double begins = doc_literal(d, layer, "start", 0, 0),
-               lasts = doc_literal(d, layer, "duration", 0, -1);
+  const double begins = doc_literal(d, layer, "start", 0, 0);
   return absent_shutter(
       doc_absent_on(d, layer, now), layer, 1000.0 * begins,
-      1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))), 1000.0 * now,
-      60, open, moves);
+      1000.0 * doc_layer_ends(d, layer), 1000.0 * now, 60, open, moves);
 }
 
 double doc_group_opacity(Doc& d, int layer, double now) {
@@ -133,11 +130,9 @@ double doc_group_opacity(Doc& d, int layer, double now) {
 
 double doc_absent_opacity(Doc& d, int layer, double now) {
   if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return 1.0;
-  const double begins = doc_literal(d, layer, "start", 0, 0),
-               lasts = doc_literal(d, layer, "duration", 0, -1);
-  return absent_opacity(
-      doc_absent_on(d, layer, now), layer, 1000.0 * begins,
-      1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))), 1000.0 * now);
+  const double begins = doc_literal(d, layer, "start", 0, 0);
+  return absent_opacity(doc_absent_on(d, layer, now), layer, 1000.0 * begins,
+                        1000.0 * doc_layer_ends(d, layer), 1000.0 * now);
 }
 
 int doc_members(Doc& d, int layer) {

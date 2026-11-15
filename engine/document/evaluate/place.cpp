@@ -254,12 +254,10 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   if (const std::vector<AbsentEffect> moving =
           doc_placing_absent(d, layer, said);
       !moving.empty()) {
-    const double begins = doc_literal(d, layer, "start", 0, 0),
-                 lasts = doc_literal(d, layer, "duration", 0, -1);
-    const AbsentMoved m =
-        absent_motion(moving, layer, 1000.0 * begins,
-                      1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))),
-                      1000.0 * said);
+    const double begins = doc_literal(d, layer, "start", 0, 0);
+    const AbsentMoved m = absent_motion(moving, layer, 1000.0 * begins,
+                                        1000.0 * doc_layer_ends(d, layer),
+                                        1000.0 * said);
     // The size of one document pixel in stage units where the layer stands, as
     // for the copies of a script.
     const double pixel =

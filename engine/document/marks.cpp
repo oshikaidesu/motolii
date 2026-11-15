@@ -13,6 +13,12 @@
 
 namespace motolii {
 
+double doc_layer_ends(Doc& d, int layer) {
+  const double begins = doc_literal(d, layer, "start", 0, 0),
+               lasts = doc_literal(d, layer, "duration", 0, -1);
+  return begins + (lasts >= 0.0 ? lasts : doc_seconds(d));
+}
+
 double doc_seconds(Doc& d) {
   double all = 0.0;
   for (const auto& [layer, t] : d.on_stage.shown) {

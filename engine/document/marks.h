@@ -17,6 +17,12 @@ struct Doc;
 // project ends.
 double doc_seconds(Doc& d);
 
+// Returns the time (in seconds, measured from 0) at which the layer stops being
+// shown: its `start` plus its `duration`, or `start` plus [doc_seconds] if the
+// layer has no `duration` keyframe. For AbsentMotion effects (community/absent_motion)
+// multiply the result by 1000 to get milliseconds.
+double doc_layer_ends(Doc& d, int layer);
+
 // The work area is the stretch of the project that is played round and exported
 // as a video, as in After Effects. If it is not set, it is all of the project.
 // Marks are named times of the project, like After Effects' composition
