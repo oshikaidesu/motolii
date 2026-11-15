@@ -123,6 +123,7 @@ inline const DocShown doc_shown[] = {
     // Typed values may go as far as kinds.h allows: 1e4 and 64.
     {"focus", "stage", "px", "Focus Distance", 0, 9, nullptr},
     {"aperture", "", "", "F-Stop", 0, 22, nullptr},
+    {"blur_level", "", "×", "Blur", 0, 10, nullptr},
     {"anchor_x", "", "%", "Anchor X", -1, 1, "Anchor"},
     {"anchor_y", "", "%", "Anchor Y", -1, 1, "Anchor"},
     {"anchor_z", "", "%", "Anchor Z", -1, 1, "Anchor"},

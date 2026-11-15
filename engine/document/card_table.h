@@ -39,11 +39,8 @@ inline const DocCard doc_cards[] = {
      "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z "
      "rotate_x rotate_y rotate opacity",
      "kind", "!camera"},
-    // After Effects' camera: where it is, how it is turned and how far its eye
-    // is from what it
-    // looks at.
-    {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom focus aperture", "kind",
-     "camera"},
+    // After Effects' camera: where it is and how it is turned.
+    {"Camera", "parent x y z rotate_x rotate_y rotate", "kind", "camera"},
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over
     // what lies below as the mode says, or only inside the layer before it.
@@ -149,7 +146,10 @@ inline const DocCard doc_cards[] = {
      "intensity falloff cone shadows shadow_softness contact_shadows "
      "light_group sun_size sun_halo",
      "kind", "light"},
-    {"Projection", "projection shift_x shift_y"},
+    // Focal length, lens type and sensor shift. Shown for camera layers.
+    {"Lens", "focal_length projection shift_x shift_y", "kind", "camera"},
+    // Depth of field: shown only once one of its values is set.
+    {"Depth of Field", "focus aperture blur_level", "kind", "camera", true},
     {"Room", "room environment environment_rotate behind background"},
     // A behaviour written as a file: its own parameters come under it, as a
     // script's do.

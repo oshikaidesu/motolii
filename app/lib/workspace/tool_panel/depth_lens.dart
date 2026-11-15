@@ -28,11 +28,6 @@ class DepthLens {
 
 final depthLenses = Expando<DepthLens>();
 
-/// The focal length in millimetres that corresponds to a document camera zoom of 1.
-///
-/// It assumes Filament's 24 mm high film (Camera::setLensProjection): 12 mm divided by the tangent of half the stage's 30 degree field of view.
-const depthFilmMm = 12 / 0.2679491924311227;
-
 /// Reads the first camera layer of the document into [lens] and returns its layer id and its distance from the eye.
 ///
 /// The focus is stored in canvas points measured from the eye. When the camera has no focus value, the focus is the eye distance.
@@ -47,11 +42,13 @@ const depthFilmMm = 12 / 0.2679491924311227;
   final t = int.parse(cam.id),
       at = m.now,
       p = m.point,
-      eye = 6 * (m.value(t, 'distance', at) ?? 1) * p;
+          // The working camera orbits at kStageBack (6.0) units along +Z by default.
+          eye =
+          6.0 * p;
   final stop = m.value(t, 'aperture', at) ?? 0,
       focus = m.value(t, 'focus', at) ?? 0;
   lens
-    ..focal = (m.value(t, 'zoom', at) ?? 1) * depthFilmMm
+    ..focal = m.value(t, 'focal_length', at) ?? 45.0
     ..fstop = stop > 0
         ? stop
         // An aperture of 0 means everything is sharp, which is shown as the narrowest f-stop of the tool panel.

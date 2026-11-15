@@ -114,8 +114,8 @@ class _DepthToolState extends State<DepthTool> {
                     // A narrower view is a longer lens.
                     onFocal: (f) => edit(
                       () => lens.focal = f.clamp(8.0, 600.0),
-                      'zoom',
-                      f.clamp(8.0, 600.0) / depthFilmMm,
+                      'focal_length',
+                      f.clamp(8.0, 600.0),
                     ),
                     onDone: () {
                       // Ending the drag makes the change one undo step.
