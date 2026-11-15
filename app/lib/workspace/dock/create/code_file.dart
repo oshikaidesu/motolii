@@ -45,11 +45,23 @@ class CodeFile {
   }
 
   /// Sets the name to [to]. An empty name removes the sidecar, so [name] falls back to [plain].
-  void rename(String to) {
-    if (to.trim().isNotEmpty) {
-      return shelfSidecarWrite(file, to.trim());
+  /// [taken] holds the names already used by the other pasted files; when [to] matches one,
+  /// a number is appended to make it one of its own, so the user cannot accidentally give two
+  /// tiles the same name (B150). Case-insensitive, to match shelfRename.
+  void rename(String to, {Iterable<String> taken = const []}) {
+    to = to.trim();
+    if (to.isEmpty) return shelfSidecarDelete(file);
+    final lower = {for (final t in taken) t.toLowerCase()};
+    if (lower.contains(to.toLowerCase())) {
+      for (var i = 2; i < 1000; i++) {
+        final tried = '$to $i';
+        if (!lower.contains(tried.toLowerCase())) {
+          to = tried;
+          break;
+        }
+      }
     }
-    shelfSidecarDelete(file);
+    shelfSidecarWrite(file, to);
   }
 
   /// The first line of the file that says something.

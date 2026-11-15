@@ -302,7 +302,15 @@ class _OwnTileState extends State<_OwnTile> {
     final m = widget.m, ws = widget.c.ws;
     if (to == null || to.trim() == m.name) return;
     if (m.pasted) {
-      CodeFile(m.file!).rename(to);
+      // Avoid giving two pasted tiles the same name: CodeFile.rename appends
+      // " 2", " 3", ... when the chosen name is already taken (B150).
+      CodeFile(m.file!).rename(
+        to,
+        taken: {
+          for (final other in codeFiles())
+            if (other.file != m.file) other.name,
+        },
+      );
       return widget.c.set(() {});
     }
     final why = shelfRename(

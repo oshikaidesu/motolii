@@ -211,7 +211,12 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         else if (sqlite3_total_changes(m->d->file) != m->snapshots.rows)
           snapshot_update(m);
         // Count a document revision if the document changed. Cached frames are
-        // invalidated by this count.
+        // invalidated by this count. on_render_thread already bumps revision
+        // for each call it wraps, so this fires a second time for the same
+        // iteration when any of the todo went through it; that is harmless
+        // because stage_cache_fresh compares revision for equality (any new
+        // number invalidates the cache). This catch-all is here for calls
+        // posted() queues directly, which skip the on_render_thread wrapper.
         if (sqlite3_total_changes(m->d->file) != rows)
           m->revision.fetch_add(1, std::memory_order_release);
       }
