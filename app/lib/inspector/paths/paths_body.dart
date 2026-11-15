@@ -214,6 +214,7 @@ class _PathsBodyState extends State<PathsBody> {
                 doc: scope.doc,
                 tick: scope.tick,
                 child: _StackItem(
+                  index: i,
                   id: id,
                   param: params[id],
                   doc: doc,
@@ -348,11 +349,13 @@ class _PathsBodyState extends State<PathsBody> {
 
 class _StackItem extends StatelessWidget {
   const _StackItem({
+    required this.index,
     required this.id,
     required this.param,
     required this.doc,
     required this.onRemove,
   });
+  final int index;
   final String id;
   final Parameter? param;
   final InspectorValues doc;
@@ -372,7 +375,7 @@ class _StackItem extends StatelessWidget {
       child: Row(
         children: [
           ReorderableDragStartListener(
-            index: 0,
+            index: index,
             child: SizedBox(
               width: Shape.z(28),
               child: Center(
