@@ -10,6 +10,9 @@ import 'package:motolii/bridge/engine_paths.dart'
 import 'package:motolii/skin/theme.dart';
 
 void main() {
+  setUpAll(
+    () => ColorTheme.setSkinRoots(shelves: motoliiShelves, own: motoliiOwn),
+  );
   test('the library\'s skins (shelves/skins) are in View › Skin', () {
     final shipped = [
       for (final d in Directory(
