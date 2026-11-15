@@ -23,9 +23,7 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
       if (shape)
         shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset,
                         1.f - std::clamp(cut, 0.f, 1.f) + offset);
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
+    canvas_redraw_now(d);
   });
 }
 
@@ -51,9 +49,7 @@ void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
     if (d->shape->bounds(&x, &y, &w, &h) == tvg::Result::Success &&
         !(std::max(w, h) < 64.f * std::max(1.f, d->canvasHigh)))
       d->shape->reset();
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
+    canvas_redraw_now(d);
   });
 }
 
@@ -95,9 +91,7 @@ void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
     // not its parts (see update in tvgPicture.h). Paint::opacity marks it.
     d->film->picture()->opacity(254), d->film->picture()->opacity(255);
     // Draws now even if the picture does not move.
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
+    canvas_redraw_now(d);
   });
 }
 
@@ -110,9 +104,7 @@ bool words_at(Stage& s, Canvas2D* d, const std::string& words) {
   cache_drop(s, d);
   interop::on_driver(s.engine, [d, words] {
     d->retype(words);
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
+    canvas_redraw_now(d);
   });
   return true;
 }

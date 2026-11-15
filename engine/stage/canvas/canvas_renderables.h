@@ -23,6 +23,16 @@ namespace motolii {
 // A colour component in 0..1 as the byte ThorVG takes.
 inline uint8_t byte_of(float c) { return (uint8_t)std::lround(255.f * c); }
 
+// Pushes the ThorVG canvas' change to its target texture right now (driver
+// thread). After this the next `s.renderer->render(s.view)` shows the result.
+// The three calls were written out at every edit (trim_at, bend_at, lit_at,
+// words_at, layer_at); this helper keeps the sequence in one place.
+inline void canvas_redraw_now(Canvas2D* d) {
+  d->canvas->update();
+  d->canvas->draw(true), d->stale = true;
+  d->canvas->sync();
+}
+
 // Builds a Canvas2D from a ThorVG paint. The paint is drawn into a texture on
 // Filament's device, and a flat sheet shows that texture. Shared by
 // image_canvas(), type() and flat(). Returns nullptr on failure, or when the

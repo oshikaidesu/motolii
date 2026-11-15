@@ -326,9 +326,7 @@ void layer_at(Stage& s, Canvas2D* d, float frame) {
       copy->transform(d->fit);
       d->holder->add(copy);
     }
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
+    canvas_redraw_now(d);
   });
 }
 
