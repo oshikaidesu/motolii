@@ -95,12 +95,11 @@ inline const DocCard doc_cards[] = {
     // The drawings of an animation level: an image that has a drawing is one.
     {"Drawing", "cel", "cel", "!0"},
     // After Effects' shape operators, as ThorVG provides them, plus Polystar's
-    // own points: the number of corners and how far in the star goes. Shown for
-    // shape layers without being asked, as a path's corners are part of what it
-    // is. Trim is here too, for drawing a line along the path.
+    // own points: the number of corners and how far in the star goes. Trim is
+    // here too, for drawing a line along the path.
     {"Paths",
      "points inner round bloat offset zigzag zigzag_ridges zigzag_smooth "
-     "trim trim_begin trim_offset morph morph_to morph_steps "
+     "trim trim_offset morph morph_to morph_steps "
      "resample rough rough_detail fill_rule trail trail_length",
      "kind", "text shape image"},
     // Where in its file a video starts (Premiere Pro's Slip), how loud it is

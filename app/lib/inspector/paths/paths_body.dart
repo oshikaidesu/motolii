@@ -1,6 +1,6 @@
 // The Paths card's inside: a sample shape showing what the active operators do, a reorderable stack of those operators,
 // and a picker grouped by kind to add more. The stack's order is display only; the engine applies them in its own
-// fixed order. Points and inner sit below the stack as they define the shape, not an operator added on top.
+// fixed order. Points and inner are on the Shape card, not here.
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -23,8 +23,6 @@ class PathsBody extends StatefulWidget {
   final CardDeclaration card;
 
   static const Set<String> drawn = {
-    'points',
-    'inner',
     'round',
     'bloat',
     'offset',
@@ -41,7 +39,6 @@ class PathsBody extends StatefulWidget {
     'trail',
     'trail_length',
     'trim',
-    'trim_begin',
     'trim_offset',
   };
 
@@ -63,7 +60,6 @@ class PathsBody extends StatefulWidget {
     'trail': 1.0,
     'trail_length': 1.0,
     'trim': 0.8,
-    'trim_begin': 0.0,
     'trim_offset': 0.0,
   };
 
@@ -83,15 +79,14 @@ class PathsBody extends StatefulWidget {
   // The order operators appear in the picker, grouped. Morph and Trail are left
   // out (they need another layer). A sub — folded by the engine (Parameter.fold,
   // e.g. Zig zag's Ridges/Smooth) or depending on its owner (_funcDeps) — is
-  // left out of the picker and shown under its parent. Trim start stays on its
-  // own, since it trims on its own.
+  // left out of the picker and shown under its parent.
   static const _groups = [
     (
       'Deform',
       ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
     ),
     ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
-    ('Animate', ['trim', 'trim_begin', 'trim_offset']),
+    ('Animate', ['trim', 'trim_offset']),
   ];
 
   // All stackable operators in their default order.
@@ -112,7 +107,6 @@ class PathsBody extends StatefulWidget {
     'trail',
     'trail_length',
     'trim',
-    'trim_begin',
     'trim_offset',
   ];
 
@@ -163,8 +157,8 @@ class _PathsBodyState extends State<PathsBody> {
 
   // Adding an operator turns on its folded subs too, each at its default, as one
   // gesture (only Zig zag has any; everything else adds just itself).
+  // The same operator may be added more than once.
   void _add(InspectorValues doc, String id) {
-    if (_order.contains(id)) return;
     doc.beginGesture();
     for (final x in [id, ..._subsOf(id)]) {
       doc.set('v_$x', PathsBody._defaults[x] ?? 1.0);
@@ -176,19 +170,18 @@ class _PathsBodyState extends State<PathsBody> {
     });
   }
 
-  // Removing an operator turns off its folded subs with it.
-  void _remove(InspectorValues doc, String id) {
-    doc.beginGesture();
-    for (final x in [id, ..._subsOf(id)]) {
-      doc.set('v_$x', 0.0);
+  // Removing an operator by index. The engine value is zeroed only when this is
+  // the last instance of that operator on the stack.
+  void _removeAt(InspectorValues doc, int index, String id) {
+    final remaining = [..._order]..removeAt(index);
+    if (!remaining.contains(id)) {
+      doc.beginGesture();
+      for (final x in [id, ..._subsOf(id)]) {
+        doc.set('v_$x', 0.0);
+      }
+      doc.endGesture();
     }
-    doc.endGesture();
-    setState(
-      () => _order = [
-        for (final p in _order)
-          if (p != id) p,
-      ],
-    );
+    setState(() => _order = remaining);
   }
 
   @override
@@ -225,8 +218,6 @@ class _PathsBodyState extends State<PathsBody> {
               SizedBox(height: Shape.s(8)),
               if (_order.isNotEmpty) _buildStack(doc, params),
               _buildAddButton(doc, params),
-              SizedBox(height: Shape.s(8)),
-              _buildShapeRows(doc, params),
             ],
           ),
         );
@@ -256,7 +247,7 @@ class _PathsBodyState extends State<PathsBody> {
             // The parent carries the drag handle and the remove button; its subs
             // ride beneath it in the same item, so they move and go as a set.
             return InspectorScope(
-              key: ValueKey(id),
+              key: ValueKey('$id:$i'),
               doc: scope.doc,
               tick: scope.tick,
               child: Column(
@@ -267,7 +258,7 @@ class _PathsBodyState extends State<PathsBody> {
                     id: id,
                     param: params[id],
                     doc: doc,
-                    onRemove: () => _remove(doc, id),
+                    onRemove: () => _removeAt(doc, i, id),
                   ),
                   for (final sub in _subsOf(id))
                     _StackItem(
@@ -344,7 +335,7 @@ class _PathsBodyState extends State<PathsBody> {
   ) {
     final available = [
       for (final id in ids)
-        if (!_order.contains(id) && !_isSub(id)) id,
+        if (!_isSub(id)) id,
     ];
     if (available.isEmpty) return [];
     return [
@@ -373,36 +364,6 @@ class _PathsBodyState extends State<PathsBody> {
           ),
         ),
     ];
-  }
-
-  Widget _buildShapeRows(InspectorValues doc, Map<String, Parameter> params) {
-    final pointsP = params['points'];
-    final innerP = params['inner'];
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (pointsP != null)
-          RowInfo(
-            keys: doc.keys['v_points'] ?? KeyframeState.off,
-            child: InspectorNumberField(
-              pointsP,
-              key: const ValueKey('paths:points'),
-              id: 'v_points',
-              caption: 'Points',
-            ),
-          ),
-        if (innerP != null)
-          RowInfo(
-            keys: doc.keys['v_inner'] ?? KeyframeState.off,
-            child: InspectorNumberField(
-              innerP,
-              key: const ValueKey('paths:inner'),
-              id: 'v_inner',
-              caption: 'Inner',
-            ),
-          ),
-      ],
-    );
   }
 }
 
