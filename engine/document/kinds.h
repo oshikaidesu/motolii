@@ -261,7 +261,7 @@ inline const DocValue doc_values[] = {
     // Where its sound strikes: the layer is louder by this many dB at once. 0
     // shows none.
     {"beats", "video", 0, 60, false, nullptr},
-    {"blend", doc_video_sheet_kinds, 0, 0, false,
+    {"blend", doc_visible_kinds, 0, 0, false,
      "normal add multiply screen darken lighten overlay soft_light hard_light "
      "color_dodge color_burn difference exclusion hue saturation color "
      "luminosity linear_burn linear_light vivid_light pin_light darker_color "
