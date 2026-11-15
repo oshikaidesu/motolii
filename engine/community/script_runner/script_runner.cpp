@@ -95,13 +95,18 @@ Script::Script(const std::string& file, const std::string& p5,
   if (src.find("AE.compile") !=
       std::string::npos) {  // (an After Effects expression the recipe holds:
                             // read once with acorn, third_party/js/acorn, then
-                            // only called: ae_expr.h)
-    const std::filesystem::path where =
-        std::filesystem::path(p5).parent_path().parent_path() / "acorn" /
-        "acorn.js";
-    const std::string acorn = read_text(where);
+                            // only called: ae_expr.h, ae_prelude.js)
+    const std::filesystem::path js =
+        std::filesystem::path(p5).parent_path().parent_path();
+    const std::filesystem::path acornAt = js / "acorn" / "acorn.js",
+                                preludeAt = js / "ae" / "ae_prelude.js";
+    const std::string acorn = read_text(acornAt),
+                      prelude = read_text(preludeAt);
     if (acorn.empty())
-      own->trouble = "acorn is not where it is stored: " + where.string();
+      own->trouble = "acorn is not where it is stored: " + acornAt.string();
+    else if (prelude.empty())
+      own->trouble =
+          "ae_prelude is not where it is stored: " + preludeAt.string();
     else {
       JSValue g = JS_GetGlobalObject(own->cx);
       JS_SetPropertyStr(own->cx, g, "__bezier",
@@ -109,9 +114,8 @@ Script::Script(const std::string& file, const std::string& p5,
       JS_FreeValue(own->cx, g);
       JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(),
                                     "acorn.js", JS_EVAL_TYPE_GLOBAL));
-      JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude,
-                                    std::char_traits<char>::length(ae_prelude),
-                                    "ae_expr", JS_EVAL_TYPE_GLOBAL));
+      JS_FreeValue(own->cx, JS_Eval(own->cx, prelude.c_str(), prelude.size(),
+                                    "ae_prelude.js", JS_EVAL_TYPE_GLOBAL));
     }
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
