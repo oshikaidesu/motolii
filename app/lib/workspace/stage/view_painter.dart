@@ -1,6 +1,6 @@
 // The stage's painters: the view (guides, grid, boxes, handles and captions), the rulers, and a path's points.
 import 'dart:math' as math;
-import 'dart:ui' show PointMode;
+import 'dart:ui' show PathOperation, PointMode;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
@@ -406,8 +406,40 @@ class ViewPainter extends CustomPainter {
       c.drawPath(d, linePaint(Grey.g00, 3));
       c.drawPath(d, Paint()..color = lit);
     }
+    if (h['crop c0'] != null) {
+      // Crop: the cut-away margin dimmed around the kept rectangle, as Google Slides shades a crop.
+      final inner = Path()
+        ..addPolygon([
+          h['crop c0']!,
+          h['crop c1']!,
+          h['crop c2']!,
+          h['crop c3']!,
+        ], true);
+      if (h['corner 0'] != null) {
+        final outer = Path()
+          ..addPolygon([
+            h['corner 0']!,
+            h['corner 1']!,
+            h['corner 2']!,
+            h['corner 3']!,
+          ], true);
+        c.drawPath(
+          Path.combine(PathOperation.difference, outer, inner),
+          Paint()..color = Grey.g00.withValues(alpha: 0.4),
+        );
+      }
+      c.drawPath(inner, linePaint(lit, 1.5));
+      for (var i = 0; i < 4; i++) {
+        // A grip at each corner of the kept rectangle.
+        if (h['crop c$i'] case final p? when seen('crop c$i')) {
+          final big = grip == 'crop c$i' ? 1.6 : 1.0;
+          c.drawCircle(p, 4.5 * big, Paint()..color = Grey.g00);
+          c.drawCircle(p, 3 * big, Paint()..color = lit);
+        }
+      }
+    }
     for (var i = 0; i < 4; i++) {
-      // Image crop: a bar on each side where the image is cut.
+      // Crop: a bar on each side where the layer is cut.
       if (h['crop $i'] case final p? when seen('crop $i')) {
         final big = grip == 'crop $i' ? 1.6 : 1.0,
             along = i.isEven ? Offset(0, 7 * big) : Offset(7 * big, 0);

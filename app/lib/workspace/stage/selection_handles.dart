@@ -66,6 +66,12 @@ Map<String, Offset> selectionHandles(
       'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],
       'crop 2': (c[1] + c[2]) / 2 - (c[1] - c[0]) * crop[2],
       'crop 3': (c[3] + c[2]) / 2 - (c[3] - c[0]) * crop[3],
+      // The corners of the cut rectangle, to move two sides at once, as Google Slides' crop corners.
+      'crop c0': c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * crop[1],
+      'crop c1': c[0] + (c[1] - c[0]) * (1 - crop[2]) + (c[3] - c[0]) * crop[1],
+      'crop c2':
+          c[0] + (c[1] - c[0]) * (1 - crop[2]) + (c[3] - c[0]) * (1 - crop[3]),
+      'crop c3': c[0] + (c[1] - c[0]) * crop[0] + (c[3] - c[0]) * (1 - crop[3]),
     },
   };
 }

@@ -276,6 +276,52 @@ class StageDrag extends ChangeNotifier {
     final h = held, ws = _stage.workspace, m = ws.inside;
     if (h == null || m == null) return;
     final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
+    if (h.by case final way? when way.startsWith('crop c')) {
+      // A corner of the cut rectangle moves its two sides at once, as Google Slides' crop corners do.
+      final corner =
+              int.parse(
+                way.substring(6),
+              ), // 0..3: top-left, top-right, bottom-right, bottom-left
+          c = [
+            for (var i = 0; i < 4; i++)
+              _stage.handles['corner $i'] ?? Offset.zero,
+          ],
+          crop = _stage.crop;
+      if (crop.length == 4) {
+        final w = c[1] - c[0],
+            hgt = c[3] - c[0],
+            wlen = math.max(1.0, w.distance),
+            hlen = math.max(1.0, hgt.distance),
+            wdir = w / wlen,
+            hdir = hgt / hlen,
+            at = _stage.handles[way] ?? h.from,
+            overW =
+                ((local - at).dx * wdir.dx + (local - at).dy * wdir.dy) / wlen,
+            overH =
+                ((local - at).dx * hdir.dx + (local - at).dy * hdir.dy) / hlen,
+            leftSide = corner == 0 || corner == 3,
+            topSide = corner == 0 || corner == 1,
+            hIdx = leftSide ? 0 : 2,
+            vIdx = topSide ? 1 : 3;
+        m.dragUpdate(
+          cropSides[hIdx],
+          (crop[hIdx] + (leftSide ? overW : -overW)).clamp(
+            0.0,
+            .95 - crop[(hIdx + 2) % 4],
+          ),
+        );
+        m.dragUpdate(
+          cropSides[vIdx],
+          (crop[vIdx] + (topSide ? overH : -overH)).clamp(
+            0.0,
+            .95 - crop[(vIdx + 2) % 4],
+          ),
+        );
+      }
+      held = (from: h.from, moved: true, by: way);
+      notifyListeners();
+      return;
+    }
     if (h.by case final way? when way.startsWith('crop ')) {
       // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
       final side = int.parse(way.substring(5)),
