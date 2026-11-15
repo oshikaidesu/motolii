@@ -63,6 +63,8 @@ class _WaitedState extends State<Waited> {
 
   // One frame's budget at 60 fps, in microseconds, as Flutter's performance overlay judges it.
   static const _beat = 1000000 ~/ 60;
+  // Debug builds are 2–4× slower than release; count only frames that miss the budget by this factor.
+  static const _debugFactor = kDebugMode ? 3 : 1;
   @override
   void initState() {
     super.initState();
@@ -128,7 +130,7 @@ class _WaitedState extends State<Waited> {
       if (!moved ||
           !going ||
           _born.elapsed.inSeconds < 3 ||
-          (build <= _beat && raster <= _beat)) {
+          (build <= _beat * _debugFactor && raster <= _beat * _debugFactor)) {
         continue;
       }
       final at = now.subtract(Duration(microseconds: last - finish));
