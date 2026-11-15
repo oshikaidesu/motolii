@@ -1,10 +1,6 @@
-// spectrum.glsl: a colour of light as a number (its wavelength in nm): how hard glass bends it, and what colour it
-// shows as. Read by thick_glass.mat.
-// From Saqoosha/Spectral-Glass `cauchyIor`, `cieXyz`, `xyzToSrgb` (MIT, (c) 2026 Saqoosha).
-// --- Spectral-Glass: Cauchy + Abbe number (glTF KHR_materials_dispersion formulation)
-float cauchyIor(float lambda, float n_d, float V_d) {
-    return max(n_d + (n_d - 1.0) / V_d * (523655.0 / (lambda * lambda) - 1.5168), 1.0);
-}
+// spectrum.glsl: a colour of light as a number (its wavelength in nm): what colour it shows as.
+// Read by thick_glass.mat.
+// From Saqoosha/Spectral-Glass `cieXyz`, `xyzToSrgb` (MIT, (c) 2026 Saqoosha).
 float gLobe(float lambda, float mu, float s1, float s2) {
     float t = (lambda - mu) / (lambda < mu ? s1 : s2);
     return exp(-0.5 * t * t);
@@ -21,7 +17,3 @@ vec3 xyzToSrgb(vec3 c) {
     return mat3(3.2404542, -0.9692660, 0.0556434, -1.5371385, 1.8760108, -0.2040259,
                 -0.4985314, 0.0415560, 1.0572252) * c;
 }
-// the mean of xyzToSrgb(cieXyz(l)), cut off at 0, over 400..700 nm: n evenly spaced colours add up to n times this
-// (within a hundredth from 16 colours up, three hundredths at 8), so a colour's share of white light is its own
-// value over n times this
-const vec3 SPECTRUM_MEAN = vec3(0.58695, 0.38445, 0.36265);
