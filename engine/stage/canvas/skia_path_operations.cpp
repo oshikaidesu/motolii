@@ -442,4 +442,31 @@ bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   return path.contains(x, y);
 }
 
+// Converts a filled path to its stroke outline at center alignment (align 0),
+// clips it to the fill interior (align -1, inside) or the fill exterior
+// (align 1, outside). `cap` and `join` are ThorVG's StrokeCap/StrokeJoin
+// values (-1 uses butt/miter). Returns false if the result is empty.
+bool sk_stroke_align(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+                     const tvg::Point* pts, float width, int cap, int join,
+                     int align, std::vector<tvg::PathCommand>& outCmds,
+                     std::vector<tvg::Point>& outPts) {
+  outCmds.clear(), outPts.clear();
+  if (width <= 0.f || align == 0) return false;
+  const SkPath fill = sk_of(cmds, cmdsCnt, pts);
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setStrokeWidth(width);
+  if (cap >= 0) paint.setStrokeCap((SkPaint::Cap)cap);
+  if (join >= 0) paint.setStrokeJoin((SkPaint::Join)join);
+  SkStrokeRec rec(paint);
+  SkPath stroked;
+  if (!rec.applyToPath(&stroked, fill) || stroked.isEmpty()) return false;
+  const SkPathOp op = align == -1 ? kIntersect_SkPathOp : kDifference_SkPathOp;
+  std::optional<SkPath> result = Op(stroked, fill, op);
+  if (!result || result->isEmpty()) return false;
+  if (result->getFillType() != SkPathFillType::kWinding)
+    result = AsWinding(*result);
+  return result && !result->isEmpty() && tvg_of(*result, outCmds, outPts);
+}
+
 }  // namespace motolii

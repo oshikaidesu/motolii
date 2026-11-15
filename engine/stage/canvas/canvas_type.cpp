@@ -272,7 +272,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         // Half of the outline lies outside the letters, so the texture grows by
         // that much on all sides.
         float outline = stroke;
-        for (const float4& rim : fx.rims) outline += 2.f * rim.w * tall;
+        for (const Canvas2DFx::Rim& rim : fx.rims) outline += 2.f * rim.color.w * tall;
         const float dx = -x + 0.5f * outline, dy = -y + 0.5f * outline;
         shape->translate(dx, dy);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
@@ -388,17 +388,17 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         }
         std::vector<float> ends;
         for (auto rim = fx.rims.rbegin(); rim != fx.rims.rend(); ++rim)
-          ends.push_back((ends.empty() ? 0.f : ends.back()) + rim->w * tall);
+          ends.push_back((ends.empty() ? 0.f : ends.back()) + rim->color.w * tall);
         if (stroke > 0.f)
           ends.push_back((ends.empty() ? 0.f : ends.back()) + stroke);
         for (size_t k = 0; k < ends.size() && k < 3; ++k) d->bands[k] = ends[k];
         d->bands.w = (float)std::min<size_t>(ends.size(), 3);
         std::vector<tvg::Paint*> under;
         float wider = stroke;
-        for (const float4& rim : fx.rims) {
-          wider += 2.f * rim.w * tall;
-          const uint8_t r = byte_of(rim.x), g = byte_of(rim.y),
-                        b = byte_of(rim.z);
+        for (const Canvas2DFx::Rim& rim : fx.rims) {
+          wider += 2.f * rim.color.w * tall;
+          const uint8_t r = byte_of(rim.color.x), g = byte_of(rim.color.y),
+                        b = byte_of(rim.color.z);
           tvg::Shape* round = (tvg::Shape*)shape->duplicate();
           round->fill(r, g, b), round->strokeWidth(wider),
               round->strokeFill(r, g, b);

@@ -83,6 +83,9 @@ std::string doc_words(Doc& d, int layer, const char* name) {
   for (const DocValue& one : doc_values)
     if (!strcmp(one.name, name) && doc_among(one.kinds, kind))
       return one.words ? one.words : "";
+  // Per-instance names carry an "id:" prefix; fall back to the base name.
+  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+    return doc_words(d, layer, base.c_str());
   return "";
 }
 
@@ -360,7 +363,8 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
       const std::string id = fx_entry_id(entry);
       if (id.empty()) continue;
       all += (all.empty() ? "" : "; ") + std::string("Stroke: ") + id +
-             ":stroke " + id + ":stroke_width";
+             ":stroke " + id + ":stroke_width " + id + ":cap " + id + ":join " +
+             id + ":dash " + id + ":dash_offset " + id + ":stroke_align";
     }
   if (!besides.empty()) all += (all.empty() ? "" : "; ") + besides;
   if (doc_among("image text shape solid stage behaviour",

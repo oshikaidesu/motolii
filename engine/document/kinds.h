@@ -592,8 +592,9 @@ inline const DocValue doc_values[] = {
     // color-interpolation-method
     // (canvas_renderables.h, ramp_of).
     {"gradient_blend", "text shape", 0, 0, false, "rgb oklab hue steps"},
-    {"cap", "shape", 0, 0, false, "butt round square"},
-    {"join", "shape", 0, 0, false, "miter round bevel"},
+    {"cap", doc_sheet_kinds, 0, 0, false, "butt round square"},
+    {"join", doc_sheet_kinds, 0, 0, false, "miter round bevel"},
+    {"stroke_align", doc_sheet_kinds, 0, 0, false, "center inside outside"},
     // After Effects' Bevel Style and Depth. Ogee and Step are Easy
     // Typography's.
     {"bevel", doc_sheet_kinds, 0, 0, false,
@@ -624,8 +625,8 @@ inline const DocValue doc_values[] = {
      "arrow circle box chevron bar t_line square square_filled diamond "
      "diamond_filled arrow_hollow arrow_filled circle_hollow circle_filled "
      "teardrop_hollow teardrop_filled"},
-    {"dash", "shape", 0, 1000, false, nullptr},
-    {"dash_offset", "shape", -1e4, 1e4, false, nullptr},
+    {"dash", doc_sheet_kinds, 0, 1000, false, nullptr},
+    {"dash_offset", doc_sheet_kinds, -1e4, 1e4, false, nullptr},
     // Filament's own surface of a solid in a color: how metallic, how rough,
     // how much it reflects,
     // a clear coat over it and how rough that is, and how much it lights

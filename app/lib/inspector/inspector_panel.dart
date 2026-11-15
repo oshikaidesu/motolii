@@ -2,11 +2,13 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/number_field.dart' show NumberField;
 
+import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/empty_state.dart';
 import 'package:motolii/inspector/inspector_header.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/host_cards.dart';
 import 'package:motolii/inspector/values_card.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -17,6 +19,14 @@ import 'package:motolii/widgets/text_gestures.dart';
 // Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and
 // written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.
 // No card is named in this file.
+
+// Returns true when [name] is listed in an active host card's absorbs set.
+bool _absorbed(List<CardDeclaration> cards, String name) {
+  for (final c in cards) {
+    if (hostCards[c.name]?.absorbs.contains(name) ?? false) return true;
+  }
+  return false;
+}
 
 int _addAt(InspectorValues doc) {
   final at =
@@ -125,10 +135,11 @@ class _InspectorPanelState extends State<InspectorPanel> {
       else ...[
         // One stack: Transform first, then the layer's effects, then the other cards. Premiere Pro's Effect Controls lists effects under Motion and Opacity the same way.
         // Every titled card folds on its own.
+        // Cards absorbed by a host card (e.g. Stroke cards shown inside the Fill card) are suppressed here.
         for (final (i, c) in doc.cards.indexed) ...[
           if (doc.actions.onAddEffect != null && i == _addAt(doc))
             const AddEffectRow(),
-          ValuesCard(c),
+          if (!_absorbed(doc.cards, c.name)) ValuesCard(c),
         ],
         if (doc.actions.onAddEffect != null && _addAt(doc) >= doc.cards.length)
           const AddEffectRow(),

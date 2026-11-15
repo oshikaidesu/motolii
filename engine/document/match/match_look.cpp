@@ -98,10 +98,22 @@ void look_material(LayerBuild& build) {
     const long hex = std::strtol(word.c_str(), nullptr, 16);
     const double wide =
         doc_number(d, layer, (id + ":stroke_width").c_str(), 0, 0) / units;
-    if (wide > 0.0)
-      fx.rims.push_back(float4{(float)((hex >> 16) & 255) / 255.f,
-                               (float)((hex >> 8) & 255) / 255.f,
-                               (float)(hex & 255) / 255.f, (float)wide});
+    if (wide > 0.0) {
+      Canvas2DFx::Rim rim;
+      rim.color = float4{(float)((hex >> 16) & 255) / 255.f,
+                         (float)((hex >> 8) & 255) / 255.f,
+                         (float)(hex & 255) / 255.f, (float)wide};
+      rim.cap = which(d, layer, (id + ":cap").c_str(), "butt round square");
+      rim.join = which(d, layer, (id + ":join").c_str(), "miter round bevel");
+      const std::string sa = doc_word(d, layer, (id + ":stroke_align").c_str());
+      rim.align = sa == "inside" ? -1 : sa == "outside" ? 1 : 0;
+      rim.dash = (float)(doc_number(d, layer, (id + ":dash").c_str(), 0, 0) /
+                         units);
+      rim.dashFrom =
+          (float)(doc_number(d, layer, (id + ":dash_offset").c_str(), 0, 0) /
+                  units);
+      fx.rims.push_back(rim);
+    }
   }
 }
 

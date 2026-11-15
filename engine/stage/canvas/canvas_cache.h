@@ -64,9 +64,13 @@ struct Canvas2DFx {
   // Cuts the edges of the box as the project says. See deep.glsl and
   // canvas_edge.h.
   bool bevel = false;
-  // Extra outlines, each outside the previous one. x, y and z are the color and
-  // w is the width as a fraction of the layer height.
-  std::vector<filament::math::float4> rims;
+  // Extra outlines, each outside the previous one.
+  struct Rim {
+    filament::math::float4 color;  // rgb + width fraction of layer height
+    int cap = -1, join = -1, align = 0;  // align: -1 inside, 0 center, 1 outside
+    float dash = 0.f, dashFrom = 0.f;
+  };
+  std::vector<Rim> rims;
   // Stacks the letters vertically, one letter height apart.
   bool column = false;
   // A text's lines are broken in a box wrapWidth letter heights wide (wrap 0

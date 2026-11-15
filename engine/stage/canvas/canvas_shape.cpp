@@ -237,6 +237,39 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
           const float gap[2] = {fx.dash * (float)*h, fx.dash * (float)*h};
           shape->strokeDash(gap, 2, fx.dashFrom * (float)*h);
         }
+        // Extra rims: stacked under the main shape, widest first.
+        const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
+          if (fx.rims.empty()) return top;
+          std::vector<tvg::Paint*> under;
+          float wider = in > 0.f ? 2.f * in : 0.f;
+          for (const Canvas2DFx::Rim& rim : fx.rims) {
+            wider += 2.f * rim.color.w * (float)*h;
+            const uint8_t r = byte_of(rim.color.x), g = byte_of(rim.color.y),
+                          b = byte_of(rim.color.z);
+            tvg::Shape* out = (tvg::Shape*)shape->duplicate();
+            out->fill(r, g, b, 255);
+            out->strokeWidth(wider);
+            out->strokeFill(r, g, b, 255);
+            if (rim.align == -1) {
+              // Inside: clip the rim to the fill boundary.
+              tvg::Shape* clip = (tvg::Shape*)shape->duplicate();
+              clip->fill(255, 255, 255, 255);
+              clip->strokeWidth(0.f);
+              out->mask(clip, tvg::MaskMethod::Alpha);
+            }
+            if (rim.cap >= 0) out->strokeCap((tvg::StrokeCap)rim.cap);
+            if (rim.join >= 0) out->strokeJoin((tvg::StrokeJoin)rim.join);
+            if (rim.dash > 0.f) {
+              const float gap[2] = {rim.dash, rim.dash};
+              out->strokeDash(gap, 2, rim.dashFrom);
+            }
+            under.push_back(out);
+          }
+          tvg::Scene* all = tvg::Scene::gen();
+          for (auto it = under.rbegin(); it != under.rend(); ++it) all->add(*it);
+          all->add(top);
+          return all;
+        };
         // Fill with an image. It covers the shape and is visible only where the
         // shape is filled, using ThorVG's alpha mask, as a ramp does on letters
         // in type. The edge is drawn over it.
@@ -259,11 +292,11 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
             shape->fill(0, 0, 0, 0);
             tvg::Scene* both = tvg::Scene::gen();
             both->add(pic), both->add(shape);
-            return both;
+            return over_rims(both);
           }
           tvg::Paint::rel(pic);
         }
-        return shape;
+        return over_rims(shape);
       },
       place, high, float3{-1.f}, true, lay, fx);
 }

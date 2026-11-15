@@ -88,6 +88,15 @@ int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
 bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
                const tvg::Point* pts, float x, float y, float* far);
 
+// Converts a filled path to its stroke outline at center alignment (align 0),
+// clips it to the fill interior (align -1, inside) or the fill exterior
+// (align 1, outside). `cap` and `join` are ThorVG's StrokeCap/StrokeJoin
+// values (-1 uses butt/miter). Returns false if the result is empty.
+bool sk_stroke_align(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+                     const tvg::Point* pts, float width, int cap, int join,
+                     int align, std::vector<tvg::PathCommand>& outCmds,
+                     std::vector<tvg::Point>& outPts);
+
 // The sk_svg_* functions read and edit SVG path data like a pen tool.
 //
 // Writes the path's anchor points to `xy` as x, y pairs and returns how many
