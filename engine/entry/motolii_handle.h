@@ -40,8 +40,6 @@ struct Motolii {
   // The number of times the document has changed. Can be read from any thread
   // without the document lock.
   std::atomic<long> revision{0};
-  // The number of times the values held by an ongoing drag have changed.
-  std::atomic<long> dragged{0};
 
   // The parts, each defined in the header named beside it.
   // The render thread and the calls waiting for it (render_thread.h).

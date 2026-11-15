@@ -199,7 +199,6 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         const long rows = sqlite3_total_changes(m->d->file);
-        const auto held = m->d->held.tried;
         for (auto& does : todo) does();
         if (!todo.empty()) ++m->display.writes_on_beat;
         lap(6);
@@ -211,13 +210,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           m->snapshots.easings = doc_own_easings_made(), snapshot_update(m);
         else if (sqlite3_total_changes(m->d->file) != m->snapshots.rows)
           snapshot_update(m);
-        // Count a document revision if the document changed, or a drag count if
-        // only the values held by a drag changed. Cached frames are invalidated
-        // by these counts.
-        if (sqlite3_total_changes(m->d->file) != rows ||
-            m->d->held.tried != held)
-          (sqlite3_total_changes(m->d->file) != rows ? m->revision : m->dragged)
-              .fetch_add(1, std::memory_order_release);
+        // Count a document revision if the document changed. Cached frames are
+        // invalidated by this count.
+        if (sqlite3_total_changes(m->d->file) != rows)
+          m->revision.fetch_add(1, std::memory_order_release);
       }
       lap(1);
       // A datamosh finished meanwhile: make the layers again with it.

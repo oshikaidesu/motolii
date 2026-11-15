@@ -467,8 +467,7 @@ unsigned long long motolii_frames(Motolii* m);
 void motolii_finished(Motolii* m, void (*listener)(void*), void* with);
 /* Returns the preview's frames that are cached on disk for playback
    (preview/playback_cache.h), as spans of frames at motolii_rate, "from to from
-   to", or "" if there are none. How many times that has changed is read without
-   waiting, as motolii_revision does. */
+   to", or "" if there are none. */
 const char* motolii_cache(Motolii* m);
 /* Returns the titles of a layer's effect cards in the order its effects are
    laid, separated by
