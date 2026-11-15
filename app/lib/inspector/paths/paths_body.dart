@@ -23,6 +23,8 @@ class PathsBody extends StatefulWidget {
   final CardDeclaration card;
 
   static const Set<String> drawn = {
+    'points',
+    'inner',
     'round',
     'bloat',
     'offset',
@@ -208,6 +210,7 @@ class _PathsBodyState extends State<PathsBody> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _buildShapeRows(doc, params),
               _Preview(
                 round: round,
                 points: points,
@@ -364,6 +367,38 @@ class _PathsBodyState extends State<PathsBody> {
           ),
         ),
     ];
+  }
+
+  Widget _buildShapeRows(InspectorValues doc, Map<String, Parameter> params) {
+    final pointsP = params['points'];
+    final innerP = params['inner'];
+    if (pointsP == null && innerP == null) return const SizedBox.shrink();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (pointsP != null)
+          RowInfo(
+            keys: doc.keys['v_points'] ?? KeyframeState.off,
+            child: InspectorNumberField(
+              pointsP,
+              key: const ValueKey('paths:points'),
+              id: 'v_points',
+              caption: 'Points',
+            ),
+          ),
+        if (innerP != null)
+          RowInfo(
+            keys: doc.keys['v_inner'] ?? KeyframeState.off,
+            child: InspectorNumberField(
+              innerP,
+              key: const ValueKey('paths:inner'),
+              id: 'v_inner',
+              caption: 'Inner radius',
+            ),
+          ),
+        SizedBox(height: Shape.s(4)),
+      ],
+    );
   }
 }
 
