@@ -22,7 +22,6 @@ import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/effects.dart';
-import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -59,13 +58,9 @@ class _StageState extends State<_Stage> {
   set _safe(bool v) => _ws.setView('stage.safe', v);
   bool get _grid => _ws.viewOf('stage.grid', false);
   set _grid(bool v) => _ws.setView('stage.grid', v);
-  // Off until the user asks, so the stage shows the whole world. Alight Motion's cameraView works the same way.
-  bool get _camera => _ws.viewOf('stage.camera', false);
   (Object?, String) _eyeTold = (null, '');
 
   /// Tells the engine which view camera the stage is seen through, when that has changed.
-  ///
-  /// A newly opened document starts with the world view.
   void _tellEye(WorkspaceController ws) {
     final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
     if (m == null || _eyeTold == (m, word)) return;
@@ -73,7 +68,6 @@ class _StageState extends State<_Stage> {
     m.later('view_camera', word: word);
   }
 
-  set _camera(bool v) => _ws.setView('stage.camera', v);
   Map<String, int> get _opts =>
       _ws.view.putIfAbsent('stage.options', () => <String, int>{})
           as Map<String, int>;
@@ -184,17 +178,6 @@ class _StageState extends State<_Stage> {
                     onTap: () => setState(() => _grid = !_grid),
                   ),
                   SizedBox(width: Shape.s(6)),
-                  if (_camera ||
-                      ws.layers.any((l) => l.kind == LayerKind.camera)) ...[
-                    // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
-                    Toggle(
-                      label: _camera ? 'Camera' : 'Free',
-                      glyph: Glyphs.camera,
-                      on: _camera,
-                      onTap: () => setState(() => _camera = !_camera),
-                    ),
-                    SizedBox(width: Shape.s(6)),
-                  ],
                   Toggle(
                     key: const ValueKey('ws-snapshot-take'),
                     label: 'Snapshot',

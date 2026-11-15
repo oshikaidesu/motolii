@@ -34,9 +34,8 @@ class PanelLayout {
   }
 
   /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
-  bool get freeEye =>
-      !viewOf('stage.camera', false) &&
-      _layers().any((l) => l.kind == LayerKind.camera);
+  /// Always true when a camera layer exists: the stage is a fixed world view, the Camera View shows what the camera sees.
+  bool get freeEye => _layers().any((l) => l.kind == LayerKind.camera);
 
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
