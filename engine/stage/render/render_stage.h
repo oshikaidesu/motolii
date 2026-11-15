@@ -349,22 +349,6 @@ void more_parts(Stage& s, Mesh* m, size_t parts,
 // and Filament keeps them until no frame uses them.
 void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends);
 
-// Makes one glass block of edge 1, as real ones are: the edges a little round,
-// by a tenth of half the edge, and the faces flat. `flat` is how many times a
-// flat face is cut across.
-Mesh* cube(float ROUND, int flat = 1);
-
-// Makes a ring of round section, lying in the plane of x and y. R is the radius
-// of the ring and r the radius of its section.
-Mesh* torus(float R, float r, int around = 128, int about = 40);
-
-// Makes a ball of radius r, round from pole to pole.
-Mesh* sphere(float r, int around = 48, int about = 24);
-
-// Makes a solid of twenty flat faces, an icosahedron. Each face has its own
-// three corners, so the edges are hard.
-Mesh* gem(float size);
-
 }  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_RENDER_STAGE_H_

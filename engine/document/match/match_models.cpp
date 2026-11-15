@@ -9,10 +9,14 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
+#include <map>
 #include <string>
+#include <system_error>
 #include <vector>
 
+#include "community/three/solid_three.h"
 #include "document/card_table.h"
 #include "document/document.h"
 #include "document/evaluate/evaluate.h"
@@ -20,6 +24,7 @@
 #include "document/evaluate/material.h"
 #include "document/evaluate/value_at.h"
 #include "document/match/rebuild.h"
+#include "shelf/shelf_folders.h"
 #include "stage/render/gltf_model.h"
 #include "stage/render/point_cloud.h"
 #include "stage/render/render_layers.h"
@@ -34,6 +39,53 @@ using filament::math::float3;
 using filament::math::mat4f;
 
 namespace {
+
+// Builds the mesh of a built-in shape from its shelf file, with parameters
+// that keep the sizes of the engine's older cube/torus/sphere/gem functions.
+// Returns a new Mesh*. shape is one of "gem", "cube", "ball", "torus".
+Mesh* built_in_mesh(const std::string& shape) {
+  std::string file;
+  std::map<std::string, double> numbers;
+  if (shape == "gem")
+    // gem(0.5f): radius 0.5, as Icosahedron.js gives at size=1 and h=1.
+    file = "Icosahedron.js";
+  else if (shape == "cube")
+    // cube(0.1f): a unit cube rounded by 0.1, as Cube.js gives at size=1,
+    // smoothing=0.1.
+    file = "Cube.js", numbers["smoothing"] = 0.1;
+  else if (shape == "ball")
+    // sphere(0.5f): a ball of radius 0.5, as Ellipsoid.js gives with its
+    // defaults (width=height=depth=1, h=1).
+    file = "Ellipsoid.js";
+  else
+    // torus(0.37f, 0.13f): a ring of major radius 0.37 and minor 0.13. Torus.js
+    // computes r = radius * h / 2 and tube_radius = tube * r.
+    file = "Torus.js", numbers["radius"] = 0.74, numbers["tube"] = 0.13 / 0.37;
+  std::string full;
+  for (const std::filesystem::path& folder : doc_folders("solids"))
+    if (std::error_code wrong;
+        std::filesystem::exists(folder / file, wrong))
+      full = (folder / file).string();
+  if (full.empty()) return nullptr;
+  SolidMesh built;
+  std::string why;
+  if (!solid_three(full, numbers, {}, 1.0, 1.0, {}, 0, 0, built, why) ||
+      built.pos.empty() || built.idx.empty()) {
+    std::fprintf(stderr, "the shape %s is not built: %s\n", shape.c_str(),
+                 why.substr(0, 400).c_str());
+    return nullptr;
+  }
+  Mesh* m = new Mesh;
+  m->pos.resize(built.pos.size() / 3), m->nrm.resize(built.pos.size() / 3),
+      m->uv.resize(built.uv.size() / 2);
+  std::memcpy(m->pos.data(), built.pos.data(),
+              built.pos.size() * sizeof(float));
+  std::memcpy(m->nrm.data(), built.nrm.data(),
+              built.nrm.size() * sizeof(float));
+  std::memcpy(m->uv.data(), built.uv.data(), built.uv.size() * sizeof(float));
+  m->idx = std::move(built.idx);
+  return m;
+}
 
 // What the surface of a solid layer is made of, as the project says.
 // material: the name of the material it wears. glass: that material is glass.
@@ -129,11 +181,7 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
   const Surface& surface = wear.surface;
   const char* model = wear.model;
   made.sketch = shape == "sketch";
-  made.shape = made.sketch       ? sketch_mesh()
-               : shape == "gem"  ? gem(0.5f)
-               : shape == "cube" ? cube(0.1f)
-               : shape == "ball" ? sphere(0.5f)
-                                 : torus(0.37f, 0.13f);
+  made.shape = made.sketch ? sketch_mesh() : built_in_mesh(shape);
   MaterialInstance* look =
       glass ? thick_glass(s, made.shape, {mat4f{}})
       : own && !made.sketch

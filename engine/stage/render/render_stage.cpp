@@ -271,6 +271,15 @@ Mesh* sketch_mesh() {
   return m;
 }
 
+void sheet_deep(Mesh* m, float deep) {
+  for (size_t i = 0; i < 4; ++i)
+    m->pos.push_back(m->pos[i]), m->nrm.push_back(m->nrm[i]),
+        m->uv.push_back(m->uv[i]);
+  for (size_t i = 0; i < 4; ++i) m->pos[i].z = deep, m->pos[i + 4].z = -deep;
+  m->idx = {0, 1, 2, 0, 2, 3, 5, 4, 7, 5, 7, 6, 4, 5, 1, 4, 1, 0,
+            5, 6, 2, 5, 2, 1, 6, 7, 3, 6, 3, 2, 7, 4, 0, 7, 0, 3};
+}
+
 std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* filamat,
                                          std::vector<mat4f> places,
                                          std::vector<uint32_t> ends,
