@@ -13,7 +13,7 @@ const homeTile = 150.0;
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
     Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: EdgeInsets.only(left: Shape.s(4)),
       child: Chip(
         key: ValueKey(key),
         label: text,
@@ -26,7 +26,7 @@ Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
           onInk: WindowTokens.onAccent,
           padX: 8,
           padY: 4,
-          radius: 6,
+          radius: WindowTokens.radius,
           text: (c) => TextStyles.label(c),
         ),
       ),
@@ -74,7 +74,7 @@ class HomeCard extends StatelessWidget {
               height: homeTile,
               decoration: BoxDecoration(
                 color: WindowTokens.card,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: Shape.round(8),
                 border: open
                     ? Border.all(color: WindowTokens.accent, width: 2)
                     : null,
@@ -91,14 +91,14 @@ class HomeCard extends StatelessWidget {
                       top: 0,
                       child: Container(
                         key: ValueKey('home-picked:${d.path}'),
-                        margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                        margin: EdgeInsets.all(Shape.s(6)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Shape.s(6),
+                          vertical: Shape.s(2),
                         ),
                         decoration: BoxDecoration(
                           color: WindowTokens.accent,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: Shape.round(WindowTokens.chipRadius),
                         ),
                         child: Text(
                           '✓',
@@ -114,14 +114,14 @@ class HomeCard extends StatelessWidget {
                       key: ValueKey('home-more:${d.path}'),
                       onPressed: onMore,
                       child: Container(
-                        margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                        margin: EdgeInsets.all(Shape.s(6)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: Shape.s(6),
+                          vertical: Shape.s(2),
                         ),
                         decoration: BoxDecoration(
                           color: WindowTokens.ground,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: Shape.round(WindowTokens.chipRadius),
                         ),
                         child: Text('•••', style: TextStyles.label(Grey.g76)),
                       ),
@@ -130,14 +130,14 @@ class HomeCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: Shape.s(8)),
             Text(
               d.name,
               style: TextStyles.name(Grey.g91).bold,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: Shape.s(2)),
             // CapCut's "254.3M | 02:13".
             Text(
               [
@@ -156,10 +156,10 @@ class HomeCard extends StatelessWidget {
             ),
             if (menu)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: EdgeInsets.only(top: Shape.s(8)),
                 child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
+                  spacing: Shape.s(4),
+                  runSpacing: Shape.s(4),
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: asking
                       ? [

@@ -190,7 +190,10 @@ class _HomeWindowState extends State<HomeWindow> {
         rows
           ..add(
             Padding(
-              padding: EdgeInsets.only(top: rows.isEmpty ? 0 : 24, bottom: 12),
+              padding: EdgeInsets.only(
+                top: rows.isEmpty ? 0 : Shape.s(24),
+                bottom: Shape.s(12),
+              ),
               child: Text(day, style: TextStyles.label(Grey.g76)),
             ),
           )
@@ -201,7 +204,7 @@ class _HomeWindowState extends State<HomeWindow> {
       key: const ValueKey('ws-home'),
       color: WindowTokens.ground,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+        padding: EdgeInsets.fromLTRB(Shape.s(32), Shape.s(24), Shape.s(32), 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -211,18 +214,18 @@ class _HomeWindowState extends State<HomeWindow> {
                 homeButton('home-close', '×', false, widget.onClose),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: Shape.s(8)),
             NakedButton(
               enableFeedback: false,
               // CapCut's "Create project": a button as wide as the page.
               key: const ValueKey('home-new'),
               onPressed: widget.onNew,
               child: Container(
-                height: 120,
+                height: Shape.z(120),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: WindowTokens.card,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: Shape.round(12),
                   border: Border.all(color: WindowTokens.raised),
                 ),
                 child: Text(
@@ -231,19 +234,19 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: Shape.s(28)),
             Row(
               children: [
                 Text('Projects', style: TextStyles.title(Grey.g91)),
                 const Spacer(),
                 SizedBox(
-                  width: 180,
+                  width: Shape.z(180),
                   child: ShelfSearchField(
                     controller: _findText,
                     hint: 'Search',
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: Shape.s(8)),
                 if (_picked.isNotEmpty) ...[
                   homeButton(
                     'home-export',
@@ -257,7 +260,7 @@ class _HomeWindowState extends State<HomeWindow> {
                     false,
                     () => setState(_picked.clear),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: Shape.s(8)),
                 ],
                 homeButton(
                   'home-by-date',
@@ -273,7 +276,7 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: Shape.s(16)),
             Expanded(child: ListView(children: rows)),
           ],
         ),

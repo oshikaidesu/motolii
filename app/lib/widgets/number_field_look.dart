@@ -95,11 +95,11 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
     height: n.height,
     decoration: BoxDecoration(
       color: n.fillColor,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: Shape.round(6),
       border: n.inline ? null : Border.all(color: n.borderColor),
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: Shape.round(5),
       child: Stack(
         children: [
           if (n.fill != null && n.bipolar)
