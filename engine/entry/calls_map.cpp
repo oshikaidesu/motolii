@@ -1,7 +1,6 @@
 // Implements the shelf maps declared in motolii.h: motolii_map lays items out
-// on a plane so that similar ones lie near each other, motolii_grid snaps such
-// a layout to a grid, motolii_likeness describes images as vectors, and
-// motolii_type_frame draws a font specimen.
+// on a plane so that similar ones lie near each other, motolii_likeness
+// describes images as vectors, and motolii_type_frame draws a font specimen.
 //
 // XLN Audio's XO lays out samples by how alike they sound using t-SNE, and
 // IDEO's Font Map lays out fonts by their drawn letters. The shelves use the
@@ -13,7 +12,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -23,7 +21,6 @@
 
 #include "entry/motolii.h"
 #include "qdtsne/qdtsne.hpp"
-#include "rectangular_lsap.h"
 
 // Lays out n points of dims numbers each on a plane with t-SNE, so that similar
 // points lie near each other. points holds the n points one after another.
@@ -52,38 +49,6 @@ int motolii_map(const float* points, int n, int dims, double* xy) {
     for (int i = 0; i < n; ++i)
       xy[2 * i + axis] = hi > lo ? (y[2 * i + axis] - lo) / (hi - lo) : 0.5;
   }
-  return n;
-}
-
-// Assigns each of n places in xy (x and y in 0 to 1) its own cell of a cols x
-// rows grid, so that the total squared distance between each place and its cell
-// is as small as possible. cell[i] receives row * cols + column. This follows
-// Kyle McDonald's CloudToGrid, which puts the images of a t-SNE map on a grid:
-// the grid nodes are spaced evenly from 0 to 1 on each axis, as np.linspace
-// does, and the cost is the squared distance from each place to each node. The
-// assignment is solved by SciPy's linear_sum_assignment
-// (third_party/scipy_lsap, BSD-3, unmodified). Returns n, or 0 if an argument
-// is invalid, there are fewer cells than places, or n times the number of cells
-// exceeds 4 million, which takes 32 MB and some seconds, about 2,000 places on
-// a square grid.
-int motolii_grid(const double* xy, int n, int cols, int rows, int* cell) {
-  if (!xy || !cell || n < 1 || cols < 1 || rows < 1 || (long)cols * rows < n ||
-      (long)n * cols * rows > 4000000)
-    return 0;
-  const int cells = cols * rows;
-  std::vector<double> cost((size_t)n * cells);
-  for (int i = 0; i < n; ++i)
-    for (int c = 0; c < cells; ++c) {
-      const double gx = cols > 1 ? (double)(c % cols) / (cols - 1) : .5,
-                   gy = rows > 1 ? (double)(c / cols) / (rows - 1) : .5;
-      cost[(size_t)i * cells + c] = (xy[2 * i] - gx) * (xy[2 * i] - gx) +
-                                    (xy[2 * i + 1] - gy) * (xy[2 * i + 1] - gy);
-    }
-  std::vector<int64_t> a(n), b(n);
-  if (solve_rectangular_linear_sum_assignment(n, cells, cost.data(), false,
-                                              a.data(), b.data()) != 0)
-    return 0;
-  for (int i = 0; i < n; ++i) cell[a[i]] = (int)b[i];
   return n;
 }
 

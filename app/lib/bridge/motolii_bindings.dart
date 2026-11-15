@@ -737,39 +737,6 @@ class MotoliiBindings {
         ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
       >();
 
-  int motolii_grid(
-    ffi.Pointer<ffi.Double> xy,
-    int n,
-    int cols,
-    int rows,
-    ffi.Pointer<ffi.Int> cell,
-  ) {
-    return _motolii_grid(xy, n, cols, rows, cell);
-  }
-
-  late final _motolii_gridPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<ffi.Double>,
-            ffi.Int,
-            ffi.Int,
-            ffi.Int,
-            ffi.Pointer<ffi.Int>,
-          )
-        >
-      >('motolii_grid');
-  late final _motolii_grid = _motolii_gridPtr
-      .asFunction<
-        int Function(
-          ffi.Pointer<ffi.Double>,
-          int,
-          int,
-          int,
-          ffi.Pointer<ffi.Int>,
-        )
-      >();
-
   ffi.Pointer<pkg_ffi.Utf8> motolii_guides(ffi.Pointer<Motolii> m) {
     return _motolii_guides(m);
   }
@@ -1619,6 +1586,24 @@ class MotoliiBindings {
   late final _motolii_settings = _motolii_settingsPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_shape_svg(
+    ffi.Pointer<Motolii> m,
+    int layer,
+  ) {
+    return _motolii_shape_svg(m, layer);
+  }
+
+  late final _motolii_shape_svgPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)
+        >
+      >('motolii_shape_svg');
+  late final _motolii_shape_svg = _motolii_shape_svgPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_shaping(ffi.Pointer<Motolii> m) {
     return _motolii_shaping(m);
   }
@@ -1979,24 +1964,6 @@ class MotoliiBindings {
           int,
           ffi.Pointer<pkg_ffi.Utf8>,
         )
-      >();
-
-  ffi.Pointer<pkg_ffi.Utf8> motolii_shape_svg(
-    ffi.Pointer<Motolii> m,
-    int layer,
-  ) {
-    return _motolii_shape_svg(m, layer);
-  }
-
-  late final _motolii_shape_svgPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)
-        >
-      >('motolii_shape_svg');
-  late final _motolii_shape_svg = _motolii_shape_svgPtr
-      .asFunction<
-        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
       >();
 
   ffi.Pointer<pkg_ffi.Utf8> motolii_words(

@@ -108,7 +108,7 @@ target_include_directories(motolii_flags INTERFACE
   ${FILAMENT}/third_party/stb ${FILAMENT}/third_party/cgltf
   ${FILAMENT_SDK}/include ${THORVG}/inc ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES}
   ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
-  ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap
+  ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include
   ${HOMEBREW}/opt/sqlite/include ${HOMEBREW}/opt/luajit/include/luajit-2.1 ${HOMEBREW}/opt/quickjs-ng/include
   ${THIRD_PARTY}/onnxruntime/include)
 
@@ -479,7 +479,7 @@ endforeach()
 # reached through the dependencies the modules declare.
 
 add_library(motolii SHARED
-  third_party/scipy_lsap/rectangular_lsap.cpp third_party/thermion_frame/FrameScheduler.cpp)
+  third_party/thermion_frame/FrameScheduler.cpp)
 target_link_libraries(motolii PRIVATE motolii_entry)
 set_target_properties(motolii PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ENGINE}/out INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR ON)
 

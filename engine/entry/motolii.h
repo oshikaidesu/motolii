@@ -111,11 +111,6 @@ int motolii_type_frame(const char* font, const char* words, int w, int h,
    near each other (t-SNE). Writes 2n numbers to xy, with x and y each from 0
    to 1. Any thread. Returns 0 if there are fewer than 4 points. */
 int motolii_map(const float* points, int n, int dims, double* xy);
-/* Assigns each of n places (x and y from 0 to 1) its own cell of a cols x rows
-   grid, so that the places are as near their cells as they can be all together.
-   cell[i] receives row * cols + column. Any thread. Returns 0 if the places
-   could not be laid out. */
-int motolii_grid(const double* xy, int n, int cols, int rows, int* cell);
 /* Describes each of n images (224 x 224 pixels, RGBA) as a vector of dims
    numbers scaled to length 1, using a CLIP image encoder stored as an ONNX
    file. Any thread. Returns 0 on failure. */

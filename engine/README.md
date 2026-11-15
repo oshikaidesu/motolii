@@ -118,7 +118,7 @@ The rows come from the `target_link_libraries` lines in `CMakeLists.txt` and cha
   system. They are not in git and not built by our CMake.
 - **Changes to them** are patches in `deps/patches/<library>/`, one folder per patched library, applied on top of the fetched source.
   Nothing in `third_party/` is edited by hand.
-- **Small bundled works** (`anime/`, `godot_easing/`, `js/`, `leva/`, `midi_roll/`, `qdtsne/`, `rapidfuzz/`, `scipy_lsap/`,
+- **Small bundled works** (`anime/`, `godot_easing/`, `js/`, `leva/`, `midi_roll/`, `qdtsne/`, `rapidfuzz/`,
   `thermion_frame/`, `ymm4-luascript/` and the data folders `wordnet_ja/`, `noto_sans_jp/`, `gflanguages/`) are in git, with
   their licence files. `.gitignore` in this folder lists exactly which ones.
 - Licences of everything are listed in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
