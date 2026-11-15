@@ -72,8 +72,13 @@ class TransformBody extends StatelessWidget {
                   ),
                 ],
               ),
-            TransformCanvas(params: params, linked: linked),
-            SizedBox(height: InspectorSkin.titleGap),
+            // The preview box drives move, scale, rotate and anchor, so it is
+            // shown only for a layer that can scale.  A camera or light keeps
+            // just its position and rotation rows below.
+            if (scale.isNotEmpty) ...[
+              TransformCanvas(params: params, linked: linked),
+              SizedBox(height: InspectorSkin.titleGap),
+            ],
             const AxisHeader(),
             TransformRow(
               mark: (c, s) => drawMove(c, s, _lit(TransformZone.move)),
@@ -82,31 +87,32 @@ class TransformBody extends StatelessWidget {
               unit: params['v_x']?.unit ?? '',
               cells: [field('v_x'), field('v_y'), field('v_z')],
             ),
-            TransformRow(
-              mark: (c, s) => drawScale(
-                c,
-                s,
-                _lit(TransformZone.scale),
-                doc.get('v_scale_x') ?? 100,
-                doc.get('v_scale_y') ?? 100,
+            if (scale.isNotEmpty)
+              TransformRow(
+                mark: (c, s) => drawScale(
+                  c,
+                  s,
+                  _lit(TransformZone.scale),
+                  doc.get('v_scale_x') ?? 100,
+                  doc.get('v_scale_y') ?? 100,
+                ),
+                hot: TransformZone.scale,
+                label: 'Scale',
+                unit: params['v_scale_x']?.unit ?? '',
+                trail: _Link(
+                  on: linked,
+                  onTap: () => doc.flag('transform.link', !linked),
+                ),
+                cells: [
+                  for (final id in scale)
+                    field(
+                      id,
+                      onSet: linked
+                          ? (v) => _scaleLinked(doc, scale, id, v, params)
+                          : null,
+                    ),
+                ],
               ),
-              hot: TransformZone.scale,
-              label: 'Scale',
-              unit: params['v_scale_x']?.unit ?? '',
-              trail: _Link(
-                on: linked,
-                onTap: () => doc.flag('transform.link', !linked),
-              ),
-              cells: [
-                for (final id in scale)
-                  field(
-                    id,
-                    onSet: linked
-                        ? (v) => _scaleLinked(doc, scale, id, v, params)
-                        : null,
-                  ),
-              ],
-            ),
             TransformRow(
               mark: (c, s) => drawRotation(
                 c,

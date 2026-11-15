@@ -35,15 +35,17 @@ inline const DocCard doc_cards[] = {
     // After Effects' Transform group: where the layer is, how large, how turned
     // and how visible.
     // Each is a property of its own.
+    // Shown for every placed kind, the camera included; the engine keeps only
+    // the properties that kind has, so a camera sees just parent, position and
+    // rotation here (no anchor, scale or opacity), and its lens stays on the
+    // Camera card below.
     {"Transform",
      "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z "
-     "rotate_x rotate_y rotate opacity",
-     "kind", "!camera"},
-    // After Effects' camera: where it is, how it is turned, and its lens.
+     "rotate_x rotate_y rotate opacity"},
+    // After Effects' camera lens. Where the camera is and how it is turned live
+    // on the Transform card above, like every other placed layer.
     {"Camera",
-     "parent x y z rotate_x rotate_y rotate "
-     "focal_length projection shift_x shift_y "
-     "focus aperture blur_level",
+     "focal_length projection shift_x shift_y focus aperture blur_level",
      "kind", "camera"},
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over
