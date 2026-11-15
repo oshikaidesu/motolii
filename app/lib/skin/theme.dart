@@ -20,14 +20,15 @@
 //
 // A `Font...File` role is loaded as a font under the family name given by the matching `Font...` role when the theme is read.
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data' show ByteData;
 
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/engine_paths.dart'
-    show motoliiOwn, motoliiShelves;
+import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/font_bytes.dart' show readFontBytes;
+import 'package:motolii/storage/skin_folders.dart';
+import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 
@@ -60,37 +61,20 @@ abstract final class ColorTheme {
   /// The user's own skins folder.
   ///
   /// Each skin is a folder in it, like every shelf (doc_folders), with its theme.xml beside the pictures and fonts it brings.
-  static String get skins => '$motoliiOwn/skins';
+  static String get skins => '$_skinsOwn/skins';
 
-  /// The folders skins are read from, later ones winning when two skins have the same name.
-  ///
-  /// The user's own folder wins over shelves/skins. ~/.motolii/skins is an older location, still read so that a skin worn
-  /// from there is not lost.
-  static List<String> get _skinFolders => [
-    '$motoliiShelves/skins',
-    '${Platform.environment['HOME']}/.motolii/skins',
-    skins,
-  ];
+  static String _skinsShelves = '', _skinsOwn = '';
 
-  /// The folder of each skin, by skin name.
-  static Map<String, String> _skinsByName() {
-    final by = <String, String>{};
-    for (final at in _skinFolders) {
-      try {
-        for (final d in Directory(at).listSync().whereType<Directory>()) {
-          if (File('${d.path}/theme.xml').existsSync()) {
-            by[d.uri.pathSegments[d.uri.pathSegments.length - 2]] = d.path;
-          }
-        }
-      } catch (_) {
-        // A folder that is not there has no skins.
-      }
-    }
-    return by;
+  /// Where the app's own skins are read from: the engine's shelves and the user's own folder. Set once at launch.
+  static void setSkinRoots({required String shelves, required String own}) {
+    _skinsShelves = shelves;
+    _skinsOwn = own;
   }
 
   /// The names of the available skins, sorted.
-  static List<String> skinNames() => _skinsByName().keys.toList()..sort();
+  static List<String> skinNames() =>
+      skinFoldersByName(shelves: _skinsShelves, own: _skinsOwn).keys.toList()
+        ..sort();
 
   /// The name of the skin in use, or null for the built-in look.
   static String? get skin => switch (WindowFile.get('Skin')) {
@@ -102,7 +86,7 @@ abstract final class ColorTheme {
       at ??
       (skin == null
           ? ''
-          : '${_skinsByName()[skin] ?? '$skins/$skin'}/theme.xml');
+          : '${skinFoldersByName(shelves: _skinsShelves, own: _skinsOwn)[skin] ?? '$skins/$skin'}/theme.xml');
 
   /// Switches to the skin [name], or to the built-in look when null, and stores the choice for the next launch.
   static void wear(String? name) {
@@ -118,9 +102,8 @@ abstract final class ColorTheme {
   /// If it is missing or unreadable, the built-in colours and shapes are used.
   static void load(String path) {
     try {
-      final file = File(path);
-      folder = file.parent.path;
-      final xml = file.readAsStringSync();
+      folder = folderOfFile(path);
+      final xml = readTextNow(path);
       roles.value = parse(xml);
       words.value = {
         for (final m in RegExp(
@@ -150,7 +133,7 @@ abstract final class ColorTheme {
   static String place(String w) => w.isEmpty || w.startsWith('/')
       ? w
       : (w.startsWith('~/')
-            ? '${Platform.environment['HOME']}${w.substring(1)}'
+            ? '${homeFolder()}${w.substring(1)}'
             : '$folder/$w');
 
   /// Whether the theme asks for the light shade, or null when it does not say and the app's own switch decides.
@@ -163,34 +146,27 @@ abstract final class ColorTheme {
     )) {
       final family = words.value[e.key.substring(0, e.key.length - 4)];
       final path = place(e.value);
-      if (family == null || !File(path).existsSync()) continue;
+      if (family == null || !existsFile(path)) continue;
       FontLoader(family)
-        ..addFont(File(path).readAsBytes().then((b) => ByteData.sublistView(b)))
+        ..addFont(readFontBytes(path).then((b) => ByteData.sublistView(b)))
         ..load();
     }
   }
 
-  static StreamSubscription<FileSystemEvent>? _watching;
+  static StreamSubscription<dynamic>? _watching;
 
   /// Reads the theme file now and again whenever it is written, then calls [changed] so the app can rebuild in place.
   static void watch(void Function() changed) {
     _changed = changed;
-    final file = File(_worn);
-    load(file.path);
+    final path = _worn;
+    load(path);
     _watching?.cancel();
     // The built-in look has no file to watch.
-    if (file.path.isEmpty) return;
-    try {
-      file.parent.createSync(recursive: true);
-      _watching = file.parent.watch().where((e) => e.path == file.path).listen((
-        _,
-      ) {
-        load(file.path);
-        changed();
-      });
-    } catch (_) {
-      // A folder that cannot be watched is read once.
-    }
+    if (path.isEmpty) return;
+    _watching = watchFile(path, () {
+      load(path);
+      changed();
+    });
   }
 
   /// The colour roles of a theme file: every `<Name Value="#rrggbb"/>` or `"#rrggbbaa"`.

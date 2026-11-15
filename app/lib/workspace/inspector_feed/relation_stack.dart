@@ -1,11 +1,14 @@
 // The relations the selected layer belongs to, at the top of its inspector.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart'
+    show layerValue;
+import 'package:motolii/workspace/state/layers/relation_reads.dart';
+import 'package:motolii/workspace/state/layers/relation_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -24,9 +27,9 @@ class RelationStack extends StatelessWidget {
   ); // Listens on its own so the inspector is not rebuilt when a value of another layer changes.
 
   Widget _built(BuildContext context) {
-    final ws = WorkspaceScope.read(context), m = ws.inside, t = ws.selected;
-    if (m == null || t == null) return const SizedBox.shrink();
-    final rels = relationsOfSelected(ws), top = relationInEffect(ws);
+    final ws = WorkspaceScope.read(context), t = ws.selected;
+    if (!projectOpen(ws) || t == null) return const SizedBox.shrink();
+    final rels = relationsOfSelectedOf(ws), top = relationInEffectOf(ws);
     if (rels.isEmpty) return const SizedBox.shrink();
     String nameOf(int i) =>
         '${ws.layers.indexWhere((l) => l.id == '$i') + 1}. ${ws.layers.where((l) => l.id == '$i').firstOrNull?.name ?? ''}';
@@ -44,9 +47,9 @@ class RelationStack extends StatelessWidget {
           for (final r in rels)
             () {
               final id = int.parse(r),
-                  kind = relationLabel(relationKindOf(m, id)),
-                  on = (m.value(id, 'visible', 0) ?? 1) > .5;
-              final lead = relationLeader(m, id), leads = '$lead' == t;
+                  kind = relationLabel(relationKindOf(ws, id)),
+                  on = (layerValue(ws, id, 'visible', 0) ?? 1) > .5;
+              final lead = relationLeaderOf(ws, id), leads = '$lead' == t;
               final ink = r == top ? Grey.g95 : Grey.g56;
               return Pressable(
                 key: ValueKey('ws-stack-$r'),
@@ -84,14 +87,7 @@ class RelationStack extends StatelessWidget {
                         Pressable(
                           key: ValueKey('ws-stack-free-$r'),
                           cursor: SystemMouseCursors.basic,
-                          onTap: () => ws.after(
-                            m.later(
-                              'free',
-                              layer: int.parse(t),
-                              number: id.toDouble(),
-                            ),
-                            (_, _) => ws.reread(),
-                          ),
+                          onTap: () => freeFromRelation(ws, int.parse(t), id),
                           builder: (_, _) =>
                               Text('×', style: TextStyles.label(Grey.g56)),
                         ),

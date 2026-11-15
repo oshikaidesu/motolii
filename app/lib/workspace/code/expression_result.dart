@@ -9,17 +9,19 @@
 // Effects' Slider Control and pick whip do, a slider named amp that the expression reads.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/disk.dart' show existsFile, modifiedOf;
+import 'package:motolii/storage/text_file.dart' show readText;
 import 'package:motolii/widgets/controls.dart' show Chip;
 import 'package:motolii/widgets/number_field.dart' show NumberField;
 import 'package:motolii/workspace/code/expression_reference.dart'
     show expressionReference;
 import 'package:motolii/workspace/shelf/code_field.dart' show CodeMark;
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -60,10 +62,8 @@ class _ExpressionResultState extends State<ExpressionResult> {
 
   /// The frame, how many times the document was read and the time the code was written: the answer changes when any
   /// does (a slider typed into changes the document, not the frame). Not each new snapshot: asking makes one.
-  String _key(int frame) {
-    final f = File(widget.file);
-    return '$frame $_reads ${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}';
-  }
+  String _key(int frame) =>
+      '$frame $_reads ${modifiedOf(widget.file)?.microsecondsSinceEpoch ?? 0}';
 
   int _reads = 0;
 
@@ -74,42 +74,34 @@ class _ExpressionResultState extends State<ExpressionResult> {
   }
 
   void _ask(WorkspaceController ws, int frame, [int tries = 0]) {
-    final m = ws.inside, key = _key(frame);
-    if (m == null || _asking || (_askedFor == key && tries == 0)) return;
+    final key = _key(frame);
+    if (!projectOpen(ws) || _asking || (_askedFor == key && tries == 0)) return;
     _asking = true;
     _askedFor = key;
     // What the expression gave at the playhead's time (the engine keeps it per time, in milliseconds); an error is
     // shown whenever it came, since a failed expression is not run again.
     final ms = (frame / WorkspaceController.fps * 1000).round();
-    m
-        .askScript(
-          widget.file,
-          '(() => { const a = globalThis.__ae_at, v = a && a.get($ms), l = globalThis.__ae_last; '
-          // (NaN and Infinity as JavaScript writes them, as a console shows them: JSON would make them null)
-          'return JSON.stringify(v || (l && l.error ? l : null), '
-          '(k, x) => typeof x === "number" && !isFinite(x) ? String(x) : x); })()',
-        )
-        .then((said) {
-          _asking = false;
-          if (!mounted) return;
-          final last = said.isEmpty ? null : jsonDecode(said);
-          if (last is Map<String, dynamic>) {
-            setState(() => _last = last);
-            _markMissing();
-          } else if (tries < 10 && File(widget.file).existsSync()) {
-            // The engine has not run that time yet: what was shown stays, and it is asked again.
-            _again?.cancel();
-            _again = Timer(const Duration(milliseconds: 100), () {
-              if (mounted && _askedFor == key) _ask(ws, frame, tries + 1);
-            });
-            return;
-          } else {
-            setState(() => _last = null);
-            _markMissing();
-          }
-          // The playhead moved, or the code was written, while the question was out.
-          if (_key(ws.frame) != key) _ask(ws, ws.frame);
+    expressionAt(ws, widget.file, ms).then((said) {
+      _asking = false;
+      if (!mounted) return;
+      final last = said.isEmpty ? null : jsonDecode(said);
+      if (last is Map<String, dynamic>) {
+        setState(() => _last = last);
+        _markMissing();
+      } else if (tries < 10 && existsFile(widget.file)) {
+        // The engine has not run that time yet: what was shown stays, and it is asked again.
+        _again?.cancel();
+        _again = Timer(const Duration(milliseconds: 100), () {
+          if (mounted && _askedFor == key) _ask(ws, frame, tries + 1);
         });
+        return;
+      } else {
+        setState(() => _last = null);
+        _markMissing();
+      }
+      // The playhead moved, or the code was written, while the question was out.
+      if (_key(ws.frame) != key) _ask(ws, ws.frame);
+    });
   }
 
   @override
@@ -153,9 +145,7 @@ class _ExpressionResultState extends State<ExpressionResult> {
     );
   }
 
-  String get _code => File(widget.file).existsSync()
-      ? File(widget.file).readAsStringSync()
-      : '';
+  String get _code => readText(widget.file) ?? '';
 
   /// The name the error says is not defined.
   static String? _missing(Object? error) => error == null

@@ -1,7 +1,6 @@
 // The title and body fonts at the top of the Fonts shelf.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip;
@@ -12,6 +11,7 @@ import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/media/fonts_service.dart';
 
 /// The title and body fonts, shown first on the shelf like PowerPoint's Headings and Body theme fonts
 /// and Canva's brand fonts.
@@ -33,9 +33,8 @@ class FontRoles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final commands = FontCommands(c, controller);
-    final m = c.ws.inside!,
-        t = int.tryParse(c.ws.selected ?? ''),
-        onText = t != null && m.word(t, 'kind') == 'text';
+    final t = int.tryParse(c.ws.selected ?? ''),
+        onText = t != null && isTextLayer(c.ws, t);
     Widget role(String r, String label, String face) {
       final f =
           fonts.where((f) => f.path == face).firstOrNull ??

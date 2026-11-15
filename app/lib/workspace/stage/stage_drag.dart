@@ -6,14 +6,12 @@ import 'dart:ui' show Offset, Rect;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 
 /// What the pointer holds during a drag on the stage.
 ///
@@ -71,12 +69,12 @@ class StageDrag extends ChangeNotifier {
   /// Collects the lines that dragging layer [id] snaps to: the canvas, the guides and the other layers' bounds.
   /// Layers in the same parent chain as [id] are left out.
   void _snapFrom(String id) {
-    final boxes = _stage.scene.boxes, m = _stage.workspace.inside;
+    final boxes = _stage.scene.boxes, ws = _stage.workspace;
     final grabbed = boxes[id];
-    if (!_stage.tool.snap || grabbed == null || m == null) {
+    if (!_stage.tool.snap || grabbed == null || !stageConnected(ws)) {
       return _snapTo = null;
     }
-    final mine = m.outermost(int.parse(id)), c = ArtGeometry.comp;
+    final mine = stageOutermost(ws, int.parse(id)), c = ArtGeometry.comp;
     final xs = <(double, double)>[(0, c.width)],
         ys = <(double, double)>[(0, c.height)];
     for (final g in _stage.scene.guidesX) {
@@ -86,7 +84,7 @@ class StageDrag extends ChangeNotifier {
       ys.add((g, g));
     }
     for (final MapEntry(:key, :value) in boxes.entries) {
-      if (m.outermost(int.parse(key)) == mine) continue;
+      if (stageOutermost(ws, int.parse(key)) == mine) continue;
       final r = _bounds(value);
       xs.add((r.left, r.right));
       ys.add((r.top, r.bottom));
@@ -132,14 +130,14 @@ class StageDrag extends ChangeNotifier {
 
   /// Starts pulling a guide, either out of a ruler or by grabbing an existing guide. Returns whether one was taken.
   bool guideDragStart(StageViewport v, Offset local) {
-    final ws = _stage.workspace, m = ws.inside;
-    if (m == null) return false;
+    final ws = _stage.workspace;
+    if (!stageConnected(ws)) return false;
     final at = v.toComposition(local), tol = 4 / v.scale;
     if (local.dy < StageTokens.ruler || local.dx < StageTokens.ruler) {
       _pulling = (axis: local.dy < StageTokens.ruler ? 'y' : 'x', was: null);
       return true;
     }
-    for (final (axis, g) in m.guides) {
+    for (final (axis, g) in stageGuides(ws)) {
       if (((axis == 'x' ? at.dx : at.dy) - g).abs() > tol) continue;
       _pulling = (axis: axis, was: g);
       return true;
@@ -149,26 +147,26 @@ class StageDrag extends ChangeNotifier {
 
   /// Releases a pulled guide: removes the old one if it was moved, and adds a new one unless it was dropped on the ruler.
   void guideDragEnd(StageViewport v, Offset local) {
-    final p = _pulling, ws = _stage.workspace, m = ws.inside;
+    final p = _pulling, ws = _stage.workspace;
     _pulling = null;
-    if (p == null || m == null) return;
+    if (p == null || !stageConnected(ws)) return;
     final over = p.axis == 'y'
             ? local.dy < StageTokens.ruler
             : local.dx < StageTokens.ruler,
         at = v.toComposition(local);
     // Group the guide changes into one undo step.
-    m.later('together', number: 1);
+    stageBeginUndoStep(ws);
     if (p.was != null) {
-      m.later('guide', name: p.axis, number: p.was!, word: 'off');
+      stageGuide(ws, axis: p.axis, number: p.was!, word: 'off');
     }
     if (!over) {
-      m.later(
-        'guide',
-        name: p.axis,
+      stageGuide(
+        ws,
+        axis: p.axis,
         number: ((p.axis == 'x' ? at.dx : at.dy)).roundToDouble(),
       );
     }
-    ws.after(m.later('together'));
+    ws.after(stageEndUndoStep(ws));
   }
 
   /// Gives up the guide being pulled: nothing is added, moved or removed.
@@ -180,10 +178,10 @@ class StageDrag extends ChangeNotifier {
   ///
   /// Returns whether one was there.
   bool handleDragStart(StageViewport v, Offset local) {
-    final ws = _stage.workspace, m = ws.inside;
+    final ws = _stage.workspace;
     // Dragging a handle of the selected layer. The engine works out the change from where the drag started.
     final picked = int.tryParse(_stage.selected ?? '');
-    if (m != null && picked != null) {
+    if (stageConnected(ws) && picked != null) {
       String? by, grip;
       var near = 8.0;
       for (final MapEntry(:key, :value) in _stage.handles.entries) {
@@ -203,8 +201,8 @@ class StageDrag extends ChangeNotifier {
         grip = key;
       }
       for (final p in [
-        ...m.points(picked),
-        for (final (h, _) in m.handles(picked)) h,
+        ...stagePathPoints(ws, picked),
+        for (final (h, _) in stagePathHandles(ws, picked)) h,
       ]) {
         // A path point (moved with its handles) or a bezier handle alone. The engine picks the nearest one.
         final d = (v.toScreen(p) - local).distance;
@@ -243,10 +241,10 @@ class StageDrag extends ChangeNotifier {
         }
       }
       if (by != null) {
-        m.take(picked);
+        stageStartDrag(ws, picked);
         // Canvas coordinates, which is what the engine expects.
         final at = v.toComposition(local);
-        m.dragUpdate('grip', at.dx, at.dy);
+        stageUpdateDrag(ws, 'grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
         held = (from: local, moved: false, by: by);
         if (grip != _heldGrip) {
@@ -261,9 +259,9 @@ class StageDrag extends ChangeNotifier {
 
   /// Takes hold of the layer [id] at [local], to move it as a whole, and selects it.
   void layerDragStart(String id, Offset local) {
-    final ws = _stage.workspace, m = ws.inside, t = int.tryParse(id);
-    if (m == null || t == null) return;
-    m.take(t);
+    final ws = _stage.workspace, t = int.tryParse(id);
+    if (!stageConnected(ws) || t == null) return;
+    stageStartDrag(ws, t);
     ws.select(id);
     // Grabbing a layer stops playback.
     if (ws.playing) ws.playing = false;
@@ -273,8 +271,8 @@ class StageDrag extends ChangeNotifier {
 
   /// Carries the drag on to [local]: tells the engine how far the pointer has gone, or where the handle is now.
   void dragUpdate(StageViewport v, Offset local) {
-    final h = held, ws = _stage.workspace, m = ws.inside;
-    if (h == null || m == null) return;
+    final h = held, ws = _stage.workspace;
+    if (h == null || !stageConnected(ws)) return;
     final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
     if (h.by case final way? when way.startsWith('crop c')) {
       // A corner of the cut rectangle moves its two sides at once, as Google Slides' crop corners do.
@@ -303,14 +301,16 @@ class StageDrag extends ChangeNotifier {
             topSide = corner == 0 || corner == 1,
             hIdx = leftSide ? 0 : 2,
             vIdx = topSide ? 1 : 3;
-        m.dragUpdate(
+        stageUpdateDrag(
+          ws,
           cropSides[hIdx],
           (crop[hIdx] + (leftSide ? overW : -overW)).clamp(
             0.0,
             .95 - crop[(hIdx + 2) % 4],
           ),
         );
-        m.dragUpdate(
+        stageUpdateDrag(
+          ws,
           cropSides[vIdx],
           (crop[vIdx] + (topSide ? overH : -overH)).clamp(
             0.0,
@@ -336,7 +336,8 @@ class StageDrag extends ChangeNotifier {
       final at = _stage.handles[way] ?? h.from,
           inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
       if (crop.length == 4) {
-        m.dragUpdate(
+        stageUpdateDrag(
+          ws,
           cropSides[side],
           (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]),
         );
@@ -353,11 +354,12 @@ class StageDrag extends ChangeNotifier {
           ],
           g = gripOf(c),
           t = int.tryParse(_stage.selected ?? '');
-      if (way == 'round') m.dragUpdate('round', g.roundOf(local));
+      if (way == 'round') stageUpdateDrag(ws, 'round', g.roundOf(local));
       if (way == 'points' && t != null) {
-        m.dragUpdate(
+        stageUpdateDrag(
+          ws,
           'points',
-          ((m.value(t, 'points', 0) ?? 5) +
+          ((stageValue(ws, t, 'points', 0) ?? 5) +
                   (((local - h.from).dx * g.u.dx +
                               (local - h.from).dy * g.u.dy) /
                           24)
@@ -386,7 +388,8 @@ class StageDrag extends ChangeNotifier {
           gone = n * (gone.dx * n.dx + gone.dy * n.dy);
         }
       }
-      m.dragUpdate(
+      stageUpdateDrag(
+        ws,
         '$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}',
         gone.dx,
         gone.dy,
@@ -405,7 +408,7 @@ class StageDrag extends ChangeNotifier {
       2 => Offset(0, all.dy),
       _ => all,
     }, v.scale);
-    m.dragUpdate('place', by.dx, by.dy);
+    stageUpdateDrag(ws, 'place', by.dx, by.dy);
     held = (from: h.from, moved: true, by: null);
     notifyListeners();
   }
@@ -414,7 +417,6 @@ class StageDrag extends ChangeNotifier {
   void dragEnd({bool keep = true}) {
     final h = held,
         ws = _stage.workspace,
-        m = ws.inside,
         free = h?.by == 'orbit' && ws.freeEye;
     held = null;
     _snapTo = null;
@@ -426,16 +428,16 @@ class StageDrag extends ChangeNotifier {
       _met = (null, null);
       notifyListeners();
     }
-    if (h == null || m == null || free) return;
+    if (h == null || !stageConnected(ws) || free) return;
     // Queue the release without waiting, then reread the project once the engine has applied it.
-    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
+    ws.after(stageEndDrag(ws, keep: keep && h.moved));
   }
 
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
   /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
   String? heldSays(String? by) {
-    final m = _stage.workspace.inside, t = int.tryParse(_stage.selected ?? '');
-    final f = m == null || t == null ? null : m.bounds(t);
+    final ws = _stage.workspace, t = int.tryParse(_stage.selected ?? '');
+    final f = t == null ? null : stageBounds(ws, t);
     if (f == null) return null;
     return switch (by) {
       null => '${f[0].round()}, ${f[1].round()}',

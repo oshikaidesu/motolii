@@ -1,5 +1,4 @@
 // A palette taken from a photo.
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
@@ -7,6 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart'
     show QuantizerCelebi;
 
+import 'package:motolii/storage/saved_colors_file.dart'
+    show keepReference, photoBytes;
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
 import 'package:motolii/workspace/dock/colors/saved_colors.dart';
 
@@ -16,7 +17,7 @@ import 'package:motolii/workspace/dock/colors/saved_colors.dart';
 Future<ColorPalette?> paletteFromPhoto(String path, SavedColors saved) async {
   try {
     final codec = await ui.instantiateImageCodec(
-      await File(path).readAsBytes(),
+      await photoBytes(path),
       targetWidth: 96,
     );
     final img = (await codec.getNextFrame()).image;
@@ -38,12 +39,7 @@ Future<ColorPalette?> paletteFromPhoto(String path, SavedColors saved) async {
           )).colorToCount.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
     final total = found.fold<int>(0, (s, e) => s + e.value);
-    final kept = Directory(
-      '${Platform.environment['HOME']}/.motolii/references',
-    )..createSync(recursive: true);
-    final name = path.split('/').last,
-        copy = '${kept.path}/${DateTime.now().millisecondsSinceEpoch}_$name';
-    File(path).copySync(copy);
+    final name = path.split('/').last, copy = keepReference(path, name);
     return ColorPalette(
       'mine${saved.palettes.length}',
       name.replaceFirst(RegExp(r'\.[A-Za-z0-9]+$'), ''),

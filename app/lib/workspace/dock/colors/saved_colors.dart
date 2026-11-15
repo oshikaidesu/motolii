@@ -1,12 +1,14 @@
 // The colors, palettes and gradients the user has saved on the Colors shelf, kept in ~/.motolii/colors.json.
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
-import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
+import 'package:motolii/storage/saved_colors_file.dart'
+    show keepSavedColors, savedColorsJson;
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
+
+export 'package:motolii/storage/saved_colors_file.dart' show colorsAt;
 
 /// The range of the box size slider. The size can be any value in it, not a few steps,
 /// like Finder's icon size, Photoshop's Swatches panel and Lightroom's thumbnails.
@@ -15,11 +17,6 @@ const bentoTileLeast = 16.0, bentoTileMost = 120.0;
 /// What the user has saved on the Colors shelf, kept in ~/.motolii/colors.json:
 /// {"palettes": [{"name": "", "colors": ["#rrggbb"]}], "gradients": [{"name": "", "colors": [], "blend": "oklab"}], "colours": [], "tile": 52}.
 class SavedColors {
-  /// Where the saved colors are stored. A test points it elsewhere with [colorsAt].
-  static File _file = File(
-    '${Platform.environment['HOME']}/.motolii/colors.json',
-  );
-
   /// The user's own palettes, newest first.
   final palettes = <ColorPalette>[];
 
@@ -39,7 +36,7 @@ class SavedColors {
     if (_read) return;
     _read = true;
     try {
-      final told = fileJson(_file) as Map;
+      final told = savedColorsJson() as Map;
       for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
         final cs = [for (final h in (p['colors'] as List)) ?colorOfHex('$h')];
         final sh = (p['shares'] as List?)
@@ -91,8 +88,7 @@ class SavedColors {
 
   /// Writes everything to the file.
   void keep() {
-    fileKeep(
-      _file,
+    keepSavedColors(
       jsonEncode({
         'palettes': [
           for (final p in palettes)
@@ -124,6 +120,3 @@ class SavedColors {
   /// The user's gradients, then the starters.
   List<ShelfGradient> get allGradients => [...gradients, ...starterGradients];
 }
-
-/// Sets where the saved colors are stored. A test points it at a file of its own before it opens a window.
-void colorsAt(File f) => SavedColors._file = f;

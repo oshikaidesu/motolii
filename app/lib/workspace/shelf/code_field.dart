@@ -1,6 +1,5 @@
 // An editor for code, coloured by re_highlight. The Code tab's cells use it.
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/scheduler.dart';
@@ -12,6 +11,7 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/code/expression_prompts.dart';
 
@@ -64,7 +64,7 @@ class CodeField extends StatefulWidget {
 }
 
 class _CodeFieldState extends State<CodeField> {
-  late String _written = File(widget.file).readAsStringSync();
+  late String _written = readTextNow(widget.file);
   late final _text = CodeLineEditingController(
     codeLines: CodeLines.fromText(_written),
     spanBuilder: _marked,
@@ -119,7 +119,7 @@ class _CodeFieldState extends State<CodeField> {
   @override
   void didUpdateWidget(CodeField old) {
     super.didUpdateWidget(old);
-    final now = File(widget.file).readAsStringSync();
+    final now = readTextNow(widget.file);
     if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {
       _text.text = _written = now; // Another editor wrote the file.
     }

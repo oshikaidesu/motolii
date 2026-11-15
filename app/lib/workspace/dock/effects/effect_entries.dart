@@ -6,8 +6,6 @@ import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
@@ -21,6 +19,8 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The shelf's effects as entries, and what the engine said about each of them by id: a layer effect by its name, a file effect by its file.
@@ -40,7 +40,7 @@ EffectEntries effectEntries({
   required void Function(String id, String? to) tagged,
   required void Function(String file, String was, String? to) renamed,
 }) {
-  final ws = c.ws, m = ws.inside!;
+  final ws = c.ws;
   final on = ws.fxOf(ws.selected),
       screen = ws.screenFx,
       picked = int.tryParse(ws.selected ?? '') != null;
@@ -149,15 +149,15 @@ EffectEntries effectEntries({
   }
 
   // File effects sorted by name. One the user added and renamed shows the name written beside it (shelf_add.dart).
-  final screens = m.items('screen');
+  final screens = itemsOf(ws, 'screen');
   final lined = <(String, ShelfItem)>[
-    for (final i in m.items('thing')) (i.name, i),
+    for (final i in itemsOf(ws, 'thing')) (i.name, i),
     ...(effects.byName[screens] ??= ([
       for (final i in screens) (shelfNamed(i.id) ?? i.name, i),
     ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
     // A saved preset by its name (Save Look). Applying it gives the selected layer its values, effects and keyframes.
-    for (final (_, f) in m.presets)
-      if (m.item(f) case final i?) (i.name, i),
+    for (final (_, f) in presetsOf(ws))
+      if (itemOf(ws, f) case final i?) (i.name, i),
   ];
   final every = <EffectEntry>[
     // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_effect.dart).
@@ -245,11 +245,10 @@ List<EffectEntry> effectLost({
 
 /// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
 String _said(WorkspaceController ws, String name) {
-  final m = ws.inside!,
-      v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
+  final v = layerEffectValue(ws, name),
       t = int.tryParse(
         ws.selected ?? '',
       ); // The selected layer's id, or null when none is selected.
-  final now = t == null ? '' : m.word(t, v);
+  final now = t == null ? '' : wordOf(ws, t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';
 }

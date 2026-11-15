@@ -13,9 +13,9 @@ import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_handle.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
 
 import 'package:motolii/widgets/two_finger_gestures.dart';
 
@@ -259,20 +259,20 @@ class _EaseGraphState extends State<EaseGraph> {
 ///
 /// They are drawn in the layer's own colour and cannot be edited, as Blender shows curves it will not let the user change.
 List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
-  final m = ws.inside, t = int.tryParse(span?.layer.id ?? '');
-  if (m == null ||
+  final t = int.tryParse(span?.layer.id ?? '');
+  if (!isConnected(ws) ||
       t == null ||
       span == null ||
       span.to <= span.from ||
-      m.word(t, 'kind') != 'behaviour') {
+      layerWord(ws, t, 'kind') != 'behaviour') {
     return const [];
   }
   final lag =
-      (m.value(t, 'js_lag', 0) ?? 0) *
+      (layerValue(ws, t, 'js_lag', 0) ?? 0) *
       WorkspaceController.fps /
       (span.to - span.from);
   final members = [
-    for (final s in m.word(t, 'members').split(' '))
+    for (final s in layerWord(ws, t, 'members').split(' '))
       if (s.isNotEmpty && s != '_') s,
   ];
   if (lag <= 0 || members.length < 2) return const [];

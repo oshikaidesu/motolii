@@ -3,10 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/ease/ease_writes.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool_state.dart';
@@ -25,15 +24,15 @@ mixin EaseEnds on State<EaseTool> {
     EaseSpan span,
     bool start,
   ) sync* {
-    final m = ws.inside!, t = int.parse(span.layer.id);
-    for (final name in m.moving(t)) {
+    final t = int.parse(span.layer.id);
+    for (final name in layerMoving(ws, t)) {
       // When one property line is selected, only that property's ends are used.
       if (ws.stretch case final s? when s.name != name) continue;
       final at = [
-            for (final s in m.keyTimes(t, name))
+            for (final s in layerKeyTimes(ws, t, name))
               (s * WorkspaceController.fps).round(),
           ],
-          vs = m.keyValues(t, name);
+          vs = layerKeyValues(ws, t, name);
       final i = at.indexOf(span.from),
           j = at.indexOf(span.to),
           k = start ? i : j;
@@ -52,7 +51,7 @@ mixin EaseEnds on State<EaseTool> {
 
   // Where the two ends stand on their bars.
   (double, double) endsOf(WorkspaceController ws, EaseSpan? span) {
-    if (ws.inside == null || span == null || _from(ws, span).isEmpty) {
+    if (!isConnected(ws) || span == null || _from(ws, span).isEmpty) {
       return (0, 1);
     }
     final from = _from(ws, span);
@@ -73,14 +72,13 @@ mixin EaseEnds on State<EaseTool> {
   double? _pullNext;
   bool _pullGoing = false, _pullDone = false;
   double _toward(
-    Motolii m,
     EaseSpan span,
     WorkspaceController ws,
     String name,
     double was,
     double by,
   ) {
-    final shown = m.shown(name),
+    final shown = propertyLook(ws, name),
         lo = shown?.low ?? -double.infinity,
         hi = shown?.high ?? double.infinity;
     return (was + by * _from(ws, span)[name]!.$3).clamp(
@@ -96,8 +94,7 @@ mixin EaseEnds on State<EaseTool> {
     double by, {
     bool done = false,
   }) {
-    final m = ws.inside;
-    if (m == null || span == null) return;
+    if (!isConnected(ws) || span == null) return;
     if (_pullGoing) {
       _pullNext = by;
       _pullDone = _pullDone || done;
@@ -112,7 +109,7 @@ mixin EaseEnds on State<EaseTool> {
         // The scale of the bars from the keys as they are now, recorded once.
         final i = at.indexOf(span.from),
             j = at.indexOf(span.to),
-            shown = m.shown(name);
+            shown = propertyLook(ws, name);
         _from(ws, span).putIfAbsent(
           name,
           () => (
@@ -125,34 +122,34 @@ mixin EaseEnds on State<EaseTool> {
         );
       }
       _pull = [..._ends(ws, span, start)];
-      m.later('together', number: 1);
+      openEaseStep(ws);
       for (final (name, at, vs, k) in _pull!) {
         if (easeJump && outside >= 0 && !at.contains(outside)) {
           // With Jump on, add a key one frame outside the end that keeps the value from before the move.
-          m.later(
-            'key',
-            layer: t,
-            name: name,
-            word: '${outside / WorkspaceController.fps}',
-            number: vs[k],
+          keyEaseProperty(
+            ws,
+            t,
+            name,
+            '${outside / WorkspaceController.fps}',
+            vs[k],
           );
         }
       }
     }
     for (final (name, _, vs, k) in _pull!) {
-      m.later(
-        'key',
-        layer: t,
-        name: name,
-        word: '${key / WorkspaceController.fps}',
-        number: _toward(m, span, ws, name, vs[k], by),
+      keyEaseProperty(
+        ws,
+        t,
+        name,
+        '${key / WorkspaceController.fps}',
+        _toward(span, ws, name, vs[k], by),
       );
     }
     if (done) {
       final told = _pull!.length;
       _pull = null;
-      ws.after(
-        m.later('together'),
+      closeEaseStep(
+        ws,
         (ok, why) => mounted
             ? setState(
                 () => trouble = ok
@@ -164,7 +161,7 @@ mixin EaseEnds on State<EaseTool> {
       return;
     }
     _pullGoing = true;
-    ws.after(m.later('show', layer: t), (_, _) {
+    showEaseLayer(ws, t, (_, _) {
       _pullGoing = false;
       final next = _pullNext, last = _pullDone;
       _pullNext = null;
@@ -181,15 +178,14 @@ mixin EaseEnds on State<EaseTool> {
     bool start,
     double by,
   ) {
-    final m = ws.inside;
-    if (m == null || span == null) return null;
+    if (!isConnected(ws) || span == null) return null;
     final t = int.parse(span.layer.id);
     for (final (name, _, vs, i) in _pull ?? [..._ends(ws, span, start)]) {
       final now = _from(ws, span).containsKey(name)
-          ? _toward(m, span, ws, name, vs[i], by)
+          ? _toward(span, ws, name, vs[i], by)
           : vs[i];
-      final (k, f) = m.reading(t, name);
-      final v = now * k + f, shown = m.shown(name);
+      final (k, f) = layerReading(ws, t, name);
+      final v = now * k + f, shown = propertyLook(ws, name);
       return '${shown?.label ?? name} ${v.toStringAsFixed(v.abs() >= 100 ? 0 : 2)}${shown?.unit ?? ''}';
     }
     return null;

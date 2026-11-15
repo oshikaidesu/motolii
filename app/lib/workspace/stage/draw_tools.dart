@@ -13,12 +13,11 @@ import 'package:perfect_freehand/perfect_freehand.dart'
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
     show getStrokeRadius;
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/widgets/text_gestures.dart' show textToType;
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The strokes of the stage's drawing tools: the lasso, the shape and text tools, the pen and the brush.
@@ -158,16 +157,13 @@ class DrawTools extends ChangeNotifier {
   /// Creates a layer of the active tool's kind from a drag that started at [drawFrom] and ended at [to].
   /// A drag shorter than 6 screen pixels creates the layer at its default size.
   void drawDragEnd(StageViewport v, Offset to) {
-    final from = _drawFrom,
-        ws = _stage.workspace,
-        m = ws.inside,
-        kind = _stage.tool.make;
+    final from = _drawFrom, ws = _stage.workspace, kind = _stage.tool.make;
     _drawFrom = null;
     notifyListeners();
-    if (from == null || m == null || kind == null) return;
+    if (from == null || !stageConnected(ws) || kind == null) return;
     final a = v.toComposition(from),
         b = v.toComposition(to),
-        p = m.point,
+        p = stagePointsPerUnit(ws),
         c = ArtGeometry.comp;
     // Drawn out from its centre: twice the drag, centred on where the drag started.
     final centred = kind == 'circle' && _stage.tool.fromCentre;
@@ -178,66 +174,67 @@ class DrawTools extends ChangeNotifier {
         y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
     final cut = _stage.tool.mask ? int.tryParse(ws.selected ?? '') : null;
     // Queue everything as one undo step. Layer -1 refers to the layer just added, which is selected once it exists.
-    final before = m.layers.length;
-    m.later('together', number: 1);
+    final before = stageLayers(ws).length;
+    stageBeginUndoStep(ws);
     var made = 0;
     // Text uses the body font, as a text box does in PowerPoint.
     ws.after(
-      m.later(
-        'add',
+      stageAddLayer(
+        ws,
         name: kind == 'text' ? '' : 'shape',
         word: kind == 'text' ? ws.bodyFace : kind,
       ),
       null,
       (t) => made = t,
     );
-    m
-      ..later('set', layer: -1, name: 'x', number: x)
-      ..later('set', layer: -1, name: 'y', number: y);
+    stageSetValue(ws, layer: -1, name: 'x', number: x);
+    stageSetValue(ws, layer: -1, name: 'y', number: y);
     // Apply the current drawing colours.
     applyChosenInks(ws, kind == 'text' ? 'text' : 'shape', kind);
     if (kind == 'text') {
       // The text starts where the drag started, as point text does in After Effects, Figma and Illustrator.
-      m.later('set', layer: -1, name: 'anchor_x', number: -1);
+      stageSetValue(ws, layer: -1, name: 'anchor_x', number: -1);
     }
     if (cut != null) {
       // Mask: the new layer sits just behind the selected layer, which it clips. It is invisible itself and only cuts,
       // like an After Effects matte.
-      final all = m.layers;
+      final all = stageLayers(ws);
       if (all.contains(cut)) {
-        m
-          ..later(
-            'raise',
-            layer: -1,
-            number: (all.indexOf(cut) - before).toDouble(),
-          )
-          ..later('set', layer: cut, name: 'clip', number: 1)
-          ..later('set', layer: -1, name: 'opacity', number: 0);
+        stageRaiseLayer(
+          ws,
+          layer: -1,
+          number: (all.indexOf(cut) - before).toDouble(),
+        );
+        stageSetValue(ws, layer: cut, name: 'clip', number: 1);
+        stageSetValue(ws, layer: -1, name: 'opacity', number: 0);
       }
     }
     if (!tiny && kind != 'text') {
       if (kind == 'line') {
         // A line is 1/25 of a unit thick, as long as the drag and rotated to match it.
-        m
-          ..later('set', layer: -1, name: 'wide', number: d.distance / p / .04)
-          ..later(
-            'set',
-            layer: -1,
-            name: 'rotate',
-            number: math.atan2(d.dy, d.dx) * 180 / math.pi,
-          );
+        stageSetValue(
+          ws,
+          layer: -1,
+          name: 'wide',
+          number: d.distance / p / .04,
+        );
+        stageSetValue(
+          ws,
+          layer: -1,
+          name: 'rotate',
+          number: math.atan2(d.dy, d.dx) * 180 / math.pi,
+        );
       } else {
-        m
-          ..later('set', layer: -1, name: 'size', number: d.dy.abs() / p)
-          ..later(
-            'set',
-            layer: -1,
-            name: 'wide',
-            number: d.dx.abs() / math.max(d.dy.abs(), 1e-3),
-          );
+        stageSetValue(ws, layer: -1, name: 'size', number: d.dy.abs() / p);
+        stageSetValue(
+          ws,
+          layer: -1,
+          name: 'wide',
+          number: d.dx.abs() / math.max(d.dy.abs(), 1e-3),
+        );
       }
     }
-    ws.after(m.later('together'), (done, _) {
+    ws.after(stageEndUndoStep(ws), (done, _) {
       if (!done || made <= 0) return;
       // The new text's field takes the keyboard at once (see parameter_tile.dart).
       if (kind == 'text') textToType = true;
@@ -250,20 +247,20 @@ class DrawTools extends ChangeNotifier {
   /// Places a pen point at [down] with its handle pulled out to [up]; a click, where the two are the same, makes a
   /// corner point. A scribble between them becomes a fitted path instead.
   void pen(StageViewport v, Offset down, Offset up) {
-    final ws = _stage.workspace, m = ws.inside, way = _penWay;
+    final ws = _stage.workspace, way = _penWay;
     _drawFrom = null;
     _penWay = null;
     notifyListeners();
-    if (m == null) return;
+    if (!stageConnected(ws)) return;
     if (way != null && scribbled(way, down, up)) return _fit(v, way);
     final a = v.toComposition(down), h = v.toComposition(up) - a;
     final first = !_penning;
     _penning = true;
-    if (first) m.later('together', number: 1);
+    if (first) stageBeginUndoStep(ws);
     var made = 0;
     ws.after(
-      m.later(
-        'pen',
+      stagePenPoint(
+        ws,
         layer: first ? int.tryParse(_stage.selected ?? '') ?? 0 : -1,
         word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}',
       ),
@@ -273,7 +270,7 @@ class DrawTools extends ChangeNotifier {
     if (first) {
       applyChosenInks(ws, 'shape', 'path');
       ws.after(
-        m.later('together'),
+        stageEndUndoStep(ws),
         (done, _) => done && made > 0 ? ws.select('$made') : null,
       );
     }
@@ -298,19 +295,19 @@ class DrawTools extends ChangeNotifier {
   /// result has ordinary pen anchors and handles that the user can move. A scribble that ends where it began becomes
   /// a closed, filled path. Otherwise it becomes an open stroke in the current ink.
   void _fit(StageViewport v, List<Offset> way) {
-    final ws = _stage.workspace, m = ws.inside!;
+    final ws = _stage.workspace;
     // The fitted path is complete, so the next pen click starts a new one.
     _penning = false;
     final points = [for (final p in way) v.toComposition(p)],
         error = (v.toComposition(way.first + const Offset(8, 0)) - points.first)
             .distance;
     final closed = (points.first - points.last).distance < 4 * error;
-    m.later('together', number: 1);
+    stageBeginUndoStep(ws);
     var made = 0;
     ws.after(
-      m.later(
-        'curve',
-        word: '$error ${[for (final p in points) '${p.dx} ${p.dy}'].join(' ')}',
+      stageFitCurve(
+        ws,
+        '$error ${[for (final p in points) '${p.dx} ${p.dy}'].join(' ')}',
       ),
       (done, why) => done ? null : ws.notice = why,
       (t) => made = t,
@@ -318,28 +315,27 @@ class DrawTools extends ChangeNotifier {
     if (closed) {
       applyChosenInks(ws, 'shape', 'path');
     } else {
-      m
-        ..later('say', layer: -1, name: 'fill', word: 'none')
-        ..later(
-          'say',
-          layer: -1,
-          name: 'stroke',
-          word: ws.ink.isEmpty || ws.ink.contains(' ') ? 'ffffff' : ws.ink,
-        )
-        ..later('set', layer: -1, name: 'stroke_width', number: 6);
+      stageSetWord(ws, layer: -1, name: 'fill', word: 'none');
+      stageSetWord(
+        ws,
+        layer: -1,
+        name: 'stroke',
+        word: ws.ink.isEmpty || ws.ink.contains(' ') ? 'ffffff' : ws.ink,
+      );
+      stageSetValue(ws, layer: -1, name: 'stroke_width', number: 6);
     }
     ws.after(
-      m.later('together'),
+      stageEndUndoStep(ws),
       (done, _) => done && made > 0 ? ws.select('$made') : null,
     );
   }
 
   /// Turns the brush stroke into a drawing layer, or erases from the selected drawing with the eraser.
   void brushDragEnd(StageViewport v) {
-    final way = _brush, ws = _stage.workspace, m = ws.inside;
+    final way = _brush, ws = _stage.workspace;
     _brush = null;
     notifyListeners();
-    if (way == null || way.length < 2 || m == null) return;
+    if (way == null || way.length < 2 || !stageConnected(ws)) return;
     final options = StrokeOptions(
       size: _stage.tool.brushSize,
       simulatePressure: true,
@@ -366,8 +362,8 @@ class DrawTools extends ChangeNotifier {
         return;
       }
       ws.after(
-        m.later(
-          'brush',
+        stageBrushStroke(
+          ws,
           layer: into,
           word: '3 ${options.size} ${said.join(' ')}',
         ),
@@ -377,25 +373,25 @@ class DrawTools extends ChangeNotifier {
       );
       return;
     }
-    m.later('together', number: 1);
+    stageBeginUndoStep(ws);
     var made = 0;
     ws.after(
-      m.later(
-        'brush',
+      stageBrushStroke(
+        ws,
         word: '${_stage.tool.brushTool} ${options.size} ${said.join(' ')}',
       ),
       null,
       (t) => made = t,
     );
     // An outline with no fill shows nothing, so use white when no ink is chosen, as drawing apps do.
-    m.later(
-      'say',
+    stageSetWord(
+      ws,
       layer: -1,
       name: 'fill',
       word: ws.ink.isEmpty ? 'ffffff' : ws.ink,
     );
     ws.after(
-      m.later('together'),
+      stageEndUndoStep(ws),
       (done, _) => done && made > 0 ? ws.select('$made') : null,
     );
   }

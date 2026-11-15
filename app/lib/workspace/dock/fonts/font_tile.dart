@@ -41,7 +41,7 @@ Widget fontTile(
 }) {
   final commands = FontCommands(c, controller);
   final sel = c.sel == f.family, star = c.starred(f.family);
-  final tags = f.script ?? controller.tagsOf(f, c.ws.inside).take(2).join(' ');
+  final tags = f.script ?? controller.tagsOf(f, c.ws).take(2).join(' ');
   return ShelfTile(
     ShelfItem(f.family, f.family, label: f.script ?? '', about: f.sample ?? ''),
     shelfLooks['Fonts']!,

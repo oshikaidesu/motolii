@@ -6,25 +6,20 @@
 // Keeping the file name keeps everything attached to it: the parameter names (js_<stem>_<param>, doc_screen_knob)
 // and the card title (doc_fx_title), so the effect's visibility, place and values stay.
 // Files the engine reads from the same folder are copied along: an ISF's .vs (isf.cpp), its line in first.tsv
-// (script_first), and the images its header names (--image@, screen_fx.h).
-import 'dart:io';
-
-import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
-
+// (script_first), and the images its header names (screen_fx.h). The engine's side is in state/effect_code_cards.dart.
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/shelf_add.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/shelf_disk.dart' show writeText;
+import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/workspace/code/expression_prompts.dart';
-import 'package:motolii/workspace/code/expression_reference.dart'
-    show supportedIn;
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
+import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/state/tiles/effect_code_cards.dart' as cards;
+import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class EffectCode extends StatefulWidget {
   const EffectCode(
@@ -54,32 +49,18 @@ class EffectCode extends StatefulWidget {
   @override
   State<EffectCode> createState() => _EffectCodeState();
 
-  // Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
-  static final _code = RegExp(r'\.(wgsl|fs|js)$');
-
   /// The view state the Code tab keeps: the titles of the cards whose cell is folded, and the card last asked for
   /// with a count, so that asking for the same card again is heard.
-  static const folded = 'code.folded', asked = 'code.asked';
+  static const folded = cards.codeFolded, asked = cards.codeAsked;
 
   /// Opens the Code tab on the card [title]: its cell is unfolded and scrolled into sight.
-  static void show(WorkspaceController ws, String title) {
-    ws.setView(folded, {...ws.viewOf(folded, const <String>{})}..remove(title));
-    ws.setView(asked, (
-      title,
-      (ws.viewOf<(String, int)?>(asked, null)?.$2 ?? 0) + 1,
-    ));
-    ws.front('Code');
-  }
+  static void show(WorkspaceController ws, String title) =>
+      cards.showCodeCell(ws, title);
 
   /// The code of the card [title] of the layer [thing], or null if the card has no code.
   ///
   /// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
-  /// not by the title alone, because two cards can share a title.
-  /// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
-  /// (`js_<stem>_<param>`, document/scripts/scripts.h doc_script_of), so the file is the one whose name they all begin with.
-  /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
-  /// If two files fit, the one whose title matches the card wins, then the longer name.
-  /// A card with no parameters of its own (the engine still gives it a card, doc_cards_of) is matched by title alone.
+  /// not by the title alone, because two cards can share a title (state/effect_code_cards.dart codeOfCard).
   static EffectCode? ofCard(
     WorkspaceController ws,
     int thing,
@@ -87,123 +68,31 @@ class EffectCode extends StatefulWidget {
     List<String> names, {
     bool fit = false,
   }) {
-    final m = ws.inside!;
-    if (title == 'Script') {
-      final script = m.word(thing, 'script');
-      return script.endsWith('.js')
-          ? EffectCode(
-              ws,
-              thing,
-              script,
-              slot: 'script',
-              shelf: false,
-              fit: fit,
-              key: ValueKey('script-code-$thing'),
-            )
-          : null;
-    }
-    final word = fileOf(m.word(thing, 'fx'), title, names);
-    return word == null
-        ? null
-        : EffectCode(
-            ws,
-            thing,
-            word,
-            fit: fit,
-            key: ValueKey('fx-code-$thing-$title'),
-          );
+    final card = cards.codeOfCard(ws, thing, title, names);
+    if (card == null) return null;
+    final script = card.slot == 'script';
+    return EffectCode(
+      ws,
+      thing,
+      card.word,
+      slot: card.slot,
+      shelf: !script,
+      fit: fit,
+      key: script
+          ? ValueKey('script-code-$thing')
+          : ValueKey('fx-code-$thing-$title'),
+    );
   }
 
   /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
-  static String? fileOf(String fx, String title, List<String> names) {
-    (String, int)? best;
-    for (final w in WorkspaceController.fxFiles(fx)) {
-      if (!_code.hasMatch(w)) continue;
-      final file = source(w),
-          stem = TileReview.knobStem(w),
-          titled = titleOf(w) == title;
-      // A three.js effect is run as a scene once saved (doc_three_saved).
-      if (w.endsWith('.js') && _three(file)) continue;
-      // A card's own parameters begin with js_. The first card with code on a layer also shows values of the layer
-      // itself (How many copies), which no file declares, so those do not decide.
-      final own = [
-        for (final n in names)
-          if (n.startsWith('js_')) n,
-      ];
-      if (own.isEmpty) {
-        if (titled) return w;
-        continue;
-      }
-      final fits = w.endsWith('.js') && file == w
-          ? own.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains)
-          : own.every((n) => n.startsWith('js_${stem}_'));
-      if (!fits) continue;
-      final score = (titled ? 1000 : 0) + stem.length;
-      if (best == null || score > best.$2) best = (w, score);
-    }
-    return best?.$1;
-  }
+  static String? fileOf(String fx, String title, List<String> names) =>
+      cards.codeFileOf(fx, title, names);
 
   /// The card title for an effect file, named as the engine does (document/cards.h doc_fx_title).
-  ///
-  /// An effect applied again ("Glow~2.fs") gets its original's title and its number.
-  /// An ISF effect gets its file name (isf.cpp titles the WGSL it generates that way).
-  /// Any other file gets the name in its first line ("// Repeater: …"), else its file name with each _ as a space
-  /// and the first letter capitalised.
-  static String titleOf(String w) {
-    final file = source(w),
-        stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
-    if (file != w) {
-      return '${titleOf(file)} ${stem.substring(stem.lastIndexOf('~') + 1)}';
-    }
-    if (w.endsWith('.fs')) return stem;
-    var first = '';
-    try {
-      first = File(file).readAsLinesSync().firstOrNull ?? '';
-    } catch (_) {}
-    if (first.startsWith('// ') && first.contains(':')) {
-      return first.substring(3, first.indexOf(':'));
-    }
-    final t = stem.replaceAll('_', ' ');
-    return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
-  }
-
-  /// The header of [file]: the comment lines before its code (script.cpp script_knobs reads its parameters there).
-  static List<String> _head(String file) {
-    try {
-      return [
-        for (final l in File(file).readAsLinesSync().takeWhile(
-          (l) => l.startsWith('//') || l.trim().isEmpty,
-        ))
-          if (l.startsWith('//')) l,
-      ];
-    } catch (_) {
-      return const [];
-    }
-  }
-
-  /// The parameter names declared in [head], such as "// --track@StepX:Step X,…" (script_knobs).
-  static List<String> _knobs(List<String> head) => [
-    for (final l in head)
-      if ((l.indexOf('--'), l.indexOf('@'), l.indexOf(':'))
-          case (final d, final a, final c)
-          when d >= 0 && d < a && a < c && c > a + 1)
-        l.substring(a + 1, c),
-  ];
-
-  static bool _three(String file) {
-    // Same test as three_isf.cpp three_is: a .js containing a fragmentShader.
-    try {
-      return File(file).readAsStringSync().contains('fragmentShader');
-    } catch (_) {
-      return false;
-    }
-  }
+  static String titleOf(String w) => cards.codeTitleOf(w);
 
   /// The file to read for an effect [w]. An effect applied again ("Glow~2.fs") reads its original's file (fx_source, isf.h).
-  static String source(String w) => File(w).existsSync()
-      ? w
-      : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
+  static String source(String w) => cards.codeSource(w);
 
   /// Whether the file [word] of the layer [thing] belongs to that card alone: one of the user's own copies, used by
   /// no other card on any layer.
@@ -212,16 +101,7 @@ class EffectCode extends StatefulWidget {
     int thing,
     String word,
     String slot,
-  ) {
-    final m = ws.inside!, file = source(word);
-    if (!file.startsWith('${EffectTiles.own}/programs/$slot/')) return false;
-    for (final t in m.layers) {
-      for (final w in WorkspaceController.fxFiles(m.word(t, slot))) {
-        if (!(t == thing && w == word) && source(w) == file) return false;
-      }
-    }
-    return true;
-  }
+  ) => cards.codeAlone(ws, thing, word, slot);
 
   /// Gives the card's file [word] a copy of its own, as its first edit does: the file and the ones the engine reads
   /// beside it go to `programs/<slot>/<stamp>/`, and the layer's slot names the copy. Returns the copy as the slot
@@ -231,25 +111,7 @@ class EffectCode extends StatefulWidget {
     int thing,
     String word,
     String slot,
-  ) {
-    final m = ws.inside!, file = source(word);
-    final dir =
-            '${EffectTiles.own}/programs/$slot/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
-        to = '$dir/${file.split('/').last}',
-        said = '$dir/${word.split('/').last}';
-    Directory(dir).createSync(recursive: true);
-    _EffectCodeState._beside(file, word, dir);
-    File(file).copySync(to);
-    // Joined the way doc_fx_join does. An entry keeps the ID in front of its file, which its values are kept under.
-    final fx = [
-      for (final e in WorkspaceController.fxEntries(m.word(thing, slot)))
-        WorkspaceController.fxFile(e) == word
-            ? '${e.substring(0, e.length - word.length)}$said'
-            : e,
-    ].join(' ');
-    m.later('say', layer: thing, name: slot, word: fx);
-    return (said, to, m.later('code', word: to));
-  }
+  ) => cards.codeCopyOwn(ws, thing, word, slot);
 }
 
 class _EffectCodeState extends State<EffectCode> {
@@ -279,10 +141,9 @@ class _EffectCodeState extends State<EffectCode> {
   }
 
   void _askPrompts(String file) {
-    final m = widget.ws.inside;
-    if (m == null || file == _promptsFor) return;
+    if (!projectOpen(widget.ws) || file == _promptsFor) return;
     _promptsFor = file;
-    supportedIn(m, file).then((runs) {
+    cards.codeSupport(widget.ws, file).then((runs) {
       if (mounted && _promptsFor == file) {
         setState(
           () => _prompts = runs == null ? null : ExpressionPrompts.of(runs),
@@ -303,7 +164,7 @@ class _EffectCodeState extends State<EffectCode> {
         word = _mine ?? widget.word,
         file = EffectCode.source(word);
     if (EffectCode.alone(ws, widget.thing, word, widget.slot)) {
-      File(file).writeAsStringSync(text);
+      writeText(file, text);
       return _saved(file);
     }
     final (said, to, read) = EffectCode.copyOwn(
@@ -317,37 +178,15 @@ class _EffectCodeState extends State<EffectCode> {
     _typed = text;
     ws.after(read, (_, _) {
       _making = false;
-      File(to).writeAsStringSync(_typed!);
+      writeText(to, _typed!);
       _typed = null;
       _saved(to);
     });
   }
 
-  void _saved(String file) =>
-      widget.ws.after(widget.ws.inside!.later('code', word: file), (done, why) {
-        if (mounted) setState(() => _why = done ? '' : why.trim());
-        widget.ws.reread();
-      });
-
-  /// Copies the files the engine reads beside [from] to the copy's folder [dir].
-  static void _beside(String from, String word, String dir) {
-    final home = from.substring(0, from.lastIndexOf('/'));
-    if (from.endsWith('.fs')) {
-      final vs = File(from.replaceFirst(RegExp(r'\.fs$'), '.vs'));
-      if (vs.existsSync()) vs.copySync('$dir/${vs.path.split('/').last}');
-    }
-    final first = File('$home/first.tsv'), name = word.split('/').last;
-    if (first.existsSync()) {
-      final lines = [
-        for (final l in first.readAsLinesSync())
-          if (l.split('\t').first == name) l,
-      ];
-      if (lines.isNotEmpty) {
-        File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n');
-      }
-    }
-    shelfCopyImages(from, dir);
-  }
+  void _saved(String file) => cards.codeWritten(widget.ws, file, (done, why) {
+    if (mounted) setState(() => _why = done ? '' : why.trim());
+  });
 
   // Adds the card's code to the shelf under [name]: an effect to the Effects shelf, an expression to Create's Copies
   // (shelf_add.dart). The name is typed in place of the title, like Rename in Finder.
@@ -362,7 +201,7 @@ class _EffectCodeState extends State<EffectCode> {
         : shelfAdd(
             widget.ws,
             file,
-            _typed ?? File(file).readAsStringSync(),
+            _typed ?? readTextNow(file),
             name,
             shelfTaken(widget.ws, expression: expression),
           );

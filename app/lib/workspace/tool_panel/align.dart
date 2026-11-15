@@ -13,11 +13,11 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
+import 'package:motolii/workspace/state/layers/layer_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 
 /// The Align tool: six buttons that align the selected layer to the canvas edges or center.
 class AlignTool extends StatelessWidget {
@@ -27,7 +27,7 @@ class AlignTool extends StatelessWidget {
   /// Null when no layer is selected or nothing is visible.
   static Rect? _seen(WorkspaceController ws) {
     final t = int.tryParse(ws.selected ?? '');
-    return t == null ? null : ws.inside?.seen(t);
+    return t == null ? null : layerSeen(ws, t);
   }
 
   /// Aligns the selected layer to [side]: 0 left, 1 horizontal center, 2 right, 3 top, 4 vertical center, 5 bottom.
@@ -35,10 +35,9 @@ class AlignTool extends StatelessWidget {
   /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
   /// so the second pass corrects the remaining offset.
   static void align(WorkspaceController ws, int side, [int pass = 0]) {
-    final m = ws.inside,
-        t = int.tryParse(ws.selected ?? ''),
-        r = t == null ? null : m?.seen(t);
-    if (m == null || t == null || r == null) return;
+    final t = int.tryParse(ws.selected ?? ''),
+        r = t == null ? null : layerSeen(ws, t);
+    if (t == null || r == null) return;
     final pic = ArtGeometry.comp;
     final dx = switch (side) {
       0 => -r.left,
@@ -53,11 +52,11 @@ class AlignTool extends StatelessWidget {
       _ => 0.0,
     };
     if (dx.abs() < .25 && dy.abs() < .25) return;
-    // Moves the layer like a drag on the stage, without waiting for the engine.
-    m.later('drag_start', layer: t);
-    m.dragUpdate('place', dx, dy);
-    ws.after(
-      m.later('drag_end', number: 1),
+    moveLayerBy(
+      ws,
+      t,
+      dx,
+      dy,
       (done, _) => done && pass == 0 ? align(ws, side, 1) : null,
     );
   }

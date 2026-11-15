@@ -15,9 +15,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -157,10 +157,9 @@ class _TimelinePaneState extends State<TimelinePane>
   void _tickNow(Duration e) {
     final ws = workspace!;
     // The engine keeps the clock. The playhead shows the time of the last frame it drew.
-    _lastFrame = (ws.inside!.now * WorkspaceController.fps).round().clamp(
-      0,
-      WorkspaceController.duration,
-    );
+    _lastFrame = (timeline_service.clockSeconds(ws) * WorkspaceController.fps)
+        .round()
+        .clamp(0, WorkspaceController.duration);
     ws.frame = _lastFrame;
   }
 
@@ -255,12 +254,12 @@ class _TimelinePaneState extends State<TimelinePane>
             children: [
               TimelineHeader(
                 ws: ws,
-                loop: ws.inside!.looping,
+                loop: timeline_service.isLooping(ws),
                 zoom: viewport.zoom,
                 onToggle: _toggle,
                 onStep: _step,
                 onLoop: () =>
-                    setState(() => ws.inside!.looping = !ws.inside!.looping),
+                    setState(() => timeline_service.toggleLooping(ws)),
                 onZoom: setZoom,
                 onMark: setMark,
               ),

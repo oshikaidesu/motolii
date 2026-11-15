@@ -7,18 +7,19 @@
 // last in its group and marked, because posted code uses it and the mark is the order in which to make them run.
 // For any other script the list is the functions its runtime adds to JavaScript's own, also asked, names only.
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show existsFile, modifiedOf;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/workspace/code/expression_reference.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The Functions list for the code file [file], or for no cell when it is null.
@@ -61,19 +62,17 @@ class _FunctionsPanelState extends State<FunctionsPanel> {
   }
 
   void _ask() {
-    final m = WorkspaceScope.read(context).inside, file = widget.file;
-    if (m == null || file == null || !File(file).existsSync()) return;
-    final key = '$file ${File(file).lastModifiedSync().microsecondsSinceEpoch}';
+    final ws = WorkspaceScope.read(context), file = widget.file;
+    if (!projectOpen(ws) || file == null || !existsFile(file)) return;
+    final key = '$file ${modifiedOf(file)!.microsecondsSinceEpoch}';
     if (key == _askedFor) return;
     _askedFor = key;
-    Future.wait([supportedIn(m, file), m.askScript(file, runtimeAdds)]).then((
-      said,
-    ) {
+    askFunctions(ws, file).then((said) {
       if (!mounted || _askedFor != key) return;
-      final adds = said[1] as String;
+      final adds = said.$2;
       setState(() {
         _answered = true;
-        _runs = said[0] as Map<String, String>?;
+        _runs = said.$1;
         _adds = adds.isEmpty
             ? const []
             : [for (final n in jsonDecode(adds) as List<dynamic>) n as String];

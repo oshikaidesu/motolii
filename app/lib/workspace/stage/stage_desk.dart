@@ -3,10 +3,9 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class StageDesk {
   StageDesk({required this.alive, required this.rebuild});
@@ -16,18 +15,19 @@ class StageDesk {
   final void Function(VoidCallback change) rebuild;
 
   // Tells the engine where the stage sits when that changes (or the window's pixel ratio does).
+  final _link = StageDeskLink();
+
   /// The texture id of the whole pane as the engine draws it, once it has been made.
   int? id;
   StageViewport? _toldDesk;
-  Motolii? _deskOf;
   double? _toldDpr;
   void follow(
+    WorkspaceController ws,
     StageViewport v, {
     required double dpr,
-    required Motolii? m,
     required bool textured,
   }) {
-    if (m != _deskOf) {
+    if (_link.changedFor(ws)) {
       // A different project was opened: forget the old engine view and send it again.
       id = null;
       _toldDesk = null;
@@ -38,11 +38,11 @@ class StageDesk {
     }
     _toldDesk = v;
     _toldDpr = dpr;
-    if ((_deskOf = m) == null) return;
+    _link.adopt(ws);
+    if (!_link.attached) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!alive() || _toldDesk != v || _toldDpr != dpr) return;
-      final m = _deskOf!;
-      final ticket = m.desk(
+      final ticket = _link.draw(
         (v.area.width * dpr).round(),
         (v.area.height * dpr).round(),
         (v.origin.dx - v.area.left) * dpr,
@@ -53,7 +53,7 @@ class StageDesk {
       void look(Duration _) {
         // Poll once per frame until the engine has drawn, so the window never blocks on it.
         if (!alive()) return;
-        final a = m.answer(ticket);
+        final a = _link.answer(ticket);
         if (a < 0) {
           SchedulerBinding.instance.scheduleFrameCallback(look);
           return;
@@ -61,7 +61,7 @@ class StageDesk {
         if (a == 0) return;
         _toldPick = null;
         if (id == null) {
-          m.deskTexture().then(
+          _link.texture().then(
             (got) => alive() && got >= 0 ? rebuild(() => id = got) : null,
           );
         }
@@ -76,17 +76,16 @@ class StageDesk {
   // With the engine drawing the pane: tells it which layer is selected and which is hovered whenever they change.
   (int, int)? _toldPick;
   void pick(String? selected, String? hover) {
-    final m = _deskOf;
-    if (id == null || m == null) return;
+    if (id == null || !_link.attached) return;
     final now = (
       int.tryParse(selected ?? '') ?? 0,
       int.tryParse(hover ?? '') ?? 0,
     );
     if (now == _toldPick) return;
     _toldPick = now;
-    m.pick(now.$1, now.$2);
+    _link.pick(now.$1, now.$2);
   }
 
   /// Back to the engine's own stage view.
-  void release() => _deskOf?.desk(0, 0, 0, 0, 0, 0);
+  void release() => _link.release();
 }

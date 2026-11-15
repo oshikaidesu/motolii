@@ -1,19 +1,20 @@
 // The top bar's Render button and the dialog it opens: the name, the ending, the room and the length of the film.
 import 'package:motolii/widgets/modal_card.dart';
 
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/free_space.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Pressable;
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/document/document_writes.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -50,13 +51,8 @@ class _RenderState extends State<RenderButton> {
   /// Free space on the folder's disk, as the Mac's df reports it (the Available column, in 1024-byte blocks).
   static String _room(String? folder) {
     try {
-      final cols =
-          (Process.runSync('df', ['-k', folder ?? '.']).stdout as String)
-              .trim()
-              .split('\n')
-              .last
-              .split(RegExp(r'\s+'));
-      return '${(int.parse(cols[3]) / (1024 * 1024)).toStringAsFixed(1)} GB free';
+      final kb = freeKilobytesOn(folder ?? '.');
+      return '${(kb / (1024 * 1024)).toStringAsFixed(1)} GB free';
     } catch (_) {
       return '';
     }
@@ -228,8 +224,7 @@ class _RenderState extends State<RenderButton> {
                 label,
                 StatefulBuilder(
                   builder: (context, again) {
-                    final m = ws.inside,
-                        now = (m?.value(0, name, 0) ?? 0).round();
+                    final now = (layerValue(ws, 0, name, 0) ?? 0).round();
                     return Wrap(
                       spacing: Shape.s(6),
                       runSpacing: Shape.s(4),
@@ -240,15 +235,12 @@ class _RenderState extends State<RenderButton> {
                             key: ValueKey('render-$name-$v'),
                             label: said,
                             on: now == v,
-                            onTap: m == null
+                            onTap: !isConnected(ws)
                                 ? null
-                                : () => ws.after(
-                                    m.later(
-                                      'set',
-                                      layer: 0,
-                                      name: name,
-                                      number: v.toDouble(),
-                                    ),
+                                : () => setDocumentNumber(
+                                    ws,
+                                    name,
+                                    v.toDouble(),
                                     (_, _) => mounted ? again(() {}) : null,
                                   ),
                           ),

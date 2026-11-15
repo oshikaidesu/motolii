@@ -1,32 +1,34 @@
 // The easing as a stack of cards: what each edit of the stack makes. Each card acts on the result of the cards above it (ease_cards.dart);
 // the stack is stored as one easing built from `way()`. These are the pure edits the Ease tool's cards ask for: replace, remove, move,
 // insert, lay on. The tool sets what they return; nothing here draws or writes.
-import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
+import 'package:motolii/workspace/state/ease/ease_reads.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class EaseStack {
-  EaseStack(this.ease, this.m)
+  EaseStack(this.ease, this.ws)
     : cards = easeIsLaid(said(ease))
-          ? [for (final c in easeCards(said(ease))) easeCard(c, m)]
+          ? [for (final c in easeCards(said(ease))) easeCardFor(ws, c)]
           : [ease];
 
-  /// The easing as it is now, and the engine that computes the kinds with no tile of their own.
+  /// The easing as it is now, and the workspace whose engine computes the kinds with no tile of their own.
   final Ease ease;
-  final Motolii? m;
+  final WorkspaceController ws;
 
   /// The cards the easing is made of: itself alone when it is not laid.
   final List<Ease> cards;
 
   /// The cards of [e] as cards of this engine.
   List<Ease> _cardsOf(Ease e) => [
-    for (final c in easeCards(said(e))) easeCard(c, m),
+    for (final c in easeCards(said(e))) easeCardFor(ws, c),
   ];
 
   /// The stack with card [at] replaced by [e]; a single easing is simply replaced.
-  Ease replaced(int at, Ease e) =>
-      cards.length > 1 ? easeLaid([...cards]..[at] = easeCard(said(e), m)) : e;
+  Ease replaced(int at, Ease e) => cards.length > 1
+      ? easeLaid([...cards]..[at] = easeCardFor(ws, said(e)))
+      : e;
 
   // Over plain Linear there is nothing to layer onto, so the new easing replaces it.
   Ease laidOn(Ease e) =>

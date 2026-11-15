@@ -2,7 +2,6 @@
 // tiles are ready, and every name on the shelf.
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
@@ -11,6 +10,8 @@ import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
 import 'package:motolii/workspace/dock/create/code_file.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/dock/create/expressions.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
@@ -32,7 +33,7 @@ String createFact(WorkspaceController ws) {
   return (
     'Recipes',
     [
-      for (final (name, what) in ws.inside!.createScripts)
+      for (final (name, what) in createScriptsOf(ws))
         if (!expressions.contains(name) && !pasted.contains(name))
           CreateTile(
             name,
@@ -73,7 +74,7 @@ final codeTilesDrawn = ValueNotifier<int>(0);
 (String, List<CreateTile>) elementGroup(WorkspaceController ws) => (
   'Elements',
   [
-    for (final (name, _) in ws.inside!.elements)
+    for (final (name, _) in elementsOf(ws))
       CreateTile(
         name,
         AppGlyphs.nullObj,
@@ -87,7 +88,7 @@ final codeTilesDrawn = ValueNotifier<int>(0);
 /// All names on Create, the library's and the user's. An expression cannot be added under one of them (shelf_add.dart).
 Set<String> createNames(WorkspaceController ws) => {
   for (final (_, items) in [
-    if (ws.inside != null) ...[recipeGroup(ws), elementGroup(ws)],
+    if (projectOpen(ws)) ...[recipeGroup(ws), elementGroup(ws)],
     ...builtInGroups,
     solidGroup,
     materialGroup,

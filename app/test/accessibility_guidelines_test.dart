@@ -15,12 +15,11 @@ import 'package:motolii/workspace/dock/fonts/fonts_controller.dart'
     show fontRecentAt;
 import 'package:motolii/workspace/dock/colors/saved_colors.dart' show colorsAt;
 import 'package:motolii/workspace/dock/map/shelf_map.dart' show shelfMapsAt;
-import 'package:motolii/workspace/shelf/shelf_context.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/common/shelf_tags.dart' show ShelfTags;
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart'
     show easeKeptAt;
-import 'package:motolii/workspace/shelf/effect_decks.dart'
-    show effectDecksAt, effectRecentAt;
+import 'package:motolii/workspace/state/tiles/effect_decks_store.dart'
+    show dockStarsAt, effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show TimelinePane;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
 import 'package:motolii/workspace/state/window_zoom.dart' show WindowZoom;
@@ -43,13 +42,13 @@ Future<void> _open(WidgetTester t) async {
     (_) async => null,
   );
   // (the maker's own kept state is left alone: every store points at a temp file)
-  colorsAt(_tmp('colors'));
-  effectDecksAt(_tmp('decks'));
-  effectRecentAt(_tmp('recent'));
-  easeKeptAt(_tmp('kept'));
+  colorsAt(_tmp('colors').path);
+  effectDecksAt(_tmp('decks').path);
+  effectRecentAt(_tmp('recent').path);
+  easeKeptAt(_tmp('kept').path);
   shelfMapsAt(Directory.systemTemp.createTempSync('maps'));
-  ShelfTags.latchedAt(_tmp('latched'));
-  dockStarsAt(_tmp('stars'));
+  ShelfTags.latchedAt(_tmp('latched').path);
+  dockStarsAt(_tmp('stars').path);
   fontRecentAt(_tmp('fonts'));
   ColorTheme.at = '${Directory.systemTemp.path}/motolii_test_no_theme.xml';
   WindowZoom.set(1, keep: false);

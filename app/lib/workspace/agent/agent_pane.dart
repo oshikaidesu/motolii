@@ -3,18 +3,16 @@
 // It is drawn with the app's own parts: PanelHeader, the shelf's search field (also the message field), DockHover
 // rows, the skin's Forms for the agent's questions. A reply is Markdown, laid out by flutter_markdown_plus (BSD-3,
 // the Flutter authors' flutter_markdown carried on) in the app's text styles.
-import 'dart:io';
-
 import 'package:acpd/acpd.dart'
     show ContentBlock, RequestPermissionRequest, ResourceLink;
 import 'package:acpd_io/acpd_io.dart' show AcpAgentConfig;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn;
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show modifiedOf;
+import 'package:motolii/storage/folder_files.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
@@ -26,6 +24,8 @@ import 'package:motolii/workspace/agent/magpie.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart' show putEffectFile;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -40,7 +40,7 @@ class AgentPane extends StatefulWidget {
 }
 
 class _AgentPaneState extends State<AgentPane> {
-  late final _agents = agentRegistry();
+  late final _agents = agentRegistry(ownFolder());
   final _find = TextEditingController(), _say = TextEditingController();
   var _choosing = false;
 
@@ -60,9 +60,9 @@ class _AgentPaneState extends State<AgentPane> {
         command: c.command,
         args: c.args,
         env: c.env,
-        workingDirectory: motoliiOwn,
+        workingDirectory: ownFolder(),
       ),
-      motoliiOwn,
+      ownFolder(),
       line: a.line,
       env: a.env,
     )..start();
@@ -80,19 +80,14 @@ class _AgentPaneState extends State<AgentPane> {
     final more = code == null
         ? const <ContentBlock>[]
         : await ownedFor(ws, code, fresh);
-    DateTime? time(String f) =>
-        File(f).existsSync() ? File(f).lastModifiedSync() : null;
+    DateTime? time(String f) => modifiedOf(f);
     final seen = <String, DateTime?>{
       for (final b in more)
         if (b is ResourceLink)
           Uri.parse(b.uri).toFilePath(): time(Uri.parse(b.uri).toFilePath()),
     };
     talk.settled = () {
-      final folder = Directory(fresh);
-      for (final f in [
-        if (folder.existsSync())
-          for (final e in folder.listSync().whereType<File>()) e.path,
-      ]) {
+      for (final f in filesIn(fresh)) {
         if (!seen.containsKey(f)) {
           seen[f] = time(f);
           _put(ws, talk, f);
@@ -169,9 +164,8 @@ class _AgentPaneState extends State<AgentPane> {
   /// Has the engine read a file the agent wrote, as a cell's save does (EffectCode._saved): the engine looks at a
   /// file's time only when told (files_changed), so a write from outside the app is otherwise not seen.
   void _read(WorkspaceController ws, AcpChatSession talk, String file) {
-    final m = ws.inside;
-    if (m == null || !RegExp(r'\.(wgsl|fs|js)$').hasMatch(file)) return;
-    ws.after(m.later('code', word: file), (done, why) {
+    if (!RegExp(r'\.(wgsl|fs|js)$').hasMatch(file)) return;
+    readCodeFile(ws, file, (done, why) {
       if (!done) {
         talk.tell('${file.split('/').last} does not run: ${why.trim()}');
       }

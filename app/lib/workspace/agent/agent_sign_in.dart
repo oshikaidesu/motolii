@@ -3,13 +3,11 @@
 // auth_required (-32000). A `terminal` way is the agent's own command run again with the way's args and env, in a
 // terminal, where the person signs in; exit status 0 is success. Any other way is carried out by the agent on
 // `authenticate`. Motolii keeps no key or password: the agent stores what it gets, where it always does.
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/sign_in_script.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
 
@@ -40,57 +38,13 @@ Future<int?> signInInTerminal(
   SignInWay way,
   String folder,
   bool Function() waiting,
-) async {
-  final dir = Directory('${Directory.systemTemp.path}/motolii-sign-in')
-    ..createSync(recursive: true);
-  final status = File('${dir.path}/${way.id}.status');
-  if (status.existsSync()) status.deleteSync();
-  final words = [...line, ...way.args], all = {...env, ...way.env};
-  final File script;
-  final List<String> open;
-  if (Platform.isWindows) {
-    String q(String w) => '"${w.replaceAll('"', '""')}"';
-    script = File('${dir.path}/${way.id}.bat')
-      ..writeAsStringSync(
-        [
-          'cd /d ${q(folder)}',
-          for (final e in all.entries) 'set "${e.key}=${e.value}"',
-          words.map(q).join(' '),
-          'echo %errorlevel%> ${q(status.path)}',
-        ].join('\r\n'),
-      );
-    open = ['cmd', '/c', 'start', '', 'cmd', '/c', script.path];
-  } else {
-    String q(String w) => "'${w.replaceAll("'", r"'\''")}'";
-    final shell = Platform.environment['SHELL'] ?? '/bin/sh';
-    script = File('${dir.path}/${way.id}.command')
-      ..writeAsStringSync(
-        [
-          '#!/bin/sh',
-          'cd ${q(folder)}',
-          for (final e in all.entries) 'export ${e.key}=${q(e.value)}',
-          // The login shell, so npx is found as when the agent was started.
-          '${q(shell)} -lc ${q('exec ${words.map(q).join(' ')}')}',
-          'echo \$? > ${q(status.path)}',
-        ].join('\n'),
-      );
-    await Process.run('chmod', ['+x', script.path]);
-    open = Platform.isMacOS
-        ? ['open', '-a', 'Terminal', script.path]
-        : ['x-terminal-emulator', '-e', script.path];
-  }
-  try {
-    final r = await Process.run(open.first, open.skip(1).toList());
-    if (r.exitCode != 0) return null;
-  } catch (_) {
-    return null;
-  }
-  while (!status.existsSync() || status.readAsStringSync().trim().isEmpty) {
-    if (!waiting()) return null;
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-  }
-  return int.tryParse(status.readAsStringSync().trim()) ?? 1;
-}
+) => runSignInScript(
+  id: way.id,
+  words: [...line, ...way.args],
+  env: {...env, ...way.env},
+  folder: folder,
+  waiting: waiting,
+);
 
 /// The pane's card while the agent waits for sign-in: why, and one button per way it offered.
 Widget signInCard(BuildContext context, AcpChatSession talk) => Container(

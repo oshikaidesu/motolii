@@ -1,12 +1,12 @@
 // The small parts of the Colors shelf's picker that are not the wheel: fourteen sample colors, one press each, and the bar under them with
 // the box size and the buttons that save the color, the project's colors, a photo's palette, and throw the box shapes again.
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show existsFile, imageFile;
 import 'package:motolii/widgets/controls.dart' show Chip, IconPress;
 import 'package:motolii/widgets/dice_painter.dart';
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
@@ -183,7 +183,7 @@ class PaletteDetails extends StatelessWidget {
     builder: (context, id, _) {
       final p = colors.saved.allPalettes.where((p) => p.id == id).firstOrNull;
       if (p == null) return const SizedBox.shrink();
-      final photo = p.reference != null && File(p.reference!).existsSync()
+      final photo = p.reference != null && existsFile(p.reference!)
           ? p.reference
           : null;
       final whose = photo != null
@@ -194,7 +194,7 @@ class PaletteDetails extends StatelessWidget {
       return ShelfFooter(
         key: const ValueKey('colour-details'),
         preview: photo != null
-            ? Image.file(File(photo), fit: BoxFit.cover, cacheWidth: 96)
+            ? Image(image: imageFile(photo, cacheWidth: 96), fit: BoxFit.cover)
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

@@ -12,14 +12,17 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/ease_kept.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_ends.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_graph.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_side.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/ease/ease_reads.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -88,12 +91,13 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         span = easeSpan(ws),
         store = eases[ws] ??= {},
         id = spanId(span);
-    if ((ws.inside, span) case (final m?, final span?)) {
+    if (span != null && isConnected(ws)) {
       final at = keysAt(ws, span);
       final inDocument = at.isEmpty
           ? easingPreset('Linear')
           : heard(
-              m.easingOf(
+              layerEasingAt(
+                ws,
                 int.parse(span.layer.id),
                 at.keys.first,
                 at.values.first,
@@ -106,7 +110,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       var ease = writer.pending ?? writer.told ?? writer.base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {
         // There is no tile for this kind, so its curve is the one the engine computes for it now.
-        ease = easeCard(said(ease), m);
+        ease = easeCardFor(ws, said(ease));
       }
       void set(Ease e) {
         setState(() => writer.pending = e);
@@ -128,12 +132,11 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       );
     }
     // No segment: the panel keeps its own easing, so the user can make and save presets. The document is not changed.
-    final own =
-        store[id] ?? easingPreset(ws.inside == null ? 'Ease' : 'Linear');
+    final own = store[id] ?? easingPreset(isConnected(ws) ? 'Linear' : 'Ease');
     return _body(
       ws,
       span,
-      easeOther(own) ? easeCard(said(own), ws.inside) : own,
+      easeOther(own) ? easeCardFor(ws, said(own)) : own,
       (e) => setState(() => store[id] = e),
     );
   }
@@ -145,9 +148,9 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     Ease ease,
     ValueChanged<Ease> set,
   ) {
-    final stack = EaseStack(ease, ws.inside),
+    final stack = EaseStack(ease, ws),
         cards = stack.cards,
-        pile = _held == null ? cards : EaseStack(_held!, ws.inside).cards;
+        pile = _held == null ? cards : EaseStack(_held!, ws).cards;
     if (spanId(span) != _cardOf) {
       (_cardOf = spanId(span), _card = 0, _adding = false, _overLocked = false);
     }
@@ -184,7 +187,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
 
     void over(Ease? e) {
       setState(() => _held = e);
-      if (ws.inside == null || span == null) return;
+      if (!isConnected(ws) || span == null) return;
       if (e == null) return writer.giveUp(ws);
       writer.base ??= ease;
       writer.live(ws, e);
@@ -197,7 +200,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       } catch (_) {
         // The clipboard is unavailable, so fall back to the curve copied inside the app.
       }
-      final e = easeFromText(words?.text, ws.inside) ?? easeCopied;
+      final e = easeFromPaste(ws, words?.text) ?? easeCopied;
       if (e != null) {
         put(e);
       } else {
@@ -235,10 +238,10 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       onChanged: put,
       jump: easeJump,
       overshoot: overshoot && !whole,
-      onEnd: ws.inside == null
+      onEnd: !isConnected(ws)
           ? null
           : (start, by) => toEnd(ws, span, start, by, done: true),
-      onEndMove: ws.inside == null
+      onEndMove: !isConnected(ws)
           ? null
           : (start, by) => toEnd(ws, span, start, by),
       endSays: (start, by) => endSays(ws, span, start, by),
@@ -280,7 +283,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
               ),
               // Pastes the curve copied in the app, or a cubic-bezier() or linear() from a web page. See easeFromText.
               ('paste', 'Paste Curve', () => paste(set)),
-              if (easeCopied != null && ws.inside != null)
+              if (easeCopied != null && isConnected(ws))
                 (
                   'all',
                   'Paste Curve to All Keyframes',
@@ -453,7 +456,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                                 columns: across,
                                 pitch: side + Shape.s(6),
                                 side: side,
-                                inside: ws.inside,
+                                ws: ws,
                                 onKeep: keep,
                                 onForget: (e) => setState(
                                   () => easeKeep(said(e), off: true),

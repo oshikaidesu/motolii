@@ -1,0 +1,35 @@
+// The Motolii projects on disk: listing them in a folder, copying one, and moving one to the Trash. Panels import this
+// instead of dart:io.
+import 'dart:io';
+
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
+
+typedef ProjectFile = ({String path, DateTime modified, int size});
+
+/// The projects directly in [folder]: each file whose name ends in .motolii, with when it was last changed and its size.
+/// Throws when [folder] cannot be listed.
+List<ProjectFile> projectFilesIn(String folder) {
+  final found = <ProjectFile>[];
+  for (final f in Directory(folder).listSync().whereType<File>()) {
+    if (!f.path.endsWith('.motolii')) continue;
+    final s = f.statSync();
+    found.add((path: f.path, modified: s.modified, size: s.size));
+  }
+  return found;
+}
+
+/// Copies the file at [from] to [to].
+void copyProjectFile(String from, String to) => File(from).copySync(to);
+
+/// Moves the file at [from] to [to]. False if it could not be moved.
+bool moveProjectFile(String from, String to) {
+  try {
+    File(from).renameSync(to);
+  } catch (_) {
+    return false;
+  }
+  return true;
+}
+
+/// The user's Trash folder, as the Finder keeps it.
+String trashFolder() => '$homeFolder/.Trash';

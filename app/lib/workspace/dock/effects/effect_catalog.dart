@@ -1,15 +1,12 @@
 // What the Effects shelf lists. The entries are the shelf's effects as plain data (a tile to draw, whether it is on, what a press does); effectListing
 // is the pure part of the shelf: from the entries, the search words, the place, the chip and the decks it works out what is shown, in what order,
 // and the counts the places and chips display. It draws nothing and changes nothing.
-import 'package:motolii/workspace/shelf/tile_moving.dart';
-import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
 /// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.
@@ -87,7 +84,7 @@ EffectListing effectListing({
   required List<EffectEntry> every,
   required Map<String, ShelfItem> seen,
 }) {
-  final ws = c.ws, m = ws.inside!;
+  final ws = c.ws;
   // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
   // It also matches the tags read from the effect (ShelfTags), each word on its own.
   // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
@@ -105,7 +102,7 @@ EffectListing effectListing({
       hit = {for (final e in hits) e.id};
   final near = c.query.trim().isEmpty || hits.isNotEmpty
       ? const <String>[]
-      : m.find(c.query, [
+      : findIn(ws, c.query, [
           for (final e in every)
             if (!hit.contains(e.id))
               (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
@@ -191,9 +188,9 @@ EffectListing effectListing({
   // An effect the deck holds but the shelf does not: its name is kept and marked. Layer effects are excluded, since they wait for a layer.
   final known = {
     ...every.map((e) => e.id),
-    ...m.layerEffects.map((e) => e.$1),
-    ...m.presets.map((e) => e.$2),
-    ...m.animators.map((e) => e.$2),
+    ...layerEffectsOf(ws).map((e) => e.$1),
+    ...presetsOf(ws).map((e) => e.$2),
+    ...animatorsOf(ws).map((e) => e.$2),
   };
   return EffectListing(
     found: found,

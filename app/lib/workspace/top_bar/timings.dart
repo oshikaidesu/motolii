@@ -15,10 +15,10 @@ import 'package:flutter/widgets.dart';
 
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// A red dot with a count of problems, shown only when there are any.
@@ -52,7 +52,7 @@ class _WaitedState extends State<Waited> {
   // How many problems the list has already shown. The dot counts only newer ones, like an unread badge.
   int _seen = 0;
   // The engine whose errors are counted. A different engine starts counting again from 0.
-  Object? _of;
+  int _of = 0;
   // The project whose problems are counted. A different project starts again from 0.
   String? _doc;
   // True if playback ran, or a pointer was down or scrolling, since the last frame timings arrived.
@@ -71,8 +71,8 @@ class _WaitedState extends State<Waited> {
       // Read the engine's error count without waiting for it.
       final ws = WorkspaceScope.read(context);
       _moved |= ws.playing;
-      final n = ws.inside?.brokenCount ?? 0;
-      if (!identical(ws.inside, _of)) {
+      final n = engineBrokenCount(ws) ?? 0;
+      if (engineIdOf(ws) != _of) {
         // The project was opened or reopened. Errors recorded before it was seen here are not counted.
         final doc = '${ws.documentFolder}/${ws.document}';
         if (doc != _doc) {
@@ -81,7 +81,7 @@ class _WaitedState extends State<Waited> {
           _insideSeen = _lateCount = _seen = 0;
           _late.clear();
         }
-        _of = ws.inside;
+        _of = engineIdOf(ws);
         _inside = n;
       }
       final shown = switch (WidgetsBinding.instance.lifecycleState) {
@@ -177,7 +177,7 @@ class _WaitedState extends State<Waited> {
       popoverBuilder: (context, info) {
         // The engine's and the app's lines, newest first. Each line starts with its clock time.
         final lines = ([
-          ...(WorkspaceScope.read(context).inside?.broken ?? '')
+          ...(engineBroken(WorkspaceScope.read(context)) ?? '')
               .split('\n')
               .where((l) => l.isNotEmpty),
           ..._late,

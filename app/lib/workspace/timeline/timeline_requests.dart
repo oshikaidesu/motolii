@@ -4,7 +4,6 @@
 // - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
@@ -15,6 +14,8 @@ import 'package:motolii/workspace/workspace.dart' show WorkspaceState;
 import 'package:motolii/workspace/commands/panel_requests.dart'
     show timelineRequest, renameRequested, requestTimeline, selectedMarker;
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
@@ -63,8 +64,10 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     final was = naming, ws = workspace!, words = said?.trim() ?? '';
     if (was == null) return;
     setState(() => naming = null);
-    if (words.isNotEmpty && words != was.$2 && ws.inside != null) {
-      ws.after(ws.inside!.later('mark', number: was.$1, word: words));
+    if (words.isNotEmpty &&
+        words != was.$2 &&
+        timeline_service.isConnected(ws)) {
+      ws.after(timeline_service.renameMarker(ws, was.$1, words));
     }
   }
 
@@ -87,11 +90,11 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   }
 
   void _heard() {
-    final ws = workspace, m = ws?.inside;
-    if (!mounted || ws == null || m == null) return;
+    final ws = workspace;
+    if (!mounted || ws == null || !timeline_service.isConnected(ws)) return;
     switch (timelineRequest.value.$1) {
       case 'loop':
-        setState(() => m.looping = !m.looping);
+        setState(() => timeline_service.toggleLooping(ws));
       case 'in':
         setZoom(viewport.zoom * 1.5);
       case 'out':
@@ -178,8 +181,8 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   /// On a marker it selects the marker, and the menu can rename it, play from it or delete it.
   /// Elsewhere the menu adds a marker named by its order, or one whose name field opens at once, as in Final Cut Pro.
   void rulerRight(Offset p) {
-    final ws = workspace, m = ws?.inside;
-    if (ws == null || m == null) return;
+    final ws = workspace;
+    if (ws == null || !timeline_service.isConnected(ws)) return;
     if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       return rulerMenu.currentState?.show(p, [
@@ -199,16 +202,14 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
         const ContextMenuItem.rule(),
         ContextMenuItem('Delete', () {
           selectedMarker.value = null;
-          ws.after(m.later('mark', number: flag.$1));
+          ws.after(timeline_service.removeMarker(ws, flag.$1));
         }, keys: '⌫'),
         const ContextMenuItem.rule(),
         // A marker has one of the label colours, as in Premiere Pro, DaVinci Resolve and CapCut.
         ContextMenuItem.colors(
           [for (var k = 0; k < 16; k++) labelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
-          (k) => ws.after(
-            m.later('mark_colour', number: flag.$1, word: '${k + 1}'),
-          ),
+          (k) => ws.after(timeline_service.recolourMarker(ws, flag.$1, k + 1)),
         ),
       ]);
     }
@@ -237,7 +238,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
           // Starts a bar here, as in Live.
           'Set 1.1.1 Here',
           () => ws.after(
-            m.later('set', layer: 0, name: 'bpm_from', number: at),
+            timeline_service.setBeatGridStart(ws, at),
             (_, _) => ws.reread(),
           ),
         ),
@@ -274,14 +275,14 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   ///
   /// It adds a marker at the playhead and selects it. If a marker is already there, it deletes it (Delete Locator in Live).
   void setMark() {
-    final ws = workspace, m = ws?.inside;
-    if (ws == null || m == null) return;
+    final ws = workspace;
+    if (ws == null || !timeline_service.isConnected(ws)) return;
     if (ws.marks
             .where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame)
             .firstOrNull
         case (final was, _)?) {
       selectedMarker.value = null;
-      return ws.after(m.later('mark', number: was));
+      return ws.after(timeline_service.removeMarker(ws, was));
     }
     _addMark(ws.frame / WorkspaceController.fps, named: false);
   }
@@ -292,7 +293,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     while (marks.any((k) => k.$2 == 'M$n')) {
       n++;
     }
-    ws.after(ws.inside!.later('mark', number: at, word: 'M$n'), (done, _) {
+    ws.after(timeline_service.addMarker(ws, at, 'M$n'), (done, _) {
       if (!done || !mounted) return;
       selectedMarker.value = (at, 'M$n');
       if (named) _rename();
@@ -317,8 +318,12 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     setState(() => _renaming = null);
     final t = int.tryParse(id),
         was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
-    if (t != null && words.isNotEmpty && words != was && ws?.inside != null) {
-      ws!.after(ws.inside!.later('say', layer: t, name: 'name', word: words));
+    if (t != null &&
+        words.isNotEmpty &&
+        words != was &&
+        ws != null &&
+        timeline_service.isConnected(ws)) {
+      ws.after(timeline_service.renameLayer(ws, t, words));
     }
   }
 

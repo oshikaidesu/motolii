@@ -1,9 +1,10 @@
 // The timeline's rows: the order they are laid out in, what each one shows, and the drag that reorders them.
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/slip_edit.dart';
@@ -170,10 +171,10 @@ class TimelineRows {
     final by = (_lift / TimelineMetrics.row).round();
     if (by != 0) {
       ws.after(
-        ws.inside!.later(
-          'raise',
-          layer: int.parse(l.id),
-          number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble(),
+        timeline_service.reorderLayer(
+          ws,
+          int.parse(l.id),
+          (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble(),
         ),
       );
     }

@@ -1,0 +1,18 @@
+# Only the window's state (lib/workspace/state) and the engine's own code (lib/bridge, lib/main.dart) hold the engine
+# handle (WorkspaceController.inside). A panel asks the state for an operation or a value; it does not reach the engine.
+# `ignores` has two parts. The first is permanent. The second is the baseline: files that used the handle before the rule
+# existed. Delete a line when the file is fixed; never add one.
+id: engine-only-in-state
+language: dart
+severity: error
+message: The engine handle (ws.inside) is used only by lib/workspace/state. A panel asks the state for an operation or a value.
+rule:
+  kind: identifier
+  regex: '^inside$'
+files:
+  - lib/**
+ignores:
+  - lib/bridge/**
+  - lib/main.dart
+  - lib/workspace/state/**
+  # baseline

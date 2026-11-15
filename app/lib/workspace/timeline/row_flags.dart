@@ -1,5 +1,6 @@
 // Each row's switches as the project stores them: hidden, solo and locked.
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The hidden, solo and locked switches of the layers of a workspace, and the commands that turn them.
@@ -22,12 +23,7 @@ class RowFlags {
   /// Hides the layer [id], or shows it again. It is one undo step.
   void toggleHidden(String id) {
     workspace.after(
-      workspace.inside!.later(
-        'set',
-        layer: int.parse(id),
-        name: 'visible',
-        number: isHidden(id) ? 1 : 0,
-      ),
+      timeline_service.setLayerVisible(workspace, int.parse(id), isHidden(id)),
     );
   }
 
@@ -44,13 +40,11 @@ class RowFlags {
 
   /// Clips the layer [id] to the layer below it, or removes the clip. It is one undo step.
   void toggleClipped(String id) {
-    final m = workspace.inside!;
     workspace.after(
-      m.later(
-        'set',
-        layer: int.parse(id),
-        name: 'clip',
-        number: isClipped(id) ? 0 : 1,
+      timeline_service.setLayerClipped(
+        workspace,
+        int.parse(id),
+        !isClipped(id),
       ),
     );
   }
@@ -60,13 +54,12 @@ class RowFlags {
 
   /// Turns the switch [name] of the layer [id] on or off. [name] is `solo` or `lock`, as the project spells it.
   void toggle(String name, String id) {
-    final m = workspace.inside!;
     workspace.after(
-      m.later(
-        'set',
-        layer: int.parse(id),
-        name: name,
-        number: (name == 'solo' ? isSolo(id) : isLocked(id)) ? 0 : 1,
+      timeline_service.setLayerSwitch(
+        workspace,
+        int.parse(id),
+        name,
+        !(name == 'solo' ? isSolo(id) : isLocked(id)),
       ),
     );
   }

@@ -3,19 +3,17 @@
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
 // Colors come from WindowTokens, so both the light and dark shades apply.
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
 import 'package:docking/docking.dart';
 
-import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/shipped_layout.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -45,12 +43,7 @@ class _PanesState extends State<Panes> {
   static const _ids = _Ids();
 
   /// The layout a workspace ships as, if it ships as a file.
-  String? _shipped(String name) {
-    final file = File(
-      '$motoliiShelves/workspaces/${name.toLowerCase()}.layout',
-    );
-    return file.existsSync() ? file.readAsStringSync().trim() : null;
-  }
+  String? _shipped(String name) => shippedLayoutOf(name);
 
   void _switch() {
     final name = _ws!.viewOf('workspace', widget.workspaces.keys.first);

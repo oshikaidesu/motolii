@@ -5,10 +5,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart'
     show selectedMarker;
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
@@ -155,22 +156,14 @@ class RulerMarks extends ChangeNotifier {
 
   /// Ends a drag on the ruler. The work area becomes the project's on release, as one undo step.
   void end() {
-    final m = workspace?.inside;
     if (_markHeld case (final at, final name)?) {
       _markHeld = null;
       final to = _markTo / WorkspaceController.fps;
       if (_markOff) {
-        workspace!.after(m!.later('mark', number: at));
+        workspace!.after(timeline_service.removeMarker(workspace!, at));
       } else if ((to - at).abs() >= 0.5 / WorkspaceController.fps) {
-        // Moved: one undo step, and the name is kept.
-        m!.later('together', number: 1);
-        m.later('mark', number: at);
-        m.later('mark', number: to, word: name);
-        // The colour moves with the marker.
-        if (workspace!.markColors[at] case final k?) {
-          m.later('mark_colour', number: to, word: '$k');
-        }
-        workspace!.after(m.later('together'));
+        // Moved: one undo step, and the name and colour are kept (the colour moves with the marker).
+        workspace!.after(timeline_service.moveMarker(workspace!, at, to, name));
       } else {
         // Released where it was grabbed, so a small shake is not a drag. Treated as a click on the marker.
         selectedMarker.value = (at, name);
@@ -183,10 +176,10 @@ class RulerMarks extends ChangeNotifier {
     }
     if (_workDrag != null) {
       workspace!.after(
-        m!.later(
-          'work',
-          number: _workIn / WorkspaceController.fps,
-          word: '${_workOut / WorkspaceController.fps}',
+        timeline_service.setWorkArea(
+          workspace!,
+          _workIn / WorkspaceController.fps,
+          _workOut / WorkspaceController.fps,
         ),
       );
     }

@@ -1,12 +1,10 @@
 // The Fonts shelf: each font is shown set in its own face.
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/dock/common/empty_shelf.dart';
@@ -20,10 +18,14 @@ import 'package:motolii/workspace/dock/fonts/font_map.dart';
 import 'package:motolii/workspace/dock/fonts/font_roles.dart';
 import 'package:motolii/workspace/dock/fonts/font_tile.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
+import 'package:motolii/storage/folder_entries.dart' show folderOfFile;
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/document/document_service.dart';
+import 'package:motolii/workspace/state/media/fonts_service.dart';
+import 'package:motolii/workspace/state/media/pictures_service.dart';
 
 /// The Fonts shelf: a grid, list or map of the available fonts, with the title and body roles above.
 class FontsShelf extends StatelessWidget {
@@ -39,18 +41,13 @@ class FontsShelf extends StatelessWidget {
   );
 
   Widget _shelf(BuildContext context) {
-    final m = c.ws.inside;
-    if (m == null) return const SizedBox.shrink();
+    if (!documentOpen(c.ws)) return const SizedBox.shrink();
     final fonts = controller.fontsOf(c.ws);
     final commands = FontCommands(c, controller);
     // Maps each font file to the text layer that uses it.
-    final setIn = {
-      for (final l in c.ws.layers)
-        if (m.word(int.parse(l.id), 'kind') == 'text')
-          m.whole(m.word(int.parse(l.id), 'file')): l,
-    };
+    final setIn = textLayersByFile(c.ws);
     bool used(FontFile f) => setIn.containsKey(f.path);
-    Set<String> tagsOf(FontFile f) => controller.tagsOf(f, c.ws.inside);
+    Set<String> tagsOf(FontFile f) => controller.tagsOf(f, c.ws);
     var hits = fonts
         .where((f) => ShelfTags.hit(c.query, f.family, tagsOf(f)))
         .toList();
@@ -121,44 +118,49 @@ class FontsShelf extends StatelessWidget {
                       // Map view: each font is placed by how its letters look when drawn by ThorVG.
                       final map = controller.map,
                           files = [for (final f in fonts) ?f.path];
-                      controller.drawDots(m, files);
+                      controller.drawDots(c.ws, files);
                       // Place fonts by how FontCLIP sees them once the model is available, otherwise by a small drawing of the sample.
                       final clip = likenessModel('fontclip_b32');
-                      map.need(m, [for (final f in files) (f, f)], (
-                        from,
-                      ) async {
-                        // Keyed by file, because two files can share one family name.
-                        final List<Float32List?> look;
-                        if (clip != null) {
-                          look = await byFontClip(
-                            m,
-                            clip,
-                            from,
-                            controller.wordOf,
-                          );
-                        } else {
-                          await controller.drawDots(m, files);
-                          look = [
-                            for (final f in from)
-                              if (controller.dotsDrawn[f] case final g?)
-                                halvedDot(g)
-                              else
-                                null,
-                          ];
-                        }
-                        final kinds = [for (final f in from) fontKindOf(m, f)],
-                            all = kinds.toSet().toList();
-                        return joinFeatures(
-                          [
-                            look,
+                      map.need(
+                        (points) => layOutMap(c.ws, points),
+                        [for (final f in files) (f, f)],
+                        (from) async {
+                          // Keyed by file, because two files can share one family name.
+                          final List<Float32List?> look;
+                          if (clip != null) {
+                            look = await fontClipLooks(
+                              c.ws,
+                              clip,
+                              from,
+                              controller.wordOf,
+                            );
+                          } else {
+                            await controller.drawDots(c.ws, files);
+                            look = [
+                              for (final f in from)
+                                if (controller.dotsDrawn[f] case final g?)
+                                  halvedDot(g)
+                                else
+                                  null,
+                            ];
+                          }
+                          final kinds = [
+                                for (final f in from) fontKindOf(c.ws, f),
+                              ],
+                              all = kinds.toSet().toList();
+                          return joinFeatures(
                             [
-                              for (final k in kinds)
-                                Float32List(all.length)..[all.indexOf(k)] = 1,
+                              look,
+                              [
+                                for (final k in kinds)
+                                  Float32List(all.length)..[all.indexOf(k)] = 1,
+                              ],
                             ],
-                          ],
-                          const [1, 0.5],
-                        ); // The font style is blended in at half weight so fonts of the same style group together.
-                      }, also: '${clip ?? ''} kinds');
+                            const [1, 0.5],
+                          ); // The font style is blended in at half weight so fonts of the same style group together.
+                        },
+                        also: '${clip ?? ''} kinds',
+                      );
                       final byPath = {for (final f in list) ?f.path: f};
                       return ShelfMapView(
                         map,
@@ -230,17 +232,26 @@ class FontsShelf extends StatelessWidget {
             title: sel.family,
             meta:
                 c.mem.trouble[sel.family] ??
-                '${sel.path!.split('.').last.toUpperCase()} · ${File(sel.path!).parent.path.split('/').last}',
+                '${sel.path!.split('.').last.toUpperCase()} · ${folderOfFile(sel.path!).split('/').last}',
             // Applies to the selected text layer, or places a new text layer when none is selected.
             action:
-                m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') != 'text'
+                layerWord(
+                      c.ws,
+                      int.tryParse(c.ws.selected ?? '') ?? 0,
+                      'kind',
+                    ) !=
+                    'text'
                 ? 'Place'
                 : 'Apply',
             done: onText,
             doneLabel: 'In use',
             // True when no text layer is selected, so the action creates a new one.
             fresh:
-                m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') !=
+                layerWord(
+                  c.ws,
+                  int.tryParse(c.ws.selected ?? '') ?? 0,
+                  'kind',
+                ) !=
                 'text',
             onAction: () => commands.setFont(sel),
           ),

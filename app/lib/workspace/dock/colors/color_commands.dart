@@ -2,16 +2,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/widgets/text_gestures.dart' show wordsPicked;
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
 import 'package:motolii/workspace/dock/colors/colors_controller.dart';
 import 'package:motolii/workspace/dock/colors/gradient_stops.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart';
 
 /// What the Colors shelf asks the engine to do: color the selected layer, some letters of a text or the next layer
 /// drawn, and say what is being colored now. Every call to the engine the shelf makes is a method here.
@@ -27,25 +24,23 @@ class ColorCommands {
 
   /// The letters selected in the selected text layer's text, or null.
   ({int start, int count})? lettersPicked(int? t) {
-    final m = c.ws.inside;
-    if (m == null || t == null || m.word(t, 'kind') != 'text') return null;
-    return pickedLetters(m.word(t, 'text'), wordsPicked.value);
+    if (t == null || wordOf(c.ws, t, 'kind') != 'text') return null;
+    return pickedLetters(wordOf(c.ws, t, 'text'), wordsPicked.value);
   }
 
   /// Colors some letters of a text layer and leaves the rest alone, as Figma, Canva, PowerPoint, Keynote
   /// and After Effects' Character panel do for selected characters: one range of the layer's text_styles
   /// sets their CSS color (see inspector/text/text_ranges.dart).
   void _fillLetters(int t, ({int start, int count}) at, String word) {
-    final m = c.ws.inside!;
     final styles = styleRange(
-      m.word(t, 'text_styles'),
+      wordOf(c.ws, t, 'text_styles'),
       at.start,
       at.count,
       'color',
       '#$word',
     );
     c.ws.after(
-      m.later('say', layer: t, name: 'text_styles', word: styles),
+      sayWord(c.ws, t, 'text_styles', styles),
       (done, why) => c.set(
         () => done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why,
       ),
@@ -62,7 +57,7 @@ class ColorCommands {
       : _fillNow(word);
 
   void _fillNow(String word) {
-    final m = c.ws.inside!, t = colored;
+    final t = colored;
     if ((c.ws.aim == null || c.ws.aim == 'fill') &&
         RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(word)) {
       if (lettersPicked(t) case final at?) {
@@ -93,12 +88,12 @@ class ColorCommands {
           aim == 'stroke' &&
           t != null &&
           word != 'none' &&
-          (m.value(t, 'stroke_width', 0) ?? 0) <= 0;
-      if (edged) m.later('together', number: 1);
-      final said = m.later('say', layer: t ?? 0, name: aim, word: word);
-      if (edged) m.later('set', layer: t, name: 'stroke_width', number: 6);
+          (valueOf(c.ws, t, 'stroke_width', 0) ?? 0) <= 0;
+      if (edged) groupBegin(c.ws);
+      final said = sayWord(c.ws, t ?? 0, aim, word);
+      if (edged) setNumber(c.ws, t, 'stroke_width', 6);
       c.ws.after(
-        edged ? m.later('together') : said,
+        edged ? groupEnd(c.ws) : said,
         (done, why) => c.set(() {
           if (done && t != null) keep(aim);
           done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why;
@@ -113,7 +108,7 @@ class ColorCommands {
       return;
     }
     c.ws.after(
-      m.later('say', layer: t, name: 'fill', word: word),
+      sayWord(c.ws, t, 'fill', word),
       (done, why) => c.set(() {
         if (done) keep('fill');
         done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why;
@@ -123,19 +118,19 @@ class ColorCommands {
 
   /// The layer the shelf colors: the selected one. A sound has nothing to color, so it counts as no selection (the next layer drawn).
   int? get colored => switch (int.tryParse(c.ws.selected ?? '')) {
-    final t? when isSoundLayer(c.ws.inside!, t) => null,
+    final t? when soundLayer(c.ws, t) => null,
     final t => t,
   };
 
   /// The current value of the target: the selected layer's property (its fill, unless a link or the tool strip chose another),
   /// else the stage's, else the ink or edge of the next layer drawn.
   String get paintNow {
-    final t = colored, aim = c.ws.aim ?? 'fill', m = c.ws.inside!;
-    if (t != null) return m.word(t, aim);
+    final t = colored, aim = c.ws.aim ?? 'fill';
+    if (t != null) return wordOf(c.ws, t, aim);
     if (aim == 'fill' || aim == 'stroke') {
       return aim == 'stroke' ? c.ws.edge : c.ws.ink;
     }
-    return m.word(0, aim);
+    return wordOf(c.ws, 0, aim);
   }
 
   /// Applies a color from a swatch or the eyedropper to the target, or to the selected stop while the target is a gradient.
@@ -171,7 +166,7 @@ class ColorCommands {
   /// Puts a gradient on what is being colored: its colors, and how they are mixed. That is the picked layer's gradient_blend,
   /// or the ink's for the next layer drawn. It is one undo step.
   void putGradient(List<Color> cs, String blend, [List<double>? at]) {
-    final m = c.ws.inside!, t = colored;
+    final t = colored;
     final word = at != null && at.length == cs.length
         ? wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])])
         : [for (final k in cs) hexOfColor(k).substring(1).toLowerCase()]
@@ -180,17 +175,17 @@ class ColorCommands {
       c.ws.inkBlend = blend;
       return fill(word);
     }
-    m.later('together', number: 1);
+    groupBegin(c.ws);
     fill(word);
-    m.later('say', layer: t, name: 'gradient_blend', word: blend);
-    c.ws.after(m.later('together'));
+    sayWord(c.ws, t, 'gradient_blend', blend);
+    c.ws.after(groupEnd(c.ws));
   }
 
   /// How the gradient being edited is mixed: the picked layer's gradient_blend, or the ink's. Unset means 'rgb'.
   String get blendNow {
     final t = colored,
         w = t != null && (c.ws.aim ?? 'fill') == 'fill'
-            ? c.ws.inside!.word(t, 'gradient_blend')
+            ? wordOf(c.ws, t, 'gradient_blend')
             : c.ws.inkBlend;
     return w.isEmpty ? 'rgb' : w;
   }
@@ -234,14 +229,7 @@ class ColorCommands {
   void setBlend(String name, String blend) {
     final t = colored;
     t != null && name == 'fill'
-        ? c.ws.after(
-            c.ws.inside!.later(
-              'say',
-              layer: t,
-              name: 'gradient_blend',
-              word: blend,
-            ),
-          )
+        ? c.ws.after(sayWord(c.ws, t, 'gradient_blend', blend))
         : c.set(() => c.ws.inkBlend = blend);
   }
 }

@@ -5,13 +5,13 @@
 // A `frame.<part>.svg` is stretched around that part in its own colours (see SkinFrame in widgets/skin_frame.dart).
 // A part the folder does not have keeps the built-in drawing, so a skin may bring one picture or all of them.
 // The part names are listed in shelves/skins/PARTS.md.
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:motolii/skin/theme.dart';
+import 'package:motolii/storage/skin_pictures.dart';
 
 /// The pictures of the current skin, loaded from the folder named by the theme's `Parts` role.
 abstract final class SkinParts {
@@ -35,24 +35,10 @@ abstract final class SkinParts {
   }
 
   static Future<void> _load(String dir) async {
-    final next = <String, PictureInfo>{};
-    final folder = Directory(dir);
-    if (dir.isNotEmpty && folder.existsSync()) {
-      for (final f in folder.listSync().whereType<File>().where(
-        (f) => f.path.endsWith('.svg'),
-      )) {
-        try {
-          final name = f.uri.pathSegments.last.replaceAll('.svg', '');
-          next[name] = await vg.loadPicture(SvgFileLoader(f), null);
-          if (RegExp(r'data-slice="([0-9.]+)"').firstMatch(f.readAsStringSync())
-              case final m?) {
-            _slices[name] = double.parse(m.group(1)!);
-          }
-        } catch (_) {
-          // A picture that cannot be read is skipped, so the built-in drawing stays.
-        }
-      }
-    }
+    final next = await readSkinPictures(
+      dir,
+      (name, slice) => _slices[name] = slice,
+    );
     // The theme moved on while these were loading.
     if (dir != _dir) return;
     // No pictures before or now, so there is nothing to repaint.

@@ -11,10 +11,10 @@ import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
+import 'package:motolii/workspace/state/layers/layer_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
 
 /// The Blend tool: one row per layer, front layer first.
@@ -54,18 +54,15 @@ class _RowState extends State<_Row> {
   Widget build(BuildContext context) {
     final l = widget.l,
         ws = WorkspaceScope.of(context, {WorkspaceAspect.document}),
-        m = ws.inside,
         t = int.tryParse(l.id);
-    final ways = m == null || t == null
-        ? const <String>[]
-        : m.words(t, 'blend');
+    final ways = t == null ? const <String>[] : layerWords(ws, t, 'blend');
     final now = ways.isEmpty
         ? ''
-        : (m!.word(t!, 'blend').isEmpty ? ways.first : m.word(t, 'blend'));
+        : (layerWord(ws, t!, 'blend').isEmpty
+              ? ways.first
+              : layerWord(ws, t, 'blend'));
     void say(String name, String word) {
-      if (m != null && t != null) {
-        ws.after(m.later('say', layer: t, name: name, word: word));
-      }
+      if (t != null) sayLayer(ws, t, name, word);
     }
 
     final row = Container(

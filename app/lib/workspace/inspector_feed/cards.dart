@@ -3,70 +3,77 @@ import 'dart:math' as math;
 
 import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 
-import 'package:motolii/bridge/engine_paths.dart';
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
-import 'package:motolii/workspace/inspector_feed/values.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/inspector/inspector_reads.dart';
+import 'package:motolii/workspace/state/inspector/inspector_values.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart'
+    show soundLayer;
+import 'package:motolii/workspace/state/layers/layer_reads.dart'
+    show layerValue, layerWord, layerWords;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.
-/// The values named in code are the exceptions in values.dart (`_onCard`, `writeNumbers`): position, scale, rotation and
+/// The values named in code are the exceptions in state/inspector_values.dart (`_onCard`, `writeNumbers`): position, scale, rotation and
 /// opacity as the stage shows them, `speed`, and the other layer a value may point at.
 List<CardDeclaration>? valueCards(WorkspaceController ws, String? id) {
   // With nothing selected the cards belong to the stage itself, layer 0.
-  final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
-  if (m == null || t == null) return null;
+  final t = id == null ? 0 : int.tryParse(id);
+  if (!projectOpen(ws) || t == null) return null;
   // The cards are rebuilt only when the set of cards, their values or the layers they may name change.
   // Ending a drag changes none of these, and the numbers on the cards come from layerTransform.
   // The inspector takes a card's current value (its @default) only when it builds the cards anew.
-  final shape = '${m.cards(t)}|${ws.layers.map((l) => l.name).join(',')}';
+  final shape =
+      '${layerCardsOf(ws, t)}|${ws.layers.map((l) => l.name).join(',')}';
+  final project = openProjectToken(ws);
   final made = _cardsMade[t];
-  if (made != null && made.$1 == shape && identical(made.$3, m)) return made.$2;
-  final cards = _makeCards(ws, m, t);
-  _cardsMade[t] = (shape, cards, m);
+  if (made != null && made.$1 == shape && identical(made.$3, project)) {
+    return made.$2;
+  }
+  final cards = _makeCards(ws, t);
+  _cardsMade[t] = (shape, cards, project);
   return cards;
 }
 
-final _cardsMade = <int, (String, List<CardDeclaration>, Motolii)>{};
+final _cardsMade = <int, (String, List<CardDeclaration>, Object?)>{};
 
-List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
+List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
   // The time of the frame on screen.
   final at = drawnTime(ws);
   // How much each parameter of the layer's effects moves its result, as the effect tiles show it.
   final weights = {
     for (final f in WorkspaceController.fxFiles(
-      '${m.word(t, 'fx')} ${m.word(t, 'script')}',
+      '${layerWord(ws, t, 'fx')} ${layerWord(ws, t, 'script')}',
     ))
-      ...TileReview.weighed(motoliiShelves, f),
+      ...TileReview.weighed(shelvesFolder(), f),
   };
   String field(String n) {
-    final sh = m.shown(n),
+    final sh = shownFactOf(ws, n),
         label =
             '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
     if (sh?.look == 'thing') {
       // Another layer, listed by the names the timeline shows: None first, then the others. The stored number is the document's.
       final others = otherLayers(ws, t),
-          at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
+          at = others.values.toList().indexOf(
+            (layerValue(ws, t, n, 0) ?? 0).round(),
+          );
       return '  /// $label @enum(${['None', ...others.keys.map((o) => o.replaceAll(',', ' '))].join(', ')}) @default(${at + 1})\n  $n: u32,';
     }
-    if (m.words(t, n) case final words when words.isNotEmpty) {
-      return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(m.word(t, n)))})\n  $n: u32,';
+    if (layerWords(ws, t, n) case final words when words.isNotEmpty) {
+      return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(layerWord(ws, t, n)))})\n  $n: u32,';
     }
-    if (m.range(t, n) case (final lo0, final hi0)) {
+    if (layerRangeOf(ws, t, n) case (final lo0, final hi0)) {
       final a = shownNumber(
-            m,
+            ws,
             t,
             n,
             sh != null && sh.high > sh.low ? sh.low : lo0,
           ),
           b = shownNumber(
-            m,
+            ws,
             t,
             n,
             sh != null && sh.high > sh.low ? sh.high : hi0,
@@ -76,8 +83,8 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
       // The card's range is how far the slider goes. A typed number may go as far as the engine accepts.
       // After Effects does the same with a slider range and a valid range (PF_FloatSliderDef).
       // Example: the From value of Datamosh slides to 10 s but can be typed up to the engine's limit.
-      final va = shownNumber(m, t, n, lo0),
-          vb = shownNumber(m, t, n, hi0),
+      final va = shownNumber(ws, t, n, lo0),
+          vb = shownNumber(ws, t, n, hi0),
           valid =
               sh?.open != true &&
                   (math.min(va, vb) < lo || math.max(va, vb) > hi)
@@ -95,7 +102,7 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
       };
       final whole =
           sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
-      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${shownNumber(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
+      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${shownNumber(ws, t, n, layerValue(ws, t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
     }
     // Any word: colours of six digits each, taken from the Colors shelf, or numbers with one for each copy.
     return '  /// $label${const ['numbers', 'colours', 'words', 'file'].contains(sh?.look) ? ' @unit(${sh!.look})' : ''}\n  $n: vec3<f32>,';
@@ -106,25 +113,25 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
   // and choosing from the Colors shelf sets all three numbers.
   // Without this, a white colour took three number fields.
   String colour(String base) =>
-      '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
+      '  /// @label(${shownFactOf(ws, '${base}_x')!.label.substring(0, shownFactOf(ws, '${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
-    for (final (title, names) in m.cards(t))
+    for (final (title, names) in layerCardsOf(ws, t))
       // A sound layer has a volume and nothing to place on the canvas, as in Alight Motion's audio layer
       // (docs/design/alight_motion_ui.md).
       // The Matte card is shown only when the layer is clipped (clip=1): the clip toggle is in the timeline.
-      if ((title == 'Sound' || !isSoundLayer(m, t)) &&
-          (title != 'Matte' || (m.value(t, 'clip', 0) ?? 0) > .5))
+      if ((title == 'Sound' || !soundLayer(ws, t)) &&
+          (title != 'Matte' || (layerValue(ws, t, 'clip', 0) ?? 0) > .5))
         CardDeclaration(
           title,
           'struct Params {\n${[
             for (final n in names)
-              if (m.shown(n)?.fold == null)
-                if (colourBase(m, n, names) case final base?) colour(base) else if (!{
+              if (shownFactOf(ws, n)?.fold == null)
+                if (colourBaseOf(ws, n, names) case final base?) colour(base) else if (!{
                   for (final x in names)
-                    if (colourBase(m, x, names) case final b?) ...['${b}_y', '${b}_z'],
+                    if (colourBaseOf(ws, x, names) case final b?) ...['${b}_y', '${b}_z'],
                 }.contains(n)) field(n),
-            for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
-              if (m.shown(n)?.fold == fold) field(n)],
+            for (final fold in {for (final n in names) ?shownFactOf(ws, n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
+              if (shownFactOf(ws, n)?.fold == fold) field(n)],
           ].join('\n')}\n}',
           toneOf: () => InspectorSkin.toneLayer,
         ),

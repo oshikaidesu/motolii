@@ -11,7 +11,7 @@ void main() {
   test('own tags set on an item are read back by a new window', () {
     final dir = Directory.systemTemp.createTempSync('shelf_tags');
     addTearDown(() => dir.deleteSync(recursive: true));
-    ShelfTags.ownAt(File('${dir.path}/tags.json'));
+    ShelfTags.ownAt('${dir.path}/tags.json');
 
     ShelfTags().setOwn('Effects', 'corner pin', ['#Basic', ' warp ', '']);
 
@@ -28,7 +28,7 @@ void main() {
   test('setting no tags removes the item from the file', () {
     final dir = Directory.systemTemp.createTempSync('shelf_tags');
     addTearDown(() => dir.deleteSync(recursive: true));
-    ShelfTags.ownAt(File('${dir.path}/tags.json'));
+    ShelfTags.ownAt('${dir.path}/tags.json');
 
     ShelfTags()
       ..setOwn('Effects', 'a', ['x'])

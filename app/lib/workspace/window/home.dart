@@ -12,14 +12,15 @@ import 'package:motolii/workspace/window/home_project.dart';
 import 'package:motolii/workspace/window/home_card.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/bridge/motolii.dart' show docFactsOf;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/project_files.dart';
+import 'package:motolii/storage/thumbnail_folder.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
+import 'package:motolii/workspace/state/project_facts.dart';
 
 class HomeWindow extends StatefulWidget {
   const HomeWindow({
@@ -63,9 +64,7 @@ class _HomeWindowState extends State<HomeWindow> {
   final _picked = <String>{};
   // The project the last pick was on, where a Shift range starts.
   String? _lead;
-  late final Directory _pictures = Directory.systemTemp.createTempSync(
-    'motolii_home',
-  );
+  late final String _pictures = makeThumbnailFolder();
 
   @override
   void initState() {
@@ -82,7 +81,7 @@ class _HomeWindowState extends State<HomeWindow> {
   void dispose() {
     _findText.dispose();
     try {
-      _pictures.deleteSync(recursive: true);
+      removeThumbnailFolder(_pictures);
     } catch (_) {}
     super.dispose();
   }
@@ -91,20 +90,18 @@ class _HomeWindowState extends State<HomeWindow> {
   var _reads = 0;
   void _read() {
     final docs = <HomeProject>[], read = _reads++;
-    for (final f in Directory(widget.folder).listSync().whereType<File>()) {
-      if (!f.path.endsWith('.motolii')) continue;
-      final s = f.statSync();
-      docs.add(HomeProject(f.path, s.modified, s.size));
+    for (final f in projectFilesIn(widget.folder)) {
+      docs.add(HomeProject(f.path, f.modified, f.size));
     }
     setState(() => _docs = docs);
     for (final (i, d) in docs.indexed) {
-      final png = '${_pictures.path}/$read-$i.png';
-      docFactsOf(widget.lib, d.path, png).then((facts) {
+      final png = '$_pictures/$read-$i.png';
+      savedProjectFacts(widget.lib, d.path, png).then((facts) {
         if (!mounted) return;
         setState(
           () => d
             ..facts = facts
-            ..picture = facts != null && File(png).existsSync() ? png : null,
+            ..picture = facts != null && existsFile(png) ? png : null,
         );
       });
     }

@@ -3,16 +3,14 @@
 // It slides like the colour boxes (dock_make_2.dart) and uses as many columns as the pane has room for, like Easey's presetsPage.js.
 // Dragging a card over the grip opens the shelf, like a Finder folder opening under a dragged item (macOS spring-loaded folders).
 import 'package:motolii/workspace/easing/ease.dart';
-import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/ease_kept.dart';
+import 'package:motolii/workspace/state/ease/ease_reads.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/ease/easing_preset_tile.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_side.dart'
@@ -20,29 +18,8 @@ import 'package:motolii/workspace/tool_panel/ease/ease_side.dart'
 import 'package:motolii/widgets/media.dart' show Draw;
 
 import 'package:motolii/widgets/controls.dart' show Pressable;
-import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 
-/// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
-/// Saving works like saving a device preset in Ableton Live (manual, 23.2.5 Saving Presets).
-/// The list lives in ~/.motolii/ease_kept.json, next to colors.json.
-File _keptFile = File(
-  '${Platform.environment['HOME']}/.motolii/ease_kept.json',
-);
-List<String>? _kept;
-
-/// Points the list at another file and forgets what was read. Tests use this, as they do with coloursAt.
-void easeKeptAt(File f) => (_keptFile = f, _kept = null);
-
-List<String> easeKept() =>
-    _kept ??= [for (final w in fileList(_keptFile)) '$w'];
-
-/// Saves [word], or removes it when [off] is set.
-void easeKeep(String word, {bool off = false}) {
-  final kept = easeKept()..remove(word);
-  if (!off) kept.add(word);
-  // The list is also held in memory, so it is known while the app is open even if writing the file fails.
-  fileKeep(_keptFile, jsonEncode(kept));
-}
+export 'package:motolii/storage/ease_kept.dart' show easeKeptAt;
 
 // Each saved easing is parsed once, so fifty of them are not parsed again whenever a handle moves.
 final _tiles = <String, Ease>{};
@@ -93,7 +70,7 @@ class EaseShelf extends StatelessWidget {
     required this.onPick,
     required this.onKeep,
     required this.onForget,
-    required this.inside,
+    required this.ws,
   });
 
   /// The easing on the keyframe interval, as its name string.
@@ -104,7 +81,7 @@ class EaseShelf extends StatelessWidget {
 
   final int columns;
   final double pitch, side;
-  final Motolii? inside;
+  final WorkspaceController ws;
   final ValueChanged<Ease> onPick, onForget;
 
   /// Called with the index of a dropped card, or a negative number to save all the cards.
@@ -152,7 +129,7 @@ class EaseShelf extends StatelessWidget {
                   : Pressable(
                       cursor: MouseCursor.defer,
                       builder: (_, h) {
-                        final e = _tiles[kept[i]] ??= easeCard(kept[i], inside);
+                        final e = _tiles[kept[i]] ??= easeCardFor(ws, kept[i]);
                         return Stack(
                           children: [
                             Positioned.fill(

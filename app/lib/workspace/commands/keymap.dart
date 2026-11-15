@@ -7,10 +7,11 @@
 import 'package:re_editor/re_editor.dart' show CodeEditor;
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:motolii/storage/host_platform.dart' show hostIsMacOS;
+import 'package:motolii/storage/keybindings_file.dart';
 
 /// The default keys: Ableton Live 12's (manual chapter 42; command_actions.dart says where each comes from),
 /// the standard Mac ones (New, Undo, Cut, Copy, Paste, Select All), and the canvas tools.
@@ -105,9 +106,8 @@ class Keymap {
       for (final (k, c) in defaultKeys)
         if (activatorOf(k) case final a?) (a, c),
     ];
-    final path = '${Platform.environment['HOME']}/.motolii/keybindings.json';
     try {
-      final told = jsonDecode(File(path).readAsStringSync()) as List;
+      final told = jsonDecode(readKeybindingsText()) as List;
       for (final e in told.cast<Map>()) {
         final a = activatorOf('${e['key']}'), c = '${e['command']}';
         if (a == null) continue;
@@ -145,10 +145,10 @@ SingleActivator? activatorOf(String said) {
   final cmd = mods.contains('cmd');
   return SingleActivator(
     key,
-    meta: (cmd && Platform.isMacOS) || mods.contains('meta'),
+    meta: (cmd && hostIsMacOS) || mods.contains('meta'),
     shift: mods.contains('shift'),
     control:
-        (cmd && !Platform.isMacOS) ||
+        (cmd && !hostIsMacOS) ||
         mods.contains('ctrl') ||
         mods.contains('control'),
     alt: mods.contains('alt') || mods.contains('option'),
@@ -160,7 +160,7 @@ SingleActivator? activatorOf(String said) {
 String keyLabel(SingleActivator? a) {
   if (a == null) return '';
   final k = a.trigger;
-  if (Platform.isMacOS) {
+  if (hostIsMacOS) {
     return '${a.control ? '⌃' : ''}${a.alt ? '⌥' : ''}${a.shift ? '⇧' : ''}${a.meta ? '⌘' : ''}'
         '${_macKeys[k] ?? k.keyLabel.toUpperCase()}';
   }

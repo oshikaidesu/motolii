@@ -4,12 +4,10 @@
 import 'dart:async' show scheduleMicrotask;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/easing/ease.dart';
-import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
+import 'package:motolii/workspace/state/ease/ease_writes.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -68,13 +66,7 @@ class EaseWriter {
   void live(WorkspaceController ws, Ease e) {
     final all = easeStretches(ws);
     if (all.isEmpty) return;
-    ws.live.move((m) {
-      define(m, said(e));
-      for (final (t, name, at) in all) {
-        m.later('easing', layer: t, name: name, number: at, word: said(e));
-      }
-      return {for (final (t, _, _) in all) t};
-    });
+    liveEase(ws, e, all);
   }
 
   // Abandons a preview or a drag: the undo step it opened is removed whole.
@@ -82,12 +74,6 @@ class EaseWriter {
     ws.live.cancel();
     if (base != null && alive()) rebuild(() => base = null);
     base = null;
-  }
-
-  void define(Motolii m, String word) {
-    for (final (name, goes) in easeDefines(word)) {
-      m.later('define', name: name, word: goes);
-    }
   }
 
   void settle(WorkspaceController ws, EaseSpan? span) {
@@ -101,32 +87,21 @@ class EaseWriter {
     base = null;
     if (e == null || span == null) return;
     told = e;
-    final m = ws.inside!, to = said(e), open = ws.live.isOpen;
+    final to = said(e), open = ws.live.isOpen;
     final all = easeStretches(ws);
     // Segments that already have this easing are skipped, so numbers with no field here are not overwritten.
     // If the drag already sent the ease, it is sent once more on release and the undo step is closed.
     final toTell = [
       for (final (t, name, at) in all)
-        if (open || said(heard(m.easingOf(t, name, at))) != to) (t, name, at),
+        if (open || said(heard(layerEasingAt(ws, t, name, at))) != to)
+          (t, name, at),
     ];
     if (!open && toTell.isEmpty) {
       return showTrouble(
         all.isEmpty ? 'No key where the stretch begins' : null,
       );
     }
-    ws.live.done((m) {
-      send(m, to, toTell);
-      return const [];
-    }, _heard);
-  }
-
-  // Defines the easing in the document and puts it on each of the segments (layer, property, time).
-  void send(Motolii m, String to, List<(int, String, double)> segments) {
-    define(m, to);
-    for (final (t, name, at) in segments) {
-      m.later('easing', layer: t, name: name, number: at, word: to);
-    }
-    define(m, to);
+    settleEase(ws, to, toTell, _heard);
   }
 
   // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
@@ -135,27 +110,17 @@ class EaseWriter {
         ? {for (final k in ws.keys) k.layer}
         // Nothing picked: the layer of the segment the playhead is in.
         : {if (easeSpan(ws) case final s?) s.layer.id};
-    ws.live.done((m) {
-      define(m, said(e));
-      for (final l in ws.layers.where((l) => layers.contains(l.id))) {
-        for (final f in l.keys) {
+    final stretches = [
+      for (final l in ws.layers.where((l) => layers.contains(l.id)))
+        for (final f in l.keys)
           for (final at in keysAt(ws, (
             layer: l,
             from: f,
             to: f,
             picked: f,
-          )).entries) {
-            m.later(
-              'easing',
-              layer: int.parse(l.id),
-              name: at.key,
-              number: at.value,
-              word: said(e),
-            );
-          }
-        }
-      }
-      return const [];
-    }, _heard);
+          )).entries)
+            (int.parse(l.id), at.key, at.value),
+    ];
+    everyKeyEase(ws, e, stretches, _heard);
   }
 }

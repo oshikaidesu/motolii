@@ -1,14 +1,13 @@
 // What the timeline's rows show of their media, requested from the engine once and kept: the beats of the layers'
 // sound, a video's frames, an image's thumbnail, a sound's waveform and the length of a video file.
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, mediaSecondsOf;
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/storage/media_cache_files.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The media the timeline has read for its rows, kept until the project changes.
@@ -52,16 +51,18 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// Frames of the audio beats of every layer that has them, requested from the engine once per read of the project.
   List<int> beatsOf(WorkspaceController ws) {
-    final m = ws.inside;
-    if (m == null) return const [];
+    if (!timeline_service.isConnected(ws)) return const [];
     if (_beats case (final r, final b) when r == ws.reads) return b;
     if (_beatsAsked == ws.reads) return _beats?.$2 ?? const [];
     final asks = <Future<List<double>>>[];
     for (final l in ws.layers) {
       final t = int.tryParse(l.id),
-          rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
+          rise = t == null
+              ? 0.0
+              : timeline_service.layerValue(ws, t, 'beats', 0) ?? 0;
       if (rise > 0 && waveOf(ws, l) != null) {
-        asks.add(m.strikes(t!, rise)); // Only after its sound has been read.
+        // Only after its sound has been read.
+        asks.add(timeline_service.strikesOf(ws, t!, rise));
       }
     }
     final reads = _beatsAsked = ws.reads;
@@ -81,8 +82,8 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// A few frames to draw along a video layer's bar, or the thumbnail of an image layer; null if there are none.
   List<ui.Image>? framesOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, media = l.media;
-    if (m == null || media == null) return null;
+    final media = l.media;
+    if (!timeline_service.isConnected(ws) || media == null) return null;
     if (media.still) return _stillOf(media.file, l.id);
     final (:file, :begin, :speed, still: _) = media;
     final key = (file, begin, speed, l.inF, l.outF);
@@ -99,20 +100,21 @@ class TimelineMediaCache extends ChangeNotifier {
                       : (i + .5) / n * lasts) *
                   speed.abs(),
       ];
-      Future.wait([for (final s in seconds) m.videoFrame(file, s)])
-          .then((pngs) async {
-            // No frames could be read: the file has sound only.
-            if (pngs.any((p) => p == null)) {
-              return _set(() => _frames[l.id] = (key, null));
-            }
-            final read = [
-              for (final p in pngs)
-                (await (await ui.instantiateImageCodec(
-                  File(p!).readAsBytesSync(),
-                )).getNextFrame()).image,
-            ];
-            _set(() => _frames[l.id] = (key, read));
-          });
+      Future.wait([
+        for (final s in seconds) timeline_service.videoFrame(ws, file, s),
+      ]).then((pngs) async {
+        // No frames could be read: the file has sound only.
+        if (pngs.any((p) => p == null)) {
+          return _set(() => _frames[l.id] = (key, null));
+        }
+        final read = [
+          for (final p in pngs)
+            (await (await ui.instantiateImageCodec(
+              readImageSync(p!),
+            )).getNextFrame()).image,
+        ];
+        _set(() => _frames[l.id] = (key, read));
+      });
     }
     return _frames[l.id]?.$2;
   }
@@ -126,7 +128,7 @@ class TimelineMediaCache extends ChangeNotifier {
       () async {
         try {
           final read = (await (await ui.instantiateImageCodec(
-            await File(file).readAsBytes(),
+            await readImage(file),
             targetHeight: 48,
           )).getNextFrame()).image;
           _set(() => _frames[id] = (file, [read]));
@@ -140,8 +142,9 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// The loudness of a video layer's sound over its bar, or null while it is unknown or the layer has no sound.
   List<double>? waveOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || l.media?.still != false) return null;
+    final t = int.tryParse(l.id);
+    if (!timeline_service.isConnected(ws) || t == null) return null;
+    if (l.media?.still != false) return null;
     final key = (ws.reads, l.inF, l.outF);
     final had = _waves[l.id];
     if (had case (final r, final a, final b, final w) when (r, a, b) == key) {
@@ -150,8 +153,9 @@ class TimelineMediaCache extends ChangeNotifier {
     if (_waveAsked[l.id] != key) {
       // The engine answers on another isolate; the waveform is drawn on the bar when the answer arrives.
       _waveAsked[l.id] = key;
-      m
+      timeline_service
           .loudnessOver(
+            ws,
             t,
             l.inF / WorkspaceController.fps,
             l.outF / WorkspaceController.fps,
@@ -161,8 +165,8 @@ class TimelineMediaCache extends ChangeNotifier {
             if (_disposed) return;
             if (w == null) {
               if (_asked.add(l.id)) {
-                m
-                    .loudness(t)
+                timeline_service
+                    .loudnessOf(ws, t)
                     .then(
                       (_) => _set(
                         () => (
@@ -188,14 +192,13 @@ class TimelineMediaCache extends ChangeNotifier {
   }
 
   /// The length of the video [file] in seconds: null the first time it is asked for, 0 until it has been read.
-  double? secondsOf(Motolii m, String file) {
+  double? secondsOf(WorkspaceController ws, String file) {
     final seconds = _filmSeconds[file];
     if (seconds == null) {
       _filmSeconds[file] = 0;
-      mediaSecondsOf(
-        m.libPath,
-        file,
-      ).then((s) => _set(() => _filmSeconds[file] = s));
+      timeline_service
+          .filmSeconds(ws, file)
+          .then((s) => _set(() => _filmSeconds[file] = s));
     }
     return seconds;
   }

@@ -8,6 +8,7 @@ import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -77,8 +78,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = c.ws, m = ws.inside;
-    if (m == null) return EmptyShelf(c.query);
+    final ws = c.ws;
+    if (!projectOpen(ws)) return EmptyShelf(c.query);
     final picked = int.tryParse(ws.selected ?? '') != null;
     final commands = EffectCommands(c, widget.effects);
     final look = shelfLooks['Effects']!;
@@ -264,7 +265,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     : c.mem.mapped.contains('Effects')
                     ? EffectMapPane(
                         widget.effects,
-                        m,
+                        ws,
                         every: every,
                         listed: listed,
                         picked: c.sel,

@@ -6,10 +6,9 @@ import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout;
 import 'package:flutter/services.dart';
 
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
@@ -150,22 +149,23 @@ class TrackDrag extends ChangeNotifier {
         s.grab,
       ]);
       _slide = (keys: s.keys, grab: s.grab, by: by);
+      final ws = workspace!;
       // Each step goes into the drag's undo step from where the keyframes now are, so a step skipped on the way
       // loses nothing.
-      workspace!.live.move((m) {
+      ws.live.move((_) {
         final step = by - _slid;
         final now = [
           for (final k in s.keys) (layer: k.layer, frame: k.frame + _slid),
         ];
         _slid = by;
-        return slideWrites(m, now, step);
+        return timeline_service.slideKeyframeWrites(ws, now, step);
       });
       notifyListeners();
       workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
     }
-    final h = _bar, ws = workspace!, m = ws.inside;
-    if (h == null || m == null) return;
+    final h = _bar, ws = workspace!;
+    if (h == null || !timeline_service.isConnected(ws)) return;
     // Moves by whole frames.
     var by = (_viewport.view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
@@ -184,7 +184,7 @@ class TrackDrag extends ChangeNotifier {
     ]);
     if (h.part == 'tail') by = math.max(by, _barIn + 1 - _barOut);
     if (h.part == 'head') by = math.min(by, _barOut - 1 - _barIn);
-    m.dragUpdate(h.part, by / WorkspaceController.fps);
+    timeline_service.dragBarPart(ws, h.part, by / WorkspaceController.fps);
     _bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
     ws.respan(h.id);
   }
@@ -208,11 +208,11 @@ class TrackDrag extends ChangeNotifier {
       keep ? ws.live.done(null, (_) => ws.reread()) : ws.live.cancel();
       return;
     }
-    final h = _bar, ws = workspace!, m = ws.inside;
+    final h = _bar, ws = workspace!;
     _bar = null;
-    if (h == null || m == null) return;
+    if (h == null || !timeline_service.isConnected(ws)) return;
     // Does not wait for the engine.
-    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
+    ws.after(timeline_service.endBarDrag(ws, keep && h.moved));
   }
 
   /// A click on a property lane, at [p].
@@ -221,11 +221,8 @@ class TrackDrag extends ChangeNotifier {
   /// - Between two keyframes it selects that span, as Theatre.js does. Live cannot select a span.
   /// - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
   void tapUp(Offset p) {
-    final ws = workspace!,
-        m = ws.inside,
-        r = _rows.rowAt(p.dy),
-        v = _viewport.view;
-    if (m == null ||
+    final ws = workspace!, r = _rows.rowAt(p.dy), v = _viewport.view;
+    if (!timeline_service.isConnected(ws) ||
         r == null ||
         r.value == null ||
         RowFlags(ws).isLocked(r.l.id)) {
@@ -236,10 +233,10 @@ class TrackDrag extends ChangeNotifier {
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
-    for (final k in m.keyTimes(t, name)) {
+    for (final k in timeline_service.keyframeTimes(ws, t, name)) {
       if ((v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <=
           TimelineMetrics.keyPicked + 2) {
-        return ws.after(m.later('unkey', layer: t, name: name, number: k));
+        return ws.after(timeline_service.removeKeyframe(ws, t, name, k));
       }
     }
     final now = DateTime.now(),
@@ -252,19 +249,18 @@ class TrackDrag extends ChangeNotifier {
     final f = v.frameAt(p.dx);
     if (twice) {
       return ws.after(
-        m.later(
-          'key_here',
-          layer: t,
-          name: name,
-          number:
-              f.round().clamp(0, WorkspaceController.duration) /
+        timeline_service.addKeyframe(
+          ws,
+          t,
+          name,
+          f.round().clamp(0, WorkspaceController.duration) /
               WorkspaceController.fps,
         ),
       );
     }
     final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1,
-        inside = from != null && pts.any((q) => q.$1 > f);
-    inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
+        between = from != null && pts.any((q) => q.$1 > f);
+    between ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
 
   /// A press on the tracks at [p]: selects the keyframe or the layer there, or clears the selection.
@@ -333,7 +329,7 @@ class TrackDrag extends ChangeNotifier {
     if (r.value case final n?) {
       // On a lane, a click on a keyframe deletes it.
       final t = int.parse(l.id);
-      final at = ws.inside!.keyTimes(t, n),
+      final at = timeline_service.keyframeTimes(ws, t, n),
           f = v.frameAt(p.dx) / WorkspaceController.fps;
       return at.any(
                 (k) =>
@@ -360,9 +356,9 @@ class TrackDrag extends ChangeNotifier {
   }
 
   bool _grab(Offset p) {
-    final ws = workspace!, v = _viewport.view, m = ws.inside;
+    final ws = workspace!, v = _viewport.view;
     final r = _rows.rowAt(p.dy);
-    if (m == null || r == null) return false;
+    if (!timeline_service.isConnected(ws) || r == null) return false;
     // A lane has nothing to drag and starts no selection box.
     if (r.value != null) return true;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
@@ -380,7 +376,7 @@ class TrackDrag extends ChangeNotifier {
       _stops = ws.stops(skip: {l.id})..add(ws.frame);
       return true;
     }
-    m.take(int.parse(l.id));
+    timeline_service.grabLayer(ws, int.parse(l.id));
     ws.select(l.id);
     if (ws.playing) ws.playing = false;
     _barIn = l.inF;

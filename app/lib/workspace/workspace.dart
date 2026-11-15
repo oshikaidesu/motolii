@@ -20,14 +20,14 @@ import 'package:motolii/workspace/commands/menu_bar.dart';
 import 'package:motolii/workspace/commands/menu_items.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/state/command_writes.dart'
+import 'package:motolii/workspace/state/document/command_writes.dart'
     show copyLayerStyle, copyLayerThing;
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
-import 'package:motolii/workspace/state/layer_edits.dart'
+import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
-import 'package:motolii/workspace/state/stage_service.dart'
+import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageError, stageTakeStill;
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';

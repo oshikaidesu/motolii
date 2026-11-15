@@ -32,9 +32,9 @@ Workspace(document: path, extra: [
 
 - The panel appears as a tab beside the Inspector. No existing file changes.
 - Inside the panel, `WorkspaceScope.of(context)` returns the `WorkspaceController`. It rebuilds on every change. To rebuild only when one part changes, name it: `WorkspaceScope.of(context, {WorkspaceAspect.picked})`. The playhead is read with `WorkspaceScope.frameOf(context)`.
-- `inside` is the project (`Motolii`), `selected` is the selected layer, and `frame` is the current frame. Read a value with `inside.value(thing, name, seconds)`, change it with `inside.set(...)`.
-- To move a layer on the preview in pixels: `inside.take(t)`, `inside.dragUpdate('place', 10, 0)`, then `inside.later('drag_end', number: 1)` (one undo, like a real drag). `inside.keyTimes(t, name).length` is the number of keys.
-- Four things to remember: `selected` is a string, so `int.parse` it before calling the engine. The current time in seconds is `frame / WorkspaceController.fps`. A layer's name is `inside.word(t, 'name')`. After changing the project, call `ws.reread()` so the other panels read it again.
+- `selected` is the selected layer's id, and `frame` is the current frame. A panel never touches the engine (the project): it reads the window's state (`ws.layers`, `ws.layer`, `ws.frame`) and asks a service in `lib/workspace/state/` for an operation, for example `lib/workspace/state/layers/layer_writes.dart`. A value is read with the service's reader and changed with its writer; look there for the name you need.
+- To move a layer on the preview in pixels, use the stage's drag services (`lib/workspace/state/stage/stage_service.dart`: start, update, end) so it is one undo step, like a real drag.
+- A layer's id is a string, and the current time in seconds is `frame / WorkspaceController.fps`. After changing the project, the state reads it again on its own; a panel does not call the engine to refresh.
 
 ## Add a tool to the tool panel
 

@@ -1,8 +1,9 @@
 // Reads a timesheet and finds the drawings of its levels on the disk. MediaCommands.placeSheet places them.
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:motolii/storage/folder_entries.dart'
+    show filesInNow, folderOfFile, folderThere;
 import 'package:motolii/workspace/dock/media/file_node.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
@@ -105,14 +106,14 @@ List<(int, String)>? levelNamed(
   String name,
   String Function(String file) kindOf,
 ) {
-  final here = File(sheet).parent.path,
+  final here = folderOfFile(sheet),
       named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
-    if (!Directory(folder).existsSync()) continue;
+    if (!folderThere(folder)) continue;
     if (levelOf(
           [
-            for (final e in Directory(folder).listSync())
-              if (e is File && named.hasMatch(basename(e.path))) e.path,
+            for (final p in filesInNow(folder))
+              if (named.hasMatch(basename(p))) p,
           ],
           kindOf,
           least: 1,

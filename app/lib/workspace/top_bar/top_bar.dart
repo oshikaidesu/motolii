@@ -2,18 +2,18 @@
 import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
 import 'package:motolii/workspace/top_bar/render_button.dart';
 
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show modifiedOf;
 import 'package:motolii/widgets/controls.dart'
     show Badge, Chip, ChipLook, Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/document/document_writes.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -120,12 +120,12 @@ class _Wordmark extends StatelessWidget {
 ///
 /// It reads the layers and values that the reloaded project reports as changed.
 String undoStepName(WorkspaceController ws, String done) {
-  final c = ws.lastChange, m = ws.inside;
-  if (c == null || m == null) return done;
+  final c = ws.lastChange;
+  if (c == null || !isConnected(ws)) return done;
   if (c.layers) return '$done: things added or taken away';
   final byThing = <int, Set<String>>{};
   for (final (t, n) in c.values) {
-    (byThing[t] ??= {}).add(m.shown(n)?.label ?? n);
+    (byThing[t] ??= {}).add(propertyLook(ws, n)?.label ?? n);
   }
   String nameOf(int t) => t == 0
       ? 'Stage'
@@ -161,11 +161,11 @@ class _UndoRedo extends StatelessWidget {
           rest: const Color(0x00000000),
           ink: Grey.g63,
           onTap: () {
-            final ws = WorkspaceScope.read(context), m = ws.inside;
-            if (m == null) return;
-            ws.after(
-              m.later(flip ? 'redo' : 'undo'),
-              (done, why) => ws.notice = done
+            final ws = WorkspaceScope.read(context);
+            requestUndo(
+              ws,
+              redo: flip,
+              then: (done, why) => ws.notice = done
                   ? undoStepName(ws, flip ? 'Redone' : 'Undone')
                   : why,
             ); // The app does not wait for the step to finish.
@@ -242,9 +242,8 @@ void _drawShade(Canvas canvas, Size s, Color c) {
 
 /// When the project file was last written. Every change is written as it is made.
 String _savedAt(WorkspaceController ws) {
-  final f = File('${ws.documentFolder}/${ws.document}');
-  if (ws.document == null || !f.existsSync()) return 'Saved';
-  final t = f.lastModifiedSync();
+  final t = modifiedOf('${ws.documentFolder}/${ws.document}');
+  if (ws.document == null || t == null) return 'Saved';
   return 'Saved ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
 

@@ -2,9 +2,6 @@
 // selected layer or from the fill and stroke the next drawn layer gets, and the selected layer's position.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
@@ -17,6 +14,7 @@ import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -75,7 +73,7 @@ paintOf(WorkspaceController ws) {
   int align,
 })
 _paintNow(WorkspaceController ws) {
-  final m = ws.inside!, t = int.tryParse(ws.selected ?? '');
+  final t = int.tryParse(ws.selected ?? '');
   if (t == null) {
     return (
       fill: _colorOf(ws.ink),
@@ -87,22 +85,28 @@ _paintNow(WorkspaceController ws) {
       align: 0,
     );
   }
-  final w = m.value(t, 'stroke_width', 0),
-      r = m.value(t, 'round', 0),
-      text = m.word(t, 'kind') == 'text';
+  final w = stageValue(ws, t, 'stroke_width', 0),
+      r = stageValue(ws, t, 'round', 0),
+      text = stageWord(ws, t, 'kind') == 'text';
   return (
-    fill: _colorOf(m.word(t, 'fill')),
-    stroke: _colorOf(m.word(t, 'stroke')),
-    width: m.word(t, 'stroke').isEmpty ? 'None' : '${(w ?? 0).round()} px',
+    fill: _colorOf(stageWord(ws, t, 'fill')),
+    stroke: _colorOf(stageWord(ws, t, 'stroke')),
+    width: stageWord(ws, t, 'stroke').isEmpty
+        ? 'None'
+        : '${(w ?? 0).round()} px',
     // A share of half the shorter side.
     round: '${((r ?? 0) * 200).round()}%',
     font: text
-        ? m.word(t, 'file').split('/').last.replaceFirst(RegExp(r'\.ttf$'), '')
+        ? stageWord(
+            ws,
+            t,
+            'file',
+          ).split('/').last.replaceFirst(RegExp(r'\.ttf$'), '')
         : '—',
     size: text
-        ? '${((m.value(t, 'size', m.now) ?? 1) * m.point).round()} px'
+        ? '${((stageValue(ws, t, 'size', stageNow(ws)) ?? 1) * stagePointsPerUnit(ws)).round()} px'
         : '—',
-    align: ((m.value(t, 'align', 0) ?? 0) * 2).round().clamp(0, 2),
+    align: ((stageValue(ws, t, 'align', 0) ?? 0) * 2).round().clamp(0, 2),
   );
 }
 
@@ -207,15 +211,13 @@ class OptionsStrip extends StatelessWidget {
           onSelect: (i) {
             // Aligns the selected text's lines this way, using the document's align property.
             final t = int.tryParse(ws.selected ?? '');
-            final m = ws.inside;
-            if (t == null || m == null) return;
-            m
-              ..later('together', number: 1)
-              ..later('set', layer: t, name: 'align', number: i / 2)
-              // Anchors the text where it stands, as After Effects' point text does.
-              ..later('set', layer: t, name: 'anchor_x', number: i - 1.0);
+            if (t == null || !stageConnected(ws)) return;
+            stageBeginUndoStep(ws);
+            stageSetValue(ws, layer: t, name: 'align', number: i / 2);
+            // Anchors the text where it stands, as After Effects' point text does.
+            stageSetValue(ws, layer: t, name: 'anchor_x', number: i - 1.0);
             // Does not wait for the result.
-            ws.after(m.later('together'));
+            ws.after(stageEndUndoStep(ws));
           },
         ),
       ),
@@ -350,7 +352,7 @@ class _Readout extends StatelessWidget {
         // A behaviour layer has no image of its own, so there is nothing to say. A camera layer, while its bar covers
         // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
         if (box == null &&
-            ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour' &&
+            stageWord(ws, int.parse(l.id), 'kind') != 'behaviour' &&
             !(l.kind == LayerKind.camera &&
                 (scene.layer(l.id)?.live(scene.frame) ?? false)))
           Padding(

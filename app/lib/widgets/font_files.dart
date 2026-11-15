@@ -1,9 +1,9 @@
 // Font files that are not bundled with the app: set text in one, and read the variable-font axes it has.
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show FontLoader;
+import 'package:motolii/storage/font_bytes.dart';
 
 /// The font files handed to Flutter so far. Flutter keeps a loaded font for as long as the app runs, so this set
 /// lasts as long, whichever window asked.
@@ -17,7 +17,7 @@ String fontFileFamily(String path) {
     Zone.root.run(
       () =>
           (FontLoader(path)
-                ..addFont(File(path).readAsBytes().then(ByteData.sublistView)))
+                ..addFont(readFontBytes(path).then(ByteData.sublistView)))
               .load()
               .catchError((Object _) {}),
     );
@@ -46,8 +46,7 @@ final _axes = <String, Future<List<FontAxis>>>{};
 /// of 12 bytes from 6: platformID, encodingID, languageID, nameID, length, offset). An axis without a name keeps its
 /// tag.
 Future<List<FontAxis>> fontFileAxes(String path) =>
-    _axes[path] ??= File(path)
-        .readAsBytes()
+    _axes[path] ??= readFontBytes(path)
         .then(_readAxes, onError: (Object _) => const <FontAxis>[]);
 
 List<FontAxis> _readAxes(Uint8List bytes) {

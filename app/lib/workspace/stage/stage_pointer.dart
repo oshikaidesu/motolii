@@ -8,6 +8,7 @@ import 'package:motolii/workspace/stage/draw_tools.dart';
 import 'package:motolii/workspace/stage/stage_drag.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class StagePointer {
@@ -51,25 +52,25 @@ class StagePointer {
       draw.drawDragStart(local);
       return;
     }
-    final w = ws(), m = w.inside;
+    final w = ws(), connected = stageConnected(w);
     if (drag.handleDragStart(v, local)) return;
-    if (m != null && camera.gizmoDragStart(v, local, inside: false)) return;
+    if (connected && camera.gizmoDragStart(v, local, wholeFrame: false)) return;
     // Guides come after the handles, which lie over everything else.
     if (drag.guideDragStart(v, local)) return;
-    final id = m == null ? null : hit(v, local), t = int.tryParse(id ?? '');
+    final id = !connected ? null : hit(v, local), t = int.tryParse(id ?? '');
     // Layers are tested first, then the camera frames they lie in.
-    if (m != null &&
+    if (connected &&
         t == null &&
-        camera.gizmoDragStart(v, local, inside: true)) {
+        camera.gizmoDragStart(v, local, wholeFrame: true)) {
       return;
     }
-    if (m != null && t == null) {
+    if (connected && t == null) {
       // Nothing under the pointer: draw a lasso.
       w.select(null);
       draw.lassoDragStart(local);
       return;
     }
-    if (m == null || t == null) return;
+    if (!connected || t == null) return;
     drag.layerDragStart(id!, local);
   }
 

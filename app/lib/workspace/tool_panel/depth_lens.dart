@@ -2,10 +2,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
 
 const depthZMax = 3000.0;
 
@@ -36,19 +36,18 @@ final depthLenses = Expando<DepthLens>();
   WorkspaceController ws,
   DepthLens lens,
 ) {
-  final m = ws.inside,
-      cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
-  if (m == null || cam == null) return null;
+  final cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
+  if (!isConnected(ws) || cam == null) return null;
   final t = int.parse(cam.id),
-      at = m.now,
-      p = m.point,
+      at = documentNow(ws) ?? 0.0,
+      p = documentPoint(ws) ?? 1.0,
           // The working camera orbits at kStageBack (6.0) units along +Z by default.
           eye =
           6.0 * p;
-  final stop = m.value(t, 'aperture', at) ?? 0,
-      focus = m.value(t, 'focus', at) ?? 0;
+  final stop = layerValue(ws, t, 'aperture', at) ?? 0,
+      focus = layerValue(ws, t, 'focus', at) ?? 0;
   lens
-    ..focal = m.value(t, 'focal_length', at) ?? 45.0
+    ..focal = layerValue(ws, t, 'focal_length', at) ?? 45.0
     ..fstop = stop > 0
         ? stop
         // An aperture of 0 means everything is sharp, which is shown as the narrowest f-stop of the tool panel.
@@ -68,7 +67,8 @@ typedef DepthSlab = ({
 
 /// Returns one slab per layer, except cameras: its horizontal position and its distance from the eye.
 List<DepthSlab> depthSlabsOf(WorkspaceController ws) {
-  final m = ws.inside!, eye = depthLensOf(ws, DepthLens())?.eye;
+  final eye = depthLensOf(ws, DepthLens())?.eye;
+  final p = documentPoint(ws) ?? 1.0;
   return [
     for (final l in ws.layers)
       if (eye != null && l.kind != LayerKind.camera)
@@ -76,9 +76,9 @@ List<DepthSlab> depthSlabsOf(WorkspaceController ws) {
           id: l.id,
           name: l.name,
           tone: layerKindColor(l.kind),
-          x: (m.value(int.parse(l.id), 'x', 0) ?? 0) * m.point,
-          z: eye - (m.value(int.parse(l.id), 'z', 0) ?? 0) * m.point,
-          w: m.bounds(int.parse(l.id))?[2] ?? 200,
+          x: (layerValue(ws, int.parse(l.id), 'x', 0) ?? 0.0) * p,
+          z: eye - (layerValue(ws, int.parse(l.id), 'z', 0) ?? 0.0) * p,
+          w: layerBounds(ws, int.parse(l.id))?[2] ?? 200,
         ),
   ];
 }

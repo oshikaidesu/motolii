@@ -3,12 +3,11 @@
 // Each entry is started as the registry says: `npx <package>` or `uvx <package>` with its args and env, or a binary
 // by its command name. The command runs in the login shell, so a Finder-opened app finds npx where a terminal does.
 import 'dart:convert';
-import 'dart:ffi' show Abi;
-import 'dart:io';
 
 import 'package:acpd_io/acpd_io.dart' show AcpAgentConfig;
 
-import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn;
+import 'package:motolii/storage/agent_registry_file.dart';
+import 'package:motolii/storage/host_platform.dart';
 
 const _registry =
     'https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json';
@@ -23,12 +22,12 @@ class AgentEntry {
 
   /// How the agent is started: the command in the login shell (cmd on Windows).
   AcpAgentConfig get config {
-    if (Platform.isWindows) {
+    if (hostIsWindows) {
       return AcpAgentConfig(command: 'cmd', args: ['/c', ...line], env: env);
     }
     final quoted = line.map((w) => "'${w.replaceAll("'", r"'\''")}'").join(' ');
     return AcpAgentConfig(
-      command: Platform.environment['SHELL'] ?? '/bin/sh',
+      command: loginShell,
       args: ['-lc', 'exec $quoted'],
       env: env,
     );
@@ -36,20 +35,8 @@ class AgentEntry {
 }
 
 /// Every agent in the registry this machine can start, newest list first, the kept copy when offline.
-Future<List<AgentEntry>> agentRegistry() async {
-  final kept = File('$motoliiOwn/agents/registry.json');
-  String? text;
-  try {
-    final request = await HttpClient().getUrl(Uri.parse(_registry));
-    final response = await request.close().timeout(const Duration(seconds: 8));
-    if (response.statusCode == 200) {
-      text = await response.transform(utf8.decoder).join();
-      kept
-        ..createSync(recursive: true)
-        ..writeAsStringSync(text);
-    }
-  } catch (_) {}
-  text ??= kept.existsSync() ? kept.readAsStringSync() : null;
+Future<List<AgentEntry>> agentRegistry(String ownFolder) async {
+  final text = await registryText(_registry, '$ownFolder/agents/registry.json');
   if (text == null) return const [];
   final agents = (jsonDecode(text) as Map)['agents'] as List;
   return [
@@ -91,7 +78,6 @@ List<String> _words(Object? args) => [
 
 /// The registry's name for this machine, as `darwin-aarch64`.
 String get _platform {
-  final os = Platform.isMacOS ? 'darwin' : Platform.operatingSystem;
-  final arm = '${Abi.current()}'.contains('arm64');
-  return '$os-${arm ? 'aarch64' : 'x86_64'}';
+  final arm = hostIsArm64;
+  return '$hostOperatingSystem-${arm ? 'aarch64' : 'x86_64'}';
 }

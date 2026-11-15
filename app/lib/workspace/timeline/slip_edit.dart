@@ -7,10 +7,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 
@@ -30,9 +29,11 @@ class SlipEdit extends ChangeNotifier {
   ///
   /// It is null when the layer is not a video or the file's length has not been read yet.
   (int, int)? wholeOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, media = l.media;
-    if (m == null || media == null || media.still) return null;
-    final seconds = _media.secondsOf(m, media.file);
+    final media = l.media;
+    if (!timeline_service.isConnected(ws) || media == null || media.still) {
+      return null;
+    }
+    final seconds = _media.secondsOf(ws, media.file);
     if (seconds == null || seconds <= 0) return null;
     final rate =
             WorkspaceController.fps /
@@ -44,8 +45,8 @@ class SlipEdit extends ChangeNotifier {
     return (from.round(), (from + seconds * rate).round());
   }
 
-  double _speedOf(Motolii m, int t) =>
-      switch ((m.value(t, 'speed', 0) ?? 1).abs()) {
+  double _speedOf(WorkspaceController ws, int t) =>
+      switch ((timeline_service.layerValue(ws, t, 'speed', 0) ?? 1).abs()) {
         0 => 1,
         final s => s,
       };
@@ -65,15 +66,16 @@ class SlipEdit extends ChangeNotifier {
     required int barIn,
     required int barOut,
   }) {
-    final whole = _whole, m = ws.inside!;
+    final whole = _whole;
     if (whole == null) return;
     final to = by.clamp(
       math.min(0, barOut - whole.$2),
       math.max(0, barIn - whole.$1),
     );
-    m.dragUpdate(
+    timeline_service.dragBarPart(
+      ws,
       'begin',
-      (barIn - whole.$1 - to) * _speedOf(m, t) / WorkspaceController.fps,
+      (barIn - whole.$1 - to) * _speedOf(ws, t) / WorkspaceController.fps,
     );
     notifyListeners();
   }

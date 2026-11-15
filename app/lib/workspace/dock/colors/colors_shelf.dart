@@ -3,7 +3,6 @@ import 'package:motolii/workspace/dock/colors/color_saved_bar.dart';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
@@ -18,6 +17,7 @@ import 'package:motolii/workspace/dock/colors/colors_controller.dart';
 import 'package:motolii/workspace/dock/colors/gradient_stops.dart';
 import 'package:motolii/workspace/dock/colors/hex_field.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -48,7 +48,7 @@ class ColorsShelf extends StatelessWidget {
     }); // Rebuilds when the target or the selection changes.
     colors.saved.read();
     final commands = ColorCommands(c, colors);
-    final m = c.ws.inside!, usedCount = <Color, int>{};
+    final usedCount = <Color, int>{};
     for (final col in usedColors(c.ws).values) {
       usedCount[col] = (usedCount[col] ?? 0) + 1; // Layers using this color: roughly how much of the picture it covers.
     }
@@ -56,7 +56,7 @@ class ColorsShelf extends StatelessWidget {
     final (t, name) = _target(commands);
     final word = t == null
         ? (name == 'stroke' ? c.ws.edge : c.ws.ink)
-        : m.word(t, name);
+        : wordOf(c.ws, t, name);
     final stops = stopsIn(word),
         gradient = stops.length > 1,
         none = name == 'stroke' ? word.isEmpty : word == 'none';
@@ -136,7 +136,7 @@ class ColorsShelf extends StatelessWidget {
                         : null;
                     final who = at == null
                         ? whom
-                        : '“${String.fromCharCodes(m.word(t!, 'text').runes.toList().sublist(at.start, at.start + at.count))}” in $whom';
+                        : '“${String.fromCharCodes(wordOf(c.ws, t!, 'text').runes.toList().sublist(at.start, at.start + at.count))}” in $whom';
                     return Text(
                       '${name == 'fill'
                           ? 'Fill'

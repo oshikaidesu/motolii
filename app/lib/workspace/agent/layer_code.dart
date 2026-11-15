@@ -8,14 +8,12 @@
 import 'package:acpd/acpd.dart'
     show ContentBlock, ResourceLink, TextContentBlock;
 
-import 'package:motolii/bridge/engine_paths.dart' show motoliiDir, motoliiOwn;
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/inspector/card_declaration.dart';
-import 'package:motolii/workspace/code/expression_reference.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
+import 'package:motolii/workspace/state/agent_context.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class LayerCode {
@@ -42,14 +40,10 @@ class LayerCode {
 
 /// The selected layer as the agent is told of it, or null with no layer selected.
 LayerCode? layerCode(WorkspaceController ws) {
-  final m = ws.inside, t = int.tryParse(ws.selected ?? '');
-  if (m == null || t == null) return null;
+  final t = int.tryParse(ws.selected ?? '');
+  if (!projectOpen(ws) || t == null) return null;
   final name = ws.layers.where((l) => l.id == ws.selected).firstOrNull?.name;
   final stretch = ws.selection.stretch;
-  String value(String n) =>
-      m.words(t, n).isNotEmpty || m.value(t, n, m.now) == null
-      ? m.word(t, n)
-      : _number(m.value(t, n, m.now)!);
   return LayerCode(
     t,
     name ?? 'Layer $t',
@@ -59,17 +53,14 @@ LayerCode? layerCode(WorkspaceController ws) {
             case final code?)
           (c.name, code.word, code.slot),
     ],
-    [
-      for (final (title, names) in m.cards(t))
-        '$title: ${[for (final n in names) '${m.shown(n)?.label ?? n} ($n)=${value(n)}'].join(', ')}',
-    ],
+    cardValueLines(ws, t),
     stretch != null && stretch.layer == ws.selected ? stretch.name : '',
   );
 }
 
 /// The folder a request's new files go in: a fresh one under the own programs, as an empty expression's (empty_effect.dart).
 String newFolder() =>
-    '$motoliiOwn/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
+    '${ownFolder()}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
 
 /// Makes each of [code]'s files the layer's own and returns what is sent with a request: the layer's cards and values,
 /// its files as links, where new files go ([fresh]), and the expression reference with the names that run here.
@@ -91,11 +82,11 @@ Future<List<ContentBlock>> ownedFor(
   final runs = <String>{};
   for (final (_, f) in files) {
     if (f.endsWith('.js')) {
-      runs.addAll((await supportedIn(ws.inside!, f))?.keys ?? const []);
+      runs.addAll((await supportedIn(ws, f))?.keys ?? const []);
     }
   }
   final reference =
-      '$motoliiDir/third_party/js/expression-globals-typescript/index.d.ts';
+      '${engineFolder()}/third_party/js/expression-globals-typescript/index.d.ts';
   return [
     TextContentBlock(
       text: [
@@ -125,7 +116,3 @@ Future<List<ContentBlock>> ownedFor(
       ResourceLink(name: t, title: t, uri: Uri.file(f).toString()),
   ];
 }
-
-String _number(double v) => v == v.roundToDouble()
-    ? '${v.toInt()}'
-    : '${double.parse(v.toStringAsFixed(4))}';

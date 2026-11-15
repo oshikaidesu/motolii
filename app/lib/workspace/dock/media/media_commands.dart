@@ -1,17 +1,16 @@
 // What the Media shelf asks the engine to do: place files, levels and timesheets on the canvas, and replace what a layer shows.
 import 'dart:async';
-import 'dart:io';
 
-import 'package:motolii/bridge/motolii.dart' show mediaSecondsOf;
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/text_file.dart' show readTextOrEmpty;
 import 'package:motolii/workspace/dock/media/file_node.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/dock/media/timesheet.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/state/media/media_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the Media shelf asks the engine to do: place files on the canvas as new layers, and replace the file a layer
-/// shows. Every call to the engine the shelf makes is a method here.
+/// shows. The engine calls are in state (media_service.dart).
 class MediaCommands {
   /// [c] is the shelf as it is built now, and [media] what the shelf keeps between builds.
   MediaCommands(this.c, this.media);
@@ -32,48 +31,21 @@ class MediaCommands {
     if (levelOf(files, media.kindOf) case final drawings?) {
       return _placeLevel(drawings);
     }
-    final m = c.ws.inside!;
     final lengths = [
-      for (final (i, s) in (await Future.wait([
-        for (final f in files) mediaSecondsOf(m.libPath, f),
-      ])).indexed)
+      for (final (i, s) in (await mediaLengthsOf(c.ws, files)).indexed)
         media.kindOf(files[i]) == 'picture' ? media.stillSeconds : s,
     ]; // A still image lasts as long as chosen.
-    m.later('together', number: 1);
-    final made = <Future<int>>[];
-    for (final (i, f) in files.indexed) {
-      final asked = Completer<int>();
-      c.ws.after(m.later('add', word: f), (done, why) {
-        if (done) return;
-        c.set(() => c.mem.trouble[f] = why);
-        asked.complete(0);
-      }, asked.complete);
-      if (_fitted(f)) m.later('fit', layer: -1, word: 'fit');
-      if (lengths[i] > 0) {
-        m.later(
-          'set',
-          layer: -1,
-          name: 'duration',
-          number: lengths[i],
-        ); // Applies to the layer just added.
-      }
-      made.add(asked.future);
-    }
-    c.ws.after(m.later('together'));
-    Future.wait(made).then((ids) {
-      final all = [
-        for (final i in ids)
-          if (i > 0) i,
-      ];
-      if (all.length > 1 && lengths.every((s) => s > 0)) {
-        c.ws.after(
-          m.later('time_align', word: 'stagger ${all.join(' ')}'),
-          (_, _) => c.ws.reread(),
-        );
-      }
-      c.ws.pickMany([for (final i in all) '$i']);
-      media.picked.clear();
-    });
+    layFilesInOrder(
+      c.ws,
+      files,
+      lengths,
+      [for (final f in files) _fitted(f)],
+      refused: (f, why) => c.set(() => c.mem.trouble[f] = why),
+      placed: (ids) {
+        c.ws.pickMany([for (final i in ids) '$i']);
+        media.picked.clear();
+      },
+    );
   }
 
   /// Places a level, OpenToonz's term and CLIP STUDIO's animation folder, on the canvas as one layer.
@@ -85,32 +57,12 @@ class MediaCommands {
   /// timesheet. Drawings numbered 1, 3, 5 are therefore held across the gaps, which After Effects users ask for on the
   /// forum and After Effects lacks. The timing can then be changed by moving the keyframes.
   void _placeLevel(List<(int, String)> drawings) {
-    final m = c.ws.inside!,
-        from = c.ws.frame / WorkspaceController.fps,
-        first = drawings.first.$1;
-    m.later('together', number: 1);
-    c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
-      if (!done) c.set(() => c.mem.trouble[drawings.first.$2] = why);
-    }, (made) => c.ws.select('$made'));
-    m.later('fit', layer: -1, word: 'fit');
-    m.later(
-      'set',
-      layer: -1,
-      name: 'duration',
-      number: (drawings.last.$1 - first + 1) / 24,
+    placeLevel(
+      c.ws,
+      drawings,
+      c.ws.frame / WorkspaceController.fps,
+      refused: (f, why) => c.set(() => c.mem.trouble[f] = why),
     );
-    for (final (n, _) in drawings) {
-      final at = '${from + (n - first) / 24}';
-      m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
-      m.later(
-        'easing',
-        layer: -1,
-        name: 'cel',
-        number: double.parse(at),
-        word: 'hold',
-      );
-    }
-    c.ws.after(m.later('together'), (_, _) => c.ws.reread());
     media.picked.clear();
   }
 
@@ -132,18 +84,11 @@ class MediaCommands {
       // Reading a song takes the engine a moment, so a second click in that moment counts as the same click.
       return;
     }
-    final m = c.ws.inside!,
-        still = media.kindOf(n.id) == 'picture' && media.stillSeconds > 0,
+    final still = media.kindOf(n.id) == 'picture' && media.stillSeconds > 0,
         cut = const ['film', 'sound'].contains(media.kindOf(n.id))
             ? media.filmRanges[n.id]
             : null,
         fit = _fitted(n.id); // The engine works out what the file is without waiting, and the layer is selected once made.
-    if (still || cut != null || fit) {
-      m.later(
-        'together',
-        number: 1,
-      ); // Adding, fitting and setting the length are one undo step.
-    }
     // An SVG comes in as editable path shapes ("vector") by default, or as a
     // picture ("add") when the viewer switched it (file_tile.dart). Everything
     // else is placed as a layer of its own kind.
@@ -151,31 +96,20 @@ class MediaCommands {
         MediaController.isSvg(n.id) && !media.svgAsPicture.contains(n.id)
         ? 'vector'
         : 'add';
-    c.ws.after(m.later(verb, word: n.id), (done, why) {
-      media.placing.remove(n.id);
-      c.set(
-        () => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why,
-      );
-    }, (made) => c.ws.select('$made'));
-    if (fit) m.later('fit', layer: -1, word: 'fit');
-    if (still) {
-      m.later(
-        'set',
-        layer: -1,
-        name: 'duration',
-        number: media.stillSeconds,
-      ); // Applies to the layer just added.
-    }
-    if (cut case (final a, final b)) {
-      mediaSecondsOf(m.libPath, n.id).then((len) {
-        // The length is already known because the range band drew it. The begin time is where the band's left end is in the video.
-        m.later('set', layer: -1, name: 'begin', number: a * len);
-        m.later('set', layer: -1, name: 'duration', number: (b - a) * len);
-        c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-      });
-    } else if (still || fit) {
-      c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-    }
+    placeFileLayer(
+      c.ws,
+      file: n.id,
+      verb: verb,
+      fit: fit,
+      stillSeconds: still ? media.stillSeconds : null,
+      cut: cut,
+      settled: (done, why) {
+        media.placing.remove(n.id);
+        c.set(
+          () => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why,
+        );
+      },
+    );
   }
 
   /// Places the timesheet [file] on the canvas, starting at the current time.
@@ -185,55 +119,30 @@ class MediaCommands {
   /// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
   /// Missing drawings and unsupported values are reported in the notice.
   Future<void> placeSheet(String file) async {
-    final sheet = sheetOf(
-      await File(file).readAsString().catchError((_) => ''),
-    );
+    final sheet = sheetOf(await readTextOrEmpty(file));
     if (sheet == null) {
       c.ws.notice = 'Not a timesheet: ${basename(file)}';
       return;
     }
-    final m = c.ws.inside!,
-        from = c.ws.frame / WorkspaceController.fps,
-        missing = <String>[],
-        made = <Future<int>>[];
-    m.later('together', number: 1);
-    for (final (name, keys) in sheet.columns) {
-      if (levelNamed(file, name, media.kindOf) case final drawings?) {
-        final asked = Completer<int>();
-        c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
-          if (!done) asked.complete(0);
-        }, asked.complete);
-        m.later('fit', layer: -1, word: 'fit');
-        m.later('say', layer: -1, name: 'name', word: name);
-        m.later('set', layer: -1, name: 'duration', number: sheet.frames / 24);
-        for (final (f, n) in keys) {
-          final at = '${from + f / 24}';
-          m.later(
-            'key',
-            layer: -1,
-            name: 'cel',
-            word: at,
-            number: n.toDouble(),
-          );
-          m.later(
-            'easing',
-            layer: -1,
-            name: 'cel',
-            number: double.parse(at),
-            word: 'hold',
-          );
-        }
-        made.add(asked.future);
-      } else {
-        missing.add(name);
-      }
-    }
-    c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-    final ids = [
-      for (final i in await Future.wait(made))
-        if (i > 0) '$i',
+    final columns = [
+      for (final (name, keys) in sheet.columns)
+        (
+          name: name,
+          keys: keys,
+          drawings: levelNamed(file, name, media.kindOf),
+        ),
     ];
-    c.ws.pickMany(ids);
+    final ids = await layOutSheet(
+      c.ws,
+      from: c.ws.frame / WorkspaceController.fps,
+      frames: sheet.frames,
+      columns: columns,
+    );
+    c.ws.pickMany([for (final i in ids) '$i']);
+    final missing = [
+      for (final column in columns)
+        if (column.drawings == null) column.name,
+    ];
     final told = [
       if (missing.isNotEmpty)
         'no drawings named ${missing.join(', ')} beside it',
@@ -247,25 +156,21 @@ class MediaCommands {
   ///
   /// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
   /// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
-  void replaceAll(List<(int, String)> all, String file) {
-    final m = c.ws.inside!;
-    m.later('together', number: 1);
-    for (final (t, w) in all) {
-      c.ws.after(m.later('say', layer: t, name: w, word: file), (done, why) {
-        if (!done) c.ws.notice = 'Not replaced: $why';
-      });
-    }
-    c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-  }
-
-  /// Fills the shape layer [shape] with the image [file], as in Alight Motion's Fill > Media.
-  void fillShape(int shape, String file) => c.ws.after(
-    c.ws.inside!.later('say', layer: shape, name: 'fill_media', word: file),
+  void replaceAll(List<(int, String)> all, String file) => replaceSourcesIn(
+    c.ws,
+    all,
+    file,
+    refused: (why) => c.ws.notice = 'Not replaced: $why',
   );
 
+  /// Fills the shape layer [shape] with the image [file], as in Alight Motion's Fill > Media.
+  void fillShape(int shape, String file) => fillShapeWith(c.ws, shape, file);
+
   /// Makes the image or video layer [layer] show [file] instead, keeping its position, size, keyframes and effects.
-  void replaceSource(int layer, String file) => c.ws.after(
-    c.ws.inside!.later('say', layer: layer, name: 'file', word: file),
-    (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why',
+  void replaceSource(int layer, String file) => replaceLayerSource(
+    c.ws,
+    layer,
+    file,
+    refused: (why) => c.ws.notice = 'Not replaced: $why',
   );
 }

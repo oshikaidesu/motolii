@@ -1,9 +1,11 @@
 // A project as the home screen lists it, and what is said or done about one: the facts and sizes as text, the day it is filed under,
 // copying it, and moving it to the Trash. None of it draws.
-import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/unique_name.dart' show firstFree;
+import 'package:motolii/workspace/state/project_facts.dart' show ProjectFacts;
 
 /// One project listed: its file, and the facts saved in it. [facts] and [picture] are null until read, or if the project saved none.
 class HomeProject {
@@ -11,7 +13,7 @@ class HomeProject {
   final String path;
   final DateTime changed;
   final int bytes;
-  ({int wide, int high, double seconds, double rate})? facts;
+  ProjectFacts? facts;
   String? picture;
   String get name =>
       path.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
@@ -84,24 +86,19 @@ String homeLength(double seconds) {
 void duplicateProject(String folder, HomeProject d) {
   final to = firstFree(
     '$folder/${d.name} Copy.motolii',
-    (f) => File(f).existsSync(),
+    existsFile,
     (n) => '$folder/${d.name} Copy $n.motolii',
   );
-  File(d.path).copySync(to);
+  copyProjectFile(d.path, to);
 }
 
 /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there. False if it could not be moved.
 bool trashProject(HomeProject d) {
-  final trash = '${Platform.environment['HOME']}/.Trash';
+  final trash = trashFolder();
   final to = firstFree(
     '$trash/${d.name}.motolii',
-    (f) => File(f).existsSync(),
+    existsFile,
     (n) => '$trash/${d.name} $n.motolii',
   );
-  try {
-    File(d.path).renameSync(to);
-  } catch (_) {
-    return false;
-  }
-  return true;
+  return moveProjectFile(d.path, to);
 }

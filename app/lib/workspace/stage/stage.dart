@@ -1,12 +1,8 @@
 // The Stage panel: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
 // The image is the work (state/art_scene.dart). The chrome around it stays grey, with the accent only on what is switched on.
-import 'dart:io' show Directory, File;
-
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
-import 'package:motolii/bridge/motolii_watch.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
@@ -21,7 +17,9 @@ import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/storage/snapshot_files.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -58,15 +56,11 @@ class _StageState extends State<_Stage> {
   set _safe(bool v) => _ws.setView('stage.safe', v);
   bool get _grid => _ws.viewOf('stage.grid', false);
   set _grid(bool v) => _ws.setView('stage.grid', v);
-  (Object?, String) _eyeTold = (null, '');
+  final _eyeTold = ViewCameraLink();
 
   /// Tells the engine which view camera the stage is seen through, when that has changed.
-  void _tellEye(WorkspaceController ws) {
-    final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
-    if (m == null || _eyeTold == (m, word)) return;
-    _eyeTold = (m, word);
-    m.later('view_camera', word: word);
-  }
+  void _tellEye(WorkspaceController ws) =>
+      _eyeTold.tell(ws, ws.freeEye ? ws.eye.join(' ') : '');
 
   Map<String, int> get _opts =>
       _ws.view.putIfAbsent('stage.options', () => <String, int>{})
@@ -92,13 +86,11 @@ class _StageState extends State<_Stage> {
   /// While Show Snapshot is held the still is shown over the stage, to compare an earlier look with the current one.
   /// Nothing is undone.
   void _take() {
-    final m = _ws.inside;
-    if (m == null) return;
+    if (!stageConnected(_ws)) return;
     // A new name each time, because Flutter's image cache identifies a file by its name.
-    final png =
-        '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';
-    if (!m.still(png)) {
-      _ws.notice = 'No snapshot: ${m.error}';
+    final png = newSnapshotPath();
+    if (!stageTakeStill(_ws, png)) {
+      _ws.notice = 'No snapshot: ${stageError(_ws)}';
       return;
     }
     _forget();
@@ -106,11 +98,7 @@ class _StageState extends State<_Stage> {
   }
 
   void _forget() {
-    try {
-      if (_shot case final was?) File(was).deleteSync();
-    } catch (_) {
-      // Already gone.
-    }
+    if (_shot case final was?) deleteSnapshot(was);
   }
 
   @override

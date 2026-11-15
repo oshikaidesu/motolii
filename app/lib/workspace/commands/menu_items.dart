@@ -1,10 +1,9 @@
 // The menu bar, built from the workspace's commands (menu_bar.dart): the items, their shortcuts, and the skins offered.
 // ignore_for_file: invalid_use_of_protected_member
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
-import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/theme.dart';
+import 'package:motolii/storage/open_in_host.dart';
+import 'package:motolii/workspace/state/help_readme.dart';
 import 'package:motolii/workspace/workspace.dart';
 import 'package:motolii/workspace/commands/command_arrange.dart'
     show workspaceAligns, workspaceTimes;
@@ -163,54 +162,53 @@ extension WorkspaceMenuItems on WorkspaceState {
         ],
       );
 
-  PlatformMenu _viewMenu(
-    PlatformMenuItem Function(String, String) item,
-  ) => PlatformMenu(
-    label: 'View',
-    menus: [
-      PlatformMenuItemGroup(
-        // Live's View menu: zoom of the arrangement.
-        members: [
-          item('Zoom In', 'zoom.in'),
-          item('Zoom Out', 'zoom.out'),
-          item('Zoom to Selection', 'zoom.selection'),
-          item('Zoom Back', 'zoom.back'),
-          item('Optimize Width', 'zoom.width'),
-        ],
-      ),
-      PlatformMenuItemGroup(
-        members: [
-          item('Play / Stop', 'play.fromStart'),
-          item('Continue Play', 'play.continue'),
-          item('Loop', 'loop.toggle'),
-        ],
-      ),
+  PlatformMenu _viewMenu(PlatformMenuItem Function(String, String) item) =>
       PlatformMenu(
-        label: 'Skin',
+        label: 'View',
         menus: [
           PlatformMenuItemGroup(
+            // Live's View menu: zoom of the arrangement.
             members: [
-              PlatformMenuItem(
-                label: 'Default',
-                onSelected: ColorTheme.skin == null ? null : () => _wear(null),
-              ),
-              for (final n in ColorTheme.skinNames())
-                PlatformMenuItem(
-                  label: n,
-                  onSelected: n == ColorTheme.skin ? null : () => _wear(n),
-                ),
+              item('Zoom In', 'zoom.in'),
+              item('Zoom Out', 'zoom.out'),
+              item('Zoom to Selection', 'zoom.selection'),
+              item('Zoom Back', 'zoom.back'),
+              item('Optimize Width', 'zoom.width'),
             ],
           ),
-          PlatformMenuItem(
-            label: 'Show Skins Folder',
-            onSelected: () => Process.run('open', [
-              (Directory(ColorTheme.skins)..createSync(recursive: true)).path,
-            ]),
+          PlatformMenuItemGroup(
+            members: [
+              item('Play / Stop', 'play.fromStart'),
+              item('Continue Play', 'play.continue'),
+              item('Loop', 'loop.toggle'),
+            ],
+          ),
+          PlatformMenu(
+            label: 'Skin',
+            menus: [
+              PlatformMenuItemGroup(
+                members: [
+                  PlatformMenuItem(
+                    label: 'Default',
+                    onSelected: ColorTheme.skin == null
+                        ? null
+                        : () => _wear(null),
+                  ),
+                  for (final n in ColorTheme.skinNames())
+                    PlatformMenuItem(
+                      label: n,
+                      onSelected: n == ColorTheme.skin ? null : () => _wear(n),
+                    ),
+                ],
+              ),
+              PlatformMenuItem(
+                label: 'Show Skins Folder',
+                onSelected: () => openFolderInHost(ColorTheme.skins),
+              ),
+            ],
           ),
         ],
-      ),
-    ],
-  );
+      );
 
   PlatformMenu _arrangeMenu(
     PlatformMenuItem Function(String, String) item,
@@ -277,8 +275,7 @@ extension WorkspaceMenuItems on WorkspaceState {
     menus: [
       PlatformMenuItem(
         label: 'Motolii (README)',
-        onSelected: () =>
-            Process.run('open', ['${File(motoliiDir).parent.path}/README.md']),
+        onSelected: () => openInHost(helpReadmePath()),
       ),
     ],
   );

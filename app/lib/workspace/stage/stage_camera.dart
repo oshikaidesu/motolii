@@ -2,10 +2,9 @@
 // Like After Effects' 2 Views with Active Camera. It is view-only; all editing happens on the stage.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -17,7 +16,7 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
-  (Motolii?, bool) _told = (null, false);
+  final _told = CameraViewLink();
 
   @override
   void initState() {
@@ -31,20 +30,15 @@ class _CameraViewState extends State<CameraView> {
   /// nobody looks at costs no second image.
   void _look(Duration _) {
     if (!mounted) return;
-    final m = WorkspaceScope.read(context).inside,
-        seen =
-            context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
-    if (_told != (m, seen)) {
-      // A newly opened document starts with the tab not announced.
-      _told = (m, seen);
-      m?.later('camera_view', word: seen ? 'on' : '');
-    }
+    final seen =
+        context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
+    _told.tell(WorkspaceScope.read(context), seen);
     WidgetsBinding.instance.addPostFrameCallback(_look);
   }
 
   @override
   void dispose() {
-    _told.$1?.later('camera_view');
+    _told.forget();
     super.dispose();
   }
 

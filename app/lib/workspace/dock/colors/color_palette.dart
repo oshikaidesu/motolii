@@ -1,7 +1,7 @@
 // The Colors shelf's palettes and gradients: what each is, the starters, and the colors a project uses.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A color palette: the starters, the user's saved ones, or one taken from a photo.
@@ -125,11 +125,9 @@ String hexOfColor(Color c) {
 
 /// The colors that layers are filled with, keyed by layer name. A gradient counts as its first color.
 Map<String, Color> usedColors(WorkspaceController ws) {
-  final m = ws.inside;
-  if (m == null) return const {};
   return {
     for (final l in ws.layers)
-      if (m.word(int.parse(l.id), 'fill').split(' ').first.split('@').first
+      if (wordOf(ws, int.parse(l.id), 'fill').split(' ').first.split('@').first
           case final f when f.length == 6)
         if (int.tryParse(f, radix: 16) case final v?)
           l.name: Color(0xFF000000 | v),

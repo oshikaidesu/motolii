@@ -1,14 +1,9 @@
 // panel.dart: the inspector's panel in the window: what it listens to, and when it builds again or only tells the fields their numbers.
 import 'dart:async';
 import 'dart:developer' show Timeline;
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_watch.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/host_cards.dart';
 import 'package:motolii/inspector/inspected_layer.dart';
@@ -25,7 +20,14 @@ import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
 import 'package:motolii/workspace/inspector_feed/relation_stack.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/inspector/inspector_actions.dart';
+import 'package:motolii/workspace/state/inspector/inspector_reads.dart';
+import 'package:motolii/workspace/state/inspector/inspector_values.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart'
+    show groupBegin, groupEnd, soundLayer;
+import 'package:motolii/workspace/state/layers/layer_reads.dart' show layerWord;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -53,12 +55,11 @@ class _InspectorPanelState extends State<InspectorPane> {
   bool _keyed(WorkspaceController ws) {
     final l = _layerOf(ws);
     if (l != null) return l.keys.isNotEmpty;
-    final m = ws.inside;
-    if (m == null) return true;
+    if (!projectOpen(ws)) return true;
     if (_stageKeyed?.$1 != ws.rev) {
       _stageKeyed = (
         ws.rev,
-        m.moving(0).any((n) => m.keyTimes(0, n).isNotEmpty),
+        stageHasKeys(ws),
       ); // (the stage's: once a document)
     }
     return _stageKeyed!.$2;
@@ -77,17 +78,16 @@ class _InspectorPanelState extends State<InspectorPane> {
   // (the reading of the document changed only numbers of what is picked, none that changes its cards: they are told
   //  to the fields that show them, as a moment's are; anything else, or not known: the inspector built again)
   bool _onlyNumbers(WorkspaceController ws) {
-    final m = ws.inside,
-        c = ws.lastChange,
+    final c = ws.lastChange,
         t = int.tryParse(_id(ws) ?? '') ?? (_id(ws) == null ? 0 : null);
-    if (m == null ||
+    if (!projectOpen(ws) ||
         c == null ||
         c.layers ||
         t == null ||
         const bool.fromEnvironment('NOPOUR')) {
       return false;
     }
-    final cards = '${m.cards(t)}';
+    final cards = '${layerCardsOf(ws, t)}';
     if (cards != _cards) {
       // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset;
       //  or a card's own values changed under the same title, as a slider is added to an expression's head in the Code tab)
@@ -97,13 +97,13 @@ class _InspectorPanelState extends State<InspectorPane> {
     for (final (thing, name) in c.values) {
       if (name == 'name' ||
           (thing == t &&
-              (m.shaping.contains(name) ||
-                  m.range(t, name) == null ||
-                  m.shown(name)?.look == 'thing'))) {
+              (shapingNamesOf(ws).contains(name) ||
+                  layerRangeOf(ws, t, name) == null ||
+                  shownFactOf(ws, name)?.look == 'thing'))) {
         return false; // (another thing: shown by its name, a word) // (a name changed anywhere: things are named on cards; a word: it is not watched)
       }
       // (nor is an effect's colour, three numbers shown as one swatch as a word is (cards.dart): golf_noise.md (84))
-      if (thing == t && isColourPart(m, name)) return false;
+      if (thing == t && isColourPartOf(ws, name)) return false;
     }
     return true;
   }
@@ -158,7 +158,7 @@ class _InspectorPanelState extends State<InspectorPane> {
 
   Timer? _settle;
 
-  // (the inside showed something new while the document and the pick stayed (a hand carrying on the stage, a relation
+  // (the engine showed something new while the document and the pick stayed (a hand carrying on the stage, a relation
   //  at a moment): the numbers told to the fields that show them; nothing built again)
   void _seenNow() {
     final ws = _ws!;
@@ -219,8 +219,8 @@ class _InspectorPanelState extends State<InspectorPane> {
     final ws = WorkspaceScope.read(context),
         l = _layerOf(ws),
         k = _kindOf(l),
-        m = ws.inside!,
         own = widget.only == null;
+    requireProject(ws);
     if (!own && l == null) {
       return const SizedBox.shrink(); // (never the stage's cards)
     }
@@ -243,83 +243,42 @@ class _InspectorPanelState extends State<InspectorPane> {
         title: l?.name,
         movable: !own || int.tryParse(l?.id ?? '') == null
             ? const []
-            : m.fxTitles(
+            : effectTitles(
+                ws,
                 int.parse(l!.id),
               ), // (its effects, up or down their stack)
         moreCards: !own || int.tryParse(l?.id ?? '') == null
             ? const []
             : [
-                for (final c in m.moreCards(int.parse(l!.id)))
+                for (final c in moreCardTitles(ws, int.parse(l!.id)))
                   if (l.kind != LayerKind.audio || c == 'Play') c,
               ], // (a sound's speed, Alight Motion's; nothing else)
         cardsOff: int.tryParse(l?.id ?? '') == null
             ? const []
-            : [
-                for (final t in m.word(int.parse(l!.id), 'fx_off').split(';'))
-                  if (t.isNotEmpty) t,
-              ],
+            : effectsOff(ws, int.parse(l!.id)),
       ),
       actions: CardActions(
         onCardMove: !own || int.tryParse(l?.id ?? '') == null
             ? null
-            : (title, by) => ws.after(
-                m.later(
-                  'fx_move',
-                  layer: int.parse(l!.id),
-                  word: title,
-                  number: by.toDouble(),
-                ),
-              ),
-        onSum: m.workOut,
+            : (title, by) => moveEffect(ws, int.parse(l!.id), title, by),
+        onSum: (sum) => workOutSum(ws, sum),
         onMoreCard: !own || int.tryParse(l?.id ?? '') == null
             ? null
-            : (title) {
-                m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);
-                ws.reread();
-              },
+            : (title) => askMoreCard(ws, int.parse(l!.id), title),
         onAddEffect:
             !own ||
                 int.tryParse(l?.id ?? '') == null ||
                 l?.kind == LayerKind.audio ||
-                m.word(int.parse(l!.id), 'kind') == 'light'
+                layerWord(ws, int.parse(l!.id), 'kind') == 'light'
             ? null
             : () {
-                // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
+                // (a light takes none: the engine's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
                 ws.front('Effects');
                 askDockSearch();
               },
         onCardRemove: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title, names) {
-                // A Stroke card's parameter ids read as "<6-hex>:stroke" and
-                // "<6-hex>:stroke_width"; the id in front of the colon is the
-                // instance's handle. The bin takes that one slot out.
-                if (title == 'Stroke' && names.isNotEmpty) {
-                  final head = names.first.split(':');
-                  if (head.length == 2 && head[0].length == 6) {
-                    ws.after(
-                      m.later(
-                        'stroke_out',
-                        layer: int.parse(l!.id),
-                        word: head[0],
-                      ),
-                      (_, _) => ws.reread(),
-                    );
-                    return;
-                  }
-                }
-                ws.after(
-                  title == 'Script'
-                      ? m.later(
-                          'say',
-                          layer: int.parse(l!.id),
-                          name: 'script',
-                          word: '',
-                        )
-                      : m.later('fx_out', layer: int.parse(l!.id), word: title),
-                  (_, _) => ws.reread(),
-                );
-              },
+            : (title, names) => removeCard(ws, int.parse(l!.id), title, names),
         onAddStroke:
             int.tryParse(l?.id ?? '') == null ||
                 !const {
@@ -328,10 +287,7 @@ class _InspectorPanelState extends State<InspectorPane> {
                   LayerKind.image,
                 }.contains(l?.kind)
             ? null
-            : () => ws.after(
-                m.later('stroke_add', layer: int.parse(l!.id)),
-                (_, _) => ws.reread(),
-              ),
+            : () => addStroke(ws, int.parse(l!.id)),
         cardEdit: int.tryParse(l?.id ?? '') == null
             ? null
             : (title, names) =>
@@ -340,75 +296,48 @@ class _InspectorPanelState extends State<InspectorPane> {
                   : () => EffectCode.show(ws, title), // (a card's code is a cell of the Code tab: workspace/code/code_pane.dart)
         onCardEye: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title) => ws.after(
-                m.later('fx_visible', layer: int.parse(l!.id), word: title),
-                (_, _) => ws.reread(),
-              ),
+            : (title) => toggleEffect(ws, int.parse(l!.id), title),
         onCardDuplicate: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title) => ws.after(
-                m.later('fx_duplicate', layer: int.parse(l!.id), word: title),
-                (done, why) => done ? ws.reread() : ws.notice = why,
-              ), // (Alight Motion's ⋮ Duplicate: put on again after it, its values with it)
-        onCardInfo: (title) => ws.notice = m.about(title).isEmpty
+            : (title) => duplicateEffect(ws, int.parse(l!.id), title),
+        onCardInfo: (title) => ws.notice = aboutEffect(ws, title).isEmpty
             ? '$title: no words of its maker\'s'
-            : '$title: ${m.about(title)}', // (in its maker's words, as the shelf searches them)
+            : '$title: ${aboutEffect(ws, title)}', // (in its maker's words, as the shelf searches them)
         onCardSave: int.tryParse(l?.id ?? '') == null
             ? null
-            : (title, names) => ws.after(
-                m.later(
-                  'keep_preset',
-                  layer: int.parse(l!.id),
-                  name: names.join(' '),
-                  word: title,
-                ),
-                (done, why) {
-                  // (that effect's values and keys a look on the Effects shelf, by its name and a number the inside gives it)
-                  m.forgetFolders();
-                  ws.notice = done ? 'Preset kept: $title' : 'Not kept: $why';
-                  ws.reread();
-                },
-              ),
+            : (title, names) =>
+                  keepCardPreset(ws, int.parse(l!.id), title, names),
         onCardReset: !own || int.tryParse(l?.id ?? '') == null
             ? null
-            : (names) => ws.after(
-                m.later(
-                  'reset',
-                  layer: int.parse(l!.id),
-                  word: names.join(' '),
-                ),
-                (_, _) => ws.reread(),
-              ),
+            : (names) => resetCardValues(ws, int.parse(l!.id), names),
         onCardCopy: !own || int.tryParse(l?.id ?? '') == null
             ? null
-            : (names) => m.later(
-                'copy_style',
-                layer: int.parse(l!.id),
-                name: names.join(' '),
-                word: WorkspaceState.clipboard('card'),
+            : (names) => copyCardValues(
+                ws,
+                int.parse(l!.id),
+                names,
+                WorkspaceState.clipboard('card'),
               ), // (that card's values alone: Alight Motion's copy of one effect)
         onCardPaste: !own || int.tryParse(l?.id ?? '') == null
             ? null
-            : () => File(WorkspaceState.clipboard('card')).existsSync()
-                  ? ws.after(
-                      m.later(
-                        'paste_style',
-                        layer: int.parse(l!.id),
-                        word: WorkspaceState.clipboard('card'),
-                      ),
-                      (_, _) => ws.reread(),
-                    )
-                  : null,
+            : () => pasteCardValues(
+                ws,
+                int.parse(l!.id),
+                WorkspaceState.clipboard('card'),
+              ),
         shapeSvg: int.tryParse(l?.id ?? '') == null
             ? null
-            : () => m.shapeSvg(int.parse(l!.id)),
+            : () => shapeSvgOf(ws, int.parse(l!.id)),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(
           'transform',
           () => layerTransform(ws, l?.id),
         ),
-        words: WorkspaceController.timed('words', () => layerWords(ws, l?.id)),
+        words: WorkspaceController.timed(
+          'words',
+          () => inspectorWords(ws, l?.id),
+        ),
         animating: ws.animating,
         flags: own
             ? WorkspaceController.timed('flags', () => layerFlags(ws, l?.id))
@@ -429,15 +358,13 @@ class _InspectorPanelState extends State<InspectorPane> {
         onFlags: own ? (changed) => writeFlags(ws, l?.id, changed) : null,
         onValues: (changed, {required live}) =>
             writeNumbers(ws, l?.id, changed, live: live),
-        onDrop: () => ws.after(
-          m.later('drag_end'),
-        ), // (put down unchanged, without waiting)
+        onDrop: () => putDownValue(ws), // (put down unchanged, without waiting)
         onKey: (prop, mark) => applyKeyframeMark(ws, l?.id, prop, mark),
         together: (tells) {
-          // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
-          m.later('together', number: 1);
+          // (one step, asked without waiting: begun and ended in the engine's queue around what is told)
+          groupBegin(ws);
           tells();
-          ws.after(m.later('together'));
+          ws.after(groupEnd(ws));
         },
       ),
       live: _live,
@@ -484,13 +411,13 @@ class LayerCards extends StatelessWidget {
 /// The document's name for a layer's kind, for kinds the inspector's own [Kind] has no entry for (video, image, solid).
 String? _kindWord(WorkspaceController ws, String? id) {
   final t = int.tryParse(id ?? ''),
-      w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
+      w = t == null ? '' : layerWord(ws, t, 'kind');
   if (w == 'behaviour') {
-    return relationKinds.contains(ws.inside?.word(t!, 'file'))
+    return relationKinds.contains(layerWord(ws, t!, 'file'))
         ? 'Relation'
         : 'Behaviour';
   }
-  if (w == 'film' && isSoundLayer(ws.inside!, t!)) return 'Sound';
+  if (w == 'film' && soundLayer(ws, t!)) return 'Sound';
   return const {'film', 'picture', 'solid', 'light'}.contains(w)
       ? w.replaceRange(0, 1, w[0].toUpperCase())
       : null;

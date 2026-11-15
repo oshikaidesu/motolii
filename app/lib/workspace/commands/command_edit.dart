@@ -8,13 +8,17 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/storage/window_paths.dart' show clipboardFileThere;
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
-import 'package:motolii/workspace/state/command_writes.dart';
-import 'package:motolii/workspace/state/create_service.dart' show adaptCode;
-import 'package:motolii/workspace/state/document_writes.dart' show requestUndo;
-import 'package:motolii/workspace/state/layer_edits.dart'
+import 'package:motolii/workspace/state/document/command_writes.dart';
+import 'package:motolii/workspace/state/media/create_service.dart'
+    show adaptCode;
+import 'package:motolii/workspace/state/document/document_writes.dart'
+    show requestUndo;
+import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
-import 'package:motolii/workspace/state/stage_service.dart' show stageSeconds;
-import 'package:motolii/workspace/state/timeline_service.dart' show setWorkArea;
+import 'package:motolii/workspace/state/stage/stage_service.dart'
+    show stageSeconds;
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    show setWorkArea;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
 

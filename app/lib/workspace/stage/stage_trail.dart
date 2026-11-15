@@ -2,10 +2,8 @@
 // Asked of the engine again only when the document or the selection changes.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class StageTrail {
@@ -20,25 +18,29 @@ class StageTrail {
   // layer stays put.
   (Object?, List<Offset>?) _trail = (null, null);
   List<Offset>? of(WorkspaceController ws, String? selected) {
-    final m = ws.inside, t = int.tryParse(selected ?? '');
-    if (m == null ||
+    final t = int.tryParse(selected ?? '');
+    if (!stageConnected(ws) ||
         t == null ||
-        const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) {
+        const {
+          'behaviour',
+          'camera',
+          'light',
+        }.contains(stageWord(ws, t, 'kind'))) {
       return null;
     }
     final key = (ws.rev, t);
     if (_trail.$1 != key) {
       _trail = (key, null);
-      final start = m.value(t, 'start', 0) ?? 0,
-          lasts = m.lasts(t),
-          end = lasts > 0 ? start + lasts : m.seconds;
+      final start = stageValue(ws, t, 'start', 0) ?? 0,
+          lasts = stageLasts(ws, t),
+          end = lasts > 0 ? start + lasts : stageSeconds(ws);
       if (end > start) {
-        m.path(t, from: start, to: end, n: 90).then((p) {
+        stageMotionPath(ws, t, from: start, to: end, n: 90).then((p) {
           if (!alive() || _trail.$1 != key || p == null) return;
           final c = ArtGeometry.centre,
               pts = [
                 for (var i = 0; i + 1 < p.length; i += 4)
-                  c + Offset(p[i], -p[i + 1]) * m.point,
+                  c + Offset(p[i], -p[i + 1]) * stagePointsPerUnit(ws),
               ];
           rebuild(
             () => _trail = (

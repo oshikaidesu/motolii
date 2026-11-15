@@ -1,13 +1,13 @@
 // The Expression group of the Create shelf: which files are expressions, and their tiles.
-import 'dart:io';
-
-import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/storage/script_files.dart'
+    show filesUnder, linesOf, textOf;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 // ---- The Expression group: every JS file that goes on a layer and moves its values (docs/design/create_and_program_shelves.md).
@@ -24,25 +24,23 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 List<(String, String)> expressionRecipes() {
   final by = <String, String>{};
   for (final dir in [
-    '$motoliiShelves/create',
+    '${shelvesFolder()}/create',
     '${EffectTiles.own}/recipes',
     '${EffectTiles.own}/create',
   ]) {
     // recipes/ is the user's folder under its former name, which doc_folders still reads.
-    final d = Directory(dir);
-    if (!d.existsSync()) continue;
-    for (final f in d.listSync(recursive: true).whereType<File>()) {
+    for (final f in filesUnder(dir, recursive: true)) {
       // Subfolders: shapes/, cavalry/, repeats/, over_footage/.
-      final n = f.path.split('/').last;
+      final n = f.split('/').last;
       if (n.endsWith('.js') &&
-          f.readAsStringSync().contains(RegExp(r'function\s+each\b'))) {
-        by[n] = f.path;
+          textOf(f).contains(RegExp(r'function\s+each\b'))) {
+        by[n] = f;
       }
     }
   }
   return [
     for (final f in by.values)
-      if (File(f).readAsLinesSync().firstOrNull case final first?
+      if (linesOf(f).firstOrNull case final first?
           when first.startsWith('// ') && first.contains(':'))
         (first.substring(3, first.indexOf(':')), f),
   ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
@@ -60,7 +58,7 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
       file: file,
       made: true,
     ),
-  for (final (name, file) in ws.inside?.animators ?? const <(String, String)>[])
+  for (final (name, file) in animatorsOf(ws))
     // A motion the user added is also in expressions/, the engine's motions folder. Its tile is the one below, with its own name.
     if (!shelfAdded(file))
       CreateTile(
@@ -71,7 +69,7 @@ List<CreateTile> expressionsOf(WorkspaceController ws) => [
         'A motion, on the picked thing, a card of its own (nothing picked: on a new board)',
         file: file,
       ),
-  for (final (name, file) in ws.inside?.relations ?? const <(String, String)>[])
+  for (final (name, file) in relationsOf(ws))
     CreateTile(
       name,
       AppGlyphs.copies,

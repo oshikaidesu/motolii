@@ -14,6 +14,7 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
@@ -316,10 +317,7 @@ class ProjectReader {
     int t,
   ) {
     if (m.word(t, 'kind') != 'shape') return null;
-    Color? colour(String hex) =>
-        hex.length == 6 && int.tryParse(hex, radix: 16) != null
-        ? Color(0xFF000000 | int.parse(hex, radix: 16))
-        : null;
+    Color? colour(String hex) => hex.length == 6 ? colorOfHex(hex) : null;
     final outline = m.word(t, 'fill') == 'none';
     return (
       shape: m.word(t, 'shape'),

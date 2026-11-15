@@ -8,15 +8,17 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
-import 'package:motolii/workspace/state/command_writes.dart';
-import 'package:motolii/workspace/state/create_service.dart' show addLayer;
+import 'package:motolii/workspace/state/document/command_writes.dart';
+import 'package:motolii/workspace/state/media/create_service.dart'
+    show addLayer;
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
-import 'package:motolii/workspace/state/layer_edits.dart'
+import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd, sayWord, setNumber, valueOf, wordOf;
-import 'package:motolii/workspace/state/layer_reads.dart' show layerBounds;
-import 'package:motolii/workspace/state/stage_service.dart'
+import 'package:motolii/workspace/state/layers/layer_reads.dart'
+    show layerBounds;
+import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageLasts, stageLayers, stageParentOf, stagePointsPerUnit;
-import 'package:motolii/workspace/state/timeline_service.dart'
+import 'package:motolii/workspace/state/media/timeline_service.dart'
     show loudnessOf, removeMarker, reorderLayer, setLayerVisible;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';

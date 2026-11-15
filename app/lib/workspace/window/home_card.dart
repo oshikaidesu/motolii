@@ -1,11 +1,10 @@
 // The home screen's parts: the small button, and one project's card.
 import 'package:motolii/skin/window_tokens.dart';
 
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/disk.dart' show imageFile;
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/window/home_project.dart';
 
@@ -85,7 +84,7 @@ class HomeCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (d.picture != null)
-                    Image.file(File(d.picture!), fit: BoxFit.cover),
+                    Image(image: imageFile(d.picture!), fit: BoxFit.cover),
                   if (picked)
                     Positioned(
                       left: 0,

@@ -1,6 +1,8 @@
 // A pasted code file on the Create shelf: code that came from outside, kept as written (the group Code).
-import 'dart:io';
-
+import 'package:motolii/storage/script_files.dart'
+    show filesUnder, linesOf, writtenAt;
+import 'package:motolii/workspace/state/media/shelf_items.dart'
+    show shelfSidecarDelete, shelfSidecarText, shelfSidecarWrite;
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 
@@ -24,10 +26,9 @@ class CodeFile {
   /// That is the site title adapter_net.h wrote at the head of the file, or the description of a multi-tab file.
   String get name {
     try {
-      if (shelfSidecar(file).existsSync()) {
-        return shelfSidecar(file).readAsStringSync().trim();
-      }
-      final lines = File(file).readAsLinesSync();
+      final named = shelfSidecarText(file);
+      if (named != null) return named.trim();
+      final lines = linesOf(file);
       final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"')
           .firstMatch(lines.first)?[1];
       if (kept != null && kept != 'Shadertoy') return kept;
@@ -46,9 +47,9 @@ class CodeFile {
   /// Sets the name to [to]. An empty name removes the sidecar, so [name] falls back to [plain].
   void rename(String to) {
     if (to.trim().isNotEmpty) {
-      return shelfSidecar(file).writeAsStringSync(to.trim());
+      return shelfSidecarWrite(file, to.trim());
     }
-    if (shelfSidecar(file).existsSync()) shelfSidecar(file).deleteSync();
+    shelfSidecarDelete(file);
   }
 
   /// The first line of the file that says something.
@@ -57,12 +58,11 @@ class CodeFile {
       final kept =
           RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
           // A multi-tab file describes itself in its first line.
-          .firstMatch(File(file).readAsLinesSync().first);
+          .firstMatch(linesOf(file).first);
       if (kept != null && kept[1] != 'Shadertoy') {
         return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
       }
-      return File(file)
-          .readAsLinesSync()
+      return linesOf(file)
           .map((l) => l.trim())
           .firstWhere(
             (l) =>
@@ -82,19 +82,16 @@ class CodeFile {
 ///
 /// A Hydra or p5 source is hidden when the shader it became sits beside it, because that shader stands for it.
 List<CodeFile> codeFiles() {
-  final dir = Directory('${EffectTiles.own}/programs');
-  if (!dir.existsSync()) return const [];
-  final all = dir
-      .listSync()
-      .whereType<File>()
-      .where((f) => RegExp(r'\.(js|fs|hydra)$').hasMatch(f.path))
-      .toList();
+  final all = [
+    for (final p in filesUnder('${EffectTiles.own}/programs'))
+      if (RegExp(r'\.(js|fs|hydra)$').hasMatch(p)) p,
+  ];
   final made = {
-    for (final f in all)
-      if (RegExp(r'\.(hydra|js)$').hasMatch(f.path))
-        f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
+    for (final p in all)
+      if (RegExp(r'\.(hydra|js)$').hasMatch(p))
+        p.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
   };
-  final kept = all.where((f) => !made.contains(f.path)).toList()
-    ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-  return [for (final f in kept) CodeFile(f.path)];
+  final kept = all.where((p) => !made.contains(p)).toList()
+    ..sort((a, b) => writtenAt(b).compareTo(writtenAt(a)));
+  return [for (final p in kept) CodeFile(p)];
 }

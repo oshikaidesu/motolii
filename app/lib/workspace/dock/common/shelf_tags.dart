@@ -6,21 +6,24 @@
 //   The key is the shelf name, a bar, then the item's id. They are the way to tag an item that is not the user's to
 //   edit (a file that came with the app or from outside); a file's own `// --tag:` line is read by the engine.
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
+import 'package:motolii/storage/shelf_tags_file.dart'
+    show
+        keepLatched,
+        keepOwnTags,
+        latchFileAt,
+        latchedJson,
+        ownTagsAt,
+        ownTagsJson;
 
 /// The tags of the shelves' items, the words a search is completed from, and the item each search was last answered
 /// with. One for the window, shared by its shelves.
 class ShelfTags {
   final _own = <String, Set<String>>{};
   bool _read = false;
-  static File _ownFile = File(
-    '${Platform.environment['HOME']}/.motolii/tags.json',
-  );
 
   /// Sets where the user's own tags are kept. A test points it at a file of its own before it opens a window.
-  static void ownAt(File f) => _ownFile = f;
+  static void ownAt(String path) => ownTagsAt(path);
 
   /// The tags each shelf has used so far. A search is completed from these words.
   final seen = <String, Set<String>>{};
@@ -29,7 +32,7 @@ class ShelfTags {
     if (_read) return;
     _read = true;
     try {
-      final told = fileJson(_ownFile) as Map;
+      final told = ownTagsJson() as Map;
       for (final e in told.entries) {
         _own['${e.key}'] = {
           for (final t in e.value as List) '$t'.toLowerCase(),
@@ -58,8 +61,7 @@ class ShelfTags {
     } else {
       _own['$shelf|$id'] = set;
     }
-    fileKeep(
-      _ownFile,
+    keepOwnTags(
       jsonEncode({
         for (final e in _own.entries) e.key: e.value.toList()..sort(),
       }),
@@ -78,18 +80,15 @@ class ShelfTags {
   ///
   /// This follows Alfred's Keyword Latching (alfredapp.com/help/kb/understanding-result-ordering).
   /// It is stored in ~/.motolii/latched.json as {"Effects|adjustment layer": the item's id}. A test can point it elsewhere.
-  static File _latchFile = File(
-    '${Platform.environment['HOME']}/.motolii/latched.json',
-  );
   Map<String, String>? _latches;
 
   /// Sets where the latched items are stored. A test points it at a file of its own before it opens a window.
-  static void latchedAt(File f) => _latchFile = f;
+  static void latchedAt(String path) => latchFileAt(path);
   Map<String, String> get _latched {
     if (_latches case final l?) return l;
     try {
       return _latches = {
-        for (final e in (fileJson(_latchFile) as Map).entries)
+        for (final e in (latchedJson() as Map).entries)
           '${e.key}': '${e.value}',
       };
     } catch (_) {
@@ -108,7 +107,7 @@ class ShelfTags {
     final q = query.trim().toLowerCase();
     if (q.isEmpty || _latched['$shelf|$q'] == id) return;
     _latched['$shelf|$q'] = id;
-    fileKeep(_latchFile, jsonEncode(_latched));
+    keepLatched(jsonEncode(_latched));
   }
 
   /// Whether an item matches a search: every word of [query] is in its name or in one of its tags.

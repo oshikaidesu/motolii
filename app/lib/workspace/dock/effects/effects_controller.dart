@@ -1,11 +1,11 @@
 // What the Effects shelf keeps while the window is open.
 import 'dart:typed_data';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, ShelfItem;
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart' show ShelfItem;
 
 /// What the Effects shelf keeps while the window is open: its map, what the tiles' pictures look like to the map, and
 /// which effect a dragged tile carries.
@@ -37,16 +37,13 @@ class EffectsController {
   /// The kind is weighted twice as much as the look: each kind becomes an island with similar effects near each other,
   /// as XO's Space keeps each drum type's colour together.
   Future<List<Float32List?>> numbersOf(
-    Motolii m,
-    String? clip,
+    Future<Float32List?> Function(List<String> at)? seen,
     List<String> kinds,
     List<String> homes,
   ) async {
     final look = [
       for (final f in homes)
-        await (clip == null
-            ? features.tiny
-            : (List<String> at) => features.seen(m, clip, at))([
+        await (seen ?? features.tiny)([
           for (final k in const [0, 7, 15]) EffectTiles.frame(f, k),
         ]),
     ];

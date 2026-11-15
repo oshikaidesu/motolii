@@ -3,13 +3,13 @@
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/reveal_in_finder.dart';
+import 'package:motolii/storage/script_files.dart' show writtenAt;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/dock/common/empty_shelf.dart';
@@ -31,6 +31,9 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/state/media/create_service.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart';
 
 /// The Create shelf: filter chips above grouped tiles, and a footer for the selected tile.
 class CreateShelf extends StatelessWidget {
@@ -177,16 +180,16 @@ Widget _makeTile(
   Widget? naming,
   ValueChanged<Offset>? onMenu,
 }) {
-  final sel = c.sel == m.id, inside = c.ws.inside;
+  final sel = c.sel == m.id;
   final makes =
-      inside != null &&
+      projectOpen(c.ws) &&
       (m.recipe
-          ? inside.createScripts.any((r) => r.$1 == m.name)
+          ? hasScript(c.ws, m.name)
           : layerOfTile.containsKey(m.name) ||
                 shadingOfTile.containsKey(m.name) ||
                 m.onPicked ||
                 m.pasted ||
-                inside.elements.any((e) => e.$1 == m.name));
+                hasElement(c.ws, m.name));
   return ShelfTile(
     ShelfItem(m.id, m.name, about: m.what),
     shelfLooks['Create']!,
@@ -229,13 +232,13 @@ Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
       child: ValueListenableBuilder(
         valueListenable: codeTilesDrawn,
         builder: (_, _, _) {
-          final drawn = File(CodeTiles.home(m.file!));
-          return drawn.existsSync()
+          final drawn = CodeTiles.home(m.file!);
+          return existsFile(drawn)
               ? TileMoving(
-                  drawn.path,
+                  drawn,
                   playing: true,
                   key: ValueKey(
-                    '${drawn.path} ${drawn.lastModifiedSync().millisecondsSinceEpoch}',
+                    '$drawn ${writtenAt(drawn).millisecondsSinceEpoch}',
                   ),
                 )
               : mark();
@@ -274,11 +277,8 @@ Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
 
 /// True if [name] is one of the engine's create scripts. It also starts asking for the motions of all the scripts.
 bool _isRecipe(ShelfContext c, String name) {
-  final m = c.ws.inside;
-  if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
-  RecipeMotions.ask(File(m.libPath).parent.parent.path, [
-    for (final r in m.createScripts) r.$1,
-  ]);
+  if (!hasScript(c.ws, name)) return false;
+  RecipeMotions.ask(c.ws, [for (final r in createScriptsOf(c.ws)) r.$1]);
   return true;
 }
 
@@ -326,14 +326,7 @@ class _OwnTileState extends State<_OwnTile> {
         _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
           ContextMenuItem('Rename…', () => setState(() => _naming = true)),
           if (widget.m.pasted)
-            ContextMenuItem(
-              Platform.isWindows ? 'Show in Explorer' : 'Show in Finder',
-              () => Platform.isWindows
-                  ? Process.run('explorer', [
-                      '/select,${widget.m.file!.replaceAll('/', r'\')}',
-                    ])
-                  : Process.run('open', ['-R', widget.m.file!]),
-            ),
+            ContextMenuItem(revealLabel, () => revealFile(widget.m.file!)),
         ]);
       },
     ),

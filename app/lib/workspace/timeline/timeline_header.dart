@@ -6,7 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
@@ -17,6 +16,8 @@ import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
+    as timeline_service;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
@@ -379,7 +380,7 @@ class _TempoState extends State<_Tempo> {
   void _set(double bpm) {
     final ws = widget.ws;
     ws.after(
-      ws.inside!.later('set', layer: 0, name: 'bpm', number: bpm.clamp(0, 999)),
+      timeline_service.setTempo(ws, bpm.clamp(0, 999)),
       (_, _) => ws.reread(),
     );
   }
@@ -410,7 +411,7 @@ class _TempoState extends State<_Tempo> {
   @override
   Widget build(BuildContext context) {
     final ws = widget.ws, bpm = ws.bpm;
-    if (ws.inside == null) return const SizedBox.shrink();
+    if (!timeline_service.isConnected(ws)) return const SizedBox.shrink();
     if (!_typing) {
       return NakedButton(
         key: const ValueKey('ws-tl-bpm'),

@@ -9,9 +9,8 @@
 //
 // The move is read from the document and queued on the engine without waiting. The position of a layer at the other
 // end is asked of the engine (where it shows at full strength) and is never computed here.
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/layers/group_move_writes.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
@@ -36,56 +35,19 @@ String groupMoveName(
 /// Layers that already come in through another move go out through this one instead.
 /// A move made later in the video leaves the earlier part alone.
 void makeGroupMove(WorkspaceController ws, List<String> who, double start) {
-  final m = ws.inside,
-      file = m?.relations
-          .map((r) => r.$2)
-          .where((f) => f.endsWith('Group.js'))
-          .firstOrNull;
-  if (m == null || file == null || who.isEmpty) return;
-  final held = {
-    for (final l in ws.layers)
-      if (int.tryParse(l.id) case final b?
-          when m.word(b, 'kind') == 'behaviour' &&
-              m.word(b, 'script').endsWith('Group.js'))
-        for (final w in m.word(b, 'members').split(' '))
-          if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
-  };
+  final file = groupRelationFile(ws);
+  if (!projectOpen(ws) || file == null || who.isEmpty) return;
+  final held = layersHeldByGroups(ws);
   final coming = !who.any(held.contains);
-  m.later('together', number: 1);
-  ws.after(
-    m.later('add', name: 'behaviour', word: 'relate'),
-    null,
-    (b) => ws.select('$b'),
+  final closed = queueGroupMove(
+    ws,
+    file,
+    who,
+    coming,
+    start,
+    groupMoveName(ws, who, coming),
   );
-  m.later('say', layer: -1, name: 'script', word: file);
-  m.later('set', layer: -1, name: 'strength', number: 1);
-  m.later('say', layer: -1, name: 'name', word: groupMoveName(ws, who, coming));
-  m.later('relate', layer: -1, word: who.join(' '));
-  m.later('set', layer: -1, name: 'js_lag', number: .08);
-  m.later('set', layer: -1, name: 'js_y', number: -.15);
-  m.later('set', layer: -1, name: 'js_opacity', number: 0);
-  m.later(
-    'key',
-    layer: -1,
-    name: 'strength',
-    word: '$start',
-    number: coming ? 1 : 0,
-  );
-  m.later(
-    'key',
-    layer: -1,
-    name: 'strength',
-    word: '${start + .6}',
-    number: coming ? 0 : 1,
-  );
-  m.later(
-    'easing',
-    layer: -1,
-    name: 'strength',
-    number: start,
-    word: 'Bezier 0.200 0 0.2 1.000',
-  );
-  ws.after(m.later('together'), (done, why) {
+  ws.after(closed, (done, why) {
     if (!done) ws.notice = 'No move made: $why'; // The whole undo step is undone; the top bar shows why.
     ws.reread();
   });

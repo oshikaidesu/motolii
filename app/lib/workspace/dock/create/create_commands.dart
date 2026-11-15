@@ -1,17 +1,14 @@
 // What the Create shelf asks the engine to do when a tile is run: make a layer, wear a material, put on an expression.
-import 'dart:io';
-
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/script_files.dart' show linesOf;
 import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
 import 'package:motolii/workspace/dock/create/code_file.dart';
 import 'package:motolii/workspace/dock/create/create_tile.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/state/media/create_service.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/layers/layer_edits.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the Create shelf asks the engine to do when a tile is run. Every call to the engine the shelf makes is a
@@ -32,11 +29,11 @@ class CreateCommands {
   /// Runs a tile: it creates a new layer and selects it. A tile of copies lays out the picked layer instead, and a material changes it.
   /// On failure the reason is stored under the tile's name, and the footer shows it.
   void make(CreateTile tile) {
-    final m = c.ws.inside!, name = tile.name;
+    final name = tile.name;
     if (tile.recipe) {
       // A create script: one undo step, and the new layer is selected. It does not wait for the result.
       c.ws.after(
-        m.later('create', word: name),
+        makeRecipe(c.ws, name),
         _troubled(name),
         (made) => c.ws.select('$made'),
       );
@@ -64,38 +61,31 @@ class CreateCommands {
       final t = int.tryParse(c.ws.selected ?? '');
       final told = _troubled(name);
       if (t != null) {
-        if (!kindsThatWear.contains(m.word(t, 'kind'))) {
+        if (!kindsThatWear.contains(wordOf(c.ws, t, 'kind'))) {
           return c.set(
             () => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen',
           );
         }
-        c.ws.after(
-          m.later('say', layer: t, name: 'shading', word: wears),
-          told,
-        );
+        c.ws.after(sayWord(c.ws, t, 'shading', wears), told);
         return;
       }
       // One undo step covers the ball and its material.
-      m.later('together', number: 1);
+      groupBegin(c.ws);
       c.ws.after(
-        m.later('add', name: 'solid', word: 'ball'),
+        addLayer(c.ws, 'solid', 'ball'),
         null,
         (made) => c.ws.select('$made'),
       );
       applyChosenInks(c.ws, 'solid', 'ball');
-      m.later('say', layer: -1, name: 'shading', word: wears);
-      c.ws.after(m.later('together'), told);
+      sayWord(c.ws, -1, 'shading', wears);
+      c.ws.after(groupEnd(c.ws), told);
       return;
     }
     if (!layerOfTile.containsKey(name)) {
-      if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {
+      if (elementFile(c.ws, name) case final e?) {
         // Added at the playhead, in the middle, and selected, as in AbsentMotion's addElement.
         c.ws.after(
-          m.later(
-            'element',
-            word: e.$2,
-            number: c.ws.frame / WorkspaceController.fps,
-          ),
+          addElement(c.ws, e, c.ws.frame / WorkspaceController.fps),
           _troubled(name),
           (made) => c.ws.select('$made'),
         );
@@ -104,46 +94,36 @@ class CreateCommands {
     }
     final asked = layerOfTile[name]!;
     // One undo step covers the layer and its colors.
-    m.later('together', number: 1);
+    groupBegin(c.ws);
     // Does not wait: the new layer is selected once it exists. A text layer uses the body font.
     c.ws.after(
-      m.later(
-        'add',
-        name: asked.$1,
-        word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2,
-      ),
+      addLayer(c.ws, asked.$1, asked.$1 == 'text' ? c.ws.bodyFace : asked.$2),
       null,
       (made) => c.ws.select('$made'),
     );
     applyChosenInks(c.ws, asked.$1, asked.$2);
     for (final e
         in (startValuesOfTile[name] ?? const <String, double>{}).entries) {
-      m.later('set', layer: -1, name: e.key, number: e.value);
+      setNumber(c.ws, -1, e.key, e.value);
     }
-    if (name == 'Floor') m.later('say', layer: -1, name: 'name', word: name);
-    if (asked.$1 == 'light' && (m.value(0, 'environment', 0) ?? 1) == 1) {
+    if (name == 'Floor') sayWord(c.ws, -1, 'name', name);
+    if (asked.$1 == 'light' && (valueOf(c.ws, 0, 'environment', 0) ?? 1) == 1) {
       // As in After Effects, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
-      m.later('set', layer: 0, name: 'environment', number: .3);
+      setNumber(c.ws, 0, 'environment', .3);
     }
-    c.ws.after(m.later('together'), _troubled(name));
+    c.ws.after(groupEnd(c.ws), _troubled(name));
   }
 
   /// Makes a layer from a pasted code file through the adapter of what it was written for, names it and selects it.
   void _createFromCode(CreateTile tile) {
-    final m = c.ws.inside!, code = CodeFile(tile.file!);
+    final code = CodeFile(tile.file!);
     c.ws.after(
-      m.later(
-        'adapter',
-        layer: int.tryParse(c.ws.selected ?? '') ?? 0,
-        word: code.file,
-      ),
+      adaptCode(c.ws, int.tryParse(c.ws.selected ?? '') ?? 0, code.file),
       _troubled(tile.name),
       (made) {
         if (made <= 0) return;
         if (code.name != code.plain) {
-          c.ws.after(
-            m.later('say', layer: made, name: 'name', word: code.name),
-          );
+          c.ws.after(sayWord(c.ws, made, 'name', code.name));
         }
         c.ws.select('$made');
       },
@@ -152,8 +132,7 @@ class CreateCommands {
 
   /// Puts an expression on the picked layer, or on a new layer when none is picked.
   void _putExpression(CreateTile tile) {
-    final m = c.ws.inside!,
-        name = tile.name,
+    final name = tile.name,
         file = tile.file!,
         t = int.tryParse(c.ws.selected ?? '');
     void told(String why) => c.set(
@@ -168,33 +147,31 @@ class CreateCommands {
     if (t == null && tile.made) {
       // Created the same way as a script tile.
       return c.ws.after(
-        m.later('create', word: name),
+        makeRecipe(c.ws, name),
         (done, why) => told(done ? '' : why),
         (made) => c.ws.select('$made'),
       );
     }
     final first =
         t != null &&
-        !WorkspaceController.fxFiles(m.word(t, 'fx')).contains(file);
+        !WorkspaceController.fxFiles(wordOf(c.ws, t, 'fx')).contains(file);
     putEffectFile(c.ws, file, expression: true, told: told);
     if (t == null) return;
     // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
     // The first time the Repeater is added, its starting parameters are also set from firstValuesOfExpression.
-    final head = File(file)
-        .readAsLinesSync()
-        .takeWhile((l) => l.startsWith('//'));
+    final head = linesOf(file).takeWhile((l) => l.startsWith('//'));
     if (head
             .map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1])
             .nonNulls
             .firstOrNull
-        case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
-      m.later('set', layer: t, name: 'copies', number: double.parse(n));
+        case final n? when (valueOf(c.ws, t, 'copies', 0) ?? 1) <= 1) {
+      setNumber(c.ws, t, 'copies', double.parse(n));
     }
     if (first) {
       for (final e
           in (firstValuesOfExpression[name] ?? const <String, double>{})
               .entries) {
-        m.later('set', layer: t, name: e.key, number: e.value);
+        setNumber(c.ws, t, e.key, e.value);
       }
     }
   }

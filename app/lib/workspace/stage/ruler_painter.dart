@@ -140,12 +140,12 @@ class PointsPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size _) {
     final edge = linePaint(WindowTokens.accent),
-        inside = Paint()..color = const Color(0xFFFFFFFF);
+        white = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
       if ((h - o).distance < 1) continue;
       c
         ..drawLine(o, h, edge)
-        ..drawCircle(h, 3, inside)
+        ..drawCircle(h, 3, white)
         ..drawCircle(h, 3, edge);
     }
     for (final p in at) {
@@ -155,7 +155,7 @@ class PointsPainter extends CustomPainter {
         height: Shape.z(6),
       );
       c
-        ..drawRect(r, inside)
+        ..drawRect(r, white)
         ..drawRect(r, edge);
     }
   }

@@ -1,26 +1,20 @@
 // What the Fonts shelf keeps while the window is open: the font files it offers, the fonts used lately, and the
 // fonts' dots on the map.
-import 'package:motolii/bridge/motolii_shelves.dart';
-
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
-import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
-import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
+import 'package:motolii/storage/font_recent.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/fonts/font_file.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
+import 'package:motolii/workspace/state/media/fonts_service.dart';
+import 'package:motolii/workspace/state/media/pictures_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-final _fontFile = RegExp(r'\.(ttf|otf|ttc|otc)$', caseSensitive: false);
+export 'package:motolii/storage/font_recent.dart' show fontRecentAt;
 
 /// The size in pixels of a font's dot on the map.
 ///
@@ -41,13 +35,11 @@ class FontsController {
   /// The tags of the fonts, which a search matches beside their names.
   final ShelfTags tags;
 
-  /// The tags of a font: the user's own if it has them, else the ones read from the font file by the engine ([m]).
-  Set<String> tagsOf(FontFile f, Motolii? m) => tags.of(
+  /// The tags of a font: the user's own if it has them, else the ones read from the font file by the engine.
+  Set<String> tagsOf(FontFile f, WorkspaceController ws) => tags.of(
     'Fonts',
     f.family,
-    f.path == null
-        ? const <String>{}
-        : (m?.fontTags(f.path!) ?? const <String>{}),
+    f.path == null ? const <String>{} : fontFileTags(ws, f.path!),
   );
 
   /// The shelf's map: where each font lies when the shelf is shown as a map.
@@ -75,78 +67,28 @@ class FontsController {
   /// Sample text for fonts that cannot show Latin letters, keyed by file. Filled by [read].
   var samples = const <String, String>{};
 
-  /// Reads the font files once, on the root zone so a test can wait for it.
-  /// A font that can set the shelf's sample line is offered with that line. A font with other letters is offered
-  /// with a sample in its own script, as fonts.google.com does (samples.json, from Google Fonts' gflanguages),
-  /// so the user never sees missing-glyph boxes. The bundled fonts and the user's own are offered as well.
-  Future<void> read(
-    WorkspaceController ws,
-  ) => _reading ??= Zone.root.run<Future<void>>(() async {
-    final files = <String>[];
-    for (final dir in [
-      '/System/Library/Fonts',
-      '/System/Library/Fonts/Supplemental',
-      '/Library/Fonts',
-      '${Platform.environment['HOME']}/Library/Fonts',
-      // The bundled fallback font the engine draws with.
-      '$motoliiDir/third_party/noto_sans_jp',
-      '${EffectTiles.own}/fonts',
-      ?ws.documentFolder,
-    ]) {
-      try {
-        for (final e in await Directory(dir).list().toList()) {
-          if (e is File && _fontFile.hasMatch(e.path)) files.add(e.path);
-        }
-      } on FileSystemException catch (_) {
-        // A folder that is missing or unreadable has no fonts to offer.
-      }
-    }
-    var scripts = const <(String, String)>[];
-    try {
-      scripts = [
-        for (final s in jsonDecode(
-          File('$motoliiDir/third_party/gflanguages/samples.json')
-              .readAsStringSync(),
-        ) as List)
-          for (final w in [s['sample'], s['letters']])
-            // The sample text, or else the first letters of the alphabet for a script that has no sample.
-            if (w is String && w.isNotEmpty) ('${s['script']}', w),
-      ];
-    } catch (_) {
-      // Without samples.json only fonts with Latin letters are offered.
-    }
-    final first = await ws.inside!.settingFirst(files, [
-      fontSampleLine,
-      for (final (_, w) in scripts) w,
-    ]);
-    _disk = [
-      for (final (i, f) in files.indexed)
-        if (first[i] >= 0)
-          FontFile(
-            f.split('/').last.substring(0, f.split('/').last.length - 4),
-            path: f,
-            script: first[i] == 0 ? null : scripts[first[i] - 1].$1,
-            sample: first[i] == 0 ? null : scripts[first[i] - 1].$2,
-          ),
-    ]..sort((a, b) => a.family.toLowerCase().compareTo(b.family.toLowerCase()));
-    unoffered = first.where((k) => k < 0).length;
-    samples = {
-      for (final f in _disk!)
-        if ((f.path, f.sample) case (final p?, final w?)) p: w,
-    };
-    reads.value++;
-  });
+  /// Reads the font files once, on the root zone so a test can wait for it. The files are read by [readFontFiles].
+  Future<void> read(WorkspaceController ws) =>
+      _reading ??= Zone.root.run<Future<void>>(() async {
+        final r = await readFontFiles(ws, fontSampleLine);
+        _disk = [
+          for (final f in r.fonts)
+            FontFile(
+              f.family,
+              path: f.path,
+              script: f.script,
+              sample: f.sample,
+            ),
+        ];
+        unoffered = r.unoffered;
+        samples = r.samples;
+        reads.value++;
+      });
 
-  /// The file that stores the eight most recently used fonts, newest first. A test points it elsewhere with
-  /// [fontRecentAt]. The Ease tool panel stores its recent easings the same way (ease_stars.json).
-  static File _recentFile = File(
-    '${Platform.environment['HOME']}/.motolii/font_recent.json',
-  );
   List<String>? _recent;
 
   /// The families of the fonts used lately, newest first.
-  List<String> get recent =>
-      _recent ??= [for (final s in fileList(_recentFile)) '$s'];
+  List<String> get recent => _recent ??= recentFontsKept();
 
   /// Puts [family] at the head of the fonts used lately and stores the list.
   void used(String family) {
@@ -154,8 +96,7 @@ class FontsController {
       ..remove(family)
       ..insert(0, family);
     if (r.length > 8) r.removeRange(8, r.length);
-    // If the write fails, the list is still correct while the app is open.
-    fileKeep(_recentFile, jsonEncode(r));
+    recentFontsKeep(r);
   }
 
   /// Each font's sample word as the engine drew it for the map, by file: one byte of ink per pixel, [fontDotSize] large.
@@ -163,7 +104,7 @@ class FontsController {
   Future<void>? _drawing;
 
   /// Has the engine draw the dots of [files], once.
-  Future<void> drawDots(Motolii m, List<String> files) =>
+  Future<void> drawDots(WorkspaceController ws, List<String> files) =>
       _drawing ??= Zone.root.run<Future<void>>(() async {
         // Runs once, like read.
         final byWord = <String, List<String>>{};
@@ -171,7 +112,8 @@ class FontsController {
           (byWord[wordOf(f, 0)] ??= []).add(f);
         }
         for (final MapEntry(key: w, value: some) in byWord.entries) {
-          final drawn = await m.typePictures(
+          final drawn = await typePicturesOf(
+            ws,
             some,
             w,
             fontDotSize.$1,
@@ -207,6 +149,3 @@ class FontsController {
   /// The dots as images Flutter can draw, by file, and the files whose image is being made.
   final dotImages = <String, ui.Image>{}, dotsMaking = <String>{};
 }
-
-/// Sets where the fonts used lately are stored. A test points it at a file of its own.
-void fontRecentAt(File f) => FontsController._recentFile = f;

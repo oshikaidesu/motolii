@@ -4,8 +4,8 @@
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/workspace/state/command_writes.dart';
-import 'package:motolii/workspace/state/timeline_service.dart'
+import 'package:motolii/workspace/state/document/command_writes.dart';
+import 'package:motolii/workspace/state/media/timeline_service.dart'
     show reorderLayer;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';

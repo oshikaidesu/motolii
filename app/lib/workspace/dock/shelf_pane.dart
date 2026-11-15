@@ -4,7 +4,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -27,6 +26,7 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/tiles/effect_tiles_service.dart';
 import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -221,9 +221,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                     dockMark(AppGlyphs.reload),
                     key: const ValueKey('ws-fx-reload'),
                     on: EffectTiles.progress.value != null,
-                    onTap: ws.inside == null
-                        ? null
-                        : () => EffectTiles.again(ws.inside!, file: c.sel),
+                    onTap: effectTilesAgain(ws, file: c.sel),
                   ),
                 ),
               ConstrainedBox(
@@ -236,8 +234,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                       'Fonts' => '${_fonts.offered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
-                        null =>
-                          '${(ws.inside?.layerEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
+                        null => '${readyEffectCount(ws)} ready',
                       },
                       'Colors' =>
                         '${usedColors(ws).values.toSet().length} used here',

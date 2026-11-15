@@ -1,13 +1,12 @@
 // What a shelf body is given by the dock for one build: ShelfMemory (what each shelf remembers) and ShelfContext (the memory,
 // the search text, the project and a way to change local state), and the file that stores which items are starred.
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/tiles/effect_decks_store.dart'
+    show starsKeep, starsRead;
+import 'package:motolii/workspace/state/media/shelf_items.dart'
+    show nearShelfItems;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the dock remembers per shelf while the user switches between shelves (selection, chip, folds).
@@ -25,7 +24,7 @@ class ShelfMemory {
   final open = <String>{'Project'};
 
   /// The ids the user has starred, stored in ~/.motolii/effect_stars.json like the Ease tool panel's stars.
-  final starred = _starsRead();
+  final starred = starsRead();
 
   /// Why the last request to the engine for an entry failed, by the entry's id.
   final trouble = <String, String>{};
@@ -105,28 +104,17 @@ class ShelfContext {
     double least = 0,
   }) => query.trim().isEmpty
       ? const []
-      : ws.inside?.find(query, items, least: least) ?? const [];
+      : nearShelfItems(ws, query, items, least: least);
   Set<String> get _stars => mem.starred;
   bool starred(String id) => _stars.contains(id);
   void star(String id) => set(() {
     _stars.contains(id) ? _stars.remove(id) : _stars.add(id);
-    _starsKeep(_stars);
+    starsKeep(_stars);
   });
   void unstar(Iterable<String> ids) => set(() {
     _stars.removeAll(ids);
-    _starsKeep(_stars);
+    starsKeep(_stars);
   });
   void toggle(Set<String> s, String id) =>
       set(() => s.contains(id) ? s.remove(id) : s.add(id));
 }
-
-/// Where the starred effects are stored, in the same way the Ease tool panel stores its stars (ease_stars.json).
-/// A test can point it elsewhere with [dockStarsAt].
-File _starsFile = File(
-  '${Platform.environment['HOME']}/.motolii/effect_stars.json',
-);
-void dockStarsAt(File f) => _starsFile = f;
-Set<String> _starsRead() => {for (final s in fileList(_starsFile)) '$s'};
-
-void _starsKeep(Set<String> all) =>
-    fileKeep(_starsFile, jsonEncode(all.toList()));

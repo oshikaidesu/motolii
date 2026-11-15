@@ -6,6 +6,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
+import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_numbers.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_side.dart';
@@ -61,7 +62,7 @@ class EaseGraphPanel extends StatelessWidget {
                   builder: (_, frame, _) => graph(frame),
                 ),
         ),
-        if (span == null && ws.inside != null)
+        if (span == null && isConnected(ws))
           Positioned(
             left: Shape.s(6),
             top: Shape.s(4),

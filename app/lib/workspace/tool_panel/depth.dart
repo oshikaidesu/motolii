@@ -13,11 +13,11 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/layer_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
 
 /// The Depth tool: a top view of the camera lens with the layers as slabs.
@@ -42,9 +42,7 @@ class _DepthToolState extends State<DepthTool> {
     void edit(void Function() f, String name, double value) {
       setState(f);
       if (joined != null) {
-        ws.inside!
-          ..take(joined.camera)
-          ..dragUpdate(name, value);
+        dragLayerValue(ws, joined.camera, name, value);
       }
     }
 
@@ -109,7 +107,7 @@ class _DepthToolState extends State<DepthTool> {
                         lens.target = id;
                       },
                       'focus',
-                      z.clamp(100.0, depthZMax) / (ws.inside?.point ?? 1),
+                      z.clamp(100.0, depthZMax) / (documentPoint(ws) ?? 1),
                     ),
                     // A narrower view is a longer lens.
                     onFocal: (f) => edit(
@@ -120,7 +118,7 @@ class _DepthToolState extends State<DepthTool> {
                     onDone: () {
                       // Ending the drag makes the change one undo step.
                       if (joined != null) {
-                        ws.after(ws.inside!.later('drag_end', number: 1));
+                        endDrag(ws);
                       }
                     },
                   ),

@@ -8,15 +8,13 @@ import 'package:motolii/workspace/stage/stage_desk.dart';
 import 'package:motolii/workspace/stage/stage_pointer.dart';
 
 import 'dart:async' show Timer;
-import 'dart:io' show File;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/storage/snapshot_files.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
@@ -36,6 +34,7 @@ import 'package:motolii/workspace/stage/ruler_painter.dart';
 import 'package:motolii/workspace/stage/view_painter.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -133,15 +132,15 @@ class _StageViewState extends State<StageView>
 
   /// The selected image's crop, as the share cut from each side, while it is being cropped; empty otherwise.
   List<double> _cropOf() {
-    final m = WorkspaceScope.read(context).inside,
+    final ws = WorkspaceScope.read(context),
         t = int.tryParse(widget.selected ?? '');
-    if (m == null ||
+    if (!stageConnected(ws) ||
         t == null ||
         _cropping != widget.selected ||
         !_croppable(widget.selected)) {
       return const [];
     }
-    return [for (final n in cropSides) m.value(t, n, 0) ?? 0];
+    return [for (final n in cropSides) stageValue(ws, t, n, 0) ?? 0];
   }
 
   /// Any placed, visible layer can be cropped — a photo, a video, text, a solid or a shape — as in Google Slides.
@@ -197,10 +196,10 @@ class _StageViewState extends State<StageView>
 
   /// The selected shape's kind and corner radius, for its handles.
   (String, double) _formOf() {
-    final m = WorkspaceScope.read(context).inside,
+    final ws = WorkspaceScope.read(context),
         t = int.tryParse(widget.selected ?? '');
-    if (m == null || t == null || m.word(t, 'kind') != 'shape') return ('', 0);
-    return (m.word(t, 'shape'), m.value(t, 'round', 0) ?? 0);
+    if (t == null || stageWord(ws, t, 'kind') != 'shape') return ('', 0);
+    return (stageWord(ws, t, 'shape'), stageValue(ws, t, 'round', 0) ?? 0);
   }
 
   @override
@@ -236,19 +235,19 @@ class _StageViewState extends State<StageView>
     // A layer off the canvas can still be grabbed by its frame and dragged back.
     final d = v.toComposition(local),
         id = ArtGeometry.hit(widget.scene, d),
-        m = WorkspaceScope.read(context).inside;
-    if (widget.tool.group && m != null && id != null) {
+        ws = WorkspaceScope.read(context);
+    if (widget.tool.group && stageConnected(ws) && id != null) {
       // Grouping: pick the outermost ancestor by following parents.
-      return '${m.outermost(int.parse(id))}';
+      return '${stageOutermost(ws, int.parse(id))}';
     }
     return id;
   }
 
   /// The id of the selected layer's parent, or null if it has none.
   String? _parentOf() {
-    final m = WorkspaceScope.read(context).inside,
+    final ws = WorkspaceScope.read(context),
         t = int.tryParse(widget.selected ?? '');
-    final p = m == null || t == null ? 0 : m.parentOf(t);
+    final p = t == null ? 0 : stageParentOf(ws, t);
     return p > 0 ? '$p' : null;
   }
 
@@ -285,9 +284,9 @@ class _StageViewState extends State<StageView>
         crop: _cropOf(),
       );
       desk.follow(
+        WorkspaceScope.read(context),
         v,
         dpr: MediaQuery.devicePixelRatioOf(context),
-        m: WorkspaceScope.read(context).inside,
         textured: widget.texture != null,
       );
       desk.pick(widget.selected, _hover);
@@ -413,8 +412,8 @@ class _StageViewState extends State<StageView>
                     Positioned.fromRect(
                       rect: v.compositionRect,
                       child: IgnorePointer(
-                        child: Image.file(
-                          File(shot),
+                        child: Image(
+                          image: snapshotImage(shot),
                           key: const ValueKey('ws-stage-snapshot'),
                           fit: BoxFit.fill,
                           gaplessPlayback: true,
@@ -422,21 +421,23 @@ class _StageViewState extends State<StageView>
                       ),
                     ),
                   if (int.tryParse(widget.selected ?? '') case final picked?
-                      when WorkspaceScope.read(context).inside != null) // The selected path's own points, so they can be grabbed.
+                      when stageConnected(WorkspaceScope.read(context))) // The selected path's own points, so they can be grabbed.
                     IgnorePointer(
                       child: CustomPaint(
                         size: Size.infinite,
                         painter: PointsPainter(
                           [
-                            for (final p in WorkspaceScope.read(
-                              context,
-                            ).inside!.points(picked))
+                            for (final p in stagePathPoints(
+                              WorkspaceScope.read(context),
+                              picked,
+                            ))
                               v.toScreen(p),
                           ],
                           [
-                            for (final (h, o) in WorkspaceScope.read(
-                              context,
-                            ).inside!.handles(picked))
+                            for (final (h, o) in stagePathHandles(
+                              WorkspaceScope.read(context),
+                              picked,
+                            ))
                               (v.toScreen(h), v.toScreen(o)),
                           ],
                         ),

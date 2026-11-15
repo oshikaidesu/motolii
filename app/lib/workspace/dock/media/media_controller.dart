@@ -1,14 +1,11 @@
 // What the Media shelf keeps while the window is open: the folders it has read, what the project uses, and what is picked.
-import 'dart:io';
-
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/storage/folder_entries.dart' show entriesKept;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
+import 'package:motolii/workspace/state/media/media_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the Media shelf keeps while the window is open: the folders read from the disk, the files the project uses,
@@ -33,11 +30,11 @@ class MediaController {
       // CLIP STUDIO's and OpenToonz's timesheet is not a layer kind in the engine, but its columns are.
       file.toLowerCase().endsWith('.xdts')
       ? 'timesheet'
-      : _ws.inside!.kindOf(file);
+      : mediaKindOf(_ws, file);
 
   /// The file of thumbnail [step] of [steps] of the video [film], made by the engine.
   Future<String?> thumbnailAt(String film, int step, int steps) =>
-      _ws.inside!.thumbnailAt(film, step, steps);
+      mediaThumbnail(_ws, film, step, steps);
 
   /// The mark of the kind of layer [file] makes, or null when it makes none.
   AppGlyphs? glyphOf(String file) => switch (kindOf(file)) {
@@ -77,28 +74,21 @@ class MediaController {
     if (!_reading.add(path)) return;
     _lists.putIfAbsent(path, () => const []);
     () async {
-      final out = <FileNode>[];
-      try {
-        await for (final e in Directory(path).list()) {
-          final name = basename(e.path);
-          if (name.startsWith('.')) continue;
-          if (e is Directory) {
-            out.add(FileNode(e.path, name, AppGlyphs.folder));
-          } else if (glyphOf(name) case final g?) {
-            out.add(
-              FileNode(
-                e.path,
-                name,
-                g,
-                meta:
-                    '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size((await e.stat()).size)}',
-              ),
-            );
-          }
+      final out = await entriesKept<FileNode>(path, (e, size) async {
+        final name = basename(e.path);
+        if (name.startsWith('.')) return null;
+        if (e.folder) return FileNode(e.path, name, AppGlyphs.folder);
+        if (glyphOf(name) case final g?) {
+          return FileNode(
+            e.path,
+            name,
+            g,
+            meta:
+                '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size(await size())}',
+          );
         }
-      } on FileSystemException {
-        out.clear();
-      }
+        return null;
+      });
       _lists[path] = out
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
       _reading.remove(path);
@@ -121,21 +111,8 @@ class MediaController {
   Map<String, String> get filesUsed {
     final ws = _ws;
     if (_usedRev == ws.rev) return _usedNow;
-    final m = ws.inside!;
     _usedRev = ws.rev;
-    return _usedNow = {
-      // The front layer is the first row, so going in reverse makes it the last entry and therefore the one kept.
-      for (final l in ws.layers.reversed)
-        if (m.word(int.parse(l.id), 'file') case final f
-            when f.isNotEmpty &&
-                !const {
-                  'behaviour',
-                  'camera',
-                  'light',
-                }.contains(m.word(int.parse(l.id), 'kind')))
-          // Behaviour, camera and light layers hold a kind name instead of a file.
-          m.whole(f): l.id,
-    };
+    return _usedNow = filesOfLayers(ws);
   }
 
   /// The files selected together with Cmd and click, as Finder adds to a selection. They are placed together.

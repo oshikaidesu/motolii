@@ -7,16 +7,20 @@
 // change, and positions are cached in ~/Library/Caches/Motolii.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/storage/map_cache.dart';
 import 'package:motolii/workspace/dock/map/map_palette.dart';
 import 'package:motolii/workspace/dock/map/spread.dart';
+
+export 'package:motolii/storage/map_cache.dart' show shelfMapsAt;
+
+typedef MapLayout = Future<List<(double, double)>?> Function(
+  List<Float32List> points,
+);
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([spreadApart]). [laying] is true
 /// while the layout is being computed. A shelf keeps its map while the window is open.
@@ -78,14 +82,6 @@ class ShelfMap {
         }),
       ));
 
-  /// Where the maps are cached between sessions. A test points it elsewhere with [shelfMapsAt], so the user's own
-  /// cache is left alone.
-  static Directory _cacheFolder = Directory(
-    '${Platform.environment['HOME']}/Library/Caches/Motolii',
-  );
-
-  File get _kept => File('${_cacheFolder.path}/map_$name.json');
-
   /// Lays out [items], each an id and the source it is read from.
   ///
   /// [read] turns the sources into feature vectors, or null for an item to leave off the map. [also] is any other input
@@ -95,7 +91,7 @@ class ShelfMap {
   /// as openTSNE adds points to an existing map (prepare_partial, initialization "median", k 25; BSD-3). Everything goes
   /// through t-SNE only when nothing was laid out before.
   void need(
-    Motolii m,
+    MapLayout lay,
     List<(String, String)> items,
     Future<List<Float32List?>> Function(List<String> from) read, {
     String also = '',
@@ -116,7 +112,7 @@ class ShelfMap {
       var known = <String, Offset>{};
       try {
         final kept =
-                jsonDecode(await _kept.readAsString()) as Map<String, dynamic>,
+                jsonDecode(await readMapCache(name)) as Map<String, dynamic>,
             was = (jsonDecode(kept['for'] as String) as List).cast<String>();
         final same = was.skip(1).toSet(),
             from = {for (final (id, f) in items) id: f};
@@ -145,7 +141,7 @@ class ShelfMap {
           for (final (i, (id, _)) in items.indexed)
             if (numbers[i] != null) id,
         ];
-        final laid = await m.map([for (final v in numbers) ?v]);
+        final laid = await lay([for (final v in numbers) ?v]);
         if (laid != null) {
           at = {
             for (final (i, id) in ids.indexed)
@@ -165,8 +161,8 @@ class ShelfMap {
       await show(at);
       laying.value = false;
       try {
-        _kept.parent.createSync(recursive: true);
-        await _kept.writeAsString(
+        await writeMapCache(
+          name,
           jsonEncode({
             'for': key,
             'places': {
@@ -231,9 +227,6 @@ class ShelfMap {
   Map<String, Color> paletteOf(Map<String, Offset> at) =>
       _palettes[at] ??= mapPalette(at);
 }
-
-/// Sets where the maps are cached between sessions. A test points it at a folder of its own.
-void shelfMapsAt(Directory d) => ShelfMap._cacheFolder = d;
 
 /// Runs [spreadApart] and [ShelfMap._joined] on their own isolate. Only their arguments are sent, because a closure
 /// made inside [ShelfMap.need] would capture its library too.

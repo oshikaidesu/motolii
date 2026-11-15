@@ -7,7 +7,7 @@
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
-import 'package:motolii/workspace/state/timeline_service.dart'
+import 'package:motolii/workspace/state/media/timeline_service.dart'
     show dragBarPart, endBarDrag, grabLayer, setLayerSwitch;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 

@@ -7,13 +7,12 @@
 // "Edit code" on a card in the Inspector unfolds its cell and scrolls to it (EffectCode.show).
 // Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
 // first one open. The word "Functions" in the head hides and shows it.
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/text_file.dart' show readText;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/panel_header.dart';
@@ -22,6 +21,7 @@ import 'package:motolii/workspace/code/functions_panel.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
+import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -60,7 +60,7 @@ class _CodePaneState extends State<CodePane> {
       WorkspaceAspect.view,
     });
     final t = int.tryParse(ws.selected ?? '');
-    if (ws.inside == null || t == null) {
+    if (!projectOpen(ws) || t == null) {
       return const _Said(
         'Pick a layer. Its code opens here, one cell for each effect and expression.',
       );
@@ -188,8 +188,7 @@ class _Cell extends StatelessWidget {
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
   /// reads it); for any other code, what it is written in, said by the file's ending.
   String get _on {
-    final file = File(EffectCode.source(code.word));
-    final text = file.existsSync() ? file.readAsStringSync() : '';
+    final text = readText(EffectCode.source(code.word)) ?? '';
     final named = RegExp(r'//\s*--property:\s*(\w+)')
         .firstMatch(text)
         ?.group(1);

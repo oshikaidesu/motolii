@@ -5,10 +5,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_watch.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
@@ -16,6 +12,9 @@ import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
+import 'package:motolii/workspace/state/document/document_reads.dart';
+import 'package:motolii/workspace/state/document/document_writes.dart';
+import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -178,15 +177,12 @@ class _SizeChipState extends State<SizeChip> {
                 key: ValueKey('size-${r}fps'),
                 label: '$r',
                 on: r == WorkspaceController.fps,
-                onTap: ws.inside == null
+                onTap: !isConnected(ws)
                     ? null
-                    : () => ws.after(
-                        ws.inside!.later(
-                          'set',
-                          layer: 0,
-                          name: 'frame_rate',
-                          number: r == ws.inside!.rate ? 0 : r.toDouble(),
-                        ),
+                    : () => setDocumentNumber(
+                        ws,
+                        'frame_rate',
+                        r == documentRate(ws) ? 0 : r.toDouble(),
                         (_, _) => ws.reread(),
                       ),
               ),
@@ -205,21 +201,8 @@ class _SizeChipState extends State<SizeChip> {
               Chip(
                 key: ValueKey('size-bg-$label'),
                 label: label,
-                on: (ws.inside?.word(0, 'background') ?? '') == hex,
-                onTap: ws.inside == null
-                    ? null
-                    : () {
-                        final m = ws.inside!;
-                        m.later('together', number: 1);
-                        m.later('say', layer: 0, name: 'background', word: hex);
-                        m.later(
-                          'set',
-                          layer: 0,
-                          name: 'render_alpha',
-                          number: hex.isEmpty ? 1 : 0,
-                        );
-                        ws.after(m.later('together'), (_, _) => ws.reread());
-                      },
+                on: layerWord(ws, 0, 'background') == hex,
+                onTap: !isConnected(ws) ? null : () => setBackground(ws, hex),
               ),
           ]),
           SizedBox(height: Shape.s(12)),
@@ -247,16 +230,13 @@ class _SizeChipState extends State<SizeChip> {
               Chip(
                 key: ValueKey('size-len-$n'),
                 label: n == 0 ? 'End' : '${n}s',
-                on: (ws.inside?.value(0, 'layer_length', 0) ?? 0).round() == n,
-                onTap: ws.inside == null
+                on: (layerValue(ws, 0, 'layer_length', 0) ?? 0).round() == n,
+                onTap: !isConnected(ws)
                     ? null
-                    : () => ws.after(
-                        ws.inside!.later(
-                          'set',
-                          layer: 0,
-                          name: 'layer_length',
-                          number: n.toDouble(),
-                        ),
+                    : () => setDocumentNumber(
+                        ws,
+                        'layer_length',
+                        n.toDouble(),
                         (_, _) => ws.reread(),
                       ),
               ),
@@ -266,11 +246,11 @@ class _SizeChipState extends State<SizeChip> {
             '$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second',
             style: TextStyles.value(Grey.g76),
           ),
-          if (ws.inside case final m?) ...[
+          if (documentEdited(ws) case final edited?) ...[
             // Alight Motion's Total Edit Time: how long the project has been worked on.
             SizedBox(height: Shape.s(6)),
             Text(
-              'Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m',
+              'Total Edit Time  ${edited ~/ 3600}h ${(edited % 3600) ~/ 60}m',
               key: const ValueKey('size-edited'),
               style: TextStyles.value(Grey.g63),
             ),

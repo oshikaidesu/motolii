@@ -1,11 +1,6 @@
 // The footer of the Media shelf for the picked file: what it is, how much of it is placed, and its one action.
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart'
-    show Motolii, mediaInfoOf, mediaSecondsOf;
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -17,14 +12,9 @@ import 'package:motolii/workspace/dock/media/media_commands.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
-
-/// Every layer that shows [file] (whole path), with the property that says so: its own file or a shape filled with it.
-List<(int, String)> _showing(Motolii m, String file) => [
-  for (final t in m.layers)
-    for (final w in const ['file', 'fill_media'])
-      if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file)
-        (t, w),
-];
+import 'package:motolii/storage/sound_play.dart';
+import 'package:motolii/workspace/state/document/document_service.dart';
+import 'package:motolii/workspace/state/media/media_service.dart';
 
 /// The footer for the selected file: a file the engine can show is placed, a folder is opened.
 class FileFooter extends StatelessWidget {
@@ -55,32 +45,32 @@ class FileFooter extends StatelessWidget {
     }
     final layer = media.filesUsed[n.id],
         can = media.kindOf(n.id).isNotEmpty,
-        m = c.ws.inside;
+        open = documentOpen(c.ws);
     // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
     final shape = int.tryParse(c.ws.selected ?? ''),
         fills =
-            m != null &&
+            open &&
             shape != null &&
             media.kindOf(n.id) == 'picture' &&
-            m.word(shape, 'kind') == 'shape' &&
-            m.word(shape, 'shape') != 'null';
+            layerWord(c.ws, shape, 'kind') == 'shape' &&
+            layerWord(c.ws, shape, 'shape') != 'null';
     // An image or video layer is selected and a file of the same kind chosen: the layer shows that file instead and keeps
     // its position, size, keyframes and effects. This is After Effects' Replace Layer Source and Premiere Pro's Replace With Clip.
     final swaps =
-        m != null &&
+        open &&
         shape != null &&
         !fills &&
         layer != '$shape' &&
-        const {'picture', 'film'}.contains(m.word(shape, 'kind')) &&
-        media.kindOf(n.id) == m.word(shape, 'kind');
+        const {'picture', 'film'}.contains(layerWord(c.ws, shape, 'kind')) &&
+        media.kindOf(n.id) == layerWord(c.ws, shape, 'kind');
     // The other layers that show the same file, which MediaCommands.replaceAll replaces together with this one.
     final all = swaps
-        ? _showing(m, m.whole(m.word(shape, 'file')))
+        ? layersShowingFileOf(c.ws, shape)
         : const <(int, String)>[];
     return FutureBuilder<String>(
       // The description comes from GStreamer's discoverer, like Alight Motion's Media Info. The key gives each file its own state.
       key: ValueKey(n.id),
-      future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
+      future: can && open ? mediaInfoFor(c.ws, n.id) : null,
       builder: (context, info) => ShelfFooter(
         preview:
             n.disk &&
@@ -138,11 +128,11 @@ class FileFooter extends StatelessWidget {
             ? null
             : switch (media.kindOf(n.id)) {
                 'picture' => _StillSeconds(c, media),
-                'film' || 'sound' when m != null => _FilmRange(
+                'film' || 'sound' when open => _FilmRange(
                   c,
                   media,
                   n.id,
-                  mediaSecondsOf(m.libPath, n.id),
+                  mediaLengthOf(c.ws, n.id),
                 ),
                 _ => null,
               },
@@ -269,14 +259,14 @@ class _Listen extends StatefulWidget {
 }
 
 class _ListenState extends State<_Listen> {
-  Process? _playing;
+  SoundPlay? _playing;
 
   Future<void> _toggle() async {
     if (_playing case final p?) {
       p.kill();
       return setState(() => _playing = null);
     }
-    final p = await Process.start('afplay', [widget.n.id]);
+    final p = await playSound(widget.n.id);
     if (!mounted) {
       p.kill();
       return;

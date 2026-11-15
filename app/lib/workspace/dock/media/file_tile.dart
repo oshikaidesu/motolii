@@ -2,13 +2,13 @@
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/disk.dart' show imageFile;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
 import 'package:motolii/workspace/dock/media/file_node.dart';
@@ -48,8 +48,8 @@ class FileArt extends StatelessWidget {
               ? flat
               : ColoredBox(
                   color: WindowTokens.well,
-                  child: Image.file(
-                    File(made.data!),
+                  child: Image(
+                    image: imageFile(made.data!),
                     fit: BoxFit.contain,
                     gaplessPlayback: true,
                   ),
@@ -63,10 +63,9 @@ class FileArt extends StatelessWidget {
       return photo
           ? ColoredBox(
               color: WindowTokens.well,
-              child: Image.file(
-                File(n.id),
+              child: Image(
+                image: imageFile(n.id, cacheWidth: 240),
                 fit: BoxFit.contain,
-                cacheWidth: 240,
                 errorBuilder: (_, _, _) => flat,
               ),
             )

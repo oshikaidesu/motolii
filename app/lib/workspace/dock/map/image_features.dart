@@ -1,15 +1,13 @@
 // What pictures look like, as numbers a shelf's map can compare: tiny colours or a CLIP encoder's vector, cached on disk.
-import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:crypto/crypto.dart' show sha1;
+import 'package:motolii/storage/picture_files.dart';
+import 'package:motolii/workspace/state/media/pictures_service.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/storage/json_file.dart' show fileKeep;
+export 'package:motolii/storage/picture_files.dart' show likenessModel;
 
 /// The feature vectors of the pictures a shelf's map has compared, remembered while the window is open so each picture
 /// is read once.
@@ -35,7 +33,11 @@ class ImageFeatures {
   /// that two effects are compared frame by frame at the same times, as in ViSiL's frame-to-frame similarity
   /// (Kordopatis-Zilos et al., ICCV 2019). Every effect's tile is drawn at the same times. Returns null if an image cannot
   /// be read or the model fails. Results are cached ([featuresKept]), so only a new or redrawn image is encoded again.
-  Future<Float32List?> seen(Motolii m, String model, List<String> files) async {
+  Future<Float32List?> seen(
+    WorkspaceController ws,
+    String model,
+    List<String> files,
+  ) async {
     final key = '$model\n${files.join('\n')}';
     if (_clip[key] case final v?) return v;
     final v = Float32List(512 * files.length),
@@ -43,9 +45,7 @@ class ImageFeatures {
         missing = <int>[];
     for (final (k, f) in files.indexed) {
       try {
-        keys.add(
-          '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}',
-        );
+        keys.add('$model\n$f\n${lastChangedMicros(f)}');
       } catch (_) {
         return null;
       }
@@ -60,7 +60,7 @@ class ImageFeatures {
       for (final k in missing) {
         try {
           final codec = await ui.instantiateImageCodec(
-            await File(files[k]).readAsBytes(),
+            await readPictureBytes(files[k]),
             targetWidth: 224,
             targetHeight: 224,
           );
@@ -75,7 +75,7 @@ class ImageFeatures {
           return null;
         }
       }
-      final told = await m.likeness(model, pictures);
+      final told = await likenessOf(ws, model, pictures);
       if (told == null) return null;
       for (final (j, k) in missing.indexed) {
         v.setRange(512 * k, 512 * (k + 1), told[j]);
@@ -92,7 +92,7 @@ Future<Float32List?> _read(List<String> files) async {
   for (final (k, f) in files.indexed) {
     try {
       final codec = await ui.instantiateImageCodec(
-        await File(f).readAsBytes(),
+        await readPictureBytes(f),
         targetWidth: side,
         targetHeight: side,
       );
@@ -112,35 +112,6 @@ Future<Float32List?> _read(List<String> files) async {
     }
   }
   return out;
-}
-
-/// Path of the CLIP image encoder [name] (clip_b32 is OpenAI's ViT-B/32, fontclip_b32 is FontCLIP's) if it has been
-/// built (engine/deps/likeness_models.py), otherwise null. Without a model the maps use tiny colours
-/// ([ImageFeatures.tiny]).
-String? likenessModel(String name) {
-  final f =
-      '${Platform.environment['HOME']}/Library/Caches/Motolii/models/$name.onnx';
-  return File(f).existsSync() ? f : null;
-}
-
-/// The cache file for an image's feature vector, in ~/Library/Caches/Motolii/looks.
-/// [key] combines the model, the image and when it was drawn. [featuresKept] returns null when nothing is cached.
-File _look(String key) => File(
-  '${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode(key))}.f32',
-);
-Float32List? featuresKept(String key) {
-  try {
-    final had = _look(key).readAsBytesSync();
-    return had.isEmpty || had.length % 4 != 0
-        ? null
-        : had.buffer.asFloat32List();
-  } catch (_) {
-    return null;
-  }
-}
-
-void keepFeatures(String key, Float32List v) {
-  fileKeep(_look(key), Float32List.fromList(v).buffer.asUint8List());
 }
 
 /// Joins several feature vectors per item side by side, as FontMap does for fonts (FontCLIP's numbers beside the tags'

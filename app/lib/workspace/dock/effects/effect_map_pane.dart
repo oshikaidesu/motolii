@@ -1,13 +1,15 @@
 // What the Effects shelf draws besides its tiles: a deck's cover and the map of every effect.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effects_controller.dart';
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/tile_moving.dart';
+import 'package:motolii/workspace/state/media/pictures_service.dart'
+    show layOutMap;
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A deck's cover, as Spotify makes a playlist's cover: the images of its first four effects in a 2x2 grid,
 /// or the first one alone while it holds fewer than four. [pic] is an effect's image, '' when it has none.
@@ -41,7 +43,7 @@ Widget? deckCover(Iterable<String> ids, String Function(String) pic) {
 class EffectMapPane extends StatelessWidget {
   const EffectMapPane(
     this.effects,
-    this.m, {
+    this.ws, {
     required this.every,
     required this.listed,
     required this.picked,
@@ -51,7 +53,7 @@ class EffectMapPane extends StatelessWidget {
     super.key,
   });
   final EffectsController effects;
-  final Motolii m;
+  final WorkspaceController ws;
   final List<EffectEntry> every, listed;
   final String? picked;
   final void Function(String) press;
@@ -71,11 +73,15 @@ class EffectMapPane extends StatelessWidget {
       ];
       if (!drawing || map.places.value.isEmpty) {
         map.need(
-          m,
+          (points) => layOutMap(ws, points),
           [for (final e in drawn) (e.id, pic(e.id))],
-          (from) => effects.numbersOf(m, clip, [
-            for (final e in drawn) e.label,
-          ], from),
+          (from) => effects.numbersOf(
+            clip == null
+                ? null
+                : (List<String> at) => effects.features.seen(ws, clip, at),
+            [for (final e in drawn) e.label],
+            from,
+          ),
           also: '${clip ?? ''} kinds',
         );
       }
