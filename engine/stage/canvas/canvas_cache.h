@@ -68,7 +68,9 @@ struct Canvas2DFx {
   struct Rim {
     filament::math::float4 color;  // rgb + width fraction of layer height
     int cap = -1, join = -1, align = 0;  // align: -1 inside, 0 center, 1 outside
-    float dash = 0.f, dashFrom = 0.f;
+    // dash is the length of each dash; gap is the gap between them. When gap
+    // is 0 it equals dash, so a dash set alone draws evenly spaced dashes.
+    float dash = 0.f, gap = 0.f, dashFrom = 0.f;
   };
   std::vector<Rim> rims;
   // Stacks the letters vertically, one letter height apart.
@@ -80,8 +82,10 @@ struct Canvas2DFx {
   float letters = 0.f, lines = 1.2f, italic = 0.f, wrapWidth = 0.f;
   int wrap = 0;
   // Stroke options passed to ThorVG's Shape::strokeDash, strokeCap and
-  // strokeJoin. -1 for cap and join keeps ThorVG's default.
-  float dash = 0.f, dashFrom = 0.f;
+  // strokeJoin. -1 for cap and join keeps ThorVG's default. dash is the length
+  // of each dash and gap the gap between them; gap of 0 equals dash, so a dash
+  // set alone draws evenly spaced dashes.
+  float dash = 0.f, gap = 0.f, dashFrom = 0.f;
   int cap = -1, join = -1;
   // Heads on the ends of an open edge, as in Cavalry. heads is 1 for the end, 2
   // for the start and 3 for both. headSize scales the heads relative to the

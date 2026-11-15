@@ -235,10 +235,13 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
         }
         if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);
         if (fx.join >= 0) shape->strokeJoin((tvg::StrokeJoin)fx.join);
-        // Dashes and gaps are equally long, as fractions of the height.
+        // Dashes and gaps, as fractions of the height. gap at 0 equals dash,
+        // so a dash set alone draws evenly spaced dashes.
         if (fx.dash > 0.f) {
-          const float gap[2] = {fx.dash * (float)*h, fx.dash * (float)*h};
-          shape->strokeDash(gap, 2, fx.dashFrom * (float)*h);
+          const float dashGap[2] = {
+              fx.dash * (float)*h,
+              (fx.gap > 0.f ? fx.gap : fx.dash) * (float)*h};
+          shape->strokeDash(dashGap, 2, fx.dashFrom * (float)*h);
         }
         // Extra rims: stacked under the main shape, widest first.
         const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
@@ -263,8 +266,9 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
             if (rim.cap >= 0) out->strokeCap((tvg::StrokeCap)rim.cap);
             if (rim.join >= 0) out->strokeJoin((tvg::StrokeJoin)rim.join);
             if (rim.dash > 0.f) {
-              const float gap[2] = {rim.dash, rim.dash};
-              out->strokeDash(gap, 2, rim.dashFrom);
+              const float dashGap[2] = {rim.dash,
+                                        rim.gap > 0.f ? rim.gap : rim.dash};
+              out->strokeDash(dashGap, 2, rim.dashFrom);
             }
             under.push_back(out);
           }

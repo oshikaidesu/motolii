@@ -112,6 +112,9 @@ void look_material(LayerBuild& build) {
       rim.align = sa == "inside" ? -1 : sa == "outside" ? 1 : 0;
       rim.dash = (float)(doc_number(d, layer, (id + ":dash").c_str(), 0, 0) /
                          units);
+      rim.gap =
+          (float)(doc_number(d, layer, (id + ":dash_gap").c_str(), 0, 0) /
+                  units);
       rim.dashFrom =
           (float)(doc_number(d, layer, (id + ":dash_offset").c_str(), 0, 0) /
                   units);
@@ -269,6 +272,7 @@ void look_edge_ends(LayerBuild& build) {
             "diamond diamond_filled arrow_hollow arrow_filled circle_hollow "
             "circle_filled teardrop_hollow teardrop_filled");
   fx.dash = (float)(build.number("dash", 0) / units),
+  fx.gap = (float)(build.number("dash_gap", 0) / units),
   fx.dashFrom = (float)(build.number("dash_offset", 0) / units);
 }
 

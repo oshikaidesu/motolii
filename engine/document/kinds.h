@@ -627,6 +627,7 @@ inline const DocValue doc_values[] = {
      "diamond_filled arrow_hollow arrow_filled circle_hollow circle_filled "
      "teardrop_hollow teardrop_filled"},
     {"dash", doc_sheet_kinds, 0, 1000, false, nullptr},
+    {"dash_gap", doc_sheet_kinds, 0, 1000, false, nullptr},
     {"dash_offset", doc_sheet_kinds, -1e4, 1e4, false, nullptr},
     // Filament's own surface of a solid in a color: how metallic, how rough,
     // how much it reflects,

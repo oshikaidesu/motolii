@@ -172,6 +172,7 @@ inline const DocShown doc_shown[] = {
     {"head_start", "", "", "Start shape", 0, 0, nullptr},
     {"join", "", "", "Corners", 0, 0, nullptr},
     {"dash", "", "px", "Dash", 0, 100, nullptr},
+    {"dash_gap", "", "px", "Gap", 0, 100, nullptr},
     {"dash_offset", "", "px", "Offset", -100, 100, nullptr},
     {"metallic", "share", "%", "Metal", 0, 1, nullptr},
     {"roughness", "share", "%", "Rough", 0, 1, nullptr},
