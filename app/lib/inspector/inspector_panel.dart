@@ -179,9 +179,6 @@ class _InspectorPanelState extends State<InspectorPanel> {
         ),
       ),
     );
-    final floated = Overlay.maybeOf(context) == null
-        ? Overlay.wrap(child: panel)
-        : panel;
-    return floated;
+    return panel;
   }
 }

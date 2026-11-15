@@ -57,6 +57,8 @@ class Panel extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) => ClipRect(
-    child: ColoredBox(color: WindowTokens.body, child: child),
+    child: Overlay.wrap(
+      child: ColoredBox(color: WindowTokens.body, child: child),
+    ),
   );
 }
