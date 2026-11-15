@@ -42,3 +42,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    # Inter is the UI's Latin face; Noto Sans JP covers Japanese (and CJK) where Inter has no glyph.
+    # Both are bundled so the window looks the same on every OS. A skin still overrides either with a FontSansFile role.
+    - family: Inter
+      fonts:
+        - asset: fonts/Inter-Variable.ttf
+    - family: Noto Sans JP
+      fonts:
+        - asset: fonts/NotoSansJP-Regular.otf

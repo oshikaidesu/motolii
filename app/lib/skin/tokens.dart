@@ -218,7 +218,8 @@ abstract final class TextStyles {
     double? ls,
   ]) => TextStyle(
     fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
+    // Inter has no kana or kanji, so Japanese falls to the bundled Noto Sans JP, then the system face.
+    fontFamilyFallback: const ['Noto Sans JP', '.AppleSystemUIFont'],
     fontSize: px(size),
     fontWeight: w,
     color: ink(c ?? dim),
@@ -239,6 +240,7 @@ abstract final class TextStyles {
       _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
   static TextStyle value([Color? c]) => TextStyle(
     fontFamily: mono,
+    fontFamilyFallback: const ['Noto Sans JP', '.AppleSystemUIFont'],
     fontSize: px(11),
     color: ink(c ?? Grey.g91),
     height: 1,
