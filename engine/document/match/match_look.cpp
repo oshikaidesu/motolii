@@ -38,6 +38,9 @@ namespace math = filament::math;
 
 namespace {
 
+// Defined further down, but used by look_material above its definition.
+int which(Doc& d, int layer, const char* name, const char* words);
+
 // A fill is one colour of six hex digits. For text or a flat shape it can
 // also be two or more colours that form a ramp. Each colour is six or eight
 // hex digits, and the last two are the alpha, so a colour can fade to

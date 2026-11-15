@@ -459,8 +459,10 @@ bool sk_stroke_align(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   if (cap >= 0) paint.setStrokeCap((SkPaint::Cap)cap);
   if (join >= 0) paint.setStrokeJoin((SkPaint::Join)join);
   SkStrokeRec rec(paint);
-  SkPath stroked;
-  if (!rec.applyToPath(&stroked, fill) || stroked.isEmpty()) return false;
+  SkPathBuilder strokedBuilder;
+  if (!rec.applyToPath(&strokedBuilder, fill)) return false;
+  const SkPath stroked = strokedBuilder.detach();
+  if (stroked.isEmpty()) return false;
   const SkPathOp op = align == -1 ? kIntersect_SkPathOp : kDifference_SkPathOp;
   std::optional<SkPath> result = Op(stroked, fill, op);
   if (!result || result->isEmpty()) return false;
