@@ -244,6 +244,13 @@ LayerOpacity evaluate_opacity(Doc& d, int layer, DocShownLayer& t, double now) {
     look->setParameter("opacity", (float)ownClear);
   if (t.drawn && t.drawn->edgeLook)
     t.drawn->edgeLook->setParameter("opacity", (float)ownClear);
+  if (t.solid) {
+    Stage& s = *d.stage;
+    doc_material_instances(s, t, [ownClear](MaterialInstance* look) {
+      if (look->getMaterial()->hasParameter("opacity"))
+        look->setParameter("opacity", (float)ownClear);
+    });
+  }
   return {sheetClear, ownClear};
 }
 

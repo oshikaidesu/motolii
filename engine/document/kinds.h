@@ -175,7 +175,7 @@ inline const DocValue doc_values[] = {
     {"focus", "camera", 0, 1e4, true, nullptr},
     {"aperture", "camera", 0, 64, true, nullptr},
     {"blur_level", "camera", 0, 100, true, nullptr},
-    {"opacity", "video image text shape behaviour", 0, 1, true, nullptr},
+    {"opacity", "video image text shape solid behaviour", 0, 1, true, nullptr},
     {"clip", doc_visible_kinds, 0, 1, false, nullptr},
     // clip: the layer is clipped by the flat layer before it, with the render
     // code's matte.
@@ -189,10 +189,9 @@ inline const DocValue doc_values[] = {
     // cut out by. Alight Motion's Group and Mask and Group and Exclude, see
     // docs/design/alight_motion_ui.md.
     {"group_mask", "shape", 0, 0, false, "none mask exclude"},
-    // A solid is cut by a box, not a matte.
-    {"clip_matte", doc_video_sheet_kinds, 0, 0, false, "alpha luma"},
-    {"clip_invert", doc_video_sheet_kinds, 0, 1, false, nullptr},
-    {"clip_feather", doc_video_sheet_kinds, 0, 500, false, nullptr},
+    {"clip_matte", doc_visible_kinds, 0, 0, false, "alpha luma"},
+    {"clip_invert", doc_visible_kinds, 0, 1, false, nullptr},
+    {"clip_feather", doc_visible_kinds, 0, 500, false, nullptr},
     // After Effects' own: while any layer is solo only those layers are seen,
     // and a locked layer
     // cannot be changed.

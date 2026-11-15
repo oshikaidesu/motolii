@@ -80,8 +80,7 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   // by that layer's own image, like an After Effects alpha matte. Otherwise
   // it is cut by the upright box of what the clipping layer covers.
   const DocShownLayer* const a = clipped ? &d.on_stage.shown[by] : nullptr;
-  // A solid can be cut too, through its own material.
-  const bool shaped = a && a->drawn && (t.drawn || t.video || t.look);
+  const bool shaped = a && a->drawn && (t.drawn || t.video || t.look || t.solid);
   DocOnStage::Cut& cut = d.on_stage.cuts[layer];
   MaterialInstance* const base = t.video   ? t.video->look
                                  : t.drawn ? t.drawn->look
@@ -121,6 +120,13 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   if (shaped &&
       (cut.from != by || cut.by != a->drawn || cut.how != how ||
        cut.tex != pic)) {
+    // For solid, all material instances were matted; clear them all first.
+    if (t.solid && cut.look) {
+      doc_material_instances(s, t, [&](MaterialInstance* look) {
+        unmatte(s, look, true);
+      });
+      cut.look = nullptr;
+    }
     // Release what cut the material before.
     unmatte(s, cut.look, cut.look == base || cut.look == own);
     if (cut.matte >= 0) {
@@ -149,7 +155,41 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
       matted(s, t.drawn->edgeLook, cut.matte, invert < 0.5,
              (float)doc_number(d, layer, "clip_feather", 0, 0));
   }
-  if (!shaped && cut.look) matte_released(s, cut, own);
+  if (shaped && t.solid && cut.matte >= 0) {
+    // Find the first material instance as a tracking sentinel.
+    MaterialInstance* first = nullptr;
+    doc_material_instances(s, t, [&](MaterialInstance* mi) {
+      if (!first) first = mi;
+    });
+    if (cut.look != first) {
+      // Solid was (re)created since the matte was last applied; re-apply to all.
+      doc_material_instances(s, t, [&](MaterialInstance* look) {
+        unmatte(s, look, true);
+      });
+      const float feather =
+          (float)doc_number(d, layer, "clip_feather", 0, 0);
+      doc_material_instances(s, t, [&](MaterialInstance* look) {
+        matted(s, look, cut.matte, invert < 0.5, feather);
+      });
+      cut.look = first;
+    }
+  }
+  if (!shaped && cut.look) {
+    if (t.solid) {
+      doc_material_instances(s, t, [&](MaterialInstance* look) {
+        unmatte(s, look, true);
+      });
+      cut.look = nullptr, cut.from = 0, cut.by = nullptr;
+      if (cut.matte >= 0) {
+        Scene* sc = s.mattes[(size_t)cut.matte].scene;
+        doc_unshape(s, [sc](const Stage::Renderable& made) {
+          return sc->hasEntity(made.thing);
+        });
+      }
+    } else {
+      matte_released(s, cut, own);
+    }
+  }
   return shaped;
 }
 
