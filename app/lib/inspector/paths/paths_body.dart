@@ -67,15 +67,27 @@ class PathsBody extends StatefulWidget {
     'trim_offset': 0.0,
   };
 
-  // The order operators appear in the picker, grouped.
+  // Operators that carry sub-parameters: adding the parent lays its subs right
+  // below it, and they move and are removed with it as a set. The parent's name
+  // prefixes each sub, so this is the one place the dependency is written.
+  static const _subs = <String, List<String>>{
+    'zigzag': ['zigzag_ridges', 'zigzag_smooth'],
+    'rough': ['rough_detail'],
+    'morph': ['morph_to', 'morph_steps'],
+    'trail': ['trail_length'],
+    'trim': ['trim_begin', 'trim_offset'],
+  };
+
+  // Every sub-parameter, kept out of the picker and the top-level stack order.
+  static final _allSubs = {for (final subs in _subs.values) ...subs};
+
+  // The parents and standalone operators the picker offers, grouped. Subs are
+  // not here; they come with their parent.
   static const _groups = [
-    (
-      'Deform',
-      ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
-    ),
-    ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
-    ('Path', ['morph', 'morph_to', 'morph_steps', 'trail', 'trail_length']),
-    ('Animate', ['trim', 'trim_begin', 'trim_offset']),
+    ('Deform', ['round', 'bloat', 'offset', 'zigzag']),
+    ('Texture', ['rough', 'resample', 'fill_rule']),
+    ('Path', ['morph', 'trail']),
+    ('Animate', ['trim']),
   ];
 
   // All stackable operators in their default order.
@@ -105,7 +117,9 @@ class PathsBody extends StatefulWidget {
 }
 
 class _PathsBodyState extends State<PathsBody> {
-  List<String> _stack = [];
+  // The parents and standalone operators on the stack, in order. Each parent's
+  // subs come with it (PathsBody._subs); they are not held here.
+  List<String> _order = [];
   bool _initialized = false;
   bool _picking = false;
 
@@ -116,32 +130,40 @@ class _PathsBodyState extends State<PathsBody> {
   void _init(InspectorValues doc) {
     if (_initialized) return;
     _initialized = true;
-    _stack = [
+    // Only parents and standalone operators sit on the stack; a sub shows under
+    // its parent, so an orphan sub left in the document is ignored here.
+    _order = [
       for (final id in PathsBody._stackable)
-        if ((doc.get('v_$id') ?? 0) != 0.0) id,
+        if (!PathsBody._allSubs.contains(id) && (doc.get('v_$id') ?? 0) != 0.0)
+          id,
     ];
   }
 
+  // Adding a parent turns on its subs too, each at its default, as one gesture.
   void _add(InspectorValues doc, String id) {
-    if (_stack.contains(id)) return;
-    final val = PathsBody._defaults[id] ?? 1.0;
+    if (_order.contains(id)) return;
     doc.beginGesture();
-    doc.set('v_$id', val);
+    for (final x in [id, ...?PathsBody._subs[id]]) {
+      doc.set('v_$x', PathsBody._defaults[x] ?? 1.0);
+    }
     doc.endGesture();
     setState(() {
-      _stack = [..._stack, id];
+      _order = [..._order, id];
       _picking = false;
     });
   }
 
+  // Removing a parent turns off its subs with it.
   void _remove(InspectorValues doc, String id) {
     doc.beginGesture();
-    doc.set('v_$id', 0.0);
+    for (final x in [id, ...?PathsBody._subs[id]]) {
+      doc.set('v_$x', 0.0);
+    }
     doc.endGesture();
     setState(
-      () => _stack = [
-        for (final s in _stack)
-          if (s != id) s,
+      () => _order = [
+        for (final p in _order)
+          if (p != id) p,
       ],
     );
   }
@@ -178,7 +200,7 @@ class _PathsBodyState extends State<PathsBody> {
                 svgPath: svgPath,
               ),
               SizedBox(height: Shape.s(8)),
-              if (_stack.isNotEmpty) _buildStack(doc, params),
+              if (_order.isNotEmpty) _buildStack(doc, params),
               _buildAddButton(doc, params),
               SizedBox(height: Shape.s(8)),
               _buildShapeRows(doc, params),
@@ -199,25 +221,41 @@ class _PathsBodyState extends State<PathsBody> {
         ReorderableList(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: _stack.length,
+          itemCount: _order.length,
           onReorderItem: (from, to) {
             setState(() {
-              final item = _stack.removeAt(from);
-              _stack.insert(to, item);
+              final item = _order.removeAt(from);
+              _order.insert(to, item);
             });
           },
           itemBuilder: (ctx, i) {
-            final id = _stack[i];
+            final id = _order[i];
+            // The parent carries the drag handle and the remove button; its subs
+            // ride beneath it in the same item, so they move and go as a set.
             return InspectorScope(
               key: ValueKey(id),
               doc: scope.doc,
               tick: scope.tick,
-              child: _StackItem(
-                index: i,
-                id: id,
-                param: params[id],
-                doc: doc,
-                onRemove: () => _remove(doc, id),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _StackItem(
+                    index: i,
+                    id: id,
+                    param: params[id],
+                    doc: doc,
+                    onRemove: () => _remove(doc, id),
+                  ),
+                  for (final sub in PathsBody._subs[id] ?? const <String>[])
+                    _StackItem(
+                      index: i,
+                      id: sub,
+                      param: params[sub],
+                      doc: doc,
+                      onRemove: () {},
+                      isSub: true,
+                    ),
+                ],
               ),
             );
           },
@@ -283,7 +321,7 @@ class _PathsBodyState extends State<PathsBody> {
   ) {
     final available = [
       for (final id in ids)
-        if (!_stack.contains(id)) id,
+        if (!_order.contains(id)) id,
     ];
     if (available.isEmpty) return [];
     return [
@@ -352,17 +390,24 @@ class _StackItem extends StatelessWidget {
     required this.param,
     required this.doc,
     required this.onRemove,
+    this.isSub = false,
   });
   final int index;
   final String id;
   final Parameter? param;
   final InspectorValues doc;
   final VoidCallback onRemove;
+  // A sub rides under its parent: no drag handle, no remove, indented and dim.
+  final bool isSub;
 
   @override
   Widget build(BuildContext context) {
     final p = param;
     if (p == null) return const SizedBox.shrink();
+    // A sub reads as the part after its parent's name: 'zigzag_ridges' -> 'ridges'.
+    final label = isSub
+        ? id.split('_').skip(1).join(' ')
+        : id.replaceAll('_', ' ');
     return Container(
       height: Shape.z(32),
       margin: EdgeInsets.only(bottom: Shape.s(2)),
@@ -372,21 +417,28 @@ class _StackItem extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ReorderableDragStartListener(
-            index: index,
-            child: SizedBox(
-              width: Shape.z(28),
-              child: Center(
-                child: Text('⠿', style: TextStyles.label(Grey.g56)),
+          // The parent drags the whole set; a sub has no handle of its own.
+          if (isSub)
+            SizedBox(width: Shape.z(28))
+          else
+            ReorderableDragStartListener(
+              index: index,
+              child: SizedBox(
+                width: Shape.z(28),
+                child: Center(
+                  child: Text('⠿', style: TextStyles.label(Grey.g56)),
+                ),
               ),
             ),
-          ),
           SizedBox(
             width: Shape.z(68),
-            child: Text(
-              id.replaceAll('_', ' '),
-              style: TextStyles.label(Grey.g76),
-              overflow: TextOverflow.ellipsis,
+            child: Padding(
+              padding: EdgeInsets.only(left: isSub ? Shape.s(10) : 0),
+              child: Text(
+                label,
+                style: TextStyles.label(isSub ? Grey.g56 : Grey.g76),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           Expanded(
@@ -396,23 +448,27 @@ class _StackItem extends StatelessWidget {
                 p,
                 key: ValueKey('paths:$id'),
                 id: 'v_$id',
-                caption: id.replaceAll('_', ' '),
+                caption: label,
                 compact: true,
               ),
             ),
           ),
-          Pressable(
-            onTap: onRemove,
-            builder: (_, hot) => SizedBox(
-              width: Shape.z(28),
-              child: Center(
-                child: Text(
-                  '×',
-                  style: TextStyles.label(hot ? Grey.g76 : Grey.g44),
+          // Only the parent removes the set; a sub keeps the row aligned.
+          if (isSub)
+            SizedBox(width: Shape.z(28))
+          else
+            Pressable(
+              onTap: onRemove,
+              builder: (_, hot) => SizedBox(
+                width: Shape.z(28),
+                child: Center(
+                  child: Text(
+                    '×',
+                    style: TextStyles.label(hot ? Grey.g76 : Grey.g44),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
