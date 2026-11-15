@@ -27,14 +27,19 @@ namespace motolii {
 
 struct ImagePixels {
   int w = 0, h = 0;
-  // w * h pixels of red, green, blue, alpha (alpha not multiplied in), row 0
-  // on top.
+  // bufW and bufH are the dimensions at which `rgba` is actually stored. They
+  // equal w and h for a picture that fits, and are scaled down to at most 4096
+  // either way for a bigger one. Sample coordinates stay in (w, h) space.
+  int bufW = 0, bufH = 0;
+  // bufW * bufH pixels of red, green, blue, alpha (alpha not multiplied in),
+  // row 0 on top.
   std::vector<uint8_t> rgba;
 };
 
-// The picture in `file`, drawn by ThorVG at its own size (PNG, JPEG, SVG ...;
-// at most 4096 either way), or null when it cannot be read. A file is decoded
-// once and kept until it changes on disk. Safe to call from any thread.
+// The picture in `file`, drawn by ThorVG (PNG, JPEG, SVG ...), or null when it
+// cannot be read. A picture larger than 4096 either way is drawn at a reduced
+// size and `image_sample` still answers in its own pixel space. A file is
+// decoded once and kept until it changes on disk. Safe to call from any thread.
 std::shared_ptr<const ImagePixels> image_pixels(const std::string& file);
 
 // sampleImage([x, y], [rx, ry]) of `image`: [red, green, blue, alpha], each 0
