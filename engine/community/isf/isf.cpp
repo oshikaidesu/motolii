@@ -22,12 +22,12 @@
 
 #include <fstream>
 #include <regex>
+#include <sstream>
 
 #include "community/isf/isf_translate.h"
 #include "community/sites/adapter.h"
 #include "community/three/three_isf.h"
 #include "sca/builtinResource.h"
-#include "src/tint/lang/wgsl/writer/writer.h"
 
 namespace motolii {
 
