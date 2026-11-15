@@ -9,8 +9,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 extern "C" {
@@ -23,6 +25,7 @@ extern "C" {
 #include "document/cards.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
+#include "document/edit/parent.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"
@@ -355,6 +358,157 @@ bool doc_to_path(Doc& d, int layer) {
       ok = doc_set(d, layer, name, 0.0);
   if (!ok) d.act.ok = false;
   return doc_acted(d) && ok;
+}
+
+namespace {
+
+// One shape read out of an SVG: its outline, already in the drawing's own
+// coordinates (the shape's own transform folded in), and the look it was drawn
+// with. The outline is turned into a path string once the whole drawing's box
+// is known, so every part shares one frame.
+struct SvgPart {
+  std::vector<tvg::PathCommand> cmds;
+  std::vector<std::pair<float, float>> pts;  // the shape's own transform applied
+  std::string fill;    // "rrggbb", or "none" for a shape with no fill
+  std::string stroke;  // "rrggbb", or "" for no stroke
+  float strokeWidth = 0.f;  // in the SVG's own units, before the drawing is framed
+};
+
+}  // namespace
+
+int doc_svg_paths(Doc& d, const char* file) {
+  // ThorVG reads no file until it is started (image_pixels.cpp). Reading the
+  // outlines needs no canvas: the Accessor walks the scene tree on the CPU.
+  tvg::Initializer::init(0);
+  tvg::Picture* pic = tvg::Picture::gen();
+  if (!pic) return 0;
+  if (pic->load(file) != tvg::Result::Success) {
+    delete pic;
+    return 0;  // not a vector drawing ThorVG can read
+  }
+  std::vector<SvgPart> parts;
+  bool faithless = false;  // a transform or gradient this cannot keep as a shape
+  float minX = 1e30f, minY = 1e30f, maxX = -1e30f, maxY = -1e30f;
+  tvg::Accessor* walk = tvg::Accessor::gen();
+  walk->set(
+      pic,
+      [&](const tvg::Paint* node, void*) {
+        // transform() is not const, but nothing is changed here.
+        const tvg::Matrix m = const_cast<tvg::Paint*>(node)->transform();
+        const bool plain = m.e11 == 1 && m.e12 == 0 && m.e13 == 0 &&
+                           m.e21 == 0 && m.e22 == 1 && m.e23 == 0;
+        if (node->type() == tvg::Type::Scene) {
+          // A <g> transform moves all it holds. This folds in only each
+          // shape's own transform, not the chain of its parents, so a moved
+          // group is left to the picture path rather than placed wrong.
+          if (!plain) faithless = true;
+          return true;
+        }
+        if (node->type() != tvg::Type::Shape) return true;
+        const tvg::Shape* sh = static_cast<const tvg::Shape*>(node);
+        const tvg::PathCommand* cmds = nullptr;
+        const tvg::Point* pts = nullptr;
+        uint32_t cc = 0, pc = 0;
+        sh->path(&cmds, &cc, &pts, &pc);
+        if (cc == 0 || pc == 0) return true;
+        SvgPart part;
+        part.cmds.assign(cmds, cmds + cc);
+        part.pts.reserve(pc);
+        for (uint32_t i = 0; i < pc; ++i) {
+          const float x = m.e11 * pts[i].x + m.e12 * pts[i].y + m.e13,
+                      y = m.e21 * pts[i].x + m.e22 * pts[i].y + m.e23;
+          part.pts.emplace_back(x, y);
+          minX = std::min(minX, x), maxX = std::max(maxX, x);
+          minY = std::min(minY, y), maxY = std::max(maxY, y);
+        }
+        // The fill. A gradient is a Fill a shape cannot hold, so the whole
+        // drawing goes to the picture path rather than drop its look. A shape
+        // with no solid fill is drawn hollow ("none").
+        uint8_t r = 0, g = 0, b = 0, a = 0;
+        char hex[8];
+        if (sh->fill() != nullptr)
+          faithless = true;
+        else if (sh->fill(&r, &g, &b, &a) == tvg::Result::Success && a > 0) {
+          std::snprintf(hex, sizeof hex, "%02x%02x%02x", r, g, b);
+          part.fill = hex;
+        } else
+          part.fill = "none";
+        // The stroke, if the shape has one.
+        const float sw = sh->strokeWidth();
+        if (sw > 0.f) {
+          if (sh->strokeFill() != nullptr)
+            faithless = true;
+          else if (sh->strokeFill(&r, &g, &b, &a) == tvg::Result::Success &&
+                   a > 0) {
+            std::snprintf(hex, sizeof hex, "%02x%02x%02x", r, g, b);
+            part.stroke = hex, part.strokeWidth = sw;
+          }
+        }
+        parts.push_back(std::move(part));
+        return true;
+      },
+      nullptr);
+  delete walk;
+  delete pic;
+  const float H = maxY - minY, W = maxX - minX;
+  if (parts.empty() || faithless || H <= 0.f || W <= 0.f)
+    return 0;  // leave it to the picture path
+  // One drawing-height is one unit, framed to the whole drawing and centred, so
+  // the outline sits in the same units a drawn shape uses (doc_to_path). y is
+  // down, as in SVG.
+  const double s = 1.0 / H, cx = 0.5 * (minX + maxX), cy = 0.5 * (minY + maxY);
+  char one[96];
+  const auto at = [&](const std::pair<float, float>& p) {
+    std::snprintf(one, sizeof one, "%.5f %.5f", (p.first - cx) * s,
+                  (p.second - cy) * s);
+    return std::string(one);
+  };
+  doc_act(d);
+  const std::string stem = std::filesystem::path(file).stem().string();
+  const int grp = doc_add(d, "shape", "null");
+  bool ok = grp != 0;
+  if (ok) doc_say(d, grp, "name", (stem.empty() ? "SVG" : stem).c_str());
+  for (const SvgPart& part : parts) {
+    if (!ok) break;
+    std::string path;
+    for (uint32_t c = 0, p = 0; c < (uint32_t)part.cmds.size(); ++c)
+      switch (part.cmds[c]) {
+        case tvg::PathCommand::MoveTo:
+          path += (path.empty() ? "M" : " M") + at(part.pts[p]);
+          ++p;
+          break;
+        case tvg::PathCommand::LineTo:
+          path += " L" + at(part.pts[p]);
+          ++p;
+          break;
+        case tvg::PathCommand::CubicTo:
+          path += " C" + at(part.pts[p]) + " " + at(part.pts[p + 1]) + " " +
+                  at(part.pts[p + 2]);
+          p += 3;
+          break;
+        case tvg::PathCommand::Close:
+          path += " Z";
+          break;
+      }
+    if (path.empty()) continue;
+    const int lay = doc_add(d, "shape", "path");
+    if (!lay) {
+      ok = false;
+      break;
+    }
+    ok = doc_say(d, lay, "path", path.c_str()) &&
+         doc_say(d, lay, "fill", part.fill.c_str());
+    if (ok && !part.stroke.empty())
+      // stroke_width is in image points at the scale layers start at, so the
+      // stroke's fraction of the drawing's height (strokeWidth * s) is taken
+      // back to points of a layer one stage-height tall (match_look.cpp).
+      ok = doc_say(d, lay, "stroke", part.stroke.c_str()) &&
+           doc_set(d, lay, "stroke_width",
+                   part.strokeWidth * s * 0.5 * (double)d.stage->h);
+    if (ok) ok = doc_parent(d, lay, (double)grp);
+  }
+  if (!ok) d.act.ok = false;
+  return doc_acted(d) && ok ? grp : 0;
 }
 
 }  // namespace motolii

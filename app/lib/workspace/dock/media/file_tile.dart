@@ -261,6 +261,40 @@ class _FileTileState extends State<FileTile> {
               look: ChipLook.tag(t.hue, edge: true),
             ),
           ),
+        // An SVG comes in as editable path shapes by default; this switches it
+        // to come in as a picture, and back. The mark shows which it is: a
+        // shape for paths, a picture for a picture. It stays shown in picture
+        // mode, so the one that is not the default is visible without hovering.
+        if (MediaController.isSvg(n.id) &&
+            (h || sel || media.svgAsPicture.contains(n.id)))
+          Positioned(
+            right: 3,
+            top: 3,
+            child: Pressable(
+              onTap: () => setState(() {
+                if (!media.svgAsPicture.add(n.id)) {
+                  media.svgAsPicture.remove(n.id);
+                }
+              }),
+              builder: (_, _) => Container(
+                width: Shape.z(16),
+                height: Shape.z(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xAA000000),
+                  borderRadius: BorderRadius.all(Shape.r(8)),
+                ),
+                child: Center(
+                  child: dockBadge(
+                    media.svgAsPicture.contains(n.id)
+                        ? AppGlyphs.image
+                        : AppGlyphs.shape,
+                    const Color(0xFFFFFFFF),
+                    size: Shape.z(10),
+                  ),
+                ),
+              ),
+            ),
+          ),
         if (n.folder && media.listed(n))
           Positioned(
             right: 4,

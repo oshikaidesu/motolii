@@ -149,6 +149,15 @@ class MediaController {
 
   /// The files being placed whose layer the engine has not made yet.
   final placing = <String>{};
+
+  /// The SVG files the viewer switched to come in as a picture. An SVG not in
+  /// the set comes in as editable path shapes, the default, so its points can
+  /// be moved and an expression can drive them. The file tile shows which it is
+  /// and switches it (file_tile.dart); MediaCommands.placeFile reads it.
+  final svgAsPicture = <String>{};
+
+  /// Whether [file] is an SVG, so it can come in as path shapes or a picture.
+  static bool isSvg(String file) => file.toLowerCase().endsWith('.svg');
 }
 
 String _size(int bytes) => bytes >= 1 << 20

@@ -28,6 +28,7 @@
 #include "document/edit/fx_put.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"
+#include "document/edit/paths.h"
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
@@ -266,10 +267,14 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
     return file;
   };
-  // An SVG is a picture: a new image layer of it, which plays its CSS
-  // animations if it has any (image_canvas).
+  // An SVG comes in as editable path shapes by default, so its points can be
+  // moved and an expression can drive them (doc_svg_paths makes its own
+  // change). A drawing that cannot be turned into shapes faithfully is placed
+  // as a picture instead, which plays its CSS animations if it has any
+  // (image_canvas).
   if (form == "svg") {
     const std::filesystem::path file = stored(".svg");
+    if (const int on = doc_svg_paths(d, file.string().c_str())) return on;
     doc_act(d);
     const int on = doc_add(d, "image", file.string().c_str());
     return doc_acted(d) && on ? on : 0;

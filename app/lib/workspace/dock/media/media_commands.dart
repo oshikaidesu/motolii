@@ -144,7 +144,14 @@ class MediaCommands {
         number: 1,
       ); // Adding, fitting and setting the length are one undo step.
     }
-    c.ws.after(m.later('add', word: n.id), (done, why) {
+    // An SVG comes in as editable path shapes ("vector") by default, or as a
+    // picture ("add") when the viewer switched it (file_tile.dart). Everything
+    // else is placed as a layer of its own kind.
+    final verb =
+        MediaController.isSvg(n.id) && !media.svgAsPicture.contains(n.id)
+        ? 'vector'
+        : 'add';
+    c.ws.after(m.later(verb, word: n.id), (done, why) {
       media.placing.remove(n.id);
       c.set(
         () => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why,
