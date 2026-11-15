@@ -137,6 +137,15 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "add")
           ok = m->later.last_added =
               changes(m, doc_add(doc(m), n.c_str(), w.c_str()));
+        // word: an SVG file. It comes in as editable path shapes, or, when it
+        // cannot be shapes faithfully, as a picture. The result is the new
+        // group or layer. This is how the Media shelf places an SVG in path
+        // mode; image mode uses "add".
+        else if (c == "vector") {
+          int on = doc_svg_paths(doc(m), w.c_str());
+          if (!on) on = doc_add(doc(m), "", w.c_str());
+          ok = m->later.last_added = changes(m, on);
+        }
         // word: the create script. The result is the new layer.
         else if (c == "create")
           ok = m->later.last_added = changes(m, doc_make(doc(m), w.c_str()));
