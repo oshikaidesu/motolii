@@ -12,12 +12,16 @@ import 'package:motolii/workspace/workspace.dart';
 
 void main() {
   // Catch widget-tree errors (layout, build, paint).
-  FlutterError.onError = (details) => log(
-    details.exceptionAsString(),
-    name: 'flutter',
-    error: details.exception,
-    stackTrace: details.stack,
-  );
+  // presentError keeps the default formatted console dump; log() also sends to DevTools.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    log(
+      details.exceptionAsString(),
+      name: 'flutter',
+      error: details.exception,
+      stackTrace: details.stack,
+    );
+  };
   // Catch platform-channel and async errors the zone does not reach.
   PlatformDispatcher.instance.onError = (error, stack) {
     log('$error', name: 'platform', error: error, stackTrace: stack);
