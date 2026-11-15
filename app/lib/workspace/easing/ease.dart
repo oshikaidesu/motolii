@@ -6,7 +6,7 @@ enum EaseKind { bezier, hold }
 /// One easing: a kind and two bezier handles.
 /// The handles are kept even when another kind is shown, so dragging a handle switches back to bezier.
 class Ease {
-  const Ease(this.kind, this.p1, this.p2, [this.name, this.drawn]);
+  const Ease(this.kind, this.p1, this.p2, [this.name, this.drawn, this.live]);
   final EaseKind kind;
   final Offset p1, p2;
   final String? name;
@@ -14,7 +14,13 @@ class Ease {
   /// Samples of an easing that has no tile in the tool panel, as the document evaluates it, at even steps along the span.
   final List<double>? drawn;
 
-  double at(double x) => drawn != null
+  /// An exact evaluator, for an easing whose shape is computed rather than fixed, so a stacked curve is drawn as steeply as it
+  /// really is and not frozen into [drawn]'s even samples. When set it is used over [drawn]; [drawn] is kept only to fit the view.
+  final double Function(double)? live;
+
+  double at(double x) => live != null
+      ? live!(x)
+      : drawn != null
       ? easeAlong(drawn!, x)
       : switch (kind) {
           EaseKind.bezier => Cubic(

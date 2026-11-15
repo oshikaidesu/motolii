@@ -268,14 +268,33 @@ class _TimelinePaneState extends State<TimelinePane>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(width: _labelWidth, child: labels(ws, drawn)),
-                    _ColumnDivider(
-                      onDrag: (dx) => setState(
-                        () => _labelWidth = (_labelWidth + dx).clamp(
-                          TimelineMetrics.labelMin,
-                          TimelineMetrics.labelMax,
-                        ),
+                    SizedBox(
+                      width: _labelWidth,
+                      child: Stack(
+                        children: [
+                          labels(ws, drawn),
+                          // The resize handle overlays the header's right edge (its empty padding), so dragging it
+                          // resizes the column without adding any gap between the names and the tracks.
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            width: TimelineMetrics.grip,
+                            height: TimelineMetrics.ruler,
+                            child: _ResizeHandle(
+                              onDrag: (dx) => setState(
+                                () => _labelWidth = (_labelWidth + dx).clamp(
+                                  TimelineMetrics.labelMin,
+                                  TimelineMetrics.labelMax,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    SizedBox(
+                      width: TimelineMetrics.divider,
+                      child: ColoredBox(color: WindowTokens.ground),
                     ),
                     Expanded(child: tracks(ws, drawn)),
                   ],
@@ -289,56 +308,37 @@ class _TimelinePaneState extends State<TimelinePane>
   }
 }
 
-/// The divider between the layer names and the tracks. Its handle sits in the header (the "LAYER n" row), lit on hover,
-/// and is dragged left or right to resize the name column, as a table column is resized by its heading. Below the header
-/// it is a plain hairline, so the drag is only where the heading is.
-class _ColumnDivider extends StatefulWidget {
-  const _ColumnDivider({required this.onDrag});
+/// The handle that resizes the name column, overlaid on the header's right edge (the "LAYER n" row). It is invisible until
+/// hovered, when an accent line lights at the column edge beside the divider to show the grab point; dragged left or right
+/// it resizes the column, as a table column is resized by its heading. It covers only the header, so the drag is only there.
+class _ResizeHandle extends StatefulWidget {
+  const _ResizeHandle({required this.onDrag});
 
   /// The pointer's horizontal movement during a drag, in logical pixels.
   final ValueChanged<double> onDrag;
   @override
-  State<_ColumnDivider> createState() => _ColumnDividerState();
+  State<_ResizeHandle> createState() => _ResizeHandleState();
 }
 
-class _ColumnDividerState extends State<_ColumnDivider> {
+class _ResizeHandleState extends State<_ResizeHandle> {
   bool _hot = false;
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: TimelineMetrics.grip,
-    child: Column(
-      // The children fill the grip's full width, so the whole handle is grabbable, not just the hairline at its centre.
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        MouseRegion(
-          cursor: SystemMouseCursors.resizeColumn,
-          onEnter: (_) => setState(() => _hot = true),
-          onExit: (_) => setState(() => _hot = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onHorizontalDragUpdate: (d) => widget.onDrag(d.delta.dx),
-            child: SizedBox(
-              height: TimelineMetrics.ruler,
-              child: Center(
-                child: Container(
-                  width: _hot ? 2.0 : TimelineMetrics.divider,
-                  height: double.infinity,
-                  color: _hot ? WindowTokens.accentInk : WindowTokens.ground,
-                ),
-              ),
-            ),
-          ),
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.resizeColumn,
+    onEnter: (_) => setState(() => _hot = true),
+    onExit: (_) => setState(() => _hot = false),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragUpdate: (d) => widget.onDrag(d.delta.dx),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 90),
+          width: _hot ? 2.0 : 0.0,
+          height: double.infinity,
+          color: WindowTokens.accentInk,
         ),
-        Expanded(
-          child: Center(
-            child: SizedBox(
-              width: TimelineMetrics.divider,
-              height: double.infinity,
-              child: ColoredBox(color: WindowTokens.ground),
-            ),
-          ),
-        ),
-      ],
+      ),
     ),
   );
 }

@@ -65,9 +65,15 @@ Ease easeCard(String word, Motolii? m) {
   }
   if (easeIsTurned(word)) {
     final base = easeCard(easeTurn(word), m);
-    return Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), word, [
-      for (var i = 0; i <= _steps; i++) 1 - base.at(1 - i / _steps),
-    ]);
+    return Ease(
+      EaseKind.bezier,
+      Offset.zero,
+      const Offset(1, 1),
+      word,
+      [for (var i = 0; i <= _steps; i++) 1 - base.at(1 - i / _steps)],
+      // Exact, so reversing a steep stack stays a smooth climb rather than the samples' steps.
+      (u) => 1 - base.at(1 - u),
+    );
   }
   final e = heard(word);
   if (!easeOther(e) || m == null) return e;
@@ -105,6 +111,9 @@ List<double> easeCurve(String way, Motolii m) {
 }
 
 /// The cards stacked as one easing. A single card is returned as it is.
+///
+/// The stack carries both the even samples (to fit the view) and an exact evaluator, so the curve is drawn as steeply as it
+/// really is — a stack of steep beziers is near vertical, and reading it from the samples alone would show it as steps.
 Ease easeLaid(List<Ease> cards) => cards.length == 1
     ? cards.single
     : Ease(
@@ -114,6 +123,7 @@ Ease easeLaid(List<Ease> cards) => cards.length == 1
         [for (final c in cards) said(c).replaceAll(' ', easeSpaceMark)]
             .join(easeStackMark),
         [for (var i = 0; i <= _steps; i++) _went(cards, i / _steps)],
+        (u) => _went(cards, u),
       );
 
 // The same as _goes, but evaluated directly so the app can draw it.

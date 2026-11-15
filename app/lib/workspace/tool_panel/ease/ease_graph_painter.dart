@@ -13,6 +13,10 @@ import 'package:motolii/widgets/paint_helpers.dart';
 /// For a drag or a hover: below this is a handle's index in easeHandles, this is the start end and this + 1 the end end.
 const easeEnd = 100;
 
+/// Segments along the width when drawing a curve. Enough that a stack of steep beziers, whose climb is near vertical, reads as a
+/// smooth line rather than steps; the curves are evaluated exactly (not from their even samples), so the extra segments are true.
+const _fine = 768;
+
 /// Where the point [v] (x from 0 to 1, y in the curve's own values) lies in the graph box [g], for the vertical range [reach].
 Offset easePx(Rect g, (double, double) reach, Offset v) => Offset(
   g.left + v.dx * g.width,
@@ -139,8 +143,8 @@ class EaseGraphPainter extends CustomPainter {
     c.clipRect(g);
     for (final (shift, hue) in ghosts) {
       final copy = Path()..moveTo(px(Offset(shift, 0)).dx, a.dy);
-      for (var i = 1; i <= 96; i++) {
-        final x = i / 96,
+      for (var i = 1; i <= _fine; i++) {
+        final x = i / _fine,
             o = px(Offset(x + shift, y0 + (y1 - y0) * (onion ?? ease).at(x)));
         copy.lineTo(o.dx, o.dy);
       }
@@ -156,8 +160,8 @@ class EaseGraphPainter extends CustomPainter {
     c.restore();
     if (onion case final whole?) {
       final skin = Path()..moveTo(a.dx, a.dy);
-      for (var i = 1; i <= 192; i++) {
-        final o = px(Offset(i / 192, y0 + (y1 - y0) * whole.at(i / 192)));
+      for (var i = 1; i <= _fine; i++) {
+        final o = px(Offset(i / _fine, y0 + (y1 - y0) * whole.at(i / _fine)));
         skin.lineTo(o.dx, o.dy);
       }
       c.drawPath(
@@ -188,9 +192,9 @@ class EaseGraphPainter extends CustomPainter {
         );
       }
     }
-    // The curve.
+    // The curve. Drawn finely so a stack of steep beziers, which is near vertical, is a smooth climb and not a flight of steps.
     final path = Path()..moveTo(a.dx, a.dy);
-    const n = 192;
+    const n = _fine;
     for (var i = 1; i <= n; i++) {
       final x = i / n;
       final o = px(Offset(x, along(x)));
