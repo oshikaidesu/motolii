@@ -61,6 +61,9 @@ using filament::math::float4;
 using filament::math::mat4f;
 
 DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
+  // The camera's orientation: rotate_y (pan), rotate_x (tilt), rotate (roll).
+  // With no camera layer the stage's own camera looks straight along -Z, so
+  // the rotation matrices are all identity.
   const auto turned = [&](const char* name, math::double3 about) {
     return camera ? math::mat4::rotation(doc_number(d, camera, name, now, 0) *
                                              (double)TAU / 360.0,
@@ -70,14 +73,24 @@ DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
   DocViewCamera e;
   e.round = turned("rotate_y", {0, 1, 0}) * turned("rotate_x", {1, 0, 0}) *
             turned("rotate", {0, 0, 1});
-  e.look = camera ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz
-                  : math::double3{0.0};
-  e.far = camera ? doc_number(d, camera, "distance", now, 1) : 1.0;
-  e.fov =
-      2.0 * std::atan(std::tan(15.0 * (double)TAU / 360.0) /
-                      (camera ? doc_number(d, camera, "zoom", now, 1) : 1.0));
-  e.eye = e.look + (e.round * math::double4{0, 0, 6.0 * e.far, 0}).xyz,
+  // The camera's position is the layer's own world position. With no camera
+  // layer the stage's own camera sits kStageBack units along +Z, looking at
+  // the origin.
+  e.eye = camera
+              ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz
+              : math::double3{0.0, 0.0, kStageBack};
+  // The camera looks in its local -Z. One unit ahead gives the look-at point.
+  e.look = e.eye + (e.round * math::double4{0, 0, -1, 0}).xyz;
   e.up = (e.round * math::double4{0, 1, 0, 0}).xyz;
+  // `far` is a scale on the default clip distance. Keep it at 1 when there is
+  // no camera layer so the near/far planes stay as they were.
+  e.far = 1.0;
+  // Vertical field of view from focal length. The stage uses a 24 mm sensor
+  // height (half = 12 mm), matching a 35 mm full-frame crop at 2:3 aspect.
+  // Default: 45 mm → ~30° vertical FOV, the same as the old default zoom = 1.
+  const double focal =
+      camera ? doc_number(d, camera, "focal_length", now, 45.0) : 45.0;
+  e.fov = 2.0 * std::atan(12.0 / std::max(focal, 1.0));
   return e;
 }
 

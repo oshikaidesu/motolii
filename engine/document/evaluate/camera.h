@@ -17,6 +17,11 @@ class Skybox;
 
 namespace motolii {
 
+// Default distance of the stage's own orbital camera along +Z, in scene units.
+inline constexpr double kStageBack = 6.0;
+// Near clip plane of both the orbital and document cameras.
+inline constexpr double kStageNear = 0.05;
+
 struct Canvas2D;
 struct Doc;
 

@@ -79,7 +79,13 @@ Stage open_stage(int w, int h) {
   s.swap = s.engine->createSwapChain((uint32_t)w, (uint32_t)h, 0);
   s.camera = s.engine->createCamera(utils::EntityManager::get().create());
   s.camera->setExposure(16.0f, 1.0f / 125.0f, 100.0f);
-  s.film = s.camera;
+  // The project's own camera is a separate Filament camera from the Stage's
+  // orbital working camera. 2D layers follow `film`; the Stage view looks
+  // through `camera`. The two share the same scene so the same objects appear
+  // in both views.
+  s.filmEntity = utils::EntityManager::get().create();
+  s.film = s.engine->createCamera(s.filmEntity);
+  s.film->setExposure(16.0f, 1.0f / 125.0f, 100.0f);
   s.view->setScene(s.scene);
   s.view->setCamera(s.camera);
   s.view->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
@@ -115,7 +121,10 @@ Stage open_stage(int w, int h) {
                                        .build(*s.engine);
   s.view_behind = s.engine->createView();
   s.view_behind->setScene(s.scene);
-  s.view_behind->setCamera(s.camera);
+  // view_behind captures the scene through the project camera, not the orbital
+  // working camera, because glass and matte layers project relative to the
+  // project's own viewpoint.
+  s.view_behind->setCamera(s.film);
   s.view_behind->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
   s.view_behind->setRenderTarget(
       RenderTarget::Builder()

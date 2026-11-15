@@ -430,7 +430,7 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
     else if (n == "z")
       times = p;
     else if (n == "scale_x" || n == "scale_y" || n == "scale_z" ||
-             n == "opacity" || n == "zoom")
+             n == "opacity")
       times = 100;
     else if (n == "rotate")
       times = camera ? 1 : -1;
@@ -442,8 +442,6 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
       times = -50, from = 50;
     else if (n == "anchor_z")
       times = -50;
-    else if (n == "distance")
-      times = 6 * p;
     else if (n == "size")
       times = p;
     else if (const DocShown* s = doc_shown_of(*m->d, name)) {

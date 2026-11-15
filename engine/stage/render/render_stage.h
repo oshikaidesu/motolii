@@ -107,10 +107,13 @@ struct Stage {
   filament::SwapChain* swap;
   // The camera that views the stage. Every image of the stage is taken by it.
   filament::Camera* camera;
-  // The project's own camera. It is the same as `camera` unless a free camera
-  // is in use, see god_view. Mattes in the project camera's image are taken by
-  // it.
+  // The project's own camera. Its image is the Camera View. 2D layers follow
+  // it; mattes are taken through it. It is separate from `camera`, which is
+  // the Stage's orbital working camera.
   filament::Camera* film;
+  // The entity that owns `film`. Stored so that `film` can be destroyed and so
+  // that 2D layers can be parented to it in the scene graph.
+  utils::Entity filmEntity;
   // The free camera, once it has been requested.
   filament::Camera* god = nullptr;
   // The same scene without the glass (layer 2), drawn first into `behind`. It

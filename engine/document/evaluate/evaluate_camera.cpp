@@ -17,7 +17,6 @@
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/evaluation.h"
 #include "document/evaluate/value_at.h"
-#include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -71,28 +70,34 @@ void lens_at(Doc& d, int camera, double now, math::double3 eye,
   s.film->setFocusDistance((float)(focus > 0.0 ? focus : length(eye - look)));
 }
 
-// In the working view the document camera stays where it is and the stage's
-// own camera orbits the origin at the angles and distance in
-// d.working_camera.position. A 2D layer belongs to the camera's image and
-// to no 3D world, as in the working 3D views of Adobe applications, so it
-// is hidden.
-void working_view_shown(Evaluation& evaluation) {
+// In the working view the Stage's orbital camera orbits the world origin while
+// the project's own camera (film) keeps its own viewpoint unchanged. The
+// Stage view is always through `s.camera`; the Camera View is always through
+// `s.film`. When the active camera layer has hide_2d_in_stage set, all 2D
+// layers are hidden in the Stage view to keep them from swinging around.
+void working_view_shown(Evaluation& evaluation, int camera) {
   Doc& d = evaluation.d;
   Stage& s = evaluation.s;
   std::vector<EvaluatedLayer>& lies = evaluation.lies;
-  if (d.working_camera.on) {
-    const math::mat4 about =
-        math::mat4::rotation(d.working_camera.position[0] * (double)TAU / 360.0,
-                             math::double3{0, 1, 0}) *
-        math::mat4::rotation(d.working_camera.position[1] * (double)TAU / 360.0,
-                             math::double3{1, 0, 0});
-    s.camera->lookAt(
-        (about * math::double4{0, 0, 6.0 * d.working_camera.position[2], 0})
-            .xyz,
-        math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
-    s.camera->setProjection(30.0, double(s.w) / double(s.h), 0.05,
-                            60.0 * std::max(1.0, d.working_camera.position[2]));
-    for (EvaluatedLayer& l : lies) l.on = l.on && l.shown->space != 2;
+  const math::mat4 about =
+      math::mat4::rotation(d.working_camera.position[0] * (double)TAU / 360.0,
+                           math::double3{0, 1, 0}) *
+      math::mat4::rotation(d.working_camera.position[1] * (double)TAU / 360.0,
+                           math::double3{1, 0, 0});
+  s.camera->lookAt(
+      (about *
+       math::double4{0, 0, kStageBack * d.working_camera.position[2], 0})
+          .xyz,
+      math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
+  s.camera->setProjection(30.0, double(s.w) / double(s.h), kStageNear,
+                          60.0 * std::max(1.0, d.working_camera.position[2]));
+  if (d.working_camera.on && camera &&
+      doc_number(d, camera, "hide_2d_in_stage", 0, 0) > 0.5) {
+    for (EvaluatedLayer& l : lies) {
+      if (d.on_stage.shown.count(l.layer) &&
+          d.on_stage.shown[l.layer].space == 2)
+        l.on = false;
+    }
   }
 }
 
@@ -110,7 +115,6 @@ void evaluate_camera(Evaluation& evaluation) {
   // progress.
   d.working_camera.on =
       d.working_camera.asked && camera && !d.video_export.writing;
-  god_view(s, d.working_camera.on);
   const DocViewCamera seen = doc_view_camera_of(d, camera, now);
   const math::double3 eye = seen.eye, look = seen.look, up = seen.up;
   const double far = seen.far, fov = seen.fov;
@@ -118,13 +122,13 @@ void evaluate_camera(Evaluation& evaluation) {
   // An orthographic camera is as large at the point it looks at as the
   // perspective camera shows it there.
   if (camera && doc_word(d, camera, "projection") == "orthographic") {
-    const double high = 6.0 * far * std::tan(0.5 * fov),
+    const double high = kStageBack * far * std::tan(0.5 * fov),
                  wide = high * double(s.w) / double(s.h);
     s.film->setProjection(Camera::Projection::ORTHO, -wide, wide, -high, high,
-                          0.05, 60.0 * std::max(1.0, far));
+                          kStageNear, 60.0 * std::max(1.0, far));
   } else
     s.film->setProjection(fov * 360.0 / (double)TAU, double(s.w) / double(s.h),
-                          0.05, 60.0 * std::max(1.0, far));
+                          kStageNear, 60.0 * std::max(1.0, far));
   s.film->setShift(camera
                        ? math::double2{doc_number(d, camera, "shift_x", now, 0),
                                        doc_number(d, camera, "shift_y", now, 0)}
@@ -132,11 +136,11 @@ void evaluate_camera(Evaluation& evaluation) {
   // Transform from the stage's own camera, six units back along z, to this
   // camera.
   d.camera.rig = s.film->getModelMatrix() *
-                 math::mat4::translation(math::double3{0, 0, -6});
+                 math::mat4::translation(math::double3{0, 0, -kStageBack});
   lens_at(d, camera, now, eye, look);
   // The rotation part of d.camera.rig.
   d.camera.facing = math::mat4(d.camera.rig.upperLeft());
-  working_view_shown(evaluation);
+  working_view_shown(evaluation, camera);
 }
 
 // The camera's lens is enabled on the stage's own view when solid layers are
