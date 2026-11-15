@@ -131,10 +131,7 @@ bool duck(Motolii* m, int layer) {
     if (t == layer || doc_word(d, t, "kind") != "video") continue;
     const std::vector<float>* all = loudness_of(doc_word(d, t, "file"), false);
     if (!all) return d.error = "the other sounds are not read yet", false;
-    const double start = doc_number(d, t, "start", 0, 0),
-                 begin = doc_number(d, t, "begin", 0, 0),
-                 speed = doc_number(d, t, "speed", 0, 1),
-                 its = doc_number(d, t, "duration", 0, -1);
+    const auto [start, begin, speed, its] = video_clock(d, t);
     // Map project time to the video's own time as in motolii_loudness_over.
     for (size_t i = 0; i < loud.size(); ++i) {
       const double s = from + (double)i / rate;
