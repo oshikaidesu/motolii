@@ -4,26 +4,31 @@
 import 'package:motolii/workspace/workspace_panes.dart';
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_watch.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
+import 'package:motolii/storage/project_files.dart' show projectFilesIn;
+import 'package:motolii/storage/window_paths.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/commands/menu_bar.dart';
 import 'package:motolii/workspace/commands/menu_items.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/state/command_writes.dart'
+    show copyLayerStyle, copyLayerThing;
+import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
+import 'package:motolii/workspace/state/layer_edits.dart'
+    show groupBegin, groupEnd;
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/project_session.dart';
+import 'package:motolii/workspace/state/stage_service.dart'
+    show stageError, stageTakeStill;
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/top_bar/top_bar.dart';
@@ -41,7 +46,7 @@ class Workspace extends StatefulWidget {
 
   /// Extra panes that join the Inspector's tabs.
   ///
-  /// A pane reads and changes the project through [WorkspaceScope.of]: `inside` is the engine's project,
+  /// A pane reads and changes the project through [WorkspaceScope.of]: the engine's project is
   /// `selected` the selected layer and `frame` the current time.
   final List<Pane> extra;
   @override
@@ -51,9 +56,10 @@ class Workspace extends StatefulWidget {
 class WorkspaceState extends State<Workspace> {
   late final ws = WorkspaceController()
     ..panes = [...workspacePanes, ...widget.extra];
-  Motolii? engine;
+  // The engine this window has open, held by the session (state/project_session.dart).
+  final _session = ProjectSession();
   // Watches the user's own effects folder (effect_tiles.dart).
-  StreamSubscription<FileSystemEvent>? _own;
+  StreamSubscription<String>? _own;
 
   /// The path of the open project: the one passed in, or one created or opened from the menu.
   String? documentPath;
@@ -67,17 +73,13 @@ class WorkspaceState extends State<Workspace> {
     // Reads the theme's SVG parts from the folder the theme names.
     SkinParts.follow();
     // With no project given, start a new untitled one, as After Effects does.
-    _join(
-      widget.document ??
-          '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii',
-    );
+    _join(widget.document ?? untitledProjectPath());
   }
 
   /// Opens another project in place of the current one, creating it if it does not exist.
   Future<void> open(String doc) {
     ws.stageTexture = null;
-    engine?.close();
-    engine = null;
+    _session.close();
     return _join(doc);
   }
 
@@ -86,29 +88,19 @@ class WorkspaceState extends State<Workspace> {
   /// AbsentMotion does the same when its editor closes (MainActivity.kt saveThumbnail).
   /// The thumbnail is taken at the playhead, or at the time set by file.poster.
   /// It is not saved when another project is opened in place of this one, because its last requests would go unanswered.
-  void keepPoster() =>
-      engine?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
+  void keepPoster() => _session.keepPoster(posterPath());
 
   /// Whether the project list is shown over the window (AbsentMotion's home screen; see home.dart).
   bool home = false;
 
   /// The projects in the open project's folder, read when a project is opened.
   List<String> beside = const [];
-  List<String> _documents() {
-    final here = Directory(File(documentPath!).parent.path);
-    return [
-      for (final f in here.listSync().whereType<File>())
-        if (f.path.endsWith('.motolii')) f.path,
-    ]..sort();
-  }
+  List<String> _documents() =>
+      [for (final f in projectFilesIn(parentFolderOf(documentPath!))) f.path]
+        ..sort();
 
   /// The file where a copied layer or preset is kept between windows (the engine's own format: document/edit/presets.h).
-  static String clipboard(String what) {
-    final dir = Directory(
-      '${Platform.environment['HOME']}/Library/Caches/Motolii',
-    )..createSync(recursive: true);
-    return '${dir.path}/clipboard_$what.motolii';
-  }
+  static String clipboard(String what) => clipboardFile(what);
 
   /// The selected layers: all of the multi-selection if there is one, otherwise the single selected layer.
   List<int> pickedLayers() => [
@@ -118,25 +110,29 @@ class WorkspaceState extends State<Workspace> {
 
   /// Applies [tell] to each selected layer, as a single undo step.
   void eachPicked(int Function(int) tell) {
-    final m = engine, all = pickedLayers();
-    if (m == null || all.isEmpty) return;
-    m.later('together', number: 1);
+    final all = pickedLayers();
+    if (!projectOpen(ws) || all.isEmpty) return;
+    groupBegin(ws);
     for (final t in all) {
       tell(t);
     }
-    ws.after(m.later('together'));
+    ws.after(groupEnd(ws));
   }
 
   /// The text on the system clipboard when something was last copied here.
   /// It lets a paste tell whether the clipboard still holds this app's copy, so that what was copied last is what gets pasted.
   String? textWhenCopied;
 
-  void copy(String call, String what) {
+  /// Copies the selected layer, or its style with [style], to the clipboard file that a paste reads.
+  void copy({bool style = false}) {
     Clipboard.getData(Clipboard.kTextPlain)
         .then((said) => textWhenCopied = said?.text);
     final t = int.tryParse(ws.selected ?? '');
-    if (engine != null && t != null) {
-      engine!.later(call, layer: t, word: clipboard(what));
+    if (!projectOpen(ws) || t == null) return;
+    if (style) {
+      copyLayerStyle(ws, t);
+    } else {
+      copyLayerThing(ws, t);
     }
   }
 
@@ -151,30 +147,23 @@ class WorkspaceState extends State<Workspace> {
     return true;
   }
 
-  String fresh() {
-    final here = File(documentPath!).parent.path;
-    for (var n = 1; ; n++) {
-      if (!File('$here/untitled_$n.motolii').existsSync()) {
-        return '$here/untitled_$n.motolii';
-      }
-    }
-  }
+  String fresh() => freeUntitledPath(parentFolderOf(documentPath!));
 
   /// Exports the project as a video file beside it. The top bar shows how it went.
   Future<bool> _render() async {
-    final m = engine, doc = documentPath;
-    if (m == null || doc == null) return false;
+    final doc = documentPath;
+    if (!projectOpen(ws) || doc == null) return false;
     final mp4 = ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
     ws.renderTo = null;
     ws.notice = 'Writing ${mp4.split('/').last} …';
-    final done = await m.exportVideo(mp4);
+    final done = await exportVideoTo(ws, mp4);
     if (mounted) {
       ws.notice = done
           ? 'Written: ${mp4.split('/').last}'
-          : 'Not written: ${m.error}';
+          : 'Not written: ${stageError(ws)}';
     }
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
-      unawaited(_checkFlashes(m, mp4));
+      unawaited(_checkFlashes(mp4));
     }
     return done;
   }
@@ -182,11 +171,11 @@ class WorkspaceState extends State<Workspace> {
   /// Checks a newly exported video for flashes that may cause seizures and shows the result in the top bar.
   ///
   /// YouTube Studio's Checks do the same while a video uploads (EA's IRIS: flashesOf).
-  Future<void> _checkFlashes(Motolii m, String film) async {
+  Future<void> _checkFlashes(String film) async {
     final written = 'Written: ${film.split('/').last}',
         checking = '$written · Checking flashes…';
     ws.notice = checking;
-    final fails = await flashesOf(m.libPath, film);
+    final fails = await flashesIn(ws, film);
     // If the notice changed in the meantime, the newer notice stays.
     if (!mounted || ws.notice != checking) return;
     String clock(double s) =>
@@ -232,24 +221,24 @@ class WorkspaceState extends State<Workspace> {
   /// Gathers the project and its media into `<name> package` beside it, so it can be moved elsewhere whole
   /// (Alight Motion's project package, After Effects' Collect Files). The top bar shows the result.
   void package() {
-    final m = engine, doc = documentPath;
-    if (m == null || doc == null) return;
+    final doc = documentPath;
+    if (!projectOpen(ws) || doc == null) return;
     final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''),
-        folder = '${File(doc).parent.path}/$name package';
-    final n = m.pack(folder, name);
+        folder = '${parentFolderOf(doc)}/$name package';
+    final n = packProject(ws, folder, name);
     ws.notice = n < 0
-        ? 'Not packaged: ${m.error}'
+        ? 'Not packaged: ${stageError(ws)}'
         : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
   /// Exports the frame at the playhead as a PNG beside the project (Premiere Pro's Export Frame). The top bar shows the result.
   void exportFrame() {
-    final m = engine, doc = documentPath;
-    if (m == null || doc == null) return;
+    final doc = documentPath;
+    if (!projectOpen(ws) || doc == null) return;
     final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${ws.frame}.png';
-    ws.notice = m.still(png)
+    ws.notice = stageTakeStill(ws, png)
         ? 'Written: ${png.split('/').last}'
-        : 'Not written: ${m.error}';
+        : 'Not written: ${stageError(ws)}';
   }
 
   /// Holds the focus when nothing else in the window does (a field was left or a pane closed), so the window's keys still work.
@@ -274,46 +263,44 @@ class WorkspaceState extends State<Workspace> {
   /// The window's commands by name, with the keys bound to them: the defaults and the user's own file (keymap.dart).
   late final keymap = Keymap.load();
   Future<void> _join(String doc) async {
-    final inside = Motolii.open(doc);
-    if (inside == null) return;
-    engine = inside;
-    _own = EffectTiles.watch(
-      inside,
-      () {
-        // A file put in the user's effects folder shows on the shelves at once. An element file that is overwritten is followed wherever it is used.
-        if (mounted) {
-          ws.after(inside.later('follow_elements'), (_, _) => ws.reread());
-        }
-      },
-      codeFile: (file) {
-        if (mounted) {
-          ws.after(inside.later('code', word: file), (_, _) => ws.reread());
-        }
-      },
-    );
+    if (!_session.open(doc)) return;
     // Follow the elements when the project opens, as AbsentMotion does when a project loads.
-    ws.after(inside.later('follow_elements'));
+    _session.followOnOpen(ws);
     documentPath = doc;
     beside = _documents();
-    final id = await inside.texture();
+    final id = await _session.texture();
     if (!mounted) return;
     if (id >= 0) ws.stageTexture = id;
     ws
       ..document = doc.split('/').last
-      ..documentFolder = File(doc).parent.path
+      ..documentFolder = parentFolderOf(doc)
       ..notice = null
       ..onRender = _render
       ..onSize = (wide, high) {
         // Not awaited: the project's image then reports that it does not fit, and the project is reopened.
-        ws.after(inside.later('size', word: '$wide $high'));
+        ws.after(resizeProject(ws, wide, high));
       }
       ..refit = () {
         // The stage was opened at a new size: close the project and reopen it at the current time.
-        final at = inside.now;
+        final at = _session.now;
         open(doc);
-        engine?.at(at);
-      }
-      ..join(inside);
+        _session.seek(at);
+      };
+    _session.joinInto(ws);
+    // A file put in the user's effects folder shows on the shelves at once. An element file that is overwritten is followed wherever it is used.
+    _own = EffectTiles.watch(
+      ws,
+      () {
+        if (mounted) {
+          ws.after(followElements(ws), (_, _) => ws.reread());
+        }
+      },
+      codeFile: (file) {
+        if (mounted) {
+          ws.after(codeChanged(ws, file), (_, _) => ws.reread());
+        }
+      },
+    );
     // The menus belong to the open project.
     setState(() {});
   }
@@ -324,7 +311,7 @@ class WorkspaceState extends State<Workspace> {
     FocusManager.instance.removeListener(_keepKeys);
     _windowFocus.dispose();
     _own?.cancel();
-    engine?.close();
+    _session.close();
     ws.dispose();
     super.dispose();
   }
@@ -365,11 +352,11 @@ class WorkspaceState extends State<Workspace> {
           child: Stack(
             children: [
               Overlay(initialEntries: [_entry]),
-              if (home && documentPath != null && ws.inside != null)
+              if (home && documentPath != null && projectOpen(ws))
                 Positioned.fill(
                   child: HomeWindow(
-                    folder: File(documentPath!).parent.path,
-                    lib: ws.inside!.libPath,
+                    folder: parentFolderOf(documentPath!),
+                    lib: engineLibPath(ws),
                     open: documentPath!,
                     onOpen: (d) {
                       setState(() => home = false);
@@ -389,7 +376,7 @@ class WorkspaceState extends State<Workspace> {
       ),
     );
     // The project is still opening, so no panel is built yet.
-    if (ws.inside == null) return ColoredBox(color: WindowTokens.ground);
+    if (!projectOpen(ws)) return ColoredBox(color: WindowTokens.ground);
     return PlatformMenuBar(
       menus: menus(),
       child: KeymapShortcuts(

@@ -6,8 +6,10 @@
 // and the user's keybindings.json can override that mapping.
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
+import 'package:motolii/workspace/state/timeline_service.dart'
+    show dragBarPart, endBarDrag, grabLayer, setLayerSwitch;
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 
 /// The frame where playback started.
 ///
@@ -31,8 +33,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
   ///
   /// Live 42.16: Nudge Selection Left/Right. Live moves its insert marker the same way.
   void nudge(int by) {
-    final m = ws.inside;
-    if (m == null) return;
+    if (!projectOpen(ws)) return;
     if (ws.keys.isNotEmpty) {
       slideKeyframes(ws, ws.keys.toList(), by);
       ws.pickKeys([
@@ -46,9 +47,9 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     }
     final t = int.tryParse(ws.selected ?? '');
     if (t == null) return step(by);
-    m.take(t);
-    m.dragUpdate('bar', by / WorkspaceController.fps);
-    ws.after(m.later('drag_end', number: 1));
+    grabLayer(ws, t);
+    dragBarPart(ws, 'bar', by / WorkspaceController.fps);
+    ws.after(endBarDrag(ws, true));
   }
 
   /// Selects the layer [by] rows from the selected one (Live 42.15 and 42.16: the arrow keys move between tracks).
@@ -88,16 +89,9 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
         : renameRequested.value++,
     'thing.solo': () {
       // Live 42.15 and 42.19 S: solo the selected tracks.
-      final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
-      if (t == null || m == null) return;
-      ws.after(
-        m.later(
-          'set',
-          layer: t,
-          name: 'solo',
-          number: ws.layer?.solo == true ? 0 : 1,
-        ),
-      );
+      final t = int.tryParse(ws.selected ?? '');
+      if (t == null || !projectOpen(ws)) return;
+      ws.after(setLayerSwitch(ws, t, 'solo', ws.layer?.solo != true));
     },
     'thing.lanes': () {
       // After Effects' U: shows the keyframed properties of the selected layers, and hides them when pressed again.

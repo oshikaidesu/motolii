@@ -5,19 +5,20 @@
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/commands/command_arrange.dart';
 import 'package:motolii/workspace/commands/command_edit.dart';
 import 'package:motolii/workspace/commands/command_layers.dart';
 import 'package:motolii/workspace/commands/command_actions.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/stage/stage.dart';
+import 'package:motolii/workspace/state/project_session.dart'
+    show setProjectPoster;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 extension WorkspaceMenus on WorkspaceState {
   Map<String, VoidCallback> commands() {
-    final m = engine!, ws = this.ws;
+    final ws = this.ws;
     void step(int by) {
       ws.playing = false;
       ws.frame = ws.frame + by;
@@ -39,7 +40,7 @@ extension WorkspaceMenus on WorkspaceState {
       'file.poster': () {
         // The frame the project picture is drawn at from now on (Alight Motion's Set Project Thumbnail).
         // The playhead frame is divided by 60 because the preview runs at sixty frames a second.
-        if (m.set(0, 'poster_at', ws.frame / 60)) {
+        if (setProjectPoster(ws, ws.frame / 60)) {
           ws.notice = 'Project picture: ${ws.frame}';
         }
       },

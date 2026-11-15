@@ -1,11 +1,11 @@
 // The inks and fonts a new layer is given (DrawingInks): fill, stroke and gradient blend, and the fonts of a title and of body text.
-import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:flutter/painting.dart' show HSVColor;
 
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/host_platform.dart' show hostIsWindows;
 
 /// The inks and the fonts a new layer is given. They are saved with the document but are not undo steps.
 class DrawingInks {
@@ -15,7 +15,7 @@ class DrawingInks {
   final Motolii? Function() _engine;
 
   /// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
-  static final defaultTextFont = Platform.isWindows
+  static final defaultTextFont = hostIsWindows
       ? 'C:/Windows/Fonts/arial.ttf'
       : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
 

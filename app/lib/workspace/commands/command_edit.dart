@@ -1,30 +1,35 @@
 // The Edit menu's commands: undo and redo, cut, copy and paste (layers, keyframes, styles and code from the web), selecting all, and the work area.
 // setState is called from an extension on the State itself, which the analyzer only allows in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/window_paths.dart' show clipboardFileThere;
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/state/command_writes.dart';
+import 'package:motolii/workspace/state/create_service.dart' show adaptCode;
+import 'package:motolii/workspace/state/document_writes.dart' show requestUndo;
+import 'package:motolii/workspace/state/layer_edits.dart'
+    show groupBegin, groupEnd;
+import 'package:motolii/workspace/state/stage_service.dart' show stageSeconds;
+import 'package:motolii/workspace/state/timeline_service.dart' show setWorkArea;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 extension EditCommands on WorkspaceState {
   Map<String, VoidCallback> editCommands() {
-    final m = engine!, ws = this.ws;
+    final ws = this.ws;
     return {
       'edit.undo': () =>
           typed(const UndoTextIntent(SelectionChangedCause.keyboard))
           ? null
-          : ws.after(m.later('undo')),
+          : requestUndo(ws, redo: false),
       'edit.redo': () =>
           typed(const RedoTextIntent(SelectionChangedCause.keyboard))
           ? null
-          : ws.after(m.later('redo')),
+          : requestUndo(ws, redo: true),
       'edit.cut': () {
         // Unless the user is typing text, copy the selected layer and then remove it, as one undo step each, as Live does.
         if (typed(
@@ -36,19 +41,19 @@ extension EditCommands on WorkspaceState {
         if (t == null) return;
         Clipboard.getData(Clipboard.kTextPlain)
             .then((said) => textWhenCopied = said?.text);
-        m.later('copy', layer: t, word: WorkspaceState.clipboard('thing'));
-        m.later('together', number: 1);
+        copyLayerThing(ws, t);
+        groupBegin(ws);
         for (final held in ws.under('$t')) {
-          m.later('remove', layer: int.parse(held));
+          removeLayer(ws, int.parse(held));
         }
-        m.later('remove', layer: t);
-        ws.after(m.later('together'));
+        removeLayer(ws, t);
+        ws.after(groupEnd(ws));
         ws.select(null);
       },
       'edit.copy': () {
         if (typed(CopySelectionTextIntent.copy)) return;
         copiedKeyframes = const [];
-        ws.keys.isEmpty ? copy('copy', 'thing') : copyKeyframes(ws, ws.keys);
+        ws.keys.isEmpty ? copy() : copyKeyframes(ws, ws.keys);
       },
       'edit.paste': () {
         if (typed(const PasteTextIntent(SelectionChangedCause.keyboard))) {
@@ -58,13 +63,9 @@ extension EditCommands on WorkspaceState {
         // The pasted layer is selected.
         void own() => copiedKeyframes.isNotEmpty
             ? pasteKeyframes(ws)
-            : File(WorkspaceState.clipboard('thing')).existsSync()
+            : clipboardFileThere('thing')
             ? ws.after(
-                m.later(
-                  'paste',
-                  word: WorkspaceState.clipboard('thing'),
-                  number: ws.frame / WorkspaceController.fps,
-                ),
+                pasteLayer(ws, ws.frame / WorkspaceController.fps),
                 null,
                 (made) => ws.select('$made'),
               )
@@ -74,37 +75,25 @@ extension EditCommands on WorkspaceState {
         Clipboard.getData(Clipboard.kTextPlain).then((said) {
           final code = said?.text ?? '';
           if (code.trim().isEmpty || code == textWhenCopied) return own();
-          ws.after(
-            m.later(
-              'adapter',
-              layer: int.tryParse(ws.selected ?? '') ?? 0,
-              word: code,
-            ),
-            (done, why) {
-              if (done) return;
-              why.contains('not code') ? own() : ws.notice = 'Not taken: $why';
-            },
-            (made) => made > 0 ? ws.select('$made') : null,
-          );
+          ws.after(adaptCode(ws, int.tryParse(ws.selected ?? '') ?? 0, code), (
+            done,
+            why,
+          ) {
+            if (done) return;
+            why.contains('not code') ? own() : ws.notice = 'Not taken: $why';
+          }, (made) => made > 0 ? ws.select('$made') : null);
         });
       },
-      'edit.copyStyle': () => copy('copy_style', 'style'),
+      'edit.copyStyle': () => copy(style: true),
       'edit.pasteStyle': () {
         // Applies to every selected layer.
         final all = {...ws.many, ?ws.selected};
-        if (!File(WorkspaceState.clipboard('style')).existsSync() ||
-            all.isEmpty) {
+        if (!clipboardFileThere('style') || all.isEmpty) {
           return;
         }
         for (final id in all) {
           if (int.tryParse(id) case final t?) {
-            ws.after(
-              m.later(
-                'paste_style',
-                layer: t,
-                word: WorkspaceState.clipboard('style'),
-              ),
-            );
+            ws.after(pasteStyleTo(ws, t));
           }
         }
       },
@@ -119,7 +108,7 @@ extension EditCommands on WorkspaceState {
         ..select(null),
       // Removes the work area and closes the gap (After Effects' Edit > Extract Work Area, under Split Layer).
       'edit.extractWork': () => ws.after(
-        m.later('extract'),
+        extractWorkArea(ws),
         (done, why) => done || why.isEmpty
             ? null
             : ws.notice = 'Not taken: ${why.split(':').first}',
@@ -133,14 +122,14 @@ extension EditCommands on WorkspaceState {
                 if (picked.contains(l.id)) l,
             ];
         final (from, to) = bars.isEmpty
-            ? (0.0, m.seconds)
+            ? (0.0, stageSeconds(ws))
             : (
                 bars.map((l) => l.inF).reduce(math.min) /
                     WorkspaceController.fps,
                 bars.map((l) => l.outF).reduce(math.max) /
                     WorkspaceController.fps,
               );
-        ws.after(m.later('work', number: from, word: '$to'));
+        ws.after(setWorkArea(ws, from, to));
       },
     };
   }
