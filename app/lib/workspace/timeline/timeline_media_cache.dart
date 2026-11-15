@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii, mediaSecondsOf;
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/workspace/state/layer.dart';
@@ -82,16 +81,11 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// A few frames to draw along a video layer's bar, or the thumbnail of an image layer; null if there are none.
   List<ui.Image>? framesOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m != null && t != null && m.word(t, 'kind') == 'picture') {
-      return _stillOf(m.whole(m.word(t, 'file')), l.id);
-    }
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final file = m.whole(m.word(t, 'file')),
-        begin = m.value(t, 'begin', 0) ?? 0,
-        speed = m.value(t, 'speed', 0) ?? 1,
-        start = m.value(t, 'start', 0) ?? 0;
-    final key = (file, begin, speed, start, l.inF, l.outF);
+    final m = ws.inside, media = l.media;
+    if (m == null || media == null) return null;
+    if (media.still) return _stillOf(media.file, l.id);
+    final (:file, :begin, :speed, still: _) = media;
+    final key = (file, begin, speed, l.inF, l.outF);
     if (_frames[l.id] case (final k, final f) when k == key) return f;
     if (_framesAsked[l.id] != key) {
       _framesAsked[l.id] = key;
@@ -147,7 +141,7 @@ class TimelineMediaCache extends ChangeNotifier {
   /// The loudness of a video layer's sound over its bar, or null while it is unknown or the layer has no sound.
   List<double>? waveOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
+    if (m == null || t == null || l.media?.still != false) return null;
     final key = (ws.reads, l.inF, l.outF);
     final had = _waves[l.id];
     if (had case (final r, final a, final b, final w) when (r, a, b) == key) {

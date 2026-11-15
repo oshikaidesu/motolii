@@ -194,7 +194,7 @@ class EaseStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = span, ws = WorkspaceScope.of(context, {WorkspaceAspect.document});
+    final s = span, ws = WorkspaceScope.of(context, {WorkspaceAspect.layers});
     final keys = s == null ? const <int>[] : ([...s.layer.keys]..sort());
     final to = s == null
         ? null

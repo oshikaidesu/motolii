@@ -3,7 +3,6 @@
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
@@ -27,6 +26,10 @@ mixin TimelineLabelsView<T extends StatefulWidget>
     final i = ws.layers.indexWhere((l) => l.id == id);
     return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
   }
+
+  // The lane a property row shows.
+  Lane _lane(WorkspaceController ws, int i, String name) =>
+      ws.layers[rows.order[i].layer].lanes.firstWhere((a) => a.name == name);
 
   // The column of layer names beside the tracks.
   Widget labels(WorkspaceController ws, List<TimelineRow> drawn) => Column(
@@ -95,11 +98,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                             // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
                               children: [
-                                if (rows.laneCard(
-                                      ws.layers[rows.order[i].layer],
-                                      n,
-                                    )
-                                    case final card?) ...[
+                                if (_lane(ws, i, n).card case final card?) ...[
                                   Flexible(
                                     child: Text(
                                       card,
@@ -111,7 +110,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                   SizedBox(width: Shape.s(5)),
                                 ],
                                 Text(
-                                  ws.inside?.shown(n)?.label ?? n,
+                                  _lane(ws, i, n).label,
                                   maxLines: 1,
                                   style: TextStyles.label(Grey.g76),
                                 ),
@@ -146,7 +145,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                 lanes: l.kind == LayerKind.group
                                     ? ws.groupOpen(l.id)
                                     : l.keys.isEmpty &&
-                                          linkTargets(ws, l.id).isEmpty &&
+                                          l.links.isEmpty &&
                                           !l.lined
                                     ? null
                                     : ws.lanesOpen(l.id),

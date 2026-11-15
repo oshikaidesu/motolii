@@ -1,9 +1,11 @@
 // What the window reads from the engine's document (ProjectReader): the layers as rows, the marks, the guides and the
 // tempo, and the requests still on their way to the engine.
 import 'dart:developer' show Timeline, TimelineTask;
-import 'dart:ui' show Size;
+import 'dart:math' as math;
+import 'dart:ui' show Color, Size;
 
-import 'package:flutter/foundation.dart' show ValueNotifier, VoidCallback;
+import 'package:flutter/foundation.dart'
+    show ValueNotifier, VoidCallback, listEquals, mapEquals;
 
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
@@ -18,6 +20,17 @@ import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/playhead.dart';
 
+/// What the timeline lists besides the layers: the markers, the work area, the tempo, the length and the label colours.
+typedef _Listed = ({
+  List<(double, String)> marks,
+  (double, double) work,
+  Map<double, int> markColors,
+  double bpm,
+  int duration,
+  int frameRate,
+  Map<String, int> labels,
+});
+
 /// Reads the engine's document for the window: its layers as rows, its marks, guides and tempo.
 ///
 /// It also counts the requests sent to the engine that are not answered yet.
@@ -25,18 +38,23 @@ class ProjectReader {
   /// Creates a reader that is connected to no engine: [layers] is then whatever the caller puts in it.
   ///
   /// [onLayersRead] is called each time the layers were read again, before [onChanged]. [onChanged] is called when
-  /// the panels should look at the document again. [onStageTextureChanged] is called when [stageTexture] changes.
+  /// the panels should look at the document again; [onListed] only when what the timeline lists changed (the layers'
+  /// rows, the markers, the work area, the tempo, the length). [onStageTextureChanged] is called when [stageTexture] changes.
   ProjectReader({
     required this._composition,
     required this._playhead,
     required this._onLayersRead,
     required this._onChanged,
+    required this._onListed,
     required this._onStageTextureChanged,
   });
 
   final CompositionSettings _composition;
   final Playhead _playhead;
-  final VoidCallback _onLayersRead, _onChanged, _onStageTextureChanged;
+  final VoidCallback _onLayersRead,
+      _onChanged,
+      _onListed,
+      _onStageTextureChanged;
 
   int get _frameRate => _composition.frameRate;
 
@@ -124,6 +142,7 @@ class ProjectReader {
   void shown() {
     lastChange = null; // This is not an undo step, so what changed is unknown.
     rev++;
+    _onListed();
     _onChanged();
   }
 
@@ -160,6 +179,7 @@ class ProjectReader {
     }
     rev++;
     reads++;
+    final was = List.of(layers), wasListed = _listed;
     _composition.duration = Timeline.timeSync(
       'MARK seconds',
       () => (m.seconds * _frameRate).round().clamp(1, 1 << 20),
@@ -228,12 +248,146 @@ class ProjectReader {
                     shape: easeCurve(way, m),
                   ),
               ],
+              form: _formOf(m, t),
+              members: _membersOf(m, t),
+              links: _linksOf(m, t),
+              lanes: _lanesOf(m, t),
+              retimed: [
+                for (final n in const ['retime_in', 'retime_out'])
+                  if ((m.value(t, n, 0) ?? 0) > 0)
+                    (((m.value(t, 'start', 0) ?? 0) + m.value(t, n, 0)!) *
+                            _frameRate)
+                        .round(),
+              ],
+              media: switch (kind) {
+                'film' => (
+                  file: m.whole(m.word(t, 'file')),
+                  begin: m.value(t, 'begin', 0) ?? 0,
+                  speed: m.value(t, 'speed', 0) ?? 1,
+                  still: false,
+                ),
+                'picture' => (
+                  file: m.whole(m.word(t, 'file')),
+                  begin: 0.0,
+                  speed: 1.0,
+                  still: true,
+                ),
+                _ => null,
+              },
             );
           }(),
       ]);
+    _listed = (
+      marks: m.marks,
+      work: m.work,
+      markColors: m.markColors,
+      bpm: bpm,
+      duration: _composition.duration,
+      frameRate: _frameRate,
+      labels: Map.of(chosenLabelColors),
+    );
+    final same =
+        was.length == layers.length &&
+        [for (var i = 0; i < was.length; i++) was[i].same(layers[i])]
+            .every((same) => same) &&
+        _sameListed(wasListed, _listed);
     _onLayersRead();
     tl.finish();
+    if (!same) _onListed();
     _onChanged();
+  }
+
+  // What the timeline lists besides the layers, as last read, to tell whether a read changed any of it.
+  _Listed? _listed;
+  static bool _sameListed(_Listed? a, _Listed? b) =>
+      a != null &&
+      b != null &&
+      listEquals(a.marks, b.marks) &&
+      a.work == b.work &&
+      mapEquals(a.markColors, b.markColors) &&
+      a.bpm == b.bpm &&
+      a.duration == b.duration &&
+      a.frameRate == b.frameRate &&
+      mapEquals(a.labels, b.labels);
+
+  // A shape's form, its colour and whether it is an outline; with no fill the colour is the stroke's.
+  static ({String shape, Color? colour, bool outline})? _formOf(
+    Motolii m,
+    int t,
+  ) {
+    if (m.word(t, 'kind') != 'shape') return null;
+    Color? colour(String hex) =>
+        hex.length == 6 && int.tryParse(hex, radix: 16) != null
+        ? Color(0xFF000000 | int.parse(hex, radix: 16))
+        : null;
+    final outline = m.word(t, 'fill') == 'none';
+    return (
+      shape: m.word(t, 'shape'),
+      colour: colour(m.word(t, outline ? 'stroke' : 'fill')),
+      outline: outline,
+    );
+  }
+
+  // A relation's layers in its own order ('_' marks an empty place); null for any other layer.
+  static List<String>? _membersOf(Motolii m, int t) =>
+      m.word(t, 'kind') == 'behaviour' &&
+          relationKinds.contains(m.word(t, 'file'))
+      ? [
+          for (final s in m.word(t, 'members').split(' '))
+            if (s.isNotEmpty && s != '_') s,
+        ]
+      : null;
+
+  // The layers that layer [t] points at, each with its label: those its properties name, and a relation's layers.
+  // Cavalry shows a connection at both ends; here it shows only at the end that names the target.
+  static List<(String, String)> _linksOf(Motolii m, int t) => [
+    for (final n in m.values(t))
+      if (m.shown(n) case final s? when s.look == 'thing')
+        if ((m.value(t, n, 0) ?? 0).round() case final o
+            when m.layers.contains(o))
+          (s.label, '$o'),
+    for (final s in _membersOf(m, t) ?? const <String>[])
+      if (int.tryParse(s) case final o? when m.layers.contains(o))
+        ('Moves', '$o'),
+  ];
+
+  // The lanes of layer [t]: its properties with keyframes (and a sketch's lines), in its own order. Ableton does the
+  // same with "Show Automated Parameters Only"; with Animate on every property counts as moving, so keyframes decide.
+  static List<Lane> _lanesOf(Motolii m, int t) {
+    final moving = m.moving(t).toSet();
+    final names = [
+      for (final n in m.values(t))
+        if (n.startsWith('js_line_') ||
+            moving.contains(n) && m.keyTimes(t, n).isNotEmpty)
+          n,
+    ];
+    if (names.isEmpty) return const [];
+    final cards = m.cards(t);
+    return [
+      for (final n in names)
+        () {
+          final at = m.keyTimes(t, n),
+              vs = m.keyValues(t, n),
+              k = math.min(at.length, vs.length);
+          return Lane(
+            name: n,
+            label: m.shown(n)?.label ?? n,
+            card: [
+              for (final (title, held) in cards)
+                if (held.contains(n)) title,
+            ].firstOrNull,
+            at: at.take(k).toList(),
+            values: vs.take(k).toList(),
+            curves: [
+              for (var i = 0; i + 1 < k; i++)
+                switch (m.easingOf(t, n, at[i])) {
+                  '' => const [0.0, 1.0],
+                  final way => easeCurve(way, m),
+                },
+            ],
+          );
+        }(),
+    ];
   }
 
   int? _stageTexture;

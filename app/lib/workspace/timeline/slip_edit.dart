@@ -8,7 +8,6 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii;
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
@@ -31,14 +30,17 @@ class SlipEdit extends ChangeNotifier {
   ///
   /// It is null when the layer is not a video or the file's length has not been read yet.
   (int, int)? wholeOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final said = m.word(t, 'file'),
-        file = said.startsWith('/') ? said : '${m.home}/$said';
-    final seconds = _media.secondsOf(m, file);
+    final m = ws.inside, media = l.media;
+    if (m == null || media == null || media.still) return null;
+    final seconds = _media.secondsOf(m, media.file);
     if (seconds == null || seconds <= 0) return null;
-    final rate = WorkspaceController.fps / _speedOf(m, t),
-        from = l.inF - (m.value(t, 'begin', 0) ?? 0) * rate;
+    final rate =
+            WorkspaceController.fps /
+            switch (media.speed.abs()) {
+              0 => 1,
+              final s => s,
+            },
+        from = l.inF - media.begin * rate;
     return (from.round(), (from + seconds * rate).round());
   }
 

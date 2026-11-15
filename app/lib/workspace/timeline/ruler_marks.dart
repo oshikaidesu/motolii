@@ -5,7 +5,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart'
@@ -216,15 +215,5 @@ class RulerMarks extends ChangeNotifier {
   /// Frames where the selected group's intro ends and its outro starts, for marking on the ruler.
   ///
   /// They are the End of intro and Start of outro values of the group's Element card (the engine's doc_element_clock).
-  List<int> get retimed {
-    final ws = workspace!;
-    final m = ws.inside, t = int.tryParse(ws.selected ?? '');
-    if (m == null || t == null) return const [];
-    final start = m.value(t, 'start', 0) ?? 0;
-    return [
-      for (final n in const ['retime_in', 'retime_out'])
-        if ((m.value(t, n, 0) ?? 0) > 0)
-          ((start + m.value(t, n, 0)!) * WorkspaceController.fps).round(),
-    ];
-  }
+  List<int> get retimed => workspace!.layer?.retimed ?? const [];
 }

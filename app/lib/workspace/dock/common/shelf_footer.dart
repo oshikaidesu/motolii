@@ -47,7 +47,7 @@ class ShelfFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.of(context, {
-          WorkspaceAspect.document,
+          WorkspaceAspect.layers,
           WorkspaceAspect.picked,
         }),
         l = fresh ? null : ws.layer;

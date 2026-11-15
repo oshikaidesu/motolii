@@ -1,0 +1,81 @@
+# Only these touch the disk or native memory (dart:io, dart:ffi, package:ffi): lib/bridge, lib/main.dart, and lib/storage, which
+# a panel reads through (lib/storage/disk.dart).
+# `ignores` has two parts. The first is permanent. The second is the baseline: files that imported them before the rule
+# existed. Delete a line when the file is fixed; never add one (a new file that does must go through lib/storage instead).
+id: import-disk
+language: dart
+severity: error
+message: The disk and native memory are read through lib/storage (or lib/bridge), not by a panel importing dart:io or dart:ffi.
+rule:
+  kind: uri
+  regex: "^'(dart:io'|dart:ffi'|package:ffi/)"
+files:
+  - lib/**
+ignores:
+  - lib/bridge/**
+  - lib/main.dart
+  - lib/storage/**
+  # baseline
+  - lib/skin/skin_parts.dart
+  - lib/skin/theme.dart
+  - lib/widgets/font_files.dart
+  - lib/workspace/agent/agent_pane.dart
+  - lib/workspace/agent/agent_registry.dart
+  - lib/workspace/agent/agent_sign_in.dart
+  - lib/workspace/code/code_pane.dart
+  - lib/workspace/code/expression_reference.dart
+  - lib/workspace/code/expression_result.dart
+  - lib/workspace/code/functions_panel.dart
+  - lib/workspace/commands/command_edit.dart
+  - lib/workspace/commands/keymap.dart
+  - lib/workspace/commands/menu_items.dart
+  - lib/workspace/dock/colors/color_saved_bar.dart
+  - lib/workspace/dock/colors/photo_palette.dart
+  - lib/workspace/dock/colors/saved_colors.dart
+  - lib/workspace/dock/common/shelf_tags.dart
+  - lib/workspace/dock/create/code_file.dart
+  - lib/workspace/dock/create/create_commands.dart
+  - lib/workspace/dock/create/create_shelf.dart
+  - lib/workspace/dock/create/expressions.dart
+  - lib/workspace/dock/fonts/font_map.dart
+  - lib/workspace/dock/fonts/fonts_controller.dart
+  - lib/workspace/dock/fonts/fonts_shelf.dart
+  - lib/workspace/dock/map/image_features.dart
+  - lib/workspace/dock/map/shelf_map.dart
+  - lib/workspace/dock/media/file_footer.dart
+  - lib/workspace/dock/media/file_tile.dart
+  - lib/workspace/dock/media/folder_navigation.dart
+  - lib/workspace/dock/media/media_commands.dart
+  - lib/workspace/dock/media/media_controller.dart
+  - lib/workspace/dock/media/timesheet.dart
+  - lib/workspace/inspector_feed/panel.dart
+  - lib/workspace/shelf/code_field.dart
+  - lib/workspace/shelf/code_tiles.dart
+  - lib/workspace/shelf/copies_tiles.dart
+  - lib/workspace/shelf/create_preview.dart
+  - lib/workspace/shelf/effect_code.dart
+  - lib/workspace/shelf/effect_decks.dart
+  - lib/workspace/shelf/effect_tile_profile.dart
+  - lib/workspace/shelf/effect_tile_stage.dart
+  - lib/workspace/shelf/effect_tile_studio.dart
+  - lib/workspace/shelf/effect_tiles.dart
+  - lib/workspace/shelf/effect_tiles_difference.dart
+  - lib/workspace/shelf/effect_tiles_knob.dart
+  - lib/workspace/shelf/effect_tiles_review.dart
+  - lib/workspace/shelf/effect_tiles_showcase.dart
+  - lib/workspace/shelf/empty_effect.dart
+  - lib/workspace/shelf/material_tiles.dart
+  - lib/workspace/shelf/shelf_add.dart
+  - lib/workspace/shelf/shelf_context.dart
+  - lib/workspace/stage/stage.dart
+  - lib/workspace/stage/stage_view.dart
+  - lib/workspace/state/drawing_inks.dart
+  - lib/workspace/timeline/timeline_media_cache.dart
+  - lib/workspace/tool_panel/ease/ease_shelf.dart
+  - lib/workspace/top_bar/render_button.dart
+  - lib/workspace/top_bar/top_bar.dart
+  - lib/workspace/window/home.dart
+  - lib/workspace/window/home_card.dart
+  - lib/workspace/window/home_project.dart
+  - lib/workspace/window/panes.dart
+  - lib/workspace/workspace.dart

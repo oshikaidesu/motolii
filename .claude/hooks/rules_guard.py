@@ -6,10 +6,9 @@
 # Never in the way by accident: any error here exits 0.
 import json, re, sys
 
-HELD = ['.githooks/import_rules.txt', '.githooks/import_check.py', '.githooks/pre-commit',
+HELD = ['app/tool/rules/import_engine.yml', 'app/tool/rules/import_disk.yml', '.githooks/pre-commit',
         '.github/workflows/checks.yml', '.claude/settings.json', '.claude/hooks/rules_guard.py']
-READ = re.compile(r'\s*(python3\s+(\S*/)?\.githooks/import_check\.py(\s+--all)?'
-                  r'|(cat|head|tail|grep|rg|wc|git\s+(diff|log|show|status|blame))\b[^>;&|`$]*)\s*')
+READ = re.compile(r'\s*(cat|head|tail|grep|rg|wc|git\s+(diff|log|show|status|blame))\b[^>;&|`$]*')
 
 
 def answer(said, held):
@@ -17,7 +16,7 @@ def answer(said, held):
     print(json.dumps({'hookSpecificOutput': {
         'hookEventName': 'PreToolUse',
         'permissionDecision': 'deny' if worker else 'ask',
-        'permissionDecisionReason': f'{held} は作り手が決める規則です（.githooks/import_rules.txt）。'
+        'permissionDecisionReason': f'{held} は作り手が決める規則です。'
                                     + ('作業者は書き換えず、要る変更を報告に書く。' if worker else
                                        '書き換えてよいか作り手に確認します。規則を破る代わりに規則を変えない。')}}))
 

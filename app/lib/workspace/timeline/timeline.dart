@@ -239,7 +239,7 @@ class _TimelinePaneState extends State<TimelinePane>
   Widget build(BuildContext context) {
     ruler.takeWorkArea();
     final ws = WorkspaceScope.of(context, {
-      WorkspaceAspect.document,
+      WorkspaceAspect.layers,
       WorkspaceAspect.picked,
       WorkspaceAspect.animating,
     });

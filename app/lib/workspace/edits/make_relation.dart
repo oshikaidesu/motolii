@@ -7,14 +7,11 @@
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/widgets/picks.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
+import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-
-/// What the engine calls a relation's file: every relation is written as a file in relations/*.js.
-const relationKinds = ['relate'];
 
 /// The label of a relation file, as its row and card are named.
 String relationLabel(String kind) {
@@ -123,28 +120,6 @@ Set<String> relationMembers(WorkspaceController ws) {
     for (final w in m.word(sel, 'members').split(' '))
       if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
   }; // The relation's own list, in order. A layer it moves through another relation counts too.
-}
-
-/// The layers a layer points at, each with its label.
-///
-/// These are the layers named by its properties (Parent, Leader, Join, Into and so on), and the layers of a relation.
-/// Cavalry shows a connection at both ends. Here it shows only at the end that names the target, in the row's own
-/// lanes, like the Parent & Link column of After Effects.
-List<(String, String)> linkTargets(WorkspaceController ws, String id) {
-  final m = ws.inside, t = int.tryParse(id);
-  if (m == null || t == null) return const [];
-  return [
-    for (final n in m.values(t))
-      if (m.shown(n) case final s? when s.look == 'thing')
-        if ((m.value(t, n, 0) ?? 0).round() case final o
-            when m.layers.contains(o))
-          (s.label, '$o'),
-    if (m.word(t, 'kind') == 'behaviour' &&
-        relationKinds.contains(m.word(t, 'file')))
-      for (final s in m.word(t, 'members').split(' '))
-        if (int.tryParse(s) case final o? when m.layers.contains(o))
-          ('Moves', '$o'),
-  ];
 }
 
 /// What a click on layer [id] does to the layers selected together, by the one rule of every selection (picks.dart):

@@ -20,7 +20,6 @@ import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/values_card.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
-import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
 import 'package:motolii/workspace/inspector_feed/relation_stack.dart';

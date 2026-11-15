@@ -1,9 +1,13 @@
 // A layer of the composition as the window lists it (Layer): its kind and the kind's colour, its bar and its keyframes.
 // Also the records that name a keyframe, and a stretch between two keyframes, when the user selects one.
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/window_tokens.dart';
+
+/// What the engine calls a relation's file: every relation is written as a file in relations/*.js.
+const relationKinds = ['relate'];
 
 /// The kinds of layer the timeline distinguishes.
 enum LayerKind { shape, text, image, camera, group, particles, audio }
@@ -34,6 +38,12 @@ class Layer {
     this.locked = false,
     this.clipped = false,
     this.stretches = const [],
+    this.form,
+    this.members,
+    this.links = const [],
+    this.lanes = const [],
+    this.retimed = const [],
+    this.media,
   });
   final String id, name;
   final LayerKind kind;
@@ -53,6 +63,55 @@ class Layer {
   /// [clipped] means it is shown only inside the layer below it (Clip to Below).
   final bool hidden, solo, locked, clipped;
 
+  /// A shape's form as the engine names it (rect, circle, star...), its colour, and whether it is an outline (no fill,
+  /// so the colour is the stroke's). Null for other layers.
+  final ({String shape, Color? colour, bool outline})? form;
+
+  /// A relation's layers, in its own order. Null for any other layer.
+  final List<String>? members;
+
+  /// The layers it points at, each with its label: those its properties name (Parent, Leader, Join, Into...), and a
+  /// relation's layers ('Moves'). Like the Parent & Link column of After Effects.
+  final List<(String, String)> links;
+
+  /// Its properties with keyframes (and a sketch's lines), in its own order: each a lane under its row, as in Ableton.
+  final List<Lane> lanes;
+
+  /// For a group with an intro and outro (its Element card), the frames where the intro ends and the outro starts.
+  final List<int> retimed;
+
+  /// A video's or image's file, where in the file the layer begins and how fast it plays. Null for other layers.
+  final ({String file, double begin, double speed, bool still})? media;
+
+  /// Whether [o] is listed the same: what the timeline draws of it is unchanged.
+  bool same(Layer o) =>
+      id == o.id &&
+      name == o.name &&
+      kind == o.kind &&
+      inF == o.inF &&
+      outF == o.outF &&
+      listEquals(keys, o.keys) &&
+      parent == o.parent &&
+      lined == o.lined &&
+      hidden == o.hidden &&
+      solo == o.solo &&
+      locked == o.locked &&
+      clipped == o.clipped &&
+      form == o.form &&
+      listEquals(members, o.members) &&
+      listEquals(links, o.links) &&
+      listEquals(lanes, o.lanes) &&
+      listEquals(retimed, o.retimed) &&
+      media == o.media &&
+      stretches.length == o.stretches.length &&
+      [
+        for (var i = 0; i < stretches.length; i++)
+          stretches[i].from == o.stretches[i].from &&
+              stretches[i].to == o.stretches[i].to &&
+              stretches[i].way == o.stretches[i].way &&
+              listEquals(stretches[i].shape, o.stretches[i].shape),
+      ].every((same) => same);
+
   /// The layer's label colour.
   Color get tone => layerLabelColor(id);
 
@@ -65,6 +124,42 @@ class Layer {
       yield p;
     }
   }
+}
+
+/// One animated property of a layer, as its lane shows it: its keyframes' times (seconds) and values, and the easing
+/// curve (0 to 1) from each keyframe to the next.
+@immutable
+class Lane {
+  const Lane({
+    required this.name,
+    required this.label,
+    required this.card,
+    required this.at,
+    required this.values,
+    required this.curves,
+  });
+
+  /// The property as the project names it, as its own label shows it, and the title of the card that holds it.
+  final String name, label;
+  final String? card;
+  final List<double> at, values;
+  final List<List<double>> curves;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Lane &&
+      other.name == name &&
+      other.label == label &&
+      other.card == card &&
+      listEquals(other.at, at) &&
+      listEquals(other.values, values) &&
+      other.curves.length == curves.length &&
+      [
+        for (var i = 0; i < curves.length; i++)
+          listEquals(other.curves[i], curves[i]),
+      ].every((same) => same);
+  @override
+  int get hashCode => Object.hash(name, label, card, Object.hashAll(at));
 }
 
 /// The stretch between two keyframes: its frames, its easing, and the easing curve (0 to 1) sampled at 17 points.

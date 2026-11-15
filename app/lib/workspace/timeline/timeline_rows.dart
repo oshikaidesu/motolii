@@ -1,12 +1,8 @@
 // The timeline's rows: the order they are laid out in, what each one shows, and the drag that reorders them.
 import 'dart:math' as math;
-import 'dart:ui' show Color;
 
-import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
-import 'package:motolii/workspace/easing/ease_curve.dart';
-import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
@@ -47,106 +43,32 @@ class TimelineRows {
 
   double _lift = 0; // how far a label row has been carried up or down
 
-  // The properties of [l] that have keyframes, in the layer's own order.
-  // Ableton does the same with "Show Automated Parameters Only". With Animate on, every property counts as moving, so its keyframes decide.
-  List<String> _moving(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null) return const [];
-    final moving = m.moving(t).toSet();
-    return [
-      for (final n in m.values(t))
-        if (n.startsWith('js_line_') ||
-            moving.contains(n) && m.keyTimes(t, n).isNotEmpty)
-          n,
-    ];
-  }
-
-  /// The title of the inspector card that holds the property [name] of [l]: an effect, or Transform and the like.
-  String? laneCard(Layer l, String name) {
-    final ws = workspace!;
-    return [
-      for (final (title, names) in ws.inside!.cards(int.parse(l.id)))
-        if (names.contains(name)) title,
-    ].firstOrNull;
-  }
-
-  /// The lane for the property [name] of [l]: its keyframe times and values, read from the project snapshot without
-  /// asking the engine.
+  /// The lane for the property [name] of [l]: its keyframe times and values as the window last read them.
   TimelineRow laneRow(Layer l, String name) {
-    final ws = workspace!;
-    final m = ws.inside!,
-        t = int.parse(l.id),
-        at = m.keyTimes(t, name),
-        vs = m.keyValues(t, name),
-        flags = RowFlags(ws);
-    final n = math.min(at.length, vs.length);
-    final lo = vs.take(n).fold(double.infinity, math.min),
-        hi = vs.take(n).fold(-double.infinity, math.max);
+    final ws = workspace!, flags = RowFlags(ws);
+    final lane = l.lanes.firstWhere((a) => a.name == name),
+        keys = [for (final s in lane.at) (s * WorkspaceController.fps).round()];
+    final lo = lane.values.fold(double.infinity, math.min),
+        hi = lane.values.fold(-double.infinity, math.max);
     return TimelineRow(
       name: name,
       kind: l.kind,
       inF: l.inF,
       outF: l.outF,
-      keys: [
-        for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round(),
-      ],
+      keys: keys,
       picked: const {},
       tone: l.tone,
       dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
       locked: flags.isLocked(l.id),
       lane: [
-        for (var i = 0; i < n; i++)
-          (
-            (at[i] * WorkspaceController.fps).round(),
-            hi > lo ? (vs[i] - lo) / (hi - lo) : .5,
-          ),
+        for (final (i, v) in lane.values.indexed)
+          (keys[i], hi > lo ? (v - lo) / (hi - lo) : .5),
       ],
-      laneWays: [
-        for (var i = 0; i + 1 < n; i++)
-          _wayShape(ws, m.easingOf(t, name, at[i])),
-      ],
+      laneWays: lane.curves,
       laneOn: switch (ws.stretch) {
-        final s? when s.layer == l.id && s.name == name => [
-          for (var i = 0; i < n; i++) (at[i] * WorkspaceController.fps).round(),
-        ].indexOf(s.from),
+        final s? when s.layer == l.id && s.name == name => keys.indexOf(s.from),
         _ => null,
       },
-    );
-  }
-
-  // An easing's curve from 0 to 1, as drawn between keyframes.
-  List<double> _wayShape(WorkspaceController ws, String way) =>
-      way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
-
-  /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
-  List<Color>? _mixOf(WorkspaceController ws, String id) {
-    final m = ws.inside, t = int.tryParse(id);
-    if (m == null ||
-        t == null ||
-        m.word(t, 'kind') != 'behaviour' ||
-        !relationKinds.contains(m.word(t, 'file'))) {
-      return null;
-    }
-    return [
-      for (final s in m.word(t, 'members').split(' '))
-        if (s.isNotEmpty && s != '_') layerLabelColor(s),
-    ];
-  }
-
-  /// A shape's form name, colour and whether it is an outline, as stored in the project, for the small icon at the row's left.
-  /// With no fill, the outline is drawn in the stroke colour.
-  (String, Color?, bool)? _formOf(WorkspaceController ws, Layer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
-    Color? colour(String hex) =>
-        hex.length == 6 && int.tryParse(hex, radix: 16) != null
-        ? Color(0xFF000000 | int.parse(hex, radix: 16))
-        : null;
-    final outline = m.word(t, 'fill') == 'none';
-    return (
-      m.word(t, 'shape'),
-      colour(m.word(t, outline ? 'stroke' : 'fill')),
-      outline,
     );
   }
 
@@ -156,9 +78,12 @@ class TimelineRows {
     final away = ws.foldedAway, flags = RowFlags(ws);
     final sel = ws.selected,
         picks = ws.keys,
+        ids = {for (final l in ws.layers) l.id},
         lit = {
           ...ws.many,
-          ...relationMembers(ws),
+          // The layers the selected relation moves.
+          for (final id in ws.layer?.members ?? const <String>[])
+            if (ids.contains(id)) id,
           for (final p in [?sel, ...ws.many]) ?away[p],
         };
     // The lit layers are those selected together, those moved by the selected relation, and the closed group a selected layer is in.
@@ -168,10 +93,9 @@ class TimelineRows {
         if (!away.containsKey(l.id)) ...[
           (layer: i, value: null, aim: null),
           if (ws.aimsOpen(l.id))
-            for (final a in linkTargets(ws, l.id))
-              (layer: i, value: '', aim: a),
+            for (final a in l.links) (layer: i, value: '', aim: a),
           if (ws.lanesOpen(l.id))
-            for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
+            for (final a in l.lanes) (layer: i, value: a.name, aim: null),
         ],
     ];
     return <TimelineRow>[
@@ -196,11 +120,14 @@ class TimelineRows {
             clipped: l.clipped,
             wave: _media.waveOf(ws, l),
             frames: _media.framesOf(ws, l),
-            form: _formOf(ws, l)?.$1,
-            fill: _formOf(ws, l)?.$2,
-            outline: _formOf(ws, l)?.$3 ?? false,
+            form: l.form?.shape,
+            fill: l.form?.colour,
+            outline: l.form?.outline ?? false,
             tone: l.tone,
-            mix: _mixOf(ws, l.id),
+            mix: switch (l.members) {
+              final ms? => [for (final s in ms) layerLabelColor(s)],
+              null => null,
+            },
             whole: _slip.wholeOf(ws, l),
           ),
     ];
