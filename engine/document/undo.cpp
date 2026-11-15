@@ -321,7 +321,7 @@ Doc* doc_open(Stage& s, const char* path) {
         "and name = 'script';"
         "insert into keyframe(layer, name, at, value) select layer, 'script', "
         "0.0, %Q from old_layers;"
-        "drop table old_things; commit;",
+        "drop table old_layers; commit;",
         names.c_str(), rename.c_str(), names.c_str(), by.c_str(),
         repeater.c_str());
     if (sqlite3_exec(d->file, sql, nullptr, nullptr, nullptr) != SQLITE_OK)
