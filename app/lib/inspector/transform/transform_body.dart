@@ -52,6 +52,10 @@ class TransformBody extends StatelessWidget {
           for (final id in const ['v_scale_x', 'v_scale_y', 'v_scale_z'])
             if (params.containsKey(id)) id,
         ];
+        final rotate = [
+          for (final id in const ['v_rotate_x', 'v_rotate_y', 'v_rotate'])
+            if (params.containsKey(id)) id,
+        ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -113,22 +117,19 @@ class TransformBody extends StatelessWidget {
                     ),
                 ],
               ),
-            TransformRow(
-              mark: (c, s) => drawRotation(
-                c,
-                s,
-                _lit(TransformZone.rotate),
-                doc.get('v_rotate') ?? 0,
+            if (rotate.isNotEmpty)
+              TransformRow(
+                mark: (c, s) => drawRotation(
+                  c,
+                  s,
+                  _lit(TransformZone.rotate),
+                  doc.get('v_rotate') ?? 0,
+                ),
+                hot: TransformZone.rotate,
+                label: 'Rotation',
+                unit: (params['v_rotate'] ?? params[rotate.first])!.unit,
+                cells: [for (final id in rotate) field(id)],
               ),
-              hot: TransformZone.rotate,
-              label: 'Rotation',
-              unit: params['v_rotate']!.unit,
-              cells: [
-                field('v_rotate_x'),
-                field('v_rotate_y'),
-                field('v_rotate'),
-              ],
-            ),
             if (params['v_opacity'] case final op?)
               TransformRow(
                 mark: (c, s) =>
