@@ -153,16 +153,17 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
       low = std::stod(r[1]), high = std::stod(r[2]);
     JSValue v = JS_GetPropertyStr(cx, own->effect, name.c_str());
     const auto parameter = [&](const std::string& n, const std::string& label,
-                               double usual, double lo, double hi) {
+                               const std::string& group, double usual,
+                               double lo, double hi) {
       ScriptParameter k;
       k.name = n, k.label = label, k.kind = "track", k.low = lo, k.high = hi,
-      k.usual = usual, k.step = 0.001;
+      k.usual = usual, k.step = 0.001, k.group = group;
       own->parameters.push_back(k);
     };
     double one = 0;
     if (JS_IsNumber(v)) {
       JS_ToFloat64(cx, &one, v);
-      parameter(name, name, one, std::min(low, one), std::max(high, one));
+      parameter(name, name, "", one, std::min(low, one), std::max(high, one));
       own->fields.push_back({name, 1});
     } else if (JS_IsObject(v)) {
       const bool colour = JS_HasProperty(cx, v, JS_NewAtom(cx, "r"));
@@ -171,7 +172,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
         JSValue p = JS_GetPropertyStr(cx, v, std::string(1, parts[c]).c_str());
         JS_ToFloat64(cx, &one, p);
         JS_FreeValue(cx, p);
-        parameter(name + "_" + parts[c], name + " " + parts[c], one,
+        parameter(name + "_" + parts[c], std::string(1, parts[c]), name, one,
                   colour ? 0.0 : std::min(-10.0, one),
                   colour ? std::max(1.0, one) : std::max(10.0, one));
       }

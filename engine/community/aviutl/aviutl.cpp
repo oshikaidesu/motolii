@@ -240,11 +240,12 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
       k.usual = v.usual, k.step = 1;
     else {
       if (v.unset)
-        parameters.push_back({v.var + "_on", label, "check", 0, 1, 0, 1, ""});
+        parameters.push_back(
+            {v.var + "_on", label, "check", 0, 1, 0, 1, "", label});
       for (int c = 0; c < 3; ++c)
         parameters.push_back(
-            {v.var + "_" + "rgb"[c], label + " " + "RGB"[c], "track", 0, 255,
-             (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, ""});
+            {v.var + "_" + "rgb"[c], std::string(1, "RGB"[c]), "track", 0, 255,
+             (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, "", label});
       continue;
     }
     parameters.push_back(k);

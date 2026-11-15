@@ -100,17 +100,19 @@ void viewer_walk(const rapidjson::Value& v, const std::string& at,
       n.push_back(e.GetDouble());
     }
   static const char* const xyzw[] = {"x", "y", "z", "w"};
+  const bool folded = v.IsArray() && n.size() >= 2;
   for (size_t i = 0; i < n.size(); ++i) {
     ScriptParameter one;
     one.kind = "track";
     one.name = v.IsArray() ? name + "_" + xyzw[i] : name;
-    one.label = v.IsArray() ? label + " " + xyzw[i] : label;
+    one.label = v.IsArray() ? xyzw[i] : label;
     one.usual = n[i];
     // The range follows the rule of lottie_slots.h for a value with no stated
     // range.
     one.low = n[i] < 0 ? 4 * n[i] : 0,
     one.high = std::max(1.0, 4 * std::fabs(n[i]));
     one.step = 0.001;
+    if (folded) one.group = label;
     one.words =
         "viewer " + at + " " + std::to_string(v.IsArray() ? (int)i : -1);
     parameters.push_back(one);

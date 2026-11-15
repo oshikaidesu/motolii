@@ -44,13 +44,16 @@ std::vector<ScriptParameter> lottie_parameters(const std::string& file) {
     const std::string sid = slot.name.GetString();
     static const char *const xy[] = {"x", "y"}, *const rgba[] = {"r", "g", "b",
                                                                  "a"};
+    // A multi-component slot (position xy, colour rgb/rgba) folds the sliders
+    // under the slot's own name so they stay together on the card.
+    const bool folded = v.size() >= 2;
     for (size_t i = 0; i < v.size(); ++i) {
       ScriptParameter one;
       one.kind = "track";
       one.name =
           v.size() == 1 ? sid : sid + "_" + (v.size() == 2 ? xy[i] : rgba[i]);
       one.label =
-          v.size() == 1 ? sid : sid + " " + (v.size() == 2 ? xy[i] : rgba[i]);
+          v.size() == 1 ? sid : (v.size() == 2 ? xy[i] : rgba[i]);
       one.usual = v[i];
       if (v.size() >= 3)
         one.low = 0, one.high = 1;
@@ -58,6 +61,7 @@ std::vector<ScriptParameter> lottie_parameters(const std::string& file) {
         one.low = v[i] < 0 ? 4 * v[i] : 0,
         one.high = std::max(1.0, 4 * std::fabs(v[i]));
       one.step = 0.001;
+      if (folded) one.group = sid;
       one.words = "lottie " + sid + " " + std::to_string(i) + " " +
                   std::to_string(v.size());
       parameters.push_back(one);
