@@ -73,12 +73,11 @@ void lens_at(Doc& d, int camera, double now, math::double3 eye,
 // In the working view the Stage's orbital camera orbits the world origin while
 // the project's own camera (film) keeps its own viewpoint unchanged. The
 // Stage view is always through `s.camera`; the Camera View is always through
-// `s.film`. When the active camera layer has hide_2d_in_stage set, all 2D
-// layers are hidden in the Stage view to keep them from swinging around.
+// `s.film`. Billboards and 2D layers face whichever camera the current view
+// uses, so they look correct in both views without any manual override.
 void working_view_shown(Evaluation& evaluation, int camera) {
   Doc& d = evaluation.d;
   Stage& s = evaluation.s;
-  std::vector<EvaluatedLayer>& lies = evaluation.lies;
   const math::mat4 about =
       math::mat4::rotation(d.working_camera.position[0] * (double)TAU / 360.0,
                            math::double3{0, 1, 0}) *
@@ -91,14 +90,6 @@ void working_view_shown(Evaluation& evaluation, int camera) {
       math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
   s.camera->setProjection(30.0, double(s.w) / double(s.h), kStageNear,
                           60.0 * std::max(1.0, d.working_camera.position[2]));
-  if (d.working_camera.on && camera &&
-      doc_number(d, camera, "hide_2d_in_stage", 0, 0) > 0.5) {
-    for (EvaluatedLayer& l : lies) {
-      if (d.on_stage.shown.count(l.layer) &&
-          d.on_stage.shown[l.layer].space == 2)
-        l.on = false;
-    }
-  }
 }
 
 }  // namespace
@@ -133,14 +124,17 @@ void evaluate_camera(Evaluation& evaluation) {
                        ? math::double2{doc_number(d, camera, "shift_x", now, 0),
                                        doc_number(d, camera, "shift_y", now, 0)}
                        : math::double2{0.0});
-  // Transform from the stage's own camera, six units back along z, to this
-  // camera.
-  d.camera.rig = s.film->getModelMatrix() *
-                 math::mat4::translation(math::double3{0, 0, -kStageBack});
   lens_at(d, camera, now, eye, look);
-  // The rotation part of d.camera.rig.
-  d.camera.facing = math::mat4(d.camera.rig.upperLeft());
+  // Set up the working camera first so its model matrix is ready.
   working_view_shown(evaluation, camera);
+  // The stage view faces s.camera when the working camera is on; the camera
+  // view always faces s.film. Billboards and 2D layers use the facing camera
+  // so they look correct in whichever view is shown (Blender's behaviour).
+  filament::Camera* const facing_cam =
+      d.working_camera.on ? s.camera : s.film;
+  d.camera.rig = facing_cam->getModelMatrix() *
+                 math::mat4::translation(math::double3{0, 0, -kStageBack});
+  d.camera.facing = math::mat4(d.camera.rig.upperLeft());
 }
 
 // The camera's lens is enabled on the stage's own view when solid layers are

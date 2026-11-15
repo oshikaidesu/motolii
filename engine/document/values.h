@@ -117,7 +117,6 @@ inline const DocShown doc_shown[] = {
     {"clip", "onoff", "", "Clip to below", 0, 1, nullptr},
     {"label", "", "", "Label colour", 0, 0, nullptr},
     {"focal_length", "", "mm", "Focal Length", 1, 400, nullptr},
-    {"hide_2d_in_stage", "onoff", "", "Hide 2D in Stage", 0, 1, nullptr},
     // Focus distance and aperture follow After Effects' Focus Distance and
     // Blender's F-Stop. The sliders reach as far as the top view of the camera
     // panel, 3000 points of a 1080-point-high image or 8.9 units, and f/22.

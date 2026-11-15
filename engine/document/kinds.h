@@ -167,7 +167,6 @@ inline const DocValue doc_values[] = {
     {"anchor_y", doc_visible_kinds, -100, 100, true, nullptr},
     {"anchor_z", doc_visible_kinds, -100, 100, true, nullptr},
     {"focal_length", "camera", 1, 400, true, nullptr},
-    {"hide_2d_in_stage", "camera", 0, 1, false, nullptr},
     // The camera's lens: focus is how far from the camera layers are sharp, 0
     // being where it looks.
     // aperture is the f-number, and 0 means everything is sharp.
