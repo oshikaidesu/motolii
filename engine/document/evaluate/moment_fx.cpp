@@ -167,11 +167,18 @@ void doc_layers_fx(Doc& d) {
       // shelves/effects/sources/from_absent.py).
       if (name.rfind("backdropBox_", 0) == 0) {
         const Stage& s = *d.stage;
+        // The image of what is behind the layer is as large as the work box
+        // (the whole desk while editing, the comp on export; see
+        // doc_layers_read and thing_fx_work), so the layer's place on it is
+        // measured from the work box's corner, not the comp's. This keeps the
+        // read aligned when the panel shows past the comp's edge.
+        double work[4];
+        thing_fx_work(s, work);
         const size_t i = std::string("xyzw").find(name.back());
-        return i == 0   ? e.box[0] / s.w
-               : i == 1 ? e.box[1] / s.h
-               : i == 2 ? (e.box[2] - e.box[0]) / s.w
-                        : (e.box[3] - e.box[1]) / s.h;
+        return i == 0   ? (e.box[0] - work[0]) / (work[2] - work[0])
+               : i == 1 ? (e.box[1] - work[1]) / (work[3] - work[1])
+               : i == 2 ? (e.box[2] - e.box[0]) / (work[2] - work[0])
+                        : (e.box[3] - e.box[1]) / (work[3] - work[1]);
       }
       // The layer's own rectangle on its image, in the image's pixels: where
       // its corner is and how large it is, chosen by the last letter of the
@@ -375,6 +382,7 @@ void doc_layers_read(Doc& d,
       doc_reading(s, t->second, 0.f, 0.f, white_point(s));
     doc_sheet_reads(d, r->first, 0.f, white_point(s));
     s.engine->destroy(r->second.into), s.engine->destroy(r->second.seen),
+        s.engine->destroy(r->second.deep),
         r = d.effects.reads.erase(r);
   }
   if (std::none_of(laid.begin(), laid.end(),
@@ -397,20 +405,38 @@ void doc_layers_read(Doc& d,
     const int layer = laid[i].first;
     if (reads(layer)) {
       DocEffects::Read& r = d.effects.reads[layer];
-      if (!r.seen) {
+      // The image of what is behind the layer is as large as the view draws:
+      // the whole desk while editing (so an effect that reads past the comp --
+      // from_absent's backdrop -- sees the off-stage too, not a cut at the
+      // comp's edge), the comp on export. view_behind is already aimed there by
+      // desk_lay, so the image only needs to match its size. See thing_fx_work
+      // and backdropBox_, which reads this image over the work box.
+      const uint32_t rw = s.desk.w ? s.desk.w : (uint32_t)s.w,
+                     rh = s.desk.w ? s.desk.h : (uint32_t)s.h;
+      if (!r.seen || r.w != rw || r.h != rh) {
+        if (r.into) s.engine->destroy(r.into);
+        if (r.seen) s.engine->destroy(r.seen);
+        if (r.deep) s.engine->destroy(r.deep);
+        r.w = rw, r.h = rh;
         r.seen = Texture::Builder()
-                     .width((uint32_t)s.w)
-                     .height((uint32_t)s.h)
+                     .width(rw)
+                     .height(rh)
                      .levels(1)
                      .usage(Texture::Usage::COLOR_ATTACHMENT |
                             Texture::Usage::SAMPLEABLE)
                      .format(Texture::InternalFormat::RGBA16F)
                      .build(*s.engine);
-        r.into =
-            RenderTarget::Builder()
-                .texture(RenderTarget::AttachmentPoint::COLOR, r.seen)
-                .texture(RenderTarget::AttachmentPoint::DEPTH, s.behindDepth)
-                .build(*s.engine);
+        r.deep = Texture::Builder()
+                     .width(rw)
+                     .height(rh)
+                     .levels(1)
+                     .usage(Texture::Usage::DEPTH_ATTACHMENT)
+                     .format(Texture::InternalFormat::DEPTH24)
+                     .build(*s.engine);
+        r.into = RenderTarget::Builder()
+                     .texture(RenderTarget::AttachmentPoint::COLOR, r.seen)
+                     .texture(RenderTarget::AttachmentPoint::DEPTH, r.deep)
+                     .build(*s.engine);
       }
       const float way = (float)doc_blend_way(doc_word(d, layer, "blend"));
       doc_reading(s, *laid[i].second,

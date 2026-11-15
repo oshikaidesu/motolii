@@ -36,7 +36,11 @@ struct DocEffects {
   // into is the target that image is drawn to.
   struct Read {
     filament::Texture* seen = nullptr;
+    filament::Texture* deep = nullptr;
     filament::RenderTarget* into = nullptr;
+    // The size `seen` is built at, in pixels: the desk while editing, the comp
+    // on export (see doc_layers_read). Rebuilt when it changes.
+    uint32_t w = 0, h = 0;
   };
   // The layers that read what is under them, each with its image of it (see
   // doc_layers_read).
