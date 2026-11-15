@@ -25,6 +25,7 @@ material {
     parameters : [
         { type : sampler2d, name : picture0 }, { type : sampler2d, name : picture1 }, { type : sampler2d, name : picture2 },
         { type : sampler2d, name : picture3 }, { type : sampler2d, name : picture4 }, { type : sampler2d, name : picture5 },
+        { type : sampler2d, name : picture6 }, { type : sampler2d, name : picture7 }, { type : sampler2d, name : picture8 },
         { type : float4, name : color },
         { type : float, name : roughness },
         { type : float, name : metalOff },
@@ -79,7 +80,10 @@ fragment {
         if (which < 3.5) return textureLod(materialParams_picture2, at, 0.0);
         if (which < 4.5) return textureLod(materialParams_picture3, at, 0.0);
         if (which < 5.5) return textureLod(materialParams_picture4, at, 0.0);
-        return textureLod(materialParams_picture5, at, 0.0);
+        if (which < 6.5) return textureLod(materialParams_picture5, at, 0.0);
+        if (which < 7.5) return textureLod(materialParams_picture6, at, 0.0);
+        if (which < 8.5) return textureLod(materialParams_picture7, at, 0.0);
+        return textureLod(materialParams_picture8, at, 0.0);
     }
     void material(inout MaterialInputs material) {
         prepareMaterial(material);

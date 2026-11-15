@@ -195,7 +195,8 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
   made.look = look;
   if (look && glass) glassy(d, layer, look);
   if (look && made.sketch)
-    for (int i = 0; i < 6; ++i)
+    // Same as sketch.mat's picture samplers and sketch.cpp's PICTURES limit.
+    for (int i = 0; i < 9; ++i)
       look->setParameter(("picture" + std::to_string(i)).c_str(),
                          white_point(s), TextureSampler());
   if (!look)

@@ -190,7 +190,7 @@ void doc_sketch_mesh(Doc& d, int layer, DocShownLayer& t, double now) {
   // rest draw as white. Past WAYS shader uses the rest are drawn flat. Record
   // sizes in floats, and the limits named above.
   constexpr size_t HEAD = 15, RET = 29, TRI = 15, SEG = 12, TOLD = 720,
-                   MOST = 3000000, PICTURES = 6, WAYS = 4096;
+                   MOST = 3000000, PICTURES = 9, WAYS = 4096;
   Stage& s = *d.stage;
   DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script"));
   if (!sc || !sc->run || !sc->run->ok()) return;
