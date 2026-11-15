@@ -2,13 +2,12 @@
 
 #include <algorithm>
 #include <cmath>
-#include <fstream>
 #include <functional>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
+#include "base/file_read.h"
 #include "base/json.h"
 #include "community/quickjs/script.h"
 #include "shelf/shelf_folders.h"
@@ -26,10 +25,7 @@ const std::string& viewer_text(const std::string& file) {
   static std::map<std::string, CachedSettings> cache;
   CachedSettings& one = cache[file];
   if (one.seen != files_changed()) {
-    std::ifstream in(file);
-    std::stringstream text;
-    text << in.rdbuf();
-    one.text = text.str(), one.seen = files_changed();
+    one.text = read_text(file), one.seen = files_changed();
   }
   return one.text;
 }

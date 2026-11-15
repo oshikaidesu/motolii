@@ -12,6 +12,7 @@
 #include <system_error>
 #include <utility>
 
+#include "base/file_read.h"
 #include "base/hash.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
@@ -134,16 +135,13 @@ std::vector<DocRecipe> doc_recipes_read() {
   for (const auto& f : doc_folder_files("create", ".js")) {
     DocRecipe r;
     r.path = f.string();
-    std::ifstream in(f);
-    std::stringstream text;
-    text << in.rdbuf();
+    const std::string text = read_text(f.string());
     // Detect which program the pasted sketch comes from and convert it to plain
     // JavaScript (adapter.h).
-    const std::string form = adapter_form(text.str()),
-                      told = adapter_js(text.str(), form);
+    const std::string form = adapter_form(text), told = adapter_js(text, form);
     // A p5.js sketch as pasted has no head of ours, so it gets a default recipe
     // that adds one layer.
-    if (text.str().find("\n// make ") == std::string::npos &&
+    if (text.find("\n// make ") == std::string::npos &&
         script_is_sketch(told)) {
       // The sketch makes its own layers and motion, see
       // docs/design/create_and_program_shelves.md. The code flag is set for a
@@ -161,8 +159,8 @@ std::vector<DocRecipe> doc_recipes_read() {
       all.push_back(r);
       continue;
     }
-    in.clear(), in.seekg(0);
-    for (std::string line; std::getline(in, line);) {
+    std::istringstream lines(text);
+    for (std::string line; std::getline(lines, line);) {
       if (line.rfind("//", 0) != 0) {
         if (line.find_first_not_of(" \t\r") != std::string::npos) {
           r.code = true;

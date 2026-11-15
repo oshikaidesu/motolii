@@ -1,10 +1,9 @@
 // A compute shader that moves the points of a layer's solid, each frame, on
 // the GPU. See thing_fx_points in layer_fx.h for the file's contract.
 #include <filesystem>
-#include <fstream>
 #include <map>
-#include <sstream>
 
+#include "base/file_read.h"
 #include "gpu/compute_interop.h"
 #include "stage/layer_effects/layer_fx.h"
 
@@ -30,10 +29,7 @@ struct PointsFx {
 
 namespace {
 std::string points_text(const std::string& file) {
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  return all.str();
+  return read_text(file);
 }
 }  // namespace
 

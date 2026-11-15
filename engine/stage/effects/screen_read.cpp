@@ -12,11 +12,11 @@
 #include <fstream>
 #include <map>
 #include <regex>
-#include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
 #include "shelf/shelf_folders.h"
@@ -91,11 +91,9 @@ bool screen_read(ScreenFx& fx, std::string& code) {
     return fx.trouble =
                "the ISF effect could not be turned into WGSL: " + fx.file,
            false;
-  std::ifstream in(file);
-  if (!in) return fx.trouble = "there is no such file: " + fx.file, false;
-  std::stringstream all;
-  all << in.rdbuf();
-  code = all.str();
+  if (!std::filesystem::exists(file))
+    return fx.trouble = "there is no such file: " + fx.file, false;
+  code = read_text(file);
   if (code.find("layerRect") == std::string::npos &&
       code.find("frameRect") == std::string::npos)
     screen_framed(code);
