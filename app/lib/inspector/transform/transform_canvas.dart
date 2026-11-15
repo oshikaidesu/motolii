@@ -40,6 +40,12 @@ class _TransformCanvasState extends State<TransformCanvas> {
   Map<String, double>? _before;
   (TransformZone, int)? _grab, _hover;
   Offset _down = Offset.zero, _last = Offset.zero;
+  // True once the pointer has moved past _dragSlop from _down: every
+  // onPointerMove before that is treated as a jitter of a click, not a drag
+  // (B04). Without the threshold the Transform preview starts dragging on any
+  // sub-pixel pointer event that comes with the mouse-down.
+  bool _moved = false;
+  static const double _dragSlop = 3.0;
   TransformHome? _home;
   String? _homeOf;
 
@@ -70,6 +76,8 @@ class _TransformCanvasState extends State<TransformCanvas> {
   void _drag(Offset p) {
     final g = _start, grab = _grab, doc = _doc;
     if (g == null || grab == null || doc == null) return;
+    if (!_moved && (p - _down).distance < _dragSlop) return;
+    _moved = true;
     final next = g.drag(
       grab.$1,
       grab.$2,
@@ -157,6 +165,7 @@ class _TransformCanvasState extends State<TransformCanvas> {
                     _start = g;
                     _grab = grab;
                     _down = _last = e.localPosition;
+                    _moved = false;
                     transformHot.value = grab.$1.id;
                   },
                   onPointerMove: (e) => _drag(e.localPosition),
