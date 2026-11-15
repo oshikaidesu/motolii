@@ -436,15 +436,17 @@ class _Preview extends StatelessWidget {
   final String svgPath;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    key: const ValueKey('paths-preview'),
-    size: Size.fromHeight(Shape.z(60)),
-    painter: _PreviewPaint(
-      round: round,
-      points: points,
-      inner: inner,
-      shape: shape,
-      svgPath: svgPath,
+  Widget build(BuildContext context) => ClipRect(
+    child: CustomPaint(
+      key: const ValueKey('paths-preview'),
+      size: Size.fromHeight(Shape.z(60)),
+      painter: _PreviewPaint(
+        round: round,
+        points: points,
+        inner: inner,
+        shape: shape,
+        svgPath: svgPath,
+      ),
     ),
   );
 }
@@ -463,8 +465,9 @@ class _PreviewPaint extends CustomPainter {
   final String shape;
   final String svgPath;
 
-  // The engine's outline (motolii_shape_svg: SVG path data, centred at the origin and 1 unit high) as a Path that is
-  // 2 [r] high about ([cx], [cy]). Null when it is not path data.
+  // The engine's outline (motolii_shape_svg: SVG path data) as a Path fitted into a 2 [r] box about ([cx], [cy]).
+  // The outline is meant to be a unit high about the origin, but a strong deform (a large round, a rough edge) carries
+  // it well past that, so its real bounds are measured and scaled to fit rather than assumed. Null when it is not path data.
   Path? _parseSvg(double cx, double cy, double r) {
     final unit = Path();
     try {
@@ -472,9 +475,28 @@ class _PreviewPaint extends CustomPainter {
     } catch (_) {
       return null;
     }
-    final k = r * 2;
+    final b = unit.getBounds();
+    if (b.isEmpty) return null;
+    final k = r * 2 / math.max(b.width, b.height);
     return unit.transform(
-      Float64List.fromList([k, 0, 0, 0, 0, k, 0, 0, 0, 0, 1, 0, cx, cy, 0, 1]),
+      Float64List.fromList([
+        k,
+        0,
+        0,
+        0,
+        0,
+        k,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        cx - b.center.dx * k,
+        cy - b.center.dy * k,
+        0,
+        1,
+      ]),
     );
   }
 
