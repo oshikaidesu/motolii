@@ -18,9 +18,6 @@ void makeFolder(String path) => Directory(path).createSync(recursive: true);
 void makeFolderOf(String filePath) =>
     Directory(File(filePath).parent.path).createSync(recursive: true);
 
-/// The folder that the file [filePath] is in.
-String parentFolder(String filePath) => File(filePath).parent.path;
-
 /// The folder above [folder], as an absolute path.
 String folderAbove(String folder) => Directory(folder).absolute.parent.path;
 

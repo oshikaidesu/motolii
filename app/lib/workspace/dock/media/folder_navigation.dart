@@ -1,5 +1,5 @@
 // Where the Media shelf's tree starts, the path from there to a folder, and opening a folder or a file.
-import 'package:motolii/storage/folder_entries.dart' show homeFolderEnv;
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
 import 'package:motolii/widgets/picks.dart' show pickOnClick;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
@@ -7,7 +7,7 @@ import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
-final _home = homeFolderEnv ?? '/';
+final _home = homeFolder ?? '/';
 
 /// The locations in the tree: the project's own files and the folders they are in, then the disk.
 List<FileNode> mediaRoots(ShelfContext c, MediaController media) {

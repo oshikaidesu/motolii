@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:motolii/storage/folder_entries.dart'
-    show filesInNow, folderOfFile, folderThere;
+    show filesInNow, folderThere;
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/workspace/dock/media/file_node.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
@@ -106,7 +107,7 @@ List<(int, String)>? levelNamed(
   String name,
   String Function(String file) kindOf,
 ) {
-  final here = folderOfFile(sheet),
+  final here = parentFolderOf(sheet),
       named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
     if (!folderThere(folder)) continue;

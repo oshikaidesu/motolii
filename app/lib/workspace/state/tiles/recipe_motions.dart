@@ -14,6 +14,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -75,7 +76,7 @@ abstract final class RecipeMotions {
   static void ask(WorkspaceController ws, List<String> recipes) {
     if (_asked) return;
     _asked = true;
-    final libDir = parentFolder(parentFolder(ws.inside!.libPath));
+    final libDir = parentFolderOf(parentFolderOf(ws.inside!.libPath));
     final port = ReceivePort(),
         halt = _halt = HaltFlag.create(),
         ended = _ended = Completer<void>();

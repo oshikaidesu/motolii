@@ -2,8 +2,7 @@
 import 'dart:async';
 import 'dart:io';
 
-/// The HOME folder, or null when the environment has none.
-String? homeFolder() => Platform.environment['HOME'];
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
 
 /// The folders skins are read from, later ones winning when two skins have the same name.
 ///
@@ -11,7 +10,7 @@ String? homeFolder() => Platform.environment['HOME'];
 /// from there is not lost.
 List<String> skinFolders({required String shelves, required String own}) => [
   '$shelves/skins',
-  '${homeFolder()}/.motolii/skins',
+  '$homeFolder/.motolii/skins',
   '$own/skins',
 ];
 
@@ -34,9 +33,6 @@ Map<String, String> skinFoldersByName({
   }
   return by;
 }
-
-/// The folder that holds the file at [path].
-String folderOfFile(String path) => File(path).parent.path;
 
 /// Calls [changed] whenever the file at [path] is written. Its folder is made first.
 /// Null when the folder cannot be watched, and the file is then read once.

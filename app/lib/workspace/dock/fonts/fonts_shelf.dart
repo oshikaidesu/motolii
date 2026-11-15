@@ -18,7 +18,7 @@ import 'package:motolii/workspace/dock/fonts/font_map.dart';
 import 'package:motolii/workspace/dock/fonts/font_roles.dart';
 import 'package:motolii/workspace/dock/fonts/font_tile.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
-import 'package:motolii/storage/folder_entries.dart' show folderOfFile;
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
@@ -232,7 +232,7 @@ class FontsShelf extends StatelessWidget {
             title: sel.family,
             meta:
                 c.mem.trouble[sel.family] ??
-                '${sel.path!.split('.').last.toUpperCase()} · ${folderOfFile(sel.path!).split('/').last}',
+                '${sel.path!.split('.').last.toUpperCase()} · ${parentFolderOf(sel.path!).split('/').last}',
             // Applies to the selected text layer, or places a new text layer when none is selected.
             action:
                 layerWord(

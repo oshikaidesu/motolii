@@ -27,6 +27,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/font_bytes.dart' show readFontBytes;
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/skin_folders.dart';
 import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/storage/window_settings.dart' show WindowFile;
@@ -102,7 +104,7 @@ abstract final class ColorTheme {
   /// If it is missing or unreadable, the built-in colours and shapes are used.
   static void load(String path) {
     try {
-      folder = folderOfFile(path);
+      folder = parentFolderOf(path);
       final xml = readTextNow(path);
       roles.value = parse(xml);
       words.value = {
@@ -132,9 +134,7 @@ abstract final class ColorTheme {
   static String folder = '';
   static String place(String w) => w.isEmpty || w.startsWith('/')
       ? w
-      : (w.startsWith('~/')
-            ? '${homeFolder()}${w.substring(1)}'
-            : '$folder/$w');
+      : (w.startsWith('~/') ? '$homeFolder${w.substring(1)}' : '$folder/$w');
 
   /// Whether the theme asks for the light shade, or null when it does not say and the app's own switch decides.
   static final shadeSaid = ValueNotifier<bool?>(null);

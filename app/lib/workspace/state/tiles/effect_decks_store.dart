@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart' show sha256;
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/storage/unique_name.dart' show firstFree;
 
@@ -31,7 +32,7 @@ void effectUsed(String id, {required String words, required String chip}) {
   keepText(_recentFile, jsonEncode(r));
   try {
     appendText(
-      '${parentFolder(_recentFile)}/effect_used.jsonl',
+      '${parentFolderOf(_recentFile)}/effect_used.jsonl',
       '${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n',
     );
   } catch (_) {

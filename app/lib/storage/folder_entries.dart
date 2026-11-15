@@ -1,8 +1,6 @@
-// What a folder on the disk holds, as the panels read it: the entries they keep, whether a folder is there, and the
-// home folder. Panels import this instead of dart:io.
+// What a folder on the disk holds, as the panels read it: the entries they keep, and whether a folder is there.
+// Panels import this instead of dart:io.
 import 'dart:io';
-
-String? get homeFolderEnv => Platform.environment['HOME'];
 
 /// The entries of [folder] that [make] keeps, in the order the disk lists them. [make] is given each entry, and a way to
 /// read its size when it needs one. A folder that cannot be read has no entries.
@@ -36,5 +34,3 @@ List<String> filesInNow(String folder) => [
   for (final e in Directory(folder).listSync())
     if (e is File) e.path,
 ];
-
-String folderOfFile(String path) => File(path).parent.path;
