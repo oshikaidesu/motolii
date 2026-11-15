@@ -228,7 +228,7 @@ void match_model(LayerBuild& build) {
   const Surface& surface = wear.surface;
   const std::string& shading = wear.shading;
   const char* model = wear.model;
-  if (coloured && (rgb < 0 || ramp.size() > 1))
+  if (coloured && rgb < 0 && ramp.empty())
     why = "a solid's fill is six digits, as ff3366, or glass";
   else if (!shape.empty())
     built_in_model(build, wear);
