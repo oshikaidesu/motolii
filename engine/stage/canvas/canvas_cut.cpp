@@ -18,6 +18,34 @@ using filament::math::float3;
 using filament::math::float4;
 using filament::math::mat4f;
 
+namespace {
+
+// Tessellate the rings into triangles with libtess2. The rings with 3 points or
+// more become the contours; `winding` is TESS_WINDING_ODD or
+// TESS_WINDING_NONZERO. Calls `point(x, y)` for each vertex in order, so the
+// caller writes them into a mesh however it wants, then appends the vertex
+// indices (each offset by `base`) to `idx`. Does nothing if the tessellator
+// fails.
+template <typename Point>
+void tess_fill(const std::vector<std::vector<float2>>& rings, int winding,
+               uint32_t base, Point point, std::vector<uint32_t>& idx) {
+  TESStesselator* t = tessNewTess(nullptr);
+  for (const auto& ring : rings)
+    if (ring.size() > 2)
+      tessAddContour(t, 2, ring.data(), sizeof(float2), (int)ring.size());
+  if (tessTesselate(t, winding, TESS_POLYGONS, 3, 2, nullptr)) {
+    const TESSreal* v = tessGetVertices(t);
+    for (int i = 0; i < tessGetVertexCount(t); ++i)
+      point(v[2 * i], v[2 * i + 1]);
+    const TESSindex* e = tessGetElements(t);
+    for (int i = 0; i < 3 * tessGetElementCount(t); ++i)
+      idx.push_back(base + (uint32_t)e[i]);
+  }
+  tessDeleteTess(t);
+}
+
+}  // namespace
+
 // Builds the triangles of a flat shape for its current path and appends them to
 // d->sheet. The fill comes first, with no triangles if the shape is hollow. It
 // is tessellated by libtess2 and rebuilt only when `refill` is true or the mesh
@@ -62,13 +90,7 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
     } else if (!d->hollow) {
       // Tessellate the outline. Curves are already split into short pieces, so
       // each curve is represented by its end point.
-      TESStesselator* t = tessNewTess(nullptr);
-      std::vector<float2> ring;
-      const auto end = [&] {
-        if (ring.size() > 2)
-          tessAddContour(t, 2, ring.data(), sizeof(float2), (int)ring.size());
-        ring.clear();
-      };
+      std::vector<std::vector<float2>> rings(1);
       // The path left after trimming, closed with a straight line. It is filled
       // instead of the full path when a trim is set.
       std::vector<tvg::PathCommand> partBy;
@@ -80,34 +102,25 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
       const uint32_t fillCnt = part ? (uint32_t)partBy.size() : cmdsCnt;
       for (uint32_t c = 0, p = 0; c < fillCnt; ++c) switch (fillBy[c]) {
           case tvg::PathCommand::MoveTo:
-            end();
-            ring.push_back({fillAt[p].x, fillAt[p].y});
+            rings.emplace_back();
+            rings.back().push_back({fillAt[p].x, fillAt[p].y});
             ++p;
             break;
           case tvg::PathCommand::LineTo:
-            ring.push_back({fillAt[p].x, fillAt[p].y});
+            rings.back().push_back({fillAt[p].x, fillAt[p].y});
             ++p;
             break;
           case tvg::PathCommand::CubicTo:
-            ring.push_back({fillAt[p + 2].x, fillAt[p + 2].y});
+            rings.back().push_back({fillAt[p + 2].x, fillAt[p + 2].y});
             p += 3;
             break;
           case tvg::PathCommand::Close:
-            end();
+            rings.emplace_back();
             break;
         }
-      end();
-      if (tessTesselate(t,
-                        d->fx.evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO,
-                        TESS_POLYGONS, 3, 2, nullptr)) {
-        const TESSreal* v = tessGetVertices(t);
-        for (int i = 0; i < tessGetVertexCount(t); ++i)
-          point(v[2 * i], v[2 * i + 1]);
-        const TESSindex* e = tessGetElements(t);
-        for (int i = 0; i < 3 * tessGetElementCount(t); ++i)
-          m.idx.push_back((uint32_t)e[i]);
-      }
-      tessDeleteTess(t);
+      tess_fill(rings,
+                d->fx.evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, 0,
+                point, m.idx);
     }
     if (m.idx.empty()) none();
     d->fillPoints = (uint32_t)m.pos.size(), d->fillEnd = (uint32_t)m.idx.size();
@@ -156,52 +169,36 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
                         .c_str(),
                     c, p))
           return;
-        TESStesselator* t = tessNewTess(nullptr);
-        std::vector<float2> ring;
-        const auto close = [&] {
-          if (ring.size() > 2)
-            tessAddContour(t, 2, ring.data(), sizeof(float2), (int)ring.size());
-          ring.clear();
-        };
+        std::vector<std::vector<float2>> rings(1);
         for (size_t i = 0, q = 0; i < c.size(); ++i) switch (c[i]) {
             case tvg::PathCommand::MoveTo:
-              close();
-              ring.push_back({p[q].x, p[q].y});
+              rings.emplace_back();
+              rings.back().push_back({p[q].x, p[q].y});
               ++q;
               break;
             case tvg::PathCommand::LineTo:
-              ring.push_back({p[q].x, p[q].y});
+              rings.back().push_back({p[q].x, p[q].y});
               ++q;
               break;
             case tvg::PathCommand::CubicTo: {
-              const float2 a = ring.empty() ? float2{p[q].x, p[q].y}
-                                            : ring.back(),
+              const float2 a = rings.back().empty() ? float2{p[q].x, p[q].y}
+                                                    : rings.back().back(),
                            b{p[q].x, p[q].y}, e{p[q + 1].x, p[q + 1].y},
                            f{p[q + 2].x, p[q + 2].y};
               for (int k = 1; k <= 8; ++k) {
                 const float u = (float)k / 8.f, v = 1.f - u;
-                ring.push_back(v * v * v * a + 3.f * v * v * u * b +
-                               3.f * v * u * u * e + u * u * u * f);
+                rings.back().push_back(v * v * v * a + 3.f * v * v * u * b +
+                                       3.f * v * u * u * e + u * u * u * f);
               }
               q += 3;
               break;
             }
             case tvg::PathCommand::Close:
-              close();
+              rings.emplace_back();
               break;
           }
-        close();
-        if (tessTesselate(t, TESS_WINDING_NONZERO, TESS_POLYGONS, 3, 2,
-                          nullptr)) {
-          const uint32_t k = (uint32_t)m.pos.size();
-          const TESSreal* v = tessGetVertices(t);
-          for (int i = 0; i < tessGetVertexCount(t); ++i)
-            point(v[2 * i], v[2 * i + 1]);
-          const TESSindex* e = tessGetElements(t);
-          for (int i = 0; i < 3 * tessGetElementCount(t); ++i)
-            m.idx.push_back(k + (uint32_t)e[i]);
-        }
-        tessDeleteTess(t);
+        tess_fill(rings, TESS_WINDING_NONZERO, (uint32_t)m.pos.size(), point,
+                  m.idx);
         return;
       }
       const uint32_t k = (uint32_t)m.pos.size();
