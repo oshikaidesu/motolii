@@ -178,7 +178,8 @@ class _DepthPainter extends CustomPainter {
       }
     }
     // The lens cone, out to the far edge of the diagram.
-    final half = math.atan(36 / (2 * focal)), reach = depthZMax * 1.1;
+    // Matches engine/document/evaluate/camera.cpp: 24 mm sensor height, half = 12 mm.
+    final half = math.atan(12 / focal), reach = depthZMax * 1.1;
     final spread = reach * math.tan(half);
     final cone = Path()
       ..moveTo(m.eye.dx, m.eye.dy)

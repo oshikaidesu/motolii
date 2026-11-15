@@ -14,7 +14,8 @@ class DepthLens {
   double focal = 50, focus = 1120, fstop = 2.8;
   String? target;
 
-  double get fov => 2 * math.atan(36 / (2 * focal));
+  // Matches engine/document/evaluate/camera.cpp: 24 mm sensor height, half = 12 mm.
+  double get fov => 2 * math.atan(12 / focal);
 
   /// The thin-lens depth of field, taking one canvas pixel as 4 mm and a circle of confusion of 0.03 mm.
   ({double near, double far}) get dof {
