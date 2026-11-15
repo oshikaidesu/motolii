@@ -181,8 +181,7 @@ void doc_layers_fx(Doc& d) {
         double frame[8];
         if (!doc_fx_frame(d, layer, e, frame)) return 0.0;
         const Stage& s = *d.stage;
-        const double ppp =
-            (double)s.view->getViewport().width / std::max(1, s.w);
+        const double ppp = thing_fx_ppp(s);
         const size_t i = std::string("xyzw").find(name.back());
         return ppp * (i == 0   ? frame[0] - frame[2] / 2 - e.box[0]
                       : i == 1 ? frame[1] - frame[3] / 2 - e.box[1]
@@ -221,8 +220,7 @@ void doc_layers_fx(Doc& d) {
             !doc_frame(d, layer, now - 0.5 * open, was) ||
             !doc_frame(d, layer, now + 0.5 * open, is))
           return 0.0;
-        const double ppp = (double)d.stage->view->getViewport().width /
-                           std::max(1, d.stage->w);
+        const double ppp = thing_fx_ppp(*d.stage);
         const math::double3 way = (doc_shown_at(d, layer, now + 0.5 * open)[3] -
                                    doc_shown_at(d, layer, now - 0.5 * open)[3])
                                       .xyz;
@@ -250,7 +248,12 @@ void doc_layers_fx(Doc& d) {
     // Before the frame: works out where the layer is seen, what its images are,
     // and what its sheet shows.
     s.aim.push_back([&s, &d, layer = layer, &e = e] {
-      double box[4] = {0, 0, (double)s.w, (double)s.h}, seen[4];
+      // The effect's image covers the work box: the whole preview panel while
+      // editing (so a duplicate or mirror that spreads past the comp fills the
+      // panel and is not cut), or the comp when writing out. See thing_fx_work.
+      double work[4], box[4], seen[4];
+      thing_fx_work(s, work);
+      std::copy(work, work + 4, box);
       {
         std::lock_guard<std::recursive_timed_mutex> hold(
             d.lock);  // (asked while the picture is drawn)
@@ -262,16 +265,15 @@ void doc_layers_fx(Doc& d) {
         // image, as in After Effects. Add room around it for what its effects
         // draw outside it: a margin of 128 pixels.
         if (found) {
-          const double m =
-              128.0 * s.w / std::max(1u, s.view->getViewport().width);
-          box[0] = std::max(0.0, seen[0] - m),
-          box[1] = std::max(0.0, seen[1] - m),
-          box[2] = std::min((double)s.w, seen[2] + m),
-          box[3] = std::min((double)s.h, seen[3] + m);
+          const double m = 128.0 / thing_fx_ppp(s);
+          box[0] = std::max(work[0], seen[0] - m),
+          box[1] = std::max(work[1], seen[1] - m),
+          box[2] = std::min(work[2], seen[2] + m),
+          box[3] = std::min(work[3], seen[3] + m);
         }
-        // If none of the layer is on the stage, use the whole stage.
+        // If none of the layer is on the stage, use the whole work box.
         if (box[2] - box[0] < 1 || box[3] - box[1] < 1)
-          box[0] = box[1] = 0, box[2] = s.w, box[3] = s.h;
+          std::copy(work, work + 4, box);
         e.st.frame[0] = 0, e.st.frame[1] = 0, e.st.frame[2] = 1,
         e.st.frame[3] = 1;
         const bool shown = found && !e.shell && !e.st.wide;
@@ -281,23 +283,25 @@ void doc_layers_fx(Doc& d) {
         // (engine/third_party/AbsentMotion/app/src/main/cpp/effects.cpp,
         // EffectRuntime::draw).
         if (!e.shell && !e.st.wide) {
-          e.st.frame[0] = box[0] / s.w, e.st.frame[1] = box[1] / s.h,
-          e.st.frame[2] = (box[2] - box[0]) / s.w,
-          e.st.frame[3] = (box[3] - box[1]) / s.h;
-          box[0] = box[1] = 0, box[2] = s.w, box[3] = s.h;
+          e.st.frame[0] = (box[0] - work[0]) / (work[2] - work[0]),
+          e.st.frame[1] = (box[1] - work[1]) / (work[3] - work[1]),
+          e.st.frame[2] = (box[2] - box[0]) / (work[2] - work[0]),
+          e.st.frame[3] = (box[3] - box[1]) / (work[3] - work[1]);
+          std::copy(work, work + 4, box);
         }
         std::copy(e.st.frame, e.st.frame + 4, e.st.own);
         if (shown)
-          e.st.own[0] = seen[0] / s.w, e.st.own[1] = seen[1] / s.h,
-          e.st.own[2] = (seen[2] - seen[0]) / s.w,
-          e.st.own[3] = (seen[3] - seen[1]) / s.h;
+          e.st.own[0] = (seen[0] - work[0]) / (work[2] - work[0]),
+          e.st.own[1] = (seen[1] - work[1]) / (work[3] - work[1]),
+          e.st.own[2] = (seen[2] - seen[0]) / (work[2] - work[0]),
+          e.st.own[3] = (seen[3] - seen[1]) / (work[3] - work[1]);
         // An AviUtl2 script that draws the layer uses the whole stage as its
         // frame, as an AviUtl2 object is drawn on the screen. The box where the
         // layer is seen is passed to the effect in thingSeen.
         if (e.st.wide) {
           std::copy(found ? seen : box, (found ? seen : box) + 4,
                     e.st.thingSeen);
-          box[0] = box[1] = 0, box[2] = s.w, box[3] = s.h;
+          std::copy(work, work + 4, box);
         }
       }
       if (!e.solidFile.empty()) return doc_layer_solid_aim(d, layer, e);

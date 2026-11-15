@@ -25,8 +25,23 @@ using filament::math::mat4f;
 namespace backend = filament::backend;
 namespace math = filament::math;
 
+double thing_fx_ppp(const Stage& s) {
+  return s.desk.w ? s.desk.scale
+                  : (double)s.view->getViewport().width / std::max(1, s.w);
+}
+
+void thing_fx_work(const Stage& s, double* work) {
+  if (!s.desk.w) {
+    work[0] = 0, work[1] = 0, work[2] = s.w, work[3] = s.h;
+    return;
+  }
+  work[0] = -s.desk.x / s.desk.scale, work[1] = -s.desk.y / s.desk.scale,
+  work[2] = (s.desk.w - s.desk.x) / s.desk.scale,
+  work[3] = (s.desk.h - s.desk.y) / s.desk.scale;
+}
+
 void thing_fx_aim(Stage& s, ThingFx& e, const double* said) {
-  const double ppp = (double)s.view->getViewport().width / std::max(1, s.w);
+  const double ppp = thing_fx_ppp(s);
   double box[4] = {said[0], said[1], said[2], said[3]};
   // A solid reads its image point for point, so snap the box to the stage's
   // pixels.
@@ -92,7 +107,7 @@ void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half,
                     double seen) {
   // `usual` is the number of stage points per world unit at the stage's own
   // camera distance; see document/evaluate/evaluate.h.
-  const double ppp = (double)s.view->getViewport().width / std::max(1, s.w),
+  const double ppp = thing_fx_ppp(s),
                usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));
   const double room = 128.0 / usual, sx = length(place[0].xyz),
                sy = length(place[1].xyz), wide = half.x * sx + room,

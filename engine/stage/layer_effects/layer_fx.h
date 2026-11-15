@@ -141,6 +141,21 @@ ThingFx& thing_fx_built(Stage& s, ThingFx& e, const std::string& lay = "",
 // Removes everything the layer created in the engine and resets `e`.
 void thing_fx_off(Stage& s, ThingFx& e);
 
+// How many pixels of a layer's effect image cover one point of the stage. In
+// the editor it is the preview panel's zoom (desk.scale), so the image is as
+// dense as the panel shows and, over the work box below, as large as the panel
+// (desk.w by desk.h); without a panel (export) it is the stage's own view.
+double thing_fx_ppp(const Stage& s);
+
+// The part of the stage a layer's effect image must cover, in stage points:
+// left, top, right, bottom. In the editor it is everything the preview panel
+// shows, off the stage included, so an effect that spreads past the comp (a
+// duplicate, a mirror) fills the panel instead of being cut at the comp's edge.
+// Without a panel (export) it is the comp itself, whose frame is the output.
+// With thing_fx_ppp the image is then exactly the panel's pixels, aimed by the
+// same projection as desk_lay.
+void thing_fx_work(const Stage& s, double* work);
+
 // Aims the layer's camera at `said`, the box where the layer is seen: left,
 // top, right, bottom in stage points. The camera is given the stage's
 // projection and pose each frame, as the offscreen camera in
