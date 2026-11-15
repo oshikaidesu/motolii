@@ -24,6 +24,7 @@
 #include <regex>
 #include <sstream>
 
+#include "base/hash.h"
 #include "community/isf/isf_translate.h"
 #include "community/sites/adapter.h"
 #include "community/three/three_isf.h"
@@ -135,8 +136,7 @@ std::string isf_file(const std::string& asked) {
   static std::map<std::string, std::string> built;
   std::lock_guard<std::mutex> hold(isf_lock);
   if (auto m = built.find(key); m != built.end()) return m->second;
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
+  const uint64_t hash = fnv1a64(key);
   const char* home = std::getenv("HOME");
   const std::filesystem::path dir =
       std::filesystem::path(home ? home : "/tmp") /

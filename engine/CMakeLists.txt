@@ -187,7 +187,7 @@ target_link_libraries(motolii_community_isf PUBLIC filament_libraries motolii_ba
 # Adapter: playcanvas code run as it is.
 add_library(motolii_community_playcanvas STATIC
   community/playcanvas/splatfx.cpp)
-target_link_libraries(motolii_community_playcanvas PUBLIC motolii_flags motolii_community_quickjs)
+target_link_libraries(motolii_community_playcanvas PUBLIC motolii_flags motolii_base motolii_community_quickjs)
 
 # Filament: the scene, cameras, lights, 3D files.
 add_library(motolii_stage_render STATIC
@@ -288,7 +288,7 @@ add_library(motolii_stage_canvas STATIC
   stage/canvas/canvas_sketch.cpp
   stage/canvas/canvas_type.cpp
   stage/canvas/image_pixels.cpp)
-target_link_libraries(motolii_stage_canvas PUBLIC motolii_flags motolii_community_css motolii_community_absent_motion motolii_gpu motolii_shelf motolii_stage_render motolii_community_script_runner)
+target_link_libraries(motolii_stage_canvas PUBLIC motolii_flags motolii_base motolii_community_css motolii_community_absent_motion motolii_gpu motolii_shelf motolii_stage_render motolii_community_script_runner)
 target_sources(motolii_stage_canvas PRIVATE $<TARGET_OBJECTS:thorvg_path_operators> $<TARGET_OBJECTS:skia_path_operations>)
 target_link_libraries(motolii_stage_canvas PUBLIC ${THORVG}/build_dawn/src/libthorvg-1.a skia_libraries
   ${THIRD_PARTY}/libtess2/build/libtess2.a)
@@ -370,7 +370,7 @@ target_link_libraries(motolii_stage PUBLIC motolii_flags motolii_gpu motolii_sta
 # The playback cache.
 add_library(motolii_preview STATIC
   preview/playback_cache.cpp)
-target_link_libraries(motolii_preview PUBLIC motolii_flags motolii_community_quickjs motolii_shelf motolii_stage_render motolii_stage_canvas motolii_document motolii_stage)
+target_link_libraries(motolii_preview PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_shelf motolii_stage_render motolii_stage_canvas motolii_document motolii_stage)
 
 # The C API the app calls (entry/motolii.h).
 add_library(motolii_entry OBJECT

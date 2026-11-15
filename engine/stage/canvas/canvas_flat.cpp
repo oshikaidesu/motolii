@@ -2,6 +2,7 @@
 
 #include <filament/TextureSampler.h>
 
+#include "base/hash.h"
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/canvas_renderables.h"
@@ -49,16 +50,14 @@ uint64_t cut_key(float3 trim, const std::array<float, 10>& bend,
                  const Canvas2D::Other& join, const Canvas2D::Other& morph,
                  const Canvas2D::Other& trace) {
   // FNV-1a over everything the cut depends on.
-  uint64_t h = 1469598103934665603ull;
-  const auto mix = [&](const void* p, size_t n) {
-    for (size_t i = 0; i < n; ++i)
-      h = (h ^ ((const uint8_t*)p)[i]) * 1099511628211ull;
-  };
-  mix(&trim, sizeof trim), mix(bend.data(), sizeof bend);
-  for (const Canvas2D::Other* o : {&join, &morph, &trace})
-    mix(&o->how, sizeof o->how), mix(&o->much, sizeof o->much),
-        mix(o->by.data(), o->by.size() * sizeof(tvg::PathCommand)),
-        mix(o->at.data(), o->at.size() * sizeof(tvg::Point));
+  uint64_t h = fnv1a64(&trim, sizeof trim);
+  h = fnv1a64(bend.data(), sizeof bend, h);
+  for (const Canvas2D::Other* o : {&join, &morph, &trace}) {
+    h = fnv1a64(&o->how, sizeof o->how, h);
+    h = fnv1a64(&o->much, sizeof o->much, h);
+    h = fnv1a64(o->by.data(), o->by.size() * sizeof(tvg::PathCommand), h);
+    h = fnv1a64(o->at.data(), o->at.size() * sizeof(tvg::Point), h);
+  }
   return h;
 }
 

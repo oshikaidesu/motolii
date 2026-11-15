@@ -18,6 +18,8 @@
 #include <sstream>
 #include <system_error>
 
+#include "base/hash.h"
+
 namespace motolii {
 
 namespace {
@@ -287,9 +289,7 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat,
                                        utils::JobSystem& jobs,
                                        std::string& why) {
   // FNV-1a hash of both texts names the cache file.
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : mat + "\x01" + glsl)
-    hash = (hash ^ c) * 1099511628211ull;
+  const uint64_t hash = fnv1a64(mat + "\x01" + glsl);
   const char* home = std::getenv("HOME");
   const std::filesystem::path dir =
       std::filesystem::path(home ? home : "/tmp") /

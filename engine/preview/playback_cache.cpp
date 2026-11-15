@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/hash.h"
 #include "community/quickjs/script.h"
 #include "document/document.h"
 #include "document/evaluate/value_at.h"
@@ -66,11 +67,12 @@ void stage_cache_tell(StageCache& k) {
 // keyframes, the modification time and size of every file the document uses,
 // and every easing expression.
 uint64_t stage_cache_key(Doc& d, int w, int h) {
-  // FNV-1a, as cached frames are named in canvas.h.
-  uint64_t hash = 1469598103934665603ull;
+  // FNV-1a with a 0xff byte between pieces (so "ab|c" and "a|bc" do not
+  // collide), as cached frames are named in canvas.h.
+  uint64_t hash = kFnv1aOffset;
   const auto add = [&](const std::string& s) {
-    for (unsigned char c : s) hash = (hash ^ c) * 1099511628211ull;
-    hash = (hash ^ 0xff) * 1099511628211ull;
+    hash = fnv1a64(s, hash);
+    hash = fnv1a64_mix(hash, 0xff);
   };
   add(std::to_string(w) + "x" + std::to_string(h));
   doc_rows(

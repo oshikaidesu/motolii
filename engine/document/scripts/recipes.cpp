@@ -12,6 +12,7 @@
 #include <system_error>
 #include <utility>
 
+#include "base/hash.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
@@ -60,9 +61,7 @@ std::string doc_tile(const std::string& ref,
   // Version of the app's tile drawing in effect_tiles.dart. Changing it draws
   // every tile again.
   key += "|tiles 3";
-  // 64-bit FNV-1a hash of the key.
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
+  const uint64_t hash = fnv1a64(key);
   const char* home = std::getenv("HOME");
   char name[24];
   std::snprintf(name, sizeof name, "%016llx.png", (unsigned long long)hash);

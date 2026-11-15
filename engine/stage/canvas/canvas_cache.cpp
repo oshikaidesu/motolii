@@ -5,6 +5,7 @@
 
 #include <thread>
 
+#include "base/hash.h"
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_sketch.h"
 
@@ -30,9 +31,7 @@ std::filesystem::path cache_file(const Canvas2D* d, int at) {
   for (float v : {d->fromFrame, d->toFrame}) add(v);
   for (uint32_t id : d->deep) add((float)id);
   all += "|" + d->slots;
-  // FNV-1a, 64 bit.
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : all) hash = (hash ^ c) * 1099511628211ull;
+  const uint64_t hash = fnv1a64(all);
   char name[64];
   std::snprintf(name, sizeof name, "%016llx_%05d.zst", (unsigned long long)hash,
                 at);

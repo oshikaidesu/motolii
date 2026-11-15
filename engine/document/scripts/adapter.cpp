@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "base/default_font.h"
+#include "base/hash.h"
 #include "community/hydra/hydra_isf.h"
 #include "community/isf/isf.h"
 #include "community/p5/adapter_p5_shader.h"
@@ -221,12 +222,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
                       text != word ? std::filesystem::path(word).parent_path()
                                    : std::filesystem::path{},
                       [&](const std::string& url) {
-                        uint64_t mark = 1469598103934665603ull;
-                        for (unsigned char c : url)
-                          mark = (mark ^ c) * 1099511628211ull;
                         // A web address is not a usable file name, so the name
                         // is the FNV-1a hash of the address. Each address is
                         // downloaded once.
+                        const uint64_t mark = fnv1a64(url);
                         const std::string name =
                             std::to_string(mark & 0xffffff) + ".js";
                         std::filesystem::create_directories(brought, wrong);
@@ -255,8 +254,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // gets a different file, written once. Code already a file in the shelf is
   // used as it is when `as_is`.
   const auto stored = [&](const char* ext, bool as_is = true) {
-    uint64_t mark = 1469598103934665603ull;
-    for (unsigned char c : text) mark = (mark ^ c) * 1099511628211ull;
+    const uint64_t mark = fnv1a64(text);
     char tail[16];
     std::snprintf(tail, sizeof tail, "-%04llx",
                   (unsigned long long)(mark & 0xffff));

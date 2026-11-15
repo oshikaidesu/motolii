@@ -1,5 +1,6 @@
 #include "media/video_datamosh.h"
 
+#include "base/hash.h"
 #include "base/video_encoder.h"
 
 #include <sys/stat.h>
@@ -42,8 +43,7 @@ std::string mosh_file(const std::string& film, double at,
       key += "|" + std::to_string(st.st_mtimespec.tv_sec) + "." +
              std::to_string(st.st_size);
   }
-  uint64_t hash = 1469598103934665603ull;
-  for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
+  const uint64_t hash = fnv1a64(key);
   const char* home = std::getenv("HOME");
   const std::filesystem::path dir =
       std::filesystem::path(home ? home : "/tmp") /
