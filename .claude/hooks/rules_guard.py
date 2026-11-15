@@ -6,7 +6,7 @@
 # Never in the way by accident: any error here exits 0.
 import json, re, sys
 
-HELD = ['app/tool/rules/import_engine.yml', 'app/tool/rules/import_disk.yml', 'app/tool/rules/engine_only_in_state.yml', '.githooks/pre-commit',
+HELD = ['app/tool/rules/import_engine.yml', 'app/tool/rules/import_disk.yml', 'app/tool/rules/engine_only_in_state.yml', 'app/tool/pubspec_allow.txt', 'app/tool/check_pubspec.py', '.githooks/pre-commit',
         '.github/workflows/checks.yml', '.claude/settings.json', '.claude/hooks/rules_guard.py']
 READ = re.compile(r'\s*(cat|head|tail|grep|rg|wc|git\s+(diff|log|show|status|blame))\b[^>;&|`$]*')
 

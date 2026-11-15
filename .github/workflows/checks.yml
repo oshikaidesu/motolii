@@ -50,3 +50,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 .githooks/path_check.py --all
+      - run: python3 tool/check_pubspec.py   # only tool/pubspec_allow.txt's packages may be depended on
+        working-directory: app
