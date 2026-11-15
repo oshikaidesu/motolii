@@ -11,9 +11,6 @@
 
 #include "base/file_read.h"
 #include "community/after_effects/ae_expr.h"
-#include "community/p5/p5_mesh.h"
-#include "community/p5/p5_stand.h"
-#include "community/p5/p5_three.h"
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/project_reads.h"
 #include "community/script_runner/script_natives.h"
@@ -119,11 +116,19 @@ Script::Script(const std::string& file, const std::string& p5,
     }
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
+  const std::filesystem::path p5Stand =
+      std::filesystem::path(p5).parent_path() / "stand";
   if (sketch) {
     const std::string p5js = read_text(p5);
-    JS_FreeValue(own->cx, JS_Eval(own->cx, p5_before,
-                                  std::char_traits<char>::length(p5_before),
-                                  "p5_before", JS_EVAL_TYPE_GLOBAL));
+    // The stand-ins live beside p5.min.js: third_party/js/p5/stand/*.js. Each
+    // was a C++ raw string in p5_stand.h / p5_mesh.h / p5_three.h; moved out so
+    // engine holds no JavaScript it does not run.
+    const auto eval = [&](const char* name) {
+      const std::string js = read_text(p5Stand / (std::string(name) + ".js"));
+      JS_FreeValue(own->cx, JS_Eval(own->cx, js.c_str(), js.size(), name,
+                                    JS_EVAL_TYPE_GLOBAL));
+    };
+    eval("p5_before");
     JS_FreeValue(own->cx, JS_Eval(own->cx, p5js.c_str(), p5js.size(),
                                   "p5.min.js", JS_EVAL_TYPE_GLOBAL));
     // p5.sound itself, for a sketch that listens (script_natives.h).
@@ -131,10 +136,7 @@ Script::Script(const std::string& file, const std::string& p5,
             sketch_hears(own->cx, src, p5, &own->made_film);
         !wrong.empty())
       own->trouble = wrong;
-    for (const char* stand : {p5_after, p5_three, p5_mesh})
-      JS_FreeValue(own->cx, JS_Eval(own->cx, stand,
-                                    std::char_traits<char>::length(stand),
-                                    "p5_after", JS_EVAL_TYPE_GLOBAL));
+    for (const char* stand : {"p5_after", "p5_three", "p5_mesh"}) eval(stand);
     if (const std::string needs = adapter_library(form); !needs.empty()) {
       const std::string lib = adapter_library_text(
           form,
@@ -215,7 +217,8 @@ Script::Script(const std::string& file, const std::string& p5,
       body = std::move(marked);
     JS_FreeValue(own->cx, told);
   }
-  const std::string run = sketch ? body + "\n;\n" + p5_start : src;
+  const std::string run =
+      sketch ? body + "\n;\n" + read_text(p5Stand / "p5_start.js") : src;
   JSValue ran = JS_Eval(own->cx, run.c_str(), run.size(), file.c_str(),
                         JS_EVAL_TYPE_GLOBAL);
   if (sketch)
