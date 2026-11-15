@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "base/json.h"
 #include "community/aviutl/aviutl.h"
 #include "community/aviutl/aviutl_fx.h"
@@ -53,11 +54,9 @@ const std::map<std::string, AviutlRemade>& aviutl_remakes() {
   static const std::map<std::string, AviutlRemade> all = [] {
     std::map<std::string, AviutlRemade> read;
     const std::filesystem::path dir = doc_folders("effects").front();
-    std::ifstream in(dir / "sources" / "sashimono_aviutl.json");
-    std::stringstream text;
-    text << in.rdbuf();
+    const std::string text = read_text(dir / "sources" / "sashimono_aviutl.json");
     rapidjson::Document d;
-    if (d.Parse(text.str().c_str()).HasParseError() || !d.IsObject())
+    if (d.Parse(text.c_str()).HasParseError() || !d.IsObject())
       return read;
     for (const auto& e : d.GetObject()) {
       AviutlRemade& one = read[e.name.GetString()];

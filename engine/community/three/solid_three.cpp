@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "base/file_read.h"
+
 namespace motolii {
 
 namespace {
@@ -32,10 +34,7 @@ namespace {
 // Returns the whole contents of `file`, or an empty string if it cannot be
 // read.
 std::string solid_text(const std::string& file) {
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  return all.str();
+  return read_text(file);
 }
 
 }  // namespace

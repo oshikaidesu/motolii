@@ -28,6 +28,7 @@
 #include <sstream>
 
 #include "base/cache_folder.h"
+#include "base/file_read.h"
 #include "base/hash.h"
 #include "media/midi_notes.h"
 
@@ -61,14 +62,13 @@ std::string midi_roll(const std::string& file, double bpm, std::string& why,
   // the background color.
   const double spacing = midi_spacing(events),
                inset = std::max(0.0, spacing - 18.0);
-  std::ifstream in(std::filesystem::path(__FILE__).parent_path() /
-                   "third_party/midi_roll/PianoRollSvg.js");
-  std::stringstream source;
-  source << in.rdbuf();
-  if (source.str().empty()) return why = "PianoRollSvg.js is not there", "";
+  const std::string source =
+      read_text(std::filesystem::path(__FILE__).parent_path() /
+                "third_party/midi_roll/PianoRollSvg.js");
+  if (source.empty()) return why = "PianoRollSvg.js is not there", "";
   const std::string run =
       "var module = { exports: {} };\nvar MidiParser = { parse: () => (" +
-      song.str() + ") };\n" + source.str() +
+      song.str() + ") };\n" + source +
       "\nvar roll = new module.exports('');\nglobalThis.__said = roll.render({ "
       "barsPerRow: " +
       std::to_string(seconds) +
@@ -174,10 +174,7 @@ bool midi_roll_box(const std::string& svg, double& w, double& h) {
 // Rectangles come from the SVG; pitch, velocity and timing come from the .notes
 // file beside it.
 std::vector<MidiRollNote> midi_roll_notes(const std::string& svg) {
-  std::ifstream in(svg);
-  std::stringstream all;
-  all << in.rdbuf();
-  const std::string text = all.str();
+  const std::string text = read_text(svg);
   std::vector<MidiRollNote> notes;
   std::ifstream said(std::filesystem::path(svg).replace_extension(".notes"));
   const auto number = [&](size_t from, const char* name) {

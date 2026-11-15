@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include "base/cache_folder.h"
+#include "base/file_read.h"
 #include "base/hash.h"
 #include "community/isf/isf_translate.h"
 #include "community/sites/adapter.h"
@@ -43,9 +44,7 @@ std::string fx_source(const std::string& f) {
 
 // Returns the tags of an ISF file, read from its header and body. See isf.h.
 std::string isf_tags(const std::string& file) {
-  std::ifstream in(file);
-  const std::string text = adapter_isf(std::string(
-      (std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
+  const std::string text = adapter_isf(read_text(file));
   IsfHead head;
   if (!isf_read_head(text, head)) return "";
   const rapidjson::Value& passes = *head.passes;
@@ -144,9 +143,7 @@ std::string isf_file(const std::string& asked) {
   const std::string out = (dir / name).string();
   std::error_code e;
   if (std::filesystem::exists(out, e)) return built[key] = isf_built(file, out);
-  std::ifstream in(file);
-  std::stringstream text;
-  text << in.rdbuf();
+  std::string text = read_text(file);
   std::string why;
   if (std::filesystem::path(file).extension() == ".js") {
     const std::string isf = three_isf(file, why);
@@ -155,17 +152,15 @@ std::string isf_file(const std::string& asked) {
                    file.c_str(), why.substr(0, 600).c_str());
       return built[key] = isf_fallback(file, why);
     }
-    text.str(isf);
+    text = isf;
   }
   const std::string stem = std::filesystem::path(file).stem().string();
   // The file's own vertex shader, if there is one beside it.
-  std::stringstream vertex;
-  if (std::ifstream vs(std::filesystem::path(file).replace_extension(".vs"));
-      vs)
-    vertex << vs.rdbuf();
+  const std::string vertex =
+      read_text(std::filesystem::path(file).replace_extension(".vs"));
   // Shadertoy and GLSL Sandbox shaders are accepted as they come (adapter.h).
   const std::string wgsl =
-      isf_wgsl(adapter_isf(text.str()), stem, why, vertex.str());
+      isf_wgsl(adapter_isf(text), stem, why, vertex);
   if (wgsl.empty()) {
     std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(),
                  why.substr(0, 600).c_str());

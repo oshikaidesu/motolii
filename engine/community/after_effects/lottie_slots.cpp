@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "base/file_read.h"
 #include "base/json.h"
 #include "community/quickjs/script.h"
 
@@ -15,11 +16,9 @@ namespace motolii {
 
 std::vector<ScriptParameter> lottie_parameters(const std::string& file) {
   std::vector<ScriptParameter> parameters;
-  std::ifstream in(file);
-  std::stringstream text;
-  text << in.rdbuf();
+  const std::string text = read_text(file);
   rapidjson::Document doc;
-  if (doc.Parse(text.str().c_str()).HasParseError() || !doc.IsObject() ||
+  if (doc.Parse(text.c_str()).HasParseError() || !doc.IsObject() ||
       !doc.HasMember("slots") || !doc["slots"].IsObject())
     return parameters;
   for (auto& slot : doc["slots"].GetObject()) {

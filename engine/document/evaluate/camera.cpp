@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/quickjs/script.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
@@ -287,9 +288,8 @@ void doc_look(Doc& d) {
     if (!sky) {
       // The sky image refers to this memory, so it must stay alive.
       auto& kept = d.look.skyBytes;
-      kept.push_back(load_file(
-          ("out/" + d.look.roomIs + "/" + d.look.roomIs + "_skybox.ktx")
-              .c_str()));
+      kept.push_back(read_bytes("out/" + d.look.roomIs + "/" + d.look.roomIs +
+                                 "_skybox.ktx"));
       if (!kept.back().empty())
         if (Texture* tex = ktxreader::Ktx1Reader::createTexture(
                 s.engine,

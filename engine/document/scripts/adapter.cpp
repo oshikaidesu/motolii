@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "base/default_font.h"
+#include "base/file_read.h"
 #include "base/hash.h"
 #include "community/hydra/hydra_isf.h"
 #include "community/isf/isf.h"
@@ -204,12 +205,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   std::string text = word;
   // If `word` is a short path of an existing file, read the code from it.
   // Otherwise `word` is the code.
-  if (word.size() < 1024 && std::filesystem::is_regular_file(word, wrong)) {
-    std::ifstream in(word);
-    std::stringstream all;
-    all << in.rdbuf();
-    text = all.str();
-  }
+  if (word.size() < 1024 && std::filesystem::is_regular_file(word, wrong))
+    text = read_text(word);
   const std::filesystem::path folder = doc_folders("programs").back();
   // True when the code is already a file in the programs/ folder. It is
   // then used where it is and not stored again.
@@ -445,10 +442,8 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
           .count();
   long long& seen = doc_scripts_kept(d).sketches[file].saved;
   const std::string ext = std::filesystem::path(file).extension().string();
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  const bool three = ext == ".js" && adapter_form(all.str()) == "three";
+  const std::string text = read_text(file);
+  const bool three = ext == ".js" && adapter_form(text) == "three";
   const bool shaded =
       ext == ".js" &&
       std::filesystem::exists(
@@ -456,7 +451,7 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
   if (!wrong && stamp != seen) {
     seen = stamp, why.clear();
     if (ext == ".hydra")
-      why = doc_hydra_saved(d, file, all.str());
+      why = doc_hydra_saved(d, file, text);
     else if (three)
       why = doc_three_saved(d, file);
     else if (shaded)

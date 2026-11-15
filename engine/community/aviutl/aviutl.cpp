@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "SPIRV/GlslangToSpv.h"
+#include "base/file_read.h"
 #include "glslang/Public/ShaderLang.h"
 #include "sca/builtinResource.h"
 #include "spirv-tools/optimizer.hpp"
@@ -46,11 +47,10 @@ bool aviutl_is(const std::string& file) {
 bool aviutl_text(const std::string& file, std::string& own, std::string& all,
                  std::string& why) {
   const size_t hash = file.find('#', file.rfind('/') + 1);
-  std::ifstream in(aviutl_path(file));
-  if (!in) return why = "there is no such file: " + file, false;
-  std::stringstream text;
-  text << in.rdbuf();
-  own = all = text.str();
+  std::error_code wrong;
+  if (!std::filesystem::is_regular_file(aviutl_path(file), wrong))
+    return why = "there is no such file: " + file, false;
+  own = all = read_text(aviutl_path(file));
   if (std::filesystem::path(aviutl_path(file)).filename().string()[0] != '@')
     return true;
   // An "@" file holds several scripts, each starting at a line "@name"

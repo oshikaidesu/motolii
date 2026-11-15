@@ -11,6 +11,7 @@
 #include <system_error>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/sites/adapter_shadertoy.h"
 #include "community/subtitles/subtitles.h"
 #include "third_party/js/twigl/noise.h"
@@ -240,10 +241,7 @@ std::string adapter_page(
         needs += "//! needs " + got + "\n";
     } else if (told && !beside.empty() && !std::regex_match(base, ours) &&
                std::filesystem::is_regular_file(beside / src, wrong)) {
-      std::ifstream in(beside / src);
-      std::stringstream all;
-      all << in.rdbuf();
-      out += all.str() + "\n";
+      out += read_text(beside / src) + "\n";
     } else if (!told &&
                (!adapter_has(tag, "type=") || adapter_has(tag, "module") ||
                 adapter_has(tag, "javascript")))
@@ -268,10 +266,7 @@ std::string adapter_shader_files(const std::string& text,
   static const std::regex load(
       R"re(\bloadShader\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*['"`]([^'"`]+)['"`]\s*(?:,[^)]*)?\))re");
   const auto file = [&](const std::string& name) {
-    std::ifstream in(beside / name);
-    std::stringstream all;
-    all << in.rdbuf();
-    return all.str();
+    return read_text(beside / name);
   };
   std::string out;
   size_t at = 0;

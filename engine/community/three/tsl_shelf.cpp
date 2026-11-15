@@ -8,6 +8,8 @@
 #include <regex>
 #include <sstream>
 
+#include "base/file_read.h"
+
 namespace motolii {
 
 namespace {
@@ -28,10 +30,7 @@ const char* const kPasted = "<pasted tsl>";
 const char* const kAbsent = "<absent ";
 
 std::string tsl_text(const std::filesystem::path& file) {
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  return all.str();
+  return read_text(file);
 }
 
 // QuickJS module-name normalizer: three.js's own names as its import map has

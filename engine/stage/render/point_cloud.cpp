@@ -37,6 +37,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/playcanvas/splatfx.h"
 #include "stage/render/render_stage.h"
 
@@ -439,11 +440,8 @@ Material* points_effect(Stage& s, const std::string& file,
   Material*& m = s.materials["splat:" + fx->glsl()];
   if (m) return m;
   const std::filesystem::path source = doc_engine("materials/points.mat");
-  std::ifstream in(source);
-  std::stringstream text;
-  text << in.rdbuf();
-  const std::vector<uint8_t> bytes =
-      splat_effect_look(text.str(), fx->glsl(), s.engine->getJobSystem(), why);
+  const std::vector<uint8_t> bytes = splat_effect_look(
+      read_text(source), fx->glsl(), s.engine->getJobSystem(), why);
   if (bytes.empty()) return nullptr;
   return m = Material::Builder()
                  .package(bytes.data(), bytes.size())

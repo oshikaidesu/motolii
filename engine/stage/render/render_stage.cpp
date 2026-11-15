@@ -13,6 +13,8 @@
 
 #include <fstream>
 
+#include "base/file_read.h"
+
 namespace motolii {
 
 using filament::Box;
@@ -46,11 +48,6 @@ backend::BufferDescriptor copied(const void* from, size_t bytes) {
   memcpy(copy, from, bytes);
   return backend::BufferDescriptor(
       copy, bytes, [](void* buffer, size_t, void*) { free(buffer); });
-}
-
-std::vector<uint8_t> load_file(const char* path) {
-  std::ifstream in(path, std::ios::binary);
-  return std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), {});
 }
 
 Stage open_stage(int w, int h) {
@@ -159,7 +156,7 @@ void desk_lay(Stage& s, bool on) {
 
 bool room(Stage& s, const char* ktx, float intensity) {
   static std::vector<std::vector<uint8_t>> ktxs;
-  ktxs.push_back(load_file(ktx));
+  ktxs.push_back(read_bytes(ktx));
   if (ktxs.back().empty()) return false;
   auto* bundle =
       new image::Ktx1Bundle(ktxs.back().data(), (uint32_t)ktxs.back().size());
@@ -203,7 +200,7 @@ std::string flat_laid(const char* lay, bool lit, const std::string& wear) {
 Material* material(Stage& s, const char* filamat) {
   auto& built = s.materials;
   if (!built.count(filamat)) {
-    const std::vector<uint8_t> pkg = load_file(filamat);
+    const std::vector<uint8_t> pkg = read_bytes(filamat);
     built[filamat] = pkg.empty() ? nullptr
                                  : Material::Builder()
                                        .package(pkg.data(), pkg.size())

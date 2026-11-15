@@ -31,6 +31,7 @@
 #include <sstream>
 #include <string>
 
+#include "base/file_read.h"
 #include "base/json.h"
 
 namespace motolii {
@@ -52,15 +53,8 @@ export class Matrix3 {} export class Matrix4 {}
 // the file at `name` for any other module, without running it. Returns null if
 // the module does not compile.
 JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
-  std::string src;
-  if (std::string(name) == "three")
-    src = three_stand_ins;
-  else {
-    std::ifstream in(name);
-    std::stringstream all;
-    all << in.rdbuf();
-    src = all.str();
-  }
+  const std::string src =
+      std::string(name) == "three" ? three_stand_ins : read_text(name);
   JSValue built = JS_Eval(cx, src.c_str(), src.size(), name,
                           JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
   if (JS_IsException(built)) return nullptr;
@@ -74,10 +68,7 @@ JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
 // See three_isf.h.
 bool three_is(const std::string& file) {
   if (std::filesystem::path(file).extension() != ".js") return false;
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  return all.str().find("fragmentShader") != std::string::npos;
+  return read_text(file).find("fragmentShader") != std::string::npos;
 }
 
 namespace {

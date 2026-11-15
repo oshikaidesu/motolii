@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "shelf/shelf_folders.h"
 
 namespace motolii {
@@ -354,15 +355,14 @@ double anime_ease(const std::string& bundle, const std::string& said, double u,
   std::lock_guard<std::mutex> held(one);
   if (!rt) {
     rt = JS_NewRuntime(), cx = JS_NewContext(rt);
-    std::ifstream in(bundle);
-    std::stringstream code;
-    code << "globalThis.setImmediate = function () { return 0; }; "
-            "globalThis.clearImmediate = function () {};\n"
-         << in.rdbuf() << anime_prelude;
-    const std::string src = code.str();
+    const std::string bundle_text = read_text(bundle);
+    const std::string src =
+        std::string("globalThis.setImmediate = function () { return 0; }; "
+                    "globalThis.clearImmediate = function () {};\n") +
+        bundle_text + anime_prelude;
     JSValue ran =
         JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
-    if (!in || JS_IsException(ran))
+    if (bundle_text.empty() || JS_IsException(ran))
       why = "anime.js is not where it is stored: " + bundle;
     JS_FreeValue(cx, ran);
     JSValue g = JS_GetGlobalObject(cx);

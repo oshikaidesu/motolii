@@ -31,6 +31,7 @@
 // Filament's library.
 #include <cgltf.h>
 
+#include "base/file_read.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -81,7 +82,7 @@ void solid_to(Stage& s, Solid* d, const mat4f& place, size_t nth) {
 
 Solid* solid(Stage& s, const char* file, const mat4f& place, float high,
              int many) {
-  const std::vector<uint8_t> bytes = load_file(file);
+  const std::vector<uint8_t> bytes = read_bytes(file);
   Solid* d = new Solid;
   std::vector<gltfio::FilamentInstance*> ones((size_t)std::max(1, many));
   d->asset = bytes.empty() ? nullptr
@@ -98,8 +99,7 @@ Solid* solid(Stage& s, const char* file, const mat4f& place, float high,
   std::vector<std::vector<uint8_t>> beside(d->asset->getResourceUriCount());
   for (size_t i = 0; i < beside.size(); ++i) {
     const char* part = d->asset->getResourceUris()[i];
-    beside[i] = load_file(
-        (std::filesystem::path(file).parent_path() / part).string().c_str());
+    beside[i] = read_bytes(std::filesystem::path(file).parent_path() / part);
     resources.addResourceData(part, gltfio::ResourceLoader::BufferDescriptor(
                                         beside[i].data(), beside[i].size()));
   }

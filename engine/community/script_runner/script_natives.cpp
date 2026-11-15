@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 
+#include "base/file_read.h"
 #include "community/p5/web_audio_stand.h"
 #include "community/script_runner/script_runner.h"
 #include "community/sites/adapter.h"
@@ -172,10 +173,7 @@ JSValue text_read(JSContext* cx, JSValueConst, int, JSValueConst* a) {
   JS_FreeCString(cx, name);
   std::error_code wrong;
   if (!std::filesystem::is_regular_file(file, wrong)) return JS_NULL;
-  std::ifstream in(file, std::ios::binary);
-  std::stringstream all;
-  all << in.rdbuf();
-  const std::string text = all.str();
+  const std::string text = read_text(file);
   return JS_NewStringLen(cx, text.data(), text.size());
 }
 JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
@@ -262,12 +260,9 @@ std::string sketch_hears(JSContext* cx, const std::string& src,
   for (const char* heard : {"loadSound", "p5.SoundFile", "p5.FFT",
                             "p5.Amplitude", "p5.PeakDetect", "AudioContext"})
     names = names || src.find(heard) != std::string::npos;
-  std::ifstream addon(std::filesystem::path(p5).parent_path() / "addons" /
-                      "p5.sound.min.js");
-  if (!names || !addon) return "";
-  std::stringstream text;
-  text << addon.rdbuf();
-  const std::string sound = text.str();
+  const std::string sound = read_text(std::filesystem::path(p5).parent_path() /
+                                      "addons" / "p5.sound.min.js");
+  if (!names || sound.empty()) return "";
   JSValue g = JS_GetGlobalObject(cx),
           of = JS_NewInt64(cx, (int64_t)(intptr_t)film);
   JS_SetPropertyStr(cx, g, "__sound_wave",

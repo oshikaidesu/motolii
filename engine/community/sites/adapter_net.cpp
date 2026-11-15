@@ -10,6 +10,7 @@
 #include <system_error>
 #include <vector>
 
+#include "base/file_read.h"
 #include "base/json.h"
 
 namespace motolii {
@@ -49,10 +50,7 @@ std::filesystem::path adapter_openprocessing(const std::string& id,
   const auto asked = [&](const std::string& url, const char* name,
                          rapidjson::Document& out) {
     if (!adapter_fetch(url, at / name)) return false;
-    std::ifstream in(at / name);
-    std::stringstream all;
-    all << in.rdbuf();
-    return !out.Parse(all.str().c_str()).HasParseError();
+    return !out.Parse(read_text(at / name).c_str()).HasParseError();
   };
   // Returns member `k` of `v` as a string, or "" if it is missing or not a
   // string.

@@ -26,6 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
+
 namespace motolii {
 
 namespace {
@@ -33,10 +35,7 @@ namespace {
 // Returns the contents of the file at `file`, or an empty string if it cannot
 // be read.
 std::string hydra_text(const std::string& file) {
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  return all.str();
+  return read_text(file);
 }
 // QuickJS module-name normalizer. Resolves `name` relative to the directory of
 // the importing module `base` and returns the result as a newly allocated

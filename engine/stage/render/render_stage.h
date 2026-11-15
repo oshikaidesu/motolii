@@ -93,9 +93,6 @@ void sheet_deep(Mesh* m, float deep);
 // so the mesh may be rebuilt meanwhile.
 filament::backend::BufferDescriptor copied(const void* from, size_t bytes);
 
-// Reads the whole file at `path`. Returns an empty vector if it cannot be read.
-std::vector<uint8_t> load_file(const char* path);
-
 // The state of one Filament engine and the stage it draws: scene, views,
 // cameras, helper images, and the entities put on it.
 struct Stage {

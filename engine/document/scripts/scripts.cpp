@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/absent_motion/absent_motion.h"
 #include "community/after_effects/lottie_slots.h"
 #include "community/aviutl/aviutl.h"
@@ -166,14 +167,8 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
     // letters (doc_expressions_lay), with the pen's HTML when it is beside it.
     // Its letters may each have their own opacity.
     if (ext == ".css") {
-      const auto read = [](const std::filesystem::path& f) {
-        std::ifstream in(f);
-        std::stringstream all;
-        all << in.rdbuf();
-        return all.str();
-      };
       std::filesystem::path html = fx_source(file);
-      s.css = read(html), s.html = read(html.replace_extension(".html")),
+      s.css = read_text(html), s.html = read_text(html.replace_extension(".html")),
       s.clears = true;
       return &s;
     }
@@ -192,12 +187,8 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
       return &s;
     }
     doc_scripts_kept(d).why.erase(file);
-    {
-      std::ifstream in(screen ? isf_file(file) : fx_source(file));
-      std::stringstream text;
-      text << in.rdbuf();
-      s.clears = text.str().find("opacity") != std::string::npos;
-    }
+    s.clears = read_text(screen ? isf_file(file) : fx_source(file))
+                   .find("opacity") != std::string::npos;
   }
   return &s;
 }

@@ -19,6 +19,7 @@
 #include <system_error>
 
 #include "base/cache_folder.h"
+#include "base/file_read.h"
 #include "base/hash.h"
 
 namespace motolii {
@@ -69,12 +70,8 @@ JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     src = splatfx_playcanvas;
   else if (std::filesystem::path(n).filename() == "gsplat-shader-effect.mjs")
     src = splatfx_base;
-  else {
-    std::ifstream in(n);
-    std::stringstream all;
-    all << in.rdbuf();
-    src = all.str();
-  }
+  else
+    src = read_text(n);
   JSValue built = JS_Eval(cx, src.c_str(), src.size(), name,
                           JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
   if (JS_IsException(built)) return nullptr;
@@ -133,10 +130,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
   // Turn the effect's attributes into parameters. Numbers, Vec3s and Colors are
   // read with their initial values. Each takes its range from an @range comment
   // in the source, if there is one.
-  std::ifstream in(file);
-  std::stringstream all;
-  all << in.rdbuf();
-  const std::string text = all.str();
+  const std::string text = read_text(file);
   JSPropertyEnum* props = nullptr;
   uint32_t count = 0;
   JS_GetOwnPropertyNames(cx, &props, &count, own->effect,
@@ -295,8 +289,8 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat,
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.filamat", (unsigned long long)hash);
   const std::filesystem::path cached = dir / name;
-  if (std::ifstream in(cached, std::ios::binary); in)
-    return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
+  if (std::error_code wrong; std::filesystem::exists(cached, wrong))
+    return read_bytes(cached);
   // Turn each uniform declaration in the GLSL into a material parameter, and
   // define a macro so that the GLSL still refers to it by its own name. All
   // other lines are kept as they are.

@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/css/svg.h"
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_cache.h"
@@ -46,9 +47,7 @@ namespace {
 // Returns the first frame of a Lottie file, which is the "ip" key at the top
 // level of the file. ThorVG does not report it.
 float lottie_in(const char* file) {
-  std::ifstream in(file);
-  std::string all((std::istreambuf_iterator<char>(in)),
-                  std::istreambuf_iterator<char>());
+  const std::string all = read_text(file);
   int depth = 0;
   bool quoted = false;
   // Look only at the key at the outermost depth, because each layer has its
@@ -275,10 +274,7 @@ Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place,
   const std::string ext = std::filesystem::path(file).extension().string();
   const bool lottie = ext == ".json" || ext == ".lot";
   std::string text;
-  if (ext == ".svg") {
-    std::ifstream in(file, std::ios::binary);
-    text.assign(std::istreambuf_iterator<char>(in), {});
-  }
+  if (ext == ".svg") text = read_text(file);
   Canvas2D* built = place_canvas(
       s,
       [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {

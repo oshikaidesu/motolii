@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 
+#include "base/file_read.h"
 #include "community/after_effects/ae_expr.h"
 #include "community/p5/p5_mesh.h"
 #include "community/p5/p5_stand.h"
@@ -57,13 +58,11 @@ static const char* const script_copy_names[17] = {
 Script::Script(const std::string& file, const std::string& p5,
                const std::string& film)
     : own(new Own) {
-  std::ifstream in(file);
-  std::stringstream code;
-  code << in.rdbuf();
+  const std::string code = read_text(file);
   const std::string
-      form = adapter_form(code.str()),
+      form = adapter_form(code),
       src = adapter_js(
-          code.str(),
+          code,
           form);  // (a form from the net told as a sketch: adapter.h)
   own->rt = JS_NewRuntime();
   JS_SetMemoryLimit(own->rt,
@@ -100,11 +99,8 @@ Script::Script(const std::string& file, const std::string& p5,
     const std::filesystem::path where =
         std::filesystem::path(p5).parent_path().parent_path() / "acorn" /
         "acorn.js";
-    std::ifstream lib(where);
-    std::stringstream text;
-    text << lib.rdbuf();
-    const std::string acorn = text.str();
-    if (!lib || acorn.empty())
+    const std::string acorn = read_text(where);
+    if (acorn.empty())
       own->trouble = "acorn is not where it is stored: " + where.string();
     else {
       JSValue g = JS_GetGlobalObject(own->cx);
@@ -120,10 +116,7 @@ Script::Script(const std::string& file, const std::string& p5,
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
   if (sketch) {
-    std::ifstream lib(p5);
-    std::stringstream all;
-    all << lib.rdbuf();
-    const std::string p5js = all.str();
+    const std::string p5js = read_text(p5);
     JS_FreeValue(own->cx, JS_Eval(own->cx, p5_before,
                                   std::char_traits<char>::length(p5_before),
                                   "p5_before", JS_EVAL_TYPE_GLOBAL));
@@ -139,11 +132,10 @@ Script::Script(const std::string& file, const std::string& p5,
                                     std::char_traits<char>::length(stand),
                                     "p5_after", JS_EVAL_TYPE_GLOBAL));
     if (const std::string needs = adapter_library(form); !needs.empty()) {
-      std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() /
-                        needs);
-      std::stringstream text;
-      text << one.rdbuf();
-      const std::string lib = adapter_library_text(form, text.str());
+      const std::string lib = adapter_library_text(
+          form,
+          read_text(std::filesystem::path(p5).parent_path().parent_path() /
+                    needs));
       JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(),
                                     needs.c_str(), JS_EVAL_TYPE_GLOBAL));
     }
@@ -154,23 +146,18 @@ Script::Script(const std::string& file, const std::string& p5,
                                // third_party/js; the other two it says it needs
                                // only run forceSimulation, which the world does
                                // for it: document/evaluate/world.h)
-        std::ifstream one(
+        const std::string read_ = read_text(
             std::filesystem::path(p5).parent_path().parent_path() / lib /
             (std::string(lib) + ".min.js"));
-        std::stringstream text;
-        text << one.rdbuf();
-        const std::string read = text.str();
-        JS_FreeValue(own->cx, JS_Eval(own->cx, read.c_str(), read.size(), lib,
+        JS_FreeValue(own->cx, JS_Eval(own->cx, read_.c_str(), read_.size(), lib,
                                       JS_EVAL_TYPE_GLOBAL));
       }
-    for (const std::string& needs : adapter_needs(
-             code.str())) {  // (a library from the net: fetched by the adapter,
-                             // it stands beside the sketch)
-      std::ifstream one(std::filesystem::path(file).parent_path() /
-                        std::filesystem::path(file).stem() / needs);
-      std::stringstream text;
-      text << one.rdbuf();
-      const std::string lib = text.str();
+    for (const std::string& needs :
+         adapter_needs(code)) {  // (a library from the net: fetched by the
+                                 // adapter, it stands beside the sketch)
+      const std::string lib =
+          read_text(std::filesystem::path(file).parent_path() /
+                    std::filesystem::path(file).stem() / needs);
       JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(),
                                     needs.c_str(), JS_EVAL_TYPE_GLOBAL));
     }
@@ -193,7 +180,7 @@ Script::Script(const std::string& file, const std::string& p5,
     JS_SetPropertyStr(own->cx, g, "__jobs",
                       JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
     if (form == "subtitles") {
-      own->subtitles = std::make_unique<Subtitles>(code.str());
+      own->subtitles = std::make_unique<Subtitles>(code);
       JSValue size = JS_NewArray(own->cx),
               them =
                   JS_NewInt64(own->cx, (int64_t)(intptr_t)own->subtitles.get());

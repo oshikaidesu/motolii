@@ -129,7 +129,7 @@ target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
 add_library(motolii_community_quickjs STATIC
   community/quickjs/script.cpp
   community/quickjs/script_leva.cpp)
-target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags motolii_shelf)
+target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags motolii_base motolii_shelf)
 target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)
 target_link_libraries(motolii_community_quickjs PUBLIC qjs)
 target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
@@ -227,7 +227,7 @@ target_link_options(motolii_community_aviutl PUBLIC -Wl,-rpath,${HOMEBREW}/opt/l
 # Adapter: hydra code run as it is.
 add_library(motolii_community_hydra STATIC
   community/hydra/hydra_isf.cpp)
-target_link_libraries(motolii_community_hydra PUBLIC motolii_flags)
+target_link_libraries(motolii_community_hydra PUBLIC motolii_flags motolii_base)
 
 # Adapter: p5 code run as it is.
 add_library(motolii_community_p5 STATIC

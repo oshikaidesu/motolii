@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
 #include "document/evaluate/evaluate.h"
@@ -123,7 +124,7 @@ SketchPaint doc_sketch_paint(Stage& s, const std::string& text,
       return paint;
     }
   }
-  const std::vector<uint8_t> bytes = load_file((stem + ".filamat").c_str());
+  const std::vector<uint8_t> bytes = read_bytes(stem + ".filamat");
   if (!bytes.empty())
     paint.material = Material::Builder()
                          .package(bytes.data(), bytes.size())
