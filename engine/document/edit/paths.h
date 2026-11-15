@@ -103,6 +103,20 @@ int doc_brush(Doc& d, const char* said, int into = 0);
 // false, with d.error set, if the shape cannot be converted.
 bool doc_to_path(Doc& d, int layer);
 
+// Brings an SVG in as editable path shapes, the way After Effects' "Create
+// Shapes from Vector Layer" does. ThorVG reads the file and its Accessor walks
+// the scene tree, so nothing here parses SVG; each shape it finds becomes a
+// shape layer whose `path` is that outline in SVG notation, with its fill (or
+// "none") and its stroke kept. The parts are held in a Null named after the
+// file, so the drawing moves as one. The outline is stored in the path's own
+// units, framed to the whole drawing, 1 high from the middle, the same frame
+// doc_to_path and doc_freehand use. Returns the group layer, or 0 with no
+// change when the drawing cannot be turned into shapes faithfully — a group
+// carries a transform this does not yet fold in, or a fill or stroke is a
+// gradient a shape cannot hold — so the caller can place it as a picture
+// instead.
+int doc_svg_paths(Doc& d, const char* file);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_PATHS_H_
