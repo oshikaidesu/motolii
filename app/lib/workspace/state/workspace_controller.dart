@@ -190,6 +190,7 @@ class WorkspaceController extends ChangeNotifier {
   Layer? get layer => selection.layer;
   Set<String> get many => selection.many;
   bool get manyInOrder => selection.manyInOrder;
+  String? get lead => selection.lead;
   Set<SelectedKeyframe> get keys => selection.keys;
   StretchPicked? get stretch => selection.stretch;
   void select(String? id) => selection.select(id);

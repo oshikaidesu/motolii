@@ -10,6 +10,7 @@ import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
+import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/layers/layer_writes.dart';
@@ -86,7 +87,22 @@ class _RowState extends State<_Row> {
           Expanded(
             child: Pressable(
               cursor: SystemMouseCursors.basic,
-              onTap: () => ws.select(l.id),
+              // Cmd/Ctrl-click adds, Shift-click takes a range from the lead
+              // down the layer list (same rule as picks.dart everywhere: Finder,
+              // Figma, After Effects). Plain click selects alone. (B03)
+              onTap: () {
+                final k = clickKeys();
+                if (!k.add && !k.span) return ws.select(l.id);
+                final r = pickOnClick(
+                  now: {...ws.many, if (ws.selected != null) ws.selected!},
+                  lead: ws.lead ?? ws.selected,
+                  id: l.id,
+                  order: [for (final e in ws.layers) e.id],
+                  add: k.add,
+                  span: k.span,
+                );
+                ws.pickMany(r.picked, inOrder: true, lead: r.lead);
+              },
               builder: (_, _) => Text(
                 l.name,
                 maxLines: 1,
