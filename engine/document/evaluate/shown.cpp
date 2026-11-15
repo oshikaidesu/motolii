@@ -55,7 +55,7 @@ std::vector<int> doc_layers(Doc& d) { return doc_laid(d); }
 
 double doc_lasts(Doc& d, int layer) {
   const double lasts = doc_number(d, layer, "duration", 0, -1);
-  return lasts > 0.0 ? lasts : -1.0;
+  return lasts >= 0.0 ? lasts : -1.0;
 }
 
 std::vector<double> doc_key_times(Doc& d, int layer, const char* name) {

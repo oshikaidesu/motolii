@@ -22,7 +22,7 @@ double doc_seconds(Doc& d) {
                        : t.solid ? (double)t.solid->seconds
                                  : 0.0,
                  lasts = doc_number(d, layer, "duration", 0, own);
-    if (lasts > 0.0)
+    if (lasts >= 0.0)
       all = std::max(all, doc_number(d, layer, "start", 0, 0) + lasts);
   }
   return all > 0.0 ? all : 8.0;

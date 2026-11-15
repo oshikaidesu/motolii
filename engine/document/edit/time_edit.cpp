@@ -70,7 +70,7 @@ int doc_split(Doc& d, int layer, double at) {
     return d.error = "it is locked", 0;
   const double start = doc_number(d, layer, "start", 0, 0),
                lasts = doc_number(d, layer, "duration", 0, -1),
-               end = lasts > 0.0 ? start + lasts : doc_seconds(d);
+               end = lasts >= 0.0 ? start + lasts : doc_seconds(d);
   if (!(at > start + 1e-3 && at < end - 1e-3))
     return d.error = "the moment is not inside it", 0;
   doc_act(d);
@@ -111,7 +111,7 @@ bool doc_extract(Doc& d) {
     // the project.
     const double s = doc_number(d, t, "start", 0, 0),
                  lasts = doc_number(d, t, "duration", 0, -1),
-                 e = lasts > 0.0 ? s + lasts : all;
+                 e = lasts >= 0.0 ? s + lasts : all;
     // `after` is the part of the layer that lies after the work area and moves
     // earlier. It is the layer itself if it starts after the work area.
     int after = s >= out - 1e-3 ? t : 0;

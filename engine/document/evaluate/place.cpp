@@ -258,7 +258,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                  lasts = doc_literal(d, layer, "duration", 0, -1);
     const AbsentMoved m =
         absent_motion(moving, layer, 1000.0 * begins,
-                      1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))),
+                      1000.0 * (begins + (lasts >= 0 ? lasts : doc_seconds(d))),
                       1000.0 * said);
     // The size of one document pixel in stage units where the layer stands, as
     // for the copies of a script.
@@ -454,7 +454,7 @@ std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
         continue;
       const double start = doc_number(d, t, "start", 0, 0),
                    lasts = doc_number(d, t, "duration", 0, -1);
-      if (now < start || (lasts > 0 && now >= start + lasts)) continue;
+      if (now < start || (lasts >= 0 && now >= start + lasts)) continue;
       const std::string heard = doc_word(d, t, "file");
       const SoundRead* read = heard.empty() ? nullptr : sound_of(heard);
       if (!read) continue;

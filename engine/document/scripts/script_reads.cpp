@@ -157,7 +157,7 @@ void doc_script_reads(Doc& d, Script& run) {
     const double start = doc_number(d, layer, "start", 0, 0),
                  lasts = doc_number(d, layer, "duration", 0, -1);
     double second = 0;
-    if (t < start || (lasts > 0 && t >= start + lasts) ||
+    if (t < start || (lasts >= 0 && t >= start + lasts) ||
         !file_second(d, layer, t, &second))
       return std::vector<float>();
     return sound_raw(sound_of(doc_word(d, layer, "file"), true), spectrum,

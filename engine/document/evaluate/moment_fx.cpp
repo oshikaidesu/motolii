@@ -158,7 +158,7 @@ void doc_layers_fx(Doc& d) {
         const double start = doc_number(d, layer, "start", 0, 0),
                      lasts = doc_number(d, layer, "duration", 0, -1);
         return name == "clip_time" ? d.stage->now - start
-               : lasts > 0         ? lasts
+               : lasts >= 0         ? lasts
                                    : std::max(0.0, doc_seconds(d) - start);
       }
       // The box of the layer's image on the stage as shares of the stage: left,

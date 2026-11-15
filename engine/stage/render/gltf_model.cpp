@@ -55,7 +55,7 @@ void solid_at(Solid* d, const std::string& name, double seconds, size_t nth) {
   for (size_t i = 0; i < d->moves.size(); ++i)
     if (d->moves[i] == name) which = i;
   const float lasts = moves->getAnimationDuration(which);
-  if (lasts <= 0.f) return;
+  if (lasts < 0.f) return;
   moves->applyAnimation(which,
                         (float)(seconds - lasts * std::floor(seconds / lasts)));
   moves->updateBoneMatrices();

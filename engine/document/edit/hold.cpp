@@ -282,9 +282,9 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
   } else if (!strcmp(by, "head")) {
     const double start = was("start"), lasts = was("duration"),
                  to = std::clamp(start + a, 0.0,
-                                 lasts > 0.0 ? start + lasts - 1e-3 : 1e6);
+                                 lasts >= 0.0 ? start + lasts - 1e-3 : 1e6);
     ok = tries("start", to) &&
-         (lasts <= 0.0 || tries("duration", start + lasts - to));
+         (lasts < 0.0 || tries("duration", start + lasts - to));
     if (const double on = doc_own_clock(d, h.layer, to - start);
         ok && on != 0.0)
       ok = tries("begin", std::max(0.0, was("begin") + on));
@@ -292,7 +292,7 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
     const double start = was("start"), lasts = was("duration");
     ok = tries(
         "duration",
-        std::max(1e-3, (lasts > 0.0 ? lasts : doc_seconds(d) - start) + a));
+        std::max(1e-3, (lasts >= 0.0 ? lasts : doc_seconds(d) - start) + a));
   } else {
     // `by` is the name of a property. Save its original value first, so that it
     // can be restored when the drag is discarded.

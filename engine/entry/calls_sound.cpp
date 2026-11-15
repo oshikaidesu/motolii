@@ -104,7 +104,7 @@ int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
       const double s = from + (to - from) * i / n,
                    own = begin + (s - start) * speed;
       const long k = std::lround(own * 100.0);
-      db[i] = s < start || (lasts > 0.0 && s >= start + lasts) || k < 0 ||
+      db[i] = s < start || (lasts >= 0.0 && s >= start + lasts) || k < 0 ||
                       k >= (long)all->size()
                   ? -100.f
                   : (*all)[(size_t)k];
@@ -123,7 +123,7 @@ bool duck(Motolii* m, int layer) {
     return d.error = "its volume has keys already", false;
   const double rate = 100.0, from = doc_number(d, layer, "start", 0, 0),
                lasts = doc_number(d, layer, "duration", 0, -1),
-               to = lasts > 0.0 ? from + lasts : doc_seconds(d);
+               to = lasts >= 0.0 ? from + lasts : doc_seconds(d);
   std::vector<char> loud((size_t)std::max(0.0, std::ceil((to - from) * rate)),
                          0);
   bool any = false;
@@ -202,7 +202,7 @@ int motolii_strikes(Motolii* m, int layer, double rise, int own, double* at,
     int n = 0;
     for (const double t : struck) {
       const double when = speed == 0.0 ? -1.0 : start + (t - begin) / speed;
-      if (when < start || (lasts > 0.0 && when >= start + lasts)) continue;
+      if (when < start || (lasts >= 0.0 && when >= start + lasts)) continue;
       if (n < room) at[n] = when;
       ++n;
     }

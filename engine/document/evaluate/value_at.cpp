@@ -141,7 +141,7 @@ double doc_element_clock(Doc& d, int el, double at) {
                scene_end =
                    doc_keys_at(d, doc_keys_of(d, el, "element_length"), 0, 0);
   const double lasts = doc_keys_at(d, doc_keys_of(d, el, "duration"), 0, -1),
-               layer_end = lasts > 0.0 ? lasts : scene_end;
+               layer_end = lasts >= 0.0 ? lasts : scene_end;
   const std::string method = doc_word(d, el, "retime");
   const double local = at - origin;
   if (method == "blank") return local < scene_end ? at : -1e9;
