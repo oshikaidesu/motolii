@@ -157,7 +157,7 @@ Alight Motion 6.2.60（Android）を、エミュレーターで 1 画面ずつ�
 - **Motolii**：メディアの棚（フォルダの木、ダブルクリック・落とすで置く、動画は乗ると流し見）。置く前に範囲を切る形は無い。見本の素材は無い。
 
 ### 写真のレイヤー（44 (`docs/internal/reports/alight_motion/alight_ui/44_image_layer.jpg`, not in the repository)、45 (`docs/internal/reports/alight_motion/alight_ui/45_image_edit_shape.jpg`, not in the repository)、46 (`docs/internal/reports/alight_motion/alight_ui/46_image_crop_handles.jpg`, not in the repository)）
-- **ある**：図形と同じ並び（色と塗り・縁と影・重ね方・移動と変形・プリセット・効果）で、点の編集の代わりに **Edit Shape**。写真は「写真で塗った四角」として扱われ、Edit Shape で四角の大きさ（X・Y）を変えて切り抜く。上の 2 つで取っ手を角か辺かに切り替え、キャンバスに切り抜きの取っ手。
+- **ある**：図形と同じ並び（色と塗り・縁と影・重ね方・移動と変形・プリセット・効果）で、点の編集の代わりに **Crop**（旧 Edit Shape、11/15 改名）。写真は「写真で塗った四角」として扱われ、Crop で四角の大きさ（Left・Top・Right・Bottom）を変えて切り抜く。切り抜きは写真専用でなく全可視レイヤーに効く（写真以外は Filament scissor で切る）。キャンバスに切り抜きの取っ手（辺の棒と角のグリップ、Google スライド式）。
 - **良い**：写真も図形と同じ仕組み（塗り・縁・影がそのまま効く）。切り抜きの大きさにもキーが打てる。
 - **悪い**：丸や星で切り抜くのは、ここではなくクリッピングマスクか Convert to Outline。
 - **Motolii**：picture。切り抜きは clip（下の物で切る）。
