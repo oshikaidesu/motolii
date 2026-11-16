@@ -4,11 +4,13 @@
 
 #include <set>
 
+#include "community/script_runner/script_runner.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/bodies.h"
 #include "document/evaluate/shown.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
+#include "document/scripts/scripts.h"
 #include "media/midi_notes.h"
 #include "media/midi_roll.h"
 #include "media/sound_level.h"
@@ -140,6 +142,15 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
       kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d),
       kept.from = from;
       laying.insert(layer);
+      // GPU path: a single script whose each() built to WGSL could run on the
+      // GPU instead of the CPU each() loop. tsl_each() produces a vertex
+      // shader today (community/three_shading_language_to_shelf/from_each.js);
+      // the compute variant and the gpu/compute_interop.h dispatch that fills
+      // kept.copies without going through doc_expressions_lay are not yet
+      // wired. Until then, CPU runs every time regardless of wgsl().
+      const bool gpu_ready = scs.size() == 1 && scs.front()->run &&
+                             !scs.front()->run->wgsl().empty();
+      (void)gpu_ready;  // TODO(expressions-gpu): dispatch via compute_interop.
       kept.copies = doc_expressions_lay(d, layer, scs, n, said, clock, gone);
       laying.erase(layer);
     }

@@ -337,6 +337,8 @@ Script::Script(const std::string& file, const std::string& p5,
     tsl_each(doc_engine("third_party/js/three").string(),
              doc_engine("community/three_shading_language_to_shelf").string(),
              cavalry, ways, src, own->wgsl, wgsl_why);
+    if (std::getenv("MOTOLII_TSL_WHY") && !wgsl_why.empty())
+      std::fprintf(stderr, "tsl_each: %s\n", wgsl_why.c_str());
   }
   // A file that only says a layer's text places no copy: each stays where it
   // is.
