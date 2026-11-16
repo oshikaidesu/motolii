@@ -129,7 +129,16 @@ function makeCompInterface(comp) {
   return api;
 }
 
-function makeElem(comp, spec) {
+// Matches script_parameters.cpp's snake_name: the key an AE effect's name is
+// stored under in the knobs object the script's each(i, n, t, k) receives.
+function snakeName(s) {
+  return String(s)
+    .split('')
+    .map((c) => (/\w/.test(c) ? c.toLowerCase() : '_'))
+    .join('');
+}
+
+function makeElem(comp, spec, knobs) {
   spec = spec || {};
   const noVal = { v: [0, 0, 0], pv: [0, 0, 0], getValueAtTime() { return this.v; } };
   const scaleVal = { v: [100, 100], pv: [100, 100], getValueAtTime() { return this.v; } };
@@ -164,7 +173,25 @@ function makeElem(comp, spec) {
     getLayerSize() {
       return { w: spec.width || comp.width, h: spec.height || comp.height };
     },
-    effect() { return () => ({ v: 0, value: 0 }); },
+    // AE's effect("Name Control")("Slider") reads the value the user set
+    // on the layer's card. On motolii the card's values arrive as `k` in
+    // each(i, n, t, k) and the shim's bind captured them in `knobs`.
+    // script_parameters.cpp emits one track per unique effect name, keyed by
+    // snake_name(name). When no slider has been set, the AE Slider default
+    // (0) is used.
+    effect(name) {
+      const key = snakeName(name);
+      // Returns a plain number so `effect("Freq")("Slider") * 10` is numeric,
+      // matching AE's behaviour (a Slider control is a scalar). Lottie's own
+      // EffectInterface would return a PropertyInterface, but motolii's
+      // recipes multiply / add the value directly — see ae_prelude.js's old
+      // L.effect for the same contract.
+      return function () {
+        return knobs && knobs[key] !== undefined && knobs[key] !== null
+          ? knobs[key]
+          : 0;
+      };
+    },
     maskManager: { getMaskProperty() { return { v: 0 }; } },
   };
 }
@@ -202,10 +229,13 @@ function compile(src) {
       processed = 'var $bm_rt; $bm_rt = (' + processed + ')';
     }
     const data = { x: processed, k: 0 };
+  // The knobs object lives at bound.knobs. Each run updates it in place so
+  // the closure effect() built in makeElem sees fresh values.
   let bound = null;
   const bind = (ctx) => {
     const comp = (ctx && ctx.comp) || makeComp(ctx && ctx.compSpec);
-    const elem = makeElem(comp, (ctx && ctx.layer) || {});
+    const knobs = {};
+    const elem = makeElem(comp, (ctx && ctx.layer) || {}, knobs);
     const value = ctx && ctx.value !== undefined ? ctx.value : 0;
     const property = makeProperty(comp, elem, value);
     // lottie's executeExpression reads elem.layerInterface and
@@ -214,21 +244,28 @@ function compile(src) {
     // wraps each layer in its own structure, breaking AE.comp(spec, [layer])
     // recipes).
     comp.compInterface = makeCompInterface(comp);
-    try {
-      elem.layerInterface = LayerExpressionInterface(elem);
-    } catch (_) {
-      // LayerExpressionInterface touches many lottie internals that a motolii
-      // mock doesn't have. Fall back to the small surface executeExpression
-      // reads: text / toWorld / fromWorld / toComp / fromComp / mask.
-      elem.layerInterface = {
-        text: {},
-        toWorld: (p) => p,
-        fromWorld: (p) => p,
-        toComp: (p) => p,
-        fromComp: (p) => p,
-        mask: null,
-      };
-    }
+    // layerInterface must be a *callable* function — lottie's executeExpression
+    // calls `thisLayer(4)` (ExpressionManager.js:718) to grab the effect
+    // getter. The factory in LayerInterface.js returns a function with
+    // `.shapeInterface / .effect / .textInterface / .toWorld / ...` attached.
+    // We build the same shape with just the methods expressions touch.
+    const thisLayer = function (name) {
+      if (name === 4 || name === 'ADBE Effect Parade') return elem.effect;
+      if (name === 'ADBE Text Properties') return thisLayer.text;
+      if (name === 'ADBE Root Vectors Group') return thisLayer.shapeInterface;
+      // callable property access: thisLayer("Rotation") etc.
+      return null;
+    };
+    thisLayer.text = {};
+    thisLayer.shapeInterface = {};
+    thisLayer.toWorld = (p) => p;
+    thisLayer.fromWorld = (p) => p;
+    thisLayer.toComp = (p) => p;
+    thisLayer.fromComp = (p) => p;
+    thisLayer.mask = null;
+    thisLayer.effect = elem.effect;
+    thisLayer._elem = elem;
+    elem.layerInterface = thisLayer;
     // `this` inside initiateExpression is the property (reads this.data.hd
     // and this.comp). lottie assumes the caller binds it.
     const exec = ExpressionManager.initiateExpression.call(
@@ -237,7 +274,7 @@ function compile(src) {
       data,
       property
     );
-    return { comp, elem, property, exec };
+    return { comp, elem, property, exec, knobs };
   };
   return function run(ctx) {
     if (!bound) bound = bind(ctx);
@@ -249,6 +286,12 @@ function compile(src) {
         bound.property.v = bound.property.pv = ctx.value;
       }
       if (ctx.index !== undefined) bound.elem.data.ind = ctx.index;
+      // Mirror ctx.k (user's slider values) into the knobs object that
+      // elem.effect(...) reads from. Values stay between runs so a card
+      // slider that stops being updated keeps its last reading.
+      if (ctx.k && typeof ctx.k === 'object') {
+        for (const key in ctx.k) bound.knobs[key] = ctx.k[key];
+      }
       bound.comp.globalData.frameId = (bound.comp.globalData.frameId | 0) + 1;
     }
     ExpressionManager.resetFrame();
