@@ -1,0 +1,24 @@
+diff --git a/packages/flutter/lib/src/rendering/mouse_tracker.dart b/packages/flutter/lib/src/rendering/mouse_tracker.dart
+index 1cd3df11ca8..7d83318bcf2 100644
+--- a/packages/flutter/lib/src/rendering/mouse_tracker.dart
++++ b/packages/flutter/lib/src/rendering/mouse_tracker.dart
+@@ -201,11 +201,14 @@ class MouseTracker extends ChangeNotifier {
+       _debugDuringDeviceUpdate = true;
+       return true;
+     }());
+-    task();
+-    assert(() {
+-      _debugDuringDeviceUpdate = false;
+-      return true;
+-    }());
++    try {
++      task();
++    } finally {
++      assert(() {
++        _debugDuringDeviceUpdate = false;
++        return true;
++      }());
++    }
+   }
+ 
+   // Whether an observed event might update a device.

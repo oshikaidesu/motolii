@@ -11,6 +11,11 @@ const _fn = Color(0xFFFFC66D);
 const _attr = Color(0xFFBBB529);
 const _var = Color(0xFF9876AA);
 
+const darkSelectionColor = Color(0xFF264F78);
+const lightSelectionColor = Color(0xFFADD6FF);
+const darkBracketColor = Color(0xFFFFD700);
+const lightBracketColor = Color(0xFF0B7FC0);
+
 final darkCodeStyles = <String, TextStyle>{
   'root': TextStyle(color: Grey.g91, backgroundColor: WindowTokens.well),
   'keyword': const TextStyle(color: _kw),

@@ -1,6 +1,7 @@
 // An editor for code, coloured by re_highlight through code_forge.
-// code_forge handles Material, scrolling, line numbers, folding, and bracket
-// matching internally. This file is the only place that imports it.
+// code_forge handles scrolling, line numbers, folding, bracket matching,
+// indentation guides, and minimap internally. This file is the only place
+// that imports it.
 import 'dart:async';
 
 import 'package:code_forge/code_forge.dart';
@@ -118,19 +119,25 @@ class _CodeFieldState extends State<CodeField> {
     final fontSize = TextStyles.value().fontSize!;
     final dark = Grey.g07.computeLuminance() <= 0.5;
     final theme = dark ? darkCodeStyles : lightCodeStyles;
+    final fit = widget.fit;
     return CodeForge(
       controller: _controller,
       focusNode: _focus,
       language: _languageFor(widget.file),
       editorTheme: theme,
       initialText: _written,
-      lineWrap: !widget.fit,
+      lineWrap: !fit,
+      useSpaceAsTab: true,
+      tabSize: 2,
       textStyle: TextStyle(
         fontSize: fontSize,
         fontFamily: TextStyles.mono,
         height: 1.4,
       ),
-      enableFolding: !widget.fit,
+      innerPadding: const EdgeInsets.only(top: 4, bottom: 8),
+      enableFolding: !fit,
+      enableMinimap: !fit,
+      enableGuideLines: !fit,
       enableGutter: true,
       enableGutterDivider: false,
       gutterStyle: GutterStyle(
@@ -142,7 +149,17 @@ class _CodeFieldState extends State<CodeField> {
         ),
         backgroundColor: WindowTokens.well,
       ),
-      selectionStyle: CodeSelectionStyle(cursorColor: Grey.g91),
+      selectionStyle: CodeSelectionStyle(
+        cursorColor: Grey.g91,
+        selectionColor: (dark ? darkSelectionColor : lightSelectionColor)
+            .withAlpha(120),
+      ),
+      bracketPairStyle: BracketPairStyle(
+        color: dark ? darkBracketColor : lightBracketColor,
+      ),
+      minimapStyle: fit
+          ? null
+          : MinimapStyle(backgroundColor: WindowTokens.well),
     );
   }
 }
