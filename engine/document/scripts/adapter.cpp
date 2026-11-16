@@ -188,6 +188,24 @@ std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
   return "";
 }
 
+// Called when TSL code is saved. Re-runs tsl_shelf and overwrites the WGSL
+// files beside it so that layers using them pick up the change. Returns the
+// reason the code cannot run, or an empty string.
+std::string doc_tsl_saved(Doc& d, const std::filesystem::path& file) {
+  const std::string text = read_text(file);
+  std::string effect, points, why;
+  if (!tsl_shelf(doc_engine("third_party/js/three").string(),
+                 doc_engine("community/three_shading_language_to_shelf").string(),
+                 text, file.stem().string(), effect, points, why))
+    return why;
+  const std::string stem = file.stem().string();
+  if (!effect.empty())
+    std::ofstream(file.parent_path() / (stem + ".effect.wgsl")) << effect;
+  if (!points.empty())
+    std::ofstream(file.parent_path() / (stem + ".points.wgsl")) << points;
+  return "";
+}
+
 }  // namespace
 
 int doc_door(Doc& d, const std::string& said, int picked) {
@@ -312,9 +330,20 @@ int doc_door(Doc& d, const std::string& said, int picked) {
             doc_engine("community/three_shading_language_to_shelf").string(),
             came, adapter_name(form), effect, points, why))
       return d.error = why, 0;
+    // The original TSL is stored as a .js file so the user can edit and
+    // hot-reload it (doc_tsl_saved). The WGSL files are named after the .js
+    // stem so that doc_tsl_saved can find and overwrite them on save.
+    const std::filesystem::path tsl_file = stored(".js");
+    const std::string stem = tsl_file.stem().string();
     std::filesystem::path made[2];
-    if (!effect.empty()) text = effect, made[0] = stored(".wgsl", false);
-    if (!points.empty()) text = points, made[1] = stored(".wgsl", false);
+    if (!effect.empty()) {
+      made[0] = tsl_file.parent_path() / (stem + ".effect.wgsl");
+      std::ofstream(made[0]) << effect;
+    }
+    if (!points.empty()) {
+      made[1] = tsl_file.parent_path() / (stem + ".points.wgsl");
+      std::ofstream(made[1]) << points;
+    }
     doc_act(d);
     int layer = picked;
     if (!layer && (layer = doc_add(d, "shape", "rect")) &&
@@ -448,6 +477,7 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
       ext == ".js" &&
       std::filesystem::exists(
           std::filesystem::path(file).replace_extension(".vs"), wrong);
+  const bool tsl = ext == ".js" && adapter_form(text) == "tsl";
   if (!wrong && stamp != seen) {
     seen = stamp, why.clear();
     if (ext == ".hydra")
@@ -456,10 +486,12 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
       why = doc_three_saved(d, file);
     else if (shaded)
       why = doc_p5_shaded_saved(d, file);
+    else if (tsl)
+      why = doc_tsl_saved(d, file);
   }
   ++files_changed();
   doc_files_moved(d);
-  if (ext == ".js" && !three && !shaded) doc_sketch_written(d, file);
+  if (ext == ".js" && !three && !shaded && !tsl) doc_sketch_written(d, file);
   doc_match(d);
   // An ISF effect that is half typed keeps being drawn as it was last built,
   // and the reason is reported (see community/isf/isf.cpp). The reason is
