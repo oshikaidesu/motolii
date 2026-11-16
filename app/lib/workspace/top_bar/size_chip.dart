@@ -90,15 +90,13 @@ class _SizeChipState extends State<SizeChip> {
     setState(() => _editing = false);
     if (nums.isEmpty || ws.onSize == null) return;
     final w0 = ArtGeometry.comp.width, h0 = ArtGeometry.comp.height;
-    final w = nums[0],
-        h = nums.length > 1 ? nums[1] : (nums[0] * h0 / w0).round();
-    if (w >= 16 &&
-        h >= 16 &&
-        w <= 16384 &&
-        h <= 16384 &&
-        (w != w0.round() || h != h0.round())) {
-      ws.onSize!(w, h);
-    }
+    // engine/document/marks.cpp の doc_size_words が 16〜8192、偶数のみを受け付ける。
+    // H.264 も偶数を要る。上限を合わせないと打った値が黙って捨てられる。
+    int even(int v) => (v ~/ 2) * 2;
+    int fit(int v) => even(v.clamp(16, 8192));
+    final w = fit(nums[0]),
+        h = fit(nums.length > 1 ? nums[1] : (nums[0] * h0 / w0).round());
+    if (w != w0.round() || h != h0.round()) ws.onSize!(w, h);
   }
 
   @override
