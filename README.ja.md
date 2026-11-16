@@ -13,9 +13,8 @@ After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lo
 ![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
 
 - **GPU ネイティブ。** 式は GPU シェーダーにコンパイルされる。数千コピーが 60fps で動く。
-- **エフェクトはただのファイル。** `.wgsl`、`.fs`、`.js` — 開いて、仕組みを読んで、変えられる。ブラックボックスじゃない。
+- **エフェクトはただのファイル。** `.wgsl`、`.fs`、`.js` — 開いて、仕組みを読んで、変えられる。好きな AI エージェントと一緒に書くこともできる（[ACP](https://github.com/anthropics/agent-client-protocol) 対応）。ブラックボックスじゃない。
 - **1 レイヤーに複数言語。** CSS アニメーション、After Effects の式、シェーダーエフェクトが同じテキストの上で、重ねた順に動く。
-- **AI エージェントも自由。** Zed や JetBrains と同じ [ACP](https://github.com/anthropics/agent-client-protocol)（Agent Client Protocol）対応。好きなエージェント、好きなモデルで、式やエフェクトを書いてもらえる。
 
 ## いまの状態
 
