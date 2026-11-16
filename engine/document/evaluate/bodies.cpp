@@ -51,9 +51,7 @@ BodyPlane doc_body_plane(Doc& d, int layer, double at) {
   math::float2 half{0.5f};
   float deep = 0.f;
   doc_half(d, layer, &half, &deep);
-  const math::double3 anchor{doc_literal(d, layer, "anchor_x", at, 0) * half.x,
-                             doc_literal(d, layer, "anchor_y", at, 0) * half.y,
-                             doc_literal(d, layer, "anchor_z", at, 0) * deep};
+  const math::double3 anchor = doc_anchor(d, layer, at, half, deep);
   const auto never_zero = [](double v) {
     return std::fabs(v) < 1e-9 ? 1e-9 : v;
   };

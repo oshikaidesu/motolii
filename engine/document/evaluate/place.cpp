@@ -20,6 +20,13 @@ namespace math = filament::math;
 using filament::MaterialInstance;
 using filament::math::float2;
 
+math::double3 doc_anchor(Doc& d, int layer, double at, math::float2 half,
+                         float deep) {
+  return math::double3{doc_literal(d, layer, "anchor_x", at, 0) * half.x,
+                       doc_literal(d, layer, "anchor_y", at, 0) * half.y,
+                       doc_literal(d, layer, "anchor_z", at, 0) * deep};
+}
+
 namespace {
 // Returns the depth scale of a layer at time `now`. A scale of exactly 0 would
 // make the matrix singular, so a layer that is not a solid gets 1e-3 instead.
@@ -182,9 +189,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
   float2 half{0.5f};
   float deep = 0.f;
   doc_half(d, layer, &half, &deep);
-  const math::double3 anchor{doc_literal(d, layer, "anchor_x", now, 0) * half.x,
-                             doc_literal(d, layer, "anchor_y", now, 0) * half.y,
-                             doc_literal(d, layer, "anchor_z", now, 0) * deep};
+  const math::double3 anchor = doc_anchor(d, layer, now, half, deep);
   // A copy is offset in stage units, so that a larger layer does not get larger
   // gaps. The script or the MIDI file places it (doc_laid) relative to the
   // layer's own position. Then it is rotated and scaled as they say, about its

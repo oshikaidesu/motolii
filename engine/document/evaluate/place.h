@@ -79,6 +79,13 @@ struct DocPlaceCache {
   std::map<std::tuple<int, double, long long>, filament::math::double3> tracks;
 };
 
+// Returns the layer's anchor as a point in its own box: the (anchor_x,
+// anchor_y, anchor_z) properties at time `at` multiplied by the box's half
+// extents (half.x, half.y) and depth (`deep`), which doc_half supplies. This
+// is the point about which the layer is placed, rotated and scaled.
+filament::math::double3 doc_anchor(Doc& d, int layer, double at,
+                                   filament::math::float2 half, float deep);
+
 // Returns the matrix that places `layer` on the stage at time `now`. `deeper`
 // is nonzero when the result is wanted before the layer's space (2D, 2.5D or
 // 3D) is applied. With `member`, the matrix is for copy number `copy` of the
