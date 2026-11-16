@@ -12,12 +12,12 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart'
     show Badge, Chip, ChipLook, Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
-import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/document/document_writes.dart';
-import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/commands/undo_step_name.dart'
+    show undoStepName;
 import 'package:motolii/workspace/top_bar/size_chip.dart';
 import 'package:motolii/workspace/top_bar/timings.dart';
 import 'package:motolii/workspace/top_bar/workspace_switch.dart';
@@ -114,30 +114,6 @@ class _Wordmark extends StatelessWidget {
       ),
     ],
   );
-}
-
-/// Describes in plain words what an undo or redo changed, as the Edit menu of After Effects and Premiere Pro names
-/// the step, for example "Undo Change Warmth".
-///
-/// It reads the layers and values that the reloaded project reports as changed.
-String undoStepName(WorkspaceController ws, String done) {
-  final c = ws.lastChange;
-  if (c == null || !isConnected(ws)) return done;
-  if (c.layers) return '$done: things added or taken away';
-  final byThing = <int, Set<String>>{};
-  for (final (t, n) in c.values) {
-    (byThing[t] ??= {}).add(propertyLook(ws, n)?.label ?? n);
-  }
-  String nameOf(int t) => t == 0
-      ? 'Stage'
-      : ws.layers.where((l) => l.id == '$t').firstOrNull?.name ?? 'a thing';
-  final said = [
-    for (final e in byThing.entries.take(3))
-      '${nameOf(e.key)} ${e.value.take(3).join(', ')}${e.value.length > 3 ? '…' : ''}',
-  ];
-  return said.isEmpty
-      ? done
-      : '$done: ${said.join(' · ')}${byThing.length > 3 ? ' …' : ''}';
 }
 
 class _UndoRedo extends StatelessWidget {

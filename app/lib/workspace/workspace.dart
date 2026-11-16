@@ -33,6 +33,7 @@ import 'package:motolii/workspace/state/media/media_service.dart'
     show placeDroppedFiles;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageError, stageErrorWithHint, stageTakeStill;
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -78,8 +79,15 @@ class WorkspaceState extends State<Workspace> {
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
     // Reads the theme's SVG parts from the folder the theme names.
     SkinParts.follow();
+    // When the document changes (an undo or redo swaps in a different step), rebuild so the Edit menu's dynamic
+    // undo / redo labels follow (UAT 135).
+    ws.on[WorkspaceAspect.document]!.addListener(_rebuildMenus);
     // With no project given, start a new untitled one, as After Effects does.
     _join(widget.document ?? untitledProjectPath());
+  }
+
+  void _rebuildMenus() {
+    if (mounted) setState(() {});
   }
 
   /// Opens another project in place of the current one, creating it if it does not exist.
@@ -334,6 +342,7 @@ class WorkspaceState extends State<Workspace> {
   void dispose() {
     keepPoster();
     FocusManager.instance.removeListener(_keepKeys);
+    ws.on[WorkspaceAspect.document]!.removeListener(_rebuildMenus);
     _windowFocus.dispose();
     _own?.cancel();
     _session.close();

@@ -8,6 +8,8 @@ import 'package:motolii/workspace/workspace.dart';
 import 'package:motolii/workspace/commands/command_arrange.dart'
     show workspaceAligns, workspaceTimes;
 import 'package:motolii/workspace/commands/menu_bar.dart' show WorkspaceMenus;
+import 'package:motolii/workspace/commands/undo_step_name.dart'
+    show undoStepName;
 
 extension WorkspaceMenuItems on WorkspaceState {
   void _wear(String? skin) => setState(
@@ -76,54 +78,61 @@ extension WorkspaceMenuItems on WorkspaceState {
         ],
       );
 
-  PlatformMenu _editMenu(PlatformMenuItem Function(String, String) item) =>
-      PlatformMenu(
-        label: 'Edit',
-        menus: [
-          PlatformMenuItemGroup(
-            members: [item('Undo', 'edit.undo'), item('Redo', 'edit.redo')],
-          ),
-          // These menus replace the system's Edit menu, so text boxes handle their own editing keys.
-          PlatformMenuItemGroup(
-            members: [
-              item('Cut', 'edit.cut'),
-              item('Copy', 'edit.copy'),
-              item('Paste', 'edit.paste'),
-              item('Copy Style', 'edit.copyStyle'),
-              item('Paste Style', 'edit.pasteStyle'),
-              item('Save Look', 'thing.saveLook'),
-              item('Save to My Elements', 'thing.saveElement'),
-              item('Select All', 'edit.selectAll'),
-              item('Deselect All', 'edit.deselectAll'),
-              item(
-                'Select Previous Layer',
-                'layer.previous',
-              ), // After Effects' names for its ⌘↑ and ⌘↓.
-              item('Select Next Layer', 'layer.next'),
-            ],
-          ),
-          PlatformMenuItemGroup(
-            members: [
-              item('Duplicate', 'thing.duplicate'),
-              item('Convert to Outline', 'thing.outline'),
-              item('Group', 'thing.group'),
-              item('Group and Mask', 'thing.groupMask'),
-              item('Group and Exclude', 'thing.groupExclude'),
-              item('Ungroup', 'thing.ungroup'),
-              item('Unlink from Element', 'thing.unlinkElement'),
-              item('Split', 'thing.split'),
-              item('Extract Work Area', 'edit.extractWork'),
-              item('Set Work Area to Selected', 'edit.workToPicked'),
-              item('Extract Sound', 'thing.extractSound'),
-              item('Rename', 'thing.rename'),
-              item('Remove', 'thing.remove'),
-            ],
-          ),
-          item('Solo', 'thing.solo'),
-          item('Keyed Values', 'thing.lanes'),
-          item('Deactivate', 'thing.deactivate'),
+  PlatformMenu _editMenu(
+    PlatformMenuItem Function(String, String) item,
+  ) => PlatformMenu(
+    label: 'Edit',
+    menus: [
+      // Undo's label picks up what the last change touched ("Undo: Stage distance"), as After Effects and
+      // Premiere Pro name undo steps. Redo's label stays plain, because the engine does not report the next
+      // forward step; the `ws.notice` after a redo spells out what came back.
+      PlatformMenuItemGroup(
+        members: [
+          item(undoStepName(ws, 'Undo'), 'edit.undo'),
+          item('Redo', 'edit.redo'),
         ],
-      );
+      ),
+      // These menus replace the system's Edit menu, so text boxes handle their own editing keys.
+      PlatformMenuItemGroup(
+        members: [
+          item('Cut', 'edit.cut'),
+          item('Copy', 'edit.copy'),
+          item('Paste', 'edit.paste'),
+          item('Copy Style', 'edit.copyStyle'),
+          item('Paste Style', 'edit.pasteStyle'),
+          item('Save Look', 'thing.saveLook'),
+          item('Save to My Elements', 'thing.saveElement'),
+          item('Select All', 'edit.selectAll'),
+          item('Deselect All', 'edit.deselectAll'),
+          item(
+            'Select Previous Layer',
+            'layer.previous',
+          ), // After Effects' names for its ⌘↑ and ⌘↓.
+          item('Select Next Layer', 'layer.next'),
+        ],
+      ),
+      PlatformMenuItemGroup(
+        members: [
+          item('Duplicate', 'thing.duplicate'),
+          item('Convert to Outline', 'thing.outline'),
+          item('Group', 'thing.group'),
+          item('Group and Mask', 'thing.groupMask'),
+          item('Group and Exclude', 'thing.groupExclude'),
+          item('Ungroup', 'thing.ungroup'),
+          item('Unlink from Element', 'thing.unlinkElement'),
+          item('Split', 'thing.split'),
+          item('Extract Work Area', 'edit.extractWork'),
+          item('Set Work Area to Selected', 'edit.workToPicked'),
+          item('Extract Sound', 'thing.extractSound'),
+          item('Rename', 'thing.rename'),
+          item('Remove', 'thing.remove'),
+        ],
+      ),
+      item('Solo', 'thing.solo'),
+      item('Keyed Values', 'thing.lanes'),
+      item('Deactivate', 'thing.deactivate'),
+    ],
+  );
 
   // Modelled on Final Cut Pro's Mark menu: Go To Beginning and End, Previous and Next Frame, as its guide's
   // "Navigate within your clips" names them. Ten frames and After Effects' J and K (previous and next visible item) sit beside them.
