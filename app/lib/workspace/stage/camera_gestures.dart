@@ -6,6 +6,7 @@ import 'dart:ui' show Offset, Path;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_drag.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
@@ -58,7 +59,7 @@ class CameraGestures extends ChangeNotifier {
     _dollyAt = (_dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
     stageUpdateDrag(ws, 'distance', _dollyAt!);
     _dollyRest?.cancel();
-    _dollyRest = Timer(const Duration(milliseconds: 300), () {
+    _dollyRest = Timer(Gestures.burstRest, () {
       _dollyAt = null;
       ws.after(stageEndDrag(ws, keep: true));
     });

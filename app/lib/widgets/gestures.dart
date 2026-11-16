@@ -38,6 +38,11 @@ abstract final class Gestures {
   /// precise control.
   static const double fine = 0.1;
 
+  /// Section 12 `burstRest`: how long the Unified Camera tool's wheel waits
+  /// after the last turn before closing the undo step. Also the delay for
+  /// other burst-like inputs.
+  static const Duration burstRest = Duration(milliseconds: 300);
+
   /// Section 12 `menuWidth`: a context menu's own width, in design points
   /// (parts wrap this in `Shape.z` to get screen pixels).
   static const double menuWidth = 220.0;
