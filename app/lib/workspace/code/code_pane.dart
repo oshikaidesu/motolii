@@ -8,6 +8,8 @@
 // A cell is a card, so its head does what the card's head does in the Inspector: dragging it moves the effect up or
 // down the layer's stack (fx_move), the eye switches it off, the bin takes it away. The strip under a cell's code
 // makes it taller or shorter; the height is kept with the window's view, as which cells are folded is.
+// Pressing a cell's name twice names the card, as a name is changed in Finder. The name is written in the code's first
+// line ("// Name: what it does"), where the engine and the shelf read it, so it is kept in one place.
 // Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
 // first one open. The word "Functions" in the head hides and shows it.
 import 'package:flutter/widgets.dart';
@@ -28,10 +30,14 @@ import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/code_field.dart' show CodeField;
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
+import 'package:motolii/workspace/shelf/shelf_add.dart' show ShelfNameField;
 import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
+    show codeNameRefused;
 import 'package:motolii/workspace/state/inspector/inspector_actions.dart'
     show effectTitles, effectsOff, moveEffect, removeCard, toggleEffect;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The Code tab: the selected layer's code, a cell for each card that has code.
@@ -53,6 +59,46 @@ class _CodePaneState extends State<CodePane> {
 
   /// Why a new expression was refused, shown under the cells until the next try.
   String _why = '';
+
+  /// The cell whose name is being typed, by layer and card.
+  String? _naming;
+
+  /// Names the card [was] of layer [t] [to]; null leaves it as it is. What the window keeps by the card's name (its
+  /// cell folded, its height, the card switched off) is kept for the new name.
+  void _name(
+    WorkspaceController ws,
+    int t,
+    String was,
+    EffectCode code,
+    String? to,
+    Iterable<String> taken,
+    bool off,
+  ) {
+    setState(() => _naming = null);
+    final name = to?.trim();
+    if (name == null || name == was) return;
+    if (codeNameRefused(name, taken) case final why when why.isNotEmpty) {
+      ws.notice = why;
+      return;
+    }
+    // The engine knows a card that is off by its name (fx_off): it is put on under the old name and off under the new.
+    if (off) toggleEffect(ws, t, was);
+    code.rename(name, (done, why) {
+      if (!done) {
+        ws.notice = why;
+        return;
+      }
+      final folded = ws.viewOf(EffectCode.folded, const <String>{}),
+          heights = ws.viewOf(_heights, const <String, double>{});
+      if (folded.contains(was)) {
+        ws.setView(EffectCode.folded, {...folded, name}..remove(was));
+      }
+      if (heights['$t/$was'] case final h?) {
+        ws.setView(_heights, {...heights, '$t/$name': h}..remove('$t/$was'));
+      }
+      if (off) toggleEffect(ws, t, name);
+    });
+  }
 
   void _scrollTo(GlobalKey cell) =>
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,8 +126,9 @@ class _CodePaneState extends State<CodePane> {
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull;
     // The height each cell was dragged to, by layer and card; a cell not in it is as tall as its code.
     final heights = ws.viewOf(_heights, const <String, double>{});
+    final cards = valueCards(ws, ws.selected) ?? const <CardDeclaration>[];
     final cells = [
-      for (final c in valueCards(ws, ws.selected) ?? const <CardDeclaration>[])
+      for (final c in cards)
         if (EffectCode.ofCard(
               ws,
               t,
@@ -188,6 +235,18 @@ class _CodePaneState extends State<CodePane> {
                                   ? ({...folded}..remove(title))
                                   : {...folded, title},
                             ),
+                            naming: _naming == '$t/$title'
+                                ? ShelfNameField(
+                                    title,
+                                    (to) => _name(ws, t, title, code, to, [
+                                      for (final c in cards) c.name,
+                                    ], off.contains(title)),
+                                    small: false,
+                                  )
+                                : null,
+                            onName: code.named
+                                ? () => setState(() => _naming = '$t/$title')
+                                : null,
                             at: effect && stack.length > 1 ? i : null,
                             off: off.contains(title),
                             onEye: effect
@@ -231,6 +290,8 @@ class _Cell extends StatelessWidget {
     super.key,
     required this.open,
     required this.onFold,
+    required this.naming,
+    required this.onName,
     required this.at,
     required this.off,
     required this.onEye,
@@ -240,6 +301,11 @@ class _Cell extends StatelessWidget {
   final EffectCode code;
   final bool open;
   final VoidCallback onFold;
+
+  /// The field the name is typed in while the card is being named, and what starts the naming when the name is
+  /// pressed twice; null for a card whose name is not the user's to give (an ISF's, the Script card's).
+  final Widget? naming;
+  final VoidCallback? onName;
 
   /// The cell's place among the cells when its head can be dragged to another place; null when it cannot.
   final int? at;
@@ -287,16 +353,27 @@ class _Cell extends StatelessWidget {
               children: [
                 DisclosureTriangle(open: open, hot: hot),
                 SizedBox(width: Shape.s(6)),
-                Flexible(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.name(
-                      off ? Grey.g56 : (hot ? Grey.g95 : Grey.g91),
+                if (naming case final field?)
+                  SizedBox(
+                    width: Shape.z(180),
+                    height: Shape.s(18),
+                    child: field,
+                  )
+                else
+                  Flexible(
+                    child: GestureDetector(
+                      key: ValueKey('code-cell-name:$title'),
+                      onDoubleTap: onName,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyles.name(
+                          off ? Grey.g56 : (hot ? Grey.g95 : Grey.g91),
+                        ),
+                      ),
                     ),
                   ),
-                ),
                 const Spacer(),
                 if (!open) ExpressionResult.mark(EffectCode.source(code.word)),
                 Text(_on, style: TextStyles.micro(Grey.g56)),

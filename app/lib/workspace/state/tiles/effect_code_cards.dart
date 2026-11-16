@@ -143,6 +143,56 @@ bool codeAlone(WorkspaceController ws, int thing, String word, String slot) {
   return (said, to, m.later('code', word: to));
 }
 
+/// Whether the card of the code [word] takes a name of the user's: its title is the name in the code's first line
+/// (doc_fx_title). An ISF's title is its file's name and an effect put on again has its original's, so those do not.
+bool codeNamedInText(String word, String slot) =>
+    slot == 'fx' && !word.endsWith('.fs') && codeSource(word) == word;
+
+/// [text] with the card's name in its first line ("// Repeater: what it does") changed to [name]. Code that has no
+/// such line gets one. The file keeps its name, so its values and keys, which are named after the file, stay.
+String codeRenamed(String text, String name) {
+  final end = text.indexOf('\n'),
+      first = end < 0 ? text : text.substring(0, end);
+  if (first.startsWith('// ') &&
+      !first.startsWith('// --') &&
+      first.contains(':')) {
+    return '// $name${text.substring(first.indexOf(':'))}';
+  }
+  return '// $name:\n$text';
+}
+
+/// Why [name] cannot be the name of a card beside the cards [taken], or '' if it can.
+String codeNameRefused(String name, Iterable<String> taken) {
+  final n = name.trim();
+  if (n.isEmpty) return 'A card needs a name';
+  if (n.contains(':') || n.contains('\n') || n.startsWith('--')) {
+    return 'A name has no colon and does not begin with --';
+  }
+  return taken.contains(n) ? 'Another card of this layer is named $n' : '';
+}
+
+/// Names the card of the code [word] of layer [thing] [name], by writing it in the code's first line as a change of
+/// the code is written: to the layer's own copy, made first if the file is the shelf's or another card's too.
+void codeRename(
+  WorkspaceController ws,
+  int thing,
+  String word,
+  String slot,
+  String name,
+  void Function(bool done, String why) told,
+) {
+  final file = codeSource(word), text = codeRenamed(textOf(file), name.trim());
+  if (codeAlone(ws, thing, word, slot)) {
+    writeText(file, text);
+    return codeWritten(ws, file, told);
+  }
+  final (_, to, read) = codeCopyOwn(ws, thing, word, slot);
+  ws.after(read, (_, _) {
+    writeText(to, text);
+    codeWritten(ws, to, told);
+  });
+}
+
 /// Copies the files the engine reads beside [from] to the copy's folder [dir].
 void codeBeside(String from, String word, String dir) {
   final home = from.substring(0, from.lastIndexOf('/'));

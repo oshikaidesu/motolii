@@ -8,6 +8,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
+import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
+    show codeNameRefused, codeRenamed;
 
 import '../main_tests_only.dart';
 
@@ -21,6 +23,31 @@ void main() {
     File(file).writeAsStringSync(
       [for (var i = 0; i < 60; i++) 'const line$i = $i;'].join('\n'),
     );
+  });
+
+  // The card's name is the one in the code's first line, where the engine reads it (document/cards.cpp doc_fx_title:
+  // "// " then the name then a colon).
+  test('a card is named in the first line of its code', () {
+    expect(
+      codeRenamed(
+        '// Empty: the copies where they are\n\nfunction each() {}\n',
+        'Wave',
+      ),
+      '// Wave: the copies where they are\n\nfunction each() {}\n',
+    );
+    expect(
+      codeRenamed('function each() {}\n', 'Wave'),
+      '// Wave:\nfunction each() {}\n',
+    );
+    expect(
+      codeRenamed('// --property: rotation\ntime * 90', 'Spin'),
+      '// Spin:\n// --property: rotation\ntime * 90',
+      reason: 'a line that says what the code is on is not its name',
+    );
+    expect(codeNameRefused('Wave', ['Empty']), '');
+    expect(codeNameRefused('  ', const []), isNotEmpty);
+    expect(codeNameRefused('a: b', const []), isNotEmpty);
+    expect(codeNameRefused('Empty', ['Empty']), isNotEmpty);
   });
 
   Future<(ScrollController, List<double?>)> page(WidgetTester t) async {

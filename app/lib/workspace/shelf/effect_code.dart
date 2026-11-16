@@ -113,6 +113,12 @@ class EffectCode extends StatefulWidget {
     String slot,
   ) => cards.codeAlone(ws, thing, word, slot);
 
+  /// Whether the card takes a name of the user's, and the naming of it: the name is the one in the code's first line
+  /// (state/effect_code_cards.dart codeRename).
+  bool get named => cards.codeNamedInText(word, slot);
+  void rename(String name, void Function(bool done, String why) told) =>
+      cards.codeRename(ws, thing, word, slot, name, told);
+
   /// Gives the card's file [word] a copy of its own, as its first edit does: the file and the ones the engine reads
   /// beside it go to `programs/<slot>/<stamp>/`, and the layer's slot names the copy. Returns the copy as the slot
   /// names it, the copied file, and the engine's ticket for reading it.
