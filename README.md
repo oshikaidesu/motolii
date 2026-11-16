@@ -8,7 +8,7 @@
 
 A Shadertoy shader reacting to the beat of a song. CSS @keyframes animating the letters while a p5.js sketch draws behind them. An After Effects expression and a Lottie animation on the same layer. Paste code from the web; it works as it was published.
 
-An open-source video editor that runs After Effects expressions, Shadertoy, WGSL, Cavalry scripts, p5.js, CSS animations, Resolume ISF, three.js TSL, Lottie and more — each with its original engine, no plugin rebuild. The [full list](#what-runs) is below.
+After Effects expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie and more. Paste it; it runs. An open-source video editor — [20+ formats and counting](#what-runs).
 
 ![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 

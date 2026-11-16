@@ -8,7 +8,7 @@
 
 Shadertoy のシェーダーが曲のビートに反応する。After Effects の式と CSS アニメーションが同じテキストの上で動く。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。
 
-After Effects の式、Shadertoy、WGSL、Cavalry、p5.js、AviUtl、CSS、Resolume ISF、three.js TSL、Lottie ── それぞれの元のエンジンで動かすオープンソースの動画編集ソフト。プラグインに作り直す必要はありません。[対応する形式の一覧](#何が動く)は下にあります。
+After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lottie も。貼るだけで動く、オープンソースの動画編集ソフト。[全部で 20 以上](#何が動く)。
 
 ![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
 
