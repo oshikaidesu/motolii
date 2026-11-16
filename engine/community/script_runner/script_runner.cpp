@@ -110,14 +110,13 @@ Script::Script(const std::string& file, const std::string& p5,
                       JS_NewCFunction(own->cx, text_read, "__text_read", 1));
     JS_FreeValue(own->cx, g);
   }
-  if (src.find("AE.compile") !=
-      std::string::npos) {  // AE 式は lottie-web の ExpressionManager が
-                            // 解釈する (AGENTS.md 原則 2)。shim は
-                            // community/after_effects/lottie_shim.js、vendor
-                            // は third_party/js/lottie。ビルド時に lottie_shim
-                            // とその import を QuickJS バイトコードに焼いて
-                            // あり (community/after_effects/lottie_bytecode.h)、
-                            // ここはそれを JS_ReadObject で読むだけ。
+  {  // AE 式は lottie-web の ExpressionManager が解釈する (AGENTS.md 原則 2)。
+     // shim は community/after_effects/lottie_shim.js、vendor は
+     // third_party/js/lottie。ビルド時に lottie_shim とその import を
+     // QuickJS バイトコードに焼いてあり (community/after_effects/
+     // lottie_bytecode.h)、ここはそれを JS_ReadObject で読むだけ。全 .js で
+     // 読む: 焼いた分、起動時のパースは出ないのでコストは一度だけ (
+     // docs/design/next_expressions.md 2026-11-16「How lottie_shim loads」)。
     // Module loader: looks up the requested canonical name in the pre-compiled
     // bytecode table and returns its JSModuleDef. Every lottie module the shim
     // reaches was built into the table by lottie_precompile; a miss means the
@@ -303,9 +302,60 @@ Script::Script(const std::string& file, const std::string& p5,
     else
       body = std::move(marked);
     JS_FreeValue(own->cx, told);
+  } else if (!src.empty()) {
+    // each() が無く、ファイル全体がトップレベルのオブジェクトリテラル
+    // だった場合は function each(index, count, time, value) { return (...) }
+    // として包む (docs/design/next_expressions.md 2026-11-16「Syntax: each()
+    // is optional」)。Cavalry の式カードをそのまま貼れるようにする目的。
+    // 先頭のコメントと空白を飛ばして最初の意味ある文字が '{' の時だけ
+    // 包み、それ以外は原文のまま。包んだ結果が構文誤りなら原文で走り、
+    // 書いた人が本当の誤りに気付けるようにする。
+    auto strip_head = [](std::string_view s) {
+      while (!s.empty()) {
+        char c = s.front();
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+          s.remove_prefix(1);
+          continue;
+        }
+        if (s.size() >= 2 && s[0] == '/' && s[1] == '/') {
+          auto nl = s.find('\n');
+          if (nl == std::string_view::npos) {
+            s.remove_prefix(s.size());
+            break;
+          }
+          s.remove_prefix(nl + 1);
+          continue;
+        }
+        if (s.size() >= 2 && s[0] == '/' && s[1] == '*') {
+          auto end = s.find("*/", 2);
+          if (end == std::string_view::npos) {
+            s.remove_prefix(s.size());
+            break;
+          }
+          s.remove_prefix(end + 2);
+          continue;
+        }
+        break;
+      }
+      return s;
+    };
+    const auto head = strip_head(src);
+    if (!head.empty() && head.front() == '{' &&
+        src.find("function each") == std::string::npos) {
+      const std::string wrapped =
+          "function each(index, count, time, value) { return (" + src +
+          "\n); }";
+      JSValue told =
+          JS_Eval(own->cx, wrapped.c_str(), wrapped.size(), file.c_str(),
+                  JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+      if (!JS_IsException(told)) body = wrapped;
+      else
+        JS_FreeValue(own->cx, JS_GetException(own->cx));
+      JS_FreeValue(own->cx, told);
+    }
   }
   const std::string run =
-      sketch ? body + "\n;\n" + read_text(p5Stand / "p5_start.js") : src;
+      sketch ? body + "\n;\n" + read_text(p5Stand / "p5_start.js") : body;
   JSValue ran = JS_Eval(own->cx, run.c_str(), run.size(), file.c_str(),
                         JS_EVAL_TYPE_GLOBAL);
   if (sketch)

@@ -286,6 +286,11 @@ function compile(src) {
         bound.property.v = bound.property.pv = ctx.value;
       }
       if (ctx.index !== undefined) bound.elem.data.ind = ctx.index;
+      // Cavalry's `count` is AE's thisComp.numLayers: an expression like
+      // `index / (count - 1)` arrives using it. Mirror it onto the shim's
+      // comp so lottie-web's CompInterface returns the right value. See
+      // docs/design/next_expressions.md 2026-11-16「Variable names」.
+      if (ctx.count !== undefined) bound.comp.numLayers = ctx.count;
       // Mirror ctx.k (user's slider values) into the knobs object that
       // elem.effect(...) reads from. Values stay between runs so a card
       // slider that stops being updated keeps its last reading.
