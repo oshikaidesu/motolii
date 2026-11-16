@@ -257,7 +257,8 @@ class _Saved extends StatelessWidget {
           WorkspaceAspect.notice,
         }),
         go = ws.noticeGo,
-        active = ws.notice != null;
+        active = ws.notice != null,
+        f = ws.noticeProgress;
     // The dot pops in accent when a notice is up; quiets to g38 when the project has just been saved.
     final said = Text(
       ws.notice ?? _savedAt(ws),
@@ -268,6 +269,38 @@ class _Saved extends StatelessWidget {
           : TextStyles.label(active ? Grey.g91 : Grey.g63)
                 .copyWith(decoration: TextDecoration.underline),
     ); // The underline marks the notice as a link when it has a target.
+    final body = ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: Shape.z(260)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          go == null ? said : Pressable(onTap: go, builder: (_, _) => said),
+          if (f != null) ...[
+            SizedBox(height: Shape.s(3)),
+            // A slim 2-px bar under the notice text, filled to the fraction.
+            Container(
+              height: 2,
+              decoration: BoxDecoration(
+                color: Grey.g20,
+                borderRadius: Shape.round(1),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: f.clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: WindowTokens.accent,
+                    borderRadius: Shape.round(1),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -277,12 +310,7 @@ class _Saved extends StatelessWidget {
           radius: Radius.circular(Shape.z(3)),
         ),
         SizedBox(width: Shape.s(6)),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: Shape.z(260)),
-          child: go == null
-              ? said
-              : Pressable(onTap: go, builder: (_, _) => said),
-        ),
+        body,
       ],
     );
   }

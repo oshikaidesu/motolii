@@ -164,18 +164,21 @@ class WorkspaceState extends State<Workspace> {
     ws.renderTo = null;
     final name = mp4.split('/').last;
     ws.notice = 'Writing $name …';
-    // A periodic timer, cancelled when the export future resolves, posts the current fraction as the notice.
+    ws.noticeProgress = 0;
+    // A periodic timer, cancelled when the export future resolves, updates the progress bar under the notice.
     final poll = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       final f = exportFractionOf(ws);
       if (f > 0 && f < 1) {
         ws.notice = 'Writing $name · ${(f * 100).round()}%';
+        ws.noticeProgress = f;
       }
     });
     final done = await exportVideoTo(ws, mp4);
     poll.cancel();
     if (mounted) {
       ws.notice = done ? 'Written: $name' : 'Not written: ${stageError(ws)}';
+      ws.noticeProgress = null;
     }
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
       unawaited(_checkFlashes(mp4));

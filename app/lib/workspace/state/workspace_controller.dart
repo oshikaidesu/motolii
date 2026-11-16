@@ -142,6 +142,8 @@ class WorkspaceController extends ChangeNotifier {
   set notice(String? said) => notices.notice = said;
   void Function()? get noticeGo => notices.noticeGo;
   set noticeGo(void Function()? go) => notices.noticeGo = go;
+  double? get noticeProgress => notices.progress;
+  set noticeProgress(double? f) => notices.progress = f;
 
   static T timed<T>(String name, T Function() does) =>
       Timeline.timeSync(name, does);
