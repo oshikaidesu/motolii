@@ -14,6 +14,7 @@ import 'package:super_drag_and_drop/super_drag_and_drop.dart'
 
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart' show Motion;
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
@@ -345,14 +346,23 @@ class WorkspaceState extends State<Workspace> {
     ),
   );
 
+  /// Drawn over the window while a Finder / Explorer drag is held above it, so the user sees that files can be dropped here.
+  /// Cleared on drop and on leave by the DropRegion below.
+  final _drophover = ValueNotifier<bool>(false);
+
   @override
   Widget build(BuildContext context) {
     final window = WorkspaceScope(
       ws: ws,
       child: DropRegion(
         formats: const [Formats.fileUri],
-        onDropOver: (_) => DropOperation.copy,
+        onDropOver: (_) {
+          _drophover.value = true;
+          return DropOperation.copy;
+        },
+        onDropLeave: (_) => _drophover.value = false,
         onPerformDrop: (event) async {
+          _drophover.value = false;
           final files = <String>[];
           for (final item in event.session.items) {
             final reader = item.dataReader;
@@ -378,6 +388,27 @@ class WorkspaceState extends State<Workspace> {
             child: Stack(
               children: [
                 Overlay(initialEntries: [_entry]),
+                // One accent border and faint tint while files are held over the window, so a drop looks received.
+                ValueListenableBuilder<bool>(
+                  valueListenable: _drophover,
+                  builder: (_, on, _) => Positioned.fill(
+                    child: IgnorePointer(
+                      child: AnimatedOpacity(
+                        duration: Motion.dur,
+                        opacity: on ? 1 : 0,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: WindowTokens.accent.withValues(alpha: .06),
+                            border: Border.all(
+                              color: WindowTokens.accent,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 if (home && documentPath != null && projectOpen(ws))
                   Positioned.fill(
                     child: HomeWindow(
