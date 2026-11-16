@@ -130,6 +130,73 @@ Script::Script(const std::string& file, const std::string& p5,
                                     "acorn.js", JS_EVAL_TYPE_GLOBAL));
       JS_FreeValue(own->cx, JS_Eval(own->cx, prelude.c_str(), prelude.size(),
                                     "ae_prelude.js", JS_EVAL_TYPE_GLOBAL));
+      // AGENTS.md 原則 2: AE 式の解釈は lottie-web (ExpressionManager) に
+      // 任せる方向。MOTOLII_LOTTIE 環境変数を立てた時だけ、自前 ae_prelude の
+      // AE.* を lottie 版で上書きする。安定したらこの分岐を既定に、
+      // ae_prelude は retire。
+      if (const char* on = std::getenv("MOTOLII_LOTTIE"); on && *on) {
+        const std::filesystem::path lottieRoot = js / "lottie",
+                                    shimAt = doc_engine(
+                                        "community/after_effects/"
+                                        "lottie_shim.js");
+        struct LottieLoad {
+          std::filesystem::path root;
+        };
+        static LottieLoad load_data;
+        load_data.root = lottieRoot;
+        // Normalizer: resolves 'motolii-lottie/<path>' to third_party/js/lottie/<path>,
+        // and anything starting with '.' relative to the importing file.
+        auto normalizer = +[](JSContext* cx, const char* base, const char* name,
+                              void* opq) -> char* {
+          auto* d = static_cast<LottieLoad*>(opq);
+          std::string n = name;
+          std::filesystem::path to;
+          const std::string_view mark = "motolii-lottie/";
+          if (n.rfind(mark, 0) == 0) {
+            to = d->root / n.substr(mark.size());
+          } else if (!n.empty() && n[0] == '.') {
+            to = std::filesystem::path(base).parent_path() / n;
+            // lottie imports look like '../common' — add .js if it has no ext
+            if (!to.has_extension() && !std::filesystem::exists(to))
+              to.replace_extension(".js");
+          } else {
+            to = n;
+          }
+          return js_strdup(cx, to.lexically_normal().string().c_str());
+        };
+        auto loader = +[](JSContext* cx, const char* name, void*) -> JSModuleDef* {
+          const std::string src = read_text(name);
+          if (src.empty()) return nullptr;
+          JSValue built =
+              JS_Eval(cx, src.c_str(), src.size(), name,
+                      JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+          if (JS_IsException(built)) return nullptr;
+          auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+          JS_FreeValue(cx, built);
+          return m;
+        };
+        JS_SetModuleLoaderFunc(own->rt, normalizer, loader, &load_data);
+        const std::string shim = read_text(shimAt);
+        if (shim.empty()) {
+          own->trouble = "lottie_shim is not where it is stored: " +
+                         shimAt.string();
+        } else {
+          JSValue ran =
+              JS_Eval(own->cx, shim.c_str(), shim.size(),
+                      shimAt.string().c_str(), JS_EVAL_TYPE_MODULE);
+          if (JS_IsException(ran)) {
+            JSValue e = JS_GetException(own->cx);
+            const char* s = JS_ToCString(own->cx, e);
+            own->trouble =
+                std::string("lottie_shim threw at load: ") + (s ? s : "?");
+            JS_FreeCString(own->cx, s);
+            JS_FreeValue(own->cx, e);
+          }
+          JS_FreeValue(own->cx, ran);
+          for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
+          }
+        }
+      }
     }
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
