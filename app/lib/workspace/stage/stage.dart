@@ -90,7 +90,7 @@ class _StageState extends State<_Stage> {
     // A new name each time, because Flutter's image cache identifies a file by its name.
     final png = newSnapshotPath();
     if (!stageTakeStill(_ws, png)) {
-      _ws.notice = 'No snapshot: ${stageError(_ws)}';
+      _ws.notice = 'No snapshot: ${stageErrorWithHint(_ws)}';
       return;
     }
     _forget();

@@ -252,7 +252,7 @@ class WorkspaceState extends State<Workspace> {
         folder = '${parentFolderOf(doc)}/$name package';
     final n = packProject(ws, folder, name);
     ws.notice = n < 0
-        ? 'Not packaged: ${stageError(ws)}'
+        ? 'Not packaged: ${stageErrorWithHint(ws)}'
         : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
@@ -263,7 +263,7 @@ class WorkspaceState extends State<Workspace> {
     final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${ws.frame}.png';
     ws.notice = stageTakeStill(ws, png)
         ? 'Written: ${png.split('/').last}'
-        : 'Not written: ${stageError(ws)}';
+        : 'Not written: ${stageErrorWithHint(ws)}';
   }
 
   /// Holds the focus when nothing else in the window does (a field was left or a pane closed), so the window's keys still work.
