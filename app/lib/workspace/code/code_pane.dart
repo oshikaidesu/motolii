@@ -18,14 +18,17 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/values_card.dart' show CardBin, CardGrip;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 import 'package:motolii/storage/text_file.dart' show readText;
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/code/functions_panel.dart';
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/code_field.dart' show CodeField;
 import 'package:motolii/workspace/shelf/effect_code.dart';
@@ -283,7 +286,7 @@ class _CodePaneState extends State<CodePane> {
 }
 
 /// One cell: a head with the card's title and what its code is on or written in, and under it the code, unless folded.
-class _Cell extends StatelessWidget {
+class _Cell extends StatefulWidget {
   const _Cell(
     this.title,
     this.code, {
@@ -315,20 +318,25 @@ class _Cell extends StatelessWidget {
   final VoidCallback? onEye;
   final VoidCallback onRemove;
 
+  @override
+  State<_Cell> createState() => _CellState();
+}
+
+class _CellState extends State<_Cell> {
+  bool _tagging = false;
+
   /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
   /// reads it); for any other code, what it is written in, said by the file's ending.
   String get _on {
-    final text = readText(EffectCode.source(code.word)) ?? '';
+    final text = readText(EffectCode.source(widget.code.word)) ?? '';
     final named = RegExp(r'//\s*--property:\s*(\w+)')
         .firstMatch(text)
         ?.group(1);
     if (named != null && named.isNotEmpty) {
-      // As After Effects' Timeline names an expression's row under its property, "Expression: Rotation"; a bare
-      // "Rotation" beside other cells' "JavaScript" read as a language.
       return 'Expression: ${named[0].toUpperCase()}${named.substring(1)}';
     }
-    return switch (code.word.split('.').last) {
+    return switch (widget.code.word.split('.').last) {
       'wgsl' => 'WGSL',
       'fs' => 'GLSL',
       _ => 'JavaScript',
@@ -347,13 +355,13 @@ class _Cell extends StatelessWidget {
       children: [
         Expanded(
           child: Pressable(
-            onTap: onFold,
+            onTap: widget.onFold,
             builder: (_, hot) => Row(
-              key: ValueKey('code-cell-head:$title'),
+              key: ValueKey('code-cell-head:${widget.title}'),
               children: [
-                DisclosureTriangle(open: open, hot: hot),
+                DisclosureTriangle(open: widget.open, hot: hot),
                 SizedBox(width: Shape.s(6)),
-                if (naming case final field?)
+                if (widget.naming case final field?)
                   SizedBox(
                     width: Shape.z(180),
                     height: Shape.s(18),
@@ -362,43 +370,147 @@ class _Cell extends StatelessWidget {
                 else
                   Flexible(
                     child: GestureDetector(
-                      key: ValueKey('code-cell-name:$title'),
-                      onDoubleTap: onName,
+                      key: ValueKey('code-cell-name:${widget.title}'),
+                      onDoubleTap: widget.onName,
                       child: Text(
-                        title,
+                        widget.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyles.name(
-                          off ? Grey.g56 : (hot ? Grey.g95 : Grey.g91),
+                          widget.off ? Grey.g56 : (hot ? Grey.g95 : Grey.g91),
                         ),
                       ),
                     ),
                   ),
                 const Spacer(),
-                if (!open) ExpressionResult.mark(EffectCode.source(code.word)),
+                if (!widget.open)
+                  ExpressionResult.mark(EffectCode.source(widget.code.word)),
                 Text(_on, style: TextStyles.micro(Grey.g56)),
                 SizedBox(width: Shape.s(10)),
               ],
             ),
           ),
         ),
-        if (onEye case final eye?)
+        if (widget.onEye case final eye?)
           Pressable(
-            key: ValueKey('code-cell-${off ? 'show' : 'hide'}:$title'),
+            key: ValueKey(
+              'code-cell-${widget.off ? 'show' : 'hide'}:${widget.title}',
+            ),
             onTap: eye,
             builder: (_, h) => Padding(
               padding: EdgeInsets.only(right: Shape.s(6)),
               child: Glyph(
-                off ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
+                widget.off ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
                 size: 12,
                 color: h ? Grey.g95 : Grey.g56,
                 fade: true,
               ),
             ),
           ),
-        CardBin(onRemove, key: ValueKey('code-cell-remove:$title')),
-        if (at != null) const CardGrip(),
+        CardBin(
+          widget.onRemove,
+          key: ValueKey('code-cell-remove:${widget.title}'),
+        ),
+        if (widget.at != null) const CardGrip(),
       ],
+    ),
+  );
+
+  /// The thin line under the head: author · licence, engine tags and user tags as chips.
+  Widget? _metaRow() {
+    final file = EffectCode.source(widget.code.word);
+    final meta = shelfMetaOfFile(file);
+    final tags = ShelfTags.shared;
+    final userTags = tags.ownOf('Effects', widget.title);
+    if ((meta == null || meta.isEmpty) && userTags.isEmpty && !_tagging) {
+      return null;
+    }
+    final parts = <String>[
+      if (meta != null && meta.author.isNotEmpty) 'by ${meta.author}',
+      if (meta != null && meta.license.isNotEmpty) meta.license,
+    ];
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset + Shape.s(18),
+        0,
+        WindowTokens.inset,
+        Shape.s(4),
+      ),
+      child: Wrap(
+        spacing: Shape.s(4),
+        runSpacing: Shape.s(2),
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (parts.isNotEmpty)
+            Text(parts.join(' · '), style: TextStyles.label(Grey.g44)),
+          for (final t in userTags) _userChip(t),
+          if (_tagging) _tagField() else _addTagButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _userChip(String tag) => Pressable(
+    onTap: () => setState(() {
+      ShelfTags.shared.setOwn(
+        'Effects',
+        widget.title,
+        ShelfTags.shared.ownOf('Effects', widget.title)..remove(tag),
+      );
+    }),
+    builder: (_, hot) => Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Shape.s(5),
+        vertical: Shape.s(1),
+      ),
+      decoration: BoxDecoration(
+        color: hot ? Grey.g26 : Grey.g20,
+        borderRadius: BorderRadius.circular(Shape.s(3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('#$tag', style: TextStyles.label(Grey.g63)),
+          SizedBox(width: Shape.s(2)),
+          Text('×', style: TextStyles.label(hot ? Grey.g76 : Grey.g44)),
+        ],
+      ),
+    ),
+  );
+
+  Widget _addTagButton() => Pressable(
+    onTap: () => setState(() => _tagging = true),
+    builder: (_, hot) => Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: Shape.s(5),
+        vertical: Shape.s(1),
+      ),
+      child: Text('+', style: TextStyles.label(hot ? Grey.g76 : Grey.g44)),
+    ),
+  );
+
+  Widget _tagField() => SizedBox(
+    width: Shape.z(100),
+    height: Shape.s(16),
+    child: TypedField(
+      key: ValueKey('code-cell-tag-input:${widget.title}'),
+      text: '',
+      style: TextStyles.label(Grey.g91),
+      cursor: Grey.g76,
+      take: true,
+      escapes: true,
+      onDone: (said) {
+        if (said != null) {
+          final tag = said.trim().toLowerCase().replaceFirst(RegExp(r'^#'), '');
+          if (tag.isNotEmpty) {
+            ShelfTags.shared.setOwn('Effects', widget.title, {
+              ...ShelfTags.shared.ownOf('Effects', widget.title),
+              tag,
+            });
+          }
+        }
+        setState(() => _tagging = false);
+      },
     ),
   );
 
@@ -406,15 +518,16 @@ class _Cell extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      if (at case final i?)
+      if (widget.at case final i?)
         ReorderableDragStartListener(
-          key: ValueKey('code-cell-drag:$title'),
+          key: ValueKey('code-cell-drag:${widget.title}'),
           index: i,
           child: _head(),
         )
       else
         _head(),
-      if (open)
+      ?_metaRow(),
+      if (widget.open)
         Padding(
           padding: EdgeInsets.fromLTRB(
             WindowTokens.inset,
@@ -422,7 +535,7 @@ class _Cell extends StatelessWidget {
             WindowTokens.inset,
             Shape.s(8),
           ),
-          child: code,
+          child: widget.code,
         ),
     ],
   );

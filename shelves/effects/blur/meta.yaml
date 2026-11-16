@@ -1,0 +1,54 @@
+Blur (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+  source: https://github.com/sashimono-and-tsuitate/sashimono-edit
+
+Border Blur (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+  source: https://github.com/sashimono-and-tsuitate/sashimono-edit
+
+Circular Blur (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+  source: https://github.com/sashimono-and-tsuitate/sashimono-edit
+
+Directional Blur (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+  source: https://github.com/sashimono-and-tsuitate/sashimono-edit
+
+Diagonal Blur:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Edge Blur:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Fast Blur:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Dilate:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Dilate-Fast:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Erode:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video
+
+Erode-Fast:
+  author: VIDVOX
+  license: MIT
+  source: https://editor.isf.video

@@ -57,7 +57,7 @@ class _ShelfPaneState extends State<ShelfPane> {
   ValueNotifier<int> get _reads => _kept('reads', () => ValueNotifier<int>(0));
 
   /// The tags of the shelves' items and the words searches are completed from, shared by the window's shelves.
-  ShelfTags get _tags => _kept('tags', ShelfTags.new);
+  ShelfTags get _tags => _kept('tags', () => ShelfTags.shared);
 
   // What each shelf keeps between builds. What a controller is given is fetched before it is made, because making
   // one must not add to the view while the view is looking its key up.

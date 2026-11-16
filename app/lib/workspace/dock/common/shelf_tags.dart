@@ -19,6 +19,10 @@ import 'package:motolii/storage/shelf_tags_file.dart'
 /// The tags of the shelves' items, the words a search is completed from, and the item each search was last answered
 /// with. One for the window, shared by its shelves.
 class ShelfTags {
+  /// The window's tags. All panes that read or write user tags share this instance,
+  /// so a tag added in the Code tab is seen by the Effects shelf at once.
+  static final shared = ShelfTags();
+
   final _own = <String, Set<String>>{};
   bool _read = false;
 
