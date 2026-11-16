@@ -154,9 +154,6 @@ class _CodeFieldState extends State<CodeField> {
         selectionColor: (dark ? darkSelectionColor : lightSelectionColor)
             .withAlpha(120),
       ),
-      bracketPairStyle: BracketPairStyle(
-        color: dark ? darkBracketColor : lightBracketColor,
-      ),
       minimapStyle: fit
           ? null
           : MinimapStyle(backgroundColor: WindowTokens.well),
