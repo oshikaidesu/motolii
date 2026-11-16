@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/file_read.h"
 #include "community/aviutl/aviutl.h"
 #include "community/aviutl/aviutl_fx.h"
 #include "community/aviutl/aviutl_load.h"
@@ -47,6 +48,17 @@ namespace {
 // script's Lua state after the sandbox.
 std::filesystem::path aviutl_globals_path() {
   return doc_engine("community/aviutl/aviutl_globals.lua");
+}
+
+// Reads a WGSL shader next to this file, cached after the first read. The
+// placing, drawpoly and blur shaders live as .wgsl files so they are easier to
+// change, swap or step through than a C++ string literal.
+const std::string& aviutl_wgsl(const char* name) {
+  static std::map<std::string, std::string> cache;
+  if (auto it = cache.find(name); it != cache.end()) return it->second;
+  return cache[name] =
+             read_text(doc_engine((std::string("community/aviutl/") + name)
+                                      .c_str()));
 }
 
 }  // namespace
@@ -167,14 +179,18 @@ std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
   else
     r->chunk = luaL_ref(L, LUA_REGISTRYINDEX);
   std::string why;
-  if (!(r->place = interop::screen(s.engine, "aviutl place", aviutl_placing, 64,
-                                   &why)))
+  if (!(r->place =
+            interop::screen(s.engine, "aviutl place",
+                            aviutl_wgsl("aviutl_placing.wgsl").c_str(), 64,
+                            &why)))
     r->trouble = "its placing shader: " + why;
-  if (!(r->poly = interop::screen(s.engine, "aviutl drawpoly", aviutl_poly, 16,
+  if (!(r->poly = interop::screen(s.engine, "aviutl drawpoly",
+                                  aviutl_wgsl("aviutl_poly.wgsl").c_str(), 16,
                                   &why, 1, 0, true)))
     r->trouble = "its drawpoly shader: " + why;
-  if (!(r->blur =
-            interop::screen(s.engine, "aviutl blur", aviutl_blur, 16, &why)))
+  if (!(r->blur = interop::screen(s.engine, "aviutl blur",
+                                  aviutl_wgsl("aviutl_blur.wgsl").c_str(), 16,
+                                  &why)))
     r->trouble = "its blur shader: " + why;
   r->none = Texture::Builder()
                 .width(1)

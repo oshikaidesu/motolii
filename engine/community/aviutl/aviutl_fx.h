@@ -82,8 +82,9 @@ struct AviutlRun {
   // Number of draws made with each shader this frame. Each draw has its own
   // constants, selected by the interop's pass index.
   std::map<interop::Screen*, int> draws;
-  // The shaders for placing images (aviutl_placing), for drawing polygons
-  // (aviutl_poly) and for blurring (aviutl_blur).
+  // The shaders for placing images (aviutl_placing.wgsl), for drawing polygons
+  // (aviutl_poly.wgsl) and for blurring (aviutl_blur.wgsl), found with
+  // aviutl_wgsl() in aviutl_run.cpp.
   interop::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
   // An empty texture for draws that read no image, and the noise texture that
   // obj.pixelshader supplies for a resource named "random".
@@ -157,25 +158,10 @@ struct AviutlRun {
 };
 
 // The placing shader. It draws an image onto the target so that the image's
-// pixel `src` lands at `at` of the target, rotated and scaled by `m` (the
-// matrix that takes target pixels back to image pixels), and faded by `alpha`.
-// Outside the image's edge the result is transparent (AviUtl2's "clip" sampler,
-// as in aviutl.cpp), except in way 2, where the edge is not clipped. Way 1
-// outputs the plain color, which is how a buffer is cleared. Otherwise colour.x
-// selects a conversion: 1 reads straight alpha and makes it premultiplied (a
-// layer's image is straight, as Motolii's effects keep it), and 2 makes it
-// straight again.
-extern const char* const aviutl_placing;
-// The shader for obj.drawpoly: draws the image on triangles (the interop's
-// mesh), sampled at each corner's uv, or in each corner's color for a face with
-// no image (uv.x below -1), faded by alpha.
-extern const char* const aviutl_poly;
-// The shader for the blur effect of obj.effect: a copy of sashimono-edit's
-// blur1d (MIT, effects/builtin.py). Each pass blurs along one axis: it sums the
-// pixel and up to `radius` pixels (at most 96) on each side, weighted by a
-// Gaussian whose sigma is half the radius. The buffer is already premultiplied,
-// as its premul step makes it.
-extern const char* const aviutl_blur;
+// The three WGSL shaders used while running an AviUtl2 script
+// (aviutl_placing.wgsl, aviutl_poly.wgsl, aviutl_blur.wgsl) live beside this
+// file. aviutl_run.cpp reads each one once through aviutl_wgsl() and hands it
+// to interop::screen; see the files for the shader text and header comments.
 
 // A frame's run is stopped once it takes longer than Redis allows a script
 // (lua-time-limit, 5000 ms). Redis does this with a count hook every 100000
