@@ -15,9 +15,13 @@ abstract final class Gestures {
   static const double grab = 8.0;
 
   /// `drag.4` Timeline bars and keyframes stop within this distance of other
-  /// stopping points. The stage's `snap` is 6 px on the screen (see
-  /// `stage_drag.dart`).
+  /// stopping points.
   static const double snapTimeline = 8.0;
+
+  /// `drag.4` A layer on the stage snaps to edges, centres and guides within
+  /// this many screen pixels (divided by the view scale when compared to
+  /// document distances).
+  static const double snapStage = 6.0;
 
   /// `hover.3` How long a state change takes. One motion with [Motion.dur].
   static Duration get change => Motion.dur;

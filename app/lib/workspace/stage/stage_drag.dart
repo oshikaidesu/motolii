@@ -6,6 +6,7 @@ import 'dart:ui' show Offset, Rect;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
@@ -92,7 +93,7 @@ class StageDrag extends ChangeNotifier {
     _snapTo = (box: _bounds(grabbed), xs: xs, ys: ys);
   }
 
-  /// Adjusts the drag offset [by] so the dragged layer's edges or centre land on a snap line within 6 screen pixels.
+  /// Adjusts the drag offset [by] so the dragged layer's edges or centre land on a snap line within [Gestures.snapStage] screen pixels.
   /// [s] is the view scale. It also records which lines were met so the painter can draw them.
   Offset _snapped(Offset by, double s) {
     final to = _snapTo;
@@ -108,7 +109,7 @@ class StageDrag extends ChangeNotifier {
         for (final line in [a, (a + b) / 2, b]) {
           for (final mine in [lo + d, lo + d + size / 2, lo + d + size]) {
             final diff = line - mine;
-            if (diff.abs() <= 6 / s &&
+            if (diff.abs() <= Gestures.snapStage / s &&
                 (best == null || diff.abs() < best.$1.abs())) {
               best = (diff, line);
             }
