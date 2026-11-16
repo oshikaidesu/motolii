@@ -14,7 +14,8 @@ import 'package:super_drag_and_drop/super_drag_and_drop.dart'
 
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
-import 'package:motolii/skin/tokens.dart' show Motion;
+import 'package:motolii/skin/tokens.dart'
+    show BoldStyle, Motion, Shape, TextStyles;
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
@@ -416,7 +417,8 @@ class WorkspaceState extends State<Workspace> {
             child: Stack(
               children: [
                 Overlay(initialEntries: [_entry]),
-                // One accent border and faint tint while files are held over the window, so a drop looks received.
+                // One accent border, a faint tint, and a centered "Drop files" badge while files are held over the
+                // window, so a drop looks received and the user knows it was understood.
                 ValueListenableBuilder<bool>(
                   valueListenable: _drophover,
                   builder: (_, on, _) => Positioned.fill(
@@ -424,12 +426,28 @@ class WorkspaceState extends State<Workspace> {
                       child: AnimatedOpacity(
                         duration: Motion.dur,
                         opacity: on ? 1 : 0,
-                        child: DecoratedBox(
+                        child: Container(
                           decoration: BoxDecoration(
                             color: WindowTokens.accent.withValues(alpha: .06),
                             border: Border.all(
                               color: WindowTokens.accent,
                               width: 2,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Shape.s(16),
+                              vertical: Shape.s(10),
+                            ),
+                            decoration: BoxDecoration(
+                              color: WindowTokens.accent,
+                              borderRadius: Shape.round(10),
+                            ),
+                            child: Text(
+                              'Drop files to add layers',
+                              style: TextStyles.name(WindowTokens.onAccent)
+                                  .bold,
                             ),
                           ),
                         ),
