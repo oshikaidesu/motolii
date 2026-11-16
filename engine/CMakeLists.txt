@@ -178,7 +178,7 @@ add_library(motolii_community_three STATIC
   community/three/solid_three.cpp
   community/three/three_isf.cpp
   community/three/tsl_shelf.cpp)
-target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base)
+target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base motolii_shelf)
 
 # Adapter: isf code run as it is.
 add_library(motolii_community_isf STATIC $<TARGET_OBJECTS:isf_translation>)
