@@ -7,14 +7,8 @@ import 'dart:ui' show Color, Size;
 import 'package:flutter/foundation.dart'
     show ValueNotifier, VoidCallback, listEquals, mapEquals;
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_moment.dart';
-import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/panel.dart';
 import 'package:motolii/skin/layer_colors.dart';
-import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';

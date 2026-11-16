@@ -1,8 +1,7 @@
 // The playhead (Playhead): the current frame, and whether the preview is playing.
 import 'package:flutter/foundation.dart' show ValueNotifier, VoidCallback;
 
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/panel.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 
 /// The playhead: the frame the window shows, and whether the preview is playing.
