@@ -166,11 +166,21 @@ Script::Script(const std::string& file, const std::string& p5,
         };
         auto loader = +[](JSContext* cx, const char* name, void*) -> JSModuleDef* {
           const std::string src = read_text(name);
-          if (src.empty()) return nullptr;
+          if (src.empty()) {
+            std::fprintf(stderr, "lottie: missing module %s\n", name);
+            JS_ThrowReferenceError(cx, "lottie module empty or missing: %s",
+                                   name);
+            return nullptr;
+          }
           JSValue built =
               JS_Eval(cx, src.c_str(), src.size(), name,
                       JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-          if (JS_IsException(built)) return nullptr;
+          if (JS_IsException(built)) {
+            // Keep the inner parse/load exception intact so quickjs's chained
+            // loader can surface it; just log the file to stderr for context.
+            std::fprintf(stderr, "lottie: compile failed in %s\n", name);
+            return nullptr;
+          }
           auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
           JS_FreeValue(cx, built);
           return m;
@@ -181,16 +191,32 @@ Script::Script(const std::string& file, const std::string& p5,
           own->trouble = "lottie_shim is not where it is stored: " +
                          shimAt.string();
         } else {
+          auto describe = [&](JSValue v) -> std::string {
+            if (!JS_IsException(v) && !JS_IsError(v)) return "?";
+            JSValue e = JS_IsException(v) ? JS_GetException(own->cx)
+                                          : JS_DupValue(own->cx, v);
+            const char* s = JS_ToCString(own->cx, e);
+            std::string out = s ? s : "?";
+            JSValue st = JS_GetPropertyStr(own->cx, e, "stack");
+            if (!JS_IsUndefined(st) && !JS_IsException(st)) {
+              const char* ss = JS_ToCString(own->cx, st);
+              if (ss) {
+                out += "\n";
+                out += ss;
+              }
+              JS_FreeCString(own->cx, ss);
+            }
+            JS_FreeValue(own->cx, st);
+            JS_FreeCString(own->cx, s);
+            JS_FreeValue(own->cx, e);
+            return out;
+          };
           JSValue ran =
               JS_Eval(own->cx, shim.c_str(), shim.size(),
                       shimAt.string().c_str(), JS_EVAL_TYPE_MODULE);
           if (JS_IsException(ran)) {
-            JSValue e = JS_GetException(own->cx);
-            const char* s = JS_ToCString(own->cx, e);
             own->trouble =
-                std::string("lottie_shim threw at load: ") + (s ? s : "?");
-            JS_FreeCString(own->cx, s);
-            JS_FreeValue(own->cx, e);
+                std::string("lottie_shim threw at load: ") + describe(ran);
           }
           JS_FreeValue(own->cx, ran);
           for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
