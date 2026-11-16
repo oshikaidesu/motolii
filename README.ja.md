@@ -4,9 +4,9 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**ネットで見つけた表現を、すぐ自分の映像に。**
+**離れていた表現の、交差点。**
 
-Motolii は、MV やモーショングラフィックスを制作するためのオープンソースの動画編集ソフトです。Web 上で公開されているエフェクトやスクリプトを、専用プラグインに作り直さずに利用できます。
+Shadertoy のシェーダー、p5.js のスケッチ、After Effects の式、CSS アニメーション、AviUtl のスクリプト、three.js のマテリアル ── 同じ動画に、同じタイムラインに、一緒に載る。Motolii は、別々だったクリエイティブの世界が出会うオープンソースの動画編集ソフトです。それぞれのコードは公開されたまま動き、プラグインに作り直す必要はありません。
 
 ![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
 

@@ -4,9 +4,9 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**Use a look you found on the net in your own video, right away.**
+**A crossroads of expressions that were apart.**
 
-Motolii is an open-source video editor for making music videos and motion graphics. It can use effects and scripts published on the web without rebuilding them as dedicated plugins.
+Shadertoy shaders, p5.js sketches, After Effects expressions, CSS animations, AviUtl scripts, three.js materials — pasted into the same video, on the same timeline, running together. Motolii is an open-source video editor where creative communities that have been separate meet. Their code runs as it was published, without being rebuilt as a plugin.
 
 ![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
