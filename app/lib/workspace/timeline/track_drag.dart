@@ -233,11 +233,19 @@ class TrackDrag extends ChangeNotifier {
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
+    // Remove the lane keyframe closest to the pointer, not the first one in
+    // iteration order: at a dense zoom several sit inside the hit radius (B144).
+    double? pickK;
+    double pickDx = TimelineMetrics.keyPicked + 2;
     for (final k in timeline_service.keyframeTimes(ws, t, name)) {
-      if ((v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <=
-          TimelineMetrics.keyPicked + 2) {
-        return ws.after(timeline_service.removeKeyframe(ws, t, name, k));
+      final dx = (v.x((k * WorkspaceController.fps).round()) - p.dx).abs();
+      if (dx <= pickDx) {
+        pickDx = dx;
+        pickK = k;
       }
+    }
+    if (pickK case final k?) {
+      return ws.after(timeline_service.removeKeyframe(ws, t, name, k));
     }
     final now = DateTime.now(),
         twice =
@@ -366,8 +374,20 @@ class TrackDrag extends ChangeNotifier {
     if (RowFlags(workspace!).isLocked(l.id) || (off && !_onPale(ws, l, p))) {
       return false;
     }
+    // Pick the key closest to the pointer within the hit radius, not just the
+    // first one that matches. At a dense zoom several keys sit inside the
+    // radius and the old "first wins" order grabbed one at the left edge of
+    // the group rather than the one the user was aiming at (B144).
+    int? pickK;
+    double pickDx = TimelineMetrics.keyPicked + 2;
     for (final k in l.keys) {
-      if ((v.x(k) - p.dx).abs() > TimelineMetrics.keyPicked + 2) continue;
+      final dx = (v.x(k) - p.dx).abs();
+      if (dx <= pickDx) {
+        pickDx = dx;
+        pickK = k;
+      }
+    }
+    if (pickK case final k?) {
       final held = (layer: l.id, frame: k),
           all = ws.keys.contains(held) ? ws.keys.toList() : [held];
       if (!ws.keys.contains(held)) ws.pickKey(held);
