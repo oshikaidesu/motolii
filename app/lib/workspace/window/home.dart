@@ -193,10 +193,20 @@ class _HomeWindowState extends State<HomeWindow> {
           ..add(
             Padding(
               padding: EdgeInsets.only(
-                top: rows.isEmpty ? 0 : Shape.s(24),
-                bottom: Shape.s(12),
+                top: rows.isEmpty ? 0 : Shape.s(28),
+                bottom: Shape.s(14),
               ),
-              child: Text(day, style: TextStyles.label(Grey.g76)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(day, style: TextStyles.name(Grey.g91).bold),
+                  SizedBox(width: Shape.s(10)),
+                  // A hair-line that stretches across the remaining width ties the group together and separates it from the one above.
+                  Expanded(
+                    child: Container(height: 1, color: WindowTokens.line),
+                  ),
+                ],
+              ),
             ),
           )
           ..add(grid(docs));
@@ -206,14 +216,15 @@ class _HomeWindowState extends State<HomeWindow> {
       key: const ValueKey('ws-home'),
       color: WindowTokens.ground,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(Shape.s(32), Shape.s(24), Shape.s(32), 0),
+        padding: EdgeInsets.fromLTRB(Shape.s(40), Shape.s(28), Shape.s(40), 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Top band: the same wordmark as the main window's top bar, so Home reads as the app's front door, and a plain close icon on the right.
             Row(
               children: [
+                _HomeWordmark(),
                 const Spacer(),
-                // Icon button with the standard close glyph, matching the rest of the app.
                 IconPress(
                   (c) => Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
                   key: const ValueKey('home-close'),
@@ -224,64 +235,83 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
               ],
             ),
-            SizedBox(height: Shape.s(8)),
+            SizedBox(height: Shape.s(22)),
             NakedButton(
               enableFeedback: false,
-              // CapCut's "Create project": a button as wide as the page, with the + glyph set apart from the label so it reads as a button, not a line of text.
+              // "New Project" is the first thing after the wordmark: a wide button with an accent "+" badge to the left of the label, so the action reads as first-class.
               key: const ValueKey('home-new'),
               onPressed: widget.onNew,
               child: Container(
                 height: Shape.z(112),
-                alignment: Alignment.center,
+                padding: EdgeInsets.symmetric(horizontal: Shape.s(28)),
                 decoration: BoxDecoration(
                   color: WindowTokens.card,
-                  borderRadius: Shape.round(12),
-                  border: Border.all(
-                    color: WindowTokens.raised,
-                    style: BorderStyle.solid,
-                  ),
+                  borderRadius: Shape.round(14),
+                  border: Border.all(color: WindowTokens.line),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // The lime "+" badge: the same manner as the top bar's wordmark, so a "create" action reads as a first-class control.
                     Container(
-                      width: Shape.z(36),
-                      height: Shape.z(36),
+                      width: Shape.z(40),
+                      height: Shape.z(40),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: WindowTokens.accent,
-                        borderRadius: Shape.round(8),
+                        borderRadius: Shape.round(10),
                       ),
                       child: Text(
                         '+',
                         style: TextStyles.title(WindowTokens.onAccent).copyWith(
-                          fontSize: TextStyles.px(22),
+                          fontSize: TextStyles.px(24),
                           fontWeight: FontWeight.w800,
                           height: 1,
                         ),
                       ),
                     ),
-                    SizedBox(width: Shape.s(14)),
-                    Text('New Project', style: TextStyles.title(Grey.g91).bold),
+                    SizedBox(width: Shape.s(16)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'New Project',
+                            style: TextStyles.title(Grey.g91).bold,
+                          ),
+                          SizedBox(height: Shape.s(3)),
+                          Text(
+                            'Start with an empty composition',
+                            style: TextStyles.label(Grey.g56),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Glyph(
+                      AppGlyphs.chevron,
+                      size: Shape.z(14),
+                      color: Grey.g56,
+                    ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: Shape.s(28)),
+            SizedBox(height: Shape.s(32)),
+            // "Projects · N" header line with search on the right and the sort chips next to it.
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Projects', style: TextStyles.title(Grey.g91)),
+                Text('Projects', style: TextStyles.title(Grey.g91).bold),
+                SizedBox(width: Shape.s(10)),
+                Text('${shown.length}', style: TextStyles.title(Grey.g56)),
                 const Spacer(),
                 SizedBox(
-                  width: Shape.z(180),
+                  width: Shape.z(220),
                   child: ShelfSearchField(
                     controller: _findText,
                     hint: 'Search',
                   ),
                 ),
-                SizedBox(width: Shape.s(8)),
+                SizedBox(width: Shape.s(10)),
                 if (_picked.isNotEmpty) ...[
                   homeButton(
                     'home-export',
@@ -320,4 +350,38 @@ class _HomeWindowState extends State<HomeWindow> {
   }
 
   final _findText = TextEditingController();
+}
+
+/// The lime "M" square and "Motolii" wordmark, as in the main window's top bar. One manner used in both places so Home
+/// reads as the same app, not a splash screen.
+class _HomeWordmark extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: Shape.z(28),
+        height: Shape.z(28),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: WindowTokens.accent),
+        child: Text(
+          'M',
+          style: TextStyles.title(WindowTokens.onAccent).copyWith(
+            fontSize: TextStyles.px(16),
+            fontWeight: FontWeight.w900,
+            height: 1,
+          ),
+        ),
+      ),
+      SizedBox(width: Shape.s(10)),
+      Text(
+        'Motolii',
+        style: TextStyles.title(Grey.g95).copyWith(
+          fontSize: TextStyles.px(18),
+          fontWeight: FontWeight.w800,
+          letterSpacing: -.3,
+        ),
+      ),
+    ],
+  );
 }

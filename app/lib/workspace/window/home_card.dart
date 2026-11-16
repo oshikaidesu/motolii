@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/disk.dart' show imageFile;
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/window/home_project.dart';
 
@@ -83,27 +84,29 @@ class HomeCard extends StatelessWidget {
                 children: [
                   if (d.picture != null)
                     Image(image: imageFile(d.picture!), fit: BoxFit.cover),
+                  // A round accent pill with a check glyph when the card is picked, mirroring Finder's selection dot.
                   if (picked)
                     Positioned(
                       left: 0,
                       top: 0,
                       child: Container(
                         key: ValueKey('home-picked:${d.path}'),
-                        margin: EdgeInsets.all(Shape.s(6)),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: Shape.s(6),
-                          vertical: Shape.s(2),
-                        ),
+                        margin: EdgeInsets.all(Shape.s(8)),
+                        width: Shape.z(20),
+                        height: Shape.z(20),
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: WindowTokens.accent,
-                          borderRadius: Shape.round(WindowTokens.chipRadius),
+                          shape: BoxShape.circle,
                         ),
                         child: Text(
                           '✓',
-                          style: TextStyles.label(WindowTokens.onAccent),
+                          style: TextStyles.label(WindowTokens.onAccent)
+                              .copyWith(fontSize: TextStyles.px(11), height: 1),
                         ),
                       ),
                     ),
+                  // The "•••" more button uses the shared more glyph, in a round pill, so it reads with the rest of the app.
                   Positioned(
                     right: 0,
                     top: 0,
@@ -112,16 +115,19 @@ class HomeCard extends StatelessWidget {
                       key: ValueKey('home-more:${d.path}'),
                       onPressed: onMore,
                       child: Container(
-                        margin: EdgeInsets.all(Shape.s(6)),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: Shape.s(6),
-                          vertical: Shape.s(2),
-                        ),
+                        margin: EdgeInsets.all(Shape.s(8)),
+                        width: Shape.z(24),
+                        height: Shape.z(24),
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: WindowTokens.ground,
-                          borderRadius: Shape.round(WindowTokens.chipRadius),
+                          shape: BoxShape.circle,
                         ),
-                        child: Text('•••', style: TextStyles.label(Grey.g76)),
+                        child: Glyph(
+                          AppGlyphs.more,
+                          size: Shape.z(12),
+                          color: Grey.g76,
+                        ),
                       ),
                     ),
                   ),
