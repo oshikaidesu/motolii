@@ -23,6 +23,16 @@
         ]
       },
       {
+        "matcher": "mcp__computer-use__request_access",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"UI verification hint: golden tests in app/test/golden/ capture PNG screenshots without screen access. Run: cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes test/golden/ — or add a new golden test for the widget you want to check. Consider this before requesting screen access.\"}}'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|mcp__terminal__run_in_terminal",
         "hooks": [
           {
