@@ -4,6 +4,7 @@
 // Each command names the manual section it comes from. Where Live has no such key, the app that does is named.
 // This file defines what each command does to the workspace state. keymap.dart maps keys to commands,
 // and the user's keybindings.json can override that mapping.
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
@@ -79,8 +80,8 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     },
     'nudge.left': () => nudge(-1),
     'nudge.right': () => nudge(1),
-    'nudge.left10': () => nudge(-10),
-    'nudge.right10': () => nudge(10),
+    'nudge.left10': () => nudge(-Gestures.nudgeShift),
+    'nudge.right10': () => nudge(Gestures.nudgeShift),
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
     // Live 42.5 and 42.19 Cmd+R: renames the selected track, or the selected locator.
