@@ -22,8 +22,6 @@
 #include <cstring>
 #include <string>
 
-namespace motolii {
-
 const char* motolii_font_tags(const char* path) {
   static thread_local std::string out;
   out.clear();
@@ -112,8 +110,6 @@ const char* motolii_font_tags(const char* path) {
   return out.c_str();
 }
 
-}  // namespace motolii
-
 #else
 
 // Windows and Linux: HarfBuzz (hb_face_create / hb_ot_name_list_names) or
@@ -123,13 +119,9 @@ const char* motolii_font_tags(const char* path) {
 // the same tags out of these tables. Until then the Fonts shelf treats every
 // font as Latin only (no tags, no scripts), which falls back to the English
 // sample line.
-namespace motolii {
-
 const char* motolii_font_tags(const char* path) {
   (void)path;
   return "";
 }
-
-}  // namespace motolii
 
 #endif
