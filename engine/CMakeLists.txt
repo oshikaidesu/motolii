@@ -152,8 +152,36 @@ add_library(motolii_community_css INTERFACE)
 target_link_libraries(motolii_community_css INTERFACE motolii_css)
 
 # Adapter: after effects code run as it is.
+# A build-time tool that pre-compiles lottie_shim.js and every module it reaches
+# to QuickJS bytecode. The engine reads the bytecode on each Script load
+# instead of parsing 7000 lines of lottie-web.
+add_executable(lottie_precompile community/after_effects/lottie_precompile.cpp)
+target_link_libraries(lottie_precompile PRIVATE motolii_flags)
+target_include_directories(lottie_precompile PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${HOMEBREW}/opt/quickjs-ng/include)
+target_link_directories(lottie_precompile PRIVATE ${HOMEBREW}/opt/quickjs-ng/lib)
+target_link_libraries(lottie_precompile PRIVATE qjs)
+target_link_options(lottie_precompile PRIVATE -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
+
+set(LOTTIE_BYTECODE_CC ${CMAKE_CURRENT_BINARY_DIR}/lottie_bytecode_generated.cc)
+file(GLOB_RECURSE LOTTIE_SOURCES CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/js/lottie/*.js)
+add_custom_command(
+  OUTPUT ${LOTTIE_BYTECODE_CC}
+  COMMAND lottie_precompile
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/js/lottie
+    ${CMAKE_CURRENT_SOURCE_DIR}/community/after_effects/lottie_shim.js
+    ${LOTTIE_BYTECODE_CC}
+  DEPENDS lottie_precompile
+    ${CMAKE_CURRENT_SOURCE_DIR}/community/after_effects/lottie_shim.js
+    ${LOTTIE_SOURCES}
+  COMMENT "Pre-compiling lottie_shim.js and its imports to QuickJS bytecode"
+  VERBATIM)
+
 add_library(motolii_community_after_effects STATIC
-  community/after_effects/lottie_slots.cpp)
+  community/after_effects/lottie_slots.cpp
+  ${LOTTIE_BYTECODE_CC})
 target_link_libraries(motolii_community_after_effects PUBLIC motolii_flags motolii_base motolii_community_quickjs)
 
 # Interop with Filament's WebGPU backend; its sources are built inside Filament's own build (gpu/CMakeLists.txt).

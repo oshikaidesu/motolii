@@ -10,6 +10,8 @@
 #include <thread>
 
 #include "base/file_read.h"
+#include "community/after_effects/lottie_bytecode.h"
+#include "community/after_effects/lottie_canonical.h"
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/project_reads.h"
 #include "community/script_runner/script_natives.h"
@@ -111,115 +113,99 @@ Script::Script(const std::string& file, const std::string& p5,
   if (src.find("AE.compile") !=
       std::string::npos) {  // AE 式は lottie-web の ExpressionManager が
                             // 解釈する (AGENTS.md 原則 2)。shim は
-                            // engine/community/after_effects/lottie_shim.js、
-                            // vendor は engine/third_party/js/lottie。
-    const std::filesystem::path js =
-        std::filesystem::path(p5).parent_path().parent_path();
+                            // community/after_effects/lottie_shim.js、vendor
+                            // は third_party/js/lottie。ビルド時に lottie_shim
+                            // とその import を QuickJS バイトコードに焼いて
+                            // あり (community/after_effects/lottie_bytecode.h)、
+                            // ここはそれを JS_ReadObject で読むだけ。
+    // Module loader: looks up the requested canonical name in the pre-compiled
+    // bytecode table and returns its JSModuleDef. Every lottie module the shim
+    // reaches was built into the table by lottie_precompile; a miss means the
+    // graph changed since the build.
+    auto loader = +[](JSContext* cx, const char* name, void*) -> JSModuleDef* {
+      const std::string n = name;
+      for (std::size_t i = 0; i < kLottieBytecodeCount; ++i) {
+        if (n == kLottieBytecode[i].name) {
+          JSValue m = JS_ReadObject(cx, kLottieBytecode[i].data,
+                                    kLottieBytecode[i].size,
+                                    JS_READ_OBJ_BYTECODE);
+          if (JS_IsException(m)) {
+            std::fprintf(stderr, "lottie: JS_ReadObject failed for %s\n",
+                         name);
+            return nullptr;
+          }
+          auto* def = (JSModuleDef*)JS_VALUE_GET_PTR(m);
+          JS_FreeValue(cx, m);
+          return def;
+        }
+      }
+      std::fprintf(stderr, "lottie: %s is not in the bytecode table\n", name);
+      JS_ThrowReferenceError(cx, "lottie module not pre-compiled: %s", name);
+      return nullptr;
+    };
+    JS_SetModuleLoaderFunc(own->rt, lottie_canonical, loader, nullptr);
+    // DOM globals must be set BEFORE the shim's imports evaluate, since
+    // lottie-web's utils/common.js reads navigator.userAgent at top-level
+    // and throws under QuickJS otherwise — which silently kills the
+    // shim module's top-level (import side effects are evaluated before
+    // the shim body). Set the stubs with a plain-script eval first.
     {
-        const std::filesystem::path lottieRoot = js / "lottie",
-                                    shimAt = doc_engine(
-                                        "community/after_effects/"
-                                        "lottie_shim.js");
-        struct LottieLoad {
-          std::filesystem::path root;
-        };
-        static LottieLoad load_data;
-        load_data.root = lottieRoot;
-        // Normalizer: resolves 'motolii-lottie/<path>' to third_party/js/lottie/<path>,
-        // and anything starting with '.' relative to the importing file.
-        auto normalizer = +[](JSContext* cx, const char* base, const char* name,
-                              void* opq) -> char* {
-          auto* d = static_cast<LottieLoad*>(opq);
-          std::string n = name;
-          std::filesystem::path to;
-          const std::string_view mark = "motolii-lottie/";
-          if (n.rfind(mark, 0) == 0) {
-            to = d->root / n.substr(mark.size());
-          } else if (!n.empty() && n[0] == '.') {
-            to = std::filesystem::path(base).parent_path() / n;
-            // lottie imports look like '../common' — add .js if it has no ext
-            if (!to.has_extension() && !std::filesystem::exists(to))
-              to.replace_extension(".js");
-          } else {
-            to = n;
+      static const char* kDomStubs =
+          "globalThis.navigator = globalThis.navigator || "
+          "{ userAgent: '' };\n"
+          "if (typeof globalThis.window === 'undefined') "
+          "globalThis.window = null;\n"
+          "if (typeof globalThis.document === 'undefined') "
+          "globalThis.document = null;\n";
+      JS_FreeValue(own->cx,
+                   JS_Eval(own->cx, kDomStubs, std::strlen(kDomStubs),
+                           "<lottie_dom_stubs>", JS_EVAL_TYPE_GLOBAL));
+    }
+    const LottieBytecodeEntry* shim = nullptr;
+    for (std::size_t i = 0; i < kLottieBytecodeCount; ++i)
+      if (std::string(kLottieBytecode[i].name) == kLottieShimCanonical) {
+        shim = &kLottieBytecode[i];
+        break;
+      }
+    if (!shim) {
+      own->trouble = "lottie_shim bytecode not generated (re-run cmake)";
+    } else {
+      auto describe = [&](JSValue v) -> std::string {
+        if (!JS_IsException(v) && !JS_IsError(v)) return "?";
+        JSValue e = JS_IsException(v) ? JS_GetException(own->cx)
+                                      : JS_DupValue(own->cx, v);
+        const char* s = JS_ToCString(own->cx, e);
+        std::string out = s ? s : "?";
+        JSValue st = JS_GetPropertyStr(own->cx, e, "stack");
+        if (!JS_IsUndefined(st) && !JS_IsException(st)) {
+          const char* ss = JS_ToCString(own->cx, st);
+          if (ss) {
+            out += "\n";
+            out += ss;
           }
-          return js_strdup(cx, to.lexically_normal().string().c_str());
-        };
-        auto loader = +[](JSContext* cx, const char* name, void*) -> JSModuleDef* {
-          const std::string src = read_text(name);
-          if (src.empty()) {
-            std::fprintf(stderr, "lottie: missing module %s\n", name);
-            JS_ThrowReferenceError(cx, "lottie module empty or missing: %s",
-                                   name);
-            return nullptr;
-          }
-          JSValue built =
-              JS_Eval(cx, src.c_str(), src.size(), name,
-                      JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-          if (JS_IsException(built)) {
-            // Keep the inner parse/load exception intact so quickjs's chained
-            // loader can surface it; just log the file to stderr for context.
-            std::fprintf(stderr, "lottie: compile failed in %s\n", name);
-            return nullptr;
-          }
-          auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
-          JS_FreeValue(cx, built);
-          return m;
-        };
-        JS_SetModuleLoaderFunc(own->rt, normalizer, loader, &load_data);
-        // DOM globals must be set BEFORE the shim's imports evaluate, since
-        // lottie-web's utils/common.js reads navigator.userAgent at top-level
-        // and throws under QuickJS otherwise — which silently kills the
-        // shim module's top-level (import side effects are evaluated before
-        // the shim body). Set the stubs with a plain-script eval first.
-        {
-          static const char* kDomStubs =
-              "globalThis.navigator = globalThis.navigator || "
-              "{ userAgent: '' };\n"
-              "if (typeof globalThis.window === 'undefined') "
-              "globalThis.window = null;\n"
-              "if (typeof globalThis.document === 'undefined') "
-              "globalThis.document = null;\n";
-          JS_FreeValue(own->cx,
-                       JS_Eval(own->cx, kDomStubs, std::strlen(kDomStubs),
-                               "<lottie_dom_stubs>", JS_EVAL_TYPE_GLOBAL));
+          JS_FreeCString(own->cx, ss);
         }
-        const std::string shim = read_text(shimAt);
-        if (shim.empty()) {
-          own->trouble = "lottie_shim is not where it is stored: " +
-                         shimAt.string();
-        } else {
-          auto describe = [&](JSValue v) -> std::string {
-            if (!JS_IsException(v) && !JS_IsError(v)) return "?";
-            JSValue e = JS_IsException(v) ? JS_GetException(own->cx)
-                                          : JS_DupValue(own->cx, v);
-            const char* s = JS_ToCString(own->cx, e);
-            std::string out = s ? s : "?";
-            JSValue st = JS_GetPropertyStr(own->cx, e, "stack");
-            if (!JS_IsUndefined(st) && !JS_IsException(st)) {
-              const char* ss = JS_ToCString(own->cx, st);
-              if (ss) {
-                out += "\n";
-                out += ss;
-              }
-              JS_FreeCString(own->cx, ss);
-            }
-            JS_FreeValue(own->cx, st);
-            JS_FreeCString(own->cx, s);
-            JS_FreeValue(own->cx, e);
-            return out;
-          };
-          JSValue ran =
-              JS_Eval(own->cx, shim.c_str(), shim.size(),
-                      shimAt.string().c_str(), JS_EVAL_TYPE_MODULE);
-          if (JS_IsException(ran)) {
-            own->trouble =
-                std::string("lottie_shim threw at load: ") + describe(ran);
-          }
-          JS_FreeValue(own->cx, ran);
-          for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
-          }
+        JS_FreeValue(own->cx, st);
+        JS_FreeCString(own->cx, s);
+        JS_FreeValue(own->cx, e);
+        return out;
+      };
+      JSValue m = JS_ReadObject(own->cx, shim->data, shim->size,
+                                JS_READ_OBJ_BYTECODE);
+      if (JS_IsException(m)) {
+        own->trouble = "lottie_shim: JS_ReadObject failed: " + describe(m);
+      } else {
+        // JS_EvalFunction resolves the shim's imports (calling the loader for
+        // each) and runs every reached module's top-level code in dependency
+        // order.
+        JSValue ran = JS_EvalFunction(own->cx, m);
+        if (JS_IsException(ran))
+          own->trouble =
+              std::string("lottie_shim threw at load: ") + describe(ran);
+        JS_FreeValue(own->cx, ran);
+        for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
         }
+      }
     }
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
