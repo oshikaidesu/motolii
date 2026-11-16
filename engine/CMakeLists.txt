@@ -177,6 +177,7 @@ target_link_libraries(motolii_community_sites PUBLIC PkgConfig::GSTREAMER)   # a
 add_library(motolii_community_three STATIC
   community/three/solid_three.cpp
   community/three/three_isf.cpp
+  community/three/tsl_each.cpp
   community/three/tsl_shelf.cpp)
 target_link_libraries(motolii_community_three PUBLIC motolii_flags motolii_base motolii_shelf)
 

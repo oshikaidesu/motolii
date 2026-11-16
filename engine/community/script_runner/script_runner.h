@@ -55,6 +55,9 @@ class Script {
   ~Script();
   // Returns true if the file ran without error.
   bool ok() const;
+  // Returns the WGSL vertex shader built by the GPU path, or an empty string
+  // when the GPU path could not be built (the CPU path is the fallback).
+  const std::string& wgsl() const;
   // Returns the text of the error, or an empty string if there was none.
   const std::string& trouble() const;
   // Returns true for a p5.js sketch, which p5.js itself runs; see p5_stand.h.

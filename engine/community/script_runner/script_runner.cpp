@@ -15,6 +15,7 @@
 #include "community/script_runner/script_natives.h"
 #include "community/sites/adapter.h"
 #include "community/subtitles/subtitles.h"
+#include "community/three/tsl_each.h"
 #include "media/video_frames_for_scripts.h"
 #include "shelf/shelf_folders.h"
 
@@ -38,6 +39,8 @@ struct Script::Own {
   std::vector<std::unique_ptr<Script>> helpers;
   bool relates = false;  // a relation's relate() and no draw(): it lays copies
                          // too, all at once (__copies_by_relate)
+  std::string wgsl;      // WGSL vertex shader built by tsl_each(); empty when
+                         // the GPU path could not be built (CPU is the fallback)
   FilmRead film;         // what its createCapture and createVideo see
   std::unique_ptr<Subtitles> subtitles;  // an .ass file's, drawn by libass
   std::vector<SketchLine> lines;         // its lines that draw
@@ -339,6 +342,16 @@ Script::Script(const std::string& file, const std::string& p5,
   own->each = JS_GetPropertyStr(own->cx, g, "each");
   own->text = JS_GetPropertyStr(own->cx, g, "sourceText");
   JS_FreeValue(own->cx, g);
+  // Try building a WGSL vertex shader for the GPU path; fall back to CPU when
+  // the graph cannot be built (tsl_each.h, from_each.js).
+  if (JS_IsFunction(own->cx, own->each)) {
+    const std::string cavalry =
+        read_text(doc_engine("community/script_runner/cavalry_prelude.js"));
+    std::string wgsl_why;
+    tsl_each(doc_engine("third_party/js/three").string(),
+             doc_engine("community/three_shading_language_to_shelf").string(),
+             cavalry, ways, src, own->wgsl, wgsl_why);
+  }
   // A file that only says a layer's text places no copy: each stays where it
   // is.
   own->whole = !JS_IsFunction(own->cx, own->each) && !says_text();
@@ -356,6 +369,7 @@ Script::~Script() {
   JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
 bool Script::ok() const { return own->trouble.empty(); }
+const std::string& Script::wgsl() const { return own->wgsl; }
 void Script::reads(LayerReader read) { own->project.value = std::move(read); }
 void Script::reads_pictures(ImageSampler sample, PointMapper point) {
   own->project.sample = std::move(sample),
