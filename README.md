@@ -13,7 +13,7 @@ After Effects expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie and more. Past
 ![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
 - **GPU-native.** Expressions compile to GPU shaders. Thousands of copies stay at 60 fps.
-- **Effects are files.** A `.wgsl`, a `.fs`, a `.js` — read them, share them, drop them in. The author's name and licence stay where they wrote them.
+- **Effects are files.** A `.wgsl`, a `.fs`, a `.js` — open them, read how they work, change them. Not a black box.
 - **One layer, many languages.** A CSS animation, an After Effects expression and a shader effect compose on the same text, in the order you stack them.
 
 ## Status
