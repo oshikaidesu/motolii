@@ -6,11 +6,14 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/storage/pasteboard_files.dart' show clipboardFilePaths;
 import 'package:motolii/storage/window_paths.dart' show clipboardFileThere;
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/state/document/command_writes.dart';
 import 'package:motolii/workspace/state/media/create_service.dart'
     show adaptCode;
+import 'package:motolii/workspace/state/media/media_service.dart'
+    show placeFileLayer;
 import 'package:motolii/workspace/state/document/document_writes.dart'
     show requestUndo;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
@@ -74,17 +77,48 @@ extension EditCommands on WorkspaceState {
                 (made) => ws.select('$made'),
               )
             : null;
+        // Finder からコピーしたファイル、または画像データ (⌘⇧⌃4 のスクリーンショットなど) をクリップボードから拾って、
+        // 1 ファイル 1 レイヤーとして置く (UAT 230/231/306). 以降のコード/キーフレームペーストは走らない。
+        Future<bool> pasteFiles() async {
+          final paths = await clipboardFilePaths();
+          if (paths.isEmpty) return false;
+          for (final p in paths) {
+            placeFileLayer(
+              ws,
+              file: p,
+              verb: 'add',
+              fit: false,
+              stillSeconds: null,
+              cut: null,
+              settled: (done, why) {
+                if (!done && why.isNotEmpty) {
+                  ws.notice = 'Not taken: ${why.split(':').first}';
+                }
+              },
+            );
+          }
+          return true;
+        }
+
         // Code copied from the web is run by the engine's adapter (adapter.h), whatever it is written for.
         // Whatever was copied last wins.
-        Clipboard.getData(Clipboard.kTextPlain).then((said) {
+        Clipboard.getData(Clipboard.kTextPlain).then((said) async {
           final code = said?.text ?? '';
-          if (code.trim().isEmpty || code == textWhenCopied) return own();
+          if (code.trim().isEmpty || code == textWhenCopied) {
+            if (await pasteFiles()) return;
+            return own();
+          }
           ws.after(adaptCode(ws, int.tryParse(ws.selected ?? '') ?? 0, code), (
             done,
             why,
-          ) {
+          ) async {
             if (done) return;
-            why.contains('not code') ? own() : ws.notice = 'Not taken: $why';
+            if (why.contains('not code')) {
+              if (await pasteFiles()) return;
+              own();
+            } else {
+              ws.notice = 'Not taken: $why';
+            }
           }, (made) => made > 0 ? ws.select('$made') : null);
         });
       },

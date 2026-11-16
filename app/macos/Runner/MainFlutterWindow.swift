@@ -14,6 +14,7 @@ class MainFlutterWindow: NSWindow {
     GlassTexture.attach(to: flutterViewController)
     StageTexture.attach(to: flutterViewController)
     ColourSampler.attach(to: flutterViewController)
+    PasteboardFiles.attach(to: flutterViewController)
 
     super.awakeFromNib()
     // after the xib has restored its own frame

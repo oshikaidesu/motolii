@@ -13,6 +13,7 @@ import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
+import 'package:motolii/storage/pasteboard_files.dart' show onDroppedFiles;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
 import 'package:motolii/storage/window_paths.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
@@ -25,6 +26,8 @@ import 'package:motolii/workspace/state/document/command_writes.dart'
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
+import 'package:motolii/workspace/state/media/media_service.dart'
+    show placeFileLayer;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -76,8 +79,31 @@ class WorkspaceState extends State<Workspace> {
     // When the document changes (an undo or redo swaps in a different step), rebuild so the Edit menu's dynamic
     // undo / redo labels follow (UAT 135).
     ws.on[WorkspaceAspect.document]!.addListener(_rebuildMenus);
+    // Finder からファイルをドロップした時に、各パスを 1 レイヤーとしてステージに置く (UAT 230/231/306).
+    onDroppedFiles(_addDroppedPaths);
     // With no project given, start a new untitled one, as After Effects does.
     _join(widget.document ?? untitledProjectPath());
+  }
+
+  void _addDroppedPaths(List<String> paths) {
+    if (!projectOpen(ws) || paths.isEmpty) return;
+    groupBegin(ws);
+    for (final p in paths) {
+      placeFileLayer(
+        ws,
+        file: p,
+        verb: 'add',
+        fit: false,
+        stillSeconds: null,
+        cut: null,
+        settled: (done, why) {
+          if (!done && why.isNotEmpty) {
+            ws.notice = 'Not taken: ${why.split(':').first}';
+          }
+        },
+      );
+    }
+    ws.after(groupEnd(ws));
   }
 
   void _rebuildMenus() {
