@@ -6,7 +6,9 @@
 
 **離れていた表現の、交差点。**
 
-Shadertoy のシェーダー、p5.js のスケッチ、After Effects の式、CSS アニメーション、AviUtl のスクリプト、three.js のマテリアル ── 同じ動画に、同じタイムラインに、一緒に載る。Motolii は、別々だったクリエイティブの世界が出会うオープンソースの動画編集ソフトです。それぞれのコードは公開されたまま動き、プラグインに作り直す必要はありません。
+AviUtl のスクリプトと CodePen の CSS アニメーションが同じテキストの上で動く。Shadertoy のシェーダーが曲のビートに反応する。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。
+
+After Effects の式、Shadertoy、WGSL、Cavalry、p5.js、AviUtl、CSS、Resolume ISF、three.js TSL、Lottie ── それぞれの元のエンジンで動かすオープンソースの動画編集ソフト。プラグインに作り直す必要はありません。[対応する形式の一覧](#何が動く)は下にあります。
 
 ![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
 
@@ -52,12 +54,38 @@ app/tool/live.sh
 
 手順の詳しい説明、最初の 1 本、困った時の直し方は[ガイドの「使ってみる」](docs/using/guide.ja.md#使ってみる)にあります。
 
-## 見つけたファイルを使う
+## 何が動く
 
-[`shelves/README.ja.md`](shelves/README.ja.md) を見てください。ファイルの種類ごとに置き場所と書き方があります。
+コードを貼る（⌘V）かファイルを落とす。言語は自動で判定されます。
 
-- ファイル（シェーダー・`.js`・イージングなど）：種類に合うフォルダに置く。例：`effects/` に `.fs` を置くと Effects タブに出る
-- コード（p5.js・Shadertoy など）：置かずに、コピーしてアプリで ⌘V
+| 世界 | 入れ方 | 動かすエンジン |
+|---|---|---|
+| **Shadertoy** | ⌘V | ISF → WGSL（glslang + Tint） |
+| **GLSL Sandbox** | ⌘V | 同上 |
+| **twigl** | ⌘V | 同上 |
+| **Bonzomatic** | ⌘V | 同上 |
+| **ISF (.fs)** | `effects/` に置く | glslang → SPIR-V → WGSL |
+| **WGSL (.wgsl)** | `effects/` に置く | そのまま |
+| **p5.js / Processing** | ⌘V | QuickJS-ng |
+| **Paper.js** | ⌘V | QuickJS-ng |
+| **Two.js** | ⌘V | QuickJS-ng |
+| **Canvas 2D** | ⌘V | QuickJS-ng |
+| **Dwitter** | ⌘V | QuickJS-ng |
+| **tixy.land** | ⌘V | QuickJS-ng |
+| **Turtletoy** | ⌘V | QuickJS-ng |
+| **Hydra** | ⌘V | QuickJS-ng → WGSL |
+| **After Effects の式** | ⌘V or 式カード | lottie-web（QuickJS-ng） |
+| **Cavalry のスクリプト** | 式カード | QuickJS-ng |
+| **CSS @keyframes** | テキストレイヤーで ⌘V | Stylo（Firefox の CSS エンジン） |
+| **アニメーション SVG** | ⌘V or D&D | ThorVG + Stylo |
+| **three.js TSL** | ⌘V | WGSLNodeBuilder（QuickJS-ng） |
+| **AviUtl2 (.anm2, .obj2)** | `aviutl_scripts/` に置く | LuaJIT |
+| **Lottie (.json)** | D&D | ThorVG |
+| **字幕 (ASS/SRT/LRC/VTT)** | D&D | libass（FFmpeg 経由） |
+
+対応形式のコードでも、すべてが正しく動作するわけではありません。数と詳細は[仕様](docs/using/specifications.ja.md#対応形式と動作状況)にあります。
+
+ファイルの種類ごとの置き場所は [`shelves/README.ja.md`](shelves/README.ja.md) にあります。
 
 ## フォルダの並び
 

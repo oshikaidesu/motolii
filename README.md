@@ -6,7 +6,9 @@
 
 **A crossroads of expressions that were apart.**
 
-Shadertoy shaders, p5.js sketches, After Effects expressions, CSS animations, AviUtl scripts, three.js materials — pasted into the same video, on the same timeline, running together. Motolii is an open-source video editor where creative communities that have been separate meet. Their code runs as it was published, without being rebuilt as a plugin.
+A Shadertoy shader reacting to the beat of a song. CSS @keyframes animating the letters while a p5.js sketch draws behind them. An After Effects expression and a Lottie animation on the same layer. Paste code from the web; it works as it was published.
+
+An open-source video editor that runs After Effects expressions, Shadertoy, WGSL, Cavalry scripts, p5.js, CSS animations, Resolume ISF, three.js TSL, Lottie and more — each with its original engine, no plugin rebuild. The [full list](#what-runs) is below.
 
 ![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
@@ -52,12 +54,38 @@ To run the tests: `engine/build.sh test` for the engine (CMake's ctest) and `cd 
 
 Each step in detail, a first piece, and what to do if something goes wrong: [guide, "Try it"](docs/using/guide.md#try-it).
 
-## Use a file you found
+## What runs
 
-See [`shelves/README.md`](shelves/README.md). Each kind of file has its own folder and its own way of being written.
+Paste code (⌘V) or drop a file. The language is detected automatically.
 
-- A file (a shader, a `.js`, an easing...): put it in the folder for its kind. For example, a `.fs` in `effects/` shows in the Effects tab.
-- Code (p5.js, Shadertoy...): do not place it; copy it and press ⌘V in the app.
+| World | How it gets in | Run by |
+|---|---|---|
+| **Shadertoy** | ⌘V | ISF → WGSL via glslang and Tint |
+| **GLSL Sandbox** | ⌘V | same |
+| **twigl** | ⌘V | same |
+| **Bonzomatic** | ⌘V | same |
+| **ISF (.fs)** | file in `effects/` | glslang → SPIR-V → WGSL |
+| **WGSL (.wgsl)** | file in `effects/` | as is |
+| **p5.js / Processing** | ⌘V | QuickJS-ng |
+| **Paper.js** | ⌘V | QuickJS-ng |
+| **Two.js** | ⌘V | QuickJS-ng |
+| **Canvas 2D** | ⌘V | QuickJS-ng |
+| **Dwitter** | ⌘V | QuickJS-ng |
+| **tixy.land** | ⌘V | QuickJS-ng |
+| **Turtletoy** | ⌘V | QuickJS-ng |
+| **Hydra** | ⌘V | QuickJS-ng → WGSL |
+| **After Effects expressions** | ⌘V or expression card | lottie-web in QuickJS-ng |
+| **Cavalry scripts** | expression card | QuickJS-ng |
+| **CSS @keyframes** | ⌘V on a text layer | Stylo (Firefox's CSS engine) |
+| **Animated SVG** | ⌘V or D&D | ThorVG + Stylo |
+| **three.js TSL** | ⌘V | WGSLNodeBuilder in QuickJS-ng |
+| **AviUtl2 (.anm2, .obj2)** | file in `aviutl_scripts/` | LuaJIT |
+| **Lottie (.json)** | D&D | ThorVG |
+| **Subtitles (ASS/SRT/LRC/VTT)** | D&D | libass via FFmpeg |
+
+Not all code in a supported format runs correctly. Counts and details: [Specifications](docs/using/specifications.md#supported-formats-and-how-they-run).
+
+See also [`shelves/README.md`](shelves/README.md) for where each kind of file goes.
 
 ## Repository layout
 

@@ -2,6 +2,191 @@
 
 *外の人が Motolii で最初の 1 本を作るまでの手順。理想として先に書き、コードで裏を取る。*
 
+*Motolii は離れていた表現の交差点。来る人はそれぞれ違う道から来る。*
+
+## どこから来た？
+
+Motolii に来る人は一つじゃない。それぞれが持っているもの、期待するもの、最初にやることが違う。
+
+### Shadertoy / GLSL から
+
+**持っているもの:** GLSL のシェーダーコード。Shadertoy や GLSL Sandbox で動くもの。
+
+**最初の一歩:** コードをコピー → Motolii で ⌘V → レイヤーになる。再生すると動く。
+
+**交差点の瞬間:** そのシェーダーを文字の上に重ねたり、動画のエフェクトにしたり、キーフレームでパラメータを動かせる。Shadertoy の中だけでは出来なかったこと。
+
+**入り口に置く tips:**
+- `iResolution`, `iTime`, `iMouse` はそのまま動く
+- `.fs`（ISF 形式）ならエフェクトフォルダに置くだけで Effects タブに出る
+- `.wgsl` も同じ。GLSL → WGSL の変換は Motolii がやる（ISF 経由）
+
+### p5.js / Processing から
+
+**持っているもの:** p5.js のスケッチ。OpenProcessing や自分のサイトで動くもの。
+
+**最初の一歩:** `setup()` と `draw()` のコードをコピー → ⌘V → レイヤーになる。スクラブできる。
+
+**交差点の瞬間:** スケッチが動画のレイヤーになるので、他のレイヤーと重ねられる。スケッチの中の音声反応（`p5.sound`）がタイムライン上の音声レイヤーに繋がる。時間がタイムラインにある：巻き戻しも、任意の秒へのジャンプもできる。
+
+**入り口に置く tips:**
+- `loadImage`, `loadSound` はスケッチと同名のフォルダに素材を入れるだけ
+- p5.sound の `FFT` と `Amplitude` はそのまま動く（Web Audio 互換）
+- `createCapture` は動画レイヤーの映像を受け取る
+
+### After Effects から
+
+**持っているもの:** 式の知識。`thisComp.layer("X").transform.position`、`wiggle`、`ease`。
+
+**最初の一歩:** Create → Expression で式カードを追加。`{ x: index * 10, rotate: time * 90 }` と書くだけでコピーが並んで回る。
+
+**交差点の瞬間:** AE の式に Shadertoy のエフェクトを重ねる。CSS の @keyframes でテキストの登場を決めて、AE 式でコピーの配置を決める。別の世界のコードが同じレイヤーの上で共存する。
+
+**入り口に置く tips:**
+- `index`, `count`, `time`, `value` — Cavalry と同じ名前。AE の `thisLayer.index` は `index`（0始まり）
+- `AE.compile` / `AE.run` で lottie-web が式を解釈する（AE の式がそのまま動く）
+- `effect("Name")("Slider")` で式カードのスライダーを読める
+- `sampleImage` で他のレイヤーのピクセルを読める
+- `each()` で包まなくても、オブジェクトリテラルだけで動く
+
+### AviUtl から
+
+**持っているもの:** `.anm2` / `.obj2` スクリプト。Lua で書かれた表現。
+
+**最初の一歩:** スクリプトファイルを `shelves/aviutl_scripts/` に置く → Effects タブに出る。
+
+**交差点の瞬間:** AviUtl のスクリプトと Shadertoy のシェーダーを同じレイヤーに掛けられる。AviUtl の中では GLSL と Lua は別の世界だった。
+
+**入り口に置く tips:**
+- `obj` の呼び出しはエンジンが受ける（LuaJIT で実行）
+- HLSL を含むスクリプトは glslang → SPIR-V → WGSL に変換される
+- 180 本の AviUtl スクリプトが同梱されている
+
+### CSS / Web アニメーションから
+
+**持っているもの:** `@keyframes`、`transition`、`cubic-bezier`。Splitting.js で文字を動かした経験。
+
+**最初の一歩:** テキストレイヤーを選んで、CSS をコピー → ⌘V → 文字が動く。
+
+**交差点の瞬間:** CSS のレイアウト（flex, grid）で文字を並べて、AE 式で登場タイミングを決めて、シェーダーで光らせる。ブラウザの中では別々だった CSS と WebGL が、一つのテキストの上で合流する。
+
+**入り口に置く tips:**
+- `--char-index` と `--char-total`（Splitting.js）がそのまま使える
+- Stylo（Firefox の CSS エンジン）が `@keyframes` を解釈する。ブラウザと同じ結果になる
+- CSS アニメーション付き SVG（ローダーなど）もそのまま動く
+- `cubic-bezier` の精度は Chrome と 0.036 px 以内
+
+### three.js / TSL から
+
+**持っているもの:** three.js のマテリアルコード。TSL ノード。
+
+**最初の一歩:** TSL マテリアルのコードをコピー → ⌘V → 棚のエフェクトになる。
+
+**交差点の瞬間:** three.js のマテリアルが動画のエフェクトとして使える。`WGSLNodeBuilder` が WGSL を生成し、Filament が描く。three.js のデモを動画の中で使える。
+
+**入り口に置く tips:**
+- `NodeMaterial`, `colorNode`, `positionNode` を含むコードは自動判定される
+- WGSL は three.js 自身の `WGSLNodeBuilder` が生成する（Motolii の変換ではない）
+- `shelves/solids/` に three.js の `BufferGeometry` を置くと 3D モデルにもなる
+
+### Cavalry から
+
+**持っているもの:** Cavalry の JavaScript 式。`index`, `count` で書いたコード。
+
+**最初の一歩:** 式をそのままコピー → Motolii の式カードに貼る。`index` と `count` はそのまま動く。
+
+**交差点の瞬間:** Cavalry の式の上に Shadertoy のエフェクトを載せられる。Cavalry には無い映像素材や音声反応と組み合わせられる。
+
+**入り口に置く tips:**
+- `index`, `count`, `time`, `value` — Cavalry と同じ名前
+- `each()` で包んでも、オブジェクトリテラルだけでもいい
+- Cavalry の `random()`, `animate()` に相当するプレリュードが読み込まれる
+
+### Hydra / ライブコーディングから
+
+**持っているもの:** Hydra のコード。`osc()`, `.out()` で書いたビジュアル。
+
+**最初の一歩:** コードをコピー → ⌘V → レイヤーになる。
+
+**交差点の瞬間:** ライブコーディングの映像がタイムラインに載る。時間を戻せる。他のエフェクトと重ねられる。
+
+### GLSL Sandbox / twigl / Bonzomatic から
+
+**持っているもの:** ミニマルな fragment shader。
+
+**最初の一歩:** コードをコピー → ⌘V → エフェクトまたはレイヤーになる。`gl_FragColor` や `fGlobalTime` は自動判定。
+
+**交差点の瞬間:** Bonzomatic のライブシェーダーを動画に焼ける。twigl の 280 文字シェーダーをテキストの背景にできる。
+
+### Paper.js / Two.js / Canvas 2D から
+
+**持っているもの:** 2D 描画コード。`path`, `shape`, `getContext('2d')`。
+
+**最初の一歩:** コードをコピー → ⌘V → レイヤーになる。
+
+**交差点の瞬間:** Paper.js の生成アートをキーフレームで動かしたり、AE 式と組み合わせたり。
+
+### Dwitter / tixy.land から
+
+**持っているもの:** 超短いコード。Dwitter の `d/XXXX` や tixy の `(t,i,x,y) =>` 式。
+
+**最初の一歩:** コードをコピー → ⌘V → レイヤーになる。
+
+**交差点の瞬間:** 140 文字のコードが動画のレイヤーに。タイムラインでスクラブできて、他のレイヤーと重ねられる。
+
+### Turtletoy から
+
+**持っているもの:** Turtle graphics のコード。
+
+**最初の一歩:** コードをコピー → ⌘V → レイヤーになる。
+
+**交差点の瞬間:** 亀の描画がベクターとして動画に入る。
+
+### アニメーション SVG から
+
+**持っているもの:** CSS @keyframes で動く SVG（ローダー、アイコン、svg-spinners など）。
+
+**最初の一歩:** SVG をコピー → ⌘V → 画像レイヤーとして動く。
+
+**交差点の瞬間:** SVG スピナーが動画の素材になる。CSS アニメーションの精度は Chrome と 0.036 px 以内。
+
+### 字幕 (ASS / SRT / LRC / VTT) から
+
+**持っているもの:** タイミング付きの歌詞やテロップ。Aegisub で作った ASS、YouTube の SRT。
+
+**最初の一歩:** ファイルを D&D → 字幕レイヤーになる。`\k` タグのカラオケもそのまま。
+
+**交差点の瞬間:** 字幕の上にエフェクトを掛けられる。libass がレンダリングするのでタグの解釈は正確。
+
+### Lottie から
+
+**持っているもの:** Bodymovin で書き出した Lottie JSON。式入りも。
+
+**最初の一歩:** .json ファイルを D&D → ThorVG がアニメーション再生する。
+
+**交差点の瞬間:** Lottie アニメーションが他のレイヤーと重なる。Lottie の式は lottie-web が解釈する（AE と同じランタイム）。
+
+### ISF / WGSL ファイルから
+
+**持っているもの:** ISF (.fs) や WGSL (.wgsl) のシェーダーファイル。
+
+**最初の一歩:** ファイルを `shelves/effects/` に置く → 再起動不要で Effects タブに出る。
+
+**交差点の瞬間:** 自分で書いたシェーダーが、他の全ての表現と重ねられるエフェクトになる。サムネイルも自動生成される。
+
+### 初めて動画を作る人
+
+**持っているもの:** 動画にしたい素材（写真、動画、音楽）。コードは書かない。
+
+**最初の一歩:** 素材を D&D → テキストを追加 → Effects タブからエフェクトを選ぶ（動くサムネイルで確認） → Render。
+
+**交差点の瞬間:** Effects タブに並ぶエフェクトの一つ一つが、Shadertoy や ISF や AviUtl の世界から来たもの。自分はコードを書かないけれど、世界中のクリエイターの表現を使える。
+
+**入り口に置く tips:**
+- エフェクトのサムネイルにポインタを乗せると動いて見える
+- スライダーだけで調整できる。コードは見なくていい
+- Create タブの Expression タイルも同じ — 押すだけで文字が動き出す
+
 ## 開く
 
 Motolii を起動するとホーム画面が出る。前に作ったプロジェクトがサムネイルで並び、「続きから」で大きく出る。初めての人には何も無い。
