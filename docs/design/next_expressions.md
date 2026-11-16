@@ -1,12 +1,32 @@
 # Next-generation expressions: the ideal
 
-*Status: an ideal, not a plan. It says what a user should be able to do and see. It chooses no library and no folder. Written on 2026-11-11 from a conversation with the author. Where it differs from an earlier note, the last section says so.*
+*Status: an ideal, not a plan. It says what a user should be able to do and see. It chooses no library and no folder. Written on 2026-11-11 from a conversation with the author; open questions closed on 2026-11-16. Where it differs from an earlier note, the last section says so.*
 
 ## 1. The aim
 
 Short code found on the net (an After Effects expression, Lua, a p5.js sketch, a Cavalry script, a Blender Python driver, TSL) is pasted and works. It runs as fast as a built-in effect, with a project of hundreds of layers open and the preview playing. Editing it is comfortable: save, and the frame under the playhead shows the new result.
 
 This is the aim in [AGENTS.md](../../AGENTS.md) (an expression found on the net, usable in your video at once) applied to the part of Motolii that runs code.
+
+### 1.1 The wider picture: each engine does what it is best at
+
+Expressions are one kind of code, but the aim is not only about expressions. Motolii runs several engines — QuickJS for JavaScript, Stylo for CSS, libass for subtitles, ThorVG for shapes and SVG, Filament for 3D and compositing — and none of them is Motolii's own. The product's job is handing one engine's result to the next.
+
+| What | Whose it is |
+|---|---|
+| The letters' outlines | The font, read by ThorVG |
+| Where the letters are put | CSS: flex and grid (Stylo via Blitz) |
+| When each letter comes; what stays behind | An expression (QuickJS) and an effect (the shelf) |
+| Stroke, trim, path operators | ThorVG |
+| Subtitle timing and layout | libass |
+| Points, 3D, the final picture | Filament |
+| Motolii | Handing one's result to the next |
+
+**Nothing is converted.** A text stays a text. A letter is one thing with four settings (12.7), and a layer is never made to stand for another. After Effects has Create Shapes from Text because text and shapes are two worlds there. That is its wall, not a feature to copy.
+
+**One material, many engines in turn.** The same text layer can carry CSS layout, a JavaScript expression, a shader effect and a subtitle style. Languages meet through values (5.3), not through conversion. A `.css` file, a `.js` file and a `.wgsl` file on one layer each do what they do best, and the results compose.
+
+This applies beyond expressions — to the shelf, to paste, to import, to export. Wherever Motolii touches code, the principle is the same: run the code that already exists for this, with the engine that already runs it, and hand the values to the next step. The rest of this document works out what that means for expressions specifically. Section 11 works it out for text. Section 12.7 tried it.
 
 ## 2. One idea: code reads, and says what it reads
 
