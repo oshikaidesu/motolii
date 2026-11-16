@@ -65,8 +65,7 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer,
   k.copies.clear();
   if (doc_word(d, layer, "fx").find(".am") == std::string::npos)
     return k.copies;
-  const double begins = doc_literal(d, layer, "start", 0, 0),
-               lasts = doc_literal(d, layer, "duration", 0, -1);
+  const double begins = doc_literal(d, layer, "start", 0, 0);
   // `k2` converts points of the preview to pixels of the document.
   const double high = doc_comp_high(d),
                k2 = high / std::max(1, d.stage->h);
