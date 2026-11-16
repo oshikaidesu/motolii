@@ -53,6 +53,31 @@ void main() {
     );
   });
 
+  // Where the running expression is wrong: a red wave under it, as VS Code underlines an error.
+  testWidgets('code editor — an error underlined', (tester) async {
+    final mark = ValueNotifier<CodeMark?>((line: 5, from: 7, to: 15));
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 600,
+            height: 300,
+            child: CodeField(jsPath, (_) {}, mark: mark),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byType(CodeField),
+      matchesGoldenFile('goldens/code_field_mark.png'),
+    );
+  });
+
   // The Code tab's cell: as tall as its code, inside a scrolling column (code_pane.dart).
   testWidgets('code editor — a cell as tall as its code, in a scroll', (
     tester,

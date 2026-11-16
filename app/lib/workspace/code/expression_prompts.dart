@@ -3,8 +3,9 @@
 // The names are the Functions list's, from the reference and what the running expression has
 // (expression_reference.dart), so the two cannot disagree.
 //
-// flutter_code_editor has no built-in autocomplete overlay like re_editor did.  The types below
-// keep the data model intact so the feature can be reconnected when an overlay is added.
+// The editor (code_forge, shelf/code_field.dart) lists the names said alone among its own completions. Its list
+// cannot be drawn by another, so the list drawn here, with what each name does under it and the names after an
+// object (`thisComp.`), is not shown yet.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -14,7 +15,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/code/expression_reference.dart';
 
-// Lightweight replacements for re_editor's autocomplete types.
+// What a completion is and what choosing it writes.
 
 class CodePrompt {
   const CodePrompt({required this.word});

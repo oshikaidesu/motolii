@@ -22,6 +22,7 @@ import 'package:motolii/skin/code_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/code/expression_prompts.dart';
 
 /// A stretch of code that is wrong: its line, counted from 1, and its columns.
 typedef CodeMark = ({int line, int from, int to});
@@ -39,10 +40,16 @@ class CodeField extends StatefulWidget {
     this.fit = false,
     this.height,
     this.onHeight,
+    this.prompts,
     this.mark,
   });
   final String file;
+
+  /// What to underline as wrong, if anything: a red wave where it is in the code, as VS Code underlines an error.
   final ValueListenable<CodeMark?>? mark;
+
+  /// The names completed as they are typed (IntelliSense), for an After Effects expression; null for other code.
+  final ExpressionPrompts? prompts;
   final void Function(String text) write;
 
   /// Whether it is a cell: as tall as its code, with one more line to type on, and not as tall as the room it is given.
@@ -113,18 +120,62 @@ class _CodeFieldState extends State<CodeField> {
     setState(() => _lines = _controller.lineCount);
   }
 
+  // code_forge underlines what a language server calls wrong; the running expression's own error is told to it the
+  // same way (lines and columns from 0, as the Language Server Protocol counts them).
+  void _remark() {
+    final m = widget.mark?.value;
+    _controller.diagnosticsNotifier.value = [
+      if (m != null)
+        LspErrors(
+          severity: 1,
+          range: {
+            'start': {'line': m.line - 1, 'character': m.from},
+            'end': {'line': m.line - 1, 'character': m.to},
+          },
+          message: '',
+        ),
+    ];
+  }
+
+  /// The names an expression may say, as code_forge's list of completions takes them: a function is written with its
+  /// brackets and the cursor between them.
+  List<CustomCodeSnippet>? get _names => widget.prompts == null
+      ? null
+      : [
+          for (final p in widget.prompts!.direct)
+            p is CodeFunctionPrompt
+                ? CustomCodeSnippet(
+                    label: p.word,
+                    value: '${p.word}()',
+                    cursorLocations: {p.word.length + 1},
+                  )
+                : CustomCodeSnippet(
+                    label: p.word,
+                    value: p.word,
+                    cursorLocations: const {},
+                  ),
+        ];
+
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onChanged);
+    widget.mark?.addListener(_remark);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ready = true;
+      // code_forge's painter takes what is wrong only when told of a change, so it is told once it is there.
+      if (mounted) _remark();
     });
   }
 
   @override
   void didUpdateWidget(CodeField old) {
     super.didUpdateWidget(old);
+    if (old.mark != widget.mark) {
+      old.mark?.removeListener(_remark);
+      widget.mark?.addListener(_remark);
+      _remark();
+    }
     final now = readTextNow(widget.file);
     if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {
       _controller.text = _written = now;
@@ -136,6 +187,7 @@ class _CodeFieldState extends State<CodeField> {
     if (_soon?.isActive ?? false) _save();
     _soon?.cancel();
     _controller.removeListener(_onChanged);
+    widget.mark?.removeListener(_remark);
     if (identical(CodeField._last, _controller)) CodeField._last = null;
     _focus.dispose();
     _controller.dispose();
@@ -228,6 +280,9 @@ class _CodeFieldState extends State<CodeField> {
           : const NeverScrollableScrollPhysics(),
       useSpaceAsTab: true,
       tabSize: 2,
+      // The list of completions opens on the words of the code itself, and the expression's names are put first in it.
+      enableLocalSuggestions: widget.prompts != null,
+      customCodeSnippets: _names,
       textStyle: TextStyle(
         fontSize: fontSize,
         fontFamily: TextStyles.mono,
