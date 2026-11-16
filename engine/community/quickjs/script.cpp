@@ -323,28 +323,14 @@ void script_first(const std::string& file,
       k.usual = v->second;
 }
 
-// anime.js's easings (third_party/anime, MIT) run as they are: one QuickJS
-// context for the whole library, the bundle read once from where the library
-// keeps it, and each ease said made once and kept by what it says. irregular()
-// draws its points with Math.random: while an ease is made, anime.js's own
-// seeded one stands in, its seed from the words, so the same words give the
-// same curve every time.
-static const char anime_prelude[] = R"(
-var __eases = {};
-function __ease(said) {
-  var built = __eases[said];
-  if (built) return built;
-  var seed = 0;
-  for (var i = 0; i < said.length; i++) seed = (seed * 31 + said.charCodeAt(i)) | 0;
-  var r = anime.utils.createSeededRandom(seed), ownRandom = Math.random;
-  Math.random = function () { return r(0, 1, 6); };
-  try { with (anime.eases) { with (anime) { built = eval('(' + said + ')'); } } } finally { Math.random = ownRandom; }   // (anime's own linear(), steps()... before eases.linear)
-  if (built && typeof built.ease === 'function') built = built.ease;   // (a spring: its ease)
-  if (typeof built !== 'function') throw new Error(said + ': not an ease of anime.js');
-  return __eases[said] = built;
+// anime.js's easing wrapper lives in anime_prelude.js beside this file; see
+// it for the header comment on how __ease / __ease_at build and cache ease
+// functions from text. Read once, appended to the anime.js bundle.
+static const std::string& anime_prelude() {
+  static const std::string text =
+      read_text(doc_engine("community/quickjs/anime_prelude.js"));
+  return text;
 }
-function __ease_at(said, u) { return __ease(said)(Math.min(1, Math.max(0, u))); }
-)";
 double anime_ease(const std::string& bundle, const std::string& said, double u,
                   std::string* trouble) {
   static std::mutex one;
@@ -359,7 +345,7 @@ double anime_ease(const std::string& bundle, const std::string& said, double u,
     const std::string src =
         std::string("globalThis.setImmediate = function () { return 0; }; "
                     "globalThis.clearImmediate = function () {};\n") +
-        bundle_text + anime_prelude;
+        bundle_text + anime_prelude();
     JSValue ran =
         JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
     if (bundle_text.empty() || JS_IsException(ran))
