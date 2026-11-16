@@ -18,6 +18,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedMenu, OverlayPositionConfig;
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// One row of a menu.
@@ -85,7 +86,7 @@ class ContextMenuList extends StatelessWidget {
   final VoidCallback close;
   final double max, width;
 
-  static double get _row => Shape.z(22);
+  static double get _row => Shape.z(Gestures.menuRow);
   static double get _swatch => Shape.z(20);
   static double high(ContextMenuItem it) => it.colors.isNotEmpty
       ? (it.colors.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4)
@@ -386,7 +387,7 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
               child: MenuHost(
                 controller: _m,
                 items: _items,
-                width: Shape.z(220),
+                width: Shape.z(Gestures.menuWidth),
                 child: const SizedBox.shrink(),
               ),
             ),

@@ -25,4 +25,12 @@ abstract final class Gestures {
 
   /// `hover.3` How long a state change takes. One motion with [Motion.dur].
   static Duration get change => Motion.dur;
+
+  /// Section 12 `menuWidth`: a context menu's own width, in design points
+  /// (parts wrap this in `Shape.z` to get screen pixels).
+  static const double menuWidth = 220.0;
+
+  /// Section 12 `menuRow`: the height of one row in a context menu, in
+  /// design points.
+  static const double menuRow = 22.0;
 }
