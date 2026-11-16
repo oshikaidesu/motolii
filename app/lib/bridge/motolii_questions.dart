@@ -87,6 +87,10 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
+  /// How far the export has come, from 0 at the start to 1 at the last frame. Returns 0 when no export is running.
+  /// Safe to call on the UI thread while [exportVideo] runs on an isolate: the engine updates it atomically per frame.
+  double exportFraction() => bindings.motolii_export_fraction(handle);
+
   /// Each property as the stage shows it at the requested time: after any relation, otherwise its own value.
   /// An entry is null if the property has none.
   ///

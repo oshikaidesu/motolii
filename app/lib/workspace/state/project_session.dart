@@ -52,6 +52,11 @@ String engineLibPath(WorkspaceController ws) => ws.inside!.libPath;
 Future<bool> exportVideoTo(WorkspaceController ws, String mp4) =>
     ws.inside!.exportVideo(mp4);
 
+/// How far the current export has come, from 0 at the start to 1 at the last frame. Returns 0 when no export is
+/// running. Safe to call from the UI thread while [exportVideoTo] runs; the engine updates it per frame.
+double exportFractionOf(WorkspaceController ws) =>
+    ws.inside?.exportFraction() ?? 0.0;
+
 /// Checks the video [film] for flashes that may cause seizures: each flash's start and end in seconds, or null if the
 /// check could not run.
 Future<List<(double, double)>?> flashesIn(

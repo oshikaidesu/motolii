@@ -155,18 +155,27 @@ class WorkspaceState extends State<Workspace> {
 
   String fresh() => freeUntitledPath(parentFolderOf(documentPath!));
 
-  /// Exports the project as a video file beside it. The top bar shows how it went.
+  /// Exports the project as a video file beside it. The top bar shows how it went, polling the engine every 200 ms for
+  /// the fraction written and turning it into a "Writing name.mp4 · 42%" notice (UAT 103).
   Future<bool> _render() async {
     final doc = documentPath;
     if (!projectOpen(ws) || doc == null) return false;
     final mp4 = ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
     ws.renderTo = null;
-    ws.notice = 'Writing ${mp4.split('/').last} …';
+    final name = mp4.split('/').last;
+    ws.notice = 'Writing $name …';
+    // A periodic timer, cancelled when the export future resolves, posts the current fraction as the notice.
+    final poll = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (!mounted) return;
+      final f = exportFractionOf(ws);
+      if (f > 0 && f < 1) {
+        ws.notice = 'Writing $name · ${(f * 100).round()}%';
+      }
+    });
     final done = await exportVideoTo(ws, mp4);
+    poll.cancel();
     if (mounted) {
-      ws.notice = done
-          ? 'Written: ${mp4.split('/').last}'
-          : 'Not written: ${stageError(ws)}';
+      ws.notice = done ? 'Written: $name' : 'Not written: ${stageError(ws)}';
     }
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
       unawaited(_checkFlashes(mp4));

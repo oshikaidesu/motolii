@@ -45,6 +45,7 @@ int motolii_export(Motolii* m, const char* mp4) {
     const int frames = (int)std::lround((to - from) * RATE);
     m->d->video_export.writing = true;
     m->d->video_export.written_from = from;
+    m->d->video_export.written_fraction = 0.0;
     // The render thread that handled this call holds the project lock. Release
     // it while each frame is drawn, as in live playback. Between frames the
     // render thread runs the calls that were asked in the meantime, so an app
@@ -72,6 +73,7 @@ int motolii_export(Motolii* m, const char* mp4) {
                                          ? std::round(at)
                                          : at) /
                                         RATE);
+              m->d->video_export.written_fraction = done;
             },
             FilmWay{(int)doc_number(*m->d, 0, "render_height", 0, 0),
                     (int)(doc_number(*m->d, 0, "render_rate", 0, 0) > 0
@@ -84,11 +86,22 @@ int motolii_export(Motolii* m, const char* mp4) {
     m->d->lock.lock();
     m->d->video_export.writing = false;
     m->d->video_export.written_from = 0.0;
+    m->d->video_export.written_fraction = 0.0;
     // Restore the time the preview was at before the export.
     time_is(*m->s, m->playback.now);
     return ok;
   });
 }
+// Returns how far the export has come, from 0 at the start to 1 at the last
+// frame. Reads [DocExport.written_fraction] without the project lock: the
+// render thread writes it as each frame is drawn, the app reads it from its UI
+// thread to show the progress, and a double read on a modern CPU is atomic
+// enough for a single-writer counter — a stale value never undoes real
+// progress because it just lags one frame.
+double motolii_export_fraction(Motolii* m) {
+  return m && m->d ? m->d->video_export.written_fraction : 0.0;
+}
+
 // Copies the project, as name.motolii, and the files its layers use into a
 // folder, and rewrites the file names in the copy to the copied files. Returns
 // how many files were copied, or -1 on failure.

@@ -404,6 +404,10 @@ int motolii_still(Motolii* m, const char* png);
    Other calls are answered meanwhile from another thread, but the project is
    not changed, and nothing is held until it is done. */
 int motolii_export(Motolii* m, const char* mp4);
+/* How far the export has come, from 0 at the start to 1 at the last frame.
+   Returns 0 when no export is running. Safe to call from another thread, which
+   is how the app's UI thread reads progress. */
+double motolii_export_fraction(Motolii* m);
 /* Returns the frame rate of the exported video, in frames per second. An app
    that counts in frames counts in these. */
 int motolii_rate(Motolii* m);

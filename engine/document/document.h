@@ -33,6 +33,10 @@ struct DocExport {
   // The time of the project at which the video being exported begins, which is
   // the start of its work area.
   double written_from = 0.0;
+  // How far the export has come, from 0 at the start to 1 at the last frame.
+  // Updated by the render thread as each frame is drawn, and read by the app
+  // through motolii_export_fraction(). Resets to 0 when the next export begins.
+  double written_fraction = 0.0;
 };
 
 // Doc is an open project: the SQLite database, and the state built from it,
