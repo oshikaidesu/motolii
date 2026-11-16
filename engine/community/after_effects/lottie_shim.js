@@ -216,11 +216,10 @@ function compile(src) {
     comp.compInterface = makeCompInterface(comp);
     try {
       elem.layerInterface = LayerExpressionInterface(elem);
-    } catch (e) {
-      if (typeof globalThis.print === 'function') {
-        globalThis.print('LOTTIE layerIface err: ' + e + ' stack=' + (e && e.stack));
-      }
-      // Minimal fallback: expressions reach .text / .toWorld through this.
+    } catch (_) {
+      // LayerExpressionInterface touches many lottie internals that a motolii
+      // mock doesn't have. Fall back to the small surface executeExpression
+      // reads: text / toWorld / fromWorld / toComp / fromComp / mask.
       elem.layerInterface = {
         text: {},
         toWorld: (p) => p,
@@ -257,8 +256,8 @@ function compile(src) {
   };
 }
 
-// The surface older recipes read (see engine/third_party/js/ae/ae_prelude.js,
-// which this shim is replacing once it is wired in script_runner.cpp).
+// The AE.* surface older recipes read. AE.compile wraps `src` into a lottie
+// expression that returns `$bm_rt`; AE.run passes the ctx straight through.
 globalThis.AE = {
   compile,
   run(f, ctx) { return f(ctx); },
@@ -267,31 +266,6 @@ globalThis.AE = {
   name(s) { return String(s).replace(/\W+/g, '_'); },
 };
 
-// expose Expressions for tests that want the raw lottie entry
+// Debugging hook, in case a recipe needs to inspect which implementation
+// answers its AE calls.
 globalThis.__LottieExpressions = Expressions;
-globalThis.__lottie_shim_ready = true;
-// Trace hook: lets host print what AE.compile was handed, and what it returned.
-globalThis.__lottie_trace = { calls: [] };
-const _origCompile = globalThis.AE.compile;
-globalThis.AE.compile = function (src) {
-  try {
-    const f = _origCompile(src);
-    return function (ctx) {
-      try {
-        const v = f(ctx);
-        if (globalThis.__lottie_trace.calls.length < 3) {
-          const msg = 'TRACE src=' + String(src).slice(0, 60) + ' t=' + (ctx && ctx.time) + ' v=' + JSON.stringify(v);
-          globalThis.__lottie_trace.calls.push(msg);
-          if (typeof globalThis.print === 'function') globalThis.print('LOTTIE ' + msg);
-        }
-        return v;
-      } catch (e) {
-        if (typeof globalThis.print === 'function') globalThis.print('LOTTIE RUN ERR: ' + e + ' stack=' + (e && e.stack));
-        return 0;
-      }
-    };
-  } catch (e) {
-    if (typeof globalThis.print === 'function') globalThis.print('LOTTIE COMPILE ERR: ' + e + ' stack=' + (e && e.stack));
-    return () => 0;
-  }
-};

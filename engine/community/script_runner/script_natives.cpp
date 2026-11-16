@@ -23,12 +23,6 @@
 #include "motion/easing_names.h"
 namespace motolii {
 
-JSValue bezier_ease(JSContext* cx, JSValueConst, int argc, JSValueConst* a) {
-  double p[5] = {0, 0, 1, 1, 0};
-  for (int i = 0; i < argc && i < 5; ++i) JS_ToFloat64(cx, &p[i], a[i]);
-  return JS_NewFloat64(cx, interp_bezier(p[0], p[1], p[2], p[3], p[4]));
-}
-
 
 // cavalry_prelude.js and rows_prelude.js sit beside this file and are read by
 // script_runner.cpp when a QuickJS context is opened. The engine ships no

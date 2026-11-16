@@ -10,7 +10,6 @@
 #include <thread>
 
 #include "base/file_read.h"
-#include "community/after_effects/ae_expr.h"
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/project_reads.h"
 #include "community/script_runner/script_natives.h"
@@ -107,37 +106,13 @@ Script::Script(const std::string& file, const std::string& p5,
     JS_FreeValue(own->cx, g);
   }
   if (src.find("AE.compile") !=
-      std::string::npos) {  // (an After Effects expression the recipe holds:
-                            // read once with acorn, third_party/js/acorn, then
-                            // only called: ae_expr.h, ae_prelude.js)
+      std::string::npos) {  // AE 式は lottie-web の ExpressionManager が
+                            // 解釈する (AGENTS.md 原則 2)。shim は
+                            // engine/community/after_effects/lottie_shim.js、
+                            // vendor は engine/third_party/js/lottie。
     const std::filesystem::path js =
         std::filesystem::path(p5).parent_path().parent_path();
-    const std::filesystem::path acornAt = js / "acorn" / "acorn.js",
-                                preludeAt = js / "ae" / "ae_prelude.js";
-    const std::string acorn = read_text(acornAt),
-                      prelude = read_text(preludeAt);
-    if (acorn.empty())
-      own->trouble = "acorn is not where it is stored: " + acornAt.string();
-    else if (prelude.empty())
-      own->trouble =
-          "ae_prelude is not where it is stored: " + preludeAt.string();
-    else {
-      JSValue g = JS_GetGlobalObject(own->cx);
-      JS_SetPropertyStr(own->cx, g, "__bezier",
-                        JS_NewCFunction(own->cx, bezier_ease, "__bezier", 5));
-      JS_FreeValue(own->cx, g);
-      JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(),
-                                    "acorn.js", JS_EVAL_TYPE_GLOBAL));
-      JS_FreeValue(own->cx, JS_Eval(own->cx, prelude.c_str(), prelude.size(),
-                                    "ae_prelude.js", JS_EVAL_TYPE_GLOBAL));
-      // AGENTS.md 原則 2: AE 式の解釈は lottie-web (ExpressionManager) に
-      // 任せる。ae_prelude.js の自前実装は上で読まれているが、ここで
-      // lottie_shim が globalThis.AE を lottie 実装で上書きする。shim の
-      // 読み込みに失敗した時だけ、自前の ae_prelude が動く形になる。
-      // 既存の 8 件の AE テスト (ease / sampleImage / fromWorld) は lottie
-      // 側で全て合格。MOTOLII_LOTTIE=0 を立てた時だけ無効化する (debug 用)。
-      const char* off = std::getenv("MOTOLII_LOTTIE");
-      if (!off || std::string(off) != "0") {
+    {
         const std::filesystem::path lottieRoot = js / "lottie",
                                     shimAt = doc_engine(
                                         "community/after_effects/"
@@ -195,21 +170,6 @@ Script::Script(const std::string& file, const std::string& p5,
         // shim module's top-level (import side effects are evaluated before
         // the shim body). Set the stubs with a plain-script eval first.
         {
-          JSValue g_tmp = JS_GetGlobalObject(own->cx);
-          JS_SetPropertyStr(own->cx, g_tmp, "print",
-              JS_NewCFunction(own->cx, [](JSContext *cx, JSValueConst,
-                                          int argc, JSValueConst *argv) -> JSValue {
-                for (int i = 0; i < argc; ++i) {
-                  const char* s = JS_ToCString(cx, argv[i]);
-                  if (s) std::fprintf(stderr, "%s%s", i ? " " : "", s);
-                  JS_FreeCString(cx, s);
-                }
-                std::fprintf(stderr, "\n");
-                return JS_UNDEFINED;
-              }, "print", 1));
-          JS_FreeValue(own->cx, g_tmp);
-        }
-        {
           static const char* kDomStubs =
               "globalThis.navigator = globalThis.navigator || "
               "{ userAgent: '' };\n"
@@ -256,15 +216,7 @@ Script::Script(const std::string& file, const std::string& p5,
           JS_FreeValue(own->cx, ran);
           for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
           }
-          {
-            JSValue g2 = JS_GetGlobalObject(own->cx);
-            JSValue ready = JS_GetPropertyStr(own->cx, g2, "__lottie_shim_ready");
-            std::fprintf(stderr, "lottie: shim_ready=%d\n", JS_ToBool(own->cx, ready));
-            JS_FreeValue(own->cx, ready);
-            JS_FreeValue(own->cx, g2);
-          }
         }
-      }
     }
   }
   const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
