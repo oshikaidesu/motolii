@@ -79,6 +79,33 @@ int? stageCameraLayer(WorkspaceController ws, String? selected) {
 /// The engine's own message for the last refused call.
 String stageError(WorkspaceController ws) => ws.inside?.error ?? '';
 
+/// The engine's message plus, where known, a short hint on how to fix it. The engine's messages stay terse so the
+/// error log reads cleanly; the hint is the app's layer on top (UAT 141).
+String stageErrorWithHint(WorkspaceController ws) {
+  final why = stageError(ws);
+  if (why.isEmpty) return '';
+  // Each entry: the substring that identifies the engine message, and the fix hint appended to it.
+  const hints = <(String, String)>[
+    ('there is no such folder', 'Pick a folder that exists'),
+    ('it is being written already', 'Wait for the current export, or Cancel'),
+    ('a film is written as', 'Use .mp4, .mov, .gif, .png or .jpg'),
+    (
+      'the file could not be written',
+      'Check that the disk has room and the folder is writable',
+    ),
+    (
+      'the picture could not be read back',
+      'Try again, or export frames instead',
+    ),
+    ('the document could not keep it', 'Reload the project and retry'),
+    ('cancelled', ''),
+  ];
+  for (final (needle, hint) in hints) {
+    if (why.contains(needle) && hint.isNotEmpty) return '$why · $hint';
+  }
+  return why;
+}
+
 /// The motion path of [layer] between [from] and [to] seconds, in [n] samples, as the engine computes it (null if none).
 Future<List<double>?> stageMotionPath(
   WorkspaceController ws,

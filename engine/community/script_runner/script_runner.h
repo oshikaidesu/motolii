@@ -23,6 +23,10 @@
 // same thing as `value`. What each() returns is added on top of that position.
 // See document/scripts/expressions.h.
 //
+// A script may also say the text of a text layer, with sourceText(t, k,
+// value): see says_text() below. With the layer split into lines, each line
+// of that text is a copy, so a file's rows can be a text's lines.
+//
 // A script may hold an After Effects expression as it was posted:
 // AE.compile(`...`) once, then AE.run(f, ...) in each(). The expression is
 // compiled once, not every frame. See ae_expr.h.
@@ -149,6 +153,20 @@ class Script {
   using SoundReader =
       std::function<std::vector<float>(int layer, bool spectrum, double t)>;
   void reads_sound(SoundReader sound);
+  // Returns true if the script says the text of a text layer: it defines
+  //   function sourceText(t, k, value) { return "..."; }
+  // the name After Effects gives the property (text.sourceText). t and k are
+  // each()'s, and value is the text as typed, as After Effects hands an
+  // expression the property's own `value`.
+  bool says_text() const;
+  // Returns what sourceText() gives at time t with the parameters as the
+  // project has them now, as a string, a line break being \n (After Effects'
+  // \r is taken for one). Returns `typed` when the script has no
+  // sourceText(), when it gives undefined or null, or when it throws, which
+  // trouble() then tells.
+  std::string text(double t, const std::map<std::string, double>& numbers,
+                   const std::map<std::string, std::string>& words,
+                   const std::string& typed);
   // Returns the source lines of the sketch that draw, as sketch_marked reports
   // them.
   std::vector<int> lines() const;

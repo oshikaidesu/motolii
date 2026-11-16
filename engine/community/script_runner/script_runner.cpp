@@ -28,6 +28,7 @@ struct Script::Own {
   JSRuntime* rt = nullptr;
   JSContext* cx = nullptr;
   JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
+  JSValue text = JS_UNDEFINED;  // its sourceText(), when it has one
   std::string trouble, file, src;
   bool whole = false;   // no each(): the whole file says every copy at once, as
                         // a Canvalry distribution (a PointCloud)
@@ -94,6 +95,17 @@ Script::Script(const std::string& file, const std::string& p5,
       JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva",
               JS_EVAL_TYPE_GLOBAL));  // (folder(), as its parameters object
                                       // says its folds: script_leva.h)
+  {  // The files a script came with: those of the folder named like it,
+     // beside it (Fire/ for Fire.js). __text_read(name) gives one as text.
+    JS_SetContextOpaque(own->cx, &own->film);
+    own->film.beside = (std::filesystem::path(file).parent_path() /
+                        std::filesystem::path(file).stem())
+                           .string();
+    JSValue g = JS_GetGlobalObject(own->cx);
+    JS_SetPropertyStr(own->cx, g, "__text_read",
+                      JS_NewCFunction(own->cx, text_read, "__text_read", 1));
+    JS_FreeValue(own->cx, g);
+  }
   if (src.find("AE.compile") !=
       std::string::npos) {  // (an After Effects expression the recipe holds:
                             // read once with acorn, third_party/js/acorn, then
@@ -177,17 +189,11 @@ Script::Script(const std::string& file, const std::string& p5,
                           src.find("loadImage") != std::string::npos))
       own->film.open(
           film, 320);  // (as much of it as a webcam sketch reads, and light)
-    JS_SetContextOpaque(own->cx, &own->film);
-    own->film.beside = (std::filesystem::path(file).parent_path() /
-                        std::filesystem::path(file).stem())
-                           .string();
     JSValue g = JS_GetGlobalObject(own->cx);
     JS_SetPropertyStr(own->cx, g, "__film_next",
                       JS_NewCFunction(own->cx, film_next, "__film_next", 0));
     JS_SetPropertyStr(own->cx, g, "__image_read",
                       JS_NewCFunction(own->cx, image_read, "__image_read", 1));
-    JS_SetPropertyStr(own->cx, g, "__text_read",
-                      JS_NewCFunction(own->cx, text_read, "__text_read", 1));
     JS_SetPropertyStr(own->cx, g, "__jobs",
                       JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
     if (form == "subtitles") {
@@ -244,14 +250,18 @@ Script::Script(const std::string& file, const std::string& p5,
   JS_FreeValue(own->cx, ran);
   JSValue g = JS_GetGlobalObject(own->cx);
   own->each = JS_GetPropertyStr(own->cx, g, "each");
+  own->text = JS_GetPropertyStr(own->cx, g, "sourceText");
   JS_FreeValue(own->cx, g);
-  own->whole = !JS_IsFunction(own->cx, own->each);
+  // A file that only says a layer's text places no copy: each stays where it
+  // is.
+  own->whole = !JS_IsFunction(own->cx, own->each) && !says_text();
   own->relates = src.find("function relate") != std::string::npos &&
                  src.find("function draw") == std::string::npos;
   own->parameters = JS_NewObject(own->cx), own->at = JS_NewObject(own->cx);
 }
 Script::~Script() {
   if (!own->cx) return;
+  JS_FreeValue(own->cx, own->text);
   JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters),
       JS_FreeValue(own->cx, own->at);
   for (JSAtom a : own->said)
@@ -271,6 +281,39 @@ void Script::reads_sound(SoundReader sound) {
   own->project.sound = std::move(sound);
 }
 bool Script::sketch() const { return own->sketch; }
+bool Script::says_text() const {
+  return own->cx && JS_IsFunction(own->cx, own->text);
+}
+std::string Script::text(double t, const std::map<std::string, double>& numbers,
+                         const std::map<std::string, std::string>& words,
+                         const std::string& typed) {
+  if (!says_text() || !ok()) return typed;
+  JSContext* cx = own->cx;
+  JS_UpdateStackTop(own->rt);
+  parameters(numbers, words);
+  JSValue args[3] = {JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters),
+                     JS_NewStringLen(cx, typed.data(), typed.size())};
+  JSValue out = JS_Call(cx, own->text, JS_UNDEFINED, 3, args);
+  JS_FreeValue(cx, args[1]), JS_FreeValue(cx, args[2]);
+  std::string said = typed;
+  if (JS_IsException(out)) {
+    JSValue e = JS_GetException(cx);
+    const char* why = JS_ToCString(cx, e);
+    own->trouble = std::string("sourceText() threw: ") + (why ? why : "?");
+    if (why) JS_FreeCString(cx, why);
+    JS_FreeValue(cx, e);
+  } else if (!JS_IsUndefined(out) && !JS_IsNull(out)) {
+    if (const char* got = JS_ToCString(cx, out)) said = got, JS_FreeCString(cx, got);
+    // After Effects writes a line break in a text as \r; here it is \n.
+    for (size_t at = 0; (at = said.find('\r', at)) != std::string::npos;)
+      if (at + 1 < said.size() && said[at + 1] == '\n')
+        said.erase(at, 1);
+      else
+        said[at] = '\n';
+  }
+  JS_FreeValue(cx, out);
+  return said;
+}
 bool Script::lays() const {
   return own->cx && (own->relates || (!own->whole && !own->sketch));
 }
@@ -534,6 +577,7 @@ ScriptCopy Script::ask(
                // so far, its fifth: one object, told again for each copy)
   ScriptCopy c;
   JSContext* cx = own->cx;
+  if (!JS_IsFunction(cx, own->each)) return c;
   JS_UpdateStackTop(own->rt);
   if (own->said[0] == JS_ATOM_NULL)
     for (int k = 0; k < 17; ++k)

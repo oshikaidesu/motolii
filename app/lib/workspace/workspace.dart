@@ -34,7 +34,7 @@ import 'package:motolii/workspace/state/media/media_service.dart'
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart'
-    show stageError, stageTakeStill;
+    show stageError, stageErrorWithHint, stageTakeStill;
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/top_bar/top_bar.dart';
@@ -184,7 +184,7 @@ class WorkspaceState extends State<Workspace> {
           ? 'Written: $name'
           : cancelled
           ? 'Cancelled writing $name'
-          : 'Not written: ${stageError(ws)}';
+          : 'Not written: ${stageErrorWithHint(ws)}';
       ws.noticeProgress = null;
     }
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
