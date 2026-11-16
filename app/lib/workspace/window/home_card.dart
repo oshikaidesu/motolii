@@ -99,10 +99,10 @@ class HomeCard extends StatelessWidget {
                           color: WindowTokens.accent,
                           shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          '✓',
-                          style: TextStyles.label(WindowTokens.onAccent)
-                              .copyWith(fontSize: TextStyles.px(11), height: 1),
+                        child: Glyph(
+                          AppGlyphs.check,
+                          size: Shape.z(12),
+                          color: WindowTokens.onAccent,
                         ),
                       ),
                     ),

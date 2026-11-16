@@ -18,6 +18,7 @@ enum AppGlyphs implements GlyphKind {
   code,
   search,
   close,
+  check,
   chevron,
   grid,
   list,
@@ -169,6 +170,12 @@ enum AppGlyphs implements GlyphKind {
       case AppGlyphs.close:
         cv.drawLine(p(.28, .28), p(.72, .72), st);
         cv.drawLine(p(.72, .28), p(.28, .72), st);
+      // Two strokes, a short one up-left and a long one up-right, like the macOS check mark.
+      case AppGlyphs.check:
+        cv.drawPath(
+          poly(const [Offset(.22, .52), Offset(.44, .72), Offset(.78, .32)]),
+          st,
+        );
       case AppGlyphs.chevron:
         cv.drawPath(
           poly(const [Offset(.34, .22), Offset(.72, .5), Offset(.34, .78)]),
