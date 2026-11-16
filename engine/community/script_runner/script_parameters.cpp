@@ -23,6 +23,49 @@ namespace motolii {
 
 namespace {
 
+// Turns a human-readable name into a snake_case identifier that fits
+// ScriptParameter::name (which the inspector uses as a key).
+std::string snake_name(const std::string& human) {
+  std::string n = human;
+  for (char& c : n)
+    c = std::isalnum(static_cast<unsigned char>(c))
+            ? static_cast<char>(std::tolower(static_cast<unsigned char>(c)))
+            : '_';
+  return n;
+}
+
+// Pulls every CSS custom property declaration (`--name: 2s;`, `--name: 10px;`)
+// out of `css` and emits one track parameter per unique property that has
+// a numeric default. CSS units (s, ms, px, %, deg, rem, em) are read but
+// dropped; the slider sees the number. Range defaults to [0, max(1, 2*value)]
+// so the user can push the value up or down from where the pen started it.
+// The parameter's label is `--name`, which is what the user sees in the CSS.
+void append_css_variable_params(const std::string& css,
+                                std::vector<ScriptParameter>& out) {
+  // Match `--name: <number><unit?>` (ignore gradient / calc / var() uses).
+  static const std::regex varRe{
+      R"(--([A-Za-z][\w-]*)\s*:\s*(-?\d+(?:\.\d+)?)\s*(ms|s|px|%|deg|rem|em)?\b)"};
+  std::set<std::string> seen;
+  for (std::sregex_iterator it(css.begin(), css.end(), varRe), end; it != end;
+       ++it) {
+    const std::string cssName = it->str(1);
+    if (!seen.insert(cssName).second) continue;
+    const double value = std::stod(it->str(2));
+    const std::string unit = it->str(3);
+    const double unitScale = unit == "ms" ? 0.001 : 1.0;  // slider in seconds
+    const double seed = value * unitScale;
+    ScriptParameter p;
+    p.kind = "track";
+    p.name = snake_name(cssName);
+    p.label = "--" + cssName;
+    p.low = std::min(0.0, seed);
+    p.high = std::max(1.0, std::abs(seed) * 2.0);
+    p.usual = seed;
+    p.step = 0;
+    out.push_back(std::move(p));
+  }
+}
+
 // Pulls every `effect("Name Control")("Slider")` reference out of each
 // AE.compile(`...`) call in `js` and emits one track parameter per unique
 // control. The parameter's name is a snake_case form of the effect name;
@@ -50,12 +93,7 @@ void append_ae_expression_params(const std::string& js,
       if (!seen.insert(key).second) continue;
       ScriptParameter p;
       p.kind = "track";
-      std::string n = effectName;
-      for (char& c : n)
-        c = std::isalnum(static_cast<unsigned char>(c))
-                ? static_cast<char>(std::tolower(static_cast<unsigned char>(c)))
-                : '_';
-      p.name = std::move(n);
+      p.name = snake_name(effectName);
       p.label = effectName;
       p.low = 0;
       p.high = 1;
@@ -112,6 +150,12 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
     // effect() references so the user can drive them from the card.
     if (all.str().find("AE.compile") != std::string::npos) {
       append_ae_expression_params(all.str(), parameters);
+    }
+    // A CSS pen's custom properties (`--duration: 2s`) become sliders too,
+    // so the user can retime or resize what the pen does without editing
+    // the CSS text.
+    if (adapter_form(all.str()) == "css") {
+      append_css_variable_params(all.str(), parameters);
     }
     in.clear(), in.seekg(0);
     if (const std::string head = leva_head(all.str()); !head.empty())
