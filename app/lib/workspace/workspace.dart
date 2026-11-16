@@ -82,7 +82,11 @@ class WorkspaceState extends State<Workspace> {
     // Finder からファイルをドロップした時に、各パスを 1 レイヤーとしてステージに置く (UAT 230/231/306).
     onDroppedFiles(_addDroppedPaths);
     // With no project given, start a new untitled one, as After Effects does.
-    _join(widget.document ?? untitledProjectPath());
+    final doc = widget.document ?? untitledProjectPath();
+    _join(doc);
+    // A window opened without a project lands on a temporary untitled file: show the home screen
+    // so the user sees their projects (or "New Project" if there are none), instead of an empty stage.
+    if (widget.document == null) home = true;
   }
 
   void _addDroppedPaths(List<String> paths) {
