@@ -12,6 +12,7 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/transform/transform_layout.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/widgets/number_field_state.dart' show dragRate;
 
 /// The value id of the part hovered or held on the preview, or of the row hovered under it, so both light together.
@@ -45,7 +46,7 @@ class _TransformCanvasState extends State<TransformCanvas> {
   // (B04). Without the threshold the Transform preview starts dragging on any
   // sub-pixel pointer event that comes with the mouse-down.
   bool _moved = false;
-  static const double _dragSlop = 3.0;
+  static const double _dragSlop = Gestures.dragSlop;
   TransformHome? _home;
   String? _homeOf;
 

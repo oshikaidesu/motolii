@@ -15,7 +15,7 @@ Each rule is one line, found by its name at the front (for example `press.1`). T
 - `[Maintainer]` Decided by the maintainer. `[DESIGN]` A rule of DESIGN.md.
 - `[common]` No outside source. Most apps already do it this way.
 
-The shared numbers are meant to be written once, in a `Gestures` class in `app/lib/widgets/`, and read from there by every part (section 12). That class does not exist yet, so until it does this document is the reference for the values.
+The shared numbers are written once, in the `Gestures` class in `app/lib/widgets/gestures.dart`, and read from there by every part (section 12). A value that a part needs is added to that class first, with the same name as in section 12.
 
 ---
 
