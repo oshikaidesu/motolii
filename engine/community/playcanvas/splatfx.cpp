@@ -21,26 +21,22 @@
 #include "base/cache_folder.h"
 #include "base/file_read.h"
 #include "base/hash.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 
 namespace {
 
-// Minimal stand-ins for the parts of the 'playcanvas' module that an effect
-// imports.
-const char* const splatfx_playcanvas = R"(
-export class Vec3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; } copy(v) { return this.set(v.x, v.y, v.z); } clone() { return new Vec3(this.x, this.y, this.z); } }
-export class Color { constructor(r = 0, g = 0, b = 0, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; } set(r, g, b, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; return this; } copy(c) { return this.set(c.r, c.g, c.b, c.a); } clone() { return new Color(this.r, this.g, this.b, this.a); } }
-export class Script { constructor() { this.enabled = true; } on() {} off() {} fire() {} }
-)";
-const char* const splatfx_base = R"(
-import { Script } from 'playcanvas';
-export class GSplatShaderEffect extends Script {
-    constructor() { super(); this.effectTime = 0; this.__uniforms = {}; }
-    setUniform(name, v) { this.__uniforms[name] = typeof v === 'number' ? [v] : Array.from(v); }
-    isEffectComplete() { const t = this.getCompletionTime ? this.getCompletionTime() : Infinity; return this.effectTime >= t; }
+// Stand-ins for the parts of the 'playcanvas' module and for
+// gsplat-shader-effect.mjs that an effect imports, in splatfx_playcanvas.js
+// and splatfx_base.js beside this file. Read once each; the text never
+// changes at runtime.
+const std::string& splatfx_stub(const char* name) {
+  static std::map<std::string, std::string> cache;
+  if (auto it = cache.find(name); it != cache.end()) return it->second;
+  return cache[name] = read_text(
+             doc_engine((std::string("community/playcanvas/") + name).c_str()));
 }
-)";
 
 }  // namespace
 
@@ -67,9 +63,9 @@ JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
   const std::string n = name;
   std::string src;
   if (n == "playcanvas")
-    src = splatfx_playcanvas;
+    src = splatfx_stub("splatfx_playcanvas.js");
   else if (std::filesystem::path(n).filename() == "gsplat-shader-effect.mjs")
-    src = splatfx_base;
+    src = splatfx_stub("splatfx_base.js");
   else
     src = read_text(n);
   JSValue built = JS_Eval(cx, src.c_str(), src.size(), name,
