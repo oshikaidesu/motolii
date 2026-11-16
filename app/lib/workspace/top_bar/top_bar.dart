@@ -256,21 +256,23 @@ class _Saved extends StatelessWidget {
           WorkspaceAspect.document,
           WorkspaceAspect.notice,
         }),
-        go = ws.noticeGo;
+        go = ws.noticeGo,
+        active = ws.notice != null;
+    // The dot pops in accent when a notice is up; quiets to g38 when the project has just been saved.
     final said = Text(
       ws.notice ?? _savedAt(ws),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: go == null
-          ? TextStyles.label(Grey.g63)
-          : TextStyles.label(Grey.g63)
+          ? TextStyles.label(active ? Grey.g91 : Grey.g63)
+          : TextStyles.label(active ? Grey.g91 : Grey.g63)
                 .copyWith(decoration: TextDecoration.underline),
     ); // The underline marks the notice as a link when it has a target.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Badge(
-          WindowTokens.accent,
+          active ? WindowTokens.accent : Grey.g38,
           size: Shape.z(6),
           radius: Radius.circular(Shape.z(3)),
         ),
