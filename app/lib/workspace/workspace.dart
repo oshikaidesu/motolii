@@ -29,6 +29,7 @@ import 'package:motolii/workspace/state/layers/layer_edits.dart'
 import 'package:motolii/workspace/state/media/media_service.dart'
     show placeFileLayer;
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/workspace/state/effect_credits.dart'
     show writeCreditsFile;
 import 'package:motolii/workspace/state/project_session.dart';
@@ -86,9 +87,8 @@ class WorkspaceState extends State<Workspace> {
     // With no project given, start a new untitled one, as After Effects does.
     final doc = widget.document ?? untitledProjectPath();
     _join(doc);
-    // A window opened without a project lands on a temporary untitled file: show the home screen
-    // so the user sees their projects (or "New Project" if there are none), instead of an empty stage.
-    if (widget.document == null) home = true;
+    // The home screen shows on every startup (UAT 94), over the project that opens in the background.
+    home = true;
   }
 
   void _addDroppedPaths(List<String> paths) {
@@ -363,6 +363,8 @@ class WorkspaceState extends State<Workspace> {
         }
       },
     );
+    // Remember the opened project for the home screen's "continue from here" (UAT 94).
+    WindowFile.lastProject = doc;
     // The menus belong to the open project.
     setState(() {});
   }
@@ -417,20 +419,33 @@ class WorkspaceState extends State<Workspace> {
               Overlay(initialEntries: [_entry]),
               if (home && documentPath != null && projectOpen(ws))
                 Positioned.fill(
-                  child: HomeWindow(
-                    folder: parentFolderOf(documentPath!),
-                    lib: engineLibPath(ws),
-                    open: documentPath!,
-                    onOpen: (d) {
-                      setState(() => home = false);
-                      if (d != documentPath) open(d);
-                    },
-                    onExport: _exportFrom,
-                    onNew: () {
-                      setState(() => home = false);
-                      commands()['file.new']!();
-                    },
-                    onClose: () => setState(() => home = false),
+                  child: Overlay(
+                    initialEntries: [
+                      OverlayEntry(
+                        builder: (_) => HomeWindow(
+                          folder:
+                              WindowFile.projectsFolder ??
+                              parentFolderOf(documentPath!),
+                          lib: engineLibPath(ws),
+                          open: documentPath!,
+                          lastProject: WindowFile.lastProject,
+                          onOpen: (d) {
+                            setState(() => home = false);
+                            if (d != documentPath) open(d);
+                          },
+                          onExport: _exportFrom,
+                          onNew: () {
+                            setState(() => home = false);
+                            commands()['file.new']!();
+                          },
+                          onClose: () => setState(() => home = false),
+                          onFolder: (folder) {
+                            WindowFile.projectsFolder = folder;
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],

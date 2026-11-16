@@ -25,6 +25,14 @@ abstract final class WindowFile {
   /// The saved value for [name], or null if none is saved.
   static String? get(String name) => _all()[name];
 
+  /// The folder the home screen lists projects from, or null to use the default (~/Movies/Motolii).
+  static String? get projectsFolder => get('ProjectsFolder');
+  static set projectsFolder(String? v) => set('ProjectsFolder', v);
+
+  /// The last project the user opened, so the home screen can show "continue from here".
+  static String? get lastProject => get('LastProject');
+  static set lastProject(String? v) => set('LastProject', v);
+
   /// Saves [value] for [name] and leaves the other settings as they were. A null [value] removes the setting.
   static void set(String name, String? value) {
     final all = _all();

@@ -21,7 +21,8 @@ import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart'
 import 'package:motolii/workspace/state/tiles/effect_decks_store.dart'
     show dockStarsAt, effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show TimelinePane;
-import 'package:motolii/workspace/workspace.dart' show Workspace;
+import 'package:motolii/workspace/workspace.dart'
+    show Workspace, WorkspaceState;
 import 'package:motolii/workspace/state/window_zoom.dart' show WindowZoom;
 
 final _built = File('$motoliiDir/out/libmotolii.dylib').existsSync();
@@ -60,6 +61,10 @@ Future<void> _open(WidgetTester t) async {
       builder: (c, _) => Workspace(document: doc),
     ),
   );
+  // Close the home screen (shown on every startup since UAT 94) before the
+  // pump loop — the overlay's layout in the test viewport throws overflow.
+  // ignore: invalid_use_of_protected_member
+  t.state<WorkspaceState>(find.byType(Workspace)).home = false;
   for (
     var i = 0;
     i < 1500 && find.byType(TimelinePane).evaluate().isEmpty;

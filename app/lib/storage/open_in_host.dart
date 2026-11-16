@@ -9,3 +9,13 @@ Future<ProcessResult> openFolderInHost(String path) {
   final folder = Directory(path)..createSync(recursive: true);
   return Process.run('open', [folder.path]);
 }
+
+/// Asks the user to pick a folder with the system dialog. Returns the path, or null if cancelled.
+Future<String?> pickFolder({String prompt = 'Choose a folder'}) async {
+  final r = await Process.run('osascript', [
+    '-e',
+    'set f to choose folder with prompt "$prompt"\nreturn POSIX path of f',
+  ]);
+  final path = (r.stdout as String).trim();
+  return path.isEmpty ? null : path.replaceFirst(RegExp(r'/$'), '');
+}

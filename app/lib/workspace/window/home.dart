@@ -17,6 +17,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/open_in_host.dart' show pickFolder;
 import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/thumbnail_folder.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -34,6 +35,8 @@ class HomeWindow extends StatefulWidget {
     required this.onExport,
     required this.onNew,
     required this.onClose,
+    this.lastProject,
+    this.onFolder,
   });
 
   /// The folder whose projects are listed.
@@ -47,6 +50,12 @@ class HomeWindow extends StatefulWidget {
   final void Function(String doc) onOpen;
   final void Function(List<String> docs) onExport;
   final VoidCallback onNew, onClose;
+
+  /// The last project the user worked on, shown as "continue from here" at the top (UAT 94).
+  final String? lastProject;
+
+  /// Called with a folder path to change where the home screen looks for projects (UAT 98).
+  final void Function(String folder)? onFolder;
   @override
   State<HomeWindow> createState() => _HomeWindowState();
 }
@@ -107,6 +116,54 @@ class _HomeWindowState extends State<HomeWindow> {
         );
       });
     }
+  }
+
+  Future<void> _pickFolder() async {
+    final folder = await pickFolder(prompt: 'Choose projects folder');
+    if (folder != null && mounted) widget.onFolder?.call(folder);
+  }
+
+  /// The "continue from here" card: the last project the user worked on, shown large (UAT 94).
+  Widget? _continueCard() {
+    final last = widget.lastProject;
+    if (last == null || !existsFile(last)) return null;
+    final name = last.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
+    final lastDoc = _docs.where((d) => d.path == last).firstOrNull;
+    final facts = lastDoc != null ? homeFacts(lastDoc) : const <String>[];
+    return NakedButton(
+      enableFeedback: false,
+      key: const ValueKey('home-continue'),
+      onPressed: () => widget.onOpen(last),
+      child: Container(
+        height: Shape.z(80),
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(28)),
+        decoration: BoxDecoration(
+          color: WindowTokens.card,
+          borderRadius: Shape.round(14),
+          border: Border.all(color: WindowTokens.accent, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Glyph(AppGlyphs.chevron, size: Shape.z(14), color: Grey.g91),
+            SizedBox(width: Shape.s(16)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(name, style: TextStyles.title(Grey.g95).bold),
+                  if (facts.isNotEmpty) ...[
+                    SizedBox(height: Shape.s(3)),
+                    Text(facts.join(' · '), style: TextStyles.label(Grey.g56)),
+                  ],
+                ],
+              ),
+            ),
+            Text('Continue', style: TextStyles.label(Grey.g63)),
+          ],
+        ),
+      ),
+    );
   }
 
   void _duplicate(HomeProject d) {
@@ -236,6 +293,10 @@ class _HomeWindowState extends State<HomeWindow> {
               ],
             ),
             SizedBox(height: Shape.s(22)),
+            if (_continueCard() case final card?) ...[
+              card,
+              SizedBox(height: Shape.s(14)),
+            ],
             NakedButton(
               enableFeedback: false,
               // "New Project" is the first thing after the wordmark: a wide button with an accent "+" badge to the left of the label, so the action reads as first-class.
@@ -303,6 +364,17 @@ class _HomeWindowState extends State<HomeWindow> {
                 Text('Projects', style: TextStyles.title(Grey.g91).bold),
                 SizedBox(width: Shape.s(10)),
                 Text('${shown.length}', style: TextStyles.title(Grey.g56)),
+                if (widget.onFolder != null) ...[
+                  SizedBox(width: Shape.s(10)),
+                  IconPress(
+                    (c) => Glyph(AppGlyphs.folder, size: Shape.z(12), color: c),
+                    key: const ValueKey('home-folder'),
+                    tip: 'Change Folder',
+                    onTap: _pickFolder,
+                    size: Shape.z(22),
+                    ink: Grey.g56,
+                  ),
+                ],
                 const Spacer(),
                 SizedBox(
                   width: Shape.z(220),
