@@ -52,4 +52,41 @@ void main() {
       matchesGoldenFile('goldens/code_field_js.png'),
     );
   });
+
+  // The Code tab's cell: as tall as its code, inside a scrolling column (code_pane.dart).
+  testWidgets('code editor — a cell as tall as its code, in a scroll', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 600,
+            height: 300,
+            child: ColoredBox(
+              color: WindowTokens.well,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [CodeField(jsPath, (_) {}, fit: true)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(tester.takeException(), isNull);
+    // Eight lines of code, the empty one after the last newline, one more to type on, and the padding.
+    final line = TextStyles.value().fontSize! * 1.4;
+    expect(tester.getSize(find.byType(CodeField)).height, 10 * line + 12);
+    await expectLater(
+      find.byType(SingleChildScrollView),
+      matchesGoldenFile('goldens/code_field_cell.png'),
+    );
+  });
 }

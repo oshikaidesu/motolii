@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:re_highlight/languages/css.dart' show langCss;
 import 'package:re_highlight/languages/glsl.dart' show langGlsl;
@@ -76,8 +77,25 @@ class _CodeFieldState extends State<CodeField> {
 
   void _onChanged() {
     if (!_ready) return;
+    _counted();
     _soon?.cancel();
     _soon = Timer(const Duration(milliseconds: 400), _save);
+  }
+
+  /// The lines the editor's height was last worked out for, when it is as tall as its code.
+  late int _lines = '\n'.allMatches(_written).length + 1;
+
+  // code_forge fills the height it is given and cannot be as tall as its code by itself (its Column holds an
+  // Expanded), so a cell's height is worked out from the count of lines. The controller may tell its listeners
+  // while a frame is being built, when nothing may be rebuilt.
+  void _counted() {
+    if (!mounted || !widget.fit || _controller.lineCount == _lines) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => _counted());
+      return;
+    }
+    setState(() => _lines = _controller.lineCount);
   }
 
   @override
@@ -120,6 +138,20 @@ class _CodeFieldState extends State<CodeField> {
     final dark = Grey.g07.computeLuminance() <= 0.5;
     final theme = dark ? darkCodeStyles : lightCodeStyles;
     final fit = widget.fit;
+    final editor = _editor(fontSize, theme, fit);
+    // One more line than the code, to type on, as a notebook's cell has (Jupyter).
+    return fit
+        ? SizedBox(
+            height: (_lines + 1) * fontSize * _lineHeight + _pad.vertical,
+            child: editor,
+          )
+        : editor;
+  }
+
+  static const _lineHeight = 1.4;
+  static const _pad = EdgeInsets.only(top: 4, bottom: 8);
+
+  Widget _editor(double fontSize, Map<String, TextStyle> theme, bool fit) {
     return CodeForge(
       controller: _controller,
       focusNode: _focus,
@@ -132,9 +164,9 @@ class _CodeFieldState extends State<CodeField> {
       textStyle: TextStyle(
         fontSize: fontSize,
         fontFamily: TextStyles.mono,
-        height: 1.4,
+        height: _lineHeight,
       ),
-      innerPadding: const EdgeInsets.only(top: 4, bottom: 8),
+      innerPadding: _pad,
       enableFolding: !fit,
       enableMinimap: !fit,
       enableGuideLines: !fit,
@@ -144,15 +176,14 @@ class _CodeFieldState extends State<CodeField> {
         lineNumberStyle: TextStyle(
           fontSize: fontSize,
           fontFamily: TextStyles.mono,
-          height: 1.4,
+          height: _lineHeight,
           color: Grey.g38,
         ),
         backgroundColor: WindowTokens.well,
       ),
       selectionStyle: CodeSelectionStyle(
         cursorColor: Grey.g91,
-        selectionColor: (dark ? darkSelectionColor : lightSelectionColor)
-            .withAlpha(120),
+        selectionColor: WindowTokens.accent.withAlpha(90),
       ),
       minimapStyle: fit
           ? null
