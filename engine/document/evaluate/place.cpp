@@ -26,6 +26,11 @@ math::double3 doc_position(Doc& d, int layer, double at) {
                        doc_literal(d, layer, "z", at, 0)};
 }
 
+double doc_stage_pixel(Doc& d, int layer, double at) {
+  return (double)d.stage->h /
+         std::max(1.0, doc_comp_high(d) * doc_point(d, layer, at));
+}
+
 math::double3 doc_anchor(Doc& d, int layer, double at, math::float2 half,
                          float deep) {
   return math::double3{doc_literal(d, layer, "anchor_x", at, 0) * half.x,
@@ -106,9 +111,7 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
       kept.copies = midi_copies(
           midi_of(notes), n,
           (said - doc_literal(d, layer, "start", 0, 0)) * speed,
-          doc_comp_high(d) / 1080.0 * (double)d.stage->h /
-              std::max(1.0, doc_comp_high(d) *
-                                doc_point(d, layer, said)),
+          doc_comp_high(d) / 1080.0 * doc_stage_pixel(d, layer, said),
           h);
     }
     const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
@@ -271,9 +274,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                                         1000.0 * said);
     // The size of one document pixel in stage units where the layer stands, as
     // for the copies of a script.
-    const double pixel =
-        (double)d.stage->h / std::max(1.0, doc_comp_high(d) *
-                                               doc_point(d, layer, said));
+    const double pixel = doc_stage_pixel(d, layer, said);
     // Alight Motion's y axis points down; the stage's points up.
     shift += math::double3{m.x * pixel, -m.y * pixel, m.z * pixel};
     // Alight Motion rotates clockwise, so the angle is negated.

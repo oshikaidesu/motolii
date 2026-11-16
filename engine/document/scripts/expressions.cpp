@@ -15,6 +15,7 @@
 #include "document/document.h"
 #include "document/marks.h"
 #include "document/evaluate/fx_list.h"
+#include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
@@ -247,9 +248,7 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // The fourth argument is the size of one project pixel in stage units at
     // the layer's depth. The last argument is the copies laid by the earlier
     // scripts, the fifth argument of each(); see script_runner.h.
-    const double px =
-        (double)d.stage->h / std::max(1.0, doc_comp_high(d) *
-                                               doc_point(d, layer, said));
+    const double px = doc_stage_pixel(d, layer, said);
     // A page's pixel is a project pixel as the letters are seen. The letters
     // are laid at size 1 and the layer's size scales them afterwards, so
     // one such pixel is that many times smaller where they are laid.

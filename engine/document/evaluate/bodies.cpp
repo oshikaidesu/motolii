@@ -161,9 +161,8 @@ const std::vector<double>* doc_bodies(Doc& d, double t) {
   if (b.layers.empty()) return nullptr;
   if (!b.jolt) b.jolt = std::make_shared<RigidBodies>(), b.at = -1;
   // A metre in stage units, where the first layer with bodies stands.
-  b.metre = kPixelsAMetre * (double)d.stage->h /
-            std::max(1.0, doc_comp_high(d) *
-                              doc_point(d, b.layers.front().first, 0));
+  b.metre = kPixelsAMetre *
+            doc_stage_pixel(d, b.layers.front().first, 0);
   std::vector<RigidBodyTold> told;
   const auto tell = [&](size_t f) {
     const double at = (double)f / 60.0;

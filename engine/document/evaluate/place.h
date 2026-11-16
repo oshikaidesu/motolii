@@ -83,6 +83,14 @@ struct DocPlaceCache {
 // vector, in the parent space the matrices above it work in.
 filament::math::double3 doc_position(Doc& d, int layer, double at);
 
+// Returns the size of one document pixel in stage units where `layer` stands
+// at time `at`: how many stage units of height a project pixel takes, taking
+// the layer's 3D depth (doc_point) into account. Falls back to the stage's
+// own height when the composition is not yet sized. Used wherever stage units
+// have to meet document pixels — in script copies, expressions, and the
+// physics world's metre.
+double doc_stage_pixel(Doc& d, int layer, double at);
+
 // Returns the layer's anchor as a point in its own box: the (anchor_x,
 // anchor_y, anchor_z) properties at time `at` multiplied by the box's half
 // extents (half.x, half.y) and depth (`deep`), which doc_half supplies. This
