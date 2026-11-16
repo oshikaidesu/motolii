@@ -6,6 +6,7 @@ import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/engine_access.dart' show ownFolder;
 import 'package:motolii/workspace/state/media/shelf_reads.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
@@ -129,6 +130,7 @@ EffectListing effectListing({
           }.difference(d.without),
       };
   final used = ws.fxUsed, packs = <String, int>{};
+  final own = ownFolder();
   for (final e in every) {
     if (effectPack(e.id) case final p?) packs[p] = (packs[p] ?? 0) + 1;
   }
@@ -151,6 +153,7 @@ EffectListing effectListing({
                 switch (place) {
                   '★' => c.starred(e.id),
                   'In video' => used.contains(e.id),
+                  'Mine' => e.id.startsWith(own),
                   _ when deck != null => deckIds[deck]!.contains(e.id),
                   _ when pack != null => effectPack(e.id) == pack,
                   _ => true,

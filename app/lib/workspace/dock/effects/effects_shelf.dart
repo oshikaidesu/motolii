@@ -187,6 +187,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         'Recent': recent.length,
         '★': all.where((e) => c.starred(e.id)).length,
         'In video': all.where((e) => used.contains(e.id)).length,
+        'Mine': all.where((e) => e.id.startsWith(ownFolder())).length,
       },
       decks: {
         for (final d in decks)
