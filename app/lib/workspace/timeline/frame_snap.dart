@@ -6,6 +6,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/workspace/state/beats.dart';
 
 /// The frames a drag can snap to, at one zoom of the timeline.
@@ -28,7 +29,7 @@ class FrameSnap {
   final double pixelsPerFrame;
 
   /// How near a stop must be on screen to catch a dragged frame, in pixels.
-  static double get reach => Shape.z(8);
+  static double get reach => Shape.z(Gestures.snapTimeline);
 
   /// The stop nearest to frame [f] among those within [reach], or null when none is that near.
   int? nearest(int f) {
