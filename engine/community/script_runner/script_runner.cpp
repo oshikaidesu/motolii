@@ -189,6 +189,38 @@ Script::Script(const std::string& file, const std::string& p5,
           return m;
         };
         JS_SetModuleLoaderFunc(own->rt, normalizer, loader, &load_data);
+        // DOM globals must be set BEFORE the shim's imports evaluate, since
+        // lottie-web's utils/common.js reads navigator.userAgent at top-level
+        // and throws under QuickJS otherwise — which silently kills the
+        // shim module's top-level (import side effects are evaluated before
+        // the shim body). Set the stubs with a plain-script eval first.
+        {
+          JSValue g_tmp = JS_GetGlobalObject(own->cx);
+          JS_SetPropertyStr(own->cx, g_tmp, "print",
+              JS_NewCFunction(own->cx, [](JSContext *cx, JSValueConst,
+                                          int argc, JSValueConst *argv) -> JSValue {
+                for (int i = 0; i < argc; ++i) {
+                  const char* s = JS_ToCString(cx, argv[i]);
+                  if (s) std::fprintf(stderr, "%s%s", i ? " " : "", s);
+                  JS_FreeCString(cx, s);
+                }
+                std::fprintf(stderr, "\n");
+                return JS_UNDEFINED;
+              }, "print", 1));
+          JS_FreeValue(own->cx, g_tmp);
+        }
+        {
+          static const char* kDomStubs =
+              "globalThis.navigator = globalThis.navigator || "
+              "{ userAgent: '' };\n"
+              "if (typeof globalThis.window === 'undefined') "
+              "globalThis.window = null;\n"
+              "if (typeof globalThis.document === 'undefined') "
+              "globalThis.document = null;\n";
+          JS_FreeValue(own->cx,
+                       JS_Eval(own->cx, kDomStubs, std::strlen(kDomStubs),
+                               "<lottie_dom_stubs>", JS_EVAL_TYPE_GLOBAL));
+        }
         const std::string shim = read_text(shimAt);
         if (shim.empty()) {
           own->trouble = "lottie_shim is not where it is stored: " +
@@ -223,6 +255,13 @@ Script::Script(const std::string& file, const std::string& p5,
           }
           JS_FreeValue(own->cx, ran);
           for (JSContext* job; JS_ExecutePendingJob(own->rt, &job) > 0;) {
+          }
+          {
+            JSValue g2 = JS_GetGlobalObject(own->cx);
+            JSValue ready = JS_GetPropertyStr(own->cx, g2, "__lottie_shim_ready");
+            std::fprintf(stderr, "lottie: shim_ready=%d\n", JS_ToBool(own->cx, ready));
+            JS_FreeValue(own->cx, ready);
+            JS_FreeValue(own->cx, g2);
           }
         }
       }

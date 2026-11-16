@@ -14,6 +14,8 @@
 
 import Expressions from 'motolii-lottie/utils/expressions/Expressions.js';
 import ExpressionManager from 'motolii-lottie/utils/expressions/ExpressionManager.js';
+import LayerExpressionInterface from 'motolii-lottie/utils/expressions/LayerInterface.js';
+import CompExpressionInterface from 'motolii-lottie/utils/expressions/CompInterface.js';
 
 // lottie-web reads a handful of DOM globals at module load time. motolii has
 // no DOM, so stub them to the smallest values that keep lottie's internal
@@ -53,9 +55,19 @@ function makeComp(spec) {
 
 function makeElem(comp, spec) {
   spec = spec || {};
+  const noVal = { v: [0, 0, 0], pv: [0, 0, 0], getValueAtTime() { return this.v; } };
+  const scaleVal = { v: [100, 100], pv: [100, 100], getValueAtTime() { return this.v; } };
+  const scalar0 = { v: 0, pv: 0, getValueAtTime() { return this.v; } };
+  const opacVal = { v: 100, pv: 100, getValueAtTime() { return this.v; } };
+  const mProp = {
+    a: noVal, p: noVal, s: scaleVal, r: scalar0, o: opacVal,
+    sk: scalar0, sa: scalar0,
+    getValueAtTime(t) { return mProp; },
+    applyToMatrix(mat) { return mat; },
+  };
   return {
     data: {
-      ty: spec.ty !== undefined ? spec.ty : 4, // 4 = shape layer
+      ty: spec.ty !== undefined ? spec.ty : 4,
       nm: spec.name || 'Layer',
       ind: spec.index || 1,
       ip: spec.inPoint !== undefined ? spec.inPoint : 0,
@@ -68,16 +80,16 @@ function makeElem(comp, spec) {
     },
     comp,
     globalData: comp.globalData,
-    finalTransform: {
-      mProp: {
-        a: { v: [0, 0, 0] },
-        p: { v: [0, 0, 0] },
-        s: { v: [100, 100] },
-        r: { v: 0 },
-        o: { v: 100 },
-      },
-    },
+    finalTransform: { mProp: mProp },
     hierarchy: [],
+    sourceRectAtTime() {
+      return { top: 0, left: 0, width: comp.width, height: comp.height };
+    },
+    getLayerSize() {
+      return { w: spec.width || comp.width, h: spec.height || comp.height };
+    },
+    effect() { return () => ({ v: 0, value: 0 }); },
+    maskManager: { getMaskProperty() { return { v: 0 }; } },
   };
 }
 
@@ -102,13 +114,34 @@ function makeProperty(comp, elem, initial) {
 // the runner binds the context (comp/layer/value) the expression sees; later
 // calls reuse that binding and just update time / value / index.
 function compile(src) {
-  const data = { x: String(src), k: 0 };
+    // lottie-web expects expression source to have been rewritten by the
+    // bodymovin After Effects plugin to assign its final value to `$bm_rt`.
+    // When a recipe passes a raw AE expression like `ease(time, 0, 1, 0, 1)`
+    // we wrap it so the eval'd function's result lands in scoped_bm_rt.
+    // Expressions that already contain `$bm_rt = …` are left alone.
+    let processed = String(src).trim();
+    while (processed.endsWith(';')) processed = processed.slice(0, -1).trim();
+    if (!/\$bm_rt\s*=/.test(processed)) {
+      // `$bm_rt` must be declared (strict mode in the eval'd function).
+      processed = 'var $bm_rt; $bm_rt = (' + processed + ')';
+    }
+    const data = { x: processed, k: 0 };
   let bound = null;
   const bind = (ctx) => {
     const comp = (ctx && ctx.comp) || makeComp(ctx && ctx.compSpec);
     const elem = makeElem(comp, (ctx && ctx.layer) || {});
     const value = ctx && ctx.value !== undefined ? ctx.value : 0;
     const property = makeProperty(comp, elem, value);
+    // lottie's executeExpression reads elem.layerInterface and
+    // elem.comp.compInterface. Build the real interfaces from lottie.
+    try {
+      elem.layerInterface = LayerExpressionInterface(elem);
+      comp.compInterface = CompExpressionInterface(comp);
+    } catch (e) {
+      if (typeof globalThis.print === 'function') {
+        globalThis.print('LOTTIE iface err: ' + e + ' stack=' + (e && e.stack));
+      }
+    }
     // `this` inside initiateExpression is the property (reads this.data.hd
     // and this.comp). lottie assumes the caller binds it.
     const exec = ExpressionManager.initiateExpression.call(
@@ -148,3 +181,29 @@ globalThis.AE = {
 
 // expose Expressions for tests that want the raw lottie entry
 globalThis.__LottieExpressions = Expressions;
+globalThis.__lottie_shim_ready = true;
+// Trace hook: lets host print what AE.compile was handed, and what it returned.
+globalThis.__lottie_trace = { calls: [] };
+const _origCompile = globalThis.AE.compile;
+globalThis.AE.compile = function (src) {
+  try {
+    const f = _origCompile(src);
+    return function (ctx) {
+      try {
+        const v = f(ctx);
+        if (globalThis.__lottie_trace.calls.length < 3) {
+          const msg = 'TRACE src=' + String(src).slice(0, 60) + ' t=' + (ctx && ctx.time) + ' v=' + JSON.stringify(v);
+          globalThis.__lottie_trace.calls.push(msg);
+          if (typeof globalThis.print === 'function') globalThis.print('LOTTIE ' + msg);
+        }
+        return v;
+      } catch (e) {
+        if (typeof globalThis.print === 'function') globalThis.print('LOTTIE RUN ERR: ' + e + ' stack=' + (e && e.stack));
+        return 0;
+      }
+    };
+  } catch (e) {
+    if (typeof globalThis.print === 'function') globalThis.print('LOTTIE COMPILE ERR: ' + e + ' stack=' + (e && e.stack));
+    return () => 0;
+  }
+};
