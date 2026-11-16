@@ -32,29 +32,27 @@
 #include <string>
 
 #include "base/file_read.h"
+#include "shelf/shelf_folders.h"
 #include "base/json.h"
 
 namespace motolii {
 
 namespace {
 
-// Source of the stand-in 'three' module: just enough of Vector2/3/4, Color and
-// Matrix3/4 for a shader module to build its uniform values. Vectors keep their
-// components and Color converts a hex number to r, g, b in 0-1.
-const char* const three_stand_ins = R"(
-export class Vector2 { constructor(x = 0, y = 0) { this.x = x; this.y = y; } }
-export class Vector3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } }
-export class Vector4 { constructor(x = 0, y = 0, z = 0, w = 1) { this.x = x; this.y = y; this.z = z; this.w = w; } }
-export class Color { constructor(r = 1, g, b) { if (g === undefined) { const h = typeof r === 'number' ? r : 0xffffff; this.r = ((h >> 16) & 255) / 255; this.g = ((h >> 8) & 255) / 255; this.b = (h & 255) / 255; } else { this.r = r; this.g = g; this.b = b; } } }
-export class Matrix3 {} export class Matrix4 {}
-)";
+// Stand-in for the 'three' module (Vector/Color/Matrix) a shader module
+// imports, in three_stand_ins.js beside this file. Read once.
+const std::string& three_stand_ins() {
+  static const std::string text =
+      read_text(doc_engine("community/three/three_stand_ins.js"));
+  return text;
+}
 
 // QuickJS module loader. Compiles the stand-in source for the name "three" and
 // the file at `name` for any other module, without running it. Returns null if
 // the module does not compile.
 JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
   const std::string src =
-      std::string(name) == "three" ? three_stand_ins : read_text(name);
+      std::string(name) == "three" ? three_stand_ins() : read_text(name);
   JSValue built = JS_Eval(cx, src.c_str(), src.size(), name,
                           JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
   if (JS_IsException(built)) return nullptr;
