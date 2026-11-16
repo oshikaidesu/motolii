@@ -15,8 +15,6 @@ import 'package:motolii/workspace/state/document/document_writes.dart'
     show requestUndo;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
-import 'package:motolii/workspace/state/media/media_service.dart'
-    show clipboardPaths, placeDroppedFiles;
 import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageSeconds;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
@@ -76,32 +74,18 @@ extension EditCommands on WorkspaceState {
                 (made) => ws.select('$made'),
               )
             : null;
-        // Finder / Explorer copied the file, so the clipboard holds a file URI: place the files as new layers
-        // (same path as a drop). Whatever was copied last wins, so a file URI beats a plain-text or code paste.
-        clipboardPaths().then((files) {
-          if (files.isNotEmpty) {
-            placeDroppedFiles(
-              ws,
-              files,
-              refused: (file, why) => ws.notice = 'Not taken: $file · $why',
-            );
-            return;
-          }
-          // Code copied from the web is run by the engine's adapter (adapter.h), whatever it is written for.
-          Clipboard.getData(Clipboard.kTextPlain).then((said) {
-            final code = said?.text ?? '';
-            if (code.trim().isEmpty || code == textWhenCopied) return own();
-            ws.after(
-              adaptCode(ws, int.tryParse(ws.selected ?? '') ?? 0, code),
-              (done, why) {
-                if (done) return;
-                why.contains('not code')
-                    ? own()
-                    : ws.notice = 'Not taken: $why';
-              },
-              (made) => made > 0 ? ws.select('$made') : null,
-            );
-          });
+        // Code copied from the web is run by the engine's adapter (adapter.h), whatever it is written for.
+        // Whatever was copied last wins.
+        Clipboard.getData(Clipboard.kTextPlain).then((said) {
+          final code = said?.text ?? '';
+          if (code.trim().isEmpty || code == textWhenCopied) return own();
+          ws.after(adaptCode(ws, int.tryParse(ws.selected ?? '') ?? 0, code), (
+            done,
+            why,
+          ) {
+            if (done) return;
+            why.contains('not code') ? own() : ws.notice = 'Not taken: $why';
+          }, (made) => made > 0 ? ws.select('$made') : null);
         });
       },
       'edit.copyStyle': () => copy(style: true),

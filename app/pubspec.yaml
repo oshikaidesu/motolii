@@ -30,8 +30,6 @@ dependencies:
   acpd: ^1.0.0
   acpd_io: ^1.0.0
   flutter_markdown_plus: ^1.0.12
-  super_clipboard: ^0.9.0   # (clipboard reading for files pasted from Finder or Explorer; macOS, Windows, Linux)
-  super_drag_and_drop: ^0.9.0   # (dropping files from Finder or Explorer onto the window; macOS, Windows, Linux)
 dev_dependencies:
   flutter_test:
     sdk: flutter

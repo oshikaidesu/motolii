@@ -22,8 +22,6 @@ auto_size_text                       # text that shrinks to fit a row
 flutter_colorpicker                  # the colours shelf's picker
 flutter_svg                          # the inspector icons from .svg
 flutter_markdown_plus                # the help markdown
-super_clipboard                      # file URIs pasted from Finder/Explorer and other OS clipboard formats (macOS, Windows, Linux)
-super_drag_and_drop                  # drop files from Finder/Explorer onto the window (macOS, Windows, Linux)
 re_editor                            # the code editor in the Code tab
 re_highlight                         # syntax colours for re_editor
 widgetbook                           # the component gallery

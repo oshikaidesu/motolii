@@ -8,14 +8,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
-import 'package:super_clipboard/super_clipboard.dart' show Formats;
-import 'package:super_drag_and_drop/super_drag_and_drop.dart'
-    show DropOperation, DropRegion;
 
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
-import 'package:motolii/skin/tokens.dart'
-    show BoldStyle, Motion, Shape, TextStyles;
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
@@ -30,8 +25,6 @@ import 'package:motolii/workspace/state/document/command_writes.dart'
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
-import 'package:motolii/workspace/state/media/media_service.dart'
-    show droppedItemsToPaths, placeDroppedFiles;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -375,118 +368,37 @@ class WorkspaceState extends State<Workspace> {
     ),
   );
 
-  /// Drawn over the window while a Finder / Explorer drag is held above it, so the user sees that files can be dropped here.
-  /// Cleared on drop and on leave by the DropRegion below.
-  final _drophover = ValueNotifier<bool>(false);
-
   @override
   Widget build(BuildContext context) {
     final window = WorkspaceScope(
       ws: ws,
-      child: DropRegion(
-        // Takes file URIs and inline image/video bytes (screenshot, browser drag) —
-        // droppedItemsToPaths tells file URIs from bytes and writes bytes to a temp
-        // file so placeDroppedFiles always gets a path.
-        formats: const [
-          Formats.fileUri,
-          Formats.png,
-          Formats.jpeg,
-          Formats.webp,
-          Formats.gif,
-          Formats.tiff,
-          Formats.bmp,
-          Formats.heic,
-          Formats.heif,
-          Formats.svg,
-          Formats.mp4,
-          Formats.mov,
-          Formats.m4v,
-          Formats.avi,
-        ],
-        onDropOver: (_) {
-          _drophover.value = true;
-          return DropOperation.copy;
-        },
-        onDropLeave: (_) => _drophover.value = false,
-        onPerformDrop: (event) async {
-          _drophover.value = false;
-          final files = await droppedItemsToPaths([
-            for (final i in event.session.items) i.dataReader,
-          ]);
-          if (files.isNotEmpty) {
-            placeDroppedFiles(
-              ws,
-              files,
-              refused: (file, why) => ws.notice = 'Not taken: $file · $why',
-            );
-          }
-        },
-        child: Focus(
-          focusNode: _windowFocus,
-          autofocus: true,
-          child: ColoredBox(
-            color: WindowTokens.ground,
-            child: Stack(
-              children: [
-                Overlay(initialEntries: [_entry]),
-                // One accent border, a faint tint, and a centered "Drop files" badge while files are held over the
-                // window, so a drop looks received and the user knows it was understood.
-                ValueListenableBuilder<bool>(
-                  valueListenable: _drophover,
-                  builder: (_, on, _) => Positioned.fill(
-                    child: IgnorePointer(
-                      child: AnimatedOpacity(
-                        duration: Motion.dur,
-                        opacity: on ? 1 : 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: WindowTokens.accent.withValues(alpha: .06),
-                            border: Border.all(
-                              color: WindowTokens.accent,
-                              width: 2,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: Shape.s(16),
-                              vertical: Shape.s(10),
-                            ),
-                            decoration: BoxDecoration(
-                              color: WindowTokens.accent,
-                              borderRadius: Shape.round(10),
-                            ),
-                            child: Text(
-                              'Drop files to add layers',
-                              style: TextStyles.name(WindowTokens.onAccent)
-                                  .bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+      child: Focus(
+        focusNode: _windowFocus,
+        autofocus: true,
+        child: ColoredBox(
+          color: WindowTokens.ground,
+          child: Stack(
+            children: [
+              Overlay(initialEntries: [_entry]),
+              if (home && documentPath != null && projectOpen(ws))
+                Positioned.fill(
+                  child: HomeWindow(
+                    folder: parentFolderOf(documentPath!),
+                    lib: engineLibPath(ws),
+                    open: documentPath!,
+                    onOpen: (d) {
+                      setState(() => home = false);
+                      if (d != documentPath) open(d);
+                    },
+                    onExport: _exportFrom,
+                    onNew: () {
+                      setState(() => home = false);
+                      commands()['file.new']!();
+                    },
+                    onClose: () => setState(() => home = false),
                   ),
                 ),
-                if (home && documentPath != null && projectOpen(ws))
-                  Positioned.fill(
-                    child: HomeWindow(
-                      folder: parentFolderOf(documentPath!),
-                      lib: engineLibPath(ws),
-                      open: documentPath!,
-                      onOpen: (d) {
-                        setState(() => home = false);
-                        if (d != documentPath) open(d);
-                      },
-                      onExport: _exportFrom,
-                      onNew: () {
-                        setState(() => home = false);
-                        commands()['file.new']!();
-                      },
-                      onClose: () => setState(() => home = false),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
