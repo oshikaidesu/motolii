@@ -57,6 +57,10 @@ Future<bool> exportVideoTo(WorkspaceController ws, String mp4) =>
 double exportFractionOf(WorkspaceController ws) =>
     ws.inside?.exportFraction() ?? 0.0;
 
+/// Asks the running export to bail out at the next frame boundary. [exportVideoTo] then resolves false and the
+/// partial file on disk is removed.
+void cancelExportOf(WorkspaceController ws) => ws.inside?.cancelExport();
+
 /// Checks the video [film] for flashes that may cause seizures: each flash's start and end in seconds, or null if the
 /// check could not run.
 Future<List<(double, double)>?> flashesIn(

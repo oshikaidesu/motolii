@@ -552,6 +552,17 @@ class MotoliiBindings {
         int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)
       >();
 
+  void motolii_export_cancel(ffi.Pointer<Motolii> m) {
+    return _motolii_export_cancel(m);
+  }
+
+  late final _motolii_export_cancelPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>)>>(
+        'motolii_export_cancel',
+      );
+  late final _motolii_export_cancel = _motolii_export_cancelPtr
+      .asFunction<void Function(ffi.Pointer<Motolii>)>();
+
   double motolii_export_fraction(ffi.Pointer<Motolii> m) {
     return _motolii_export_fraction(m);
   }

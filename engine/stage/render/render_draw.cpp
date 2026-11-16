@@ -48,7 +48,7 @@ void move(Stage& s, const Mesh* m,
 }
 
 bool film(Stage& s, const char* path, int frameCount,
-          const std::function<void(double)>& pose, const FilmWay& said) {
+          const std::function<bool(double)>& pose, const FilmWay& said) {
   // Quotes a file name for the shell.
   const auto quoted = [](std::string name) {
     for (size_t at = 0; (at = name.find('\'', at)) != std::string::npos;
@@ -167,7 +167,8 @@ bool film(Stage& s, const char* path, int frameCount,
   if (said.alpha) s.view->setBlendMode(View::BlendMode::TRANSLUCENT);
   const int samples = std::max(1, said.blur);
   std::vector<uint32_t> sum(samples > 1 ? pic.size() : 0);
-  for (int i = 0; i < frameCount; ++i) {
+  bool cancelled = false;
+  for (int i = 0; i < frameCount && !cancelled; ++i) {
     if (samples > 1) std::fill(sum.begin(), sum.end(), 0u);
     for (int k = 0; k < samples; ++k) {
       // Time of this sample: the frame itself, or one of several around it for
@@ -176,11 +177,15 @@ bool film(Stage& s, const char* path, int frameCount,
           samples > 1 ? std::max(0.0, i + 0.5 * ((k + 0.5) / samples - 0.5))
                       : (double)i;
       time_is(s, at / 60.0);
-      pose(at / frameCount);
+      if (pose(at / frameCount)) {
+        cancelled = true;
+        break;
+      }
       draw(s, &pic);
       if (samples > 1)
         for (size_t j = 0; j < pic.size(); ++j) sum[j] += pic[j];
     }
+    if (cancelled) break;
     if (samples > 1)
       for (size_t j = 0; j < pic.size(); ++j)
         pic[j] = (uint8_t)((sum[j] + samples / 2) / samples);
@@ -194,7 +199,10 @@ bool film(Stage& s, const char* path, int frameCount,
     if (std::fwrite(pic.data(), 1, pic.size(), to) != pic.size()) break;
   }
   if (said.alpha) s.view->setBlendMode(View::BlendMode::OPAQUE);
-  return pclose(to) == 0;
+  const bool ok = pclose(to) == 0 && !cancelled;
+  // Cancellation: the partial file on disk is not useful, so it is removed.
+  if (cancelled) std::remove(path);
+  return ok;
 }
 
 }  // namespace motolii

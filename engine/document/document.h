@@ -37,6 +37,10 @@ struct DocExport {
   // Updated by the render thread as each frame is drawn, and read by the app
   // through motolii_export_fraction(). Resets to 0 when the next export begins.
   double written_fraction = 0.0;
+  // Set by motolii_export_cancel() to ask the running export to bail out at
+  // the next frame boundary. Read between frames by the film() callback. The
+  // partial video on disk is removed on the way out.
+  bool cancelled = false;
 };
 
 // Doc is an open project: the SQLite database, and the state built from it,

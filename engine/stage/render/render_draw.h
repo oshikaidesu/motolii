@@ -56,11 +56,13 @@ struct FilmWay {
 //   - .png and .jpg: one image per frame, named name_0001.png and so on.
 // There is no sound in .gif, .png and .jpg.
 // Before each frame, `pose` is called with the progress through the video from
-// 0 to 1, so that a loop can meet its start at the end. The audio is the sound
-// of each entry of Stage::sounding: cut, sped up, reversed, looped and set to
-// its volume with ffmpeg, then mixed by ffmpeg.
+// 0 to 1, so that a loop can meet its start at the end. It returns true to
+// stop the export at the next frame boundary (cancel; the partial file is
+// removed). The audio is the sound of each entry of Stage::sounding: cut,
+// sped up, reversed, looped and set to its volume with ffmpeg, then mixed by
+// ffmpeg.
 bool film(Stage& s, const char* path, int frameCount,
-          const std::function<void(double)>& pose, const FilmWay& said = {});
+          const std::function<bool(double)>& pose, const FilmWay& said = {});
 
 // Renders the stage and saves it as a PNG at `path`. Returns true on success.
 // Three frames are drawn and the pixels are read after the last one.

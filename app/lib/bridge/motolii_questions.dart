@@ -91,6 +91,10 @@ extension MotoliiQuestions on Motolii {
   /// Safe to call on the UI thread while [exportVideo] runs on an isolate: the engine updates it atomically per frame.
   double exportFraction() => bindings.motolii_export_fraction(handle);
 
+  /// Asks the running export to bail out at the next frame boundary. [exportVideo] then returns false with the
+  /// engine error "cancelled", and the partial file on disk is removed.
+  void cancelExport() => bindings.motolii_export_cancel(handle);
+
   /// Each property as the stage shows it at the requested time: after any relation, otherwise its own value.
   /// An entry is null if the property has none.
   ///

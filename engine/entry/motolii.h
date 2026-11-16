@@ -408,6 +408,10 @@ int motolii_export(Motolii* m, const char* mp4);
    Returns 0 when no export is running. Safe to call from another thread, which
    is how the app's UI thread reads progress. */
 double motolii_export_fraction(Motolii* m);
+/* Asks the running export to bail out at the next frame boundary. The partial
+   video file on disk is removed before motolii_export returns 0 with the
+   reason "cancelled". No-op when no export is running. */
+void motolii_export_cancel(Motolii* m);
 /* Returns the frame rate of the exported video, in frames per second. An app
    that counts in frames counts in these. */
 int motolii_rate(Motolii* m);
