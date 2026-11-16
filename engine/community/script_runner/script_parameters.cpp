@@ -3,9 +3,12 @@
 // and for the rest the header lines, which leva's object form is turned into.
 #include "community/script_runner/script_parameters.h"
 
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <istream>
+#include <regex>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -17,6 +20,53 @@
 #include "community/three/solid_three.h"
 
 namespace motolii {
+
+namespace {
+
+// Pulls every `effect("Name Control")("Slider")` reference out of each
+// AE.compile(`...`) call in `js` and emits one track parameter per unique
+// control. The parameter's name is a snake_case form of the effect name;
+// the label is the effect name as pasted. Range defaults to 0..1 so the
+// user can set it on the card; After Effects' own Slider control also
+// starts at 0..1.
+void append_ae_expression_params(const std::string& js,
+                                 std::vector<ScriptParameter>& out) {
+  // The expression source is quoted with backticks in recipes
+  // (AE.compile(`...`)). This keeps the regex simple and matches the
+  // existing ae_ease_test / sample_image_test shape.
+  const std::regex compileRe{R"(AE\.compile\(\s*`([^`]*)`)"};
+  const std::regex effectRe{
+      R"(effect\(\s*["']([^"']+)["']\s*\)\s*\(\s*["']([^"']+)["']\s*\))"};
+  std::set<std::string> seen;
+  for (std::sregex_iterator it(js.begin(), js.end(), compileRe), end;
+       it != end; ++it) {
+    const std::string inside = it->str(1);
+    for (std::sregex_iterator ex(inside.begin(), inside.end(), effectRe),
+         ex_end;
+         ex != ex_end; ++ex) {
+      const std::string effectName = ex->str(1);
+      const std::string propName = ex->str(2);
+      const std::string key = effectName + "/" + propName;
+      if (!seen.insert(key).second) continue;
+      ScriptParameter p;
+      p.kind = "track";
+      std::string n = effectName;
+      for (char& c : n)
+        c = std::isalnum(static_cast<unsigned char>(c))
+                ? static_cast<char>(std::tolower(static_cast<unsigned char>(c)))
+                : '_';
+      p.name = std::move(n);
+      p.label = effectName;
+      p.low = 0;
+      p.high = 1;
+      p.usual = 0;
+      p.step = 0;
+      out.push_back(std::move(p));
+    }
+  }
+}
+
+}  // namespace
 
 std::vector<ScriptParameter> script_parameters(const std::string& file) {
   if (aviutl_is(file))
@@ -58,12 +108,19 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
       }
       return parameters;
     }
+    // A recipe that holds After Effects expressions: harvest its free
+    // effect() references so the user can drive them from the card.
+    if (all.str().find("AE.compile") != std::string::npos) {
+      append_ae_expression_params(all.str(), parameters);
+    }
     in.clear(), in.seekg(0);
     if (const std::string head = leva_head(all.str()); !head.empty())
       told_head.str(head),
           from = &told_head;  // (leva's object at its top: script_leva.h)
   }
-  return script_header_parameters(*from);
+  auto headerParams = script_header_parameters(*from);
+  parameters.insert(parameters.end(), headerParams.begin(), headerParams.end());
+  return parameters;
 }
 
 }  // namespace motolii
