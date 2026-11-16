@@ -79,6 +79,10 @@ struct DocPlaceCache {
   std::map<std::tuple<int, double, long long>, filament::math::double3> tracks;
 };
 
+// Returns the layer's position at time `at`: the (x, y, z) properties as a
+// vector, in the parent space the matrices above it work in.
+filament::math::double3 doc_position(Doc& d, int layer, double at);
+
 // Returns the layer's anchor as a point in its own box: the (anchor_x,
 // anchor_y, anchor_z) properties at time `at` multiplied by the box's half
 // extents (half.x, half.y) and depth (`deep`), which doc_half supplies. This

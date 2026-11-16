@@ -20,6 +20,12 @@ namespace math = filament::math;
 using filament::MaterialInstance;
 using filament::math::float2;
 
+math::double3 doc_position(Doc& d, int layer, double at) {
+  return math::double3{doc_literal(d, layer, "x", at, 0),
+                       doc_literal(d, layer, "y", at, 0),
+                       doc_literal(d, layer, "z", at, 0)};
+}
+
 math::double3 doc_anchor(Doc& d, int layer, double at, math::float2 half,
                          float deep) {
   return math::double3{doc_literal(d, layer, "anchor_x", at, 0) * half.x,
@@ -349,14 +355,11 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
           const math::double3 way =
               there.upperLeft() *
               math::double3{std::cos(e[2]), -std::sin(e[2]), 0.0};
-          const math::mat4 frame = doc_above(d, layer, now, deeper) *
-                                   math::mat4::translation(math::double3{
-                                       doc_literal(d, layer, "x", now, 0),
-                                       doc_literal(d, layer, "y", now, 0),
-                                       doc_literal(d, layer, "z", now, 0)}) *
-                                   turned("rotate", {0, 0, 1}) *
-                                   turned("rotate_y", {0, 1, 0}) *
-                                   turned("rotate_x", {1, 0, 0});
+          const math::mat4 frame =
+              doc_above(d, layer, now, deeper) *
+              math::mat4::translation(doc_position(d, layer, now)) *
+              turned("rotate", {0, 0, 1}) * turned("rotate_y", {0, 1, 0}) *
+              turned("rotate_x", {1, 0, 0});
           const math::mat4 back = inverse(frame);
           // The copy's position in the layer's own rotated frame, without the
           // offsets of rows and scatter.
@@ -369,10 +372,8 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
       }
     }
   const math::mat4 above = doc_above(d, layer, now, deeper),
-                   there = above * math::mat4::translation(math::double3{
-                                       doc_literal(d, layer, "x", now, 0),
-                                       doc_literal(d, layer, "y", now, 0),
-                                       doc_literal(d, layer, "z", now, 0)});
+                   there =
+                       above * math::mat4::translation(doc_position(d, layer, now));
   // Alight Motion's Parenting Helper, as bevy_alight_motion implements it
   // (MIT/Apache-2.0, src/animation/parenthelper.rs). The parent's rotation and
   // size are applied scaled by their weights, plus the rolling of a wheel.

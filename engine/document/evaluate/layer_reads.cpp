@@ -69,11 +69,10 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer,
   // `k2` converts points of the preview to pixels of the document.
   const double high = doc_comp_high(d),
                k2 = high / std::max(1, d.stage->h);
+  const math::double3 pos = doc_position(d, layer, now);
   const math::double2 at =
       doc_seen(d, (doc_above(d, layer, now, 0) *
-                   math::double4{doc_literal(d, layer, "x", now, 0),
-                                 doc_literal(d, layer, "y", now, 0),
-                                 doc_literal(d, layer, "z", now, 0), 1.0})
+                   math::double4{pos.x, pos.y, pos.z, 1.0})
                       .xyz) *
       k2;
   float2 half{0.5f};
