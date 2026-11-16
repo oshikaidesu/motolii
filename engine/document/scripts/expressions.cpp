@@ -136,13 +136,31 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
   // The size the letters are drawn at, in project pixels: the page's em.
   const float font = (float)(sh->second.drawn->em * 2.0 * half.y / px);
   DocScript::Page& p = sc.pages[layer];
-  const std::string key =
-      words + (by_words ? "\n1\n" : "\n0\n") + std::to_string(font);
+  // Build the slider overrides from every parameter whose label is a CSS
+  // custom property (`--name`). The slider's current value is written into
+  // `:root { --name: value unit; }` and prepended to the pen's own CSS, so
+  // the author's declaration is overridden by what the user set on the card
+  // (script_parameters.cpp:append_css_variable_params).
+  std::string varOverrides, varKeyPart;
+  for (size_t i = 0; i < sc.parameters.size(); ++i) {
+    const ScriptParameter& p0 = sc.parameters[i];
+    if (p0.label.size() < 2 || p0.label[0] != '-' || p0.label[1] != '-')
+      continue;
+    const double v =
+        doc_number(d, layer, sc.names[i].c_str(), clock, p0.usual);
+    const std::string numText = std::to_string(v);
+    varOverrides += p0.label + ": " + numText + p0.unit + "; ";
+    varKeyPart += p0.label + "=" + numText + ";";
+  }
+  const std::string penned =
+      varOverrides.empty() ? sc.css : ":root { " + varOverrides + "} " + sc.css;
+  const std::string key = words + (by_words ? "\n1\n" : "\n0\n") +
+                          std::to_string(font) + "\n" + varKeyPart;
   if (!p.page || p.made_for != key) {
     const double high = doc_comp_high(d);
     p.made_for = key;
     p.page = std::shared_ptr<MotoliiCss>(
-        motolii_css_new(sc.css.c_str(), sc.html.c_str(), words.c_str(), 0,
+        motolii_css_new(penned.c_str(), sc.html.c_str(), words.c_str(), 0,
                         by_words, (uint32_t)(high * d.stage->w / d.stage->h),
                         (uint32_t)high, font),
         motolii_css_free);
