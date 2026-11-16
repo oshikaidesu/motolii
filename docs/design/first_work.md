@@ -293,6 +293,100 @@ function each(index, count, time, value) {
 
 ---
 
+## シナリオ: Code タブから始める
+
+コードを書く人の入り口。Shadertoy のシェーダーを貼る人も、式を自分で書く人も、ここから。
+
+### 1. Code タブを開く
+
+左のタブから **Code** (`</>` アイコン) を選ぶ。
+
+ここには:
+- 過去に貼ったコード（自動で棚に保存されたもの）
+- 棚の式ファイル（`shelves/expressions/`）
+
+タイルにポインタを乗せると動くサムネイルが出る。ここはエフェクトと同じ。
+
+### 2. ネットのコードを貼る
+
+Shadertoy でシェーダーのコードをコピー → Motolii で **⌘V**。
+
+何が起きるか:
+- 言語が自動判定される（`mainImage` → Shadertoy、`setup()`/`draw()` → p5.js、`@keyframes` → CSS、...）
+- コードが棚に保存される（`.js`、`.fs`、`.css` として）
+- レイヤーまたはエフェクトになる
+
+| 貼ったもの | 判定 | なるもの |
+|---|---|---|
+| Shadertoy のコード | `mainImage` を検出 | シェーダーレイヤー（ISF 経由で WGSL） |
+| p5.js のスケッチ | `setup`/`draw` + `createCanvas` を検出 | スケッチレイヤー |
+| CSS @keyframes | `@keyframes` を検出、テキスト選択中 | テキストの文字が動く |
+| AE 式 | `AE.compile` または `function each` を検出 | 式カード |
+| three.js TSL | `NodeMaterial`/`colorNode` を検出 | 棚のエフェクト（WGSL） |
+| Hydra | `.out()` を検出 | シェーダーレイヤー |
+| 生のオブジェクトリテラル | `{ x: index * 10 }` | 式カード（each() に包まれる） |
+
+### 3. コードを編集する
+
+Code タブでタイルの **`</>`** を押すとコードが開く。
+
+- 書き換えると**プレビューがすぐ追いかける**（保存不要）
+- スライダーがコードの中の数値から自動で作られる
+- シンタックスハイライト付き
+
+### 4. 自分で式を書く
+
+テキストレイヤーを選んで、Code タブの入力欄に直接書く:
+
+```js
+{ x: index * 0.1, y: Math.sin(time + index) * 0.05, opacity: 1 - index / count }
+```
+
+Enter で適用。`each()` で包まなくていい。
+
+もっと複雑なら:
+
+```js
+const f = AE.compile(`ease(time, 0, 1, 0, 1) * effect("Amount")("Slider")`);
+function each(index, count, time, value) {
+  const delay = index / count * 0.5;
+  const t = Math.max(0, time - delay);
+  return { y: -0.1 * (1 - AE.run(f, { time: t })), opacity: AE.run(f, { time: t }) };
+}
+```
+
+AE の式がそのまま使える。`effect("Name")("Slider")` でカードのスライダーを読める。
+
+### 5. AI エージェントに頼む
+
+Agent パネルで:
+
+> 「この文字を 1 文字ずつ下から跳ねて登場させて」
+
+エージェントが式を書く。Code タブにコードが現れ、プレビューが動く。気に入らなければ:
+
+> 「もっとゆっくり、バウンスを柔らかく」
+
+同じコードが書き換わる。スライダーで済むことは LLM を呼ばない。
+
+### 6. エフェクトとして保存する
+
+書いたコードが気に入ったら:
+- `shelves/expressions/` にファイルとして保存 → 次から Expression タイルに出る
+- `.wgsl` を `shelves/effects/` に置けば Effects タイルに出る
+
+コードがファイルだから、Git で管理できるし、人に渡せる。
+
+### 完成
+
+```
+Code タブ → ⌘V (or 直接書く) → プレビューで確認 → 調整 → Render
+```
+
+ビジュアルのシナリオと同じタイムラインに合流する。Code タブから始めても Effects タブから始めても、最後は同じ Render ボタン。
+
+---
+
 ## リファレンス: 各ステップの詳細
 
 ## 開く
