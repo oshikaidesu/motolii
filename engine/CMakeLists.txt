@@ -226,7 +226,7 @@ target_link_options(motolii_community_aviutl PUBLIC -Wl,-rpath,${HOMEBREW}/opt/l
 # Adapter: hydra code run as it is.
 add_library(motolii_community_hydra STATIC
   community/hydra/hydra_isf.cpp)
-target_link_libraries(motolii_community_hydra PUBLIC motolii_flags motolii_base)
+target_link_libraries(motolii_community_hydra PUBLIC motolii_flags motolii_base motolii_shelf)
 
 # Adapter: p5 code run as it is.
 add_library(motolii_community_p5 STATIC
