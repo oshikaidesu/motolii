@@ -134,20 +134,21 @@ class HomeCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: Shape.s(8)),
+            SizedBox(height: Shape.s(10)),
             Text(
               d.name,
               style: TextStyles.name(Grey.g91).bold,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: Shape.s(2)),
-            // CapCut's "254.3M | 02:13".
+            SizedBox(height: Shape.s(3)),
+            // File size and duration on one line, separated by a dot (CapCut uses "254.3M | 02:13"; a dot reads lighter and
+            // matches the facts line below so the typography stays consistent).
             Text(
               [
                 homeBytes(d.bytes),
                 if (f != null) homeLength(f.seconds),
-              ].join(' | '),
+              ].join(' · '),
               style: TextStyles.value(Grey.g63),
               maxLines: 1,
             ),
