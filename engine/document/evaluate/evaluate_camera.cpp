@@ -16,6 +16,7 @@
 #include "document/evaluate/camera.h"
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/evaluation.h"
+#include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "stage/render/render_stage.h"
 
@@ -36,7 +37,7 @@ int camera_layer_now(Doc& d, const std::vector<int>& lie, double now) {
       const double since = now - doc_number(d, layer, "start", 0, 0),
                    lasts = doc_number(d, layer, "duration", 0, -1);
       if (since >= 0.0 && (lasts < 0.0 || since < lasts) &&
-          doc_number(d, layer, "visible", 0, 1) > 0.5)
+          doc_visible(d, layer))
         camera = layer;
     }
   return camera;

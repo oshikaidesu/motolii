@@ -16,6 +16,7 @@
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/moment_fx.h"
 #include "document/evaluate/relations.h"
+#include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/match.h"
@@ -99,7 +100,7 @@ void evaluate_layer_states(Evaluation& evaluation) {
     EvaluatedLayer one{layer,
                        &found->second,
                        since >= 0.0 && (lasts < 0.0 || since < lasts) &&
-                           doc_number(d, layer, "visible", 0, 1) > 0.5 &&
+                           doc_visible(d, layer) &&
                            (!solo || solo_of(d, layer)),
                        found->second.space != 2 || open || found->second.solid,
                        since,

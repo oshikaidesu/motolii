@@ -19,6 +19,9 @@ struct Doc;
 std::vector<int> doc_layers(Doc& d);
 // Returns how long the layer is on, in seconds, or -1 when it never ends.
 double doc_lasts(Doc& d, int layer);
+// Whether the layer's `visible` toggle is on at time `at` (default 0). A
+// hidden layer is drawn by nothing and stops interacting on the stage.
+bool doc_visible(Doc& d, int layer, double at = 0.0);
 // Returns the times of the keyframes of a property. A property with one
 // keyframe has none.
 std::vector<double> doc_key_times(Doc& d, int layer, const char* name);

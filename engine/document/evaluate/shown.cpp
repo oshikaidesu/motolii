@@ -58,6 +58,10 @@ double doc_lasts(Doc& d, int layer) {
   return lasts >= 0.0 ? lasts : -1.0;
 }
 
+bool doc_visible(Doc& d, int layer, double at) {
+  return doc_number(d, layer, "visible", at, 1) > 0.5;
+}
+
 std::vector<double> doc_key_times(Doc& d, int layer, const char* name) {
   // This is asked for again and again between changes, so the document is asked
   // only once.

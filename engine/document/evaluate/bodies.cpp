@@ -108,7 +108,7 @@ bool doc_body_layer_on(Doc& d, int layer, double at) {
   const double start = doc_literal(d, layer, "start", 0, 0),
                lasts = doc_literal(d, layer, "duration", 0, -1);
   return at >= start && (lasts < 0.0 || at < start + lasts) &&
-         doc_number(d, layer, "visible", 0, 1) > 0.5;
+         doc_visible(d, layer);
 }
 
 // Finds the layers that have bodies: those whose expressions say a mass for
