@@ -1,0 +1,174 @@
+Bump Distortion:
+  author: carter rosenberg
+
+Chromatic Aberration:
+  author: VIDVOX
+
+Circle Splash Distortion:
+  author: VIDVOX
+
+Circle Warp:
+  author: VIDVOX
+
+Circle Wrap Distortion:
+  author: VIDVOX
+
+Circular Duplicate (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Crop (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Cubic Warp:
+  author: carter rosenberg
+
+Diagonalize:
+  author: VIDVOX
+
+Displace:
+  author: "@colin_movecraft"
+
+Displacement Map (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Edge Distort:
+  author: VIDVOX
+
+Expand Area (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Fish Eye (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Flip (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Hyperspace:
+  author: VIDVOX
+
+Kaleidoscope (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Kaleidoscope Tile:
+  author: VIDVOX
+
+Mirror (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Mirror Edge:
+  author: VIDVOX
+
+Noise Displace:
+  author: VIDVOX
+
+Noise Displacement (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Optical Flow Distort:
+  author: "VIDVOX, based on original implementation by Andrew Benson and v002"
+
+Pixel Shifter:
+  author: VIDVOX
+
+Polar (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Polar Coordinates:
+  author: ossia score
+
+Power Warp:
+  author: ""
+
+Quad Tile:
+  author: VIDVOX
+
+Radial Replicate:
+  author: VIDVOX
+
+Replicate Random:
+  author: ""
+
+Replicate:
+  author: ""
+
+Ripple (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Ripples:
+  author: carter rosenberg
+
+Scatter (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Shape Morph Wrap:
+  author: VIDVOX
+
+Shockwave Pulse:
+  author: VIDVOX
+
+Shockwave:
+  author: VIDVOX
+
+Sine Warp Tile:
+  author: VIDVOX
+
+Skew (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Sphere Map:
+  author: VIDVOX
+
+Spiral (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Split Pieces (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Stretch (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Tile (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Transform (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Trapezoid Distortion:
+  author: VIDVOX
+
+Triangle Warp:
+  author: VIDVOX
+
+Twirl:
+  author: VIDVOX
+
+Video Bricks:
+  author: adapted from patriciogv bricks.fs by vidvox
+
+Wave (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Waveform Displace:
+  author: "icalvin102 (calvin@icalvin.de)"
+
+v002-CRT-Displacement:
+  author: vade

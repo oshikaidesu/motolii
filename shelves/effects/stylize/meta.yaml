@@ -1,0 +1,213 @@
+ASCII Art:
+  author: "VIDVOX (Ported from https://www.shadertoy.com/view/lssGDj)"
+
+Bevel Light (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Bloom:
+  author: VIDVOX
+
+Border (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Boxinator:
+  author: mojovideotech
+
+CMYK Halftone-Lookaround:
+  author: zoidberg
+
+CMYK Halftone:
+  author: zoidberg
+
+Circular Screen:
+  author: VIDVOX
+
+City Lights:
+  author: VIDVOX
+
+Color Shift (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Dirty Lens:
+  author: "Inigo Quilez ported by @colin_movecraft and VIDVOX"
+
+Dither-Bayer:
+  author: "Hugh Kennedy, adapted by David Lublin"
+
+Doodler Overlay:
+  author: VIDVOX
+
+Doodler:
+  author: VIDVOX
+
+Dot Screen:
+  author: VIDVOX
+
+Double Vision:
+  author: VIDVOX
+
+Edge Blowout:
+  author: VIDVOX
+
+Edge Detect (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Edge Trace:
+  author: VIDVOX
+
+Edges:
+  author: VIDVOX
+
+Emboss (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Emboss:
+  author: VIDVOX
+
+Fill Background (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Flash (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Flipbook:
+  author: VIDVOX
+
+Frosted Glass:
+  author: geeks3d
+
+Gloom:
+  author: VIDVOX
+
+Glow (VIDVOX):
+  author: VIDVOX
+
+Glow-Fast:
+  author: VIDVOX
+
+God Rays:
+  author: VIDVOX
+  source: "https://github.com/neilmendoza/ofxPostProcessing/blob/master/src/GodRaysPass.cpp"
+
+Gradient (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Highlighter Overlay:
+  author: VIDVOX
+
+Inner Halftone (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Inner Outline (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Inner Shadow (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Kaleidoscope:
+  author: VIDVOX
+
+Lens Flare:
+  author: VIDVOX
+
+Line Screen:
+  author: VIDVOX
+
+Long Shadow (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Meta Image:
+  author: Toneburst
+
+Mosaic (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Multi-Border:
+  author: pixi-filters OutlineFilter
+  license: MIT
+
+Multi-Pixellate:
+  author: VIDVOX
+
+MultiFrame 2x2:
+  author: VIDVOX
+
+MultiFrame 3x3:
+  author: VIDVOX
+
+Neon:
+  author: VIDVOX
+  source: "https://github.com/neilmendoza/ofxPostProcessing/blob/master/src/GodRaysPass.cpp"
+
+Noise (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Noise Pixellate:
+  author: VIDVOX
+
+Pixellate:
+  author: VIDVOX
+
+RGB Halftone-lookaround:
+  author: zoidberg
+
+RGB Halftone:
+  author: zoidberg
+
+Shadow (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Sketch:
+  author: VIDVOX
+
+Smoke Screen:
+  author: jackdavenport
+
+Smudged Lens:
+  author: "Inigo Quilez ported by @colin_movecraft and VIDVOX"
+
+Stripe Glitch (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Tiny Date Time Overlay:
+  author: VIDVOX
+
+Toon:
+  author: VIDVOX
+
+Triangle Mosaic:
+  author: VIDVOX
+
+Triangles:
+  author: VIDVOX
+
+Video Snake:
+  author: VIDVOX
+
+Zooming Feedback:
+  author: ""
+
+v002 Crosshatch:
+  author: v002
+
+v002 Light Leak:
+  author: v002
+
+v002 Vignette:
+  author: v002

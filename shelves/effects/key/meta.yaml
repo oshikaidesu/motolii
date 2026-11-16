@@ -1,0 +1,45 @@
+Chroma Key (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Color Key (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Key Spill Cleaner:
+  author: gl-chromakey
+  license: MIT
+  source: "https://github.com/bhj/gl-chromakey/blob/d8e616f6f61f72f4f7354c771f07e00e99d842d5/src/lib/shaders/fragmentShaderPaint.js"
+
+Luma Key:
+  author: "IMIMOT (ported from http://www.memo.tv/)"
+
+Luminance Key (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Mask (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Motion Mask:
+  author: VIDVOX
+
+Opacity (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Optical Flow Generator:
+  author: VIDVOX / v002 / Andrew Benson
+
+Quad Mask:
+  author: ""
+
+Random Squares Mask:
+  author: VIDVOX
+
+Shape Mask:
+  author: VIDVOX
+
+Slit Scan Mask:
+  author: VIDVOX

@@ -1,0 +1,257 @@
+Angular:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/angular.glsl"
+
+Bounce:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Bounce.glsl"
+
+Bow Tie Horizontal:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/BowTieHorizontal.glsl"
+  source: "https://gl-transitions.com/"
+
+Bow Tie Vertical:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/BowTieVertical.glsl"
+
+Burn:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/burn.glsl"
+
+Butterfly Wave Scrawler:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/ButterflyWaveScrawler.glsl"
+
+Circle Crop:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/CircleCrop.glsl"
+
+Circle Open:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/circleopen.glsl"
+
+Circle:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/circle.glsl"
+
+Color Phase:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/colorphase.glsl"
+
+Colour Distance:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/ColourDistance.glsl"
+
+Crazy Parametric Fun:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/CrazyParametricFun.glsl"
+
+CrossZoom:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/CrossZoom.glsl"
+
+Crosshatch:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/crosshatch.glsl"
+
+Crosswarp:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/crosswarp.glsl"
+
+Directional Warp:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/directionalwarp.glsl"
+
+Directional Wipe:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/directionalwipe.glsl"
+
+Directional:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Directional.glsl"
+
+Displacement:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/displacement.glsl"
+
+Doom Screen Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/DoomScreenTransition.glsl"
+
+Doorway:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/doorway.glsl"
+
+Dreamy Zoom:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/DreamyZoom.glsl"
+
+Dreamy:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Dreamy.glsl"
+  source: "https://gl-transitions.com/"
+
+Fade Color:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/fadecolor.glsl"
+
+Fade Gray Scale:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/fadegrayscale.glsl"
+
+Fade:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/fade.glsl"
+
+Fly Eye:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/flyeye.glsl"
+
+Glitch Displace:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/GlitchDisplace.glsl"
+
+Glitch Memories:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/GlitchMemories.glsl"
+
+Grid Flip:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/GridFlip.glsl"
+
+Heart Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/heart.glsl"
+
+Hexagonalize:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/hexagonalize.glsl"
+
+In-Out Blink (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Blur (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Fade (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Fall (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Getup (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Jump (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Move (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Offset (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Random Direction (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Rotate (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Skew (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Wipe (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+In-Out Zoom (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Inverted Page Curl:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/InvertedPageCurl.glsl"
+  source: "https://gl-transitions.com/"
+
+Kaleidoscope Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/kaleidoscope.glsl"
+
+Linear Blur:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/LinearBlur.glsl"
+
+Luma Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/luma.glsl"
+  source: "https://gl-transitions.com/"
+
+Luminance Melt:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/luminance_melt.glsl"
+
+Morph:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/morph.glsl"
+
+Mosaic:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Mosaic.glsl"
+
+Multiply Blend:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/multiply_blend.glsl"
+
+Perlin Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/perlin.glsl"
+
+Pinwheel:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/pinwheel.glsl"
+
+Pixelize:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/pixelize.glsl"
+
+Polar Function:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/polar_function.glsl"
+
+Polka Dots Curtain:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/PolkaDotsCurtain.glsl"
+
+Radial:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Radial.glsl"
+
+Random Squares:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/randomsquares.glsl"
+
+Ripple Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/ripple.glsl"
+
+Rotate Scale Fade:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/rotate_scale_fade.glsl"
+
+Simple Zoom Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/SimpleZoom.glsl"
+
+Squares Wire:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/squareswire.glsl"
+
+Squeeze:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/squeeze.glsl"
+
+Stereo Viewer:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/StereoViewer.glsl"
+
+Swap Transition:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/swap.glsl"
+
+Swirl:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/Swirl.glsl"
+
+TV Static:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/TVStatic.glsl"
+
+Undulating Burn Out:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/undulatingBurnOut.glsl"
+
+Water Drop:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/WaterDrop.glsl"
+
+Wind:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/wind.glsl"
+
+Window Blinds:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/windowblinds.glsl"
+
+Window Slice:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/windowslice.glsl"
+
+Wipe Down:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/wipeDown.glsl"
+  source: "https://gl-transitions.com/"
+
+Wipe Left:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/wipeLeft.glsl"
+
+Wipe Right:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/wipeRight.glsl"
+
+Wipe Up:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/wipeUp.glsl"
+
+Zoom In Circles:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/ZoomInCircles.glsl"
+
+cube:
+  author: "Automatically converted from https://www.github.com/gl-transitions/gl-transitions/tree/master/cube.glsl"

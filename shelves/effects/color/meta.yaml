@@ -1,0 +1,268 @@
+Apply Alpha:
+  author: VIDVOX
+
+Auto Color Tone:
+  author: VIDVOX
+
+Auto Colors Histogram:
+  author: VIDVOX
+
+Auto Levels:
+  author: Carter Rosenberg
+
+Binarize (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Brick Pattern:
+  author: patriciogv
+
+Bright:
+  author: zoidberg
+
+Brush Fill (Sashimono):
+  author: ""
+
+Channel Slide:
+  author: zoidberg
+
+Checkerboard:
+  author: VIDVOX
+
+Chroma Desaturation Mask:
+  author: VIDVOX
+
+Chroma Mask:
+  author: VIDVOX
+
+Chroma Zoom:
+  author: toneburst
+
+Color (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Color Balance:
+  author: "GPUImage ColorBalanceFilter2012, Brad Larson, Ben Cochran, Hugues Lismonde, Keitaroh Kobayashi, Alaric Cole, Matthew Clark, Jacob Gundersen, Chris Williams)"
+  license: "BSD-3-Clause, Copyright (c"
+
+Color Blowout:
+  author: VIDVOX
+
+Color Controls:
+  author: zoidberg
+
+Color Correct (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Color Grade (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Color History:
+  author: VIDVOX
+
+Color Invert:
+  author: zoidberg
+
+Color Levels:
+  author: VIDVOX
+
+Color Monochrome:
+  author: zoidberg
+
+Color Organ Polyphonic:
+  author: VIDVOX
+
+Color Posterize:
+  author: zoidberg
+
+Color Range Shift (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Color Replacement:
+  author: VIDVOX
+
+Color Scales:
+  author: VIDVOX
+
+Color Schemes:
+  author: VIDVOX
+
+Color Test Grid:
+  author: VIDVOX
+
+Corner Color Tint:
+  author: VIDVOX
+
+Corner Colors:
+  author: VIDVOX
+
+Directional Blur:
+  author: ossia score
+
+Directional Key (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Duotone From Histogram:
+  author: VIDVOX
+
+Duotone:
+  author: zoidberg
+
+Exposure (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Exposure Adjust:
+  author: carter rosenberg
+
+False Color:
+  author: zoidberg
+
+Fill (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Gamma Correction:
+  author: zoidberg
+
+Ghosting:
+  author: VIDVOX
+
+Gradient Map (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Graph Paper:
+  author: VIDVOX
+
+HSVtoRGB:
+  author: zoidberg
+
+Highlights Shadows (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Histogram Viewer:
+  author: VIDVOX
+
+Invert (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+LGG:
+  author: VIDVOX
+
+Layer Mask:
+  author: zoidberg
+
+Linear Gradient:
+  author: Carter Rosenberg
+
+Linear Transfer (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Long Exposure:
+  author: VIDVOX
+
+Luminance Posterize:
+  author: zoidberg
+
+Maximum Component:
+  author: zoidberg
+
+Minimum Component:
+  author: zoidberg
+
+Motion Heat Map:
+  author: VIDVOX
+
+Multi Gradient:
+  author: Carter Rosenberg
+
+Multi Hue Shift:
+  author: VIDVOX
+
+Posterize:
+  author: VIDVOX
+
+RE RGB Gradient Generator:
+  author: Carter Rosenberg
+
+RGB EQ:
+  author: VIDVOX
+
+RGB Invert:
+  author: VIDVOX
+
+RGB Strobe:
+  author: VIDVOX
+
+RGB Trails 3.0:
+  author: zoidberg
+
+RGBA Swap:
+  author: VIDVOX
+
+RGBtoHSV:
+  author: zoidberg
+
+Radial Blur:
+  author: ossia score
+
+Radial Gradient:
+  author: Carter Rosenberg
+
+Random Checkerboard:
+  author: VIDVOX
+
+Random Stripes:
+  author: VIDVOX
+
+Saturation Bleed:
+  author: VIDVOX
+
+Sepia Tone:
+  author: VIDVOX
+
+Set Alpha:
+  author: VIDVOX
+
+Sine Warp Gradient:
+  author: VIDVOX
+
+Solarize:
+  author: VIDVOX
+
+Solid Color:
+  author: Carter Rosenberg
+
+Strobe:
+  author: VIDVOX
+
+Thermal Camera:
+  author: VIDVOX
+
+Tint (Sashimono):
+  author: Sashimono Edit
+  license: MIT
+
+Trio Tone:
+  author: VIDVOX
+
+Vibrance:
+  author: zoidberg
+
+White Point Adjust:
+  author: zoidberg
+
+v002 Bleach Bypass:
+  author: v002
+
+v002 Technicolor:
+  author: v002
