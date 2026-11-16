@@ -1,16 +1,16 @@
-// An editor for code, coloured by flutter_code_editor's highlight.js binding.
-// The Code tab's cells use it.
+// An editor for code, coloured by re_highlight through code_forge.
+// code_forge handles Material, scrolling, line numbers, folding, and bracket
+// matching internally. This file is the only place that imports it.
 import 'dart:async';
 
+import 'package:code_forge/code_forge.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter/widgets.dart';
-import 'package:flutter_code_editor/flutter_code_editor.dart' as fce;
-import 'package:highlight/languages/glsl.dart';
-import 'package:highlight/languages/javascript.dart';
-import 'package:highlight/languages/css.dart';
-import 'package:highlight/languages/lua.dart';
-import 'package:highlight/highlight_core.dart' show Mode;
+import 'package:re_highlight/languages/css.dart' show langCss;
+import 'package:re_highlight/languages/glsl.dart' show langGlsl;
+import 'package:re_highlight/languages/javascript.dart' show langJavascript;
+import 'package:re_highlight/languages/lua.dart' show langLua;
+import 'package:re_highlight/re_highlight.dart' show Mode;
 
 import 'package:motolii/skin/code_colors.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -36,21 +36,14 @@ class CodeField extends StatefulWidget {
   final String file;
   final ValueListenable<CodeMark?>? mark;
   final void Function(String text) write;
-
-  /// Whether the editor sizes to its code (notebook cell) or fills its parent.
   final bool fit;
-
-  /// Whether to keep typed text as-is without reading the file back.
   final bool keep;
 
-  /// The controller that last had the keys, so a list beside the code can
-  /// write into it.
-  static fce.CodeController? _last;
+  static CodeForgeController? _last;
 
-  /// Writes [text] where the cursor is in the editor that last had the keys.
   static bool insert(String text) {
     if (_last == null) return false;
-    _last!.insertStr(text);
+    _last!.insertAtAllCursors(text);
     return true;
   }
 
@@ -60,20 +53,19 @@ class CodeField extends StatefulWidget {
 
 class _CodeFieldState extends State<CodeField> {
   late String _written = readTextNow(widget.file);
-  late final fce.CodeController _controller = fce.CodeController(
-    text: _written,
-    language: _languageFor(widget.file),
-  );
+  late final CodeForgeController _controller = CodeForgeController();
   Timer? _soon;
+  bool _ready = false;
 
-  static Mode? _languageFor(String file) {
-    if (file.endsWith('.fs') || file.endsWith('.glsl')) return glsl;
-    if (file.endsWith('.css')) return css;
+  static Mode _languageFor(String file) {
+    if (file.endsWith('.fs') || file.endsWith('.glsl')) return langGlsl;
+    if (file.endsWith('.css')) return langCss;
     if (file.endsWith('.lua') ||
         file.endsWith('.anm2') ||
-        file.endsWith('.obj2'))
-      return lua;
-    return javascript;
+        file.endsWith('.obj2')) {
+      return langLua;
+    }
+    return langJavascript;
   }
 
   void _save() {
@@ -81,9 +73,19 @@ class _CodeFieldState extends State<CodeField> {
     widget.write(_written = _controller.text);
   }
 
-  void _onChanged(String _) {
+  void _onChanged() {
+    if (!_ready) return;
     _soon?.cancel();
     _soon = Timer(const Duration(milliseconds: 400), _save);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ready = true;
+    });
   }
 
   @override
@@ -99,6 +101,7 @@ class _CodeFieldState extends State<CodeField> {
   void dispose() {
     if (_soon?.isActive ?? false) _save();
     _soon?.cancel();
+    _controller.removeListener(_onChanged);
     if (identical(CodeField._last, _controller)) CodeField._last = null;
     _focus.dispose();
     _controller.dispose();
@@ -112,63 +115,34 @@ class _CodeFieldState extends State<CodeField> {
 
   @override
   Widget build(BuildContext context) {
-    final size = TextStyles.value().fontSize!;
-    final theme = _buildTheme();
-    final field = Material(
-      type: MaterialType.transparency,
-      child: fce.CodeTheme(
-        data: theme,
-        child: fce.CodeField(
-          controller: _controller,
-          focusNode: _focus,
-          onChanged: _onChanged,
-          wrap: !widget.fit,
-          textStyle: TextStyle(
-            fontSize: size,
-            fontFamily: TextStyles.mono,
-            height: _lineHeight,
-            color: Grey.g91,
-          ),
-          maxLines: null,
-          minLines: widget.fit ? 1 : null,
-          background: WindowTokens.well,
-          cursorColor: Grey.g91,
-          gutterStyle: fce.GutterStyle(
-            showErrors: false,
-            showFoldingHandles: false,
-            showLineNumbers: true,
-            margin: Shape.s(4),
-            textStyle: TextStyle(
-              fontSize: size,
-              fontFamily: TextStyles.mono,
-              height: _lineHeight,
-              color: Grey.g38,
-            ),
-          ),
-        ),
-      ),
-    );
-    if (!widget.fit) {
-      return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: field,
-          ),
-        ),
-      );
-    }
-    final lines = '\n'.allMatches(_controller.text).length + 2;
-    return SizedBox(
-      height: lines * size * _lineHeight + Shape.s(12),
-      child: field,
-    );
-  }
-
-  static const _lineHeight = 1.4;
-
-  fce.CodeThemeData _buildTheme() {
+    final fontSize = TextStyles.value().fontSize!;
     final dark = Grey.g07.computeLuminance() <= 0.5;
-    return fce.CodeThemeData(styles: dark ? darkCodeStyles : lightCodeStyles);
+    final theme = dark ? darkCodeStyles : lightCodeStyles;
+    return CodeForge(
+      controller: _controller,
+      focusNode: _focus,
+      language: _languageFor(widget.file),
+      editorTheme: theme,
+      initialText: _written,
+      lineWrap: !widget.fit,
+      textStyle: TextStyle(
+        fontSize: fontSize,
+        fontFamily: TextStyles.mono,
+        height: 1.4,
+      ),
+      enableFolding: !widget.fit,
+      enableGutter: true,
+      enableGutterDivider: false,
+      gutterStyle: GutterStyle(
+        lineNumberStyle: TextStyle(
+          fontSize: fontSize,
+          fontFamily: TextStyles.mono,
+          height: 1.4,
+          color: Grey.g38,
+        ),
+        backgroundColor: WindowTokens.well,
+      ),
+      selectionStyle: CodeSelectionStyle(cursorColor: Grey.g91),
+    );
   }
 }
