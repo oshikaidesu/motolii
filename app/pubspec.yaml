@@ -48,6 +48,23 @@ flutter:
     - family: Inter
       fonts:
         - asset: fonts/Inter-Variable.ttf
+          weight: 100
+        - asset: fonts/Inter-Variable.ttf
+          weight: 200
+        - asset: fonts/Inter-Variable.ttf
+          weight: 300
+        - asset: fonts/Inter-Variable.ttf
+          weight: 400
+        - asset: fonts/Inter-Variable.ttf
+          weight: 500
+        - asset: fonts/Inter-Variable.ttf
+          weight: 600
+        - asset: fonts/Inter-Variable.ttf
+          weight: 700
+        - asset: fonts/Inter-Variable.ttf
+          weight: 800
+        - asset: fonts/Inter-Variable.ttf
+          weight: 900
     - family: Noto Sans JP
       fonts:
         - asset: fonts/NotoSansJP-Regular.otf
