@@ -1,16 +1,71 @@
 // Completion in a cell's editor, as VS Code's IntelliSense completes a name as it is typed: the names an After Effects
-// expression may use here, each with how it is written and what it does. The list and its keys (arrows, Enter) are
-// re_editor's own CodeAutocomplete; the names are the Functions list's, from the reference and what the running
-// expression has (expression_reference.dart), so the two cannot disagree.
+// expression may use here, each with how it is written and what it does.
+// The names are the Functions list's, from the reference and what the running expression has
+// (expression_reference.dart), so the two cannot disagree.
+//
+// flutter_code_editor has no built-in autocomplete overlay like re_editor did.  The types below
+// keep the data model intact so the feature can be reconnected when an overlay is added.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:re_editor/re_editor.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/code/expression_reference.dart';
+
+// Lightweight replacements for re_editor's autocomplete types.
+
+class CodePrompt {
+  const CodePrompt({required this.word});
+  final String word;
+}
+
+class CodeFunctionPrompt extends CodePrompt {
+  const CodeFunctionPrompt({
+    required super.word,
+    this.type = '',
+    this.customAutocomplete,
+  });
+  final String type;
+  final CodeAutocompleteResult? customAutocomplete;
+}
+
+class CodeFieldPrompt extends CodePrompt {
+  const CodeFieldPrompt({required super.word, this.type = ''});
+  final String type;
+}
+
+class CodeAutocompleteResult {
+  const CodeAutocompleteResult({
+    required this.input,
+    required this.word,
+    this.selection,
+  });
+  final String input;
+  final String word;
+  final TextSelection? selection;
+}
+
+class CodeAutocompleteEditingValue {
+  const CodeAutocompleteEditingValue({required this.prompts, this.index = 0});
+  final List<CodePrompt> prompts;
+  final int index;
+
+  CodeAutocompleteResult get autocomplete {
+    final p = prompts[index];
+    if (p is CodeFunctionPrompt && p.customAutocomplete != null) {
+      return p.customAutocomplete!;
+    }
+    return CodeAutocompleteResult(input: '', word: p.word);
+  }
+
+  CodeAutocompleteEditingValue copyWith({int? index}) =>
+      CodeAutocompleteEditingValue(
+        prompts: prompts,
+        index: index ?? this.index,
+      );
+}
 
 /// What completes a name in the editor: names said alone, names after an object (`thisComp.`), and for each prompt
 /// the reference's entry that the list shows beside it.
@@ -23,7 +78,6 @@ class ExpressionPrompts {
   /// The prompts for the names [runs] says the running expression has (`Layer.wiggle` to `bare` or `member`).
   factory ExpressionPrompts.of(Map<String, String> runs) {
     final roots = referenceRoots(expressionReference);
-    // The objects an expression is handed by name, as `thisComp.` is typed.
     final handed = {
       for (final e in roots.entries)
         if (!e.value.contains('.')) e.key: e.value,
@@ -44,8 +98,6 @@ class ExpressionPrompts {
   }
 }
 
-/// A name as a prompt. A function is written with its brackets and the cursor between them, as VS Code completes a
-/// call, not with its arguments' names, which would be wrong code until each was replaced.
 CodePrompt _prompt(ReferenceEntry e) => e.calls
     ? CodeFunctionPrompt(
         word: e.name,
@@ -67,7 +119,6 @@ PreferredSizeWidget expressionPromptsView(
 ) {
   final row = Shape.z(34), shown = math.min(notifier.value.prompts.length, 8);
   final size = Size(Shape.z(380), row * shown + Shape.s(10));
-  // The overlay gives the list loose room: it is held to its own size.
   return PreferredSize(
     preferredSize: size,
     child: Align(

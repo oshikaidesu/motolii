@@ -4,7 +4,7 @@
 // That file is a list such as {"key": "cmd+shift+z", "command": "edit.redo"}. A command starting with '-' removes the key from that command.
 // Flutter's Shortcuts and Actions carry the keys, and the menus show the same keys.
 // While the user is typing text, a key without cmd, ctrl or alt goes to the text field.
-import 'package:re_editor/re_editor.dart' show CodeEditor;
+import 'package:motolii/workspace/shelf/code_field.dart' show CodeField;
 
 import 'dart:convert';
 
@@ -257,12 +257,11 @@ class _Command extends Action<CommandIntent> {
   _Command(this.commands);
   final Map<String, VoidCallback> commands;
   // True while focus is in a text field or a code editor.
-  // re_editor's CodeEditor reads keys through its own DeltaTextInputClient with no EditableText under it,
-  // so a plain key that the workspace handles would never reach it.
+  // flutter_code_editor uses a standard TextField, so EditableTextState covers it.
   static bool get _typing {
     final at = FocusManager.instance.primaryFocus?.context;
     return at?.findAncestorStateOfType<EditableTextState>() != null ||
-        at?.findAncestorWidgetOfExactType<CodeEditor>() != null;
+        at?.findAncestorWidgetOfExactType<CodeField>() != null;
   }
 
   @override

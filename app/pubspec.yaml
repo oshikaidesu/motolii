@@ -23,13 +23,13 @@ dependencies:
   naked_ui: ^1.2.1   # (the behaviour of buttons and menus, with no look of its own: press, hover, focus, and the placing, arrow keys and Esc of every menu in widgets/context_menu.dart)
   path_parsing: ^1.1.0   # (an SVG path's text read into a Path: the Paths card draws the outline the engine gives it, motolii_shape_svg)
   perfect_freehand: ^2.5.2+1
-  re_editor: ^0.10.0
-  re_highlight: ^0.0.3
   vector_math: ^2.4.3
   widgetbook: ^3.25.0
   acpd: ^1.0.0
   acpd_io: ^1.0.0
   flutter_markdown_plus: ^1.0.12
+  flutter_code_editor: ^0.3.5
+  highlight: ^0.7.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

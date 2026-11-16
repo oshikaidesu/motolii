@@ -13,12 +13,10 @@ import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/shelf_disk.dart' show writeText;
 import 'package:motolii/storage/text_file.dart' show readTextNow;
-import 'package:motolii/workspace/code/expression_prompts.dart';
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/shelf/code_field.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/state/tiles/effect_code_cards.dart' as cards;
-import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class EffectCode extends StatefulWidget {
@@ -128,9 +126,6 @@ class _EffectCodeState extends State<EffectCode> {
   // The result of the last "Add to shelf": why it failed, or where it went.
   String _added = '';
   bool _addedOk = false;
-  // The names completed in the editor, asked of the running expression once for each file.
-  ExpressionPrompts? _prompts;
-  String? _promptsFor;
   // Where the running expression is wrong, underlined in the editor.
   final _mark = ValueNotifier<CodeMark?>(null);
 
@@ -138,18 +133,6 @@ class _EffectCodeState extends State<EffectCode> {
   void dispose() {
     _mark.dispose();
     super.dispose();
-  }
-
-  void _askPrompts(String file) {
-    if (!projectOpen(widget.ws) || file == _promptsFor) return;
-    _promptsFor = file;
-    cards.codeSupport(widget.ws, file).then((runs) {
-      if (mounted && _promptsFor == file) {
-        setState(
-          () => _prompts = runs == null ? null : ExpressionPrompts.of(runs),
-        );
-      }
-    });
   }
 
   // The copy is first made from the original and accepted by the engine, then overwritten with the typed text.
@@ -248,7 +231,6 @@ class _EffectCodeState extends State<EffectCode> {
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
-    _askPrompts(EffectCode.source(_mine ?? widget.word));
     return Column(
       mainAxisSize: widget.fit ? MainAxisSize.min : MainAxisSize.max,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,7 +251,6 @@ class _EffectCodeState extends State<EffectCode> {
             _write,
             keep: _making,
             fit: true,
-            prompts: _prompts,
             mark: _mark,
           )
         else
@@ -278,7 +259,6 @@ class _EffectCodeState extends State<EffectCode> {
               EffectCode.source(_mine ?? widget.word),
               _write,
               keep: _making,
-              prompts: _prompts,
               mark: _mark,
             ),
           ),

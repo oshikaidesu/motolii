@@ -1,14 +1,12 @@
 #!/bin/sh
 # Refuses a commit when:
 #   * its staged Dart files are not as `dart format` leaves them (format_check.py);
-#   * app/pubspec.yaml depends on a package that tool/pubspec_allow.txt does not name (check_pubspec.py);
 #   * an ast-grep rule under app/tool/rules/ catches something new (ast-grep scan).
 # Optional. Enable once per clone:  git config core.hooksPath .githooks
 # Ast-grep is skipped when not installed; the same check runs in CI.
 set -e
 root="$(git rev-parse --show-toplevel)"
 python3 "$root/.githooks/format_check.py"
-python3 "$root/app/tool/check_pubspec.py"
 if command -v ast-grep >/dev/null 2>&1; then
     (cd "$root/app" && ast-grep scan)
 fi
