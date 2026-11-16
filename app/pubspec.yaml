@@ -28,7 +28,7 @@ dependencies:
   acpd: ^1.0.0
   acpd_io: ^1.0.0
   flutter_markdown_plus: ^1.0.12
-  code_forge: ">=11.4.0 <11.8.0"
+  code_forge: ^11.8.0
   re_highlight: ^0.0.3
 dev_dependencies:
   flutter_test:
