@@ -17,6 +17,13 @@ struct Doc;
 // project ends.
 double doc_seconds(Doc& d);
 
+// The composition's width and height in project pixels. Defaults are 1920 and
+// 1080 when the document has not set them. Many callers write the same literal
+// defaults by hand; use these so a renamed key or a changed default moves
+// everywhere at once.
+double doc_comp_wide(Doc& d);
+double doc_comp_high(Doc& d);
+
 // Returns the time (in seconds, measured from 0) at which the layer stops being
 // shown: its `start` plus its `duration`, or `start` plus [doc_seconds] if the
 // layer has no `duration` keyframe. For AbsentMotion effects (community/absent_motion)

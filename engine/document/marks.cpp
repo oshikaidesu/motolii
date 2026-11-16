@@ -13,6 +13,13 @@
 
 namespace motolii {
 
+double doc_comp_wide(Doc& d) {
+  return doc_number(d, 0, "wide", 0, 1920);
+}
+double doc_comp_high(Doc& d) {
+  return doc_number(d, 0, "high", 0, 1080);
+}
+
 double doc_layer_ends(Doc& d, int layer) {
   const double begins = doc_literal(d, layer, "start", 0, 0),
                lasts = doc_literal(d, layer, "duration", 0, -1);

@@ -93,8 +93,8 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
       kept.copies = midi_copies(
           midi_of(notes), n,
           (said - doc_literal(d, layer, "start", 0, 0)) * speed,
-          doc_number(d, 0, "high", 0, 1080) / 1080.0 * (double)d.stage->h /
-              std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
+          doc_comp_high(d) / 1080.0 * (double)d.stage->h /
+              std::max(1.0, doc_comp_high(d) *
                                 doc_point(d, layer, said)),
           h);
     }
@@ -261,7 +261,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     // The size of one document pixel in stage units where the layer stands, as
     // for the copies of a script.
     const double pixel =
-        (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
+        (double)d.stage->h / std::max(1.0, doc_comp_high(d) *
                                                doc_point(d, layer, said));
     // Alight Motion's y axis points down; the stage's points up.
     shift += math::double3{m.x * pixel, -m.y * pixel, m.z * pixel};

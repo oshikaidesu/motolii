@@ -18,6 +18,7 @@
 #include "community/jolt/rigid_bodies.h"
 #include "document/document.h"
 #include "document/evaluate/kept_frames.h"
+#include "document/marks.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
@@ -163,7 +164,7 @@ const std::vector<double>* doc_bodies(Doc& d, double t) {
   if (!b.jolt) b.jolt = std::make_shared<RigidBodies>(), b.at = -1;
   // A metre in stage units, where the first layer with bodies stands.
   b.metre = kPixelsAMetre * (double)d.stage->h /
-            std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
+            std::max(1.0, doc_comp_high(d) *
                               doc_point(d, b.layers.front().first, 0));
   std::vector<RigidBodyTold> told;
   const auto tell = [&](size_t f) {

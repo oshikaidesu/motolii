@@ -13,6 +13,7 @@
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
+#include "document/marks.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
@@ -137,7 +138,7 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
   const std::string key =
       words + (by_words ? "\n1\n" : "\n0\n") + std::to_string(font);
   if (!p.page || p.made_for != key) {
-    const double high = doc_number(d, 0, "high", 0, 1080);
+    const double high = doc_comp_high(d);
     p.made_for = key;
     p.page = std::shared_ptr<MotoliiCss>(
         motolii_css_new(sc.css.c_str(), sc.html.c_str(), words.c_str(), 0,
@@ -236,8 +237,8 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     numbers["id"] = layer;
     // The project's size in pixels, so an expression written in After Effects'
     // pixels knows where its composition's corner is.
-    numbers["wide"] = doc_number(d, 0, "wide", 0, 1920);
-    numbers["high"] = doc_number(d, 0, "high", 0, 1080);
+    numbers["wide"] = doc_comp_wide(d);
+    numbers["high"] = doc_comp_high(d);
     // The project's second, After Effects' `time`: what layerValue, sampleImage
     // and fromWorld are asked at. each()'s own t counts from where the layer
     // begins.
@@ -247,7 +248,7 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
     // the layer's depth. The last argument is the copies laid by the earlier
     // scripts, the fifth argument of each(); see script_runner.h.
     const double px =
-        (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) *
+        (double)d.stage->h / std::max(1.0, doc_comp_high(d) *
                                                doc_point(d, layer, said));
     // A page's pixel is a project pixel as the letters are seen. The letters
     // are laid at size 1 and the layer's size scales them afterwards, so
