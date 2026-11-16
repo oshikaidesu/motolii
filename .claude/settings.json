@@ -43,6 +43,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/uat_goal_reminder.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
