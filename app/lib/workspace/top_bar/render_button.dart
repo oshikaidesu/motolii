@@ -148,45 +148,8 @@ class _RenderState extends State<RenderButton> {
   /// A thin outline at the composition's own aspect ratio, labelled with its size and the chosen range. The user sees
   /// at a glance what shape and length they are about to render. The outline is bounded so a very wide or very tall
   /// composition still fits in the header's 56 px band.
-  Widget _header(double w, double h, double from, double to, int frames) {
-    const bandHigh = 56.0, bandWide = 120.0;
-    final box = w >= h
-        ? (bandWide, bandWide * h / w).clamp(min: 12.0, max: bandHigh)
-        : (bandHigh * w / h, bandHigh).clamp(min: 12.0, max: bandWide);
-    final (boxW, boxH) = box;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Outline of the composition, scaled so its own shape is read from a glance.
-        Container(
-          width: Shape.z(boxW),
-          height: Shape.z(boxH),
-          decoration: BoxDecoration(
-            borderRadius: Shape.round(3),
-            border: Border.all(color: WindowTokens.line),
-            color: WindowTokens.well,
-          ),
-        ),
-        SizedBox(width: Shape.s(14)),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${w.round()} × ${h.round()}',
-                style: TextStyles.value(Grey.g95).bold,
-              ),
-              SizedBox(height: Shape.s(2)),
-              Text(
-                'Work area ${_fmtSeconds(from)} – ${_fmtSeconds(to)} · $frames frames',
-                style: TextStyles.label(Grey.g76),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _header(double w, double h, double from, double to, int frames) =>
+      RenderHeader(w: w, h: h, from: from, to: to, frames: frames);
 
   /// Format tabs: the chosen format (which is what the file name ends with) is highlighted. Clicking a tab rewrites the
   /// extension of the file name, and the description line under the tabs updates. Tabs rather than chips because a
@@ -408,6 +371,62 @@ class _RenderState extends State<RenderButton> {
       Forms.worn.action(context, ActionSpec('Render', () => _go(ws))),
     ],
   );
+}
+
+/// The outline thumbnail + size label at the top of the render dialog.
+/// Extracted so the golden test can pump it without a WorkspaceController.
+class RenderHeader extends StatelessWidget {
+  const RenderHeader({
+    super.key,
+    required this.w,
+    required this.h,
+    required this.from,
+    required this.to,
+    required this.frames,
+  });
+
+  final double w, h, from, to;
+  final int frames;
+
+  @override
+  Widget build(BuildContext context) {
+    const bandHigh = 56.0, bandWide = 120.0;
+    final box = w >= h
+        ? (bandWide, bandWide * h / w).clamp(min: 12.0, max: bandHigh)
+        : (bandHigh * w / h, bandHigh).clamp(min: 12.0, max: bandWide);
+    final (boxW, boxH) = box;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: Shape.z(boxW),
+          height: Shape.z(boxH),
+          decoration: BoxDecoration(
+            borderRadius: Shape.round(3),
+            border: Border.all(color: WindowTokens.line),
+            color: WindowTokens.well,
+          ),
+        ),
+        SizedBox(width: Shape.s(14)),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${w.round()} × ${h.round()}',
+                style: TextStyles.value(Grey.g95).bold,
+              ),
+              SizedBox(height: Shape.s(2)),
+              Text(
+                'Work area ${_fmtSeconds(from)} – ${_fmtSeconds(to)} · $frames frames',
+                style: TextStyles.label(Grey.g76),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// A format tab. On / Off are drawn flat; the on tab fills with the window's selected tint, the off tab is a plain

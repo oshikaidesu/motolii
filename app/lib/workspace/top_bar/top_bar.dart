@@ -10,7 +10,8 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart'
-    show Badge, Chip, ChipLook, Pressable, IconPress;
+    show Badge, Chip, ChipLook, IconPress;
+import 'package:motolii/workspace/top_bar/saved_display.dart';
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/workspace/state/document/document_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -229,65 +230,13 @@ class _Saved extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.of(context, {
-          WorkspaceAspect.document,
-          WorkspaceAspect.notice,
-        }),
-        go = ws.noticeGo,
-        active = ws.notice != null,
-        f = ws.noticeProgress;
-    // The dot pops in accent when a notice is up; quiets to g38 when the project has just been saved.
-    final said = Text(
-      ws.notice ?? _savedAt(ws),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: go == null
-          ? TextStyles.label(active ? Grey.g91 : Grey.g63)
-          : TextStyles.label(active ? Grey.g91 : Grey.g63)
-                .copyWith(decoration: TextDecoration.underline),
-    ); // The underline marks the notice as a link when it has a target.
-    final body = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: Shape.z(260)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          go == null ? said : Pressable(onTap: go, builder: (_, _) => said),
-          if (f != null) ...[
-            SizedBox(height: Shape.s(3)),
-            // A slim 2-px bar under the notice text, filled to the fraction.
-            Container(
-              height: 2,
-              decoration: BoxDecoration(
-                color: Grey.g20,
-                borderRadius: Shape.round(1),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: f.clamp(0.0, 1.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: WindowTokens.accent,
-                    borderRadius: Shape.round(1),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Badge(
-          active ? WindowTokens.accent : Grey.g38,
-          size: Shape.z(6),
-          radius: Radius.circular(Shape.z(3)),
-        ),
-        SizedBox(width: Shape.s(6)),
-        body,
-      ],
+      WorkspaceAspect.document,
+      WorkspaceAspect.notice,
+    });
+    return SavedDisplay(
+      label: ws.notice ?? _savedAt(ws),
+      progress: ws.noticeProgress,
+      onGo: ws.noticeGo,
     );
   }
 }
