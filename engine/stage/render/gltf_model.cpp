@@ -197,8 +197,7 @@ Mesh* solid_mesh(const char* file) {
   }
   cgltf_free(read);
   if (m->idx.empty()) return delete m, nullptr;
-  float3 low = m->pos[0], high = m->pos[0];
-  for (const float3& p : m->pos) low = min(low, p), high = max(high, p);
+  const auto [low, high] = pos_bounds(m->pos);
   const float fit = 1.f / std::max(high.y - low.y, 1e-6f);
   for (float3& p : m->pos) p = (p - 0.5f * (low + high)) * fit;
   return m;

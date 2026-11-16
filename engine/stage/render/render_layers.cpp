@@ -234,11 +234,7 @@ int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture,
     built.onPlace = mat4f{};
     for (const Stage::Renderable& d : s.renderables) {
       if (!on || d.of != on) continue;
-      float3 low = on->pos[0], high = on->pos[0];
-      for (const float3& p : on->pos) {
-        low = min(low, p);
-        high = max(high, p);
-      }
+      const auto [low, high] = pos_bounds(on->pos);
       // A camera in front of the mesh, looking along its z axis at all of it,
       // that moves with the mesh.
       utils::Entity e = utils::EntityManager::get().create();

@@ -355,6 +355,12 @@ void more_parts(Stage& s, Mesh* m, size_t parts,
 // and Filament keeps them until no frame uses them.
 void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends);
 
+// Returns the axis-aligned bounds of `pos` as {low, high}. An empty range
+// returns {zero, zero}: Filament wants a bounding box even for an entity with
+// no points, and callers that scale by the box's size guard the zero case.
+std::pair<filament::math::float3, filament::math::float3> pos_bounds(
+    const std::vector<filament::math::float3>& pos);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_RENDER_STAGE_H_

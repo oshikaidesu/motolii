@@ -263,6 +263,13 @@ void mesh_points(Stage& s, const Mesh& m, VertexBuffer* vb, size_t n) {
 }
 }  // namespace
 
+std::pair<float3, float3> pos_bounds(const std::vector<float3>& pos) {
+  if (pos.empty()) return {float3{0.f}, float3{0.f}};
+  float3 low = pos[0], high = pos[0];
+  for (const float3& p : pos) low = min(low, p), high = max(high, p);
+  return {low, high};
+}
+
 Mesh* sketch_mesh() {
   Mesh* m = new Mesh;
   m->pos.assign(3, float3{0.f}), m->nrm.assign(3, float3{0.f, 0.f, 1.f}),
@@ -336,11 +343,7 @@ std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* filamat,
   }
   // Filament wants a rough bounding box if the entity casts or receives
   // shadows.
-  float3 low = n ? m->pos[0] : float3{0.f}, high = low;
-  for (const float3& p : m->pos) {
-    low = min(low, p);
-    high = max(high, p);
-  }
+  const auto [low, high] = pos_bounds(m->pos);
   // With `together`, the places are drawn in groups of as many as Filament
   // draws in one go, 64, each place being an instance of one entity. A GPU pays
   // for each draw, not for each triangle, so a thousand copies take sixteen
