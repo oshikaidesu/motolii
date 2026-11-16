@@ -19,6 +19,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/thumbnail_folder.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/state/project_facts.dart';
 
@@ -211,26 +213,59 @@ class _HomeWindowState extends State<HomeWindow> {
             Row(
               children: [
                 const Spacer(),
-                homeButton('home-close', '×', false, widget.onClose),
+                // Icon button with the standard close glyph, matching the rest of the app.
+                IconPress(
+                  (c) => Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
+                  key: const ValueKey('home-close'),
+                  tip: 'Close',
+                  onTap: widget.onClose,
+                  size: Shape.z(28),
+                  ink: Grey.g63,
+                ),
               ],
             ),
             SizedBox(height: Shape.s(8)),
             NakedButton(
               enableFeedback: false,
-              // CapCut's "Create project": a button as wide as the page.
+              // CapCut's "Create project": a button as wide as the page, with the + glyph set apart from the label so it reads as a button, not a line of text.
               key: const ValueKey('home-new'),
               onPressed: widget.onNew,
               child: Container(
-                height: Shape.z(120),
+                height: Shape.z(112),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: WindowTokens.card,
                   borderRadius: Shape.round(12),
-                  border: Border.all(color: WindowTokens.raised),
+                  border: Border.all(
+                    color: WindowTokens.raised,
+                    style: BorderStyle.solid,
+                  ),
                 ),
-                child: Text(
-                  '+  New Project',
-                  style: TextStyles.title(Grey.g91),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // The lime "+" badge: the same manner as the top bar's wordmark, so a "create" action reads as a first-class control.
+                    Container(
+                      width: Shape.z(36),
+                      height: Shape.z(36),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: WindowTokens.accent,
+                        borderRadius: Shape.round(8),
+                      ),
+                      child: Text(
+                        '+',
+                        style: TextStyles.title(WindowTokens.onAccent).copyWith(
+                          fontSize: TextStyles.px(22),
+                          fontWeight: FontWeight.w800,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(14)),
+                    Text('New Project', style: TextStyles.title(Grey.g91).bold),
+                  ],
                 ),
               ),
             ),
