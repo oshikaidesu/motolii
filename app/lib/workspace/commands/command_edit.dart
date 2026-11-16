@@ -1,13 +1,10 @@
 // The Edit menu's commands: undo and redo, cut, copy and paste (layers, keyframes, styles and code from the web), selecting all, and the work area.
 // setState is called from an extension on the State itself, which the analyzer only allows in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
-import 'dart:async' show Completer;
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
-import 'package:super_clipboard/super_clipboard.dart'
-    show DataReader, Formats, SystemClipboard, ValueFormat;
 
 import 'package:motolii/storage/window_paths.dart' show clipboardFileThere;
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
@@ -19,36 +16,13 @@ import 'package:motolii/workspace/state/document/document_writes.dart'
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
 import 'package:motolii/workspace/state/media/media_service.dart'
-    show placeDroppedFiles;
+    show clipboardPaths, placeDroppedFiles;
 import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageSeconds;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     show setWorkArea;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
-
-/// The file paths pasted or dropped from the OS clipboard, or an empty list
-/// when the clipboard holds no files (or the platform does not have a
-/// clipboard reader, as in tests).
-Future<List<String>> _clipboardFiles() async {
-  final clipboard = SystemClipboard.instance;
-  if (clipboard == null) return const [];
-  final reader = await clipboard.read();
-  final out = <String>[];
-  for (final item in reader.items) {
-    if (!item.canProvide(Formats.fileUri)) continue;
-    final uri = await _readValue(item, Formats.fileUri);
-    if (uri != null && uri.scheme == 'file') out.add(uri.toFilePath());
-  }
-  return out;
-}
-
-Future<T?> _readValue<T extends Object>(DataReader reader, ValueFormat<T> f) {
-  final c = Completer<T?>();
-  final progress = reader.getValue<T>(f, c.complete, onError: c.completeError);
-  if (progress == null) c.complete(null);
-  return c.future;
-}
 
 extension EditCommands on WorkspaceState {
   Map<String, VoidCallback> editCommands() {
@@ -104,7 +78,7 @@ extension EditCommands on WorkspaceState {
             : null;
         // Finder / Explorer copied the file, so the clipboard holds a file URI: place the files as new layers
         // (same path as a drop). Whatever was copied last wins, so a file URI beats a plain-text or code paste.
-        _clipboardFiles().then((files) {
+        clipboardPaths().then((files) {
           if (files.isNotEmpty) {
             placeDroppedFiles(
               ws,

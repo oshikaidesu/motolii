@@ -8,7 +8,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
-import 'package:super_clipboard/super_clipboard.dart' show DataReader, Formats;
+import 'package:super_clipboard/super_clipboard.dart' show Formats;
 import 'package:super_drag_and_drop/super_drag_and_drop.dart'
     show DropOperation, DropRegion;
 
@@ -31,7 +31,7 @@ import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
 import 'package:motolii/workspace/state/media/media_service.dart'
-    show placeDroppedFiles;
+    show droppedItemsToPaths, placeDroppedFiles;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -384,7 +384,25 @@ class WorkspaceState extends State<Workspace> {
     final window = WorkspaceScope(
       ws: ws,
       child: DropRegion(
-        formats: const [Formats.fileUri],
+        // Takes file URIs and inline image/video bytes (screenshot, browser drag) —
+        // droppedItemsToPaths tells file URIs from bytes and writes bytes to a temp
+        // file so placeDroppedFiles always gets a path.
+        formats: const [
+          Formats.fileUri,
+          Formats.png,
+          Formats.jpeg,
+          Formats.webp,
+          Formats.gif,
+          Formats.tiff,
+          Formats.bmp,
+          Formats.heic,
+          Formats.heif,
+          Formats.svg,
+          Formats.mp4,
+          Formats.mov,
+          Formats.m4v,
+          Formats.avi,
+        ],
         onDropOver: (_) {
           _drophover.value = true;
           return DropOperation.copy;
@@ -392,15 +410,9 @@ class WorkspaceState extends State<Workspace> {
         onDropLeave: (_) => _drophover.value = false,
         onPerformDrop: (event) async {
           _drophover.value = false;
-          final files = <String>[];
-          for (final item in event.session.items) {
-            final reader = item.dataReader;
-            if (reader == null) continue;
-            final uri = await _readUri(reader);
-            if (uri != null && uri.scheme == 'file') {
-              files.add(uri.toFilePath());
-            }
-          }
+          final files = await droppedItemsToPaths([
+            for (final i in event.session.items) i.dataReader,
+          ]);
           if (files.isNotEmpty) {
             placeDroppedFiles(
               ws,
@@ -490,19 +502,6 @@ class WorkspaceState extends State<Workspace> {
       ),
     );
   }
-}
-
-/// Pulls one file URI out of a drop item's data reader. Returns null when the
-/// reader has no file URI to offer.
-Future<Uri?> _readUri(DataReader reader) {
-  final c = Completer<Uri?>();
-  final progress = reader.getValue<Uri>(
-    Formats.fileUri,
-    c.complete,
-    onError: c.completeError,
-  );
-  if (progress == null) c.complete(null);
-  return c.future;
 }
 
 class _Window extends StatelessWidget {

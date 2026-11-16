@@ -2,11 +2,15 @@
 // placing files, levels and timesheets as layers, and replacing what a layer shows.
 import 'dart:async';
 
+import 'package:super_clipboard/super_clipboard.dart'
+    show DataReader, FileFormat, Formats, SystemClipboard;
+
 import 'package:motolii/bridge/motolii.dart' show mediaInfoOf, mediaSecondsOf;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/pasted_bytes.dart' show writePastedBytes;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 typedef SheetColumn = ({
@@ -61,6 +65,100 @@ List<(int, String)> layersShowingFileOf(WorkspaceController ws, int shape) {
         if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file)
           (t, w),
   ];
+}
+
+/// The file formats this app can take from a drop or a paste that is not a
+/// file URI (a screenshot pasted straight, an image dragged from a browser).
+/// Each entry says which [FileFormat] to read from the item, and the
+/// extension to give the temp file when writing the bytes.
+const List<(FileFormat, String)> _droppedBinaries = [
+  (Formats.png, '.png'),
+  (Formats.jpeg, '.jpg'),
+  (Formats.webp, '.webp'),
+  (Formats.gif, '.gif'),
+  (Formats.tiff, '.tiff'),
+  (Formats.bmp, '.bmp'),
+  (Formats.heic, '.heic'),
+  (Formats.heif, '.heif'),
+  (Formats.svg, '.svg'),
+  (Formats.mp4, '.mp4'),
+  (Formats.mov, '.mov'),
+  (Formats.m4v, '.m4v'),
+  (Formats.avi, '.avi'),
+];
+
+/// Turns clipboard or drop items into file paths. A file URI is used as-is; a
+/// screenshot pasted straight or an image dragged from a browser (bytes, no
+/// URI) is written to a temp folder and its path is returned. [items] is
+/// what super_clipboard / super_drag_and_drop hand over; null entries and
+/// items that carry no file-shaped data are skipped.
+///
+/// Used by the top-level drop region and by ⌘V in the Edit menu, so the two
+/// take the same breadth of input (UAT 1, 8, 230, 231, 233, 306).
+Future<List<String>> droppedItemsToPaths(List<DataReader?> items) async {
+  final out = <String>[];
+  for (final item in items) {
+    if (item == null) continue;
+    if (item.canProvide(Formats.fileUri)) {
+      final uri = await _readUriFromItem(item);
+      if (uri != null && uri.scheme == 'file') {
+        out.add(uri.toFilePath());
+        continue;
+      }
+    }
+    for (final (fmt, ext) in _droppedBinaries) {
+      if (!item.canProvide(fmt)) continue;
+      final path = await _writeBytesToTemp(item, fmt, ext);
+      if (path != null) {
+        out.add(path);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+/// Reads the file URIs the system clipboard holds right now. Empty when there
+/// are none, or when the platform does not have a clipboard reader (as in
+/// tests). Convenience over [droppedItemsToPaths] for the paste path.
+Future<List<String>> clipboardPaths() async {
+  final clipboard = SystemClipboard.instance;
+  if (clipboard == null) return const [];
+  final reader = await clipboard.read();
+  return droppedItemsToPaths([for (final i in reader.items) i]);
+}
+
+Future<Uri?> _readUriFromItem(DataReader item) {
+  final c = Completer<Uri?>();
+  final p = item.getValue<Uri>(
+    Formats.fileUri,
+    c.complete,
+    onError: c.completeError,
+  );
+  if (p == null) c.complete(null);
+  return c.future;
+}
+
+Future<String?> _writeBytesToTemp(
+  DataReader item,
+  FileFormat fmt,
+  String ext,
+) async {
+  final c = Completer<String?>();
+  final p = item.getFile(fmt, (file) async {
+    try {
+      final path = await writePastedBytes(
+        await file.readAll(),
+        filename: file.fileName,
+        ext: ext,
+      );
+      c.complete(path);
+    } catch (_) {
+      c.complete(null);
+    }
+  }, onError: (_) => c.complete(null));
+  if (p == null) c.complete(null);
+  return c.future;
 }
 
 /// Places [files] on the canvas as new layers at the current time, the same
