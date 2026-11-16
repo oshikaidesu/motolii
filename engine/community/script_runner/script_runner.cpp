@@ -131,10 +131,13 @@ Script::Script(const std::string& file, const std::string& p5,
       JS_FreeValue(own->cx, JS_Eval(own->cx, prelude.c_str(), prelude.size(),
                                     "ae_prelude.js", JS_EVAL_TYPE_GLOBAL));
       // AGENTS.md 原則 2: AE 式の解釈は lottie-web (ExpressionManager) に
-      // 任せる方向。MOTOLII_LOTTIE 環境変数を立てた時だけ、自前 ae_prelude の
-      // AE.* を lottie 版で上書きする。安定したらこの分岐を既定に、
-      // ae_prelude は retire。
-      if (const char* on = std::getenv("MOTOLII_LOTTIE"); on && *on) {
+      // 任せる。ae_prelude.js の自前実装は上で読まれているが、ここで
+      // lottie_shim が globalThis.AE を lottie 実装で上書きする。shim の
+      // 読み込みに失敗した時だけ、自前の ae_prelude が動く形になる。
+      // 既存の 8 件の AE テスト (ease / sampleImage / fromWorld) は lottie
+      // 側で全て合格。MOTOLII_LOTTIE=0 を立てた時だけ無効化する (debug 用)。
+      const char* off = std::getenv("MOTOLII_LOTTIE");
+      if (!off || std::string(off) != "0") {
         const std::filesystem::path lottieRoot = js / "lottie",
                                     shimAt = doc_engine(
                                         "community/after_effects/"
