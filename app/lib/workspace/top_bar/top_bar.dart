@@ -8,6 +8,7 @@ import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart'
     show Badge, Chip, ChipLook, Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
@@ -50,9 +51,9 @@ class TopBar extends StatelessWidget {
                   .copyWith(fontWeight: FontWeight.w600),
             ),
           ), // A long name is cut off with an ellipsis so the bar keeps its layout.
-          SizedBox(width: Shape.s(6)),
-          Text('/', style: TextStyles.name(Grey.g44)),
-          SizedBox(width: Shape.s(6)),
+          SizedBox(width: Shape.s(8)),
+          Glyph(AppGlyphs.chevron, size: Shape.z(9), color: Grey.g44),
+          SizedBox(width: Shape.s(8)),
           Text(ws.layer?.name ?? 'Stage', style: TextStyles.name(Grey.g76)),
           SizedBox(width: Shape.s(10)),
           const SizeChip(),
