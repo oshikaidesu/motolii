@@ -15,6 +15,7 @@ After Effects expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie and more. Past
 - **GPU-native.** Expressions compile to GPU shaders. Thousands of copies stay at 60 fps.
 - **Effects are files.** A `.wgsl`, a `.fs`, a `.js` — open them, read how they work, change them. Not a black box.
 - **One layer, many languages.** A CSS animation, an After Effects expression and a shader effect compose on the same text, in the order you stack them.
+- **Any AI agent.** Motolii speaks [ACP](https://github.com/anthropics/agent-client-protocol) — the same Agent Client Protocol that Zed and JetBrains use. Pick any agent, any model. Ask it to write your expressions and effects.
 
 ## Status
 

@@ -15,6 +15,7 @@ After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lo
 - **GPU ネイティブ。** 式は GPU シェーダーにコンパイルされる。数千コピーが 60fps で動く。
 - **エフェクトはただのファイル。** `.wgsl`、`.fs`、`.js` — 開いて、仕組みを読んで、変えられる。ブラックボックスじゃない。
 - **1 レイヤーに複数言語。** CSS アニメーション、After Effects の式、シェーダーエフェクトが同じテキストの上で、重ねた順に動く。
+- **AI エージェントも自由。** Zed や JetBrains と同じ [ACP](https://github.com/anthropics/agent-client-protocol)（Agent Client Protocol）対応。好きなエージェント、好きなモデルで、式やエフェクトを書いてもらえる。
 
 ## いまの状態
 
