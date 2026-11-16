@@ -6,7 +6,7 @@
 
 **離れていた表現の、交差点。**
 
-AviUtl のスクリプトと CodePen の CSS アニメーションが同じテキストの上で動く。Shadertoy のシェーダーが曲のビートに反応する。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。
+Shadertoy のシェーダーが曲のビートに反応する。After Effects の式と CSS アニメーションが同じテキストの上で動く。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。
 
 After Effects の式、Shadertoy、WGSL、Cavalry、p5.js、AviUtl、CSS、Resolume ISF、three.js TSL、Lottie ── それぞれの元のエンジンで動かすオープンソースの動画編集ソフト。プラグインに作り直す必要はありません。[対応する形式の一覧](#何が動く)は下にあります。
 
