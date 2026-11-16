@@ -30,6 +30,14 @@ abstract final class Gestures {
   /// the time.
   static const int nudgeShift = 10;
 
+  /// Section 12 `coarse`: how much faster Cmd (or Ctrl) makes scrubbing,
+  /// wheel and arrow nudges, as in Ableton Live (manual, section 42.6).
+  static const double coarse = 10.0;
+
+  /// Section 12 `fine`: how much slower Shift makes the same drags, for
+  /// precise control.
+  static const double fine = 0.1;
+
   /// Section 12 `menuWidth`: a context menu's own width, in design points
   /// (parts wrap this in `Shape.z` to get screen pixels).
   static const double menuWidth = 220.0;

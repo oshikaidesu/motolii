@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/widgets/text_gestures.dart';
@@ -13,8 +14,8 @@ import 'package:motolii/widgets/text_gestures.dart';
 /// The same keys apply to a scrub, a wheel, the arrow keys and a drag on a picture of the value.
 double dragRate() {
   final k = HardwareKeyboard.instance;
-  if (k.isShiftPressed) return .1;
-  if (k.isMetaPressed || k.isControlPressed) return 10;
+  if (k.isShiftPressed) return Gestures.fine;
+  if (k.isMetaPressed || k.isControlPressed) return Gestures.coarse;
   return 1;
 }
 
