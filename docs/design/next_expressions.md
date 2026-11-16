@@ -692,3 +692,54 @@ Sources used for the outside facts:
 [NumExpr](https://numexpr.readthedocs.io/en/stable/intro.html) ·
 [WebAssembly runtimes compared (arXiv)](https://www.arxiv.org/pdf/2405.09213) ·
 [Slang compilation API](https://shader-slanggithubio-aidanfnv-wip.readthedocs.io/en/latest/compilation-api.html).
+
+## Decided (2026-11-16)
+
+### Variable names
+
+`index`, `count`, `time`, `value`.
+
+- `index` and `count` from Cavalry (the names are already in wide use, so code from Cavalry expressions arrives with them).
+- `time` and `value` from lottie_shim's run context (they are already there, same names as After Effects).
+
+The change from `i`, `n`, `t`: only `index` and `count` are new additions to the run context. `time` and `value` are already there.
+
+### How lottie_shim loads
+
+For every `.js` file, always. The trigger `src.find("AE.compile") != std::string::npos` at `script_runner.cpp:108` is removed.
+
+`.fs` (ISF) and `.wgsl` go through separate paths and are not affected. lottie_shim loads once at startup; it is not a per-frame cost.
+
+### Syntax: `each()` is optional
+
+An object literal at the top level is enough:
+
+```js
+// Works as before:
+function each(index, count, time, value) {
+  return { x: index * 10, rotate: time * 90 };
+}
+
+// Also works:
+{ x: index * 10, rotate: time * 90 }
+```
+
+The engine runs both. Code found on the net that returns a plain object can be pasted without wrapping it.
+
+### Performance: measure first
+
+1. Measure the load time of lottie_shim.
+2. If it is heavy, pre-compile it to QuickJS bytecode with `JS_WriteObject` at build time and load it with `JS_ReadObject`. This eliminates the parse step without changing the JavaScript or the script format.
+3. The naming and syntax changes above are independent of this and do not wait for it.
+
+### TSL path: two distinct uses, neither wired into the engine yet
+
+The document (sections 7 and 12.4) describes TSL as the GPU optimisation route. Here is what is actually in the code now, and where the two uses are distinct.
+
+**What is wired in today.** `convert.ts` (`engine/community/three_shading_language_to_shelf/`) runs three.js 0.185.1's TSL nodes in QuickJS and feeds the result into `WGSLNodeBuilder`. It is a build-time tool. The `.wgsl` files it outputs are what goes on the shelf. No TSL source code rides in the engine at runtime.
+
+**Use A — expression card to GPU.** The probe in 12.4 ran the shelf's `each()` files in QuickJS with TSL nodes standing in for the numeric values, then compiled the resulting graph to WGSL. 24 of 25 files became valid WGSL that the GPU agreed with to 1e-4. This path is not wired into the engine: a user pasting a `.js` expression today still runs it on the CPU.
+
+**Use B — TSL code pasted from the web as an effect.** A Three.js material written in TSL (using `import { vec3, sin } from 'three/tsl'` or `THREE.vec3`) produces GPU colour, not per-copy position. Its natural place is the Effects shelf (`.fs` or `.wgsl`), not the expression card. Making this work at runtime means loading three.js into QuickJS inside the engine and running `WGSLNodeBuilder` there — the same code the probe uses, moved from a one-off script into the runtime path.
+
+**The open question.** Both uses need three.js in the engine's QuickJS runtime. Use A is the GPU speed path for expressions (section 7's reason for existing). Use B is what a user expecting seamless TSL compatibility would need. Neither is a condition for running (12.4); both run as written first. Which to wire in first, and what test to use to judge it working, is not decided.
