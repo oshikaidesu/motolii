@@ -221,7 +221,17 @@ In After Effects, a stagger across layers is written by hand from `index` in eve
 
 So text motion is born in the Code tab. A text layer split into letters is a row, and any language that speaks of rows moves it.
 
-Two ways of writing a row exist today: `each(i, n, t, k)`, asked once per copy, and a relation's `relate(things, t, k)`, given the whole array. Since 2026-11-11 a file with `each()` and no `relate()` also runs as a relation: layer i of the relation is copy i of n, and what `each()` says goes on top of the layer as it does on a copy (places and turns added, size and opacity multiplied). Pressing an Expression tile with several layers selected, or with a group picked, makes that relation; `fade_in.js` then fades the layers in one after another, unchanged. The other way round works too: a `relate()` file in a layer's effect list gets the copies, letters or words laid so far as its things, and what it says of each goes on top of that copy. `turns.js`, written for a lyric line of separate word layers, brings in the words of one text split into words, unchanged. The Relations tab took one picked layer too; the tab was removed on 2026-11-11, and the relation files are now tiles under Expression in the Create tab.
+Two ways of writing a row exist today: `each(index, count, time, value)`, asked once per copy, and a relation's `relate(things, t, k)`, given the whole array. The four names are shared with Cavalry (`index`, `count`) and After Effects (`time`, `value`), so code from either arrives using them.
+
+`each()` is optional. A top-level object literal is enough:
+
+```js
+{ x: index * 10, rotate: time * 90 }
+```
+
+The engine wraps it as `function each(index, count, time, value) { return (...); }`. Code found on the net that returns a plain object can be pasted without wrapping it. A file with a `function each(...)` declaration runs as before.
+
+Since 2026-11-11 a file with `each()` and no `relate()` also runs as a relation: layer i of the relation is copy i of n, and what `each()` says goes on top of the layer as it does on a copy (places and turns added, size and opacity multiplied). Pressing an Expression tile with several layers selected, or with a group picked, makes that relation; `fade_in.js` then fades the layers in one after another, unchanged. The other way round works too: a `relate()` file in a layer's effect list gets the copies, letters or words laid so far as its things, and what it says of each goes on top of that copy. `turns.js`, written for a lyric line of separate word layers, brings in the words of one text split into words, unchanged. The Relations tab took one picked layer too; the tab was removed on 2026-11-11, and the relation files are now tiles under Expression in the Create tab.
 
 ### 5.3 Languages
 
@@ -265,6 +275,8 @@ If neither CSS nor ASS can be had as values from an outside engine, the cut is w
 ### 6.1 When code is read and when it runs
 
 The text of the code is read once per edit. Running happens whenever an input changes. A keyframed slider changes every frame, so the compiled form runs every frame.
+
+The runtime that every `.js` file needs (lottie-web's ExpressionManager, the AE expression surface) is pre-compiled to QuickJS bytecode at build time and loaded with `JS_ReadObject`, so there is no per-script parse cost. It loads for every `.js` file, always — not only for files that contain `AE.compile`.
 
 The aim is therefore not "never evaluate each frame". It is: never read the text again each frame, never run what did not change, never run what is not seen, and where there are many copies do the work in bulk or on the GPU.
 
@@ -321,7 +333,7 @@ What follows from using a graph:
 | Cost shown | The sum of the cost of the nodes. |
 | Hot reload | Rebuild the graph, swap what differs, reuse what did not change. |
 
-How each language gets into a graph: the code is run once, as written, with marks instead of numbers. An After Effects expression already has its `+ - * /` rewritten once, by `AE.compile`; that step would build nodes instead of numbers, and `if` and `?:` become `select`. Cavalry's `each(i, n, t, k)` gets `i` as the copy-number node, so all copies are computed at once. Lua and Python overload operators, so they need no rewrite.
+How each language gets into a graph: the code is run once, as written, with marks instead of numbers. An After Effects expression already has its `+ - * /` rewritten once, by `AE.compile`; that step would build nodes instead of numbers, and `if` and `?:` become `select`. Cavalry's `each(index, count, time, value)` gets `index` as the copy-number node, so all copies are computed at once. Lua and Python overload operators, so they need no rewrite.
 
 What falls outside, and keeps running as written, with the reason shown: loops whose count depends on a value, side effects inside an `if`, strings and objects (a node has a number, vector, colour, boolean or reference as its type), references built by calculation (treated as "may change", which is safe and slow), and recurrences on an earlier time (they run in order).
 
@@ -517,7 +529,7 @@ Until now, motion written as code could come into After Effects only as a screen
 
 ### 12.3 Any language; each shared name has one implementation
 
-A language is only a way of writing (5.3), so the language a person or an LLM writes in does not matter. What the languages share is a small set of names: time, the copy number, a layer's properties, `sampleImage`, the level of a sound, and easing. Each of them is implemented once, in Motolii. However a language writes it (`ease(...)` in an After Effects expression, `cubic-bezier(...)` in CSS), the same implementation answers.
+A language is only a way of writing (5.3), so the language a person or an LLM writes in does not matter. What the languages share is a small set of names — `index`, `count`, `time`, `value`, a layer's properties, `sampleImage`, the level of a sound, and easing — each implemented once, in Motolii. `index` and `count` are Cavalry's names; `time` and `value` are After Effects'. However a language writes it (`ease(...)` in an After Effects expression, `cubic-bezier(...)` in CSS), the same implementation answers.
 
 Easing is the example.
 
@@ -537,7 +549,7 @@ This answers question 1 of section 9.
 To run on the GPU, code has to be turned into a shader. Section 7 does it through a graph of nodes. TSL (three.js Shading Language) is three.js's way of building such a graph from JavaScript.
 
 - **Not a graph format of Motolii's own that resembles TSL.** With a format of our own, the step from each language into it would have to be written here, language by language. That is translation (principle 1), and all of it would be ours to maintain.
-- **TSL as three.js ships it.** Posted code is run once in QuickJS (the JavaScript engine Motolii already runs expressions in), with TSL nodes where the numbers would be. three.js's own `WGSLNodeBuilder` turns the resulting graph into WGSL, the shader language the GPU takes (section 7). A probe outside the engine got 24 of the shelf's 25 `each()` files through (appendix). It is not wired into the engine.
+- **TSL as three.js ships it.** Posted code is run once in QuickJS (the JavaScript engine Motolii already runs expressions in), with TSL nodes where the numbers would be. three.js's own `WGSLNodeBuilder` turns the resulting graph into WGSL, the shader language the GPU takes (section 7). A probe outside the engine got 24 of the shelf's 25 `each()` files through (appendix). **Wired into the engine (2026-11-16):** `Script::Script()` calls `tsl_each()` after loading each(), building a WGSL vertex shader and storing it in `Script::wgsl()`. The read endpoint is in `place.cpp` (`doc_laid`); compute shader generation and GPU dispatch remain.
 - **The reads that section 7 adds** (another property, an earlier time, the copy number) go in as TSL's own input nodes. The probe did this for the copy number, time, the copy's place and the sliders. Reading another layer or an earlier time was not in the probe.
 - **A value and a picture are the same thing there.** A formula for a position and a formula for a pixel's colour are both graphs. The same graph can run on the CPU for one layer and on the GPU for 10,000 copies.
 - **It is a faster way to run code that already runs. It is never a condition for running** (6.3). Code that does not become a graph (a simulation that keeps state, a sketch that walks an array) runs as written. If the graph became a condition, each new expression would wait for a developer, which is what the aim forbids.
@@ -634,12 +646,13 @@ The line set before measuring was: a still frame inside 16.7 ms, and making it a
 
 So a text need not be drawn as a shape for a stroke and a trim. That cut is still what points along the letters, and letters as meshes, would need; the reading and the measurements above are for that day. `tvg_text_outline` still has no caller.
 
-## Appendix: where the code stands (2026-11-11), kept apart from the ideal
+## Appendix: where the code stands (updated 2026-11-16)
 
 - `AE.compile` reads an expression once with acorn and rewrites `+ - * /` as vector-aware calls. Each frame the resulting function is called in QuickJS-ng ([ae_expr.h](../../engine/community/after_effects/ae_expr.h)).
-- `each()` is called once per copy per frame (`Script::ask` in [script_runner.cpp](../../engine/community/script_runner/script_runner.cpp)).
+- `each(index, count, time, value)` is called once per copy per frame (`Script::ask` in [script_runner.cpp](../../engine/community/script_runner/script_runner.cpp)). A top-level object literal is wrapped into `each()` automatically.
+- lottie-web's ExpressionManager is pre-compiled to QuickJS bytecode at build time (`lottie_precompile`). Every `.js` file loads it via `JS_ReadObject`, with no per-script parse cost.
 - QuickJS-ng has no JIT. The note [sketch_import_test_record.md](sketch_import_test_record.md) says what that costs has not been measured. It did measure p5 sketches: a median of 0.8 ms a frame, and a median of 20 shapes a frame (at most 7,611). Copies of one solid are capped at 1000.
-- TSL: three.js's own node builder runs in QuickJS as a tool; only the resulting `.wgsl` files are on the shelf ([ARCHITECTURE.md](../ARCHITECTURE.md)).
+- TSL: `tsl_each()` in the engine builds a WGSL vertex shader from each() via three.js's `WGSLNodeBuilder` in QuickJS, stored in `Script::wgsl()`. The GPU compute dispatch is not yet wired (12.4). The Effects shelf already takes pasted TSL materials ([ARCHITECTURE.md](../ARCHITECTURE.md)).
 - Measured on 2026-11-11 (Apple M4, one thread, the engine built that morning, `Script::copies` called straight from the library, 60 frames, empty knobs): `fade_in.js`, `lyric.js` and `Field.js` from `shelves/expressions/` each cost about 0.6 µs a copy, whatever the script. 1,000 copies take 0.57–0.64 ms a frame; 10,000 take 5.7–6.5 ms. The line set before measuring was 4 ms at 10,000 copies, so 1,000 passes and 10,000 does not.
 - Calling the same `each()` 10,000 times inside one JavaScript loop instead of once per copy from C++ was no faster (6.4–7.3 ms). The cost is QuickJS running the code, not the crossing between C++ and JavaScript. Doing the copies in bulk in JavaScript is therefore not enough; what is left is running them on several threads, or the node graph of section 7.
 - Since 2026-11-11 `Script::copies` shares 2,000 copies or more among threads, each asking a `Script` of its own (one QuickJS runtime each), at least 1,000 copies a thread. 10,000 copies now take 1.3–1.4 ms a frame (median; the worst of 60 frames, 3.8–4.6 ms, is probably the first, which makes the helper runtimes, but that frame was not timed alone). This is under the 4 ms line, so the node graph of section 7 is not needed for speed at this scale. A p5.js sketch and a script that reads other layers stay on one thread. The rule that one runtime runs on one thread is the QuickJS manual's, section Runtime and contexts (https://bellard.org/quickjs/quickjs.html); quickjs.h only says to call `JS_UpdateStackTop` when changing thread (commit 746f3be29 named quickjs.h for it, wrongly).
@@ -693,55 +706,14 @@ Sources used for the outside facts:
 [WebAssembly runtimes compared (arXiv)](https://www.arxiv.org/pdf/2405.09213) ·
 [Slang compilation API](https://shader-slanggithubio-aidanfnv-wip.readthedocs.io/en/latest/compilation-api.html).
 
-## Decided (2026-11-16)
+## Changes from the original (2026-11-11) text
 
-### Variable names
+### 2026-11-16
 
-`index`, `count`, `time`, `value`.
-
-- `index` and `count` from Cavalry (the names are already in wide use, so code from Cavalry expressions arrives with them).
-- `time` and `value` from lottie_shim's run context (they are already there, same names as After Effects).
-
-The change from `i`, `n`, `t`: only `index` and `count` are new additions to the run context. `time` and `value` are already there.
-
-### How lottie_shim loads
-
-For every `.js` file, always. The trigger `src.find("AE.compile") != std::string::npos` at `script_runner.cpp:108` is removed.
-
-`.fs` (ISF) and `.wgsl` go through separate paths and are not affected. lottie_shim loads once at startup; it is not a per-frame cost.
-
-### Syntax: `each()` is optional
-
-An object literal at the top level is enough:
-
-```js
-// Works as before:
-function each(index, count, time, value) {
-  return { x: index * 10, rotate: time * 90 };
-}
-
-// Also works:
-{ x: index * 10, rotate: time * 90 }
-```
-
-The engine runs both. Code found on the net that returns a plain object can be pasted without wrapping it.
-
-### Performance: measure first
-
-1. Measure the load time of lottie_shim.
-2. If it is heavy, pre-compile it to QuickJS bytecode with `JS_WriteObject` at build time and load it with `JS_ReadObject`. This eliminates the parse step without changing the JavaScript or the script format.
-3. The naming and syntax changes above are independent of this and do not wait for it.
-
-### TSL path: effect paste is wired, expression card WGSL building wired (2026-11-16)
-
-**Effects shelf — wired.** When pasted code contains `three/tsl`, `NodeMaterial`, `colorNode` or `positionNode`, `engine/community/sites/adapter.cpp:168` returns `"tsl"`. On save, `engine/document/scripts/adapter.cpp` calls `tsl_shelf()` (`engine/community/three/tsl_shelf.h`), which runs the code in QuickJS with three.js's own `WGSLNodeBuilder` and writes the resulting WGSL as a shelf effect. A Three.js material pasted from the web lands in the Effects shelf unchanged.
-
-**Expression card to GPU — WGSL vertex building wired, compute + dispatch pending (2026-11-16).** `Script::Script()` in `script_runner.cpp` calls `tsl_each()` (`engine/community/three/tsl_each.h`) after loading each(). `tsl_each` runs the source in a separate QuickJS context with the TSL node proxies from `engine/community/three_shading_language_to_shelf/from_each.js`, builds a WGSL vertex shader via three.js's `WGSLNodeBuilder`, and stores it in `Script::Own::wgsl`. `Script::wgsl()` exposes it. When the graph cannot be built, `wgsl()` is empty and the CPU path is the fallback.
-
-The read endpoint is in `engine/document/evaluate/place.cpp` (`doc_laid`): on the first lay of a layer, it checks `scs.size() == 1 && !scs.front()->run->wgsl().empty()` as a `gpu_ready` candidate flag, then falls through to `doc_expressions_lay` (CPU). This is the hook the GPU dispatch will replace.
-
-**What remains.** Two pieces, both needed before GPU actually runs:
-1. `from_each.js` needs to also build a *compute* shader (not just a vertex shader). The probe in 12.4 built both in the same run, but reproducing the compute build inside `tsl_each`'s separate QuickJS context fails inside three.js with "cannot read property 'build' of null" — some renderer state the probe prepares before the compute builder is missing here. Needs investigation of the probe's exact setup vs ours.
-2. Once the compute shader exists, `place.cpp`'s `gpu_ready` branch has to use `engine/gpu/compute_interop.h` (`program`, `buffer`, `set`, `run`, `read`) to dispatch it per frame and fill `kept.copies` from the output buffer, skipping `doc_expressions_lay`.
+- **Variable names decided:** `index`, `count`, `time`, `value` (Cavalry + AE). Folded into 5.2 and 12.3.
+- **lottie_shim loads for every `.js`:** the `AE.compile` trigger is removed; bytecode pre-compilation keeps it cheap. Folded into 6.1.
+- **`each()` is optional:** a top-level object literal is wrapped automatically. Folded into 5.2.
+- **Bytecode pre-compilation done:** `lottie_precompile` builds QuickJS bytecode at build time; 20 modules, ~150 KB. Folded into 6.1 and the appendix.
+- **TSL wiring advanced:** WGSL vertex shader builds in the engine (`tsl_each` → `Script::wgsl()`); read endpoint in `place.cpp`. Compute shader generation and GPU dispatch remain. Folded into 12.4 and the appendix.
 
 For debugging the WGSL build, set `MOTOLII_TSL_WHY=1` — `script_runner.cpp` prints `tsl_each`'s `why` to stderr.
