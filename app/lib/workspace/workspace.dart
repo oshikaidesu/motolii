@@ -29,6 +29,8 @@ import 'package:motolii/workspace/state/layers/layer_edits.dart'
 import 'package:motolii/workspace/state/media/media_service.dart'
     show placeFileLayer;
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/effect_credits.dart'
+    show writeCreditsFile;
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart'
@@ -219,8 +221,11 @@ class WorkspaceState extends State<Workspace> {
           : 'Not written: ${stageErrorWithHint(ws)}';
       ws.noticeProgress = null;
     }
-    if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
-      unawaited(_checkFlashes(mp4));
+    if (done) {
+      writeCreditsFile(ws, mp4);
+      if (RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
+        unawaited(_checkFlashes(mp4));
+      }
     }
     return done;
   }

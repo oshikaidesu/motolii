@@ -1,5 +1,7 @@
 // Shelf metadata: author, licence and source of each effect, read from meta.yaml in shelf folders.
 // The engine reads tags from each file's header (isf_tags); this reads what the file header does not carry.
+import 'dart:io';
+
 import 'package:yaml/yaml.dart';
 
 import 'package:motolii/storage/text_file.dart' show readText;
@@ -51,5 +53,31 @@ Map<String, ShelfMeta> _read(String folder) {
   }
 }
 
+/// The metadata of an item looked up by its display name, searching all meta.yaml files under [shelvesDir].
+/// The first call scans the shelves folder once; after that it is a map lookup.
+/// Call [loadAllShelfMeta] with the shelves path before the first lookup by name.
+ShelfMeta? shelfMetaByName(String name) => _byName[name];
+
+final _byName = <String, ShelfMeta>{};
+bool _allLoaded = false;
+
+/// Scans [shelvesDir] for every meta.yaml and caches the entries by name. Called once early (engine_access.dart).
+void loadAllShelfMeta(String shelvesDir) {
+  if (_allLoaded) return;
+  _allLoaded = true;
+  try {
+    for (final d in Directory(shelvesDir).listSync(recursive: true)) {
+      if (d is! File || !d.path.endsWith('/meta.yaml')) continue;
+      final folder = d.parent.path;
+      final map = _cache.putIfAbsent(folder, () => _read(folder));
+      _byName.addAll(map);
+    }
+  } catch (_) {}
+}
+
 /// Drops the cache so the next lookup re-reads from disk. Called when a meta.yaml is known to have changed.
-void clearShelfMetaCache() => _cache.clear();
+void clearShelfMetaCache() {
+  _cache.clear();
+  _byName.clear();
+  _allLoaded = false;
+}

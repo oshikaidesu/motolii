@@ -2,6 +2,7 @@
 // and the app keep their files in. The calls themselves are made in the state services beside this.
 import 'package:motolii/bridge/engine_paths.dart'
     show motoliiDir, motoliiOwn, motoliiShelves;
+import 'package:motolii/storage/shelf_meta.dart' show loadAllShelfMeta;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Whether a project is open in the engine.
@@ -13,5 +14,8 @@ String ownFolder() => motoliiOwn;
 /// The engine's folder (engine/), with its third-party files.
 String engineFolder() => motoliiDir;
 
-/// The shelves that ship with Motolii.
-String shelvesFolder() => motoliiShelves;
+/// The shelves that ship with Motolii. Also loads all meta.yaml files the first time it is called.
+String shelvesFolder() {
+  loadAllShelfMeta(motoliiShelves);
+  return motoliiShelves;
+}

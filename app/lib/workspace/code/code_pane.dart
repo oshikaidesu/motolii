@@ -324,6 +324,7 @@ class _Cell extends StatefulWidget {
 
 class _CellState extends State<_Cell> {
   bool _tagging = false;
+  String _typed = '';
 
   /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
@@ -489,30 +490,69 @@ class _CellState extends State<_Cell> {
     ),
   );
 
-  Widget _tagField() => SizedBox(
-    width: Shape.z(100),
-    height: Shape.s(16),
-    child: TypedField(
-      key: ValueKey('code-cell-tag-input:${widget.title}'),
-      text: '',
-      style: TextStyles.label(Grey.g91),
-      cursor: Grey.g76,
-      take: true,
-      escapes: true,
-      onDone: (said) {
-        if (said != null) {
-          final tag = said.trim().toLowerCase().replaceFirst(RegExp(r'^#'), '');
-          if (tag.isNotEmpty) {
-            ShelfTags.shared.setOwn('Effects', widget.title, {
-              ...ShelfTags.shared.ownOf('Effects', widget.title),
-              tag,
-            });
-          }
-        }
-        setState(() => _tagging = false);
-      },
-    ),
-  );
+  void _addTag(String text) {
+    final tag = text.trim().toLowerCase().replaceFirst(RegExp(r'^#'), '');
+    if (tag.isNotEmpty) {
+      ShelfTags.shared.setOwn('Effects', widget.title, {
+        ...ShelfTags.shared.ownOf('Effects', widget.title),
+        tag,
+      });
+    }
+    setState(() {
+      _tagging = false;
+      _typed = '';
+    });
+  }
+
+  Widget _tagField() {
+    final done = ShelfTags.shared.completing('Effects', _typed);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: Shape.z(100),
+          height: Shape.s(16),
+          child: TypedField(
+            key: ValueKey('code-cell-tag-input:${widget.title}'),
+            text: '',
+            style: TextStyles.label(Grey.g91),
+            cursor: Grey.g76,
+            take: true,
+            escapes: true,
+            onPick: (v) => setState(() => _typed = v.text),
+            onDone: (said) =>
+                said != null ? _addTag(said) : setState(() => _tagging = false),
+          ),
+        ),
+        if (done.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(top: Shape.s(2)),
+            child: Wrap(
+              spacing: Shape.s(3),
+              runSpacing: Shape.s(2),
+              children: [
+                for (final t in done)
+                  Pressable(
+                    onTap: () => _addTag(t),
+                    builder: (_, h) => Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(5),
+                        vertical: Shape.s(1),
+                      ),
+                      decoration: BoxDecoration(
+                        color: h ? Grey.g26 : Grey.g20,
+                        borderRadius: BorderRadius.circular(Shape.s(3)),
+                      ),
+                      child: Text(t, style: TextStyles.label(Grey.g63)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Column(

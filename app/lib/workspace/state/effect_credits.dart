@@ -2,6 +2,7 @@
 // The log lists each unique effect once, grouped by licence, so the user can include it with an exported video.
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/storage/shelf_disk.dart' show keepText;
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 import 'package:motolii/workspace/state/workspace_controller.dart'
     show WorkspaceController;
@@ -42,6 +43,17 @@ List<EffectCredit> projectCredits(Motolii doc) {
     }
   }
   return credits;
+}
+
+/// Writes a credits file beside the exported video. Called from the state layer after a successful export.
+void writeCreditsFile(WorkspaceController ws, String videoPath) {
+  final m = ws.inside;
+  if (m == null) return;
+  final credits = projectCredits(m);
+  if (credits.isEmpty) return;
+  final txt =
+      '${videoPath.substring(0, videoPath.lastIndexOf('.'))}_credits.txt';
+  keepText(txt, creditsText(credits));
 }
 
 /// The credits as a readable text, grouped by licence. Effects with no metadata are listed under "Unknown".

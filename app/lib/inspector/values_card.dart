@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/card_meta_row.dart';
 import 'package:motolii/inspector/card_words.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_grid.dart';
@@ -167,6 +168,7 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
+        CardMetaRow(card.name),
         ?host?.body(card),
         if (heroes.isNotEmpty) ParameterGrid(heroes),
         // The fold row shows only when something sits under it: the card's own
