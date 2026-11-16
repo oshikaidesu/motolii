@@ -218,7 +218,7 @@ class EffectPlacesState extends State<EffectPlaces> {
       'Recent' => ('Recent', AppGlyphs.time, p[place]),
       '★' => ('Favorites', AppGlyphs.star, p[place]),
       'In video' => ('In This Video', AppGlyphs.video, p[place]),
-      'Mine' => ('Mine', AppGlyphs.create, p[place]),
+      'Mine' => ('Mine', AppGlyphs.person, p[place]),
       'Packs' => ('Packs', AppGlyphs.folder, widget.packs.length),
       _ when deck != null => (
         deck.name,

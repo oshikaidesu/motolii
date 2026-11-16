@@ -52,7 +52,8 @@ enum AppGlyphs implements GlyphKind {
   blend,
   align,
   tools,
-  reload;
+  reload,
+  person;
 
   @override
   String get skin => 'dock.$name';
@@ -152,6 +153,10 @@ enum AppGlyphs implements GlyphKind {
         );
         cv.drawLine(p(.84, .1), p(.82, .34), st);
         cv.drawLine(p(.82, .34), p(.58, .3), st);
+      // A person: head circle and shoulder arc, as macOS Contacts uses.
+      case AppGlyphs.person:
+        cv.drawCircle(p(.5, .32), w * .16, st);
+        cv.drawArc(r(.16, .56, .68, .52), -math.pi, math.pi, false, st);
       // Code's angle brackets with a slash.
       case AppGlyphs.code:
         cv.drawLine(p(.34, .3), p(.12, .5), st);
