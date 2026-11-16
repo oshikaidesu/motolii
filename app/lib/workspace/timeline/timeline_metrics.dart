@@ -1,5 +1,6 @@
 // The sizes of the timeline's parts, scaled by the skin.
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/gestures.dart';
 
 /// The timeline panel's own sizes.
 abstract final class TimelineMetrics {
@@ -12,8 +13,9 @@ abstract final class TimelineMetrics {
   static double get labelMin => Shape.z(180.0);
   static double get labelMax => Shape.z(420.0);
 
-  /// The width of the divider's grab area between the names and the tracks.
-  static double get grip => Shape.z(8.0);
+  /// The width of the divider's grab area between the names and the tracks
+  /// (`Gestures.grab`).
+  static double get grip => Shape.z(Gestures.grab);
   static double get ruler => Shape.z(30.0);
   static double get row => Shape.z(24.0);
   static double get overview => Shape.z(12.0);
