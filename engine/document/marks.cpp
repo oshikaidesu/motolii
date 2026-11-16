@@ -29,10 +29,12 @@ double doc_layer_ends(Doc& d, int layer) {
 double doc_seconds(Doc& d) {
   double all = 0.0;
   for (const auto& [layer, t] : d.on_stage.shown) {
+    const auto fs = d.on_stage.file_seconds.find(layer);
     const double own = t.video ? (double)t.video->seconds
                        : t.drawn
                            ? (t.drawn->sketch ? 0.0 : (double)t.drawn->seconds)
                        : t.solid ? (double)t.solid->seconds
+                       : fs != d.on_stage.file_seconds.end() ? (double)fs->second
                                  : 0.0,
                  lasts = doc_number(d, layer, "duration", 0, own);
     // Here `lasts` defaults to `own` (the video/image/solid's intrinsic length,

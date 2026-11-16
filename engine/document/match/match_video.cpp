@@ -85,11 +85,14 @@ void match_video(LayerBuild& build) {
       s, (moshed.empty() ? file : moshed).c_str(), mat4f{}, 1.f, (float)from,
       length < 0 ? -1.f : (float)(from + length * std::fabs(speed)),
       (float)speed, lay, fx.lit, fx.wear);
-  if (!made.video) why = video_trouble;
-  // When not set, keying is on if the video has a background of its own.
-  else if (const double keyed = build.number("keyed", -1);
-           keyed != 0.0)
-    key_own(made.video, keyed > 0.5);
+  if (!made.video) {
+    why = video_trouble;
+  } else {
+    d.on_stage.file_seconds[layer] = made.video->seconds;
+    // When not set, keying is on if the video has a background of its own.
+    if (const double keyed = build.number("keyed", -1); keyed != 0.0)
+      key_own(made.video, keyed > 0.5);
+  }
   // The document sets its time and starts its sound; the video does not
   // advance by itself.
   if (made.video) s.playing.erase(made.video);

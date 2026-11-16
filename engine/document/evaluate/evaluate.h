@@ -115,6 +115,10 @@ struct DocOnStage {
   // Each freehand stroke's outline as AbsentMotion's drawing effects last made
   // it, together with what it was made from. See doc_evaluate.
   std::map<int, std::pair<std::string, std::string>> drawingKept;
+  // The last successfully loaded duration of each video layer, in seconds of
+  // display time. Kept across frames so that doc_seconds can use it when a
+  // file is missing (deleted or moved after the layer was loaded).
+  std::map<int, float> file_seconds;
   // The length of the project as last shown. Waves, noise and drifts go round
   // in it a whole number of times, so that an exported video loops.
   double round = 8.0;
