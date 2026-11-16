@@ -63,6 +63,45 @@ List<(int, String)> layersShowingFileOf(WorkspaceController ws, int shape) {
   ];
 }
 
+/// Places [files] on the canvas as new layers at the current time, the same
+/// way the Media shelf does. A still image lasts [stillSeconds]. Films and
+/// still JPEG/PNG/WebP/BMP/HEIC are fitted to the canvas. Trouble per file is
+/// reported through [refused]; the made layer ids through [placed]. For file
+/// drops from the OS (Finder / Explorer) and paste-from-OS-clipboard.
+Future<void> placeDroppedFiles(
+  WorkspaceController ws,
+  List<String> files, {
+  double stillSeconds = 2.0,
+  void Function(String file, String why)? refused,
+  void Function(List<int> placed)? placed,
+}) async {
+  if (files.isEmpty) return;
+  final lengths = [
+    for (final (i, s) in (await mediaLengthsOf(ws, files)).indexed)
+      mediaKindOf(ws, files[i]) == 'picture' ? stillSeconds : s,
+  ];
+  final fits = [
+    for (final f in files)
+      mediaKindOf(ws, f) == 'film' ||
+          mediaKindOf(ws, f) == 'picture' &&
+              RegExp(
+                r'\.(jpe?g|png|webp|bmp|heic)$',
+                caseSensitive: false,
+              ).hasMatch(f),
+  ];
+  layFilesInOrder(
+    ws,
+    files,
+    lengths,
+    fits,
+    refused: (f, why) => refused?.call(f, why),
+    placed: (ids) {
+      ws.pickMany([for (final i in ids) '$i']);
+      placed?.call(ids);
+    },
+  );
+}
+
 void layFilesInOrder(
   WorkspaceController ws,
   List<String> files,
