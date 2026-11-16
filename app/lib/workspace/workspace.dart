@@ -8,6 +8,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
+import 'package:super_clipboard/super_clipboard.dart' show DataReader, Formats;
+import 'package:super_drag_and_drop/super_drag_and_drop.dart'
+    show DropOperation, DropRegion;
 
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
@@ -25,6 +28,8 @@ import 'package:motolii/workspace/state/document/command_writes.dart'
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
+import 'package:motolii/workspace/state/media/media_service.dart'
+    show placeDroppedFiles;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/project_session.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart'
@@ -344,33 +349,55 @@ class WorkspaceState extends State<Workspace> {
   Widget build(BuildContext context) {
     final window = WorkspaceScope(
       ws: ws,
-      child: Focus(
-        focusNode: _windowFocus,
-        autofocus: true,
-        child: ColoredBox(
-          color: WindowTokens.ground,
-          child: Stack(
-            children: [
-              Overlay(initialEntries: [_entry]),
-              if (home && documentPath != null && projectOpen(ws))
-                Positioned.fill(
-                  child: HomeWindow(
-                    folder: parentFolderOf(documentPath!),
-                    lib: engineLibPath(ws),
-                    open: documentPath!,
-                    onOpen: (d) {
-                      setState(() => home = false);
-                      if (d != documentPath) open(d);
-                    },
-                    onExport: _exportFrom,
-                    onNew: () {
-                      setState(() => home = false);
-                      commands()['file.new']!();
-                    },
-                    onClose: () => setState(() => home = false),
+      child: DropRegion(
+        formats: const [Formats.fileUri],
+        onDropOver: (_) => DropOperation.copy,
+        onPerformDrop: (event) async {
+          final files = <String>[];
+          for (final item in event.session.items) {
+            final reader = item.dataReader;
+            if (reader == null) continue;
+            final uri = await _readUri(reader);
+            if (uri != null && uri.scheme == 'file') {
+              files.add(uri.toFilePath());
+            }
+          }
+          if (files.isNotEmpty) {
+            placeDroppedFiles(
+              ws,
+              files,
+              refused: (file, why) => ws.notice = 'Not taken: $file · $why',
+            );
+          }
+        },
+        child: Focus(
+          focusNode: _windowFocus,
+          autofocus: true,
+          child: ColoredBox(
+            color: WindowTokens.ground,
+            child: Stack(
+              children: [
+                Overlay(initialEntries: [_entry]),
+                if (home && documentPath != null && projectOpen(ws))
+                  Positioned.fill(
+                    child: HomeWindow(
+                      folder: parentFolderOf(documentPath!),
+                      lib: engineLibPath(ws),
+                      open: documentPath!,
+                      onOpen: (d) {
+                        setState(() => home = false);
+                        if (d != documentPath) open(d);
+                      },
+                      onExport: _exportFrom,
+                      onNew: () {
+                        setState(() => home = false);
+                        commands()['file.new']!();
+                      },
+                      onClose: () => setState(() => home = false),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -386,6 +413,19 @@ class WorkspaceState extends State<Workspace> {
       ),
     );
   }
+}
+
+/// Pulls one file URI out of a drop item's data reader. Returns null when the
+/// reader has no file URI to offer.
+Future<Uri?> _readUri(DataReader reader) {
+  final c = Completer<Uri?>();
+  final progress = reader.getValue<Uri>(
+    Formats.fileUri,
+    c.complete,
+    onError: c.completeError,
+  );
+  if (progress == null) c.complete(null);
+  return c.future;
 }
 
 class _Window extends StatelessWidget {
