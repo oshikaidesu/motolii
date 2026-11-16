@@ -28,8 +28,9 @@ if (typeof globalThis.document === 'undefined') globalThis.document = null;
 
 const FPS = 60; // motolii's fixed frame rate (WorkspaceController.fps)
 
-function makeComp(spec) {
+function makeComp(spec, layers) {
   spec = spec || {};
+  const layerList = layers || spec.layers || [];
   const comp = {
     name: spec.name || 'Comp',
     width: spec.width || 1920,
@@ -37,9 +38,10 @@ function makeComp(spec) {
     displayStartTime: 0,
     renderedFrame: 0,
     pixelRatio: 1,
-    layers: spec.layers || [],
+    layers: layerList,
     hierarchy: [],
     frameDuration: 1 / FPS,
+    numLayers: spec.numLayers !== undefined ? spec.numLayers : layerList.length,
   };
   comp.globalData = {
     frameRate: FPS,
@@ -51,6 +53,80 @@ function makeComp(spec) {
     registerExpressionProperty() {},
   };
   return comp;
+}
+
+// Motolii-style compInterface: callable (thisComp("Video")) and also exposes
+// layer(nameOrIndex), width/height/numLayers. Returns the raw layer object
+// the recipe passed in (so thisComp.layer("Video").sampleImage calls the
+// recipe-supplied sampleImage directly, matching ae_prelude's behaviour).
+function makeCompInterface(comp) {
+  // AE-spec defaults for the handful of layer calls expressions use. When an
+  // expression omits an argument, AE fills it in (sampleImage radius = half a
+  // pixel, postEffect = true, t = current time; fromWorld adds a z = 0 and
+  // defaults t to current time). lottie doesn't do this — the raw layer
+  // object a recipe passed to AE.comp sees undefineds otherwise.
+  function nowSeconds() {
+    return comp.renderedFrame / (comp.globalData.frameRate || 60);
+  }
+  function wrapLayer(layer) {
+    if (!layer || typeof layer !== 'object') return layer;
+    const wrapped = Object.create(layer);
+    if (typeof layer.sampleImage === 'function') {
+      wrapped.sampleImage = function (point, radius, postEffect, t) {
+        return layer.sampleImage(
+          point,
+          radius === undefined ? [0.5, 0.5] : radius,
+          postEffect === undefined ? true : postEffect,
+          t === undefined ? nowSeconds() : t
+        );
+      };
+    }
+    // In AE, world == comp for a 2D layer. If the layer only has one of the
+    // pair, use it for both (matches ae_prelude's `L.fromComp = L.fromWorld`).
+    const fw = layer.fromWorld || layer.fromComp;
+    const tw = layer.toWorld || layer.toComp;
+    if (typeof fw === 'function') {
+      const call = function (vec, t) {
+        const v = Array.isArray(vec)
+          ? [vec[0] || 0, vec[1] || 0, vec[2] || 0]
+          : vec;
+        return fw(v, t === undefined ? nowSeconds() : t);
+      };
+      wrapped.fromWorld = call;
+      wrapped.fromComp = call;
+    }
+    if (typeof tw === 'function') {
+      const call = function (vec, t) {
+        const v = Array.isArray(vec)
+          ? [vec[0] || 0, vec[1] || 0, vec[2] || 0]
+          : vec;
+        return tw(v, t === undefined ? nowSeconds() : t);
+      };
+      wrapped.toWorld = call;
+      wrapped.toComp = call;
+    }
+    return wrapped;
+  }
+  const api = {
+    layer(nameOrIndex) {
+      if (typeof nameOrIndex === 'string') {
+        return wrapLayer(
+          comp.layers.find((l) => l && l.name === nameOrIndex) || null
+        );
+      }
+      if (typeof nameOrIndex === 'number') {
+        return wrapLayer(comp.layers[nameOrIndex - 1] || null);
+      }
+      return null;
+    },
+    width: comp.width,
+    height: comp.height,
+    numLayers: comp.numLayers,
+    displayStartTime: comp.displayStartTime,
+    pixelAspect: 1,
+    compName: comp.name,
+  };
+  return api;
 }
 
 function makeElem(comp, spec) {
@@ -133,14 +209,26 @@ function compile(src) {
     const value = ctx && ctx.value !== undefined ? ctx.value : 0;
     const property = makeProperty(comp, elem, value);
     // lottie's executeExpression reads elem.layerInterface and
-    // elem.comp.compInterface. Build the real interfaces from lottie.
+    // elem.comp.compInterface. We provide motolii-flavored interfaces that
+    // keep recipe-passed layer objects reachable (lottie's own CompInterface
+    // wraps each layer in its own structure, breaking AE.comp(spec, [layer])
+    // recipes).
+    comp.compInterface = makeCompInterface(comp);
     try {
       elem.layerInterface = LayerExpressionInterface(elem);
-      comp.compInterface = CompExpressionInterface(comp);
     } catch (e) {
       if (typeof globalThis.print === 'function') {
-        globalThis.print('LOTTIE iface err: ' + e + ' stack=' + (e && e.stack));
+        globalThis.print('LOTTIE layerIface err: ' + e + ' stack=' + (e && e.stack));
       }
+      // Minimal fallback: expressions reach .text / .toWorld through this.
+      elem.layerInterface = {
+        text: {},
+        toWorld: (p) => p,
+        fromWorld: (p) => p,
+        toComp: (p) => p,
+        fromComp: (p) => p,
+        mask: null,
+      };
     }
     // `this` inside initiateExpression is the property (reads this.data.hd
     // and this.comp). lottie assumes the caller binds it.
