@@ -51,20 +51,28 @@ Widget? stageHeldSays({required StageDrag drag, required Offset? last}) {
   final says = drag.heldSays(h.by);
   if (says == null) return null;
   return Positioned(
-    left: last.dx + 16,
-    top: last.dy + 16,
+    left: last.dx + 14,
+    top: last.dy + 14,
     child: IgnorePointer(
       child: Container(
         key: const ValueKey('ws-held-says'),
         padding: EdgeInsets.symmetric(
-          horizontal: Shape.s(6),
-          vertical: Shape.s(3),
+          horizontal: Shape.s(7),
+          vertical: Shape.s(4),
         ),
         decoration: BoxDecoration(
-          color: WindowTokens.raised,
-          borderRadius: Shape.round(3),
+          // Dark pill with a thin accent-tinted outline, like Figma's drag tag: reads over any stage colour.
+          color: Grey.g10.withValues(alpha: .92),
+          borderRadius: Shape.round(4),
+          border: Border.all(color: WindowTokens.line),
         ),
-        child: Text(says, style: TextStyles.micro(Grey.g95)),
+        child: Text(
+          says,
+          style: TextStyles.micro(Grey.g95).copyWith(
+            // Tabular figures so the numbers do not jiggle as they change.
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
       ),
     ),
   );
