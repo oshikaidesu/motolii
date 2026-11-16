@@ -117,7 +117,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     'frame.next': () => step(1),
     'frame.previousStop': () => hop(-1),
     'frame.nextStop': () => hop(1),
-    'frame.back10': () => step(-10),
-    'frame.forward10': () => step(10),
+    'frame.back10': () => step(-Gestures.nudgeShift),
+    'frame.forward10': () => step(Gestures.nudgeShift),
   };
 }
