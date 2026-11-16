@@ -141,11 +141,13 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
   // A transition put on at the layer's own start comes in instead of going out.
   // Premiere Pro does the same: a transition on the head edge of a clip brings
   // the clip in, and one on its tail edge takes it out. "At the start" means
-  // within half a frame at the stage's 60 frames per second; see RATE in
-  // entry/render_thread.h.
+  // within half a frame of the document's frame rate (B07): at 24fps a frame
+  // is 1/24 s, and the tolerance was 0.5/60 s before, so landing on the head
+  // edge at 24fps missed by 2.5 times the frame width.
+  const double rate = doc_number(d, 0, "frame_rate", 0, 60);
   const bool in =
       !std::isnan(now) &&
-      std::fabs(now - doc_number(d, layer, "start", 0, 0)) < 0.5 / 60.0;
+      std::fabs(now - doc_number(d, layer, "start", 0, 0)) < 0.5 / rate;
   if (!std::isnan(now))
     if (const DocScript* sc = doc_script_of(d, file))
       if (std::any_of(
