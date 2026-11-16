@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart' as fce;
 import 'package:highlight/languages/glsl.dart';
@@ -113,39 +114,50 @@ class _CodeFieldState extends State<CodeField> {
   Widget build(BuildContext context) {
     final size = TextStyles.value().fontSize!;
     final theme = _buildTheme();
-    final field = fce.CodeTheme(
-      data: theme,
-      child: fce.CodeField(
-        controller: _controller,
-        focusNode: _focus,
-        onChanged: _onChanged,
-        wrap: !widget.fit,
-        textStyle: TextStyle(
-          fontSize: size,
-          fontFamily: TextStyles.mono,
-          height: _lineHeight,
-          color: Grey.g91,
-        ),
-        expands: !widget.fit,
-        maxLines: widget.fit ? null : null,
-        minLines: widget.fit ? 1 : null,
-        background: WindowTokens.well,
-        cursorColor: Grey.g91,
-        gutterStyle: fce.GutterStyle(
-          showErrors: false,
-          showFoldingHandles: false,
-          showLineNumbers: true,
-          margin: Shape.s(4),
+    final field = Material(
+      type: MaterialType.transparency,
+      child: fce.CodeTheme(
+        data: theme,
+        child: fce.CodeField(
+          controller: _controller,
+          focusNode: _focus,
+          onChanged: _onChanged,
+          wrap: !widget.fit,
           textStyle: TextStyle(
             fontSize: size,
             fontFamily: TextStyles.mono,
             height: _lineHeight,
-            color: Grey.g38,
+            color: Grey.g91,
+          ),
+          maxLines: null,
+          minLines: widget.fit ? 1 : null,
+          background: WindowTokens.well,
+          cursorColor: Grey.g91,
+          gutterStyle: fce.GutterStyle(
+            showErrors: false,
+            showFoldingHandles: false,
+            showLineNumbers: true,
+            margin: Shape.s(4),
+            textStyle: TextStyle(
+              fontSize: size,
+              fontFamily: TextStyles.mono,
+              height: _lineHeight,
+              color: Grey.g38,
+            ),
           ),
         ),
       ),
     );
-    if (!widget.fit) return field;
+    if (!widget.fit) {
+      return LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: field,
+          ),
+        ),
+      );
+    }
     final lines = '\n'.allMatches(_controller.text).length + 2;
     return SizedBox(
       height: lines * size * _lineHeight + Shape.s(12),
