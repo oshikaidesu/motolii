@@ -5,23 +5,32 @@
 // one text, and typing here moves the card's sliders. A cell is as tall as its code and the tab scrolls, as a
 // notebook's cells do (Jupyter). Any number of cells stay open; pressing a cell's head folds it.
 // "Edit code" on a card in the Inspector unfolds its cell and scrolls to it (EffectCode.show).
+// A cell is a card, so its head does what the card's head does in the Inspector: dragging it moves the effect up or
+// down the layer's stack (fx_move), the eye switches it off, the bin takes it away. The strip under a cell's code
+// makes it taller or shorter; the height is kept with the window's view, as which cells are folded is.
 // Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
 // first one open. The word "Functions" in the head hides and shows it.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/values_card.dart' show CardBin, CardGrip;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/text_file.dart' show readText;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/code/functions_panel.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
+import 'package:motolii/workspace/shelf/code_field.dart' show CodeField;
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/state/engine_access.dart';
+import 'package:motolii/workspace/state/inspector/inspector_actions.dart'
+    show effectTitles, effectsOff, moveEffect, removeCard, toggleEffect;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -33,6 +42,9 @@ class CodePane extends StatefulWidget {
 }
 
 class _CodePaneState extends State<CodePane> {
+  /// The view state that keeps the height each cell was dragged to.
+  static const _heights = 'code.heights';
+
   /// One key for each cell on screen, by layer and card, so a cell that was asked for can be scrolled to.
   final _cells = <String, GlobalKey>{};
 
@@ -66,14 +78,30 @@ class _CodePaneState extends State<CodePane> {
       );
     }
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull;
+    // The height each cell was dragged to, by layer and card; a cell not in it is as tall as its code.
+    final heights = ws.viewOf(_heights, const <String, double>{});
     final cells = [
       for (final c in valueCards(ws, ws.selected) ?? const <CardDeclaration>[])
-        if (EffectCode.ofCard(ws, t, c.name, [
-              for (final p in c.params) p.id,
-            ], fit: true)
+        if (EffectCode.ofCard(
+              ws,
+              t,
+              c.name,
+              [for (final p in c.params) p.id],
+              fit: true,
+              height: heights['$t/${c.name}'],
+              onHeight: (h) => ws.setView(
+                _heights,
+                h == null
+                    ? ({...heights}..remove('$t/${c.name}'))
+                    : {...heights, '$t/${c.name}': h},
+              ),
+            )
             case final code?)
-          (c.name, code),
+          (c.name, code, [for (final p in c.params) p.id]),
     ];
+    // The layer's effects in the order they act. A cell of one of them can be moved, switched off and taken away,
+    // as its card can in the Inspector; the Script card's cell is not among them.
+    final stack = effectTitles(ws, t), off = effectsOff(ws, t);
     final folded = ws.viewOf(EffectCode.folded, const <String>{});
     final asked = ws.viewOf<(String, int)?>(EffectCode.asked, null);
     if (asked != null && asked != _shown) {
@@ -82,7 +110,7 @@ class _CodePaneState extends State<CodePane> {
     }
     // The cell the lists beside the code are for: the one last asked for if it is open, else the first open one.
     final open = [
-      for (final (title, code) in cells)
+      for (final (title, code, _) in cells)
         if (!folded.contains(title)) (title, code),
     ];
     final beside =
@@ -135,19 +163,40 @@ class _CodePaneState extends State<CodePane> {
                         const _Said(
                           'Nothing on this layer has code yet. Put an expression or an effect on it from Create or Effects, paste code, or start an empty expression below.',
                         ),
-                      for (final (title, code) in cells)
-                        _Cell(
-                          title,
-                          code,
-                          key: _cells.putIfAbsent('$t/$title', GlobalKey.new),
-                          open: !folded.contains(title),
-                          onFold: () => ws.setView(
-                            EffectCode.folded,
-                            folded.contains(title)
-                                ? ({...folded}..remove(title))
-                                : {...folded, title},
-                          ),
-                        ),
+                      // Dragging a cell's head to another's place moves its effect there in the layer's stack.
+                      ReorderableList(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: cells.length,
+                        onReorderItem: (from, to) {
+                          final a = stack.indexOf(cells[from].$1),
+                              b = stack.indexOf(cells[to].$1);
+                          if (a < 0 || b < 0 || a == b) return;
+                          moveEffect(ws, t, cells[from].$1, b - a);
+                        },
+                        itemBuilder: (context, i) {
+                          final (title, code, names) = cells[i];
+                          final effect = stack.contains(title);
+                          return _Cell(
+                            title,
+                            code,
+                            key: _cells.putIfAbsent('$t/$title', GlobalKey.new),
+                            open: !folded.contains(title),
+                            onFold: () => ws.setView(
+                              EffectCode.folded,
+                              folded.contains(title)
+                                  ? ({...folded}..remove(title))
+                                  : {...folded, title},
+                            ),
+                            at: effect && stack.length > 1 ? i : null,
+                            off: off.contains(title),
+                            onEye: effect
+                                ? () => toggleEffect(ws, t, title)
+                                : null,
+                            onRemove: () => removeCard(ws, t, title, names),
+                          );
+                        },
+                      ),
                       _AddRow('New expression', _why, add),
                     ],
                   ),
@@ -157,8 +206,12 @@ class _CodePaneState extends State<CodePane> {
                 Container(width: 1, color: WindowTokens.line),
                 SizedBox(
                   width: Shape.z(300),
-                  child: FunctionsPanel(
-                    beside == null ? null : EffectCode.source(beside.$2.word),
+                  // A press in the list writes into the code, so it does not take the keys from it (CodeField).
+                  child: TapRegion(
+                    groupId: CodeField,
+                    child: FunctionsPanel(
+                      beside == null ? null : EffectCode.source(beside.$2.word),
+                    ),
                   ),
                 ),
               ],
@@ -178,11 +231,23 @@ class _Cell extends StatelessWidget {
     super.key,
     required this.open,
     required this.onFold,
+    required this.at,
+    required this.off,
+    required this.onEye,
+    required this.onRemove,
   });
   final String title;
   final EffectCode code;
   final bool open;
   final VoidCallback onFold;
+
+  /// The cell's place among the cells when its head can be dragged to another place; null when it cannot.
+  final int? at;
+
+  /// Whether the card is switched off, and what switches it on and off; null for a card with no eye (the Script card).
+  final bool off;
+  final VoidCallback? onEye;
+  final VoidCallback onRemove;
 
   /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
@@ -204,32 +269,74 @@ class _Cell extends StatelessWidget {
     };
   }
 
+  /// The head: a press folds the cell, a drag moves it. Its eye and bin are the card's in the Inspector.
+  Widget _head() => Container(
+    height: Shape.z(26),
+    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
+    decoration: BoxDecoration(
+      color: WindowTokens.card,
+      border: Border(top: BorderSide(color: WindowTokens.line)),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Pressable(
+            onTap: onFold,
+            builder: (_, hot) => Row(
+              key: ValueKey('code-cell-head:$title'),
+              children: [
+                DisclosureTriangle(open: open, hot: hot),
+                SizedBox(width: Shape.s(6)),
+                Flexible(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.name(
+                      off ? Grey.g56 : (hot ? Grey.g95 : Grey.g91),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (!open) ExpressionResult.mark(EffectCode.source(code.word)),
+                Text(_on, style: TextStyles.micro(Grey.g56)),
+                SizedBox(width: Shape.s(10)),
+              ],
+            ),
+          ),
+        ),
+        if (onEye case final eye?)
+          Pressable(
+            key: ValueKey('code-cell-${off ? 'show' : 'hide'}:$title'),
+            onTap: eye,
+            builder: (_, h) => Padding(
+              padding: EdgeInsets.only(right: Shape.s(6)),
+              child: Glyph(
+                off ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
+                size: 12,
+                color: h ? Grey.g95 : Grey.g56,
+                fade: true,
+              ),
+            ),
+          ),
+        CardBin(onRemove, key: ValueKey('code-cell-remove:$title')),
+        if (at != null) const CardGrip(),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Pressable(
-        onTap: onFold,
-        builder: (_, hot) => Container(
-          key: ValueKey('code-cell-head:$title'),
-          height: Shape.z(26),
-          padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
-          decoration: BoxDecoration(
-            color: WindowTokens.card,
-            border: Border(top: BorderSide(color: WindowTokens.line)),
-          ),
-          child: Row(
-            children: [
-              DisclosureTriangle(open: open, hot: hot),
-              SizedBox(width: Shape.s(6)),
-              Text(title, style: TextStyles.name(hot ? Grey.g95 : Grey.g91)),
-              const Spacer(),
-              if (!open) ExpressionResult.mark(EffectCode.source(code.word)),
-              Text(_on, style: TextStyles.micro(Grey.g56)),
-            ],
-          ),
-        ),
-      ),
+      if (at case final i?)
+        ReorderableDragStartListener(
+          key: ValueKey('code-cell-drag:$title'),
+          index: i,
+          child: _head(),
+        )
+      else
+        _head(),
       if (open)
         Padding(
           padding: EdgeInsets.fromLTRB(

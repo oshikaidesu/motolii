@@ -162,19 +162,7 @@ class ValuesCard extends StatelessWidget {
                     data: card.name,
                     axis: Axis.vertical,
                     feedback: EffectDragGhost(card),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.grab,
-                      child: SizedBox(
-                        width: Shape.z(16),
-                        height: Shape.z(16),
-                        child: CustomPaint(
-                          painter: Draw(
-                            (c, s) => _drawGrip(c, s, Grey.g56),
-                            Grey.g56,
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: const CardGrip(),
                   ),
               ],
             ),
@@ -308,15 +296,41 @@ void _drawBin(Canvas c, Size s, Color color) {
 }
 
 /// The bin at the head of an effect's card: a press takes the card away.
-Widget _bin(CardActions actions, String name, List<String> params) => Pressable(
+Widget _bin(CardActions actions, String name, List<String> params) => CardBin(
+  () => actions.onCardRemove!(name, params),
   key: ValueKey('card-remove:$name'),
-  onTap: () => actions.onCardRemove!(name, params),
-  builder: (_, h) => Padding(
-    padding: EdgeInsets.only(right: Shape.s(6)),
-    child: glyph(
-      Shape.z(12),
-      (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
-      h,
-    ),
-  ),
 );
+
+/// The bin at the head of a card, or of its code's cell in the Code tab: a press takes the card away.
+class CardBin extends StatelessWidget {
+  const CardBin(this.onTap, {super.key});
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Pressable(
+    onTap: onTap,
+    builder: (_, h) => Padding(
+      padding: EdgeInsets.only(right: Shape.s(6)),
+      child: glyph(
+        Shape.z(12),
+        (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
+        h,
+      ),
+    ),
+  );
+}
+
+/// The ≡ grip at the head of a card, or of its code's cell: dragging by it moves the effect up or down its stack.
+class CardGrip extends StatelessWidget {
+  const CardGrip({super.key});
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.grab,
+    child: SizedBox(
+      width: Shape.z(16),
+      height: Shape.z(16),
+      child: CustomPaint(
+        painter: Draw((c, s) => _drawGrip(c, s, Grey.g56), Grey.g56),
+      ),
+    ),
+  );
+}

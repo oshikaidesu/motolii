@@ -27,6 +27,8 @@ class EffectCode extends StatefulWidget {
     this.slot = 'fx',
     this.shelf = true,
     this.fit = false,
+    this.height,
+    this.onHeight,
     super.key,
   });
   final WorkspaceController ws;
@@ -44,6 +46,10 @@ class EffectCode extends StatefulWidget {
 
   /// Whether the editor is as tall as its code (CodeField.fit), not as tall as the room it is given.
   final bool fit;
+
+  /// The height the editor was given by hand, and what is called when it is dragged to another (CodeField.height).
+  final double? height;
+  final void Function(double? height)? onHeight;
   @override
   State<EffectCode> createState() => _EffectCodeState();
 
@@ -65,6 +71,8 @@ class EffectCode extends StatefulWidget {
     String title,
     List<String> names, {
     bool fit = false,
+    double? height,
+    void Function(double? height)? onHeight,
   }) {
     final card = cards.codeOfCard(ws, thing, title, names);
     if (card == null) return null;
@@ -76,6 +84,8 @@ class EffectCode extends StatefulWidget {
       slot: card.slot,
       shelf: !script,
       fit: fit,
+      height: height,
+      onHeight: onHeight,
       key: script
           ? ValueKey('script-code-$thing')
           : ValueKey('fx-code-$thing-$title'),
@@ -251,6 +261,8 @@ class _EffectCodeState extends State<EffectCode> {
             _write,
             keep: _making,
             fit: true,
+            height: widget.height,
+            onHeight: widget.onHeight,
             mark: _mark,
           )
         else

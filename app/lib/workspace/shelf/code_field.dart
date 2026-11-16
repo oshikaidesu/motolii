@@ -2,7 +2,11 @@
 // code_forge handles scrolling, line numbers, folding, bracket matching,
 // indentation guides, and minimap internally. This file is the only place
 // that imports it.
+//
+// As a cell of the Code tab ([CodeField.fit]) it is as tall as its code until the strip under it is dragged, and the
+// wheel scrolls the tab, not the code, until the code is clicked: a page of editors scrolls so (GitHub's, a notebook's).
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
@@ -33,12 +37,23 @@ class CodeField extends StatefulWidget {
     super.key,
     this.keep = false,
     this.fit = false,
+    this.height,
+    this.onHeight,
     this.mark,
   });
   final String file;
   final ValueListenable<CodeMark?>? mark;
   final void Function(String text) write;
+
+  /// Whether it is a cell: as tall as its code, with one more line to type on, and not as tall as the room it is given.
   final bool fit;
+
+  /// The height a cell was given by hand; null is as tall as its code.
+  final double? height;
+
+  /// Called with the height the strip under a cell is dragged to, or null when the strip is pressed twice, which
+  /// makes the cell as tall as its code again. Without it a cell has no strip.
+  final void Function(double? height)? onHeight;
   final bool keep;
 
   static CodeForgeController? _last;
@@ -130,7 +145,31 @@ class _CodeFieldState extends State<CodeField> {
   late final FocusNode _focus = FocusNode()
     ..addListener(() {
       if (_focus.hasFocus) CodeField._last = _controller;
+      // A cell's frame and what the wheel scrolls follow the keys.
+      if (mounted && widget.fit) setState(() {});
     });
+
+  /// The cell's height when the drag of its strip began, moved by the drag since.
+  double _dragged = 0;
+
+  /// The strip under a cell: dragging it makes the cell taller or shorter, pressing it twice as tall as its code.
+  Widget _strip(double now, double least) => MouseRegion(
+    cursor: SystemMouseCursors.resizeUpDown,
+    child: GestureDetector(
+      key: const ValueKey('code-cell-size'),
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragStart: (_) => _dragged = now,
+      onVerticalDragUpdate: (d) =>
+          widget.onHeight!(math.max(least, _dragged += d.delta.dy)),
+      onDoubleTap: () => widget.onHeight!(null),
+      child: SizedBox(
+        height: Shape.s(8),
+        child: Center(
+          child: Container(width: Shape.z(24), height: 2, color: Grey.g38),
+        ),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -138,14 +177,38 @@ class _CodeFieldState extends State<CodeField> {
     final dark = Grey.g07.computeLuminance() <= 0.5;
     final theme = dark ? darkCodeStyles : lightCodeStyles;
     final fit = widget.fit;
-    final editor = _editor(fontSize, theme, fit);
+    // A press anywhere else gives the keys back, so the window's shortcuts and the tab's scrolling work again.
+    // The list of functions beside the code is of the same group (code_pane.dart): it writes into the code.
+    final editor = TapRegion(
+      groupId: CodeField,
+      onTapOutside: (_) => _focus.unfocus(),
+      child: _editor(fontSize, theme, fit),
+    );
+    if (!fit) return editor;
     // One more line than the code, to type on, as a notebook's cell has (Jupyter).
-    return fit
-        ? SizedBox(
-            height: (_lines + 1) * fontSize * _lineHeight + _pad.vertical,
+    final line = fontSize * _lineHeight,
+        tall = widget.height ?? (_lines + 1) * line + _pad.vertical;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: tall,
+          child: DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _focus.hasFocus
+                    ? WindowTokens.accent
+                    : WindowTokens.line,
+              ),
+            ),
             child: editor,
-          )
-        : editor;
+          ),
+        ),
+        if (widget.onHeight != null) _strip(tall, 3 * line + _pad.vertical),
+      ],
+    );
   }
 
   static const _lineHeight = 1.4;
@@ -159,6 +222,10 @@ class _CodeFieldState extends State<CodeField> {
       editorTheme: theme,
       initialText: _written,
       lineWrap: !fit,
+      // A cell's code is scrolled once it has the keys; until then the wheel scrolls the tab the cells are in.
+      verticalScrollPhysics: !fit || _focus.hasFocus
+          ? const ClampingScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
       useSpaceAsTab: true,
       tabSize: 2,
       textStyle: TextStyle(
