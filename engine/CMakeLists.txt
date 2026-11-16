@@ -377,6 +377,7 @@ add_library(motolii_entry OBJECT
   entry/calls_easing.cpp
   entry/calls_files.cpp
   entry/calls_find.cpp
+  entry/calls_fonts.cpp
   entry/calls_later.cpp
   entry/calls_map.cpp
   entry/calls_shelf.cpp
