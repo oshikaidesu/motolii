@@ -66,6 +66,11 @@ struct ScriptParameter {
   std::vector<Turned> turns;
   // The macro that drives this parameter. Empty if none.
   std::string by;
+  // The CSS length unit (s, ms, px, %, deg, rem, em) a CSS custom property
+  // declaration was taken from, or empty when the parameter did not come
+  // from a CSS pen. Lets doc_css_lay write the slider's number back into
+  // the pen as the same unit the author wrote.
+  std::string unit;
 };
 // The placement and look of one copy, as returned by each(). colour is the
 // copy's own color; -1 means the copy keeps the color of its solid. matrix is

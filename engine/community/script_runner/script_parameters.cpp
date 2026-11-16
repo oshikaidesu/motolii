@@ -62,6 +62,10 @@ void append_css_variable_params(const std::string& css,
     p.high = std::max(1.0, std::abs(seed) * 2.0);
     p.usual = seed;
     p.step = 0;
+    // Remember the unit so doc_css_lay can write the slider's value back
+    // into the pen with the same unit the author used. 'ms' is folded to
+    // seconds here, so the unit stored is 's' instead.
+    p.unit = unit == "ms" ? std::string("s") : unit;
     out.push_back(std::move(p));
   }
 }

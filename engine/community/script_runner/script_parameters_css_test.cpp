@@ -47,6 +47,19 @@ TEST(ScriptParametersCSS, MillisecondsFoldIntoSeconds) {
       ":root { --delay: 250ms; }\n@keyframes a { 0% {} 100% {} }\n");
   ASSERT_EQ(params.size(), 1u);
   EXPECT_DOUBLE_EQ(params[0].usual, 0.25);
+  EXPECT_EQ(params[0].unit, "s");  // ms folded to seconds, unit kept as 's'
+}
+
+TEST(ScriptParametersCSS, UnitIsRememberedForEachProperty) {
+  const auto params = ParamsOf(
+      ":root { --duration: 2s; --angle: 30deg; --size: 100px; --ratio: 0.5; }\n"
+      "@keyframes a { 0% {} 100% {} }\n");
+  ASSERT_EQ(params.size(), 4u);
+  EXPECT_EQ(params[0].label, "--duration");
+  EXPECT_EQ(params[0].unit, "s");
+  EXPECT_EQ(params[1].unit, "deg");
+  EXPECT_EQ(params[2].unit, "px");
+  EXPECT_EQ(params[3].unit, "");  // no unit
 }
 
 TEST(ScriptParametersCSS, RepeatedDeclarationIsDeduplicated) {
