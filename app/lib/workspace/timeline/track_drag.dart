@@ -72,7 +72,7 @@ class TrackDrag extends ChangeNotifier {
   MouseCursor get cursor => _cursor;
   MouseCursor _cursor = MouseCursor.defer;
 
-  // The keyframe being dragged, together with the other selected keyframes. They slide in time while the playhead shows the position.
+  // The keyframe being dragged, together with the other selected keyframes.
   ({List<SelectedKeyframe> keys, int grab, int by})? _slide;
   // How far the slide has been written into the document so far, in frames.
   int _slid = 0;
@@ -162,7 +162,6 @@ class TrackDrag extends ChangeNotifier {
         return timeline_service.slideKeyframeWrites(ws, now, step);
       });
       notifyListeners();
-      workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
     }
     final h = _bar, ws = workspace!;
@@ -392,6 +391,20 @@ class TrackDrag extends ChangeNotifier {
         _slide = (keys: all, grab: frame, by: 0);
         _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
         return true;
+      }
+      // Inside a selected stretch: slide both boundary keyframes together.
+      if (ws.stretch case final s? when s.layer == r.l.id && s.name == name) {
+        final f = v.frameAt(p.dx);
+        if (f >= s.from && f <= s.to) {
+          final both = [
+            (layer: r.l.id, frame: s.from),
+            (layer: r.l.id, frame: s.to),
+          ];
+          if (ws.playing) ws.playing = false;
+          _slide = (keys: both, grab: f.round(), by: 0);
+          _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
+          return true;
+        }
       }
       return true;
     }
