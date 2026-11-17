@@ -5,8 +5,6 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
-import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
-    show slideWrites;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 // Defines the easing in the document, so that the stretches can name it.
@@ -91,19 +89,6 @@ void closeEaseStep(
   void Function(bool done, String why) then,
 ) {
   ws.after(ws.inside!.later('together'), then);
-}
-
-/// Slides the keyframe at [frame] on [layer] by [step] frames, as one step of a LiveEdit gesture.
-/// Returns the layers that changed, for the caller to show.
-Iterable<int> trimEaseSpan(
-  WorkspaceController ws,
-  String layer,
-  int frame,
-  int step,
-) {
-  final m = ws.inside!;
-  final key = [(layer: layer, frame: frame)];
-  return slideWrites(m, key, step);
 }
 
 /// Waits until the engine shows [layer] again, then calls [then].

@@ -13,9 +13,6 @@ import 'package:motolii/widgets/paint_helpers.dart';
 /// For a drag or a hover: below this is a handle's index in easeHandles, this is the start end and this + 1 the end end.
 const easeEnd = 100;
 
-/// Horizontal trim: dragging the left or right edge of the graph to move a boundary keyframe in time.
-const easeTrimStart = 102, easeTrimEnd = 103;
-
 /// Segments along the width when drawing a curve. Enough that a stack of steep beziers, whose climb is near vertical, reads as a
 /// smooth line rather than steps; the curves are evaluated exactly (not from their even samples), so the extra segments are true.
 const _fine = 768;
