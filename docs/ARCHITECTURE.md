@@ -113,7 +113,7 @@ Each shelf folder may contain a `meta.yaml` keyed by effect name, with `author`,
 
 User tags are stored in `~/.motolii/tags.json` and managed by `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`). Tags are shown as chips in the Code tab (`code_pane.dart` `_metaRow`) and Inspector (`inspector/card_meta_row.dart` `CardMetaRow`), with inline autocomplete.
 
-On export, `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) writes a `_credits.txt` beside the video, listing every effect used, grouped by licence.
+On export, `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) writes a credits text file beside the video, listing every effect used, grouped by licence.
 
 ## Home screen
 
