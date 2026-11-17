@@ -196,6 +196,42 @@ mixin TimelineTracksView<T extends StatefulWidget>
               return const SizedBox.shrink();
             },
           ),
+          // Edge fades at the top and bottom of the track rows, hinting that
+          // the rows scroll, as Lumit's edge_fade does.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: TimelineMetrics.ruler,
+            height: 12,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [WindowTokens.body, WindowTokens.body.withAlpha(0)],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: TimelineMetrics.overview,
+            height: 12,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [WindowTokens.body, WindowTokens.body.withAlpha(0)],
+                  ),
+                ),
+              ),
+            ),
+          ),
           // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
           if (naming case (final at, _)?)
             Positioned(
