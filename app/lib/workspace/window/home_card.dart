@@ -10,7 +10,6 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/window/home_project.dart';
 
 const homeTile = 240.0;
-const _ratio = 9 / 16;
 
 /// A seeded gradient for cards with no thumbnail, based on the project name's hash.
 Color seedColor(String name) {
@@ -82,29 +81,28 @@ class _HomeCardState extends State<HomeCard> {
     final d = widget.d;
     final f = d.facts;
     final h = _hovered || widget.menu;
-    return SizedBox(
-      width: homeTile,
-      child: GestureDetector(
-        onSecondaryTapDown: (_) => widget.onMore(),
-        child: NakedButton(
-          enableFeedback: false,
-          key: ValueKey('home-doc:${d.path}'),
-          onPressed: widget.onTap,
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _hovered = true),
-            onExit: (_) => setState(() => _hovered = false),
-            child: AnimatedScale(
-              scale: h ? 1.03 : 1.0,
-              duration: Motion.dur,
-              curve: Motion.ease,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 16:9 thumbnail area.
-                  AnimatedContainer(
+    return GestureDetector(
+      onSecondaryTapDown: (_) => widget.onMore(),
+      child: NakedButton(
+        enableFeedback: false,
+        key: ValueKey('home-doc:${d.path}'),
+        onPressed: widget.onTap,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: AnimatedScale(
+            scale: h ? 1.03 : 1.0,
+            duration: Motion.dur,
+            curve: Motion.ease,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 16:9 thumbnail area.
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: AnimatedContainer(
                     duration: Motion.dur,
                     curve: Motion.ease,
-                    height: homeTile * _ratio,
                     decoration: BoxDecoration(
                       borderRadius: Shape.round(10),
                       boxShadow: h
@@ -241,79 +239,79 @@ class _HomeCardState extends State<HomeCard> {
                       ],
                     ),
                   ),
-                  SizedBox(height: Shape.s(8)),
-                  // Project name as a quiet caption.
-                  Text(
-                    d.name,
-                    style: TextStyles.name(h ? Grey.g91 : Grey.g56)
-                        .copyWith(letterSpacing: .3),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // Menu row.
-                  if (widget.menu)
-                    Padding(
-                      padding: EdgeInsets.only(top: Shape.s(8)),
-                      child: Wrap(
-                        spacing: Shape.s(4),
-                        runSpacing: Shape.s(4),
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: widget.asking
-                            ? [
-                                Text(
-                                  'Move to the Trash?',
-                                  style: TextStyles.label(Grey.g91),
-                                ),
+                ),
+                SizedBox(height: Shape.s(8)),
+                // Project name as a quiet caption.
+                Text(
+                  d.name,
+                  style: TextStyles.name(h ? Grey.g91 : Grey.g56)
+                      .copyWith(letterSpacing: .3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                // Menu row.
+                if (widget.menu)
+                  Padding(
+                    padding: EdgeInsets.only(top: Shape.s(8)),
+                    child: Wrap(
+                      spacing: Shape.s(4),
+                      runSpacing: Shape.s(4),
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: widget.asking
+                          ? [
+                              Text(
+                                'Move to the Trash?',
+                                style: TextStyles.label(Grey.g91),
+                              ),
+                              homeButton(
+                                'home-trash-yes:${d.path}',
+                                'Move to Trash',
+                                true,
+                                widget.onTrash,
+                              ),
+                              homeButton(
+                                'home-trash-no:${d.path}',
+                                'Cancel',
+                                false,
+                                widget.onKeep,
+                              ),
+                            ]
+                          : [
+                              homeButton(
+                                'home-open:${d.path}',
+                                'Open',
+                                false,
+                                widget.onOpen,
+                              ),
+                              homeButton(
+                                'home-select:${d.path}',
+                                'Select',
+                                false,
+                                widget.onSelect,
+                              ),
+                              homeButton(
+                                'home-export:${d.path}',
+                                'Export…',
+                                false,
+                                widget.onExport,
+                              ),
+                              homeButton(
+                                'home-duplicate:${d.path}',
+                                'Duplicate',
+                                false,
+                                widget.onDuplicate,
+                              ),
+                              if (!widget.open)
                                 homeButton(
-                                  'home-trash-yes:${d.path}',
+                                  'home-trash:${d.path}',
                                   'Move to Trash',
-                                  true,
-                                  widget.onTrash,
-                                ),
-                                homeButton(
-                                  'home-trash-no:${d.path}',
-                                  'Cancel',
                                   false,
-                                  widget.onKeep,
+                                  widget.onAskTrash,
                                 ),
-                              ]
-                            : [
-                                homeButton(
-                                  'home-open:${d.path}',
-                                  'Open',
-                                  false,
-                                  widget.onOpen,
-                                ),
-                                homeButton(
-                                  'home-select:${d.path}',
-                                  'Select',
-                                  false,
-                                  widget.onSelect,
-                                ),
-                                homeButton(
-                                  'home-export:${d.path}',
-                                  'Export…',
-                                  false,
-                                  widget.onExport,
-                                ),
-                                homeButton(
-                                  'home-duplicate:${d.path}',
-                                  'Duplicate',
-                                  false,
-                                  widget.onDuplicate,
-                                ),
-                                if (!widget.open)
-                                  homeButton(
-                                    'home-trash:${d.path}',
-                                    'Move to Trash',
-                                    false,
-                                    widget.onAskTrash,
-                                  ),
-                              ],
-                      ),
+                            ],
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),

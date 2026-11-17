@@ -228,51 +228,64 @@ class _HomeWindowState extends State<HomeWindow> {
         (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
       );
     }
-    Widget grid(List<HomeProject> docs) => Wrap(
-      spacing: 36,
-      runSpacing: 36,
-      children: [
-        for (final d in docs)
-          HomeCard(
-            d,
-            open: d.path == widget.open,
-            picked: _picked.contains(d.path),
-            menu: _menu == d.path,
-            asking: _asking == d.path,
-            onTap: () {
-              final k = clickKeys();
-              if (_picked.isEmpty && !k.add && !k.span) {
-                return widget.onOpen(d.path);
-              }
-              final r = pickOnClick(
-                now: _picked,
-                lead: _lead,
-                id: d.path,
-                order: [for (final e in docs) e.path],
-                add: k.add || !k.span,
-                span: k.span,
-              );
-              setState(() {
-                _picked
-                  ..clear()
-                  ..addAll(r.picked);
-                _lead = r.lead;
-              });
-            },
-            onMore: () =>
-                setState(() => _menu = _menu == d.path ? null : d.path),
-            onOpen: () => widget.onOpen(d.path),
-            onSelect: () => setState(() {
-              _picked.add(d.path);
-              _menu = null;
-            }),
-            onExport: () => widget.onExport([d.path]),
-            onDuplicate: () => _duplicate(d),
-            onAskTrash: () => setState(() => _asking = d.path),
-            onTrash: () => _trash(d),
-            onKeep: () => setState(() => _asking = null),
-          ),
-      ],
+    Widget grid(List<HomeProject> docs) => LayoutBuilder(
+      builder: (context, box) {
+        const gap = 32.0;
+        final cols = ((box.maxWidth + gap) / (homeTile + gap)).floor().clamp(
+          1,
+          6,
+        );
+        final tile = (box.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final d in docs)
+              SizedBox(
+                width: tile,
+                child: HomeCard(
+                  d,
+                  open: d.path == widget.open,
+                  picked: _picked.contains(d.path),
+                  menu: _menu == d.path,
+                  asking: _asking == d.path,
+                  onTap: () {
+                    final k = clickKeys();
+                    if (_picked.isEmpty && !k.add && !k.span) {
+                      return widget.onOpen(d.path);
+                    }
+                    final r = pickOnClick(
+                      now: _picked,
+                      lead: _lead,
+                      id: d.path,
+                      order: [for (final e in docs) e.path],
+                      add: k.add || !k.span,
+                      span: k.span,
+                    );
+                    setState(() {
+                      _picked
+                        ..clear()
+                        ..addAll(r.picked);
+                      _lead = r.lead;
+                    });
+                  },
+                  onMore: () =>
+                      setState(() => _menu = _menu == d.path ? null : d.path),
+                  onOpen: () => widget.onOpen(d.path),
+                  onSelect: () => setState(() {
+                    _picked.add(d.path);
+                    _menu = null;
+                  }),
+                  onExport: () => widget.onExport([d.path]),
+                  onDuplicate: () => _duplicate(d),
+                  onAskTrash: () => setState(() => _asking = d.path),
+                  onTrash: () => _trash(d),
+                  onKeep: () => setState(() => _asking = null),
+                ),
+              ),
+          ],
+        );
+      },
     );
     return ColoredBox(
       key: const ValueKey('ws-home'),
