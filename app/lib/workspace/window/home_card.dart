@@ -151,6 +151,26 @@ class _HomeCardState extends State<HomeCard> {
                               ),
                             ),
                           ),
+                        // Subtle bottom vignette for visual cohesion.
+                        if (d.picture != null)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: 40,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Grey.g00.withValues(alpha: 0),
+                                    Grey.g00.withValues(alpha: .15),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         // Picked mark.
                         if (widget.picked)
                           Positioned(
