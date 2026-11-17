@@ -308,6 +308,12 @@ class WorkspaceState extends State<Workspace> {
           (now is FocusScopeNode && _windowFocus.ancestors.contains(now));
     }
 
+    // If a text field has focus, leave it alone.
+    final pf = FocusManager.instance.primaryFocus;
+    if (pf != null &&
+        pf.context?.findAncestorStateOfType<EditableTextState>() != null) {
+      return;
+    }
     if (!mounted || !fallen() || _windowFocus.context == null) return;
     // Wait until the frame's own focus requests are done. A field built in this frame requests focus after it, and would lose it to us.
     WidgetsBinding.instance.addPostFrameCallback(

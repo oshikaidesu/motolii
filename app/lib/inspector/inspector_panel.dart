@@ -149,6 +149,13 @@ class _InspectorPanelState extends State<InspectorPanel> {
       focusNode: _node,
       child: TapRegion(
         onTapInside: (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+          // If the tap landed on a text-editing widget, let it keep focus.
+          final target = FocusManager.instance.primaryFocus;
+          if (target != null &&
+              target.context?.findAncestorStateOfType<EditableTextState>() !=
+                  null) {
+            return;
+          }
           if (mounted && !_node.hasFocus) _node.requestFocus();
         }),
         child: Container(

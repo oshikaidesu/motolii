@@ -267,8 +267,9 @@ class NumberFieldState extends State<NumberField> {
           // Wait until this field's own editor is gone, because until then it would be the next focus target.
           _tabbed = true;
           back ? _node.previousFocus() : _node.nextFocus();
-          // Reset in a separate microtask, after the focus has moved.
-          scheduleMicrotask(() => _tabbed = false);
+          // Reset after the next frame, so the receiving field's
+          // initState / didChangeDependencies has finished.
+          WidgetsBinding.instance.addPostFrameCallback((_) => _tabbed = false);
         });
       }
       return KeyEventResult.handled;
