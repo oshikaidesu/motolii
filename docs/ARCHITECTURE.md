@@ -95,7 +95,7 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `aviutl_scripts/` | `document/scripts/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
 | `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
 | `expressions/` | `entry/calls_shelf.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
-| `relations/` | `entry/calls_shelf.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
+| `relations/` (expressions に統合) | `entry/calls_shelf.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/edit/presets.h` | `bridge/motolii_shelves.dart` |
 | `solids/` | `community/three/solid_three.cpp` | none |
 | `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/ease/ease_shelf.dart` |
