@@ -1,11 +1,4 @@
-// The home screen: a responsive grid of the projects in a folder.
-//
-// A hero banner shows the last project ("Continue"), then a responsive grid of 16:9 cards with hover-reveal metadata.
-// Clicking a card opens it. Its menu can select, export, duplicate, or move it to the Trash after a confirmation.
-// The thumbnail, size and length come from what the project last saved (Motolii.poster), read without opening it.
-import 'dart:math' as math;
-
-import 'package:motolii/widgets/grid_columns.dart' show BentoItem, bentoPack;
+// The home screen: the user's projects, filling the window edge to edge.
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/window/home_project.dart';
 import 'package:motolii/workspace/window/home_card.dart';
@@ -15,7 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/storage/disk.dart' show existsFile, imageFile;
+import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/open_in_host.dart' show pickFolder;
 import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/thumbnail_folder.dart';
@@ -38,46 +31,26 @@ class HomeWindow extends StatefulWidget {
     this.onFolder,
   });
 
-  /// The folder whose projects are listed.
   final String folder;
-
-  /// The engine library, used to read each project's facts on another isolate.
   final String lib;
-
-  /// The path of the project that is open now.
   final String open;
   final void Function(String doc) onOpen;
   final void Function(List<String> docs) onExport;
   final VoidCallback onNew, onClose;
-
-  /// The last project the user worked on, shown as "continue from here" at the top (UAT 94).
   final String? lastProject;
-
-  /// Called with a folder path to change where the home screen looks for projects (UAT 98).
   final void Function(String folder)? onFolder;
   @override
   State<HomeWindow> createState() => _HomeWindowState();
 }
 
 class _HomeWindowState extends State<HomeWindow> {
-  // The last sort order chosen, kept like AbsentMotion's sortBy.
   static var byName = false;
-  // Whether to show the bento layout (mixed-size cards) or the uniform grid.
-  static var bento = false;
   List<HomeProject> _docs = const [];
-  // The card whose menu is open.
   String? _menu;
-  // The card waiting for the user to confirm moving it to the Trash.
   String? _asking;
-  // The search text, matched against project names.
   String _find = '';
-  // Selected projects, as in Alight Motion's menu "Select" or Cmd-click in the Finder.
-  // While any is selected, a click toggles selection instead of opening.
   final _picked = <String>{};
-  // The project the last pick was on, where a Shift range starts.
   String? _lead;
-  bool _hoverBanner = false;
-  bool _hoverNew = false;
   late final String _pictures = makeThumbnailFolder();
 
   @override
@@ -100,7 +73,6 @@ class _HomeWindowState extends State<HomeWindow> {
     super.dispose();
   }
 
-  // Counts reads so each read writes thumbnails under new names and never overwrites one that is on screen.
   var _reads = 0;
   void _read() {
     final docs = <HomeProject>[], read = _reads++;
@@ -125,139 +97,6 @@ class _HomeWindowState extends State<HomeWindow> {
     final folder = await pickFolder(prompt: 'Choose projects folder');
     if (folder != null && mounted) widget.onFolder?.call(folder);
   }
-
-  /// The hero banner: the last project, shown as a wide 16:9 card with its thumbnail.
-  Widget? _continueCard() {
-    final last = widget.lastProject;
-    if (last == null || !existsFile(last)) return null;
-    final name = last.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
-    final lastDoc = _docs.where((d) => d.path == last).firstOrNull;
-    final facts = lastDoc != null ? homeFacts(lastDoc) : const <String>[];
-    final hb = _hoverBanner;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hoverBanner = true),
-      onExit: (_) => setState(() => _hoverBanner = false),
-      child: NakedButton(
-        enableFeedback: false,
-        key: const ValueKey('home-continue'),
-        onPressed: () => widget.onOpen(last),
-        child: AnimatedScale(
-          scale: hb ? 1.01 : 1.0,
-          duration: Motion.dur,
-          curve: Motion.ease,
-          child: AnimatedContainer(
-            duration: Motion.dur,
-            height: Shape.z(220),
-            decoration: BoxDecoration(
-              borderRadius: Shape.round(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Grey.g00.withValues(alpha: hb ? .3 : 0),
-                  blurRadius: hb ? 20 : 0,
-                  offset: Offset(0, hb ? 8 : 0),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (lastDoc?.picture != null)
-                  Image(image: imageFile(lastDoc!.picture!), fit: BoxFit.cover)
-                else
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [seedColor(name), seedColorLight(name)],
-                      ),
-                    ),
-                    child: Align(
-                      alignment: const Alignment(.85, -.2),
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : 'M',
-                        style: TextStyle(
-                          fontSize: 140,
-                          fontWeight: FontWeight.w900,
-                          color: Grey.g95.withValues(alpha: .04),
-                          letterSpacing: -5,
-                        ),
-                      ),
-                    ),
-                  ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.5, 1.0],
-                      colors: [
-                        Grey.g00.withValues(alpha: 0),
-                        Grey.g00.withValues(alpha: .15),
-                        Grey.g00.withValues(alpha: .75),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: Shape.s(32),
-                    vertical: Shape.s(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [WindowTokens.seiji, WindowTokens.usuki],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: Shape.s(10)),
-                      Text(
-                        'CONTINUE',
-                        style: TextStyles.micro(WindowTokens.seiji).copyWith(
-                          letterSpacing: 3,
-                          fontWeight: FontWeight.w800,
-                          fontSize: TextStyles.px(9),
-                        ),
-                      ),
-                      SizedBox(height: Shape.s(4)),
-                      Text(
-                        name,
-                        style: TextStyles.title(Grey.g95).copyWith(
-                          fontSize: TextStyles.px(28),
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -.5,
-                        ),
-                      ),
-                      if (facts.isNotEmpty) ...[
-                        SizedBox(height: Shape.s(4)),
-                        Text(
-                          facts.join(' · '),
-                          style: TextStyles.label(Grey.g56),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static int _totalBytes(List<HomeProject> docs) =>
-      docs.fold(0, (sum, d) => sum + d.bytes);
-  static double _totalSeconds(List<HomeProject> docs) =>
-      docs.fold(0.0, (sum, d) => sum + (d.facts?.seconds ?? 0));
 
   void _duplicate(HomeProject d) {
     duplicateProject(widget.folder, d);
@@ -284,6 +123,7 @@ class _HomeWindowState extends State<HomeWindow> {
         (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
       );
     }
+
     Widget card(HomeProject d, int i, List<HomeProject> docs) => HomeCard(
       d,
       index: i,
@@ -324,365 +164,229 @@ class _HomeWindowState extends State<HomeWindow> {
       onKeep: () => setState(() => _asking = null),
     );
 
-    Widget grid(List<HomeProject> docs) => LayoutBuilder(
-      builder: (context, box) {
-        final gap = box.maxWidth > 800 ? 36.0 : 24.0;
-        final cols = ((box.maxWidth + gap) / (homeTile + gap)).floor().clamp(
-          2,
-          4,
-        );
-        final tile = (box.maxWidth - gap * (cols - 1)) / cols;
+    // The last-worked project leads the grid at double width.
+    final last = widget.lastProject;
+    final hasLast =
+        last != null &&
+        existsFile(last) &&
+        _find.isEmpty &&
+        shown.any((d) => d.path == last);
 
-        if (!bento) {
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: [
-              for (final (i, d) in docs.indexed)
-                SizedBox(width: tile, child: card(d, i, docs)),
-            ],
-          );
-        }
-
-        // Bento mode: mixed-size cards packed with no holes.
-        final items = [
-          for (final (i, _) in docs.indexed)
-            BentoItem('home', i, i == 0 ? 1.8 : (i < 3 ? .9 : .5)),
-        ];
-        final laid = bentoPack(items, cols);
-        final unit = (box.maxWidth + gap) / cols;
-        final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4));
-        return SizedBox(
-          height: rows * unit,
-          child: Stack(
-            children: [
-              for (final (k, d) in docs.indexed)
-                AnimatedPositioned(
-                  key: ValueKey('home-bento-${d.path}'),
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  left: laid[k].$1 * unit,
-                  top: laid[k].$2 * unit,
-                  width: laid[k].$3 * unit - gap,
-                  height: laid[k].$4 * unit - gap,
-                  child: card(d, k, docs),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-    return Stack(
+    return ColoredBox(
       key: const ValueKey('ws-home'),
-      children: [
-        Positioned.fill(child: ColoredBox(color: Grey.g10)),
-        Positioned(
-          top: -100,
-          left: 0,
-          right: 0,
-          height: 500,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(-.4, .3),
-                radius: 1.0,
-                colors: [
-                  WindowTokens.accent.withValues(alpha: .04),
-                  Grey.g10.withValues(alpha: 0),
-                ],
-              ),
-            ),
-            child: const SizedBox.expand(),
+      color: Grey.g07,
+      child: Column(
+        children: [
+          _TopBar(
+            count: shown.length,
+            find: _findText,
+            byName: byName,
+            picked: _picked,
+            onNew: widget.onNew,
+            onClose: widget.onClose,
+            onFolder: widget.onFolder != null ? _pickFolder : null,
+            onExport: () => widget.onExport([..._picked]),
+            onUnpick: () => setState(_picked.clear),
+            onByDate: () => setState(() => byName = false),
+            onByName: () => setState(() => byName = true),
           ),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              height: 3,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    WindowTokens.seiji,
-                    WindowTokens.nadeshiko,
-                    WindowTokens.usuki,
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  Shape.s(48),
-                  Shape.s(24),
-                  Shape.s(48),
-                  0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        _HomeWordmark(),
-                        const Spacer(),
-                        MouseRegion(
-                          onEnter: (_) => setState(() => _hoverNew = true),
-                          onExit: (_) => setState(() => _hoverNew = false),
-                          child: NakedButton(
-                            enableFeedback: false,
-                            key: const ValueKey('home-new'),
-                            onPressed: widget.onNew,
-                            child: AnimatedContainer(
-                              duration: Motion.dur,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: Shape.s(14),
-                                vertical: Shape.s(6),
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: _hoverNew ? Grey.g56 : Grey.g38,
-                                ),
-                                borderRadius: Shape.round(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '+',
-                                    style: TextStyles.name(
-                                      _hoverNew ? Grey.g91 : Grey.g76,
-                                    ).copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  SizedBox(width: Shape.s(6)),
-                                  Text(
-                                    'New',
-                                    style: TextStyles.name(
-                                      _hoverNew ? Grey.g91 : Grey.g76,
-                                    ).copyWith(fontWeight: FontWeight.w500),
-                                  ),
-                                ],
-                              ),
-                            ),
+          Expanded(
+            child: shown.isEmpty
+                ? _Empty(searching: _find.isNotEmpty)
+                : LayoutBuilder(
+                    builder: (context, box) {
+                      final pad = Shape.s(20);
+                      final gap = Shape.s(12);
+                      final w = box.maxWidth - pad * 2;
+                      final cols = (w / 280).floor().clamp(2, 5);
+                      final tile = (w - gap * (cols - 1)) / cols;
+                      final items = <Widget>[];
+                      for (final (i, d) in shown.indexed) {
+                        final isLast = hasLast && d.path == last;
+                        final span = isLast && cols >= 3 ? 2 : 1;
+                        items.add(
+                          SizedBox(
+                            width: tile * span + gap * (span - 1),
+                            child: card(d, i, shown),
                           ),
+                        );
+                      }
+                      return ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          pad,
+                          Shape.s(8),
+                          pad,
+                          Shape.s(40),
                         ),
-                        SizedBox(width: Shape.s(12)),
-                        if (widget.onFolder != null)
-                          IconPress(
-                            (c) => Glyph(
-                              AppGlyphs.folder,
-                              size: Shape.z(12),
-                              color: c,
-                            ),
-                            key: const ValueKey('home-folder'),
-                            tip: 'Change Folder',
-                            onTap: _pickFolder,
-                            size: Shape.z(28),
-                            ink: Grey.g56,
-                          ),
-                        IconPress(
-                          (c) => Glyph(
-                            AppGlyphs.close,
-                            size: Shape.z(14),
-                            color: c,
-                          ),
-                          key: const ValueKey('home-close'),
-                          tip: 'Close',
-                          onTap: widget.onClose,
-                          size: Shape.z(28),
-                          ink: Grey.g56,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: Shape.s(24)),
-                    if (_find.isEmpty)
-                      if (_continueCard() case final card?) ...[
-                        card,
-                        SizedBox(height: Shape.s(28)),
-                      ],
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${shown.length}',
-                          style: TextStyles.title(Grey.g95).copyWith(
-                            fontSize: TextStyles.px(26),
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        SizedBox(width: Shape.s(6)),
-                        Padding(
-                          padding: EdgeInsets.only(top: Shape.s(2)),
-                          child: Text(
-                            [
-                              shown.length == 1 ? 'project' : 'projects',
-                              if (shown.isNotEmpty)
-                                homeBytes(_totalBytes(shown)),
-                              if (_totalSeconds(shown) > 0)
-                                homeLength(_totalSeconds(shown)),
-                            ].join(' · '),
-                            style: TextStyles.label(Grey.g44)
-                                .copyWith(letterSpacing: 1.5),
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: Shape.z(200),
-                          child: ShelfSearchField(
-                            controller: _findText,
-                            hint: 'Search',
-                          ),
-                        ),
-                        SizedBox(width: Shape.s(8)),
-                        if (_picked.isNotEmpty) ...[
-                          homeButton(
-                            'home-export',
-                            'Export ${_picked.length}',
-                            true,
-                            () => widget.onExport([..._picked]),
-                          ),
-                          homeButton(
-                            'home-unpick',
-                            'Cancel',
-                            false,
-                            () => setState(_picked.clear),
-                          ),
-                          SizedBox(width: Shape.s(8)),
-                        ],
-                        homeButton(
-                          'home-by-date',
-                          'Date',
-                          !byName,
-                          () => setState(() => byName = false),
-                        ),
-                        homeButton(
-                          'home-by-name',
-                          'Name',
-                          byName,
-                          () => setState(() => byName = true),
-                        ),
-                        SizedBox(width: Shape.s(8)),
-                        homeButton(
-                          'home-bento',
-                          'Bento',
-                          bento,
-                          () => setState(() => bento = !bento),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: Shape.s(16)),
-                      child: Row(
                         children: [
-                          Container(
-                            width: 40,
-                            height: 2,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  WindowTokens.seiji,
-                                  WindowTokens.nadeshiko,
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Grey.g20.withValues(alpha: .4),
-                            ),
-                          ),
+                          Wrap(spacing: gap, runSpacing: gap, children: items),
                         ],
-                      ),
-                    ),
-                    Expanded(
-                      child: shown.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _find.isNotEmpty
-                                        ? 'No matches'
-                                        : 'No projects yet',
-                                    style: TextStyles.title(Grey.g44).copyWith(
-                                      fontSize: TextStyles.px(20),
-                                      fontWeight: FontWeight.w300,
-                                      letterSpacing: .5,
-                                    ),
-                                  ),
-                                  SizedBox(height: Shape.s(10)),
-                                  Text(
-                                    _find.isNotEmpty
-                                        ? 'Try a different search.'
-                                        : 'Create one to get started.',
-                                    style: TextStyles.label(Grey.g38),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView(
-                              padding: EdgeInsets.only(bottom: Shape.s(48)),
-                              children: [grid(shown)],
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
   final _findText = TextEditingController();
 }
 
-/// The lime "M" square and "Motolii" wordmark, as in the main window's top bar. One manner used in both places so Home
-/// reads as the same app, not a splash screen.
-class _HomeWordmark extends StatelessWidget {
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.count,
+    required this.find,
+    required this.byName,
+    required this.picked,
+    required this.onNew,
+    required this.onClose,
+    required this.onFolder,
+    required this.onExport,
+    required this.onUnpick,
+    required this.onByDate,
+    required this.onByName,
+  });
+  final int count;
+  final TextEditingController find;
+  final bool byName;
+  final Set<String> picked;
+  final VoidCallback onNew, onClose, onExport, onUnpick, onByDate, onByName;
+  final VoidCallback? onFolder;
+
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: Shape.z(28),
-        height: Shape.z(28),
-        alignment: Alignment.center,
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.fromLTRB(
+      Shape.s(20),
+      Shape.s(10),
+      Shape.s(20),
+      Shape.s(10),
+    ),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: Grey.g15)),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: Shape.z(22),
+          height: Shape.z(22),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: WindowTokens.accent,
+            borderRadius: Shape.round(5),
+          ),
+          child: Text(
+            'M',
+            style: TextStyles.title(WindowTokens.onAccent).copyWith(
+              fontSize: TextStyles.px(13),
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
+        ),
+        SizedBox(width: Shape.s(8)),
+        Text(
+          'Motolii',
+          style: TextStyles.name(Grey.g76)
+              .copyWith(fontWeight: FontWeight.w700, letterSpacing: -.3),
+        ),
+        SizedBox(width: Shape.s(16)),
+        SizedBox(
+          width: Shape.z(180),
+          child: ShelfSearchField(controller: find, hint: 'Search'),
+        ),
+        const Spacer(),
+        if (picked.isNotEmpty) ...[
+          homeButton('home-export', 'Export ${picked.length}', true, onExport),
+          homeButton('home-unpick', 'Cancel', false, onUnpick),
+          SizedBox(width: Shape.s(8)),
+        ],
+        homeButton('home-by-date', 'Date', !byName, onByDate),
+        homeButton('home-by-name', 'Name', byName, onByName),
+        SizedBox(width: Shape.s(12)),
+        _NewButton(onTap: onNew),
+        SizedBox(width: Shape.s(4)),
+        if (onFolder != null)
+          IconPress(
+            (c) => Glyph(AppGlyphs.folder, size: Shape.z(12), color: c),
+            key: const ValueKey('home-folder'),
+            tip: 'Change Folder',
+            onTap: onFolder!,
+            size: Shape.z(28),
+            ink: Grey.g56,
+          ),
+        IconPress(
+          (c) => Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
+          key: const ValueKey('home-close'),
+          tip: 'Close',
+          onTap: onClose,
+          size: Shape.z(28),
+          ink: Grey.g56,
+        ),
+      ],
+    ),
+  );
+}
+
+class _NewButton extends StatefulWidget {
+  const _NewButton({required this.onTap});
+  final VoidCallback onTap;
+  @override
+  State<_NewButton> createState() => _NewButtonState();
+}
+
+class _NewButtonState extends State<_NewButton> {
+  bool _h = false;
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => setState(() => _h = true),
+    onExit: (_) => setState(() => _h = false),
+    child: NakedButton(
+      enableFeedback: false,
+      key: const ValueKey('home-new'),
+      onPressed: widget.onTap,
+      child: AnimatedContainer(
+        duration: Motion.dur,
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(12),
+          vertical: Shape.s(5),
+        ),
         decoration: BoxDecoration(
-          color: WindowTokens.accent,
+          color: _h ? WindowTokens.accent : null,
+          border: Border.all(color: _h ? WindowTokens.accent : Grey.g26),
           borderRadius: Shape.round(6),
         ),
         child: Text(
-          'M',
-          style: TextStyles.title(WindowTokens.onAccent).copyWith(
-            fontSize: TextStyles.px(16),
-            fontWeight: FontWeight.w900,
-            height: 1,
-          ),
+          '+ New',
+          style: TextStyles.label(_h ? WindowTokens.onAccent : Grey.g76)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
       ),
-      SizedBox(width: Shape.s(10)),
-      Text(
-        'Motolii',
-        style: TextStyles.title(Grey.g95).copyWith(
-          fontSize: TextStyles.px(18),
-          fontWeight: FontWeight.w800,
-          letterSpacing: -.3,
+    ),
+  );
+}
+
+class _Empty extends StatelessWidget {
+  const _Empty({required this.searching});
+  final bool searching;
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          searching ? 'No matches' : 'No projects yet',
+          style: TextStyles.title(
+            Grey.g38,
+          ).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w300),
         ),
-      ),
-      SizedBox(width: Shape.s(10)),
-      Container(
-        width: 2,
-        height: Shape.z(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [WindowTokens.seiji, WindowTokens.nadeshiko],
-          ),
+        SizedBox(height: Shape.s(6)),
+        Text(
+          searching ? 'Try a different search.' : 'Create one to get started.',
+          style: TextStyles.label(Grey.g26),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
