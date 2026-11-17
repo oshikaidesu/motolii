@@ -1,10 +1,10 @@
-#ifndef MOTOLII_COMMUNITY_SITES_ADAPTER_H_
-#define MOTOLII_COMMUNITY_SITES_ADAPTER_H_
+#ifndef MOTOLII_COMMUNITY_SITES_SITE_ADAPTER_H_
+#define MOTOLII_COMMUNITY_SITES_SITE_ADAPTER_H_
 
 // Adapters for code found on the net. They detect which site a pasted program
 // was written for and turn it into something the engine runs without the user
 // changing the code. JavaScript becomes a p5.js sketch running on the p5.js
-// canvas (community/p5/p5_stand.h). A shader becomes an ISF effect
+// canvas (community/p5js/p5_stand.h). A shader becomes an ISF effect
 // (community/isf/isf.cpp). Information taken from the page, such as the
 // libraries it needs, goes in a comment line before the code, so the sketch's
 // own lines stay as they were (sketch_marked in community/quickjs/script.h).
@@ -99,4 +99,4 @@ std::string adapter_isf(const std::string& text);
 
 }  // namespace motolii
 
-#endif  // MOTOLII_COMMUNITY_SITES_ADAPTER_H_
+#endif  // MOTOLII_COMMUNITY_SITES_SITE_ADAPTER_H_

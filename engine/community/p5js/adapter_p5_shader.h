@@ -1,5 +1,5 @@
-#ifndef MOTOLII_COMMUNITY_P5_ADAPTER_P5_SHADER_H_
-#define MOTOLII_COMMUNITY_P5_ADAPTER_P5_SHADER_H_
+#ifndef MOTOLII_COMMUNITY_P5JS_ADAPTER_P5_SHADER_H_
+#define MOTOLII_COMMUNITY_P5JS_ADAPTER_P5_SHADER_H_
 
 // Converts a p5.js sketch that paints the whole canvas with shader() into an
 // ISF effect.
@@ -42,4 +42,4 @@ bool adapter_p5_shader(const std::string& json, std::string& fs,
 
 }  // namespace motolii
 
-#endif  // MOTOLII_COMMUNITY_P5_ADAPTER_P5_SHADER_H_
+#endif  // MOTOLII_COMMUNITY_P5JS_ADAPTER_P5_SHADER_H_

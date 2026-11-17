@@ -33,7 +33,7 @@ struct FilmRead {
     if (out) gst_object_unref(out);
   }
   // The folder of the images that the script came with; see
-  // document/scripts/adapter.h.
+  // document/scripts/import_adapter.h.
   std::string beside;
   // Opens `file` and reads its first frame. `wide` is the frame width in
   // pixels, or 0 for the size of the video. Returns false if the pipeline

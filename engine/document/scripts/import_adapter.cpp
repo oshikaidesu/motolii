@@ -1,4 +1,4 @@
-#include "document/scripts/adapter.h"
+#include "document/scripts/import_adapter.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -18,10 +18,10 @@
 #include "base/hash.h"
 #include "community/hydra/hydra_isf.h"
 #include "community/isf/isf.h"
-#include "community/p5/adapter_p5_shader.h"
+#include "community/p5js/adapter_p5_shader.h"
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "community/sites/adapter_net.h"
 #include "community/sites/adapter_shadertoy_json.h"
 #include "community/three/tsl_shelf.h"
@@ -84,7 +84,7 @@ std::string doc_p5_shaded(const std::filesystem::path& file,
 // written as a .glb file beside the script, the material comes from the scene,
 // and the layer is placed where the scene places the part. The layer's js_part
 // property holds `p`, so that the script can find its part again (see
-// __three_each in community/p5/p5_stand.h). Passing `solid` as 0 creates a new
+// __three_each in community/p5js/p5_stand.h). Passing `solid` as 0 creates a new
 // layer; otherwise that layer is updated. Returns the layer, or 0 on failure.
 int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
                    int p, int solid) {

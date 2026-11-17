@@ -28,7 +28,7 @@
 #include "base/file_read.h"
 #include "base/hash.h"
 #include "community/isf/isf_translate.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "community/three/three_isf.h"
 #include "sca/builtinResource.h"
 

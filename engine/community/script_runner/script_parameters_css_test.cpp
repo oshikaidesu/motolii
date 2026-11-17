@@ -1,6 +1,6 @@
 // Tests that `script_parameters` (script_parameters.h) pulls one track
 // parameter out of every CSS custom property declaration in a pen whose
-// adapter_form is "css" (community/sites/adapter.h). This is the CSS half
+// adapter_form is "css" (community/sites/site_adapter.h). This is the CSS half
 // of "paste → card": a pen's --duration / --radius / --angle appear as
 // sliders on its ValuesCard, so the user can retime or resize what the
 // pen does without editing the CSS text.

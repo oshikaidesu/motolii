@@ -1,7 +1,7 @@
 #ifndef MOTOLII_COMMUNITY_SITES_ADAPTER_NET_H_
 #define MOTOLII_COMMUNITY_SITES_ADAPTER_NET_H_
 
-// Fetches things from the net for the adapters in adapter.h. Downloads use
+// Fetches things from the net for the adapters in site_adapter.h. Downloads use
 // curl, started directly with no shell in between. Also reads works from
 // OpenProcessing. A work named by its address is fetched through the site's
 // public API (openprocessing.org/api: its tabs, libraries, files and license)

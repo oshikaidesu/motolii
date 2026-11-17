@@ -1,5 +1,5 @@
-#ifndef MOTOLII_COMMUNITY_P5_WEB_AUDIO_STAND_H_
-#define MOTOLII_COMMUNITY_P5_WEB_AUDIO_STAND_H_
+#ifndef MOTOLII_COMMUNITY_P5JS_WEB_AUDIO_STAND_H_
+#define MOTOLII_COMMUNITY_P5JS_WEB_AUDIO_STAND_H_
 
 // Web Audio with no page and no loudspeaker, for a sketch that listens: what
 // p5.sound (third_party/js/p5/addons, its file as it is released) and code
@@ -13,4 +13,4 @@
 // what is real (the graph, AnalyserNode, AudioWorkletNode, time, loaded
 // buffers) and what is not (sketch-made oscillators, output to speakers).
 
-#endif  // MOTOLII_COMMUNITY_P5_WEB_AUDIO_STAND_H_
+#endif  // MOTOLII_COMMUNITY_P5JS_WEB_AUDIO_STAND_H_

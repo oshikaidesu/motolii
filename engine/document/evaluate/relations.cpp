@@ -361,7 +361,7 @@ double doc_related(Doc& d, int by, int layer, const char* name, double t,
   // comes from the simulated world. Otherwise it comes from the file's relate()
   // results, one number per member and per name in doc_relate_names, blended by
   // the strength. Its falloff is applied inside the file, see __relates in
-  // engine/community/p5/p5_stand.h. While layers settle (d.relations.settled)
+  // engine/community/p5js/p5_stand.h. While layers settle (d.relations.settled)
   // it gives nothing, because what it gives may change with time.
   if (d.relations.settled) return base;
   const bool pushes = doc_pushes(d, by);
