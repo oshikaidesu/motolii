@@ -258,9 +258,10 @@ class _HomeWindowState extends State<HomeWindow> {
     Widget grid(List<HomeProject> docs) => LayoutBuilder(
       builder: (context, box) {
         final gap = box.maxWidth > 800 ? 36.0 : 24.0;
+        final maxCols = docs.length.clamp(1, 4);
         final cols = ((box.maxWidth + gap) / (homeTile + gap)).floor().clamp(
           1,
-          6,
+          maxCols,
         );
         final tile = (box.maxWidth - gap * (cols - 1)) / cols;
         return Wrap(
