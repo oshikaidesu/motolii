@@ -106,6 +106,7 @@ class _HomeCardState extends State<HomeCard> {
                     duration: Motion.dur,
                     curve: Motion.ease,
                     decoration: BoxDecoration(
+                      color: Grey.g15,
                       borderRadius: Shape.round(12),
                       boxShadow: [
                         BoxShadow(

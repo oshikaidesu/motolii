@@ -339,7 +339,7 @@ class _HomeWindowState extends State<HomeWindow> {
     return Stack(
       key: const ValueKey('ws-home'),
       children: [
-        Positioned.fill(child: ColoredBox(color: WindowTokens.ground)),
+        Positioned.fill(child: ColoredBox(color: Grey.g10)),
         Positioned(
           top: -100,
           left: 0,
@@ -351,8 +351,8 @@ class _HomeWindowState extends State<HomeWindow> {
                 center: const Alignment(-.4, .3),
                 radius: 1.0,
                 colors: [
-                  WindowTokens.accent.withValues(alpha: .03),
-                  WindowTokens.ground.withValues(alpha: 0),
+                  WindowTokens.accent.withValues(alpha: .04),
+                  Grey.g10.withValues(alpha: 0),
                 ],
               ),
             ),
