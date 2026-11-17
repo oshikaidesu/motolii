@@ -212,12 +212,16 @@ class _HomeWindowState extends State<HomeWindow> {
                       Container(
                         width: 24,
                         height: 2,
-                        color: WindowTokens.accent,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [WindowTokens.seiji, WindowTokens.usuki],
+                          ),
+                        ),
                       ),
                       SizedBox(height: Shape.s(10)),
                       Text(
                         'CONTINUE',
-                        style: TextStyles.micro(WindowTokens.accent).copyWith(
+                        style: TextStyles.micro(WindowTokens.seiji).copyWith(
                           letterSpacing: 3,
                           fontWeight: FontWeight.w800,
                           fontSize: TextStyles.px(9),
@@ -394,7 +398,18 @@ class _HomeWindowState extends State<HomeWindow> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(height: 3, color: WindowTokens.accent),
+            Container(
+              height: 3,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    WindowTokens.seiji,
+                    WindowTokens.nadeshiko,
+                    WindowTokens.usuki,
+                  ],
+                ),
+              ),
+            ),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -561,7 +576,14 @@ class _HomeWindowState extends State<HomeWindow> {
                           Container(
                             width: 40,
                             height: 2,
-                            color: WindowTokens.accent,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  WindowTokens.seiji,
+                                  WindowTokens.nadeshiko,
+                                ],
+                              ),
+                            ),
                           ),
                           Expanded(
                             child: Container(
@@ -650,7 +672,17 @@ class _HomeWordmark extends StatelessWidget {
         ),
       ),
       SizedBox(width: Shape.s(10)),
-      Container(width: 2, height: Shape.z(20), color: WindowTokens.accent),
+      Container(
+        width: 2,
+        height: Shape.z(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [WindowTokens.seiji, WindowTokens.nadeshiko],
+          ),
+        ),
+      ),
     ],
   );
 }

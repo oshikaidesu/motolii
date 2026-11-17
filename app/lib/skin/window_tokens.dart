@@ -76,4 +76,16 @@ abstract final class WindowTokens {
 
   /// The playhead line: the accent, so "now" is the loudest line in the window. Its head is an [accent] fill.
   static Color get playhead => accentInk;
+
+  /// The brand triad from the website: seiji (青磁), nadeshiko (撫子), usuki (浅黄).
+  static Color get seiji => ColorTheme.of('Seiji', const Color(0xFF69B0AC));
+  static Color get nadeshiko =>
+      ColorTheme.of('Nadeshiko', const Color(0xFFDC9FB4));
+  static Color get usuki => ColorTheme.of('Usuki', const Color(0xFFE8B64A));
+  static Color get seijiInk =>
+      ColorTheme.of('SeijiInk', const Color(0xFF1f6f6a));
+  static Color get nadeshikoInk =>
+      ColorTheme.of('NadeshikoInk', const Color(0xFFa85b77));
+  static Color get usukiInk =>
+      ColorTheme.of('UsukiInk', const Color(0xFF8a6a16));
 }

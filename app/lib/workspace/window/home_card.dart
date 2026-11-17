@@ -11,17 +11,25 @@ import 'package:motolii/workspace/window/home_project.dart';
 
 const homeTile = 240.0;
 
-/// A seeded gradient for cards with no thumbnail, based on the project name's hash.
+/// The brand triad from the website: seiji (青磁), nadeshiko (撫子), usuki (浅黄).
+List<(Color, Color)> get _triad => [
+  (WindowTokens.seiji, WindowTokens.seijiInk),
+  (WindowTokens.nadeshiko, WindowTokens.nadeshikoInk),
+  (WindowTokens.usuki, WindowTokens.usukiInk),
+];
+
+/// Which triad color a project uses, cycled by the name's hash.
+(Color, Color) triadOf(int index) => _triad[index % _triad.length];
+
+/// A seeded gradient for cards with no thumbnail, based on the triad.
 Color seedColor(String name) {
-  final h = name.hashCode;
-  final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .35, .18).toColor();
+  final (c, _) = triadOf(name.hashCode.abs());
+  return HSLColor.fromColor(c).withLightness(.18).withSaturation(.4).toColor();
 }
 
 Color seedColorLight(String name) {
-  final h = name.hashCode;
-  final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .4, .28).toColor();
+  final (c, _) = triadOf(name.hashCode.abs());
+  return HSLColor.fromColor(c).withLightness(.28).withSaturation(.35).toColor();
 }
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
@@ -115,7 +123,7 @@ class _HomeCardState extends State<HomeCard> {
                           offset: Offset(0, h ? 8 : 2),
                         ),
                         BoxShadow(
-                          color: seedColor(d.name)
+                          color: triadOf(widget.index).$1
                               .withValues(alpha: h ? .15 : 0),
                           blurRadius: h ? 32 : 0,
                         ),
@@ -181,20 +189,36 @@ class _HomeCardState extends State<HomeCard> {
                               ),
                             ),
                           ),
-                        // Index number (Swiss style).
+                        // Index + triad color tag.
                         Positioned(
                           left: 0,
                           top: 0,
                           child: Padding(
                             padding: EdgeInsets.all(Shape.s(8)),
-                            child: Text(
-                              '${widget.index + 1}'.padLeft(2, '0'),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Grey.g56.withValues(alpha: h ? .9 : .5),
-                                letterSpacing: .5,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 3,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: triadOf(widget.index).$1,
+                                    borderRadius: Shape.round(2),
+                                  ),
+                                ),
+                                SizedBox(width: Shape.s(5)),
+                                Text(
+                                  '${widget.index + 1}'.padLeft(2, '0'),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Grey.g56.withValues(
+                                      alpha: h ? .9 : .5,
+                                    ),
+                                    letterSpacing: .5,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
