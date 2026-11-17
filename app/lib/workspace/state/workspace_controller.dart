@@ -150,6 +150,7 @@ class WorkspaceController extends ChangeNotifier {
 
   @override
   void dispose() {
+    live.cancel();
     project.dispose();
     notices.dispose();
     playhead.dispose();

@@ -15,7 +15,6 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/layers/layer_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
@@ -42,7 +41,8 @@ class _DepthToolState extends State<DepthTool> {
     void edit(void Function() f, String name, double value) {
       setState(f);
       if (joined != null) {
-        dragLayerValue(ws, joined.camera, name, value);
+        if (!ws.live.isOpen) ws.live.hold(joined.camera);
+        ws.live.update(name, value);
       }
     }
 
@@ -116,14 +116,11 @@ class _DepthToolState extends State<DepthTool> {
                       f.clamp(8.0, 600.0),
                     ),
                     onDone: () {
-                      // Ending the drag makes the change one undo step.
-                      if (joined != null) {
-                        endDrag(ws);
-                      }
+                      if (joined != null) ws.live.letGo();
                     },
                     onCancel: () {
                       if (joined != null) {
-                        cancelDrag(ws);
+                        ws.live.cancel();
                         setState(() {});
                       }
                     },

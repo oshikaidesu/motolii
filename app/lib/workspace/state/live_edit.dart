@@ -1,10 +1,11 @@
-// One gesture as one undo step that the stage and every panel follow while it lasts. The first move opens the step,
-// each move is written into it and shown, letting go closes it, and cancelling (Escape, a lost pointer) takes it all
-// back. The step is the engine's undo step, a SQLite transaction (begin, then commit or rollback), so the values in
-// progress have one place and every panel reads them from there; `show` (engine/entry/calls_later.cpp) matches the
-// stage again and reads the previews of the layers it names anew. While one move is on its way the next waits, and
-// moves in between are skipped, since the newest says all. This is how the Ease tool already wrote its drags
-// (ease_writer.dart); it is the one way now.
+// The one gesture gateway. Every continuous drag — carry or live writes — goes through here, so the undo step has one
+// owner and Escape / pointer loss / dispose all have one cancel path.
+//
+// Carry: the engine holds values in memory, updates are coalesced and cheap, one commit at release. Used by the stage
+// (move, resize, rotate, crop), bar drag/trim/slip and depth.
+//
+// Live writes: each step writes to SQLite and `show`s the result. Used by keyframe slide, Ease, colours, inspector
+// words and the transform pad.
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 
@@ -18,14 +19,45 @@ class LiveEdit {
   LiveEdit(this.ws);
   final WorkspaceController ws;
 
-  bool _open = false, _going = false;
+  bool _open = false, _going = false, _carry = false;
   LiveWrites? _waiting;
 
   /// Whether a gesture's undo step is open.
   bool get isOpen => _open;
 
+  // ---- carry ------------------------------------------------
+
+  /// Begins a carry-style drag on [layer]. The engine holds values in memory; updates go through
+  /// [Motolii.dragUpdate] as before. Calling again while already carrying the same layer is a no-op
+  /// (the engine's doc_hold is idempotent for the same layer).
+  void hold(int layer) {
+    if (_carry) return;
+    assert(!_open, 'A live-writes gesture is already open');
+    ws.inside!.take(layer);
+    _open = true;
+    _carry = true;
+  }
+
+  /// Sends a value into the carry drag. [name] is the property name and [a] is its new value.
+  void update(String name, double a, [double b = 0]) {
+    assert(_carry, 'update is for carry gestures');
+    ws.inside?.dragUpdate(name, a, b);
+  }
+
+  /// Ends the carry, keeping or discarding it. [then] hears the engine's answer.
+  void letGo({bool keep = true, void Function(bool, String)? then}) {
+    if (!_carry) return;
+    _open = false;
+    _carry = false;
+    final m = ws.inside;
+    if (m != null) ws.after(m.later('drag_end', number: keep ? 1 : 0), then);
+  }
+
+  // ---- live writes ------------------------------------------
+
   /// Writes [writes] into the gesture's undo step, opening it at the first move, and shows the result.
   void move(LiveWrites writes) {
+    assert(!_carry, 'A carry gesture is open — use dragUpdate, not move');
     final m = ws.inside;
     if (m == null) return;
     if (_going) {
@@ -52,6 +84,7 @@ class LiveEdit {
   /// Ends the gesture with [last] written, if given, as one undo step; a change with no gesture before it is a step
   /// of its own. [then] hears why the step was refused, or null when it was kept.
   void done([LiveWrites? last, void Function(String? why)? then]) {
+    assert(!_carry, 'A carry gesture is open — use letGo, not done');
     final m = ws.inside;
     if (m == null) return;
     _waiting = null;
@@ -62,13 +95,22 @@ class LiveEdit {
     ws.after(m.later('together'), (done, why) => then?.call(done ? null : why));
   }
 
-  /// Takes the whole gesture back, as SQLite's rollback does; the stage and the panels show the document as it was.
-  /// Returns whether there was one to take back.
+  // ---- common -----------------------------------------------
+
+  /// Takes the whole gesture back — carry or live writes — and returns whether there was one.
   bool cancel() {
     final m = ws.inside;
     _waiting = null;
     if (!_open || m == null) return false;
+    if (_carry) {
+      _open = false;
+      _carry = false;
+      _going = false;
+      ws.after(m.later('drag_end', number: 0));
+      return true;
+    }
     _open = false;
+    _going = false;
     ws.after(m.later('together', number: -1));
     return true;
   }

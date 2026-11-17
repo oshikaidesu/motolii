@@ -211,8 +211,7 @@ class TrackDrag extends ChangeNotifier {
     final h = _bar, ws = workspace!;
     _bar = null;
     if (h == null || !timeline_service.isConnected(ws)) return;
-    // Does not wait for the engine.
-    ws.after(timeline_service.endBarDrag(ws, keep && h.moved));
+    ws.live.letGo(keep: keep && h.moved);
   }
 
   /// A click on a property lane, at [p].
@@ -338,7 +337,7 @@ class TrackDrag extends ChangeNotifier {
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
-      // On a lane, a click on a keyframe deletes it.
+      // On a lane, a click on a keyframe selects it.
       final t = int.parse(l.id);
       final at = timeline_service.keyframeTimes(ws, t, n),
           f = v.frameAt(p.dx) / WorkspaceController.fps;
@@ -439,7 +438,7 @@ class TrackDrag extends ChangeNotifier {
       _stops = ws.stops(skip: {l.id})..add(ws.frame);
       return true;
     }
-    timeline_service.grabLayer(ws, int.parse(l.id));
+    ws.live.hold(int.parse(l.id));
     ws.select(l.id);
     if (ws.playing) ws.playing = false;
     _barIn = l.inF;

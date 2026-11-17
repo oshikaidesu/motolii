@@ -240,7 +240,7 @@ class StageDrag extends ChangeNotifier {
         }
       }
       if (by != null) {
-        stageStartDrag(ws, picked);
+        ws.live.hold(picked);
         // Canvas coordinates, which is what the engine expects.
         final at = v.toComposition(local);
         stageUpdateDrag(ws, 'grip', at.dx, at.dy);
@@ -260,7 +260,7 @@ class StageDrag extends ChangeNotifier {
   void layerDragStart(String id, Offset local) {
     final ws = _stage.workspace, t = int.tryParse(id);
     if (!stageConnected(ws) || t == null) return;
-    stageStartDrag(ws, t);
+    ws.live.hold(t);
     ws.select(id);
     // Grabbing a layer stops playback.
     if (ws.playing) ws.playing = false;
@@ -402,8 +402,7 @@ class StageDrag extends ChangeNotifier {
       notifyListeners();
     }
     if (h == null || !stageConnected(ws) || free) return;
-    // Queue the release without waiting, then reread the project once the engine has applied it.
-    ws.after(stageEndDrag(ws, keep: keep && h.moved));
+    ws.live.letGo(keep: keep && h.moved);
   }
 
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.

@@ -178,9 +178,11 @@ class _TimelinePaneState extends State<TimelinePane>
 
   bool _escapeKey(KeyEvent e) {
     if (e is KeyDownEvent && e.logicalKey == LogicalKeyboardKey.escape) {
+      final had =
+          (workspace?.live.isOpen ?? false) || drag.selectionBox != null;
       ruler.cancel();
       drag.up(keep: false);
-      return true;
+      return had;
     }
     return false;
   }
