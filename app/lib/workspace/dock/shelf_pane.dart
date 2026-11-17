@@ -1,4 +1,4 @@
-// A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create or Presets.
+// A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create or Looks.
 // It has a header, a search field and a body. Each shelf is one tab of the window's panes.
 // Media is the one file browser, for the project and the disk (media/media_shelf.dart).
 import 'package:flutter/scheduler.dart';
@@ -20,6 +20,7 @@ import 'package:motolii/workspace/dock/effects/effects_controller.dart';
 import 'package:motolii/workspace/dock/effects/effects_shelf.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_shelf.dart';
+import 'package:motolii/workspace/dock/looks/looks_shelf.dart';
 import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/dock/media/media_shelf.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
@@ -306,14 +307,7 @@ class _ShelfPaneState extends State<ShelfPane> {
               'Fonts' => FontsShelf(c, _fonts),
               'Colors' => ColorsShelf(c, _colors),
               'Create' => CreateShelf(c),
-              'Looks' => Padding(
-                padding: EdgeInsets.all(Shape.s(24)),
-                child: Text(
-                  'No looks yet',
-                  textAlign: TextAlign.center,
-                  style: TextStyles.label(Grey.g63),
-                ),
-              ),
+              'Looks' => LooksShelf(c),
               _ => MediaShelf(c, _media),
             },
           ),

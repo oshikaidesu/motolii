@@ -79,5 +79,6 @@ const shelfLooks = <String, ShelfLook>{
   'Effects': _tile,
   'Media': _tile,
   'Create': _tile,
+  'Looks': _tile,
   'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
 };
