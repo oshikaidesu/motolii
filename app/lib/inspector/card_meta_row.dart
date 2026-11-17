@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaByName;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField;
@@ -66,7 +67,7 @@ class _CardMetaRowState extends State<CardMetaRow> {
       ),
       decoration: BoxDecoration(
         color: hot ? Grey.g26 : Grey.g20,
-        borderRadius: BorderRadius.circular(Shape.s(3)),
+        borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -142,7 +143,9 @@ class _CardMetaRowState extends State<CardMetaRow> {
                       ),
                       decoration: BoxDecoration(
                         color: h ? Grey.g26 : Grey.g20,
-                        borderRadius: BorderRadius.circular(Shape.s(3)),
+                        borderRadius: BorderRadius.all(
+                          Shape.r(WindowTokens.chipRadius),
+                        ),
                       ),
                       child: Text(t, style: TextStyles.label(Grey.g63)),
                     ),
