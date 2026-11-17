@@ -31,7 +31,7 @@
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/match.h"
-#include "document/scripts/adapter.h"
+#include "document/scripts/import_adapter.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/recipes.h"
 #include "document/scripts/scripts.h"

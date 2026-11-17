@@ -1,7 +1,7 @@
-#ifndef MOTOLII_DOCUMENT_SCRIPTS_ADAPTER_H_
-#define MOTOLII_DOCUMENT_SCRIPTS_ADAPTER_H_
+#ifndef MOTOLII_DOCUMENT_SCRIPTS_IMPORT_ADAPTER_H_
+#define MOTOLII_DOCUMENT_SCRIPTS_IMPORT_ADAPTER_H_
 
-// adapter.h: imports code found on the net into the project.
+// import_adapter.h: imports code found on the net into the project.
 // The code (a shader, a p5.js sketch, a three.js scene, Hydra code, or a file
 // of any of them) is read as what it is, stored unchanged in the programs/
 // folder so that it also appears on the Create shelf, and placed on the canvas.
@@ -32,4 +32,4 @@ std::string doc_code_saved(Doc& d, const std::string& file);
 
 }  // namespace motolii
 
-#endif  // MOTOLII_DOCUMENT_SCRIPTS_ADAPTER_H_
+#endif  // MOTOLII_DOCUMENT_SCRIPTS_IMPORT_ADAPTER_H_

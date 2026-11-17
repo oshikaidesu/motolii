@@ -13,9 +13,9 @@
 #include <string>
 
 #include "base/file_read.h"
-#include "community/p5/web_audio_stand.h"
+#include "community/p5js/web_audio_stand.h"
 #include "community/script_runner/script_runner.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "community/subtitles/subtitles.h"
 #include "media/sound_level.h"
 #include "media/video_frames_for_scripts.h"

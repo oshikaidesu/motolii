@@ -1,4 +1,4 @@
-#include "community/p5/adapter_p5_shader.h"
+#include "community/p5js/adapter_p5_shader.h"
 
 #include <algorithm>
 #include <cctype>
@@ -14,7 +14,7 @@
 
 #include "base/json.h"
 #include "community/hydra/hydra_isf.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 
 namespace motolii {
 

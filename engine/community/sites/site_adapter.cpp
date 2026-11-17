@@ -1,4 +1,4 @@
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 
 #include <algorithm>
 #include <filesystem>

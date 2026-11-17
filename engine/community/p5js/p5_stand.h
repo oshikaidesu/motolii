@@ -1,5 +1,5 @@
-#ifndef MOTOLII_COMMUNITY_P5_P5_STAND_H_
-#define MOTOLII_COMMUNITY_P5_P5_STAND_H_
+#ifndef MOTOLII_COMMUNITY_P5JS_P5_STAND_H_
+#define MOTOLII_COMMUNITY_P5JS_P5_STAND_H_
 
 // p5.js with no page: a sketch from the net, its file as it is, run by p5.js
 // itself (third_party/js/p5, 1.11.13, LGPL-2.1, its file as it is released) in
@@ -19,4 +19,4 @@
 //                  light and shader adapters)
 //   p5_start.js    appended to the sketch's own body so the sketch runs
 
-#endif  // MOTOLII_COMMUNITY_P5_P5_STAND_H_
+#endif  // MOTOLII_COMMUNITY_P5JS_P5_STAND_H_

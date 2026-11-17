@@ -15,7 +15,7 @@
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/project_reads.h"
 #include "community/script_runner/script_natives.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "community/subtitles/subtitles.h"
 #include "community/three/tsl_each.h"
 #include "media/video_frames_for_scripts.h"

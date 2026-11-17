@@ -16,7 +16,7 @@
 #include "community/aviutl/aviutl.h"
 #include "community/quickjs/script.h"
 #include "community/quickjs/script_leva.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "community/three/solid_three.h"
 
 namespace motolii {
@@ -133,7 +133,7 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
                             // parameters, solid_three.h)
       if (adapter_form(all.str()) ==
           "three") {  // (which part of the scene this thing is:
-                      // document/scripts/adapter.h)
+                      // document/scripts/import_adapter.h)
         ScriptParameter part;
         part.kind = "track", part.name = "part", part.label = "Part",
         part.high = 9999, part.step = 1;

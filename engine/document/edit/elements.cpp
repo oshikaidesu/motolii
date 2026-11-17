@@ -2,6 +2,8 @@
 // followed when the file changes (Alight Motion's My Elements). They are
 // stored like presets (presets.cpp); this file is the keeping, the adding and
 // the following.
+#include "document/edit/elements.h"
+
 #include <sqlite3.h>
 
 #include "document/document.h"
