@@ -80,10 +80,28 @@ class TimelineRulerPainter extends CustomPainter {
       RRect.fromLTRBR(a, 2, b, TimelineMetrics.band - 1, Shape.r(3)),
       p..color = Grey.g38,
     );
-    for (final x in [a, b - 4]) {
+    for (final x in [a, b - 5]) {
       c.drawRRect(
-        RRect.fromLTRBR(x, 1, x + 4, TimelineMetrics.band, Shape.r(2)),
-        p..color = Grey.g76,
+        RRect.fromLTRBR(x, 1, x + 5, TimelineMetrics.band, Shape.r(2)),
+        p..color = Grey.g91,
+      );
+      c.drawRect(
+        Rect.fromLTWH(
+          x + 1.5,
+          TimelineMetrics.band * .3,
+          0.8,
+          TimelineMetrics.band * .4,
+        ),
+        p..color = Grey.g44,
+      );
+      c.drawRect(
+        Rect.fromLTWH(
+          x + 2.8,
+          TimelineMetrics.band * .3,
+          0.8,
+          TimelineMetrics.band * .4,
+        ),
+        p..color = Grey.g44,
       );
     }
 

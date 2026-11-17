@@ -172,8 +172,9 @@ abstract class Forms {
       : (selected ? Color.lerp(kind, const Color(0xFFFFFFFF), .18)! : kind);
   double get trackRadius => 4;
   double trackBar({required bool selected}) => Shape.z(18);
-  Color trackBand(int index, bool selected) =>
-      selected ? Grey.g20 : (index.isEven ? Grey.bandA : Grey.bandB);
+  Color trackBand(int index, bool selected) => selected
+      ? Color.lerp(Grey.g20, Accent.fill, .08)!
+      : (index.isEven ? Grey.bandA : Grey.bandB);
 
   /// The mark at the front of a pane's tab. The app's own mark, unless a form draws a different shape.
   Widget paneMark(

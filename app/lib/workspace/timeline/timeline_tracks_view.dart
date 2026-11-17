@@ -179,8 +179,11 @@ mixin TimelineTracksView<T extends StatefulWidget>
                   child: IgnorePointer(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: WindowTokens.accent.withAlpha(36),
-                        border: WindowTokens.chosen,
+                        color: WindowTokens.accent.withAlpha(14),
+                        border: Border.all(
+                          color: WindowTokens.accent.withValues(alpha: .7),
+                          width: 1,
+                        ),
                       ),
                     ),
                   ),

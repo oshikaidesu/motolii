@@ -39,7 +39,7 @@ void _wayLine(
 ) {
   final n = way.length - 1, wide = xb - xa;
   if (wide <= 0) return;
-  final every = math.max(1, (n * 1.5 / wide).floor());
+  final every = math.max(1, (n * .7 / wide).floor());
   final from = ((-xa / wide * n).floor() - every).clamp(0, n),
       to = (((width - xa) / wide * n).ceil() + every).clamp(0, n);
   for (var i = from + every; i < to; i += every) {
@@ -308,14 +308,14 @@ class TimelineTracksPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
-          ..color = Grey.g100,
+          ..color = WindowTokens.accentHot,
       );
     }
     for (final st in r.stretches) {
       // The easing between each keyframe and the next, drawn as a thin line inside the bar, as Ableton draws automation.
       final xa = view.x(st.from), xb = view.x(st.to);
       if (xb - xa < 6 || xb < 0 || xa > s.width) continue;
-      final h = bar.height * .62, base = cy + h / 2;
+      final h = bar.height * .72, base = cy + h / 2;
       final line = Path()
         ..moveTo(xa, base - st.shape.first.clamp(-.5, 1.5) * h);
       _wayLine(
@@ -330,7 +330,7 @@ class TimelineTracksPainter extends CustomPainter {
         line,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2
+          ..strokeWidth = 1.6
           ..strokeJoin = StrokeJoin.round
           ..isAntiAlias = true
           ..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!,
@@ -405,27 +405,35 @@ class TimelineTracksPainter extends CustomPainter {
       );
     }
     if (r.laneOn case final i? when i + 1 < pts.length) {
+      final la = at(pts[i]).dx, lb = at(pts[i + 1]).dx;
+      final band = Rect.fromLTRB(
+        la,
+        cy - TimelineMetrics.row / 2,
+        lb,
+        cy + TimelineMetrics.row / 2,
+      );
       c.drawRect(
-        Rect.fromLTRB(
-          at(pts[i]).dx,
-          cy - TimelineMetrics.row / 2,
-          at(pts[i + 1]).dx,
-          cy + TimelineMetrics.row / 2,
-        ),
-        Paint()..color = WindowTokens.accent.withValues(alpha: .18),
-      ); // Highlights the segment open in the curve editor, like Theatre.js's connector.
+        band,
+        Paint()..color = WindowTokens.accent.withValues(alpha: .06),
+      );
+      for (final ex in [la, lb]) {
+        c.drawRect(
+          Rect.fromLTWH(ex, band.top, 1.5, band.height),
+          Paint()..color = WindowTokens.accent,
+        );
+      }
     }
     c.drawPath(
       line,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
+        ..strokeWidth = 1.5
         ..strokeJoin = StrokeJoin.round
         ..isAntiAlias = true
         ..color = col,
     );
     for (final q in pts) {
-      c.drawCircle(at(q), TimelineMetrics.key * .75, Paint()..color = col);
+      c.drawCircle(at(q), TimelineMetrics.key * .85, Paint()..color = col);
     }
   }
 

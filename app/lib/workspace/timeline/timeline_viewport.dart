@@ -68,6 +68,9 @@ class TimelineViewport extends ChangeNotifier {
   double get rowsHeight => _rowsHeight;
   double _rowsHeight = 200;
 
+  /// The row count from the last layout, for clamping between builds.
+  int _rows = 0;
+
   /// The width of one frame at zoom 1, where the whole project fits between the left and right padding.
   double get fit => math.max(
     .1,
@@ -98,6 +101,7 @@ class TimelineViewport extends ChangeNotifier {
   }) {
     _trackWidth = trackWidth;
     _rowsHeight = rowsHeight;
+    _rows = rows;
     _scroll = clampScroll(_scroll);
     _verticalScroll = clampVerticalScroll(rows);
   }
@@ -111,12 +115,31 @@ class TimelineViewport extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Keeps frame [f] in view when zoomed in: the view pages along when [f] is off either edge.
+  /// Keeps frame [f] in view when zoomed in: the view pages along as play
+  /// or a scrub carries it off the edge. When a frame leaves the visible area
+  /// the view jumps so it sits a tenth of the visible frames from the near
+  /// edge, as the original. Additionally, when the frame enters the outer 8 %
+  /// of either side the view nudges gently, so the playhead never slams into
+  /// the wall without warning.
   void follow(int f) {
     if (_zoom <= 1) return;
     final v = view, x = v.x(f);
-    if (x >= 0 && x <= _trackWidth - TimelineMetrics.padR) return;
-    _scroll = clampScroll(f - visible * .1);
+    final right = _trackWidth - TimelineMetrics.padR;
+    if (x < 0 || x > right) {
+      _scroll = clampScroll(f - visible * .1);
+      notifyListeners();
+      return;
+    }
+    final margin = _trackWidth * .08;
+    if (x < margin) {
+      _scroll = clampScroll(_scroll - visible * .04 * ((margin - x) / margin));
+    } else if (x > right - margin) {
+      _scroll = clampScroll(
+        _scroll + visible * .04 * ((x - (right - margin)) / margin),
+      );
+    } else {
+      return;
+    }
     notifyListeners();
   }
 
@@ -132,9 +155,10 @@ class TimelineViewport extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Scrolls the rows down by [pixels]. The next [layout] keeps the result inside the rows.
+  /// Scrolls the rows down by [pixels], clamped to the rows from the last layout.
   void scrollRowsBy(double pixels) {
-    _verticalScroll = _verticalScroll + pixels;
+    final max = math.max(0.0, _rows * TimelineMetrics.row - _rowsHeight);
+    _verticalScroll = (_verticalScroll + pixels).clamp(0.0, max).toDouble();
     notifyListeners();
   }
 }

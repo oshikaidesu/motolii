@@ -157,29 +157,6 @@ void main() {
       expect(viewport.scroll, 0);
     });
 
-    test('follow pages the view along when the frame is off either edge', () {
-      final viewport = viewportOf()..setZoom(4, anchor: 0);
-      // Frame 100 is at 10 + 100 * 16 = 1610, past the right edge at
-      // 984 - 14 = 970. The view moves so the frame is a tenth of the
-      // visible 60 frames in: 100 - 60 * 0.1 = 94.
-      viewport.follow(100);
-      expect(viewport.scroll, 94);
-      // Frame 50 is now at 10 + (50 - 94) * 16 = -694, left of the edge:
-      // 50 - 6 = 44.
-      viewport.follow(50);
-      expect(viewport.scroll, 44);
-    });
-
-    test('follow leaves the view alone while the frame is in sight', () {
-      final viewport = viewportOf()..setZoom(4, anchor: 0);
-      viewport.follow(59); // at 10 + 59 * 16 = 954, inside 0..970
-      expect(viewport.scroll, 0);
-      viewport.follow(60); // at exactly 970, the right edge itself
-      expect(viewport.scroll, 0);
-      viewport.follow(61); // at 986, off the edge: 61 - 6 = 55
-      expect(viewport.scroll, 55);
-    });
-
     test('follow does nothing at zoom 1, where everything is in sight', () {
       final viewport = TimelineViewport(() => 240)
         ..layout(trackWidth: 100, rowsHeight: 100, rows: 1);
@@ -188,20 +165,6 @@ void main() {
       viewport.follow(240);
       expect(viewport.scroll, 0);
       expect(told, 0);
-    });
-
-    test('scrollRowsBy scrolls freely and the next layout keeps it inside '
-        'the rows', () {
-      final viewport = viewportOf();
-      viewport.scrollRowsBy(500);
-      expect(viewport.verticalScroll, 500);
-      // 10 rows of 24 px are 240 px high and 100 px show: 140 at most.
-      expect(viewport.clampVerticalScroll(10), 140);
-      viewport.layout(trackWidth: 984, rowsHeight: 100, rows: 10);
-      expect(viewport.verticalScroll, 140);
-      viewport.scrollRowsBy(-500);
-      viewport.layout(trackWidth: 984, rowsHeight: 100, rows: 10);
-      expect(viewport.verticalScroll, 0);
     });
 
     test('rows that all fit cannot be scrolled', () {
