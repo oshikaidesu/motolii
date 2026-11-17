@@ -1,10 +1,6 @@
-// The home screen: a grid of the projects in a folder.
+// The home screen: a responsive grid of the projects in a folder.
 //
-// The layout follows CapCut's desktop home: a wide "New Project" button, then "Projects" with a search field and a grid
-// of square thumbnails, each with its name and "size | length" below.
-// The facts shown (aspect ratio, resolution, frame rate) and the grouping follow AbsentMotion (Apache-2.0,
-// ui/home/HomeScreen.kt, ProjectFacts.kt aspectName, ExportOptions.kt formatBytes):
-// projects are grouped under the day they were last changed, newest first, or listed by name.
+// A hero banner shows the last project ("Continue"), then a responsive grid of 16:9 cards with hover-reveal metadata.
 // Clicking a card opens it. Its menu can select, export, duplicate, or move it to the Trash after a confirmation.
 // The thumbnail, size and length come from what the project last saved (Motolii.poster), read without opening it.
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
@@ -359,12 +355,21 @@ class _HomeWindowState extends State<HomeWindow> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Projects',
-                  style: TextStyles.name(Grey.g76)
-                      .copyWith(letterSpacing: .5, fontWeight: FontWeight.w600),
+                  '${shown.length}',
+                  style: TextStyles.title(Grey.g76).copyWith(
+                    fontSize: TextStyles.px(20),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                SizedBox(width: Shape.s(8)),
-                Text('${shown.length}', style: TextStyles.name(Grey.g44)),
+                SizedBox(width: Shape.s(6)),
+                Padding(
+                  padding: EdgeInsets.only(top: Shape.s(2)),
+                  child: Text(
+                    shown.length == 1 ? 'project' : 'projects',
+                    style: TextStyles.label(Grey.g44)
+                        .copyWith(letterSpacing: 1.5),
+                  ),
+                ),
                 const Spacer(),
                 SizedBox(
                   width: Shape.z(200),
@@ -405,10 +410,28 @@ class _HomeWindowState extends State<HomeWindow> {
             ),
             SizedBox(height: Shape.s(20)),
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [grid(shown)],
-              ),
+              child: shown.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'No projects yet',
+                            style: TextStyles.title(Grey.g44).copyWith(
+                              fontSize: TextStyles.px(20),
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: .5,
+                            ),
+                          ),
+                          SizedBox(height: Shape.s(10)),
+                          Text(
+                            'Create one to get started.',
+                            style: TextStyles.label(Grey.g38),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(padding: EdgeInsets.zero, children: [grid(shown)]),
             ),
           ],
         ),

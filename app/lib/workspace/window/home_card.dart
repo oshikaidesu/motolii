@@ -15,13 +15,13 @@ const homeTile = 240.0;
 Color seedColor(String name) {
   final h = name.hashCode;
   final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .15, .12).toColor();
+  return HSLColor.fromAHSL(1, hue, .35, .18).toColor();
 }
 
 Color seedColorLight(String name) {
   final h = name.hashCode;
   final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .2, .2).toColor();
+  return HSLColor.fromAHSL(1, hue, .4, .28).toColor();
 }
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
@@ -104,21 +104,19 @@ class _HomeCardState extends State<HomeCard> {
                     duration: Motion.dur,
                     curve: Motion.ease,
                     decoration: BoxDecoration(
-                      borderRadius: Shape.round(10),
-                      boxShadow: h
-                          ? [
-                              BoxShadow(
-                                color: Grey.g00.withValues(alpha: .25),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ]
-                          : [],
-                      border: widget.open
-                          ? Border.all(
-                              color: WindowTokens.accent.withValues(alpha: .5),
-                            )
-                          : null,
+                      borderRadius: Shape.round(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Grey.g00.withValues(alpha: h ? .25 : 0),
+                          blurRadius: h ? 16 : 0,
+                          offset: Offset(0, h ? 6 : 0),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: widget.open
+                            ? WindowTokens.accent.withValues(alpha: .5)
+                            : Grey.g20.withValues(alpha: h ? .5 : .3),
+                      ),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: Stack(
@@ -145,10 +143,10 @@ class _HomeCardState extends State<HomeCard> {
                                     ? d.name[0].toUpperCase()
                                     : '?',
                                 style: TextStyle(
-                                  fontSize: 44,
-                                  fontWeight: FontWeight.w300,
+                                  fontSize: 56,
+                                  fontWeight: FontWeight.w200,
                                   color: Grey.g38,
-                                  letterSpacing: 2,
+                                  letterSpacing: 3,
                                 ),
                               ),
                             ),
@@ -242,13 +240,26 @@ class _HomeCardState extends State<HomeCard> {
                 ),
                 SizedBox(height: Shape.s(8)),
                 // Project name as a quiet caption.
-                Text(
-                  d.name,
+                AnimatedDefaultTextStyle(
+                  duration: Motion.dur,
                   style: TextStyles.name(h ? Grey.g91 : Grey.g56)
                       .copyWith(letterSpacing: .3),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Text(
+                    d.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                if (homeFacts(d).isNotEmpty)
+                  AnimatedDefaultTextStyle(
+                    duration: Motion.dur,
+                    style: TextStyles.micro(h ? Grey.g56 : Grey.g38),
+                    child: Text(
+                      homeFacts(d).join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 // Menu row.
                 if (widget.menu)
                   Padding(
