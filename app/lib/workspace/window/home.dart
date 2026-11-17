@@ -195,16 +195,18 @@ class _HomeWindowState extends State<HomeWindow> {
                       Text(
                         'CONTINUE',
                         style: TextStyles.micro(WindowTokens.accent).copyWith(
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w700,
+                          letterSpacing: 3,
+                          fontWeight: FontWeight.w800,
+                          fontSize: TextStyles.px(9),
                         ),
                       ),
-                      SizedBox(height: Shape.s(6)),
+                      SizedBox(height: Shape.s(4)),
                       Text(
                         name,
                         style: TextStyles.title(Grey.g95).copyWith(
-                          fontSize: TextStyles.px(22),
-                          fontWeight: FontWeight.w700,
+                          fontSize: TextStyles.px(28),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.5,
                         ),
                       ),
                       if (facts.isNotEmpty) ...[
@@ -319,188 +321,212 @@ class _HomeWindowState extends State<HomeWindow> {
     return ColoredBox(
       key: const ValueKey('ws-home'),
       color: WindowTokens.ground,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(Shape.s(48), Shape.s(28), Shape.s(48), 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                _HomeWordmark(),
-                const Spacer(),
-                MouseRegion(
-                  onEnter: (_) => setState(() => _hoverNew = true),
-                  onExit: (_) => setState(() => _hoverNew = false),
-                  child: NakedButton(
-                    enableFeedback: false,
-                    key: const ValueKey('home-new'),
-                    onPressed: widget.onNew,
-                    child: AnimatedContainer(
-                      duration: Motion.dur,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: Shape.s(14),
-                        vertical: Shape.s(6),
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _hoverNew ? Grey.g56 : Grey.g38,
-                        ),
-                        borderRadius: Shape.round(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '+',
-                            style: TextStyles.name(
-                              _hoverNew ? Grey.g91 : Grey.g76,
-                            ).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          SizedBox(width: Shape.s(6)),
-                          Text(
-                            'New',
-                            style: TextStyles.name(
-                              _hoverNew ? Grey.g91 : Grey.g76,
-                            ).copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: Shape.s(12)),
-                if (widget.onFolder != null)
-                  IconPress(
-                    (c) => Glyph(AppGlyphs.folder, size: Shape.z(12), color: c),
-                    key: const ValueKey('home-folder'),
-                    tip: 'Change Folder',
-                    onTap: _pickFolder,
-                    size: Shape.z(28),
-                    ink: Grey.g56,
-                  ),
-                IconPress(
-                  (c) => Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
-                  key: const ValueKey('home-close'),
-                  tip: 'Close',
-                  onTap: widget.onClose,
-                  size: Shape.z(28),
-                  ink: Grey.g56,
-                ),
-              ],
-            ),
-            SizedBox(height: Shape.s(24)),
-            if (_find.isEmpty)
-              if (_continueCard() case final card?) ...[
-                card,
-                SizedBox(height: Shape.s(28)),
-              ],
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '${shown.length}',
-                  style: TextStyles.title(Grey.g95).copyWith(
-                    fontSize: TextStyles.px(26),
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(width: Shape.s(6)),
-                Padding(
-                  padding: EdgeInsets.only(top: Shape.s(2)),
-                  child: Text(
-                    [
-                      shown.length == 1 ? 'project' : 'projects',
-                      if (shown.isNotEmpty) homeBytes(_totalBytes(shown)),
-                      if (_totalSeconds(shown) > 0)
-                        homeLength(_totalSeconds(shown)),
-                    ].join(' · '),
-                    style: TextStyles.label(Grey.g44)
-                        .copyWith(letterSpacing: 1.5),
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: Shape.z(200),
-                  child: ShelfSearchField(
-                    controller: _findText,
-                    hint: 'Search',
-                  ),
-                ),
-                SizedBox(width: Shape.s(8)),
-                if (_picked.isNotEmpty) ...[
-                  homeButton(
-                    'home-export',
-                    'Export ${_picked.length}',
-                    true,
-                    () => widget.onExport([..._picked]),
-                  ),
-                  homeButton(
-                    'home-unpick',
-                    'Cancel',
-                    false,
-                    () => setState(_picked.clear),
-                  ),
-                  SizedBox(width: Shape.s(8)),
-                ],
-                homeButton(
-                  'home-by-date',
-                  'Date',
-                  !byName,
-                  () => setState(() => byName = false),
-                ),
-                homeButton(
-                  'home-by-name',
-                  'Name',
-                  byName,
-                  () => setState(() => byName = true),
-                ),
-              ],
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: Shape.s(16)),
-              child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(height: 3, color: WindowTokens.accent),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                Shape.s(48),
+                Shape.s(24),
+                Shape.s(48),
+                0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(width: 40, height: 2, color: WindowTokens.accent),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Grey.g20.withValues(alpha: .4),
+                  Row(
+                    children: [
+                      _HomeWordmark(),
+                      const Spacer(),
+                      MouseRegion(
+                        onEnter: (_) => setState(() => _hoverNew = true),
+                        onExit: (_) => setState(() => _hoverNew = false),
+                        child: NakedButton(
+                          enableFeedback: false,
+                          key: const ValueKey('home-new'),
+                          onPressed: widget.onNew,
+                          child: AnimatedContainer(
+                            duration: Motion.dur,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Shape.s(14),
+                              vertical: Shape.s(6),
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _hoverNew ? Grey.g56 : Grey.g38,
+                              ),
+                              borderRadius: Shape.round(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '+',
+                                  style: TextStyles.name(
+                                    _hoverNew ? Grey.g91 : Grey.g76,
+                                  ).copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(width: Shape.s(6)),
+                                Text(
+                                  'New',
+                                  style: TextStyles.name(
+                                    _hoverNew ? Grey.g91 : Grey.g76,
+                                  ).copyWith(fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: Shape.s(12)),
+                      if (widget.onFolder != null)
+                        IconPress(
+                          (c) => Glyph(
+                            AppGlyphs.folder,
+                            size: Shape.z(12),
+                            color: c,
+                          ),
+                          key: const ValueKey('home-folder'),
+                          tip: 'Change Folder',
+                          onTap: _pickFolder,
+                          size: Shape.z(28),
+                          ink: Grey.g56,
+                        ),
+                      IconPress(
+                        (c) =>
+                            Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
+                        key: const ValueKey('home-close'),
+                        tip: 'Close',
+                        onTap: widget.onClose,
+                        size: Shape.z(28),
+                        ink: Grey.g56,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: Shape.s(24)),
+                  if (_find.isEmpty)
+                    if (_continueCard() case final card?) ...[
+                      card,
+                      SizedBox(height: Shape.s(28)),
+                    ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${shown.length}',
+                        style: TextStyles.title(Grey.g95).copyWith(
+                          fontSize: TextStyles.px(26),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(width: Shape.s(6)),
+                      Padding(
+                        padding: EdgeInsets.only(top: Shape.s(2)),
+                        child: Text(
+                          [
+                            shown.length == 1 ? 'project' : 'projects',
+                            if (shown.isNotEmpty) homeBytes(_totalBytes(shown)),
+                            if (_totalSeconds(shown) > 0)
+                              homeLength(_totalSeconds(shown)),
+                          ].join(' · '),
+                          style: TextStyles.label(Grey.g44)
+                              .copyWith(letterSpacing: 1.5),
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: Shape.z(200),
+                        child: ShelfSearchField(
+                          controller: _findText,
+                          hint: 'Search',
+                        ),
+                      ),
+                      SizedBox(width: Shape.s(8)),
+                      if (_picked.isNotEmpty) ...[
+                        homeButton(
+                          'home-export',
+                          'Export ${_picked.length}',
+                          true,
+                          () => widget.onExport([..._picked]),
+                        ),
+                        homeButton(
+                          'home-unpick',
+                          'Cancel',
+                          false,
+                          () => setState(_picked.clear),
+                        ),
+                        SizedBox(width: Shape.s(8)),
+                      ],
+                      homeButton(
+                        'home-by-date',
+                        'Date',
+                        !byName,
+                        () => setState(() => byName = false),
+                      ),
+                      homeButton(
+                        'home-by-name',
+                        'Name',
+                        byName,
+                        () => setState(() => byName = true),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: Shape.s(16)),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 2,
+                          color: WindowTokens.accent,
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            color: Grey.g20.withValues(alpha: .4),
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  Expanded(
+                    child: shown.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _find.isNotEmpty
+                                      ? 'No matches'
+                                      : 'No projects yet',
+                                  style: TextStyles.title(Grey.g44).copyWith(
+                                    fontSize: TextStyles.px(20),
+                                    fontWeight: FontWeight.w300,
+                                    letterSpacing: .5,
+                                  ),
+                                ),
+                                SizedBox(height: Shape.s(10)),
+                                Text(
+                                  _find.isNotEmpty
+                                      ? 'Try a different search.'
+                                      : 'Create one to get started.',
+                                  style: TextStyles.label(Grey.g38),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView(
+                            padding: EdgeInsets.only(bottom: Shape.s(48)),
+                            children: [grid(shown)],
+                          ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: shown.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _find.isNotEmpty ? 'No matches' : 'No projects yet',
-                            style: TextStyles.title(Grey.g44).copyWith(
-                              fontSize: TextStyles.px(20),
-                              fontWeight: FontWeight.w300,
-                              letterSpacing: .5,
-                            ),
-                          ),
-                          SizedBox(height: Shape.s(10)),
-                          Text(
-                            _find.isNotEmpty
-                                ? 'Try a different search.'
-                                : 'Create one to get started.',
-                            style: TextStyles.label(Grey.g38),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView(
-                      padding: EdgeInsets.only(bottom: Shape.s(48)),
-                      children: [grid(shown)],
-                    ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
