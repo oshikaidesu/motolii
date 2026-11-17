@@ -1,21 +1,16 @@
 // The Paths card's inside: a sample shape showing what the active operators do, a reorderable stack of those operators,
 // and a picker grouped by kind to add more. The stack's order is display only; the engine applies them in its own
 // fixed order. Points and inner are on the Shape card, not here.
-import 'dart:math' as math;
-import 'dart:typed_data';
-
 import 'package:flutter/widgets.dart';
-import 'package:path_parsing/path_parsing.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
-import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
-import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
-import 'package:motolii/inspector/rows/row_info.dart';
+import 'package:motolii/inspector/paths/paths_picker.dart';
+import 'package:motolii/inspector/paths/paths_preview.dart';
+import 'package:motolii/inspector/paths/paths_stack.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// The Paths card's inside (see host_cards.dart).
 class PathsBody extends StatefulWidget {
@@ -76,19 +71,6 @@ class PathsBody extends StatefulWidget {
   };
   static final _funcSubs = {for (final subs in _funcDeps.values) ...subs};
 
-  // The order operators appear in the picker, grouped. Morph and Trail are left
-  // out (they need another layer). A sub — folded by the engine (Parameter.fold,
-  // e.g. Zig zag's Ridges/Smooth) or depending on its owner (_funcDeps) — is
-  // left out of the picker and shown under its parent.
-  static const _groups = [
-    (
-      'Deform',
-      ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
-    ),
-    ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
-    ('Animate', ['trim', 'trim_offset']),
-  ];
-
   // All stackable operators in their default order.
   static const _stackable = [
     'round',
@@ -116,18 +98,17 @@ class PathsBody extends StatefulWidget {
 
 class _PathsBodyState extends State<PathsBody> {
   // The parents and standalone operators on the stack, in order. Each parent's
-  // subs come with it (PathsBody._subs); they are not held here.
+  // subs come with it; they are not held here.
   List<String> _order = [];
   bool _initialized = false;
-  bool _picking = false;
 
   Map<String, Parameter> get _params => {
     for (final p in widget.card.params) p.id: p,
   };
 
   // The subs shown under [id]: those the engine folds under it (Parameter.fold ==
-  // its label, e.g. Zig zag's Ridges/Smooth) plus its functional dependents
-  // (PathsBody._funcDeps). Empty for an operator that stands on its own.
+  // its label, e.g. Zig zag's Ridges/Smooth) plus its functional dependents.
+  // Empty for an operator that stands on its own.
   List<String> _subsOf(String id) {
     final label = _params[id]?.label;
     final byFold = label == null
@@ -157,7 +138,6 @@ class _PathsBodyState extends State<PathsBody> {
 
   // Adding an operator turns on its folded subs too, each at its default, as one
   // gesture (only Zig zag has any; everything else adds just itself).
-  // The same operator may be added more than once.
   void _add(InspectorValues doc, String id) {
     doc.beginGesture();
     for (final x in [id, ..._subsOf(id)]) {
@@ -166,7 +146,6 @@ class _PathsBodyState extends State<PathsBody> {
     doc.endGesture();
     setState(() {
       _order = [..._order, id];
-      _picking = false;
     });
   }
 
@@ -208,7 +187,7 @@ class _PathsBodyState extends State<PathsBody> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Preview(
+              PathsPreview(
                 round: round,
                 points: points,
                 inner: inner,
@@ -216,413 +195,25 @@ class _PathsBodyState extends State<PathsBody> {
                 svgPath: svgPath,
               ),
               SizedBox(height: Shape.s(8)),
-              if (_order.isNotEmpty) _buildStack(doc, params),
-              _buildAddButton(doc, params),
+              if (_order.isNotEmpty)
+                PathsStack(
+                  order: _order,
+                  params: params,
+                  doc: doc,
+                  subsOf: _subsOf,
+                  onRemoveAt: (i, id) => _removeAt(doc, i, id),
+                  onReorder: (from, to) {
+                    setState(() {
+                      final item = _order.removeAt(from);
+                      _order.insert(to, item);
+                    });
+                  },
+                ),
+              PathsPicker(isSub: _isSub, onAdd: (id) => _add(doc, id)),
             ],
           ),
         );
       },
     );
   }
-
-  Widget _buildStack(InspectorValues doc, Map<String, Parameter> params) {
-    // ReorderableListView measures item heights itself; no SizedBox needed.
-    // Items that move into an Overlay during drag still need their InspectorScope.
-    final scope = InspectorScope.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ReorderableList(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _order.length,
-          onReorderItem: (from, to) {
-            setState(() {
-              final item = _order.removeAt(from);
-              _order.insert(to, item);
-            });
-          },
-          itemBuilder: (ctx, i) {
-            final id = _order[i];
-            // The parent carries the drag handle and the remove button; its subs
-            // ride beneath it in the same item, so they move and go as a set.
-            return InspectorScope(
-              key: ValueKey('$id:$i'),
-              doc: scope.doc,
-              tick: scope.tick,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _StackItem(
-                    index: i,
-                    id: id,
-                    param: params[id],
-                    doc: doc,
-                    onRemove: () => _removeAt(doc, i, id),
-                  ),
-                  for (final sub in _subsOf(id))
-                    _StackItem(
-                      index: i,
-                      id: sub,
-                      param: params[sub],
-                      doc: doc,
-                      onRemove: () {},
-                      isSub: true,
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-        SizedBox(height: Shape.s(2)),
-      ],
-    );
-  }
-
-  Widget _buildAddButton(InspectorValues doc, Map<String, Parameter> params) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Pressable(
-          onTap: () => setState(() => _picking = !_picking),
-          builder: (_, hot) => Container(
-            height: Shape.z(28),
-            decoration: BoxDecoration(
-              color: hot ? Grey.g15 : null,
-              borderRadius: Shape.round(6),
-              border: Border.all(
-                color: _picking ? Grey.g38 : Grey.g20,
-                strokeAlign: BorderSide.strokeAlignInside,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '+ operator',
-              style: TextStyles.label(_picking ? Grey.g76 : Grey.g44),
-            ),
-          ),
-        ),
-        if (_picking) _buildPicker(doc, params),
-      ],
-    );
-  }
-
-  Widget _buildPicker(InspectorValues doc, Map<String, Parameter> params) {
-    return Container(
-      margin: EdgeInsets.only(top: Shape.s(2)),
-      padding: EdgeInsets.all(Shape.s(4)),
-      decoration: BoxDecoration(
-        color: Grey.g10,
-        borderRadius: Shape.round(8),
-        border: Border.all(color: Grey.g20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final (group, ids) in PathsBody._groups)
-            ..._buildPickerGroup(doc, group, ids),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPickerGroup(
-    InspectorValues doc,
-    String group,
-    List<String> ids,
-  ) {
-    final available = [
-      for (final id in ids)
-        if (!_isSub(id)) id,
-    ];
-    if (available.isEmpty) return [];
-    return [
-      Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: Shape.s(6),
-          vertical: Shape.s(3),
-        ),
-        child: Text(group, style: TextStyles.label(Grey.g44)),
-      ),
-      for (final id in available)
-        Pressable(
-          onTap: () => _add(doc, id),
-          builder: (_, hot) => Container(
-            height: Shape.z(26),
-            padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-            decoration: BoxDecoration(
-              color: hot ? Grey.g20 : null,
-              borderRadius: Shape.round(5),
-            ),
-            alignment: Alignment.centerLeft,
-            child: Text(
-              id.replaceAll('_', ' '),
-              style: TextStyles.name(hot ? Grey.g91 : Grey.g76),
-            ),
-          ),
-        ),
-    ];
-  }
-}
-
-class _StackItem extends StatelessWidget {
-  const _StackItem({
-    required this.index,
-    required this.id,
-    required this.param,
-    required this.doc,
-    required this.onRemove,
-    this.isSub = false,
-  });
-  final int index;
-  final String id;
-  final Parameter? param;
-  final InspectorValues doc;
-  final VoidCallback onRemove;
-  // A sub rides under its parent: no drag handle, no remove, indented and dim.
-  final bool isSub;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = param;
-    if (p == null) return const SizedBox.shrink();
-    // A sub reads as the part after its parent's name: 'zigzag_ridges' -> 'ridges'.
-    final label = isSub
-        ? id.split('_').skip(1).join(' ')
-        : id.replaceAll('_', ' ');
-    return Container(
-      height: Shape.z(32),
-      margin: EdgeInsets.only(bottom: Shape.s(2)),
-      decoration: BoxDecoration(color: Grey.g10, borderRadius: Shape.round(6)),
-      child: Row(
-        children: [
-          // The parent drags the whole set; a sub has no handle of its own.
-          if (isSub)
-            SizedBox(width: Shape.z(28))
-          else
-            ReorderableDragStartListener(
-              index: index,
-              child: SizedBox(
-                width: Shape.z(28),
-                child: Center(
-                  child: Text('⠿', style: TextStyles.label(Grey.g56)),
-                ),
-              ),
-            ),
-          SizedBox(
-            width: Shape.z(68),
-            child: Padding(
-              padding: EdgeInsets.only(left: isSub ? Shape.s(10) : 0),
-              child: Text(
-                label,
-                style: TextStyles.label(isSub ? Grey.g56 : Grey.g76),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          Expanded(
-            child: RowInfo(
-              keys: doc.keys['v_$id'] ?? KeyframeState.off,
-              child: InspectorNumberField(
-                p,
-                key: ValueKey('paths:$id'),
-                id: 'v_$id',
-                caption: label,
-                compact: true,
-              ),
-            ),
-          ),
-          // Only the parent removes the set; a sub keeps the row aligned.
-          if (isSub)
-            SizedBox(width: Shape.z(28))
-          else
-            Pressable(
-              onTap: onRemove,
-              builder: (_, hot) => SizedBox(
-                width: Shape.z(28),
-                child: Center(
-                  child: Text(
-                    '×',
-                    style: TextStyles.label(hot ? Grey.g76 : Grey.g44),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Preview extends StatelessWidget {
-  const _Preview({
-    required this.round,
-    required this.points,
-    required this.inner,
-    required this.shape,
-    required this.svgPath,
-  });
-  final double round;
-  final int points;
-  final double inner;
-  final String shape;
-  final String svgPath;
-
-  @override
-  Widget build(BuildContext context) => ClipRect(
-    child: CustomPaint(
-      key: const ValueKey('paths-preview'),
-      size: Size.fromHeight(Shape.z(60)),
-      painter: _PreviewPaint(
-        round: round,
-        points: points,
-        inner: inner,
-        shape: shape,
-        svgPath: svgPath,
-      ),
-    ),
-  );
-}
-
-class _PreviewPaint extends CustomPainter {
-  const _PreviewPaint({
-    required this.round,
-    required this.points,
-    required this.inner,
-    required this.shape,
-    required this.svgPath,
-  });
-  final double round;
-  final int points;
-  final double inner;
-  final String shape;
-  final String svgPath;
-
-  // The engine's outline (motolii_shape_svg: SVG path data) as a Path fitted into a 2 [r] box about ([cx], [cy]).
-  // The outline is meant to be a unit high about the origin, but a strong deform (a large round, a rough edge) carries
-  // it well past that, so its real bounds are measured and scaled to fit rather than assumed. Null when it is not path data.
-  Path? _parseSvg(double cx, double cy, double r) {
-    final unit = Path();
-    try {
-      writeSvgPathDataToPath(svgPath, _IntoPath(unit));
-    } catch (_) {
-      return null;
-    }
-    final b = unit.getBounds();
-    if (b.isEmpty) return null;
-    final k = r * 2 / math.max(b.width, b.height);
-    return unit.transform(
-      Float64List.fromList([
-        k,
-        0,
-        0,
-        0,
-        0,
-        k,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        cx - b.center.dx * k,
-        cy - b.center.dy * k,
-        0,
-        1,
-      ]),
-    );
-  }
-
-  Path _fallbackPath(double cx, double cy, double r) {
-    final path = Path();
-    final isRect = shape == 'rect' && points == 4 && inner <= 0;
-    if (points == 0 || points >= 50) {
-      path.addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
-    } else if (isRect || points < 3) {
-      final rr = math.min(round * r * 2, r * 0.49);
-      path.addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(cx, cy), width: r * 2, height: r * 2),
-          Radius.circular(rr),
-        ),
-      );
-    } else {
-      final rr = round.clamp(0.0, 0.49) * r;
-      final step = 2 * math.pi / points;
-      final start = -math.pi / 2;
-      for (var i = 0; i < points; i++) {
-        final a = start + step * i;
-        final x = cx + r * math.cos(a), y = cy + r * math.sin(a);
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else if (rr > 0) {
-          final prev = start + step * (i - 1);
-          final mx = cx + r * math.cos(prev + step / 2) * 0.95;
-          final my = cy + r * math.sin(prev + step / 2) * 0.95;
-          path.quadraticBezierTo(mx, my, x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      path.close();
-    }
-    return path;
-  }
-
-  @override
-  void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
-    final cx = s.width / 2, cy = s.height / 2;
-    final r = math.min(s.width, s.height) * 0.32;
-    final path =
-        (svgPath.isNotEmpty ? _parseSvg(cx, cy, r) : null) ??
-        _fallbackPath(cx, cy, r);
-    c.drawPath(
-      path,
-      Paint()
-        ..color = Grey.g15
-        ..style = PaintingStyle.fill,
-    );
-    c.drawPath(
-      path,
-      Paint()
-        ..color = Accent.fill.withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_PreviewPaint o) =>
-      o.round != round ||
-      o.points != points ||
-      o.inner != inner ||
-      o.shape != shape ||
-      o.svgPath != svgPath;
-}
-
-/// What path_parsing reads of an SVG path, drawn into a Flutter [Path].
-class _IntoPath extends PathProxy {
-  _IntoPath(this.path);
-  final Path path;
-  @override
-  void moveTo(double x, double y) => path.moveTo(x, y);
-  @override
-  void lineTo(double x, double y) => path.lineTo(x, y);
-  @override
-  void cubicTo(
-    double x1,
-    double y1,
-    double x2,
-    double y2,
-    double x3,
-    double y3,
-  ) => path.cubicTo(x1, y1, x2, y2, x3, y3);
-  @override
-  void close() => path.close();
 }
