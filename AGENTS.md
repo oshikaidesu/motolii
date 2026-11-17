@@ -26,3 +26,22 @@
 | 全テストを走らせたい時 | `cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes` |
 | フレームレートを測りたい時 | [docs/TESTING.md](docs/TESTING.md) の「Frame timing」 |
 | C++ ユニットテスト | `engine/build.sh test`（重い・エンジンビルドを含む） |
+| ミューテーション検査 | `cd app && mutation_test -b <xml>` — XML の書き方は下記 |
+
+ミューテーション検査（`pub global activate mutation_test` で入る）：対象ファイルとテストコマンドを XML に書いて走らせる。テストが変異を検出できなければ、テストに穴がある。
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<mutations version="1.0">
+  <files>
+    <file>lib/inspector/inspector_sync.dart</file>
+  </files>
+  <commands>
+    <command group="test" expected-return="0"
+            working-directory="/Users/member_ottoto/motolii/app"
+            timeout="120">flutter test test/inspector/inspector_sync_report_test.dart test/inspector/inspector_sync_show_test.dart --dart-define=MOTOLII_RUN_EVERY_TEST=yes</command>
+  </commands>
+</mutations>
+```
+
+現在 Quality A のファイル: `inspector_sync.dart`・`inspector_values.dart`・`field_selection.dart`（全ミューテーション検出済み）。
