@@ -16,7 +16,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/storage/disk.dart' show existsFile;
+import 'package:motolii/storage/disk.dart' show existsFile, imageFile;
 import 'package:motolii/storage/open_in_host.dart' show pickFolder;
 import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/thumbnail_folder.dart';
@@ -123,7 +123,7 @@ class _HomeWindowState extends State<HomeWindow> {
     if (folder != null && mounted) widget.onFolder?.call(folder);
   }
 
-  /// The "continue from here" card: the last project the user worked on, shown large (UAT 94).
+  /// The hero banner: the last project, shown as a wide 16:9 card with its thumbnail.
   Widget? _continueCard() {
     final last = widget.lastProject;
     if (last == null || !existsFile(last)) return null;
@@ -135,35 +135,72 @@ class _HomeWindowState extends State<HomeWindow> {
       key: const ValueKey('home-continue'),
       onPressed: () => widget.onOpen(last),
       child: Container(
-        height: Shape.z(80),
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(28)),
+        height: Shape.z(180),
         decoration: BoxDecoration(
-          color: WindowTokens.card,
           borderRadius: Shape.round(14),
-          border: Border.all(color: WindowTokens.accent, width: 1.5),
+          border: Border.all(
+            color: WindowTokens.accent.withValues(alpha: .4),
+            width: 1,
+          ),
         ),
-        child: Row(
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Glyph(
-              AppGlyphs.chevron,
-              size: Shape.z(14),
-              color: WindowTokens.accent,
+            if (lastDoc?.picture != null)
+              Image(image: imageFile(lastDoc!.picture!), fit: BoxFit.cover)
+            else
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [seedColor(name), seedColorLight(name)],
+                  ),
+                ),
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Grey.g00.withValues(alpha: .87),
+                    Grey.g00.withValues(alpha: .2),
+                  ],
+                ),
+              ),
             ),
-            SizedBox(width: Shape.s(16)),
-            Expanded(
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(32),
+                vertical: Shape.s(24),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text(name, style: TextStyles.title(Grey.g95).bold),
+                  Text(
+                    'CONTINUE',
+                    style: TextStyles.micro(
+                      WindowTokens.accent,
+                    ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: Shape.s(6)),
+                  Text(
+                    name,
+                    style: TextStyles.title(Grey.g95).copyWith(
+                      fontSize: TextStyles.px(22),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   if (facts.isNotEmpty) ...[
-                    SizedBox(height: Shape.s(3)),
+                    SizedBox(height: Shape.s(4)),
                     Text(facts.join(' · '), style: TextStyles.label(Grey.g56)),
                   ],
                 ],
               ),
             ),
-            Text('Continue', style: TextStyles.label(Grey.g63)),
           ],
         ),
       ),
@@ -184,11 +221,17 @@ class _HomeWindowState extends State<HomeWindow> {
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[],
-        shown = [
-          for (final d in _docs)
-            if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
-        ];
+    final shown = [
+      for (final d in _docs)
+        if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
+    ];
+    if (!byName) {
+      shown.sort((a, b) => b.changed.compareTo(a.changed));
+    } else {
+      shown.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
     Widget grid(List<HomeProject> docs) => Wrap(
       spacing: 24,
       runSpacing: 28,
@@ -200,7 +243,6 @@ class _HomeWindowState extends State<HomeWindow> {
             picked: _picked.contains(d.path),
             menu: _menu == d.path,
             asking: _asking == d.path,
-            // A press opens the project; with some picked, or with Cmd or Shift held, it picks by the rule of picks.dart.
             onTap: () {
               final k = clickKeys();
               if (_picked.isEmpty && !k.add && !k.span) {
@@ -236,158 +278,93 @@ class _HomeWindowState extends State<HomeWindow> {
           ),
       ],
     );
-    if (byName) {
-      rows.add(
-        grid(
-          shown..sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-          ),
-        ),
-      );
-    } else {
-      final byDay = <String, List<HomeProject>>{};
-      for (final d in shown..sort((a, b) => b.changed.compareTo(a.changed))) {
-        (byDay[homeDay(d.changed)] ??= []).add(d);
-      }
-      for (final MapEntry(key: day, value: docs) in byDay.entries) {
-        rows
-          ..add(
-            Padding(
-              padding: EdgeInsets.only(
-                top: rows.isEmpty ? 0 : Shape.s(28),
-                bottom: Shape.s(14),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(day, style: TextStyles.name(Grey.g91).bold),
-                  SizedBox(width: Shape.s(10)),
-                  // A hair-line that stretches across the remaining width ties the group together and separates it from the one above.
-                  Expanded(
-                    child: Container(height: 1, color: WindowTokens.line),
-                  ),
-                ],
-              ),
-            ),
-          )
-          ..add(grid(docs));
-      }
-    }
     return ColoredBox(
       key: const ValueKey('ws-home'),
       color: WindowTokens.ground,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(Shape.s(40), Shape.s(28), Shape.s(40), 0),
+        padding: EdgeInsets.fromLTRB(Shape.s(48), Shape.s(28), Shape.s(48), 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Top band: the same wordmark as the main window's top bar, so Home reads as the app's front door, and a plain close icon on the right.
             Row(
               children: [
                 _HomeWordmark(),
                 const Spacer(),
+                NakedButton(
+                  enableFeedback: false,
+                  key: const ValueKey('home-new'),
+                  onPressed: widget.onNew,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Shape.s(14),
+                      vertical: Shape.s(6),
+                    ),
+                    decoration: BoxDecoration(
+                      color: WindowTokens.accent,
+                      borderRadius: Shape.round(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '+',
+                          style: TextStyles.name(WindowTokens.onAccent)
+                              .copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        SizedBox(width: Shape.s(6)),
+                        Text(
+                          'New',
+                          style: TextStyles.name(WindowTokens.onAccent)
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: Shape.s(12)),
+                if (widget.onFolder != null)
+                  IconPress(
+                    (c) => Glyph(AppGlyphs.folder, size: Shape.z(12), color: c),
+                    key: const ValueKey('home-folder'),
+                    tip: 'Change Folder',
+                    onTap: _pickFolder,
+                    size: Shape.z(28),
+                    ink: Grey.g56,
+                  ),
                 IconPress(
                   (c) => Glyph(AppGlyphs.close, size: Shape.z(14), color: c),
                   key: const ValueKey('home-close'),
                   tip: 'Close',
                   onTap: widget.onClose,
                   size: Shape.z(28),
-                  ink: Grey.g63,
+                  ink: Grey.g56,
                 ),
               ],
             ),
-            SizedBox(height: Shape.s(22)),
+            SizedBox(height: Shape.s(24)),
             if (_continueCard() case final card?) ...[
               card,
-              SizedBox(height: Shape.s(14)),
+              SizedBox(height: Shape.s(28)),
             ],
-            NakedButton(
-              enableFeedback: false,
-              // "New Project" is the first thing after the wordmark: a wide button with an accent "+" badge to the left of the label, so the action reads as first-class.
-              key: const ValueKey('home-new'),
-              onPressed: widget.onNew,
-              child: Container(
-                height: Shape.z(72),
-                padding: EdgeInsets.symmetric(horizontal: Shape.s(28)),
-                decoration: BoxDecoration(
-                  color: WindowTokens.card,
-                  borderRadius: Shape.round(14),
-                  border: Border.all(color: WindowTokens.line),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: Shape.z(40),
-                      height: Shape.z(40),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: WindowTokens.accent,
-                        borderRadius: Shape.round(10),
-                      ),
-                      child: Text(
-                        '+',
-                        style: TextStyles.title(WindowTokens.onAccent).copyWith(
-                          fontSize: TextStyles.px(24),
-                          fontWeight: FontWeight.w800,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: Shape.s(16)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'New Project',
-                            style: TextStyles.title(Grey.g91).bold,
-                          ),
-                          SizedBox(height: Shape.s(3)),
-                          Text(
-                            'Start with an empty composition',
-                            style: TextStyles.label(Grey.g56),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Glyph(
-                      AppGlyphs.chevron,
-                      size: Shape.z(14),
-                      color: Grey.g56,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: Shape.s(32)),
-            // "Projects · N" header line with search on the right and the sort chips next to it.
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Projects', style: TextStyles.title(Grey.g91).bold),
-                SizedBox(width: Shape.s(10)),
-                Text('${shown.length}', style: TextStyles.title(Grey.g56)),
-                if (widget.onFolder != null) ...[
-                  SizedBox(width: Shape.s(10)),
-                  IconPress(
-                    (c) => Glyph(AppGlyphs.folder, size: Shape.z(12), color: c),
-                    key: const ValueKey('home-folder'),
-                    tip: 'Change Folder',
-                    onTap: _pickFolder,
-                    size: Shape.z(22),
-                    ink: Grey.g56,
-                  ),
-                ],
+                Text(
+                  'Projects',
+                  style: TextStyles.name(Grey.g76)
+                      .copyWith(letterSpacing: .5, fontWeight: FontWeight.w600),
+                ),
+                SizedBox(width: Shape.s(8)),
+                Text('${shown.length}', style: TextStyles.name(Grey.g44)),
                 const Spacer(),
                 SizedBox(
-                  width: Shape.z(220),
+                  width: Shape.z(200),
                   child: ShelfSearchField(
                     controller: _findText,
                     hint: 'Search',
                   ),
                 ),
-                SizedBox(width: Shape.s(10)),
+                SizedBox(width: Shape.s(8)),
                 if (_picked.isNotEmpty) ...[
                   homeButton(
                     'home-export',
@@ -417,8 +394,13 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
               ],
             ),
-            SizedBox(height: Shape.s(16)),
-            Expanded(child: ListView(children: rows)),
+            SizedBox(height: Shape.s(20)),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [grid(shown)],
+              ),
+            ),
           ],
         ),
       ),
