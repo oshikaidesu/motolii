@@ -31,7 +31,7 @@ class RulerMarks extends ChangeNotifier {
 
   final WorkspaceController? Function() _workspaceOf;
   final TimelineViewport _viewport;
-  final FrameSnap? Function(Set<int> stops) _snapTo;
+  final FrameSnap? Function(List<SnapTarget> targets) _snapTo;
 
   /// The workspace the timeline is shown in, read each time it is needed.
   WorkspaceController? get workspace => _workspaceOf();
@@ -149,7 +149,7 @@ class RulerMarks extends ChangeNotifier {
         // As in After Effects, holding Shift while dragging the time indicator snaps it to what it passes.
         final shift = HardwareKeyboard.instance.isShiftPressed;
         workspace!.frame = shift
-            ? _snapTo(workspace!.stops())?.nearest(f) ?? f
+            ? _snapTo(workspace!.snapTargets())?.nearest(f)?.frame ?? f
             : f;
     }
   }

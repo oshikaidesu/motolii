@@ -14,6 +14,8 @@ import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/playhead.dart';
+import 'package:motolii/workspace/timeline/frame_snap.dart'
+    show SnapKind, SnapTarget;
 
 /// What the timeline lists besides the layers: the markers, the work area, the tempo, the length and the label colours.
 typedef _Listed = ({
@@ -433,14 +435,31 @@ class ProjectReader {
   /// The document's markers, each a time in seconds and a name, in time order. Only when connected.
   List<(double, String)> get marks => _inside!.marks;
 
-  /// The frames that dragging snaps to and that J and K jump to, like Alight Motion's snapTargets: the marks, the
-  /// other layers' ends and keyframes, and a sound's strikes (the beat marks CapCut's bars snap to).
+  /// The frames that J and K jump to: the marks, the other layers' ends and keyframes, and a sound's strikes.
   Set<int> stops({Set<String> skip = const {}}) => {
     for (final (at, _) in marks) (at * _frameRate).round(),
     for (final l in layers)
       if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
     ..._playhead.strikes,
   };
+
+  /// Typed snap targets for drags, following Lumit's SnapTarget pattern.
+  List<SnapTarget> snapTargets({Set<String> skip = const {}}) => [
+    SnapTarget(_playhead.moment.value, SnapKind.playhead),
+    for (final (at, _) in marks)
+      SnapTarget((at * _frameRate).round(), SnapKind.marker),
+    for (final l in layers)
+      if (!skip.contains(l.id)) ...[
+        SnapTarget(l.inF, SnapKind.layerIn),
+        SnapTarget(l.outF, SnapKind.layerOut),
+        for (final k in l.keys) SnapTarget(k, SnapKind.keyframe),
+      ],
+    for (final s in _playhead.strikes) SnapTarget(s, SnapKind.beat),
+    if (_inside != null) ...[
+      SnapTarget((_inside!.work.$1 * _frameRate).round(), SnapKind.workArea),
+      SnapTarget((_inside!.work.$2 * _frameRate).round(), SnapKind.workArea),
+    ],
+  ];
 
   /// The markers that have a colour: each marker's time mapped to its label colour. Only when connected.
   Map<double, int> get markColors => _inside!.markColors;

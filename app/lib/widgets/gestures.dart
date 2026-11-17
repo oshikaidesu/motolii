@@ -15,8 +15,8 @@ abstract final class Gestures {
   static const double grab = 8.0;
 
   /// `drag.4` Timeline bars and keyframes stop within this distance of other
-  /// stopping points.
-  static const double snapTimeline = 8.0;
+  /// stopping points. 12 px, as Lumit found 8 too weak across a marker.
+  static const double snapTimeline = 12.0;
 
   /// `drag.4` A layer on the stage snaps to edges, centres and guides within
   /// this many screen pixels (divided by the view scale when compared to

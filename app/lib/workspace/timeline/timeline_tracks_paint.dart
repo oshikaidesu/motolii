@@ -16,6 +16,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
+import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/track_drag.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
@@ -108,8 +109,8 @@ class TimelineTracksPainter extends CustomPainter {
   final int fps;
   final double vscroll;
 
-  /// The frame where the drag snapped, drawn as a line like Alight Motion's SnapLine, or null.
-  final int? restAt;
+  /// What the drag snapped to: its frame and kind, or null.
+  final SnapTarget? restAt;
 
   @override
   void paint(Canvas c, Size s) {
@@ -154,11 +155,16 @@ class TimelineTracksPainter extends CustomPainter {
       if (top > s.height || top + TimelineMetrics.row < 0) continue;
       _row(c, s, rows[i], top + TimelineMetrics.row / 2 - .5);
     }
-    if (restAt case final f?) {
-      c.drawRect(
-        Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height),
-        p..color = WindowTokens.accent,
-      );
+    if (restAt case final t?) {
+      final sx = view.x(t.frame).roundToDouble();
+      final ink = switch (t.kind) {
+        SnapKind.marker => WindowTokens.toneText,
+        SnapKind.playhead => WindowTokens.playhead,
+        SnapKind.workArea => Grey.g76,
+        SnapKind.beat => WindowTokens.toneAudio,
+        _ => WindowTokens.accent,
+      };
+      c.drawRect(Rect.fromLTWH(sx, 0, 1, s.height), p..color = ink);
     }
   }
 

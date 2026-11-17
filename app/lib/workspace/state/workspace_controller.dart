@@ -17,6 +17,7 @@ import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/panel_layout.dart';
 import 'package:motolii/workspace/state/playhead.dart';
 import 'package:motolii/workspace/state/project_reader.dart';
+import 'package:motolii/workspace/timeline/frame_snap.dart' show SnapTarget;
 import 'package:motolii/workspace/state/row_folds.dart';
 import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -83,6 +84,8 @@ class WorkspaceController extends ChangeNotifier {
   (double, double) get work => project.work;
   List<(double, String)> get marks => project.marks;
   Set<int> stops({Set<String> skip = const {}}) => project.stops(skip: skip);
+  List<SnapTarget> snapTargets({Set<String> skip = const {}}) =>
+      project.snapTargets(skip: skip);
   Map<double, int> get markColors => project.markColors;
   List<(String, double)> get guides => project.guides;
   List<String> under(String id) => project.under(id);

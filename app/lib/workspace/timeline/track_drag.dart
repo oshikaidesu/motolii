@@ -38,7 +38,7 @@ class TrackDrag extends ChangeNotifier {
   final TimelineViewport _viewport;
   final TimelineRows _rows;
   final SlipEdit _slip;
-  final FrameSnap? Function(Set<int> stops) _snapTo;
+  final FrameSnap? Function(List<SnapTarget> targets) _snapTo;
 
   /// The workspace the timeline is shown in, read each time it is needed.
   WorkspaceController? get workspace => _workspaceOf();
@@ -47,18 +47,16 @@ class TrackDrag extends ChangeNotifier {
   // The timeline only records which part was grabbed and how far the pointer moved.
   // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
   ({String id, String part, double grab, bool moved})? _bar;
-  // The frames the drag can snap to, collected when the drag starts.
-  Set<int> _stops = const {};
+  // The typed snap targets, collected when the drag starts.
+  List<SnapTarget> _targets = const [];
 
-  /// The frame the drag has snapped to, where a guide line is drawn, or null.
-  int? get snappedAt => _restAt;
-  int? _restAt;
+  /// What the drag snapped to: its frame (for the guide line) and its kind (for the indicator). Null between snaps.
+  SnapTarget? get snappedAt => _restAt;
+  SnapTarget? _restAt;
 
-  // The drag distance [by] adjusted so that the nearest of [ends] lands on a snap stop, if one is close enough.
-  // Where it landed is kept in [_restAt].
   int _snapped(int by, List<int> ends) {
-    final snapped = _snapTo(_stops)?.snap(by, ends);
-    _restAt = snapped?.at;
+    final snapped = _snapTo(_targets)?.snap(by, ends);
+    _restAt = snapped?.caught;
     return snapped?.by ?? by;
   }
 
@@ -392,7 +390,7 @@ class TrackDrag extends ChangeNotifier {
         if (!ws.keys.contains(held)) ws.pickKey(held);
         if (ws.playing) ws.playing = false;
         _slide = (keys: all, grab: frame, by: 0);
-        _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
+        _targets = ws.snapTargets(skip: {r.l.id});
         return true;
       }
       // Inside a selected stretch: slide both boundary keyframes together.
@@ -405,7 +403,7 @@ class TrackDrag extends ChangeNotifier {
           ];
           if (ws.playing) ws.playing = false;
           _slide = (keys: both, grab: f.round(), by: 0);
-          _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
+          _targets = ws.snapTargets(skip: {r.l.id});
           return true;
         }
       }
@@ -435,7 +433,7 @@ class TrackDrag extends ChangeNotifier {
       if (!ws.keys.contains(held)) ws.pickKey(held);
       if (ws.playing) ws.playing = false;
       _slide = (keys: all, grab: k, by: 0);
-      _stops = ws.stops(skip: {l.id})..add(ws.frame);
+      _targets = ws.snapTargets(skip: {l.id});
       return true;
     }
     ws.live.hold(int.parse(l.id));
@@ -443,7 +441,7 @@ class TrackDrag extends ChangeNotifier {
     if (ws.playing) ws.playing = false;
     _barIn = l.inF;
     _barOut = l.outF;
-    _stops = ws.stops(skip: {l.id, ...ws.many})..add(ws.frame);
+    _targets = ws.snapTargets(skip: {l.id, ...ws.many});
     _slip.start(ws, l);
     if (off && (ws.frame < l.inF || ws.frame >= l.outF)) ws.frame = l.inF;
     _bar = (

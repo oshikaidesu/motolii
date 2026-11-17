@@ -228,12 +228,11 @@ class _TimelinePaneState extends State<TimelinePane>
     }
   }
 
-  // Snapping to [stops] and the beat grid at the present zoom, or null while Cmd is held, which turns snapping off.
-  // The drags on the ruler and on the tracks both ask for it.
-  FrameSnap? _snapTo(Set<int> stops) => HardwareKeyboard.instance.isMetaPressed
+  FrameSnap? _snapTo(List<SnapTarget> targets) =>
+      HardwareKeyboard.instance.isMetaPressed
       ? null
       : FrameSnap(
-          stops: stops,
+          targets: targets,
           beats: workspace!.beats,
           pixelsPerFrame: viewport.view.pixelsPerFrame,
         );
