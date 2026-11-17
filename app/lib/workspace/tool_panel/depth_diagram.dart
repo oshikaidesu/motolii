@@ -4,6 +4,8 @@ import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart'
+    show HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
@@ -19,17 +21,37 @@ class DepthDiagram extends StatefulWidget {
     required this.onFocus,
     required this.onFocal,
     required this.onDone,
+    this.onCancel,
   });
   final DepthLens lens;
   final void Function(double z, String? id) onFocus;
   final void Function(double focal) onFocal;
   final VoidCallback onDone;
+  final VoidCallback? onCancel;
   @override
   State<DepthDiagram> createState() => _DiagramState();
 }
 
 class _DiagramState extends State<DepthDiagram> {
   bool _drag = false, _hot = false;
+  double? _focusBefore, _focalBefore;
+
+  bool _escapeKey(KeyEvent e) {
+    if (e is! KeyDownEvent ||
+        e.logicalKey != LogicalKeyboardKey.escape ||
+        !_drag) {
+      return false;
+    }
+    // Restore the values from before the drag and cancel the undo step.
+    if (_focusBefore != null) widget.lens.focus = _focusBefore!;
+    if (_focalBefore != null) widget.lens.focal = _focalBefore!;
+    setState(() => _drag = false);
+    widget.onCancel?.call();
+    HardwareKeyboard.instance.removeHandler(_escapeKey);
+    _focusBefore = null;
+    _focalBefore = null;
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,16 +94,34 @@ class _DiagramState extends State<DepthDiagram> {
               widget.onDone();
             },
             onVerticalDragStart: (e) {
-              if (nearFocus(e.localPosition)) setState(() => _drag = true);
+              if (nearFocus(e.localPosition)) {
+                _focusBefore = widget.lens.focus;
+                _focalBefore = widget.lens.focal;
+                HardwareKeyboard.instance.addHandler(_escapeKey);
+                setState(() => _drag = true);
+              }
             },
             onVerticalDragUpdate: (e) {
               if (_drag) widget.onFocus(m.z(e.localPosition.dy), null);
             },
             onVerticalDragEnd: (_) {
+              HardwareKeyboard.instance.removeHandler(_escapeKey);
               if (_drag) widget.onDone();
               setState(() => _drag = false);
+              _focusBefore = null;
+              _focalBefore = null;
             },
-            onHorizontalDragEnd: (_) => widget.onDone(),
+            onHorizontalDragStart: (_) {
+              _focusBefore = widget.lens.focus;
+              _focalBefore = widget.lens.focal;
+              HardwareKeyboard.instance.addHandler(_escapeKey);
+            },
+            onHorizontalDragEnd: (_) {
+              HardwareKeyboard.instance.removeHandler(_escapeKey);
+              if (!_drag) widget.onDone();
+              _focusBefore = null;
+              _focalBefore = null;
+            },
             // Dragging sideways changes the focal length, as the cone edge opens or closes the view.
             onHorizontalDragUpdate: (e) {
               final d = e.localPosition - m.eye;

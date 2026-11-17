@@ -38,6 +38,7 @@ class NumberFieldState extends State<NumberField> {
   Offset _down = Offset.zero;
   double _start = 0, _acc = 0, _sum = 0, _w = 0;
   DateTime? _lastUp;
+  Timer? _burst;
 
   bool get _bounded => widget.min != null && widget.max != null;
   double get _zeroAt => _bounded
@@ -64,6 +65,7 @@ class NumberFieldState extends State<NumberField> {
 
   @override
   void dispose() {
+    _burst?.cancel();
     NumberField.asked.removeListener(_askedToType);
     _ef.dispose();
     _node.dispose();
@@ -110,6 +112,12 @@ class NumberFieldState extends State<NumberField> {
     if (!_moved && (e.position - _down).distance < 4) return;
     if (!_moved) {
       // A scrub is a single gesture, so the caller can settle what it shows when the drag ends.
+      // If a burst (wheel/arrow) gesture was open, close it first so the drag starts its own.
+      if (_burst != null) {
+        _burst!.cancel();
+        _burst = null;
+        widget.onDrop?.call();
+      }
       widget.onGrab?.call();
       setState(() => _moved = true);
     }
@@ -172,6 +180,15 @@ class NumberFieldState extends State<NumberField> {
 
   void _by(double d) {
     // A slide or nudge moves the value by `d` from where it is now.
+    // Wheel, two-finger slide and arrow key changes are grouped into one undo
+    // step by opening a gesture on the first change and closing it after the
+    // hand rests for burstRest (GESTURES wheel.2).
+    if (_burst == null && !_drag) widget.onGrab?.call();
+    _burst?.cancel();
+    _burst = Timer(Gestures.burstRest, () {
+      _burst = null;
+      if (!_drag) widget.onDrop?.call();
+    });
     final cur = widget.value();
     cur == null
         ? widget.onBy?.call(d)

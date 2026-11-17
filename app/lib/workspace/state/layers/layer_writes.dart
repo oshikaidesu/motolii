@@ -26,6 +26,11 @@ void endDrag(WorkspaceController ws) {
   ws.after(ws.inside!.later('drag_end', number: 1));
 }
 
+/// Cancels the drag in progress: the engine discards the change and nothing is left in undo.
+void cancelDrag(WorkspaceController ws) {
+  ws.after(ws.inside!.later('drag_end', number: 0));
+}
+
 /// Moves [layer] by ([dx], [dy]) canvas points as a drag on the stage, one undo step. [then] hears whether the engine kept it.
 void moveLayerBy(
   WorkspaceController ws,

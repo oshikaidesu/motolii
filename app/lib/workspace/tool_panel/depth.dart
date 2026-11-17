@@ -121,6 +121,12 @@ class _DepthToolState extends State<DepthTool> {
                         endDrag(ws);
                       }
                     },
+                    onCancel: () {
+                      if (joined != null) {
+                        cancelDrag(ws);
+                        setState(() {});
+                      }
+                    },
                   ),
                 ),
               ),

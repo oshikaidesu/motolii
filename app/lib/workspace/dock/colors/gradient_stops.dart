@@ -1,6 +1,8 @@
 // A gradient as its fill word and as a bar with stops to edit.
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart'
+    show HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
@@ -75,6 +77,25 @@ class GradientStops extends StatefulWidget {
 class _GradientStopsState extends State<GradientStops> {
   List<(Color, double)>?
   _held; // The stops as they are while one is being dragged.
+  List<(Color, double)>?
+  _before; // The stops before the drag started, for Escape cancel.
+
+  bool _escapeKey(KeyEvent e) {
+    if (e is! KeyDownEvent ||
+        e.logicalKey != LogicalKeyboardKey.escape ||
+        _held == null) {
+      return false;
+    }
+    // Restore the stops from before the drag and tell the caller to discard the undo step.
+    final before = _before!;
+    setState(() {
+      _held = null;
+      _before = null;
+    });
+    widget.onChanged(before);
+    widget.onDrag?.call(false);
+    return true;
+  }
 
   Color _at(List<(Color, double)> s, double x) {
     final sorted = [...s]..sort((a, b) => a.$2.compareTo(b.$2));
@@ -140,7 +161,11 @@ class _GradientStopsState extends State<GradientStops> {
                     onHorizontalDragStart: (_) {
                       widget.onPick(i);
                       widget.onDrag?.call(true);
-                      setState(() => _held = [...s]);
+                      HardwareKeyboard.instance.addHandler(_escapeKey);
+                      setState(() {
+                        _before = [...s];
+                        _held = [...s];
+                      });
                     },
                     onHorizontalDragUpdate: (d) {
                       final held = _held!;
@@ -152,9 +177,15 @@ class _GradientStopsState extends State<GradientStops> {
                       widget.onChanged([...held]);
                     },
                     onHorizontalDragEnd: (_) {
-                      final held = _held!, at = held[i].$2;
-                      widget.onPick(held.where((e) => e.$2 < at).length); // If it was dragged past another stop, select it at its new index.
-                      setState(() => _held = null);
+                      HardwareKeyboard.instance.removeHandler(_escapeKey);
+                      final held = _held;
+                      if (held == null) return; // Already cancelled by Escape.
+                      final at = held[i].$2;
+                      widget.onPick(held.where((e) => e.$2 < at).length);
+                      setState(() {
+                        _held = null;
+                        _before = null;
+                      });
                       widget.onDrag?.call(false);
                     },
                     child: Container(
