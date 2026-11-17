@@ -35,6 +35,8 @@ class EaseGraph extends StatefulWidget {
     this.onEnd,
     this.onEndMove,
     this.endSays,
+    this.onTrim,
+    this.onTrimMove,
     this.jump = true,
     this.overshoot = false,
     this.beats = const [],
@@ -64,9 +66,18 @@ class EaseGraph extends StatefulWidget {
   /// The text shown beside the dragged end, describing the value it now gives.
   final String? Function(bool start, double by)? endSays;
 
+  /// Horizontal trim: called when a left/right edge is dragged sideways to move the
+  /// boundary keyframe in time, like trimming a layer bar on the timeline.
+  /// [start] is true for the left edge, [by] is frames from where the drag began.
+  /// [onTrim] fires on release, [onTrimMove] on every step.
+  final void Function(bool start, int by)? onTrim, onTrimMove;
+
   /// [jump] draws the dashed jump at a dragged end. [overshoot] lets the view and the handles go past 0 and 1,
   /// as Alight Motion's Enable Overshoot does.
   final bool jump, overshoot;
+
+  /// Whether the graph's left and right edges can be dragged horizontally to trim the span.
+  bool get canTrim => onTrim != null && span != null;
 
   /// Progress of a preview of the easing, 0 to 1, shown when there is no span to follow (ease_trial.dart).
   final double? trial;
@@ -102,6 +113,12 @@ class _EaseGraphState extends State<EaseGraph> {
       if ((p.dx - (g.left - easeBarOut)).abs() < reach) return easeEnd;
       if ((p.dx - (g.right + easeBarOut)).abs() < reach) return easeEnd + 1;
     }
+    // Horizontal trim zones at the left and right edges of the graph square.
+    if (widget.canTrim) {
+      final reach = Shape.z(6);
+      if ((p.dx - g.left).abs() < reach && p.dy > g.top) return easeTrimStart;
+      if ((p.dx - g.right).abs() < reach && p.dy > g.top) return easeTrimEnd;
+    }
     final d = [
       for (final (i, h) in easeHandles(widget.ease).indexed)
         ((_px(g, Offset(h.x, h.y)) - p).distance, i),
@@ -122,9 +139,19 @@ class _EaseGraphState extends State<EaseGraph> {
     }
   }
 
+  int _trimBy = 0;
+
   void _move(Rect g, Offset p) {
     final (lo, hi) = _reach;
     final (y0, y1) = widget.ends;
+    if (_drag == easeTrimStart || _drag == easeTrimEnd) {
+      final span = widget.span;
+      if (span == null || g.width < 1) return;
+      final frames = (p.dx - _from.dx) / g.width * (span.to - span.from);
+      _trimBy = frames.round();
+      widget.onTrimMove?.call(_drag == easeTrimStart, _trimBy);
+      return;
+    }
     if (_drag! >= easeEnd) {
       setState(
         () => _endAt = (lo + (g.bottom - p.dy) / g.height * (hi - lo)).clamp(
@@ -160,9 +187,16 @@ class _EaseGraphState extends State<EaseGraph> {
 
   void _let(_) {
     final end = _drag, at = _endAt;
+    final trimmed = end == easeTrimStart || end == easeTrimEnd;
     setState(() {
       _drag = _endAt = _reachHeld = null;
     });
+    if (trimmed && _trimBy != 0) {
+      widget.onTrim?.call(end == easeTrimStart, _trimBy);
+      _trimBy = 0;
+      return;
+    }
+    _trimBy = 0;
     if (end != null && end >= easeEnd && at != null) {
       widget.onEnd?.call(end == easeEnd, at - _endFrom);
     }
@@ -172,8 +206,15 @@ class _EaseGraphState extends State<EaseGraph> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       final g = easeBox(box.biggest);
+      final trimHot =
+          _hot == easeTrimStart ||
+          _hot == easeTrimEnd ||
+          _drag == easeTrimStart ||
+          _drag == easeTrimEnd;
       return MouseRegion(
-        cursor: _hot != null || _drag != null
+        cursor: trimHot
+            ? SystemMouseCursors.resizeLeftRight
+            : _hot != null || _drag != null
             ? SystemMouseCursors.grab
             : MouseCursor.defer,
         onHover: (e) {
@@ -194,9 +235,12 @@ class _EaseGraphState extends State<EaseGraph> {
             if (_drag != null) _move(g, d.localPosition);
           },
           onPanEnd: _let,
-          onPanCancel: () => setState(() {
-            _drag = _endAt = _reachHeld = null;
-          }),
+          onPanCancel: () {
+            _trimBy = 0;
+            setState(() {
+              _drag = _endAt = _reachHeld = null;
+            });
+          },
           child: Stack(
             children: [
               CustomPaint(

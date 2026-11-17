@@ -29,6 +29,8 @@ import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_side.dart';
 import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/ease/ease_reads.dart';
+import 'package:motolii/workspace/state/ease/ease_writes.dart'
+    show trimEaseSpan;
 import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -102,6 +104,23 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     HardwareKeyboard.instance.removeHandler(_escapeKey);
     _ws?.moment.removeListener(_moved);
     super.dispose();
+  }
+
+  int _trimSlid = 0;
+
+  void _trimMove(WorkspaceController ws, EaseSpan span, bool start, int by) {
+    final frame = start ? span.from : span.to;
+    final step = by - _trimSlid;
+    if (step == 0) return;
+    ws.live.move((_) {
+      _trimSlid = by;
+      return trimEaseSpan(ws, span.layer.id, frame, step);
+    });
+  }
+
+  void _trimDone(WorkspaceController ws, EaseSpan span, bool start, int by) {
+    _trimSlid = 0;
+    ws.live.done(null, (_) => ws.reread());
   }
 
   @override
@@ -267,6 +286,12 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
           ? null
           : (start, by) => toEnd(ws, span, start, by),
       endSays: (start, by) => endSays(ws, span, start, by),
+      onTrim: !isConnected(ws) || span == null
+          ? null
+          : (start, by) => _trimDone(ws, span, start, by),
+      onTrimMove: !isConnected(ws) || span == null
+          ? null
+          : (start, by) => _trimMove(ws, span, start, by),
       trial: trial,
     );
     return LayoutBuilder(
