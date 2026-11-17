@@ -275,7 +275,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
                         key: ValueKey('ws-map-$_name-$id'),
                         rect: at,
                         duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOutCubic,
+                        curve: Curves.easeOutCubic,
                         child: item(id, tile),
                       ),
                 ],

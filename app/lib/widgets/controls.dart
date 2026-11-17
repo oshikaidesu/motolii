@@ -335,7 +335,9 @@ class Chip extends StatelessWidget {
     Widget chip(bool h) {
       final lit = h && onTap != null;
       final ink = on ? l.onInk ?? l.ink : (lit ? l.hoverInk ?? l.ink : l.ink);
-      return Container(
+      return AnimatedContainer(
+        duration: Motion.dur,
+        curve: Motion.ease,
         height: l.height == null ? null : Shape.z(l.height!),
         margin: l.margin,
         padding: EdgeInsets.symmetric(

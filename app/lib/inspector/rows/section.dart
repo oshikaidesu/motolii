@@ -86,8 +86,24 @@ class Section extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           head,
-          if (body.isNotEmpty) SizedBox(height: InspectorSkin.titleGap),
-          ...body,
+          AnimatedCrossFade(
+            firstChild: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: InspectorSkin.titleGap),
+                ...children,
+              ],
+            ),
+            secondChild: const SizedBox.shrink(),
+            crossFadeState: open
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            duration: Motion.dur,
+            firstCurve: Curves.easeOut,
+            secondCurve: Curves.easeOut,
+            sizeCurve: Curves.easeOut,
+          ),
         ],
       ),
     );

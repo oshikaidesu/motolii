@@ -29,10 +29,16 @@ class ToolPanel extends StatelessWidget {
         children: [
           _ToolHeader(name: name),
           Expanded(
-            child: switch (name) {
-              'Tools' => const _Catalog(),
-              _ => panelTool(ws, name)?.build() ?? const SizedBox.shrink(),
-            },
+            child: AnimatedSwitcher(
+              duration: Motion.dur,
+              child: KeyedSubtree(
+                key: ValueKey(name),
+                child: switch (name) {
+                  'Tools' => const _Catalog(),
+                  _ => panelTool(ws, name)?.build() ?? const SizedBox.shrink(),
+                },
+              ),
+            ),
           ),
         ],
       ),
