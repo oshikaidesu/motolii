@@ -306,6 +306,7 @@ class ColorsShelf extends StatelessWidget {
         WindowTokens.inset,
       ),
       child: Bento(
+        grid: c.mem.colorGrid,
         [
           // The newest additions come first: the user's own colors, then the user's own gradients.
           // No other app does this: Procreate fills the next empty slot and Canva sorts by hue.

@@ -200,6 +200,22 @@ class _ShelfPaneState extends State<ShelfPane> {
                     setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
               ),
             ] else ...[
+              if (name == 'Colors') ...[
+                IconPress(
+                  dockMark(AppGlyphs.grid),
+                  tip: 'Grid view',
+                  key: const ValueKey('ws-colors-grid'),
+                  on: _mem.colorGrid,
+                  onTap: () => setState(() => _mem.colorGrid = true),
+                ),
+                IconPress(
+                  dockMark(AppGlyphs.particles),
+                  tip: 'Bento view',
+                  key: const ValueKey('ws-colors-bento'),
+                  on: !_mem.colorGrid,
+                  onTap: () => setState(() => _mem.colorGrid = false),
+                ),
+              ],
               if (name == 'Effects' || name == 'Fonts') ...[
                 // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (map/shelf_map.dart).
                 IconPress(

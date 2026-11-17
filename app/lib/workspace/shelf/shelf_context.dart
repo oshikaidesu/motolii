@@ -36,6 +36,9 @@ class ShelfMemory {
   /// The shelves shown as a map with similar items close together (dock_map.dart), instead of as rows of tiles.
   final mapped = <String>{};
 
+  /// Colors: show the colors as a uniform grid instead of the bento.
+  bool colorGrid = false;
+
   /// Media: list the folders below the open one together with it, and where the tree sits.
   /// [treeSide] is 0 for automatic by the available room, 1 for left, 2 for above.
   bool mediaDeep = false;

@@ -51,7 +51,10 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) =>
 /// The dice throws the shapes again. Boxes move to their new place quickly and without overshooting
 /// (AnimatedPositioned with easeOutCubic).
 class Bento extends StatelessWidget {
-  const Bento(this.boxes, this.c, this.colors, {super.key});
+  const Bento(this.boxes, this.c, this.colors, {super.key, this.grid = false});
+
+  /// Whether to show a uniform grid instead of mixed-size bento.
+  final bool grid;
 
   /// The boxes, in the order they are packed.
   final List<BentoBox> boxes;
@@ -62,13 +65,29 @@ class Bento extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      // As many columns as boxes of the chosen size fit, with the boxes stretching to fill the row.
-      // CLIP STUDIO PAINT's Color Set and CSS Grid's repeat(auto-fill, minmax()) work the same way.
-      // The layout is redone only when the columns, the colors or the dice change, and only then do the boxes move.
-      // Widening the shelf just stretches them without a new layout, which keeps the app at 60 frames per second.
       final cols = math.max(1, box.maxWidth ~/ Shape.z(colors.saved.tile)),
           unit = box.maxWidth / cols,
           all = boxes;
+      final gap = Shape.s(3);
+
+      Widget tile(BentoBox b) => b.grad != null
+          ? _GradientTile('grad-${b.i}', b.grad!, c, colors)
+          : _ColorBox(b, c, colors);
+
+      if (grid) {
+        return ContextMenu(
+          key: colors.boxMenu,
+          child: Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final b in all)
+                SizedBox(width: unit - gap, height: unit - gap, child: tile(b)),
+            ],
+          ),
+        );
+      }
+
       final key =
           '$cols/${colors.dice}/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
       final laid = colors.laid?.$1 == key
@@ -76,8 +95,7 @@ class Bento extends StatelessWidget {
               : _packed(all, cols, colors.dice),
           moved = colors.laid?.$1 != key;
       colors.laid = (key, laid);
-      final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4)),
-          gap = Shape.s(3);
+      final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4));
       return ContextMenu(
         key: colors.boxMenu,
         child: SizedBox(
@@ -95,9 +113,7 @@ class Bento extends StatelessWidget {
                   top: laid[k].$2 * unit,
                   width: laid[k].$3 * unit - gap,
                   height: laid[k].$4 * unit - gap,
-                  child: b.grad != null
-                      ? _GradientTile('grad-${b.i}', b.grad!, c, colors)
-                      : _ColorBox(b, c, colors),
+                  child: tile(b),
                 ),
             ],
           ),
