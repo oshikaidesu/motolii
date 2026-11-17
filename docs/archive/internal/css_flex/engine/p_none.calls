@@ -1,7 +1,0 @@
-add text /Users/member_ottoto/motolii/engine/third_party/filament_src/assets/fonts/Roboto-Medium.ttf
-say 1 text FLEXBOX
-set 1 size 0.08
-say 1 split letters
-say 1 script /Users/member_ottoto/motolii/docs/internal/css_flex/engine/none.css
-at 0
-still /Users/member_ottoto/motolii/docs/internal/css_flex/engine/p_none_0.png

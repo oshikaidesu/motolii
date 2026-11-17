@@ -1,2 +1,0 @@
-[data-splitting] { font: 700 64px Helvetica, Arial, sans-serif; }
-[data-splitting] .word { display: grid; grid-template-columns: repeat(4, 1fr); justify-items: center; width: 600px; }
