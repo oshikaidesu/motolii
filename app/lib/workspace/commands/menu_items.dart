@@ -130,7 +130,7 @@ extension WorkspaceMenuItems on WorkspaceState {
       ),
       item('Solo', 'thing.solo'),
       item('Keyed Values', 'thing.lanes'),
-      item('Deactivate', 'thing.deactivate'),
+      item('Hide', 'thing.deactivate'),
     ],
   );
 

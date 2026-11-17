@@ -44,7 +44,7 @@ List<ContextMenuItem> layerContextMenu(
     ),
     const ContextMenuItem.rule(),
     ContextMenuItem(
-      l.hidden ? 'Activate' : 'Deactivate',
+      l.hidden ? 'Show' : 'Hide',
       () => say('thing.deactivate'),
       keys: keys('thing.deactivate'),
     ),

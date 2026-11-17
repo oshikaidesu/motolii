@@ -59,9 +59,9 @@ final workspacePanes = [
     iconOnly: true,
   ),
   Pane(
-    'Presets',
+    'Looks',
     AppGlyphs.files,
-    () => const ShelfPane('Presets', 'Search presets'),
+    () => const ShelfPane('Looks', 'Search looks'),
     at: PaneStrip.shelves,
     minSize: 240,
     iconOnly: true,
@@ -111,7 +111,7 @@ final workspacePanes = [
     minSize: 260,
   ),
   Pane(
-    'Camera',
+    'Depth',
     AppGlyphs.camera,
     () => const DepthTool(),
     at: PaneStrip.tools,

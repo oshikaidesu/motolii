@@ -236,7 +236,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                       'Colors' =>
                         '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),
-                      'Presets' => '0',
+                      'Looks' => '0',
                       _ => '',
                     },
                     maxLines: 1,
@@ -306,10 +306,10 @@ class _ShelfPaneState extends State<ShelfPane> {
               'Fonts' => FontsShelf(c, _fonts),
               'Colors' => ColorsShelf(c, _colors),
               'Create' => CreateShelf(c),
-              'Presets' => Padding(
+              'Looks' => Padding(
                 padding: EdgeInsets.all(Shape.s(24)),
                 child: Text(
-                  'No presets yet',
+                  'No looks yet',
                   textAlign: TextAlign.center,
                   style: TextStyles.label(Grey.g63),
                 ),
