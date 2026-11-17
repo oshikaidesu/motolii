@@ -13,10 +13,14 @@ import 'package:flutter/widgets.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:settings_ui/settings_ui.dart';
 
+import 'package:motolii/skin/layer_colors.dart' show labelColor;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/theme.dart';
+import 'package:motolii/workspace/commands/keymap.dart'
+    show defaultKeys, keyLabel, activatorOf;
 import 'package:motolii/workspace/state/window_zoom.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/storage/disk.dart' show existsFile, imageFile;
 import 'package:motolii/storage/host_platform.dart' show homeFolder;
 import 'package:motolii/storage/open_in_host.dart' show pickFolder;
@@ -1070,12 +1074,34 @@ enum _SettingsPage {
   appearance,
   skin,
   display,
+  autoSave,
+  playback,
+  audio,
+  performance,
+  rendering,
+  timeline,
+  keyboard,
+  labels,
+  canvas,
+  scripting,
+  projectDefaults,
   storage;
 
   String get label => switch (this) {
     appearance => 'Appearance',
     skin => 'Skin',
     display => 'Display',
+    autoSave => 'Auto Save',
+    playback => 'Playback',
+    audio => 'Audio',
+    performance => 'Performance',
+    rendering => 'Export',
+    timeline => 'Timeline',
+    keyboard => 'Keyboard',
+    labels => 'Labels',
+    canvas => 'Canvas',
+    scripting => 'Scripting',
+    projectDefaults => 'Project Defaults',
     storage => 'Storage',
   };
 }
@@ -1350,6 +1376,362 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.autoSave => [
+      SettingsSection(
+        title: Text('AUTO SAVE'),
+        tiles: [
+          SettingsTile.switchTile(
+            title: const Text('Enable Auto Save'),
+            initialValue: (WindowFile.get('AutoSave') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('AutoSave', '$v')),
+          ),
+          SettingsTile(
+            title: const Text('Interval'),
+            trailing: Text(
+              '${WindowFile.get('AutoSaveInterval') ?? '5'} min',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const steps = ['1', '2', '5', '10', '15', '30'];
+              final now = WindowFile.get('AutoSaveInterval') ?? '5';
+              final i = (steps.indexOf(now) + 1) % steps.length;
+              setState(() => WindowFile.set('AutoSaveInterval', steps[i]));
+            },
+          ),
+          SettingsTile(
+            title: const Text('Max Backups'),
+            trailing: Text(
+              WindowFile.get('AutoSaveBackups') ?? '3',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const steps = ['1', '3', '5', '10'];
+              final now = WindowFile.get('AutoSaveBackups') ?? '3';
+              final i = (steps.indexOf(now) + 1) % steps.length;
+              setState(() => WindowFile.set('AutoSaveBackups', steps[i]));
+            },
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.playback => [
+      SettingsSection(
+        title: Text('PLAYBACK'),
+        tiles: [
+          SettingsTile.switchTile(
+            title: const Text('Loop Playback'),
+            initialValue: (WindowFile.get('PlaybackLoop') ?? 'false') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) =>
+                setState(() => WindowFile.set('PlaybackLoop', '$v')),
+          ),
+          SettingsTile.switchTile(
+            title: const Text('Audio During Scrub'),
+            initialValue: (WindowFile.get('AudioScrub') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('AudioScrub', '$v')),
+          ),
+          SettingsTile(
+            title: const Text('Preview Quality'),
+            trailing: Text(switch (WindowFile.get('PreviewQuality')) {
+              'half' => 'Half',
+              'quarter' => 'Quarter',
+              _ => 'Full',
+            }, style: TextStyles.label(Grey.g56)),
+            onPressed: (_) {
+              final next = switch (WindowFile.get('PreviewQuality')) {
+                'full' || null => 'half',
+                'half' => 'quarter',
+                _ => 'full',
+              };
+              setState(() => WindowFile.set('PreviewQuality', next));
+            },
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.audio => [
+      SettingsSection(
+        title: Text('AUDIO'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Sample Rate'),
+            trailing: Text(
+              '${WindowFile.get('SampleRate') ?? '44100'} Hz',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              final next = switch (WindowFile.get('SampleRate')) {
+                '44100' || null => '48000',
+                '48000' => '96000',
+                _ => '44100',
+              };
+              setState(() => WindowFile.set('SampleRate', next));
+            },
+          ),
+          SettingsTile(
+            title: const Text('Audio Device'),
+            value: const Text('System default'),
+            enabled: false,
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.performance => [
+      SettingsSection(
+        title: Text('PERFORMANCE'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Cache Size Limit'),
+            trailing: Text(
+              '${WindowFile.get('CacheSize') ?? '10'} GB',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const steps = ['2', '5', '10', '20', '50'];
+              final now = WindowFile.get('CacheSize') ?? '10';
+              final i = (steps.indexOf(now) + 1) % steps.length;
+              setState(() => WindowFile.set('CacheSize', steps[i]));
+            },
+          ),
+          SettingsTile.switchTile(
+            title: const Text('GPU Acceleration'),
+            initialValue: (WindowFile.get('GpuAccel') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('GpuAccel', '$v')),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.rendering => [
+      SettingsSection(
+        title: Text('EXPORT'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Default Format'),
+            trailing: Text(switch (WindowFile.get('ExportFormat')) {
+              'mov' => '.mov',
+              'gif' => '.gif',
+              'png' => '.png',
+              _ => '.mp4',
+            }, style: TextStyles.label(Grey.g56)),
+            onPressed: (_) {
+              final next = switch (WindowFile.get('ExportFormat')) {
+                'mp4' || null => 'mov',
+                'mov' => 'gif',
+                'gif' => 'png',
+                _ => 'mp4',
+              };
+              setState(() => WindowFile.set('ExportFormat', next));
+            },
+          ),
+          SettingsTile(
+            title: const Text('Output Folder'),
+            value: Text(
+              _folderName(WindowFile.get('ExportFolder') ?? '~/Movies'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onPressed: (_) async {
+              final f = await pickFolder(prompt: 'Choose export folder');
+              if (f != null && mounted) {
+                setState(() => WindowFile.set('ExportFolder', f));
+              }
+            },
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.timeline => [
+      SettingsSection(
+        title: Text('TIMELINE'),
+        tiles: [
+          SettingsTile.switchTile(
+            title: const Text('Snap to Grid'),
+            description: const Text('Hold ⌘ to snap freely'),
+            initialValue: (WindowFile.get('SnapTimeline') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) =>
+                setState(() => WindowFile.set('SnapTimeline', '$v')),
+          ),
+          SettingsTile.switchTile(
+            title: const Text('Follow Playhead'),
+            initialValue:
+                (WindowFile.get('FollowPlayhead') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) =>
+                setState(() => WindowFile.set('FollowPlayhead', '$v')),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.keyboard => [
+      SettingsSection(
+        title: Text('KEYBOARD SHORTCUTS'),
+        tiles: [
+          for (final (key, cmd) in defaultKeys)
+            SettingsTile(
+              title: Text(cmd),
+              trailing: Text(
+                keyLabel(activatorOf(key)),
+                style: TextStyles.label(Grey.g56),
+              ),
+            ),
+        ],
+      ),
+      SettingsSection(
+        title: Text('CUSTOMISE'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Keybindings File'),
+            value: const Text('~/.motolii/keybindings.json'),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.labels => [
+      SettingsSection(
+        title: Text('LABEL COLOURS'),
+        tiles: [
+          CustomSettingsTile(
+            child: Padding(
+              padding: EdgeInsets.all(Shape.s(10)),
+              child: Wrap(
+                spacing: Shape.s(8),
+                runSpacing: Shape.s(8),
+                children: [
+                  for (var k = 0; k < 16; k++)
+                    Container(
+                      width: Shape.z(28),
+                      height: Shape.z(28),
+                      decoration: BoxDecoration(
+                        color: labelColor(k),
+                        borderRadius: Shape.round(6),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${k + 1}',
+                        style: TextStyles.micro(Grey.g00),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          SettingsTile(
+            title: const Text('Override'),
+            value: const Text('Skins can set Label1–Label16'),
+            enabled: false,
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.canvas => [
+      SettingsSection(
+        title: Text('CANVAS'),
+        tiles: [
+          SettingsTile.switchTile(
+            title: const Text('Show Grid'),
+            initialValue: (WindowFile.get('ShowGrid') ?? 'false') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('ShowGrid', '$v')),
+          ),
+          SettingsTile.switchTile(
+            title: const Text('Show Safe Area'),
+            initialValue: (WindowFile.get('ShowSafe') ?? 'false') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('ShowSafe', '$v')),
+          ),
+          SettingsTile.switchTile(
+            title: const Text('Snap to Objects'),
+            initialValue: (WindowFile.get('SnapStage') ?? 'true') == 'true',
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (v) => setState(() => WindowFile.set('SnapStage', '$v')),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.scripting => [
+      SettingsSection(
+        title: Text('EXPRESSION ENGINES'),
+        tiles: [
+          SettingsTile(
+            title: const Text('QuickJS'),
+            value: const Text('JavaScript expressions'),
+            enabled: false,
+          ),
+          SettingsTile(
+            title: const Text('Lua'),
+            value: const Text('Lua scripting'),
+            enabled: false,
+          ),
+          SettingsTile(
+            title: const Text('Lottie Expressions'),
+            value: const Text('After Effects expression subset'),
+            enabled: false,
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.projectDefaults => [
+      SettingsSection(
+        title: Text('NEW PROJECT DEFAULTS'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Frame Size'),
+            trailing: Text(
+              '${WindowFile.get('DefaultWidth') ?? '1920'} × '
+              '${WindowFile.get('DefaultHeight') ?? '1080'}',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const sizes = [
+                ('1920', '1080'),
+                ('3840', '2160'),
+                ('1280', '720'),
+                ('1080', '1080'),
+                ('1080', '1920'),
+              ];
+              final w = WindowFile.get('DefaultWidth') ?? '1920';
+              final h = WindowFile.get('DefaultHeight') ?? '1080';
+              var i = sizes.indexWhere((s) => s.$1 == w && s.$2 == h);
+              i = (i + 1) % sizes.length;
+              setState(() {
+                WindowFile.set('DefaultWidth', sizes[i].$1);
+                WindowFile.set('DefaultHeight', sizes[i].$2);
+              });
+            },
+          ),
+          SettingsTile(
+            title: const Text('Frame Rate'),
+            trailing: Text(
+              '${WindowFile.get('DefaultFrameRate') ?? '30'} fps',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const steps = ['24', '25', '30', '50', '60'];
+              final now = WindowFile.get('DefaultFrameRate') ?? '30';
+              final i = (steps.indexOf(now) + 1) % steps.length;
+              setState(() => WindowFile.set('DefaultFrameRate', steps[i]));
+            },
+          ),
+          SettingsTile(
+            title: const Text('Duration'),
+            trailing: Text(
+              '${WindowFile.get('DefaultDuration') ?? '240'} frames',
+              style: TextStyles.label(Grey.g56),
+            ),
+            onPressed: (_) {
+              const steps = ['60', '120', '240', '300', '600', '900'];
+              final now = WindowFile.get('DefaultDuration') ?? '240';
+              final i = (steps.indexOf(now) + 1) % steps.length;
+              setState(() => WindowFile.set('DefaultDuration', steps[i]));
+            },
           ),
         ],
       ),
