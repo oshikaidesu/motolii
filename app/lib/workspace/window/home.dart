@@ -268,11 +268,12 @@ class _HomeWindowState extends State<HomeWindow> {
           spacing: gap,
           runSpacing: gap,
           children: [
-            for (final d in docs)
+            for (final (i, d) in docs.indexed)
               SizedBox(
                 width: tile,
                 child: HomeCard(
                   d,
+                  index: i,
                   open: d.path == widget.open,
                   picked: _picked.contains(d.path),
                   menu: _menu == d.path,

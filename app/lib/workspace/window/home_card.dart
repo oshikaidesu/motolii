@@ -50,6 +50,7 @@ class HomeCard extends StatefulWidget {
   const HomeCard(
     this.d, {
     super.key,
+    this.index = 0,
     required this.open,
     required this.picked,
     required this.menu,
@@ -65,6 +66,7 @@ class HomeCard extends StatefulWidget {
     required this.onKeep,
   });
   final HomeProject d;
+  final int index;
   final bool open, picked, menu, asking;
   final VoidCallback onTap, onMore, onOpen, onSelect, onExport;
   final VoidCallback onDuplicate, onAskTrash, onTrash, onKeep;
@@ -179,6 +181,23 @@ class _HomeCardState extends State<HomeCard> {
                               ),
                             ),
                           ),
+                        // Index number (Swiss style).
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: Padding(
+                            padding: EdgeInsets.all(Shape.s(8)),
+                            child: Text(
+                              '${widget.index + 1}'.padLeft(2, '0'),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Grey.g56.withValues(alpha: h ? .9 : .5),
+                                letterSpacing: .5,
+                              ),
+                            ),
+                          ),
+                        ),
                         // Picked mark.
                         if (widget.picked)
                           Positioned(
