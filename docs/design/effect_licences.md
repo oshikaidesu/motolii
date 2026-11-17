@@ -11,10 +11,8 @@ During editing, the effect card shows **by author** — the person, not the term
 | Exit | What happens |
 |---|---|
 | **Export** | A `_credits.txt` appears beside the exported video, listing every effect the project used. Already working. |
-| **Share / template** | When a `.motolii` project is shared, the receipt travels with it, so the recipient knows what is inside. |
+| **Share / template** | When a `.motolii` project is shared, the attribution travels with it, so the recipient knows what is inside. |
 | **Publish to shelf** | When a user puts their own effect on a shelf, the `meta.yaml` records `origin: self`. |
-
-During editing, the effect card shows only **by author** — the person, not the terms. The licence is on the receipt, not on the shelf.
 
 The one exception: a warning may surface during editing when a project mixes effects whose licences conflict (e.g. a copyleft effect composed with a proprietary one).
 
