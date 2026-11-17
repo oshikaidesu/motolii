@@ -1,5 +1,7 @@
 // The home screen's project card, drawn flat: a picture that fills whatever cell the bento gives it, a label on a solid
 // block, and, when it is the one previewed, a design tool's bounding box with its four handles.
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -56,30 +58,66 @@ List<Color> homeTones() => [
   WindowTokens.toneGroup,
 ];
 
-/// What stands in for a project that saved no picture: its first letter, very large and cut off by the frame.
+/// The four handles of a design tool's bounding box, for a `Stack` that does not clip: one on each corner, reaching
+/// [homeReach] outside it.
+List<Widget> homeHandles() => [
+  for (final (right, bottom) in const [
+    (false, false),
+    (true, false),
+    (false, true),
+    (true, true),
+  ])
+    Positioned(
+      left: right ? null : -homeReach + 1,
+      right: right ? -homeReach + 1 : null,
+      top: bottom ? null : -homeReach + 1,
+      bottom: bottom ? -homeReach + 1 : null,
+      child: Container(
+        width: 9,
+        height: 9,
+        decoration: BoxDecoration(
+          color: Grey.g95,
+          border: Border.all(color: WindowTokens.accent, width: homeEdge),
+        ),
+      ),
+    ),
+];
+
+/// What stands in for a project that saved no picture, as a small poster: one flat shape, and over it the project's
+/// first letter, very large and cut off by the frame.
 class HomeLetter extends StatelessWidget {
   const HomeLetter({super.key, required this.name, required this.index});
   final String name;
 
-  /// The project's place in the list, which picks the letter's colour.
+  /// The project's place in the list, which picks the shape's colour.
   final int index;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       final tones = homeTones(), tall = box.maxHeight;
+      final letter = name.isNotEmpty ? name.characters.first : '?';
       return ColoredBox(
-        color: Grey.g13,
+        color: Grey.g10,
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _PosterShape(
+                  // The shape follows the name, not the place, so the same colour does not always bring the same shape.
+                  (name.length + letter.codeUnitAt(0)) % 5,
+                  tones[index % tones.length],
+                ),
+              ),
+            ),
             Positioned(
               right: tall * .06,
               bottom: -tall * .2,
               child: Text(
-                name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+                letter.toUpperCase(),
                 style: TextStyles.name(
-                  tones[index % tones.length],
+                  Grey.g95,
                   tall * .92,
                   FontWeight.w900,
                 ).copyWith(letterSpacing: 0),
@@ -90,6 +128,55 @@ class HomeLetter extends StatelessWidget {
       );
     },
   );
+}
+
+/// One of five flat shapes, sized by the frame's height and set toward its right side.
+class _PosterShape extends CustomPainter {
+  _PosterShape(this.kind, this.tone);
+  final int kind;
+  final Color tone;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, m = size.height, fill = Paint()..color = tone;
+    switch (kind) {
+      case 0:
+        canvas.drawCircle(Offset(w - .5 * m, .58 * m), .48 * m, fill);
+      case 1:
+        canvas.drawPath(
+          Path()
+            ..moveTo(w - 1.05 * m, 1.05 * m)
+            ..lineTo(w - .02 * m, 1.05 * m)
+            ..lineTo(w - .54 * m, .1 * m)
+            ..close(),
+          fill,
+        );
+      case 2:
+        canvas.drawCircle(Offset(w, m), .96 * m, fill);
+      case 3:
+        final mid = Offset(w - .52 * m, .54 * m), burst = Path();
+        for (var i = 0; i < 20; i++) {
+          final a = i * math.pi / 10 - math.pi / 2;
+          final o =
+              mid +
+              Offset(math.cos(a), math.sin(a)) * (i.isEven ? .56 : .42) * m;
+          i == 0 ? burst.moveTo(o.dx, o.dy) : burst.lineTo(o.dx, o.dy);
+        }
+        canvas.drawPath(burst..close(), fill);
+      default:
+        canvas.save();
+        canvas.translate(w - .52 * m, .52 * m);
+        canvas.rotate(.22);
+        canvas.drawRect(
+          Rect.fromCenter(center: Offset.zero, width: .7 * m, height: .7 * m),
+          fill,
+        );
+        canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PosterShape old) => old.kind != kind || old.tone != tone;
 }
 
 class HomeCard extends StatelessWidget {
@@ -145,8 +232,8 @@ class HomeCard extends StatelessWidget {
                     color: selected
                         ? WindowTokens.accent
                         : h
-                        ? Grey.g63
-                        : Grey.g26,
+                        ? Grey.g100
+                        : Grey.g63,
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -316,30 +403,7 @@ class HomeCard extends StatelessWidget {
               ),
 
               // The bounding box's handles, which sit on the corners and reach outside the card.
-              if (selected)
-                for (final (right, bottom) in const [
-                  (false, false),
-                  (true, false),
-                  (false, true),
-                  (true, true),
-                ])
-                  Positioned(
-                    left: right ? null : -homeReach + 1,
-                    right: right ? -homeReach + 1 : null,
-                    top: bottom ? null : -homeReach + 1,
-                    bottom: bottom ? -homeReach + 1 : null,
-                    child: Container(
-                      width: 9,
-                      height: 9,
-                      decoration: BoxDecoration(
-                        color: Grey.g95,
-                        border: Border.all(
-                          color: WindowTokens.accent,
-                          width: homeEdge,
-                        ),
-                      ),
-                    ),
-                  ),
+              if (selected) ...homeHandles(),
             ],
           );
         },

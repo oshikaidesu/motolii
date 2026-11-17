@@ -2,7 +2,9 @@
 //
 // It is drawn flat, in the manner of a design tool's concept art: solid blocks, one outline width, very large type, and
 // the tool's own marks (a bounding box with handles, a tag beside a cursor, a pen path) used as the decoration.
+// A collage of those marks covers the whole window; the parts above it are opaque, so it shows wherever they leave room.
 import 'dart:math' as math;
+import 'dart:ui' show ClipOp;
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
@@ -200,143 +202,172 @@ class _HomeWindowState extends State<HomeWindow> {
       onKeep: () => setState(() => _asking = null),
     );
 
+    final side = Shape.z(232), ground = Grey.g00;
     return ColoredBox(
       key: const ValueKey('ws-home'),
-      color: Grey.g07,
-      child: Row(
+      color: ground,
+      child: Stack(
         children: [
-          SizedBox(
-            width: Shape.z(232),
-            child: _Sidebar(
-              docs: _docs,
-              folder: widget.folder,
-              selected: hero?.path,
-              find: _findText,
-              onChoose: _choose,
-              onClose: widget.onClose,
+          Positioned.fill(
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _Collage(
+                  tones: homeTones(),
+                  ink: Grey.g95,
+                  ground: ground,
+                  // The sidebar's title, search and list stay clear of it.
+                  keep: Size(side, Shape.z(440)),
+                ),
+              ),
             ),
           ),
-          Expanded(
-            child: Stack(
-              children: [
-                const _Decorations(),
-                LayoutBuilder(
+          Row(
+            children: [
+              SizedBox(
+                width: side,
+                child: _Sidebar(
+                  docs: _docs,
+                  folder: widget.folder,
+                  selected: hero?.path,
+                  find: _findText,
+                  onChoose: _choose,
+                  onClose: widget.onClose,
+                ),
+              ),
+              Expanded(
+                child: LayoutBuilder(
                   builder: (context, box) {
                     final pad = Shape.s(24), gap = Shape.s(12);
                     // The cards keep room on every side for the chosen one's handles.
                     final sides = EdgeInsets.only(left: homeReach, right: pad);
-                    final heroTall = (box.maxHeight * .38).clamp(264.0, 400.0);
-                    final rowTall = ((box.maxWidth - pad) * .15).clamp(
-                      110.0,
-                      190.0,
-                    );
-                    return Padding(
-                      padding: EdgeInsets.only(top: pad),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: sides,
-                            child: SizedBox(
-                              height: heroTall,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: hero == null
-                                        ? _Empty(searching: _find.isNotEmpty)
-                                        : _Hero(
-                                            d: hero,
-                                            index: shown.indexOf(hero),
-                                            note: hero.path == widget.open
-                                                ? 'OPEN NOW'
-                                                : hero.path ==
-                                                      widget.lastProject
-                                                ? 'LAST OPENED'
-                                                : 'PREVIEW',
-                                            action: hero.path == widget.open
-                                                ? 'CONTINUE EDITING →'
-                                                : 'OPEN →',
-                                            onOpen: () =>
-                                                widget.onOpen(hero.path),
-                                          ),
-                                  ),
-                                  SizedBox(width: gap),
-                                  SizedBox(
-                                    width: Shape.z(200),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: [
-                                        Expanded(
-                                          child: _ActionCard(
-                                            key: const ValueKey('home-new'),
-                                            glyph: AppGlyphs.plus,
-                                            label: 'NEW PROJECT',
-                                            solid: true,
-                                            onTap: widget.onNew,
-                                          ),
-                                        ),
-                                        if (widget.onFolder != null) ...[
-                                          SizedBox(height: gap),
-                                          Expanded(
-                                            child: _ActionCard(
-                                              key: const ValueKey(
-                                                'home-folder',
+                    // Whole numbers, so that the opaque parts meet without a seam the collage could show through.
+                    final heroTall = (box.maxHeight * .38)
+                        .clamp(300.0, 420.0)
+                        .roundToDouble();
+                    final rowTall = ((box.maxWidth - pad) * .15)
+                        .clamp(110.0, 190.0)
+                        .roundToDouble();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ColoredBox(
+                          color: ground,
+                          child: Padding(
+                            padding: sides.copyWith(
+                              top: pad,
+                              bottom: Shape.s(10) - homeReach,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  height: heroTall,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: hero == null
+                                            ? _Empty(
+                                                searching: _find.isNotEmpty,
+                                              )
+                                            : _Hero(
+                                                d: hero,
+                                                index: shown.indexOf(hero),
+                                                note: hero.path == widget.open
+                                                    ? 'OPEN NOW'
+                                                    : hero.path ==
+                                                          widget.lastProject
+                                                    ? 'LAST OPENED'
+                                                    : 'PREVIEW',
+                                                action: hero.path == widget.open
+                                                    ? 'CONTINUE EDITING →'
+                                                    : 'OPEN →',
+                                                onOpen: () =>
+                                                    widget.onOpen(hero.path),
                                               ),
-                                              glyph: AppGlyphs.folder,
-                                              label: 'CHANGE FOLDER',
-                                              solid: false,
-                                              onTap: _pickFolder,
+                                      ),
+                                      SizedBox(width: gap),
+                                      SizedBox(
+                                        width: Shape.z(200),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: _ActionCard(
+                                                key: const ValueKey('home-new'),
+                                                glyph: AppGlyphs.plus,
+                                                label: 'NEW PROJECT',
+                                                solid: true,
+                                                onTap: widget.onNew,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
+                                            if (widget.onFolder != null) ...[
+                                              SizedBox(height: gap),
+                                              Expanded(
+                                                child: _ActionCard(
+                                                  key: const ValueKey(
+                                                    'home-folder',
+                                                  ),
+                                                  glyph: AppGlyphs.folder,
+                                                  label: 'CHANGE FOLDER',
+                                                  solid: false,
+                                                  onTap: _pickFolder,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                SizedBox(height: Shape.s(28)),
+                                _GridHeader(
+                                  count: shown.length,
+                                  byName: byName,
+                                  picked: _picked.length,
+                                  onByDate: () =>
+                                      setState(() => byName = false),
+                                  onByName: () => setState(() => byName = true),
+                                  onExport: () => widget.onExport([..._picked]),
+                                  onUnpick: () => setState(_picked.clear),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(height: Shape.s(28)),
-                          Padding(
-                            padding: sides,
-                            child: _GridHeader(
-                              count: shown.length,
-                              byName: byName,
-                              picked: _picked.length,
-                              onByDate: () => setState(() => byName = false),
-                              onByName: () => setState(() => byName = true),
-                              onExport: () => widget.onExport([..._picked]),
-                              onUnpick: () => setState(_picked.clear),
-                            ),
-                          ),
-                          SizedBox(height: Shape.s(10)),
-                          Expanded(
-                            child: ListView(
-                              padding: EdgeInsets.fromLTRB(
-                                homeReach,
-                                homeReach,
-                                pad,
-                                Shape.s(24),
+                        ),
+                        Expanded(
+                          child: ListView(
+                            // Scrolled to its end, the list leaves the collage in view below the last row.
+                            padding: EdgeInsets.only(bottom: Shape.s(140)),
+                            children: [
+                              ColoredBox(
+                                color: ground,
+                                child: const SizedBox(height: homeReach),
                               ),
-                              children: _bento(
+                              for (final block in _bento(
                                 [
                                   for (final (i, d) in shown.indexed)
                                     card(d, i),
                                 ],
                                 rowTall,
                                 gap,
-                              ),
-                            ),
+                              ))
+                                ColoredBox(
+                                  color: ground,
+                                  child: Padding(padding: sides, child: block),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     );
                   },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -347,6 +378,7 @@ class _HomeWindowState extends State<HomeWindow> {
 /// Lays [cards] out as bento blocks of up to six: a tall card beside two rows of unequal ones.
 ///
 /// Every other block is mirrored. A card fills whatever cell it gets, so its picture is cropped, not stretched.
+/// Each block carries the gap below it.
 List<Widget> _bento(List<Widget> cards, double rowTall, double gap) {
   Widget across(List<(int, Widget)> parts) => Row(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -459,7 +491,7 @@ class _Sidebar extends StatelessWidget {
         Shape.s(16),
         Shape.s(24),
         Shape.s(16) - homeReach,
-        Shape.s(20),
+        Shape.s(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -525,11 +557,16 @@ class _Sidebar extends StatelessWidget {
               ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(left: Shape.s(8)),
+          // On a solid block, so it reads over the collage.
+          Container(
+            padding: EdgeInsets.all(Shape.s(10)),
+            decoration: BoxDecoration(
+              color: Grey.g00,
+              border: Border.all(color: Grey.g63, width: homeEdge),
+            ),
             child: Row(
               children: [
-                Glyph(AppGlyphs.folder, size: Shape.z(14), color: Grey.g56),
+                Glyph(AppGlyphs.folder, size: Shape.z(14), color: Grey.g76),
                 SizedBox(width: Shape.s(10)),
                 Expanded(
                   child: Column(
@@ -539,12 +576,12 @@ class _Sidebar extends StatelessWidget {
                         _folderName(folder),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyles.label(Grey.g76),
+                        style: TextStyles.label(Grey.g91),
                       ),
                       SizedBox(height: Shape.s(4)),
                       Text(
                         '${docs.length} projects · ${homeBytes(bytes)}',
-                        style: TextStyles.micro(Grey.g56),
+                        style: TextStyles.micro(Grey.g63),
                       ),
                     ],
                   ),
@@ -575,14 +612,11 @@ class _SidebarItem extends StatelessWidget {
     builder: (context, hot) => AnimatedContainer(
       duration: Motion.dur,
       padding: EdgeInsets.all(Shape.s(8)),
-      decoration: BoxDecoration(
-        color: selected
-            ? Grey.g91
-            : hot
-            ? Grey.g13
-            : Grey.g07,
-        borderRadius: Shape.round(3),
-      ),
+      color: selected
+          ? Grey.g95
+          : hot
+          ? Grey.g13
+          : Grey.g00,
       child: Row(
         children: [
           Container(
@@ -604,7 +638,7 @@ class _SidebarItem extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyles.name(
                     selected
-                        ? Grey.g07
+                        ? Grey.g00
                         : hot
                         ? Grey.g95
                         : Grey.g76,
@@ -626,7 +660,8 @@ class _SidebarItem extends StatelessWidget {
   );
 }
 
-/// The preview of the chosen project: its name set very large on one side, its picture on the other.
+/// The preview of the chosen project: on one side its name set very large over a strip of its facts, on the other its
+/// picture, shown as a design tool shows a selected layer.
 class _Hero extends StatelessWidget {
   const _Hero({
     required this.d,
@@ -643,45 +678,73 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = d.facts;
+    final facts = [
+      ('EDITED', homeAge(d.changed)),
+      if (f != null && f.seconds > 0) ('LENGTH', homeLength(f.seconds)),
+      if (f != null) ('FRAME', '${f.wide}×${f.high}'),
+      if (f != null && f.rate > 0)
+        (
+          'RATE',
+          '${f.rate == f.rate.roundToDouble() ? f.rate.round() : f.rate} fps',
+        ),
+      ('FILE', homeBytes(d.bytes)),
+    ];
     return Container(
       decoration: BoxDecoration(
-        color: Grey.g10,
-        borderRadius: Shape.round(4),
-        border: Border.all(color: Grey.g26, width: homeEdge),
+        color: Grey.g07,
+        border: Border.all(color: Grey.g91, width: homeEdge),
       ),
-      clipBehavior: Clip.antiAlias,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            flex: 5,
+            flex: 6,
             child: Padding(
               padding: EdgeInsets.all(Shape.s(24)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   homeTag(note, WindowTokens.usuki),
-                  const Spacer(),
-                  Text(
-                    d.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.name(
-                      Grey.g100,
-                      46,
-                      FontWeight.w800,
-                    ).copyWith(letterSpacing: -1.8),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        d.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyles.name(
+                          Grey.g100,
+                          44,
+                          FontWeight.w800,
+                        ).copyWith(letterSpacing: -1.8),
+                      ),
+                    ),
                   ),
-                  SizedBox(height: Shape.s(14)),
-                  Text(
-                    [
-                      homeAge(d.changed),
-                      if (f != null && f.seconds > 0) homeLength(f.seconds),
-                      ...homeFacts(d),
-                    ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.label(Grey.g76),
+                  SizedBox(height: Shape.s(16)),
+                  Container(height: 1, color: Grey.g63),
+                  SizedBox(height: Shape.s(10)),
+                  Wrap(
+                    spacing: Shape.s(22),
+                    runSpacing: Shape.s(10),
+                    children: [
+                      for (final (label, value) in facts)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(label, style: homeCaps(Grey.g56)),
+                            SizedBox(height: Shape.s(5)),
+                            Text(
+                              value,
+                              style: TextStyles.name(
+                                Grey.g95,
+                                12,
+                                FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                   SizedBox(height: Shape.s(18)),
                   Pressable(
@@ -704,21 +767,86 @@ class _Hero extends StatelessWidget {
               ),
             ),
           ),
-          Container(width: homeEdge, color: Grey.g26),
+          Container(width: homeEdge, color: Grey.g91),
           Expanded(
             flex: 8,
-            child: d.picture != null
-                ? Image(
-                    image: imageFile(d.picture!),
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.medium,
-                  )
-                : HomeLetter(name: d.name, index: index),
+            child: d.picture == null
+                ? HomeLetter(name: d.name, index: index)
+                : CustomPaint(
+                    painter: _DotGrid(Grey.g26),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        Shape.s(36),
+                        Shape.s(30),
+                        Shape.s(36),
+                        Shape.s(46),
+                      ),
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: f != null && f.wide > 0 && f.high > 0
+                              ? f.wide / f.high
+                              : 16 / 9,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            clipBehavior: Clip.none,
+                            children: [
+                              Image(
+                                image: imageFile(d.picture!),
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.medium,
+                              ),
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: WindowTokens.accent,
+                                    width: homeEdge,
+                                  ),
+                                ),
+                              ),
+                              ...homeHandles(),
+                              // The layer's size, hung under its box as a design tool hangs it.
+                              if (f != null)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: -Shape.s(30),
+                                  child: Center(
+                                    child: homeTag(
+                                      '${f.wide} × ${f.high}',
+                                      WindowTokens.accent,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
+}
+
+/// A canvas's grid of dots.
+class _DotGrid extends CustomPainter {
+  _DotGrid(this.ink);
+  final Color ink;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dot = Paint()..color = ink;
+    for (var y = 12.0; y < size.height; y += 20) {
+      for (var x = 12.0; x < size.width; x += 20) {
+        canvas.drawRect(Rect.fromLTWH(x, y, 1.5, 1.5), dot);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotGrid old) => old.ink != ink;
 }
 
 /// One of the two buttons beside the preview: its label at the top, its glyph large in the far corner.
@@ -745,25 +873,17 @@ class _ActionCard extends StatelessWidget {
       final ink = solid
           ? WindowTokens.onAccent
           : hot
-          ? Grey.g95
-          : Grey.g76;
+          ? Grey.g100
+          : Grey.g91;
       return SizedBox.expand(
         child: AnimatedContainer(
           duration: Motion.dur,
           padding: EdgeInsets.all(Shape.s(16)),
           decoration: BoxDecoration(
             color: solid
-                ? (hot ? Color.lerp(tone, Grey.g100, .16) : tone)
-                : (hot ? Grey.g13 : Grey.g10),
-            borderRadius: Shape.round(4),
-            border: Border.all(
-              width: homeEdge,
-              color: solid
-                  ? tone
-                  : hot
-                  ? Grey.g63
-                  : Grey.g26,
-            ),
+                ? (hot ? Color.lerp(tone, Grey.g100, .2) : tone)
+                : (hot ? Grey.g15 : Grey.g07),
+            border: Border.all(width: homeEdge, color: solid ? tone : Grey.g91),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -772,7 +892,7 @@ class _ActionCard extends StatelessWidget {
               const Spacer(),
               Align(
                 alignment: Alignment.bottomRight,
-                child: Glyph(glyph, size: Shape.z(30), color: ink),
+                child: Glyph(glyph, size: Shape.z(34), color: ink),
               ),
             ],
           ),
@@ -801,7 +921,7 @@ class _GridHeader extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Container(height: 2, color: Grey.g91),
+      Container(height: 3, color: Grey.g95),
       SizedBox(height: Shape.s(14)),
       Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -810,215 +930,411 @@ class _GridHeader extends StatelessWidget {
             'Projects',
             style: TextStyles.name(
               Grey.g100,
-              36,
+              40,
               FontWeight.w800,
-            ).copyWith(letterSpacing: -1.4),
+            ).copyWith(letterSpacing: -1.6),
           ),
           SizedBox(width: Shape.s(8)),
           Padding(
-            padding: EdgeInsets.only(bottom: Shape.s(4)),
+            padding: EdgeInsets.only(bottom: Shape.s(5)),
             child: Text(
               '$count',
-              style: TextStyles.name(Grey.g63, 13, FontWeight.w700),
+              style: TextStyles.name(Grey.g63, 14, FontWeight.w700),
             ),
           ),
           const Spacer(),
           if (picked > 0) ...[
             homeButton('home-export', 'Export $picked', true, onExport),
             homeButton('home-unpick', 'Cancel', false, onUnpick),
-            SizedBox(width: Shape.s(12)),
+            SizedBox(width: Shape.s(16)),
           ],
-          homeButton('home-by-date', 'Date', !byName, onByDate),
-          homeButton('home-by-name', 'Name', byName, onByName),
+          Padding(
+            padding: EdgeInsets.only(right: Shape.s(10), bottom: Shape.s(7)),
+            child: Text('SORT', style: homeCaps(Grey.g56)),
+          ),
+          _Toggle(
+            key: const ValueKey('home-by-date'),
+            text: 'DATE',
+            on: !byName,
+            onTap: onByDate,
+          ),
+          _Toggle(
+            key: const ValueKey('home-by-name'),
+            text: 'NAME',
+            on: byName,
+            onTap: onByName,
+          ),
         ],
       ),
     ],
   );
 }
 
-/// The marks of a design tool and of this app, drawn flat along the foot of the window behind the bento:
-/// a layer in its bounding box, a burst, a pen path, a triangle, a timeline with its keyframes, and a stack of discs.
-class _Decorations extends StatelessWidget {
-  const _Decorations();
+/// One of a row of choices: the chosen one inverted, the others outlined.
+class _Toggle extends StatelessWidget {
+  const _Toggle({
+    super.key,
+    required this.text,
+    required this.on,
+    required this.onTap,
+  });
+  final String text;
+  final bool on;
+  final VoidCallback onTap;
+
   @override
-  Widget build(BuildContext context) => SizedBox.expand(
-    child: CustomPaint(
-      painter: _DecorationPainter(
-        tones: homeTones(),
-        ink: Grey.g91,
-        ground: Grey.g07,
+  Widget build(BuildContext context) => Pressable(
+    onTap: onTap,
+    builder: (context, hot) => Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Shape.s(10),
+        vertical: Shape.s(6),
       ),
+      decoration: BoxDecoration(
+        color: on
+            ? Grey.g95
+            : hot
+            ? Grey.g15
+            : Grey.g00,
+        border: Border.all(color: Grey.g95, width: homeEdge),
+      ),
+      child: Text(text, style: homeCaps(on ? Grey.g00 : Grey.g91)),
     ),
   );
 }
 
-class _DecorationPainter extends CustomPainter {
-  _DecorationPainter({
+/// The collage behind the whole home screen: the marks of a design tool and of this app, many of them, at every size
+/// and a little askew, each overlapping its neighbours.
+///
+/// Rows are counted from the foot of the window and columns from its left, and each place draws from its own seed, so
+/// a mark stays where it is when the window is resized.
+class _Collage extends CustomPainter {
+  _Collage({
     required this.tones,
     required this.ink,
     required this.ground,
+    required this.keep,
   });
 
-  /// The colours of [homeTones], in its order.
+  /// The colours of [homeTones].
   final List<Color> tones;
   final Color ink, ground;
 
+  /// The top-left corner of the window that is left empty.
+  final Size keep;
+
+  static const _wide = 112.0, _tall = 98.0;
+  static const _words = [
+    '⌘V',
+    'PASTE',
+    'RENDER',
+    '.wgsl',
+    'p5.js',
+    '60 FPS',
+    'GLSL',
+    '.fs',
+    'EASE',
+    'LOTTIE',
+    'KEYFRAME',
+    'SHADER',
+  ];
+  static const _letters = ['Ag', '{ }', 'fx', 'Mo', '&', '</>', '01'];
+
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    final [usuki, nadeshiko, seiji, orange, violet] = tones;
     canvas.clipRect(Offset.zero & size);
+    canvas.clipRect(Offset.zero & keep, clipOp: ClipOp.difference);
+    final cols = (size.width / _wide).ceil() + 1,
+        rows = (size.height / _tall).ceil() + 1;
+    // From the top row down, so that a lower mark lies over the one above it.
+    for (var row = rows - 1; row >= 0; row--) {
+      for (var col = 0; col < cols; col++) {
+        final r = math.Random(row * 7919 + col * 104729 + 5);
+        final x =
+            (col + (row.isOdd ? .5 : 0) + (r.nextDouble() - .5) * .7) * _wide;
+        final y = size.height - (row + .3 + (r.nextDouble() - .5) * .7) * _tall;
+        final turn = r.nextInt(3) == 0 ? 0.0 : (r.nextDouble() - .5) * .8;
+        final grow = r.nextInt(8) == 0 ? 2.2 : .72 + r.nextDouble() * .8;
+        canvas.save();
+        canvas.translate(x, y);
+        canvas.rotate(turn);
+        canvas.scale(grow);
+        _mark(canvas, r);
+        canvas.restore();
+      }
+    }
+  }
 
-    Paint solid(Color c) => Paint()..color = c;
-    Paint stroke(Color c, [double wide = homeEdge]) => Paint()
-      ..color = c
+  /// Draws one mark about the origin, roughly a hundred across.
+  void _mark(Canvas c, math.Random r) {
+    final tone = tones[r.nextInt(tones.length)];
+    final fill = Paint()..color = tone;
+    final blank = Paint()..color = ground;
+    // The line that cuts a solid shape out of whatever lies under it.
+    final edge = Paint()
+      ..color = ground
       ..style = PaintingStyle.stroke
-      ..strokeWidth = wide;
+      ..strokeWidth = 3
+      ..strokeJoin = StrokeJoin.round;
+    final line = Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
 
-    // A bounding box's square handle, and a pen handle's round one.
+    void solid(Path p) {
+      c.drawPath(p, fill);
+      c.drawPath(p, edge);
+    }
+
     void handle(Offset at) {
-      final r = Rect.fromCenter(center: at, width: 8, height: 8);
-      canvas.drawRect(r, solid(ground));
-      canvas.drawRect(r, stroke(ink));
+      final box = Rect.fromCenter(center: at, width: 7, height: 7);
+      c.drawRect(box, blank);
+      c.drawRect(box, line);
     }
 
     void knob(Offset at) {
-      canvas.drawCircle(at, 4, solid(ground));
-      canvas.drawCircle(at, 4, stroke(ink));
+      c.drawCircle(at, 3.5, blank);
+      c.drawCircle(at, 3.5, line);
     }
 
-    // A keyframe: filled when [fill] is given, hollow otherwise.
-    void key(Offset at, [Color? fill]) {
-      const r = 8.0;
+    void key(double x, bool full) {
       final p = Path()
-        ..moveTo(at.dx, at.dy - r)
-        ..lineTo(at.dx + r, at.dy)
-        ..lineTo(at.dx, at.dy + r)
-        ..lineTo(at.dx - r, at.dy)
+        ..moveTo(x, -8)
+        ..lineTo(x + 8, 0)
+        ..lineTo(x, 8)
+        ..lineTo(x - 8, 0)
         ..close();
-      canvas.drawPath(p, solid(fill ?? ground));
-      if (fill == null) canvas.drawPath(p, stroke(ink));
+      c.drawPath(p, full ? fill : blank);
+      if (!full) c.drawPath(p, line);
     }
 
-    // Someone else's cursor, with the block that carries their name.
-    void cursor(Offset at, Color c, double tagWide) {
-      final p = Path()
-        ..moveTo(at.dx, at.dy)
-        ..lineTo(at.dx, at.dy + 20)
-        ..lineTo(at.dx + 5.5, at.dy + 15)
-        ..lineTo(at.dx + 14, at.dy + 15)
-        ..close();
-      canvas.drawPath(p, solid(c));
-      canvas.drawPath(p, stroke(ground, 1));
-      canvas.drawRect(
-        Rect.fromLTWH(at.dx + 12, at.dy + 20, tagWide, 16),
-        solid(c),
+    void word(String s, double size, {Color? color, Paint? outline}) {
+      final t = lineText(
+        s,
+        TextStyle(
+          fontFamily: TextStyles.sans,
+          fontSize: size,
+          fontWeight: FontWeight.w800,
+          height: 1,
+          letterSpacing: outline == null ? 1 : -2,
+          color: color,
+          foreground: outline,
+        ),
       );
+      t.paint(c, Offset(-t.width / 2, -t.height / 2));
+      t.dispose();
     }
 
-    // A layer in its bounding box.
-    final layer = Rect.fromLTWH(w * .03, h - 150, 168, 104);
-    canvas.drawRect(layer, solid(usuki));
-    canvas.drawRect(layer, stroke(ink));
-    for (final corner in [
-      layer.topLeft,
-      layer.topRight,
-      layer.bottomLeft,
-      layer.bottomRight,
-    ]) {
-      handle(corner);
+    switch (r.nextInt(19)) {
+      // A layer in its bounding box.
+      case 0:
+        final box = Rect.fromCenter(
+          center: Offset.zero,
+          width: 104,
+          height: 66,
+        );
+        c.drawRect(box, fill);
+        c.drawRect(box, line);
+        for (final p in [
+          box.topLeft,
+          box.topRight,
+          box.bottomLeft,
+          box.bottomRight,
+        ]) {
+          handle(p);
+        }
+      // A burst.
+      case 1:
+        final p = Path();
+        for (var i = 0; i < 18; i++) {
+          final a = i * math.pi / 9 - math.pi / 2;
+          final o = Offset(math.cos(a), math.sin(a)) * (i.isEven ? 50.0 : 37.0);
+          i == 0 ? p.moveTo(o.dx, o.dy) : p.lineTo(o.dx, o.dy);
+        }
+        solid(p..close());
+      // A stack of discs.
+      case 2:
+        for (var i = 0; i < 4; i++) {
+          final at = Offset(-20.0 + i * 13, -5.0 + i * 3);
+          c.drawCircle(at, 34, fill);
+          c.drawCircle(at, 34, edge);
+        }
+      // A triangle.
+      case 3:
+        solid(
+          Path()
+            ..moveTo(-46, 40)
+            ..lineTo(46, 40)
+            ..lineTo(0, -48)
+            ..close(),
+        );
+      // A pen path: two anchors, and the handles that bend the line between them.
+      case 4:
+        const from = Offset(-56, 34), to = Offset(56, -30);
+        const fromPull = Offset(-18, -40), toPull = Offset(6, 22);
+        c.drawLine(from, fromPull, line);
+        c.drawLine(to, toPull, line);
+        c.drawPath(
+          Path()
+            ..moveTo(from.dx, from.dy)
+            ..cubicTo(
+              fromPull.dx,
+              fromPull.dy,
+              toPull.dx,
+              toPull.dy,
+              to.dx,
+              to.dy,
+            ),
+          Paint()
+            ..color = ink
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.6,
+        );
+        knob(fromPull);
+        knob(toPull);
+        handle(from);
+        handle(to);
+      // A row of keyframes.
+      case 5:
+        c.drawLine(const Offset(-62, 0), const Offset(62, 0), line);
+        key(-52, true);
+        key(-14, false);
+        key(22, true);
+        key(54, false);
+      // Two clips on a timeline, and the playhead across them.
+      case 6:
+        c.drawRect(const Rect.fromLTWH(-54, -26, 84, 15), fill);
+        c.drawRect(const Rect.fromLTWH(-12, -5, 66, 15), blank);
+        c.drawRect(const Rect.fromLTWH(-12, -5, 66, 15), line);
+        c.drawLine(const Offset(8, -40), const Offset(8, 30), line);
+        c.drawRect(const Rect.fromLTWH(3, -46, 10, 8), Paint()..color = ink);
+      // Someone else's cursor, with the block that carries their name.
+      case 7:
+        final p = Path()
+          ..moveTo(-30, -30)
+          ..lineTo(-30, 2)
+          ..lineTo(-21, -6)
+          ..lineTo(-8, -6)
+          ..close();
+        solid(p);
+        c.drawRect(const Rect.fromLTWH(-12, 2, 58, 20), fill);
+      // A ring.
+      case 8:
+        c.drawCircle(
+          Offset.zero,
+          36,
+          Paint()
+            ..color = tone
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 14,
+        );
+      // Half a disc.
+      case 9:
+        solid(
+          Path()
+            ..addArc(
+              Rect.fromCircle(center: Offset.zero, radius: 48),
+              math.pi,
+              math.pi,
+            )
+            ..close(),
+        );
+      // A button, outlined.
+      case 10:
+        final pill = RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-56, -16, 112, 32),
+          const Radius.circular(16),
+        );
+        c.drawRRect(pill, blank);
+        c.drawRRect(pill, line);
+        word(_words[r.nextInt(_words.length)], 12, color: ink);
+      // A button, filled.
+      case 11:
+        final block = const Rect.fromLTWH(-52, -15, 104, 30);
+        c.drawRect(block, fill);
+        c.drawRect(block, edge);
+        word(_words[r.nextInt(_words.length)], 12, color: ground);
+      // A grid of dots.
+      case 12:
+        for (var i = 0; i < 25; i++) {
+          c.drawCircle(
+            Offset(-40.0 + (i % 5) * 20, -40.0 + (i ~/ 5) * 20),
+            2.6,
+            Paint()..color = ink,
+          );
+        }
+      // A cross.
+      case 13:
+        solid(
+          Path()
+            ..moveTo(-12, -40)
+            ..lineTo(12, -40)
+            ..lineTo(12, -12)
+            ..lineTo(40, -12)
+            ..lineTo(40, 12)
+            ..lineTo(12, 12)
+            ..lineTo(12, 40)
+            ..lineTo(-12, 40)
+            ..lineTo(-12, 12)
+            ..lineTo(-40, 12)
+            ..lineTo(-40, -12)
+            ..lineTo(-12, -12)
+            ..close(),
+        );
+      // A zigzag.
+      case 14:
+        final p = Path()..moveTo(-54, 14);
+        for (var i = 1; i <= 6; i++) {
+          p.lineTo(-54.0 + i * 18, i.isOdd ? -14.0 : 14.0);
+        }
+        c.drawPath(
+          p,
+          Paint()
+            ..color = tone
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 8,
+        );
+      // A window, with something in it.
+      case 15:
+        const frame = Rect.fromLTWH(-52, -38, 104, 76);
+        c.drawRect(frame, blank);
+        c.drawRect(frame, line);
+        c.drawLine(const Offset(-52, -22), const Offset(52, -22), line);
+        for (var i = 0; i < 3; i++) {
+          c.drawCircle(Offset(-43.0 + i * 9, -30), 2.4, Paint()..color = ink);
+        }
+        c.drawRect(const Rect.fromLTWH(-40, -10, 50, 34), fill);
+      // Type in outline.
+      case 16 || 17:
+        word(
+          _letters[r.nextInt(_letters.length)],
+          92,
+          outline: Paint()
+            ..color = ink
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.6,
+        );
+      // A quarter of a disc.
+      default:
+        solid(
+          Path()
+            ..moveTo(-40, 40)
+            ..lineTo(-40, -40)
+            ..arcToPoint(
+              const Offset(40, 40),
+              radius: const Radius.circular(80),
+            )
+            ..close(),
+        );
     }
-
-    // A burst, with a cursor on it.
-    final mid = Offset(w * .22, h - 86);
-    final burst = Path();
-    const points = 9;
-    for (var i = 0; i < points * 2; i++) {
-      final a = i * math.pi / points - math.pi / 2;
-      final o =
-          mid + Offset(math.cos(a), math.sin(a)) * (i.isEven ? 62.0 : 45.0);
-      i == 0 ? burst.moveTo(o.dx, o.dy) : burst.lineTo(o.dx, o.dy);
-    }
-    canvas.drawPath(burst..close(), solid(nadeshiko));
-    cursor(mid + const Offset(30, 26), orange, 46);
-
-    // A pen path: two anchors, and the handles that bend the line between them.
-    final from = Offset(w * .31, h - 44), to = Offset(w * .46, h - 134);
-    final fromPull = from + const Offset(64, -96),
-        toPull = to + const Offset(-86, 58);
-    canvas.drawLine(from, fromPull, stroke(ink, 1));
-    canvas.drawLine(to, toPull, stroke(ink, 1));
-    canvas.drawPath(
-      Path()
-        ..moveTo(from.dx, from.dy)
-        ..cubicTo(fromPull.dx, fromPull.dy, toPull.dx, toPull.dy, to.dx, to.dy),
-      stroke(ink, 2.5),
-    );
-    knob(fromPull);
-    knob(toPull);
-    handle(from);
-    handle(to);
-
-    // A triangle.
-    final foot = Offset(w * .52, h - 28);
-    canvas.drawPath(
-      Path()
-        ..moveTo(foot.dx, foot.dy)
-        ..lineTo(foot.dx + 104, foot.dy)
-        ..lineTo(foot.dx + 52, foot.dy - 128)
-        ..close(),
-      solid(violet),
-    );
-
-    // A timeline: two clips, a row of keyframes, and the playhead across them.
-    final track = Offset(w * .63, h - 62);
-    canvas.drawRect(
-      Rect.fromLTWH(track.dx + 26, track.dy - 62, 150, 18),
-      solid(orange),
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(track.dx + 96, track.dy - 36, 118, 18),
-      solid(seiji),
-    );
-    canvas.drawLine(track, track + const Offset(230, 0), stroke(ink, 1));
-    key(track + const Offset(8, 0), usuki);
-    key(track + const Offset(84, 0));
-    key(track + const Offset(160, 0), usuki);
-    key(track + const Offset(222, 0));
-    canvas.drawLine(
-      track + const Offset(122, -78),
-      track + const Offset(122, 24),
-      stroke(ink),
-    );
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: track + const Offset(122, -82),
-        width: 11,
-        height: 9,
-      ),
-      solid(ink),
-    );
-
-    // A stack of discs, the top one a play button.
-    var disc = Offset(w * .86, h - 88);
-    for (var i = 0; i < 5; i++) {
-      canvas.drawCircle(disc, 46, solid(seiji));
-      canvas.drawCircle(disc, 46, stroke(ground, 2.5));
-      if (i < 4) disc += const Offset(18, 5);
-    }
-    canvas.drawPath(
-      Path()
-        ..moveTo(disc.dx - 9, disc.dy - 13)
-        ..lineTo(disc.dx + 14, disc.dy)
-        ..lineTo(disc.dx - 9, disc.dy + 13)
-        ..close(),
-      solid(ground),
-    );
   }
 
   @override
-  bool shouldRepaint(_DecorationPainter old) =>
-      !listEquals(old.tones, tones) || old.ink != ink || old.ground != ground;
+  bool shouldRepaint(_Collage old) =>
+      !listEquals(old.tones, tones) ||
+      old.ink != ink ||
+      old.ground != ground ||
+      old.keep != keep;
 }
 
 /// Shown in the preview's place when there is no project to preview.
@@ -1029,9 +1345,8 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: EdgeInsets.all(Shape.s(24)),
     decoration: BoxDecoration(
-      color: Grey.g10,
-      borderRadius: Shape.round(4),
-      border: Border.all(color: Grey.g26, width: homeEdge),
+      color: Grey.g07,
+      border: Border.all(color: Grey.g91, width: homeEdge),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1041,7 +1356,7 @@ class _Empty extends StatelessWidget {
           searching ? 'No matches' : 'No projects yet',
           style: TextStyles.name(
             Grey.g100,
-            46,
+            44,
             FontWeight.w800,
           ).copyWith(letterSpacing: -1.8),
         ),
