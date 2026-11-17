@@ -1,6 +1,7 @@
 // The Media shelf, in the style of AEViewer 2: one browser for the project's files and media.
 // A folder tree (locations, then folders only) sits beside or above the open folder's contents, shown as thumbnails or a list.
 // Wide: tree | contents. Narrow: the tree band (its height set by dragging) over the contents.
+import 'package:motolii/storage/host_platform.dart' show isRooted;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -36,7 +37,7 @@ class MediaShelf extends StatelessWidget {
 
   Widget _shelf(BuildContext context) {
     final at = c.mem.folder;
-    if (at != 'Project' && !at.startsWith('/')) {
+    if (at != 'Project' && !isRooted(at)) {
       c.mem.folder = mediaRoots(c, media).first.id;
     }
     return LayoutBuilder(

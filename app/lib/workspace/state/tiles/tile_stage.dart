@@ -11,6 +11,7 @@ import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/tiles/tile_frames.dart';
 import 'package:motolii/workspace/state/tiles/tile_media.dart';
 import 'package:motolii/workspace/state/tiles/tile_showcase.dart';
+import 'package:motolii/storage/host_platform.dart' show hostIsMacOS;
 import 'package:motolii/workspace/state/workspace_controller.dart'
     show defaultTextFont;
 
@@ -208,7 +209,8 @@ class TileStage {
           if (one(at, tileDrawnFrame(home, k))) tileDrawnFrame(home, k),
       ]);
     }
-    if (made.isNotEmpty) runTool('sips', ['-Z', '192', ...made]);
+    // (see copies_tiles.dart)
+    if (made.isNotEmpty && hostIsMacOS) runTool('sips', ['-Z', '192', ...made]);
     return made;
   }
 

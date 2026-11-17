@@ -7,6 +7,7 @@
 // Nothing is overwritten: a name already on the shelf, or an existing file of that name, is refused.
 // A rename writes the name beside the file (<file>.name, as pasted code does: CodeFile.rename in dock/create/code_file.dart).
 // The file stays where it is, so documents that use it still find it.
+import 'package:motolii/storage/host_platform.dart' show isRooted;
 import 'package:motolii/bridge/engine_paths.dart'
     show motoliiOwn, motoliiShelves;
 import 'package:motolii/storage/disk.dart' show existsFile;
@@ -171,7 +172,7 @@ void shelfCopyImages(String from, String dir, {bool overwrite = true}) {
   for (final l in linesOf(from)) {
     final image = RegExp(r'^//.*--image@[^:]*:(.+)$').firstMatch(l)?[1]?.trim();
     if (image == null ||
-        image.startsWith('/') ||
+        isRooted(image) ||
         !existsFile('$home/$image') ||
         (!overwrite && existsFile('$dir/$image'))) {
       continue;

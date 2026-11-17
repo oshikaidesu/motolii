@@ -1,4 +1,5 @@
-// Plays a sound file with macOS's afplay, for the Media shelf's preview before a file is placed.
+// Plays a sound file with macOS's afplay (GStreamer's gst-launch elsewhere), for the Media shelf's preview before a file is
+// placed.
 import 'dart:io';
 
 class SoundPlay {
@@ -12,5 +13,12 @@ class SoundPlay {
   Future<int> get exitCode => _process.exitCode;
 }
 
-Future<SoundPlay> playSound(String path) async =>
-    SoundPlay._(await Process.start('afplay', [path]));
+Future<SoundPlay> playSound(String path) async => SoundPlay._(
+  Platform.isMacOS
+      ? await Process.start('afplay', [path])
+      : await Process.start('gst-launch-1.0', [
+          '-q',
+          'playbin',
+          'uri=${Uri.file(path)}',
+        ]),
+);

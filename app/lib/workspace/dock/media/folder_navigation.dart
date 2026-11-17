@@ -1,5 +1,5 @@
 // Where the Media shelf's tree starts, the path from there to a folder, and opening a folder or a file.
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/host_platform.dart' show homeFolder, isRooted;
 import 'package:motolii/widgets/picks.dart' show pickOnClick;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
@@ -34,12 +34,12 @@ List<FileNode> mediaRoots(ShelfContext c, MediaController media) {
 /// The folders from the root down to [id], root first.
 List<FileNode> folderPathOf(ShelfContext c, MediaController media, String id) {
   final roots = mediaRoots(c, media);
-  if (!id.startsWith('/')) return [roots.first];
+  if (!isRooted(id)) return [roots.first];
   final out = <FileNode>[];
   for (var at = id; ; at = dirname(at)) {
-    if (at == _home || at == '/') {
+    if (at == _home || at == dirname(at)) {
       return out
-        ..insert(0, FileNode(at, at == _home ? 'Home' : '/', AppGlyphs.folder));
+        ..insert(0, FileNode(at, at == _home ? 'Home' : at, AppGlyphs.folder));
     }
     out.insert(0, FileNode(at, basename(at), AppGlyphs.folder));
   }
@@ -47,7 +47,7 @@ List<FileNode> folderPathOf(ShelfContext c, MediaController media, String id) {
 
 /// Opens the folder [id] in the shelf: its contents are shown and its row in the tree is opened.
 void openFolder(ShelfContext c, MediaController media, String id) => c.set(() {
-  if (id.startsWith('/')) {
+  if (isRooted(id)) {
     // A folder on disk is read again each time it is opened.
     media.readFolder(id);
   }

@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
+
 import 'package:crypto/crypto.dart' show sha1;
 
 import 'package:motolii/storage/json_file.dart' show fileKeep;
@@ -12,8 +14,7 @@ import 'package:motolii/storage/json_file.dart' show fileKeep;
 /// built (engine/deps/likeness_models.py), otherwise null. Without a model the maps use tiny colours
 /// (ImageFeatures.tiny).
 String? likenessModel(String name) {
-  final f =
-      '${Platform.environment['HOME']}/Library/Caches/Motolii/models/$name.onnx';
+  final f = '$homeFolder/Library/Caches/Motolii/models/$name.onnx';
   return File(f).existsSync() ? f : null;
 }
 
@@ -25,7 +26,7 @@ Future<Uint8List> readPictureBytes(String path) => File(path).readAsBytes();
 /// The cache file for an image's feature vector, in ~/Library/Caches/Motolii/looks.
 /// [key] combines the model, the image and when it was drawn. [featuresKept] returns null when nothing is cached.
 File _look(String key) => File(
-  '${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode(key))}.f32',
+  '$homeFolder/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode(key))}.f32',
 );
 
 Float32List? featuresKept(String key) {

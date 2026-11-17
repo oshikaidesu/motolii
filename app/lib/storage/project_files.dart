@@ -33,3 +33,18 @@ bool moveProjectFile(String from, String to) {
 
 /// The user's Trash folder, as the Finder keeps it.
 String trashFolder() => '$homeFolder/.Trash';
+
+/// Moves [file] to Windows' Recycle Bin, as Explorer's Delete does (.NET's FileSystem.DeleteFile with SendToRecycleBin).
+/// False if it could not be moved.
+bool recycleFile(String file) {
+  try {
+    return Process.runSync('powershell', [
+          '-NoProfile',
+          '-Command',
+          "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${file.replaceAll('/', r'\').replaceAll("'", "''")}', 'OnlyErrorDialogs', 'SendToRecycleBin')",
+        ]).exitCode ==
+        0;
+  } on ProcessException {
+    return false;
+  }
+}

@@ -10,7 +10,8 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/storage/folder_entries.dart' show entriesKept;
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/host_platform.dart'
+    show homeFolder, windowsFontFolders;
 import 'package:motolii/storage/picture_files.dart'
     show featuresKept, keepFeatures, lastChangedMicros;
 import 'package:motolii/storage/text_file.dart' show readTextNow;
@@ -44,6 +45,7 @@ Future<FontsRead> readFontFiles(
     '/System/Library/Fonts/Supplemental',
     '/Library/Fonts',
     '$homeFolder/Library/Fonts',
+    ...windowsFontFolders,
     // The bundled fallback font the engine draws with.
     '$motoliiDir/third_party/noto_sans_jp',
     '$motoliiOwn/fonts',

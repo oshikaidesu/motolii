@@ -20,6 +20,7 @@ import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/tiles/tile_frames.dart';
 import 'package:motolii/workspace/state/tiles/tile_media.dart';
 import 'package:motolii/workspace/state/tiles/tile_queue.dart';
+import 'package:motolii/storage/host_platform.dart' show hostIsMacOS;
 
 /// Tiles for the Copies entries on the Create shelf.
 abstract final class CopiesTiles {
@@ -53,7 +54,8 @@ abstract final class CopiesTiles {
               if (m.at(at) && m.still('${base}_$k.png')) '${base}_$k.png',
         ];
         if (pictures.length >= tileMoments.length) {
-          runTool('sips', ['-Z', '192', ...pictures]);
+          // (shrunk with the Mac's sips; elsewhere they stay their drawn size, read smaller by the shelf)
+          if (hostIsMacOS) runTool('sips', ['-Z', '192', ...pictures]);
           copyFile(pictures[tileStill], home);
           // Without ffmpeg only the still exists.
           ffmpeg([

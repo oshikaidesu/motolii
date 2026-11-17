@@ -1,5 +1,7 @@
 // A project as the home screen lists it, and what is said or done about one: the facts and sizes as text, the day it is filed under,
 // copying it, and moving it to the Trash. None of it draws.
+import 'package:motolii/storage/host_platform.dart' show hostIsWindows;
+
 import 'dart:math' as math;
 
 import 'package:motolii/storage/disk.dart' show existsFile;
@@ -104,7 +106,9 @@ void duplicateProject(String folder, HomeProject d) {
 }
 
 /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there. False if it could not be moved.
+/// On Windows it goes to the Recycle Bin instead.
 bool trashProject(HomeProject d) {
+  if (hostIsWindows) return recycleFile(d.path);
   final trash = trashFolder();
   final to = firstFree(
     '$trash/${d.name}.motolii',
