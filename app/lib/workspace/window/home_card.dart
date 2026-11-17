@@ -64,163 +64,166 @@ class HomeCard extends StatelessWidget {
     final f = d.facts;
     return SizedBox(
       width: homeTile,
-      child: NakedButton(
-        enableFeedback: false,
-        key: ValueKey('home-doc:${d.path}'),
-        onPressed: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: homeTile,
-              decoration: BoxDecoration(
-                color: WindowTokens.card,
-                borderRadius: Shape.round(8),
-                border: open ? WindowTokens.chosen : null,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (d.picture != null)
-                    Image(image: imageFile(d.picture!), fit: BoxFit.cover),
-                  // A round accent pill with a check glyph when the card is picked, mirroring Finder's selection dot.
-                  if (picked)
+      child: GestureDetector(
+        onSecondaryTapDown: (_) => onMore(),
+        child: NakedButton(
+          enableFeedback: false,
+          key: ValueKey('home-doc:${d.path}'),
+          onPressed: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: homeTile,
+                decoration: BoxDecoration(
+                  color: WindowTokens.card,
+                  borderRadius: Shape.round(8),
+                  border: open ? WindowTokens.chosen : null,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (d.picture != null)
+                      Image(image: imageFile(d.picture!), fit: BoxFit.cover),
+                    // A round accent pill with a check glyph when the card is picked, mirroring Finder's selection dot.
+                    if (picked)
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        child: Container(
+                          key: ValueKey('home-picked:${d.path}'),
+                          margin: EdgeInsets.all(Shape.s(8)),
+                          width: Shape.z(20),
+                          height: Shape.z(20),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: WindowTokens.accent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Glyph(
+                            AppGlyphs.check,
+                            size: Shape.z(12),
+                            color: WindowTokens.onAccent,
+                          ),
+                        ),
+                      ),
+                    // The "•••" more button uses the shared more glyph, in a round pill, so it reads with the rest of the app.
                     Positioned(
-                      left: 0,
+                      right: 0,
                       top: 0,
-                      child: Container(
-                        key: ValueKey('home-picked:${d.path}'),
-                        margin: EdgeInsets.all(Shape.s(8)),
-                        width: Shape.z(20),
-                        height: Shape.z(20),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: WindowTokens.accent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Glyph(
-                          AppGlyphs.check,
-                          size: Shape.z(12),
-                          color: WindowTokens.onAccent,
-                        ),
-                      ),
-                    ),
-                  // The "•••" more button uses the shared more glyph, in a round pill, so it reads with the rest of the app.
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: NakedButton(
-                      enableFeedback: false,
-                      key: ValueKey('home-more:${d.path}'),
-                      onPressed: onMore,
-                      child: Container(
-                        margin: EdgeInsets.all(Shape.s(8)),
-                        width: Shape.z(24),
-                        height: Shape.z(24),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: WindowTokens.ground,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Glyph(
-                          AppGlyphs.more,
-                          size: Shape.z(12),
-                          color: Grey.g76,
+                      child: NakedButton(
+                        enableFeedback: false,
+                        key: ValueKey('home-more:${d.path}'),
+                        onPressed: onMore,
+                        child: Container(
+                          margin: EdgeInsets.all(Shape.s(8)),
+                          width: Shape.z(24),
+                          height: Shape.z(24),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: WindowTokens.ground,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Glyph(
+                            AppGlyphs.more,
+                            size: Shape.z(12),
+                            color: Grey.g76,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: Shape.s(10)),
-            Text(
-              d.name,
-              style: TextStyles.name(Grey.g91).bold,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: Shape.s(3)),
-            // File size and duration on one line, separated by a dot (CapCut uses "254.3M | 02:13"; a dot reads lighter and
-            // matches the facts line below so the typography stays consistent).
-            Text(
-              [
-                homeBytes(d.bytes),
-                if (f != null) homeLength(f.seconds),
-              ].join(' · '),
-              style: TextStyles.value(Grey.g63),
-              maxLines: 1,
-            ),
-            Text(
-              homeFacts(d).join(' · '),
-              key: ValueKey('home-facts:${d.path}'),
-              style: TextStyles.value(Grey.g56),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (menu)
-              Padding(
-                padding: EdgeInsets.only(top: Shape.s(8)),
-                child: Wrap(
-                  spacing: Shape.s(4),
-                  runSpacing: Shape.s(4),
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: asking
-                      ? [
-                          Text(
-                            'Move to the Trash?',
-                            style: TextStyles.label(Grey.g91),
-                          ),
-                          homeButton(
-                            'home-trash-yes:${d.path}',
-                            'Move to Trash',
-                            true,
-                            onTrash,
-                          ),
-                          homeButton(
-                            'home-trash-no:${d.path}',
-                            'Cancel',
-                            false,
-                            onKeep,
-                          ),
-                        ]
-                      : [
-                          homeButton(
-                            'home-open:${d.path}',
-                            'Open',
-                            false,
-                            onOpen,
-                          ),
-                          homeButton(
-                            'home-select:${d.path}',
-                            'Select',
-                            false,
-                            onSelect,
-                          ),
-                          homeButton(
-                            'home-export:${d.path}',
-                            'Export…',
-                            false,
-                            onExport,
-                          ),
-                          homeButton(
-                            'home-duplicate:${d.path}',
-                            'Duplicate',
-                            false,
-                            onDuplicate,
-                          ),
-                          if (!open)
-                            homeButton(
-                              'home-trash:${d.path}',
-                              'Move to Trash',
-                              false,
-                              onAskTrash,
-                            ),
-                        ],
+                  ],
                 ),
               ),
-          ],
+              SizedBox(height: Shape.s(10)),
+              Text(
+                d.name,
+                style: TextStyles.name(Grey.g91).bold,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: Shape.s(3)),
+              // File size and duration on one line, separated by a dot (CapCut uses "254.3M | 02:13"; a dot reads lighter and
+              // matches the facts line below so the typography stays consistent).
+              Text(
+                [
+                  homeBytes(d.bytes),
+                  if (f != null) homeLength(f.seconds),
+                ].join(' · '),
+                style: TextStyles.value(Grey.g63),
+                maxLines: 1,
+              ),
+              Text(
+                homeFacts(d).join(' · '),
+                key: ValueKey('home-facts:${d.path}'),
+                style: TextStyles.value(Grey.g56),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (menu)
+                Padding(
+                  padding: EdgeInsets.only(top: Shape.s(8)),
+                  child: Wrap(
+                    spacing: Shape.s(4),
+                    runSpacing: Shape.s(4),
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: asking
+                        ? [
+                            Text(
+                              'Move to the Trash?',
+                              style: TextStyles.label(Grey.g91),
+                            ),
+                            homeButton(
+                              'home-trash-yes:${d.path}',
+                              'Move to Trash',
+                              true,
+                              onTrash,
+                            ),
+                            homeButton(
+                              'home-trash-no:${d.path}',
+                              'Cancel',
+                              false,
+                              onKeep,
+                            ),
+                          ]
+                        : [
+                            homeButton(
+                              'home-open:${d.path}',
+                              'Open',
+                              false,
+                              onOpen,
+                            ),
+                            homeButton(
+                              'home-select:${d.path}',
+                              'Select',
+                              false,
+                              onSelect,
+                            ),
+                            homeButton(
+                              'home-export:${d.path}',
+                              'Export…',
+                              false,
+                              onExport,
+                            ),
+                            homeButton(
+                              'home-duplicate:${d.path}',
+                              'Duplicate',
+                              false,
+                              onDuplicate,
+                            ),
+                            if (!open)
+                              homeButton(
+                                'home-trash:${d.path}',
+                                'Move to Trash',
+                                false,
+                                onAskTrash,
+                              ),
+                          ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

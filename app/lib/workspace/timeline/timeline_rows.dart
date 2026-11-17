@@ -169,6 +169,7 @@ class TimelineRows {
   void reorderEnd(Layer l) {
     final ws = workspace!;
     final by = (_lift / TimelineMetrics.row).round();
+    _lift = 0;
     if (by != 0) {
       ws.after(
         timeline_service.reorderLayer(
@@ -179,4 +180,7 @@ class TimelineRows {
       );
     }
   }
+
+  /// Escape pressed while dragging: cancel without reordering.
+  void reorderCancel() => _lift = 0;
 }

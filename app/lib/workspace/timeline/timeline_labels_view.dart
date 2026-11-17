@@ -135,6 +135,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                               onVerticalDragUpdate: (d) =>
                                   rows.reorderBy(d.delta.dy),
                               onVerticalDragEnd: (_) => rows.reorderEnd(l),
+                              onVerticalDragCancel: rows.reorderCancel,
                               child: TimelineLabelRow(
                                 // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
                                 index: rows.order[i].layer,
