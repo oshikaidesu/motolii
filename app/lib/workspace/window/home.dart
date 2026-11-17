@@ -168,6 +168,18 @@ class _HomeWindowState extends State<HomeWindow> {
                         colors: [seedColor(name), seedColorLight(name)],
                       ),
                     ),
+                    child: Align(
+                      alignment: const Alignment(.85, -.2),
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'M',
+                        style: TextStyle(
+                          fontSize: 140,
+                          fontWeight: FontWeight.w900,
+                          color: Grey.g95.withValues(alpha: .04),
+                          letterSpacing: -5,
+                        ),
+                      ),
+                    ),
                   ),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -192,6 +204,12 @@ class _HomeWindowState extends State<HomeWindow> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      Container(
+                        width: 24,
+                        height: 2,
+                        color: WindowTokens.accent,
+                      ),
+                      SizedBox(height: Shape.s(10)),
                       Text(
                         'CONTINUE',
                         style: TextStyles.micro(WindowTokens.accent).copyWith(
