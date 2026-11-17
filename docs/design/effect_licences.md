@@ -14,7 +14,7 @@ During editing, the effect card shows **by author** — the person, not the term
 | **Share / template** | When a `.motolii` project is shared, the attribution travels with it, so the recipient knows what is inside. |
 | **Publish to shelf** | When a user puts their own effect on a shelf, the `meta.yaml` records `origin: self`. |
 
-The one exception: a warning may surface during editing when a project mixes effects whose licences conflict (e.g. a copyleft effect composed with a proprietary one).
+Motolii does not warn about licence compatibility during editing. The tool records where things come from; the user decides what to do with that information.
 
 ## Origin
 
@@ -49,11 +49,24 @@ Effects used in this project
 
 Builtin and self effects list only names. Community effects list author, licence and source — the full attribution the author deserves.
 
+## What Motolii ships vs. what the user brings in
+
+| | Bundled (`shelves/`) | Pasted by the user (⌘V) |
+|---|---|---|
+| **Who distributes it** | Motolii | The user |
+| **Licence requirement** | Commercial-use-compatible only (MIT, CC0, Unlicense, …) | The user's responsibility |
+| **Attribution** | `meta.yaml` beside the file, always present | Motolii records the source format (Shadertoy, p5.js, …) in the project |
+| **On the receipt** | Full: author, licence, source | Source format and what the user pasted |
+
+Everything on the shelf is commercially safe. Code the user pastes is theirs to judge — Motolii records where it came from so the receipt can show it, but does not block or warn.
+
+This is the same boundary as Hydra (AGPL-3.0): not bundled, fetched by the user with `extensions/hydra/get.sh`, deleted and Motolii is as it was. Works whose author publishes no licence text follow the same rule (already in [CONTRIBUTING](.github/CONTRIBUTING.md): not bundled; fetched at build time instead).
+
 ## For the future
 
-When a content protocol (ACP or otherwise) brings effects in from outside, `origin` extends naturally: `store`, `import`, whatever the channel is. The receipt format does not change; a new origin section appears.
+When a content protocol (ACP or otherwise) brings effects in from outside, `origin` extends naturally: `store`, `import`, whatever the channel is. The attribution format does not change; a new origin section appears.
 
-The goal stays the same: **credit is clear, but it does not become a fence.** The community should be able to mix freely without having to think about licence compatibility until the moment they export — and at that moment, the attribution is already there, complete and correct, without anyone having had to assemble it by hand.
+The goal stays the same: **credit is clear, but it does not become a fence.** The community can mix freely. Motolii records where things come from; the user decides what to do with that information.
 
 ## Where the code lives
 
