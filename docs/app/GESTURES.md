@@ -67,7 +67,7 @@ The shared numbers are written once, in the `Gestures` class in `app/lib/widgets
 - `wheel.3` Views: the wheel pans (vertical; horizontal, or Shift+wheel, for sideways). Zoom is Cmd+wheel, centred under the pointer, by a factor of 1.0015 per tick. On the timeline it zooms around the playhead instead, since the wheel carries no pointer frame there (`timeline.dart`). `[Mac]` `[common]`
 - `wheel.4` Views: two fingers carry what is visible with the fingers (1 px per 1 px). Pinching zooms around the fingers. `[Mac]`
 - `wheel.5` Lists, menus and rows of chips: the wheel scrolls (a horizontal row scrolls with a horizontal slide or Shift+wheel). No row is ever cut off. `[Mac]`
-- `wheel.6` Two fingers are not a press. They never drag a value, handle or bar; they only pan or rotate the view. Only a mouse, a finger or a pen presses (`wsPressing`). `[other: Blender]`
+- `wheel.6` Two fingers are not a press. They never drag a value, handle or bar; they only pan or rotate the view. Only a mouse, a finger or a pen presses (`pressingDevices` in `widgets/two_finger_gestures.dart`). `[other: Blender]`
 
 ## 6. Hover and cursor
 
@@ -159,26 +159,23 @@ These are about the frame of a part (card, row, tile, tab), not about the contro
 
 ## 12. Numbers
 
-The values for the `Gestures` class. Parts and panels read them by these names and do not write numbers of their own.
+The values for the `Gestures` class (`app/lib/widgets/gestures.dart`). Parts and panels read them by these names and do not write numbers of their own. Values marked *(Flutter default)* are not fields in the class; they are Flutter framework constants used implicitly.
 
 | `Gestures` name | Value | Source |
 |---|---|---|
 | `dragSlop` | 4 px (on screen) | `[common]` Number scrubbing and the marquee already use this value |
-| `doubleTap` | 300 ms | `[other: Flutter]` `kDoubleTapTimeout` |
-| `doubleTapSlop` | 100 px | `[other: Flutter]` `kDoubleTapSlop` |
-| `longPress` | 500 ms | `[other: Flutter]` `kLongPressTimeout` |
+| *(Flutter default)* | `kDoubleTapTimeout` 300 ms | `[other: Flutter]` |
+| *(Flutter default)* | `kDoubleTapSlop` 100 px | `[other: Flutter]` |
+| *(Flutter default)* | `kLongPressTimeout` 500 ms | `[other: Flutter]` |
 | `grab` | 8 px (around a point, keyframe, handle or edge) | `[common]` The preview's handles and keyframes use this value |
-| `snap` | 8 px on the timeline; 6 px for a layer on the stage | `[Alight]` `[Maintainer]` The timeline stops within 8 points (Alight); on the stage a layer snaps to edges and guides within 6 screen px (`stage_drag.dart`) |
+| `snapTimeline`, `snapStage` | 8 px on the timeline; 6 px for a layer on the stage | `[Alight]` `[Maintainer]` The timeline stops within 8 points (Alight); on the stage a layer snaps to edges and guides within 6 screen px (`stage_drag.dart`) |
 | `coarse` | 10 times (Cmd or Ctrl on a value) | `[other: Ableton Live]` Cmd or Ctrl makes scrubbing 10 times coarser (Live manual, section 42.6) |
 | `fine` | one tenth (Shift on a value) | `[other: Ableton Live]` Shift makes scrubbing one tenth, for fine control (Live manual, section 42.6) |
 | `nudgeShift` | 10 (Shift+arrow on items and time) | `[AE]` Shift+arrow moves by 10 |
-| `hover` | 0 ms | `[common]` |
 | `change` | 120 ms (`Motion.dur`) | `[DESIGN]` The one motion |
 | `menuWidth` | 220 px | `[common]` |
 | `menuRow` | 22 px | `[common]` |
-| `menuMaxHeight` | half the height of the app | `[common]` |
 | `burstRest` | 300 ms | `[AE]` The Unified Camera tool's wheel: one step after it stops |
-| `cmd`, `valueFactor` | How to read the key (Cmd or Ctrl) and the factor applied to a value | `mod.5`, `mod.1` |
 
 ## 13. Standing exceptions
 
