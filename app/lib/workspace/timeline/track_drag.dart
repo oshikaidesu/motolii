@@ -369,8 +369,32 @@ class TrackDrag extends ChangeNotifier {
     final ws = workspace!, v = _viewport.view;
     final r = _rows.rowAt(p.dy);
     if (!timeline_service.isConnected(ws) || r == null) return false;
-    // A lane has nothing to drag and starts no selection box.
-    if (r.value != null) return true;
+    // A lane's keyframes can be dragged in time, like those on the main row.
+    if (r.value != null) {
+      final t = int.parse(r.l.id), name = r.value!;
+      if (RowFlags(ws).isLocked(r.l.id)) return true;
+      double? pickK;
+      double pickDx = TimelineMetrics.keyPicked + 2;
+      for (final k in timeline_service.keyframeTimes(ws, t, name)) {
+        final frame = (k * WorkspaceController.fps).round();
+        final dx = (v.x(frame) - p.dx).abs();
+        if (dx <= pickDx) {
+          pickDx = dx;
+          pickK = k;
+        }
+      }
+      if (pickK case final k?) {
+        final frame = (k * WorkspaceController.fps).round();
+        final held = (layer: r.l.id, frame: frame),
+            all = ws.keys.contains(held) ? ws.keys.toList() : [held];
+        if (!ws.keys.contains(held)) ws.pickKey(held);
+        if (ws.playing) ws.playing = false;
+        _slide = (keys: all, grab: frame, by: 0);
+        _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
+        return true;
+      }
+      return true;
+    }
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (RowFlags(workspace!).isLocked(l.id) || (off && !_onPale(ws, l, p))) {
