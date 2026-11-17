@@ -270,16 +270,15 @@ class _HomeCardState extends State<HomeCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (homeFacts(d).isNotEmpty)
-                  AnimatedDefaultTextStyle(
-                    duration: Motion.dur,
-                    style: TextStyles.micro(h ? Grey.g56 : Grey.g38),
-                    child: Text(
-                      homeFacts(d).join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                AnimatedDefaultTextStyle(
+                  duration: Motion.dur,
+                  style: TextStyles.micro(h ? Grey.g56 : Grey.g38),
+                  child: Text(
+                    [homeAge(d.changed), ...homeFacts(d)].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
                 // Menu row.
                 if (widget.menu)
                   Padding(

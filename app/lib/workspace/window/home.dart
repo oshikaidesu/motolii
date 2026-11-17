@@ -443,7 +443,17 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
               ],
             ),
-            SizedBox(height: Shape.s(20)),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: Shape.s(16)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Grey.g20.withValues(alpha: .3)),
+                  ),
+                ),
+                child: const SizedBox(width: double.infinity),
+              ),
+            ),
             Expanded(
               child: shown.isEmpty
                   ? Center(
