@@ -346,6 +346,9 @@ void main() {
         ['/Users/me/My Effects/soft glow.wgsl', '/lib/tint.fs'],
       );
       expect(WorkspaceController.fxFiles('none /a b/c.json'), ['/a b/c.json']);
+      expect(WorkspaceController.fxFiles('/lib/helper.mjs'), [
+        '/lib/helper.mjs',
+      ]);
       expect(WorkspaceController.fxFiles('/x/script.anm2@Track1 /y/z.js'), [
         '/x/script.anm2@Track1',
         '/y/z.js',
