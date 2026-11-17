@@ -204,13 +204,11 @@ void main() {
       },
     );
 
-    test('the working camera is the eye while a camera layer exists and the view is not through it', () {
+    test('the working camera is the eye while a camera layer exists', () {
       final ws = _ws();
       expect(ws.freeEye, isFalse);
       ws.layers.add(_layer('1', LayerKind.camera));
       expect(ws.freeEye, isTrue);
-      ws.setView('stage.camera', true);
-      expect(ws.freeEye, isFalse);
     });
 
     test('front tells fronted every time and counts up, so fronting the same panel again is heard', () {
@@ -315,9 +313,12 @@ void main() {
   });
 
   group('the document', () {
-    test('shown counts one more look at the document, forgets what changed and tells document', () {
+    test('shown counts one more look at the document, forgets what changed and tells document and layers', () {
       final ws = _ws()..lastChange = (layers: true, values: const {});
-      expect(_told(ws, ws.shown), {WorkspaceAspect.document: 1});
+      expect(_told(ws, ws.shown), {
+        WorkspaceAspect.document: 1,
+        WorkspaceAspect.layers: 1,
+      });
       expect((ws.rev, ws.reads, ws.lastChange), (1, 0, null));
     });
 

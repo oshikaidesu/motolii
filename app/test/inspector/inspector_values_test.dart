@@ -64,7 +64,7 @@ void main() {
     expect(doc.inGesture, isFalse);
   });
 
-  test('set, setMany and delta each notify once, and leave the defaults and the field counters alone', () {
+  test('set and delta each notify once, leave the defaults and the field counters alone', () {
     final doc = _doc(), amount = doc.watch('v_amount');
     var told = 0;
     doc.addListener(() => told++);
@@ -75,13 +75,25 @@ void main() {
     );
     doc.set('v_amount', 2); // The same value still notifies.
     expect(told, 2);
-    doc.setMany({'v_amount': 3, 'v_x': 8});
-    expect((doc.numbers['v_amount'], doc.numbers['v_x'], told), (3, 8, 3));
-    doc.delta('v_x', -1.5);
+    doc.delta('v_x', -1.5); // Default 0 − 1.5 = −1.5.
     doc.delta('v_new', 2); // A value that is not there yet counts from 0.
-    expect((doc.numbers['v_x'], doc.numbers['v_new'], told), (6.5, 2, 5));
+    expect((doc.numbers['v_x'], doc.numbers['v_new'], told), (-1.5, 2, 4));
     expect(amount.value, 0);
   });
+
+  test(
+    'setMany notifies once and bumps the field counters of values that changed',
+    () {
+      final doc = _doc(), amount = doc.watch('v_amount'), x = doc.watch('v_x');
+      var told = 0;
+      doc.addListener(() => told++);
+      doc.setMany({'v_amount': 3, 'v_x': 8});
+      expect((doc.numbers['v_amount'], doc.numbers['v_x'], told), (3, 8, 1));
+      expect((amount.value, x.value), (1, 1));
+      doc.setMany({'v_amount': 3}); // Same value: no bump.
+      expect((told, amount.value), (2, 1));
+    },
+  );
 
   test('str, flag and poke each notify once', () {
     final doc = _doc();

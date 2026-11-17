@@ -148,6 +148,64 @@ void main() {
       doc.poke();
       expect(owner.take(), ['{', '}']);
     });
+
+    test('Animate all that matches the known value does not rebuild', () {
+      final (doc, sync, owner) = syncStarted();
+      expect(
+        sync.show(doc, syncNothing, owner.edits, previous: syncNothing),
+        isFalse,
+      );
+    });
+
+    test('a number shown during a drag goes to the watched field', () {
+      final (doc, sync, owner) = syncStarted();
+      final amount = doc.watch('v_amount');
+      doc.beginGesture();
+      expect(
+        sync.show(
+          doc,
+          const InspectorSnapshot(numbers: {'v_amount': 9}),
+          owner.edits,
+          previous: syncNothing,
+        ),
+        isFalse,
+      );
+      expect(doc.numbers['v_amount'], 4);
+      expect(amount.value, 0);
+    });
+
+    test('a flag that differs rebuilds, and the same flag again does not', () {
+      final (doc, sync, owner) = syncStarted();
+      const a = InspectorSnapshot(flags: {'clip': true});
+      expect(sync.show(doc, a, owner.edits, previous: syncNothing), isTrue);
+      expect(doc.flags['clip'], isTrue);
+      expect(sync.show(doc, a, owner.edits, previous: a), isFalse);
+    });
+
+    test(
+      'a key mark shown while the doc already has it does not bump the field',
+      () {
+        const marks = InspectorSnapshot(keyMarks: {'v_amount': syncAt});
+        final (doc, sync, owner) = syncStarted(snapshot: marks);
+        final mark = doc.watch('key:v_amount');
+        expect(sync.show(doc, marks, owner.edits, previous: marks), isFalse);
+        expect(mark.value, 0);
+      },
+    );
+
+    test(
+      'a key mark shown when previous differs from snapshot updates the field',
+      () {
+        final (doc, sync, owner) = syncStarted();
+        final mark = doc.watch('key:v_amount');
+        const next = InspectorSnapshot(keyMarks: {'v_amount': syncAt});
+        expect(
+          sync.show(doc, next, owner.edits, previous: syncNothing),
+          isFalse,
+        );
+        expect((doc.keys['v_amount'], mark.value), (syncAt, 1));
+      },
+    );
   });
 
   group('showAt', () {
@@ -180,6 +238,17 @@ void main() {
       expect(sync.showAt(doc, {'v_x': 1}, {'v_x': syncAt}), isFalse);
       expect(doc.numbers['v_x'], 0);
       expect(doc.keys, isEmpty);
+    });
+
+    test('during a drag, values and marks stay as they were', () {
+      final (doc, sync, _) = syncStarted();
+      final amount = doc.watch('v_amount');
+      doc.beginGesture();
+      doc.delta('v_amount', 1);
+      sync.showAt(doc, {'v_amount': 99}, {'v_amount': syncAt});
+      expect(doc.numbers['v_amount'], 5);
+      expect(doc.keys, isEmpty);
+      expect(amount.value, 0);
     });
   });
 }

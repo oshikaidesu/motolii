@@ -66,8 +66,11 @@ class InspectorValues extends ChangeNotifier {
 
   double? get(String id) => numbers[id];
 
-  /// A typed or reset value is absolute.
-  void set(String id, double x) => setMany({id: x});
+  /// A typed or reset value is absolute. Unlike [setMany] it does not bump the field's watcher.
+  void set(String id, double x) {
+    numbers[id] = x;
+    notifyListeners();
+  }
 
   void delta(String id, double dx) {
     numbers[id] = (numbers[id] ?? 0) + dx;
