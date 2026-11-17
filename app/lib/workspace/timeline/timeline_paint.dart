@@ -135,13 +135,22 @@ double markerFlagRoom(String name, double x, Iterable<double> xs) {
 // ---------------------------------------------------------------- tracks
 
 /// Paints the playhead: a thin line with a small head.
+///
+/// Repaints from [viewport] and [moment] via [repaint], so a scroll and the advancing playhead repaint without
+/// rebuilding the timeline's widgets.
 class TimelinePlayheadPainter extends CustomPainter {
-  const TimelinePlayheadPainter({
-    required this.view,
+  TimelinePlayheadPainter({
+    required this.viewport,
     required this.frame,
     required this.headTop,
     this.moment,
-  }) : super(repaint: moment);
+  }) : view = viewport.view,
+       super(
+         repaint: moment == null
+             ? viewport as Listenable
+             : Listenable.merge([moment, viewport]),
+       );
+  final TimelineViewport viewport;
   final TimelineView view;
   final int frame;
   final double headTop;
@@ -149,6 +158,7 @@ class TimelinePlayheadPainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
+    final view = viewport.view;
     final frame = moment?.value ?? this.frame;
     final x = view.x(frame).roundToDouble();
     if (x < -40 || x > s.width + 40) return;

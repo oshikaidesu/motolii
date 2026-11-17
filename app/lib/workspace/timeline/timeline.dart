@@ -96,11 +96,10 @@ class _TimelinePaneState extends State<TimelinePane>
   @override
   void initState() {
     super.initState();
-    viewport.addListener(_rebuild);
+    // viewport, ruler and drag repaint via the painters' repaint: parameter and ListenableBuilders;
+    // only media and slip still need a widget rebuild (they feed the row data that the painters draw).
     media.addListener(_rebuild);
-    ruler.addListener(_rebuild);
     _slip.addListener(_rebuild);
-    drag.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     listenForRequests();
   }
@@ -271,7 +270,11 @@ class _TimelinePaneState extends State<TimelinePane>
                       width: _labelWidth,
                       child: Stack(
                         children: [
-                          labels(ws, drawn),
+                          // The labels scroll with the rows via viewport, without rebuilding the whole timeline.
+                          ListenableBuilder(
+                            listenable: viewport,
+                            builder: (_, __) => labels(ws, drawn),
+                          ),
                           // The resize handle overlays the header's right edge (its empty padding), so dragging it
                           // resizes the column without adding any gap between the names and the tracks.
                           Positioned(

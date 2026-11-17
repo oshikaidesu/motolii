@@ -9,14 +9,19 @@ import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
+///
+/// Repaints from [viewport] and [kept] via [repaint].
 class TimelineCachePainter extends CustomPainter {
-  TimelineCachePainter({required this.view, required this.kept})
-    : super(repaint: kept);
+  TimelineCachePainter({required this.viewport, required this.kept})
+    : view = viewport.view,
+      super(repaint: Listenable.merge([kept, viewport]));
+  final TimelineViewport viewport;
   final TimelineView view;
   final ValueListenable<List<(int, int)>> kept;
 
   @override
   void paint(Canvas c, Size s) {
+    final view = viewport.view;
     final ink = Paint()..color = WindowTokens.accent;
     for (final (from, to) in kept.value) {
       c.drawRect(
@@ -33,5 +38,5 @@ class TimelineCachePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TimelineCachePainter o) =>
-      o.view != view || o.kept != kept;
+      o.viewport != viewport || o.kept != kept;
 }

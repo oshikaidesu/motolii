@@ -16,6 +16,7 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
+import 'package:motolii/workspace/timeline/track_drag.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
 Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(
@@ -88,15 +89,21 @@ void _vLines(
   }
 }
 
+/// Repaints from [viewport] and [drag] via [repaint], so a scroll or a drag does not rebuild the timeline's widgets.
+/// Snapshot fields are set at construction for [shouldRepaint]; [paint] reads live data from the objects.
 class TimelineTracksPainter extends CustomPainter {
-  const TimelineTracksPainter({
+  TimelineTracksPainter({
     required this.rows,
-    required this.view,
+    required this.viewport,
     required this.fps,
-    required this.vscroll,
-    this.restAt,
-  });
+    required this.drag,
+  }) : view = viewport.view,
+       vscroll = viewport.verticalScroll,
+       restAt = drag.snappedAt,
+       super(repaint: Listenable.merge([viewport, drag]));
   final List<TimelineRow> rows;
+  final TimelineViewport viewport;
+  final TrackDrag drag;
   final TimelineView view;
   final int fps;
   final double vscroll;
@@ -106,6 +113,11 @@ class TimelineTracksPainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
+    // Live data from the objects, not the snapshot fields.
+    final view = viewport.view;
+    final vscroll = viewport.verticalScroll;
+    final restAt = drag.snappedAt;
+
     c.clipRect(Offset.zero & s);
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
@@ -151,6 +163,7 @@ class TimelineTracksPainter extends CustomPainter {
   }
 
   void _row(Canvas c, Size s, TimelineRow r, double cy) {
+    final view = viewport.view;
     // A lane with no points is a row that only shows what it targets, so nothing is drawn.
     if (r.lane case final pts?) {
       return pts.isEmpty ? null : _lane(c, s, r, pts, cy);
@@ -369,6 +382,7 @@ class TimelineTracksPainter extends CustomPainter {
     List<(int, double)> pts,
     double cy,
   ) {
+    final view = viewport.view;
     final top = cy - TimelineMetrics.row / 2 + 4,
         h = TimelineMetrics.row - 9,
         col = Color.lerp(trackBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
@@ -424,6 +438,7 @@ class TimelineTracksPainter extends CustomPainter {
     int inF,
     List<double> db,
   ) {
+    final view = viewport.view;
     final p = Paint()..color = Color.lerp(fill, ink, .7)!;
     final h = bar.height - 4, cy = bar.center.dy;
     for (var x = math.max(bar.left + 4, 0.0); x < bar.right - 4; x += 2) {
