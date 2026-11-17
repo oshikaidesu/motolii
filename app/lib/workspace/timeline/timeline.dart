@@ -267,6 +267,10 @@ class _TimelinePaneState extends State<TimelinePane>
     viewport.scrollTo(f - viewport.visible / 2);
   }
 
+  @override
+  void overviewZoom(double zoom, int anchor) =>
+      viewport.setZoom(zoom, anchor: anchor);
+
   // ---------------------------------------------------------------- build
 
   @override

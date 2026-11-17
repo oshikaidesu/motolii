@@ -37,6 +37,9 @@ mixin TimelineTracksView<T extends StatefulWidget>
   /// Scrolls the tracks to where the overview strip was pressed at [p], when the strip is [w] wide.
   void overviewTo(Offset p, double w);
 
+  /// Zooms the lanes from the overview strip's edge-drag, anchored at [anchor].
+  void overviewZoom(double zoom, int anchor);
+
   // The tracks area: the ruler, the painted rows with their pointer handling, the overview strip, and the playhead
   // drawn over them.
   Widget tracks(
@@ -141,7 +144,8 @@ mixin TimelineTracksView<T extends StatefulWidget>
                   from: viewport.scroll,
                   to: viewport.scroll + viewport.visible,
                   frame: ws.moment.value,
-                  onDrag: (p) => overviewTo(p, box.maxWidth),
+                  onPan: (p) => overviewTo(p, box.maxWidth),
+                  onZoom: overviewZoom,
                 ),
               ),
             ],
