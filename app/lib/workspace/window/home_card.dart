@@ -16,13 +16,13 @@ const _ratio = 9 / 16;
 Color seedColor(String name) {
   final h = name.hashCode;
   final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .25, .18).toColor();
+  return HSLColor.fromAHSL(1, hue, .15, .12).toColor();
 }
 
 Color seedColorLight(String name) {
   final h = name.hashCode;
   final hue = (h % 360).abs().toDouble();
-  return HSLColor.fromAHSL(1, hue, .35, .28).toColor();
+  return HSLColor.fromAHSL(1, hue, .2, .2).toColor();
 }
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
@@ -145,9 +145,10 @@ class _HomeCardState extends State<HomeCard> {
                                     ? d.name[0].toUpperCase()
                                     : '?',
                                 style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w700,
-                                  color: Grey.g56,
+                                  fontSize: 44,
+                                  fontWeight: FontWeight.w300,
+                                  color: Grey.g38,
+                                  letterSpacing: 2,
                                 ),
                               ),
                             ),
@@ -242,7 +243,8 @@ class _HomeCardState extends State<HomeCard> {
                   // Project name as a quiet caption.
                   Text(
                     d.name,
-                    style: TextStyles.name(h ? Grey.g95 : Grey.g76),
+                    style: TextStyles.name(h ? Grey.g91 : Grey.g56)
+                        .copyWith(letterSpacing: .3),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -162,11 +162,13 @@ class _HomeWindowState extends State<HomeWindow> {
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.4, 1.0],
                   colors: [
-                    Grey.g00.withValues(alpha: .87),
-                    Grey.g00.withValues(alpha: .2),
+                    Grey.g00.withValues(alpha: .1),
+                    Grey.g00.withValues(alpha: .3),
+                    Grey.g00.withValues(alpha: .9),
                   ],
                 ),
               ),
@@ -233,8 +235,8 @@ class _HomeWindowState extends State<HomeWindow> {
       );
     }
     Widget grid(List<HomeProject> docs) => Wrap(
-      spacing: 24,
-      runSpacing: 28,
+      spacing: 36,
+      runSpacing: 36,
       children: [
         for (final d in docs)
           HomeCard(
@@ -300,7 +302,7 @@ class _HomeWindowState extends State<HomeWindow> {
                       vertical: Shape.s(6),
                     ),
                     decoration: BoxDecoration(
-                      color: WindowTokens.accent,
+                      border: Border.all(color: Grey.g38),
                       borderRadius: Shape.round(8),
                     ),
                     child: Row(
@@ -308,14 +310,14 @@ class _HomeWindowState extends State<HomeWindow> {
                       children: [
                         Text(
                           '+',
-                          style: TextStyles.name(WindowTokens.onAccent)
-                              .copyWith(fontWeight: FontWeight.w800),
+                          style: TextStyles.name(Grey.g76)
+                              .copyWith(fontWeight: FontWeight.w600),
                         ),
                         SizedBox(width: Shape.s(6)),
                         Text(
                           'New',
-                          style: TextStyles.name(WindowTokens.onAccent)
-                              .copyWith(fontWeight: FontWeight.w600),
+                          style: TextStyles.name(Grey.g76)
+                              .copyWith(fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
