@@ -408,64 +408,64 @@ class WorkspaceState extends State<Workspace> {
 
   @override
   Widget build(BuildContext context) {
-    final window = Title(
-      title: ws.document ?? 'Motolii',
-      color: WindowTokens.ground,
-      child: WorkspaceScope(
-        ws: ws,
-        child: Focus(
-          focusNode: _windowFocus,
-          autofocus: true,
-          child: ColoredBox(
-            color: WindowTokens.ground,
-            child: Stack(
-              children: [
-                Overlay(initialEntries: [_entry]),
-                if (home && documentPath != null && projectOpen(ws))
-                  Positioned.fill(
-                    child: Overlay(
-                      initialEntries: [
-                        OverlayEntry(
-                          builder: (_) => HomeWindow(
-                            folder:
-                                WindowFile.projectsFolder ??
-                                parentFolderOf(documentPath!),
-                            lib: engineLibPath(ws),
-                            open: documentPath!,
-                            lastProject: WindowFile.lastProject,
-                            onOpen: (d) {
-                              setState(() => home = false);
-                              if (d != documentPath) open(d);
-                            },
-                            onExport: _exportFrom,
-                            onNew: () {
-                              setState(() => home = false);
-                              commands()['file.new']!();
-                            },
-                            onClose: () => setState(() => home = false),
-                            onFolder: (folder) {
-                              WindowFile.projectsFolder = folder;
-                              setState(() {});
-                            },
-                          ),
+    final window = WorkspaceScope(
+      ws: ws,
+      child: Focus(
+        focusNode: _windowFocus,
+        autofocus: true,
+        child: ColoredBox(
+          color: WindowTokens.ground,
+          child: Stack(
+            children: [
+              Overlay(initialEntries: [_entry]),
+              if (home && documentPath != null && projectOpen(ws))
+                Positioned.fill(
+                  child: Overlay(
+                    initialEntries: [
+                      OverlayEntry(
+                        builder: (_) => HomeWindow(
+                          folder:
+                              WindowFile.projectsFolder ??
+                              parentFolderOf(documentPath!),
+                          lib: engineLibPath(ws),
+                          open: documentPath!,
+                          lastProject: WindowFile.lastProject,
+                          onOpen: (d) {
+                            setState(() => home = false);
+                            if (d != documentPath) open(d);
+                          },
+                          onExport: _exportFrom,
+                          onNew: () {
+                            setState(() => home = false);
+                            commands()['file.new']!();
+                          },
+                          onClose: () => setState(() => home = false),
+                          onFolder: (folder) {
+                            WindowFile.projectsFolder = folder;
+                            setState(() {});
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
     );
     // The project is still opening, so no panel is built yet.
     if (!projectOpen(ws)) return ColoredBox(color: WindowTokens.ground);
-    return PlatformMenuBar(
-      menus: menus(),
-      child: KeymapShortcuts(
-        keymap: keymap,
-        commands: commands(),
-        child: WindowZoomed(child: window),
+    return Title(
+      title: ws.document ?? 'Motolii',
+      color: WindowTokens.ground,
+      child: PlatformMenuBar(
+        menus: menus(),
+        child: KeymapShortcuts(
+          keymap: keymap,
+          commands: commands(),
+          child: WindowZoomed(child: window),
+        ),
       ),
     );
   }
