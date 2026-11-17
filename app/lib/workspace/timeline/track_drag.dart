@@ -8,8 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/edits/make_relation.dart' show clickLayer;
 import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
-    show KeyframeSlide;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -76,8 +74,8 @@ class TrackDrag extends ChangeNotifier {
 
   // The keyframe being dragged, together with the other selected keyframes.
   ({List<SelectedKeyframe> keys, int grab, int by})? _slide;
-  // Cached property info, collected once at drag start, so each drag step sends only unkey/key without FFI reads.
-  final _slideCache = KeyframeSlide();
+  // How far the slide has been written into the document so far, in frames.
+  int _slid = 0;
   // When and where a lane was last clicked, to detect a double-click.
   DateTime? _lanePressed;
   Offset _laneAt = Offset.zero;
@@ -153,7 +151,16 @@ class TrackDrag extends ChangeNotifier {
       ]);
       _slide = (keys: s.keys, grab: s.grab, by: by);
       final ws = workspace!;
-      ws.live.move((m) => _slideCache.step(m, by));
+      // Each step goes into the drag's undo step from where the keyframes now are, so a step skipped on the way
+      // loses nothing.
+      ws.live.move((_) {
+        final step = by - _slid;
+        final now = [
+          for (final k in s.keys) (layer: k.layer, frame: k.frame + _slid),
+        ];
+        _slid = by;
+        return timeline_service.slideKeyframeWrites(ws, now, step);
+      });
       notifyListeners();
       return;
     }
@@ -196,6 +203,7 @@ class TrackDrag extends ChangeNotifier {
     }
     if (_slide != null) {
       _slide = null;
+      _slid = 0;
       final ws = workspace!;
       keep ? ws.live.done(null, (_) => ws.reread()) : ws.live.cancel();
       return;
@@ -385,7 +393,6 @@ class TrackDrag extends ChangeNotifier {
         if (!ws.keys.contains(held)) ws.pickKey(held);
         if (ws.playing) ws.playing = false;
         _slide = (keys: all, grab: frame, by: 0);
-        timeline_service.prepareKeyframeSlide(ws, _slideCache, all);
         _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
         return true;
       }
@@ -399,7 +406,6 @@ class TrackDrag extends ChangeNotifier {
           ];
           if (ws.playing) ws.playing = false;
           _slide = (keys: both, grab: f.round(), by: 0);
-          timeline_service.prepareKeyframeSlide(ws, _slideCache, both);
           _stops = ws.stops(skip: {r.l.id})..add(ws.frame);
           return true;
         }
@@ -430,7 +436,6 @@ class TrackDrag extends ChangeNotifier {
       if (!ws.keys.contains(held)) ws.pickKey(held);
       if (ws.playing) ws.playing = false;
       _slide = (keys: all, grab: k, by: 0);
-      timeline_service.prepareKeyframeSlide(ws, _slideCache, all);
       _stops = ws.stops(skip: {l.id})..add(ws.frame);
       return true;
     }
