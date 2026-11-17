@@ -176,36 +176,42 @@ class _ShelfPaneState extends State<ShelfPane> {
             if (name == 'Media') ...[
               IconPress(
                 dockMark(AppGlyphs.grid),
+                tip: 'Grid view',
                 on: !_mem.mediaList,
                 onTap: () => setState(() => _mem.mediaList = false),
               ),
               IconPress(
                 dockMark(AppGlyphs.list),
+                tip: 'List view',
                 on: _mem.mediaList,
                 onTap: () => setState(() => _mem.mediaList = true),
               ),
               IconPress(
                 dockMark(AppGlyphs.folder),
+                tip: 'Show subfolders',
                 on: _mem.mediaDeep,
                 onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep),
-              ), // Lists the folders below as well.
+              ),
               IconPress(
                 dockMark(AppGlyphs.files),
+                tip: 'Folder tree',
                 on: _mem.treeSide != 0,
                 onTap: () =>
                     setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
-              ), // Cycles the folder tree between automatic, left and above.
+              ),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
                 // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (map/shelf_map.dart).
                 IconPress(
                   dockMark(AppGlyphs.grid),
+                  tip: 'Grid view',
                   key: ValueKey('ws-$name-rows'),
                   on: !_mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.remove(name)),
                 ),
                 IconPress(
                   dockMark(AppGlyphs.particles),
+                  tip: 'Map view',
                   key: ValueKey('ws-$name-map'),
                   on: _mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.add(name)),
@@ -217,6 +223,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                   listenable: EffectTiles.progress,
                   builder: (context, _) => IconPress(
                     dockMark(AppGlyphs.reload),
+                    tip: 'Redraw tiles',
                     key: const ValueKey('ws-fx-reload'),
                     on: EffectTiles.progress.value != null,
                     onTap: effectTilesAgain(ws, file: c.sel),
