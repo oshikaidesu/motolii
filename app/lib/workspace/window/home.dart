@@ -142,7 +142,7 @@ class _HomeWindowState extends State<HomeWindow> {
           curve: Motion.ease,
           child: AnimatedContainer(
             duration: Motion.dur,
-            height: Shape.z(200),
+            height: Shape.z(220),
             decoration: BoxDecoration(
               borderRadius: Shape.round(8),
               boxShadow: [
@@ -174,11 +174,11 @@ class _HomeWindowState extends State<HomeWindow> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.4, 1.0],
+                      stops: const [0.0, 0.5, 1.0],
                       colors: [
-                        Grey.g00.withValues(alpha: .1),
-                        Grey.g00.withValues(alpha: .3),
-                        Grey.g00.withValues(alpha: .9),
+                        Grey.g00.withValues(alpha: 0),
+                        Grey.g00.withValues(alpha: .15),
+                        Grey.g00.withValues(alpha: .75),
                       ],
                     ),
                   ),
@@ -459,7 +459,7 @@ class _HomeWindowState extends State<HomeWindow> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: Grey.g20.withValues(alpha: .3)),
+                    bottom: BorderSide(color: Grey.g20.withValues(alpha: .5)),
                   ),
                 ),
                 child: const SizedBox(width: double.infinity),
