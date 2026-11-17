@@ -228,23 +228,25 @@ class TrackDrag extends ChangeNotifier {
         RowFlags(ws).isLocked(r.l.id)) {
       return;
     }
-    final t = int.parse(r.l.id),
-        name = r.value!,
+    final name = r.value!,
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
     // Select the lane keyframe closest to the pointer (AE behaviour).
-    double? pickK;
+    final lane = r.l.lanes.where((a) => a.name == name).firstOrNull;
+    int? pickFrame;
     double pickDx = TimelineMetrics.keyPicked + 2;
-    for (final k in timeline_service.keyframeTimes(ws, t, name)) {
-      final dx = (v.x((k * WorkspaceController.fps).round()) - p.dx).abs();
-      if (dx <= pickDx) {
-        pickDx = dx;
-        pickK = k;
+    if (lane != null) {
+      for (final k in lane.at) {
+        final frame = (k * WorkspaceController.fps).round();
+        final dx = (v.x(frame) - p.dx).abs();
+        if (dx <= pickDx) {
+          pickDx = dx;
+          pickFrame = frame;
+        }
       }
     }
-    if (pickK case final k?) {
-      final frame = (k * WorkspaceController.fps).round();
+    if (pickFrame case final frame?) {
       ws.pickKeys([(layer: r.l.id, frame: frame)]);
       return;
     }
@@ -260,7 +262,7 @@ class TrackDrag extends ChangeNotifier {
       return ws.after(
         timeline_service.addKeyframe(
           ws,
-          t,
+          int.parse(r.l.id),
           name,
           f.round().clamp(0, WorkspaceController.duration) /
               WorkspaceController.fps,
@@ -370,20 +372,22 @@ class TrackDrag extends ChangeNotifier {
     if (!timeline_service.isConnected(ws) || r == null) return false;
     // A lane's keyframes can be dragged in time, like those on the main row.
     if (r.value != null) {
-      final t = int.parse(r.l.id), name = r.value!;
+      final name = r.value!;
       if (RowFlags(ws).isLocked(r.l.id)) return true;
-      double? pickK;
+      final lane = r.l.lanes.where((a) => a.name == name).firstOrNull;
+      int? pickFrame;
       double pickDx = TimelineMetrics.keyPicked + 2;
-      for (final k in timeline_service.keyframeTimes(ws, t, name)) {
-        final frame = (k * WorkspaceController.fps).round();
-        final dx = (v.x(frame) - p.dx).abs();
-        if (dx <= pickDx) {
-          pickDx = dx;
-          pickK = k;
+      if (lane != null) {
+        for (final k in lane.at) {
+          final frame = (k * WorkspaceController.fps).round();
+          final dx = (v.x(frame) - p.dx).abs();
+          if (dx <= pickDx) {
+            pickDx = dx;
+            pickFrame = frame;
+          }
         }
       }
-      if (pickK case final k?) {
-        final frame = (k * WorkspaceController.fps).round();
+      if (pickFrame case final frame?) {
         final held = (layer: r.l.id, frame: frame),
             all = ws.keys.contains(held) ? ws.keys.toList() : [held];
         if (!ws.keys.contains(held)) ws.pickKey(held);
