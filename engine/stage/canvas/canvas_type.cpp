@@ -153,15 +153,15 @@ std::string type_fallback(const std::string& fontFile,
     std::error_code wrong;
     std::vector<std::filesystem::path> fonts;
     for (const auto& e : std::filesystem::directory_iterator(dir, wrong))
-      if (const std::string x = e.path().extension().string();
+      if (const std::string x = e.path().extension().generic_string();
           x == ".otf" || x == ".ttf" || x == ".ttc" || x == ".OTF" ||
           x == ".TTF")
         fonts.push_back(e.path());
     std::sort(fonts.begin(), fonts.end());
     for (const auto& f : fonts)
       if (f != std::filesystem::path(fontFile) &&
-          type_lacks(f.string(), words).empty())
-        return f.string();
+          type_lacks(f.generic_string(), words).empty())
+        return f.generic_string();
   }
   return "";
 }

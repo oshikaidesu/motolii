@@ -165,7 +165,7 @@ Doc* doc_open(Stage& s, const char* path) {
       d->file, "anime", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr,
       [](sqlite3_context* c, int, sqlite3_value** v) {
         static const std::string bundle =
-            (doc_engine("third_party/anime") / "anime.umd.min.js").string();
+            (doc_engine("third_party/anime") / "anime.umd.min.js").generic_string();
         std::string error;
         const double went =
             anime_ease(bundle, (const char*)sqlite3_value_text(v[0]),

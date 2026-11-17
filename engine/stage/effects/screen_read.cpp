@@ -229,7 +229,7 @@ bool screen_read(ScreenFx& fx, std::string& code) {
         fx.sounds.push_back({});
     fx.images.push_back(
         (std::filesystem::path(file).parent_path() / line.substr(colon + 1))
-            .string());
+            .generic_string());
   }
   if ((!fx.targets.empty() || !fx.others.empty()) &&
       (int)fx.targets.size() + 1 + (int)__builtin_popcount(fx.layered) +

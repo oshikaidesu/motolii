@@ -63,7 +63,7 @@ std::string script_shelf_file(const std::string& file) {
   static std::map<std::string, std::map<std::string, std::string>> by;
   for (std::filesystem::path p = std::filesystem::path(file).parent_path();
        !p.empty() && p != p.parent_path(); p = p.parent_path()) {
-    const std::string kind = p.filename().string();
+    const std::string kind = p.filename().generic_string();
     if (kind != "effects" && kind != "create" && kind != "relations" &&
         kind != "expressions" && kind != "solids" && kind != "looks" &&
         kind != "recipes" && kind != "animators")
@@ -81,10 +81,10 @@ std::string script_shelf_file(const std::string& file) {
       auto& names = by[now];
       for (const auto& e :
            std::filesystem::recursive_directory_iterator(shelf, wrong))
-        names.emplace(e.path().filename().string(), e.path().string());
+        names.emplace(e.path().filename().generic_string(), e.path().generic_string());
     }
     const auto at =
-        by[now].find(std::filesystem::path(file).filename().string());
+        by[now].find(std::filesystem::path(file).filename().generic_string());
     return at == by[now].end() ? file : at->second;
   }
   return file;

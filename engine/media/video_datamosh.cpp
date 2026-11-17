@@ -48,7 +48,7 @@ std::string mosh_file(const std::string& film, double at,
   const std::filesystem::path dir = cache_folder("mosh");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.mp4", (unsigned long long)hash);
-  const std::string out = (dir / name).string();
+  const std::string out = (dir / name).generic_string();
   std::error_code e;
   if (std::filesystem::exists(out, e)) return out;
   std::lock_guard<std::mutex> hold(lock);
@@ -56,7 +56,7 @@ std::string mosh_file(const std::string& film, double at,
   asked[out] = 1;
   std::filesystem::create_directories(dir, e);
   std::thread([film, with, at, out,
-               work = (dir / (std::string(name) + ".d")).string()] {
+               work = (dir / (std::string(name) + ".d")).generic_string()] {
     std::error_code e;
     std::filesystem::create_directories(work, e);
     const std::string w = mosh_quoted(work);

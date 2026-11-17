@@ -22,17 +22,17 @@ char* each_name(JSContext* cx, const char* base, const char* name, void* held) {
   const std::string n = name;
   std::string to;
   if (n == "three" || n == "three/webgpu")
-    to = (run.three / "three.webgpu.js").string();
+    to = (run.three / "three.webgpu.js").generic_string();
   else if (n == "three/tsl")
-    to = (run.three / "three.tsl.js").string();
+    to = (run.three / "three.tsl.js").generic_string();
   else if (n == "acorn")
-    to = (run.three.parent_path() / "acorn" / "acorn.mjs").string();
+    to = (run.three.parent_path() / "acorn" / "acorn.mjs").generic_string();
   else if (n[0] == '.' || n[0] == '/') {
     std::filesystem::path p =
         n[0] == '/' ? std::filesystem::path(n)
                     : std::filesystem::path(base).parent_path() / n;
     if (p.extension().empty()) p += ".js";
-    to = p.lexically_normal().string();
+    to = p.lexically_normal().generic_string();
   } else
     to = std::string("<absent ") + n + ">";
   return js_strdup(cx, to.c_str());
@@ -76,7 +76,7 @@ bool tsl_each(const std::string& three, const std::string& writers,
   JS_SetModuleLoaderFunc(rt, each_name, each_load, &run);
   const std::string driver =
       "import { buildEach } from '" +
-      (std::filesystem::path(writers) / "from_each.js").string() +
+      (std::filesystem::path(writers) / "from_each.js").generic_string() +
       "';\n"
       "const r = buildEach(globalThis.__src, globalThis.__cavalry,"
       " globalThis.__ease);\n"

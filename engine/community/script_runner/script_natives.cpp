@@ -77,7 +77,7 @@ JSValue image_read(
   std::error_code wrong;
   FilmRead f;
   if (!std::filesystem::is_regular_file(file, wrong) ||
-      !f.open(file.string(), 0))
+      !f.open(file.generic_string(), 0))
     return JS_NULL;
   JSValue o = JS_NewObject(cx);
   JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f.w)),

@@ -140,7 +140,7 @@ std::string isf_file(const std::string& asked) {
   const std::filesystem::path dir = cache_folder("isf");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.wgsl", (unsigned long long)hash);
-  const std::string out = (dir / name).string();
+  const std::string out = (dir / name).generic_string();
   std::error_code e;
   if (std::filesystem::exists(out, e)) return built[key] = isf_built(file, out);
   std::string text = read_text(file);
@@ -154,7 +154,7 @@ std::string isf_file(const std::string& asked) {
     }
     text = isf;
   }
-  const std::string stem = std::filesystem::path(file).stem().string();
+  const std::string stem = std::filesystem::path(file).stem().generic_string();
   // The file's own vertex shader, if there is one beside it.
   const std::string vertex =
       read_text(std::filesystem::path(file).replace_extension(".vs"));

@@ -44,7 +44,7 @@ std::string hydra_text(const std::string& file) {
 char* hydra_name(JSContext* cx, const char* base, const char* name, void*) {
   return js_strdup(cx, (std::filesystem::path(base).parent_path() / name)
                            .lexically_normal()
-                           .string()
+                           .generic_string()
                            .c_str());
 }
 // QuickJS module loader. Reads the file `name` from disk and compiles it as a
@@ -92,7 +92,7 @@ bool hydra_isf(const std::string& folder, const std::string& code,
                     JS_NewStringLen(cx, code.c_str(), code.size()));
   JS_SetPropertyStr(cx, g, "__seconds", JS_NewFloat64(cx, seconds));
   JS_SetPropertyStr(cx, g, "__step", JS_NewFloat64(cx, HYDRA_STEP));
-  const std::string name = (src / "motolii.js").string();
+  const std::string name = (src / "motolii.js").generic_string();
   const std::string& make = hydra_make();
   JSValue ran = JS_Eval(cx, make.c_str(), make.size(), name.c_str(),
                         JS_EVAL_TYPE_MODULE);

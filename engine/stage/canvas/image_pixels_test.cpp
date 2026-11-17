@@ -56,11 +56,11 @@ void Is(const std::array<double, 4>& got, double r, double g, double b,
 
 TEST(ImagePixels, ReadsTheSizeAndKeepsTheFileDecodedOnce) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   EXPECT_EQ(image->w, 4);
   EXPECT_EQ(image->h, 2);
-  EXPECT_EQ(image_pixels(p.file.string()), image);
+  EXPECT_EQ(image_pixels(p.file.generic_string()), image);
 }
 
 TEST(ImagePixels, AFileThatIsNotThereIsNull) {
@@ -69,7 +69,7 @@ TEST(ImagePixels, AFileThatIsNotThereIsNull) {
 
 TEST(ImageSample, OnePixelByDefaultAtTheCentreOfThatPixel) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   Is(image_sample(*image, 0, 0), 1, 0, 0, 1);
   Is(image_sample(*image, 2, 0), 0, 0, 1, 1);
@@ -78,7 +78,7 @@ TEST(ImageSample, OnePixelByDefaultAtTheCentreOfThatPixel) {
 
 TEST(ImageSample, ClearPixelGivesNothingAndHalfAlphaKeepsItsColour) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   Is(image_sample(*image, 3, 0), 0, 0, 0, 0);
   // The alpha is the file's. The colour is 255 in the file, but ThorVG holds a
@@ -92,7 +92,7 @@ TEST(ImageSample, ClearPixelGivesNothingAndHalfAlphaKeepsItsColour) {
 
 TEST(ImageSample, AverageOverARectangleOfPixels) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   // x from -0.5 to 2.5, y from -0.5 to 0.5: red, red, blue.
   Is(image_sample(*image, 1, 0, 1.5, 0.5), 2.0 / 3.0, 0, 1.0 / 3.0, 1);
@@ -102,7 +102,7 @@ TEST(ImageSample, AverageOverARectangleOfPixels) {
 
 TEST(ImageSample, AClearPixelWeighsNothingInTheColourButHalvesTheAlpha) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   // Pixels 2 (blue, opaque) and 3 (clear): the colour is blue, the alpha 1/2.
   Is(image_sample(*image, 2.5, 0, 1, 0.5), 0, 0, 1, 0.5);
@@ -111,7 +111,7 @@ TEST(ImageSample, AClearPixelWeighsNothingInTheColourButHalvesTheAlpha) {
 // Chosen: the After Effects page does not say what lies outside the picture.
 TEST(ImageSample, OutsideThePictureIsTransparentBlack) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   Is(image_sample(*image, 10, 10), 0, 0, 0, 0);
   // x from -1 to 1: half a unit outside, pixel 0 whole, half of pixel 1: red
@@ -122,7 +122,7 @@ TEST(ImageSample, OutsideThePictureIsTransparentBlack) {
 // Chosen: a pixel the rectangle covers in part counts by the area covered.
 TEST(ImageSample, APartlyCoveredPixelCountsByItsArea) {
   Picture p;
-  const auto image = image_pixels(p.file.string());
+  const auto image = image_pixels(p.file.generic_string());
   ASSERT_NE(image, nullptr);
   // x from 1.0 to 2.0: pixel 1 spans 0.5 to 1.5 so the right half of it (red)
   // is in, and pixel 2 spans 1.5 to 2.5 so the left half of it (blue) is in.

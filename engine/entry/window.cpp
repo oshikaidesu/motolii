@@ -48,7 +48,7 @@ Motolii* motolii_open(const char* document, int wide, int high) {
   // /usr/bin:/bin, and the shell that popen and system start would find none: Homebrew's folders are added last.
   if (const auto lgpl = doc_engine("third_party/ffmpeg_lgpl/bin");
       std::filesystem::exists(lgpl / "ffmpeg"))
-    add_first_to_path(lgpl.string());
+    add_first_to_path(lgpl.generic_string());
   add_to_path();
   // A document being opened reads the folders as they are now. They are read
   // once as a window opens (docs/app/BRIDGE.md, rule 8).

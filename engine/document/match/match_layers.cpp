@@ -123,7 +123,7 @@ bool effect_file_refuses(Rebuild& rebuild, LayerBuild& build) {
   // image's own file is refused.
   if (!fxOk && doc_fx_files(doc_fx_steps(d, layer))) {
     d.error = why + ": the " + kind + " " +
-              std::filesystem::path(file + shape).filename().string() +
+              std::filesystem::path(file + shape).filename().generic_string() +
               " could not be made";
     all = false;
     return true;
@@ -192,12 +192,12 @@ bool layer_made(Rebuild& rebuild, LayerBuild& build) {
   if (made.celMove && !made.drawn) {
     if (made.cel >= 0)
       d.error = why + ": the picture " +
-                std::filesystem::path(file).filename().string(),
+                std::filesystem::path(file).filename().generic_string(),
       all = false;
   } else if (!made.video && !made.drawn && !made.solid && !made.shape &&
              !made.camera && made.light.isNull() && kind != "behaviour") {
     d.error = why + ": the " + kind + " " +
-              std::filesystem::path(file + shape).filename().string() +
+              std::filesystem::path(file + shape).filename().generic_string() +
               " could not be made";
     all = false;
     return false;

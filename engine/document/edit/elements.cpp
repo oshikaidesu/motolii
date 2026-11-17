@@ -68,7 +68,7 @@ bool doc_element_keep(Doc& d, int layer, const std::string& name) {
   std::error_code wrong;
   const std::filesystem::path dir = doc_folders("elements").back();
   std::filesystem::create_directories(dir, wrong);
-  return doc_preset_save(d, layer, (dir / (name + ".motolii")).string().c_str(),
+  return doc_preset_save(d, layer, (dir / (name + ".motolii")).generic_string().c_str(),
                          true);
 }
 

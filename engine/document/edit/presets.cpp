@@ -49,7 +49,7 @@ bool doc_preset_attach(Doc& d, const char* path, bool read_only) {
           std::to_string(
               std::chrono::steady_clock::now().time_since_epoch().count()) +
           ".motolii"))
-            .string();
+            .generic_string();
     std::filesystem::copy_file(
         path, at, std::filesystem::copy_options::overwrite_existing, wrong);
     read_only = false;
@@ -87,8 +87,8 @@ void doc_preset_detach(Doc& d) {
 std::pair<std::string, std::string> doc_preset_roots() {
   const auto at = doc_folders("looks");
   return {
-      at[0].parent_path().string() + "/",
-      at.size() > 1 ? at[1].parent_path().string() + "/" : std::string("\x01")};
+      at[0].parent_path().generic_string() + "/",
+      at.size() > 1 ? at[1].parent_path().generic_string() + "/" : std::string("\x01")};
 }
 
 bool doc_preset_save(Doc& d, int layer, const char* path, bool whole,
@@ -347,7 +347,7 @@ bool doc_preset_keep(Doc& d, int layer, const std::string& name,
        ++n)
     named = name + " " + std::to_string(n);
   return doc_preset_save(
-      d, layer, (dir / (named + ".motolii")).string().c_str(), false, only);
+      d, layer, (dir / (named + ".motolii")).generic_string().c_str(), false, only);
 }
 
 int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
@@ -356,7 +356,7 @@ int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
   const std::filesystem::path to =
       std::filesystem::path(folder) / (name + ".motolii");
   std::filesystem::remove(to, wrong);
-  char* copy = sqlite3_mprintf("vacuum into %Q", to.string().c_str());
+  char* copy = sqlite3_mprintf("vacuum into %Q", to.generic_string().c_str());
   const bool copied =
       sqlite3_exec(d.file, copy, nullptr, nullptr, nullptr) == SQLITE_OK;
   sqlite3_free(copy);
@@ -370,23 +370,23 @@ int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
            });
   const auto roots = doc_preset_roots();
   sqlite3* pack = nullptr;
-  if (sqlite3_open(to.string().c_str(), &pack) != SQLITE_OK)
+  if (sqlite3_open(to.generic_string().c_str(), &pack) != SQLITE_OK)
     return sqlite3_close(pack), d.error = "the package could not be opened", -1;
   int n = 0;
   std::set<std::string> taken;
   for (const std::string& word : files) {
     const std::filesystem::path was = std::filesystem::absolute(word, wrong);
-    const std::string whole = was.string();
+    const std::string whole = was.generic_string();
     // Skip values that are not files, such as the name of a built-in kind, and
     // files in the library's folders: there is nothing to copy.
     if (!std::filesystem::is_regular_file(was, wrong) ||
         whole.rfind(roots.first, 0) == 0 || whole.rfind(roots.second, 0) == 0)
       continue;
-    std::string named = was.filename().string();
+    std::string named = was.filename().generic_string();
     // Rename when two files of the same name come from different folders.
     for (int k = 2; taken.count(named); ++k)
-      named = was.stem().string() + " " + std::to_string(k) +
-              was.extension().string();
+      named = was.stem().generic_string() + " " + std::to_string(k) +
+              was.extension().generic_string();
     taken.insert(named);
     if (!std::filesystem::copy_file(
             was, std::filesystem::path(folder) / named,
@@ -410,9 +410,9 @@ std::string doc_preset_names() {
     for (const auto& f : doc_folder_files(kind, ".motolii")) {
       const std::filesystem::path picture =
           std::filesystem::path(f).replace_extension(".png");
-      all += (all.empty() ? "" : "\n") + f.stem().string() + "\t" + f.string() +
+      all += (all.empty() ? "" : "\n") + f.stem().generic_string() + "\t" + f.generic_string() +
              (kind[0] == 'l' ? "\tLook\t" : "\tElement\t") +
-             (std::filesystem::exists(picture, wrong) ? picture.string() : "");
+             (std::filesystem::exists(picture, wrong) ? picture.generic_string() : "");
     }
   return all;
 }

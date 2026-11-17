@@ -48,7 +48,7 @@ const DocShown* doc_shown_of(Doc& d, const char* name) {
 std::string doc_screen_parameter(const std::string& file,
                                  const std::string& parameter,
                                  const std::string& instance_id) {
-  std::string stem = std::filesystem::path(file).stem().string();
+  std::string stem = std::filesystem::path(file).stem().generic_string();
   // Replace byte by byte, ASCII letters and digits are kept. std::isalnum
   // depends on the locale and takes the byte of a UTF-8 character for a letter,
   // which leaves half a letter in the name. See _stem in
@@ -71,7 +71,7 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
   // Checked already. This must come first, because the code below opens the
   // file.
   if (s.stamp >= 0 && s.seen == files_changed()) return &s;
-  const std::string ext = std::filesystem::path(file).extension().string();
+  const std::string ext = std::filesystem::path(file).extension().generic_string();
   // Files that are drawn as effects, or only named by their parameters, and not
   // run as scripts. These are WGSL and ISF shaders, three.js effects, see
   // engine/community/three/three_isf.cpp, solid shapes, see
@@ -177,7 +177,7 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
     if (!screen && runs)
       s.run = std::make_unique<Script>(
           fx_source(file),
-          (doc_engine("third_party/js/p5") / "p5.min.js").string());
+          (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
     // The new code does not compile but the old code ran. Keep the old script
     // and record the error, so that code that is half typed does not break the
     // layer.
@@ -212,7 +212,7 @@ std::vector<DocScript*> doc_scripts_on(Doc& d, int layer) {
     if (const std::string file = doc_word(d, layer, "file");
         doc_word(d, layer, "kind") == "image")
       if (const std::string ext =
-              std::filesystem::path(file).extension().string();
+              std::filesystem::path(file).extension().generic_string();
           ext == ".json" || ext == ".lot" || ext == ".js")
         if (DocScript* sc = doc_script_of(d, file, ext != ".js");
             sc && !sc->parameters.empty())

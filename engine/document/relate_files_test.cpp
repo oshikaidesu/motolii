@@ -59,7 +59,7 @@ std::string Shelf(const char* folder, const char* name) {
               .parent_path()
               .parent_path() /
           "shelves" / folder / name)
-      .string();
+      .generic_string();
 }
 
 // A project in memory.
@@ -425,7 +425,7 @@ TEST(RelateFiles, ARelationWrittenForLayersLaysCopiesInARowToo) {
   Script row(Shelf("relations", "Row.js"),
              (fs::path(__FILE__).parent_path().parent_path().parent_path() /
               "third_party" / "js" / "p5" / "p5.min.js")
-                 .string());
+                 .generic_string());
   ASSERT_TRUE(row.ok()) << row.trouble();
   EXPECT_TRUE(row.lays());
   const auto c = row.copies(3, 0.0,

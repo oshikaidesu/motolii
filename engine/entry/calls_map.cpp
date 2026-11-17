@@ -137,7 +137,7 @@ int motolii_type_frame(const char* font, const char* words, int w, int h,
   tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
   tvg::Text* t = tvg::Text::gen();
   // ThorVG identifies a loaded font by its file name without the extension.
-  t->font(std::filesystem::path(font).stem().string().c_str());
+  t->font(std::filesystem::path(font).stem().generic_string().c_str());
   t->size(100.f);
   t->text(words);
   t->fill(255, 255, 255);

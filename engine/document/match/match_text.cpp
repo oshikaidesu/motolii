@@ -78,7 +78,7 @@ void match_text(LayerBuild& build) {
   else if ((stroke.empty() || edgeRgb >= 0) && fxOk)
     made.drawn =
         type(s,
-             words.empty() ? std::filesystem::path(file).stem().string().c_str()
+             words.empty() ? std::filesystem::path(file).stem().generic_string().c_str()
                            : (fx.column ? doc_column(words) : words).c_str(),
              file.c_str(), build.word("text_styles").c_str(), mat4f{}, 1.f,
              fill.empty() ? float3{0x11 / 255.f} : colour, lay, edge,

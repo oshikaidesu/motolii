@@ -70,7 +70,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     // absent_motion.h. .json is Filament's settings for the stage; see
     // viewer_settings.h. Neither is an effect here.
     if (const std::string ext =
-            std::filesystem::path(path).extension().string();
+            std::filesystem::path(path).extension().generic_string();
         ext == ".am" || ext == ".json")
       continue;
     // A solid's shape. The layer's image is laid on the solid, not run through
@@ -93,7 +93,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     const size_t hash = path.rfind('#');
     return hash != std::string::npos
                ? aviutl_unword(path.substr(hash + 1))
-               : std::filesystem::path(path).stem().string();
+               : std::filesystem::path(path).stem().generic_string();
   };
   // The effect names in order. A script can ask for its neighbours with
   // obj.getoption("script_name").

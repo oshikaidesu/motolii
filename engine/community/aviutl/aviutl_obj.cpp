@@ -231,7 +231,7 @@ int aviutl_getinfo(lua_State* L) {
   else if (n == "script_path")
     lua_pushstring(
         L,
-        (std::filesystem::path(r.file).parent_path().string() + "/").c_str());
+        (std::filesystem::path(r.file).parent_path().generic_string() + "/").c_str());
   // As many layers as the document has layers (doc_aviutl_asked).
   else if (n == "layer_max")
     lua_pushinteger(

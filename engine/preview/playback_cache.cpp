@@ -142,7 +142,7 @@ void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision,
     std::thread([prefix = std::string(gone)] {
       std::error_code e;
       for (const auto& f : std::filesystem::directory_iterator(cache_dir(), e))
-        if (f.path().filename().string().rfind(prefix, 0) == 0)
+        if (f.path().filename().generic_string().rfind(prefix, 0) == 0)
           std::filesystem::remove(f.path(), e);
     }).detach();
   }

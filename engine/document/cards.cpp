@@ -114,7 +114,7 @@ std::string doc_name(Doc& d, int layer) {
   if (is.empty())
     return std::filesystem::path(doc_word(d, layer, "file"))
         .filename()
-        .string();
+        .generic_string();
   if (doc_word(d, layer, "kind") != "text")
     is[0] = (char)std::toupper((unsigned char)is[0]);
   // A multi-line text is listed on one line.
@@ -157,7 +157,7 @@ std::string doc_fx_title(const std::string& name) {
   if (const std::string source = fx_source(name); source != name) {
     // An effect duplicated from another: the title of its source plus its
     // number, such as "Glow 2". It has its own card.
-    const std::string stem = std::filesystem::path(name).stem().string();
+    const std::string stem = std::filesystem::path(name).stem().generic_string();
     return doc_fx_title(source) + " " + stem.substr(stem.rfind('~') + 1);
   }
   // Title as the shelf names it: the name in the file's first comment line,
@@ -174,7 +174,7 @@ std::string doc_fx_title(const std::string& name) {
       return (one = {files_changed(), first.substr(3, first.find(':') - 3)})
           .second;
   }
-  std::string t = std::filesystem::path(name).stem().string();
+  std::string t = std::filesystem::path(name).stem().generic_string();
   for (char& c : t)
     if (c == '_') c = ' ';
   if (!t.empty()) t[0] = (char)std::toupper((unsigned char)t[0]);
@@ -204,9 +204,9 @@ std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title) {
   };
   for (int n = 2; made.empty() || there(); ++n)
     made = (source.parent_path() /
-            (source.stem().string() + "~" + std::to_string(n) +
-             source.extension().string()))
-               .string();
+            (source.stem().generic_string() + "~" + std::to_string(n) +
+             source.extension().generic_string()))
+               .generic_string();
   list.insert(at + 1, made);
   std::string fx;
   for (const std::string& w : list) fx += (fx.empty() ? "" : " ") + w;

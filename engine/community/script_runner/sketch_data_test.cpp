@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 TEST(SketchData, LoadTableLoadJsonAndFetchReadTheFilesThatCameWithIt) {
@@ -42,7 +42,7 @@ function draw() {
   background(0);
   for (let r = 0; r < rows.getRowCount(); r++) rect(r * 50, 0, 40, rows.getNum(r, 'height'));
 })";
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   s.said("__to(2)");
   EXPECT_EQ(s.said("rows.getRowCount()+','+rows.getNum(2,'height')"), "3,70");

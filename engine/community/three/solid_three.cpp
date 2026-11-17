@@ -63,7 +63,7 @@ char* solid_name(JSContext* cx, const char* base, const char* name, void*) {
       std::string(name) == "three" ? dir / "three.core.js"
       : name[0] == '.'             ? dir / name
                                    : std::filesystem::path(name);
-  return js_strdup(cx, to.lexically_normal().string().c_str());
+  return js_strdup(cx, to.lexically_normal().generic_string().c_str());
 }
 // QuickJS module loader. Compiles the module at the path `name` without running
 // it. Returns null if the file does not compile.
@@ -135,7 +135,7 @@ bool solid_three(const std::string& file,
   JS_SetPropertyStr(cx, g, "__why", JS_NewString(cx, ""));
   const std::string code =
       "import { solid } from '" +
-      std::filesystem::absolute(file).lexically_normal().string() + "';\n" +
+      std::filesystem::absolute(file).lexically_normal().generic_string() + "';\n" +
       solid_wrap();
   // Each call evaluates the wrapper as a module with a fresh name. The shape
   // script itself is imported by path, so it is loaded only once.

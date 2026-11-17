@@ -66,10 +66,10 @@ std::vector<std::filesystem::path> doc_folder_files(const char* folder,
   std::error_code wrong;
   const auto take = [&](const std::filesystem::path& p) {
     if ((" " + std::string(extension) + " ")
-                .find(" " + p.extension().string() + " ") !=
+                .find(" " + p.extension().generic_string() + " ") !=
             std::string::npos &&
         p.has_extension())
-      by[p.filename().string()] = p;
+      by[p.filename().generic_string()] = p;
   };
   // effects/ and create/ keep one subfolder per origin or purpose, such as
   // blur/ or shapes/, and are read recursively.

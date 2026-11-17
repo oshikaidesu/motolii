@@ -107,12 +107,12 @@ SketchPaint doc_sketch_paint(Stage& s, const std::string& text,
       std::filesystem::temp_directory_path() / "motolii_paints";
   std::filesystem::create_directories(made);
   const std::string stem =
-      (made / std::to_string(std::hash<std::string>{}(text))).string();
+      (made / std::to_string(std::hash<std::string>{}(text))).generic_string();
   if (!std::filesystem::exists(stem + ".filamat")) {
     std::ofstream(stem + ".mat") << text;
     const std::string matc =
         (doc_engine("third_party/filament_src/out/wgpu_install/bin") / "matc")
-            .string();
+            .generic_string();
     if (std::system(("'" + matc + "' -a webgpu -a metal -p desktop -o '" +
                      stem + ".filamat' '" + stem + ".mat' > '" + stem +
                      ".log' 2>&1")
@@ -292,7 +292,7 @@ void doc_sketch_mesh(Doc& d, int layer, DocShownLayer& t, double now) {
         sketch_texture(s, sc->run.get(),
                        (doc_engine("third_party/filament_src/assets/fonts") /
                         "Roboto-Medium.ttf")
-                           .string(),
+                           .generic_string(),
                        (int)i, (int)p[0], (int)p[1]);
     t.sketchPics.push_back(pic);
     if (!pic) continue;

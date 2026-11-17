@@ -464,7 +464,7 @@ int doc_svg_paths(Doc& d, const char* file) {
     return std::string(one);
   };
   doc_act(d);
-  const std::string stem = std::filesystem::path(file).stem().string();
+  const std::string stem = std::filesystem::path(file).stem().generic_string();
   const int grp = doc_add(d, "shape", "null");
   bool ok = grp != 0;
   if (ok) doc_say(d, grp, "name", (stem.empty() ? "SVG" : stem).c_str());

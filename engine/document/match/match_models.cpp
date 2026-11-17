@@ -65,7 +65,7 @@ Mesh* built_in_mesh(const std::string& shape) {
   for (const std::filesystem::path& folder : doc_folders("solids"))
     if (std::error_code wrong;
         std::filesystem::exists(folder / file, wrong))
-      full = (folder / file).string();
+      full = (folder / file).generic_string();
   if (full.empty()) return nullptr;
   SolidMesh built;
   std::string why;

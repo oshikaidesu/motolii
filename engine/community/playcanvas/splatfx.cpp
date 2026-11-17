@@ -96,7 +96,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
   // Instantiate the module's one class that has getShaderGLSL, as PlayCanvas
   // creates a script.
   const std::string wrap =
-      "import * as m from '" + std::filesystem::absolute(file).string() +
+      "import * as m from '" + std::filesystem::absolute(file).generic_string() +
       "';\n"
       "const C = Object.values(m).find(v => typeof v === 'function' && "
       "v.prototype && v.prototype.getShaderGLSL);\n"

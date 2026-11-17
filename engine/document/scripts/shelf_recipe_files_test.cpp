@@ -83,7 +83,7 @@ std::vector<fs::path> ShelfFiles(const std::string& extensions) {
       at.disable_recursion_pending();
       continue;
     }
-    const std::string extension = at->path().extension().string();
+    const std::string extension = at->path().extension().generic_string();
     if (at->is_regular_file(wrong) && !extension.empty() &&
         (" " + extensions + " ").find(" " + extension + " ") !=
             std::string::npos)
@@ -344,7 +344,7 @@ TEST(ShelfFiles, EveryRelativePathInAShellScriptExists) {
       std::smatch went;
       // went[1] is what follows the script's folder: "/..." or nothing.
       if (std::regex_search(line, went, cd))
-        base = fs::path(file.parent_path().string() + went[1].str());
+        base = fs::path(file.parent_path().generic_string() + went[1].str());
       for (std::sregex_iterator found(line.begin(), line.end(), relative), end;
            found != end; ++found) {
         const std::string written = (*found)[2];

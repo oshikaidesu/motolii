@@ -90,7 +90,7 @@ bool film(Stage& s, const char* path, int frameCount,
     each += how.data();
     all += "[a" + std::to_string(++n) + "]";
   }
-  const std::string ending = std::filesystem::path(path).extension().string();
+  const std::string ending = std::filesystem::path(path).extension().generic_string();
   const std::string h264 = ending == ".mp4" ? h264_encoder_here() : "";
   if (ending == ".mp4" && h264.empty()) {
     std::fprintf(stderr, "film: this ffmpeg lists no H.264 encoder\n");
@@ -124,12 +124,12 @@ bool film(Stage& s, const char* path, int frameCount,
       : ending == ".png"
           ? " -an" + sized + rate + " -c:v png " +
                 quoted(
-                    std::filesystem::path(path).replace_extension().string() +
+                    std::filesystem::path(path).replace_extension().generic_string() +
                     "_%04d.png")
       : ending == ".jpg"
           ? " -an" + sized + rate + " -c:v mjpeg -q:v 2 -pix_fmt yuvj420p " +
                 quoted(
-                    std::filesystem::path(path).replace_extension().string() +
+                    std::filesystem::path(path).replace_extension().generic_string() +
                     "_%04d.jpg")
       : ending == ".mov" && said.alpha
           // Transparency in ProRes 4444, ffmpeg's own encoder: the same on every system, which HEVC with alpha is not
