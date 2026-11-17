@@ -1,15 +1,19 @@
-// The home screen's project card: a thumbnail that fills the card, name overlaid.
-import 'package:motolii/skin/window_tokens.dart';
-
+// The home screen's project card, drawn flat: a picture that fills whatever cell the bento gives it, a label on a solid
+// block, and, when it is the one previewed, a design tool's bounding box with its four handles.
 import 'package:flutter/widgets.dart';
-import 'package:naked_ui/naked_ui.dart';
+
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show imageFile;
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
 import 'package:motolii/workspace/window/home_project.dart';
 
-const homeTile = 240.0;
+/// The width of every outline on the home screen.
+const homeEdge = 1.5;
+
+/// How far a chosen card's handles reach outside it. A list of cards leaves this much room around itself.
+const homeReach = 5.0;
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
     Padding(
@@ -32,7 +36,63 @@ Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
       ),
     );
 
-class HomeCard extends StatefulWidget {
+/// Capital letters set wide and heavy, for a tag or a small heading.
+TextStyle homeCaps(Color c, [double size = 10]) =>
+    TextStyles.name(c, size, FontWeight.w800).copyWith(letterSpacing: 1);
+
+/// A flat tag, like the name a design tool hangs beside a cursor: [text] in dark ink on a block of [tone].
+Widget homeTag(String text, Color tone) => Container(
+  padding: EdgeInsets.symmetric(horizontal: Shape.s(7), vertical: Shape.s(4)),
+  color: tone,
+  child: Text(text, style: homeCaps(WindowTokens.onAccent)),
+);
+
+/// The five flat colours the home screen draws with: the brand's three, then two of the layer tones.
+List<Color> homeTones() => [
+  WindowTokens.usuki,
+  WindowTokens.nadeshiko,
+  WindowTokens.seiji,
+  WindowTokens.toneShape,
+  WindowTokens.toneGroup,
+];
+
+/// What stands in for a project that saved no picture: its first letter, very large and cut off by the frame.
+class HomeLetter extends StatelessWidget {
+  const HomeLetter({super.key, required this.name, required this.index});
+  final String name;
+
+  /// The project's place in the list, which picks the letter's colour.
+  final int index;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final tones = homeTones(), tall = box.maxHeight;
+      return ColoredBox(
+        color: Grey.g13,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            Positioned(
+              right: tall * .06,
+              bottom: -tall * .2,
+              child: Text(
+                name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+                style: TextStyles.name(
+                  tones[index % tones.length],
+                  tall * .92,
+                  FontWeight.w900,
+                ).copyWith(letterSpacing: 0),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class HomeCard extends StatelessWidget {
   const HomeCard(
     this.d, {
     super.key,
@@ -43,7 +103,6 @@ class HomeCard extends StatefulWidget {
     required this.menu,
     required this.asking,
     required this.onTap,
-    this.onDoubleTap,
     required this.onMore,
     required this.onOpen,
     required this.onSelect,
@@ -55,255 +114,235 @@ class HomeCard extends StatefulWidget {
   });
   final HomeProject d;
   final int index;
+
+  /// [open] is the project in the editor now; [selected] is the one the home screen previews.
   final bool open, picked, selected, menu, asking;
-  final VoidCallback onTap;
-  final VoidCallback? onDoubleTap;
-  final VoidCallback onMore, onOpen, onSelect, onExport;
+  final VoidCallback onTap, onMore, onOpen, onSelect, onExport;
   final VoidCallback onDuplicate, onAskTrash, onTrash, onKeep;
 
   @override
-  State<HomeCard> createState() => _HomeCardState();
-}
-
-class _HomeCardState extends State<HomeCard> {
-  bool _h = false;
-
-  @override
   Widget build(BuildContext context) {
-    final d = widget.d;
-    final h = _h || widget.menu;
-    final borderColor = widget.selected
-        ? WindowTokens.accent
-        : widget.open
-        ? WindowTokens.accent.withValues(alpha: .5)
-        : h
-        ? Grey.g26
-        : Grey.g15;
-
+    final f = d.facts;
     return GestureDetector(
-      onSecondaryTapDown: (_) => widget.onMore(),
-      onDoubleTap: widget.onDoubleTap,
-      child: NakedButton(
-        enableFeedback: false,
+      onSecondaryTapDown: (_) => onMore(),
+      child: Pressable(
         key: ValueKey('home-doc:${d.path}'),
-        onPressed: widget.onTap,
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _h = true),
-          onExit: (_) => setState(() => _h = false),
-          child: AnimatedContainer(
-            duration: Motion.dur,
-            curve: Motion.ease,
-            decoration: BoxDecoration(
-              color: Grey.g13,
-              borderRadius: Shape.round(8),
-              border: Border.all(color: borderColor),
-              boxShadow: h
-                  ? [
-                      BoxShadow(
-                        color: Grey.g00.withValues(alpha: .3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : null,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Thumbnail fills the whole card
-                if (d.picture != null)
-                  Image(image: imageFile(d.picture!), fit: BoxFit.cover)
-                else
-                  _Placeholder(name: d.name, index: widget.index),
-
-                // Gradient at the bottom for the name
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 48,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Grey.g00.withValues(alpha: 0),
-                          Grey.g00.withValues(alpha: .65),
-                        ],
-                      ),
-                    ),
+        onTap: onTap,
+        builder: (context, hot) {
+          final h = hot || menu;
+          return Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: Motion.dur,
+                curve: Motion.ease,
+                decoration: BoxDecoration(
+                  color: Grey.g13,
+                  borderRadius: Shape.round(4),
+                  border: Border.all(
+                    width: homeEdge,
+                    color: selected
+                        ? WindowTokens.accent
+                        : h
+                        ? Grey.g63
+                        : Grey.g26,
                   ),
                 ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (d.picture != null)
+                      Image(image: imageFile(d.picture!), fit: BoxFit.cover)
+                    else
+                      HomeLetter(name: d.name, index: index),
 
-                // Name overlaid at bottom-left
-                Positioned(
-                  left: Shape.s(8),
-                  bottom: Shape.s(6),
-                  right: Shape.s(8),
-                  child: Text(
-                    d.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.label(Grey.g91).copyWith(
-                      fontWeight: FontWeight.w600,
-                      shadows: const [
-                        Shadow(
-                          blurRadius: 8,
-                          color: Grey.g00.withValues(alpha: .67),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Selection badge
-                if (widget.picked)
-                  Positioned(
-                    left: Shape.s(8),
-                    top: Shape.s(8),
-                    child: Container(
-                      width: Shape.z(20),
-                      height: Shape.z(20),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: WindowTokens.accent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Glyph(
-                        AppGlyphs.check,
-                        size: Shape.z(12),
-                        color: WindowTokens.onAccent,
-                      ),
-                    ),
-                  ),
-
-                // More button on hover
-                if (h)
-                  Positioned(
-                    right: Shape.s(6),
-                    top: Shape.s(6),
-                    child: NakedButton(
-                      enableFeedback: false,
-                      onPressed: widget.onMore,
-                      child: Container(
-                        width: Shape.z(24),
-                        height: Shape.z(24),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Grey.g00.withValues(alpha: .5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Glyph(
-                          AppGlyphs.more,
-                          size: Shape.z(12),
-                          color: Grey.g91,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Context menu
-                if (widget.menu)
-                  Positioned(
-                    left: Shape.s(6),
-                    bottom: Shape.s(28),
-                    right: Shape.s(6),
-                    child: Wrap(
-                      spacing: Shape.s(4),
-                      runSpacing: Shape.s(4),
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: widget.asking
-                          ? [
-                              Text('Trash?', style: TextStyles.label(Grey.g91)),
-                              homeButton(
-                                'home-trash-yes:${d.path}',
-                                'Trash',
-                                true,
-                                widget.onTrash,
-                              ),
-                              homeButton(
-                                'home-trash-no:${d.path}',
-                                'Cancel',
-                                false,
-                                widget.onKeep,
-                              ),
-                            ]
-                          : [
-                              homeButton(
-                                'home-open:${d.path}',
-                                'Open',
-                                false,
-                                widget.onOpen,
-                              ),
-                              homeButton(
-                                'home-select:${d.path}',
-                                'Select',
-                                false,
-                                widget.onSelect,
-                              ),
-                              homeButton(
-                                'home-export:${d.path}',
-                                'Export…',
-                                false,
-                                widget.onExport,
-                              ),
-                              homeButton(
-                                'home-duplicate:${d.path}',
-                                'Duplicate',
-                                false,
-                                widget.onDuplicate,
-                              ),
-                              if (!widget.open)
-                                homeButton(
-                                  'home-trash:${d.path}',
-                                  'Trash',
-                                  false,
-                                  widget.onAskTrash,
+                    // The name and what is known of it, on a solid block in the corner.
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Container(
+                          color: Grey.g07,
+                          padding: EdgeInsets.fromLTRB(
+                            Shape.s(10),
+                            Shape.s(8),
+                            Shape.s(12),
+                            Shape.s(9),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                d.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyles.name(
+                                  Grey.g95,
+                                  12,
+                                  FontWeight.w700,
                                 ),
+                              ),
+                              SizedBox(height: Shape.s(5)),
+                              Text(
+                                [
+                                  homeAge(d.changed),
+                                  if (f != null && f.seconds > 0)
+                                    homeLength(f.seconds),
+                                ].join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyles.micro(Grey.g63),
+                              ),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    if (open)
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        child: homeTag('OPEN', WindowTokens.usuki),
+                      ),
+
+                    if (picked)
+                      Positioned(
+                        left: Shape.s(8),
+                        top: Shape.s(open ? 30 : 8),
+                        child: Container(
+                          width: Shape.z(20),
+                          height: Shape.z(20),
+                          alignment: Alignment.center,
+                          color: WindowTokens.accent,
+                          child: Glyph(
+                            AppGlyphs.check,
+                            size: Shape.z(12),
+                            color: WindowTokens.onAccent,
+                          ),
+                        ),
+                      ),
+
+                    if (h)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Pressable(
+                          onTap: onMore,
+                          builder: (context, _) => Container(
+                            width: Shape.z(26),
+                            height: Shape.z(26),
+                            alignment: Alignment.center,
+                            color: Grey.g07,
+                            child: Glyph(
+                              AppGlyphs.more,
+                              size: Shape.z(12),
+                              color: Grey.g91,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    if (menu)
+                      Positioned(
+                        left: Shape.s(6),
+                        right: Shape.s(6),
+                        bottom: Shape.s(56),
+                        child: Wrap(
+                          spacing: Shape.s(4),
+                          runSpacing: Shape.s(4),
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: asking
+                              ? [
+                                  Text(
+                                    'Trash?',
+                                    style: TextStyles.label(Grey.g91),
+                                  ),
+                                  homeButton(
+                                    'home-trash-yes:${d.path}',
+                                    'Trash',
+                                    true,
+                                    onTrash,
+                                  ),
+                                  homeButton(
+                                    'home-trash-no:${d.path}',
+                                    'Cancel',
+                                    false,
+                                    onKeep,
+                                  ),
+                                ]
+                              : [
+                                  homeButton(
+                                    'home-open:${d.path}',
+                                    'Open',
+                                    false,
+                                    onOpen,
+                                  ),
+                                  homeButton(
+                                    'home-select:${d.path}',
+                                    'Select',
+                                    false,
+                                    onSelect,
+                                  ),
+                                  homeButton(
+                                    'home-export:${d.path}',
+                                    'Export…',
+                                    false,
+                                    onExport,
+                                  ),
+                                  homeButton(
+                                    'home-duplicate:${d.path}',
+                                    'Duplicate',
+                                    false,
+                                    onDuplicate,
+                                  ),
+                                  if (!open)
+                                    homeButton(
+                                      'home-trash:${d.path}',
+                                      'Trash',
+                                      false,
+                                      onAskTrash,
+                                    ),
+                                ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // The bounding box's handles, which sit on the corners and reach outside the card.
+              if (selected)
+                for (final (right, bottom) in const [
+                  (false, false),
+                  (true, false),
+                  (false, true),
+                  (true, true),
+                ])
+                  Positioned(
+                    left: right ? null : -homeReach + 1,
+                    right: right ? -homeReach + 1 : null,
+                    top: bottom ? null : -homeReach + 1,
+                    bottom: bottom ? -homeReach + 1 : null,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: Grey.g95,
+                        border: Border.all(
+                          color: WindowTokens.accent,
+                          width: homeEdge,
+                        ),
+                      ),
                     ),
                   ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder with a coloured gradient that cycles through the brand triad.
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.name, required this.index});
-  final String name;
-  final int index;
-  @override
-  Widget build(BuildContext context) {
-    final colors = [
-      (WindowTokens.seiji, WindowTokens.nadeshiko),
-      (WindowTokens.nadeshiko, WindowTokens.usuki),
-      (WindowTokens.usuki, WindowTokens.seiji),
-    ];
-    final (a, b) = colors[index % colors.length];
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [a.withValues(alpha: .15), Grey.g10, b.withValues(alpha: .1)],
-        ),
-      ),
-      child: Center(
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: TextStyle(
-            fontSize: 42,
-            fontWeight: FontWeight.w200,
-            color: a.withValues(alpha: .3),
-          ),
-        ),
+            ],
+          );
+        },
       ),
     );
   }
