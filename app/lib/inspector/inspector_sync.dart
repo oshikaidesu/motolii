@@ -65,14 +65,18 @@ class InspectorSync {
     } else if (_live && !live) {
       edits.onDrop();
     }
-    // Only a drag that told numbers has one held to drop: a drag of words alone (a text range, typing) holds none.
-    _live = live && (_live || changed.isNotEmpty);
+    var deferredKeys = false;
     for (final e in doc.keys.entries.toList()) {
-      // While a drag is in progress nothing is settled; the key is reported when the drag ends.
-      if (live || _seenKeys[e.key] == e.value) continue;
+      if (_seenKeys[e.key] == e.value) continue;
+      if (live) {
+        deferredKeys = true;
+        continue;
+      }
       _seenKeys[e.key] = e.value;
       edits.onKey(e.key, e.value);
     }
+    // A drag that told numbers or deferred keys has something held to drop.
+    _live = live && (_live || changed.isNotEmpty || deferredKeys);
     final words = {
       if (!live) ..._liveWords,
       for (final e in doc.strings.entries)
