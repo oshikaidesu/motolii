@@ -125,8 +125,11 @@ Tests written by the same hand that wrote the code tend to repeat its mistakes, 
 
 - `dart format --output=none --set-exit-if-changed .`
 - `flutter analyze`
+- `dart_code_linter` banned-import check (no Material or Cupertino)
 - `flutter test` (the main tests only; CI never runs every test)
 - `clang-format --dry-run --Werror` over the engine's own sources (clang-format 23.1.5, the root `.clang-format`)
+- `ast-grep scan` (the rules in `app/tool/rules/`)
+- `jscpd` copy-paste detection on `app/lib/`
 - `python3 .githooks/path_check.py --all`
 
 [.github/workflows/build.yml](../.github/workflows/build.yml) runs on pushes to main, pull requests that touch `engine/`, `shelves/`, `app/` or the `Brewfile`, and by hand, on macOS 15: `engine/build.sh test` (the build, then ctest), then `engine/edit.sh build.motolii` (a document opened by what was built). It runs no picture comparison.

@@ -66,7 +66,7 @@ flowchart TB
 | Source | Route | Where |
 |---|---|---|
 | ISF (`.fs`, GLSL) | glslang to SPIR-V to Tint to WGSL, using the tools built with Filament | `engine/community/isf/isf.cpp` |
-| WGSL (`.wgsl`) | Used as is. A head line declares parameters in AviUtl2 style. An image placed beside the file is loaded once by ThorVG through `--image@name:file`. | `engine/stage/effects/screen_fx.h`, `layer_fx.h` |
+| WGSL (`.wgsl`) | Used as is. A head line declares parameters in AviUtl2 style. An image placed beside the file is loaded once by ThorVG through `--image@name:file`. | `engine/stage/effects/screen_fx.h`, `engine/stage/layer_effects/layer_fx.h` |
 | AviUtl2 (`.anm2`, `.obj2`) | Lua runs in LuaJIT, as in AviUtl2, and the calls on `obj` are answered by engine functions. HLSL inside goes through glslang's HLSL reader, SPIR-V and Tint to WGSL. | `engine/community/aviutl/` (`aviutl_run.h`, `aviutl_fx.h`) |
 | three.js shapes (`shelves/solids/*.js`) | QuickJS-ng runs three.js and the engine takes the resulting BufferGeometry | `engine/community/three/solid_three.cpp` |
 | Recipes (`shelves/create/*/*.js`) | QuickJS-ng. A recipe creates layers and values once. | `engine/community/quickjs/script.cpp` |
@@ -94,8 +94,8 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `effects/` | `document/scripts/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
 | `aviutl_scripts/` | `document/scripts/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
 | `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
-| `expressions/` | `entry/calls.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
-| `relations/` | `entry/calls.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
+| `expressions/` | `entry/calls_shelf.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
+| `relations/` | `entry/calls_shelf.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/edit/presets.h` | `bridge/motolii_shelves.dart` |
 | `solids/` | `community/three/solid_three.cpp` | none |
 | `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/ease/ease_shelf.dart` |
@@ -111,13 +111,19 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 
 Each shelf folder may contain a `meta.yaml` keyed by effect name, with `author`, `license` and `source` fields. The app reads these through `app/lib/storage/shelf_meta.dart` (`shelfMetaOfFile`, `shelfMetaByName`). ISF effects have metadata generated from their CREDIT headers; AviUtl2 scripts have metadata from their SOURCE.txt.
 
-User tags are stored in `~/.motolii/tags.json` and managed by `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`). Tags are shown as chips in the Code tab (`code_pane.dart` `_metaRow`) and Inspector (`inspector/card_meta_row.dart` `CardMetaRow`), with inline autocomplete.
+In the GUI, metadata appears in two places: at the bottom of each effect card in the Inspector (the `CardMetaRow` widget), and in each cell of the Code tab (the `_metaRow` in `code_pane.dart`). Both show "by Author · License" and the user's tag chips. Pressing the "+" chip opens an autocomplete field to add a tag; pressing the "×" on a chip removes it.
 
-On export, `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) writes a credits text file beside the video, listing every effect used, grouped by licence.
+User tags are stored in `~/.motolii/tags.json` and managed by `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`).
+
+The Effects shelf (the "Effects" tab on the left dock) has a "Mine" filter row (`workspace/dock/effects/effect_places.dart`) that shows only effects from the user's own folder (`ownFolder()`).
+
+On export (File > Export Video, or the Render button in the top bar), `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) automatically writes a credits text file beside the exported video, listing every effect used, grouped by licence.
 
 ## Home screen
 
-The home screen (`app/lib/workspace/window/home.dart`) shows on startup over the workspace. It lists projects from the user's folder (default: the parent of the opened document, changeable via `WindowFile.projectsFolder`). A "Continue" card shows the last project (`WindowFile.lastProject`). Settings persist in `~/.motolii/window.xml` through `app/lib/storage/window_settings.dart`.
+The home screen (`app/lib/workspace/window/home.dart`) shows on startup as an overlay over the workspace. It lists projects from the user's folder, grouped by date or sorted by name. A "Continue" card at the top shows the last project (`WindowFile.lastProject`). The "New Project" button creates a fresh document. The × button in the top-right corner closes the home screen and returns to the workspace. The folder icon beside "Projects" opens a system dialog to change the projects folder (`WindowFile.projectsFolder`). Settings persist in `~/.motolii/window.xml` through `app/lib/storage/window_settings.dart`.
+
+Skins are switched from View > Skin in the menu bar; the available skins come from `shelves/skins/` and the user's own skins folder (`skin/theme.dart` `ColorTheme.skinNames`).
 
 ## Where things live
 
