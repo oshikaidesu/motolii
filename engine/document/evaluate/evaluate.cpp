@@ -12,7 +12,6 @@
 #include "document/evaluate/evaluate_layers.h"
 #include "document/evaluate/evaluate_lights.h"
 #include "document/evaluate/evaluate_scenes.h"
-#include "document/evaluate/evaluation.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/moment_fx.h"
 #include "document/evaluate/relations.h"

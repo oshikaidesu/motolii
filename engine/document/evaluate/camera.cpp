@@ -15,6 +15,7 @@
 #include <ktxreader/Ktx1Reader.h>
 #include <math/mat3.h>
 #include <math/mat4.h>
+#include <math/vec2.h>
 #include <math/vec3.h>
 #include <math/vec4.h>
 #include <sqlite3.h>
@@ -35,6 +36,8 @@
 #include "community/quickjs/script.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
+#include "document/evaluate/evaluate.h"
+#include "document/evaluate/evaluate_camera.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/shown.h"
@@ -51,6 +54,7 @@
 namespace motolii {
 
 namespace math = filament::math;
+using filament::Camera;
 using filament::ColorGrading;
 using filament::IndirectLight;
 using filament::LinearToneMapper;
@@ -342,6 +346,133 @@ void doc_look(Doc& d) {
   if (d.look.backdrop)
     move(s, d.look.backdrop->sheet,
          [&](int, const mat4f&) { return mat4f(d.camera.rig); });
+}
+
+// -- evaluate_camera: the camera phases of doc_evaluate. --
+
+namespace {
+
+// Returns the camera layer in use: the last camera layer in stacking order that
+// is active now, or 0 when there is none.
+int camera_layer_now(Doc& d, const std::vector<int>& lie, double now) {
+  int camera = 0;
+  for (int layer : lie)
+    if (d.on_stage.shown.count(layer) && d.on_stage.shown[layer].camera) {
+      const double since = now - doc_number(d, layer, "start", 0, 0),
+                   lasts = doc_number(d, layer, "duration", 0, -1);
+      if (since >= 0.0 && (lasts < 0.0 || since < lasts) &&
+          doc_visible(d, layer))
+        camera = layer;
+    }
+  return camera;
+}
+
+// Depth of field uses Filament's own lens model: sharp at the focus
+// distance and blurred away from it as the f-number says. The shutter speed
+// follows the f-number, so the image keeps the brightness of the stage's
+// default of f/16 at 1/125 s.
+void lens_at(Doc& d, int camera, double now, math::double3 eye,
+             math::double3 look) {
+  Stage& s = *d.stage;
+  const double said = camera ? doc_number(d, camera, "aperture", now, 0) : 0.0,
+               focus = camera ? doc_number(d, camera, "focus", now, 0) : 0.0;
+  d.camera.blurred = !d.working_camera.on && said > 0.0;
+  // Filament's widest aperture is f/0.5.
+  const double stop = std::max(said, 0.5);
+  View::DepthOfFieldOptions lens = s.view->getDepthOfFieldOptions();
+  // Update the circle of confusion scale only when it changed.
+  if (camera &&
+      lens.cocScale != (float)doc_number(d, camera, "blur_level", now, 1))
+    lens.cocScale = (float)doc_number(d, camera, "blur_level", now, 1),
+    s.view->setDepthOfFieldOptions(lens);
+  s.film->setExposure(d.camera.blurred ? (float)stop : 16.f,
+                      d.camera.blurred
+                          ? (float)(stop * stop / (16.0 * 16.0 * 125.0))
+                          : 1.f / 125.f,
+                      100.f);
+  // The focus distance is the focus property, or the distance to the look-at
+  // point when it is 0.
+  s.film->setFocusDistance((float)(focus > 0.0 ? focus : length(eye - look)));
+}
+
+// In the working view the Stage's orbital camera orbits the world origin while
+// the project's own camera (film) keeps its own viewpoint unchanged. The
+// Stage view is always through `s.camera`; the Camera View is always through
+// `s.film`. Billboards and 2D layers face whichever camera the current view
+// uses, so they look correct in both views without any manual override.
+void working_view_shown(Evaluation& evaluation, int camera) {
+  Doc& d = evaluation.d;
+  Stage& s = evaluation.s;
+  const math::mat4 about =
+      math::mat4::rotation(d.working_camera.position[0] * (double)TAU / 360.0,
+                           math::double3{0, 1, 0}) *
+      math::mat4::rotation(d.working_camera.position[1] * (double)TAU / 360.0,
+                           math::double3{1, 0, 0});
+  s.camera->lookAt(
+      (about *
+       math::double4{0, 0, kStageBack * d.working_camera.position[2], 0})
+          .xyz,
+      math::double3{0.0}, (about * math::double4{0, 1, 0, 0}).xyz);
+  s.camera->setProjection(30.0, double(s.w) / double(s.h), kStageNear,
+                          60.0 * std::max(1.0, d.working_camera.position[2]));
+}
+
+}  // namespace
+
+// The camera is the last camera layer in stacking order that is active now.
+// With none, the stage's own camera is used.
+void evaluate_camera(Evaluation& evaluation) {
+  Doc& d = evaluation.d;
+  Stage& s = evaluation.s;
+  const double now = evaluation.now;
+  const int camera = camera_layer_now(d, evaluation.lie, now);
+  // The working view shows the user's view camera instead of the document
+  // camera. It needs a camera layer in the document and no export in
+  // progress.
+  d.working_camera.on =
+      d.working_camera.asked && camera && !d.video_export.writing;
+  const DocViewCamera seen = doc_view_camera_of(d, camera, now);
+  const math::double3 eye = seen.eye, look = seen.look, up = seen.up;
+  const double far = seen.far, fov = seen.fov;
+  s.film->lookAt(eye, look, up);
+  // An orthographic camera is as large at the point it looks at as the
+  // perspective camera shows it there.
+  if (camera && doc_word(d, camera, "projection") == "orthographic") {
+    const double high = kStageBack * far * std::tan(0.5 * fov),
+                 wide = high * double(s.w) / double(s.h);
+    s.film->setProjection(Camera::Projection::ORTHO, -wide, wide, -high, high,
+                          kStageNear, 60.0 * std::max(1.0, far));
+  } else
+    s.film->setProjection(fov * 360.0 / (double)TAU, double(s.w) / double(s.h),
+                          kStageNear, 60.0 * std::max(1.0, far));
+  s.film->setShift(camera
+                       ? math::double2{doc_number(d, camera, "shift_x", now, 0),
+                                       doc_number(d, camera, "shift_y", now, 0)}
+                       : math::double2{0.0});
+  lens_at(d, camera, now, eye, look);
+  // Set up the working camera first so its model matrix is ready.
+  working_view_shown(evaluation, camera);
+  // The stage view faces s.camera when the working camera is on; the camera
+  // view always faces s.film. Billboards and 2D layers use the facing camera
+  // so they look correct in whichever view is shown (Blender's behaviour).
+  filament::Camera* const facing_cam =
+      d.working_camera.on ? s.camera : s.film;
+  d.camera.rig = facing_cam->getModelMatrix() *
+                 math::mat4::translation(math::double3{0, 0, -kStageBack});
+  d.camera.facing = math::mat4(d.camera.rig.upperLeft());
+}
+
+// The camera's lens is enabled on the stage's own view when solid layers are
+// in it.
+void evaluate_depth_of_field(const Evaluation& evaluation) {
+  Doc& d = evaluation.d;
+  Stage& s = evaluation.s;
+  const std::vector<int>& sorts = evaluation.sorts;
+  const int base = evaluation.base;
+  View::DepthOfFieldOptions lens = s.view->getDepthOfFieldOptions();
+  if (lens.enabled !=
+      (d.camera.blurred && (base == 1 || (!sorts.empty() && sorts[0]))))
+    lens.enabled = !lens.enabled, s.view->setDepthOfFieldOptions(lens);
 }
 
 }  // namespace motolii

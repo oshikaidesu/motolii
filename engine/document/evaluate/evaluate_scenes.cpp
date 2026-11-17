@@ -17,7 +17,6 @@
 
 #include "document/document.h"
 #include "document/evaluate/evaluate.h"
-#include "document/evaluate/evaluation.h"
 #include "document/evaluate/material.h"
 #include "document/evaluate/moment_fx.h"
 #include "document/evaluate/value_at.h"
