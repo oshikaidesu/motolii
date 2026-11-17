@@ -9,6 +9,7 @@ import 'package:material_color_utilities/material_color_utilities.dart'
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/widgets/grid_columns.dart' show BentoItem, bentoPack;
 import 'package:motolii/workspace/dock/colors/color_commands.dart';
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
 import 'package:motolii/workspace/dock/colors/colors_controller.dart';
@@ -25,6 +26,8 @@ class BentoBox {
   final double weight;
   final Color? colour;
   final ShelfGradient? grad;
+
+  BentoItem get _item => BentoItem(group, i, weight, wide: grad != null);
 }
 
 const _rainbow = [
@@ -39,56 +42,9 @@ const _rainbow = [
 ];
 
 /// Where each box lies, in grid cells, as (x, y, width, height).
-/// The dice picks each box's shape: a color that covers more of the picture gets a larger box, and a gradient a wide one.
-/// Each box then goes where it first fits from the top left, and later boxes fill the gaps
-/// (dense auto-placement, CSS Grid Layout Module Level 1, section 8.5).
-/// A throw changes about a third of the boxes and the rest keep their shapes, because changing all at once was too much.
-List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
-  final taken = <int, Set<int>>{}, out = <(int, int, int, int)>[];
-  bool free(int x, int y, int w, int h) {
-    if (x + w > cols) return false;
-    for (var j = y; j < y + h; j++) {
-      for (var i = x; i < x + w; i++) {
-        if (taken[j]?.contains(i) ?? false) return false;
-      }
-    }
-    return true;
-  }
-
-  for (final b in boxes) {
-    var thrown = 0; // The last throw that changed this box.
-    for (var d = 1; d <= seed; d++) {
-      if (math.Random(Object.hash(d, b.group, b.i, 7)).nextDouble() < .35) {
-        thrown = d;
-      }
-    }
-    final r = math.Random(Object.hash(thrown, b.group, b.i));
-    final shapes = b.grad != null
-        ? const [(2, 1), (3, 1), (2, 2)]
-        : b.weight >= 1.6
-        ? const [(2, 2), (3, 2), (2, 3), (3, 3)]
-        : b.weight >= .9
-        ? const [(2, 1), (1, 2), (2, 2), (1, 1)]
-        : const [(1, 1), (1, 1), (1, 2), (2, 1)];
-    final (w0, h) = shapes[r.nextInt(shapes.length)];
-    final w = math.min(w0, cols);
-    for (var y = 0; ; y++) {
-      final x = [
-        for (var x = 0; x < cols; x++)
-          if (free(x, y, w, h)) x,
-      ].firstOrNull;
-      if (x == null) continue;
-      for (var j = y; j < y + h; j++) {
-        taken.putIfAbsent(j, () => {}).addAll([
-          for (var i = x; i < x + w; i++) i,
-        ]);
-      }
-      out.add((x, y, w, h));
-      break;
-    }
-  }
-  return out;
-}
+/// Delegates to the shared [bentoPack] in grid_columns.dart.
+List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) =>
+    bentoPack([for (final b in boxes) b._item], cols, seed);
 
 /// The colors as a bento of boxes of many sizes, wide and tall, packed with no holes.
 /// As many boxes fit in a row as the shelf is wide. A poster's colors take the space they cover, so the boxes are not all squares.

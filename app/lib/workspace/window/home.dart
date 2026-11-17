@@ -3,6 +3,9 @@
 // A hero banner shows the last project ("Continue"), then a responsive grid of 16:9 cards with hover-reveal metadata.
 // Clicking a card opens it. Its menu can select, export, duplicate, or move it to the Trash after a confirmation.
 // The thumbnail, size and length come from what the project last saved (Motolii.poster), read without opening it.
+import 'dart:math' as math;
+
+import 'package:motolii/widgets/grid_columns.dart' show BentoItem, bentoPack;
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/window/home_project.dart';
 import 'package:motolii/workspace/window/home_card.dart';
@@ -59,6 +62,8 @@ class HomeWindow extends StatefulWidget {
 class _HomeWindowState extends State<HomeWindow> {
   // The last sort order chosen, kept like AbsentMotion's sortBy.
   static var byName = false;
+  // Whether to show the bento layout (mixed-size cards) or the uniform grid.
+  static var bento = false;
   List<HomeProject> _docs = const [];
   // The card whose menu is open.
   String? _menu;
@@ -275,64 +280,91 @@ class _HomeWindowState extends State<HomeWindow> {
         (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
       );
     }
+    Widget card(HomeProject d, int i, List<HomeProject> docs) => HomeCard(
+      d,
+      index: i,
+      open: d.path == widget.open,
+      picked: _picked.contains(d.path),
+      menu: _menu == d.path,
+      asking: _asking == d.path,
+      onTap: () {
+        final k = clickKeys();
+        if (_picked.isEmpty && !k.add && !k.span) {
+          return widget.onOpen(d.path);
+        }
+        final r = pickOnClick(
+          now: _picked,
+          lead: _lead,
+          id: d.path,
+          order: [for (final e in docs) e.path],
+          add: k.add || !k.span,
+          span: k.span,
+        );
+        setState(() {
+          _picked
+            ..clear()
+            ..addAll(r.picked);
+          _lead = r.lead;
+        });
+      },
+      onMore: () => setState(() => _menu = _menu == d.path ? null : d.path),
+      onOpen: () => widget.onOpen(d.path),
+      onSelect: () => setState(() {
+        _picked.add(d.path);
+        _menu = null;
+      }),
+      onExport: () => widget.onExport([d.path]),
+      onDuplicate: () => _duplicate(d),
+      onAskTrash: () => setState(() => _asking = d.path),
+      onTrash: () => _trash(d),
+      onKeep: () => setState(() => _asking = null),
+    );
+
     Widget grid(List<HomeProject> docs) => LayoutBuilder(
       builder: (context, box) {
         final gap = box.maxWidth > 800 ? 36.0 : 24.0;
-        final maxCols = docs.length.clamp(1, 4);
         final cols = ((box.maxWidth + gap) / (homeTile + gap)).floor().clamp(
-          1,
-          maxCols,
+          2,
+          4,
         );
         final tile = (box.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (final (i, d) in docs.indexed)
-              SizedBox(
-                width: tile,
-                child: HomeCard(
-                  d,
-                  index: i,
-                  open: d.path == widget.open,
-                  picked: _picked.contains(d.path),
-                  menu: _menu == d.path,
-                  asking: _asking == d.path,
-                  onTap: () {
-                    final k = clickKeys();
-                    if (_picked.isEmpty && !k.add && !k.span) {
-                      return widget.onOpen(d.path);
-                    }
-                    final r = pickOnClick(
-                      now: _picked,
-                      lead: _lead,
-                      id: d.path,
-                      order: [for (final e in docs) e.path],
-                      add: k.add || !k.span,
-                      span: k.span,
-                    );
-                    setState(() {
-                      _picked
-                        ..clear()
-                        ..addAll(r.picked);
-                      _lead = r.lead;
-                    });
-                  },
-                  onMore: () =>
-                      setState(() => _menu = _menu == d.path ? null : d.path),
-                  onOpen: () => widget.onOpen(d.path),
-                  onSelect: () => setState(() {
-                    _picked.add(d.path);
-                    _menu = null;
-                  }),
-                  onExport: () => widget.onExport([d.path]),
-                  onDuplicate: () => _duplicate(d),
-                  onAskTrash: () => setState(() => _asking = d.path),
-                  onTrash: () => _trash(d),
-                  onKeep: () => setState(() => _asking = null),
+
+        if (!bento) {
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final (i, d) in docs.indexed)
+                SizedBox(width: tile, child: card(d, i, docs)),
+            ],
+          );
+        }
+
+        // Bento mode: mixed-size cards packed with no holes.
+        final items = [
+          for (final (i, _) in docs.indexed)
+            BentoItem('home', i, i == 0 ? 1.8 : (i < 3 ? .9 : .5)),
+        ];
+        final laid = bentoPack(items, cols);
+        final unit = (box.maxWidth + gap) / cols;
+        final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4));
+        return SizedBox(
+          height: rows * unit,
+          child: Stack(
+            children: [
+              for (final (k, d) in docs.indexed)
+                AnimatedPositioned(
+                  key: ValueKey('home-bento-${d.path}'),
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  left: laid[k].$1 * unit,
+                  top: laid[k].$2 * unit,
+                  width: laid[k].$3 * unit - gap,
+                  height: laid[k].$4 * unit - gap,
+                  child: card(d, k, docs),
                 ),
-              ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -512,6 +544,13 @@ class _HomeWindowState extends State<HomeWindow> {
                           'Name',
                           byName,
                           () => setState(() => byName = true),
+                        ),
+                        SizedBox(width: Shape.s(8)),
+                        homeButton(
+                          'home-bento',
+                          'Bento',
+                          bento,
+                          () => setState(() => bento = !bento),
                         ),
                       ],
                     ),
