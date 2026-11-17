@@ -238,8 +238,7 @@ class _HomeWindowState extends State<HomeWindow> {
                 child: LayoutBuilder(
                   builder: (context, box) {
                     final pad = Shape.s(24), gap = Shape.s(12);
-                    // The cards keep room on every side for the chosen one's handles.
-                    final sides = EdgeInsets.only(left: homeReach, right: pad);
+                    final sides = EdgeInsets.only(right: pad);
                     // Whole numbers, so that the opaque parts meet without a seam the collage could show through.
                     final heroTall = (box.maxHeight * .38)
                         .clamp(300.0, 420.0)
@@ -255,7 +254,7 @@ class _HomeWindowState extends State<HomeWindow> {
                           child: Padding(
                             padding: sides.copyWith(
                               top: pad,
-                              bottom: Shape.s(10) - homeReach,
+                              bottom: Shape.s(10),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -343,10 +342,6 @@ class _HomeWindowState extends State<HomeWindow> {
                             // Scrolled to its end, the list leaves the collage in view below the last row.
                             padding: EdgeInsets.only(bottom: Shape.s(140)),
                             children: [
-                              ColoredBox(
-                                color: ground,
-                                child: const SizedBox(height: homeReach),
-                              ),
                               for (final block in _bento(
                                 [
                                   for (final (i, d) in shown.indexed)
@@ -490,7 +485,7 @@ class _Sidebar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
         Shape.s(16),
         Shape.s(24),
-        Shape.s(16) - homeReach,
+        Shape.s(12),
         Shape.s(16),
       ),
       child: Column(
@@ -503,7 +498,10 @@ class _Sidebar extends StatelessWidget {
                 width: Shape.z(22),
                 height: Shape.z(22),
                 alignment: Alignment.center,
-                color: WindowTokens.accent,
+                decoration: BoxDecoration(
+                  color: WindowTokens.accent,
+                  borderRadius: Shape.round(7),
+                ),
                 child: Text(
                   'M',
                   style: TextStyles.name(
@@ -561,8 +559,8 @@ class _Sidebar extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(Shape.s(10)),
             decoration: BoxDecoration(
-              color: Grey.g00,
-              border: Border.all(color: Grey.g63, width: homeEdge),
+              color: Grey.g07,
+              borderRadius: Shape.round(12),
             ),
             child: Row(
               children: [
@@ -612,17 +610,24 @@ class _SidebarItem extends StatelessWidget {
     builder: (context, hot) => AnimatedContainer(
       duration: Motion.dur,
       padding: EdgeInsets.all(Shape.s(8)),
-      color: selected
-          ? Grey.g95
-          : hot
-          ? Grey.g13
-          : Grey.g00,
+      decoration: BoxDecoration(
+        color: selected
+            ? Grey.g95
+            : hot
+            ? Grey.g13
+            : Grey.g00,
+        borderRadius: Shape.round(10),
+      ),
       child: Row(
         children: [
           Container(
             width: Shape.z(44),
             height: Shape.z(28),
-            color: Grey.g13,
+            decoration: BoxDecoration(
+              color: Grey.g13,
+              borderRadius: Shape.round(5),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: d.picture != null
                 ? Image(image: imageFile(d.picture!), fit: BoxFit.cover)
                 : null,
@@ -690,17 +695,16 @@ class _Hero extends StatelessWidget {
       ('FILE', homeBytes(d.bytes)),
     ];
     return Container(
-      decoration: BoxDecoration(
-        color: Grey.g07,
-        border: Border.all(color: Grey.g91, width: homeEdge),
-      ),
+      decoration: BoxDecoration(color: Grey.g07, borderRadius: Shape.round(20)),
+      clipBehavior: Clip.antiAlias,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             flex: 6,
-            child: Padding(
-              padding: EdgeInsets.all(Shape.s(24)),
+            child: Container(
+              decoration: homeSheen(homeTones()[index % homeTones().length]),
+              padding: EdgeInsets.all(Shape.s(26)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -756,7 +760,12 @@ class _Hero extends StatelessWidget {
                         horizontal: Shape.s(16),
                         vertical: Shape.s(11),
                       ),
-                      color: hot ? WindowTokens.accentHot : WindowTokens.accent,
+                      decoration: BoxDecoration(
+                        color: hot
+                            ? WindowTokens.accentHot
+                            : WindowTokens.accent,
+                        borderRadius: Shape.round(100),
+                      ),
                       child: Text(
                         action,
                         style: homeCaps(WindowTokens.onAccent, 11),
@@ -767,7 +776,7 @@ class _Hero extends StatelessWidget {
               ),
             ),
           ),
-          Container(width: homeEdge, color: Grey.g91),
+          Container(width: 1, color: Grey.g100.withValues(alpha: .07)),
           Expanded(
             flex: 8,
             child: d.picture == null
@@ -880,10 +889,18 @@ class _ActionCard extends StatelessWidget {
           duration: Motion.dur,
           padding: EdgeInsets.all(Shape.s(16)),
           decoration: BoxDecoration(
-            color: solid
-                ? (hot ? Color.lerp(tone, Grey.g100, .2) : tone)
-                : (hot ? Grey.g15 : Grey.g07),
-            border: Border.all(width: homeEdge, color: solid ? tone : Grey.g91),
+            borderRadius: Shape.round(20),
+            // A light from the top-left corner on both; the solid one keeps its colour under it.
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: solid
+                  ? [
+                      Color.lerp(tone, Grey.g100, hot ? .38 : .2)!,
+                      Color.lerp(tone, Grey.g00, hot ? 0 : .12)!,
+                    ]
+                  : [hot ? Grey.g20 : Grey.g13, Grey.g07],
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -921,7 +938,7 @@ class _GridHeader extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Container(height: 3, color: Grey.g95),
+      Container(height: 1, color: Grey.g38),
       SizedBox(height: Shape.s(14)),
       Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -949,20 +966,32 @@ class _GridHeader extends StatelessWidget {
             SizedBox(width: Shape.s(16)),
           ],
           Padding(
-            padding: EdgeInsets.only(right: Shape.s(10), bottom: Shape.s(7)),
+            padding: EdgeInsets.only(right: Shape.s(10), bottom: Shape.s(10)),
             child: Text('SORT', style: homeCaps(Grey.g56)),
           ),
-          _Toggle(
-            key: const ValueKey('home-by-date'),
-            text: 'DATE',
-            on: !byName,
-            onTap: onByDate,
-          ),
-          _Toggle(
-            key: const ValueKey('home-by-name'),
-            text: 'NAME',
-            on: byName,
-            onTap: onByName,
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: Grey.g07,
+              borderRadius: Shape.round(100),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Toggle(
+                  key: const ValueKey('home-by-date'),
+                  text: 'DATE',
+                  on: !byName,
+                  onTap: onByDate,
+                ),
+                _Toggle(
+                  key: const ValueKey('home-by-name'),
+                  text: 'NAME',
+                  on: byName,
+                  onTap: onByName,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -970,7 +999,7 @@ class _GridHeader extends StatelessWidget {
   );
 }
 
-/// One of a row of choices: the chosen one inverted, the others outlined.
+/// One of a row of choices: a pill, inverted when it is the chosen one.
 class _Toggle extends StatelessWidget {
   const _Toggle({
     super.key,
@@ -994,17 +1023,17 @@ class _Toggle extends StatelessWidget {
         color: on
             ? Grey.g95
             : hot
-            ? Grey.g15
-            : Grey.g00,
-        border: Border.all(color: Grey.g95, width: homeEdge),
+            ? Grey.g20
+            : Grey.g07,
+        borderRadius: Shape.round(100),
       ),
-      child: Text(text, style: homeCaps(on ? Grey.g00 : Grey.g91)),
+      child: Text(text, style: homeCaps(on ? Grey.g00 : Grey.g76)),
     ),
   );
 }
 
 /// The collage behind the whole home screen: the marks of a design tool and of this app, many of them, at every size
-/// and a little askew, each overlapping its neighbours.
+/// and a little askew, each overlapping its neighbours, under a shade that keeps it in the background.
 ///
 /// Rows are counted from the foot of the window and columns from its left, and each place draws from its own seed, so
 /// a mark stays where it is when the window is resized.
@@ -1063,6 +1092,27 @@ class _Collage extends CustomPainter {
         canvas.restore();
       }
     }
+
+    // A haze of colour quiets it, in place of a black shade: indigo where the marks begin, turning teal toward the foot
+    // of the window. Above that it is the ground's own colour, so nothing shows in the upper part of the window.
+    final indigo = Color.lerp(tones[4], ground, .6)!,
+        teal = Color.lerp(tones[2], ground, .55)!;
+    final all = Offset.zero & size;
+    final from = (keep.height / size.height).clamp(0.0, .8);
+    canvas.drawRect(
+      all,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            ground,
+            indigo.withValues(alpha: .9),
+            teal.withValues(alpha: .55),
+          ],
+          stops: [from, from + (1 - from) * .5, 1],
+        ).createShader(all),
+    );
   }
 
   /// Draws one mark about the origin, roughly a hundred across.
@@ -1344,10 +1394,7 @@ class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: EdgeInsets.all(Shape.s(24)),
-    decoration: BoxDecoration(
-      color: Grey.g07,
-      border: Border.all(color: Grey.g91, width: homeEdge),
-    ),
+    decoration: BoxDecoration(color: Grey.g07, borderRadius: Shape.round(20)),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.end,
