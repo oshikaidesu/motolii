@@ -44,6 +44,13 @@ extension EditCommands on WorkspaceState {
         )) {
           return;
         }
+        // Cut keyframes: copy then delete, as After Effects does.
+        if (ws.keys.isNotEmpty) {
+          copiedKeyframes = const [];
+          copyKeyframes(ws, ws.keys);
+          removeKeyframes(ws, ws.keys);
+          return;
+        }
         final t = int.tryParse(ws.selected ?? '');
         if (t == null) return;
         Clipboard.getData(Clipboard.kTextPlain)

@@ -1,6 +1,7 @@
 // The colour bento of the Colors shelf: boxes of colours and gradients.
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 
 import 'package:material_color_utilities/material_color_utilities.dart'
@@ -168,7 +169,29 @@ class _ColorBox extends StatelessWidget {
     return DockHover(
       key: ValueKey('colour-box-${b.group}-${b.i}'),
       onMenu: (at) {
+        final col = colors.saved.colors[b.i];
         final items = [
+          ContextMenuItem(
+            'Copy ${hexOfColor(col)}',
+            () => Clipboard.setData(ClipboardData(text: hexOfColor(col))),
+          ),
+          ContextMenuItem('Paste', () async {
+            final data = await Clipboard.getData(Clipboard.kTextPlain);
+            final hex = (data?.text ?? '').trim().replaceFirst('#', '');
+            final whole = hex.length == 3
+                ? [for (final k in hex.split('')) '$k$k'].join()
+                : hex;
+            if (whole.length != 6 || int.tryParse(whole, radix: 16) == null) {
+              return;
+            }
+            c.set(() {
+              colors.saved.colors[b.i] = Color(
+                0xFF000000 | int.parse(whole, radix: 16),
+              );
+              colors.saved.keep();
+            });
+          }),
+          const ContextMenuItem.rule(),
           if (own) ...[
             ContextMenuItem(
               'Replace with ${hexOfColor(colors.wheelColor.toColor())}',
