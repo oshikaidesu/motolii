@@ -398,9 +398,9 @@ class _HomeWindowState extends State<HomeWindow> {
               children: [
                 Text(
                   '${shown.length}',
-                  style: TextStyles.title(Grey.g76).copyWith(
-                    fontSize: TextStyles.px(20),
-                    fontWeight: FontWeight.w700,
+                  style: TextStyles.title(Grey.g95).copyWith(
+                    fontSize: TextStyles.px(26),
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 SizedBox(width: Shape.s(6)),
@@ -457,13 +457,16 @@ class _HomeWindowState extends State<HomeWindow> {
             ),
             Padding(
               padding: EdgeInsets.symmetric(vertical: Shape.s(16)),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Grey.g20.withValues(alpha: .5)),
+              child: Row(
+                children: [
+                  Container(width: 40, height: 2, color: WindowTokens.accent),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: Grey.g20.withValues(alpha: .4),
+                    ),
                   ),
-                ),
-                child: const SizedBox(width: double.infinity),
+                ],
               ),
             ),
             Expanded(
@@ -537,6 +540,8 @@ class _HomeWordmark extends StatelessWidget {
           letterSpacing: -.3,
         ),
       ),
+      SizedBox(width: Shape.s(10)),
+      Container(width: 2, height: Shape.z(20), color: WindowTokens.accent),
     ],
   );
 }
