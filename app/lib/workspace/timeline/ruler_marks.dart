@@ -186,6 +186,14 @@ class RulerMarks extends ChangeNotifier {
     _workDrag = null;
   }
 
+  /// Escape pressed while dragging: cancel without writing.
+  void cancel() {
+    _markHeld = null;
+    _workDrag = null;
+    takeWorkArea();
+    notifyListeners();
+  }
+
   /// The markers on the ruler, as frame and name. These are the project's named times.
   List<(int, String)> get markers {
     return [

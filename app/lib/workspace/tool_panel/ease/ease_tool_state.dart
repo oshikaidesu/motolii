@@ -10,7 +10,14 @@ import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:math' as math;
 
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:flutter/services.dart'
+    show
+        Clipboard,
+        ClipboardData,
+        HardwareKeyboard,
+        KeyDownEvent,
+        KeyEvent,
+        LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/ease_kept.dart';
@@ -58,6 +65,18 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   // Like AbsentMotion's lockOvershoot: once the graph shows past 0 and 1 it stays so, until the menu or another card or segment resets it.
   bool _overLocked = false;
 
+  bool _escapeKey(KeyEvent e) {
+    if (e is! KeyDownEvent ||
+        e.logicalKey != LogicalKeyboardKey.escape ||
+        !writer.down) {
+      return false;
+    }
+    writer.down = false;
+    writer.giveUp(_ws!);
+    setState(() => writer.pending = null);
+    return true;
+  }
+
   // With no keyframe picked, the segment follows the playhead. The panel rebuilds when it enters another segment, not every frame.
   WorkspaceController? _ws;
   String _spanAt = '';
@@ -74,10 +93,13 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     _ws?.moment.removeListener(_moved);
     _ws = ws..moment.addListener(_moved);
     _spanAt = spanId(easeSpan(ws));
+    HardwareKeyboard.instance.removeHandler(_escapeKey);
+    HardwareKeyboard.instance.addHandler(_escapeKey);
   }
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_escapeKey);
     _ws?.moment.removeListener(_moved);
     super.dispose();
   }

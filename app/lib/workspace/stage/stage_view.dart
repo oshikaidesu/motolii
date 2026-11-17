@@ -162,14 +162,24 @@ class _StageViewState extends State<StageView>
   String? _tapped; // Layer id clicked a moment ago, until the double-click timeout passes.
   Timer? _tapWait;
   bool _enter(KeyEvent e) {
+    if (e is! KeyDownEvent) return false;
     // Ignored while the user is typing text.
-    if (_cropping == null ||
-        e is! KeyDownEvent ||
-        e.logicalKey != LogicalKeyboardKey.enter) {
-      return false;
-    }
     if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() !=
         null) {
+      return false;
+    }
+    // Escape cancels a drag or a drawing in progress (GESTURES key.4).
+    if (e.logicalKey == LogicalKeyboardKey.escape) {
+      if (_draw.drawFrom != null ||
+          _draw.brush != null ||
+          _draw.lasso != null ||
+          _drag.held != null) {
+        pointer.cancel();
+        return true;
+      }
+      return false;
+    }
+    if (_cropping == null || e.logicalKey != LogicalKeyboardKey.enter) {
       return false;
     }
     setState(() => _cropping = null);
