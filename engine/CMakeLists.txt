@@ -299,6 +299,9 @@ add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
   community/script_runner/project_reads.cpp
   community/script_runner/script_natives.cpp
+  community/script_runner/run_ae.cpp
+  community/script_runner/run_cavalry.cpp
+  community/script_runner/run_p5.cpp
   community/script_runner/script_runner.cpp)
 target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5js motolii_community_subtitles motolii_media motolii_motion)
 
