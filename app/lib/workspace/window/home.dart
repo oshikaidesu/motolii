@@ -1123,6 +1123,25 @@ class _SettingsPopover extends StatefulWidget {
 class _SettingsPopoverState extends State<_SettingsPopover> {
   _SettingsPage _page = _SettingsPage.appearance;
 
+  List<SettingsTile> _pick(
+    String key,
+    String fallback,
+    List<(String, String)> items,
+  ) => [
+    for (final (value, label) in items)
+      SettingsTile(
+        title: Text(label),
+        trailing: (WindowFile.get(key) ?? fallback) == value
+            ? Glyph(
+                AppGlyphs.check,
+                size: Shape.z(14),
+                color: WindowTokens.accent,
+              )
+            : null,
+        onPressed: (_) => setState(() => WindowFile.set(key, value)),
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final dark = !Grey.light;
@@ -1390,33 +1409,27 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
             activeSwitchColor: WindowTokens.accent,
             onToggle: (v) => setState(() => WindowFile.set('AutoSave', '$v')),
           ),
-          SettingsTile(
-            title: const Text('Interval'),
-            trailing: Text(
-              '${WindowFile.get('AutoSaveInterval') ?? '5'} min',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              const steps = ['1', '2', '5', '10', '15', '30'];
-              final now = WindowFile.get('AutoSaveInterval') ?? '5';
-              final i = (steps.indexOf(now) + 1) % steps.length;
-              setState(() => WindowFile.set('AutoSaveInterval', steps[i]));
-            },
-          ),
-          SettingsTile(
-            title: const Text('Max Backups'),
-            trailing: Text(
-              WindowFile.get('AutoSaveBackups') ?? '3',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              const steps = ['1', '3', '5', '10'];
-              final now = WindowFile.get('AutoSaveBackups') ?? '3';
-              final i = (steps.indexOf(now) + 1) % steps.length;
-              setState(() => WindowFile.set('AutoSaveBackups', steps[i]));
-            },
-          ),
         ],
+      ),
+      SettingsSection(
+        title: Text('INTERVAL'),
+        tiles: _pick('AutoSaveInterval', '5', [
+          ('1', '1 minute'),
+          ('2', '2 minutes'),
+          ('5', '5 minutes'),
+          ('10', '10 minutes'),
+          ('15', '15 minutes'),
+          ('30', '30 minutes'),
+        ]),
+      ),
+      SettingsSection(
+        title: Text('MAX BACKUPS'),
+        tiles: _pick('AutoSaveBackups', '3', [
+          ('1', '1'),
+          ('3', '3'),
+          ('5', '5'),
+          ('10', '10'),
+        ]),
       ),
     ],
     _SettingsPage.playback => [
@@ -1436,44 +1449,29 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
             activeSwitchColor: WindowTokens.accent,
             onToggle: (v) => setState(() => WindowFile.set('AudioScrub', '$v')),
           ),
-          SettingsTile(
-            title: const Text('Preview Quality'),
-            trailing: Text(switch (WindowFile.get('PreviewQuality')) {
-              'half' => 'Half',
-              'quarter' => 'Quarter',
-              _ => 'Full',
-            }, style: TextStyles.label(Grey.g56)),
-            onPressed: (_) {
-              final next = switch (WindowFile.get('PreviewQuality')) {
-                'full' || null => 'half',
-                'half' => 'quarter',
-                _ => 'full',
-              };
-              setState(() => WindowFile.set('PreviewQuality', next));
-            },
-          ),
         ],
+      ),
+      SettingsSection(
+        title: Text('PREVIEW QUALITY'),
+        tiles: _pick('PreviewQuality', 'full', [
+          ('full', 'Full'),
+          ('half', 'Half'),
+          ('quarter', 'Quarter'),
+        ]),
       ),
     ],
     _SettingsPage.audio => [
       SettingsSection(
-        title: Text('AUDIO'),
+        title: Text('SAMPLE RATE'),
+        tiles: _pick('SampleRate', '44100', [
+          ('44100', '44100 Hz'),
+          ('48000', '48000 Hz'),
+          ('96000', '96000 Hz'),
+        ]),
+      ),
+      SettingsSection(
+        title: Text('DEVICE'),
         tiles: [
-          SettingsTile(
-            title: const Text('Sample Rate'),
-            trailing: Text(
-              '${WindowFile.get('SampleRate') ?? '44100'} Hz',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              final next = switch (WindowFile.get('SampleRate')) {
-                '44100' || null => '48000',
-                '48000' => '96000',
-                _ => '44100',
-              };
-              setState(() => WindowFile.set('SampleRate', next));
-            },
-          ),
           SettingsTile(
             title: const Text('Audio Device'),
             value: const Text('System default'),
@@ -1486,19 +1484,6 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
       SettingsSection(
         title: Text('PERFORMANCE'),
         tiles: [
-          SettingsTile(
-            title: const Text('Cache Size Limit'),
-            trailing: Text(
-              '${WindowFile.get('CacheSize') ?? '10'} GB',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              const steps = ['2', '5', '10', '20', '50'];
-              final now = WindowFile.get('CacheSize') ?? '10';
-              final i = (steps.indexOf(now) + 1) % steps.length;
-              setState(() => WindowFile.set('CacheSize', steps[i]));
-            },
-          ),
           SettingsTile.switchTile(
             title: const Text('GPU Acceleration'),
             initialValue: (WindowFile.get('GpuAccel') ?? 'true') == 'true',
@@ -1507,29 +1492,30 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
           ),
         ],
       ),
+      SettingsSection(
+        title: Text('CACHE SIZE LIMIT'),
+        tiles: _pick('CacheSize', '10', [
+          ('2', '2 GB'),
+          ('5', '5 GB'),
+          ('10', '10 GB'),
+          ('20', '20 GB'),
+          ('50', '50 GB'),
+        ]),
+      ),
     ],
     _SettingsPage.rendering => [
       SettingsSection(
-        title: Text('EXPORT'),
+        title: Text('DEFAULT FORMAT'),
+        tiles: _pick('ExportFormat', 'mp4', [
+          ('mp4', '.mp4'),
+          ('mov', '.mov'),
+          ('gif', '.gif'),
+          ('png', '.png sequence'),
+        ]),
+      ),
+      SettingsSection(
+        title: Text('OUTPUT'),
         tiles: [
-          SettingsTile(
-            title: const Text('Default Format'),
-            trailing: Text(switch (WindowFile.get('ExportFormat')) {
-              'mov' => '.mov',
-              'gif' => '.gif',
-              'png' => '.png',
-              _ => '.mp4',
-            }, style: TextStyles.label(Grey.g56)),
-            onPressed: (_) {
-              final next = switch (WindowFile.get('ExportFormat')) {
-                'mp4' || null => 'mov',
-                'mov' => 'gif',
-                'gif' => 'png',
-                _ => 'mp4',
-              };
-              setState(() => WindowFile.set('ExportFormat', next));
-            },
-          ),
           SettingsTile(
             title: const Text('Output Folder'),
             value: Text(
@@ -1680,60 +1666,53 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
     ],
     _SettingsPage.projectDefaults => [
       SettingsSection(
-        title: Text('NEW PROJECT DEFAULTS'),
+        title: Text('FRAME SIZE'),
         tiles: [
-          SettingsTile(
-            title: const Text('Frame Size'),
-            trailing: Text(
-              '${WindowFile.get('DefaultWidth') ?? '1920'} × '
-              '${WindowFile.get('DefaultHeight') ?? '1080'}',
-              style: TextStyles.label(Grey.g56),
+          for (final (w, h, label) in [
+            ('1920', '1080', '1920 × 1080 (Full HD)'),
+            ('3840', '2160', '3840 × 2160 (4K)'),
+            ('1280', '720', '1280 × 720 (HD)'),
+            ('1080', '1080', '1080 × 1080 (Square)'),
+            ('1080', '1920', '1080 × 1920 (Vertical)'),
+          ])
+            SettingsTile(
+              title: Text(label),
+              trailing:
+                  (WindowFile.get('DefaultWidth') ?? '1920') == w &&
+                      (WindowFile.get('DefaultHeight') ?? '1080') == h
+                  ? Glyph(
+                      AppGlyphs.check,
+                      size: Shape.z(14),
+                      color: WindowTokens.accent,
+                    )
+                  : null,
+              onPressed: (_) => setState(() {
+                WindowFile.set('DefaultWidth', w);
+                WindowFile.set('DefaultHeight', h);
+              }),
             ),
-            onPressed: (_) {
-              const sizes = [
-                ('1920', '1080'),
-                ('3840', '2160'),
-                ('1280', '720'),
-                ('1080', '1080'),
-                ('1080', '1920'),
-              ];
-              final w = WindowFile.get('DefaultWidth') ?? '1920';
-              final h = WindowFile.get('DefaultHeight') ?? '1080';
-              var i = sizes.indexWhere((s) => s.$1 == w && s.$2 == h);
-              i = (i + 1) % sizes.length;
-              setState(() {
-                WindowFile.set('DefaultWidth', sizes[i].$1);
-                WindowFile.set('DefaultHeight', sizes[i].$2);
-              });
-            },
-          ),
-          SettingsTile(
-            title: const Text('Frame Rate'),
-            trailing: Text(
-              '${WindowFile.get('DefaultFrameRate') ?? '30'} fps',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              const steps = ['24', '25', '30', '50', '60'];
-              final now = WindowFile.get('DefaultFrameRate') ?? '30';
-              final i = (steps.indexOf(now) + 1) % steps.length;
-              setState(() => WindowFile.set('DefaultFrameRate', steps[i]));
-            },
-          ),
-          SettingsTile(
-            title: const Text('Duration'),
-            trailing: Text(
-              '${WindowFile.get('DefaultDuration') ?? '240'} frames',
-              style: TextStyles.label(Grey.g56),
-            ),
-            onPressed: (_) {
-              const steps = ['60', '120', '240', '300', '600', '900'];
-              final now = WindowFile.get('DefaultDuration') ?? '240';
-              final i = (steps.indexOf(now) + 1) % steps.length;
-              setState(() => WindowFile.set('DefaultDuration', steps[i]));
-            },
-          ),
         ],
+      ),
+      SettingsSection(
+        title: Text('FRAME RATE'),
+        tiles: _pick('DefaultFrameRate', '30', [
+          ('24', '24 fps (Film)'),
+          ('25', '25 fps (PAL)'),
+          ('30', '30 fps'),
+          ('50', '50 fps'),
+          ('60', '60 fps'),
+        ]),
+      ),
+      SettingsSection(
+        title: Text('DURATION'),
+        tiles: _pick('DefaultDuration', '240', [
+          ('60', '60 frames (2 s)'),
+          ('120', '120 frames (4 s)'),
+          ('240', '240 frames (8 s)'),
+          ('300', '300 frames (10 s)'),
+          ('600', '600 frames (20 s)'),
+          ('900', '900 frames (30 s)'),
+        ]),
       ),
     ],
     _SettingsPage.storage => [
