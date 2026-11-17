@@ -1,5 +1,6 @@
 // The top bar's size chip: shows the project size, lets the user scrub or type it, and offers common shapes and resolutions.
 import 'package:motolii/widgets/modal_card.dart';
+import 'package:motolii/widgets/number_field.dart';
 
 import 'dart:math' as math;
 
@@ -168,23 +169,40 @@ class _SizeChipState extends State<SizeChip> {
               ),
           ]),
           SizedBox(height: Shape.s(12)),
-          // The ten frame rates of Alight Motion's new-project sheet.
-          ChipGroup('Frame rate', [
-            for (final r in const [12, 15, 18, 20, 24, 25, 30, 48, 50, 60])
-              Chip(
-                key: ValueKey('size-${r}fps'),
-                label: '$r',
-                on: r == WorkspaceController.fps,
-                onTap: !isConnected(ws)
-                    ? null
-                    : () => setDocumentNumber(
-                        ws,
-                        'frame_rate',
-                        r == documentRate(ws) ? 0 : r.toDouble(),
-                        (_, _) => ws.reread(),
-                      ),
+          Row(
+            children: [
+              Text('Frame rate', style: TextStyles.label(Grey.g56)),
+              SizedBox(width: Shape.s(12)),
+              SizedBox(
+                width: Shape.z(80),
+                height: Shape.z(24),
+                child: NumberField(
+                  key: const ValueKey('size-fps'),
+                  value: () => WorkspaceController.fps.toDouble(),
+                  text: (v, _) => '${v.round()}',
+                  unit: (_, _) => ' fps',
+                  perPx: 1 / 5,
+                  step: 1,
+                  onChange: !isConnected(ws)
+                      ? null
+                      : (v) => setDocumentNumber(
+                          ws,
+                          'frame_rate',
+                          v.round().clamp(1, 120).toDouble(),
+                          (_, _) => ws.reread(),
+                        ),
+                  onReset: !isConnected(ws)
+                      ? null
+                      : () => setDocumentNumber(
+                          ws,
+                          'frame_rate',
+                          0,
+                          (_, _) => ws.reread(),
+                        ),
+                ),
               ),
-          ]),
+            ],
+          ),
           SizedBox(height: Shape.s(12)),
           // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
           ChipGroup('Background', [
@@ -204,41 +222,40 @@ class _SizeChipState extends State<SizeChip> {
               ),
           ]),
           SizedBox(height: Shape.s(12)),
-          // How long a new layer lasts, as Alight Motion's New Layer Length setting. End runs to the end of the project.
-          ChipGroup('New layer length', [
-            for (final n in const [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              15,
-              20,
-              25,
-              30,
-              45,
-              60,
-            ])
-              Chip(
-                key: ValueKey('size-len-$n'),
-                label: n == 0 ? 'End' : '${n}s',
-                on: (layerValue(ws, 0, 'layer_length', 0) ?? 0).round() == n,
-                onTap: !isConnected(ws)
-                    ? null
-                    : () => setDocumentNumber(
-                        ws,
-                        'layer_length',
-                        n.toDouble(),
-                        (_, _) => ws.reread(),
-                      ),
+          Row(
+            children: [
+              Text('New layer length', style: TextStyles.label(Grey.g56)),
+              SizedBox(width: Shape.s(12)),
+              SizedBox(
+                width: Shape.z(80),
+                height: Shape.z(24),
+                child: NumberField(
+                  key: const ValueKey('size-len'),
+                  value: () => (layerValue(ws, 0, 'layer_length', 0) ?? 0)
+                      .roundToDouble(),
+                  text: (v, _) => v.round() == 0 ? 'End' : '${v.round()}s',
+                  perPx: 1 / 3,
+                  step: 1,
+                  onChange: !isConnected(ws)
+                      ? null
+                      : (v) => setDocumentNumber(
+                          ws,
+                          'layer_length',
+                          v.round().clamp(0, 120).toDouble(),
+                          (_, _) => ws.reread(),
+                        ),
+                  onReset: !isConnected(ws)
+                      ? null
+                      : () => setDocumentNumber(
+                          ws,
+                          'layer_length',
+                          0,
+                          (_, _) => ws.reread(),
+                        ),
+                ),
               ),
-          ]),
+            ],
+          ),
           SizedBox(height: Shape.s(12)),
           Text(
             '$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second',
