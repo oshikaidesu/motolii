@@ -101,6 +101,7 @@ class _TimelinePaneState extends State<TimelinePane>
     ruler.addListener(_rebuild);
     _slip.addListener(_rebuild);
     drag.addListener(_rebuild);
+    HardwareKeyboard.instance.addHandler(_escapeKey);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     listenForRequests();
   }
@@ -124,6 +125,7 @@ class _TimelinePaneState extends State<TimelinePane>
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_escapeKey);
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     workspace?.moment.removeListener(_listener);
     _ticker.dispose();
@@ -172,6 +174,14 @@ class _TimelinePaneState extends State<TimelinePane>
     final ws = workspace!;
     ws.playing = false;
     ws.frame = ws.frame + d;
+  }
+
+  bool _escapeKey(KeyEvent e) {
+    if (e is KeyDownEvent && e.logicalKey == LogicalKeyboardKey.escape) {
+      ruler.cancel();
+      return true;
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------- view

@@ -47,7 +47,7 @@
 | **Fonts** | フォント一覧。テキストレイヤーのフォントを選ぶ |
 | **Colors** | カラーパレット。色を保存・整理できる。選んだ色は Inspector の Fill / Stroke に使われる |
 | **Create** | レシピ（テンプレート）と式（エクスプレッション）。レシピはレイヤーと値の一式を作る。式はアニメーションの動きを定義する |
-| **Presets** | ルック（見た目のプリセット）の棚。（現在は骨格のみで未実装） |
+| **Looks** | ルック（見た目のプリセット）の棚。（現在は骨格のみで未実装） |
 
 ### メインエリア
 
@@ -65,7 +65,7 @@
 | **Inspector** | 選んだレイヤーの全値を調整する。値はカードに分かれて並ぶ（下記） |
 | **Agent** | AI エージェントにレイヤーのエフェクトコードを書かせるチャットパネル。エージェント一覧から選んでメッセージを送ると、選択レイヤーのコードを読み書きしてくれる |
 | **Ease** | キーフレーム間のイージングカーブを編集する。棚からプリセットを選ぶか、カーブを直接いじる |
-| **Camera（奥行き図）** | 上から見た奥行きの図。レイヤーの Z 位置とカメラの関係を俯瞰する（Camera View や Inspector の Camera カードとは別物） |
+| **Depth** | 上から見た奥行きの図。レイヤーの Z 位置とカメラの関係を俯瞰する（Camera View や Inspector の Camera カードとは別物） |
 | **Tool Panel** | 選択中のツールに応じた追加コントロール |
 | **Blend** | レイヤーの重ね方（ブレンドモード）を設定する |
 | **Align** | 選択中のレイヤーの整列・配置 |
@@ -188,7 +188,7 @@ Inspector でエフェクトカードを：
 | 複製 | ⌘D |
 | 削除 | Delete |
 | リネーム | ⌘R |
-| 表示/非表示（Deactivate） | 0（目のアイコンと同じ。メニューでは "Deactivate"） |
+| 表示/非表示（Hide） | 0（目のアイコンと同じ。メニューでは "Hide"） |
 | ソロ | S（このレイヤーだけ表示） |
 | 前面に移動 | ⌘] |
 | 背面に移動 | ⌘[ |
@@ -321,7 +321,7 @@ Inspector でエフェクトカードを：
 
 | 場所 | メニュー項目 |
 |---|---|
-| **レイヤー**（ヘッダー / バー / Stage 上） | Rename…, Duplicate, Split, Deactivate, Delete |
+| **レイヤー**（ヘッダー / バー / Stage 上） | Rename…, Duplicate, Split, Hide, Delete |
 | **タイムライン空き地** | Paste, Select All, Deselect All |
 | **マーカー** | Rename…, Play from Here, Delete, 色選択 |
 | **Inspector の数値** | Reset, Copy, Paste, Go Past Range Ends, Key this frame / Remove key |
