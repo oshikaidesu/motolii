@@ -1121,6 +1121,8 @@ class _SettingsPopover extends StatefulWidget {
 }
 
 class _SettingsPopoverState extends State<_SettingsPopover> {
+  _SettingsPage _page = _SettingsPage.appearance;
+
   List<SettingsTile> _pick(
     String key,
     String fallback,
@@ -1180,92 +1182,98 @@ class _SettingsPopoverState extends State<_SettingsPopover> {
             data: CupertinoThemeData(
               brightness: dark ? Brightness.dark : Brightness.light,
             ),
-            child: SettingsSplitView(
-              platform: DevicePlatform.macOS,
-              layout: SettingsSplitLayout.split,
-              listPaneWidth: Shape.z(160),
-              brightness: dark ? Brightness.dark : Brightness.light,
-              applicationType: ApplicationType.material,
-              darkTheme: theme,
-              lightTheme: theme,
-              sections: [
-                SettingsSection(
-                  title: Text('GENERAL'),
-                  tiles: [
-                    for (final p in [
-                      _SettingsPage.appearance,
-                      _SettingsPage.skin,
-                      _SettingsPage.display,
-                    ])
-                      SettingsTile.navigation(
-                        title: Text(p.label),
-                        destination: SettingsDestination(
-                          id: p.name,
-                          builder: (_) =>
-                              SettingsList(sections: _sections(p, dark)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: Shape.z(160),
+                  decoration: BoxDecoration(
+                    color: dark ? Grey.g10 : Grey.g95,
+                    border: Border(
+                      right: BorderSide(color: dark ? Grey.g26 : Grey.g91),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          Shape.s(14),
+                          Shape.s(16),
+                          Shape.s(14),
+                          Shape.s(8),
+                        ),
+                        child: Text('SETTINGS', style: homeCaps(Grey.g44, 9)),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+                          children: [
+                            for (final p in _SettingsPage.values)
+                              _navItem(p, dark),
+                          ],
                         ),
                       ),
-                  ],
+                      Padding(
+                        padding: EdgeInsets.all(Shape.s(12)),
+                        child: Text(
+                          'Motolii v0.1.0',
+                          style: TextStyles.micro(Grey.g44),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SettingsSection(
-                  title: Text('WORKFLOW'),
-                  tiles: [
-                    for (final p in [
-                      _SettingsPage.autoSave,
-                      _SettingsPage.playback,
-                      _SettingsPage.audio,
-                      _SettingsPage.timeline,
-                    ])
-                      SettingsTile.navigation(
-                        title: Text(p.label),
-                        destination: SettingsDestination(
-                          id: p.name,
-                          builder: (_) =>
-                              SettingsList(sections: _sections(p, dark)),
-                        ),
-                      ),
-                  ],
-                ),
-                SettingsSection(
-                  title: Text('PROJECT'),
-                  tiles: [
-                    for (final p in [
-                      _SettingsPage.rendering,
-                      _SettingsPage.performance,
-                      _SettingsPage.canvas,
-                      _SettingsPage.labels,
-                    ])
-                      SettingsTile.navigation(
-                        title: Text(p.label),
-                        destination: SettingsDestination(
-                          id: p.name,
-                          builder: (_) =>
-                              SettingsList(sections: _sections(p, dark)),
-                        ),
-                      ),
-                  ],
-                ),
-                SettingsSection(
-                  title: Text('ADVANCED'),
-                  tiles: [
-                    for (final p in [
-                      _SettingsPage.keyboard,
-                      _SettingsPage.scripting,
-                      _SettingsPage.projectDefaults,
-                      _SettingsPage.storage,
-                    ])
-                      SettingsTile.navigation(
-                        title: Text(p.label),
-                        destination: SettingsDestination(
-                          id: p.name,
-                          builder: (_) =>
-                              SettingsList(sections: _sections(p, dark)),
-                        ),
-                      ),
-                  ],
+                Expanded(
+                  child: SettingsList(
+                    platform: DevicePlatform.macOS,
+                    brightness: dark ? Brightness.dark : Brightness.light,
+                    applicationType: ApplicationType.material,
+                    contentPadding: EdgeInsets.all(Shape.s(10)),
+                    darkTheme: theme,
+                    lightTheme: theme,
+                    sections: _sections(_page, dark),
+                  ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(_SettingsPage p, bool dark) {
+    final on = _page == p;
+    return Pressable(
+      key: ValueKey('settings-nav-${p.name}'),
+      onTap: () => setState(() => _page = p),
+      builder: (context, hot) => AnimatedContainer(
+        duration: Motion.dur,
+        curve: Motion.ease,
+        margin: EdgeInsets.only(bottom: Shape.s(2)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(10),
+          vertical: Shape.s(8),
+        ),
+        decoration: BoxDecoration(
+          color: on
+              ? WindowTokens.accent
+              : hot
+              ? (dark ? Grey.g20 : Grey.g91)
+              : Grey.g00.withValues(alpha: 0),
+          borderRadius: Shape.round(8),
+        ),
+        child: Text(
+          p.label,
+          style: TextStyles.name(
+            on
+                ? WindowTokens.onAccent
+                : hot
+                ? (dark ? Grey.g91 : Grey.g13)
+                : (dark ? Grey.g76 : Grey.g26),
+            12,
+            on ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ),
