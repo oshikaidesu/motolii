@@ -347,7 +347,6 @@ add_library(motolii_document STATIC
   document/evaluate/bodies.cpp
   document/evaluate/camera.cpp
   document/evaluate/evaluate.cpp
-  document/evaluate/evaluate_camera.cpp
   document/evaluate/evaluate_clipping.cpp
   document/evaluate/evaluate_copies.cpp
   document/evaluate/evaluate_layers.cpp
@@ -358,11 +357,8 @@ add_library(motolii_document STATIC
   document/evaluate/fx_list.cpp
   document/evaluate/material.cpp
   document/evaluate/moment_fx.cpp
-  document/evaluate/moment_fx_parts.cpp
   document/evaluate/place.cpp
-  document/evaluate/place_joins.cpp
   document/evaluate/relations.cpp
-  document/evaluate/layer_reads.cpp
   document/evaluate/shown.cpp
   document/evaluate/sketch.cpp
   document/evaluate/value_at.cpp
