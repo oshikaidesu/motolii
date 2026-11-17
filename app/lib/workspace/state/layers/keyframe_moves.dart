@@ -37,8 +37,15 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
       moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
+  return _apply(m, moves);
+}
+
+Iterable<int> _apply(
+  Motolii m,
+  List<(int, String, double, double, double, String)> moves,
+) {
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', layer: t, name: n, number: at); // All are removed first so that a keyframe slid onto another's old time is not lost.
+    m.later('unkey', layer: t, name: n, number: at);
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', layer: t, name: n, word: '$to', number: v);
@@ -47,6 +54,59 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
     }
   }
   return {for (final (t, _, _, _, _, _) in moves) t};
+}
+
+/// A cached snapshot of which properties and values a set of keyframes carry.
+/// Built once at drag start ([prepare]), then [step] writes the moves without touching the engine for reads.
+class KeyframeSlide {
+  final _entries =
+      <
+        (int, String, int, double, String)
+      >[]; // (layer, prop, frame, value, easing)
+  final _layers = <int>{};
+  int _slid = 0;
+
+  /// Collects the properties and values of [keys] from the engine once.
+  void prepare(Motolii m, Iterable<SelectedKeyframe> keys) {
+    _entries.clear();
+    _layers.clear();
+    _slid = 0;
+    for (final k in keys) {
+      final t = int.tryParse(k.layer);
+      if (t == null) continue;
+      _layers.add(t);
+      final at = k.frame / WorkspaceController.fps;
+      for (final n in m.moving(t)) {
+        if (!m
+            .keyTimes(t, n)
+            .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
+          continue;
+        }
+        _entries.add((
+          t,
+          n,
+          k.frame,
+          m.value(t, n, at) ?? 0,
+          m.easingOf(t, n, at),
+        ));
+      }
+    }
+  }
+
+  /// Writes the unkey/key pairs for a step from the last written position to [by] frames from the original.
+  Iterable<int> step(Motolii m, int by) {
+    if (by == _slid || _entries.isEmpty) return const [];
+    final fps = WorkspaceController.fps, dur = WorkspaceController.duration;
+    final moves = <(int, String, double, double, double, String)>[];
+    for (final (t, n, frame, v, way) in _entries) {
+      final from = (frame + _slid) / fps, to = (frame + by).clamp(0, dur) / fps;
+      moves.add((t, n, from, to, v, way));
+    }
+    _slid = by;
+    return _apply(m, moves);
+  }
+
+  bool get isEmpty => _entries.isEmpty;
 }
 
 /// Queues the removal of the keyframes [keys], and of the other properties' keyframes at the same times, in the open undo
