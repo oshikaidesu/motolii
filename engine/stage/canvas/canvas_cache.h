@@ -246,8 +246,17 @@ struct Canvas2D {
   // The height the path was drawn at and its shorter side, in the layer's own
   // points.
   float plainHigh = 0.f, plainSide = 0.f;
-  // Height of the image, including room for effects, in the same points.
-  float canvasHigh = 0.f;
+  // Height and width of the image, including room for effects, in texture
+  // pixels. Set by place_canvas. Used to normalise the bent outline's bounds.
+  float canvasHigh = 0.f, canvasWide = 0.f;
+  // The bent outline's own bounds, as left, top, right, bottom in the sheet's
+  // texture, 0..1 over its width and height. The box the user grabs is measured
+  // from this, not from the padded sheet quad, so it stays tight to the real
+  // outline and follows a path operator (bloat, offset, zigzag) live. It may
+  // reach past 0..1 when the bend overflows the current texture; see
+  // canvas_measure_bent. {0,0,1,1} and bentSeen false means the whole sheet.
+  filament::math::float4 bentBox{0.f, 0.f, 1.f, 1.f};
+  bool bentSeen = false;
   // Lines are cut into pieces no longer than this many points.
   float fine = 0.f;
   // True for a flat shape that Filament draws as its own triangles (flat_mesh),

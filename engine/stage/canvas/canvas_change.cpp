@@ -2,6 +2,9 @@
 // of its sheet show, lighting its letters and changing its words in place. Each
 // drops the frames cached for the canvas (cache_drop) because they no longer
 // match.
+#include <algorithm>
+#include <cmath>
+
 #include "gpu/gpu_interop.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_renderables.h"
@@ -12,6 +15,32 @@ namespace motolii {
 using filament::Texture;
 using filament::TextureSampler;
 using filament::math::float3;
+using filament::math::float4;
+
+void canvas_measure_bent(Stage& s, Canvas2D* d) {
+  if (!d->shape || d->canvasWide <= 0.f || d->canvasHigh <= 0.f) return;
+  float x = 0.f, y = 0.f, w = 0.f, h = 0.f;
+  // An empty or reset shape (the 64x guard below) has no bounds to measure.
+  if (d->shape->bounds(&x, &y, &w, &h) != tvg::Result::Success || w <= 0.f ||
+      h <= 0.f)
+    return;
+  // The bend's bounds, 0..1 over the texture's width and height. The box reaches
+  // past 0..1 when the bend overflows the texture, which is how a clip is seen.
+  const float4 box{x / d->canvasWide, y / d->canvasHigh, (x + w) / d->canvasWide,
+                   (y + h) / d->canvasHigh};
+  const float4 was = d->bentBox;
+  const bool first = !d->bentSeen;
+  d->bentBox = box, d->bentSeen = true;
+  const float moved = std::max({std::fabs(box.x - was.x), std::fabs(box.y - was.y),
+                                std::fabs(box.z - was.z), std::fabs(box.w - was.w)});
+  // Tell the render loop to snapshot the box again once it has actually moved.
+  if (first || moved > 1e-4f) ++s.bentChanges;
+  // The outline reaches past the texture, so the image clips it: ask for one
+  // rebuild that grows the sheet. A small margin keeps a steady drag from
+  // rebuilding every frame.
+  if (box.x < -0.01f || box.y < -0.01f || box.z > 1.01f || box.w > 1.01f)
+    s.bentOverflow = true;
+}
 
 void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
   const float3 is{cut, begin, offset};
@@ -34,7 +63,7 @@ void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
   if (!d->shape || d->plain.empty() || is == d->bent) return;
   d->bent = is;
   cache_drop(s, d);
-  interop::on_driver(s.engine, [d, is] {
+  interop::on_driver(s.engine, [&s, d, is] {
     const float high = d->plainHigh, side = d->plainSide;
     tvg_bend(
         d->shape, d->plain.data(), (uint32_t)d->plain.size(), d->plainAt.data(),
@@ -42,6 +71,9 @@ void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
         100.f * std::clamp(is[1], -1.f, 1.f),
         std::clamp(is[2], -4.f, 4.f) * high, (int)std::clamp(is[3], 0.f, 100.f),
         is[4] > 0.5f, std::clamp(is[5], -4.f, 4.f) * high, d->fine);
+    // Measure the bent outline for the grabbed box before any guard resets it,
+    // so the box follows the bend even past the texture's edge.
+    canvas_measure_bent(s, d);
     // A shape bent to more than 64 times the size of its image is not drawn.
     // None of it would be visible, and ThorVG can crash while measuring,
     // dashing and staging a path that large.

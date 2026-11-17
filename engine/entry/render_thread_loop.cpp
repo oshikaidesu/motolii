@@ -97,6 +97,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   opened->set_value(ok);
   if (!ok) return;
   auto last = std::chrono::steady_clock::now();
+  // The value of s.bentChanges at the last moment snapshot. When a bend moves a
+  // layer's outline after the snapshot was taken, the loop draws once more so
+  // the window's box catches up, instead of freezing until the drag ends.
+  uint64_t bent_seen = 0;
   // The first frames after opening, while materials are made, are not a
   // document in motion and are not judged.
   const auto opened_at = last;
@@ -225,6 +229,15 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       if (mosh_done.exchange(false)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         doc_match(*m->d);
+        m->render_thread.changed = true;
+      }
+      // A path operator was dragged past its sheet, so the image clips the
+      // outline. Grow the sheet once by rebuilding the layers; the headroom in
+      // place_canvas keeps a steady drag from doing this every frame.
+      if (m->s->bentOverflow) {
+        m->s->bentOverflow = false;
+        std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
+        doc_forget(*m->d), doc_match(*m->d);
         m->render_thread.changed = true;
       }
       m->render_thread.status = "telling the window";
@@ -376,6 +389,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         }
         // The window's snapshot of this time.
         snapshot_time(m);
+        bent_seen = m->s->bentChanges;
         m->render_thread.evaluating = false;
         behind = std::exchange(m->d->solver.behind, false);
         // Where each sound should be, read from the document.
@@ -459,7 +473,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
         broke_one(m, why);
       }
-      m->render_thread.changed = again;
+      // Draw once more when a bend moved the outline after this frame's
+      // snapshot, so the window's box lands on the final shape without waiting
+      // for the drag to end.
+      m->render_thread.changed = again || m->s->bentChanges != bent_seen;
     } catch (const std::exception& e) {
       std::fprintf(stderr, "motolii: the hand's round threw while %s: %s\n",
                    m->render_thread.status.load(), e.what());

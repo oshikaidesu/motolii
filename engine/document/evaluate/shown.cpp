@@ -45,6 +45,17 @@ bool doc_half_now(Doc& d, int layer, float2* half, float* deep) {
   if (!m || m->pos.empty()) return false;
   float3 most{0.f};
   for (const float3& p : m->pos) most = max(most, abs(p));
+  // The sheet quad is padded to hold a bent or effect-grown outline, so on its
+  // own it makes the grabbed box too large. When the outline's own bounds were
+  // measured (canvas_measure_bent), tighten the box to them, and let it reach
+  // past the sheet when a path operator bends past the texture's edge. The
+  // bounds are left, top, right, bottom as 0..1 over the texture; the quad maps
+  // 0..1 to -half..+half each way, with the texture's top at +y.
+  if (t.drawn && t.drawn->bentSeen) {
+    const auto b = t.drawn->bentBox;
+    most.x *= std::max(std::fabs(2.f * b.x - 1.f), std::fabs(2.f * b.z - 1.f));
+    most.y *= std::max(std::fabs(1.f - 2.f * b.y), std::fabs(1.f - 2.f * b.w));
+  }
   if (deep) *deep = most.z;
   return *half = most.xy, true;
 }

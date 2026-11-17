@@ -282,6 +282,16 @@ struct Stage {
   // Where the image finally goes. Null means the screen. For the app's window
   // it is the live image, see live.h.
   filament::RenderTarget* out = nullptr;
+  // Counts each time a layer's bent outline moved (canvas_measure_bent). The
+  // render loop re-snapshots the window's box when it advances, so the grabbed
+  // box follows a path operator drag instead of freezing until the drag ends.
+  // Written only on the driver thread and read only on the render thread, so a
+  // plain counter is enough; a stale read just delays the box by a frame.
+  uint64_t bentChanges = 0;
+  // Set when a bend reached past its texture, so a layer's image clips the
+  // outline. The render loop then rebuilds the layers once, so place_canvas
+  // grows the sheet to hold the bend.
+  bool bentOverflow = false;
 };
 
 // Creates the engine, scene, views and camera of a stage w by h pixels.

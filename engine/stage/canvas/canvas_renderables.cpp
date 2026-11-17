@@ -131,7 +131,13 @@ Canvas2D* place_canvas(
       if (okP && okB) {
         const float over = std::max({0.f, px - bx, (bx + bw) - (px + pw),
                                      py - by, (by + bh) - (py + ph)});
-        if (const float room = std::ceil(over); room > 0.f) {
+        // Add headroom so a steady path-operator drag does not clip and rebuild
+        // the sheet every frame. The grabbed box stays tight regardless, because
+        // it is measured from the outline (canvas_measure_bent), not this sheet.
+        if (const float room =
+                over > 0.f ? std::ceil(1.25f * over + 0.03f * std::max(pw, ph))
+                           : 0.f;
+            room > 0.f) {
           p->translate(room, room);
           // Enlarge the sheet by the same ratio as the texture, so the content
           // keeps its size.
@@ -141,7 +147,7 @@ Canvas2D* place_canvas(
       }
       tvg::Paint::rel(probe);
     }
-    d->canvasHigh = (float)h;
+    d->canvasHigh = (float)h, d->canvasWide = (float)w;
     // Limit the texture to 4096 points on its longer side, which leaves room to
     // spare on the device. The drawing is scaled down and the sheet keeps its
     // size.
@@ -195,6 +201,9 @@ Canvas2D* place_canvas(
     d->canvas->update();
     d->canvas->draw(true);
     d->canvas->sync();
+    // The outline's own bounds, for the grabbed box. The shape is still plain
+    // here (round apart); bend_at measures again once a path operator is on.
+    canvas_measure_bent(s, d);
   });
   // Wait once at setup, because the code above ran on the driver thread.
   s.engine->flushAndWait();
