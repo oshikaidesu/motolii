@@ -37,8 +37,15 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
       moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
+  return _applyMoves(m, moves);
+}
+
+Iterable<int> _applyMoves(
+  Motolii m,
+  List<(int, String, double, double, double, String)> moves,
+) {
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', layer: t, name: n, number: at); // All are removed first so that a keyframe slid onto another's old time is not lost.
+    m.later('unkey', layer: t, name: n, number: at);
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', layer: t, name: n, word: '$to', number: v);
@@ -47,6 +54,59 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
     }
   }
   return {for (final (t, _, _, _, _, _) in moves) t};
+}
+
+/// Caches the FFI reads on the first step and reuses them on later steps.
+/// [slid] is read at execution time (a field getter), not captured at call time.
+class KeyframeSlideCache {
+  List<(int, String, int, double, String)>? _entries;
+  int _slid = 0;
+
+  void reset() {
+    _entries = null;
+    _slid = 0;
+  }
+
+  /// A LiveWrites that slides [keys] by [by] frames, caching reads on the first call.
+  Iterable<int> step(Motolii m, List<SelectedKeyframe> keys, int by) {
+    _entries ??= _collect(m, keys);
+    if (by == _slid || _entries!.isEmpty) return const [];
+    final fps = WorkspaceController.fps, dur = WorkspaceController.duration;
+    final moves = <(int, String, double, double, double, String)>[];
+    for (final (t, n, frame, v, way) in _entries!) {
+      moves.add((
+        t,
+        n,
+        (frame + _slid) / fps,
+        (frame + by).clamp(0, dur) / fps,
+        v,
+        way,
+      ));
+    }
+    _slid = by;
+    return _applyMoves(m, moves);
+  }
+
+  static List<(int, String, int, double, String)> _collect(
+    Motolii m,
+    List<SelectedKeyframe> keys,
+  ) {
+    final out = <(int, String, int, double, String)>[];
+    for (final k in keys) {
+      final t = int.tryParse(k.layer);
+      if (t == null) continue;
+      final at = k.frame / WorkspaceController.fps;
+      for (final n in m.moving(t)) {
+        if (!m
+            .keyTimes(t, n)
+            .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
+          continue;
+        }
+        out.add((t, n, k.frame, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
+      }
+    }
+    return out;
+  }
 }
 
 /// Queues the removal of the keyframes [keys], and of the other properties' keyframes at the same times, in the open undo

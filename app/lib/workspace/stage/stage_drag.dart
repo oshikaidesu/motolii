@@ -194,8 +194,6 @@ class StageDrag extends ChangeNotifier {
           'side' => 'edge',
           'turn' => 'turn',
           'anchor' => 'pivot',
-          'round' => 'round',
-          'points' => 'points',
           'crop' => key,
           _ => null,
         };
@@ -341,32 +339,6 @@ class StageDrag extends ChangeNotifier {
           ws,
           cropSides[side],
           (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]),
-        );
-      }
-      held = (from: h.from, moved: true, by: way);
-      notifyListeners();
-      return;
-    }
-    if (h.by case final way? when way == 'round' || way == 'points') {
-      // Shape handles: corner radius or number of points follows the pointer.
-      final c = [
-            for (var i = 0; i < 4; i++)
-              _stage.handles['corner $i'] ?? Offset.zero,
-          ],
-          g = gripOf(c),
-          t = int.tryParse(_stage.selected ?? '');
-      if (way == 'round') stageUpdateDrag(ws, 'round', g.roundOf(local));
-      if (way == 'points' && t != null) {
-        stageUpdateDrag(
-          ws,
-          'points',
-          ((stageValue(ws, t, 'points', 0) ?? 5) +
-                  (((local - h.from).dx * g.u.dx +
-                              (local - h.from).dy * g.u.dy) /
-                          24)
-                      .round())
-              .clamp(3, 64)
-              .toDouble(),
         );
       }
       held = (from: h.from, moved: true, by: way);

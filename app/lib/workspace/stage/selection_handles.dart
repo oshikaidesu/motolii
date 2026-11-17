@@ -50,17 +50,6 @@ Map<String, Offset> selectionHandles(
     if (knob) 'turn': top + n * StageTokens.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),
-    if (const [
-      'rect',
-      'polygon',
-      'star',
-      'squircle',
-      'chamfer',
-      'cog',
-    ].contains(form))
-      'round': gripOf(c).roundAt(round),
-    if (const ['rect', 'polygon', 'star', 'cog'].contains(form))
-      'points': (c[1] + c[2]) / 2 + gripOf(c).u * 18,
     if (crop.length == 4) ...{
       'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
       'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],

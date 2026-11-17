@@ -384,25 +384,6 @@ class ViewPainter extends CustomPainter {
   void _own(Canvas c, Map<String, Offset> h) {
     final lit = WindowTokens.accent.withValues(alpha: 1);
     bool seen(String k) => grip == null || grip == k;
-    if (h['round'] case final r? when seen('round')) {
-      // Corner roundness: a ring inside the first corner.
-      final big = grip == 'round' ? 1.6 : 1.0;
-      c.drawCircle(r, 4.5 * big, Paint()..color = Grey.g00);
-      c.drawCircle(r, 3.5 * big, linePaint(lit, 1.5));
-    }
-    if (h['points'] case final p? when seen('points')) {
-      // Point count: a diamond outside one side.
-      final big = grip == 'points' ? 1.6 : 1.0,
-          d = Path()
-            ..addPolygon([
-              p + Offset(0, -5 * big),
-              p + Offset(5 * big, 0),
-              p + Offset(0, 5 * big),
-              p + Offset(-5 * big, 0),
-            ], true);
-      c.drawPath(d, linePaint(Grey.g00, 3));
-      c.drawPath(d, Paint()..color = lit);
-    }
     if (h['crop c0'] != null) {
       // Crop: the cut-away margin dimmed around the kept rectangle, as Google Slides shades a crop.
       final inner = Path()
