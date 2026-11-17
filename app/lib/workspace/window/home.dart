@@ -6,10 +6,16 @@
 import 'dart:math' as math;
 import 'dart:ui' show ClipOp;
 
+import 'package:cupertino_ui/cupertino_ui.dart'
+    show CupertinoTheme, CupertinoThemeData;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' as mui;
+import 'package:settings_ui/settings_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/workspace/state/window_zoom.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show existsFile, imageFile;
 import 'package:motolii/storage/host_platform.dart' show homeFolder;
@@ -61,6 +67,7 @@ class _HomeWindowState extends State<HomeWindow> {
   String _find = '';
   final _picked = <String>{};
   String? _lead;
+  bool _settings = false;
   late final String _pictures = makeThumbnailFolder();
   final _findText = TextEditingController();
 
@@ -232,19 +239,21 @@ class _HomeWindowState extends State<HomeWindow> {
                   find: _findText,
                   onChoose: _choose,
                   onClose: widget.onClose,
+                  settings: _settings,
+                  onSettings: () => setState(() => _settings = !_settings),
                 ),
               ),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, box) {
-                    final pad = Shape.s(24), gap = Shape.s(12);
+                    final pad = Shape.s(16), gap = Shape.s(10);
                     final sides = EdgeInsets.only(right: pad);
                     // Whole numbers, so that the opaque parts meet without a seam the collage could show through.
-                    final heroTall = (box.maxHeight * .38)
-                        .clamp(300.0, 420.0)
+                    final heroTall = (box.maxHeight * .26)
+                        .clamp(180.0, 260.0)
                         .roundToDouble();
-                    final rowTall = ((box.maxWidth - pad) * .15)
-                        .clamp(110.0, 190.0)
+                    final rowTall = ((box.maxWidth - pad) * .13)
+                        .clamp(100.0, 160.0)
                         .roundToDouble();
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -288,7 +297,7 @@ class _HomeWindowState extends State<HomeWindow> {
                                       ),
                                       SizedBox(width: gap),
                                       SizedBox(
-                                        width: Shape.z(200),
+                                        width: Shape.z(160),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
@@ -322,7 +331,7 @@ class _HomeWindowState extends State<HomeWindow> {
                                     ],
                                   ),
                                 ),
-                                SizedBox(height: Shape.s(28)),
+                                SizedBox(height: Shape.s(10)),
                                 _GridHeader(
                                   count: shown.length,
                                   byName: byName,
@@ -339,8 +348,7 @@ class _HomeWindowState extends State<HomeWindow> {
                         ),
                         Expanded(
                           child: ListView(
-                            // Scrolled to its end, the list leaves the collage in view below the last row.
-                            padding: EdgeInsets.only(bottom: Shape.s(140)),
+                            padding: EdgeInsets.only(bottom: Shape.s(80)),
                             children: [
                               for (final block in _bento(
                                 [
@@ -350,10 +358,7 @@ class _HomeWindowState extends State<HomeWindow> {
                                 rowTall,
                                 gap,
                               ))
-                                ColoredBox(
-                                  color: ground,
-                                  child: Padding(padding: sides, child: block),
-                                ),
+                                Padding(padding: sides, child: block),
                             ],
                           ),
                         ),
@@ -364,6 +369,22 @@ class _HomeWindowState extends State<HomeWindow> {
               ),
             ],
           ),
+          if (_settings) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _settings = false),
+                child: ColoredBox(color: Grey.g00.withValues(alpha: .3)),
+              ),
+            ),
+            Center(
+              child: _SettingsPopover(
+                folder: widget.folder,
+                onFolder: widget.onFolder != null ? _pickFolder : null,
+                onSkin: (name) => setState(() => ColorTheme.wear(name)),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -469,6 +490,8 @@ class _Sidebar extends StatelessWidget {
     required this.find,
     required this.onChoose,
     required this.onClose,
+    required this.settings,
+    required this.onSettings,
   });
   final List<HomeProject> docs;
   final String folder;
@@ -476,6 +499,8 @@ class _Sidebar extends StatelessWidget {
   final TextEditingController find;
   final void Function(String path) onChoose;
   final VoidCallback onClose;
+  final bool settings;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -483,10 +508,10 @@ class _Sidebar extends StatelessWidget {
     final bytes = docs.fold(0, (sum, d) => sum + d.bytes);
     return Padding(
       padding: EdgeInsets.fromLTRB(
+        Shape.s(14),
         Shape.s(16),
-        Shape.s(24),
+        Shape.s(10),
         Shape.s(12),
-        Shape.s(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -521,6 +546,15 @@ class _Sidebar extends StatelessWidget {
                 ).copyWith(letterSpacing: -.5),
               ),
               const Spacer(),
+              IconPress(
+                (c) => Glyph(AppGlyphs.tools, size: Shape.z(13), color: c),
+                key: const ValueKey('home-settings'),
+                tip: 'Settings',
+                onTap: onSettings,
+                size: Shape.z(24),
+                ink: settings ? WindowTokens.accent : Grey.g56,
+              ),
+              SizedBox(width: Shape.s(4)),
               IconPress(
                 (c) => Glyph(AppGlyphs.close, size: Shape.z(12), color: c),
                 key: const ValueKey('home-close'),
@@ -612,7 +646,7 @@ class _SidebarItem extends StatelessWidget {
       padding: EdgeInsets.all(Shape.s(8)),
       decoration: BoxDecoration(
         color: selected
-            ? Grey.g95
+            ? Grey.g20
             : hot
             ? Grey.g13
             : Grey.g00,
@@ -643,7 +677,7 @@ class _SidebarItem extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyles.name(
                     selected
-                        ? Grey.g00
+                        ? Grey.g100
                         : hot
                         ? Grey.g95
                         : Grey.g76,
@@ -654,7 +688,7 @@ class _SidebarItem extends StatelessWidget {
                 SizedBox(height: Shape.s(4)),
                 Text(
                   homeAge(d.changed),
-                  style: TextStyles.micro(selected ? Grey.g20 : Grey.g56),
+                  style: TextStyles.micro(selected ? Grey.g63 : Grey.g56),
                 ),
               ],
             ),
@@ -718,9 +752,9 @@ class _Hero extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyles.name(
                           Grey.g100,
-                          44,
+                          34,
                           FontWeight.w800,
-                        ).copyWith(letterSpacing: -1.8),
+                        ).copyWith(letterSpacing: -1.2),
                       ),
                     ),
                   ),
@@ -785,10 +819,10 @@ class _Hero extends StatelessWidget {
                     painter: _DotGrid(Grey.g26),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        Shape.s(36),
-                        Shape.s(30),
-                        Shape.s(36),
-                        Shape.s(46),
+                        Shape.s(24),
+                        Shape.s(20),
+                        Shape.s(24),
+                        Shape.s(32),
                       ),
                       child: Center(
                         child: AspectRatio(
@@ -947,9 +981,9 @@ class _GridHeader extends StatelessWidget {
             'Projects',
             style: TextStyles.name(
               Grey.g100,
-              40,
+              28,
               FontWeight.w800,
-            ).copyWith(letterSpacing: -1.6),
+            ).copyWith(letterSpacing: -1),
           ),
           SizedBox(width: Shape.s(8)),
           Padding(
@@ -1032,6 +1066,320 @@ class _Toggle extends StatelessWidget {
   );
 }
 
+enum _SettingsPage {
+  appearance,
+  skin,
+  display,
+  storage;
+
+  String get label => switch (this) {
+    appearance => 'Appearance',
+    skin => 'Skin',
+    display => 'Display',
+    storage => 'Storage',
+  };
+}
+
+class _SettingsPopover extends StatefulWidget {
+  const _SettingsPopover({
+    required this.folder,
+    required this.onFolder,
+    required this.onSkin,
+  });
+  final String folder;
+  final VoidCallback? onFolder;
+  final void Function(String?) onSkin;
+
+  @override
+  State<_SettingsPopover> createState() => _SettingsPopoverState();
+}
+
+class _SettingsPopoverState extends State<_SettingsPopover> {
+  _SettingsPage _page = _SettingsPage.appearance;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = !Grey.light;
+
+    final theme = SettingsThemeData(
+      settingsListBackground: Grey.g00.withValues(alpha: 0),
+      settingsSectionBackground: dark ? Grey.g20 : Grey.g95,
+      titleTextColor: Grey.g56,
+      settingsTileTextColor: dark ? Grey.g91 : Grey.g13,
+      tileDescriptionTextColor: Grey.g56,
+      dividerColor: dark ? Grey.g26 : Grey.g91,
+      leadingIconsColor: Grey.g56,
+      trailingTextColor: Grey.g56,
+      tileHighlightColor: dark ? Grey.g26 : Grey.g91,
+      titleTextStyle: homeCaps(Grey.g56),
+    );
+
+    return Container(
+      width: Shape.z(620),
+      height: Shape.z(480),
+      decoration: BoxDecoration(
+        color: dark ? Grey.g13 : Grey.g100,
+        borderRadius: Shape.round(14),
+        border: Border.all(color: Grey.g26, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Grey.g00.withValues(alpha: .4),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: Shape.round(14),
+        child: mui.Theme(
+          data: dark ? mui.ThemeData.dark() : mui.ThemeData.light(),
+          child: CupertinoTheme(
+            data: CupertinoThemeData(
+              brightness: dark ? Brightness.dark : Brightness.light,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Left nav ──
+                Container(
+                  width: Shape.z(160),
+                  decoration: BoxDecoration(
+                    color: dark ? Grey.g10 : Grey.g95,
+                    border: Border(
+                      right: BorderSide(color: dark ? Grey.g26 : Grey.g91),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          Shape.s(14),
+                          Shape.s(16),
+                          Shape.s(14),
+                          Shape.s(8),
+                        ),
+                        child: Text('SETTINGS', style: homeCaps(Grey.g44, 9)),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+                          children: [
+                            for (final p in _SettingsPage.values)
+                              _navItem(p, dark),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(Shape.s(12)),
+                        child: Text(
+                          'Motolii v0.1.0',
+                          style: TextStyles.micro(Grey.g44),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // ── Right content ──
+                Expanded(
+                  child: SettingsList(
+                    platform: DevicePlatform.macOS,
+                    brightness: dark ? Brightness.dark : Brightness.light,
+                    applicationType: ApplicationType.material,
+                    contentPadding: EdgeInsets.all(Shape.s(10)),
+                    darkTheme: theme,
+                    lightTheme: theme,
+                    sections: _buildSections(dark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(_SettingsPage p, bool dark) {
+    final on = _page == p;
+    return Pressable(
+      key: ValueKey('settings-nav-${p.name}'),
+      onTap: () => setState(() => _page = p),
+      builder: (context, hot) => AnimatedContainer(
+        duration: Motion.dur,
+        curve: Motion.ease,
+        margin: EdgeInsets.only(bottom: Shape.s(2)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(10),
+          vertical: Shape.s(8),
+        ),
+        decoration: BoxDecoration(
+          color: on
+              ? WindowTokens.accent
+              : hot
+              ? (dark ? Grey.g20 : Grey.g91)
+              : Grey.g00.withValues(alpha: 0),
+          borderRadius: Shape.round(8),
+        ),
+        child: Text(
+          p.label,
+          style: TextStyles.name(
+            on
+                ? WindowTokens.onAccent
+                : hot
+                ? (dark ? Grey.g91 : Grey.g13)
+                : (dark ? Grey.g76 : Grey.g26),
+            12,
+            on ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<AbstractSettingsSection> _buildSections(bool dark) => switch (_page) {
+    _SettingsPage.appearance => [
+      SettingsSection(
+        title: Text('APPEARANCE'),
+        tiles: [
+          SettingsTile.switchTile(
+            title: const Text('Dark Mode'),
+            initialValue: !Grey.light,
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (value) {
+              Grey.shade.value = value ? Shade.dark : Shade.light;
+              WidgetsBinding.instance.reassembleApplication();
+            },
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.skin => [
+      SettingsSection(
+        title: Text('SKIN'),
+        tiles: [
+          SettingsTile(
+            title: const Text('Default'),
+            trailing: ColorTheme.skin == null
+                ? Glyph(
+                    AppGlyphs.check,
+                    size: Shape.z(14),
+                    color: WindowTokens.accent,
+                  )
+                : null,
+            onPressed: (_) => widget.onSkin(null),
+          ),
+          for (final s in ColorTheme.skinNames())
+            SettingsTile(
+              title: Text(s),
+              trailing: ColorTheme.skin == s
+                  ? Glyph(
+                      AppGlyphs.check,
+                      size: Shape.z(14),
+                      color: WindowTokens.accent,
+                    )
+                  : null,
+              onPressed: (_) => widget.onSkin(s),
+            ),
+        ],
+      ),
+    ],
+    _SettingsPage.display => [
+      SettingsSection(
+        title: Text('DISPLAY'),
+        tiles: [
+          CustomSettingsTile(
+            child: ValueListenableBuilder<double>(
+              valueListenable: WindowZoom.value,
+              builder: (context, zoom, _) => Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(10),
+                  vertical: Shape.s(10),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'UI Zoom',
+                      style: TextStyles.name(
+                        dark ? Grey.g91 : Grey.g13,
+                        13,
+                        FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${(zoom * 100).round()}%',
+                      style: TextStyles.label(Grey.g56),
+                    ),
+                    SizedBox(width: Shape.s(10)),
+                    Pressable(
+                      key: const ValueKey('settings-zoom-down'),
+                      onTap: () => WindowZoom.set(zoom - .01),
+                      builder: (context, hot) => Text(
+                        '−',
+                        style: TextStyles.name(
+                          hot ? Grey.g100 : Grey.g56,
+                          14,
+                          FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(6)),
+                    Pressable(
+                      key: const ValueKey('settings-zoom-up'),
+                      onTap: () => WindowZoom.set(zoom + .01),
+                      builder: (context, hot) => Text(
+                        '+',
+                        style: TextStyles.name(
+                          hot ? Grey.g100 : Grey.g56,
+                          14,
+                          FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(8)),
+                    Pressable(
+                      key: const ValueKey('settings-zoom-reset'),
+                      onTap: () => WindowZoom.set(WindowZoom.usual),
+                      builder: (context, hot) => Text(
+                        'RESET',
+                        style: homeCaps(hot ? Grey.g100 : WindowTokens.accent),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+    _SettingsPage.storage => [
+      SettingsSection(
+        title: Text('STORAGE'),
+        tiles: [
+          SettingsTile(
+            leading: Glyph(
+              AppGlyphs.folder,
+              size: Shape.z(16),
+              color: Grey.g56,
+            ),
+            title: const Text('Projects Folder'),
+            value: Text(
+              _folderName(widget.folder),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onPressed: widget.onFolder != null
+                ? (_) => widget.onFolder!()
+                : null,
+          ),
+        ],
+      ),
+    ],
+  };
+}
+
 /// The collage behind the whole home screen: the marks of a design tool and of this app, many of them, at every size
 /// and a little askew, each overlapping its neighbours, under a shade that keeps it in the background.
 ///
@@ -1095,8 +1443,7 @@ class _Collage extends CustomPainter {
 
     // A haze of colour quiets it, in place of a black shade: indigo where the marks begin, turning teal toward the foot
     // of the window. Above that it is the ground's own colour, so nothing shows in the upper part of the window.
-    final indigo = Color.lerp(tones[4], ground, .6)!,
-        teal = Color.lerp(tones[2], ground, .55)!;
+    final dim = Color.lerp(tones[2], ground, .82)!;
     final all = Offset.zero & size;
     final from = (keep.height / size.height).clamp(0.0, .8);
     canvas.drawRect(
@@ -1107,10 +1454,10 @@ class _Collage extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: [
             ground,
-            indigo.withValues(alpha: .9),
-            teal.withValues(alpha: .55),
+            dim.withValues(alpha: .88),
+            dim.withValues(alpha: .5),
           ],
-          stops: [from, from + (1 - from) * .5, 1],
+          stops: [from, from + (1 - from) * .45, 1],
         ).createShader(all),
     );
   }
@@ -1403,9 +1750,9 @@ class _Empty extends StatelessWidget {
           searching ? 'No matches' : 'No projects yet',
           style: TextStyles.name(
             Grey.g100,
-            44,
+            34,
             FontWeight.w800,
-          ).copyWith(letterSpacing: -1.8),
+          ).copyWith(letterSpacing: -1.2),
         ),
         SizedBox(height: Shape.s(14)),
         Text(

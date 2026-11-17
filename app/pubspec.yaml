@@ -31,6 +31,9 @@ dependencies:
   flutter_markdown_plus: ^1.0.12
   code_forge: ^11.8.0
   re_highlight: ^0.0.3
+  settings_ui: ^4.0.2
+  material_ui: ^1.11.1
+  cupertino_ui: ^1.1.7
 dev_dependencies:
   flutter_test:
     sdk: flutter

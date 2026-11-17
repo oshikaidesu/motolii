@@ -1,5 +1,6 @@
 // The app's top bar: wordmark, project name, selected layer, size, light or dark mode, and the Render button.
 import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
+import 'package:motolii/workspace/commands/keymap.dart' show CommandIntent;
 import 'package:motolii/workspace/top_bar/render_button.dart';
 
 import 'package:flutter/widgets.dart';
@@ -10,7 +11,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart'
-    show Badge, Chip, ChipLook, IconPress;
+    show Badge, Chip, ChipLook, IconPress, Pressable;
 import 'package:motolii/workspace/top_bar/saved_display.dart';
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/workspace/state/document/document_writes.dart';
@@ -85,35 +86,41 @@ class TopBar extends StatelessWidget {
 }
 
 /// A square lime block with the wordmark in it: the poster's own manner, used once.
+/// Pressing it opens the home screen (file.home).
 class _Wordmark extends StatelessWidget {
   const _Wordmark();
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Badge(
-        WindowTokens.accent,
-        size: Shape.z(22),
-        radius: Radius.zero,
-        child: Text(
-          'M',
-          style: TextStyles.title(WindowTokens.onAccent).copyWith(
-            fontSize: TextStyles.px(14),
-            fontWeight: FontWeight.w900,
-            height: 1,
+  Widget build(BuildContext context) => Pressable(
+    key: const ValueKey('ws-home'),
+    onTap: () =>
+        Actions.maybeInvoke(context, const CommandIntent('file.home', false)),
+    builder: (context, hot) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Badge(
+          hot ? WindowTokens.accentHot : WindowTokens.accent,
+          size: Shape.z(22),
+          radius: Radius.zero,
+          child: Text(
+            'M',
+            style: TextStyles.title(WindowTokens.onAccent).copyWith(
+              fontSize: TextStyles.px(14),
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
           ),
         ),
-      ),
-      SizedBox(width: Shape.s(8)),
-      Text(
-        'Motolii',
-        style: TextStyles.title(Grey.g95).copyWith(
-          fontSize: TextStyles.px(14),
-          fontWeight: FontWeight.w800,
-          letterSpacing: -.2,
+        SizedBox(width: Shape.s(8)),
+        Text(
+          'Motolii',
+          style: TextStyles.title(hot ? Grey.g100 : Grey.g95).copyWith(
+            fontSize: TextStyles.px(14),
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.2,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 

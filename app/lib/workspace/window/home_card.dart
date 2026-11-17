@@ -50,14 +50,14 @@ Widget homeTag(String text, Color tone) => Container(
 );
 
 /// The deep shade of [tone] that the home screen quiets a picture with, in place of black.
-Color homeDeep(Color tone) => Color.lerp(tone, Grey.g00, .62)!;
+Color homeDeep(Color tone) => Color.lerp(tone, Grey.g00, .48)!;
 
 /// A light of [tone] laid over a surface from its top-left corner, so that it reads as raised.
 Decoration homeSheen(Color tone) => BoxDecoration(
   gradient: LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [tone.withValues(alpha: .2), tone.withValues(alpha: 0)],
+    colors: [tone.withValues(alpha: .28), tone.withValues(alpha: 0)],
     stops: const [0, .7],
   ),
 );
@@ -121,7 +121,7 @@ class HomeLetter extends StatelessWidget {
       final tone = tones[index % tones.length], deep = homeDeep(tone);
       final letter = name.isNotEmpty ? name.characters.first : '?';
       return ColoredBox(
-        color: Color.lerp(deep, Grey.g00, .45)!,
+        color: Color.lerp(tone, Grey.g00, .5)!,
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
@@ -152,7 +152,7 @@ class HomeLetter extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      deep.withValues(alpha: .8),
+                      deep.withValues(alpha: .35),
                       deep.withValues(alpha: 0),
                     ],
                   ),
@@ -291,8 +291,8 @@ class HomeCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        deep.withValues(alpha: lit ? 0 : .7),
-                        deep.withValues(alpha: lit ? 0 : .3),
+                        deep.withValues(alpha: lit ? 0 : .18),
+                        deep.withValues(alpha: lit ? 0 : .0),
                       ],
                     ),
                   ),
