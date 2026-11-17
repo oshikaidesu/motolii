@@ -225,6 +225,11 @@ class _HomeWindowState extends State<HomeWindow> {
     );
   }
 
+  static int _totalBytes(List<HomeProject> docs) =>
+      docs.fold(0, (sum, d) => sum + d.bytes);
+  static double _totalSeconds(List<HomeProject> docs) =>
+      docs.fold(0.0, (sum, d) => sum + (d.facts?.seconds ?? 0));
+
   void _duplicate(HomeProject d) {
     duplicateProject(widget.folder, d);
     _menu = null;
@@ -382,10 +387,11 @@ class _HomeWindowState extends State<HomeWindow> {
               ],
             ),
             SizedBox(height: Shape.s(24)),
-            if (_continueCard() case final card?) ...[
-              card,
-              SizedBox(height: Shape.s(28)),
-            ],
+            if (_find.isEmpty)
+              if (_continueCard() case final card?) ...[
+                card,
+                SizedBox(height: Shape.s(28)),
+              ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -400,7 +406,12 @@ class _HomeWindowState extends State<HomeWindow> {
                 Padding(
                   padding: EdgeInsets.only(top: Shape.s(2)),
                   child: Text(
-                    shown.length == 1 ? 'project' : 'projects',
+                    [
+                      shown.length == 1 ? 'project' : 'projects',
+                      if (shown.isNotEmpty) homeBytes(_totalBytes(shown)),
+                      if (_totalSeconds(shown) > 0)
+                        homeLength(_totalSeconds(shown)),
+                    ].join(' · '),
                     style: TextStyles.label(Grey.g44)
                         .copyWith(letterSpacing: 1.5),
                   ),
@@ -461,7 +472,7 @@ class _HomeWindowState extends State<HomeWindow> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'No projects yet',
+                            _find.isNotEmpty ? 'No matches' : 'No projects yet',
                             style: TextStyles.title(Grey.g44).copyWith(
                               fontSize: TextStyles.px(20),
                               fontWeight: FontWeight.w300,
@@ -470,7 +481,9 @@ class _HomeWindowState extends State<HomeWindow> {
                           ),
                           SizedBox(height: Shape.s(10)),
                           Text(
-                            'Create one to get started.',
+                            _find.isNotEmpty
+                                ? 'Try a different search.'
+                                : 'Create one to get started.',
                             style: TextStyles.label(Grey.g38),
                           ),
                         ],
