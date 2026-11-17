@@ -249,12 +249,16 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   void trackRight(Offset p) {
     final ws = workspace, r = rows.rowAt(p.dy);
     if (ws == null) return;
-    // Below the rows, what can be done there. On a property lane there is no bar.
+    // Below the rows, what can be done there.
     if (r == null) {
       trackMenu.currentState?.show(p, emptyContextMenu(context, ws));
       return;
     }
-    if (r.value != null) return;
+    // On a property lane: keyframe menu (Copy, Paste, Delete).
+    if (r.value != null) {
+      trackMenu.currentState?.show(p, keyframeContextMenu(context, ws));
+      return;
+    }
     final l = r.l, f = viewport.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;

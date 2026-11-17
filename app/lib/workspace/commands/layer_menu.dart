@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/context_menu.dart' show ContextMenuItem;
 import 'package:motolii/workspace/commands/keymap.dart'
     show CommandIntent, keyLabel;
+import 'package:motolii/workspace/edits/keyframe_edits.dart'
+    show copiedKeyframes, copyKeyframes, pasteKeyframes, removeKeyframes;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart' show WorkspaceState;
@@ -78,6 +80,36 @@ List<ContextMenuItem> emptyContextMenu(
           : () => say('edit.deselectAll'),
       keys: keys('edit.deselectAll'),
       why: 'Nothing is selected',
+    ),
+  ];
+}
+
+/// The context menu for a right-click on a keyframe or a property lane that has keyframes.
+List<ContextMenuItem> keyframeContextMenu(
+  BuildContext context,
+  WorkspaceController ws,
+) {
+  final (say, keys) = _commands(context);
+  final hasKeys = ws.keys.isNotEmpty;
+  return [
+    ContextMenuItem(
+      'Copy',
+      hasKeys ? () => copyKeyframes(ws, ws.keys) : null,
+      keys: keys('edit.copy'),
+      why: 'No keyframes selected',
+    ),
+    ContextMenuItem(
+      'Paste',
+      copiedKeyframes.isNotEmpty ? () => pasteKeyframes(ws) : null,
+      keys: keys('edit.paste'),
+      why: 'Nothing copied',
+    ),
+    const ContextMenuItem.rule(),
+    ContextMenuItem(
+      'Delete',
+      hasKeys ? () => removeKeyframes(ws, ws.keys) : null,
+      keys: keys('thing.remove'),
+      why: 'No keyframes selected',
     ),
   ];
 }
