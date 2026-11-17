@@ -8,9 +8,23 @@ import 'package:motolii/storage/text_file.dart' show readText;
 
 /// What a shelf's meta.yaml says about one item: who made it, under what licence, and where it came from.
 class ShelfMeta {
-  const ShelfMeta({this.author = '', this.license = '', this.source = ''});
-  final String author, license, source;
-  bool get isEmpty => author.isEmpty && license.isEmpty && source.isEmpty;
+  const ShelfMeta({
+    this.author = '',
+    this.license = '',
+    this.source = '',
+    this.origin = '',
+  });
+  final String author, license, source, origin;
+  bool get isEmpty =>
+      author.isEmpty && license.isEmpty && source.isEmpty && origin.isEmpty;
+
+  /// The resolved origin: explicit yaml value, or derived from [author].
+  /// 'builtin' for motolii's own effects, 'community' for third-party, 'self' for the user's.
+  String get resolvedOrigin {
+    if (origin.isNotEmpty) return origin;
+    if (author.toLowerCase() == 'motolii') return 'builtin';
+    return 'community';
+  }
 }
 
 final _cache = <String, Map<String, ShelfMeta>>{};
@@ -46,6 +60,7 @@ Map<String, ShelfMeta> _read(String folder) {
             author: '${(e.value as YamlMap)['author'] ?? ''}',
             license: '${(e.value as YamlMap)['license'] ?? ''}',
             source: '${(e.value as YamlMap)['source'] ?? ''}',
+            origin: '${(e.value as YamlMap)['origin'] ?? ''}',
           ),
     };
   } catch (_) {

@@ -29,7 +29,6 @@ class _CardMetaRowState extends State<CardMetaRow> {
     }
     final parts = <String>[
       if (meta != null && meta.author.isNotEmpty) 'by ${meta.author}',
-      if (meta != null && meta.license.isNotEmpty) meta.license,
     ];
     return Padding(
       padding: EdgeInsets.fromLTRB(

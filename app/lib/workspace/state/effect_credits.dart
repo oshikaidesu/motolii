@@ -15,8 +15,9 @@ class EffectCredit {
     this.author = '',
     this.license = '',
     this.source = '',
+    this.origin = 'community',
   });
-  final String title, file, author, license, source;
+  final String title, file, author, license, source, origin;
 }
 
 /// Every effect the project uses, each once, with its meta.yaml metadata.
@@ -38,6 +39,7 @@ List<EffectCredit> projectCredits(Motolii doc) {
           author: meta?.author ?? '',
           license: meta?.license ?? '',
           source: meta?.source ?? '',
+          origin: meta?.resolvedOrigin ?? 'community',
         ),
       );
     }
@@ -56,24 +58,58 @@ void writeCreditsFile(WorkspaceController ws, String videoPath) {
   keepText(txt, creditsText(credits));
 }
 
-/// The credits as a readable text, grouped by licence. Effects with no metadata are listed under "Unknown".
+/// The credits as a readable text, grouped by origin then by licence.
 String creditsText(List<EffectCredit> credits) {
   if (credits.isEmpty) return 'No effects used.';
-  final grouped = <String, List<EffectCredit>>{};
+  final byOrigin = <String, List<EffectCredit>>{};
   for (final c in credits) {
-    (grouped[c.license.isEmpty ? 'Unknown' : c.license] ??= []).add(c);
+    (byOrigin[c.origin] ??= []).add(c);
   }
   final buf = StringBuffer('Effects used in this project\n');
   buf.writeln('${'=' * 40}\n');
-  for (final license in grouped.keys.toList()..sort()) {
-    buf.writeln('[$license]');
-    for (final c in grouped[license]!) {
-      buf.write('  ${c.title}');
-      if (c.author.isNotEmpty) buf.write('  by ${c.author}');
-      if (c.source.isNotEmpty) buf.write('  (${c.source})');
-      buf.writeln();
+
+  void writeSection(
+    String heading,
+    List<EffectCredit> items, {
+    bool detail = true,
+  }) {
+    buf.writeln(heading);
+    if (!detail) {
+      for (final c in items) {
+        buf.writeln('  ${c.title}');
+      }
+    } else {
+      final byLicense = <String, List<EffectCredit>>{};
+      for (final c in items) {
+        (byLicense[c.license.isEmpty ? 'Unknown' : c.license] ??= []).add(c);
+      }
+      for (final license in byLicense.keys.toList()..sort()) {
+        buf.writeln('  [$license]');
+        for (final c in byLicense[license]!) {
+          buf.write('    ${c.title}');
+          if (c.author.isNotEmpty) buf.write('  by ${c.author}');
+          if (c.source.isNotEmpty) buf.write('  (${c.source})');
+          buf.writeln();
+        }
+      }
     }
     buf.writeln();
+  }
+
+  final self = byOrigin.remove('self');
+  final builtin = byOrigin.remove('builtin');
+  final community = byOrigin.remove('community');
+  if (self != null && self.isNotEmpty) {
+    writeSection('[Your Effects]', self, detail: false);
+  }
+  if (builtin != null && builtin.isNotEmpty) {
+    writeSection('[motolii]', builtin, detail: false);
+  }
+  if (community != null && community.isNotEmpty) {
+    writeSection('[Community]', community);
+  }
+  for (final e in byOrigin.entries) {
+    writeSection('[${e.key}]', e.value);
   }
   return buf.toString();
 }
