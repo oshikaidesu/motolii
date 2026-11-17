@@ -9,7 +9,7 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/window/home_project.dart';
 
-const homeTile = 220.0;
+const homeTile = 240.0;
 const _ratio = 9 / 16;
 
 /// A seeded gradient for cards with no thumbnail, based on the project name's hash.
@@ -117,7 +117,9 @@ class _HomeCardState extends State<HomeCard> {
                             ]
                           : [],
                       border: widget.open
-                          ? Border.all(color: WindowTokens.accent, width: 1.5)
+                          ? Border.all(
+                              color: WindowTokens.accent.withValues(alpha: .5),
+                            )
                           : null,
                     ),
                     clipBehavior: Clip.antiAlias,

@@ -135,14 +135,8 @@ class _HomeWindowState extends State<HomeWindow> {
       key: const ValueKey('home-continue'),
       onPressed: () => widget.onOpen(last),
       child: Container(
-        height: Shape.z(180),
-        decoration: BoxDecoration(
-          borderRadius: Shape.round(14),
-          border: Border.all(
-            color: WindowTokens.accent.withValues(alpha: .4),
-            width: 1,
-          ),
-        ),
+        height: Shape.z(200),
+        decoration: BoxDecoration(borderRadius: Shape.round(14)),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
