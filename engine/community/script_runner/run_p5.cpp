@@ -12,7 +12,7 @@
 #include "community/script_runner/script_natives.h"
 #include "community/script_runner/script_runner.h"
 #include "community/script_runner/script_runner_own.h"
-#include "community/sites/adapter.h"
+#include "community/sites/site_adapter.h"
 #include "shelf/shelf_folders.h"
 
 namespace motolii {
