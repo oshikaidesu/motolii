@@ -148,7 +148,12 @@ void told_held_values(Rebuild& rebuild) {
         for (const DocValue& one : doc_values)
           moves = moves || (one.moves && name == one.name);
         const auto from = d.held.from.find(name);
-        if (!moves)
+        // During a drag, reflect value changes in `of` even for moves=true
+        // properties so that match_tear_down_changed rebuilds the layer.
+        // During animation playback, only on/off switches (the else branch).
+        const bool dragging =
+            d.held.layer == held->first && !d.held.tried.empty();
+        if (!moves || dragging)
           held->second += " " + name + "~" + std::to_string(is);
         else if (from != d.held.from.end() &&
                  (from->second != 0.0) != (is != 0.0))
