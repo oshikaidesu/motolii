@@ -94,6 +94,18 @@ class TrackDrag extends ChangeNotifier {
     }
   }
 
+  static const _edgeMargin = 40.0;
+  static const _edgeSpeed = 8.0;
+
+  void _edgeScroll(double x) {
+    final w = _viewport.trackWidth;
+    if (x < _edgeMargin) {
+      _viewport.scrollBy(-_edgeSpeed * (1 - x / _edgeMargin));
+    } else if (x > w - _edgeMargin) {
+      _viewport.scrollBy(_edgeSpeed * (1 - (w - x) / _edgeMargin));
+    }
+  }
+
   /// A drag starts at [p]: picks up the bar or the keyframe there, or else starts a selection box.
   void down(Offset p) {
     if (!_grab(p)) {
@@ -138,6 +150,7 @@ class TrackDrag extends ChangeNotifier {
 
   /// The pointer moved to [p] during a drag.
   void move(Offset p) {
+    _edgeScroll(p.dx);
     if (_selectionBox case (final from, _)?) {
       _selectionBox = (from, p);
       notifyListeners();
