@@ -7,9 +7,11 @@
 #include <filament/ToneMapper.h>
 #include <filament/View.h>
 #include <gst/gst.h>
-#include <pthread.h>
 #include <sqlite3.h>
+#ifdef __APPLE__
+#include <pthread.h>
 #include <sys/qos.h>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -61,7 +63,9 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
                        std::promise<bool>* opened) {
   // Run at user-interactive priority. The thread makes the frames the window
   // shows, and macOS puts such threads on its performance cores.
+#ifdef __APPLE__
   pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#endif
   // A document that stores its own size is opened at that size.
   const bool says = doc_size(document.c_str(), &wide, &high);
   m->s = new Stage(open_stage(wide, high));

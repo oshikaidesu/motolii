@@ -299,12 +299,18 @@ void script_first(const std::string& file,
   if (slash == std::string::npos) return;
   const std::string table = file.substr(0, slash) + "/first.tsv",
                     name = file.substr(slash + 1);
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+  std::error_code missing;
+  const auto written = std::filesystem::last_write_time(table, missing);
+  const long long when = missing ? -1 : (long long)written.time_since_epoch().count();
+#else
   struct stat st{};
   const long long when =
       stat(table.c_str(), &st) == 0
           ? (long long)st.st_mtimespec.tv_sec * 1000000000LL +
                 st.st_mtimespec.tv_nsec
           : -1;
+#endif
   std::lock_guard<std::mutex> one(hold);
   auto& [stamp, values] = read[table];
   if (stamp != when) {

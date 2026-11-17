@@ -1,0 +1,42 @@
+diff --git a/filament/backend/include/backend/platforms/WebGPUPlatformWindows.h b/filament/backend/include/backend/platforms/WebGPUPlatformWindows.h
+index cc7f6d9a..10faed07 100644
+--- a/filament/backend/include/backend/platforms/WebGPUPlatformWindows.h
++++ b/filament/backend/include/backend/platforms/WebGPUPlatformWindows.h
+@@ -25,6 +25,10 @@ class WebGPUPlatformWindows : public WebGPUPlatform {
+ public:
+     wgpu::Extent2D getSurfaceExtent(void* nativeWindow) const override;
+     wgpu::Surface createSurface(void* nativeWindow, uint64_t /*flags*/) override;
++    // motolii: D3D12, whose textures are shared with the app and the video decoder by DXGI handles
++    [[nodiscard]] Configuration getConfiguration() const noexcept override {
++        return { .forceBackendType = wgpu::BackendType::D3D12 };
++    }
+ 
+ protected:
+     std::vector<wgpu::RequestAdapterOptions> getAdapterOptions() override;
+diff --git a/filament/backend/src/webgpu/platform/WebGPUPlatform.cpp b/filament/backend/src/webgpu/platform/WebGPUPlatform.cpp
+index 98a3e8ef..10aa169e 100644
+--- a/filament/backend/src/webgpu/platform/WebGPUPlatform.cpp
++++ b/filament/backend/src/webgpu/platform/WebGPUPlatform.cpp
+@@ -69,7 +69,8 @@ constexpr std::array REQUIRED_FEATURES = {
+ 
+ 
+     // Unsupported on WASM
+-#if !defined(__EMSCRIPTEN__)
++    // motolii: nor on D3D12 (Dawn has it on Metal and Vulkan): there, as on WASM, attachments are kept in memory
++#if !defined(__EMSCRIPTEN__) && !defined(_WIN32)
+     wgpu::FeatureName::TransientAttachments,
+ #endif
+ };
+@@ -90,6 +91,12 @@ constexpr std::array OPTIONAL_FEATURES = {
+     wgpu::FeatureName::SharedFenceMTLSharedEvent,
+     wgpu::FeatureName::DawnMultiPlanarFormats,
+ #endif
++#if defined(_WIN32)
++    wgpu::FeatureName::TransientAttachments,
++    // motolii: the stage's frames handed to the app, and a film's pictures from the D3D decoder, by DXGI handles
++    wgpu::FeatureName::SharedTextureMemoryDXGISharedHandle,
++    wgpu::FeatureName::SharedFenceDXGISharedHandle,
++#endif
+ };
+ 
+ enum class LimitToValidate : uint8_t {

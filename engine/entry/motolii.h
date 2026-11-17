@@ -18,6 +18,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* A DLL on Windows shows only what is marked so: every call below, while the engine itself is built. */
+#if defined(_WIN32) && defined(MOTOLII_EXPORTS)
+#pragma clang attribute push(__declspec(dllexport), apply_to = function)
+#endif
 typedef struct Motolii Motolii;
 
 /* Sets the folder that holds the engine's own files, such as its materials.
@@ -457,9 +461,16 @@ const char* motolii_list(Motolii* m);
    The engine keeps its own clock: it draws when something has changed or time
    is going on, and the app only asks for the last finished frame. motolii_front
    returns a CVPixelBufferRef on macOS, held for the caller, who must release
-   it. It and motolii_frames, how many frames have been finished, may be called
-   from any thread. */
+   it; on Windows a MotoliiSharedFrame, the caller's to free(). It and
+   motolii_frames, how many frames have been finished, may be called from any
+   thread. */
 void* motolii_front(Motolii* m);
+/* A frame on Windows: a BGRA D3D12 texture's DXGI shared (NT) handle and its
+   size, as Flutter's FlutterDesktopGpuSurfaceDescriptor takes them. */
+typedef struct MotoliiSharedFrame {
+  void* handle;
+  unsigned int width, height;
+} MotoliiSharedFrame;
 /* The desk is the app's whole preview pane, w x h pixels. While it is on, the
    frame is drawn there instead of on the preview's own buffer, which
    motolii_front keeps at its last frame. The preview lies with its top left at
@@ -489,6 +500,9 @@ const char* motolii_fx_titles(Motolii* m, int layer);
 int motolii_play(Motolii* m, int playing);
 /* Returns the preview's current time. */
 double motolii_now(Motolii* m);
+#if defined(_WIN32) && defined(MOTOLII_EXPORTS)
+#pragma clang attribute pop
+#endif
 #ifdef __cplusplus
 }
 #endif

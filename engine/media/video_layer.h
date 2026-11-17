@@ -20,7 +20,9 @@
 // KIT_EXTRA, see puppet.sh), where Filament requests the texture sharing
 // (filament_dawn_compute.patch). Only the macOS interop is implemented so far.
 
+#ifdef __APPLE__
 #include <CoreVideo/CoreVideo.h>
+#endif
 #include <filament/MaterialInstance.h>
 #include <filament/Texture.h>
 #include <gst/app/gstappsink.h>
@@ -123,6 +125,7 @@ struct Video {
   std::map<uint32_t, Planes> seen;
 };
 
+#ifdef __APPLE__
 // The macOS GStreamer plugin attaches the decoder's pixel buffer to a GstBuffer
 // under this meta name and layout. The layout is from gst-plugins-bad,
 // sys/applemedia/corevideobuffer.h, which is not installed as a public header.
@@ -131,6 +134,7 @@ struct VideoCoreVideoMeta {
   CVBufferRef cvbuf;
   CVPixelBufferRef pixbuf;
 };
+#endif
 
 // Explains why the last video that could not be shown failed. Read by the
 // caller when video() returns null.
@@ -176,9 +180,11 @@ extern long video_shared;
 // Releases a surface that was shared: Filament's two texture views are
 // destroyed first, then Dawn's end of the shared access is closed.
 void video_give_back(Stage& s, Video::Planes& planes);
+#ifdef __APPLE__
 // Returns the CoreVideo pixel buffer behind a frame, or null if the frame is in
 // CPU memory.
 CVPixelBufferRef video_surface(GstSample* sample);
+#endif
 // Computes the key of a video that is keyed by its own background color, from
 // the given frame. Falls back to pure green if the frame has no such color and
 // `own` is 2.

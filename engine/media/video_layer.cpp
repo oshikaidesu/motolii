@@ -267,6 +267,7 @@ Video* video(Stage& s, const char* file, const mat4f& place, float high,
     // The range is read from the pixel buffer itself where possible. The macOS
     // decoder delivers the narrow range whatever the file used, and the caps
     // keep naming the file's.
+#ifdef __APPLE__
     CVPixelBufferRef first = video_surface(v->held);
     const GstVideoColorRange range =
         !first ? told.colorimetry.range
@@ -274,6 +275,9 @@ Video* video(Stage& s, const char* file, const mat4f& place, float high,
                 kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
             ? GST_VIDEO_COLOR_RANGE_0_255
             : GST_VIDEO_COLOR_RANGE_16_235;
+#else
+    const GstVideoColorRange range = told.colorimetry.range;
+#endif
     gst_video_color_range_offsets(range, told.finfo, zero, span);
   }
   const float kg = 1.f - (float)kr - (float)kb, red = 2.f * (1.f - (float)kr),

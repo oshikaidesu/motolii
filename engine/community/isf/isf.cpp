@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 
 #include <fstream>
+#include <mutex>
 #include <regex>
 #include <sstream>
 
@@ -125,12 +126,22 @@ std::string isf_file(const std::string& asked) {
   // A three.js effect is converted to ISF first (three_isf.cpp).
   if (std::filesystem::path(file).extension() != ".fs" && !three_is(file))
     return file;
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+  std::error_code missing;
+  const auto when = std::filesystem::last_write_time(file, missing);
+  const auto size = std::filesystem::file_size(file, missing);
+  if (missing) return "";
+  const std::string key = "isf 15|" + file + "|" +
+                          std::to_string((long long)when.time_since_epoch().count()) + "|" +
+                          std::to_string(size);
+#else
   struct stat st{};
   if (stat(file.c_str(), &st) != 0) return "";
   const std::string key = "isf 15|" + file + "|" +
                           std::to_string(st.st_mtimespec.tv_sec) + "." +
                           std::to_string(st.st_mtimespec.tv_nsec) + "|" +
                           std::to_string(st.st_size);
+#endif
   // What each file, as it is now, became: its last good output, or "" if it
   // could not be made.
   static std::map<std::string, std::string> built;

@@ -4,14 +4,14 @@
 // Presents the stage's frames to the app without copying them.
 //
 // The main view draws into one of three pixel buffers that the GPU and the app
-// share (CVPixelBuffers on IOSurfaces, as Filament's Metal backend creates
-// them). Each buffer is exposed to Dawn as a texture, the same call
-// video_layer.h uses to read video, but here the buffer is the destination. The
-// texture is then made a Filament render target through the interop that the
-// patch already provides (Texture::Builder::import). A frame counts as finished
-// once a Filament fence created after it has signalled. macOS only.
+// share: CVPixelBuffers on IOSurfaces on macOS (live_shared_mac.mm), D3D12
+// textures with a DXGI shared handle on Windows (live_shared_windows.cpp). Each
+// buffer is exposed to Dawn as a texture, the same call video_layer.h uses to
+// read video, but here the buffer is the destination. The texture is then made a
+// Filament render target through the interop that the patch already provides
+// (Texture::Builder::import). A frame counts as finished once a Filament fence
+// created after it has signalled.
 
-#include <CoreVideo/CoreVideo.h>
 #include <filament/Fence.h>
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>
@@ -29,7 +29,11 @@ namespace motolii {
 struct Live {
   // Number of buffers. They are used round-robin.
   static constexpr int N = 3;
-  CVPixelBufferRef buffer[N] = {};
+  // The OS's buffer the app reads (a CVPixelBufferRef; an ID3D12Resource), and
+  // on Windows the shared handle the app opens it by.
+  void* buffer[N] = {};
+  void* handle[N] = {};
+  uint32_t w = 0, h = 0;
   WGPUSharedTextureMemory lent[N] = {};
   WGPUTexture shared[N] = {};
   filament::Texture* seen[N] = {};
@@ -81,9 +85,21 @@ void live_show(Stage& s, Live* l, filament::Texture* frameTexture);
 // new frame until it returns true. This follows Thermion's approach.
 bool live_ready(Stage& s, Live* l);
 
-// Returns the last finished frame as a retained CVPixelBufferRef, or null if
-// there is none yet. The caller must release it. Safe to call from any thread.
+// Returns the last finished frame, or null if there is none yet: a retained
+// CVPixelBufferRef the caller must release on macOS; on Windows its DXGI shared
+// handle, valid while this Live is open (l->w by l->h). Safe to call from any
+// thread.
 void* live_front(Live* l);
+
+// The OS's own part. live_buffers makes the buffers the app reads (l->w by
+// l->h, BGRA) where live_open is called, or returns false; on Windows they need
+// Dawn's device, so it makes none and live_share does. live_share returns buffer
+// i as a WGPUSharedTextureMemory of `device`; on the render thread. live_unshare
+// lets the buffers go once the GPU is done with them (an app that still holds
+// one keeps it).
+bool live_buffers(Live* l);
+WGPUSharedTextureMemory live_share(Live* l, int i, void* device);
+void live_unshare(Live* l);
 
 }  // namespace motolii
 

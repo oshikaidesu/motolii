@@ -12,10 +12,12 @@ cd "$(dirname "$0")/.."
 source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 J=$PWD/third_party/physics/JoltPhysics
 [ -d $J ] || { mkdir -p $J && git init -q $J && git -C $J -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/jrouwe/JoltPhysics a4b24c3fadd7eade0435f27e9d6a07564273eb5f && git -C $J checkout -q FETCH_HEAD; }
-[ -f $J/Build/install/lib/libJolt.a ] || {
+MADE=$J/Build/install/lib/libJolt.a WINDOWS=()
+[[ $OSTYPE == (msys|cygwin)* ]] && MADE=$J/Build/install/lib/Jolt.lib WINDOWS=(-DUSE_STATIC_MSVC_RUNTIME_LIBRARY=OFF)   # (MSVC's runtime DLL, as the engine's)
+[ -f $MADE ] || {
   cmake -S $J/Build -B $J/Build/out -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$J/Build/install \
     -DCROSS_PLATFORM_DETERMINISTIC=ON -DINTERPROCEDURAL_OPTIMIZATION=OFF -DTARGET_UNIT_TESTS=OFF -DTARGET_HELLO_WORLD=OFF \
     -DTARGET_PERFORMANCE_TEST=OFF -DTARGET_SAMPLES=OFF -DTARGET_VIEWER=OFF \
-    -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF > /dev/null   # (its hair on GPU compute shaders, which need dxc: not used)
+    -DJPH_USE_DX12=OFF -DJPH_USE_VK=OFF -DJPH_USE_MTL=OFF $WINDOWS > /dev/null   # (its hair on GPU compute shaders, which need dxc: not used)
   cmake --build $J/Build/out --target install > /dev/null
 }

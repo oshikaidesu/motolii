@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/posix.h"
 #include "base/file_read.h"
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
@@ -113,10 +114,9 @@ SketchPaint doc_sketch_paint(Stage& s, const std::string& text,
     const std::string matc =
         (doc_engine("third_party/filament_src/out/wgpu_install/bin") / "matc")
             .generic_string();
-    if (std::system(("'" + matc + "' -a webgpu -a metal -p desktop -o '" +
-                     stem + ".filamat' '" + stem + ".mat' > '" + stem +
-                     ".log' 2>&1")
-                        .c_str()) != 0) {
+    if (shell(shell_quoted(matc) + " -a webgpu -a metal -p desktop -o " +
+              shell_quoted(stem + ".filamat") + " " + shell_quoted(stem + ".mat") +
+              " > " + shell_quoted(stem + ".log") + " 2>&1") != 0) {
       std::ifstream log(stem + ".log");
       std::fprintf(
           stderr, "a sketch's shader did not compile: %s\n",

@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 
+#include "base/posix.h"   // (setenv and unsetenv, Windows' too)
 #include "community/quickjs/script.h"
 #include "document/scripts/folders.h"
 #include "document/scripts/recipes.h"
@@ -132,7 +133,7 @@ std::vector<DocRecipe> LibraryRecipes() {
   const bool had_own = own != nullptr;
   const std::string kept = had_own ? own : "";
   const fs::path nowhere = fs::path(testing::TempDir()) / "motolii_no_shelves";
-  setenv("MOTOLII_OWN", nowhere.c_str(), 1);
+  setenv("MOTOLII_OWN", nowhere.generic_string().c_str(), 1);
   std::vector<DocRecipe> recipes = doc_recipes_read();
   if (had_own)
     setenv("MOTOLII_OWN", kept.c_str(), 1);

@@ -4,6 +4,8 @@
 // by the shell that popen and system start. The engine adds those two folders to its own PATH once, and its
 // children (ffmpeg, ffprobe, the shell) inherit it.
 #include <cstdlib>
+
+#include "base/posix.h"
 #include <string>
 #include <vector>
 
@@ -19,12 +21,12 @@ inline std::string path_with(const std::string& path,
   for (const std::string& dir : more) {
     bool have = false;
     for (size_t at = 0; at <= out.size() && !have;) {
-      size_t end = out.find(':', at);
+      size_t end = out.find(path_separator, at);
       if (end == std::string::npos) end = out.size();
       have = out.compare(at, end - at, dir) == 0 && end - at == dir.size();
       at = end + 1;
     }
-    if (!have) out += (out.empty() ? "" : ":") + dir;
+    if (!have) out += (out.empty() ? "" : std::string(1, path_separator)) + dir;
   }
   return out;
 }
@@ -33,8 +35,8 @@ inline std::string path_with(const std::string& path,
 // Unchanged if `dir` is already first; an empty `path` gives just `dir` (never a trailing ':').
 inline std::string path_first(const std::string& path, const std::string& dir) {
   if (path.empty()) return dir;
-  if (path == dir || path.compare(0, dir.size() + 1, dir + ":") == 0) return path;
-  return dir + ":" + path;
+  if (path == dir || path.compare(0, dir.size() + 1, dir + path_separator) == 0) return path;
+  return dir + path_separator + path;
 }
 
 // Sets PATH to path_first(its present value, dir). An unset PATH counts as empty.

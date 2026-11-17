@@ -13,40 +13,47 @@
 namespace motolii {
 namespace {
 
+// A PATH written as on the Mac, with the separator of this OS (base/posix.h's path_separator).
+std::string P(std::string path) {
+  for (char& c : path)
+    if (c == ':') c = path_separator;
+  return path;
+}
+
 TEST(PathWith, EmptyPathGivesJustTheExtraDirectories) {
-  EXPECT_EQ("/opt/homebrew/bin:/usr/local/bin", path_with(""));
+  EXPECT_EQ(P("/opt/homebrew/bin:/usr/local/bin"), path_with(""));
   EXPECT_EQ("/x", path_with("", {"/x"}));
 }
 
 TEST(PathWith, FinderLikePathGetsBothAppended) {
-  EXPECT_EQ("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin", path_with("/usr/bin:/bin"));
+  EXPECT_EQ(P("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin"), path_with(P("/usr/bin:/bin")));
 }
 
 TEST(PathWith, OnlyTheMissingOneIsAdded) {
-  EXPECT_EQ("/usr/bin:/usr/local/bin:/opt/homebrew/bin", path_with("/usr/bin:/usr/local/bin"));
-  EXPECT_EQ("/opt/homebrew/bin:/usr/bin:/usr/local/bin", path_with("/opt/homebrew/bin:/usr/bin"));
+  EXPECT_EQ(P("/usr/bin:/usr/local/bin:/opt/homebrew/bin"), path_with(P("/usr/bin:/usr/local/bin")));
+  EXPECT_EQ(P("/opt/homebrew/bin:/usr/bin:/usr/local/bin"), path_with(P("/opt/homebrew/bin:/usr/bin")));
 }
 
 TEST(PathWith, BothPresentLeavesPathUnchanged) {
-  const std::string path = "/usr/local/bin:/usr/bin:/opt/homebrew/bin";
+  const std::string path = P("/usr/local/bin:/usr/bin:/opt/homebrew/bin");
   EXPECT_EQ(path, path_with(path));
 }
 
 TEST(PathWith, OrderOfMoreIsKept) {
-  EXPECT_EQ("/a:/z:/m:/b", path_with("/a", {"/z", "/m", "/b"}));
+  EXPECT_EQ(P("/a:/z:/m:/b"), path_with("/a", {"/z", "/m", "/b"}));
 }
 
 TEST(PathWith, TrailingSlashEntryIsDistinct) {
-  EXPECT_EQ("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin", path_with("/opt/homebrew/bin/"));
+  EXPECT_EQ(P("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin"), path_with("/opt/homebrew/bin/"));
 }
 
 TEST(PathWith, EmptyMoreReturnsPathUnchanged) {
-  EXPECT_EQ("/usr/bin:/bin", path_with("/usr/bin:/bin", {}));
+  EXPECT_EQ(P("/usr/bin:/bin"), path_with(P("/usr/bin:/bin"), {}));
 }
 
 TEST(PathWith, CustomMoreIsUsed) {
-  EXPECT_EQ("/usr/bin:/custom/bin", path_with("/usr/bin", {"/custom/bin"}));
-  EXPECT_EQ("/usr/bin:/custom/bin", path_with("/usr/bin:/custom/bin", {"/custom/bin"}));
+  EXPECT_EQ(P("/usr/bin:/custom/bin"), path_with("/usr/bin", {"/custom/bin"}));
+  EXPECT_EQ(P("/usr/bin:/custom/bin"), path_with(P("/usr/bin:/custom/bin"), {"/custom/bin"}));
 }
 
 class AddToPathTest : public ::testing::Test {
@@ -70,20 +77,20 @@ class AddToPathTest : public ::testing::Test {
 TEST_F(AddToPathTest, UnsetPathCountsAsEmpty) {
   ::unsetenv("PATH");
   add_to_path();
-  EXPECT_EQ("/opt/homebrew/bin:/usr/local/bin", Path());
+  EXPECT_EQ(P("/opt/homebrew/bin:/usr/local/bin"), Path());
 }
 
 TEST_F(AddToPathTest, SetPathGetsTheDirectoriesAppended) {
-  ::setenv("PATH", "/usr/bin:/bin", 1);
+  ::setenv("PATH", P("/usr/bin:/bin").c_str(), 1);
   add_to_path();
-  EXPECT_EQ("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin", Path());
+  EXPECT_EQ(P("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin"), Path());
 }
 
 TEST_F(AddToPathTest, CalledTwiceChangesNothingTheSecondTime) {
-  ::setenv("PATH", "/usr/bin:/bin", 1);
+  ::setenv("PATH", P("/usr/bin:/bin").c_str(), 1);
   add_to_path({"/x", "/y"});
   add_to_path({"/x", "/y"});
-  EXPECT_EQ("/usr/bin:/bin:/x:/y", Path());
+  EXPECT_EQ(P("/usr/bin:/bin:/x:/y"), Path());
 }
 
 TEST(PathFirst, EmptyPathGivesJustTheDirectory) {
@@ -91,15 +98,15 @@ TEST(PathFirst, EmptyPathGivesJustTheDirectory) {
 }
 
 TEST(PathFirst, FinderLikePathGetsTheDirectoryFirst) {
-  EXPECT_EQ("/x/bin:/usr/bin:/bin", path_first("/usr/bin:/bin", "/x/bin"));
+  EXPECT_EQ(P("/x/bin:/usr/bin:/bin"), path_first(P("/usr/bin:/bin"), "/x/bin"));
 }
 
 TEST(PathFirst, DirectoryAlreadyFirstLeavesPathUnchanged) {
-  EXPECT_EQ("/x/bin:/usr/bin", path_first("/x/bin:/usr/bin", "/x/bin"));
+  EXPECT_EQ(P("/x/bin:/usr/bin"), path_first(P("/x/bin:/usr/bin"), "/x/bin"));
 }
 
 TEST(PathFirst, DirectoryFoundLaterIsPlacedFirstAndTheLaterOneKept) {
-  EXPECT_EQ("/x/bin:/a:/x/bin", path_first("/a:/x/bin", "/x/bin"));
+  EXPECT_EQ(P("/x/bin:/a:/x/bin"), path_first(P("/a:/x/bin"), "/x/bin"));
 }
 
 TEST_F(AddToPathTest, AddFirstToUnsetPathCountsAsEmpty) {
@@ -109,16 +116,16 @@ TEST_F(AddToPathTest, AddFirstToUnsetPathCountsAsEmpty) {
 }
 
 TEST_F(AddToPathTest, AddFirstToSetPathPlacesItFirst) {
-  ::setenv("PATH", "/usr/bin:/bin", 1);
+  ::setenv("PATH", P("/usr/bin:/bin").c_str(), 1);
   add_first_to_path("/x/bin");
-  EXPECT_EQ("/x/bin:/usr/bin:/bin", Path());
+  EXPECT_EQ(P("/x/bin:/usr/bin:/bin"), Path());
 }
 
 TEST_F(AddToPathTest, AddFirstCalledTwiceChangesNothingTheSecondTime) {
-  ::setenv("PATH", "/usr/bin:/bin", 1);
+  ::setenv("PATH", P("/usr/bin:/bin").c_str(), 1);
   add_first_to_path("/x/bin");
   add_first_to_path("/x/bin");
-  EXPECT_EQ("/x/bin:/usr/bin:/bin", Path());
+  EXPECT_EQ(P("/x/bin:/usr/bin:/bin"), Path());
 }
 
 }  // namespace

@@ -97,9 +97,16 @@ uint64_t stage_cache_key(Doc& d, int w, int h) {
                    : script_files((const char*)sqlite3_column_text(row, 3))) {
             struct stat st{};
             if (stat(one.c_str(), &st) == 0)
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+              add(std::to_string(std::filesystem::last_write_time(one)
+                                     .time_since_epoch()
+                                     .count()) +
+                  "." + std::to_string(st.st_size));
+#else
               add(std::to_string(st.st_mtimespec.tv_sec) + "." +
                   std::to_string(st.st_mtimespec.tv_nsec) + "." +
                   std::to_string(st.st_size));
+#endif
           }
       });
   doc_rows(

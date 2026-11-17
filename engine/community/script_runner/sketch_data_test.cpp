@@ -28,7 +28,7 @@ TEST(SketchData, LoadTableLoadJsonAndFetchReadTheFilesThatCameWithIt) {
   fs::create_directories(dir / "bars");
   std::ofstream(dir / "bars" / "rows.csv") << "name,height\na,30\nb,50\nc,70\n";
   std::ofstream(dir / "bars" / "look.json") << R"({"name": "bars", "gap": 10})";
-  std::ofstream(dir / "bars" / "words.txt") << "one\ntwo\n";
+  std::ofstream(dir / "bars" / "words.txt", std::ios::binary) << "one\ntwo\n";   // (binary: no CR on Windows)
   std::ofstream(file) << R"(let rows, look, said = '';
 function preload() {
   rows = loadTable('rows.csv', 'csv', 'header');

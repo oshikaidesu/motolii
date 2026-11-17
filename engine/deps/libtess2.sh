@@ -9,4 +9,8 @@ source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, t
 L=$PWD/third_party/libtess2
 [ -d $L ] || { mkdir -p $L && git init -q $L && git -C $L -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/memononen/libtess2 8dbd6483e920311a58c9af10a10beb278efebc36 && git -C $L checkout -q FETCH_HEAD; }
 mkdir -p $L/build
-[ -f $L/build/libtess2.a ] || (cd $L/build && cc -O2 -c -I ../Include ../Source/*.c && ar rcs libtess2.a *.o)
+if [[ $OSTYPE == (msys|cygwin)* ]]; then   # (build.sh's clang, for MSVC's runtime DLL)
+    [ -f $L/build/libtess2.a ] || (cd $L/build && $CC $CFLAGS -O2 -c -I ../Include ../Source/*.c && $AR rcs libtess2.a *.o)
+else
+    [ -f $L/build/libtess2.a ] || (cd $L/build && cc -O2 -c -I ../Include ../Source/*.c && ar rcs libtess2.a *.o)
+fi

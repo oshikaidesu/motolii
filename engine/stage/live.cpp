@@ -4,10 +4,6 @@
 #include <cstdint>
 #include <initializer_list>
 
-#include <CoreVideo/CoreVideo.h>
-#include <Foundation/Foundation.h>
-#include <IOSurface/IOSurface.h>
-
 #include <filament/Engine.h>
 #include <filament/Fence.h>
 #include <filament/RenderTarget.h>
@@ -166,23 +162,12 @@ void desk_marks(Stage& s, Live* l, int i) {
 Live* live_open(Stage& s, uint32_t w, uint32_t h) {
   Live* l = new Live;
   if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
-  NSDictionary* like = @{
-    (id)kCVPixelBufferIOSurfacePropertiesKey : @{},
-    (id)kCVPixelBufferMetalCompatibilityKey : @YES
-  };
-  for (CVPixelBufferRef& b : l->buffer)
-    if (CVPixelBufferCreate(kCFAllocatorDefault, (size_t)w, (size_t)h, kCVPixelFormatType_32BGRA,
-                            (__bridge CFDictionaryRef)like, &b) != kCVReturnSuccess)
-      return nullptr;
+  l->w = w, l->h = h;
+  if (!live_buffers(l)) return nullptr;
   Engine* engine = s.engine;
   interop::on_driver(engine, [l, engine, w, h] {
     for (int i = 0; i < Live::N; ++i) {
-      WGPUSharedTextureMemoryIOSurfaceDescriptor from{};
-      from.chain.sType = WGPUSType_SharedTextureMemoryIOSurfaceDescriptor;
-      from.ioSurface = CVPixelBufferGetIOSurface(l->buffer[i]);
-      WGPUSharedTextureMemoryDescriptor what{};
-      what.nextInChain = &from.chain;
-      l->lent[i] = wgpuDeviceImportSharedTextureMemory((WGPUDevice)interop::device(engine), &what);
+      l->lent[i] = live_share(l, i, interop::device(engine));
       WGPUTextureDescriptor as{};
       as.size = {w, h, 1};
       as.format = WGPUTextureFormat_BGRA8Unorm;
@@ -234,9 +219,7 @@ void live_close(Stage& s, Live* l) {
     }
   });
   s.engine->flushAndWait();
-  // An app that still holds a buffer keeps it alive until it releases it.
-  for (CVPixelBufferRef b : l->buffer)
-    if (b) CVPixelBufferRelease(b);
+  live_unshare(l);
   if (l->pending) s.engine->destroy(l->pending);
   delete l;
 }
@@ -333,11 +316,6 @@ bool live_ready(Stage& s, Live* l) {
   if (Live* desk = l->desk; desk && desk->pendingIn >= 0)
     desk->front = desk->pendingIn, desk->pendingIn = -1, ++desk->frames;
   return true;
-}
-
-void* live_front(Live* l) {
-  const int i = l->front;
-  return i < 0 ? nullptr : (void*)CVPixelBufferRetain(l->buffer[i]);
 }
 
 }  // namespace motolii

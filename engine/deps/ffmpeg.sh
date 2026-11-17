@@ -28,9 +28,18 @@ case "$(uname -s)" in
     # (Linux: written from docs/engine/PACKAGING.md and NOT run: no Linux machine has built it. --enable-pic is what
     # FFmpeg's platform page asks for a shared build; an encoder, h264_vaapi or h264_nvenc, is added once one can be tried.)
     Linux)  CONFIGURE+=(--enable-pic); cpus=$(nproc) ;;
-    *) echo "ffmpeg: this script does not build on $(uname -s): see docs/engine/PACKAGING.md (Windows builds FFmpeg in MSYS2)"; exit 1 ;;
+    MSYS*|MINGW*)   # (MSYS2's make and nasm, MSVC's cl: run inside the VS developer environment, see build.sh)
+        OUT=$(cygpath -m $OUT)   # (E:/..., which the .pc files carry to Windows' own pkg-config)
+        # (mfenc.c needs d3d11va's headers.) zlib is GStreamer's z.lib, under the name configure gives -lz with MSVC (zlib.lib)
+        mkdir -p $SRC/zlib && cp $GSTREAMER_1_0_ROOT_MSVC_X86_64/lib/z.lib $SRC/zlib/zlib.lib
+        CONFIGURE=(--prefix=$OUT ${CONFIGURE[2,-1]} --toolchain=msvc --arch=x86_64 --enable-mediafoundation --enable-d3d11va
+                   --extra-cflags=-I$(cygpath -m $GSTREAMER_1_0_ROOT_MSVC_X86_64/include) --extra-ldflags=-LIBPATH:$(cygpath -m $SRC/zlib))
+        unset CFLAGS CC CXX AR   # (build.sh's are clang's, for deps/ built by hand: FFmpeg picks MSVC's itself)
+        cpus=$NUMBER_OF_PROCESSORS ;;
+    *) echo "ffmpeg: this script does not build on $(uname -s): see docs/engine/PACKAGING.md"; exit 1 ;;
 esac
 if [ ! -x $OUT/bin/ffmpeg ]; then
     (cd $SRC && ./configure $CONFIGURE > /dev/null && make -j$cpus > /dev/null && make install > /dev/null)
     mkdir -p $OUT && print -r -- "./configure $CONFIGURE" > $OUT/CONFIGURE.txt
+    if [ -f $OUT/bin/avcodec.lib ]; then cp $OUT/bin/*.lib $OUT/lib/; fi   # (MSVC's import libraries, where the .pc files say)
 fi

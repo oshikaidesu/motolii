@@ -7,7 +7,10 @@
 # is compiled by itself. The dependencies are not built here: each
 # deps/<library>.sh fetches one into third_party/ and builds it with that library's own build system.
 cmake_minimum_required(VERSION 3.24)
-project(motolii LANGUAGES C CXX OBJCXX)
+project(motolii LANGUAGES C CXX)
+if(APPLE)
+  enable_language(OBJCXX)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,6 +32,33 @@ set(SKIA ${THIRD_PARTY}/skia_src)
 set(ABSENT_MOTION ${THIRD_PARTY}/AbsentMotion/app/src/main/cpp)
 set(IRIS ${THIRD_PARTY}/iris)
 
+# Where the libraries the engine links come from: Homebrew's on a Mac (Brewfile); on Windows GStreamer's official
+# MSVC installer (GSTREAMER, with its pkg-config, libass) and vcpkg's x64-windows (LIBRARIES: SQLite with its session
+# extension, LuaJIT, QuickJS-ng, googletest), as engine/build.sh passes them.
+if(APPLE)
+  execute_process(COMMAND brew --prefix OUTPUT_VARIABLE HOMEBREW OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+  set(SQLITE_INCLUDE ${HOMEBREW}/opt/sqlite/include)
+  set(SQLITE_LIBRARY ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib)
+  set(LUAJIT_INCLUDE ${HOMEBREW}/opt/luajit/include/luajit-2.1)
+  set(QUICKJS_INCLUDE ${HOMEBREW}/opt/quickjs-ng/include)
+  set(ASS_INCLUDE ${HOMEBREW}/opt/libass/include)
+  set(GTEST_DIR ${HOMEBREW}/opt/googletest)
+else()
+  set(GSTREAMER "$ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64}" CACHE PATH "GStreamer's MSVC installation")
+  set(LIBRARIES "" CACHE PATH "vcpkg's installed/x64-windows")
+  set(PKG_CONFIG_EXECUTABLE ${GSTREAMER}/bin/pkg-config.exe)
+  set(ENV{PKG_CONFIG_PATH} "${GSTREAMER}/lib/pkgconfig")
+  set(SQLITE_INCLUDE ${LIBRARIES}/include)
+  set(SQLITE_LIBRARY ${LIBRARIES}/lib/sqlite3.lib)
+  set(LUAJIT_INCLUDE ${LIBRARIES}/include/luajit)
+  set(LUAJIT_LIBRARY ${LIBRARIES}/lib/lua51.lib)
+  set(QUICKJS_INCLUDE ${LIBRARIES}/include)
+  set(QUICKJS_LIBRARY ${LIBRARIES}/lib/qjs.lib)
+  set(ASS_INCLUDE ${GSTREAMER}/include)
+  set(ASS_LIBRARY ${GSTREAMER}/lib/ass.lib)
+  set(GTEST_DIR ${LIBRARIES})
+endif()
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0 gstreamer-fft-1.0)
 # FFmpeg's libraries are the LGPL-only build deps/ffmpeg.sh makes, never Homebrew's (it has GPL parts: libx264, libx265).
@@ -37,7 +67,6 @@ if(NOT EXISTS ${THIRD_PARTY}/ffmpeg_lgpl/lib/pkgconfig/libavcodec.pc)
 endif()
 set(ENV{PKG_CONFIG_PATH} "${THIRD_PARTY}/ffmpeg_lgpl/lib/pkgconfig")
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil)
-execute_process(COMMAND brew --prefix OUTPUT_VARIABLE HOMEBREW OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
 
 # ---- Sources with flags of their own: each reads another project's internal headers, built as that project builds.
 
@@ -45,7 +74,7 @@ execute_process(COMMAND brew --prefix OUTPUT_VARIABLE HOMEBREW OUTPUT_STRIP_TRAI
 add_library(thorvg_path_operators OBJECT stage/canvas/thorvg_path_operators.cpp)
 set_target_properties(thorvg_path_operators PROPERTIES CXX_STANDARD 17)
 target_compile_options(thorvg_path_operators PRIVATE -fno-rtti -fno-exceptions)
-target_compile_definitions(thorvg_path_operators PRIVATE TVG_STATIC)
+target_compile_definitions(thorvg_path_operators PRIVATE TVG_STATIC $<$<PLATFORM_ID:Windows>:NOMINMAX>)   # (its min and max, not windows.h's)
 target_include_directories(thorvg_path_operators PRIVATE ${THORVG}/build_dawn ${THORVG}/inc ${THORVG}/src/common
   ${THORVG}/src/renderer ${THORVG}/src/renderer/gpu_engine ${THORVG}/src/renderer/gpu_engine/wg ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES})
 
@@ -61,6 +90,10 @@ add_library(absent_motion OBJECT community/absent_motion/absent_drawing.cpp comm
 target_compile_options(absent_motion PRIVATE -fno-rtti -fvisibility=hidden)
 target_compile_definitions(absent_motion PRIVATE NDEBUG)
 target_include_directories(absent_motion PRIVATE ${SKIA} ${ABSENT_MOTION})
+if(WIN32)   # (its <strings.h> and M_PI, POSIX's, from base/windows and MSVC's math.h)
+  target_include_directories(absent_motion PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/base/windows)
+  target_compile_definitions(absent_motion PRIVATE _USE_MATH_DEFINES)
+endif()
 
 # The flash check: EA's IRIS, in IRIS's own C++17 (its log lines pass runtime format strings, which C++20 refuses).
 add_library(video_flash_check OBJECT media/video_flash_check.cpp)
@@ -75,7 +108,7 @@ target_compile_definitions(aviutl_translation PRIVATE ENABLE_HLSL)
 foreach(translation isf_translation aviutl_translation)
   target_compile_definitions(${translation} PRIVATE TINT_BUILD_SPV_READER=1 TINT_BUILD_WGSL_WRITER=1 TINT_BUILD_WGSL_READER=1)
   target_include_directories(${translation} PRIVATE
-  ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${HOMEBREW}/opt/sqlite/include
+  ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${SQLITE_INCLUDE}
   ${FILAMENT}/third_party/glslang ${FILAMENT}/third_party/spirv-tools/include ${FILAMENT}/libs/filamat/src
   ${FILAMENT}/third_party/dawn ${FILAMENT}/third_party/dawn/include ${FILAMENT}/out/wgpu/third_party/dawn/gen)
 endforeach()
@@ -84,15 +117,27 @@ endforeach()
 
 # Filament with its WebGPU backend, and our interop built inside Filament's own build (gpu/CMakeLists.txt).
 add_library(filament_libraries INTERFACE)
-target_link_directories(filament_libraries INTERFACE ${FILAMENT_SDK}/lib/arm64)
-target_link_libraries(filament_libraries INTERFACE
-  ${FILAMENT}/out/wgpu/filament/motolii_probe/libmotolii_interop.a
-  gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl bluevk filabridge filaflat utils geometry smol-v
-  ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
-  matdbg filamat civetweb viewer z
-  "-framework Cocoa" "-framework SceneKit" "-framework ModelIO" "-framework Metal" "-framework CoreVideo"
-  "-framework QuartzCore" "-framework IOSurface" "-framework IOKit" "-framework AVFoundation" "-framework CoreMedia"
-  "-framework CoreGraphics" "-framework Accelerate")
+if(APPLE)
+  target_link_directories(filament_libraries INTERFACE ${FILAMENT_SDK}/lib/arm64)
+  target_link_libraries(filament_libraries INTERFACE
+    ${FILAMENT}/out/wgpu/filament/motolii_probe/libmotolii_interop.a
+    gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl bluevk filabridge filaflat utils geometry smol-v
+    ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
+    matdbg filamat civetweb viewer z
+    "-framework Cocoa" "-framework SceneKit" "-framework ModelIO" "-framework Metal" "-framework CoreVideo"
+    "-framework QuartzCore" "-framework IOSurface" "-framework IOKit" "-framework AVFoundation" "-framework CoreMedia"
+    "-framework CoreGraphics" "-framework Accelerate")
+else()
+  # Filament builds no Vulkan loader (bluevk) on Windows; Dawn's D3D12 backend and Filament's Windows platform call
+  # the system's libraries after it.
+  target_link_directories(filament_libraries INTERFACE ${FILAMENT_SDK}/lib/x86_64)
+  target_link_libraries(filament_libraries INTERFACE
+    ${FILAMENT}/out/wgpu/filament/motolii_probe/motolii_interop.lib
+    gltfio gltfio_core dracodec matp filament backend webgpu_dawn bluegl filabridge filaflat utils geometry smol-v
+    ibl ktxreader stb uberzlib zstd shaders perfetto abseil meshoptimizer camutils image basis_transcoder uberarchive
+    matdbg filamat civetweb viewer
+    d3d12 d3d11 dxgi dxguid onecore_apiset user32 gdi32 shlwapi ws2_32 winmm ole32 opengl32)
+endif()
 add_library(skia_libraries INTERFACE)
 target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${SKIA}/out/path/libskia.a)
 
@@ -101,6 +146,13 @@ target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${S
 add_library(motolii_flags INTERFACE)
 target_compile_options(motolii_flags INTERFACE -ffp-contract=off $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
 target_compile_definitions(motolii_flags INTERFACE SQLITE_ENABLE_SESSION SQLITE_ENABLE_PREUPDATE_HOOK)
+if(WIN32)
+  # ThorVG is linked static, not as a DLL's import; windows.h without its min and max; M_PI from MSVC's math.h.
+  # MOTOLII_EXPORTS: the engine's own code, which defines entry/motolii.h's calls the DLL shows.
+  target_compile_definitions(motolii_flags INTERFACE TVG_STATIC NOMINMAX _USE_MATH_DEFINES _CRT_SECURE_NO_WARNINGS MOTOLII_EXPORTS)
+  # POSIX's <strings.h> (base/windows/strings.h).
+  target_include_directories(motolii_flags INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/base/windows)
+endif()
 target_include_directories(motolii_flags INTERFACE
   # Libraries Filament carries in its source tree, used under their own names: <rapidjson/...>, <zstd.h>,
   # <stb_truetype.h>, <cgltf.h>.
@@ -109,7 +161,7 @@ target_include_directories(motolii_flags INTERFACE
   ${FILAMENT_SDK}/include ${THORVG}/inc ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES}
   ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
   ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include
-  ${HOMEBREW}/opt/sqlite/include ${HOMEBREW}/opt/luajit/include/luajit-2.1 ${HOMEBREW}/opt/quickjs-ng/include
+  ${SQLITE_INCLUDE} ${LUAJIT_INCLUDE} ${QUICKJS_INCLUDE}
   ${THIRD_PARTY}/onnxruntime/include)
 
 # ---- Modules: one target a folder, lowest first. A module lists the modules it includes headers from; CMake refuses
@@ -119,30 +171,52 @@ target_include_directories(motolii_flags INTERFACE
 add_library(motolii_base INTERFACE)
 
 # Adapter: absent motion code run as it is.
-add_library(motolii_community_absent_motion STATIC $<TARGET_OBJECTS:absent_motion>)
-target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
 # Only part of AbsentMotion is compiled: what its scene.cpp would call to draw a whole scene is never reached, and
 # the linker has to drop it before it looks for those functions.
-target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
+if(APPLE)
+  add_library(motolii_community_absent_motion STATIC $<TARGET_OBJECTS:absent_motion>)
+  target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
+  target_link_options(motolii_community_absent_motion PUBLIC -Wl,-dead_strip)
+else()
+  # Windows' linker looks for them before it drops anything. So LLVM drops them itself: the objects as LLVM's own
+  # code, joined, everything but our motolii:: calls made private (internalize), and what nothing reaches removed.
+  target_compile_options(absent_motion PRIVATE -flto)
+  set(ABSENT_KEPT ${CMAKE_CURRENT_BINARY_DIR}/absent_motion_kept.obj)
+  add_custom_command(OUTPUT ${ABSENT_KEPT} DEPENDS $<TARGET_OBJECTS:absent_motion> COMMAND_EXPAND_LISTS VERBATIM
+    COMMAND llvm-link $<TARGET_OBJECTS:absent_motion> -o absent_motion.bc
+    COMMAND opt -passes=internalize,globaldce -internalize-public-api-list=*@motolii@@* absent_motion.bc -o absent_motion_kept.bc
+    COMMAND ${CMAKE_CXX_COMPILER} -c -O2 absent_motion_kept.bc -o ${ABSENT_KEPT})
+  add_library(motolii_community_absent_motion STATIC ${ABSENT_KEPT})
+  set_target_properties(motolii_community_absent_motion PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_libraries(motolii_community_absent_motion PUBLIC skia_libraries)
+endif()
 
 # Adapter: quickjs code run as it is.
 add_library(motolii_community_quickjs STATIC
   community/quickjs/script.cpp
   community/quickjs/script_leva.cpp)
 target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags motolii_base motolii_shelf)
-target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)
-target_link_libraries(motolii_community_quickjs PUBLIC qjs)
-target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
+if(APPLE)
+  target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)
+  target_link_libraries(motolii_community_quickjs PUBLIC qjs)
+  target_link_options(motolii_community_quickjs PUBLIC -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
+else()
+  target_link_libraries(motolii_community_quickjs PUBLIC ${QUICKJS_LIBRARY})
+endif()
 
 # Adapter: subtitles and lyrics as they are written: FFmpeg reads them, libass draws them.
 add_library(motolii_community_subtitles STATIC
   community/subtitles/subtitles.cpp
   community/subtitles/subtitles_from_ffmpeg.cpp)
 target_link_libraries(motolii_community_subtitles PUBLIC motolii_flags PkgConfig::FFMPEG)
-target_include_directories(motolii_community_subtitles PRIVATE ${HOMEBREW}/opt/libass/include)
-target_link_directories(motolii_community_subtitles PUBLIC ${HOMEBREW}/opt/libass/lib)
-target_link_libraries(motolii_community_subtitles PUBLIC ass)
-target_link_options(motolii_community_subtitles PUBLIC -Wl,-rpath,${HOMEBREW}/opt/libass/lib)
+target_include_directories(motolii_community_subtitles PRIVATE ${ASS_INCLUDE})
+if(APPLE)
+  target_link_directories(motolii_community_subtitles PUBLIC ${HOMEBREW}/opt/libass/lib)
+  target_link_libraries(motolii_community_subtitles PUBLIC ass)
+  target_link_options(motolii_community_subtitles PUBLIC -Wl,-rpath,${HOMEBREW}/opt/libass/lib)
+else()
+  target_link_libraries(motolii_community_subtitles PUBLIC ${ASS_LIBRARY})
+endif()
 
 # Adapter: CSS animations from CodePen on a text layer's letters. Blitz and Stylo, in Rust (community/css/Cargo.toml),
 # built by Cargo through Corrosion (corrosion-rs.github.io); Stylo is the patched copy deps/stylo.sh fetches.
@@ -159,10 +233,14 @@ add_executable(lottie_precompile community/after_effects/lottie_precompile.cpp)
 target_link_libraries(lottie_precompile PRIVATE motolii_flags)
 target_include_directories(lottie_precompile PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${HOMEBREW}/opt/quickjs-ng/include)
-target_link_directories(lottie_precompile PRIVATE ${HOMEBREW}/opt/quickjs-ng/lib)
-target_link_libraries(lottie_precompile PRIVATE qjs)
-target_link_options(lottie_precompile PRIVATE -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
+  ${QUICKJS_INCLUDE})
+if(APPLE)
+  target_link_directories(lottie_precompile PRIVATE ${HOMEBREW}/opt/quickjs-ng/lib)
+  target_link_libraries(lottie_precompile PRIVATE qjs)
+  target_link_options(lottie_precompile PRIVATE -Wl,-rpath,${HOMEBREW}/opt/quickjs-ng/lib)
+else()
+  target_link_libraries(lottie_precompile PRIVATE ${QUICKJS_LIBRARY})
+endif()
 
 set(LOTTIE_BYTECODE_CC ${CMAKE_CURRENT_BINARY_DIR}/lottie_bytecode_generated.cc)
 file(GLOB_RECURSE LOTTIE_SOURCES CONFIGURE_DEPENDS
@@ -223,7 +301,7 @@ add_library(motolii_stage_render STATIC
   stage/render/gltf_model.cpp
   stage/render/point_cloud.cpp
   stage/render/render_draw.cpp
-  stage/render/render_draw.mm
+  $<IF:$<BOOL:${APPLE}>,stage/render/render_draw.mm,stage/render/render_draw_png.cpp>
   stage/render/render_layers.cpp
   stage/render/render_stage.cpp)
 target_link_libraries(motolii_stage_render PUBLIC motolii_flags motolii_base motolii_community_playcanvas)
@@ -248,9 +326,13 @@ add_library(motolii_community_aviutl STATIC
   community/aviutl/aviutl_run.cpp)
 target_link_libraries(motolii_community_aviutl PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_shelf motolii_stage_render motolii_stage_effects)
 target_sources(motolii_community_aviutl PRIVATE $<TARGET_OBJECTS:aviutl_translation>)
-target_link_directories(motolii_community_aviutl PUBLIC ${HOMEBREW}/opt/luajit/lib)
-target_link_libraries(motolii_community_aviutl PUBLIC luajit-5.1)
-target_link_options(motolii_community_aviutl PUBLIC -Wl,-rpath,${HOMEBREW}/opt/luajit/lib)
+if(APPLE)
+  target_link_directories(motolii_community_aviutl PUBLIC ${HOMEBREW}/opt/luajit/lib)
+  target_link_libraries(motolii_community_aviutl PUBLIC luajit-5.1)
+  target_link_options(motolii_community_aviutl PUBLIC -Wl,-rpath,${HOMEBREW}/opt/luajit/lib)
+else()
+  target_link_libraries(motolii_community_aviutl PUBLIC ${LUAJIT_LIBRARY})
+endif()
 
 # Adapter: hydra code run as it is.
 add_library(motolii_community_hydra STATIC
@@ -275,8 +357,17 @@ add_library(motolii_media STATIC
 target_link_libraries(motolii_media PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_stage_render)
 target_sources(motolii_media PRIVATE $<TARGET_OBJECTS:video_flash_check>)
 target_link_directories(motolii_media PUBLIC ${IRIS}/opencv_out/lib ${IRIS}/opencv_out/lib/opencv4/3rdparty)
-target_link_libraries(motolii_media PUBLIC PkgConfig::GSTREAMER PkgConfig::FFMPEG ${IRIS}/lib/libiris.a
-  opencv_features2d opencv_videoio opencv_imgcodecs opencv_imgproc opencv_core tegra_hal)
+if(APPLE)
+  target_link_libraries(motolii_media PUBLIC PkgConfig::GSTREAMER PkgConfig::FFMPEG ${IRIS}/lib/libiris.a
+    opencv_features2d opencv_videoio opencv_imgcodecs opencv_imgproc opencv_core tegra_hal)
+else()
+  # OpenCV names its Windows libraries with its version (opencv_core4130.lib): found by their names' start.
+  file(GLOB OPENCV_LIBRARIES ${IRIS}/opencv_out/lib/opencv_features2d*.lib ${IRIS}/opencv_out/lib/opencv_videoio*.lib
+    ${IRIS}/opencv_out/lib/opencv_imgcodecs*.lib ${IRIS}/opencv_out/lib/opencv_imgproc*.lib ${IRIS}/opencv_out/lib/opencv_core*.lib)
+  # (its own zlib: Windows has none; and Media Foundation, which OpenCV reads a film with, deps/iris.sh)
+  target_link_libraries(motolii_media PUBLIC PkgConfig::GSTREAMER PkgConfig::FFMPEG ${IRIS}/lib/libiris.a ${OPENCV_LIBRARIES} zlib
+    mfplat mf mfuuid mfreadwrite wmcodecdspuuid d3d11 dxgi shlwapi)
+endif()
 
 # Easing curves and Lottie motion.
 add_library(motolii_motion STATIC
@@ -285,7 +376,8 @@ add_library(motolii_motion STATIC
 target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_absent_motion)
 
 # Adapter: rigid bodies moved by Jolt Physics as it is (deps/jolt.sh builds it and installs its CMake package).
-if(NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/libJolt.a)
+if(NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/libJolt.a AND
+   NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/Jolt.lib)
   message(FATAL_ERROR "third_party/physics/JoltPhysics is not built: run engine/deps/jolt.sh")
 endif()
 find_package(Jolt REQUIRED CONFIG PATHS ${THIRD_PARTY}/physics/JoltPhysics/Build/install NO_DEFAULT_PATH)
@@ -386,12 +478,13 @@ add_library(motolii_document STATIC
   document/undo.cpp)
 target_link_libraries(motolii_document PUBLIC motolii_flags motolii_base motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5js motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
 target_link_libraries(motolii_document PUBLIC motolii_community_jolt)
-target_link_libraries(motolii_document PUBLIC ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib
+target_link_libraries(motolii_document PUBLIC ${SQLITE_LIBRARY}
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 
 # The frame handed to the app.
 add_library(motolii_stage STATIC
-  stage/live.mm)
+  stage/live.cpp
+  $<IF:$<BOOL:${APPLE}>,stage/live_shared_mac.mm,stage/live_shared_windows.cpp>)
 target_link_libraries(motolii_stage PUBLIC motolii_flags motolii_gpu motolii_stage_render motolii_stage_effects)
 
 # The playback cache.
@@ -423,7 +516,11 @@ if(NOT EXISTS ${THIRD_PARTY}/onnxruntime/lib)
 endif()
 target_link_directories(motolii_entry PUBLIC ${THIRD_PARTY}/onnxruntime/lib)
 target_link_libraries(motolii_entry PUBLIC onnxruntime)
-target_link_options(motolii_entry PUBLIC -Wl,-rpath,${THIRD_PARTY}/onnxruntime/lib)
+if(APPLE)
+  target_link_options(motolii_entry PUBLIC -Wl,-rpath,${THIRD_PARTY}/onnxruntime/lib)
+else()
+  target_link_libraries(motolii_entry PUBLIC dwrite)   # (a font file's kinds: calls_fonts.cpp)
+endif()
 
 # ---- What each module can include. Headers are written by their path from this folder ("stage/render/render.h"), so
 # one include folder for everybody would let a module include any other. Instead each module is compiled with a folder
@@ -509,7 +606,8 @@ endforeach()
 add_library(motolii SHARED
   third_party/thermion_frame/FrameScheduler.cpp)
 target_link_libraries(motolii PRIVATE motolii_entry)
-set_target_properties(motolii PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ENGINE}/out INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR ON)
+set_target_properties(motolii PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${ENGINE}/out INSTALL_NAME_DIR "@rpath" BUILD_WITH_INSTALL_NAME_DIR ON
+  RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/out PREFIX lib)   # (libmotolii.dll beside libmotolii.dylib's place: a DLL is a runtime file)
 
 # ---- The shell: a project edited by one call a line (edit.sh).
 
@@ -525,7 +623,7 @@ set_target_properties(edit_wgpu PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${ENGINE}/ou
 include(CTest)
 if(BUILD_TESTING)
   # Homebrew's googletest (Brewfile), not one another toolchain on PATH happens to carry.
-  find_package(GTest REQUIRED CONFIG PATHS ${HOMEBREW}/opt/googletest NO_DEFAULT_PATH)
+  find_package(GTest REQUIRED CONFIG PATHS ${GTEST_DIR} NO_DEFAULT_PATH)
   include(GoogleTest)
   # motolii_module_tests(<module target> <glob> ...): the module's own tests.
   function(motolii_module_tests module)

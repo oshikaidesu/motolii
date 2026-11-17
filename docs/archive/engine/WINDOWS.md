@@ -1,44 +1,71 @@
-# Porting the engine to Windows
+# Building and running on Windows
 
-What it would take to build the engine on Windows, for a developer who has a Windows machine and wants to start.
+How to build the engine (`engine/out/libmotolii.dll`) and the Flutter app (`app/windows/`) on Windows 11 (x64), and how the Windows port works.
 
-The engine has not been built or run on Windows yet, and no Windows machine has been available. This document records what reading the sources and headers shows, what is still unknown, and the first steps once a machine is there.
+## What you need
 
-The engine is Filament on Dawn (WebGPU), ThorVG, GStreamer, SQLite and ffmpeg.
-
-## What should work as it is
-
-| Part | Why | Where it was checked |
+| Tool | What was checked | Notes |
 |---|---|---|
-| Filament's WebGPU backend | It has a Windows platform class, which lets Dawn pick Vulkan or D3D12. | `engine/third_party/filament_src/filament/backend/src/webgpu/platform/WebGPUPlatformWindows.cpp` |
-| Materials (`flat.mat`, `thick_glass.mat`, `matte.mat` and the rest), types and layering | They are built for WebGPU and have no Mac-only lines. | `engine/materials/` |
-| ThorVG (After Effects art, pictures, text) | It draws on Dawn, which exists on Windows. It builds with meson. | `engine/deps/thorvg.sh` |
-| 3D files (gltfio) | A Filament component. `gltf_model.h` has no OS-specific lines. | `engine/stage/render/gltf_model.h` |
-| The project (SQLite), keyframes (GStreamer's controller) and the edit calls (`motolii.h`) | All plain C or C++. No OS-specific lines in `document.h` or `motolii.h`. | `engine/document/document.h`, `engine/entry/motolii.h` |
-| Reading video (GStreamer's `decodebin3`; cutting, speed, reverse) | Only GStreamer's own interface is used. On Windows GStreamer picks the D3D12 or D3D11 hardware decoder parts itself. | `engine/media/video_layer.cpp` |
-| Sound and export (ffmpeg) | The engine runs the command and picks the H.264 encoder from what that ffmpeg lists. Which ffmpeg to ship, and the libraries: [PACKAGING.md](PACKAGING.md). | `film` in `engine/stage/render/render_draw.h`, `engine/base/video_encoder.h` |
+| Visual Studio 2022 | Desktop development with C++ (MSVC x64 toolset, Windows 10/11 SDK) | `engine/build.sh` runs inside the **x64 Native Tools Command Prompt for VS 2022** so `cl`, `link` and the Windows SDK headers are on `PATH`. |
+| LLVM | 23.1.5 (`win64`) on `PATH` | Needs `clang`, `clang++`, `clang-cl`, `llvm-ar`, `llvm-link` and `opt`. The engine and hand-built libraries in `engine/deps/` compile with `clang`/`clang++` targeting MSVC's runtime DLL (`-fms-runtime-lib=dll`); Skia and ThorVG use `clang-cl`; Filament and FFmpeg use MSVC's `cl`. |
+| CMake, Ninja, Meson, Python 3 | CMake 4.2, Ninja 1.12+, Meson 1.x, Python 3 on `PATH` | In Windows `PATH` (`pip install ninja meson`). |
+| Rust (`rustup`) | Default host `x86_64-pc-windows-msvc` (`cargo`, `rustc` on `PATH`) | Compiles `engine/community/css` (Blitz and Stylo) through Corrosion. |
+| Corrosion | Installed via CMake (`CMAKE_INSTALL_PREFIX` set to `<corrosion-prefix>`) | Set `MOTOLII_CORROSION=<corrosion-prefix>` (must contain `lib/cmake/Corrosion`). |
+| GStreamer (MSVC 64-bit) | 1.28.8 MSVC x86_64 runtime **and** development installers | Set `GSTREAMER_1_0_ROOT_MSVC_X86_64` to the root folder (the one holding `bin/`, `lib/`, `include/`). Also provides `pkg-config.exe`, `libass` (`ass.lib`) and `z.lib`. |
+| vcpkg | `x64-windows` triplet: `sqlite3[session]`, `luajit`, `quickjs-ng`, `gtest` | `vcpkg install sqlite3[session]:x64-windows luajit:x64-windows quickjs-ng:x64-windows gtest:x64-windows`. Set `MOTOLII_LIBRARIES` to the `installed/x64-windows` folder. |
+| MSYS2 | `zsh`, `make`, `nasm`, `patch`, `diffutils`, `unzip`, `curl`, `git` | `pacman -S zsh make nasm patch diffutils unzip`. Used to run `engine/build.sh` and `engine/deps/*.sh` (not MinGW compilers). |
+| Windows Developer Mode (or elevated prompt) | Enabled in Windows Settings | `engine/build.sh` sets `MSYS=winsymlinks:nativestrict` and CMake creates symbolic links for module header views under `engine/out/cmake/views/`. |
+| Flutter | 3.47.2+ (stable) on `PATH` | Builds and runs `app/windows/`. |
 
-## What needs rewriting (Mac-only code)
+## Environment variables
 
-| Part | Now | On Windows | What is known |
+Before building, make sure these three variables point to your installations (forward or back slashes both work; `engine/build.sh` converts them with `cygpath -m`):
+
+```cmd
+set GSTREAMER_1_0_ROOT_MSVC_X86_64=C:\gstreamer\1.0\msvc_x86_64
+set MOTOLII_LIBRARIES=C:\vcpkg\installed\x64-windows
+set MOTOLII_CORROSION=C:\corrosion
+```
+
+## Build the engine
+
+Open **x64 Native Tools Command Prompt for VS 2022**, inherit the Windows `PATH` into MSYS2, and run `engine/build.sh` with MSYS2's `zsh`:
+
+```cmd
+set MSYS2_PATH_TYPE=inherit
+C:\msys64\usr\bin\zsh engine/build.sh
+```
+
+- The first run fetches and builds the dependencies in `engine/deps/` (Filament with its Dawn D3D12 backend, ThorVG, Skia pathops, Jolt, libtess2, curve_fit_nd, FFmpeg 9.0.2 LGPL with Media Foundation and D3D11VA, ONNX Runtime `win-x64`, OpenCV + IRIS, AbsentMotion, Stylo), compiles the materials (`engine/materials/build.sh`), configures CMake in `engine/out/cmake`, copies runtime DLLs (ONNX Runtime, FFmpeg, `$MOTOLII_LIBRARIES/bin/*.dll`) into `engine/out/`, and builds `engine/out/libmotolii.dll` and `engine/out/edit_wgpu.exe`.
+- To rebuild only `libmotolii.dll`: `C:\msys64\usr\bin\zsh engine/build.sh lib`
+- To build and run the C++ tests: `C:\msys64\usr\bin\zsh engine/build.sh test`
+
+## Build and run the app
+
+From a normal command prompt or PowerShell (with `GSTREAMER_1_0_ROOT_MSVC_X86_64` set in your environment):
+
+```cmd
+cd app
+flutter run -d windows
+```
+
+At startup, `app/windows/runner/main.cpp`:
+1. Sets `HOME` from `USERPROFILE` if `HOME` is not set.
+2. Prepends the nearest `engine/out` folder and `%GSTREAMER_1_0_ROOT_MSVC_X86_64%\bin` to `PATH` so Windows can resolve all dependent DLLs when loading `libmotolii.dll`.
+3. Uses a UTF-8 active code page (`app/windows/runner/runner.exe.manifest`) so standard C narrow file calls read UTF-8 paths the same way as on macOS.
+
+---
+
+## How the Windows port works (and current limitations)
+
+| Area | On macOS | On Windows | Status |
 |---|---|---|---|
-| Handing a decoded video frame to the GPU (`engine/media/video_layer.cpp`) | The hardware decoder's frame (an IOSurface) is shared into Dawn with `SharedTextureMemoryIOSurface`. | A D3D12 or D3D11 frame shared into Dawn with `SharedTextureMemoryD3D12Resource`, `D3D11Texture2D` or `DXGISharedHandle`. | Dawn has these interfaces: the feature names are in `webgpu.h` and `dawn/native/D3D12Backend.h`. The feature list the Filament patch requests (`engine/deps/patches/filament/filament_dawn_compute.patch`) needs the Windows feature names added. |
-| Getting the decoded frame from GStreamer | The code reads an unpublished layout of GStreamer's memory. | GStreamer should have a public D3D12 header (`gst/d3d12`). | **Not confirmed.** The GStreamer installed on the Mac has no Windows headers, so the names could not be checked. If the header exists, this will be a cleaner (public) interface than the Mac one. |
-| Color range of a frame (narrow or full) | Read from the frame's format (`420v` or `420f` on the Mac). | A D3D frame's format carries no range, so the range must be read from GStreamer's caps. | On the Mac the caps and the content disagreed. Whether they do on Windows is not known. |
-| Writing a picture to a file (`shoot` in `engine/stage/render/render_draw.mm`) | Cocoa (`NSBitmapImageRep`). | Filament's `imageio`, or any PNG writer. | Not started. |
-| Build | CMake, with Mac frameworks listed in `engine/CMakeLists.txt`, driven by `engine/build.sh` (zsh). | The same CMake file with a Windows branch, and a build script that is not zsh. | Not started. |
-| `gpu_interop` (a way to put work into Filament's render queue) | Uses Filament's internal headers. | The same on every OS. | Needed so that ThorVG draws on Filament's device (`engine/gpu/gpu_interop.h`). |
-| Frame timing | Thermion's `FrameScheduler` uses CVDisplayLink. | The same class uses DXGI on Windows (`engine/third_party/thermion_frame/`). | Not tried. |
-| Showing the preview in the app | `engine/stage/live.h` draws into three IOSurface-backed CVPixelBuffers that a Flutter external texture reads (`app/macos/Runner/MainFlutterWindow.swift`). | A shared D3D11 texture handed to Flutter's Windows texture registrar. | See the unknowns below. The app has no `windows/` runner yet. |
-
-## What is not known
-
-- Whether to run Dawn on D3D12 or Vulkan. Video hand-over is more direct with D3D12, because a D3D12 frame can be passed as it is.
-- Whether the two-plane format `R8BG8Biplanar420Unorm` (luma plus chroma) works the same way on Dawn's D3D12 backend. The feature `DawnMultiPlanarFormats` exists, but it has not been tried.
-- How many videos the hardware decoder can read at the same time. On the Mac it is 59.
-- How to give Flutter on Windows a moving picture without a copy. It will differ from the Mac code. Flutter's Windows embedder accepts a GPU surface in the form of a DXGI shared handle or an `ID3D11Texture2D` (BGRA8888 or RGBA8888).
-- Which kind of D3D11 shared handle Dawn and Flutter can both open, and how to choose the same GPU on a laptop that has two.
-
-## First step
-
-Build one project without video (a mask, for example) on Windows and draw the same picture as on the Mac. Everything it needs is in the first table above, so if this fails, the cause is the build procedure.
+| Filament & Dawn (WebGPU) | Metal backend | D3D12 backend (`engine/deps/patches/filament/filament_webgpu_windows.patch`); `TransientAttachments` made optional because Dawn D3D12 does not support it | Works |
+| Preview frame sharing (`engine/stage/live.h`) | 3 `CVPixelBuffer`s backed by `IOSurface` (`engine/stage/live_shared_mac.mm`, `app/macos/Runner/MainFlutterWindow.swift`) | 3 D3D12 textures exported as DXGI shared handles (`engine/stage/live_shared_windows.cpp`) and registered with `kFlutterDesktopGpuSurfaceTypeDxgiSharedHandle` (`app/windows/runner/live_texture.cpp`) | Works (no CPU copy) |
+| Decoded video frames (`engine/media/video_frame.cpp`) | Hardware decoder's `IOSurface` imported into Dawn via `SharedTextureMemoryIOSurface` | Uploaded through CPU memory (`video_show_copied`) | Works via CPU copy; direct D3D12 frame sharing (`SharedTextureMemoryDXGISharedHandle`) is a future step |
+| Video export & flash check | FFmpeg with VideoToolbox; OpenCV with AVFoundation | FFmpeg built with MSVC, Media Foundation (`h264_mf`, `hevc_mf`) and D3D11VA (`engine/deps/ffmpeg.sh`); OpenCV built with Media Foundation (`engine/deps/iris.sh`) | Built and tested |
+| Still image export | Cocoa (`NSBitmapImageRep` in `engine/stage/render/render_draw.mm`) | `stb_image_write` PNG writer (`engine/stage/render/render_draw_png.cpp`) | Works |
+| System fonts & user folders | CoreText; `~/Library/Application Support/Motolii` | DirectWrite (`engine/entry/calls_fonts.cpp`); `%APPDATA%/Motolii` | Works |
+| Paths across engine & app | `/` everywhere | Engine converts `std::filesystem::path` with `generic_string()`; app normalizes OS paths with `slashed` and checks `isRooted` (`app/lib/storage/host_platform.dart`) | Works |
+| Host integration | `RecentDocuments`, Finder, `sips`, `df`, `afplay` | `SHAddToRecentDocs` (`app/windows/runner/flutter_window.cpp`), Explorer & PowerShell `FolderBrowserDialog` (`app/lib/storage/open_in_host.dart`), `cmd /c dir`, `gst-launch-1.0` | Works |
+| `motolii/glass` & `motolii/sampler` | macOS window glass study & screen eyedropper | Return `NotImplemented` in `app/windows/runner/live_texture.cpp` | Not implemented on Windows yet |

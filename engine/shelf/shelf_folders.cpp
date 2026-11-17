@@ -1,6 +1,10 @@
 #include "shelf/shelf_folders.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #include <cstdlib>
 #include <map>
@@ -12,9 +16,21 @@ std::atomic<int>& files_changed() {
   static std::atomic<int> n{0};
   return n;
 }
-std::filesystem::path doc_engine(const char* part) {
+// The file this library was loaded from.
+static std::filesystem::path loaded_from() {
+#ifdef _WIN32
+  HMODULE self = nullptr;
+  wchar_t name[MAX_PATH] = {};
+  GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                     (LPCWSTR)&loaded_from, &self);
+  return GetModuleFileNameW(self, name, MAX_PATH) ? std::filesystem::path(name) : std::filesystem::path(".");
+#else
   Dl_info lib{};
-  dladdr((const void*)&doc_engine, &lib);
+  dladdr((const void*)&loaded_from, &lib);
+  return lib.dli_fname ? lib.dli_fname : ".";
+#endif
+}
+std::filesystem::path doc_engine(const char* part) {
   std::error_code wrong;
   // The library is <engine>/out/libmotolii.dylib, but while the open app runs a
   // rebuilt engine it is <engine>/out/live/libmotolii-<time>.dylib, a hot-swapped
@@ -22,9 +38,7 @@ std::filesystem::path doc_engine(const char* part) {
   // either depth resolves to the same <engine>; without it the extra live/ folder
   // shifted the root and the shelves/ tree (effects, create) came back empty.
   std::filesystem::path dir =
-      std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".",
-                                        wrong)
-          .parent_path();
+      std::filesystem::weakly_canonical(loaded_from(), wrong).parent_path();
   for (std::filesystem::path p = dir; !p.empty() && p != p.parent_path();
        p = p.parent_path())
     if (p.filename() == "out") {
@@ -47,8 +61,10 @@ std::vector<std::filesystem::path> doc_folders(const char* folder) {
   std::filesystem::path own;
   if (const char* o = std::getenv("MOTOLII_OWN"))
     own = o;
+#ifdef _WIN32  // (the user's own folder: %APPDATA%/Motolii, the app's engine_paths.dart)
   else if (const char* app = std::getenv("APPDATA"))
     own = std::filesystem::path(app) / "Motolii";
+#endif
   else if (const char* home = std::getenv("HOME"))
     own = std::filesystem::path(home) / "Library" / "Application Support" /
           "Motolii";
