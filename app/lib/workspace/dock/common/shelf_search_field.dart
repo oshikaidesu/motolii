@@ -1,4 +1,5 @@
 // The shelf's search field, and a way for other panels to focus it.
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import 'package:naked_ui/naked_ui.dart';
@@ -25,7 +26,17 @@ class ShelfSearchField extends StatefulWidget {
 }
 
 class _ShelfSearchFieldState extends State<ShelfSearchField> {
-  final _focus = FocusNode();
+  late final _focus = FocusNode(
+    onKeyEvent: (_, event) {
+      if (event is KeyDownEvent &&
+          event.logicalKey == LogicalKeyboardKey.escape &&
+          widget.controller.text.isNotEmpty) {
+        widget.controller.clear();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    },
+  );
   @override
   void initState() {
     super.initState();
