@@ -1,6 +1,5 @@
 // The top bar's size chip: shows the project size, lets the user scrub or type it, and offers common shapes and resolutions.
 import 'package:motolii/widgets/modal_card.dart';
-import 'package:motolii/widgets/number_field.dart';
 
 import 'dart:math' as math;
 
@@ -169,38 +168,23 @@ class _SizeChipState extends State<SizeChip> {
               ),
           ]),
           SizedBox(height: Shape.s(12)),
-          Row(
-            children: [
-              Text('Frame rate', style: TextStyles.label(Grey.g56)),
-              SizedBox(width: Shape.s(12)),
-              NumberField(
-                key: const ValueKey('size-fps'),
-                value: () => WorkspaceController.fps.toDouble(),
-                text: (v, _) => '${v.round()} fps',
-                perPx: 1 / 5,
-                step: 1,
-                inline: true,
-                typeOnTap: false,
-                style: TextStyles.value(Grey.g91),
-                onChange: !isConnected(ws)
-                    ? null
-                    : (v) => setDocumentNumber(
-                        ws,
-                        'frame_rate',
-                        v.round().clamp(1, 120).toDouble(),
-                        (_, _) => ws.reread(),
-                      ),
-                onReset: !isConnected(ws)
-                    ? null
-                    : () => setDocumentNumber(
-                        ws,
-                        'frame_rate',
-                        0,
-                        (_, _) => ws.reread(),
-                      ),
-                paint: (_, shown, _) => shown,
-              ),
+          // The frame rates of Alight Motion's new-project sheet, as a dropdown since the list is long.
+          MenuRow<int>(
+            menuKey: const ValueKey('size-fps'),
+            label: 'Frame rate',
+            value: WorkspaceController.fps,
+            options: [
+              for (final r in const [12, 15, 18, 20, 24, 25, 30, 48, 50, 60])
+                (r, '$r fps'),
             ],
+            onChanged: !isConnected(ws)
+                ? null
+                : (r) => setDocumentNumber(
+                    ws,
+                    'frame_rate',
+                    r == documentRate(ws) ? 0 : r.toDouble(),
+                    (_, _) => ws.reread(),
+                  ),
           ),
           SizedBox(height: Shape.s(12)),
           // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
@@ -221,39 +205,41 @@ class _SizeChipState extends State<SizeChip> {
               ),
           ]),
           SizedBox(height: Shape.s(12)),
-          Row(
-            children: [
-              Text('New layer length', style: TextStyles.label(Grey.g56)),
-              SizedBox(width: Shape.s(12)),
-              NumberField(
-                key: const ValueKey('size-len'),
-                value: () =>
-                    (layerValue(ws, 0, 'layer_length', 0) ?? 0).roundToDouble(),
-                text: (v, _) => v.round() == 0 ? 'End' : '${v.round()}s',
-                perPx: 1 / 3,
-                step: 1,
-                inline: true,
-                typeOnTap: false,
-                style: TextStyles.value(Grey.g91),
-                onChange: !isConnected(ws)
-                    ? null
-                    : (v) => setDocumentNumber(
-                        ws,
-                        'layer_length',
-                        v.round().clamp(0, 120).toDouble(),
-                        (_, _) => ws.reread(),
-                      ),
-                onReset: !isConnected(ws)
-                    ? null
-                    : () => setDocumentNumber(
-                        ws,
-                        'layer_length',
-                        0,
-                        (_, _) => ws.reread(),
-                      ),
-                paint: (_, shown, _) => shown,
-              ),
+          // How long a new layer lasts (Alight Motion's New Layer Length). End runs to the end of the project.
+          MenuRow<int>(
+            menuKey: const ValueKey('size-len'),
+            label: 'New layer length',
+            value: (layerValue(ws, 0, 'layer_length', 0) ?? 0).round(),
+            options: [
+              (0, 'End'),
+              for (final n in const [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                15,
+                20,
+                25,
+                30,
+                45,
+                60,
+              ])
+                (n, '${n}s'),
             ],
+            onChanged: !isConnected(ws)
+                ? null
+                : (n) => setDocumentNumber(
+                    ws,
+                    'layer_length',
+                    n.toDouble(),
+                    (_, _) => ws.reread(),
+                  ),
           ),
           SizedBox(height: Shape.s(12)),
           Text(
