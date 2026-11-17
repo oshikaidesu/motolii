@@ -40,7 +40,7 @@ class TimelinePane extends StatefulWidget {
 
 class _TimelinePaneState extends State<TimelinePane>
     with
-        SingleTickerProviderStateMixin,
+        TickerProviderStateMixin,
         TimelineRequests<TimelinePane>,
         TimelineLabelsView<TimelinePane>,
         TimelineTracksView<TimelinePane> {
@@ -48,6 +48,13 @@ class _TimelinePaneState extends State<TimelinePane>
   // One closure, kept so that the listener removed is the one that was added.
   late final VoidCallback _listener = _changed;
   final _focus = FocusNode(debugLabel: 'timeline');
+
+  late final _zoomAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 120),
+  )..addListener(_zoomStep);
+  double _zoomFrom = 1, _zoomTo = 1;
+  int _zoomAnchor = 0;
   @override
   WorkspaceController? workspace;
 
@@ -128,6 +135,7 @@ class _TimelinePaneState extends State<TimelinePane>
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     workspace?.moment.removeListener(_listener);
     _ticker.dispose();
+    _zoomAnim.dispose();
     viewport.dispose();
     media.dispose();
     ruler.dispose();
@@ -192,8 +200,21 @@ class _TimelinePaneState extends State<TimelinePane>
   void _rebuild() => setState(() {});
 
   @override
-  void setZoom(double z, {int? anchor}) =>
-      viewport.setZoom(z, anchor: anchor ?? workspace!.frame);
+  void setZoom(double z, {int? anchor}) {
+    _zoomFrom = viewport.zoom;
+    _zoomTo = z.clamp(1.0, TimelineMetrics.maxZoom);
+    _zoomAnchor = anchor ?? workspace!.frame;
+    _zoomAnim.forward(from: 0);
+  }
+
+  void _zoomStep() {
+    final t = Curves.easeOut.transform(_zoomAnim.value);
+    final logFrom = math.log(_zoomFrom), logTo = math.log(_zoomTo);
+    viewport.setZoom(
+      math.exp(logFrom + (logTo - logFrom) * t),
+      anchor: _zoomAnchor,
+    );
+  }
 
   /// Keeps the playhead in view when zoomed in: the view pages along as play or a scrub carries it off the edge.
   void _follow(int f) {
@@ -206,7 +227,7 @@ class _TimelinePaneState extends State<TimelinePane>
   @override
   void fingers(Offset by, Offset _) => scrollBy(-by);
   @override
-  void pinch(double by, Offset at) => setZoom(
+  void pinch(double by, Offset at) => viewport.setZoom(
     viewport.zoom * by,
     anchor: viewport.view
         .frameAt(at.dx)
@@ -220,7 +241,10 @@ class _TimelinePaneState extends State<TimelinePane>
         HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
     if (HardwareKeyboard.instance.isMetaPressed ||
         HardwareKeyboard.instance.isControlPressed) {
-      setZoom(viewport.zoom * math.pow(1.0015, -d.dy));
+      viewport.setZoom(
+        viewport.zoom * math.pow(1.0015, -d.dy),
+        anchor: workspace!.frame,
+      );
     } else if (sideways) {
       viewport.scrollBy(d.dx.abs() > d.dy.abs() ? d.dx : d.dy);
     } else {
