@@ -102,7 +102,7 @@ See also [`shelves/README.md`](shelves/README.md) for where each kind of file go
 
 ## Documentation
 
-- [Effect licences](docs/design/effect_licences.md): how Motolii handles credit and licensing for bundled effects — the receipt, not the price tag.
+- [Effect licences](docs/design/effect_licences.md): how Motolii handles credit and attribution for bundled effects.
 - [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
 - [Testing](docs/TESTING.md): how to run each kind of test.
 - [Bridge](docs/app/BRIDGE.md): the contract between the Flutter app and the C++ engine.

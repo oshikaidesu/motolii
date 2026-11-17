@@ -1,14 +1,12 @@
-# Effect licences — the receipt, not the price tag
+# Effect licences and attribution
 
-Motolii bundles effects, scripts and expressions from many authors and many worlds (ISF, AviUtl2, Cavalry, p5.js, After Effects, Shadertoy, …). Users will mix them freely. For that to keep working, everyone — the author who shares an effect, the user who mixes six of them, and the community that grows around both — needs to trust that credit lands where it should, without turning licence labels into fences.
+Motolii bundles effects, scripts and expressions from many authors and many worlds (ISF, AviUtl2, Cavalry, p5.js, After Effects, Shadertoy, …). Users mix them freely. For that to keep working, everyone — the author who shares an effect, the user who mixes six of them, and the community that grows around both — needs to trust that credit lands where it should.
 
-## The problem with price tags
+## Design: credit at the exit, not at the shelf
 
-If a licence badge sits on every effect card, it becomes something people optimise for. Prominent `MIT` / `CC0` / `proprietary` labels turn the shelf into a marketplace before there is one, and rational authors pick the most restrictive option to protect themselves — which makes the shelf less open with every new effect. Motolii's whole point is a crossroads of expressions that were apart; licensing arms races close the crossroads.
+Licence information is surfaced when the user exports or shares their work, not while they browse or compose effects. This keeps attribution reliable and complete without making licence choice a competitive signal between authors.
 
-## A receipt instead
-
-A receipt does not influence what you buy; it records what you bought — after the fact, at the exit. In Motolii the exits are:
+During editing, the effect card shows **by author** — the person, not the terms. Full attribution (author, licence, source) appears at the exits:
 
 | Exit | What happens |
 |---|---|
@@ -18,7 +16,7 @@ A receipt does not influence what you buy; it records what you bought — after 
 
 During editing, the effect card shows only **by author** — the person, not the terms. The licence is on the receipt, not on the shelf.
 
-The one exception: a warning may surface during editing when a project mixes effects whose licences conflict (e.g. a copyleft effect composed with a proprietary one). That is a guardrail, not a label.
+The one exception: a warning may surface during editing when a project mixes effects whose licences conflict (e.g. a copyleft effect composed with a proprietary one).
 
 ## Origin
 
@@ -57,7 +55,7 @@ Builtin and self effects list only names. Community effects list author, licence
 
 When a content protocol (ACP or otherwise) brings effects in from outside, `origin` extends naturally: `store`, `import`, whatever the channel is. The receipt format does not change; a new origin section appears.
 
-The goal stays the same: **credit is clear, but it does not become a fence.** The community should be able to mix freely without having to think about licence compatibility until the moment they export — and at that moment, the receipt is already there, complete and correct, without anyone having had to assemble it by hand.
+The goal stays the same: **credit is clear, but it does not become a fence.** The community should be able to mix freely without having to think about licence compatibility until the moment they export — and at that moment, the attribution is already there, complete and correct, without anyone having had to assemble it by hand.
 
 ## Where the code lives
 

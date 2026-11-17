@@ -4,7 +4,7 @@ The entrance to the repository is the [README](../README.md). The code's own ent
 
 | Document | For | What it is |
 |---|---|---|
-| [`design/effect_licences.md`](design/effect_licences.md) | **Anyone bundling or using effects** | How Motolii handles credit and licensing — the receipt, not the price tag |
+| [`design/effect_licences.md`](design/effect_licences.md) | **Anyone bundling or using effects** | How Motolii handles credit and attribution for bundled effects |
 | [`GUIDE.md`](GUIDE.md) | Anyone using the app | How to use Motolii: from opening to exporting, every panel and operation |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Anyone changing the code | The whole design: how the app, the engine, drawing and video connect. Read it first |
 | [`TESTING.md`](TESTING.md) | Anyone changing the code | How to run each kind of test, what CI runs, how to add a test |
