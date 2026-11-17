@@ -330,7 +330,9 @@ class WorkspaceState extends State<Workspace> {
     _session.followOnOpen(ws);
     documentPath = doc;
     beside = _documents();
-    const MethodChannel('motolii/recent').invokeMethod<void>('note', doc);
+    const MethodChannel('motolii/recent')
+        .invokeMethod<void>('note', doc)
+        .catchError((_) {});
     final id = await _session.texture();
     if (!mounted) return;
     if (id >= 0) ws.stageTexture = id;
