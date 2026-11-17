@@ -71,6 +71,7 @@ class _HomeWindowState extends State<HomeWindow> {
   final _picked = <String>{};
   // The project the last pick was on, where a Shift range starts.
   String? _lead;
+  bool _hoverBanner = false;
   late final String _pictures = makeThumbnailFolder();
 
   @override
@@ -126,74 +127,98 @@ class _HomeWindowState extends State<HomeWindow> {
     final name = last.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
     final lastDoc = _docs.where((d) => d.path == last).firstOrNull;
     final facts = lastDoc != null ? homeFacts(lastDoc) : const <String>[];
-    return NakedButton(
-      enableFeedback: false,
-      key: const ValueKey('home-continue'),
-      onPressed: () => widget.onOpen(last),
-      child: Container(
-        height: Shape.z(200),
-        decoration: BoxDecoration(borderRadius: Shape.round(14)),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (lastDoc?.picture != null)
-              Image(image: imageFile(lastDoc!.picture!), fit: BoxFit.cover)
-            else
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [seedColor(name), seedColorLight(name)],
-                  ),
+    final hb = _hoverBanner;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hoverBanner = true),
+      onExit: (_) => setState(() => _hoverBanner = false),
+      child: NakedButton(
+        enableFeedback: false,
+        key: const ValueKey('home-continue'),
+        onPressed: () => widget.onOpen(last),
+        child: AnimatedScale(
+          scale: hb ? 1.01 : 1.0,
+          duration: Motion.dur,
+          curve: Motion.ease,
+          child: AnimatedContainer(
+            duration: Motion.dur,
+            height: Shape.z(200),
+            decoration: BoxDecoration(
+              borderRadius: Shape.round(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Grey.g00.withValues(alpha: hb ? .3 : 0),
+                  blurRadius: hb ? 20 : 0,
+                  offset: Offset(0, hb ? 8 : 0),
                 ),
-              ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.4, 1.0],
-                  colors: [
-                    Grey.g00.withValues(alpha: .1),
-                    Grey.g00.withValues(alpha: .3),
-                    Grey.g00.withValues(alpha: .9),
-                  ],
-                ),
-              ),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: Shape.s(32),
-                vertical: Shape.s(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'CONTINUE',
-                    style: TextStyles.micro(
-                      WindowTokens.accent,
-                    ).copyWith(letterSpacing: 1.5, fontWeight: FontWeight.w700),
-                  ),
-                  SizedBox(height: Shape.s(6)),
-                  Text(
-                    name,
-                    style: TextStyles.title(Grey.g95).copyWith(
-                      fontSize: TextStyles.px(22),
-                      fontWeight: FontWeight.w700,
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (lastDoc?.picture != null)
+                  Image(image: imageFile(lastDoc!.picture!), fit: BoxFit.cover)
+                else
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [seedColor(name), seedColorLight(name)],
+                      ),
                     ),
                   ),
-                  if (facts.isNotEmpty) ...[
-                    SizedBox(height: Shape.s(4)),
-                    Text(facts.join(' · '), style: TextStyles.label(Grey.g56)),
-                  ],
-                ],
-              ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.4, 1.0],
+                      colors: [
+                        Grey.g00.withValues(alpha: .1),
+                        Grey.g00.withValues(alpha: .3),
+                        Grey.g00.withValues(alpha: .9),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Shape.s(32),
+                    vertical: Shape.s(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'CONTINUE',
+                        style: TextStyles.micro(WindowTokens.accent).copyWith(
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: Shape.s(6)),
+                      Text(
+                        name,
+                        style: TextStyles.title(Grey.g95).copyWith(
+                          fontSize: TextStyles.px(22),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (facts.isNotEmpty) ...[
+                        SizedBox(height: Shape.s(4)),
+                        Text(
+                          facts.join(' · '),
+                          style: TextStyles.label(Grey.g56),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
