@@ -15,6 +15,7 @@ class MainFlutterWindow: NSWindow {
     StageTexture.attach(to: flutterViewController)
     ColourSampler.attach(to: flutterViewController)
     PasteboardFiles.attach(to: flutterViewController)
+    RecentDocuments.attach(to: flutterViewController)
 
     super.awakeFromNib()
     // after the xib has restored its own frame
@@ -151,6 +152,20 @@ enum ColourSampler {
         guard let c = picked?.usingColorSpace(.sRGB) else { return result(nil) }
         result(String(format: "%02x%02x%02x", Int((c.redComponent * 255).rounded()), Int((c.greenComponent * 255).rounded()), Int((c.blueComponent * 255).rounded())))
       }
+    }
+  }
+}
+
+/// Registers a document path with the system's recent documents list (Apple menu > Recent Items).
+enum RecentDocuments {
+  static func attach(to controller: FlutterViewController) {
+    let channel = FlutterMethodChannel(name: "motolii/recent", binaryMessenger: controller.registrar(forPlugin: "MotoliiRecent").messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "note", let path = call.arguments as? String else {
+        return result(FlutterMethodNotImplemented)
+      }
+      NSDocumentController.shared.noteNewRecentDocumentURL(URL(fileURLWithPath: path))
+      result(nil)
     }
   }
 }

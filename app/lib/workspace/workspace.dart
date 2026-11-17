@@ -6,7 +6,7 @@ import 'package:motolii/workspace/workspace_panes.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/services.dart' show Clipboard;
+import 'package:flutter/services.dart' show Clipboard, MethodChannel;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/skin_parts.dart';
@@ -330,6 +330,7 @@ class WorkspaceState extends State<Workspace> {
     _session.followOnOpen(ws);
     documentPath = doc;
     beside = _documents();
+    const MethodChannel('motolii/recent').invokeMethod<void>('note', doc);
     final id = await _session.texture();
     if (!mounted) return;
     if (id >= 0) ws.stageTexture = id;
