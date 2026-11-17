@@ -47,7 +47,7 @@
 | **Fonts** | フォント一覧。テキストレイヤーのフォントを選ぶ |
 | **Colors** | カラーパレット。色を保存・整理できる。選んだ色は Inspector の Fill / Stroke に使われる |
 | **Create** | レシピ（テンプレート）と式（エクスプレッション）。レシピはレイヤーと値の一式を作る。式はアニメーションの動きを定義する |
-| **Presets** | レイヤーから保存したルック（見た目のプリセット）を再適用する。最初は空で、レイヤーの右クリックメニューから保存すると並ぶ |
+| **Presets** | ルック（見た目のプリセット）の棚。（現在は骨格のみで未実装） |
 
 ### メインエリア
 
@@ -310,6 +310,11 @@ Inspector でエフェクトカードを：
 
 書き出した動画の隣に、使ったエフェクトの **クレジットファイル**（作者・ライセンスの一覧）が自動で作られる。動画を公開するときにそのまま使える。
 
+### その他のファイル操作
+
+- **Package Project**（File メニュー）: プロジェクトと使っている素材を 1 つにまとめる。別のマシンに持っていくときに使う。
+- **Use Frame as Project Picture**（File メニュー）: 今のフレームをホーム画面のサムネイルに設定する。
+
 ## 10. 右クリックメニュー
 
 どこでも右クリック（または ⋮ ボタン）でその場のメニューが出る。
@@ -318,12 +323,33 @@ Inspector でエフェクトカードを：
 - **数値**: リセット、コピー、ペースト、キーフレーム操作。
 - **エフェクトカード**: 削除、複製、on/off。
 - **タイムラインのバー**: 分割、トリム、複製、削除。
+- **棚のアイテム**: Show in Finder（ファイルの場所を Finder で開く）。
 
 ## 11. カスタマイズ
 
+### メニューバー
+
+macOS のネイティブメニュー。Help メニューの検索欄で全コマンドを名前で探せる。
+
+| メニュー | 主な項目 |
+|---|---|
+| **Motolii** | About（ライセンス表示） |
+| **File** | New ⌘N、Home ⌘O、Export Video ⌘⇧R、Export Frame ⇧E、Package Project、Use Frame as Project Picture |
+| **Edit** | Undo ⌘Z、Redo ⌘⇧Z、Cut/Copy/Paste、Copy Style ⌘⌥C、Paste Style ⌘⌥V、Select All ⌘A |
+| **Mark** | Animate A（キーフレーム自動記録の on/off） |
+| **Layer** | Duplicate ⌘D、Split ⌘E、Group ⌘G、Group and Mask、Group and Exclude、Rename ⌘R、前面/背面 ⌘]/⌘[ |
+| **View** | Skin（見た目の切り替え、Show Skins Folder で Finder を開く） |
+| **Arrange** | 整列・配置 |
+| **Animation** | ループ ⌘L |
+| **Help** | 検索（全コマンドを名前で探せる） |
+
+### カラーサンプラー（スポイト）
+
+Colors パネルのスポイトアイコンで、画面上のどこからでも色を採れる（macOS のネイティブカラーサンプラーを使用）。Motolii の外のアプリやデスクトップからも色を拾える。
+
 ### スキン
 
-View > Skin から見た目を変えられる。`shelves/skins/` のスキンと、自分で作ったスキンが一覧に出る。
+View > Skin から見た目を変えられる。`shelves/skins/` のスキンと、自分で作ったスキンが一覧に出る。Show Skins Folder で Finder にスキンフォルダを開ける。
 
 ### 自分のファイルを追加する
 
