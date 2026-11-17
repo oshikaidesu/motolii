@@ -72,6 +72,7 @@ class _HomeWindowState extends State<HomeWindow> {
   // The project the last pick was on, where a Shift range starts.
   String? _lead;
   bool _hoverBanner = false;
+  bool _hoverNew = false;
   late final String _pictures = makeThumbnailFolder();
 
   @override
@@ -251,7 +252,7 @@ class _HomeWindowState extends State<HomeWindow> {
     }
     Widget grid(List<HomeProject> docs) => LayoutBuilder(
       builder: (context, box) {
-        const gap = 32.0;
+        final gap = box.maxWidth > 800 ? 36.0 : 24.0;
         final cols = ((box.maxWidth + gap) / (homeTile + gap)).floor().clamp(
           1,
           6,
@@ -320,34 +321,43 @@ class _HomeWindowState extends State<HomeWindow> {
               children: [
                 _HomeWordmark(),
                 const Spacer(),
-                NakedButton(
-                  enableFeedback: false,
-                  key: const ValueKey('home-new'),
-                  onPressed: widget.onNew,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: Shape.s(14),
-                      vertical: Shape.s(6),
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Grey.g38),
-                      borderRadius: Shape.round(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '+',
-                          style: TextStyles.name(Grey.g76)
-                              .copyWith(fontWeight: FontWeight.w600),
+                MouseRegion(
+                  onEnter: (_) => setState(() => _hoverNew = true),
+                  onExit: (_) => setState(() => _hoverNew = false),
+                  child: NakedButton(
+                    enableFeedback: false,
+                    key: const ValueKey('home-new'),
+                    onPressed: widget.onNew,
+                    child: AnimatedContainer(
+                      duration: Motion.dur,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(14),
+                        vertical: Shape.s(6),
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _hoverNew ? Grey.g56 : Grey.g38,
                         ),
-                        SizedBox(width: Shape.s(6)),
-                        Text(
-                          'New',
-                          style: TextStyles.name(Grey.g76)
-                              .copyWith(fontWeight: FontWeight.w500),
-                        ),
-                      ],
+                        borderRadius: Shape.round(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '+',
+                            style: TextStyles.name(
+                              _hoverNew ? Grey.g91 : Grey.g76,
+                            ).copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          SizedBox(width: Shape.s(6)),
+                          Text(
+                            'New',
+                            style: TextStyles.name(
+                              _hoverNew ? Grey.g91 : Grey.g76,
+                            ).copyWith(fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -456,7 +466,10 @@ class _HomeWindowState extends State<HomeWindow> {
                         ],
                       ),
                     )
-                  : ListView(padding: EdgeInsets.zero, children: [grid(shown)]),
+                  : ListView(
+                      padding: EdgeInsets.only(bottom: Shape.s(48)),
+                      children: [grid(shown)],
+                    ),
             ),
           ],
         ),
@@ -478,7 +491,10 @@ class _HomeWordmark extends StatelessWidget {
         width: Shape.z(28),
         height: Shape.z(28),
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: WindowTokens.accent),
+        decoration: BoxDecoration(
+          color: WindowTokens.accent,
+          borderRadius: Shape.round(6),
+        ),
         child: Text(
           'M',
           style: TextStyles.title(WindowTokens.onAccent).copyWith(
