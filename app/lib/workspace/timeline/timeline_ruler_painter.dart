@@ -11,24 +11,32 @@ import 'package:motolii/widgets/timeline_painters.dart'
     show fineTickSpacing, majorTickSpacing;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 // ---------------------------------------------------------------- ruler
 
 /// Paints the ruler: work-area band, time ticks, beats, retimed ends and marker flags.
+///
+/// Repaints from [viewport] and [ruler] via [repaint], so the timeline need not rebuild its widgets on every scroll or
+/// ruler drag. Snapshot fields are set at construction for [shouldRepaint]; [paint] reads live data from the objects.
 class TimelineRulerPainter extends CustomPainter {
-  const TimelineRulerPainter({
-    required this.view,
+  TimelineRulerPainter({
+    required this.viewport,
+    required this.ruler,
     required this.fps,
-    required this.workIn,
-    required this.workOut,
-    required this.markers,
-    this.tempo,
-    this.markColors = const {},
     this.beats = const [],
-    this.retimed = const [],
-  });
+    this.tempo,
+  }) : view = viewport.view,
+       workIn = ruler.workIn,
+       workOut = ruler.workOut,
+       markers = ruler.markers,
+       markColors = ruler.markerColors,
+       retimed = ruler.retimed,
+       super(repaint: Listenable.merge([viewport, ruler]));
+  final TimelineViewport viewport;
+  final RulerMarks ruler;
   final TimelineView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
@@ -46,6 +54,14 @@ class TimelineRulerPainter extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
+    // Live data from the objects, not the snapshot fields.
+    final view = viewport.view;
+    final workIn = ruler.workIn;
+    final workOut = ruler.workOut;
+    final markers = ruler.markers;
+    final markColors = ruler.markerColors;
+    final retimed = ruler.retimed;
+
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = Grey.g10);
     c.drawRect(
