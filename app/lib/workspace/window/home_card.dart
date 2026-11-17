@@ -106,26 +106,25 @@ class _HomeCardState extends State<HomeCard> {
                     duration: Motion.dur,
                     curve: Motion.ease,
                     decoration: BoxDecoration(
-                      borderRadius: Shape.round(8),
+                      borderRadius: Shape.round(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Grey.g00.withValues(alpha: h ? .3 : 0),
-                          blurRadius: h ? 16 : 0,
-                          offset: Offset(0, h ? 6 : 0),
+                          color: Grey.g00.withValues(alpha: h ? .4 : .1),
+                          blurRadius: h ? 24 : 4,
+                          offset: Offset(0, h ? 8 : 2),
                         ),
                         BoxShadow(
-                          color: WindowTokens.accent.withValues(
-                            alpha: h ? .12 : 0,
-                          ),
-                          blurRadius: h ? 24 : 0,
+                          color: seedColor(d.name)
+                              .withValues(alpha: h ? .15 : 0),
+                          blurRadius: h ? 32 : 0,
                         ),
                       ],
                       border: Border.all(
                         color: widget.open
                             ? WindowTokens.accent.withValues(alpha: .5)
                             : h
-                            ? WindowTokens.accent.withValues(alpha: .3)
-                            : Grey.g20.withValues(alpha: .3),
+                            ? Grey.g56.withValues(alpha: .4)
+                            : Grey.g20.withValues(alpha: .15),
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
