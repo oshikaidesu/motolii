@@ -180,11 +180,11 @@ Inspector でエフェクトカードを：
 
 | 操作 | ショートカット |
 |---|---|
-| コピー | ⌘C |
-| カット | ⌘X |
-| ペースト | ⌘V |
-| スタイルをコピー | ⌘⌥C |
-| スタイルをペースト | ⌘⌥V |
+| コピー | ⌘C（レイヤー / キーフレーム / テキスト。数値は右クリック > Copy） |
+| カット | ⌘X（レイヤー / テキスト） |
+| ペースト | ⌘V（レイヤー / キーフレーム / テキスト / Finder のファイル / ウェブのコード） |
+| スタイルをコピー | ⌘⌥C（選択レイヤーのエフェクトと値をまとめてコピー） |
+| スタイルをペースト | ⌘⌥V（コピーしたスタイルを選択中の全レイヤーに適用） |
 | 複製 | ⌘D |
 | 削除 | Delete |
 | リネーム | ⌘R |
@@ -317,13 +317,21 @@ Inspector でエフェクトカードを：
 
 ## 10. 右クリックメニュー
 
-どこでも右クリック（または ⋮ ボタン）でその場のメニューが出る。
+右クリック（または ⋮ ボタン）でその場のメニューが出る。
 
-- **レイヤー**: 削除、複製、リネーム、表示/非表示、ソロ、並べ替え。
-- **数値**: リセット、コピー、ペースト、キーフレーム操作。
-- **エフェクトカード**: 削除、複製、on/off。
-- **タイムラインのバー**: 分割、トリム、複製、削除。
-- **棚のアイテム**: Show in Finder（ファイルの場所を Finder で開く）。
+| 場所 | メニュー項目 |
+|---|---|
+| **レイヤー**（ヘッダー / バー / Stage 上） | Rename…, Duplicate, Split, Deactivate, Delete |
+| **タイムライン空き地** | Paste, Select All, Deselect All |
+| **マーカー** | Rename…, Play from Here, Delete, 色選択 |
+| **Inspector の数値** | Reset, Copy, Paste, Go Past Range Ends, Key this frame / Remove key |
+| **エフェクトカード** ⋮ | Reset to Defaults, Duplicate, Copy/Paste Effect, Save as Preset |
+| **Effects 棚タイル** | Add/Remove, Favorites, Deck, Tags… |
+| **Create 棚タイル** | Rename…, Show in Finder |
+| **Colors の色** | Replace, Delete, Delete this palette |
+| **ホーム画面カード** ⋮ | Open, Select, Export…, Duplicate, Move to Trash |
+
+右クリックがまだ無い場所: キーフレーム、Code タブ。
 
 ## 11. カスタマイズ
 
