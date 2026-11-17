@@ -72,7 +72,8 @@ class _RenderState extends State<RenderButton> {
     final ws = WorkspaceScope.read(context),
         doc = ws.document ?? 'film.motolii';
     _free = _room(ws.documentFolder);
-    _name.text = '${doc.replaceFirst(RegExp(r'\.motolii$'), '')}.mp4';
+    final ext = ws.viewOf<String>('render.ext', '.mp4');
+    _name.text = '${doc.replaceFirst(RegExp(r'\.motolii$'), '')}$ext';
     _open.show();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => mounted ? _focus.requestFocus() : null,
@@ -104,6 +105,7 @@ class _RenderState extends State<RenderButton> {
     if (!_formats.any((f) => name.toLowerCase().endsWith(f.$2))) {
       name = '$name.mp4';
     }
+    ws.view['render.ext'] = _ending;
     ws.renderTo = name.startsWith('/')
         ? name
         : '${ws.documentFolder ?? '.'}/$name';

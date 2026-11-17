@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout;
 import 'package:flutter/services.dart';
 
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
+import 'package:motolii/workspace/edits/make_relation.dart' show clickLayer;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     as timeline_service;
@@ -317,7 +318,7 @@ class TrackDrag extends ChangeNotifier {
     }
     final f = v.frameAt(p.dx);
     if (f >= l.inF && f <= l.outF) {
-      ws.select(l.id);
+      clickLayer(ws, l.id, order: [for (final k in ws.layers) k.id]);
     } else {
       ws.clearKeys();
     }

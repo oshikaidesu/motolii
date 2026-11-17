@@ -173,16 +173,17 @@ class _InspectorPanelState extends State<InspectorPanel> {
                   child: const InspectorHeader(),
                 ),
               Expanded(
-                child: ListView(
+                child: RawScrollbar(
                   controller: _scroll,
-                  padding: EdgeInsets.all(InspectorSkin.gap),
-                  // (built ahead while a field waits to be typed into, so that it exists to take the keys: a new text
-                  //  layer's text, or a slider a quick fix just declared, NumberField.typeInto)
-                  scrollCacheExtent:
-                      textToType || NumberField.asked.value != null
-                      ? const ScrollCacheExtent.pixels(4000)
-                      : null,
-                  children: body,
+                  child: ListView(
+                    controller: _scroll,
+                    padding: EdgeInsets.all(InspectorSkin.gap),
+                    scrollCacheExtent:
+                        textToType || NumberField.asked.value != null
+                        ? const ScrollCacheExtent.pixels(4000)
+                        : null,
+                    children: body,
+                  ),
                 ),
               ),
             ],
