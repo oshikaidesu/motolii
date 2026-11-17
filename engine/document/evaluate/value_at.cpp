@@ -42,6 +42,17 @@ void doc_forget(Doc& d) {
   d.value_cache.laid.clear();
 }
 
+void doc_forget_keys(Doc& d, int layer) {
+  d.value_cache.moving.erase(layer);
+  for (auto it = d.value_cache.keyed.begin();
+       it != d.value_cache.keyed.end();) {
+    if (it->first.first == layer)
+      it = d.value_cache.keyed.erase(it);
+    else
+      ++it;
+  }
+}
+
 const std::vector<int>& doc_laid(Doc& d) {
   if (d.value_cache.laid.empty())
     doc_rows(

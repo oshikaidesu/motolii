@@ -86,6 +86,9 @@ bool doc_rows(Doc& d, char* ask,
               const std::function<void(sqlite3_stmt*)>& each = nullptr);
 // Drops every cached read of the document. Call it after the document changes.
 void doc_forget(Doc& d);
+// Drops only the keyframe cache of one layer. Call it after keyframe times
+// changed on that layer without any structural change to the document.
+void doc_forget_keys(Doc& d, int layer);
 // Returns the layers in stacking order, rearmost first. Layers with an `order`
 // property are sorted by it; the others keep their creation order. The result
 // is cached until doc_forget.

@@ -27,6 +27,7 @@
 #include "document/edit/relate.h"
 #include "document/edit/stroke_put.h"
 #include "document/edit/time_edit.h"
+#include "document/evaluate/evaluate.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/match.h"
@@ -389,6 +390,20 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           if (d.act.depth)
             d.changes.changed.insert({layer, ""}), snapshot_update(m),
                 snapshot_time(m);
+        }
+        // Like "show" but for a step that only changed keyframe times: skips
+        // the full doc_forget + doc_match and re-evaluates from a scoped
+        // keyframe-cache clear.
+        else if (c == "show_keys") {
+          Doc& d = doc(m);
+          ok = 1;
+          if (d.act.depth) {
+            d.act.unmatched = false;
+            doc_forget_keys(d, layer);
+            doc_evaluate(d, d.stage->now);
+            d.changes.changed.insert({layer, ""}), snapshot_update(m),
+                snapshot_time(m);
+          }
         } else if (c == "effect")
           ok = changes(m, (int)doc_effect(doc(m), layer, n.c_str(), number));
         // word: where the pointer is and its handle as "x y hx hy", in image

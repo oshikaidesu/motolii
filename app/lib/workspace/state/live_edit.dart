@@ -19,7 +19,7 @@ class LiveEdit {
   LiveEdit(this.ws);
   final WorkspaceController ws;
 
-  bool _open = false, _going = false, _carry = false;
+  bool _open = false, _going = false, _carry = false, _keysOnly = false;
   LiveWrites? _waiting;
 
   /// Whether a gesture's undo step is open.
@@ -56,10 +56,12 @@ class LiveEdit {
   // ---- live writes ------------------------------------------
 
   /// Writes [writes] into the gesture's undo step, opening it at the first move, and shows the result.
-  void move(LiveWrites writes) {
+  /// With [keysOnly] the engine skips the full rebuild and only re-evaluates the changed keyframes.
+  void move(LiveWrites writes, {bool keysOnly = false}) {
     assert(!_carry, 'A carry gesture is open — use dragUpdate, not move');
     final m = ws.inside;
     if (m == null) return;
+    _keysOnly = keysOnly;
     if (_going) {
       _waiting = writes;
       return;
@@ -70,14 +72,15 @@ class LiveEdit {
     }
     _going = true;
     var shown = 0;
+    final show = keysOnly ? 'show_keys' : 'show';
     for (final t in {...writes(m)}.ifEmpty(0)) {
-      shown = m.later('show', layer: t);
+      shown = m.later(show, layer: t);
     }
     ws.after(shown, (_, _) {
       _going = false;
       final next = _waiting;
       _waiting = null;
-      if (next != null && _open) move(next);
+      if (next != null && _open) move(next, keysOnly: _keysOnly);
     });
   }
 

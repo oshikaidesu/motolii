@@ -160,7 +160,7 @@ class TrackDrag extends ChangeNotifier {
         ];
         _slid = by;
         return timeline_service.slideKeyframeWrites(ws, now, step);
-      });
+      }, keysOnly: true);
       notifyListeners();
       return;
     }
