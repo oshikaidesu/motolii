@@ -18,7 +18,7 @@ Run these from the repository root unless a command says otherwise.
 cd app && flutter test
 ```
 
-This runs the main tests only: the files whose header names a source outside the code for their expected values (a specification, another product, a shipped file, arithmetic worked by hand). Today they are `accessibility_guidelines_test`, `skin_folders_test`, `bridge/find_program_test`, `inspector/controls/parameter_reach_test`, `workspace/stage/stage_viewport_test`, `workspace/window/home_project_test` and `workspace/window/shipped_layout_test`. Every other file pins what the code gave (see "The rule for tests") and starts its `main` with `if (skipUnlessEveryTest()) return;` from [app/test/main_tests_only.dart](../app/test/main_tests_only.dart), so it shows as one skipped test. To run every test, ask for it by name:
+This runs the main tests only: the files whose header names a source outside the code for their expected values (a specification, another product, a shipped file, arithmetic worked by hand). Today they are `accessibility_guidelines_test`, `skin_folders_test`, `bridge/find_program_test`, `inspector/controls/parameter_reach_test`, `inspector/fill_card_test`, `inspector/text/text_ranges_test`, `inspector/text_card_test`, `inspector/transform_card_test`, `widgets/context_menu_test`, `widgets/modal_card_dismiss_test`, `widgets/picks_test`, `widgets/tip_test`, `workspace/stage/stage_viewport_test` and `workspace/window/home_project_test`. Every other file pins what the code gave (see "The rule for tests") and starts its `main` with `if (skipUnlessEveryTest()) return;` from [app/test/main_tests_only.dart](../app/test/main_tests_only.dart), so it shows as one skipped test. To run every test, ask for it by name:
 
 ```
 cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes
@@ -43,7 +43,7 @@ This scrolls the Workspace timeline with 120 mouse-wheel notches and fails if an
 engine/build.sh test
 ```
 
-Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test, written with GoogleTest; CMake finds them by name (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). There are four today: `engine/motion/easing_curves_test.cpp`, `engine/motion/easing_godot_test.cpp`, `engine/community/quickjs/script_header_test.cpp` and `engine/document/scripts/shelf_recipe_files_test.cpp`.
+Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test, written with GoogleTest; CMake finds them by name (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). There are 18 today, in `engine/base/`, `engine/motion/`, `engine/document/`, `engine/community/quickjs/`, `engine/community/script_runner/`, `engine/community/jolt/` and `engine/stage/canvas/`.
 
 The CSS adapter is Rust and has its own tests, which CMake does not run: three layouts of letters (flex, grid, wrapped words) with the places Chrome gave them.
 
@@ -65,10 +65,12 @@ See below. It is a build.
 
 | Kind | Where | What it checks |
 |---|---|---|
-| Unit and widget | `app/test/skin`, `app/test/widgets`, `app/test/inspector`, `app/test/workspace` | Number and colour formatting, theme tokens, inspector state and parameter inference, key bindings, timeline painters, tool-panel easing, settings files, workspace state |
+| Unit and widget | `app/test/skin`, `app/test/widgets`, `app/test/inspector`, `app/test/workspace` | Number and colour formatting, theme tokens, inspector state and parameter inference, key bindings, timeline painters, tool-panel easing, settings files, workspace state, text ranges, fill/text/transform cards, context menus, picks, tooltips, modal dismiss |
+| Golden | `app/test/golden/` | Visual snapshots of the code field, drop overlay, render dialog and saved progress |
 | Skin folders | `app/test/skin_folders_test.dart` | The skins in `shelves/skins` and the user's own folder all appear in View > Skin |
 | Accessibility | `app/test/accessibility_guidelines_test.dart` | Flutter's tap-target size and label guidelines, text contrast, and that opening the app raises no layout exception |
 | Frame timing | `app/integration_test/`, `app/test_driver/` | Timeline scrolling stays inside the frame budget |
+| C++ unit | `engine/` (`*_test.cpp`, 18 files) | Easing curves, script headers, shelf recipe paths, search paths, video encoder, rigid bodies, AE parameters, CSS parameters, image pixels, cards, relate files, sample images, sketch data, sound data, subtitles |
 | Pictures | `engine/drawings_unchanged.sh` | Every shelf recipe and motion draws the same as at an older commit |
 | Static | analyzer, `check_syntax.sh`, `path_check.py` | Dart and C++ compile cleanly; documents name real paths |
 

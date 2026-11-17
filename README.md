@@ -25,7 +25,7 @@ Motolii is still in development and has been tried only on a Mac with Apple sili
 - **Partly**: AviUtl2 scripts; Alight Motion's features.
 - **Not yet**: Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound.
 
-How each format runs, with counts, and the known bug: [Specifications, "Supported formats and how they run"](docs/using/specifications.md#supported-formats-and-how-they-run).
+How each format runs, with counts, and the known bug: [Specifications](docs/archive/using/specifications.md).
 
 ## Build and run
 
@@ -34,7 +34,7 @@ You need:
 - A Mac with Apple silicon (checked on an M4, macOS 15.5).
 - Xcode from the App Store (the Command Line Tools alone can't build the UI). Open it once to add its components, then `sudo xcodebuild -license accept`.
 - Homebrew: the one line on [brew.sh](https://brew.sh/).
-- Flutter 3.47.2 (stable) on your `PATH`: [guide, "Get Flutter"](docs/using/guide.md#get-flutter).
+- Flutter 3.47.2 (stable) on your `PATH`: [flutter.dev/get-started](https://docs.flutter.dev/get-started/install).
 - Python 3: the one macOS has (it comes with Xcode).
 - About 10 GB of disk besides Xcode and Flutter.
 
@@ -56,7 +56,7 @@ The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), a
 
 To run the tests: `engine/build.sh test` for the engine (CMake's ctest) and `cd app && flutter test` for the app. More in [Testing](docs/TESTING.md).
 
-Each step in detail, a first piece, and what to do if something goes wrong: [guide, "Try it"](docs/using/guide.md#try-it).
+Each step in detail and what to do if something goes wrong: [Guide](docs/archive/using/guide.md).
 
 ## What runs
 
@@ -87,7 +87,7 @@ Paste code (⌘V) or drop a file. The language is detected automatically.
 | **Lottie (.json)** | D&D | ThorVG |
 | **Subtitles (ASS/SRT/LRC/VTT)** | D&D | libass via FFmpeg |
 
-Not all code in a supported format runs correctly. Counts and details: [Specifications](docs/using/specifications.md#supported-formats-and-how-they-run).
+Not all code in a supported format runs correctly. Counts and details: [Specifications](docs/archive/using/specifications.md).
 
 See also [`shelves/README.md`](shelves/README.md) for where each kind of file goes.
 
@@ -102,13 +102,12 @@ See also [`shelves/README.md`](shelves/README.md) for where each kind of file go
 
 ## Documentation
 
-- [What sets Motolii apart](docs/using/highlights.md): what it does today that is hard to get elsewhere, and where each one stops.
-- [Specifications](docs/using/specifications.md): the system it needs, the formats it runs with counts, what it exports, speed.
-- [Guide](docs/using/guide.md): what Motolii does, building step by step, a first piece, how it compares.
-- [The tabs](docs/using/screen_tour.md): each tab of the screen, with pictures and how to use it.
 - [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
 - [Testing](docs/TESTING.md): how to run each kind of test.
+- [Bridge](docs/app/BRIDGE.md): the contract between the Flutter app and the C++ engine.
+- [Gestures](docs/app/GESTURES.md): what a press, a drag, a wheel and each key mean on every control.
 - [Contributing](.github/CONTRIBUTING.md): building, the rules, good first tasks.
+- [Archive](docs/archive/): older docs kept for history (highlights, specifications, guide, screen tour).
 
 ## Contributing
 

@@ -10,7 +10,7 @@
 
 ## 組み立て
 
-[`README.ja.md`](../README.ja.md) の「ビルドして動かす」のとおり（手順の詳しい説明は[ガイド](../docs/using/guide.ja.md#使ってみる)）。コミット時に Dart の整形を確かめる hook を入れるなら、クローンした所で一度だけ：
+[`README.ja.md`](../README.ja.md) の「ビルドして動かす」のとおり（手順の詳しい説明は[ガイド](../docs/archive/using/guide.ja.md)）。コミット時に Dart の整形を確かめる hook を入れるなら、クローンした所で一度だけ：
 
 ```bash
 git config core.hooksPath .githooks
@@ -69,8 +69,8 @@ C++ は、`./engine/check_syntax.sh` が組み立てずに構文を見て、`eng
 | 何 | どこから | 難しさ |
 |---|---|---|
 | 配れる `.app`：エンジンが読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`app/macos/` | 中 |
-| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `docs/design/aviutl2_converter_plan.md`、`engine/community/aviutl/aviutl.cpp` | 中〜難 |
-| TSL の表現を編集の棚に出す | `engine/community/three_shading_language_to_shelf/`、`docs/design/tsl_collection.md` | 中 |
+| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `docs/archive/design/aviutl2_converter_plan.md`、`engine/community/aviutl/aviutl.cpp` | 中〜難 |
+| TSL の表現を編集の棚に出す | `engine/community/three_shading_language_to_shelf/`、`docs/archive/design/tsl_collection.md` | 中 |
 
 ## 知っている穴
 

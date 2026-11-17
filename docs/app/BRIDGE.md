@@ -2,7 +2,7 @@
 
 The contract between the Flutter app (`app/`) and the C++ engine (`engine/`, called through `engine/entry/motolii.h`), for anyone who changes either side.
 
-In short: writes are recorded and return at once, questions are answered later, and what changes every frame is subscribed to. The design follows other open-source apps with the same split: Lumit (a bridge contract), AppFlowy (one stream that says what changed and for whom), Rive's CommandQueue (writes are recorded and return, queries arrive later), Anthem (values that change every frame are subscribed to) and Thermion (a draw request is dropped while the previous one runs). Only the ideas of GPL and AGPL projects are borrowed. [`../design/bridge_rework.md`](../design/bridge_rework.md) records the rework that produced this contract.
+In short: writes are recorded and return at once, questions are answered later, and what changes every frame is subscribed to. The design follows other open-source apps with the same split: Lumit (a bridge contract), AppFlowy (one stream that says what changed and for whom), Rive's CommandQueue (writes are recorded and return, queries arrive later), Anthem (values that change every frame are subscribed to) and Thermion (a draw request is dropped while the previous one runs). Only the ideas of GPL and AGPL projects are borrowed. [`../archive/design/bridge_rework.md`](../archive/design/bridge_rework.md) records the rework that produced this contract.
 
 ## Rules
 

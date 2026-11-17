@@ -12,7 +12,7 @@ Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to
 
 ## Building
 
-As in [`README.md`](../README.md) ("Build and run"); each step in detail is in the [guide](../docs/using/guide.md#try-it). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
+As in [`README.md`](../README.md) ("Build and run"); each step in detail is in the [guide](../docs/archive/using/guide.md). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
 
 ```bash
 git config core.hooksPath .githooks
@@ -65,8 +65,8 @@ Decided by the author. A change that breaks one of them is not merged, even when
 | What | Where to start | Difficulty |
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/design/aviutl2_converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/design/tsl_collection.md` | Medium |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/archive/design/aviutl2_converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
+| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/archive/design/tsl_collection.md` | Medium |
 
 ## Known gaps
 

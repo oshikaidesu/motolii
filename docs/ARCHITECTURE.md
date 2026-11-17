@@ -46,7 +46,7 @@ flowchart TB
 | Boundary | Where | Rule |
 |---|---|---|
 | App entry | `app/lib/main.dart` opens `app/lib/workspace/workspace.dart` (`Workspace`: the whole window, opening a project, the menus). App state lives in `app/lib/workspace/state/workspace_controller.dart` (`WorkspaceController`). | [`app/README.md`](../app/README.md) maps the app's files. A new panel is added through `Workspace`'s `extra` list of `Pane`s. |
-| App to engine | `engine/entry/motolii.h` (about 400 lines). On the Dart side: `app/lib/bridge/motolii.dart` and `motolii_bindings.dart`, which ffigen generates. | The app holds no values. It reads and changes everything through C calls, and the project is the source of truth. The contract is in [`app/BRIDGE.md`](app/BRIDGE.md). |
+| App to engine | `engine/entry/motolii.h` (about 490 lines). On the Dart side: `app/lib/bridge/motolii.dart` and `motolii_bindings.dart`, which ffigen generates. | The app holds no values. It reads and changes everything through C calls, and the project is the source of truth. The contract is in [`app/BRIDGE.md`](app/BRIDGE.md). |
 | Inside the engine | `engine/entry/render_thread.h` | Only the render thread touches the project and the GPU. The app never waits for it: a write is queued and returns at once, and a read takes a snapshot the render thread built (rules 1, 3 and 6 in [`app/BRIDGE.md`](app/BRIDGE.md)). |
 | Engine to app (frames) | `engine/stage/live.h` | The preview is drawn into three CVPixelBuffers on IOSurfaces. Each is imported into Dawn as a texture and used as a Filament render target. The app (a Flutter external texture, `app/macos/Runner/MainFlutterWindow.swift`) reads the same buffers. |
 | Third-party code | `engine/deps/patches/<library>/` | Third-party code is not edited in place. A pinned version is fetched and patches are applied (see section 2 of [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)). |
@@ -100,10 +100,24 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `solids/` | `community/three/solid_three.cpp` | none |
 | `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/ease/ease_shelf.dart` |
 | `skins/` | none | `skin/theme.dart` `ColorTheme.skinNames` |
+| `behaviours/` | `document/scripts/recipes.h` | none (behaviours are engine-side expressions: noise, oscillator, random) |
+| `workspaces/` | none | `workspace/workspace.dart` reads layout presets |
 | `extensions/hydra/` | `document/scripts/adapter.h`, `community/hydra/hydra_isf.cpp` | none |
 | `engine/third_party/wordnet_ja/` (data, not a shelf) | `entry/calls_find.cpp` `find_english` (`doc_folders("words")`) | none |
 | `engine/third_party/noto_sans_jp/` (data, not a shelf) | `stage/canvas/canvas_renderables.h` `type_fallback` (`doc_folders("fonts")`) | `workspace/dock/fonts/fonts_shelf.dart` |
 | `engine/third_party/gflanguages/` (data, not a shelf) | none | `workspace/dock/fonts/fonts_controller.dart` (`samples.json`) |
+
+## Shelf metadata and user tags
+
+Each shelf folder may contain a `meta.yaml` keyed by effect name, with `author`, `license` and `source` fields. The app reads these through `app/lib/storage/shelf_meta.dart` (`shelfMetaOfFile`, `shelfMetaByName`). ISF effects have metadata generated from their CREDIT headers; AviUtl2 scripts have metadata from their SOURCE.txt.
+
+User tags are stored in `~/.motolii/tags.json` and managed by `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`). Tags are shown as chips in the Code tab (`code_pane.dart` `_metaRow`) and Inspector (`inspector/card_meta_row.dart` `CardMetaRow`), with inline autocomplete.
+
+On export, `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) writes a `_credits.txt` beside the video, listing every effect used, grouped by licence.
+
+## Home screen
+
+The home screen (`app/lib/workspace/window/home.dart`) shows on startup over the workspace. It lists projects from the user's folder (default: the parent of the opened document, changeable via `WindowFile.projectsFolder`). A "Continue" card shows the last project (`WindowFile.lastProject`). Settings persist in `~/.motolii/window.xml` through `app/lib/storage/window_settings.dart`.
 
 ## Where things live
 

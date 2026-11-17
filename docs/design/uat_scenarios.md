@@ -7,7 +7,7 @@
 ここには書かない。行が通るのは、次のどちらかの時だけ。
 
 - その行のテスト `app/test/uat/uat_<番号>_test.dart` が、エンジンを組んだ機械で通る（`cd app && flutter test --tags uat`）。飛ばされたテストは通らない扱い。
-- プログラムで確かめられない部分は、[uat_audit.md](uat_audit.md) で監査役が「通る」とした。
+- プログラムで確かめられない部分は、監査役が目視で「通る」とした。
 
 どちらも無い行は、通らない。テストは行の言葉だけを渡された書き手（`.claude/agents/uat-test-writer.md`）が書き、main に入ったら凍る。直せるのは作者だけ（`.claude/hooks/uat_lock.py`）。
 

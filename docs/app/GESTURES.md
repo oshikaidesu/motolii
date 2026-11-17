@@ -4,7 +4,7 @@ This document defines what a press, a double press, a right press, a drag, a whe
 
 The Dart code of the app is a thin layer over input and has no style of its own. The same gesture means the same thing, with the same numbers, on every control of the same kind. An exception stands only when it has a reason from the side of the person using the app. Basic gestures follow After Effects.
 
-Read this before making a panel. A panel built from the standard parts in `app/lib/widgets/` gets these rules from the parts. For how the app looks, see [DESIGN.md](DESIGN.md).
+Read this before making a panel. A panel built from the standard parts in `app/lib/widgets/` gets these rules from the parts. For how the app looks, see [`../archive/DESIGN.md`](../archive/DESIGN.md).
 
 A "shelf" is one of the tabs on the left of the window, where bundled and user content (colours, easings, effects) appears, as in Blender's Asset Shelf.
 

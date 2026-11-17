@@ -25,7 +25,7 @@ After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lo
 - **一部**：AviUtl2 のスクリプト、Alight Motion の機能。
 - **まだ**：Windows、配布できる `.app`（エンジンが Homebrew の部品を読むので、ビルドした Mac の外では動かない）、MIDI の音。
 
-形式ごとの動作状況と数、知っている不具合は[仕様の「対応形式と動作状況」](docs/using/specifications.ja.md#対応形式と動作状況)にあります。
+形式ごとの動作状況と数、知っている不具合は[仕様](docs/archive/using/specifications.ja.md)にあります。
 
 ## ビルドして動かす
 
@@ -34,7 +34,7 @@ After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lo
 - Apple Silicon の Mac（確かめたのは M4、macOS 15.5）。
 - App Store の Xcode（Command Line Tools だけでは画面をビルドできません）。入れたら一度開いて追加の部品を入れ、`sudo xcodebuild -license accept`。
 - Homebrew：[brew.sh](https://brew.sh/ja/) の 1 行。
-- Flutter 3.47.2（stable）を `PATH` に：[ガイドの「Flutter を入れる」](docs/using/guide.ja.md#flutter-を入れる)。
+- Flutter 3.47.2（stable）を `PATH` に：[flutter.dev/get-started](https://docs.flutter.dev/get-started/install)。
 - Python 3：macOS に付いている物（Xcode を入れると入る）でよい。
 - 空き容量：Xcode と Flutter のほかに約 10 GB。
 
@@ -56,7 +56,7 @@ app/tool/live.sh
 
 テストを走らせるには：エンジンは `engine/build.sh test`（CMake の ctest）、アプリは `cd app && flutter test`。詳しくは [Testing](docs/TESTING.md)。
 
-手順の詳しい説明、最初の 1 本、困った時の直し方は[ガイドの「使ってみる」](docs/using/guide.ja.md#使ってみる)にあります。
+手順の詳しい説明と困った時の直し方は[ガイド](docs/archive/using/guide.ja.md)にあります。
 
 ## 何が動く
 
@@ -87,7 +87,7 @@ app/tool/live.sh
 | **Lottie (.json)** | D&D | ThorVG |
 | **字幕 (ASS/SRT/LRC/VTT)** | D&D | libass（FFmpeg 経由） |
 
-対応形式のコードでも、すべてが正しく動作するわけではありません。数と詳細は[仕様](docs/using/specifications.ja.md#対応形式と動作状況)にあります。
+対応形式のコードでも、すべてが正しく動作するわけではありません。数と詳細は[仕様](docs/archive/using/specifications.ja.md)にあります。
 
 ファイルの種類ごとの置き場所は [`shelves/README.ja.md`](shelves/README.ja.md) にあります。
 
@@ -104,13 +104,12 @@ app/tool/live.sh
 
 ## 文書
 
-- [Motolii の特長](docs/using/highlights.ja.md)：いま他では手に入れにくいことと、それぞれの限界。
-- [仕様](docs/using/specifications.ja.md)：必要な環境、動く形式と数えた結果、書き出せる形式、速さ。
-- [ガイド](docs/using/guide.ja.md)：Motolii でできる事、ビルドの手順、最初の 1 本、他のソフトとの違い。
-- [タブの紹介](docs/using/screen_tour.ja.md)：画面のタブごとの絵と使い方。
 - [作り](docs/ARCHITECTURE.md)：全体の作り：アプリ・エンジン・描画・動画のつながり（英語）。
 - [テスト](docs/TESTING.md)：テストの種類ごとの回し方（英語）。
+- [ブリッジ](docs/app/BRIDGE.md)：Flutter アプリと C++ エンジンの間の契約（英語）。
+- [ジェスチャー](docs/app/GESTURES.md)：各コントロールでの押し・ドラッグ・ホイール・キーの意味（英語）。
 - [関わり方](.github/CONTRIBUTING.ja.md)：ビルド、決まり、手を付けやすい所。
+- [アーカイブ](docs/archive/)：以前の文書（特長・仕様・ガイド・画面紹介）。
 
 ## 開発に加わる
 
