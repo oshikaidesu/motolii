@@ -1,0 +1,2 @@
+[data-splitting] { font: 700 64px Helvetica, Arial, sans-serif; }
+[data-splitting] { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 40px; width: 600px; }

@@ -1,0 +1,136 @@
+<!doctype html><html><head><meta charset="utf-8"><style>/* Recommended styles for Splitting */
+.splitting .word,
+.splitting .char {
+  display: inline-block;
+}
+
+/* Psuedo-element chars */
+.splitting .char {
+  position: relative;
+}
+
+/**
+ * Populate the psuedo elements with the character to allow for expanded effects
+ * Set to `display: none` by default; just add `display: block` when you want
+ * to use the psuedo elements
+ */
+.splitting .char::before,
+.splitting .char::after {
+  content: attr(data-char);
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  transition: inherit;
+  user-select: none;
+}
+
+/* Expanded CSS Variables */
+
+.splitting {
+  /* The center word index */
+  --word-center: calc((var(--word-total) - 1) / 2);
+
+  /* The center character index */
+  --char-center: calc((var(--char-total) - 1) / 2);
+
+  /* The center character index */
+  --line-center: calc((var(--line-total) - 1) / 2);
+}
+
+.splitting .word {
+  /* Pecent (0-1) of the word's position */
+  --word-percent: calc(var(--word-index) / var(--word-total));
+
+  /* Pecent (0-1) of the line's position */
+  --line-percent: calc(var(--line-index) / var(--line-total));
+}
+
+.splitting .char {
+  /* Percent (0-1) of the char's position */
+  --char-percent: calc(var(--char-index) / var(--char-total));
+
+  /* Offset from center, positive & negative */
+  --char-offset: calc(var(--char-index) - var(--char-center));
+
+  /* Absolute distance from center, only positive */
+  --distance: calc(
+     (var(--char-offset) * var(--char-offset)) / var(--char-center)
+  );
+
+  /* Distance from center where -1 is the far left, 0 is center, 1 is far right */
+  --distance-sine: calc(var(--char-offset) / var(--char-center));
+
+  /* Distance from center where 1 is far left/far right, 0 is center */
+  --distance-percent: calc((var(--distance) / var(--char-center)));
+}
+</style><style>html, body {
+  background: #DD2911;
+  color: #FFF;
+}
+html {
+  height: 100%;
+  display: flex;
+}
+body {
+  margin: auto;
+}
+.mario-title {
+  font-family: "Open Sans", Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 6vw;
+  font-size: calc( 100vw / var(--char-total) );
+  position: relative;
+  padding: 0.4em 0;
+  overflow: hidden;
+}
+.mario-title:after {
+  content: "";
+  display: block;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-bottom: solid 0.2em;
+  animation: underline 1s cubic-bezier(0.8, 0, 0, 1);
+  animation-fill-mode: both;
+}
+@keyframes underline {
+  from {
+    transform: scaleX(0);
+  }
+}
+.mario-title .word {
+  display: inline-block;
+  animation: slide-up 1.25s cubic-bezier(0.5, 0.2, 0, 1);
+  animation-fill-mode: both;
+  animation-delay: calc( .5s + (.1s * var(--word-index)) );
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(125%);
+  }
+}
+.splitting-mark {
+  color: #FFF !important;
+}
+</style><style>*,*::before,*::after{animation:none!important;transition:none!important;transform:none!important;translate:none!important;rotate:none!important;scale:none!important}</style></head><body><div data-splitting data-text="Atop the Highest Tower" class="mario-title words chars splitting" style="--word-total: 4; --char-total: 19;"><span class="word" data-word="Atop" style="--word-index: 0;"><span class="char" data-char="A" style="--char-index: 0;">A</span><span class="char" data-char="t" style="--char-index: 1;">t</span><span class="char" data-char="o" style="--char-index: 2;">o</span><span class="char" data-char="p" style="--char-index: 3;">p</span></span><span class="whitespace"> </span><span class="word" data-word="the" style="--word-index: 1;"><span class="char" data-char="t" style="--char-index: 4;">t</span><span class="char" data-char="h" style="--char-index: 5;">h</span><span class="char" data-char="e" style="--char-index: 6;">e</span></span><span class="whitespace"> </span><span class="word" data-word="Highest" style="--word-index: 2;"><span class="char" data-char="H" style="--char-index: 7;">H</span><span class="char" data-char="i" style="--char-index: 8;">i</span><span class="char" data-char="g" style="--char-index: 9;">g</span><span class="char" data-char="h" style="--char-index: 10;">h</span><span class="char" data-char="e" style="--char-index: 11;">e</span><span class="char" data-char="s" style="--char-index: 12;">s</span><span class="char" data-char="t" style="--char-index: 13;">t</span></span><span class="whitespace"> </span><span class="word" data-word="Tower" style="--word-index: 3;"><span class="char" data-char="T" style="--char-index: 14;">T</span><span class="char" data-char="o" style="--char-index: 15;">o</span><span class="char" data-char="w" style="--char-index: 16;">w</span><span class="char" data-char="e" style="--char-index: 17;">e</span><span class="char" data-char="r" style="--char-index: 18;">r</span></span></div>
+<script>// Chrome's own layout of the letters: per [data-splitting] element its text, its font-size, the advance of a space in
+// its font, and for each .char the size and the box on the page of its letter. Written into the page as JSON (id "out").
+const out = [...document.querySelectorAll('[data-splitting]')].map(root => {
+  const s = document.createElement('span');
+  s.style.cssText = 'position:absolute;white-space:pre;visibility:hidden';
+  s.textContent = ' ';
+  (root.querySelector('.word') || root).append(s);
+  const space = s.getBoundingClientRect().width; s.remove();
+  // A letter's box is its text's own: where Chrome sets the glyph, as wide as its advance and as tall as the font's
+  // content area. Its element may be larger (a grid item stretched across its column) with the letter at its start.
+  const chars = [...root.querySelectorAll('.char')].map(e => {
+    const r = document.createRange(); r.selectNodeContents(e);
+    const b = r.getBoundingClientRect();
+    return [b.width, b.height, b.x + scrollX, b.y + scrollY, b.width, b.height];
+  });
+  return { text: root.dataset.text, font: parseFloat(getComputedStyle(root).fontSize), space, chars, view: [innerWidth, innerHeight] };
+});
+const pre = document.createElement('pre'); pre.id = 'out'; pre.textContent = JSON.stringify(out); document.body.append(pre);
+</script></body></html>

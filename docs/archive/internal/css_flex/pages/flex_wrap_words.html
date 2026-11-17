@@ -1,0 +1,87 @@
+<!doctype html><html><head><meta charset="utf-8"><style>/* Recommended styles for Splitting */
+.splitting .word,
+.splitting .char {
+  display: inline-block;
+}
+
+/* Psuedo-element chars */
+.splitting .char {
+  position: relative;
+}
+
+/**
+ * Populate the psuedo elements with the character to allow for expanded effects
+ * Set to `display: none` by default; just add `display: block` when you want
+ * to use the psuedo elements
+ */
+.splitting .char::before,
+.splitting .char::after {
+  content: attr(data-char);
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  transition: inherit;
+  user-select: none;
+}
+
+/* Expanded CSS Variables */
+
+.splitting {
+  /* The center word index */
+  --word-center: calc((var(--word-total) - 1) / 2);
+
+  /* The center character index */
+  --char-center: calc((var(--char-total) - 1) / 2);
+
+  /* The center character index */
+  --line-center: calc((var(--line-total) - 1) / 2);
+}
+
+.splitting .word {
+  /* Pecent (0-1) of the word's position */
+  --word-percent: calc(var(--word-index) / var(--word-total));
+
+  /* Pecent (0-1) of the line's position */
+  --line-percent: calc(var(--line-index) / var(--line-total));
+}
+
+.splitting .char {
+  /* Percent (0-1) of the char's position */
+  --char-percent: calc(var(--char-index) / var(--char-total));
+
+  /* Offset from center, positive & negative */
+  --char-offset: calc(var(--char-index) - var(--char-center));
+
+  /* Absolute distance from center, only positive */
+  --distance: calc(
+     (var(--char-offset) * var(--char-offset)) / var(--char-center)
+  );
+
+  /* Distance from center where -1 is the far left, 0 is center, 1 is far right */
+  --distance-sine: calc(var(--char-offset) / var(--char-center));
+
+  /* Distance from center where 1 is far left/far right, 0 is center */
+  --distance-percent: calc((var(--distance) / var(--char-center)));
+}
+</style><style>[data-splitting] { font: 700 64px Helvetica, Arial, sans-serif; }
+[data-splitting] { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 40px; width: 600px; }
+</style><style>*,*::before,*::after{animation:none!important;transition:none!important;transform:none!important;translate:none!important;rotate:none!important;scale:none!important}</style></head><body><div data-splitting data-text="the quick brown fox jumps over" class="words chars splitting" style="--word-total: 6; --char-total: 25;"><span class="word" data-word="the" style="--word-index: 0;"><span class="char" data-char="t" style="--char-index: 0;">t</span><span class="char" data-char="h" style="--char-index: 1;">h</span><span class="char" data-char="e" style="--char-index: 2;">e</span></span><span class="whitespace"> </span><span class="word" data-word="quick" style="--word-index: 1;"><span class="char" data-char="q" style="--char-index: 3;">q</span><span class="char" data-char="u" style="--char-index: 4;">u</span><span class="char" data-char="i" style="--char-index: 5;">i</span><span class="char" data-char="c" style="--char-index: 6;">c</span><span class="char" data-char="k" style="--char-index: 7;">k</span></span><span class="whitespace"> </span><span class="word" data-word="brown" style="--word-index: 2;"><span class="char" data-char="b" style="--char-index: 8;">b</span><span class="char" data-char="r" style="--char-index: 9;">r</span><span class="char" data-char="o" style="--char-index: 10;">o</span><span class="char" data-char="w" style="--char-index: 11;">w</span><span class="char" data-char="n" style="--char-index: 12;">n</span></span><span class="whitespace"> </span><span class="word" data-word="fox" style="--word-index: 3;"><span class="char" data-char="f" style="--char-index: 13;">f</span><span class="char" data-char="o" style="--char-index: 14;">o</span><span class="char" data-char="x" style="--char-index: 15;">x</span></span><span class="whitespace"> </span><span class="word" data-word="jumps" style="--word-index: 4;"><span class="char" data-char="j" style="--char-index: 16;">j</span><span class="char" data-char="u" style="--char-index: 17;">u</span><span class="char" data-char="m" style="--char-index: 18;">m</span><span class="char" data-char="p" style="--char-index: 19;">p</span><span class="char" data-char="s" style="--char-index: 20;">s</span></span><span class="whitespace"> </span><span class="word" data-word="over" style="--word-index: 5;"><span class="char" data-char="o" style="--char-index: 21;">o</span><span class="char" data-char="v" style="--char-index: 22;">v</span><span class="char" data-char="e" style="--char-index: 23;">e</span><span class="char" data-char="r" style="--char-index: 24;">r</span></span></div><script>// Chrome's own layout of the letters: per [data-splitting] element its text, its font-size, the advance of a space in
+// its font, and for each .char the size and the box on the page of its letter. Written into the page as JSON (id "out").
+const out = [...document.querySelectorAll('[data-splitting]')].map(root => {
+  const s = document.createElement('span');
+  s.style.cssText = 'position:absolute;white-space:pre;visibility:hidden';
+  s.textContent = ' ';
+  (root.querySelector('.word') || root).append(s);
+  const space = s.getBoundingClientRect().width; s.remove();
+  // A letter's box is its text's own: where Chrome sets the glyph, as wide as its advance and as tall as the font's
+  // content area. Its element may be larger (a grid item stretched across its column) with the letter at its start.
+  const chars = [...root.querySelectorAll('.char')].map(e => {
+    const r = document.createRange(); r.selectNodeContents(e);
+    const b = r.getBoundingClientRect();
+    return [b.width, b.height, b.x + scrollX, b.y + scrollY, b.width, b.height];
+  });
+  return { text: root.dataset.text, font: parseFloat(getComputedStyle(root).fontSize), space, chars, view: [innerWidth, innerHeight] };
+});
+const pre = document.createElement('pre'); pre.id = 'out'; pre.textContent = JSON.stringify(out); document.body.append(pre);
+</script></body></html>

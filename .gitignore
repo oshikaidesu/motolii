@@ -43,3 +43,4 @@ __pycache__/
 # Cursor's folder: one person's editor. Its rules repeat AGENTS.md, which Cursor reads itself (cursor.com/docs/context/rules),
 # and its stop hook reads reports/alight_checklist.md, which is gone
 /.cursor/
+docs/archive/internal/

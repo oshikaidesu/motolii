@@ -1,0 +1,2 @@
+@keyframes open { from { gap: 0px; } to { gap: 60px; } }
+[data-splitting] .word { display: flex; justify-content: center; animation: open 2s ease-in-out both; }

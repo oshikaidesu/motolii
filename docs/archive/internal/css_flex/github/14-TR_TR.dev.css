@@ -1,0 +1,325 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap');
+
+:root {
+    /* Define color palette - Hologram/Cyberpunk Blue Theme */
+    --primary-color: #050a14; /* Even Darker Blue Background */
+    --secondary-color: #00f0ff; /* Electric Cyan/Blue Accent */
+    --text-light: #a8d5ff; /* Lighter Cyan/Blue Text */
+    --text-dark: #6c90b8; /* Medium Muted Blue Text */
+    --background-light: #ffffff; /* White - Keep for potential contrast if needed */
+    --card-bg: #0a1428; /* Slightly Lighter Blue for Cards */
+    --border-color: #1a3a5e; /* Muted Blue Border */
+
+    /* Define fonts - Consider importing from Google Fonts */
+    --font-primary: 'Inter', sans-serif; /* Main body font */
+    --font-secondary: 'JetBrains Mono', monospace; /* Mono/Code font */
+    --font-headings: 'Space Grotesk', sans-serif; /* Heading font */
+}
+
+/* Basic Reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth; /* Smooth scrolling for anchor links */
+}
+
+body {
+    font-family: var(--font-primary);
+    background-color: #000000; /* Set body background to black */
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+/* General Styling */
+a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover,
+a:focus {
+    color: var(--text-light);
+    text-shadow: /* Add stronger glow on hover */
+        0 0 8px var(--secondary-color),
+        0 0 15px var(--secondary-color),
+        0 0 2px var(--text-light); /* Hint of inner light */
+}
+
+h1, h2, h3 {
+    font-family: var(--font-headings);
+    font-weight: 700;
+    color: var(--text-light);
+    text-shadow: /* Multiple shadows for 3D/Glow effect */
+        0 0 2px var(--text-light), /* Inner white-ish edge */
+        0 0 8px var(--secondary-color), /* Main cyan glow */
+        0 0 15px var(--secondary-color), /* Wider cyan glow */
+        2px 1px 1px rgba(5, 10, 20, 0.5); /* Subtle darker offset for pseudo-3D */
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    /* Apply title flicker animation - properties separated for JS delay */
+    /* animation: title-flicker 6s infinite linear; */
+    animation-name: title-flicker;
+    animation-duration: 6s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-delay: var(--title-flicker-delay, 0s); /* Use CSS variable for delay */
+}
+
+h1 {
+    font-size: 2.5rem; /* Adjust as needed */
+}
+
+h2 {
+    font-size: 2rem;
+    color: var(--secondary-color);
+    margin-bottom: 1.5rem;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+ul {
+    list-style: none;
+}
+
+/* Layout & Sections */
+header,
+main > section,
+footer {
+    padding: 4rem 2rem;
+    max-width: 850px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    background-color: rgba(5, 10, 20, 0.1); /* Updated RGBA alpha from 0.7 to 0.1 */
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color); /* Add subtle border */
+    /* Apply flicker animation */
+    animation: flicker 5s infinite alternate; 
+}
+
+main > section:nth-child(even) {
+    /* Optional: Alternate background for sections */
+    /* background-color: var(--card-bg); */
+}
+
+/* Header & Navigation */
+header {
+    padding: 4rem 2rem; /* Match section padding */
+    max-width: 850px; /* Match section width (Reduced from 1000px) */
+    margin: 0 auto; /* Center header */
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    position: relative; /* Ensure header stays above the fixed canvas */
+    z-index: 1;
+    background-color: rgba(5, 10, 20, 0.043); /* Updated RGBA alpha from 0.7 to 0.1 */
+    margin-bottom: 2rem; /* Optional: Space below header */
+    border-radius: 8px; /* Optional: Style the header */
+    border: 1px solid var(--border-color); /* Add subtle border */
+    /* Apply flicker animation */
+    animation: flicker 5s infinite alternate; 
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--secondary-color);
+}
+
+nav ul {
+    display: flex;
+    gap: 1.5rem;
+}
+
+nav ul li a {
+    font-family: var(--font-secondary); /* Use mono font for nav links */
+}
+
+/* Hero Section */
+.hero {
+    min-height: 60vh; /* Give it some height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    /* Add background image or gradient later if desired */
+}
+
+.hero h1 {
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: var(--text-dark);
+}
+
+/* Project Section */
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 1.5rem;
+}
+
+.project-card {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.2); /* Subtle glow on cards */
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 240, 255, 0.4); /* Stronger glow on hover */
+}
+
+.project-card h3 {
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.project-card p {
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+/* Skills Section */
+#skills ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#skills li {
+    background-color: var(--card-bg);
+    color: var(--secondary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-family: var(--font-secondary);
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+    text-shadow: /* Add slight glow to skill tags */
+        0 0 3px var(--secondary-color);
+}
+
+/* Contact Section */
+#contact ul li {
+    margin-bottom: 0.5rem;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+}
+
+/* Add Media Queries for responsiveness later */
+/* @media (max-width: 768px) { ... } */
+
+/* === Flicker Animation === */
+@keyframes flicker {
+  0%, 100% {
+    opacity: 0.95;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25); /* Base glow for sections */
+  }
+  50% {
+    opacity: 0.9; 
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.3); /* Slightly stronger glow */
+  }
+  /* Add more steps for complex flicker if desired */
+}
+
+/* === Title Flicker Animation === */
+@keyframes title-flicker {
+  0%, 85%, 100% { /* Normal state for most of the duration */
+    opacity: 1;
+    /* Keep base text-shadow */
+    text-shadow:
+        0 0 2px var(--text-light), 
+        0 0 8px var(--secondary-color), 
+        0 0 15px var(--secondary-color), 
+        2px 1px 1px rgba(5, 10, 20, 0.5); 
+  }
+  87%, 93% { /* Quick dips */
+    opacity: 0.7;
+    text-shadow:
+        0 0 2px var(--text-light), 
+        0 0 6px var(--secondary-color), /* Dimmer glow */
+        0 0 10px var(--secondary-color), 
+        2px 1px 1px rgba(5, 10, 20, 0.5); 
+  }
+  90%, 95% { /* Back to normal briefly */
+    opacity: 1;
+    text-shadow:
+        0 0 2px var(--text-light), 
+        0 0 8px var(--secondary-color), 
+        0 0 15px var(--secondary-color), 
+        2px 1px 1px rgba(5, 10, 20, 0.5); 
+  }
+}
+
+/* === Splitting.js Text Animation === */
+@keyframes fly-in-right {
+  from {
+    transform: translateX(200%); /* Start further away */
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0%);
+    opacity: 1;
+  }
+}
+
+[data-splitting] .char {
+  display: inline-block; /* Important for transform */
+  animation: fly-in-right 0.4s cubic-bezier(.25, .46, .45, .94) both; /* Faster duration, adjusted timing */
+  /* Stagger animation based on character index */
+  animation-delay: calc(15ms * var(--char-index)); /* Much shorter delay */
+}
+/* === End Splitting.js Animation === */
+
+/* Background Canvas Styling */
+#bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Position behind other content */
+    display: block; /* Ensure it behaves like a block */
+}
+
+/* === Conditionally Visible Sections === */
+/* <-- Comment out these rules
+#skills,
+#experience {
+    display: none; /* Hide by default */
+
+
+.visible-section {
+    display: block !important; /* Override default hide, use !important for specificity */
+}

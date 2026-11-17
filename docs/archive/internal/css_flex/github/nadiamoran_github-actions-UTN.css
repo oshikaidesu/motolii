@@ -1,0 +1,756 @@
+:root {
+  /* VARIABLES PARA NO REPETIR #dc3545 muchas veces */
+  --main-bg: rgb(194, 188, 188);      /*  gris */
+  --card-bg: #ffffff;                 /* Fondo de tarjetas */
+  --text-color: #333333;              /* Texto principal */
+  --text-muted: #6c757d;              /* Texto secundario */
+  --nav-bg: rgba(255, 255, 255, 0.95);/* Navbar con transparencia */
+  --footer-bg: #ffffff;               /* Fondo del footer */
+  --border-color: black;              /* Color de bordes y líneas */
+  --input-bg: #ffffff;                /* Fondo de inputs */
+  
+  /* Colores de Acento */
+  --acent-red: #dc3545;               
+  --primary-yellow: #ffc107;          
+  
+  /* Sombras */
+  --shadow-soft: 0 10px 30px rgba(0,0,0,0.1);
+  --shadow-hover: 0 15px 40px rgba(244, 196, 48, 0.3); 
+  
+  /* Animaciones y Transiciones */
+  --transition-speed: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* Transición suave para el cambio de tema */
+  --transition-theme: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+/* MODO OSCURO */
+body.dark-mode {
+  --main-bg: #121212;                 
+  --card-bg: #1e1e1e;                 
+  --text-color: #e0e0e0;              
+  --text-muted: #a0a0a0;              
+  --nav-bg: rgba(20, 20, 20, 0.95);   
+  --footer-bg: #1a1a1a;
+  --border-color: #444444;           
+  --input-bg: #2c2c2c;
+  --shadow-hover: 0 15px 40px rgba(220, 53, 69, 0.4); 
+}
+
+/* ESTILOS GENERALES */
+body {
+    position: relative; 
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 0px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Orbitron', sans-serif;
+    transition: var(--transition-theme); 
+}
+
+/* Estilos base para la imagen de fondo (pseudo-elemento) */
+body::before {
+    content: ''; 
+    position: fixed;
+    left: 0;
+    width: 100%;
+    top: 0; 
+    height: 100%; 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    z-index: -1; 
+    /* Transición para que el cambio de imagen sea suave */
+    transition: opacity 0.5s ease, background-image 0.5s ease;
+}
+
+/* FONDO MODO CLARO*/
+body:not(.dark-mode)::before {
+    background-image: url('../img/heroes_body.jpg');
+    opacity: 0.20;
+}
+
+/* FONDO MODO OSCURO */
+body.dark-mode::before {
+    background-image: url('../img/heroes_bodyDark.jpg'); 
+    opacity: 0.15; 
+    filter: contrast(1.2);
+}
+
+/* ANIMACIONES PARA LA CINTA */
+@keyframes scroll-left {
+  0% {transform: translateX(100%);}
+  100% {transform: translateX(-100%);}
+}
+
+.contenedor-cinta {
+  background-color: #c9c6c6;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--border-color);
+  line-height: 1;
+  transition: var(--transition-theme);
+}
+
+body.dark-mode .contenedor-cinta {
+    background-color: #333;
+    color: white;
+}
+        
+.texto-movimiento {
+  display: inline-block;
+  padding: 3px 0;
+  font-weight: bold;
+  animation: scroll-left 20s linear infinite;
+}
+
+/* header y navbars */
+.div-header{
+  content: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--card-bg); 
+  position: relative;
+  padding: 10px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: var(--transition-theme);
+}
+
+.navbar-cliente, footer {
+    background-color: var(--nav-bg); 
+    backdrop-filter: blur(10px); 
+    border-bottom: 3px solid var(--primary-yellow);
+    z-index: 1000;
+    padding: 10px 0;
+    transition: var(--transition-theme);
+}
+
+.navbar-cliente {
+    position: sticky;
+    top: 0;
+}
+
+
+.logo-responsive {
+  height: 100px; 
+  width: auto;
+  transition: height 0.3s ease;
+}
+
+.header-texto-main {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 40px;
+  color: var(--text-color);
+  line-height: 1.2;
+  text-transform: uppercase;
+  transition: color 0.5s ease;
+}
+
+.header-texto-secundario {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 300;
+  letter-spacing: 1.5px;
+  font-size: 15px;
+  color: var(--text-color);
+  line-height: 0;
+  text-transform: uppercase;
+  transition: color 0.5s ease;
+}
+
+/* Enlaces del Nav */
+.nav-link,
+.footer-legal a{
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  color: var(--text-color);
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+  padding-bottom: 5px;
+}
+
+.nav-link:hover,
+.footer-legal a:hover,
+#theme-toggle:hover,
+btn-usuario{
+  color: var(--acent-red);
+  transform: scale(1.15);
+}
+
+.nav-link::after{
+  content:'';
+  position: absolute;
+  width: 0;
+  height: 3px;
+  bottom: 0;
+  left: 0;
+  background-color: var(--acent-red);
+  transition: 0.3s ease-in-out;
+}
+
+.nav-link:hover::after{
+  width: 100%;
+}
+
+/* Botón Interruptor Modo Oscuro */
+#theme-toggle {
+    color: var(--text-color);
+    background: transparent;
+    border: 1px solid transparent;
+    font-size: 1.2rem;
+    padding: 6px 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+#theme-toggle:hover {
+    color: var(--primary-yellow);
+    background-color: rgba(128, 128, 128, 0.1); 
+}
+
+/* Animación del icono al cambiar */
+#theme-toggle i {
+    transition: transform 0.5s ease;
+}
+
+/* Menú de Usuario */
+.btn-usuario-menu{
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  color: var(--text-color);
+  border: none;
+  background: transparent;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: top;
+}
+
+.btn-usuario-menu:hover,
+.btn-usuario-menu:focus,
+.item-salir:hover
+ {
+  color: var(--acent-red);
+  border: none;
+  box-shadow: none;
+}
+
+.menu-vigilantes{
+  border: 1px solid var(--acent-red);
+  background-color: var(--card-bg); 
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  border-radius: 10px;
+  padding: 0.5rem;
+}
+
+/* Estilos Dropdown Global */
+.dropdown-menu {
+  background-color: var(--card-bg);
+  padding: 0;
+  box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2);
+  margin-top: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.dropdown-item {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--text-color);
+    padding: 12px 20px;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+.dropdown-item:hover, .dropdown-item:focus {
+    color: white; 
+    background-color: var(--acent-red); 
+    padding-left: 25px;
+}
+.dropdown-toggle::after {
+    vertical-align: middle;
+    margin-left: 0.5em;
+    color: var(--text-color);
+}
+
+/* MAIN Y CARDS */
+#main-index{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+}
+
+.card {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-color: var(--border-color);
+  border-radius: 15px;
+  overflow: hidden;
+  transition: all var(--transition-speed), var(--transition-theme);
+}
+
+
+
+.card-inicio{
+  width: 100%;
+  margin: 5px auto;
+  max-width: 550px;
+  background-color: var(--card-bg); 
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 15px;
+  overflow: hidden;
+  transition: all var(--transition-speed);
+}
+
+.card-text{
+  color: var(--text-color);
+  font-family:Arial, Helvetica, sans-serif;
+}
+
+/* Inputs (para el login y otros formularios) */
+
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: var(--transition-theme);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--input-bg); /* Mantiene el fondo oscuro/claro según el tema */
+    color: var(--text-color);          /* Mantiene el texto blanco/negro */
+    border-color: var(--acent-red);
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+/* Fix para el autocompletado de Chrome en modo oscuro */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px var(--input-bg) inset;
+    -webkit-text-fill-color: var(--text-color);
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Estilo base del placeholder (Modo Claro) */
+.form-control::placeholder {
+    color: var(--text-); 
+    opacity: 0.6; 
+    transition: color 0.3s ease;
+}
+
+/* Estilo específico cuando el body tiene la clase dark-mode */
+body.dark-mode .form-control::placeholder {
+    color: #e0e0e0; 
+    opacity: 0.5;
+}
+
+/* ANIMACIONES CARD */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.card-logeo-admin, .card-inicio {
+    animation-name: fadeInUp;
+    animation-duration: 0.8s;
+    animation-fill-mode: both;
+}
+
+/* Animación Cards Hover */
+.card:hover {
+    transform: translateY(-10px) scale(1.02); 
+    box-shadow: var(--shadow-hover); 
+    border-color: var(--primary-yellow);
+}
+
+/* Zoom imagen */
+.card:hover .card-img-top {
+    transform: scale(1.1);
+}
+
+.card-text {
+  height: 100px;
+  overflow-y: scroll;
+  color: var(--text-color);
+}
+
+.carrusel-img {
+    width: 100%;
+    height: 340px !important;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+}
+
+.product-card .card-img-top {
+    width: 100%;
+    height: 320px !important;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.product-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.badge {
+    font-size: 1rem;
+    padding: 8px 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Efectos de Scroll Reveal */
+.reveal-card{
+  opacity: 0.3;
+  transform: scale(0.9);
+  transition: all 0.7s ease-out;
+  filter: blur(2px);
+}
+.reveal-card.active{
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+.col:nth-child(1) .card { animation-delay: 0.1s; }
+.col:nth-child(2) .card { animation-delay: 0.2s; }
+.col:nth-child(3) .card { animation-delay: 0.3s; }
+.col:nth-child(4) .card { animation-delay: 0.4s; }
+
+/* Botón iniciar sesión home */
+.btn-usuario-logeo {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  justify-content: flex-end;
+  color: var(--text-color);
+  background: transparent;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  padding: 0.5rem;
+  transition: color 0.1s ease, background-color 0.1s ease;
+}
+
+.item-iniciar-sesion {
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+.btn-usuario-logeo:focus,
+.item-iniciar-sesion:hover {
+  color: var(--acent-red);
+}
+
+.item-iniciar-sesion:active,
+.btn-usuario-logeo:active {
+  background-color: hsla(0, 0%, 98%, 0.794);
+  color: #000000;
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+/* MODAL DE PRODUCTOS */
+.modal-producto-custom .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-radius: 0;
+    border: 2px solid var(--acent-red); 
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    overflow: hidden;
+    height: 100%;
+}
+
+.modal-producto-custom .btn-close-floating {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 1050;
+  background-color: rgba(255,255,255,0.2); 
+  border-radius: 10px;
+  padding: 10px;
+  transition: transform 0.3s, background-color 0.3s;
+}
+
+body:not(.dark-mode) .modal-producto-custom .btn-close-floating {
+    filter: invert(1);
+}
+
+.modal-producto-custom .btn-close-floating:hover{
+  transform: rotate(90deg) scale(1.1);
+  background-color: var(--acent-red);
+  filter: invert(1);
+}
+
+.modal-img-container{
+  background: radial-gradient(circle at center, #2b2b2b 0%, #000000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.modal-img-container img{
+  max-height: 700px;
+  max-width: 90%;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+  object-fit: contain;
+}
+
+.modal-img-container img:hover{
+  transform: scale(1.05);
+}
+
+.columna-info-modal{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 30px;
+}
+
+.descripcion-container{
+  overflow-y: auto;
+  max-height: 300px;
+  padding-right: 10px ;
+}
+
+.acciones-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 30px;
+}
+
+.descripcion-container h5 {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    color: var(--acent-red);
+    margin-bottom: 15px;
+}
+
+.modal-descripcion {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color); 
+}
+/* foOTER */
+.footer-legal {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+.footer-legal a {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.footer-legal a:hover {
+    color: var(--acent-red);
+    transform: scale(1.15);
+    display: inline-block;
+}
+
+#integrantes-equipo{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+/* Títulos dentro del footer/body que sean headings */
+h1, h2, h3, h4, h5, h6, .display-6 {
+    color: var(--text-color);
+}
+
+/* ANIMACIONES DEL TEXTO CON SPLITTING.JS */
+[data-splitting] .char {
+    opacity: 0; 
+    transform: translateY(20px); 
+    transition: opacity 0.3s cubic-bezier(0.5, 0, 0.5, 1), 
+                transform 0.5s cubic-bezier(0.5, 0, 0.5, 1);
+    animation: slide-in-hero 0.6s cubic-bezier(0.5, 0, 0.5, 1) both;
+    animation-delay: calc(50ms * var(--char-index));
+}
+
+@keyframes slide-in-hero {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+        color: var(--acent-red); 
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        color: inherit; 
+    }
+}
+
+/* RESOLUCIÓN PARA CELULARES */
+@media (max-width: 768px) {
+  .contenedor-cinta {
+    display: none;
+  }
+  .logo-responsive {
+    height: 60px;
+  }
+
+  .header-texto-main {
+    font-size: 20px;
+    padding: auto;
+    letter-spacing: 6px;
+    display: inline-block; 
+    transform: scaleY(2.5); 
+    transform-origin: center;
+  }
+
+  .header-texto-secundario { 
+    display: none;
+  }
+
+  .card-inicio{
+    max-width: 140px; 
+    padding: 8px;
+  }
+
+  .form-text{
+    display: none;
+  }
+
+  .card-title {
+    display: none;
+  } 
+}
+.logo-responsive {
+  height: 100px; 
+  width: auto;
+  transition: height 0.3s ease;
+  display: block; 
+}
+
+
+.botones-navbar{
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Corrección para "Carrito Vacío" en Modo Oscuro */
+body.dark-mode #carrito-vacio .text-muted {
+    color: var(--text-color); 
+}
+
+.footer-copyright{
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.texto-card-inicio{
+  color: var(--text-color);
+}
+
+#main-index {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh; 
+  padding-top: 80px; 
+}
+
+.main-ticket{
+  justify-content: space-between;
+  gap: 20px;
+}
+
+
+
+ /* TECLADO VIRTUAL */
+.contenedor-teclado-dock {
+    position: relative; 
+    width: 100%;
+    background-color: transparent; 
+    padding: 10px 5px; 
+    z-index: 1; 
+    box-shadow: none;
+    border-top: none; 
+}
+
+.simple-keyboard {
+    background-color: transparent !important;
+    font-family: 'Orbitron', sans-serif;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.simple-keyboard .hg-button {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    height: 45px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    border-radius: 5px !important;
+    margin: 3px !important; 
+    box-shadow: 0 2px 0 var(--border-color) !important; 
+    transition: all 0.1s ease !important;
+}
+
+/* Efecto al presionar */
+.simple-keyboard .hg-button:active {
+    transform: translateY(2px) !important; 
+    box-shadow: 0 0 0 transparent !important;
+}
+
+/* Hover  */
+.simple-keyboard .hg-button:hover {
+    background-color: var(--acent-red) !important;
+    color: white !important;
+    border-color: var(--acent-red) !important;
+}
+
+/* Tecla ESPACIO */
+.simple-keyboard .hg-button-space {
+    min-width: unset !important; 
+    flex-grow: 1;
+}
+
+/* Tecla BORRAR */
+.simple-keyboard .hg-button-bksp {
+    background-color: #3f0e13 !important;
+    color: var(--acent-red) !important;
+    font-size: 1.2rem !important;
+    min-width: 50px !important;
+}
+
+
+body.dark-mode .logo-responsive {
+    filter: invert(100%) brightness(200%);
+}
+
+#paginacion-comics.dark-mode{
+  color: var(--text-color);
+}
