@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'dart:ui' show Color, Size;
 
 import 'package:flutter/foundation.dart'
-    show ValueNotifier, VoidCallback, listEquals, mapEquals;
+    show ValueNotifier, VoidCallback, listEquals, mapEquals, setEquals;
 
 import 'package:motolii/panel.dart';
 import 'package:motolii/skin/layer_colors.dart';
@@ -158,6 +158,10 @@ class ProjectReader {
         _ => m.rate,
       };
 
+  // Per-layer snapshot identity and the set of parent layers, kept between reads so _reread can skip unchanged layers.
+  final _lastSnap = <int, Map<String, dynamic>>{};
+  Set<int> _holding = const {};
+
   /// Reads the document again after any change, so the panels list what the document holds.
   void reread() => Timeline.timeSync('ws reread', _reread);
   void _reread() {
@@ -166,7 +170,9 @@ class ProjectReader {
     // The document now has another size, from an edit or an undo. The host reopens it, which reads it again.
     if (!m.fits && refit != null) return refit!();
     lastChange = m.changes();
+    var frameRateChanged = false;
     if (_frameRateOf(m) != _frameRate) {
+      frameRateChanged = true;
       // The frame rate changed. Keep the playhead at the same time.
       final at = _playhead.moment.value / _frameRate;
       _composition.frameRate = _frameRateOf(m);
@@ -175,6 +181,7 @@ class ProjectReader {
     rev++;
     reads++;
     final was = List.of(layers), wasListed = _listed;
+    final oldDuration = _composition.duration;
     _composition.duration = Timeline.timeSync(
       'MARK seconds',
       () => (m.seconds * _frameRate).round().clamp(1, 1 << 20),
@@ -191,6 +198,14 @@ class ProjectReader {
     final holding = {
       for (final t in m.layers) m.parentOf(t),
     }; // The ids of layers that are parents.
+    final canReuse =
+        !frameRateChanged &&
+        _composition.duration == oldDuration &&
+        setEquals(holding, _holding);
+    _holding = holding;
+    final wasById = canReuse
+        ? {for (final l in was) l.id: l}
+        : const <String, Layer>{};
     layers
       ..clear()
       ..addAll([
@@ -198,80 +213,89 @@ class ProjectReader {
             in m
                 .layers
                 .reversed) // The topmost layer comes first, as in the sample.
-          () {
-            final kind = m.word(t, 'kind'),
-                from = ((m.value(t, 'start', 0) ?? 0) * _frameRate).round(),
-                lasts = m.lasts(t);
-            final name = m.word(t, 'name');
-            // A keyframe on any animatable property shows as a keyframe on the bar. The engine says which properties those are.
-            final keys = <int>{
-              for (final s in m.layerKeyTimes(t)) (s * _frameRate).round(),
-            }.toList()..sort();
-            return Layer(
-              '$t',
-              name,
-              switch (kind) {
-                'text' => LayerKind.text,
-                'camera' => LayerKind.camera,
-                'film' when isSound(m, t) => LayerKind.audio,
-                'film' || 'picture' => LayerKind.image,
-                'shape'
-                    when m.word(t, 'shape') == 'null' && holding.contains(t) =>
-                  LayerKind.group,
-                _ => LayerKind.shape,
-              },
-              from,
-              _outF(from, lasts),
-              keys,
-              parent: switch (m.parentOf(t)) {
-                > 0 && final p => '$p',
-                _ => null,
-              },
-              lined:
-                  (kind == 'picture' || kind == 'solid') &&
-                  m.values(t).any((n) => n.startsWith('js_line_')),
-              hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
-              solo: (m.value(t, 'solo', 0) ?? 0) > .5,
-              locked: (m.value(t, 'lock', 0) ?? 0) > .5,
-              clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-              stretches: [
-                for (final (a, b, way) in m.layerStretches(t))
-                  (
-                    from: (a * _frameRate).round(),
-                    to: (b * _frameRate).round(),
-                    way: way,
-                    shape: easeCurve(way, m),
+          if (canReuse &&
+              identical(m.layerSnapshot(t), _lastSnap[t]) &&
+              wasById.containsKey('$t'))
+            wasById['$t']!
+          else
+            () {
+              _lastSnap[t] = m.layerSnapshot(t);
+              final kind = m.word(t, 'kind'),
+                  from = ((m.value(t, 'start', 0) ?? 0) * _frameRate).round(),
+                  lasts = m.lasts(t);
+              final name = m.word(t, 'name');
+              final keys = <int>{
+                for (final s in m.layerKeyTimes(t)) (s * _frameRate).round(),
+              }.toList()..sort();
+              return Layer(
+                '$t',
+                name,
+                switch (kind) {
+                  'text' => LayerKind.text,
+                  'camera' => LayerKind.camera,
+                  'film' when isSound(m, t) => LayerKind.audio,
+                  'film' || 'picture' => LayerKind.image,
+                  'shape'
+                      when m.word(t, 'shape') == 'null' &&
+                          holding.contains(t) =>
+                    LayerKind.group,
+                  _ => LayerKind.shape,
+                },
+                from,
+                _outF(from, lasts),
+                keys,
+                parent: switch (m.parentOf(t)) {
+                  > 0 && final p => '$p',
+                  _ => null,
+                },
+                lined:
+                    (kind == 'picture' || kind == 'solid') &&
+                    m.values(t).any((n) => n.startsWith('js_line_')),
+                hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
+                solo: (m.value(t, 'solo', 0) ?? 0) > .5,
+                locked: (m.value(t, 'lock', 0) ?? 0) > .5,
+                clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
+                stretches: [
+                  for (final (a, b, way) in m.layerStretches(t))
+                    (
+                      from: (a * _frameRate).round(),
+                      to: (b * _frameRate).round(),
+                      way: way,
+                      shape: easeCurve(way, m),
+                    ),
+                ],
+                form: _formOf(m, t),
+                members: _membersOf(m, t),
+                links: _linksOf(m, t),
+                lanes: _lanesOf(m, t),
+                retimed: [
+                  for (final n in const ['retime_in', 'retime_out'])
+                    if ((m.value(t, n, 0) ?? 0) > 0)
+                      (((m.value(t, 'start', 0) ?? 0) + m.value(t, n, 0)!) *
+                              _frameRate)
+                          .round(),
+                ],
+                media: switch (kind) {
+                  'film' => (
+                    file: m.whole(m.word(t, 'file')),
+                    begin: m.value(t, 'begin', 0) ?? 0,
+                    speed: m.value(t, 'speed', 0) ?? 1,
+                    still: false,
                   ),
-              ],
-              form: _formOf(m, t),
-              members: _membersOf(m, t),
-              links: _linksOf(m, t),
-              lanes: _lanesOf(m, t),
-              retimed: [
-                for (final n in const ['retime_in', 'retime_out'])
-                  if ((m.value(t, n, 0) ?? 0) > 0)
-                    (((m.value(t, 'start', 0) ?? 0) + m.value(t, n, 0)!) *
-                            _frameRate)
-                        .round(),
-              ],
-              media: switch (kind) {
-                'film' => (
-                  file: m.whole(m.word(t, 'file')),
-                  begin: m.value(t, 'begin', 0) ?? 0,
-                  speed: m.value(t, 'speed', 0) ?? 1,
-                  still: false,
-                ),
-                'picture' => (
-                  file: m.whole(m.word(t, 'file')),
-                  begin: 0.0,
-                  speed: 1.0,
-                  still: true,
-                ),
-                _ => null,
-              },
-            );
-          }(),
+                  'picture' => (
+                    file: m.whole(m.word(t, 'file')),
+                    begin: 0.0,
+                    speed: 1.0,
+                    still: true,
+                  ),
+                  _ => null,
+                },
+              );
+            }(),
       ]);
+    // Drop stale entries for layers that no longer exist.
+    final current = {for (final t in m.layers) t};
+    _lastSnap.removeWhere((t, _) => !current.contains(t));
     _listed = (
       marks: m.marks,
       work: m.work,
