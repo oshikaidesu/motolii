@@ -55,122 +55,129 @@ class ShelfFooter extends StatelessWidget {
           WorkspaceAspect.picked,
         }),
         l = fresh ? null : ws.layer;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onDoubleTap: done ? null : onAction,
-      child: Container(
-        // At least 52 high and as tall as its content. A fixed 52 overflowed by a point (RenderFlex overflow) with two lines of text.
-        constraints: BoxConstraints(minHeight: Shape.z(52)),
-        padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
-        decoration: BoxDecoration(
-          color: WindowTokens.card,
-          border: Border(
-            top: BorderSide(
-              color: WindowTokens.ground,
-              width: WindowTokens.gutter,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Motion.dur,
+      curve: Motion.ease,
+      builder: (context, opacity, child) =>
+          Opacity(opacity: opacity, child: child),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: done ? null : onAction,
+        child: Container(
+          // At least 52 high and as tall as its content. A fixed 52 overflowed by a point (RenderFlex overflow) with two lines of text.
+          constraints: BoxConstraints(minHeight: Shape.z(52)),
+          padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
+          decoration: BoxDecoration(
+            color: WindowTokens.card,
+            border: Border(
+              top: BorderSide(
+                color: WindowTokens.ground,
+                width: WindowTokens.gutter,
+              ),
             ),
           ),
-        ),
-        child: Row(
-          children: [
-            if (preview case final p?) ...[
-              SizedBox.square(dimension: Shape.z(34), child: p),
-              SizedBox(width: Shape.s(8)),
-            ],
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.name(Grey.g95)
-                        .copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(height: Shape.s(4)),
-                  // Up to two lines of whole words before anything is cut off.
-                  Text(
-                    meta,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.label(Grey.g63),
-                  ),
-                  SizedBox(height: Shape.s(4)),
-                  Row(
-                    children: [
-                      Text('to ', style: TextStyles.label(Grey.g56)),
-                      if (l != null) ...[
-                        Container(
-                          width: Shape.z(6),
-                          height: Shape.z(6),
-                          decoration: BoxDecoration(
-                            color: layerKindColor(l.kind),
-                            borderRadius: Shape.round(1),
+          child: Row(
+            children: [
+              if (preview case final p?) ...[
+                SizedBox.square(dimension: Shape.z(34), child: p),
+                SizedBox(width: Shape.s(8)),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.name(Grey.g95)
+                          .copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: Shape.s(4)),
+                    // Up to two lines of whole words before anything is cut off.
+                    Text(
+                      meta,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.label(Grey.g63),
+                    ),
+                    SizedBox(height: Shape.s(4)),
+                    Row(
+                      children: [
+                        Text('to ', style: TextStyles.label(Grey.g56)),
+                        if (l != null) ...[
+                          Container(
+                            width: Shape.z(6),
+                            height: Shape.z(6),
+                            decoration: BoxDecoration(
+                              color: layerKindColor(l.kind),
+                              borderRadius: Shape.round(1),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: Shape.s(4)),
-                        Flexible(
-                          child: Text(
-                            l.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyles.label(Grey.g91),
+                          SizedBox(width: Shape.s(4)),
+                          Flexible(
+                            child: Text(
+                              l.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyles.label(Grey.g91),
+                            ),
                           ),
-                        ),
-                      ] else
-                        Flexible(
-                          child: Text(
-                            'new layer',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyles.label(Grey.g91),
+                        ] else
+                          Flexible(
+                            child: Text(
+                              'new layer',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyles.label(Grey.g91),
+                            ),
                           ),
-                        ),
-                      // Scaled down rather than clipped when the shelf is narrow.
-                      if (lasts case final w?) ...[
-                        SizedBox(width: Shape.s(8)),
-                        Flexible(
-                          flex: 3,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: w,
+                        // Scaled down rather than clipped when the shelf is narrow.
+                        if (lasts case final w?) ...[
+                          SizedBox(width: Shape.s(8)),
+                          Flexible(
+                            flex: 3,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: w,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: Shape.s(6)),
-            ?more,
-            DockHover(
-              onTap: done ? null : onAction,
-              builder: (context, h) => AnimatedContainer(
-                duration: Motion.dur,
-                curve: Motion.ease,
-                height: Shape.z(24),
-                padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: done ? WindowTokens.raised : WindowTokens.accent,
-                  borderRadius: Shape.round(WindowTokens.radius),
-                  border: Border.all(
-                    color: h && !done ? Grey.g95 : const Color(0x00000000),
-                  ),
-                ),
-                child: Text(
-                  done ? doneLabel : action,
-                  style: TextStyles.name(
-                    done ? Grey.g76 : WindowTokens.onAccent,
-                  ).bold,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              SizedBox(width: Shape.s(6)),
+              ?more,
+              DockHover(
+                onTap: done ? null : onAction,
+                builder: (context, h) => AnimatedContainer(
+                  duration: Motion.dur,
+                  curve: Motion.ease,
+                  height: Shape.z(24),
+                  padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: done ? WindowTokens.raised : WindowTokens.accent,
+                    borderRadius: Shape.round(WindowTokens.radius),
+                    border: Border.all(
+                      color: h && !done ? Grey.g95 : const Color(0x00000000),
+                    ),
+                  ),
+                  child: Text(
+                    done ? doneLabel : action,
+                    style: TextStyles.name(
+                      done ? Grey.g76 : WindowTokens.onAccent,
+                    ).bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

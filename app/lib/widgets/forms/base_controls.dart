@@ -23,7 +23,9 @@ abstract final class BaseControls {
         for (var i = 0; i < c.labels.length; i++)
           Pressable(
             onTap: () => c.onSelect(i),
-            builder: (_, h) => Container(
+            builder: (_, h) => AnimatedContainer(
+              duration: Motion.dur,
+              curve: Motion.ease,
               height: Shape.z(16),
               padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
               alignment: Alignment.center,
@@ -66,7 +68,9 @@ abstract final class BaseControls {
     onTap: f.onTap,
     builder: (_, h) {
       final ink = f.on ? WindowTokens.accent : (h ? Grey.g91 : Grey.g56);
-      return Container(
+      return AnimatedContainer(
+        duration: Motion.dur,
+        curve: Motion.ease,
         height: Shape.z(20),
         padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(8)),
         decoration: BoxDecoration(

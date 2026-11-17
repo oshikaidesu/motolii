@@ -301,21 +301,27 @@ class _ShelfPaneState extends State<ShelfPane> {
           child: ListenableBuilder(
             // A footer waiting for a second click opens once that click can no longer come (ShelfContext.foot).
             listenable: DockHover.secondMayCome,
-            builder: (context, _) => switch (name) {
-              'Effects' => EffectsShelf(c, _effects),
-              'Fonts' => FontsShelf(c, _fonts),
-              'Colors' => ColorsShelf(c, _colors),
-              'Create' => CreateShelf(c),
-              'Presets' => Padding(
-                padding: EdgeInsets.all(Shape.s(24)),
-                child: Text(
-                  'No presets yet',
-                  textAlign: TextAlign.center,
-                  style: TextStyles.label(Grey.g63),
-                ),
+            builder: (context, _) => AnimatedSwitcher(
+              duration: Motion.dur,
+              child: KeyedSubtree(
+                key: ValueKey(name),
+                child: switch (name) {
+                  'Effects' => EffectsShelf(c, _effects),
+                  'Fonts' => FontsShelf(c, _fonts),
+                  'Colors' => ColorsShelf(c, _colors),
+                  'Create' => CreateShelf(c),
+                  'Presets' => Padding(
+                    padding: EdgeInsets.all(Shape.s(24)),
+                    child: Text(
+                      'No presets yet',
+                      textAlign: TextAlign.center,
+                      style: TextStyles.label(Grey.g63),
+                    ),
+                  ),
+                  _ => MediaShelf(c, _media),
+                },
               ),
-              _ => MediaShelf(c, _media),
-            },
+            ),
           ),
         ),
       ],
