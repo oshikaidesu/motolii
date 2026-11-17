@@ -144,7 +144,11 @@ class _HomeWindowState extends State<HomeWindow> {
         ),
         child: Row(
           children: [
-            Glyph(AppGlyphs.chevron, size: Shape.z(14), color: Grey.g91),
+            Glyph(
+              AppGlyphs.chevron,
+              size: Shape.z(14),
+              color: WindowTokens.accent,
+            ),
             SizedBox(width: Shape.s(16)),
             Expanded(
               child: Column(
@@ -186,8 +190,8 @@ class _HomeWindowState extends State<HomeWindow> {
             if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
         ];
     Widget grid(List<HomeProject> docs) => Wrap(
-      spacing: 20,
-      runSpacing: 20,
+      spacing: 24,
+      runSpacing: 28,
       children: [
         for (final d in docs)
           HomeCard(
@@ -303,7 +307,7 @@ class _HomeWindowState extends State<HomeWindow> {
               key: const ValueKey('home-new'),
               onPressed: widget.onNew,
               child: Container(
-                height: Shape.z(112),
+                height: Shape.z(72),
                 padding: EdgeInsets.symmetric(horizontal: Shape.s(28)),
                 decoration: BoxDecoration(
                   color: WindowTokens.card,

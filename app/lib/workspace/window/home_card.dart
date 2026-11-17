@@ -10,7 +10,7 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/window/home_project.dart';
 
 // A square thumbnail above the name, as in CapCut's desktop grid.
-const homeTile = 150.0;
+const homeTile = 180.0;
 
 Widget homeButton(String key, String text, bool on, VoidCallback tap) =>
     Padding(
@@ -85,7 +85,18 @@ class HomeCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     if (d.picture != null)
-                      Image(image: imageFile(d.picture!), fit: BoxFit.cover),
+                      Image(image: imageFile(d.picture!), fit: BoxFit.cover)
+                    else
+                      Center(
+                        child: Text(
+                          d.name.isNotEmpty ? d.name[0].toUpperCase() : '?',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w700,
+                            color: Grey.g38,
+                          ),
+                        ),
+                      ),
                     // A round accent pill with a check glyph when the card is picked, mirroring Finder's selection dot.
                     if (picked)
                       Positioned(
