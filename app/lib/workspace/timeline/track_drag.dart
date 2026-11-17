@@ -218,9 +218,9 @@ class TrackDrag extends ChangeNotifier {
 
   /// A click on a property lane, at [p].
   ///
-  /// - On a keyframe it deletes it, as on Ableton's envelope (Live 12 manual 25.5.2).
-  /// - Between two keyframes it selects that span, as Theatre.js does. Live cannot select a span.
-  /// - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
+  /// - On a keyframe it selects it, as in After Effects.
+  /// - Between two keyframes it selects that span, as Theatre.js does.
+  /// - A second click in the same place adds a keyframe there.
   void tapUp(Offset p) {
     final ws = workspace!, r = _rows.rowAt(p.dy), v = _viewport.view;
     if (!timeline_service.isConnected(ws) ||
@@ -234,8 +234,7 @@ class TrackDrag extends ChangeNotifier {
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
-    // Remove the lane keyframe closest to the pointer, not the first one in
-    // iteration order: at a dense zoom several sit inside the hit radius (B144).
+    // Select the lane keyframe closest to the pointer (AE behaviour).
     double? pickK;
     double pickDx = TimelineMetrics.keyPicked + 2;
     for (final k in timeline_service.keyframeTimes(ws, t, name)) {
@@ -246,7 +245,9 @@ class TrackDrag extends ChangeNotifier {
       }
     }
     if (pickK case final k?) {
-      return ws.after(timeline_service.removeKeyframe(ws, t, name, k));
+      final frame = (k * WorkspaceController.fps).round();
+      ws.pickKeys([(layer: r.l.id, frame: frame)]);
+      return;
     }
     final now = DateTime.now(),
         twice =
