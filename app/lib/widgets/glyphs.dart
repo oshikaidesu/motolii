@@ -47,7 +47,7 @@ class Glyph extends StatelessWidget {
       ? TweenAnimationBuilder<Color?>(
           tween: ColorTween(end: color),
           duration: Motion.dur,
-          curve: Curves.easeOut,
+          curve: Motion.ease,
           builder: (_, v, _) => _box(v ?? color),
         )
       : _box(color);

@@ -10,6 +10,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart'
     show ColorPickerArea, ColorPickerHueRing, PaletteType;
 
+import 'package:motolii/skin/tokens.dart';
+
 /// A hue ring with a saturation and value square inside it. [onChanged] gets every new color.
 class ColorWheel extends StatelessWidget {
   const ColorWheel({
@@ -58,7 +60,7 @@ class ColorWheel extends StatelessWidget {
             SizedBox.square(
               dimension: s / 1.6,
               child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(3)),
+                borderRadius: Shape.round(3),
                 child: ColorPickerArea(color, onChanged, PaletteType.hsv),
               ),
             ),

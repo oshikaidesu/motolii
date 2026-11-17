@@ -307,9 +307,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                           ),
                           decoration: BoxDecoration(
                             color: h ? WindowTokens.raised : WindowTokens.well,
-                            borderRadius: BorderRadius.all(
-                              Shape.r(WindowTokens.chipRadius),
-                            ),
+                            borderRadius: Shape.round(WindowTokens.chipRadius),
                           ),
                           child: Text(t, style: TextStyles.micro(Grey.g91)),
                         ),

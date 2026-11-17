@@ -137,7 +137,7 @@ mixin TimelineTracksView<T extends StatefulWidget>
               // The overview strip repaints from viewport and moment without rebuilding the timeline.
               ListenableBuilder(
                 listenable: Listenable.merge([viewport, ws.moment]),
-                builder: (_, __) => TimelineOverview(
+                builder: (_, _) => TimelineOverview(
                   from: viewport.scroll,
                   to: viewport.scroll + viewport.visible,
                   frame: ws.moment.value,
@@ -169,7 +169,7 @@ mixin TimelineTracksView<T extends StatefulWidget>
           // The selection box rebuilds from drag without rebuilding the painters or the whole timeline.
           ListenableBuilder(
             listenable: drag,
-            builder: (_, __) {
+            builder: (_, _) {
               if (drag.selectionBox case (final a, final b)?) {
                 return Positioned.fromRect(
                   rect: Rect.fromPoints(

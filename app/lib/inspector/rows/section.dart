@@ -100,9 +100,9 @@ class Section extends StatelessWidget {
                 ? CrossFadeState.showFirst
                 : CrossFadeState.showSecond,
             duration: Motion.dur,
-            firstCurve: Curves.easeOut,
-            secondCurve: Curves.easeOut,
-            sizeCurve: Curves.easeOut,
+            firstCurve: Motion.ease,
+            secondCurve: Motion.ease,
+            sizeCurve: Motion.ease,
           ),
         ],
       ),

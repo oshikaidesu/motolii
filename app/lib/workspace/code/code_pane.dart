@@ -466,7 +466,7 @@ class _CellState extends State<_Cell> {
       ),
       decoration: BoxDecoration(
         color: hot ? Grey.g26 : Grey.g20,
-        borderRadius: BorderRadius.circular(Shape.s(3)),
+        borderRadius: Shape.round(WindowTokens.chipRadius),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -542,7 +542,7 @@ class _CellState extends State<_Cell> {
                       ),
                       decoration: BoxDecoration(
                         color: h ? Grey.g26 : Grey.g20,
-                        borderRadius: BorderRadius.circular(Shape.s(3)),
+                        borderRadius: Shape.round(WindowTokens.chipRadius),
                       ),
                       child: Text(t, style: TextStyles.label(Grey.g63)),
                     ),

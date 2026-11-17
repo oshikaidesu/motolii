@@ -33,9 +33,7 @@ abstract final class BaseControls {
                 color: i == c.selected
                     ? WindowTokens.accent
                     : (h ? WindowTokens.raised : WindowTokens.well),
-                borderRadius: BorderRadius.all(
-                  Shape.r(WindowTokens.chipRadius),
-                ),
+                borderRadius: Shape.round(WindowTokens.chipRadius),
               ),
               child: Text(
                 c.labels[i],
@@ -125,9 +123,7 @@ abstract final class BaseControls {
                     color: on
                         ? WindowTokens.accent
                         : (h ? WindowTokens.raised : WindowTokens.well),
-                    borderRadius: BorderRadius.all(
-                      Shape.r(WindowTokens.radius),
-                    ),
+                    borderRadius: Shape.round(WindowTokens.radius),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

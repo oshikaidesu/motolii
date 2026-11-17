@@ -402,9 +402,7 @@ class _Swatches extends StatelessWidget {
         height: Shape.z(16),
         foregroundDecoration: ws.aim == aim
             ? BoxDecoration(
-                borderRadius: BorderRadius.all(
-                  Shape.r(WindowTokens.chipRadius),
-                ),
+                borderRadius: Shape.round(WindowTokens.chipRadius),
                 border: WindowTokens.chosen,
               )
             : null,

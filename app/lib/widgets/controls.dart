@@ -98,8 +98,8 @@ class IconPress extends StatelessWidget {
                     ? WindowTokens.accent
                     : (lit ? Grey.g26 : (h ? WindowTokens.raised : rest)))
               : (on ? WindowTokens.raised : (h ? WindowTokens.card : null)),
-          borderRadius: BorderRadius.all(
-            Shape.r(tile ? WindowTokens.radius : WindowTokens.chipRadius),
+          borderRadius: Shape.round(
+            tile ? WindowTokens.radius : WindowTokens.chipRadius,
           ),
         ),
         child: glyph(
@@ -421,8 +421,8 @@ class Segmented extends StatelessWidget {
       enableFeedback: false,
       semanticLabel: items[i],
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
+        duration: Motion.dur,
+        curve: Motion.ease,
         padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
         alignment: Alignment.center,
         decoration: BoxDecoration(

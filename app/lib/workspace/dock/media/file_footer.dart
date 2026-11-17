@@ -109,9 +109,7 @@ class FileFooter extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: WindowTokens.raised,
-                    borderRadius: BorderRadius.all(
-                      Shape.r(WindowTokens.radius),
-                    ),
+                    borderRadius: Shape.round(WindowTokens.radius),
                     border: Border.all(
                       color: h ? Grey.g95 : const Color(0x00000000),
                     ),

@@ -286,7 +286,7 @@ class _TimelinePaneState extends State<TimelinePane>
                           // The labels scroll with the rows via viewport, without rebuilding the whole timeline.
                           ListenableBuilder(
                             listenable: viewport,
-                            builder: (_, __) => labels(ws, drawn),
+                            builder: (_, _) => labels(ws, drawn),
                           ),
                           // The resize handle overlays the header's right edge (its empty padding), so dragging it
                           // resizes the column without adding any gap between the names and the tracks.

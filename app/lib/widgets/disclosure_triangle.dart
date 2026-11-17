@@ -16,7 +16,7 @@ class DisclosureTriangle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AnimatedRotation(
     turns: open ? .25 : 0,
-    duration: const Duration(milliseconds: 120),
+    duration: Motion.dur,
     curve: Motion.ease,
     child: glyph(8, (c, s) => _drawFold(c, s, hot ? Grey.g95 : Grey.g56), hot),
   );

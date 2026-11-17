@@ -9,8 +9,8 @@ class PopSwitch extends StatelessWidget {
   final bool on;
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 120),
-    curve: Curves.easeOut,
+    duration: Motion.dur,
+    curve: Motion.ease,
     width: Shape.z(28),
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
