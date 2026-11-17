@@ -173,33 +173,32 @@ class _SizeChipState extends State<SizeChip> {
             children: [
               Text('Frame rate', style: TextStyles.label(Grey.g56)),
               SizedBox(width: Shape.s(12)),
-              SizedBox(
-                width: Shape.z(80),
-                height: Shape.z(24),
-                child: NumberField(
-                  key: const ValueKey('size-fps'),
-                  value: () => WorkspaceController.fps.toDouble(),
-                  text: (v, _) => '${v.round()}',
-                  unit: (_, _) => ' fps',
-                  perPx: 1 / 5,
-                  step: 1,
-                  onChange: !isConnected(ws)
-                      ? null
-                      : (v) => setDocumentNumber(
-                          ws,
-                          'frame_rate',
-                          v.round().clamp(1, 120).toDouble(),
-                          (_, _) => ws.reread(),
-                        ),
-                  onReset: !isConnected(ws)
-                      ? null
-                      : () => setDocumentNumber(
-                          ws,
-                          'frame_rate',
-                          0,
-                          (_, _) => ws.reread(),
-                        ),
-                ),
+              NumberField(
+                key: const ValueKey('size-fps'),
+                value: () => WorkspaceController.fps.toDouble(),
+                text: (v, _) => '${v.round()} fps',
+                perPx: 1 / 5,
+                step: 1,
+                inline: true,
+                typeOnTap: false,
+                style: TextStyles.value(Grey.g91),
+                onChange: !isConnected(ws)
+                    ? null
+                    : (v) => setDocumentNumber(
+                        ws,
+                        'frame_rate',
+                        v.round().clamp(1, 120).toDouble(),
+                        (_, _) => ws.reread(),
+                      ),
+                onReset: !isConnected(ws)
+                    ? null
+                    : () => setDocumentNumber(
+                        ws,
+                        'frame_rate',
+                        0,
+                        (_, _) => ws.reread(),
+                      ),
+                paint: (_, shown, _) => shown,
               ),
             ],
           ),
@@ -226,33 +225,33 @@ class _SizeChipState extends State<SizeChip> {
             children: [
               Text('New layer length', style: TextStyles.label(Grey.g56)),
               SizedBox(width: Shape.s(12)),
-              SizedBox(
-                width: Shape.z(80),
-                height: Shape.z(24),
-                child: NumberField(
-                  key: const ValueKey('size-len'),
-                  value: () => (layerValue(ws, 0, 'layer_length', 0) ?? 0)
-                      .roundToDouble(),
-                  text: (v, _) => v.round() == 0 ? 'End' : '${v.round()}s',
-                  perPx: 1 / 3,
-                  step: 1,
-                  onChange: !isConnected(ws)
-                      ? null
-                      : (v) => setDocumentNumber(
-                          ws,
-                          'layer_length',
-                          v.round().clamp(0, 120).toDouble(),
-                          (_, _) => ws.reread(),
-                        ),
-                  onReset: !isConnected(ws)
-                      ? null
-                      : () => setDocumentNumber(
-                          ws,
-                          'layer_length',
-                          0,
-                          (_, _) => ws.reread(),
-                        ),
-                ),
+              NumberField(
+                key: const ValueKey('size-len'),
+                value: () =>
+                    (layerValue(ws, 0, 'layer_length', 0) ?? 0).roundToDouble(),
+                text: (v, _) => v.round() == 0 ? 'End' : '${v.round()}s',
+                perPx: 1 / 3,
+                step: 1,
+                inline: true,
+                typeOnTap: false,
+                style: TextStyles.value(Grey.g91),
+                onChange: !isConnected(ws)
+                    ? null
+                    : (v) => setDocumentNumber(
+                        ws,
+                        'layer_length',
+                        v.round().clamp(0, 120).toDouble(),
+                        (_, _) => ws.reread(),
+                      ),
+                onReset: !isConnected(ws)
+                    ? null
+                    : () => setDocumentNumber(
+                        ws,
+                        'layer_length',
+                        0,
+                        (_, _) => ws.reread(),
+                      ),
+                paint: (_, shown, _) => shown,
               ),
             ],
           ),
