@@ -23,6 +23,8 @@ import 'package:motolii/workspace/state/stage/stage_service.dart'
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     show setWorkArea;
 import 'package:motolii/workspace/easing/ease_text.dart' show heard, said;
+import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
+    show unkeyStretches;
 import 'package:motolii/workspace/state/ease/ease_writes.dart' show settleEase;
 import 'package:motolii/workspace/state/layers/layer_reads.dart'
     show layerEasingAt;
@@ -52,15 +54,14 @@ extension EditCommands on WorkspaceState {
         )) {
           return;
         }
-        // Cut stretches: copy easing then reset to Linear
+        // Cut stretches: copy easing then remove keyframes
         if (ws.stretches.isNotEmpty) {
           final s = ws.stretch!;
           final easing = layerEasingAt(ws, s.layer, s.name, s.at);
           if (easing.isNotEmpty) easeCopied = heard(easing);
           groupBegin(ws);
-          for (final s in ws.stretches) {
-            resetEasing(ws, s.layer, s.name, s.at);
-          }
+          unkeyStretches(ws, ws.stretches);
+          ws.clearKeys();
           ws.after(groupEnd(ws), (_, _) => ws.reread());
           return;
         }

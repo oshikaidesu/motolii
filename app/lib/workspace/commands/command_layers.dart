@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
+    show unkeyStretches;
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/document/command_writes.dart';
 import 'package:motolii/workspace/state/media/create_service.dart'
@@ -130,9 +132,8 @@ extension LayerCommands on WorkspaceState {
         }
         if (ws.stretches.isNotEmpty) {
           groupBegin(ws);
-          for (final s in ws.stretches) {
-            resetEasing(ws, s.layer, s.name, s.at);
-          }
+          unkeyStretches(ws, ws.stretches);
+          ws.clearKeys();
           ws.after(groupEnd(ws), (_, _) => ws.reread());
           return;
         }

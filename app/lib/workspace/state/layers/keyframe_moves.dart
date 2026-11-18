@@ -173,6 +173,18 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
 /// Queues the removal of the keyframes [keys], and of the other properties'
 /// keyframes at the same times, in one FFI call. The undo step is begun and
 /// ended by the caller (see [groupBegin] and [groupEnd]).
+/// Removes the keyframes at both ends of each stretch, for that property only.
+void unkeyStretches(WorkspaceController ws, Iterable<StretchPicked> stretches) {
+  final m = ws.inside!;
+  final buf = StringBuffer();
+  final fps = WorkspaceController.fps;
+  for (final s in stretches) {
+    buf.writeln('${s.layer}\t${s.name}\t${s.from / fps}');
+    buf.writeln('${s.layer}\t${s.name}\t${s.to / fps}');
+  }
+  if (buf.isNotEmpty) m.later('unkey_batch', word: buf.toString());
+}
+
 void unkeyAtKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
   final m = ws.inside!;
   final buf = StringBuffer();
