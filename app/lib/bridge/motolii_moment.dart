@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/bridge/snapshot_parts.dart' show numbers;
 
 extension MotoliiMoment on Motolii {
   // Shows property name → offset within the 14-double shows block.
@@ -54,10 +55,8 @@ extension MotoliiMoment on Motolii {
   ///
   /// A property without keyframes comes from the project snapshot. An animated one comes from the time snapshot.
   double? value(int layer, String name, double at) {
-    if (!moving(layer).contains(name) || at == 0) {
-      return ((layerSnapshot(layer)['value'] as Map<String, dynamic>?)?[name]
-                  as num?)
-              ?.toDouble() ??
+    if (!isMoving(layer, name) || at == 0) {
+      return (partOf(layer, 'value', name) as num?)?.toDouble() ??
           usual(
             layer,
             name,
@@ -73,10 +72,7 @@ extension MotoliiMoment on Motolii {
     final keys = keyTimes(layer, name),
         i = keys.indexWhere((k) => (k - at).abs() < .5 / rate);
     if (i >= 0) {
-      return (((layerSnapshot(layer)['keyValues']
-                      as Map<String, dynamic>?)?[name]
-                  as List<dynamic>?)?[i]
-              as num?)
+      return ((partOf(layer, 'keyValues', name) as List<dynamic>?)?[i] as num?)
           ?.toDouble(); // [at] is on a keyframe, so use that keyframe's value.
     }
     return _unasked('value', layer, name, at);
@@ -132,7 +128,7 @@ extension MotoliiMoment on Motolii {
       return Float64List.sublistView(timeLayout, base, base + 8);
     }
     return switch (_momentOf(layer)?['bounds']) {
-      final List<dynamic> f => Motolii.numbers(f),
+      final List<dynamic> f => numbers(f),
       _ => null,
     };
   }
@@ -162,14 +158,14 @@ extension MotoliiMoment on Motolii {
 
   /// The points of a path shape as drawn on the canvas, for the selected layer only and without handles. Empty if none.
   List<Offset> points(int layer) {
-    final p = Motolii.numbers(_momentOf(layer)?['points']);
+    final p = numbers(_momentOf(layer)?['points']);
     return [for (var i = 0; i + 1 < p.length; i += 2) Offset(p[i], p[i + 1])];
   }
 
   /// The path's curve handles in the same way, each paired with the point it belongs to.
   List<(Offset, Offset)> handles(int layer) {
-    final h = Motolii.numbers(_momentOf(layer)?['handles']),
-        of = Motolii.numbers(_momentOf(layer)?['of']);
+    final h = numbers(_momentOf(layer)?['handles']),
+        of = numbers(_momentOf(layer)?['of']);
     return [
       for (var i = 0; i + 1 < h.length; i += 2)
         (

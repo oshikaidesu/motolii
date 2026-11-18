@@ -201,7 +201,7 @@ void snapshot_update(Motolii* m) {
   const SnapshotKeepsWhy keep{d};
   std::set<int> again;
   bool all = d.changes.layers_changed || m->snapshots.layers.empty();
-  std::string changes = d.changes.layers_changed ? "things\n" : "";
+  std::string changes = d.changes.layers_changed ? "layers\n" : "";
   for (const auto& [layer, name] : d.changes.changed) {
     changes += std::to_string(layer) + " " + name + "\n";
     if (name == "name") all = true;
@@ -245,31 +245,40 @@ void snapshot_update(Motolii* m) {
   w.Key("markColours"), w.String(motolii_mark_colours(m));
   w.Key("settings"), w.String(motolii_settings(m));
   w.Key("guides"), w.String(motolii_guides(m));
-  w.Key("easings"), w.String(motolii_easings(m));
-  w.Key("easingNames"), w.String(motolii_easing_names(m));
-  w.Key("effectNames"), w.String(motolii_effect_names(m));
+  w.Key("changes"), w.String(changes.c_str());
+  w.Key("layers"), w.StartArray();
+  for (int i = 0; i < n; ++i) w.Int(layers[i]);
+  w.EndArray();
+  w.EndObject();
+  // The tables are written apart: they are most of the bytes and a change to a
+  // layer leaves them as they were (see Snapshots::tables).
+  rapidjson::StringBuffer tables_out;
+  SnapshotWriter t(tables_out);
+  t.StartObject();
+  t.Key("easings"), t.String(motolii_easings(m));
+  t.Key("easingNames"), t.String(motolii_easing_names(m));
+  t.Key("effectNames"), t.String(motolii_effect_names(m));
   // Each easing's shape, sampled at 65 evenly spaced steps of u from 0 to 1, so
   // the app can draw its curve.
-  w.Key("easingCurves"), w.StartObject();
+  t.Key("easingCurves"), t.StartObject();
   for (const std::string& easing : snapshot_words(motolii_easing_names(m))) {
-    w.Key(easing.c_str()), w.StartArray();
+    t.Key(easing.c_str()), t.StartArray();
     for (int i = 0; i <= 64; ++i)
-      w.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
-    w.EndArray();
+      t.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
+    t.EndArray();
   }
-  w.EndObject();
-  w.Key("changes"), w.String(changes.c_str());
+  t.EndObject();
   // The default value of each numeric property, used when the document does not
   // set it.
-  w.Key("usual"), w.StartObject();
+  t.Key("usual"), t.StartObject();
   for (const DocValue& v : doc_values)
     if (!v.words)
-      w.Key(v.name), w.Double(doc_usual(*m->d, v.name)),
-          w.Key((std::string(v.name) + "_by").c_str()), w.Double(0);
-  w.EndObject();
+      t.Key(v.name), t.Double(doc_usual(*m->d, v.name)),
+          t.Key((std::string(v.name) + "_by").c_str()), t.Double(0);
+  t.EndObject();
   // The properties each layer kind has, whether or not they are set. Matches
   // doc_knows.
-  w.Key("knows"), w.StartObject();
+  t.Key("knows"), t.StartObject();
   for (const char* kind : {"video", "image", "text", "solid", "shape", "camera",
                            "light", "behaviour", "stage"}) {
     std::string all;
@@ -281,18 +290,19 @@ void snapshot_update(Motolii* m) {
                (v.words || !strcmp(kind, "stage")
                     ? ""
                     : std::string(" ") + v.name + "_by");
-    w.Key(kind), w.String(all.c_str());
+    t.Key(kind), t.String(all.c_str());
   }
-  w.EndObject();
-  w.Key("layers"), w.StartArray();
-  for (int i = 0; i < n; ++i) w.Int(layers[i]);
-  w.EndArray();
-  w.EndObject();
+  t.EndObject();
+  t.EndObject();
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   std::string own = {out.GetString(), out.GetSize()};
+  std::string tables = {tables_out.GetString(), tables_out.GetSize()};
+  const bool same_tables = tables == m->snapshots.tables;
   // Nothing the app reads changed, so publish no new snapshot.
-  if (parts.empty() && own == m->snapshots.all) return;
+  if (parts.empty() && own == m->snapshots.all && same_tables) return;
   const long v = ++m->snapshots.version;
+  if (!same_tables)
+    m->snapshots.tables = std::move(tables), m->snapshots.tablesVersion = v;
   for (auto& [layer, part] : parts)
     m->snapshots.layers[layer] = {v, std::move(part)};
   std::set<int> are(layers, layers + n);

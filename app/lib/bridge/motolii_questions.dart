@@ -69,16 +69,12 @@ extension MotoliiQuestions on Motolii {
       -1;
 
   /// Exports the project as .mp4 on another isolate.
-  Future<bool> exportVideo(String mp4) {
-    final lib = libPath, at = handle.address;
-    return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_export;
-      final to = mp4.toNativeUtf8();
-      final done = ask(EngineHandle.fromAddress(at), to) != 0;
-      malloc.free(to);
-      return done;
-    });
-  }
+  Future<bool> exportVideo(String mp4) => _ask((l, m) {
+    final to = mp4.toNativeUtf8();
+    final done = c.MotoliiBindings(l).motolii_export(m, to) != 0;
+    malloc.free(to);
+    return done;
+  });
 
   /// Export progress 0→1. Safe to call on UI thread (atomically updated per frame).
   double exportFraction() => bindings.motolii_export_fraction(handle);
@@ -87,24 +83,23 @@ extension MotoliiQuestions on Motolii {
   void cancelExport() => bindings.motolii_export_cancel(handle);
 
   /// Each property as the stage shows it at the given time (after relations). Null if none. Isolate.
-  Future<List<double?>> shownAt(List<(int, String, double)> asks) {
-    final lib = libPath, at = handle.address;
-    return Isolate.run(() {
-      final l = DynamicLibrary.open(lib), m = EngineHandle.fromAddress(at);
-      final shows = c.MotoliiBindings(l).motolii_shows;
-      final out = malloc<Double>();
-      final all = [
-        for (final (t, n, moment) in asks)
-          () {
-            final name = n.toNativeUtf8(), got = shows(m, t, name, moment, out);
-            malloc.free(name);
-            return got == 0 ? null : out.value;
-          }(),
-      ];
-      malloc.free(out);
-      return all;
-    });
-  }
+  Future<List<double?>> shownAt(List<(int, String, double)> asks) => _ask((
+    l,
+    m,
+  ) {
+    final shows = c.MotoliiBindings(l).motolii_shows;
+    final out = malloc<Double>();
+    final all = [
+      for (final (t, n, moment) in asks)
+        () {
+          final name = n.toNativeUtf8(), got = shows(m, t, name, moment, out);
+          malloc.free(name);
+          return got == 0 ? null : out.value;
+        }(),
+    ];
+    malloc.free(out);
+    return all;
+  });
 
   /// For each font, the index of the first of [words] it can render, or -1. Isolate.
   Future<List<int>> settingFirst(List<String> fonts, List<String> words) {
@@ -246,19 +241,14 @@ extension MotoliiQuestions on Motolii {
   }
 
   /// Loudness in dB (0 = full scale), 100 samples/s. Decoded once. Isolate.
-  Future<List<double>> loudness(int layer) {
-    final lib = libPath, at = handle.address;
-    return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_loudness;
-      final m = EngineHandle.fromAddress(at),
-          n = ask(m, layer, nullptr, 0),
-          out = malloc<Float>(n < 1 ? 1 : n);
-      final got = ask(m, layer, out, n),
-          all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
-      malloc.free(out);
-      return all;
-    });
-  }
+  Future<List<double>> loudness(int layer) => _ask((l, m) {
+    final ask = c.MotoliiBindings(l).motolii_loudness;
+    final n = ask(m, layer, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
+    final got = ask(m, layer, out, n),
+        all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
+    malloc.free(out);
+    return all;
+  });
 
   /// Loudness over [n] project times. -100 = silent. Null if not yet read ([loudness]).
   Future<List<double>?> loudnessOver(

@@ -142,7 +142,8 @@ const char* motolii_list(Motolii* m) {
 }
 // Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read
 // without the project lock. which 1 is the project's snapshot: its own part,
-// and the part of each layer newer than `since`. which 2 is the time snapshot.
+// its tables if they are newer than `since` (else null), and the part of each
+// layer newer than `since`. which 2 is the time snapshot.
 // The result is a JSON copy that the caller frees with free(). *version is set
 // to the version the snapshot is as of.
 char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
@@ -153,6 +154,10 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
   std::string all =
       "{\"document\":" +
       (m->snapshots.all.empty() ? std::string("null") : m->snapshots.all) +
+      ",\"tables\":" +
+      (m->snapshots.tablesVersion > since && !m->snapshots.tables.empty()
+           ? m->snapshots.tables
+           : std::string("null")) +
       ",\"layer\":{";
   bool first = true;
   for (const auto& [layer, part] : m->snapshots.layers)

@@ -38,6 +38,11 @@ struct Snapshots {
   long rows = -1;
   // The document snapshot's own part, and the snapshot of the current time.
   std::string all, time;
+  // The tables a change to a layer leaves as they were (default values, the
+  // values each kind knows, easings, effect names), and the version they last
+  // differed at: the app is handed them only when they are newer than it has.
+  std::string tables;
+  long tablesVersion = 0;
   // The time snapshot's per-layer layout as flat doubles: now, layer count,
   // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]).
   std::vector<double> timeLayout;
