@@ -317,7 +317,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             int t = 0;
             char prop[128] = {}, easing[256] = {};
             double from = 0, to = 0, val = 0;
-            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%lf\t%255s",
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%lf\t%255[^\n]",
                             &t, prop, &from, &to, &val, easing) >= 5) {
               entries.emplace_back(t, prop, from, to, val,
                                    easing[0] ? easing : "");
@@ -357,7 +357,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             int t = 0;
             char prop[128] = {}, easing[256] = {};
             double at = 0, val = 0;
-            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%255s", &t,
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%255[^\n]", &t,
                             prop, &at, &val, easing) >= 4) {
               doc_key(d, t, prop, at, val);
               if (easing[0]) doc_easing(d, t, prop, at, easing);
@@ -374,7 +374,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             int t = 0;
             char prop[128] = {}, easing[256] = {};
             double at = 0;
-            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%255s", &t,
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%255[^\n]", &t,
                             prop, &at, easing) >= 4)
               easing_is(m, t, prop, at, easing);
           }
