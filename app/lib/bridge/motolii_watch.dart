@@ -28,10 +28,15 @@ extension MotoliiWatch on Motolii {
     return [for (var i = 0; i + 1 < n.length; i += 2) (n[i], n[i + 1])];
   }
 
-  /// Diagnostics for the app's thread. [broken] lists, one per line, each change it waited for and each read that
-  /// waited on the project longer than 2 ms. Empty when there are none.
-  String get broken => bindings.motolii_broken(handle).toDartString();
+  /// Diagnostics for the app's thread. [broken] lists, one per line, each change it waited for, each read that
+  /// waited on the project longer than 2 ms, and each take of the snapshots over its budget ([SnapshotWatch]).
+  /// Empty when there are none.
+  String get broken => [
+    bindings.motolii_broken(handle).toDartString(),
+    ...snapshotWatch.lines,
+  ].where((l) => l.isNotEmpty).join('\n');
 
   // How many times since watching began. Reading it does not wait.
-  int get brokenCount => bindings.motolii_broken_count(handle);
+  int get brokenCount =>
+      bindings.motolii_broken_count(handle) + snapshotWatch.count;
 }

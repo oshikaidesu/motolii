@@ -19,7 +19,7 @@ In short: writes are recorded and return at once, questions are answered later, 
    - The user's folder (`~/Library/Application Support/Motolii/`) is watched while the app runs, and its content is read again when a file comes or goes.
    - Every effect on a shelf gets a tile: eight frames of a sample balloon scene (0.1 to 1.9 seconds, played when the pointer is over the tile), rendered in a separate isolate. The engine says where each tile is kept (`~/Library/Caches/Motolii/tiles/`, named by the file and the time it was written; see `doc_tile` in `engine/document/scripts/recipes.cpp`), and the tile is shown at once. The user's files come first. An effect whose result cannot be told from the sample (above 40 dB PSNR, measured with ffmpeg) is marked NO CHANGE. The code is `app/lib/workspace/shelf/effect_tiles.dart`.
 9. **The app owns the playhead, the selection and the zoom**, as Lumit does. It tells the engine about them as writes.
-10. **A watchdog counts the waits.** `brokenCount` and `broken` in `app/lib/bridge/motolii_watch.dart` report each time the app's thread waited for the engine and each read that waited on the project longer than 2 ms. The count must stay 0.
+10. **A watchdog counts the waits.** `brokenCount` and `broken` in `app/lib/bridge/motolii_watch.dart` report each time the app's thread waited for the engine and each read that waited on the project longer than 2 ms. They also report each take of the snapshots that held the app's thread over its budget (`SnapshotWatch` in `app/lib/bridge/snapshot_watch.dart`): the reads of both snapshots and the listener's own work, each part timed, the first take at opening left out. The count must stay 0.
 
 ## What the snapshots contain
 
