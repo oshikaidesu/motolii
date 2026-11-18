@@ -153,7 +153,17 @@ class _TimelinePaneState extends State<TimelinePane>
     if (ws.playing && !_ticker.isActive) {
       _ticker.start();
       _lastFrame = -1;
-      if (ws.frame >= WorkspaceController.duration) ws.frame = 0;
+      if (ws.frame >= WorkspaceController.duration) {
+        ws.frame = 0;
+      } else if (timeline_service.isLooping(ws)) {
+        // When loop is on and the playhead is outside the work area, jump to its start so playback is not silent.
+        final (wFrom, wTo) = ws.work;
+        final wIn = (wFrom * WorkspaceController.fps).round();
+        final wOut = (wTo * WorkspaceController.fps).round();
+        if (wIn < wOut && (ws.frame < wIn || ws.frame >= wOut)) {
+          ws.frame = wIn;
+        }
+      }
     } else if (!ws.playing && _ticker.isActive) {
       _ticker.stop();
     }

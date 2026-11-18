@@ -480,7 +480,7 @@ class TrackDrag extends ChangeNotifier {
           if (ws.playing) ws.playing = false;
           _slide = (keys: both, grab: f.round(), by: 0);
           _slideCache = timeline_service.cacheSelectedSlide(ws, both);
-          _targets = ws.snapTargets(skip: {r.l.id});
+          _targets = ws.snapTargets(skip: {r.l.id, ...ws.many});
           return true;
         }
       }

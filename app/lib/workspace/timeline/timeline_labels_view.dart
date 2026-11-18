@@ -28,8 +28,8 @@ mixin TimelineLabelsView<T extends StatefulWidget>
   }
 
   // The lane a property row shows.
-  Lane _lane(WorkspaceController ws, int i, String name) =>
-      ws.layers[rows.order[i].layer].lanes.firstWhere((a) => a.name == name);
+  Lane? _lane(WorkspaceController ws, int i, String name) =>
+      ws.layers[rows.order[i].layer].lanes.where((a) => a.name == name).firstOrNull;
 
   // The column of layer names beside the tracks.
   Widget labels(WorkspaceController ws, List<TimelineRow> drawn) => Column(
@@ -98,7 +98,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                             // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
                               children: [
-                                if (_lane(ws, i, n).card case final card?) ...[
+                                if (_lane(ws, i, n)?.card case final card?) ...[
                                   Flexible(
                                     child: Text(
                                       card,
@@ -110,7 +110,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                   SizedBox(width: Shape.s(5)),
                                 ],
                                 Text(
-                                  _lane(ws, i, n).label,
+                                  _lane(ws, i, n)?.label ?? n,
                                   maxLines: 1,
                                   style: TextStyles.label(Grey.g76),
                                 ),

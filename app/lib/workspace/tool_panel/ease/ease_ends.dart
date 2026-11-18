@@ -36,7 +36,7 @@ mixin EaseEnds on State<EaseTool> {
       final i = at.indexOf(span.from),
           j = at.indexOf(span.to),
           k = start ? i : j;
-      if (i < 0 || j < 0 || k >= vs.length || j >= vs.length) continue;
+      if (i < 0 || j < 0 || k < 0 || k >= vs.length || i >= vs.length || j >= vs.length) continue;
       yield (name, at, vs, k);
     }
   }
@@ -57,9 +57,11 @@ mixin EaseEnds on State<EaseTool> {
     final from = _from(ws, span);
     for (final (name, at, vs, _) in _ends(ws, span, true)) {
       if (from[name] case (final a, final b, final scale)?) {
+        final fi = at.indexOf(span.from), ti = at.indexOf(span.to);
+        if (fi < 0 || ti < 0 || fi >= vs.length || ti >= vs.length) continue;
         return (
-          (vs[at.indexOf(span.from)] - a) / scale,
-          1 + (vs[at.indexOf(span.to)] - b) / scale,
+          (vs[fi] - a) / scale,
+          1 + (vs[ti] - b) / scale,
         );
       }
     }
