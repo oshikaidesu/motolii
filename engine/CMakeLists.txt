@@ -411,6 +411,7 @@ add_library(motolii_entry OBJECT
   entry/calls_shelf.cpp
   entry/calls_sound.cpp
   entry/calls_time.cpp
+  entry/crash_report.cpp
   entry/export.cpp
   entry/render_thread.cpp
   entry/render_thread_loop.cpp

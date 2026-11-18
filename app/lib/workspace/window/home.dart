@@ -17,6 +17,7 @@ import 'package:motolii/workspace/window/home_card.dart';
 import 'package:motolii/workspace/window/home_collage.dart';
 import 'package:motolii/workspace/window/home_grid.dart';
 import 'package:motolii/workspace/window/home_hero.dart';
+import 'package:motolii/workspace/window/crash_dialog.dart';
 import 'package:motolii/workspace/window/home_project.dart';
 import 'package:motolii/workspace/window/home_sidebar.dart';
 import 'package:motolii/workspace/window/settings/settings_popover.dart';
@@ -71,6 +72,9 @@ class _HomeWindowState extends State<HomeWindow> {
     super.initState();
     _findText.addListener(_found);
     _read();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showCrashDialogIfNeeded(context);
+    });
   }
 
   void _found() {

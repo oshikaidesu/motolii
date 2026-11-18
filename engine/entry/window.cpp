@@ -20,6 +20,7 @@
 #include "document/card_table.h"
 #include "document/document.h"
 #include "entry/motolii.h"
+#include "entry/crash_report.h"
 #include "entry/motolii_handle.h"
 #include "entry/on_render_thread.h"
 #include "entry/render_thread.h"
@@ -42,6 +43,7 @@ void motolii_home(const char* folder) {
 // if it could not be opened. wide and high are the frame size for a new
 // document. A document that stores its own size keeps it.
 Motolii* motolii_open(const char* document, int wide, int high) {
+  install_crash_handlers();
   // The engine uses Filament's WebGPU backend, wherever it is opened from.
   setenv("BACKEND", "webgpu", 0);
   // The ffmpeg this build made (deps/ffmpeg.sh: LGPL only) is found before any other. Started from Finder, PATH is

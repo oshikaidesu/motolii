@@ -9,7 +9,6 @@
 #include <geometry/SurfaceOrientation.h>
 #include <ktxreader/Ktx1Reader.h>
 #include <utils/EntityManager.h>
-#include <utils/Panic.h>
 
 #include <fstream>
 #include <mutex>
@@ -59,11 +58,6 @@ static std::mutex engine_mutex;
 Stage open_stage(int w, int h) {
   Stage s{w, h};
   const char* backend = getenv("BACKEND");
-  utils::Panic::setPanicHandler(
-      [](void*, utils::Panic const& p) {
-        fprintf(stderr, "Filament panic: %s\n", p.what());
-      },
-      nullptr);
   {
     std::lock_guard<std::mutex> lock(engine_mutex);
     if (!shared_engine) {
