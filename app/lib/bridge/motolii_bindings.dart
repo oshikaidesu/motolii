@@ -1877,6 +1877,29 @@ class MotoliiBindings {
         )
       >();
 
+  int motolii_time_layout(
+    ffi.Pointer<Motolii> m,
+    ffi.Pointer<ffi.Double> out,
+    int capacity,
+  ) {
+    return _motolii_time_layout(m, out, capacity);
+  }
+
+  late final _motolii_time_layoutPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<Motolii>,
+            ffi.Pointer<ffi.Double>,
+            ffi.Int,
+          )
+        >
+      >('motolii_time_layout');
+  late final _motolii_time_layout = _motolii_time_layoutPtr
+      .asFunction<
+        int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Double>, int)
+      >();
+
   int motolii_together(ffi.Pointer<Motolii> m, int on) {
     return _motolii_together(m, on);
   }

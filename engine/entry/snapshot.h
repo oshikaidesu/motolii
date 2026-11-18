@@ -38,6 +38,9 @@ struct Snapshots {
   long rows = -1;
   // The document snapshot's own part, and the snapshot of the current time.
   std::string all, time;
+  // The time snapshot's per-layer layout as flat doubles: now, layer count,
+  // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]).
+  std::vector<double> timeLayout;
   // The version of the document snapshot and of the time snapshot.
   long version = 0, timeVersion = 0;
   // Which snapshots are new since the window was last notified: 1 for the

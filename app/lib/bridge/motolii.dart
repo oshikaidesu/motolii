@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:isolate';
 
 import 'package:ffi/ffi.dart';
@@ -218,6 +219,13 @@ class Motolii {
   // Each layer's part of the project snapshot, as of the version it arrived with.
   final layerSnapshots = <int, Map<String, dynamic>>{};
   Map<String, dynamic> momentSnapshot = const {'layer': {}};
+  // Binary time layout: [now, count, ids..., 26-doubles-per-layer...].
+  // Each record: bounds[8], seen[4], shows[14] (value,driven × 7). NaN = absent.
+  static const _timeLayoutCap = 2 + 1024 + 1024 * 26;
+  late final bool _hasTimeLayout = _lib.providesSymbol('motolii_time_layout');
+  Pointer<Double>? _timeBuf;
+  Float64List timeLayout = Float64List(0);
+  Map<int, int> timeIndex = const {};
   int _documentAt = -1, _momentAt = -1;
 
   /// Called when a snapshot is new. [document] is the project snapshot, [moment] the time snapshot,
@@ -347,9 +355,27 @@ class Motolii {
       shownOf.clear();
     }
     if (which & 2 != 0) {
+      // Binary time layout: all layers' bounds, seen, shows in one memcpy.
+      if (_hasTimeLayout) {
+        _timeBuf ??= malloc<Double>(_timeLayoutCap);
+        final layoutSize = bindings.motolii_time_layout(
+          handle,
+          _timeBuf!,
+          _timeLayoutCap,
+        );
+        if (layoutSize >= 2) {
+          timeLayout = Float64List.fromList(_timeBuf!.asTypedList(layoutSize));
+          final n = timeLayout[1].toInt();
+          final base = 2 + n;
+          timeIndex = {
+            for (var i = 0; i < n; i++)
+              timeLayout[2 + i].toInt(): base + i * 26,
+          };
+        }
+      }
+      // JSON detail: selected/watched layers' values, gizmo, points, handles.
       final p = _snapshot(handle, 2, 0, version);
       if (version.value == _momentAt) {
-        // Same version as before: not new.
         which &= ~2;
       } else {
         try {

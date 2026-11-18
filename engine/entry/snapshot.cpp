@@ -308,49 +308,61 @@ void snapshot_time(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   const double at = m->playback.now;
+  int layers[1024];
+  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+
+  // Binary layout: flat doubles for every layer's hot data.
+  // [now, count, ids..., records...] where each record is 26 doubles:
+  //   bounds[8], seen[4], shows[14] (value, driven pairs × 7).
+  std::vector<double> layout;
+  layout.reserve(2 + (size_t)n + (size_t)n * 26);
+  layout.push_back(at);
+  layout.push_back(n);
+  for (int i = 0; i < n; ++i) layout.push_back(layers[i]);
+  static const char* show_names[] = {"x",       "y",       "z",
+                                     "rotate",  "scale_x", "scale_y",
+                                     "opacity"};
+  for (int i = 0; i < n; ++i) {
+    const int t = layers[i];
+    double frame[8], box[4];
+    if (doc_frame(d, t, at, frame))
+      for (double f : frame) layout.push_back(f);
+    else
+      for (int j = 0; j < 8; ++j) layout.push_back(NAN);
+    if (doc_seen_box(d, t, at, box))
+      for (double b : box) layout.push_back(b);
+    else
+      for (int j = 0; j < 4; ++j) layout.push_back(NAN);
+    for (const char* name : show_names) {
+      double v = 0;
+      if (const int got = motolii_shows(m, t, name, at, &v))
+        layout.push_back(v), layout.push_back(got == 2 ? 1.0 : 0.0);
+      else
+        layout.push_back(NAN), layout.push_back(NAN);
+    }
+  }
+
+  // JSON detail: only selected/watched layers' values, gizmo, points, handles.
   rapidjson::StringBuffer out;
   SnapshotWriter w(out);
   w.StartObject();
   w.Key("now"), w.Double(at);
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
   w.Key("layer"), w.StartObject();
   for (int i = 0; i < n; ++i) {
     const int t = layers[i];
+    const bool picked = t == m->window.pick;
+    const bool watched = m->window.watched.count(t);
+    if (!picked && !watched) continue;
     w.Key(std::to_string(t).c_str()), w.StartObject();
-    double frame[8], box[4];
-    if (doc_frame(d, t, at, frame)) {
-      w.Key("bounds"), w.StartArray();
-      for (double f : frame) w.Double(f);
-      w.EndArray();
-    }
-    if (doc_seen_box(d, t, at, box)) {
-      w.Key("seen"), w.StartArray();
-      for (double b : box) w.Double(b);
-      w.EndArray();
-    }
     if (const std::string g = doc_gizmo(d, t, at); !g.empty())
       w.Key("gizmo"), w.String(g.c_str());
-    // Each value as the stage shows it, as [value, driven]. "driven" is true
-    // when a relation or behaviour drives the value.
-    w.Key("shows"), w.StartObject();
-    for (const char* name :
-         {"x", "y", "z", "rotate", "scale_x", "scale_y", "opacity"})
-      if (double v = 0; const int got = motolii_shows(m, t, name, at, &v))
-        w.Key(name), w.StartArray(), w.Double(v), w.Bool(got == 2),
-            w.EndArray();
+    w.Key("value"), w.StartObject();
+    for (const std::string& name : snapshot_words(motolii_moving(m, t)))
+      if (double v = 0; doc_value(d, t, name.c_str(), at, &v))
+        doc_macro_over(d, t, name.c_str(), at, &v), w.Key(name.c_str()),
+            w.Double(v);
     w.EndObject();
-    // The values that move at this time, for the selected layer and for layers
-    // the app watches.
-    if (t == m->window.pick || m->window.watched.count(t)) {
-      w.Key("value"), w.StartObject();
-      for (const std::string& name : snapshot_words(motolii_moving(m, t)))
-        if (double v = 0; doc_value(d, t, name.c_str(), at, &v))
-          doc_macro_over(d, t, name.c_str(), at, &v), w.Key(name.c_str()),
-              w.Double(v);
-      w.EndObject();
-    }
-    if (t == m->window.pick) {
+    if (picked) {
       double xy[512], of[512];
       const int p = std::min(doc_points(d, t, at, xy, 256), 256);
       w.Key("points"), w.StartArray();
@@ -371,6 +383,7 @@ void snapshot_time(Motolii* m) {
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   ++m->snapshots.timeVersion;
   m->snapshots.time = {out.GetString(), out.GetSize()};
+  m->snapshots.timeLayout = std::move(layout);
   m->snapshots.pending |= 2;
 }
 

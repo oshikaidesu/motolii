@@ -1,5 +1,6 @@
 // The time snapshot reader (docs/app/BRIDGE.md M): where layers are and what they show at the snapshot's time.
-// The engine rebuilds the snapshot with each frame.
+// Hot-path data (bounds, seen, shows) comes from the binary time layout; detail
+// data (gizmo, value, points, handles) from the JSON detail snapshot.
 import 'dart:ui' show Offset, Rect;
 
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -9,6 +10,17 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 
 extension MotoliiMoment on Motolii {
+  // Shows property name → offset within the 14-double shows block.
+  static const _showsOff = {
+    'x': 0,
+    'y': 2,
+    'z': 4,
+    'rotate': 6,
+    'scale_x': 8,
+    'scale_y': 10,
+    'opacity': 12,
+  };
+
   /// The layer that [t] is parented to, or 0 when it has none.
   int parentOf(int t) => (value(t, 'parent', 0) ?? 0).round();
 
@@ -25,12 +37,17 @@ extension MotoliiMoment on Motolii {
           as Map<String, dynamic>?;
 
   /// Whether [at] is the time of the time snapshot, to within a frame.
-  bool _isNow(double at) =>
-      (((momentSnapshot['now'] as num?)?.toDouble() ?? -1) - at).abs() <
-      .5 / rate;
+  bool _isNow(double at) {
+    final t = timeLayout.isNotEmpty
+        ? timeLayout[0]
+        : (momentSnapshot['now'] as num?)?.toDouble() ?? -1;
+    return (t - at).abs() < .5 / rate;
+  }
 
   /// The time of the frame the stage last drew. The playhead follows it during playback.
-  double get now => (momentSnapshot['now'] as num?)?.toDouble() ?? 0;
+  double get now => timeLayout.isNotEmpty
+      ? timeLayout[0]
+      : (momentSnapshot['now'] as num?)?.toDouble() ?? 0;
 
   /// A property's own value at [at], not what a relation makes of it (see [shows]).
   ///
@@ -85,6 +102,15 @@ extension MotoliiMoment on Motolii {
       _unasked('shows', layer, name, at);
       return null;
     }
+    // Binary path.
+    final base = timeIndex[layer];
+    final off = _showsOff[name];
+    if (base != null && off != null) {
+      final v = timeLayout[base + 12 + off];
+      if (v.isNaN) return null;
+      return (v, timeLayout[base + 12 + off + 1] != 0);
+    }
+    // JSON fallback (old dylib without motolii_time_layout).
     final v =
         (_momentOf(layer)?['shows'] as Map<String, dynamic>?)?[name]
             as List<dynamic>?;
@@ -98,21 +124,40 @@ extension MotoliiMoment on Motolii {
   ///
   /// The numbers are center (x, y), width, height (canvas points from the top left), rotation (degrees, clockwise),
   /// the rotation anchor (x, y) and depth (0 is flat).
-  List<double>? bounds(int layer) => switch (_momentOf(layer)?['bounds']) {
-    final List<dynamic> f => Motolii.numbers(f),
-    _ => null,
-  };
+  List<double>? bounds(int layer) {
+    final base = timeIndex[layer];
+    if (base != null) {
+      if (timeLayout[base].isNaN) return null;
+      return [for (var i = 0; i < 8; i++) timeLayout[base + i]];
+    }
+    return switch (_momentOf(layer)?['bounds']) {
+      final List<dynamic> f => Motolii.numbers(f),
+      _ => null,
+    };
+  }
 
   /// The axis-aligned bounding box of the layer's visible outline, in canvas points from the top left. Null if it is not shown.
-  Rect? seen(int layer) => switch (_momentOf(layer)?['seen']) {
-    final List<dynamic> b => Rect.fromLTRB(
-      (b[0] as num).toDouble(),
-      (b[1] as num).toDouble(),
-      (b[2] as num).toDouble(),
-      (b[3] as num).toDouble(),
-    ),
-    _ => null,
-  };
+  Rect? seen(int layer) {
+    final base = timeIndex[layer];
+    if (base != null) {
+      if (timeLayout[base + 8].isNaN) return null;
+      return Rect.fromLTRB(
+        timeLayout[base + 8],
+        timeLayout[base + 9],
+        timeLayout[base + 10],
+        timeLayout[base + 11],
+      );
+    }
+    return switch (_momentOf(layer)?['seen']) {
+      final List<dynamic> b => Rect.fromLTRB(
+        (b[0] as num).toDouble(),
+        (b[1] as num).toDouble(),
+        (b[2] as num).toDouble(),
+        (b[3] as num).toDouble(),
+      ),
+      _ => null,
+    };
+  }
 
   /// The points of a path shape as drawn on the canvas, for the selected layer only and without handles. Empty if none.
   List<Offset> points(int layer) {

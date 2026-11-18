@@ -421,6 +421,13 @@ int motolii_rate(Motolii* m);
    The result is JSON in a copy that the caller frees with free(). *version is
    set to the version the snapshot is as of. */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);
+/* Returns the time snapshot's per-layer layout as a flat double array, read
+   without the project lock: now, layer count, layer ids, then 26 doubles per
+   layer (bounds[8], seen[4], shows[14]: x, x_driven, y, y_driven, z, z_driven,
+   rotate, rotate_driven, scale_x, scale_x_driven, scale_y, scale_y_driven,
+   opacity, opacity_driven). NaN means absent. Returns the number of doubles
+   written, or needed when `out` is NULL or `capacity` is too small. */
+int motolii_time_layout(Motolii* m, double* out, int capacity);
 /* Sets the app's one listener: a Dart port, posted to from the render thread
    with Dart's own Dart_PostCObject (dart_native_api.h; Dart's NativeApi.postCObject)
    when new snapshots exist, the message an integer bit mask: 1 the project's
