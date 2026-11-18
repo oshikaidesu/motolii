@@ -154,7 +154,8 @@ inline const DocValue doc_values[] = {
     // How much of its parent's rotation/size it takes: 0 none, 1 all, 2 twice.
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr},
     {"parent_size", doc_kinds, 0, 2, true, nullptr},
-    // Rolls like a wheel along x or y. Radius = half smaller side + roll_radius.
+    // Rolls like a wheel along x or y. Radius = half smaller side +
+    // roll_radius.
     {"roll", doc_kinds, 0, 0, false, "x y"},
     {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},
     // Point cloud (point_cloud.h). dissolve = scatter distance, grain = size.
@@ -285,7 +286,8 @@ inline const DocValue doc_values[] = {
     {"bevel", doc_sheet_kinds, 0, 0, false,
      "none angular convex concave ogee step"},
     {"bevel_depth", doc_sheet_kinds, 0, 4096, true, nullptr},
-    // Separate materials for a thick layer's other faces. Unset = same as front.
+    // Separate materials for a thick layer's other faces. Unset = same as
+    // front.
     {"bevel_color", doc_sheet_kinds, 0, 0, false, ""},
     {"bevel_metallic", doc_sheet_kinds, 0, 1, false, nullptr},
     {"bevel_roughness", doc_sheet_kinds, 0, 1, false, nullptr},
@@ -314,7 +316,8 @@ inline const DocValue doc_values[] = {
     {"roughness", doc_visible_kinds, 0, 1, false, nullptr},
     {"reflectance", doc_visible_kinds, 0, 1, false, nullptr},
     // Glass (render code's own): ior bends light, dispersion parts colors,
-    // swim distorts what is behind, dark absorbs over distance, vivid saturates.
+    // swim distorts what is behind, dark absorbs over distance, vivid
+    // saturates.
     {"ior", doc_visible_kinds, 1, 3, false, nullptr},
     {"dispersion", doc_visible_kinds, 0, 0.5, false, nullptr},
     {"swim", doc_visible_kinds, 0, 1, false, nullptr},
@@ -324,13 +327,15 @@ inline const DocValue doc_values[] = {
     {"clear_coat_roughness", doc_visible_kinds, 0, 1, false, nullptr},
     {"emissive", doc_visible_kinds, 0, 20, true, nullptr},
     {"sheen", doc_visible_kinds, 0, 1, false, nullptr},
-    // Filament shading models. thick_glass/lacquer/bubble are custom .mat files.
+    // Filament shading models. thick_glass/lacquer/bubble are custom .mat
+    // files.
     {"shading", doc_visible_kinds, 0, 0, false,
      "lit cloth subsurface glass filament_glass lacquer bubble"},
     {"thickness", doc_visible_kinds, 0, 1, false, nullptr},
     // Negative = opposite direction.
     {"anisotropy", doc_visible_kinds, -1, 1, false, nullptr},
-    // orthographic: no depth perspective. shift_x/y: lens shift (share of image)
+    // orthographic: no depth perspective. shift_x/y: lens shift (share of
+    // image)
     // keeps uprights upright.
     {"projection", "camera", 0, 0, false, "perspective orthographic"},
     {"shift_x", "camera", -2, 2, true, nullptr},

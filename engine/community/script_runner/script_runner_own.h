@@ -34,8 +34,8 @@ struct Script::Own {
   bool relates = false;  // a relation's relate() and no draw(): it lays copies
                          // too, all at once (__copies_by_relate)
   std::string wgsl;      // WGSL vertex shader built by tsl_each(); empty when
-                         // the GPU path could not be built (CPU is the fallback)
-  FilmRead film;         // what its createCapture and createVideo see
+                     // the GPU path could not be built (CPU is the fallback)
+  FilmRead film;  // what its createCapture and createVideo see
   std::unique_ptr<Subtitles> subtitles;  // an .ass file's, drawn by libass
   std::vector<SketchLine> lines;         // its lines that draw
   JSAtom said[17] = {};  // the names each() says a copy by, made atoms once

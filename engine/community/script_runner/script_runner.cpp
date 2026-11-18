@@ -15,9 +15,9 @@
 #include "community/quickjs/script_leva.h"
 #include "community/script_runner/project_reads.h"
 #include "community/script_runner/run_ae.h"
-#include "community/script_runner/script_natives.h"
 #include "community/script_runner/run_cavalry.h"
 #include "community/script_runner/run_p5.h"
+#include "community/script_runner/script_natives.h"
 #include "community/script_runner/script_runner_own.h"
 #include "community/sites/site_adapter.h"
 #include "community/subtitles/subtitles.h"
@@ -272,7 +272,8 @@ std::vector<ScriptCopy> Script::copies(
         own->trouble = why;
     return all;
   }
-  // Cavalry PointCloud: the whole file says every copy at once (run_cavalry.cpp).
+  // Cavalry PointCloud: the whole file says every copy at once
+  // (run_cavalry.cpp).
   run_cavalry_whole(own->cx, own->rt, own->src, own->file, numbers, words, n, t,
                     unit, all, own->trouble);
   return all;

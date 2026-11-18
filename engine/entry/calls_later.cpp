@@ -31,8 +31,8 @@
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/match.h"
-#include "document/scripts/import_adapter.h"
 #include "document/scripts/expressions.h"
+#include "document/scripts/import_adapter.h"
 #include "document/scripts/recipes.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
@@ -384,8 +384,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           std::istringstream lines(w);
           std::string line;
           // First pass: unkey all at their old positions.
-          std::vector<std::tuple<int, std::string, double, double, double,
-                                 std::string>>
+          std::vector<
+              std::tuple<int, std::string, double, double, double, std::string>>
               entries;
           while (std::getline(lines, line)) {
             if (line.empty()) continue;
@@ -402,7 +402,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             doc_unkey(d, t, prop.c_str(), from);
           for (const auto& [t, prop, from, to, val, easing] : entries) {
             doc_key(d, t, prop.c_str(), to, val);
-            if (!easing.empty()) doc_easing(d, t, prop.c_str(), to, easing.c_str());
+            if (!easing.empty())
+              doc_easing(d, t, prop.c_str(), to, easing.c_str());
           }
         }
         // word: packed entries, one per line:
@@ -458,8 +459,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             int t = 0;
             char prop[128] = {}, easing[256] = {};
             double at = 0;
-            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%255s", &t,
-                            prop, &at, easing) >= 4)
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%255s", &t, prop,
+                            &at, easing) >= 4)
               easing_is(m, t, prop, at, easing);
           }
         }
@@ -503,7 +504,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           ok = 1;
           if (d.act.depth && d.act.unmatched)
             d.act.unmatched = false, doc_forget(d),
-                ok = changes(m, (int)doc_match(d));
+            ok = changes(m, (int)doc_match(d));
           if (d.act.depth) {
             std::istringstream in(w);
             int t;

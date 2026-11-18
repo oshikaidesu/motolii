@@ -28,8 +28,8 @@ namespace {
 const std::string& edge_wgsl(const char* name) {
   static std::map<std::string, std::string> cache;
   if (auto it = cache.find(name); it != cache.end()) return it->second;
-  return cache[name] =
-             read_text(doc_engine((std::string("stage/canvas/") + name).c_str()));
+  return cache[name] = read_text(
+             doc_engine((std::string("stage/canvas/") + name).c_str()));
 }
 
 }  // namespace
@@ -63,12 +63,13 @@ void edge_ask(Stage& s, Canvas2D* d, int reach) {
   s.once[d] = [&s, d, reach] {
     auto& built = s.edge_screens;
     if (!built[0])
-      built = {interop::screen(s.engine, "edge seeds",
-                                edge_wgsl("canvas_edge_seeds.wgsl").c_str(), 0),
-               interop::screen(s.engine, "edge flood",
-                                edge_wgsl("canvas_edge_flood.wgsl").c_str(), 16),
-               interop::screen(s.engine, "edge length",
-                                edge_wgsl("canvas_edge_length.wgsl").c_str(), 0)};
+      built = {
+          interop::screen(s.engine, "edge seeds",
+                          edge_wgsl("canvas_edge_seeds.wgsl").c_str(), 0),
+          interop::screen(s.engine, "edge flood",
+                          edge_wgsl("canvas_edge_flood.wgsl").c_str(), 16),
+          interop::screen(s.engine, "edge length",
+                          edge_wgsl("canvas_edge_length.wgsl").c_str(), 0)};
     if (!built[0] || !built[1] || !built[2]) return;
     interop::draw(s.engine, built[0], d->texture, d->edgeInto[0], d->edgeW,
                   d->edgeH);

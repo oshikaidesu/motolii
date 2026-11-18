@@ -16,8 +16,8 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -170,9 +170,8 @@ bool type_sets(const char* fontFile, const char* words) {
   if (!std::filesystem::is_regular_file(fontFile) ||
       !type_lacks(fontFile, words).empty())
     return false;
-  const Set set(
-      motolii_text_new(words, nullptr, fontFile, 100.f, 1.2f, 0.f, 0.f, 0.f, 0,
-                       0.f));
+  const Set set(motolii_text_new(words, nullptr, fontFile, 100.f, 1.2f, 0.f,
+                                 0.f, 0.f, 0, 0.f));
   if (!set.t) return false;
   const uint8_t* verbs = nullptr;
   const float* points = nullptr;
@@ -272,7 +271,8 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         // Half of the outline lies outside the letters, so the texture grows by
         // that much on all sides.
         float outline = stroke;
-        for (const Canvas2DFx::Rim& rim : fx.rims) outline += 2.f * rim.color.w * tall;
+        for (const Canvas2DFx::Rim& rim : fx.rims)
+          outline += 2.f * rim.color.w * tall;
         const float dx = -x + 0.5f * outline, dy = -y + 0.5f * outline;
         shape->translate(dx, dy);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
@@ -289,8 +289,8 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         // ranges.
         if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f &&
             fx.rims.empty() && ranges.empty()) {
-          d->words = words, d->textFont = fontFile,
-          d->textWide = (float)*w, d->textAt = dy;
+          d->words = words, d->textFont = fontFile, d->textWide = (float)*w,
+          d->textAt = dy;
           d->retype = [d, set, sized](const std::string& now) {
             const Set again(set(now.c_str(), sized));
             if (!again.t) return;
@@ -332,9 +332,10 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
             was = cut;
           }
           d->lettersDown = true,
-          d->linePitch = (lined.size() > 1 ? lined[1][0] - lined[0][0]
-                                           : sized * kPixelsPerPoint * fx.lines) /
-                         (float)*h;
+          d->linePitch =
+              (lined.size() > 1 ? lined[1][0] - lined[0][0]
+                                : sized * kPixelsPerPoint * fx.lines) /
+              (float)*h;
         }
         // One line split into letters, or words: each is cut halfway across
         // the gap between its ink and the next one's, so that neither holds
@@ -367,9 +368,9 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
             inks.push_back(
                 float2{(reach + dx + 0.5f * outline) / (float)*w,
                        to > from ? (to - from + outline) / (float)*w : 0.f});
-            d->boxes.push_back(float2{
-                (first[0] + dx) / (float)*w,
-                (last[0] + last[1] - first[0]) / (float)*w});
+            d->boxes.push_back(
+                float2{(first[0] + dx) / (float)*w,
+                       (last[0] + last[1] - first[0]) / (float)*w});
             if (fx.splitWords)
               while (*at == ' ') ++at, ++i;
           }
@@ -388,7 +389,8 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         }
         std::vector<float> ends;
         for (auto rim = fx.rims.rbegin(); rim != fx.rims.rend(); ++rim)
-          ends.push_back((ends.empty() ? 0.f : ends.back()) + rim->color.w * tall);
+          ends.push_back((ends.empty() ? 0.f : ends.back()) +
+                         rim->color.w * tall);
         if (stroke > 0.f)
           ends.push_back((ends.empty() ? 0.f : ends.back()) + stroke);
         for (size_t k = 0; k < ends.size() && k < 3; ++k) d->bands[k] = ends[k];
@@ -421,8 +423,8 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         ground->appendRect(0.f, 0.f, (float)*w, (float)*h);
         if (fx.ramp.size() >= 2)
           ground->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial,
-                               fx.rampAngle, fx.rampScale, fx.spread,
-                               fx.rampAt, fx.rampBlend));
+                               fx.rampAngle, fx.rampScale, fx.spread, fx.rampAt,
+                               fx.rampBlend));
         else
           ground->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z));
         sheet->add(ground);

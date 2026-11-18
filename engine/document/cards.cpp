@@ -84,7 +84,8 @@ std::string doc_words(Doc& d, int layer, const char* name) {
     if (!strcmp(one.name, name) && doc_among(one.kinds, kind))
       return one.words ? one.words : "";
   // Per-instance names carry an "id:" prefix; fall back to the base name.
-  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+  if (const std::string base = fx_entry_path(name);
+      base != name && !base.empty())
     return doc_words(d, layer, base.c_str());
   return "";
 }
@@ -411,7 +412,8 @@ bool doc_range(Doc& d, int layer, const char* name, double* low, double* high) {
     return *low = v->low, *high = v->high, true;
   // Per-instance names carry an "id:" prefix; all instances share the same
   // range. See doc_shown_of for the same fall-through.
-  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+  if (const std::string base = fx_entry_path(name);
+      base != name && !base.empty())
     return doc_range(d, layer, base.c_str(), low, high);
   return false;
 }

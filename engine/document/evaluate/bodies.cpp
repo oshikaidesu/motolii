@@ -18,11 +18,11 @@
 #include "community/jolt/rigid_bodies.h"
 #include "document/document.h"
 #include "document/evaluate/kept_frames.h"
-#include "document/marks.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "stage/render/render_stage.h"
 
@@ -62,10 +62,9 @@ BodyPlane doc_body_plane(Doc& d, int layer, double at) {
   p.tall = never_zero(doc_literal(d, layer, "tall", at, 1));
   // The layer's own place, before the camera, with its size and anchor taken
   // off again.
-  p.to_world =
-      doc_place(d, layer, at, 1) * math::mat4::translation(anchor) *
-      math::mat4::scaling(math::double3{1.0 / p.size_x,
-                                        1.0 / (p.size_y * p.tall), 1.0});
+  p.to_world = doc_place(d, layer, at, 1) * math::mat4::translation(anchor) *
+               math::mat4::scaling(math::double3{
+                   1.0 / p.size_x, 1.0 / (p.size_y * p.tall), 1.0});
   p.to_plane = inverse(p.to_world);
   p.wide = never_zero(length(p.to_world[0].xyz));
   p.high = never_zero(length(p.to_world[1].xyz));
@@ -161,8 +160,7 @@ const std::vector<double>* doc_bodies(Doc& d, double t) {
   if (b.layers.empty()) return nullptr;
   if (!b.jolt) b.jolt = std::make_shared<RigidBodies>(), b.at = -1;
   // A metre in stage units, where the first layer with bodies stands.
-  b.metre = kPixelsAMetre *
-            doc_stage_pixel(d, b.layers.front().first, 0);
+  b.metre = kPixelsAMetre * doc_stage_pixel(d, b.layers.front().first, 0);
   std::vector<RigidBodyTold> told;
   const auto tell = [&](size_t f) {
     const double at = (double)f / 60.0;
@@ -176,21 +174,20 @@ const std::vector<double>* doc_bodies(Doc& d, double t) {
       const std::vector<ScriptCopy> laid = doc_copies_laid(d, layer, n, at);
       const bool on = doc_body_layer_on(d, layer, at);
       for (int i = 0; i < n; ++i) {
-        const ScriptCopy c = (size_t)i < laid.size() ? laid[(size_t)i]
-                                                     : ScriptCopy{};
+        const ScriptCopy c =
+            (size_t)i < laid.size() ? laid[(size_t)i] : ScriptCopy{};
         const BodyBox box = doc_body_box(d, layer, i);
         const math::double4 point =
             plane.to_world * math::double4{c.x + plane.size_x * box.about_x,
                                            c.y + plane.size_y * box.about_y,
                                            0.0, 1.0};
         RigidBodyTold body;
-        body.present = on && c.mass >= 0 && box.half_wide > 0 &&
-                       box.half_high > 0;
+        body.present =
+            on && c.mass >= 0 && box.half_wide > 0 && box.half_high > 0;
         body.half_wide =
             box.half_wide * std::fabs(plane.size_x) * plane.wide / b.metre;
-        body.half_high = box.half_high *
-                         std::fabs(plane.size_y * plane.tall) * plane.high /
-                         b.metre;
+        body.half_high = box.half_high * std::fabs(plane.size_y * plane.tall) *
+                         plane.high / b.metre;
         body.middle_y =
             box.above * plane.size_y * plane.tall * plane.high / b.metre;
         body.x = point.x / b.metre, body.y = point.y / b.metre;

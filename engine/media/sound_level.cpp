@@ -143,8 +143,7 @@ const SoundRead* sound_of(const std::string& file, bool wait) {
              : nullptr;
 }
 
-void analyser_asked(const float* latest, int size, double tau,
-                    double* smooth) {
+void analyser_asked(const float* latest, int size, double tau, double* smooth) {
   // One transform a size, kept: making one works out its table of sines.
   struct Made {
     GstFFTF32* transform;
@@ -169,11 +168,11 @@ void analyser_asked(const float* latest, int size, double tau,
     m.in[(size_t)n] = latest[n] * m.window[(size_t)n];
   gst_fft_f32_fft(m.transform, m.in.data(), m.out.data());
   for (int i = 0; i < size / 2; ++i) {
-    const double x = tau * smooth[i] +
-                     (1.0 - tau) *
-                         std::hypot((double)m.out[(size_t)i].r,
-                                    (double)m.out[(size_t)i].i) /
-                         size;
+    const double x =
+        tau * smooth[i] +
+        (1.0 - tau) *
+            std::hypot((double)m.out[(size_t)i].r, (double)m.out[(size_t)i].i) /
+            size;
     smooth[i] = std::isfinite(x) ? x : 0.0;
   }
 }
@@ -199,8 +198,8 @@ std::vector<float> sound_raw(const SoundRead* r, bool fft, double at) {
   if (row * step > (long)r->wave.size()) return {};
   // The row last worked out for each sound: one frame's letters all ask for
   // the same one.
-  static auto& kept = *new std::map<const SoundRead*,
-                                    std::pair<long, std::vector<float>>>;
+  static auto& kept =
+      *new std::map<const SoundRead*, std::pair<long, std::vector<float>>>;
   static std::mutex one;
   std::lock_guard<std::mutex> hold(one);
   auto& [held, decibels] = kept[r];
@@ -240,8 +239,8 @@ std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at) {
     const std::vector<float> decibels = sound_raw(r, true, at);
     if (decibels.empty()) return v;
     for (int i = 0; i < raw; ++i)
-      all[(size_t)i] = std::clamp(
-          ((float)decibels[(size_t)i] + 100.f) / 70.f, 0.f, 1.f);
+      all[(size_t)i] =
+          std::clamp(((float)decibels[(size_t)i] + 100.f) / 70.f, 0.f, 1.f);
   } else {
     sound_wave(r, at, all.data(), raw);
     for (float& sample : all) sample = (sample * 4.f + 4.f) / 8.f;

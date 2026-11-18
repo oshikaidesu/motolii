@@ -43,8 +43,8 @@ TEST(ScriptParametersCSS, OneCustomPropertyBecomesOneTrack) {
 }
 
 TEST(ScriptParametersCSS, MillisecondsFoldIntoSeconds) {
-  const auto params = ParamsOf(
-      ":root { --delay: 250ms; }\n@keyframes a { 0% {} 100% {} }\n");
+  const auto params =
+      ParamsOf(":root { --delay: 250ms; }\n@keyframes a { 0% {} 100% {} }\n");
   ASSERT_EQ(params.size(), 1u);
   EXPECT_DOUBLE_EQ(params[0].usual, 0.25);
   EXPECT_EQ(params[0].unit, "s");  // ms folded to seconds, unit kept as 's'

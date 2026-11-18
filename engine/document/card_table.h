@@ -118,8 +118,9 @@ inline const DocCard doc_cards[] = {
     // The shapes of the open ends of a line, as Cavalry's heads and Alight
     // Motion's line start and
     // end.
-    {"Line", "cap join dash dash_gap dash_offset heads head_shape head_start "
-             "head_size",
+    {"Line",
+     "cap join dash dash_gap dash_offset heads head_shape head_start "
+     "head_size",
      nullptr, nullptr, true},
     // Cut the layer in from its sides; what is left stays where it was, as
     // Alight Motion's crop. Any placed layer is cut, by Filament's scissor on

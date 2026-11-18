@@ -152,12 +152,13 @@ void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h,
     // polygon, star and rect are all this one ring of points: a form with
     // inner > 0 is a star, and a four-point shape that is not a star is turned
     // half a step so its points land as an upright square, not a diamond.
-    const bool star = !strcmp(form, "star") ||
-                      (!strcmp(form, "rect") && inner > 0.f);
+    const bool star =
+        !strcmp(form, "star") || (!strcmp(form, "rect") && inner > 0.f);
     const int n = std::clamp(points, 3, 100) * (star ? 2 : 1);
     const float turn = !star && points == 4 ? TAU / (2.f * (float)n) : 0.f;
     for (int k = 0; k < n; ++k) {
-      // The first point is straight up (a square turns its points to the corners).
+      // The first point is straight up (a square turns its points to the
+      // corners).
       const float a = -0.5f * TAU / 2.f + turn + TAU * (float)k / (float)n,
                   r = star && (k & 1) ? std::clamp(inner, 0.01f, 1.f) : 1.f;
       k ? shape->lineTo(cx + rx * r * std::cos(a), cy + ry * r * std::sin(a))
@@ -273,7 +274,8 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
             under.push_back(out);
           }
           tvg::Scene* all = tvg::Scene::gen();
-          for (auto it = under.rbegin(); it != under.rend(); ++it) all->add(*it);
+          for (auto it = under.rbegin(); it != under.rend(); ++it)
+            all->add(*it);
           all->add(top);
           return all;
         };

@@ -85,8 +85,8 @@ void append_ae_expression_params(const std::string& js,
   const std::regex effectRe{
       R"(effect\(\s*["']([^"']+)["']\s*\)\s*\(\s*["']([^"']+)["']\s*\))"};
   std::set<std::string> seen;
-  for (std::sregex_iterator it(js.begin(), js.end(), compileRe), end;
-       it != end; ++it) {
+  for (std::sregex_iterator it(js.begin(), js.end(), compileRe), end; it != end;
+       ++it) {
     const std::string inside = it->str(1);
     for (std::sregex_iterator ex(inside.begin(), inside.end(), effectRe),
          ex_end;

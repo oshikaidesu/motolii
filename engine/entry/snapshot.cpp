@@ -319,9 +319,8 @@ void snapshot_time(Motolii* m) {
   layout.push_back(at);
   layout.push_back(n);
   for (int i = 0; i < n; ++i) layout.push_back(layers[i]);
-  static const char* show_names[] = {"x",       "y",       "z",
-                                     "rotate",  "scale_x", "scale_y",
-                                     "opacity"};
+  static const char* show_names[] = {"x",       "y",       "z",      "rotate",
+                                     "scale_x", "scale_y", "opacity"};
   for (int i = 0; i < n; ++i) {
     const int t = layers[i];
     double frame[8], box[4];

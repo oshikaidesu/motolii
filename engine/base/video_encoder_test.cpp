@@ -19,8 +19,12 @@ const std::string kBanner =
     "Encoders:\n V..... = Video\n A..... = Audio\n S..... = Subtitle\n"
     " .F.... = Frame-level multithreading\n ------\n";
 
-std::string video(const std::string& n) { return " V....D " + n + "   " + n + " H.264\n"; }
-std::string audio(const std::string& n) { return " A....D " + n + "   " + n + " audio\n"; }
+std::string video(const std::string& n) {
+  return " V....D " + n + "   " + n + " H.264\n";
+}
+std::string audio(const std::string& n) {
+  return " A....D " + n + "   " + n + " audio\n";
+}
 
 TEST(VideoEncoder, MacListingPrefersVideoToolboxOverLibx264) {
   std::string listing = kBanner + video("libx264") + audio("aac") +
@@ -54,8 +58,8 @@ TEST(VideoEncoder, HardwareEncodersFollowTheListedOrder) {
 }
 
 TEST(VideoEncoder, NameOnlyInADescriptionDoesNotCount) {
-  std::string listing = kBanner + " V....D mpeg4   like h264_nvenc, not it\n" +
-                        video("libx264");
+  std::string listing =
+      kBanner + " V....D mpeg4   like h264_nvenc, not it\n" + video("libx264");
   EXPECT_EQ(h264_encoder(listing), "libx264");
 }
 
@@ -77,8 +81,7 @@ TEST(VideoEncoder, EmptyListingGivesNothing) {
   EXPECT_EQ(h264_encoder(kBanner), "");
 }
 TEST(VideoEncoder, BannerAndLegendLinesAreSkipped) {
-  EXPECT_EQ(h264_encoder("\n\n  \nsurprise\n" + kBanner +
-                         video("h264_nvenc")),
+  EXPECT_EQ(h264_encoder("\n\n  \nsurprise\n" + kBanner + video("h264_nvenc")),
             "h264_nvenc");
 }
 
@@ -95,7 +98,8 @@ TEST(VideoEncoder, QualityOfVideoToolbox) {
   EXPECT_EQ(h264_quality("h264_videotoolbox", 0.0), " -q:v 68 ");
   EXPECT_EQ(h264_quality("h264_videotoolbox", -1.0), " -q:v 68 ");
   std::string m = std::to_string(0.5);
-  EXPECT_EQ(h264_quality("h264_videotoolbox", 0.5), " -b:v " + m + "M -maxrate " + m + "M ");
+  EXPECT_EQ(h264_quality("h264_videotoolbox", 0.5),
+            " -b:v " + m + "M -maxrate " + m + "M ");
 }
 
 TEST(VideoEncoder, QualityOfLibx264) {

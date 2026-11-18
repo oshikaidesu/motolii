@@ -94,8 +94,9 @@ void evaluate_layer_states(Evaluation& evaluation) {
                       doc_literal(d, layer, "scale_z", now, 1) != 0.0;
     // A layer is on when it is within its time range, visible, and not excluded
     // by solo. A layer that is not a 2D layer, or whose box is open, or is
-    // itself a solid, takes part in depth sorting with the solid layers. A solid
-    // keeps its depth in every space; the space only decides where it is placed.
+    // itself a solid, takes part in depth sorting with the solid layers. A
+    // solid keeps its depth in every space; the space only decides where it is
+    // placed.
     EvaluatedLayer one{layer,
                        &found->second,
                        since >= 0.0 && (lasts < 0.0 || since < lasts) &&

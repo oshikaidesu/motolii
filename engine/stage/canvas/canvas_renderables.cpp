@@ -107,9 +107,8 @@ Canvas2D* place_canvas(
     // box. The content keeps its size and stays centered, so the layer does not
     // shift. Shapes with no path of their own (images, films) are left as they
     // are.
-    if (!d->plain.empty() &&
-        (fx.round != 0.f || fx.bloat != 0.f || fx.zigzag != 0.f ||
-         fx.offset != 0.f)) {
+    if (!d->plain.empty() && (fx.round != 0.f || fx.bloat != 0.f ||
+                              fx.zigzag != 0.f || fx.offset != 0.f)) {
       const float plainHigh = d->plainHigh, side = d->plainSide;
       tvg::Shape* probe = tvg::Shape::gen();
       float px, py, pw, ph, bx, by, bw, bh;
@@ -117,9 +116,10 @@ Canvas2D* place_canvas(
       tvg_bend(probe, d->plain.data(), (uint32_t)d->plain.size(),
                d->plainAt.data(), (uint32_t)d->plainAt.size(), 0.f, 0.f, 0.f, 0,
                false, 0.f, d->fine);
-      const bool okP = probe->bounds(&px, &py, &pw, &ph) == tvg::Result::Success;
-      // The same outline bent by the operators at their largest, with the clamps
-      // bend_at uses, so the margin matches what is actually drawn.
+      const bool okP =
+          probe->bounds(&px, &py, &pw, &ph) == tvg::Result::Success;
+      // The same outline bent by the operators at their largest, with the
+      // clamps bend_at uses, so the margin matches what is actually drawn.
       tvg_bend(probe, d->plain.data(), (uint32_t)d->plain.size(),
                d->plainAt.data(), (uint32_t)d->plainAt.size(),
                std::clamp(fx.round, 0.f, 0.5f) * side,
@@ -127,13 +127,15 @@ Canvas2D* place_canvas(
                std::clamp(fx.zigzag, -4.f, 4.f) * plainHigh,
                (int)std::clamp(fx.ridges, 0.f, 100.f), fx.smooth > 0.5f,
                std::clamp(fx.offset, -4.f, 4.f) * plainHigh, d->fine);
-      const bool okB = probe->bounds(&bx, &by, &bw, &bh) == tvg::Result::Success;
+      const bool okB =
+          probe->bounds(&bx, &by, &bw, &bh) == tvg::Result::Success;
       if (okP && okB) {
         const float over = std::max({0.f, px - bx, (bx + bw) - (px + pw),
                                      py - by, (by + bh) - (py + ph)});
         // Add headroom so a steady path-operator drag does not clip and rebuild
-        // the sheet every frame. The grabbed box stays tight regardless, because
-        // it is measured from the outline (canvas_measure_bent), not this sheet.
+        // the sheet every frame. The grabbed box stays tight regardless,
+        // because it is measured from the outline (canvas_measure_bent), not
+        // this sheet.
         if (const float room =
                 over > 0.f ? std::ceil(1.25f * over + 0.03f * std::max(pw, ph))
                            : 0.f;

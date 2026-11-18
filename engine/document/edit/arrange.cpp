@@ -329,7 +329,7 @@ double doc_usual_on(Doc& d, int layer, const char* name) {
                                                         : 6.0)
          : !strcmp(name, "inner")
              ? (doc_word(d, layer, "shape") == "rect" ? 0.0 : 0.5)
-                                  : doc_usual(d, name);
+             : doc_usual(d, name);
 }
 
 bool doc_value(Doc& d, int layer, const char* name, double at, double* is) {

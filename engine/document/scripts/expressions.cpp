@@ -13,12 +13,12 @@
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
 #include "document/document.h"
-#include "document/marks.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/marks.h"
 #include "document/scripts/script_reads.h"
 #include "document/scripts/scripts.h"
 #include "stage/render/render_stage.h"
@@ -146,8 +146,7 @@ std::vector<ScriptCopy> doc_css_lay(Doc& d, int layer, DocScript& sc, int n,
     const ScriptParameter& p0 = sc.parameters[i];
     if (p0.label.size() < 2 || p0.label[0] != '-' || p0.label[1] != '-')
       continue;
-    const double v =
-        doc_number(d, layer, sc.names[i].c_str(), clock, p0.usual);
+    const double v = doc_number(d, layer, sc.names[i].c_str(), clock, p0.usual);
     const std::string numText = std::to_string(v);
     varOverrides += p0.label + ": " + numText + p0.unit + "; ";
     varKeyPart += p0.label + "=" + numText + ";";

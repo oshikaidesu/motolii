@@ -343,8 +343,9 @@ double anime_ease(const std::string& bundle, const std::string& said, double u,
     rt = JS_NewRuntime(), cx = JS_NewContext(rt);
     const std::string bundle_text = read_text(bundle);
     const std::string src =
-        std::string("globalThis.setImmediate = function () { return 0; }; "
-                    "globalThis.clearImmediate = function () {};\n") +
+        std::string(
+            "globalThis.setImmediate = function () { return 0; }; "
+            "globalThis.clearImmediate = function () {};\n") +
         bundle_text + anime_prelude();
     JSValue ran =
         JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);

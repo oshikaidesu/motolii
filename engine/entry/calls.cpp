@@ -1,10 +1,10 @@
 #include "entry/calls.h"
 
-#include <regex>
 #include <thorvg.h>
 
 #include <algorithm>
 #include <cstdio>
+#include <regex>
 #include <string>
 
 #include "document/cards.h"
@@ -467,14 +467,19 @@ const char* motolii_shape_svg(Motolii* m, int layer) {
     // outlines read as noise at this size; a square shows the path operators
     // (round/bloat/zigzag/offset) clearly, which is what the Paths card is for.
     const bool text = kind == "text";
-    const std::string form = text ? std::string("rect") : doc_word(d, layer, "shape");
-    if (!text && (kind != "shape" || form.empty() ||
-                  form == "path" || form == "null" || form == "solid"))
+    const std::string form =
+        text ? std::string("rect") : doc_word(d, layer, "shape");
+    if (!text && (kind != "shape" || form.empty() || form == "path" ||
+                  form == "null" || form == "solid"))
       return (said_word() = "").c_str();
     const bool line = form == "line", wave = form == "wave";
-    const double high = line ? 0.04 : wave ? 0.3 : 1.0,
+    const double high = line   ? 0.04
+                        : wave ? 0.3
+                               : 1.0,
                  wide = doc_number(d, layer, "wide", 0,
-                                   line ? 25 : wave ? 10 : 1);
+                                   line   ? 25
+                                   : wave ? 10
+                                          : 1);
     const int h = 1024, w = std::max(2, (int)std::lround(1024.0 * wide));
     Canvas2D made;
     tvg::Shape* shape = tvg::Shape::gen();
@@ -500,13 +505,14 @@ const char* motolii_shape_svg(Motolii* m, int layer) {
     const auto num = [&](const char* name, double usual) {
       return (float)doc_number(d, layer, name, at, usual);
     };
-    tvg_bend(shape, made.plain.data(), (uint32_t)made.plain.size(),
-             made.plainAt.data(), (uint32_t)made.plainAt.size(),
-             line ? 0.f : std::clamp(num("round", 0), 0.f, 0.5f) * made.plainSide,
-             100.f * std::clamp(num("bloat", 0), -1.f, 1.f),
-             num("zigzag", 0) * (float)h,
-             (int)std::clamp(num("zigzag_ridges", 5), 0.f, 100.f),
-             num("zigzag_smooth", 0) > 0.5f, num("offset", 0) * (float)h, 0.f);
+    tvg_bend(
+        shape, made.plain.data(), (uint32_t)made.plain.size(),
+        made.plainAt.data(), (uint32_t)made.plainAt.size(),
+        line ? 0.f : std::clamp(num("round", 0), 0.f, 0.5f) * made.plainSide,
+        100.f * std::clamp(num("bloat", 0), -1.f, 1.f),
+        num("zigzag", 0) * (float)h,
+        (int)std::clamp(num("zigzag_ridges", 5), 0.f, 100.f),
+        num("zigzag_smooth", 0) > 0.5f, num("offset", 0) * (float)h, 0.f);
     const tvg::PathCommand* cmds;
     const tvg::Point* pts;
     uint32_t cmdsCnt = 0, ptsCnt = 0;

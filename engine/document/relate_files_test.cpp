@@ -213,7 +213,8 @@ TEST(RelateFiles, AnExpressionWrittenForCopiesFadesLayersInOneAfterAnother) {
   Project p;
   const int a = p.Layer(0, 0), b = p.Layer(0, 0), c = p.Layer(0, 0);
   const int by = p.Relation("fade_in.js", {a, b, c}, true, "expressions");
-  for (const int t : {a, b, c}) p.Put(t, "opacity", 1), p.Put(t, "opacity_by", by);
+  for (const int t : {a, b, c})
+    p.Put(t, "opacity", 1), p.Put(t, "opacity_by", by);
   for (const int t : {a, b, c})
     EXPECT_NEAR(p.Opacity(t, 0), 0, kNear) << "layer " << t << " at 0";
   EXPECT_GT(p.Opacity(a, 0.25), p.Opacity(b, 0.25));
@@ -460,8 +461,8 @@ TEST(RelateFiles, ManyCopiesLaidTogetherEqualEachLaidAlone) {
   for (int i = 0; i < 5000; ++i) at.push_back({i * 0.0006, 0, 0});
   const std::vector<ScriptCopy> all = Lay("Field.js", field, {}, at);
   ASSERT_EQ(all.size(), at.size());
-  for (const size_t i : {size_t{0}, size_t{999}, size_t{1000}, size_t{2501},
-                         size_t{4999}}) {
+  for (const size_t i :
+       {size_t{0}, size_t{999}, size_t{1000}, size_t{2501}, size_t{4999}}) {
     const std::vector<ScriptCopy> one = Lay("Field.js", field, {}, {at[i]});
     EXPECT_NEAR(all[i].size, one[0].size, 1e-12) << "copy " << i;
     EXPECT_NEAR(all[i].rotate, one[0].rotate, 1e-12) << "copy " << i;

@@ -354,8 +354,8 @@ void evaluate_copy_looks(Doc& d, int layer, DocShownLayer& t, const Mesh* m,
     const bool clearLate = !sheetClear &&
                            doc_number(d, layer, "stagger", 0, 0) > 0.0 &&
                            doc_key_times(d, layer, "opacity").size() > 1;
-    if (ramp.size() < 2 && letters.empty() && !clears &&
-        !clearEach && !pickEach && fadeTo == 1 && !clearLate)
+    if (ramp.size() < 2 && letters.empty() && !clears && !clearEach &&
+        !pickEach && fadeTo == 1 && !clearLate)
       doc_copy_looks_off(d, m, main);
     else {
       auto& faces = s.engine->getRenderableManager();
@@ -371,10 +371,10 @@ void evaluate_copy_looks(Doc& d, int layer, DocShownLayer& t, const Mesh* m,
         copy_filled(looks, made, own);
         // The copy's own letter, or its own line.
         if ((size_t)made.nth < letters.size())
-          own->setParameter("window",
-                            float4{letters[(size_t)made.nth].x,
-                                   letters[(size_t)made.nth].y,
-                                   t.drawn->lettersDown ? 2.f : 1.f, 0.f});
+          own->setParameter(
+              "window",
+              float4{letters[(size_t)made.nth].x, letters[(size_t)made.nth].y,
+                     t.drawn->lettersDown ? 2.f : 1.f, 0.f});
         const double clear =
             (scripted != d.place_cache.scripted.end() &&
                      (size_t)made.nth < scripted->second.copies.size()

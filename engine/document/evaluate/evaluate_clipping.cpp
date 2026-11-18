@@ -89,7 +89,8 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   // by that layer's own image, like an After Effects alpha matte. Otherwise
   // it is cut by the upright box of what the clipping layer covers.
   const DocShownLayer* const a = clipped ? &d.on_stage.shown[by] : nullptr;
-  const bool shaped = a && a->drawn && (t.drawn || t.video || t.look || t.solid);
+  const bool shaped =
+      a && a->drawn && (t.drawn || t.video || t.look || t.solid);
   DocOnStage::Cut& cut = d.on_stage.cuts[layer];
   MaterialInstance* const base = t.video   ? t.video->look
                                  : t.drawn ? t.drawn->look
@@ -126,22 +127,20 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   }();
   // When the clipping layer, the way of cutting, or the matte texture changed,
   // the matte takes the shape of that layer's image, at that layer's place.
-  if (shaped &&
-      (cut.from != by || cut.by != a->drawn || cut.how != how ||
-       cut.tex != pic)) {
+  if (shaped && (cut.from != by || cut.by != a->drawn || cut.how != how ||
+                 cut.tex != pic)) {
     // For solid, all material instances were matted; clear them all first.
     if (t.solid && cut.look) {
-      doc_material_instances(s, t, [&](MaterialInstance* look) {
-        unmatte(s, look, true);
-      });
+      doc_material_instances(
+          s, t, [&](MaterialInstance* look) { unmatte(s, look, true); });
       cut.look = nullptr;
     }
     // Release what cut the material before.
     unmatte(s, cut.look, cut.look == base || cut.look == own);
     if (cut.matte >= 0) drop_matte_shapes(s, cut.matte);
-    cut.matte = matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))}, pic,
-                      doc_word(d, layer, "clip_matte") == "luma", 1.f,
-                      cut.matte);
+    cut.matte =
+        matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))}, pic,
+              doc_word(d, layer, "clip_matte") == "luma", 1.f, cut.matte);
     cut.from = by, cut.by = a->drawn, cut.tex = pic, cut.look = nullptr,
     cut.how = how;
   }
@@ -166,12 +165,11 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
       if (!first) first = mi;
     });
     if (cut.look != first) {
-      // Solid was (re)created since the matte was last applied; re-apply to all.
-      doc_material_instances(s, t, [&](MaterialInstance* look) {
-        unmatte(s, look, true);
-      });
-      const float feather =
-          (float)doc_number(d, layer, "clip_feather", 0, 0);
+      // Solid was (re)created since the matte was last applied; re-apply to
+      // all.
+      doc_material_instances(
+          s, t, [&](MaterialInstance* look) { unmatte(s, look, true); });
+      const float feather = (float)doc_number(d, layer, "clip_feather", 0, 0);
       doc_material_instances(s, t, [&](MaterialInstance* look) {
         matted(s, look, cut.matte, invert < 0.5, feather);
       });
@@ -180,9 +178,8 @@ bool layer_matted(Doc& d, int layer, DocShownLayer& t, int by, bool clipped,
   }
   if (!shaped && cut.look) {
     if (t.solid) {
-      doc_material_instances(s, t, [&](MaterialInstance* look) {
-        unmatte(s, look, true);
-      });
+      doc_material_instances(
+          s, t, [&](MaterialInstance* look) { unmatte(s, look, true); });
       cut.look = nullptr, cut.from = 0, cut.by = nullptr;
       if (cut.matte >= 0) drop_matte_shapes(s, cut.matte);
     } else {
