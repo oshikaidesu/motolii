@@ -1,4 +1,4 @@
-// Draws the map, the name of the item under the pointer, and the similarity list below it.
+// The map view: items at their embedding positions, hover label, and similarity list.
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
@@ -13,20 +13,8 @@ import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/dock/map/spread.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-/// The map view: each shown item's tile at its position from [ShelfMap].
-///
-/// The tiles are drawn inside a circle so none covers another. The whole map is fitted to the viewport at one scale and
-/// zoomed as one, tiles included, as in FontMap (useMapRenderer: calculateMappingDimensions; useMapZoom). It starts
-/// framed at 0.92, never zooms out further, zooms in at most 10 times, and can only be moved within its canvas.
-/// Items not in [ShelfMapView.shown] are left off, and a message is shown while the map is being laid out.
-///
-/// The map has no colour of its own because the images tell items apart. Font names, drawn in one ink, are coloured by
-/// position ([ShelfMap.paletteOf]).
-///
-/// Picking an item leaves the map where the user put it, as picking in Figma leaves its canvas. Only Zoom to Selection
-/// moves it. Flying to the picked item dragged the view away from the user, who said it felt like being grabbed by the
-/// shoulders. A button in the top right corner sets how compact the layout is ([ShelfMap.squeeze], Obsidian's graph
-/// "Center force").
+/// Tiles at their [ShelfMap] positions, fitted to the viewport at 0.92×, zoomable up to 10×.
+/// Picking does not move the map (flying to the item felt disorienting).
 class ShelfMapView extends StatefulWidget {
   const ShelfMapView(
     this.places,
@@ -39,25 +27,12 @@ class ShelfMapView extends StatefulWidget {
     this.names = const {},
   });
 
-  /// Where each item lies.
   final ShelfMap places;
-
-  /// The items to show, each an id and its tile.
   final List<(String, Widget)> shown;
-
-  /// Width to height of a tile.
   final double aspect;
-
-  /// The id of the picked item. Its nearest items are listed below the map.
   final String? picked;
-
-  /// Called when the user presses an item.
   final void Function(String id)? press;
-
-  /// Builds the moving image shown for the item under the pointer, as the shelf's footer does for the picked one.
   final Widget Function(String id)? peek;
-
-  /// The name shown beside the item under the pointer, by id.
   final Map<String, String> names;
   @override
   State<ShelfMapView> createState() => _ShelfMapViewState();
@@ -66,22 +41,17 @@ class ShelfMapView extends StatefulWidget {
 class _ShelfMapViewState extends State<ShelfMapView> {
   final _keys = FocusNode(debugLabel: 'ws-map');
 
-  /// The item the similarity list is built from: the one pressed on the map, as in XO's Space.
   String? _from;
 
-  /// Items in the order they were picked, like XO's History.
   final _seen = <String>[];
   int _at = -1;
 
-  /// The zoom state. The hover label is sized with it.
   final _view = TransformationController();
 
-  /// The id of the item under the pointer.
   final _over = ValueNotifier<String?>(null);
   Map<String, Offset>? _atWas;
   Size _roomWas = Size.zero;
 
-  /// Whether the force settings are open. They are opened from the corner button, like Obsidian's graph settings.
   bool _forces = false;
 
   @override
@@ -97,7 +67,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
   }
 
   void _saw(String? id) {
-    // Ignore a pick that came from stepping through the history itself.
     if (id == null || (_at >= 0 && _seen[_at] == id)) return;
     _seen
       ..removeRange(_at + 1, _seen.length)
@@ -105,7 +74,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     _at = _seen.length - 1;
   }
 
-  /// Moves [by] steps through the picked items, like XO's History. The up and down keys call this.
   void _back(int by) {
     final i = _at + by;
     if (i < 0 || i >= _seen.length || widget.press == null) return;
@@ -123,7 +91,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
 
   String get _name => widget.places.name;
 
-  /// Moves [by] items along the similarity list, like XO's arrows. Shift moves five.
   void _step(List<String> list, int by) {
     final i = list.indexOf(widget.picked ?? '');
     if (i < 0 || widget.press == null) return;
@@ -133,7 +100,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      // Lay out on a canvas shaped like the viewport.
       widget.places.roomIs(box.maxWidth / box.maxHeight);
       return ListenableBuilder(
         listenable: Listenable.merge([
@@ -197,7 +163,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
               focusNode: _keys,
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-                // Once the map is pressed the keys go to it, not to the canvas nudge.
+                // Keys go to the map once pressed, not to the canvas nudge.
                 onPointerDown: (_) => _keys.requestFocus(),
                 child: Column(
                   children: [
@@ -222,7 +188,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
   );
 
   Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
-    // A tile's side is such that the tile fits inside its circle.
     final r = mapTileRadius,
         a = widget.aspect,
         side = 2 * r / math.sqrt(1 + a * a);
@@ -244,7 +209,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
             height: side * s,
           );
     if (!identical(at, _atWas) || room != _roomWas) {
-      // The layout or the viewport changed, so the old view is meaningless. Show the whole map.
+      // Reset view when layout or viewport changes.
       if (_atWas != null) _view.value = Matrix4.identity();
       _atWas = at;
       _roomWas = room;
@@ -252,7 +217,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     Widget item(String id, Widget tile) => MouseRegion(
       onEnter: (_) => _over.value = id,
       onExit: (_) => _over.value == id ? _over.value = null : null,
-      // Pressing on the map makes the similarity list start from this item, as in XO's Space.
       child: Listener(onPointerDown: (_) => _from = id, child: tile),
     );
 
@@ -271,7 +235,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
                   for (final MapEntry(key: id, value: tile) in tiles.entries)
                     if (place(id) case final at?)
                       AnimatedPositioned.fromRect(
-                        // After a new layout each tile moves to its place with d3's default transition: 250 ms, easeCubic.
                         key: ValueKey('ws-map-$_name-$id'),
                         rect: at,
                         duration: const Duration(milliseconds: 250),
@@ -291,10 +254,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     );
   }
 
-  /// The settings opened from the map's top right corner, like Obsidian's graph settings.
-  ///
-  /// They hold its Center force, "how compact the graph is" ([ShelfMap.squeeze]), on the same slider the Create
-  /// shelf uses for the size of Colours.
   Widget _settings() => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
@@ -330,9 +289,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     ],
   );
 
-  /// Shows the item under the pointer larger, with its name, kept inside the map.
-  ///
-  /// This is DataMapPlot's hover text, and the Embedding Projector's label of the hovered point.
+  /// Hover card: the item under the pointer shown larger, with its name.
   Widget _told(
     Map<String, Widget> tiles,
     Rect? Function(String) place,
@@ -342,7 +299,6 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     builder: (context, _) {
       final id = _over.value, r = id == null ? null : place(id);
       if (id == null || r == null || tiles[id] == null) return const SizedBox();
-      // The same size as the moving image in the footer.
       final w = Shape.z(140), at = MatrixUtils.transformRect(_view.value, r);
       final left =
           (at.right + Shape.s(6) + w > room.width
@@ -389,10 +345,7 @@ class _ShelfMapViewState extends State<ShelfMapView> {
     },
   );
 
-  /// The similarity list under the map, after XO's Similarity List.
-  ///
-  /// It has arrows and the similar items in a row. The picked item comes first, like Splice's Similar Sounds run again
-  /// on one of its matches.
+  /// Similarity row: arrows and nearest items, picked item first.
   Widget _alike(
     List<String> list,
     Map<String, Widget> tiles,

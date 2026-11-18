@@ -20,14 +20,8 @@ import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
-/// What the pointer is doing on the track area: the bar, the keyframes or the selection box it drags, the clicks it
-/// makes, and the cursor that shows what a drag would do.
-///
-/// It notifies its listeners when what the tracks show changes: the selection box, the snap guide or the cursor.
+/// Pointer handling on the track area: bar/keyframe drags, selection box, snap guides.
 class TrackDrag extends ChangeNotifier {
-  /// Pointer handling over the rows `rows` of the workspace that `workspaceOf` returns, placed by `viewport`.
-  ///
-  /// `slip` slips a video in its bar. `snapTo` gives the snapping to a set of frames, or null while snapping is off.
   TrackDrag({
     required this._workspaceOf,
     required this._viewport,
@@ -42,17 +36,14 @@ class TrackDrag extends ChangeNotifier {
   final SlipEdit _slip;
   final FrameSnap? Function(List<SnapTarget> targets) _snapTo;
 
-  /// The workspace the timeline is shown in, read each time it is needed.
   WorkspaceController? get workspace => _workspaceOf();
 
-  // The bar being dragged. Dragging the body slides it, and dragging an end trims it.
-  // The timeline only records which part was grabbed and how far the pointer moved.
-  // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
+  // Bar drag. The engine decides what a move does; the timeline only records grab point and delta.
   ({int id, String part, double grab, bool moved})? _bar;
   // The typed snap targets, collected when the drag starts.
   List<SnapTarget> _targets = const [];
 
-  /// What the drag snapped to: its frame (for the guide line) and its kind (for the indicator). Null between snaps.
+  /// Current snap target (for guide line + indicator), or null.
   SnapTarget? get snappedAt => _restAt;
   SnapTarget? _restAt;
 
@@ -62,28 +53,25 @@ class TrackDrag extends ChangeNotifier {
     return snapped?.by ?? by;
   }
 
-  // The dragged bar's in and out frames when the drag started.
-  // A trim stops one frame short of an empty bar, because an empty bar cannot be seen, grabbed again or kept.
-  // The project is as long as its longest layer.
+  // Bar's in/out at drag start. A trim stops 1 frame short so the bar never vanishes.
   int _barIn = 0, _barOut = 0;
 
-  /// The cursor over the tracks, which shows what a drag would do: an end trims, the body slides, a keyframe slides,
-  /// empty space draws a box.
+  /// Cursor reflecting what a drag from here would do.
   MouseCursor get cursor => _cursor;
   MouseCursor _cursor = MouseCursor.defer;
 
-  // The keyframe being dragged, together with the other selected keyframes.
+  // Keyframe slide.
   ({List<SelectedKeyframe> keys, int grab, int by})? _slide;
-  // Property data cached at drag start so each step only issues writes.
+  // Cached at drag start so each step only issues writes.
   List<SlideEntry> _slideCache = const [];
-  // Per-entry offsets for stagger mode; null when not staggering.
+  // Stagger mode offsets, or null.
   List<int>? _staggerSlid;
-  // How far the slide has been written into the document so far, in frames.
+  // Frames written so far in the current slide.
   int _slid = 0;
-  // The stretch-handle drag: scales selected keyframes proportionally about an anchor.
+  // Stretch-handle drag: scales keyframes proportionally about an anchor.
   ({int anchor, int from, int to, double grab})? _stretch;
 
-  /// The stretch handles shown when ≥2 keyframes are selected: (left frame, right frame), or null.
+  /// Stretch handles when ≥2 keyframes are selected, or null.
   (int, int)? get stretchHandles {
     final ws = workspace;
     if (ws == null || ws.keys.length < 2) return null;
@@ -95,18 +83,15 @@ class TrackDrag extends ChangeNotifier {
     return lo < hi ? (lo, hi) : null;
   }
 
-  // When and where a lane was last clicked, to detect a double-click.
+  // Double-click detection.
   DateTime? _lanePressed;
   Offset _laneAt = Offset.zero;
 
-  /// The selection box dragged over empty track space, in any direction, or null. Its corners are in track coordinates.
-  ///
-  /// It selects the keyframes inside it, or else the layers whose bars it touches, like the marquee in Ableton and
-  /// After Effects.
+  /// Selection box in track coordinates, or null. Selects keyframes inside, or bars it touches.
   (Offset, Offset)? get selectionBox => _selectionBox;
   (Offset, Offset)? _selectionBox;
 
-  /// The pointer moved to [p] with no button down: shows the cursor for what a drag from there would do.
+  /// Hover: update cursor.
   void hover(Offset p) {
     final c = cursorAt(p);
     if (c != _cursor) {
@@ -127,7 +112,7 @@ class TrackDrag extends ChangeNotifier {
     }
   }
 
-  /// A drag starts at [p]: picks up the bar or the keyframe there, or else starts a selection box.
+  /// Drag start: bar, keyframe, or selection box.
   void down(Offset p) {
     if (!_grab(p)) {
       _selectionBox = (p, p);
@@ -169,7 +154,7 @@ class TrackDrag extends ChangeNotifier {
     }
   }
 
-  /// The pointer moved to [p] during a drag.
+  /// Drag update.
   void move(Offset p) {
     _edgeScroll(p.dx);
     if (_selectionBox case (final from, _)?) {
@@ -231,7 +216,7 @@ class TrackDrag extends ChangeNotifier {
     }
     final h = _bar, ws = workspace!;
     if (h == null || !timeline_service.isConnected(ws)) return;
-    // Moves by whole frames.
+    // Whole-frame steps.
     var by = (_viewport.view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
       _bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
@@ -248,7 +233,7 @@ class TrackDrag extends ChangeNotifier {
     ws.respan(h.id);
   }
 
-  /// The drag ended. With [keep] false it was cancelled, and the engine is told not to keep what it changed.
+  /// Drag end. [keep] false = cancelled; the engine discards the change.
   void up({bool keep = true}) {
     if (_restAt != null) {
       _restAt = null;
@@ -283,11 +268,7 @@ class TrackDrag extends ChangeNotifier {
     ws.live.letGo(keep: keep && h.moved);
   }
 
-  /// A click on a property lane, at [p].
-  ///
-  /// - On a keyframe it selects it, as in After Effects.
-  /// - Between two keyframes it selects that span, as Theatre.js does.
-  /// - A second click in the same place adds a keyframe there.
+  /// Click on a property lane: select keyframe, select span between two, or double-click to add.
   void tapUp(Offset p) {
     final ws = workspace!, r = _rows.rowAt(p.dy), v = _viewport.view;
     if (!timeline_service.isConnected(ws) ||
@@ -300,7 +281,7 @@ class TrackDrag extends ChangeNotifier {
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
-    // Select the lane keyframe closest to the pointer (AE behaviour).
+    // Closest keyframe within the hit radius.
     final lane = r.l.lanes.where((a) => a.name == name).firstOrNull;
     int? pickFrame;
     double pickDx = TimelineMetrics.keyPicked + 2;
@@ -342,12 +323,12 @@ class TrackDrag extends ChangeNotifier {
     between ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
 
-  /// A press on the tracks at [p]: selects the keyframe or the layer there, or clears the selection.
+  /// Press: select keyframe or layer, or clear.
   void tapDown(Offset p) {
     final ws = workspace!, v = _viewport.view;
     final r = _rows.rowAt(p.dy);
     if (r == null) {
-      // Below the rows nothing is selected, as in After Effects. The inspector then shows the whole project.
+      // Below the rows: clear selection (inspector shows the project).
       ws.clearKeys();
       ws.select(null);
       return;
@@ -371,7 +352,7 @@ class TrackDrag extends ChangeNotifier {
         }
       }
       if (best != null) {
-        // A plain click picks this key; Cmd or Shift adds it, or removes it if picked (the rule of picks.dart).
+        // Cmd/Shift toggles (picks.dart).
         final SelectedKeyframe key = (layer: l.id, frame: best);
         final k = clickKeys();
         return k.add || k.span
@@ -400,7 +381,7 @@ class TrackDrag extends ChangeNotifier {
     return w != null && p.dx >= v.x(w.$1) && p.dx <= v.x(w.$2);
   }
 
-  /// The cursor for the pointer at [p]: what a click or a drag from there would do.
+  /// Cursor for the pointer at [p].
   MouseCursor cursorAt(Offset p) {
     final ws = workspace!, v = _viewport.view;
     if (stretchHandles case (final lo, final hi)?) {
@@ -413,7 +394,6 @@ class TrackDrag extends ChangeNotifier {
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
-      // On a lane, a click on a keyframe selects it.
       final at = timeline_service.keyframeTimes(ws, l.id, n),
           f = v.frameAt(p.dx) / WorkspaceController.fps;
       return at.any(
@@ -444,9 +424,7 @@ class TrackDrag extends ChangeNotifier {
     final ws = workspace!, v = _viewport.view;
     final r = _rows.rowAt(p.dy);
     if (!timeline_service.isConnected(ws) || r == null) return false;
-    // Stretch handles: when ≥2 keyframes are selected, dragging near the left
-    // or right end of the selection scales all keyframes proportionally, as
-    // Lumit's key block stretch does.
+    // Stretch handles: near the left/right ends of a multi-key selection.
     if (stretchHandles case (final lo, final hi)?) {
       final lx = v.x(lo), hx = v.x(hi);
       if ((p.dx - lx).abs() <= 6) {
@@ -464,7 +442,7 @@ class TrackDrag extends ChangeNotifier {
         return true;
       }
     }
-    // A lane's keyframes can be dragged in time, like those on the main row.
+    // Lane keyframes can be dragged in time.
     if (r.value != null) {
       final name = r.value!;
       if (RowFlags(ws).isLocked(r.l.id)) return true;
@@ -513,10 +491,7 @@ class TrackDrag extends ChangeNotifier {
     if (RowFlags(workspace!).isLocked(l.id) || (off && !_onPale(ws, l, p))) {
       return false;
     }
-    // Pick the key closest to the pointer within the hit radius, not just the
-    // first one that matches. At a dense zoom several keys sit inside the
-    // radius and the old "first wins" order grabbed one at the left edge of
-    // the group rather than the one the user was aiming at (B144).
+    // Closest key within hit radius (not first-wins, which grabs wrong at dense zoom).
     int? pickK;
     double pickDx = TimelineMetrics.keyPicked + 2;
     for (final k in l.keys) {

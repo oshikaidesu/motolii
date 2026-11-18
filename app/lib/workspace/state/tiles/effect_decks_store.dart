@@ -1,5 +1,4 @@
-// Storage for the Effects shelf: recently used effects, a log of what was applied, the decks, and the starred effects.
-// The decks are the user's own sets of effects (the model is below). Their file and the others are read once and kept here.
+// Storage for the Effects shelf: recent effects, usage log, decks and stars.
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart' show sha256;
@@ -10,20 +9,14 @@ import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/storage/unique_name.dart' show firstFree;
 
-/// The file of recently used effects, newest first, at most forty, as Alight Motion's effect browser keeps them
-/// (EffectBrowser.kt:117). It is stored like the Fonts shelf's font_recent.json. Tests point it elsewhere with
-/// [effectRecentAt].
+/// Tests point this elsewhere with [effectRecentAt].
 String _recentFile = '$homeFolder/.motolii/effect_recent.json';
 List<String>? _recent;
 void effectRecentAt(String path) => (_recentFile = path, _recent = null);
 List<String> effectRecent() =>
     _recent ??= [for (final s in readJsonList(_recentFile)) '$s'];
 
-/// Records that an effect was applied.
-///
-/// The effect moves to the front of the recent list. A line is also appended to effect_used.jsonl beside it, one JSON
-/// object per line, as JSON Lines logs do. It holds the time, the effect [id], the search [words] typed and the [chip]
-/// (table) it was picked from, so browsing and searching can be counted.
+/// Records that an effect was applied. Also appends to effect_used.jsonl for usage analytics.
 void effectUsed(String id, {required String words, required String chip}) {
   final r = effectRecent()
     ..remove(id)
@@ -40,12 +33,8 @@ void effectUsed(String id, {required String words, required String chip}) {
   }
 }
 
-/// One effect in a deck: its shelf [id], its [name], and a fingerprint [sum] of its file.
-///
-/// The fingerprint is empty for effects built into the engine. A deck identifies an effect by what it is, not by where
-/// the file lies. Modrinth's .mrpack holds each file's hash, and a font manager's collection waits for a font that is
-/// gone (FontBase). A name alone is not enough, as Figma's swap and Hearthstone's Core cards show: 54 names on this
-/// shelf belong to two effects.
+/// One effect in a deck: shelf [id], [name], and file fingerprint [sum].
+/// Identified by content hash, not path, so it survives moves. Empty sum = built-in.
 class DeckThing {
   DeckThing(this.id, this.name, this.sum);
   String id;
@@ -55,12 +44,8 @@ class DeckThing {
       DeckThing('${j['id']}', '${j['name']}', '${j['sum'] ?? ''}');
 }
 
-/// A deck of effects made by the user, like Ableton's Collections or Suitcase's sets.
-///
-/// There can be any number of decks, and an effect can be in several. A deck holds the effects the user added by hand
-/// and, optionally, search [words] that find more. A hand-picked list alone never picks up new effects, and a saved
-/// search alone cannot be adjusted by hand, so a deck has both, as Lightroom's collections and smart collections do.
-/// [without] holds the effects that the words find but the user removed.
+/// A user-made set of effects: hand-picked [things] plus optional search [words].
+/// [without] excludes effects found by [words] that the user removed by hand.
 class EffectDeck {
   EffectDeck(
     this.name, {
@@ -73,7 +58,7 @@ class EffectDeck {
   final List<DeckThing> things;
   final Set<String> without;
 
-  /// Whether this is the deck that an effect's context menu adds to. It is saved in the decks file but not in a deck code.
+  /// The deck that "Add to Deck" targets. Saved in the decks file but not in a deck code.
   bool target = false;
   Map<String, Object> get json => {
     'name': name,
@@ -90,7 +75,7 @@ class EffectDeck {
     without: {for (final s in j['without'] as List? ?? const []) '$s'},
   );
 
-  /// Adds the effect to the deck or removes it by hand. [found] tells whether the deck's words find it.
+  /// Toggles an effect. [found]: whether the deck's search words already match it.
   void toggle(String id, String name, {required bool found}) {
     final there =
         !without.contains(id) && (found || things.any((t) => t.id == id));
@@ -101,7 +86,7 @@ class EffectDeck {
   }
 }
 
-/// The file that stores the decks, like the Colors shelf's palettes. Tests point it elsewhere with [effectDecksAt].
+/// Tests point this elsewhere with [effectDecksAt].
 String _decksFile = '$homeFolder/.motolii/effect_decks.json';
 List<EffectDeck>? _decks;
 void effectDecksAt(String path) => (_decksFile = path, _decks = null);
@@ -127,10 +112,7 @@ void effectDecksKeep() {
   );
 }
 
-/// The deck that an effect's context menu adds to, or null when none is set (then the Favorites are used).
-///
-/// Lightroom Classic's Add to Target Collection (B) works the same way: it uses the collection set as the target, or the
-/// Quick Collection until one is.
+/// The deck that "Add to Deck" targets, or null (then Favorites is used).
 EffectDeck? effectTarget() => effectDecks().where((d) => d.target).firstOrNull;
 void effectTargetSet(EffectDeck? to) {
   for (final d in effectDecks()) {
@@ -139,14 +121,14 @@ void effectTargetSet(EffectDeck? to) {
   effectDecksKeep();
 }
 
-/// A deck name no other deck has: [name], then "name 2" and so on, as Finder names a copy.
+/// A unique deck name: [name], then "name 2" and so on.
 String deckName(String name) {
   final held = {for (final d in effectDecks()) d.name},
       base = name.trim().isEmpty ? 'Deck' : name.trim();
   return firstFree(base, held.contains, (k) => '$base $k');
 }
 
-/// The fingerprint of an effect's file: the first twelve characters of its SHA-256 (package:crypto), or '' if the id is not a file.
+/// SHA-256 prefix (12 chars) of the effect's file, or '' if not a file.
 String effectSum(String id) {
   try {
     // An id with '#' names one script of a file. The part after '#' is kept.
@@ -161,21 +143,16 @@ String effectSum(String id) {
   }
 }
 
-/// The name of the pack an effect came in: the folder under aviutl_scripts ('author__pack'), without the author part.
-/// Null for an effect that came alone.
+/// Pack name from the aviutl_scripts folder path, or null for standalone effects.
 String? effectPack(String id) =>
     RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
 
-/// An effect id relative to the shelves folder that ships with the app, so it is the same on any machine.
+/// Machine-independent effect id (relative to the bundled shelves folder).
 String _place(String id) => id.startsWith('$motoliiShelves/')
     ? id.substring(motoliiShelves.length + 1)
     : id;
 
-/// Encodes a deck as one line of text that can be pasted anywhere, as a Hearthstone deck code is pasted into a forum
-/// or a video description.
-///
-/// It holds the effects' names and fingerprints and the excluded effects, because every shared set refers to its
-/// programs by name (.mrpack, Nexus Collections, ReShade's presets). The format is JSON, gzipped, then Base64 for URLs.
+/// Encodes a deck as a pasteable string: JSON → gzip → Base64.
 const deckCodeHead = 'motolii-deck:';
 String deckCode(EffectDeck d) =>
     deckCodeHead +
@@ -193,7 +170,7 @@ String deckCode(EffectDeck d) =>
       ),
     );
 
-/// Decodes a deck from a line made by [deckCode], or returns null when the line is not a deck code.
+/// Decodes a deck from a [deckCode] string, or null if invalid.
 EffectDeck? deckRead(String line) {
   if (!line.startsWith(deckCodeHead)) return null;
   try {
@@ -211,11 +188,8 @@ EffectDeck? deckRead(String line) {
   }
 }
 
-/// Points the deck's effects at the effects on this shelf, given their [ids].
-///
-/// An effect matches by the same place, otherwise by the same fingerprint. One that matches neither way stays as it came,
-/// with its name and fingerprint kept for the day it appears, as Hearthstone keeps a card the player lacks in a pasted
-/// deck. A ReShade preset, by contrast, forgets effects it could not load when it is saved.
+/// Resolves the deck's effect ids against available [ids] by path then by fingerprint.
+/// Unresolved effects keep their name and fingerprint for later.
 void deckSettle(EffectDeck d, Set<String> ids) {
   final at = {for (final id in ids) _place(id): id};
   Map<String, String>? sums;
@@ -234,14 +208,11 @@ void deckSettle(EffectDeck d, Set<String> ids) {
     ..addAll(out);
 }
 
-/// The file where the starred effects are stored, in the same way the Ease tool panel stores its stars (ease_stars.json).
-/// A test can point it elsewhere with [dockStarsAt].
+/// A test can point this elsewhere with [dockStarsAt].
 String _starsFile = '$homeFolder/.motolii/effect_stars.json';
 void dockStarsAt(String path) => _starsFile = path;
 
-/// The ids the user has starred.
 Set<String> starsRead() => {for (final s in readJsonList(_starsFile)) '$s'};
 
-/// Writes the starred ids [all].
 void starsKeep(Set<String> all) =>
     keepText(_starsFile, jsonEncode(all.toList()));

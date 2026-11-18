@@ -1,7 +1,4 @@
-// Timeline requests from the app's commands, the clicks and context menus of the ruler, and renaming in place.
-//
-// - Zoom, loop and rename requests come from command_actions.dart and follow Ableton Live. The timeline keeps its own view state.
-// - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
+// Timeline commands, ruler clicks/context menus, and renaming in place.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/layer_colors.dart';
@@ -22,44 +19,20 @@ import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
-/// The part of the timeline's State that answers the app's commands and the right-clicks: zooming on request, the
-/// context menus, and renaming a layer or a marker in place.
-///
-/// The State it is mixed into provides the workspace, the viewport, the ruler's marks and the rows.
 mixin TimelineRequests<T extends StatefulWidget> on State<T> {
-  /// The workspace the timeline is shown in, or null before the timeline has one.
   WorkspaceController? get workspace;
-
-  /// The timeline's zoom and scroll.
   TimelineViewport get viewport;
-
-  /// The markers on the ruler.
   RulerMarks get ruler;
-
-  /// The rows as laid out.
   TimelineRows get rows;
 
-  /// Zooms the timeline to [z] around frame [anchor], or around the playhead.
   void setZoom(double z, {int? anchor});
 
-  /// The context menu of the ruler.
-  ///
-  /// On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
   final rulerMenu = GlobalKey<ContextMenuState>();
-
-  /// The context menu of a layer's bar.
   final trackMenu = GlobalKey<ContextMenuState>();
-
-  /// The context menu of a row's name.
   final labelMenu = GlobalKey<ContextMenuState>();
-
-  /// The marker whose name is being edited in its flag, or null.
   (double, String)? naming;
-
-  /// The text of the marker name being edited, as it is typed, for the flag to be as wide as it.
   final markText = ValueNotifier<String>('');
 
-  /// Commits the marker name typed in its flag ([said] is null when Esc cancelled it).
   void nameDone(String? said) {
     final was = naming, ws = workspace!, words = said?.trim() ?? '';
     if (was == null) return;
@@ -71,18 +44,14 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     }
   }
 
-  // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
   (double, double)? _before;
-  // The id of the layer row being renamed with Cmd+R, as in Live.
   int? _renaming;
 
-  /// Starts listening for the requests of the app's commands. Called from initState.
   void listenForRequests() {
     timelineRequest.addListener(_heard);
     renameRequested.addListener(_rename);
   }
 
-  /// Stops listening and disposes the name fields. Called from dispose.
   void disposeRequests() {
     timelineRequest.removeListener(_heard);
     renameRequested.removeListener(_rename);
@@ -101,7 +70,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
         setZoom(viewport.zoom / 1.5);
       case 'fit':
         setZoom(1);
-      // Zooms to fill the view with the selected keyframes, else the selected layer's bar, as Z does in Live.
       case 'selection':
         final frames = ws.keys.isNotEmpty
             ? [for (final k in ws.keys) k.frame]
@@ -124,7 +92,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Plays from frame [f]. Playback is stopped first so the clock restarts at the playhead.
+  // Playback must be stopped first so the clock restarts at the new frame.
   void _playAt(int f) {
     final ws = workspace!;
     ws.playing = false;
@@ -132,12 +100,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     ws.playing = true;
   }
 
-  /// A click on the ruler.
-  ///
-  /// On a marker it selects the marker. Anywhere else it moves the playhead there and stops playback.
-  /// Any touch of Alight Motion's timeline stops playback too. There the playhead stays in the middle and the timeline moves.
-  /// On desktop the playhead moves, as in Audacity, whose "Click ruler to start playback" setting is off by default.
-  /// The work area band handles its own clicks.
+  /// On a marker: selects it. Elsewhere: moves the playhead and stops playback.
   void rulerTap(Offset p) {
     final ws = workspace;
     if (ws == null) return;
@@ -158,11 +121,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
       ..frame = f;
   }
 
-  /// A double-click on the ruler.
-  ///
-  /// On a marker it renames the marker, as Premiere Pro, DaVinci Resolve and Final Cut Pro do.
-  /// Live plays from the marker instead, so here "Play from Here" is in the right-click menu.
-  /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
+  /// Double-click: on a marker renames it, elsewhere zooms to selection.
   void rulerDouble(Offset p) {
     if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
@@ -175,11 +134,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     setZoom(1);
   }
 
-  /// A right-click on the ruler.
-  ///
-  /// As in Live (6.4), the scrub area and each locator have their own context menu.
-  /// On a marker it selects the marker, and the menu can rename it, play from it or delete it.
-  /// Elsewhere the menu adds a marker named by its order, or one whose name field opens at once, as in Final Cut Pro.
+  /// Right-click on the ruler: marker menu or add-marker menu.
   void rulerRight(Offset p) {
     final ws = workspace;
     if (ws == null || !timeline_service.isConnected(ws)) return;
@@ -205,7 +160,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
           ws.after(timeline_service.removeMarker(ws, flag.$1));
         }, keys: '⌫'),
         const ContextMenuItem.rule(),
-        // A marker has one of the label colours, as in Premiere Pro, DaVinci Resolve and CapCut.
         ContextMenuItem.colors(
           [for (var k = 0; k < 16; k++) labelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
@@ -235,7 +189,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
       ),
       if (ws.beats != null)
         ContextMenuItem(
-          // Starts a bar here, as in Live.
           'Set 1.1.1 Here',
           () => ws.after(
             timeline_service.setBeatGridStart(ws, at),
@@ -245,27 +198,22 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     ]);
   }
 
-  /// A right-click on a layer's bar opens the layer's context menu.
   void trackRight(Offset p) {
     final ws = workspace, r = rows.rowAt(p.dy);
     if (ws == null) return;
-    // Below the rows, what can be done there.
     if (r == null) {
       trackMenu.currentState?.show(p, emptyContextMenu(context, ws));
       return;
     }
-    // On a property lane: keyframe menu (Copy, Paste, Delete).
     if (r.value != null) {
       trackMenu.currentState?.show(p, keyframeContextMenu(context, ws));
       return;
     }
     final l = r.l, f = viewport.view.frameAt(p.dx);
-    // Beside the bar.
     if (f < l.inF || f > l.outF) return;
     trackMenu.currentState?.show(p, layerContextMenu(context, ws, l));
   }
 
-  /// The same menu, opened by a right-click on a row's name.
   void labelRight(Layer l, Offset global) {
     final menu = labelMenu.currentState, ws = workspace;
     if (menu == null || ws == null) return;
@@ -275,9 +223,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     );
   }
 
-  /// The Marker button, as Set Locator in Live (6.4).
-  ///
-  /// It adds a marker at the playhead and selects it. If a marker is already there, it deletes it (Delete Locator in Live).
+  /// Adds a marker at the playhead; if one is there, deletes it.
   void setMark() {
     final ws = workspace;
     if (ws == null || !timeline_service.isConnected(ws)) return;
@@ -308,7 +254,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     final ws = workspace;
     if (!mounted || ws == null) return;
     if (selectedMarker.value case final flag?) {
-      // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
       markText.value = flag.$2;
       setState(() => naming = flag);
       return;
@@ -329,8 +274,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// The name field over the row being renamed.
-  /// Enter or clicking away commits the name. Esc restores the old one.
+  /// The name field over the row being renamed. Enter commits; Esc cancels.
   Widget? renameField(int i, int id, double top) => _renaming != id
       ? null
       : Positioned(
@@ -342,7 +286,6 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
             color: Grey.g91,
             padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
             alignment: Alignment.centerLeft,
-            // The app's one text field: it takes the focus with the name selected, Return or clicking away says the name, Esc says null.
             child: TypedField(
               key: ValueKey('ws-tl-rename-$id'),
               text:

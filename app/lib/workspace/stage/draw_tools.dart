@@ -1,5 +1,4 @@
-// The stage's drawing tools: the lasso, a dragged-out rectangle, ellipse, line or text, the pen with its fitted
-// scribble, and the freehand brush. Each keeps the stroke while the pointer is down and makes the layer on release.
+// The stage's drawing tools: lasso, shape/text tools, pen and freehand brush.
 import 'dart:math' as math;
 import 'dart:ui' show Offset, Path, Rect;
 
@@ -20,103 +19,77 @@ import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-/// The strokes of the stage's drawing tools: the lasso, the shape and text tools, the pen and the brush.
-///
-/// The view decides which tool a press begins and calls that tool's methods here. Listeners are told when a stroke
-/// has changed what the stage draws.
 class DrawTools extends ChangeNotifier {
-  /// The drawing tools of the view [_stage].
   DrawTools(this._stage);
 
   final StageContext _stage;
 
-  /// Where the pointer went down to draw a layer with the current tool, or null when none is being drawn.
-  ///
-  /// A rectangle or ellipse fills the box from there to where the pointer is released, a line runs between the
-  /// points, text goes where the pointer went down. A click alone creates the layer at once. It is one undo step and
-  /// the new layer is selected.
+  /// Where the pointer went down to draw, or null.
   Offset? get drawFrom => _drawFrom;
   Offset? _drawFrom;
 
-  /// The lasso being drawn on empty stage with no tool, in the stage's own coordinates, or null.
-  ///
-  /// The layers whose centres are inside are selected together, and the actions available for them are offered
-  /// beside them.
+  /// The lasso being drawn, in stage coordinates, or null.
   List<Offset>? get lasso => _lasso;
   List<Offset>? _lasso;
 
-  // The pen: each pointer-down places a point and dragging pulls out its handle; a click alone makes a corner point. The first
-  // point goes to the selected layer, later ones to the path the pen created (layer -1). The engine works out the rest:
-  // starting a path, closing it on its first point, adding or removing a point on a closed path.
+  // First pen point goes to the selected layer; later ones to layer -1 (the
+  // path the pen created). The engine handles close/add/remove.
   bool _penning = false;
 
   /// The pointer's path while the pen is down, or null. A scribble rather than a handle becomes a path of its own.
   List<Offset>? get penWay => _penWay;
   List<Offset>? _penWay;
 
-  /// The brush stroke so far, in the stage's own coordinates, or null when the brush is not down.
-  ///
-  /// On release the points are smoothed by perfect-freehand (MIT, Steve Ruiz; Dart port by Adil Hanney), which also
-  /// simulates pressure from speed. The engine keeps the stroke and builds its outline the way Alight Motion's brush
-  /// does. Each point's pressure is its radius here over half the brush size.
+  /// The brush stroke so far, in stage coordinates, or null.
+  /// Smoothed on release by perfect_freehand (MIT, Steve Ruiz; Dart port: Adil Hanney).
   List<Offset>? get brush => _brush;
   List<Offset>? _brush;
 
-  /// Ends the path the pen is drawing, so that its next point starts a new one.
   void endPenPath() {
     _penning = false;
   }
 
-  /// Starts a brush stroke at [local].
   void brushDragStart(Offset local) {
     _brush = [local];
     notifyListeners();
   }
 
-  /// Adds [local] to the brush stroke.
   void brushDragUpdate(Offset local) {
     _brush!.add(local);
     notifyListeners();
   }
 
-  /// Gives up the brush stroke.
   void brushDragCancel() {
     _brush = null;
     notifyListeners();
   }
 
-  /// Starts a lasso at [local].
   void lassoDragStart(Offset local) {
     _lasso = [local];
     notifyListeners();
   }
 
-  /// Adds [local] to the lasso.
   void lassoDragUpdate(Offset local) {
     _lasso!.add(local);
     notifyListeners();
   }
 
-  /// Gives up the lasso.
   void lassoDragCancel() {
     _lasso = null;
     notifyListeners();
   }
 
-  /// Starts drawing a layer with the current tool from [local]. The pen also starts recording the pointer's path.
   void drawDragStart(Offset local) {
     if (_stage.tool.make == 'pen') _penWay = [local];
     _drawFrom = local;
     notifyListeners();
   }
 
-  /// Carries the drawing on to [local]: the pen's path grows, and the stage draws the box or the handle again.
   void drawDragUpdate(Offset local) {
     _penWay?.add(local);
     notifyListeners();
   }
 
-  /// Gives up the layer being drawn.
   void drawDragCancel() {
     _drawFrom = null;
     notifyListeners();
@@ -132,8 +105,7 @@ class DrawTools extends ChangeNotifier {
     _lasso = null;
     notifyListeners();
     if (round == null || round.length < 3) return;
-    // A nearly straight drag selects the box between its ends, as in Figma and After Effects. Otherwise the drawn
-    // outline is used.
+    // A nearly straight drag selects the box between its ends.
     final a = round.first, z = round.last, along = z - a;
     final straight =
         along.distance > 4 &&
@@ -177,7 +149,6 @@ class DrawTools extends ChangeNotifier {
     final before = stageLayers(ws).length;
     stageBeginUndoStep(ws);
     var made = 0;
-    // Text uses the body font, as a text box does in PowerPoint.
     ws.after(
       stageAddLayer(
         ws,
@@ -192,12 +163,11 @@ class DrawTools extends ChangeNotifier {
     // Apply the current drawing colours.
     applyChosenInks(ws, kind == 'text' ? 'text' : 'shape', kind);
     if (kind == 'text') {
-      // The text starts where the drag started, as point text does in After Effects, Figma and Illustrator.
+      // The text starts at the drag origin (anchor_x = -1 = left edge).
       stageSetValue(ws, layer: -1, name: 'anchor_x', number: -1);
     }
     if (cut != null) {
-      // Mask: the new layer sits just behind the selected layer, which it clips. It is invisible itself and only cuts,
-      // like an After Effects matte.
+      // Mask: sits behind the selected layer and clips it. Invisible itself.
       final all = stageLayers(ws);
       if (all.contains(cut)) {
         stageRaiseLayer(
@@ -240,7 +210,7 @@ class DrawTools extends ChangeNotifier {
       if (kind == 'text') textToType = true;
       ws.select(made);
     });
-    // Back to the select tool after one shape, as in Alight Motion's Add and Figma. After Effects keeps the tool.
+    // Back to the select tool after one shape.
     ws.setView('stage.tool', 0);
   }
 
@@ -289,11 +259,8 @@ class DrawTools extends ChangeNotifier {
     );
   }
 
-  /// Fits one smooth path to the pen scribble [way], as curve-fit-nd does.
-  ///
-  /// The fit stays within 8 screen pixels of the scribble, like Blender's Draw Curve tool (editcurve_paint.cc). The
-  /// result has ordinary pen anchors and handles that the user can move. A scribble that ends where it began becomes
-  /// a closed, filled path. Otherwise it becomes an open stroke in the current ink.
+  /// Fits a smooth path to the pen scribble [way] within 8 screen pixels.
+  /// A closed scribble becomes a filled path; an open one becomes a stroke.
   void _fit(StageViewport v, List<Offset> way) {
     final ws = _stage.workspace;
     // The fitted path is complete, so the next pen click starts a new one.
@@ -355,7 +322,7 @@ class DrawTools extends ChangeNotifier {
         '${p.point.x} ${p.point.y} ${2 * getStrokeRadius(options.size, options.thinning, p.pressure, options.easing) / options.size}',
     ];
     if (_stage.tool.brushTool == 3) {
-      // The eraser removes from the selected drawing, as Alight Motion's eraser does from the drawing layer it is in.
+      // The eraser removes from the selected drawing.
       final into = ws.selected;
       if (into == null) {
         ws.notice = 'Pick a drawing to erase from';
@@ -383,7 +350,7 @@ class DrawTools extends ChangeNotifier {
       null,
       (t) => made = t,
     );
-    // An outline with no fill shows nothing, so use white when no ink is chosen, as drawing apps do.
+    // An outline with no fill shows nothing, so default to white.
     stageSetWord(
       ws,
       layer: -1,

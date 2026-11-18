@@ -1,5 +1,4 @@
-// Dragging on the stage: what a press grabs (a layer, a handle, a crop edge), snapping to edges and centres, pulling
-// guides out of the rulers, and what is committed when the pointer is released.
+// Dragging on the stage: layer/handle/crop grabs, edge snapping, and guides.
 import 'dart:math' as math;
 import 'dart:ui' show Offset, Rect;
 
@@ -14,49 +13,31 @@ import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/stage/stage_service.dart';
 
-/// What the pointer holds during a drag on the stage.
-///
-/// `from` is where the pointer went down and `moved` whether it has moved since. `by` names the handle that was
-/// taken (scale, turn, pivot and so on); null means the layer itself, moved as a whole.
+/// `by`: the handle name, or null for a whole-layer move.
 typedef StageHold = ({Offset from, bool moved, String? by});
 
-/// The drag in progress on the stage: a layer, one of the selected layer's handles, or a guide.
-///
-/// The view decides which of its gestures a press begins and calls the matching start method here. Listeners are
-/// told when a drag has changed what the stage draws.
 class StageDrag extends ChangeNotifier {
-  /// The drags of the view [_stage].
   StageDrag(this._stage);
 
   final StageContext _stage;
 
-  /// What the pointer holds, or null when no layer or handle is being dragged.
-  ///
-  /// The stage reports only how far the pointer moved, in composition pixels. The engine decides what that means
-  /// for the layer (at its own depth) and for the project.
   StageHold? held;
 
-  /// The handle being dragged. Only it is shown, highlighted, until the drag ends.
   String? get heldGrip => _heldGrip;
   String? _heldGrip;
 
-  // Snapping, as in After Effects: the left, middle and right edges (and top, middle, bottom) of the dragged layer stick to
-  // the same lines of every other layer not grouped with it, of the canvas, or to a guide, within six screen points.
-  // Holds the lines snapped to and the lines met.
+  // Edges/centre of the dragged layer snap to other layers, the canvas, and
+  // guides within 6 screen points.
   ({Rect box, List<(double, double)> xs, List<(double, double)> ys})? _snapTo;
 
-  /// The snap lines (x, y) the dragged layer sits on now, or null on an axis with none.
   (double?, double?) get met => _met;
   (double?, double?) _met = (null, null);
 
-  // A guide being pulled out of a ruler (the top ruler gives a horizontal line, the left a vertical one) or an existing guide
-  // being dragged. Released over the canvas it is saved in the document; released back over its ruler it is deleted.
+  // A guide pulled from a ruler or dragged. Released over its ruler → deleted.
   ({String axis, double? was})? _pulling;
 
-  /// Whether a guide is being pulled out of a ruler or moved.
   bool get isPullingGuide => _pulling != null;
 
-  /// The axis-aligned rectangle that contains the corners of [b].
   Rect _bounds(ArtBox b) {
     final p = b.corners;
     return p
@@ -67,8 +48,7 @@ class StageDrag extends ChangeNotifier {
         );
   }
 
-  /// Collects the lines that dragging layer [id] snaps to: the canvas, the guides and the other layers' bounds.
-  /// Layers in the same parent chain as [id] are left out.
+  /// Collects snap targets. Layers in the same parent chain are excluded.
   void _snapFrom(int id) {
     final boxes = _stage.scene.boxes, ws = _stage.workspace;
     final grabbed = boxes[id];
@@ -93,8 +73,7 @@ class StageDrag extends ChangeNotifier {
     _snapTo = (box: _bounds(grabbed), xs: xs, ys: ys);
   }
 
-  /// Adjusts the drag offset [by] so the dragged layer's edges or centre land on a snap line within [Gestures.snapStage] screen pixels.
-  /// [s] is the view scale. It also records which lines were met so the painter can draw them.
+  /// Snaps [by] to the nearest snap line within tolerance. Records met lines for the painter.
   Offset _snapped(Offset by, double s) {
     final to = _snapTo;
     if (to == null) return by;
@@ -129,7 +108,7 @@ class StageDrag extends ChangeNotifier {
     return Offset(x, y);
   }
 
-  /// Starts pulling a guide, either out of a ruler or by grabbing an existing guide. Returns whether one was taken.
+  /// Starts pulling a guide from a ruler or grabbing an existing one.
   bool guideDragStart(StageViewport v, Offset local) {
     final ws = _stage.workspace;
     if (!stageConnected(ws)) return false;
@@ -146,7 +125,7 @@ class StageDrag extends ChangeNotifier {
     return false;
   }
 
-  /// Releases a pulled guide: removes the old one if it was moved, and adds a new one unless it was dropped on the ruler.
+  /// Releases a guide. Dropped on the ruler → deleted; on the canvas → saved.
   void guideDragEnd(StageViewport v, Offset local) {
     final p = _pulling, ws = _stage.workspace;
     _pulling = null;
@@ -170,17 +149,13 @@ class StageDrag extends ChangeNotifier {
     ws.after(stageEndUndoStep(ws));
   }
 
-  /// Gives up the guide being pulled: nothing is added, moved or removed.
   void guideDragCancel() {
     _pulling = null;
   }
 
-  /// Takes hold of a handle of the selected layer, or of one of its path points, near [local].
-  ///
-  /// Returns whether one was there.
+  /// Grabs a handle or path point near [local]. Returns whether one was found.
   bool handleDragStart(StageViewport v, Offset local) {
     final ws = _stage.workspace;
-    // Dragging a handle of the selected layer. The engine works out the change from where the drag started.
     final picked = _stage.selected;
     if (stageConnected(ws) && picked != null) {
       String? by, grip;
@@ -203,16 +178,13 @@ class StageDrag extends ChangeNotifier {
         ...stagePathPoints(ws, picked),
         for (final (h, _) in stagePathHandles(ws, picked)) h,
       ]) {
-        // A path point (moved with its handles) or a bezier handle alone. The engine picks the nearest one.
         final d = (v.toScreen(p) - local).distance;
         if (d > near) continue;
         near = d;
         by = 'point';
         grip = null;
       }
-      // Just outside a corner, the drag rotates. Figma does this when hovering just outside a layer's bounds.
-      // The zone is a square 2 × 1.62 × 4.5 px out from each corner, as in tldraw's rotate corners
-      // (SelectionForegroundOverlayUtil.ts).
+      // Just outside a corner the drag rotates (14.58 px zone).
       for (
         var i = 0;
         by == null && _stage.handles.containsKey('turn') && i < 4;
@@ -256,7 +228,7 @@ class StageDrag extends ChangeNotifier {
     return false;
   }
 
-  /// Takes hold of the layer [id] at [local], to move it as a whole, and selects it.
+  /// Grabs the whole layer and selects it.
   void layerDragStart(int id, Offset local) {
     final ws = _stage.workspace;
     if (!stageConnected(ws)) return;
@@ -267,13 +239,12 @@ class StageDrag extends ChangeNotifier {
     _snapFrom(id);
   }
 
-  /// Carries the drag on to [local]: tells the engine how far the pointer has gone, or where the handle is now.
   void dragUpdate(StageViewport v, Offset local) {
     final h = held, ws = _stage.workspace;
     if (h == null || !stageConnected(ws)) return;
     final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
     if (h.by case final way? when way.startsWith('crop c')) {
-      // A corner of the cut rectangle moves its two sides at once, as Google Slides' crop corners do.
+      // A crop corner moves its two sides at once.
       final corner =
               int.parse(
                 way.substring(6),
@@ -321,7 +292,6 @@ class StageDrag extends ChangeNotifier {
       return;
     }
     if (h.by case final way? when way.startsWith('crop ')) {
-      // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
       final side = int.parse(way.substring(5)),
           c = [
             for (var i = 0; i < 4; i++)
@@ -346,8 +316,7 @@ class StageDrag extends ChangeNotifier {
     }
     if (h.by case final way?) {
       var gone = v.toComposition(local) - v.toComposition(h.from);
-      // As in Figma: a corner handle resizes freely in both directions with the opposite side fixed; a side handle resizes that
-      // way only. Shift keeps the aspect ratio or rotates in 15 degree steps; Alt scales from the centre.
+      // Corner: free resize from opposite side. Side: one axis. Shift: constrain. Alt: from centre.
       final keys = HardwareKeyboard.instance,
           sized = way == 'scale' || way == 'edge',
           even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
@@ -370,7 +339,7 @@ class StageDrag extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // The Move tool. Shift locks to horizontal or vertical, whichever the pointer has gone further, as in Illustrator and Figma.
+    // Shift locks to the axis the pointer has gone further along.
     final axis =
         _stage.tool.axis == 0 && HardwareKeyboard.instance.isShiftPressed
         ? (all.dx.abs() >= all.dy.abs() ? 1 : 2)
@@ -385,7 +354,7 @@ class StageDrag extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
+  /// Ends the drag. With [keep] false or nothing moved, the change is discarded.
   void dragEnd({bool keep = true}) {
     final h = held,
         ws = _stage.workspace,
@@ -404,8 +373,7 @@ class StageDrag extends ChangeNotifier {
     ws.live.letGo(keep: keep && h.moved);
   }
 
-  /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
-  /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
+  /// Readout for the current drag: position, size, rotation or anchor.
   String? heldSays(String? by) {
     final ws = _stage.workspace, t = _stage.selected;
     final f = t == null ? null : stageBounds(ws, t);

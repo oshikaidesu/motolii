@@ -1,10 +1,7 @@
 #ifndef MOTOLII_STAGE_CANVAS_CANVAS_CACHE_H_
 #define MOTOLII_STAGE_CANVAS_CANVAS_CACHE_H_
 
-// Per-layer ThorVG canvas state and the frame cache for canvas.h. Holds the
-// Canvas2D and Canvas2DFx structs, the functions that redraw a canvas when its
-// effects or path change, and the GPU and disk caches of rendered animation
-// frames.
+// Per-layer ThorVG canvas state and the GPU/disk frame cache.
 
 #include <filament/MaterialInstance.h>
 #include <filament/RenderTarget.h>
@@ -39,15 +36,9 @@ namespace motolii {
 
 // Drawing options of a flat layer drawn by ThorVG. Lengths are fractions of the
 // layer height unless noted; see over().
-//
-// split makes a text draw each letter as a copy of its own.
 struct Canvas2DFx {
-  bool split = false;  // (a text's letters each a copy of their own)
-  // Splits a text into words instead of letters. Matches After Effects' Based
-  // On Words and Alight Motion's Text Transform.
+  bool split = false;  // each letter as a separate copy
   bool splitWords = false;
-  // Splits a text into its lines, one copy a line, where the text has line
-  // breaks of its own. Matches After Effects' Based On Lines.
   bool splitLines = false;
   // Draws all copies in one instanced draw, so no copy gets its own color or
   // clear. See add_parts in render.h.
@@ -75,23 +66,15 @@ struct Canvas2DFx {
   std::vector<Rim> rims;
   // Stacks the letters vertically, one letter height apart.
   bool column = false;
-  // A text's lines are broken in a box wrapWidth letter heights wide (wrap 0
-  // keeps the text as typed). letters is After Effects' Tracking (thousandths
-  // of an em), lines CSS's line-height <number> and italic CSS's oblique angle
-  // in degrees (community/css/text.h).
+  // letters: thousandths of an em (css-inline-3). lines: CSS line-height.
+  // italic: CSS oblique angle in degrees. wrapWidth: letter heights (0 = no wrap).
   float letters = 0.f, lines = 1.2f, italic = 0.f, wrapWidth = 0.f;
   int wrap = 0;
-  // Stroke options passed to ThorVG's Shape::strokeDash, strokeCap and
-  // strokeJoin. -1 for cap and join keeps ThorVG's default. dash is the length
-  // of each dash and gap the gap between them; gap of 0 equals dash, so a dash
-  // set alone draws evenly spaced dashes.
+  // ThorVG stroke options. -1 for cap/join = ThorVG default. gap 0 = same as dash.
   float dash = 0.f, gap = 0.f, dashFrom = 0.f;
   int cap = -1, join = -1;
-  // Heads on the ends of an open edge, as in Cavalry. heads is 1 for the end, 2
-  // for the start and 3 for both. headSize scales the heads relative to the
-  // edge. headShape is 0 arrow, 1 circle, 2 box, 3 chevron, 4 bar; 5 and above
-  // are Alight Motion shapes drawn by AbsentMotion (canvas_flat.h). headStart
-  // is the shape for the start; -1 uses headShape.
+  // heads: 1 end, 2 start, 3 both. headShape: 0 arrow, 1 circle, 2 box,
+  // 3 chevron, 4 bar; 5+ see canvas_flat.h. headStart: -1 = same as headShape.
   int heads = 0;
   float headSize = 4.f;
   int headShape = 0, headStart = -1;
@@ -109,18 +92,13 @@ struct Canvas2DFx {
   int rampBlend = 0;
   // A flat shape filled with nothing, so only its edge is visible.
   bool hollow = false;
-  // File of an image that fills a flat shape instead of its color, visible only
-  // where the shape is filled. Matches Alight Motion's Fill > Media.
+  // File of an image that fills a flat shape instead of its color.
   std::string media;
   // Where outlines overlap, leaves a hole every other time, like SVG's
   // fill-rule evenodd. Otherwise the fill rule is nonzero.
   bool evenOdd = false;
-  // The path operators at their largest over the animation, in bend_at's units
-  // before its clamps (round, bloat, zigzag with its ridges and smooth, and
-  // offset). See bend_at. place_canvas bends a copy of the plain path by these
-  // once and enlarges the image to hold wherever the bent outline reaches past
-  // its box, so a bend is never cut by the box. 0 for all leaves the image its
-  // plain size.
+  // Max path-operator values over the animation. The image is enlarged to hold
+  // the bent outline so it is never cut by the box. 0 = plain size.
   float round = 0.f, bloat = 0.f, zigzag = 0.f;
   float ridges = 5.f, smooth = 0.f, offset = 0.f;
   // radial selects ThorVG's radial gradient, from the middle outward, instead
@@ -143,12 +121,8 @@ struct Canvas2D {
   tvg::WgCanvas* canvas = nullptr;
   // The texture the canvas draws into. A cached frame is copied from it.
   WGPUTexture target = nullptr;
-  // Rendered frames of the animation, cached on the GPU so that a frame drawn
-  // once is shown again instead of drawn again. This is like After Effects' RAM
-  // preview, but per layer. cache_drop discards them when what the layer draws
-  // changes. `cached` is keyed by frame and used on the main thread. `keeping`
-  // holds the copies just made on the driver thread, which the main thread
-  // takes.
+  // Per-layer GPU frame cache. cache_drop discards when the layer changes.
+  // `cached`: keyed by frame, main thread. `keeping`: driver→main handoff.
   std::map<int, filament::Texture*> cached;
   // The WebGPU texture behind each cached frame. They are released when the
   // frames are discarded, after Filament has finished with them.
@@ -163,10 +137,9 @@ struct Canvas2D {
   // Frames that are being written to disk only, while the user is idle. See
   // frames_ahead. Main thread.
   std::set<int> ahead;
-  // Identifies the layer's frames on disk: the source file as it is. Empty
-  // means frames are not cached on disk.
+  // Disk cache key base. Empty = no disk caching.
   std::string keyBase;
-  // The After Effects file's slots as last set. See lottie_slots.h.
+  // Lottie slot overrides as last set. See lottie_slots.h.
   std::string slots;
   // For a MIDI roll: how lit each note is, as last set. See midi_roll.cpp.
   std::vector<float> lit;
@@ -179,15 +152,11 @@ struct Canvas2D {
   std::atomic<int> keepAge{0};
   // The animation. Driver thread only.
   tvg::Animation* film = nullptr;
-  // For a picture made again at each frame (an SVG moved by its CSS, see
-  // image_canvas): puts frame `at` of 60 a second in the paint the canvas
-  // holds. Driver thread.
+  // Redraws each frame (e.g. CSS-animated SVG, see image_canvas). Driver thread.
   std::function<void(int)> redraw;
-  // For a 2D sketch: produces the paints of a frame on a canvas that holds
-  // another canvas, from the script's paints. Main thread. See canvas_sketch.h.
+  // 2D sketch frame producer (see canvas_sketch.h). Main thread.
   std::function<std::vector<double>(int, int)> sketch;
-  // How strongly each drawing line of the sketch is active now. Main thread.
-  // See sketch_marked in script.h.
+  // Sketch line activation (see sketch_marked in script.h). Main thread.
   std::shared_ptr<std::map<int, double>> sketchLines;
   // The frame last requested from `sketch`, which the canvas will hold. Main
   // thread.
@@ -196,35 +165,29 @@ struct Canvas2D {
   tvg::Scene* sketchScene = nullptr;
   // ThorVG's name of the font the sketch's text is set in.
   std::string sketchFont;
-  // Images the sketch paints, by id from __bitmaps in p5_stand.h. They are
-  // requested on the main thread and read on the driver thread.
+  // Sketch images by id (__bitmaps in p5_stand.h). Requested on main, read on driver.
   std::map<int, std::shared_ptr<std::vector<uint8_t>>> sketchPics;
   // Guards `sketchPics`.
   std::mutex sketchPicsLock;
   // The texture Filament samples.
   filament::Texture* texture = nullptr;
-  // Distance from each point to the edge of the image, used for the bevel. See
-  // canvas_edge.h.
+  // Edge distance field for bevel (canvas_edge.h).
   filament::Texture* edge[3] = {};
   filament::RenderTarget* edgeInto[3] = {};
   uint32_t edgeW = 0, edgeH = 0;
-  // Where each stroke ends, in points from its outside; w is how many. Used for
-  // the stairs of a Step bevel. See deep.glsl.
+  // Stroke end positions for Step bevel stairs (deep.glsl).
   filament::math::float4 bands{0.f};
-  // True for flat_lit: the lighting of the surface is updated every frame by
-  // document/evaluate/evaluate.h.
+  // flat_lit: surface lighting updated every frame (evaluate.h).
   bool inLight = false;
   // How far the edge distances are known, in points.
   int edgeReach = 0;
-  // True when the canvas has been drawn again since the edge distances were
-  // computed. Set on the driver thread.
+  // Set when the canvas was redrawn since edge distances were computed.
   std::atomic<bool> stale{true};
-  // The layer in the scene, moved like any other layer. See move in render.h.
+  // The layer's scene mesh (see move in render.h).
   Mesh* sheet = nullptr;
-  // Half the box size across, up and through, when the layer has depth. See
-  // document/evaluate/evaluate.h.
+  // Half-extents when the layer has depth.
   filament::math::float3 boxed{0.f};
-  // True when the box is open. See document/evaluate/evaluate.h.
+  // True when the box is open.
   bool open = false;
   // The layer's material instance. Null if the layer is not shown.
   filament::MaterialInstance* look = nullptr;
@@ -234,8 +197,7 @@ struct Canvas2D {
   float starts = 0.f;
   // A flat shape's own path. Driver thread only.
   tvg::Shape* shape = nullptr;
-  // A text's outline drawn again over a sheet of colours, trimmed with
-  // `shape`. Driver thread only.
+  // Text outline over colour sheet, trimmed with `shape`. Driver thread.
   tvg::Shape* letterEdge = nullptr;
   // As last trimmed: how much was cut off the end, off the beginning, and the
   // offset along the path.
@@ -246,29 +208,21 @@ struct Canvas2D {
   // The height the path was drawn at and its shorter side, in the layer's own
   // points.
   float plainHigh = 0.f, plainSide = 0.f;
-  // Height and width of the image, including room for effects, in texture
-  // pixels. Set by place_canvas. Used to normalise the bent outline's bounds.
+  // Image size in texture pixels, including room for effects.
   float canvasHigh = 0.f, canvasWide = 0.f;
-  // The bent outline's own bounds, as left, top, right, bottom in the sheet's
-  // texture, 0..1 over its width and height. The box the user grabs is measured
-  // from this, not from the padded sheet quad, so it stays tight to the real
-  // outline and follows a path operator (bloat, offset, zigzag) live. It may
-  // reach past 0..1 when the bend overflows the current texture; see
-  // canvas_measure_bent. {0,0,1,1} and bentSeen false means the whole sheet.
+  // Bent outline bounds in sheet UV (0..1). The selection box tracks this, not
+  // the padded quad. May exceed 0..1 on overflow (canvas_measure_bent).
   filament::math::float4 bentBox{0.f, 0.f, 1.f, 1.f};
   bool bentSeen = false;
   // Lines are cut into pieces no longer than this many points.
   float fine = 0.f;
-  // True for a flat shape that Filament draws as its own triangles (flat_mesh),
-  // with no image and no canvas. Its bending is done in its material.
+  // Flat shape drawn as triangles (flat_mesh), no canvas. Bending in material.
   bool cut = false;
-  // The layer's own color laid over its material, as a copy's is. A shape cut
-  // into triangles is filled this way.
+  // Layer color overlaid on its material.
   filament::math::float4 wash{0.f};
   // Width divided by height. Bends are counted across this width.
   float wideBy = 1.f;
-  // For a shape drawn as triangles: its ThorVG path, kept on the CPU only and
-  // never drawn.
+  // ThorVG path, CPU only (not drawn).
   tvg::Shape* outline = nullptr;
   // Width of the path in points, height of the sheet on the stage, and width of
   // the edge in points.
@@ -279,31 +233,21 @@ struct Canvas2D {
   uint32_t fillPoints = 0, fillEnd = 0;
   // The edge's own material instance, for the second part of the triangles.
   filament::MaterialInstance* edgeLook = nullptr;
-  // One layer of an After Effects file, drawn alone. See layer_canvas. source
-  // is the file, layerId the layer, holder the scene that holds it and fit how
-  // it is fitted.
+  // One layer of a Lottie file, drawn alone (layer_canvas).
   tvg::Animation* source = nullptr;
   uint32_t layerId = 0;
   tvg::Scene* holder = nullptr;
   tvg::Matrix fit{1, 0, 0, 0, 1, 0, 0, 0, 1};
-  // The Lottie animation, when the layer is an After Effects file. Used to read
-  // the poses of its layers.
+  // The Lottie animation, used to read layer poses.
   tvg::LottieAnimation* lottie = nullptr;
-  // Ids of the 3D layers of an After Effects file. They are not drawn in its
-  // own image; each gets a sheet of its own. See canvas_deep.
+  // 3D layer ids from a Lottie file; each gets its own sheet (canvas_deep).
   std::vector<uint32_t> deep;
   // Parameters as last applied by bend_at: round, bloat, zigzag, ridges,
   // smooth, offset. The remaining four are for roughening: how far and how
   // fine, the number of points walked again, and the square size.
   std::array<float, 10> bent{};
-  // Another shape's path, in this shape's points, and what to do with it. It is
-  // either combined (how: the operation from skia_path_operations.cpp, -1 for
-  // none) or morphed into (much: how far, 0 for none; how above 1: that many
-  // steps from this shape to it, all at once, as a blend).
-  //
-  // joined, morphed and traced hold the other path as last combined with, as
-  // last morphed into, and as last traced. Tracing makes the whole path follow
-  // another's track.
+  // Another shape's path: combined (how: skia_path_operations.cpp op, -1 none)
+  // or morphed (much: 0–1; how>1: that many blend steps).
   struct Other {
     int how = -1;
     float much = 0.f;
@@ -320,10 +264,8 @@ struct Canvas2D {
   } joined, morphed,
       traced;  // (as last put together with, as last turned into, as last
                // tracing: its whole path another's track)
-  // Paths already cut into triangles, keyed by what they were cut from, as PAG
-  // keeps the shapes of a frame and Beutl keeps a path by its version. A time
-  // cut once is not cut again while the entry is cached. All shapes together
-  // hold at most cuts_most.
+  // Triangulated path cache. A frame cut once is reused. Total capped at
+  // cuts_most.
   struct Cut {
     std::vector<tvg::PathCommand> by;
     std::vector<tvg::Point> at;
@@ -339,57 +281,43 @@ struct Canvas2D {
     size_t bytes = 0;
     ~Cuts();
   } cuts;
-  // Named sections of an After Effects file, which are ThorVG's Lottie markers.
+  // ThorVG Lottie markers (named sections).
   std::vector<std::string> markers;
-  // For a text split into letters: where each letter lies across the image, as
-  // fractions of its width. Each copy shows one letter. For a text split into
-  // lines (lettersDown), where each line lies down the image instead, as
-  // fractions of its height from the top.
+  // Per-letter or per-line position as fraction of image width (or height if
+  // lettersDown). Each copy shows one letter/line.
   std::vector<filament::math::float2> letters;
   bool lettersDown = false;
   // For a text split into lines: how far one line's base lies below the one
   // before, as a fraction of the image's height.
   float linePitch = 0.f;
-  // For each of them, its box across as a pasted pen lays it: from where the
-  // letter is set to its advance (x and width, fractions of the image's width).
-  // For a line, from where the line begins to how wide it is.
+  // Per-letter/line bounding box (x, width) as fractions of image width.
   std::vector<filament::math::float2> boxes;
   // The section that plays when one is named, in frames of the file.
   float fromFrame = 0.f, toFrame = 0.f;
-  // For a text: how many times as tall as one line the text is. The size gives
-  // the height of a line.
+  // Text height as a multiple of one line.
   float tallBy = 1.f;
-  // For a text: the size its letters are set at, as a fraction of the image's
-  // height (an em, which a pasted pen's lengths are measured in), and where
-  // the font's line lies, from its ascent above the baseline to its descent
-  // below, as fractions of the image's height from the top (the content area
-  // of CSS 2.1 §10.6.1, a pasted pen's letter box). The image is cut to the ink.
+  // em: letter size as fraction of image height. line: ascent..descent as
+  // fractions of image height (CSS 2.1 §10.6.1 content area).
   float em = 0.f;
   filament::math::float2 line{0.f, 1.f};
   // The drawing options the layer was made with.
   Canvas2DFx fx;
-  // Sets other words in place of the text's own, into `shape`. Driver thread
-  // only; words_at calls it. Empty when the text is split, wrapped, aligned or
-  // has ranges of its own.
+  // Sets replacement words into `shape` (driver thread, via words_at).
+  // Empty when split/wrapped/aligned or has text_styles.
   std::function<void(const std::string&)> retype;
   // As last set.
   std::string words;
-  // The font file the words are set in. Words that contain letters it lacks are
-  // made again with the fallback font.
+  // Font file. Missing glyphs fall back to the system font.
   std::string textFont;
   // Width of the image and the vertical position of the words in it, in its own
   // points.
   float textWide = 0.f, textAt = 0.f;
-  // Set when words set since are wider than the image. The text must then be
-  // made again.
+  // Set when new words outgrew the image; the text must be remade.
   std::atomic<bool> outgrown{false};
 };
 
-// Trims a flat shape's path. `cut` of it is removed from the end and `begin`
-// from the beginning, and the part left is slid along the path by `offset` of
-// the way round. This uses ThorVG's trimpath, which wraps past either end, like
-// After Effects' Trim Paths. The shape is drawn again for the next frame. Does
-// nothing if the trim is unchanged.
+// Trims the path via ThorVG's trimpath. Wraps past either end. No-op if
+// unchanged.
 void trim_at(Stage& s, Canvas2D* d, float cut, float begin = 0.f,
              float offset = 0.f);
 
@@ -399,37 +327,20 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin = 0.f,
 void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
              float ridges, float smooth, float offset);
 
-// Applies the slots of an After Effects file (lottie_slots_json) and draws it
-// again for the next frame. Does nothing if the
-// slots are unchanged. Uses ThorVG's own slot API: generate the slots, then
-// apply them.
+// Applies Lottie slot overrides (lottie_slots_json) via ThorVG's slot API.
+// No-op if unchanged.
 void slots_at(Stage& s, Canvas2D* d, const std::string& slots);
-// Updates the notes of a MIDI roll and draws them again for the next frame, as
-// slots_at does. lit[i] is how lit note i is: 0 keeps its color and 1 raises it
-// by 0.3, as ALMaMPlayer does (note.gd modulate). moves[i] is the transform of
-// note i, grown and dipped as the tweens in note.gd do. Note i is the SVG
-// element "note<i>" (midi_roll.cpp), found with ThorVG's Accessor::id. Does
-// nothing if nothing changed.
+// Updates MIDI roll notes. lit[i]: 0 keeps color, 1 raises by 0.3. moves[i]:
+// per-note transform. Note i = SVG "note<i>" (midi_roll.cpp). No-op if unchanged.
 void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
             const std::vector<tvg::Matrix>& moves,
             filament::math::float3 colour);
-// Sets the words of a text, as AbsentMotion's text effects produce them
-// (doc_text_shown), and draws them again for the next frame, as slots_at does
-// for a Lottie file. The words are centered across the image at the height they
-// were set at. Does nothing if the words are unchanged. Returns false if the
-// layer has no words of its own to set, or if the last words did not fit the
-// image (outgrown).
+// Sets the displayed words of a text (doc_text_shown). No-op if unchanged.
+// Returns false if the layer has no retype function or the text outgrew the image.
 bool words_at(Stage& s, Canvas2D* d, const std::string& words);
-// Frames are also cached on disk in ~/Library/Caches/Motolii/frames, so that a
-// reopened project shows frames drawn earlier without drawing them again. Each
-// frame is one file, compressed with zstd as Filament builds it. A file is
-// named by a hash of what produced the frame: the source file, the drawn size,
-// the effects, the section and the frame number. Nuke names its cache by its
-// inputs in the same way.
-//
-// cache_dir returns the folder and creates it on first use. At that time it
-// also deletes the oldest files, on a background thread, until the folder is
-// under 20 GB.
+// Disk cache: ~/Library/Caches/Motolii/frames. Each frame is one zstd file,
+// named by a hash of its inputs. cache_dir creates the folder on first use and
+// trims it to 20 GB.
 const std::filesystem::path& cache_dir();
 // Number of frames on their way to disk: waiting to be written or still being
 // read back.
@@ -449,22 +360,12 @@ void cache_drop(Stage& s, Canvas2D* d);
 // Counts how each frame was shown: from the GPU cache, from disk, or freshly
 // rendered. For diagnostics.
 extern std::atomic<long> films_cached, films_disk, films_rendered;
-// Shows the animation `seconds` from its start, for the next frame. After its
-// end it holds the last frame. The time is rounded to the frames of the file,
-// as After Effects plays it, so a time within the frame already drawn draws
-// nothing again. ThorVG's frame() reports when the frame is the same. This is
-// the advice of the ThorVG author for Lottie on a GPU
-// (godotengine/godot#91580). A frame drawn once is shown again from the cache,
-// on the GPU or on disk.
+// Shows the animation at `seconds`. Time is rounded to file frames so a frame
+// already drawn is reused from the GPU or disk cache.
 void canvas_at(Stage& s, Canvas2D* d, float seconds);
 
-// While the user is idle, caches a few frames after the one shown before they
-// are asked for, as Final Cut Pro renders when the user stops, and as DaVinci
-// Resolve's Smart Cache and After Effects' Cache Frames When Idle do. Each
-// frame is read from disk if it is there, and otherwise drawn into the texture
-// the canvas draws into, which is free while the frame shown comes from the
-// cache. `many` is the most frames to start. Returns how many were started; 0
-// means nothing more can be done now.
+// Pre-caches up to `many` frames ahead while the user is idle. Returns 0 when
+// nothing more can be done now.
 int frames_ahead(Stage& s, Canvas2D* d, int many);
 
 }  // namespace motolii

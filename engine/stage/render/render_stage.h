@@ -1,7 +1,6 @@
 #ifndef MOTOLII_STAGE_RENDER_RENDER_STAGE_H_
 #define MOTOLII_STAGE_RENDER_RENDER_STAGE_H_
-// The stage: the mesh and Stage types, creating a Filament engine and stage,
-// and adding, reshaping and making meshes on it.
+// Mesh and Stage types, Filament engine lifecycle, and mesh management.
 #include <backend/BufferDescriptor.h>
 #include <filament/BufferObject.h>
 #include <filament/Camera.h>
@@ -102,52 +101,38 @@ struct Stage {
   filament::Scene* scene;
   filament::View* view;
   filament::SwapChain* swap;
-  // The camera that views the stage. Every image of the stage is taken by it.
   filament::Camera* camera;
-  // The project's own camera. Its image is the Camera View. 2D layers follow
-  // it; mattes are taken through it. It is separate from `camera`, which is
-  // the Stage's orbital working camera.
+  // The project's camera (Camera View). Separate from `camera` (the working
+  // orbital camera). 2D layers follow it; mattes are taken through it.
   filament::Camera* film;
-  // The entity that owns `film`. Stored so that `film` can be destroyed and so
-  // that 2D layers can be parented to it in the scene graph.
+  // Owns `film`; also the parent for 2D layers in the scene graph.
   utils::Entity filmEntity;
   // The free camera, once it has been requested.
   filament::Camera* god = nullptr;
-  // The same scene without the glass (layer 2), drawn first into `behind`. It
-  // is what a glass block shows.
+  // Scene without glass (layer 2), drawn into `behind` for glass refraction.
   filament::View* view_behind;
-  // The depth of `behind`. It is drawn into an image of its own for a layer
-  // that reads what is under it, see doc_layers_read.
+  // Depth of `behind` (see doc_layers_read).
   filament::Texture* behindDepth = nullptr;
   filament::Texture* behind;
-  // Whether anything reads `behind`, such as glass or paper. Until then it is
-  // not drawn.
+  // Whether anything reads `behind`. Until then it is not drawn.
   bool behindRead = false;
-  // Run once the image is drawn, for example to put a solid's own material
-  // instances back. See doc_layer_shell.
+  // Run once per frame after drawing (e.g. restore material instances).
   std::vector<std::function<void()>> after;
-  // Whether a layer's effect reads `behind`, as the backdrop of AbsentMotion
-  // does. Then it is also drawn before the layers' effects.
+  // Whether a layer effect reads `behind`. Causes it to be drawn before effects.
   bool backdropRead = false;
-  // The glass's far faces alone (layer 8), drawn second into `through`. It
-  // records which way they face, see far_side.mat.
+  // Glass far faces (layer 8), recording face direction (far_side.mat).
   filament::View* view_through = nullptr;
   filament::Texture* through = nullptr;
-  // How far away those far faces are. The near faces in thick_glass.mat measure
-  // the glass with it.
+  // Far-face depth; thick_glass.mat measures glass thickness with it.
   filament::Texture* through_depth = nullptr;
   // The stage's time in seconds.
   double now = 0.0;
-  // Frames per second at which the stage's time is seen, which is the project's
-  // frame rate. 0 means as smooth as it is drawn.
+  // Project frame rate. 0 = continuous.
   double frames = 0.0;
-  // True: played as the clock goes, and nothing is waited for. False: frame by
-  // frame, each one exact.
+  // True: real-time playback. False: frame-accurate stepping.
   bool by_clock = false;
-  // For a live stage: work that a point in time asks of its videos, kept to run
-  // once the project is released, see motolii.mm. This way videos put back to
-  // their start do not hold the app's reads of the project. If null, the work
-  // is done at once.
+  // Deferred video work, run once the project lock is released (motolii.mm).
+  // Null = execute immediately.
   std::vector<std::function<void()>>* later = nullptr;
   // A layer's own sound.
   // file: the audio file.
@@ -164,23 +149,14 @@ struct Stage {
     double gain = 1.0;
     std::vector<float> loud = {};
   };
-  // Sounds that are heard, each under its own layer. Asked when a video is
-  // exported.
+  // Active sounds by layer. Queried during export.
   std::map<const void*, std::function<Sound()>> sounding;
-  // Callbacks that advance by themselves as the stage's time does, such as
-  // videos and images, each under its own layer.
+  // Auto-advancing callbacks (videos, images), keyed by layer.
   std::map<const void*, std::function<void(double)>> playing;
   // Callbacks that add their own output after each line of `clock`.
   std::vector<std::function<void()>> said_after;
-  // One Filament entity put on the stage.
-  // thing: the entity. of: the mesh it was made from. nth: the index of the
-  // place of that mesh.
-  //   place: its transform.
-  // matte: true for the shape that a matte is cut by, which lives in that
-  // matte's own scene. many: draws all its places in one go with Filament's
-  // instancing, each place being an instance
-  //   of the one entity. `move` updates them all at once.
-  // count: the number of instances.
+  // One entity on the stage. matte: lives in its own scene for matte rendering.
+  // many: Filament instancing buffer (move updates all at once).
   struct Renderable {
     utils::Entity thing;
     const Mesh* of;
@@ -190,13 +166,9 @@ struct Stage {
     filament::InstanceBuffer* many = nullptr;
     int count = 1;
   };
-  // A matte: its own scene, view and image, the camera that takes it, and the
-  // entity it rides on with that entity's transform. soft: whether some layer
-  // reads it blurred. eyeOwned is the entity that holds the camera when the
-  // camera is one the matte made for itself (eye != s.film); otherwise it is
-  // null and the camera is not the matte's to destroy. A slot whose scene is
-  // null is free: release_matte left it there so its index stays valid for
-  // other cuts that still point past it, and a new matte reuses it.
+  // A matte with its own scene/view/camera. scene == null means the slot is
+  // free (release_matte keeps it so indices stay valid). eyeOwned: null when
+  // using the shared camera.
   struct Matte {
     filament::Scene* scene;
     filament::View* view;
@@ -207,26 +179,19 @@ struct Stage {
     filament::math::mat4f onPlace;
     utils::Entity eyeOwned;
   };
-  // The mattes. Each is an image taken by its own camera and drawn before
-  // everything else, see matte. A slot with scene == nullptr has been released
-  // and a new matte may reuse it; see release_matte.
+  // The mattes, drawn before everything else. Null-scene slots are reusable.
   std::vector<Matte> mattes;
-  // Records that one material instance reads one matte. slot: which matte slot
-  // of the instance. matte: the index into `mattes`. use: 1 for inside, -1 for
-  // outside. soft: the blur level.
+  // Matte→material binding. use: 1 inside, -1 outside. soft: blur level.
   struct Cut {
     filament::MaterialInstance* look;
     int slot, matte;
     float use, soft;
   };
-  // Which material instance reads which matte, see matted. The matte's camera
-  // matrix is set before every frame.
+  // All matte bindings. Camera matrices set before each frame.
   std::vector<Cut> cuts;
   // A white point: the matte of a layer that nothing cuts.
   filament::Texture* white = nullptr;
-  // Resources made once for this stage's engine and kept. A stage opened after
-  // another in the same program has its own. Each material file, read and built
-  // once.
+  // Materials made once per stage engine.
   std::map<std::string, filament::Material*> materials;
   // screen_place's copy shader. One per stage; not Filament-owned.
   interop::Screen* place_copy = nullptr;
@@ -234,25 +199,13 @@ struct Stage {
   interop::Screen* place_tone[2] = {nullptr, nullptr};
   // canvas_edge's three processing screens: seeds, flood, length.
   std::array<interop::Screen*, 3> edge_screens = {nullptr, nullptr, nullptr};
-  // Filament's reader of 3D files and its reader of their images, see
-  // gltf_model.h.
+  // glTF asset/texture loaders (gltf_model.h).
   void* solids = nullptr;
   void* solidTextures = nullptr;
-  // Every entity put on the stage: which mesh it was made from and at which of
-  // that mesh's places. `move` repositions them.
+  // All entities on stage. `move` repositions them.
   std::vector<Renderable> renderables;
-  // The app's preview panel.
-  // w, h: the size in pixels of the whole stage pane of the editing window. 0
-  // means none. The image there is the same as on the stage but seen further
-  // back. x, y: where the stage's
-  //   top left lies, and scale: how many panel pixels a point of the stage
-  //   takes. What lies off the stage is also seen.
-  // Over it are the marks of the picked layer and of the one under the pointer.
-  // Each is a frame
-  //   given by doc_frame: center, width, height, rotation, and the point it
-  //   rotates about. pick and hover hold those values, and picked and hovered
-  //   say whether they are set.
-  // point: panel pixels per point of the screen, in which the marks are sized.
+  // Preview panel state: viewport (w/h/x/y/scale) and selection/hover marks.
+  // point: panel pixels per screen point. 0×0 = no panel.
   struct {
     uint32_t w = 0, h = 0;
     double x = 0, y = 0, scale = 1, point = 2;
@@ -260,48 +213,35 @@ struct Stage {
     bool picked = false, hovered = false, rotateHandle = true;
     double pick[8] = {}, hover[8] = {};
   } desk;
-  // Drawn last, over all of them, for example a whole-screen effect. See
-  // screen_fx.h.
+  // Post-process pass (screen_fx.h).
   std::function<void()> over;
-  // Work to do once before the next frame, keyed by its owner, for example an
-  // image's distances from its edge. See canvas_edge.h.
+  // One-shot pre-frame work, keyed by owner (e.g. edge distance, canvas_edge.h).
   std::map<const void*, std::function<void()>> once;
-  // Drawn before the stage's own view, each into an image of its own, for
-  // layers with effects of their own. See layer_fx.h.
+  // Per-layer effect passes (layer_fx.h), drawn before the main view.
   std::vector<std::function<void()>> before;
-  // Run before each frame begins to set those images and the material instances
-  // that show them. Filament uploads material parameters as a frame begins, see
-  // FRenderer::beginFrame and FEngine::prepare.
+  // Run before each frame to set effect images and material parameters
+  // (must precede FRenderer::beginFrame).
   std::vector<std::function<void()>> aim;
-  // Run after everything else in the same frame. For the preview panel it
-  // places the stage's image on it, see live.h.
+  // Run last in the frame (e.g. blit stage to preview panel, live.h).
   std::function<void()> lastly;
-  // The image the views draw into, see live.h and screen_fx.h. Null means the
-  // screen.
+  // Render target texture. Null = screen.
   filament::Texture* drawTarget = nullptr;
-  // Where the image finally goes. Null means the screen. For the app's window
-  // it is the live image, see live.h.
+  // Final output. Null = screen.
   filament::RenderTarget* out = nullptr;
-  // Counts each time a layer's bent outline moved (canvas_measure_bent). The
-  // render loop re-snapshots the window's box when it advances, so the grabbed
-  // box follows a path operator drag instead of freezing until the drag ends.
-  // Written only on the driver thread and read only on the render thread, so a
-  // plain counter is enough; a stale read just delays the box by a frame.
+  // Incremented when a bent outline moves. The render loop re-snapshots on
+  // change so the selection box follows path operator drags live.
+  // Driver→render thread; a stale read just delays by one frame.
   uint64_t bentChanges = 0;
-  // Set when a bend reached past its texture, so a layer's image clips the
-  // outline. The render loop then rebuilds the layers once, so place_canvas
-  // grows the sheet to hold the bend.
+  // Set when a bend overflows its texture. The render loop rebuilds once to grow
+  // the sheet.
   bool bentOverflow = false;
 };
 
 // Creates the engine, scene, views and camera of a stage w by h pixels.
 Stage open_stage(int w, int h);
 
-// Lays the stage's images out on the preview panel when `on` is true, before
-// they are drawn, or on the stage again when it is false, after. The views that
-// the stage's camera sees by get the panel's viewport, and the camera's
-// projection is moved and scaled so the stage lies where the panel says. The
-// floor's and the mattes' own cameras are left as they are.
+// Switches viewports between the preview panel (on=true) and the stage
+// (on=false). Matte cameras are left as they are.
 void desk_lay(Stage& s, bool on);
 
 // Sets the environment light that the glass mirrors and is lit by: one of the
@@ -312,32 +252,19 @@ bool room(Stage& s, const char* ktx, float intensity);
 // Returns a 1x1 white image, created on first use.
 filament::Texture* white_point(Stage& s);
 
-// Returns the file name of the flat sheet's material for a blend mode against
-// what is behind it. `lay` is nullptr for normal blending over it, or "add",
-// "multiply" or "screen", using Filament's own blending. flat.mat is built once
-// for each. `lit` selects the lit variant. A non-empty `wear` names a material
-// with its own blend mode.
+// Material filename for a blend mode. lay: nullptr=normal, "add"/"multiply"/
+// "screen". lit: lit variant. wear: named material with its own blend.
 std::string flat_laid(const char* lay, bool lit = false,
                       const std::string& wear = "");
 
-// Returns the material made from the file `filamat`, reading and making it only
-// once. Every entity made from it has its own material instance. Returns
-// nullptr if there is no such file.
+// Returns the cached material for `filamat`, or nullptr if missing.
 filament::Material* material(Stage& s, const char* filamat);
 // Creates a placeholder mesh of one triangle for a sketch. It has no real shape
 // yet, because document/evaluate/sketch.h makes it again each frame.
 Mesh* sketch_mesh();
-// Puts mesh `m` on the stage once at each of `places`, with its triangles in
-// parts, and returns the material instance of each part. Returns an empty
-// vector if the material file is missing. ends: where each part's indices end.
-// Empty means one part. Each part has its own material instance of the same
-// material, as a Filament renderable has several primitives. layer: the
-// Filament layer mask value. 2 is left out of the image of what is behind, for
-// all glass. 8 is only in the image of the glass's far faces. order: among
-// entities of a kind, a lower value is drawn first. copies: how many times each
-// place is drawn in one go. A material that asks for its instance index tells
-// them apart. together: draw the places in groups with Filament's instancing,
-// see below.
+// Adds mesh `m` at each `places` transform, returning per-part material
+// instances. layer: Filament mask (2=skip behind, 8=glass far faces only).
+// order: lower = drawn first. copies: per-place instance count.
 std::vector<filament::MaterialInstance*> add_parts(
     Stage& s, Mesh* m, const char* filamat,
     std::vector<filament::math::mat4f> places, std::vector<uint32_t> ends,
@@ -351,23 +278,16 @@ filament::MaterialInstance* add(
     uint8_t layer = 1, bool shadows = false, int copies = 1, int order = 4,
     bool together = false);
 
-// Gives mesh `m` more parts on the stage, all using material instance `look`
-// until told otherwise. Filament makes an entity's renderable again when it is
-// built on it, see RenderableManager::Builder::build, so the entity stays where
-// it is, in the scene, under its parent.
+// Adds more parts to mesh `m`, all using `look`. The entity keeps its scene
+// position (Filament rebuilds the renderable in place).
 void more_parts(Stage& s, Mesh* m, size_t parts,
                 filament::MaterialInstance* look);
-// Replaces the points and triangles of mesh `m`, with the same count or
-// another. `ends` gives where each part's indices end. The mesh is written into
-// the buffers it has while it fits them, as Rive and Live2D write theirs again
-// instead of making new ones. Otherwise new buffers a quarter larger than
-// needed are made, as Rive grows its buffers. The old buffers are destroyed,
-// and Filament keeps them until no frame uses them.
+// Replaces mesh `m`'s geometry. Reuses existing buffers when they fit;
+// otherwise allocates 25% larger ones. Old buffers are kept until no frame uses
+// them.
 void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends);
 
-// Returns the axis-aligned bounds of `pos` as {low, high}. An empty range
-// returns {zero, zero}: Filament wants a bounding box even for an entity with
-// no points, and callers that scale by the box's size guard the zero case.
+// AABB of `pos`. Empty → {zero, zero} (Filament requires a bounding box).
 std::pair<filament::math::float3, filament::math::float3> pos_bounds(
     const std::vector<filament::math::float3>& pos);
 

@@ -1,5 +1,4 @@
-// What the window reads from the engine's document (ProjectReader): the layers as rows, the marks, the guides and the
-// tempo, and the requests still on their way to the engine.
+// Reads the engine's document for the window: layers, marks, guides, tempo.
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:math' as math;
 import 'dart:ui' show Color, Size;
@@ -17,7 +16,6 @@ import 'package:motolii/workspace/state/playhead.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart'
     show SnapKind, SnapTarget;
 
-/// What the timeline lists besides the layers: the markers, the work area, the tempo, the length and the label colours.
 typedef _Listed = ({
   List<(double, String)> marks,
   (double, double) work,
@@ -28,15 +26,7 @@ typedef _Listed = ({
   Map<int, int> labels,
 });
 
-/// Reads the engine's document for the window: its layers as rows, its marks, guides and tempo.
-///
-/// It also counts the requests sent to the engine that are not answered yet.
 class ProjectReader {
-  /// Creates a reader that is connected to no engine: [layers] is then whatever the caller puts in it.
-  ///
-  /// [onLayersRead] is called each time the layers were read again, before [onChanged]. [onChanged] is called when
-  /// the panels should look at the document again; [onListed] only when what the timeline lists changed (the layers'
-  /// rows, the markers, the work area, the tempo, the length). [onStageTextureChanged] is called when [stageTexture] changes.
   ProjectReader({
     required this._composition,
     required this._playhead,
@@ -55,22 +45,16 @@ class ProjectReader {
 
   int get _frameRate => _composition.frameRate;
 
-  /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
-  /// Like Alight Motion's audio layer (docs/design/alight_motion_ui.md).
+  /// Whether layer [t] is a sound-only video layer.
   static bool isSound(Motolii m, int t) =>
       m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
-  /// The document's layers as rows, the topmost first.
   final layers = <Layer>[];
 
-  /// The engine this window is connected to (see motolii.dart), or null for the sample document.
-  /// When connected, the layers are the document's layers, a change is a call to the engine, and the playhead is its time.
   Motolii? _inside;
 
-  /// The engine this window is connected to, or null for the sample document.
   Motolii? get inside => _inside;
 
-  /// Connects to the engine [inside], takes the composition's settings and the playhead from it, and reads its document.
   void join(Motolii inside) {
     _inside = inside;
     inside.shaping; // Read once at opening: it decides how cards are built.
@@ -81,27 +65,23 @@ class ProjectReader {
       if (document) reread();
       if (moment) seen.value++;
     };
-    // The timeline counts frames at the document's rate, as the exported video does.
     _composition.frameRate = _frameRateOf(inside);
     _composition.size = Size(
       inside.size.$1.toDouble(),
       inside.size.$2.toDouble(),
     );
-    // The playhead starts at the engine's time.
     _playhead.moment.value = (inside.now * _frameRate).round();
     reread();
   }
 
-  /// Reopens the document when it no longer has the size it was opened at. Set by the host.
   VoidCallback? refit;
 
-  /// How many times the document has been read again.
   int rev = 0;
 
-  /// Like [rev] but without drags. Things built from the document's structure, such as the cards, rebuild when it changes.
+  /// Like [rev] but without drags. Structure-dependent panels rebuild on this.
   int reads = 0;
 
-  // A layer that lasts forever (negative [lasts]) runs to the document's end.
+  // Negative lasts = runs to the document's end.
   int _outF(int from, double lasts) => lasts < 0
       ? _composition.duration
       : (from + (lasts * _frameRate).round()).clamp(
@@ -109,7 +89,7 @@ class ProjectReader {
           _composition.duration,
         );
 
-  /// Reads layer [id]'s bar from the engine again, for example during a drag, so the drawn bar matches the engine.
+  /// Re-reads layer [id]'s span from the engine (e.g. during a drag).
   void respan(int id) {
     final m = _inside, l = layers.where((l) => l.id == id).firstOrNull;
     if (m == null || l == null) return;
@@ -120,20 +100,18 @@ class ProjectReader {
 
   bool _gone = false;
 
-  /// A counter that goes up whenever the engine has a new snapshot of the current time.
   final seen = ValueNotifier<int>(0);
 
-  /// The frame ranges cached on disk for playback. The timeline marks them like After Effects' green line.
+  /// Frame ranges cached on disk for playback.
   final kept = ValueNotifier<List<(int, int)>>(const []);
 
-  /// Stops answering the engine's snapshots and releases the two notifiers.
   void dispose() {
     _gone = true;
     seen.dispose();
     kept.dispose();
   }
 
-  /// Tells the panels to look again after the engine's view changed without the document changing, such as during a drag.
+  /// Notifies panels after a visual change that is not an undo step (e.g. a drag).
   void shown() {
     lastChange = null; // This is not an undo step, so what changed is unknown.
     rev++;
@@ -141,10 +119,8 @@ class ProjectReader {
     _onChanged();
   }
 
-  /// The document's tempo in beats per minute (0 for none).
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
 
-  /// The document's beat grid, or null when it has no tempo.
   Beats? get beats => bpm > 0
       ? Beats(
           (_inside?.value(0, 'bpm_from', 0) ?? 0) * _frameRate,
@@ -158,22 +134,21 @@ class ProjectReader {
         _ => m.rate,
       };
 
-  // Per-layer snapshot identity and the set of parent layers, kept between reads so _reread can skip unchanged layers.
+  // Kept between reads to skip unchanged layers in _reread.
   final _lastSnap = <int, Map<String, dynamic>>{};
   Set<int> _holding = const {};
 
-  /// Reads the document again after any change, so the panels list what the document holds.
   void reread() => Timeline.timeSync('ws reread', _reread);
   void _reread() {
     final m = _inside;
     if (m == null) return;
-    // The document now has another size, from an edit or an undo. The host reopens it, which reads it again.
+    // Size changed: the host reopens the document.
     if (!m.fits && refit != null) return refit!();
     lastChange = m.changes();
     var frameRateChanged = false;
     if (_frameRateOf(m) != _frameRate) {
       frameRateChanged = true;
-      // The frame rate changed. Keep the playhead at the same time.
+      // Keep the playhead at the same time.
       final at = _playhead.moment.value / _frameRate;
       _composition.frameRate = _frameRateOf(m);
       _playhead.moment.value = (at * _frameRate).round();
@@ -316,7 +291,6 @@ class ProjectReader {
     _onChanged();
   }
 
-  // What the timeline lists besides the layers, as last read, to tell whether a read changed any of it.
   _Listed? _listed;
   static bool _sameListed(_Listed? a, _Listed? b) =>
       a != null &&
@@ -329,7 +303,6 @@ class ProjectReader {
       a.frameRate == b.frameRate &&
       mapEquals(a.labels, b.labels);
 
-  // A shape's form, its colour and whether it is an outline; with no fill the colour is the stroke's.
   static ({String shape, Color? colour, bool outline})? _formOf(
     Motolii m,
     int t,
@@ -344,7 +317,6 @@ class ProjectReader {
     );
   }
 
-  // A relation's layers in its own order ('_' marks an empty place); null for any other layer.
   static List<int>? _membersOf(Motolii m, int t) =>
       m.word(t, 'kind') == 'behaviour' &&
           relationKinds.contains(m.word(t, 'file'))
@@ -355,8 +327,6 @@ class ProjectReader {
         ]
       : null;
 
-  // The layers that layer [t] points at, each with its label: those its properties name, and a relation's layers.
-  // Cavalry shows a connection at both ends; here it shows only at the end that names the target.
   static List<(String, int)> _linksOf(Motolii m, int t) => [
     for (final n in m.values(t))
       if (m.shown(n) case final s? when s.look == 'thing')
@@ -367,8 +337,7 @@ class ProjectReader {
       if (m.layers.contains(o)) ('Moves', o),
   ];
 
-  // The lanes of layer [t]: its properties with keyframes (and a sketch's lines), in its own order. Ableton does the
-  // same with "Show Automated Parameters Only"; with Animate on every property counts as moving, so keyframes decide.
+  // Properties with keyframes (and a sketch's lines), in the layer's own order.
   static List<Lane> _lanesOf(Motolii m, int t) {
     final moving = m.moving(t).toSet();
     final names = [
@@ -408,7 +377,6 @@ class ProjectReader {
 
   int? _stageTexture;
 
-  /// The engine's preview as a Flutter texture id, when connected. Null means the stand-in artwork.
   int? get stageTexture => _stageTexture;
   set stageTexture(int? id) {
     if (id == _stageTexture) return;
@@ -416,7 +384,7 @@ class ProjectReader {
     _onStageTextureChanged();
   }
 
-  /// The shelf effects on layer [id]: those whose card the engine shows. An effect's card shows while the effect is on.
+  /// Active shelf effects on layer [id].
   List<String> fxOf(int? id) {
     final m = _inside, t = id;
     if (m == null || t == null) return const [];
@@ -427,13 +395,11 @@ class ProjectReader {
     ];
   }
 
-  /// The work area in seconds: the range that loops on playback and is exported. Only when connected.
   (double, double) get work => _inside!.work;
 
-  /// The document's markers, each a time in seconds and a name, in time order. Only when connected.
   List<(double, String)> get marks => _inside!.marks;
 
-  /// The frames that J and K jump to: the marks, the other layers' ends and keyframes, and a sound's strikes.
+  /// Frames that J and K jump to.
   Set<int> stops({Set<int> skip = const {}}) => {
     for (final (at, _) in marks) (at * _frameRate).round(),
     for (final l in layers)
@@ -441,7 +407,7 @@ class ProjectReader {
     ..._playhead.strikes,
   };
 
-  /// Typed snap targets for drags, following Lumit's SnapTarget pattern.
+  /// Snap targets for drags.
   List<SnapTarget> snapTargets({Set<int> skip = const {}}) => [
     SnapTarget(_playhead.moment.value, SnapKind.playhead),
     for (final (at, _) in marks)
@@ -459,14 +425,11 @@ class ProjectReader {
     ],
   ];
 
-  /// The markers that have a colour: each marker's time mapped to its label colour. Only when connected.
   Map<double, int> get markColors => _inside!.markColors;
 
-  /// The guides: 'x' for vertical and 'y' for horizontal, each with its distance in points from the canvas's left
-  /// or top edge. Only when connected.
   List<(String, double)> get guides => _inside!.guides;
 
-  /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
+  /// All descendant layer ids of a group, however deep.
   List<int> under(int id) {
     final of = <int, Layer>{for (final l in layers) l.id: l};
     if (of[id]?.kind != LayerKind.group) return const [];
@@ -476,24 +439,20 @@ class ProjectReader {
     ];
   }
 
-  /// How many groups contain layer [l]. Its row is indented by that many levels.
+  /// Nesting depth (indent level) of layer [l].
   int depth(Layer l) => l
       .ancestors({for (final x in layers) x.id: x})
       .where((p) => p.kind == LayerKind.group)
       .length;
 
-  /// What the undo steps changed since the last read (null when unknown, as after a drag).
-  /// A panel showing only some properties rebuilds only when they are among these.
+  /// What the undo steps changed (null after a drag). Panels use this to skip rebuilds.
   ({bool layers, Set<(int, String)> values})? lastChange;
 
-  // Requests still pending. The document is read again once, when the last one finishes.
   int _afters = 0;
 
-  /// Whether requests sent to the engine are still pending. The window shows them before the document has them.
   bool get waiting => _afters > 0;
 
-  /// Waits without blocking for a request made with [Motolii.later], then reads the document again and calls
-  /// [then] with whether it succeeded and why not. [got] receives the answer, such as the id of a new layer.
+  /// Awaits the engine's answer to [ticket]. [got] receives the answer (e.g. new layer id).
   void after(
     int ticket, [
     void Function(bool done, String why)? then,

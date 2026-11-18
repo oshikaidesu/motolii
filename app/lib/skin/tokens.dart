@@ -32,10 +32,7 @@ abstract final class DarkGrey {
       g100 = Color(0xFFFFFFFF);
 }
 
-/// The two shades of the colour theme.
-///
-/// Themed parts (the workspace and the inspector library) read [Grey], never [DarkGrey].
-/// [DarkGrey] stays the dark ramp for the older studies, which are dark only.
+/// Themed parts read [Grey], never [DarkGrey] directly.
 enum Shade { dark, light }
 
 /// The grey ramp for the current [Grey.shade], using [DarkGrey]'s names.
@@ -48,16 +45,11 @@ abstract final class Grey {
   // A skin that names its shade overrides the switch.
   static bool get light =>
       ColorTheme.shadeSaid.value ?? shade.value == Shade.light;
-  // The theme file's colour for the role, else the shade's own step.
   static Color _p(String role, Color dark, Color light) =>
       ColorTheme.of(role, _made(Grey.light ? light : dark));
 
-  /// Moves a step [own] of the shade's ramp onto the skin's `Background` and `Foreground` colours.
-  ///
-  /// A skin therefore sets two colours and every grey follows. If it sets neither, [own] is returned unchanged.
-  /// The tone of the result sits between the two colours at the same relative position that [own] has between the shade's
-  /// body (Grey07) and text (Grey95). Tones use Material's HCT, so equal tones look equally light.
-  /// The hue comes from the nearer of the two colours. The body is the Background itself and the text is the Foreground itself.
+  /// Maps [own] onto the skin's Background↔Foreground range using HCT tones.
+  /// A skin sets two colours and every grey follows; if neither is set, [own] is returned unchanged.
   static Color _made(Color own) {
     final bg = ColorTheme.roles.value['Background'],
         fg = ColorTheme.roles.value['Foreground'];
@@ -109,23 +101,20 @@ abstract final class Grey {
   static Color get g95 => _p('Grey95', DarkGrey.g95, const Color(0xFF121318));
   static Color get g100 =>
       _p('Grey100', DarkGrey.g100, const Color(0xFF000000));
-  // The timeline's rows alternate between bandA and bandB, with rowLine between them.
   static Color get bandA => ColorTheme.of('BandA', g10);
   static Color get bandB => ColorTheme.of('BandB', g13);
   static Color get rowLine => ColorTheme.of('RowLine', g10);
 }
 
-/// The colours for states. There is one palette, so each name is one colour.
+/// The colours for states.
 abstract final class Role {
   static const selected = Color(0xFF7A87E3);
   static const warning = Color(0xFFF69260);
   static const error = Color(0xFFE5584B);
 }
 
-/// The app's one accent colour, from the skin's theme roles (Ableton's names, with the keyframe mark named after Blender's).
-///
-/// It comes as a fill, the ink drawn on the fill, the keyframe mark, and [ink] for the accent as a line or text.
-/// In the light shade [ink] is darkened enough to read on white, unless the skin sets it.
+/// The accent colour: fill, ink drawn on it, keyframe mark, and [ink] for lines/text.
+/// In the light shade [ink] is darkened for readability, unless the skin sets it.
 abstract final class Accent {
   static Color get fill =>
       ColorTheme.of('ChosenDefault', const Color(0xFFB3C66B));
@@ -151,10 +140,6 @@ abstract final class Shape {
   static Radius r(double x) => Radius.circular(x * corner);
 
   /// A [BorderRadius] with every corner at [x] px, scaled by the skin's `Corner`.
-  ///
-  /// Shorthand for the `Shape.round(x)` written at every rounded
-  /// decoration, so the whole app rounds its corners the same way and a skin's
-  /// `Corner` number moves them together.
   static BorderRadius round(double x) => BorderRadius.all(r(x));
 
   /// A margin of [x] px, scaled by the skin's `Spacing`.
@@ -186,15 +171,10 @@ abstract final class TextStyles {
   static double px(double x) =>
       x * ColorTheme.number('TextScale', 1).clamp(.85, 1.3);
 
-  // No text is dimmer than g56 or smaller than 10 px. Adobe Spectrum's smallest UI text is also 10 px.
-  // Only dim text on a dark ground is lifted (luminance between g26 and g56).
-  // In the light shade, text paler than Grey.g56 is darkened to it.
-  // Dark ink (g00 to g20, such as the text on a light fill like the playhead head) is left alone,
-  // because lifting it to g56 made it unreadable.
-  // A colour keeps its hue: only its lightness is moved to the floor, so an error stays red. Replaced by grey, every
-  // error in the window was grey.
+  // Floor: no text dimmer than g56. Dark ink (g00–g20) is left alone (lifting made it unreadable).
+  // Hue is preserved so error colours stay red.
 
-  /// The colour [c] for text, raised to the minimum brightness described above.
+  /// The colour [c] for text, raised to the minimum brightness.
   static Color ink(Color c) => _floor(c);
   static Color _floor(Color c) {
     if (c.a < .5) return c;
@@ -235,7 +215,7 @@ abstract final class TextStyles {
     decoration: TextDecoration.none,
   );
 
-  /// The style for a name. [size], [w] and [height] let a form set its text larger or heavier.
+  /// The style for a name.
   static TextStyle name([
     Color? c,
     double size = 11,

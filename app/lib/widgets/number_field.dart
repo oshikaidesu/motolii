@@ -1,12 +1,4 @@
-// The app's numeric field.
-//
-// - Dragging sideways changes the value. Shift makes it finer, Cmd or Ctrl ten times coarser.
-// - A horizontal mouse wheel or two-finger slide over it does the same, the arrow keys nudge it, and the user can type a value.
-// - It stores no value and enforces no limit. It reads the value when needed and reports every change.
-//   [NumberField.min] and [NumberField.max] only position the range mark it draws.
-// - How far the value may go is up to the caller through [NumberField.reach], together with the source of that limit.
-// - It paints with the skin's form (lib/widgets/number_field_look.dart) or with the caller's [NumberField.paint].
-//   A panel normally supplies only value, text and onChange.
+// Scrub/scroll/type numeric field. Stores no value; reads on demand, reports every change.
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -18,8 +10,7 @@ import 'package:motolii/widgets/number_field_state.dart';
 /// Two clicks within this time count as a double-click.
 const doubleClickTime = Duration(milliseconds: 320);
 
-/// Inverts a number's colours (light for dark) to mark a value outside the range the caller has a source for.
-/// Implemented as a color inversion with Flutter's ColorFilter.matrix.
+/// Colour inversion to mark a value outside the caller's known range.
 const pastInk = ColorFilter.matrix(<double>[
   -1,
   0,
@@ -43,14 +34,14 @@ const pastInk = ColorFilter.matrix(<double>[
   0,
 ]);
 
-/// The text style for the number in a tile. A row uses TextStyles.value at size 10.5 instead.
+/// The text style for the number in a tile.
 TextStyle blockValue(Color c) => TextStyles.value(c).copyWith(
   fontSize: TextStyles.px(14),
   fontWeight: FontWeight.w600,
   height: 1.1,
 );
 
-/// A numeric field that can be scrubbed, scrolled, nudged with the arrow keys, and typed into. See the file header.
+/// A numeric field: scrub, scroll, arrow-key nudge, and type.
 class NumberField extends StatefulWidget {
   const NumberField({
     super.key,
@@ -95,89 +86,71 @@ class NumberField extends StatefulWidget {
     this.name,
   });
 
-  /// Returns the current value. It is read each time it is needed, so the caller need not rebuild during a drag.
-  /// Null means several values: the field shows "Mixed" and moves them through [onBy].
+  /// Current value (read on demand). Null = "Mixed" (multi-selection; changes go through [onBy]).
   final double? Function() value;
 
-  /// Formats a value for a field `room` wide. Typing starts from this text, formatted with an infinite `room`.
+  /// Formats a value for display. Typing starts from this text formatted with infinite `room`.
   final String Function(double value, double room) text;
 
-  /// Returns a small unit shown after the number, or an empty string for none.
+  /// Unit suffix shown after the number, or ''.
   final String Function(double value, double room)? unit;
 
-  /// Callbacks for user input. Any that is null is ignored.
-  ///
-  /// [onChange] receives the new value on every step of a drag, slide or nudge, and the typed value when [onType] is null.
-  /// [onBy] receives the change while [value] returns null. [onType] receives the typed value.
+  /// [onChange]: every drag/nudge step. [onBy]: delta when value is null. [onType]: typed value.
   final ValueChanged<double>? onChange, onBy, onType;
 
-  /// [onGrab] is called on the first move of a drag and [onDrop] when it ends, so the caller can treat a drag as a single step.
-  /// Esc or a pointer cancel restores the starting value and then calls [onDrop].
-  /// [onReset] is called on a double-click, and on Delete or Backspace when [keys] is true.
+  /// [onGrab]/[onDrop]: bracket a drag as one undo step. Esc restores the starting value.
+  /// [onReset]: double-click, or Delete/Backspace when [keys] is true.
   final VoidCallback? onGrab, onDrop, onReset;
 
-  /// [perPx] is how much one pixel of drag or slide changes the value. Null means the field cannot be scrubbed and shows a text cursor.
-  /// [step] is the change per arrow key press. Null means the field ignores the arrow keys.
+  /// [perPx]: value change per pixel. Null = no scrub. [step]: per arrow key. Null = no arrows.
   final double? perPx, step;
 
-  /// Limits how far the user can take the value. It receives the target value and, for a drag, the value where the drag began.
-  /// `from` is null for a slide, a nudge, or an arrow step while typing. A typed number does not pass through it.
+  /// Clamps the target value. `from` is the drag start (null for slides/nudges). Typed values bypass this.
   final double Function(double to, double? from)? reach;
 
-  /// Converts typed text to a number. Returning null keeps the field open. Defaults to a plain number parse.
+  /// Parses typed text. Null keeps the field open. Default: plain number parse.
   final double? Function(String said)? parse;
 
-  /// The characters that may be typed, as a RegExp source. Null allows any.
+  /// Allowed characters as a RegExp source. Null = any.
   final String? allow;
 
-  /// [keys]: a press gives the field keyboard focus and it keeps it, as the inspector's fields do. Arrows nudge, Return or a digit
-  /// starts typing, Tab moves to the next field and Delete resets. When false the field handles keys only while being typed in.
-  /// [typeOnTap]: a click without a drag starts typing, so double-click cannot be used.
-  /// [sayOnLeave]: when false, only Return reports the typed text; leaving the field discards it, as [TypedField] does.
+  /// [keys]: persistent keyboard focus (arrows nudge, Return types, Tab moves, Delete resets).
+  /// [typeOnTap]: click starts typing. [sayOnLeave]: false = only Return commits.
   final bool keys, typeOnTap, sayOnLeave;
 
-  /// Asked about every press first. True means the press belongs to the caller, for example a menu or a mark, and the field does nothing.
-  /// False also means it belongs to the caller, but the field still takes keyboard focus, for example for a pick.
-  /// Null leaves the press to the field.
+  /// True = caller owns press (field does nothing). False = caller owns but field takes focus. Null = field's.
   final bool? Function(PointerDownEvent e, double room)? onPress;
 
-  /// Returns true for a position that is not a scrub and that the field does not claim, for example a dial inside the field.
+  /// True for positions the field should not claim (e.g. a dial inside it).
   final bool Function(Offset at, double room)? ownsPress;
 
-  /// Asked about each key event after the drag's Esc handling and before the field's own handling.
+  /// Key handler called after Esc (drag cancel) and before the field's own handling.
   final KeyEventResult Function(KeyEvent e)? onKey;
 
-  /// Returns true to draw the number inverted ([pastInk]). The argument is whether a drag is in progress.
+  /// True to invert colours ([pastInk]). Argument: whether a drag is in progress.
   final bool Function(bool live)? past;
 
-  /// Appearance in the skin's form, which fills the width it is given.
-  ///
-  /// [caption] is shown over the number, or before it on one row when [inline]. [picked] marks the field as one of several picked.
+  /// [caption]: label above (or beside when [inline]).
   final String? caption;
 
-  /// A picture of the value drawn in the corner. [glyphTall] makes it the full height.
+  /// Picture in the corner. [glyphTall] = full height.
   final Widget? glyph;
 
-  /// [min] and [max] are the ends of the range mark. Set both or neither. When [bipolar], a range around zero fills out from the middle.
-  /// [keyEmpty] draws the key mark hollow.
+  /// [min]/[max]: range mark ends. [bipolar]: fills from zero. [keyEmpty]: hollow key mark.
   final bool bipolar, glyphTall, keyEmpty, picked, inline;
   final double? min, max, glyphBox, height, pad;
 
-  /// [keyDot] is the colour of the key mark. [accent] colours the range mark and the caret.
+  /// [keyDot]: key mark colour. [accent]: range mark and caret colour.
   final Color? keyDot, accent;
   final TextStyle? style;
 
-  /// Key given to the editor while the user is typing.
+  /// Key for the editor while typing.
   final Key? editorKey;
 
-  /// What the field shows, by name (the Inspector's document name, `js_amp`), so that it can be asked to open for
-  /// typing from elsewhere through [typeInto].
+  /// Document name (e.g. `js_amp`) for [typeInto] to find this field.
   final Object? name;
 
-  /// Asks the field named [name] to come into view and open for typing, as Tab opens the next field: one that is on
-  /// screen now or appears within five seconds (a slider that the code just declared appears once the engine has
-  /// read the code). After a quick fix declares a slider, the cursor is put in its value, as VS Code puts the cursor
-  /// in what a fix just made.
+  /// Opens the field named [name] for typing. Waits up to 5 s for it to appear on screen.
   static void typeInto(Object name) {
     final at = DateTime.now();
     asked.value = (name, at);
@@ -186,18 +159,17 @@ class NumberField extends StatefulWidget {
     });
   }
 
-  /// The name asked to open for typing, with when; null again once it opened or five seconds passed.
+  /// Pending typeInto request; cleared when opened or after 5 s.
   static final asked = ValueNotifier<(Object, DateTime)?>(null);
 
-  /// Replaces the skin's picture, for example with a quiet readout. It receives the number as text or, while `typing`, the editor.
+  /// Custom painter. Receives the number as text, or the editor while `typing`.
   final Widget Function(BuildContext context, Widget shown, bool typing)? paint;
 
   @override
   State<NumberField> createState() => NumberFieldState();
 }
 
-/// Claims a press that scrubs the field immediately, so an enclosing scroll view cannot take it first.
-/// Based on Flutter's EagerGestureRecognizer.
+/// Wins the gesture arena immediately so a parent scroll view cannot steal the scrub.
 class ScrubClaim extends EagerGestureRecognizer {
   bool Function(PointerDownEvent) takes = (_) => false;
   @override

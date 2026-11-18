@@ -1,5 +1,4 @@
-// Values as the inspector shows them, read from the engine at the time of the frame on screen,
-// and the user's changes to them (numbers, words, choices, switches) written back to the document.
+// Inspector values: read from the engine at the drawn frame, written back on user changes.
 import 'dart:math' as math;
 
 import 'package:motolii/bridge/motolii.dart';
@@ -13,29 +12,25 @@ import 'package:motolii/workspace/state/document/document_reads.dart'
 import 'package:motolii/workspace/state/inspector/inspector_reads.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-/// The layer being dragged in the inspector, or null.
-/// The drag starts once, updates at every step and ends when the user releases.
 int? _dragged;
 
-/// The time of the frame on the canvas.
-/// The engine records what is read at that time while drawing, so the value is available
-/// without waiting for the engine to be told a time the playhead has just moved to.
+/// The time of the frame on the canvas (available without waiting for the playhead to sync).
 double drawnTime(WorkspaceController ws) =>
     documentNow(ws) ?? ws.frame / WorkspaceController.fps;
 
-/// Converts a document value to the number shown in the inspector (see Motolii.reading).
+/// Document value → inspector display number (see Motolii.reading).
 double shownNumber(WorkspaceController ws, int t, String n, double v) {
   final (k, f) = ws.inside!.reading(t, n);
   return v * k + f;
 }
 
-/// Converts a number shown in the inspector back to the document's value.
+/// Inspector display number → document value.
 double _unshown(WorkspaceController ws, int t, String n, double x) {
   final (k, f) = ws.inside!.reading(t, n);
   return (x - f) / k;
 }
 
-/// Maps an inspector id and shown number to the document's value name and value, or null when the id has no document value.
+/// Inspector id + shown number → document (name, value), or null.
 (String, double)? _asDocument(
   WorkspaceController ws,
   int t,
@@ -68,8 +63,7 @@ double _unshown(WorkspaceController ws, int t, String n, double x) {
   return null;
 }
 
-/// Only the position, scale and rotation of a layer, as the canvas readout shows them.
-/// [layerTransform] reads all of the cards' numbers instead.
+/// Position, scale and rotation only. [layerTransform] reads all cards.
 Map<String, double> layerPlacement(WorkspaceController ws, int id) {
   final m = ws.inside, t = id;
   if (m == null) return const {};
@@ -90,13 +84,12 @@ Map<String, double> layerPlacement(WorkspaceController ws, int id) {
   };
 }
 
-/// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
+/// All card values for the selected layer, in the inspector's ids.
 Map<String, double> layerTransform(WorkspaceController ws, int? id) {
   if (ws.inside case final m?) {
-    // The document's own values, as the inspector counts them.
     final t = id;
     if (id == null) {
-      // With nothing selected these are the stage's own cards, layer 0.
+      // No selection → stage values (layer 0).
       final at = drawnTime(ws);
       return {
         for (final (_, names) in m.cards(0))
@@ -125,9 +118,8 @@ void writeNumbers(
   Map<String, double> changed, {
   required bool live,
 }) {
-  // With nothing selected the target is the stage's own layer 0.
   final m = ws.inside!, t = id ?? 0;
-  // A word chosen on one of the engine's own cards is written as that word, in one undo step.
+  // A word chosen on one of the engine's own cards is written as that word.
   final said = {
     for (final e in changed.entries)
       if (e.key.startsWith('v_') && m.words(t, e.key.substring(2)).isNotEmpty)
@@ -159,7 +151,7 @@ void writeNumbers(
     if (changed.isEmpty) return;
   }
   if (changed['v_speed'] case final speed? when t > 0) {
-    // Speed stretches the layer in time around the hold point, like Time Stretch in After Effects. It applies on release, not during the drag.
+    // Speed stretches the layer in time around the hold point. Applies on release only.
     changed = {...changed}..remove('v_speed');
     if (!live) {
       ws.after(
@@ -201,8 +193,7 @@ void writeNumbers(
     if (also.isNotEmpty) m.later('together', number: 1);
     var kept = m.later('drag_end', number: 1);
     for (final o in also) {
-      // As in After Effects and Figma, a value changed with several layers selected changes on every selected layer that has it.
-      // A dragged number moves by the same amount, and a typed number is set to the typed value.
+      // Multi-select: a dragged number moves by the same delta, a typed number sets the absolute value.
       m.take(o);
       for (final e in carried.entries) {
         m.dragUpdate(
@@ -215,15 +206,15 @@ void writeNumbers(
       m.later('drag_end', number: 1);
     }
     if (also.isNotEmpty) kept = m.later('together');
-    // The user has released, so the app does not wait for the step to finish.
+    // Released: fire-and-forget.
     ws.after(kept, (done, no) => tellRefusal(ws, why ?? (done ? null : no)));
   }
 }
 
-/// The values as they were when the drag started.
+/// Values at drag start, for computing deltas.
 final _found = <String, double>{};
 
-/// The other layers selected together with [t].
+/// The other layers in the multi-selection besides [t].
 List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains(t)
     ? [
         for (final id in ws.many)
@@ -231,10 +222,7 @@ List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains(t)
       ]
     : const [];
 
-/// Writes words chosen in the inspector to the document. Returns false when no layer is selected.
-/// While [live], a drag or typing is in progress: each step goes through [WorkspaceController.live], so the stage and
-/// the panels show it at once, and the steps up to the last word, which comes with [live] false, are one undo step.
-/// If the engine refuses, the words return to the document's own when it is read again.
+/// Writes words to the document. While [live], shown immediately; on release, committed as one undo step.
 bool writeWords(
   WorkspaceController ws,
   int? id,
@@ -256,9 +244,7 @@ bool writeWords(
   return true;
 }
 
-/// Shows a change the document refused in the top bar, using the engine's reason (its first clause).
-/// The reason must be read right when the change is refused, because every engine call forgets the last one.
-/// The next accepted change clears the message.
+/// Shows a refusal in the top bar. Must be read immediately: each engine call forgets the last error.
 void tellRefusal(WorkspaceController ws, String? why) {
   if (why != null && why.isNotEmpty) {
     ws.notice = 'Not taken: ${why.split(':').first}';
@@ -267,9 +253,8 @@ void tellRefusal(WorkspaceController ws, String? why) {
   }
 }
 
-/// The selected layer's words in the inspector's ids, such as a text's content or how it blends with what is behind.
+/// The selected layer's word values in the inspector's ids.
 Map<String, String> inspectorWords(WorkspaceController ws, int? id) {
-  // With nothing selected these are the stage's own cards.
   final m = ws.inside, t = id ?? 0;
   if (m == null) return const {};
   return {
@@ -283,8 +268,7 @@ Map<String, String> inspectorWords(WorkspaceController ws, int? id) {
   };
 }
 
-/// The message shown under a text when its font lacks some letters, or '' when nothing is missing.
-/// It names the missing letters and the font used instead, so the user sees a reason rather than empty boxes.
+/// Missing-glyph message for a text layer, or ''.
 String _lacks(WorkspaceController ws, int t) {
   final m = ws.inside!;
   final file = m.whole(m.word(t, 'file')), words = m.word(t, 'text');
@@ -301,7 +285,7 @@ String _lacks(WorkspaceController ws, int t) {
       : 'Not in this font: $lacks. Shown in ${instead.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '')}';
 }
 
-/// The text of each value on the engine's own cards, as the inspector writes it. A value with no text shows a dash.
+/// Card values formatted for display. A value with no text shows a dash.
 Map<String, String> _cardColors(
   WorkspaceController ws,
   int t, [
@@ -309,7 +293,7 @@ Map<String, String> _cardColors(
 ]) {
   final m = ws.inside!;
   return {
-    // First an effect's colour: three numbers shown as one colour (see the cards), read at the time drawn like the card's numbers.
+    // Effect colour: three separate xyz numbers shown as one #RRGGBB.
     for (final (_, names) in layerCardsOf(ws, t))
       for (final n in names)
         if (colourBaseOf(ws, n, names) case final base?)
@@ -318,9 +302,7 @@ Map<String, String> _cardColors(
     for (final (_, names) in layerCardsOf(ws, t))
       for (final n in names)
         if (m.words(t, n).isEmpty && m.range(t, n) == null)
-          // Words are shown as they are so the user can type over them. A file shows its name. Numbers, one per copy, are shown as they are.
-          // Anything else is a colour or a list of colours in order, or a word such as a material name, shown as it is (Glass).
-          // A gradient stop is shown by its colour only, without its position.
+          // Gradient stops shown by colour only (without position).
           'v_$n': shownFactOf(ws, n)?.look == 'words'
               ? m.word(t, n)
               : m.word(t, n).isEmpty || m.word(t, n) == 'none'
@@ -345,12 +327,10 @@ Map<String, String> _cardColors(
   };
 }
 
-/// A value on the engine's own cards as the inspector counts it.
-/// Another layer is its position in the list (None first), a number is in the card's units,
-/// and a word is its position among the words it may take. This holds for the stage and for layers alike.
+/// A card value in inspector units: layer refs → list position, words → index, numbers → display scale.
 double _onCard(WorkspaceController ws, int t, String n, double at) {
   final m = ws.inside!;
-  // These values are read from the snapshot as the stage shows them (see snapshot.h).
+  // Read from the stage snapshot so a drag-in-progress is included.
   final seen =
       const {
         'x',
@@ -364,7 +344,7 @@ double _onCard(WorkspaceController ws, int t, String n, double at) {
       ? m.shows(t, n, at)
       : null;
   if (seen != null) {
-    // Use the displayed value, which includes a drag in progress or a relation moving it, as After Effects shows a value driven by an expression.
+    // Use the displayed value (includes drags and relations).
     return shownNumber(ws, t, n, seen.$1);
   }
   return shownFactOf(ws, n)?.look == 'thing'
