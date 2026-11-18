@@ -91,6 +91,16 @@ Not all code in a supported format runs correctly. Counts and details: [Specific
 
 See also [`shelves/README.md`](shelves/README.md) for where each kind of file goes.
 
+### After Effects compatibility
+
+Motolii runs After Effects expressions **as they are**, without reimplementing them. The runtime is lottie-web's ExpressionManager compiled to bytecode and evaluated in QuickJS-ng — the same code that runs expressions on the web. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access and cross-layer references all work. Paste an expression from a tutorial or a forum; it runs.
+
+Lottie files (`.json` exported by Bodymovin) play through ThorVG, which also evaluates Lottie-embedded expressions at runtime with JerryScript — they are not baked. Keyframes, easing, paths, parents, precompositions, time remapping, loops, mattes and blend modes are handled by ThorVG. Motolii adds 3D layer and camera support on top (`thorvg_z.patch`).
+
+Cavalry scripts also run as they are: the `cavalry.Point`, `cavalry.PointCloud` and `cavalry.random` APIs are provided, and a bare `{ }` expression is wrapped into `each()` automatically. Twenty-six distribution scripts from the Cavalry community ship in `shelves/create/cavalry/`.
+
+What is **not** covered: most After Effects built-in effects (Glow, Turbulent Displace, etc.) and audio-reactive properties that depend on AE's internal audio graph. These are not part of the expression language or the Lottie format; Motolii covers them with its own shader effects and sound analysis instead.
+
 ## Repository layout
 
 | Folder | What it is |
