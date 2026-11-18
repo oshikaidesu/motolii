@@ -22,7 +22,7 @@ ToolRun? ffmpeg(List<String> also, {bool raw = false}) => runToolIfThere(
   raw: raw,
 );
 
-/// How far pictures differ, frame by frame, measured as AbsentMotion's effect_thumbs.py change() does: each picture is
+/// How far pictures differ, frame by frame, measured effect_thumbs.py change() does: each picture is
 /// laid over grey and the mean difference per channel, out of 255, is taken. ffmpeg puts the two side by side and the
 /// mean is taken here. Empty when ffmpeg is missing, so nothing is measured.
 List<double> _differ(String a, String b) {

@@ -63,7 +63,7 @@ void _vLines(
       fn = fineTickSpacing(v.pixelsPerFrame, fps, mj),
       p = Paint();
   if (beats != null) {
-    // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
+    // Draw the grid by beat rather than by second while the lines can be told apart.
     for (final (f, bar) in beats.between(
       v.scroll,
       v.scroll + w / v.pixelsPerFrame,

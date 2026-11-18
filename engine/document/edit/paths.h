@@ -46,7 +46,7 @@ int doc_points(Doc& d, int layer, double now, double* xy, int room,
 // Adds to the path of a path shape, as a pen tool does. The point goes at x, y
 // in points of the image from its top left, and its handle is pulled out by hx,
 // hy in points, where 0, 0 makes a corner. The path gets either a line to the
-// point or, as Illustrator's pen makes one, a curve through it (SVG's S
+// point or pen makes one, a curve through it (SVG's S
 // command: the point before becomes smooth, with its handle turned through).
 // Clicking on the first point again closes the path. On a closed path, a click
 // on one of its points removes that point, a click on its outline puts a point
@@ -71,7 +71,7 @@ int doc_freehand(Doc& d, const char* points);
 // Creates a path shape from a freehand stroke, fitted with cubic Bezier curves.
 // `said` holds the error, then x y pairs of the stroke, in points of the image.
 // The stroke is fitted with the fewest cubics that stay within `error` points
-// of it. Sharp turns, those past 70 degrees, are kept as corners. Blender's
+// of it. Sharp turns, those past 70 degrees, are kept as corners.
 // Draw Curve tool fits a stroke in the same way (editcurve_paint.cc,
 // curve_fit_cubic_to_points_refit). The app uses an error of 8 screen points.
 // The fitting library is curve-fit-nd by Campbell Barton (BSD-3-Clause). A

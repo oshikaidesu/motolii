@@ -112,7 +112,7 @@ class _LabelRowState extends State<TimelineLabelRow> {
           hot: _h,
           onSelect: widget.onSelect,
           kind: Row(
-            // A small thumbnail as in Alight Motion's rows, preceded by the expand triangle if the layer has keyframes.
+            // A small thumbnail rows, preceded by the expand triangle if the layer has keyframes.
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(width: Shape.z(10) * widget.depth), // Indent layers inside a group, as in Apple Motion's Layers list and Cavalry's tree.

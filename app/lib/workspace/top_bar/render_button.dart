@@ -78,7 +78,7 @@ class _RenderState extends State<RenderButton> {
     );
   }
 
-  // The export formats the engine writes, chosen by file extension (see render_draw.h). Alight Motion offers the same four.
+  // The export formats the engine writes, chosen by file extension (see render_draw.h).
   static const _formats = [
     ('MP4', '.mp4', "H.264, with the films' sound"),
     ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"),

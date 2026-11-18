@@ -47,7 +47,7 @@ filament::MaterialInstance* solid_wear(
 filament::MaterialInstance* thick_glass(
     Stage& s, Mesh* m, std::vector<filament::math::mat4f> places);
 
-// Adds a matte as After Effects has them: a shape that is not itself visible
+// Adds a matte has them: a shape that is not itself visible
 // and that cuts other layers. Any mesh can be one: a solid, or a sheet with an
 // image on it from ThorVG. The sheet cuts by how opaque the image is, or by its
 // brightness, like the After Effects luma matte. It is an entity like any

@@ -114,7 +114,7 @@ class TimelineMediaCache extends ChangeNotifier {
     return _frames[l.id]?.$2;
   }
 
-  /// The image of an image layer, decoded once at a small height and repeated along the bar as in Alight Motion
+  /// The image of an image layer, decoded once at a small height and repeated along the bar
   /// (see docs/design/alight_motion_ui.md). Null if Flutter cannot decode the file.
   List<ui.Image>? _stillOf(String file, int id) {
     if (_frames[id] case (final k, final f) when k == file) return f;

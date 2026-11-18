@@ -11,7 +11,7 @@ const stageTools = [
   (Glyphs.ellipse, 'Ellipse', 'E'),
   (Glyphs.pen, 'Pen', 'P'),
   (Glyphs.text, 'Text', 'T'),
-  // Freehand path, as in Alight Motion. B is the brush key in Photoshop and After Effects.
+  // Freehand path. B is the brush key in Photoshop and After Effects.
   (Glyphs.brush, 'Brush', 'B'),
   // After Effects' Unified Camera tool: a drag orbits the camera, the wheel dollies it.
   (Glyphs.camera, 'Camera', 'C'),

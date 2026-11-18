@@ -21,7 +21,7 @@ class ReferenceEntry {
     this.gives,
   );
 
-  /// The class it is declared in, as After Effects names its objects: Layer, Property, Comp, Key…
+  /// The class it is declared in names its objects: Layer, Property, Comp, Key…
   final String owner;
   final String name;
 

@@ -11,7 +11,7 @@ extension WorkspaceEffects on WorkspaceController {
   static List<String> fxFiles(String fx) => WorkspaceController.fxFiles(fx);
   static int get fps => WorkspaceController.fps;
 
-  /// The effects on the selected layer, like After Effects' effects on a layer, in the order the engine applies them.
+  /// The effects on the selected layer effects on a layer, in the order the engine applies them.
   /// Effects always belong to a layer. A whole-canvas effect is an adjustment layer showing what is behind it.
   List<String> get screenFx {
     final t = selected;

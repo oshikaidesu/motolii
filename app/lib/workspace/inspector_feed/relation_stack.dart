@@ -12,7 +12,7 @@ import 'package:motolii/workspace/state/layers/relation_writes.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
-/// The relations the selected layer belongs to, at the top of its inspector, the one in effect first (as Blender stacks constraints).
+/// The relations the selected layer belongs to, at the top of its inspector, the one in effect first.
 /// Each row shows an on/off dot, the relation's kind and its leader, and an x that removes the layer from the relation.
 /// Clicking a row selects that relation.
 class RelationStack extends StatelessWidget {

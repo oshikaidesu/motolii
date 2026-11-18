@@ -17,7 +17,7 @@ abstract interface class StageHandles {
 /// The selection's handles where they are drawn, by name.
 /// They are the four corners, the rotation knob, the anchor point and the middle (the body).
 /// The painter draws them from here and [StageHandles] hands them out from here.
-/// A shape also has its own handles, as in Alight Motion. The corner roundness handle sits on the diagonal from the
+/// A shape also has its own handles. The corner roundness handle sits on the diagonal from the
 /// first corner, as far in as the corners are rounded ([round] is a share of the shorter side). The points handle of a
 /// polygon or star sits out from the middle of the right side.
 /// While an image is being cropped (after a double click), [crop] holds the left, top, right and bottom amounts cut
@@ -37,7 +37,7 @@ Map<String, Offset> selectionHandles(
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
     if (knob && crop.length != 4) ...{
-      // The middle of each side, resizing one way only, as in Figma, Alight Motion and Keynote: left, top, right, bottom.
+      // The middle of each side, resizing one way only, Alight Motion and Keynote: left, top, right, bottom.
       'side 0': (c[0] + c[3]) / 2,
       'side 1': (c[0] + c[1]) / 2,
       'side 2': (c[1] + c[2]) / 2,

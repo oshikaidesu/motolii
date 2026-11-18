@@ -42,7 +42,7 @@ class CameraGestures extends ChangeNotifier {
     final ws = _stage.workspace, cam = _cameraOf(ws);
     if (cam == null) return;
     if (ws.freeEye) {
-      // As in After Effects' custom views, the tool moves the view, not the camera layer.
+      // custom views, the tool moves the view, not the camera layer.
       return ws.setView('stage.eye', [
         ws.eye[0],
         ws.eye[1],

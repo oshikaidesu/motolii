@@ -1,4 +1,4 @@
-// The controls beside the Ease graph, laid out as in AbsentMotion's EasingPanel.kt (Apache-2.0): a left column with
+// The controls beside the Ease graph, laid out EasingPanel.kt (Apache-2.0): a left column with
 // reverse and a menu, and a narrow row of easing shapes without names. The layout and behavior are ported; the colors are this app's.
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
@@ -55,7 +55,7 @@ List<Ease> easeOthers(List<Ease> ways) => [
     if (!easeShapes.contains(w.name)) w,
 ];
 
-/// Whether [now] is this shape, as in AbsentMotion's EasingCatalog.matches: a Bezier matches by its numbers, any other kind by its name.
+/// Whether [now] is this shape EasingCatalog.matches: a Bezier matches by its numbers, any other kind by its name.
 bool _isOf(Ease shape, Ease now) {
   final word = said(now), base = easeIsTurned(word) ? easeTurn(word) : word;
   return easeIsBezier(shape)
@@ -114,7 +114,7 @@ class EaseShapes extends StatelessWidget {
 }
 
 /// The left column: a reverse button, and a ⋯ menu to copy and paste the curve.
-/// The menu has Alight Motion's Copy Curve, Paste Curve and Paste Curve to All Keyframes, and this app's own Jump
+/// The menu h Copy Curve, Paste Curve and Paste Curve to All Keyframes, and this app's own Jump
 /// (easeJump in ease_tool_state.dart). Enable Overshoot is among the numbers instead.
 class EaseLeft extends StatelessWidget {
   const EaseLeft({super.key, this.onReverse, required this.menu});

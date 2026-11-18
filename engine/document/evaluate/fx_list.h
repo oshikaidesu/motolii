@@ -40,7 +40,7 @@ std::string doc_fx_values_id(Doc& d, const std::string& entry);
 // engine/stage/layer_effects/layer_fx.h.
 bool doc_fx_files(const std::vector<std::string>& list);
 // Returns the effects as the stack runs them: file paths without instance-ID
-// prefixes, without expressions. AbsentMotion's Motion Blur and Shutter Blur
+// prefixes, without expressions.
 // are replaced by its Directional Blur, which sits beside them on the shelf as
 // am_directionalblur.wgsl. It is told how far and in which direction the layer
 // moves while its shutter is open. See engine/document/evaluate/moment_fx.h

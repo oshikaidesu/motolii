@@ -13,7 +13,7 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/media/fonts_service.dart';
 
-/// The title and body fonts, shown first on the shelf like PowerPoint's Headings and Body theme fonts
+/// The title and body fonts, shown first on the shelf Headings and Body theme fonts
 /// and Canva's brand fonts.
 /// With no text layer selected, clicking a role chooses which role the next clicked font is for.
 /// With a text layer selected, clicking a role applies that role's font to it. The + button adds a new text in that font.

@@ -98,7 +98,7 @@ bool doc_put(Doc& d, int layer, const char* name, double at, double is) {
   if (!doc_knows(d, layer, name, &is)) return false;
   // A property with keyframes gets a keyframe there and only there. So does any
   // property changed while every change is keyed, at or before the time keying
-  // began. After Effects' Auto-keyframe keys a property at the current time,
+  // began.
   // and so does the diamond of Alight Motion at the playhead.
   if (doc_keys(d, layer, name) > 0 || (d.keying.on && at <= d.keying.from))
     return doc_key(d, layer, name, at, is);

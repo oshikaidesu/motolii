@@ -259,8 +259,8 @@ class ViewPainter extends CustomPainter {
     }
   }
 
-  /// Draws a camera in the custom view: its crossed frame as in AbsentMotion's DrawCameraFrames, lines from its
-  /// position to the frame corners, and its point of interest as in After Effects. The selected camera also gets
+  /// Draws a camera in the custom view: its crossed frame DrawCameraFrames, lines from its
+  /// position to the frame corners, and its point of interest. The selected camera also gets
   /// corner handles, because the frame size sets the lens.
   void _gizmo(Canvas c, int id) {
     final g = [

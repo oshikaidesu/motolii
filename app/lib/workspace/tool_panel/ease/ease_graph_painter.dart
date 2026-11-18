@@ -108,7 +108,7 @@ class EaseGraphPainter extends CustomPainter {
     final top = home.$2.dy, bottom = home.$1.dy;
     final grid = Paint()
       ..strokeWidth = 1
-      // Few lines, so the grid stays light. AbsentMotion's 32 lines would look like grain at this size.
+      // Few lines, so the grid stays light.
       ..color = Grey.g20;
     for (var i = 0; i <= 8; i++) {
       final x = (g.left + i * g.width / 8).floorToDouble() + .5;

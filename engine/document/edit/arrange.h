@@ -21,13 +21,13 @@ bool doc_seen_box(Doc& d, int layer, double now, double* box);
 // its default value is changed and stored.
 bool doc_value_by(Doc& d, int layer, const char* name, double add,
                   double times);
-// Aligns layers on the canvas as Keynote and Figma do (Arrange > Align). One
+// Aligns layers on the canvas and Figma do (Arrange > Align). One
 // layer is aligned to the canvas and several layers to the box around all of
 // them. `how` is left, centre, right, top, middle or bottom, or across or down,
 // which spread three or more layers so that the gaps between them are equal.
 // Returns false and sets d.error on failure. The change is one undo step.
 bool doc_align(Doc& d, const std::vector<int>& layers, const std::string& how);
-// Scales a layer to the canvas as Alight Motion's Fit, Fill and Stretch do,
+// Scales a layer to the canvas Fit, Fill and Stretch do,
 // then centres it on the canvas. `how` is `fit`, which makes it as large as
 // possible inside the canvas, `fill`, which makes it cover the canvas, or
 // `stretch`, which stretches it to the canvas. Returns false and sets d.error

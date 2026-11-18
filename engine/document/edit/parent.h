@@ -11,7 +11,7 @@ namespace motolii {
 struct Doc;
 
 // Makes `to` the parent of the layer (0 means no parent) without moving the
-// layer on the stage, as After Effects does. The layer's position, its rotation
+// layer on the stage does. The layer's position, its rotation
 // about the camera's line of sight and its size are expressed again relative to
 // the new parent. A property with keyframes is moved as a whole, by the rule of
 // doc_put. A keyed size is left as it is. A parent that leans, rotated about x

@@ -26,7 +26,7 @@ const char* doc_kind_of(const char* file);
 // in which case no number is used up.
 int doc_add(Doc& d, const char* kind, const char* file);
 // Duplicates a layer as a new layer with every keyframe of it, including its
-// keys and easings, lying where the original lies. Like After Effects'
+// keys and easings, lying where the original lies.
 // Duplicate Layer. The new layer has the newest number, as for doc_add. Returns
 // it, or 0 on failure.
 int doc_duplicate(Doc& d, int layer);

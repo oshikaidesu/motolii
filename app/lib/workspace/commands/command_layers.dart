@@ -27,7 +27,7 @@ extension LayerCommands on WorkspaceState {
   Map<String, VoidCallback> layerCommands() {
     final ws = this.ws;
     // Groups the selected layers under a new null layer placed at their centre, as one undo step.
-    // Like Figma's group, it is not a container of its own.
+    // group, it is not a container of its own.
     // [mask] is 'mask' or 'exclude': the top layer's shape
     // then shows the others within it, or cuts them out. The engine side is group_mask in document/evaluate/evaluate.h.
     // See docs/design/alight_motion_ui.md.

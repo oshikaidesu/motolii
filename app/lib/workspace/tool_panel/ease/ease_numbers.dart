@@ -1,8 +1,8 @@
 // The numbers of an easing, shown exactly. Under the graph the easing's name carries the Inspector's fold mark and
 // opens the numbers as a card over the foot of the graph, as an Inspector card does.
-// The names are those of AbsentMotion's Keyframes.kt; Alight Motion only offers them as handles.
+// The names are those of AbsentMotion's Keyframes.kt.
 // Waves and steps are entered as a count rather than a length, which is how people think of them.
-// Overshoot is switched here, next to the numbers it affects, rather than in a menu as in Alight Motion.
+// Overshoot is switched here, next to the numbers it affects, rather than in a menu.
 // Without it Y stops at 0 and 1, so typing a number cannot silently push the curve out of reach.
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';

@@ -10,7 +10,7 @@ import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
-/// Shift is finer and Cmd or Ctrl is ten times coarser, as in Ableton Live (manual, section 42.6).
+/// Shift is finer and Cmd or Ctrl is ten times coarser (manual, section 42.6).
 /// The same keys apply to a scrub, a wheel, the arrow keys and a drag on a picture of the value.
 double dragRate() {
   final k = HardwareKeyboard.instance;
@@ -276,7 +276,7 @@ class NumberFieldState extends State<NumberField> {
       return KeyEventResult.handled;
     }
     if (e.logicalKey == LogicalKeyboardKey.tab && widget.keys) {
-      // As in After Effects, Figma and Blender, Tab keeps this number and opens the next field for typing.
+      //, Figma and Blender, Tab keeps this number and opens the next field for typing.
       // If the typed number is not accepted, focus stays here.
       if (_commit()) {
         final back = HardwareKeyboard.instance.isShiftPressed;
@@ -294,7 +294,7 @@ class NumberFieldState extends State<NumberField> {
     if (widget.step case final step?
         when e.logicalKey == LogicalKeyboardKey.arrowUp ||
             e.logicalKey == LogicalKeyboardKey.arrowDown) {
-      // As in After Effects and Figma, the arrows move the number typed so far by one step.
+      // and Figma, the arrows move the number typed so far by one step.
       final t = double.tryParse(halfWidth(_ctl.text).trim()) ?? widget.value();
       if (t == null) return KeyEventResult.handled;
       final up = e.logicalKey == LogicalKeyboardKey.arrowUp ? 1 : -1;
@@ -466,7 +466,7 @@ class NumberFieldState extends State<NumberField> {
               ),
             );
         return Actions(
-          // As in After Effects and Figma, Cmd+A in a focused field selects its number, not everything in the window.
+          // and Figma, Cmd+A in a focused field selects its number, not everything in the window.
           actions: {
             if (widget.keys)
               SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(

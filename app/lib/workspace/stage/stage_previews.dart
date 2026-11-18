@@ -44,7 +44,7 @@ Widget? stageDrawPreview({
   );
 }
 
-/// The numbers beside the pointer while a layer is dragged, as Figma does; Alight Motion shows none. Null when nothing has moved.
+/// The numbers beside the pointer while a layer is dragged does; Alight Motion shows none. Null when nothing has moved.
 Widget? stageHeldSays({required StageDrag drag, required Offset? last}) {
   final h = drag.held;
   if (h == null || !h.moved || last == null) return null;

@@ -170,7 +170,7 @@ void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from,
     // except for a transition's end image, which is empty (ISF spec, endImage).
     for (size_t k = own; k < read.size(); ++k) {
       // What is behind the layer: the stage's image without it
-      // (render_layers.h); AbsentMotion's backdrop.
+      // (render_layers.h).
       if (fx.others[k - own] == "backdrop" && s.behind) {
         read[k] = s.behind;
         continue;

@@ -1,5 +1,5 @@
 // The ruler's marks and what a drag on the ruler does: it scrubs the playhead, moves the work area, or moves a marker.
-// The project's markers work like Ableton Live's locators. A marker can be dragged by its flag and keeps its name;
+// The project's markers work locators. A marker can be dragged by its flag and keeps its name;
 // dragging it off the ruler, up or down, deletes it. Each of these is one undo step.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -143,7 +143,7 @@ class RulerMarks extends ChangeNotifier {
         _workOut = a + len;
         notifyListeners();
       default:
-        // As in After Effects, holding Shift while dragging the time indicator snaps it to what it passes.
+        //, holding Shift while dragging the time indicator snaps it to what it passes.
         final shift = HardwareKeyboard.instance.isShiftPressed;
         workspace!.frame = shift
             ? _snapTo(workspace!.snapTargets())?.nearest(f)?.frame ?? f

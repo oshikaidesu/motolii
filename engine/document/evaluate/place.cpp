@@ -460,7 +460,7 @@ std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
   const double now = d.stage->now;
   // The special name "aviutl.audiobuffer" selects the mix of all video layers
   // heard now, like AviUtl2's "audiobuffer", which is the mix of every item.
-  // Each layer is read at its own time, as below. Waveforms are added; spectrum
+  // Each layer is read at its own time, as below. Waveforms are added.
   // bands take the maximum.
   if (name == "aviutl.audiobuffer") {
     std::vector<float> all;

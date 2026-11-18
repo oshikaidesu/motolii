@@ -157,7 +157,7 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
              (int)std::clamp(bend[3], 0.f, 100.f), bend[4] > 0.5f,
              bend[5] * high, d->fine);
     if (bend[6] > 0.f) {
-      // Roughen like Illustrator's Roughen and After Effects' Roughen Edges,
+      // Roughen Roughen and After Effects' Roughen Edges,
       // using Skia's own discrete path effect. bend[6] is how far points move
       // out and bend[7] how far apart they are, both in shares of the height.
       const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);

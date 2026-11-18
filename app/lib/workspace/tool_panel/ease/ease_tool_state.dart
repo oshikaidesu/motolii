@@ -61,7 +61,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
   bool _adding = false;
   // The shelf is open, and the shelf is built. It stays built until it has slid away.
   bool _shelf = false, _shelfShown = false;
-  // Like AbsentMotion's lockOvershoot: once the graph shows past 0 and 1 it stays so, until the menu or another card or segment resets it.
+  // lockOvershoot: once the graph shows past 0 and 1 it stays so, until the menu or another card or segment resets it.
   bool _overLocked = false;
 
   bool _escapeKey(KeyEvent e) {
@@ -157,7 +157,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     );
   }
 
-  // Lays out the panel as AbsentMotion's EasingPanel.kt does: the left column, the graph and the preset thumbnails.
+  // Lays out the panel EasingPanel.kt does: the left column, the graph and the preset thumbnails.
   Widget _body(
     WorkspaceController ws,
     EaseSpan? span,
@@ -224,7 +224,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       }
     }
 
-    // Like AbsentMotion's reversed(): a Bezier has its handles turned, any other kind is marked as reversed.
+    // reversed(): a Bezier has its handles turned, any other kind is marked as reversed.
     final turned = bezier
         ? card.reversed()
         : Ease(card.kind, card.p1, card.p2, easeTurn(said(card)));
@@ -233,7 +233,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         easeOvershoot = !overshoot;
         _overLocked = !overshoot;
       });
-      // Turning it off pulls the handles back inside 0 to 1, or the user could not reach them. AbsentMotion only zooms the view.
+      // Turning it off pulls the handles back inside 0 to 1, or the user could not reach them.
       if (overshoot && [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1)) {
         put(
           card.withHandles(

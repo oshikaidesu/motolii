@@ -125,7 +125,7 @@ bool doc_preset_save(Doc& d, int layer, const char* path, bool whole,
   // to others, is not carried: its _by links are left out. With `whole`, the
   // layers whose parent is this layer are carried too, as a group holds its
   // children, and so are their behaviours. Every link between carried layers is
-  // renumbered to the numbers in the preset. Alight Motion copies a group with
+  // renumbered to the numbers in the preset.
   // what is in it, and AbsentMotion's group is a scene of its own that is
   // copied whole (ElementActions.kt, elementNodes). Maps a layer number in the
   // document to its number in the preset.

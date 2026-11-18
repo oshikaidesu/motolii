@@ -180,7 +180,7 @@ Doc* doc_open(Stage& s, const char* path) {
   // `text` has gone at u, for example easing('Cyclic', u) or easing('Bezier .2
   // 0 0 1', u). Easings can therefore be layered over one another: one through
   // another, multiplied or added, as GSAP's CustomWiggle does with timingEase
-  // and amplitudeEase and as Blender's F-Curve modifier stack and Noise do.
+  // and amplitudeEase and F-Curve modifier stack and Noise do.
   // Each easing begins at its first keyframe and ends at the next, so what they
   // make does too. `way` is the old name of `easing`. It stays registered
   // because projects and shelves/ease/*.way written before the rename call it

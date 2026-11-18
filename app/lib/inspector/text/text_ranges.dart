@@ -1,5 +1,5 @@
 // A text layer's ranges (its `text_styles` value): one range a line, "start count declarations", where start and
-// count are Unicode characters, as After Effects' sourceText style.setFontSize(value, startIndex, numOfCharacters)
+// count are Unicode characters sourceText style.setFontSize(value, startIndex, numOfCharacters)
 // counts them, and the declarations are CSS ones, which the engine hands to Blitz (engine/community/css/text.rs).
 // A later line wins where ranges overlap, as a later CSS rule does.
 

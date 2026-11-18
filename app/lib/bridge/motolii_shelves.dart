@@ -34,7 +34,7 @@ extension MotoliiShelves on Motolii {
       if (shelfItems[l.$2]?.label != 'Element') l,
   ];
 
-  /// The elements on the shelf: a whole layer with its contents, inserted as a link (like Alight Motion's My Elements). Each is a name and file.
+  /// The elements on the shelf: a whole layer with its contents, inserted as a link. Each is a name and file.
   List<(String, String)> get elements => [
     for (final l in _presetLines)
       if (shelfItems[l.$2]?.label == 'Element') l,
@@ -44,7 +44,7 @@ extension MotoliiShelves on Motolii {
     () => _labelled(bindings.motolii_presets(handle).toDartString(), 'look'),
   );
 
-  /// The motions a layer can be given (like Cavalry's Animators), each a name and file. A layer's script is the file of the motion it uses.
+  /// The motions a layer can be given, each a name and file. A layer's script is the file of the motion it uses.
   List<(String, String)> get animators => folders.putIfAbsent(
     'animators',
     () =>

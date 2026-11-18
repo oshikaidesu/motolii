@@ -26,20 +26,15 @@ namespace math = filament::math;
 
 using namespace motolii;
 
-// Adds a layer of kind `kind` made from `file`. Returns nonzero on success.
 int motolii_add(Motolii* m, const char* kind, const char* file) {
   return on_render_thread(
       m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); });
 }
-// Removes the layer. Returns nonzero on success.
 int motolii_remove(Motolii* m, int layer) {
   return on_render_thread(
       m, [=] { return changes(m, (int)(doc_remove(doc(m), layer))); });
 }
-// Sets property `name` of the layer to `number`. The number goes through
-// doc_macro_own first, which turns it into the property's own value when a
-// macro drives the property; see document/scripts/expressions.h. Returns
-// nonzero on success.
+// The number goes through doc_macro_own to invert any expression driving it.
 int motolii_set(Motolii* m, int layer, const char* name, double number) {
   return on_render_thread(m, [=] {
     return changes(
@@ -49,14 +44,11 @@ int motolii_set(Motolii* m, int layer, const char* name, double number) {
                              doc(m).stage ? doc(m).stage->now : 0.0, number))));
   });
 }
-// Sets the text property `name` of the layer to `word`. Returns nonzero on
-// success.
 int motolii_say(Motolii* m, int layer, const char* name, const char* word) {
   return on_render_thread(
       m, [=] { return changes(m, (int)(doc_say(doc(m), layer, name, word))); });
 }
-// Sets the keyframe of property `name` at time `at` to `number`, converted as
-// in motolii_set. Returns nonzero on success.
+// Sets the keyframe, number converted as in motolii_set.
 int motolii_key(Motolii* m, int layer, const char* name, double at,
                 double number) {
   return on_render_thread(m, [=] {
@@ -65,16 +57,12 @@ int motolii_key(Motolii* m, int layer, const char* name, double at,
                          doc_macro_own(doc(m), layer, name, at, number))));
   });
 }
-// Turns the notes of a MIDI file into keyframes of a property, as om_midi does
-// in After Effects; see midi_notes.h, midi_keys. `kind` selects what the notes
-// produce: velocity, pitch, count, on or bool. `channel` selects the MIDI
-// channel. A positive `bpm` replays the file at that tempo. Every keyframe uses
-// the Hold easing. Returns nonzero on success.
+// Turns the notes of a MIDI file into keyframes (midi_notes.h, midi_keys).
+// Every keyframe uses Hold easing.
 int motolii_midi(Motolii* m, int layer, const char* name, const char* file,
                  const char* kind, int channel, double bpm) {
   std::vector<MidiEvent> events = midi_events(file);
-  // Rescale the times from the file's own tempo to `bpm`, as the BPM box of
-  // om_midi does. A time is its beat count times 60 divided by the tempo.
+  // Rescale times from the file's own tempo to `bpm`.
   if (bpm > 0) {
     const double by = midi_bpm(file) / bpm;
     for (MidiEvent& e : events) e.at *= by;
@@ -88,9 +76,7 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file,
                              " (kinds: velocity pitch count on bool)",
               0);
     });
-  // Remove the property's existing keyframes first and then make them again
-  // from the file, as om_midi makes a new null object each time. Both steps are
-  // one undo step.
+  // Replace existing keyframes with the file's notes, as one undo step.
   return on_render_thread(m, [=] {
     Doc& d = doc(m);
     doc_act(d);
@@ -101,24 +87,18 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file,
   });
 }
 
-// Adds effect `name` to the layer at time `at`. Returns nonzero on success.
 int motolii_effect(Motolii* m, int layer, const char* name, double at) {
   return on_render_thread(m, [=] {
     return changes(m, (int)(doc_effect(doc(m), layer, name, at)));
   });
 }
-// Evaluates the arithmetic text `sum` with SQLite and stores the result in *is.
-// Returns 1 on success, or 0 if the text is not plain arithmetic or SQLite
-// gives no number.
+// Evaluates arithmetic text with SQLite. Only allows [0-9.+-*/()eE ].
 int motolii_work_out(Motolii* m, const char* sum, double* is) {
   const std::string said(sum);
-  // Accept only arithmetic characters, so that all that is ever sent to SQLite
-  // is a sum.
   if (said.find_first_not_of("0123456789.+-*/()eE ") != std::string::npos)
     return 0;
   static const std::regex whole("(^|[^0-9.eE])([0-9]+)(?![0-9.eE])");
-  // SQLite divides whole numbers as whole numbers, so 1/3 would be 0. Make
-  // every whole number real.
+  // SQLite integer division: 1/3 = 0. Make every literal a real.
   const std::string real = std::regex_replace(said, whole, "$1$2.0");
   return by_look(m, [&] {
     sqlite3_stmt* asked = nullptr;
@@ -133,10 +113,8 @@ int motolii_work_out(Motolii* m, const char* sum, double* is) {
     return (int)ok;
   });
 }
-// Reads the value of property `name` at time `at` into *is as the preview shows
-// it. Returns 0 if the layer has no such property, 1 if the value is the
-// property's own, and 2 if a relation or a behaviour drives it. In the driven
-// case *is is the property's own value, not the driven one.
+// Returns 0 (no such property), 1 (own value), or 2 (driven; *is is the own
+// value, not the driven one).
 int motolii_shows(Motolii* m, int layer, const char* name, double at,
                   double* is) {
   return by_look(m, [=] {
@@ -146,9 +124,7 @@ int motolii_shows(Motolii* m, int layer, const char* name, double at,
     return 2;
   });
 }
-// Copies up to `room` layer numbers into `layers`, in the order they lie with
-// the one furthest back first. Returns the total number of layers, which can
-// exceed `room`.
+// Layers in stacking order (furthest back first). Returns total count.
 int motolii_layers(Motolii* m, int* layers, int room) {
   return by_look(m, [=] {
     const std::vector<int> all = doc_layers(*m->d);

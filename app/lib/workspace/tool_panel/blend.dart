@@ -144,7 +144,7 @@ class _RowState extends State<_Row> {
         child: row,
       );
     }
-    // Group the modes as After Effects does: normal, darker, lighter, contrast, difference, color.
+    // Group the modes does: normal, darker, lighter, contrast, difference, color.
     // A mode that is in none of the groups goes with normal.
     final groups = <List<String>>[[], [], [], [], [], []];
     for (final w in ways) {

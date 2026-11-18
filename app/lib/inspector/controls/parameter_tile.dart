@@ -200,7 +200,7 @@ class ParameterTile extends StatelessWidget {
           ),
         );
       case ParameterLook.color when p.unit == 'words':
-        // Free text, possibly several lines. It is committed when the field loses focus and Esc restores it (like Cavalry's string attribute).
+        // Free text, possibly several lines. It is committed when the field loses focus and Esc restores it.
         return shell(ParameterWords(id: id), tall: true);
       case ParameterLook.color when p.unit == 'file':
         // A file chosen from a shelf, such as a text layer's font from the Fonts shelf, as a colour is chosen from the Colors shelf.

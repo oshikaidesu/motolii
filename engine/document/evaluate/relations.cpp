@@ -342,7 +342,7 @@ double doc_related(Doc& d, int by, int layer, const char* name, double t,
   // The value before this relation: what the previous relation gives, or `own`.
   const double base = was ? doc_related(d, was, layer, name, t, own) : own;
   // Each member's strength is read later than the one before by the script's
-  // `lag` seconds, as in Cavalry's stagger, so that a strength that rises over
+  // `lag` seconds stagger, so that a strength that rises over
   // time reaches the members one after another. A script without a `lag`
   // parameter has no delay.
   double lag = 0;

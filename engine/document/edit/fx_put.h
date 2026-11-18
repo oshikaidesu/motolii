@@ -33,7 +33,7 @@ bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list);
 // transition effects of After Effects take a layer away, with Transition
 // Completion from 0 to 100%, and how its transition presets lay keys from the
 // current time. A second is the default length of a transition in editors such
-// as Premiere Pro and Final Cut Pro, which uses 30 frames. The user can make it
+// and Final Cut Pro, which uses 30 frames. The user can make it
 // longer or shorter by moving the keys.
 // A transition is an ISF effect, see ISF_Spec. It has a progress input and an
 // endImage input for the image it goes to.
@@ -54,7 +54,7 @@ bool doc_fx_eye(Doc& d, int layer, const char* title);
 // effect card in Alight Motion. Its keyframes and values go with it, as when an
 // effect is deleted in After Effects and Alight Motion, so that putting it on
 // again starts fresh. Turning the effect off with its eye, fx_off, keeps them,
-// as in Alight Motion. This is one undo step.
+//. This is one undo step.
 bool doc_fx_out(Doc& d, int layer, const char* name);
 
 }  // namespace motolii

@@ -14,7 +14,7 @@ class StageTrail {
   final void Function(VoidCallback change) rebuild;
 
   // The selected layer's motion path over time as the engine computes it (including its wave), in canvas points, drawn thin
-  // with direction arrows as in Alight Motion. Recomputed only when the document or the selection changes; null when the
+  // with direction arrows. Recomputed only when the document or the selection changes; null when the
   // layer stays put.
   (Object?, List<Offset>?) _trail = (null, null);
   List<Offset>? of(WorkspaceController ws, int? selected) {

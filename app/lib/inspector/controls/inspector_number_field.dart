@@ -16,7 +16,7 @@ import 'package:motolii/widgets/context_menu.dart'
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_format.dart';
 
-/// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
+/// A [NumberField] wired to the document, with a caption and an optional glyph.
 class InspectorNumberField extends StatefulWidget {
   const InspectorNumberField(
     this.p, {
@@ -30,7 +30,7 @@ class InspectorNumberField extends StatefulWidget {
     this.onSet,
   });
 
-  /// The parameter as its card declares it. [InspectorNumberFieldState] reads its unit, decimal places and range from it.
+  /// The parameter as its card declares it.
   final Parameter p;
 
   /// The document id of the number this field edits.
@@ -42,26 +42,23 @@ class InspectorNumberField extends StatefulWidget {
   /// A picture of the value, drawn in the top-right corner.
   final Widget? glyph;
 
-  /// Whether a press on [glyph] belongs to the glyph (a dial, a die) instead of starting a drag on the number.
-  /// Every number in the Inspector drags sideways, whatever it means, so only a glyph may behave differently.
+  /// Whether a press on [glyph] belongs to the glyph instead of starting a drag on the number.
   final bool glyphOwnsPointer;
 
-  /// Whether the glyph spans the block's full height on the right (stacked buttons) instead of sitting in the corner.
+  /// Whether the glyph spans the block's full height on the right.
   final bool glyphTall;
 
-  /// One row high, the number alone, for a row of axes under a header that names them (Transform's X, Y, Z).
+  /// One row high, the number alone.
   final bool compact;
 
-  /// Sets a new value in place of setting this field's own id alone, for fields that move together (linked Scale).
+  /// Sets a new value instead of this field's id alone (for linked axes).
   final ValueChanged<double>? onSet;
   @override
   State<InspectorNumberField> createState() => InspectorNumberFieldState();
 }
 
-/// Placed around a card's fields by the card. It lets their numbers be dragged past the slider's ends.
-/// [flag] is a document flag. A right click on any of the fields toggles it, and holding Option does the same for a single drag
-/// (a quasimode, as in Raskin's The Humane Interface). The slider range is only what the effect vouches for. Beyond it the value
-/// may go as far as the engine accepts, as with Houdini's non-strict ranges (FloatParmTemplate minIsStrict).
+/// Wraps a card's fields to let values be dragged past the slider's ends.
+/// Option-drag goes past for a single gesture (quasimode).
 class PastRange extends InheritedWidget {
   const PastRange({super.key, required this.flag, required super.child});
 
@@ -86,16 +83,14 @@ bool goingPast(BuildContext c, InspectorValues doc) {
 // A cell narrower than unitMinWidth drops its unit. A cell narrower than decimalsMinWidth drops decimals, but never rounds to a false 0.
 const unitMinWidth = 72.0, decimalsMinWidth = 60.0;
 
-/// The Inspector's side of a number field.
-/// [NumberField] handles dragging and typing. This state adds the document it reads and writes, the range it holds the value to,
-/// multi-selection of fields, the keyframe mark and the right-click menu.
+/// The document side of a number field: read/write, range, multi-select, keyframe mark, right-click menu.
 class InspectorNumberFieldState extends State<InspectorNumberField> {
   final _menu = GlobalKey<ContextMenuState>();
 
   InspectorScope get _x => InspectorScope.read(context);
   Parameter get _p => widget.p;
 
-  // An angle past 360 degrees is shown as full turns, as in After Effects: 1x 30°.
+  // Angles past 360° are shown as full turns: 1x 30°.
   bool get _turns => _p.look == ParameterLook.angle;
 
   // Rebuilds only this field when its value changes, not the whole Inspector.
@@ -212,16 +207,13 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       p.dx > w - InspectorSkin.glyph - InspectorSkin.tilePad &&
       (widget.glyphTall || p.dy < InspectorSkin.glyph + InspectorSkin.tilePad);
 
-  // Whether the keyframe mark is drawn, and its state. Pressing the mark adds a keyframe at this time or removes it.
+  // Whether the keyframe mark is drawn, and its state.
   bool _marked = false;
   KeyframeState _keys = KeyframeState.off;
 
-  // Handles a pointer-down before the field starts a drag.
-  // True means handled here, false means handled as a selection, and null leaves it to the field.
+  // True = handled here, false = handled as selection, null = leave to the field.
   bool? _press(PointerDownEvent e, double w) {
     if (e.buttons == kSecondaryButton) {
-      // A right click on a value opens its menu, as in After Effects and Blender. It works for every number, with the mouse alone.
-      // The same menu as every other right-click (context_menu.dart).
       _menu.currentState?.show(e.localPosition, [
         for (final (k, l, f) in _menuItems())
           ContextMenuItem(l, f, id: 'num-$k:${widget.id}'),
@@ -246,7 +238,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     final doc = _x.doc;
     final k = clickKeys();
     if (k.add || k.span) {
-      // Shift spans a rectangle of fields, Cmd adds or removes this one (the rule of picks.dart).
+      // Shift = span, Cmd = toggle (picks.dart).
       doc.fields.pick(widget.id, span: k.span, add: k.add);
       return false;
     }
@@ -267,7 +259,6 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     return KeyEventResult.handled;
   }
 
-  // Parses typed text as a number or an expression, as After Effects, Figma and Blender do.
   // Text starting with * or / continues from the current value.
   double? _typed(String said) {
     final cur = _x.doc.get(widget.id);
@@ -293,15 +284,13 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   @override
   Widget build(BuildContext context) {
     final x = InspectorScope.of(context);
-    // A dim dot means animated, and a lit dot means a keyframe at the playhead. A value that can be keyed always shows its mark,
-    // hollow when it has no keyframes, and pressing the mark adds a keyframe there.
-    // This follows Alight Motion's diamond beside each value and the stopwatch in After Effects and Premiere Pro.
+    // Dim dot = animated, lit dot = keyframe at playhead, hollow = can be keyed but has none.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
     return ContextMenu(
       key: _menu,
       child: NumberField(
-        // (the engine's name for the value, as code names it: a card's value is `v_` and that name here)
+        // Strip the `v_` prefix so the field shows the engine's name.
         name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
         value: () => _x.doc.get(widget.id),
         text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),

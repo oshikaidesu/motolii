@@ -38,7 +38,7 @@ class MediaController {
   /// The mark of the kind of layer [file] makes, or null when it makes none.
   AppGlyphs? glyphOf(String file) => switch (kindOf(file)) {
     'film' => AppGlyphs.video,
-    // Songs have a tab of their own, as in Alight Motion's Add, where Audio is apart from Media (docs/design/alight_motion_ui.md).
+    // Songs have a tab of their own Add, where Audio is apart from Media (docs/design/alight_motion_ui.md).
     'sound' => AppGlyphs.audio,
     'picture' => AppGlyphs.image,
     'solid' => AppGlyphs.shape,

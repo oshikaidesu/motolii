@@ -108,7 +108,7 @@ class CreateCommands {
     }
     if (name == 'Floor') sayWord(c.ws, -1, 'name', name);
     if (asked.$1 == 'light' && (valueOf(c.ws, 0, 'environment', 0) ?? 1) == 1) {
-      // As in After Effects, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
+      //, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
       setNumber(c.ws, 0, 'environment', .3);
     }
     c.ws.after(groupEnd(c.ws), _troubled(name));

@@ -231,7 +231,7 @@ LayerOpacity evaluate_opacity(Doc& d, int layer, DocShownLayer& t, double now) {
                        doc_group_opacity(d, layer, now);
   const auto fxOf = d.effects.layerFx.find(layer);
   // With effects of its own, opacity is applied after the effects, on the
-  // effects sheet. After Effects renders a layer's masks, effects and then
+  // effects sheet.
   // transform in that order.
   const bool sheetClear =
       fxOf != d.effects.layerFx.end() && fxOf->second.look &&

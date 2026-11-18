@@ -55,7 +55,7 @@ struct DocRelations {
     int seen = -1;
     std::vector<AbsentCopy> copies;
   };
-  // Each layer's copies as AbsentMotion's repeat effects lay them at the time
+  // Each layer's copies repeat effects lay them at the time
   // last asked, see doc_absent_copies.
   std::map<int, AbsentKept> absentKept;
 };
@@ -64,7 +64,7 @@ struct DocRelations {
 // `n` copies at time `t`. The behaviour type is the layer's "file" value:
 // stagger, oscillator, noise or random. A number from 0 to 1 is mapped onto the
 // range from "minimum" to "maximum", then rounded to a multiple of "step" when
-// step is positive. As in Cavalry, a parameter of a behaviour can itself be
+// step is positive., a parameter of a behaviour can itself be
 // driven by another behaviour.
 double doc_behaviour_at(Doc& d, int by, int copy, int n, double t);
 // Returns whether any property of the layer is connected to a behaviour, that

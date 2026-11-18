@@ -151,7 +151,7 @@ class MediaCommands {
 
   /// Replaces what every entry of [all] shows with [file], in one undo step.
   /// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
-  /// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
+  /// which changes the file's uri and every fill of it).
   void replaceAll(List<(int, String)> all, String file) => replaceSourcesIn(
     c.ws,
     all,

@@ -1,6 +1,6 @@
 // The Play card's inside: a time graph. The line's slope is the layer's Speed — up is forward, down is reversed,
 // flat is held — turning about the point where Speed holds it (its start, the playhead, or its end: speed_hold).
-// Take the handle up or down to set the speed, as After Effects' Time-Remap graph is dragged. The Speed, Hold at and
+// Take the handle up or down to set the speed Time-Remap graph is dragged. The Speed, Hold at and
 // Frame rate tiles stay below, so a value may also be typed or chosen.
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';

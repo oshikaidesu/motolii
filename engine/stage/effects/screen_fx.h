@@ -1,19 +1,9 @@
 #ifndef MOTOLII_STAGE_EFFECTS_SCREEN_FX_H_
 #define MOTOLII_STAGE_EFFECTS_SCREEN_FX_H_
-// Whole-screen effects on the stage. An effect is one WGSL file in the vgpu
-// style: a fragment shader only, with the entry point `fn
-// fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) ->
-// @location(0) vec4f`, the input image as a `texture_2d<f32>`, a `sampler`, and
-// the parameters in one `var<uniform>` struct. The parameters are declared in
-// the leading comment lines of the file, as a script's are (see script.h, for
-// example "// --track@name:...").
-// The stage draws its image into a texture of its own instead of the screen,
-// and the effect draws that texture to the screen through Filament's driver
-// (see gpu/screen_interop.h), in order with the stage's other images.
-// A struct member that the leading comments do not declare is filled in by the
-// stage when it has one of these names: `time` (seconds), `frame` (frame number
-// at 60 per second), `aspect` (width over height), `resolution`, `width` and
-// `height` (points). Any other member is read as a parameter of the same name.
+// Whole-screen WGSL effects. Parameters are declared in leading comment lines
+// (see script.h). Built-in struct members: time, frame, aspect, resolution,
+// width, height. Stage draws into a texture, effects chain through it via
+// Filament's driver (gpu/screen_interop.h).
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>
 
@@ -31,61 +21,41 @@
 
 namespace motolii {
 
-// Returns the current value of a parameter, given the effect's file, the
-// parameter's name, and its default value. The file is part of the key because
-// two effects may each have a parameter of the same name.
+// Returns a parameter's current value. The file is part of the key because
+// two effects may share a parameter name.
 using ScreenNumbers = std::function<double(
     const std::string& file, const std::string& parameter, double usual)>;
-// Returns the image of another layer that an effect reads as one of its inputs,
-// given the effect's file and the name of the parameter that selects the layer.
+// Returns another layer's image that an effect reads as an input.
 using ScreenTextures = std::function<filament::Texture*(
     const std::string& file, const std::string& name)>;
 
-// One whole-screen effect that has been loaded: its source file, parameters,
-// uniform layout, GPU objects and per-frame state. `trouble` holds the text of
-// the last error, empty when none.
+// One loaded effect: source, parameters, uniform layout, GPU objects, per-frame
+// state. `trouble` is the last error text, empty when none.
 struct ScreenFx {
   std::string file, instance_id, trouble;
-  // Returns the key passed to the ScreenNumbers callback. When this instance
-  // has an ID ("a1b2c3"), the key is "a1b2c3:file" so the callback can look up
-  // parameters keyed to this specific instance.
+  // With an instance ID, keys as "id:file" so parameters are per-instance.
   std::string numbers_key() const {
     return instance_id.empty() ? file : instance_id + ":" + file;
   }
   std::vector<ScriptParameter> parameters;
-  // A member of the parameter struct: its name, byte offset, number of floats,
-  // and whether it is an integer type (i32 or u32) and so is stored as an
-  // integer.
+  // A uniform struct member. whole = i32 or u32, stored as integer.
   struct Field {
     std::string name;
     uint32_t at = 0, floats = 1;
     bool whole = false;
   };
-  // The members of the parameter struct, laid out as WGSL lays out a uniform.
   std::vector<Field> fields;
-  // Size of the parameter struct in bytes.
   uint32_t bytes = 0;
-  // The effect as compiled in Filament's driver.
   interop::Screen* interop = nullptr;
-  // Number of images the shader reads: the stage's image, then one per target
-  // (ISF passes).
+  // Image count: stage image + one per ISF pass target.
   int textureCount = 1;
-  // Set by the leading comment `// --spill`. On a layer, the effect adds light
-  // laid over what is under it, in places where the layer is not (rays, trails,
-  // a shifted copy).
+  // `// --spill`: effect adds light beyond the layer's shape (rays, trails).
   bool spill = false;
-  // Set by the leading comment `// --alpha`. On a layer, the transparency the
-  // effect itself produces (for example grains) is what is laid down, not the
-  // layer's shape.
+  // `// --alpha`: the effect's own alpha replaces the layer's shape.
   bool alpha = false;
-  // ISF passes are drawn in turn (see the parameter `pass`). Each pass draws
-  // into a target owned by the effect or, for the last pass, to the output.
-  // A target is double-buffered: one texture is read while the other is drawn
-  // into, then they swap. A persistent target keeps its last image, which is
-  // read on the next frame. A `fine` target uses a 16-bit float format. The
-  // size is either a fraction of the stage size (share) or a fixed number of
-  // points. `front` is the texture that is read; w and h are its size in
-  // pixels.
+  // ISF pass targets. Double-buffered; persistent ones keep their image across
+  // frames. `fine` = 16-bit float. Size is either a share of stage or fixed
+  // points.
   struct Target {
     std::string name;
     bool persistent = false, fine = false;
@@ -97,90 +67,56 @@ struct ScreenFx {
     uint32_t w = 0, h = 0;
   };
   std::vector<Target> targets;
-  // The target index of each pass; -1 means the pass draws to the output.
+  // -1 = output.
   std::vector<int> passes;
-  // Past frames of the stage, when the leading comments ask for them with
-  // `// --history@frames:share`. They are an array of layers read as a
-  // `texture_2d_array<f32>`. The newest frame is at layer `head`, which the
-  // shader sees as the parameter `history_head`, and `history_count` frames are
-  // kept. Bit mask of the textures the shader reads that are the history array.
+  // `// --history@frames:share`. texture_2d_array; newest at `head`.
+  // Bitmask of textures that are the history array.
   unsigned layered = 0;
-  // Number of kept frames, and the layer of the newest one (-1 before the first
-  // is drawn).
   int historyFrames = 0, head = -1;
-  // Share of the stage size at which past frames are kept.
+  // Share of stage size for kept frames.
   double historyShare = 1;
   filament::Texture* history = nullptr;
   std::vector<filament::RenderTarget*> historyInto;
-  // Other input images (`// --picture@name`, ISF's images after the first).
-  // Each is the image of another layer as the camera sees it, chosen on the
-  // effect's card. They are read last, after the pass targets and the past
-  // frames.
+  // `// --picture@name` inputs. Read last, after targets and history.
   std::vector<std::string> others;
-  // The texture each input uses this frame, set before drawing; none means the
-  // effect's own input.
+  // nullptr = effect's own input.
   std::vector<filament::Texture*> othersNow;
-  // Whether each input is the effect's own input image this frame.
   std::vector<bool> othersOwn;
-  // The inputs that are image files next to the effect (`// --image@name:file`,
-  // ISF's IMPORTED): the path of each, empty for the others.
+  // `// --image@name:file` (ISF IMPORTED). Empty = not an image file.
   std::vector<std::string> images;
-  // The textures loaded from `images`.
   std::vector<filament::Texture*> imagesBuilt;
-  // True for an ISF generator (see isf_tags).
+  // ISF generator.
   bool source = false;
-  // Rectangles as {left, top, width, height}, each a share of the image.
-  // `frame` is the layer's frame on the image (see ScreenStack). `pass` is the
-  // same on the image the current pass draws into; a pass of a fixed size
-  // covers the whole of that side.
+  // {left, top, width, height} as shares. `pass` for a fixed-size target
+  // covers its whole side.
   double frame[4] = {0, 0, 1, 1}, pass[4] = {0, 0, 1, 1};
-  // Audio inputs (`// --sound@name`, ISF's audio and audioFFT), placed among
-  // the other inputs. Each is the sound of another layer at the current time, a
-  // row of `wide` values (the ISF spec uses one image row per channel). The
-  // values are half floats, since the spec asks for high-precision 32- or
-  // 16-bit float textures; WebGPU filters a 16-bit one as it is. `is` tells
-  // whether the input is audio at all, and `fft` whether it is the spectrum
-  // rather than the waveform.
+  // `// --sound@name`. Half-float row of `wide` values. `fft` = spectrum.
   struct Sound {
     bool is = false, fft = false;
     int wide = 0;
     filament::Texture* texture = nullptr;
   };
   std::vector<Sound> sounds;
-  // Size in pixels of the history texture.
   uint32_t hw = 0, hh = 0;
-  // Modification time of the file when the effect was built; if it changes, the
-  // effect is rebuilt.
+  // Rebuilt when the file's mtime changes.
   std::filesystem::file_time_type stamp{};
-  // The value of files_changed() when the file was last checked.
   int seen = -1;
 };
-// Returns the last write time of the effect's file, or the minimum time when it
-// cannot be read.
+// Returns the effect file's last write time, or the minimum when unreadable.
 std::filesystem::file_time_type screen_stamp(const std::string& file);
 
-// Reads the effect's file into `code` in the form Filament's driver takes, and
-// fills in `fx`. Image k is bound at 2k and its sampler at 2k+1, and the
-// parameters follow at 2 times the number of images; the entry point is renamed
-// `main`. `fx` also receives the layout of the parameter struct, the passes and
-// targets, the other inputs and the history request. Returns false and sets
-// fx.trouble when the file cannot be used.
+// Reads and compiles the effect. Image k at binding 2k, sampler at 2k+1,
+// params after. Returns false and sets fx.trouble on failure.
 bool screen_read(ScreenFx& fx, std::string& code);
 
-// The whole-screen effects applied to the stage or to one layer, one over
-// another. `files` is a list of effect file paths separated by spaces, or "" or
-// "none" for no effects. The first effect reads the stage's image, each next
-// one reads the output of the one before, and the last draws on the screen; two
-// intermediate images are used in turn. An effect that cannot be built is left
-// out and the reason is printed to stderr.
+// The effect chain on the stage or a layer. Effects chain through two
+// alternating intermediate images. Unbuildable effects are skipped (stderr).
 struct ScreenStack {
   std::string files;
   std::vector<ScreenFx*> fx;
-  // True if one of the effects reads what is behind the layer: AbsentMotion's
-  // backdrop, or the stage's image behind it.
+  // True if an effect reads the image behind the layer.
   bool readsBehind = false;
-  // True if one of the effects draws the layer anywhere on the screen, such as
-  // an AviUtl2 script calling obj.draw; its box is then the whole stage.
+  // True if an effect draws to the full stage (e.g. AviUtl2 obj.draw).
   bool wide = false;
   // Where the layer itself is seen, in stage points: left, top, right, bottom.
   double thingSeen[4] = {0, 0, 0, 0};

@@ -5,7 +5,7 @@
 // Provides the loudness over the length of the file, measured with GStreamer's
 // level element. The file is decoded as fast as possible, not played. Also
 // provides the strikes, the times where the sound gets suddenly louder, such as
-// a drum or a clap. After Effects' Convert Audio to Keyframes reads the same
+// a drum or a clap.
 // loudness, and the strikes are where its curve jumps. Finally provides the
 // sound as ISF audio inputs take it.
 

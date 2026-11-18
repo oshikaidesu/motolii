@@ -19,7 +19,7 @@ import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
-/// Fourteen sample colors as in Alight Motion, white and black included, one press each.
+/// Fourteen sample colors, white and black included, one press each.
 class ColorSamples extends StatelessWidget {
   const ColorSamples(this.commands, {super.key});
   final ColorCommands commands;
@@ -29,7 +29,7 @@ class ColorSamples extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     mainAxisSize: MainAxisSize.min,
     children: [
-      // Fourteen sample colors as in Alight Motion, white and black included, one press each.
+      // Fourteen sample colors, white and black included, one press each.
       // White needs a swatch because it is hard to hit in the square's corner.
       for (final row in const [
         [0xFF4444, 0xF4B446, 0xFAE965, 0x1ED91E, 0x17E1E1, 0x3D4CF5, 0xDD44DD],

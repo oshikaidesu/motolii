@@ -50,7 +50,7 @@ void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h,
       k ? shape->lineTo(x, y) : shape->moveTo(x, y);
     }
   }
-  // A line winding out from the center as in Cavalry's spiral: `points` turns,
+  // A line winding out from the center spiral: `points` turns,
   // starting at `inner` of the way out.
   else if (!strcmp(form, "spiral")) {
     const float turns = (float)std::clamp(points, 1, 50),

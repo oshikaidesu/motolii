@@ -272,7 +272,7 @@ class TileStudio extends TileStage {
     // AbsentMotion's split, at its 22 where one stands. With no parameter to turn, a line going across shows what the effect did, so no tile stands still.
     final at = split ? '0.1+0.8*(3*pow(N/15,2)-2*pow(N/15,3))' : splitWord;
     if (at != null && !same && enough) {
-      // Before is at its left, as AbsentMotion's effect_thumbs.py lays the photo over it up to there, with a white line where they meet.
+      // Before is at its left effect_thumbs.py lays the photo over it up to there, with a white line where they meet.
       if (ffmpeg([
             '-i',
             '${base}_%d.png',

@@ -241,7 +241,7 @@ int doc_add(Doc& d, const char* kind, const char* file) {
   if (!*kind) kind = doc_kind_of(file);
   if (!*kind)
     return d.error = std::string("no kind of layer is made from ") + file, 0;
-  // A sound is added as a hidden video that is heard. Alight Motion's audio
+  // A sound is added as a hidden video that is heard.
   // layer has no image, only its wave on the timeline
   // (docs/design/alight_motion_ui.md line 177), and Extract Sound's copy
   // (doc_extract_sound) is likewise a hidden video that is heard. Its

@@ -299,7 +299,7 @@ class _EffectCodeState extends State<EffectCode> {
               mark: _mark,
             ),
           ),
-        // What the expression gives at the playhead, under it as After Effects puts an expression's error.
+        // What the expression gives at the playhead, under it puts an expression's error.
         ExpressionResult(
           EffectCode.source(_mine ?? widget.word),
           write: _write,

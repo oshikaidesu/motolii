@@ -23,7 +23,7 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The Colors shelf. It stays small however many colors are saved, and one press applies a color. From the top it shows:
 /// - the target in one line;
-/// - the current color with its square, a full-width hue bar and its hex code, as in Figma's picker;
+/// - the current color with its square, a full-width hue bar and its hex code picker;
 /// - every palette as a small card of stripes, side by side in rows, where a press on a stripe takes that color
 ///   (as the palette cards of Coolors, Adobe Color and Canva);
 /// - the gradients as small tiles.
@@ -103,7 +103,7 @@ class ColorsShelf extends StatelessWidget {
       commands.fill(wordOfStops(next));
     }
 
-    // The paint type, as in Alight Motion's tabs and Figma. Switching a color to a gradient fades it to clear
+    // The paint type tabs and Figma. Switching a color to a gradient fades it to clear
     // Switching a gradient to a color keeps the selected stop's color.
     Widget kind(String label, bool on, VoidCallback go) => Chip(
       key: ValueKey('colour-kind-$label'),

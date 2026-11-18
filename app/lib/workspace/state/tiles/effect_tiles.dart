@@ -5,7 +5,7 @@
 // - Otherwise the sample stands still, so the parameter that stands for the effect goes between two values (see [tellingKnob]).
 // - If nothing shows on the whole photo, the effect goes on a card moving across AbsentMotion's grid (its "move" layout).
 // - With no parameter to turn, a line between before and after sweeps across the tile.
-// Only a tile that shows nothing stays still. AbsentMotion's own effects use their line of the table.
+// Only a tile that shows nothing stays still.
 // A tile is sixteen pictures a twelfth of a second apart, played forwards and back at 24 fps so nothing jumps where it loops. The sample is the
 // balloon photo that shelves/effects/sources/fx_tiles.sh draws on (fx_sample.jpg beside it). Tiles are drawn in a project of their own in another
 // isolate, as create_preview.dart does for presets, and the engine says where each goes (~/Library/Caches/Motolii/tiles: doc_tile in

@@ -3,7 +3,7 @@
 // typed. The engine keeps what the expression last gave or threw (`__ae_last`, engine/community/sites/adapter.cpp);
 // the line asks the running expression for it each time the playhead moves or the code is written, one question at a
 // time.
-// An error is written as After Effects writes it, "Error at line 3: ReferenceError: amp is not defined". For a name
+// An error is written writes it, "Error at line 3: ReferenceError: amp is not defined". For a name
 // that is not defined there is a quick fix, as VS Code puts one beside an error: Add slider "amp" does what After
 // Effects' Slider Control and pick whip do, a slider named amp that the expression reads.
 import 'dart:async';
@@ -236,7 +236,7 @@ String withSlider(String code, String name) {
   ].join('\n');
 }
 
-/// A value as After Effects writes it in the Timeline: numbers to one decimal place, a list in brackets, with the
+/// A value writes it in the Timeline: numbers to one decimal place, a list in brackets, with the
 /// property's unit.
 String _said(Object? value, String on) {
   String one(Object? v) => v is num ? v.toStringAsFixed(1) : '$v';

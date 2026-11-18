@@ -1,5 +1,5 @@
 // The Camera View tab: the image the camera takes, shown beside the stage whichever view camera the stage uses.
-// Like After Effects' 2 Views with Active Camera. It is view-only; all editing happens on the stage.
+// 2 Views with Active Camera. It is view-only; all editing happens on the stage.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';

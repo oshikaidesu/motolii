@@ -41,7 +41,7 @@ List<(String, List<String>)> layerCardsOf(WorkspaceController ws, int t) =>
     ws.inside?.range(t, name);
 
 /// The layers other than [t] (layers only, not relations or behaviours), keyed by their row number on the timeline and the
-/// name shown there. Like After Effects' parent list.
+/// name shown there. parent list.
 Map<String, int> otherLayers(WorkspaceController ws, int t) {
   final rows = ws.layers.where(
     (l) => l.id != t && layerWord(ws, l.id, 'kind') != 'behaviour',

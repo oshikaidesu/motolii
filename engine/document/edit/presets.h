@@ -29,7 +29,7 @@ struct Doc;
 // With `whole`, everything except the parent is kept; this is a copy for Edit >
 // Copy, which doc_preset_paste turns back into a layer. `only` is a list of
 // property names separated by spaces; only those properties are kept, as for
-// the card of one effect. Alight Motion copies a single effect the same way.
+// the card of one effect.
 // Returns false and sets d.error on failure.
 bool doc_preset_save(Doc& d, int layer, const char* path, bool whole = false,
                      const std::string& only = "");
@@ -92,7 +92,7 @@ std::string doc_preset_names();
 bool doc_element_keep(Doc& d, int layer, const std::string& name);
 // Puts the element file at `path` into the project at time `now` as the newest
 // layer, at the middle of the stage, linked to its file through the `element`
-// value in the form a preset uses for file names. AbsentMotion's addElement
+// value in the form a preset uses for file names.
 // does the same: an embedScene at the centre of the scene with its link
 // (ElementActions.kt). One undo step. Returns the new layer's number, or 0 on
 // failure.

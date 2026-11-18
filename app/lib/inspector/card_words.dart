@@ -5,7 +5,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/widgets/more_menu.dart';
 
-/// The Copy, Paste and Reset words in the head of a layer's own card, acting on the values [ids] as they are (like After Effects' Reset).
+/// The Copy, Paste and Reset words in the head of a layer's own card, acting on the values [ids] as they are.
 class CardWords extends StatelessWidget {
   const CardWords(this.name, this.ids, {super.key, this.more = const []});
   final String name;

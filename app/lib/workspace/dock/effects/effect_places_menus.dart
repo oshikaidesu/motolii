@@ -33,7 +33,7 @@ class EffectPlacesMenus {
   final void Function(List<String> held) saving;
 
   /// Adds a deck from a deck code copied from elsewhere. Effects this machine lacks are kept and marked,
-  /// as Hearthstone does when it reads a deck code.
+  /// does when it reads a deck code.
   Future<void> paste() async {
     final d = deckRead(
       (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '',

@@ -95,7 +95,7 @@ Widget easeHeld(Widget card, double side) {
   );
 }
 
-/// Paints an easing as AbsentMotion's EasingIcons.kt does, in its own square.
+/// Paints an easing EasingIcons.kt does, in its own square.
 /// The icon shows what the easing does rather than its exact curve, which would be too fine to read at this size.
 /// An easing with no drawing of its own is painted as its real curve.
 class EaseIcon extends CustomPainter {

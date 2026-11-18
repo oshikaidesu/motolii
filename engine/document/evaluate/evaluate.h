@@ -112,7 +112,7 @@ struct DocOnStage {
   std::map<int, Cut> cuts;
   // The layers as they are on the stage, and what each was made of.
   std::map<int, DocShownLayer> shown;
-  // Each freehand stroke's outline as AbsentMotion's drawing effects last made
+  // Each freehand stroke's outline drawing effects last made
   // it, together with what it was made from. See doc_evaluate.
   std::map<int, std::pair<std::string, std::string>> drawingKept;
   // The last successfully loaded duration of each video layer, in seconds of

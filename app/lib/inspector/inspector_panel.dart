@@ -33,7 +33,7 @@ int _addAt(InspectorValues doc) {
   return at > 0 ? at : doc.cards.length;
 }
 
-/// The Add Effect row under a layer's effects, as in Alight Motion. It opens the shelf of effects with search ready.
+/// The Add Effect row under a layer's effects. It opens the shelf of effects with search ready.
 class AddEffectRow extends StatelessWidget {
   const AddEffectRow({super.key});
   @override
@@ -89,7 +89,7 @@ class AddEffectRow extends StatelessWidget {
             word('effects-paste', 'Paste', paste),
           if (doc.layer.moreCards.isNotEmpty &&
               doc.actions.onMoreCard != null) ...[
-            // As in Alight Motion, only the cards for the layer's kind show by default. The rest are listed by name here.
+            //, only the cards for the layer's kind show by default. The rest are listed by name here.
             SizedBox(width: Shape.s(10)),
             CardMore(
               name: 'More',

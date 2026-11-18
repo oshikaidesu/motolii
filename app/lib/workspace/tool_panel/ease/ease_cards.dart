@@ -24,7 +24,7 @@ import 'package:motolii/widgets/media.dart' show Draw;
 // Drag data of the tile at the foot of the flow, which stands for all the cards (EaseShapes.onKeep).
 const _all = -1;
 
-/// The flow of cards, top to bottom, each acting on the result above it (like Blender's modifier stack).
+/// The flow of cards, top to bottom, each acting on the result above it.
 /// - An empty dashed slot under the last card shows that another can be added, as in Monster Train.
 /// - The combined result is shown small at the foot. Selecting it makes the graph show the whole stack, which has no handles.
 /// - Selecting a card makes the graph show that card with its handles.

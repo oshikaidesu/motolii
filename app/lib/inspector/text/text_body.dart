@@ -297,7 +297,7 @@ class _TextBodyState extends State<TextBody> {
   String? _before;
   String _sent = '';
 
-  /// Each key typed is written as a step of a drag, as After Effects' stage shows text while it is typed; leaving the
+  /// Each key typed is written as a step of a drag stage shows text while it is typed; leaving the
   /// box ends the drag, so the typing is one undo step.
   void _typing(InspectorValues doc, String text, String now) {
     final was = _before == null ? text : _sent;

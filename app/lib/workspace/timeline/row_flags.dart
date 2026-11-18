@@ -4,7 +4,7 @@ import 'package:motolii/workspace/state/media/timeline_service.dart'
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The hidden, solo and locked switches of the layers of a workspace, and the commands that turn them.
-/// Solo and lock are stored in the project, as in After Effects. Reading a switch reads the last snapshot of the
+/// Solo and lock are stored in the project. Reading a switch reads the last snapshot of the
 /// project, so no engine call is made while a row is built.
 class RowFlags {
   /// The switches of the layers of [workspace].

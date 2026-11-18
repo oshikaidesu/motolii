@@ -190,7 +190,7 @@ class OptionsStrip extends StatelessWidget {
     4 => [
       _seg(c, 'pen.mode', const ['Path', 'Mask']),
     ],
-    // What the user's drag and wheel do, named as After Effects names its camera tools.
+    // What the user's drag and wheel do, named names its camera tools.
     7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],
     6 => [
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),
@@ -218,7 +218,7 @@ class OptionsStrip extends StatelessWidget {
           },
         ),
       ),
-      // The colour sits in the same row, as in Alight Motion's text bar: align, font, size, colour.
+      // The colour sits in the same row text bar: align, font, size, colour.
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),
     ],
   };

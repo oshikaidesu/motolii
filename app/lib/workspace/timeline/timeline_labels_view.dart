@@ -153,7 +153,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                                 onLanes: () => l.kind == LayerKind.group
                                     ? ws.turnGroup(l.id)
                                     : ws.twirl([l.id]),
-                                // Shift takes the rows from the last one picked, as in After Effects; Cmd adds or removes this layer.
+                                // Shift takes the rows from the last one picked; Cmd adds or removes this layer.
                                 onSelect: () => clickLayer(
                                   ws,
                                   l.id,

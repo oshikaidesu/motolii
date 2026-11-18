@@ -31,7 +31,7 @@ double doc_comp_high(Doc& d);
 double doc_layer_ends(Doc& d, int layer);
 
 // The work area is the stretch of the project that is played round and exported
-// as a video, as in After Effects. If it is not set, it is all of the project.
+// as a video. If it is not set, it is all of the project.
 // Marks are named times of the project
 // markers. Both are keyframes of layer 0, the stage itself, and every change to
 // them is an undo step.
@@ -47,12 +47,12 @@ bool doc_work_is(Doc& d, double from, double to);
 // more than one line.
 bool doc_mark(Doc& d, double at, const char* word);
 // Sets a mark's color to one of the sixteen label colors, 1 to 16, or 0 for
-// none, as Premiere Pro's, DaVinci Resolve's and CapCut's markers have one, so
+// none, DaVinci Resolve's and CapCut's markers have one, so
 // that a cut and a hit can be told apart. The color is a keyframe beside the
 // mark's name at its time. Fails if there is no mark at that time.
 bool doc_mark_colour(Doc& d, double at, int colour);
 // Adds or removes a guide: a line across the image at a place, in points of it,
-// like After Effects' composition guides. Axis x is an upright line that far
+// composition guides. Axis x is an upright line that far
 // from the left, and axis y is a level line that far from the top. Guides are
 // keyframes of the stage, and a change to them is an undo step.
 bool doc_guide(Doc& d, const char* axis, double at, bool on);

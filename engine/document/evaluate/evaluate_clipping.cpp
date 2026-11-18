@@ -282,7 +282,7 @@ void layer_clipped(Doc& d, int layer, DocShownLayer& t,
 // uses Filament's scissor on the layer's materials, set to the rectangle that
 // the previous layer covers now. When that layer is turned or leaning, the
 // rectangle is the upright box around it.
-// A group made to mask, through its Null's group_mask as in Alight Motion's
+// A group made to mask, through its Null's group_mask
 // Group and Mask and Group and Exclude, works the same way. Its top layer is
 // the shape and is not seen itself. The other layers in the group are seen
 // inside it, or outside it to exclude.

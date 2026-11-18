@@ -1,12 +1,5 @@
-// The list of places the Effects shelf can look in: All, Recent, Favorites, In This Video, user decks and packs.
-// It sits beside or over the tiles and has the shape of the Media shelf's folder tree (media/media_shelf.dart).
-// Ableton's browser sidebar lists its Collections this way, Final Cut's Effects browser its categories,
-// Spotify its Library and Premiere its bins.
-// Clicking a row shows what it holds among the tiles, and the search and the kinds narrow the result within it.
-// A pack is never a chip beside the kinds.
-// Over the tiles, where the shelf is narrow, the list folds to a single row that says where the shelf is looking.
-// Clicking a place there gives the shelf to its contents, and clicking the row brings the list back.
-// Alight Motion's browser moves between its categories and a category's effects in the same way (EffectBrowser.kt: 105, 197, 247).
+// The effects shelf's place list: All, Recent, Favorites, In This Video, user decks and packs.
+// When narrow, folds to one row; tap to expand.
 import 'package:motolii/workspace/dock/effects/effect_places_menus.dart';
 import 'package:flutter/widgets.dart';
 
@@ -22,10 +15,9 @@ import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-/// The height of the list when it stands over the tiles. A double-click on its grip resets to this.
+/// Default height when over the tiles. Double-click the grip to reset.
 const defaultEffectListHeight = 176.0;
 
-/// The list of places the Effects shelf looks in. See the file header.
 class EffectPlaces extends StatefulWidget {
   const EffectPlaces(
     this.c, {
@@ -70,7 +62,7 @@ class EffectPlaces extends StatefulWidget {
   /// On the map, the effects the open deck holds, shown under its row.
   final List<Widget> held;
 
-  /// A deck's cover picture made of its first four effects, like a Spotify playlist cover.
+  /// A deck's cover picture made of its first four effects.
   final Map<String, Widget> covers;
   @override
   State<EffectPlaces> createState() => EffectPlacesState();
@@ -78,11 +70,11 @@ class EffectPlaces extends StatefulWidget {
 
 class EffectPlacesState extends State<EffectPlaces> {
   final _menu = GlobalKey<ContextMenuState>();
-  // The deck whose name, or search words, is being edited in its row, as with a Finder folder.
+  // The deck whose name or search words is being edited inline.
   EffectDeck? _naming;
   // _folded: whether the list was folded before naming began, so it can fold again afterwards.
   bool _search = false, _folded = false;
-  // The Favorites going into the deck being named. They are cleared once it is named, as in Lightroom's Save.
+  // Favorites to move into the deck once it is named. Cleared after naming.
   List<String>? _saving;
   // What is typed in the field right now, so the hint can show while it is empty.
   final _typed = ValueNotifier<String>('');
@@ -126,10 +118,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     _saving = null;
   }
 
-  /// Adds a new deck and starts editing its name at once, like a new bin in Premiere or a new folder in Finder.
-  /// [thing] is put in the new deck. The list of decks on an effect ends in this entry, as with YouTube's Save
-  /// and Spotify's Add to Playlist. [words] is saved as the deck's search, so effects that appear later join it too
-  /// (Lightroom's Create Smart Collection, Ableton's Add Label). When made from the +, the new deck is opened.
+  /// Adds a new deck and starts editing its name at once.
+  /// [words] is saved as the deck's search, so matching effects join automatically.
   void newDeck({DeckThing? thing, String words = ''}) {
     final c = widget.c,
         d = EffectDeck(
@@ -151,7 +141,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
   }
 
-  /// The menus' items; this list opens them where the pointer was and owns the naming field.
+  /// The menus' items. This list owns the naming field.
   late final menus = EffectPlacesMenus(
     c: widget.c,
     known: widget.known,
@@ -169,7 +159,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     menus.plus(),
   );
 
-  // The name field, edited inside the row as the Create shelf does for a tile's name.
+  // Inline name field for a deck row.
   Widget _field(EffectDeck d) => Container(
     color: Grey.g91,
     padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
@@ -190,7 +180,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   )
                 : const SizedBox(),
           ),
-        // The app's one text field: it takes the focus with the text selected, Return or clicking away says the text, Esc says null.
+        // Return commits, Esc cancels (says null).
         TypedField(
           key: const ValueKey('ws-fx-naming'),
           text: _search ? d.words : d.name,
@@ -210,7 +200,7 @@ class EffectPlacesState extends State<EffectPlaces> {
   EffectDeck? _deckAt(String place) =>
       widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
 
-  /// What a row shows: its name, its glyph and its count.
+  /// Name, glyph and count for a row.
   (String, AppGlyphs, int?) _said(String place) {
     final p = widget.counts, deck = _deckAt(place);
     return switch (place) {
@@ -223,7 +213,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         deck.name,
         deck.words.isEmpty ? AppGlyphs.list : AppGlyphs.search,
         widget.decks[deck],
-      ), // A deck that finds by search words has its own glyph, as Lightroom's smart collection differs from a plain one.
+      ),
       _ when place.startsWith('/') => (
         place.substring(1),
         AppGlyphs.folder,
@@ -233,9 +223,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     };
   }
 
-  /// One row, built on the Media shelf's folder row (folderRow). Clicking it shows what it holds.
-  /// [cover] is a deck's picture; the row then looks like a playlist in Spotify's library
-  /// (cover, name, and the count under it).
+  /// One row. [cover] is a deck's picture.
   Widget _row(
     String place, {
     int depth = 0,
@@ -251,7 +239,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         to = effectTarget();
     final (name, g, n) = _said(place);
     final aim = place == (to == null ? '★' : '@${to.name}');
-    // The target deck is marked with a + after its name, as in Lightroom. The + stays when a long name is cut short.
+    // The target deck is marked with a + after its name.
     Widget named(TextStyle s) => Row(
       children: [
         Flexible(
@@ -295,8 +283,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     ),
   );
 
-  /// Makes the row accept a dragged tile. Dropped on [d] it goes into that deck. Dropped on the Favorites ([d] null)
-  /// it is starred, like a track dropped on a Spotify playlist or on Liked Songs.
+  /// Makes the row accept a dragged tile. Dropped on [d] → into that deck; on Favorites ([d] null) → starred.
   Widget _into(EffectDeck? d, Widget Function(bool over) row) =>
       DragTarget<VoidCallback>(
         onWillAcceptWithDetails: (o) => widget.carried[o.data] != null,
@@ -311,8 +298,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         builder: (context, over, _) => row(over.isNotEmpty),
       );
 
-  /// On the map, the effects the open deck holds, shown under its row like Hearthstone's deck list beside its collection.
-  /// A dragged effect dropped on it is added. While the deck is empty it shows how to add one.
+  /// On the map, the open deck's effects shown under its row. Drop to add.
   Widget _held(EffectDeck? d) => _into(
     d,
     (over) => ColoredBox(
@@ -356,7 +342,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                 widget.mapped &&
                 (deck != null || c.mem.fxPlace == '★')
             ? Column(
-                // Folded to the open deck on the map, with what it holds below, as the browser goes into a category and back.
+                // Folded to the open deck on the map, with its effects below.
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _into(
@@ -382,7 +368,7 @@ class EffectPlacesState extends State<EffectPlaces> {
               )
             : widget.narrow && !c.mem.fxListOpen
             ? DragTarget<VoidCallback>(
-                // A tile dragged over it opens the list so the tile can be dropped on a deck, like Finder's spring-loaded folders.
+                // Dragging over it opens the list so the tile can drop on a deck.
                 onWillAcceptWithDetails: (_) {
                   c.set(() => c.mem.fxListOpen = true);
                   return false;

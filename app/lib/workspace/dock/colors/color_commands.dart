@@ -28,7 +28,7 @@ class ColorCommands {
     return pickedLetters(wordOf(c.ws, t, 'text'), wordsPicked.value);
   }
 
-  /// Colors some letters of a text layer and leaves the rest alone, as Figma, Canva, PowerPoint, Keynote
+  /// Colors some letters of a text layer and leaves the rest alone, Canva, PowerPoint, Keynote
   /// and After Effects' Character panel do for selected characters: one range of the layer's text_styles
   /// sets their CSS color (see inspector/text/text_ranges.dart).
   void _fillLetters(int t, ({int start, int count}) at, String word) {

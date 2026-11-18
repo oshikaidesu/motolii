@@ -6,7 +6,7 @@
 // - They are cached in ~/Library/Caches/Motolii/tiles, named by the file path and its modification time.
 // - TileMoving plays them under the pointer.
 // A tile shows the head of the Repeater recipe (create/repeats/repeater.js): a circle with five copies. The file's own
-// header lines change it: "// make shape", "// set size" and "// set copies". After Effects expressions work in the
+// header lines change it: "// make shape", "// set size" and "// set copies".
 // pixels of a composition, here a 1080 square. The file's expression (fx_file) is then applied to that layer.
 // If the engine rejects the expression (a SyntaxError), the tile is marked and keeps its glyph.
 import 'package:motolii/bridge/motolii.dart';

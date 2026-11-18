@@ -225,7 +225,7 @@ extension MotoliiDocument on Motolii {
   /// Canvas points per stage unit at z = 0.
   double get point => (documentSnapshot['point'] as num?)?.toDouble() ?? 1;
 
-  /// Total time spent editing the project, in whole seconds (like Alight Motion's Total Edit Time; see doc_edited).
+  /// Total time spent editing the project, in whole seconds.
   int get edited => ((documentSnapshot['edited'] as num?) ?? 0).round();
 
   /// How a stored value converts to the displayed one: shown = value * scale + offset, returned as (scale, offset).

@@ -105,7 +105,7 @@ bool doc_parent(Doc& d, int layer, double to) {
 }
 bool doc_key_here(Doc& d, int layer, const char* name, double at) {
   if (!doc_knows(d, layer, name, nullptr, nullptr, true)) return false;
-  // Like After Effects' Enable Time Remapping: add a keyframe at the layer's
+  // Enable Time Remapping: add a keyframe at the layer's
   // start and one at its end, each holding the layer's own time there. All of
   // it is one undo step.
   if (!strcmp(name, "time_remap") && !doc_keys(d, layer, name)) {

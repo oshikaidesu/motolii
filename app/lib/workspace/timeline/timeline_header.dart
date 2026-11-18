@@ -341,7 +341,7 @@ class _RoundButton extends StatelessWidget {
   );
 }
 
-/// The project's tempo, shown beside the frame rate as in Ableton Live's Control Bar.
+/// The project's tempo, shown beside the frame rate Control Bar.
 /// Clicking it lets the user type a value. Tap sets it from presses made in time with the beat; more presses give a more
 /// accurate value (see "Tapping the Tempo" in the Live manual). With no tempo set, no beats are shown.
 class _Tempo extends StatefulWidget {

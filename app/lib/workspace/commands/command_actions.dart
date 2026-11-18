@@ -29,7 +29,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
   }
 
   /// Moves the selected keyframes by [by] frames, else the selected layer's bar. With nothing selected it moves the playhead.
-  /// Live 42.16: Nudge Selection Left/Right. Live moves its insert marker the same way.
+  /// Live 42.16: Nudge Selection Left/Right.
   void nudge(int by) {
     if (!projectOpen(ws)) return;
     if (ws.keys.isNotEmpty) {

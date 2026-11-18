@@ -159,7 +159,7 @@ void edged_photo(LayerBuild& build, float aspect, bool cropped, double cl,
   const Canvas2DFx& fx = build.fx;
   // A photo with an edge, rounded corners or a crop is drawn as a
   // rectangle as wide as the photo, with the photo file as its fill, as a
-  // shape filled with media is. Alight Motion's media layers take a
+  // shape filled with media is.
   // border as its shapes do.
   Canvas2DFx own = fx;
   own.media = file;

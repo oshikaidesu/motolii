@@ -219,7 +219,7 @@ void doc_layers_fx(Doc& d) {
               std::string::npos) {
         // The step of the layer's Motion Blur: as far, and in the same
         // direction, as the layer's middle moves while its shutter is open, in
-        // pixels of its image. This is like AbsentMotion's quick smear. It
+        // pixels of its image. This is quick smear. It
         // applies only when the effect comes from the Motion Blur setting and
         // is not named in the layer's fx.
         double open = 0.0, was[8], is[8];
@@ -271,7 +271,7 @@ void doc_layers_fx(Doc& d) {
         const bool found = !doc_holds_fx(d, layer) &&
                            doc_seen_box(d, layer, d.stage->now, seen);
         // Where the layer is seen, limited to the part on the stage, is its
-        // image, as in After Effects. Add room around it for what its effects
+        // image. Add room around it for what its effects
         // draw outside it: a margin of 128 pixels.
         if (found) {
           const double m = 128.0 / thing_fx_ppp(s);
@@ -287,7 +287,7 @@ void doc_layers_fx(Doc& d) {
         e.st.frame[3] = 1;
         const bool shown = found && !e.shell && !e.st.wide;
         // Normally the frame is the box where the layer is seen, as shares of
-        // the stage, and the image covers the whole stage. AbsentMotion's
+        // the stage, and the image covers the whole stage.
         // effects are cut by the scene in the same way
         // (engine/third_party/AbsentMotion/app/src/main/cpp/effects.cpp,
         // EffectRuntime::draw).

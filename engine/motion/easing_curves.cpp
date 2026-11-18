@@ -25,7 +25,7 @@ double interp_smoothstep(double edge0, double edge1, double x) {
 // Bounce easing. p[0] is the length of the first bounce and p[1] the factor by
 // which each following bounce shrinks. Returns the eased value for progress u.
 // This matches Alight Motion (as implemented in AbsentMotion,
-// absent_motion.cpp) except in one case. Alight Motion does not draw a bounce
+// absent_motion.cpp) except in one case.
 // that would end after the span, however high it is, so the room left at the
 // end of the span stays flat and the value looks stuck short of the target.
 // Here a final, lower bounce is fitted into that room, so the value lands on
