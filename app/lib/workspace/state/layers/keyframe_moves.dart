@@ -18,13 +18,19 @@ typedef SlideEntry = ({
 
 /// Snapshots which properties each selected keyframe carries, their values and
 /// easings. Called once at drag start; the returned list drives every step.
-List<SlideEntry> cacheSlide(Motolii m, Iterable<SelectedKeyframe> keys) {
+/// With [property], only that property is cached (lane stretch drag).
+List<SlideEntry> cacheSlide(
+  Motolii m,
+  Iterable<SelectedKeyframe> keys, {
+  String? property,
+}) {
   final out = <SlideEntry>[];
   for (final k in keys) {
     final t = k.layer;
     final at = k.frame / WorkspaceController.fps;
     final props = <({String name, double value, String easing})>[];
-    for (final n in m.moving(t)) {
+    final names = property != null ? [property] : m.moving(t);
+    for (final n in names) {
       if (!m
           .keyTimes(t, n)
           .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {

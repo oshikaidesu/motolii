@@ -117,10 +117,12 @@ Iterable<int> slideKeyframeWrites(
 ) => slideWrites(ws.inside!, keys, by);
 
 /// Snapshots which properties each selected keyframe carries. Called once at drag start.
+/// With [property], only that property is cached (lane stretch drag).
 List<SlideEntry> cacheSelectedSlide(
   WorkspaceController ws,
-  List<SelectedKeyframe> keys,
-) => cacheSlide(ws.inside!, keys);
+  List<SelectedKeyframe> keys, {
+  String? property,
+}) => cacheSlide(ws.inside!, keys, property: property);
 
 /// Length of [file] in seconds (0 for images or unreadable files).
 Future<double> filmSeconds(WorkspaceController ws, String file) =>

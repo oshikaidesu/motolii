@@ -472,7 +472,11 @@ class TrackDrag extends ChangeNotifier {
         if (!ws.keys.contains(held)) ws.pickKey(held);
         if (ws.playing) ws.playing = false;
         _slide = (keys: all, grab: frame, by: 0);
-        _slideCache = timeline_service.cacheSelectedSlide(ws, all);
+        _slideCache = timeline_service.cacheSelectedSlide(
+          ws,
+          all,
+          property: name,
+        );
         _targets = ws.snapTargets(skip: {r.l.id});
         return true;
       }
@@ -489,7 +493,11 @@ class TrackDrag extends ChangeNotifier {
           ];
           if (ws.playing) ws.playing = false;
           _slide = (keys: both, grab: f.round(), by: 0);
-          _slideCache = timeline_service.cacheSelectedSlide(ws, both);
+          _slideCache = timeline_service.cacheSelectedSlide(
+            ws,
+            both,
+            property: name,
+          );
           _targets = ws.snapTargets(skip: {r.l.id});
           return true;
         }
