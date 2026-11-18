@@ -422,10 +422,9 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   for (auto& [who, h] : m->playback.heard) heard_off(h);
   if (m->display.beat) m->display.beat->stop();
   if (m->d) sqlite3_close(m->d->file);
-  // Teardown on the engine thread. The feature flag disables Filament's debug
-  // assert that materials are destroyed before their instances.
+  // Teardown on the engine thread. The engine is shared across stages so it
+  // outlives this stage; only per-stage resources are destroyed.
   if (m->s && m->s->engine) {
-    // interop::Screen must be released before Engine::destroy.
     for (interop::Screen* sc : m->s->edge_screens)
       if (sc) interop::drop(m->s->engine, sc);
     if (m->s->place_copy) interop::drop(m->s->engine, m->s->place_copy);
@@ -433,7 +432,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       if (m->s->place_tone[k]) interop::drop(m->s->engine, m->s->place_tone[k]);
     m->s->engine->setFeatureFlag(
         "engine.debug.assert_destroy_material_before_material_instance", false);
-    filament::Engine::destroy(&m->s->engine);
+    close_stage(*m->s);
   }
 }
 

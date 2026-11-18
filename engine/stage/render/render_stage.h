@@ -240,6 +240,10 @@ struct Stage {
 // Creates the engine, scene, views and camera of a stage w by h pixels.
 Stage open_stage(int w, int h);
 
+// Destroys the per-Stage Filament resources (renderer, scene, views, cameras,
+// textures) so the shared engine can outlive the stage.
+void close_stage(Stage& s);
+
 // Switches viewports between the preview panel (on=true) and the stage
 // (on=false). Matte cameras are left as they are.
 void desk_lay(Stage& s, bool on);

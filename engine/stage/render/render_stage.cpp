@@ -12,6 +12,7 @@
 #include <utils/Panic.h>
 
 #include <fstream>
+#include <mutex>
 
 #include "base/file_read.h"
 
@@ -50,26 +51,31 @@ backend::BufferDescriptor copied(const void* from, size_t bytes) {
       copy, bytes, [](void* buffer, size_t, void*) { free(buffer); });
 }
 
+// One Filament engine for the process. Dawn's WebGPU backend crashes when two
+// engines share the same GPU device, so every Stage borrows this one.
+static Engine* shared_engine = nullptr;
+static std::mutex engine_mutex;
+
 Stage open_stage(int w, int h) {
   Stage s{w, h};
-  // BACKEND=webgpu selects Filament's WebGPU backend, Dawn, which is the way to
-  // Windows. It needs Filament built from source, see gpu/filament_webgpu.sh.
   const char* backend = getenv("BACKEND");
-  // A Filament panic ends the app; Filament's own hook (utils/Panic.h) writes why before it does, from any thread.
   utils::Panic::setPanicHandler(
       [](void*, utils::Panic const& p) {
         fprintf(stderr, "Filament panic: %s\n", p.what());
       },
       nullptr);
-  s.engine = Engine::Builder()
-                 .backend(backend && !strcmp(backend, "webgpu")
-                              ? Engine::Backend::WEBGPU
-                              : Engine::Backend::METAL)
-                 .build();
-  // An image that does nothing to its colours gets them through exactly.
-  // Filament may then use its one-dimensional lookup table instead of a coarse
-  // block of values. With the block a white of 255 comes out as 249.
-  s.engine->setFeatureFlag("engine.color_grading.use_1d_lut", true);
+  {
+    std::lock_guard<std::mutex> lock(engine_mutex);
+    if (!shared_engine) {
+      shared_engine = Engine::Builder()
+                          .backend(backend && !strcmp(backend, "webgpu")
+                                       ? Engine::Backend::WEBGPU
+                                       : Engine::Backend::METAL)
+                          .build();
+      shared_engine->setFeatureFlag("engine.color_grading.use_1d_lut", true);
+    }
+  }
+  s.engine = shared_engine;
   s.renderer = s.engine->createRenderer();
   s.scene = s.engine->createScene();
   s.view = s.engine->createView();
@@ -131,6 +137,62 @@ Stage open_stage(int w, int h) {
   s.view_behind->setPostProcessingEnabled(false);
   s.view_behind->setScreenSpaceRefractionEnabled(false);
   return s;
+}
+
+void close_stage(Stage& s) {
+  if (!s.engine) return;
+  Engine* e = s.engine;
+  e->flushAndWait();
+  // Renderables.
+  for (auto& r : s.renderables) {
+    if (r.many) e->destroy(r.many);
+    e->destroy(r.thing);
+  }
+  s.renderables.clear();
+  // Mattes.
+  for (auto& m : s.mattes) {
+    if (m.view) m.view->setRenderTarget(nullptr), e->destroy(m.view);
+    if (m.frameTexture) e->destroy(m.frameTexture);
+    if (m.scene) e->destroy(m.scene);
+    if (m.eyeOwned) {
+      e->destroyCameraComponent(m.eyeOwned);
+      utils::EntityManager::get().destroy(m.eyeOwned);
+    }
+  }
+  s.mattes.clear();
+  s.cuts.clear();
+  // Materials.
+  for (auto& [name, mat] : s.materials) e->destroy(mat);
+  s.materials.clear();
+  if (s.white) e->destroy(s.white), s.white = nullptr;
+  // God camera.
+  if (s.god) {
+    auto ge = s.god->getEntity();
+    e->destroyCameraComponent(ge);
+    utils::EntityManager::get().destroy(ge);
+    s.god = nullptr;
+  }
+  // view_through.
+  if (s.view_through) e->destroy(s.view_through), s.view_through = nullptr;
+  if (s.through) e->destroy(s.through), s.through = nullptr;
+  if (s.through_depth) e->destroy(s.through_depth), s.through_depth = nullptr;
+  // view_behind (its anonymous RenderTarget leaks — metadata only).
+  if (s.view_behind) e->destroy(s.view_behind), s.view_behind = nullptr;
+  if (s.behind) e->destroy(s.behind), s.behind = nullptr;
+  if (s.behindDepth) e->destroy(s.behindDepth), s.behindDepth = nullptr;
+  // Film camera.
+  e->destroyCameraComponent(s.filmEntity);
+  utils::EntityManager::get().destroy(s.filmEntity);
+  // Working camera.
+  auto ce = s.camera->getEntity();
+  e->destroyCameraComponent(ce);
+  utils::EntityManager::get().destroy(ce);
+  // Core.
+  e->destroy(s.swap);
+  e->destroy(s.view);
+  e->destroy(s.scene);
+  e->destroy(s.renderer);
+  s.engine = nullptr;
 }
 
 void desk_lay(Stage& s, bool on) {
