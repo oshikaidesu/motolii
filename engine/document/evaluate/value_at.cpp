@@ -44,6 +44,21 @@ void doc_forget(Doc& d) {
 
 void doc_forget_keys(Doc& d, int layer) {
   d.value_cache.moving.erase(layer);
+  // literals stores pointers into moving; erase them too or they dangle.
+  for (auto it = d.value_cache.literals.begin();
+       it != d.value_cache.literals.end();) {
+    if (it->first.first == layer)
+      it = d.value_cache.literals.erase(it);
+    else
+      ++it;
+  }
+  for (auto it = d.value_cache.heardWords.begin();
+       it != d.value_cache.heardWords.end();) {
+    if (it->first.first == layer)
+      it = d.value_cache.heardWords.erase(it);
+    else
+      ++it;
+  }
   for (auto it = d.value_cache.keyed.begin();
        it != d.value_cache.keyed.end();) {
     if (it->first.first == layer)
