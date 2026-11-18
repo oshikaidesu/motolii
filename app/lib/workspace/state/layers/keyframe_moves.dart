@@ -42,6 +42,30 @@ List<SlideEntry> cacheSlide(Motolii m, Iterable<SelectedKeyframe> keys) {
   return out;
 }
 
+/// Packs a list of (from, to) moves into the tab-delimited format that the
+/// engine's "slide_keys" call reads, and sends it in one FFI call.
+Iterable<int> _slideKeysPacked(
+  Motolii m,
+  List<SlideEntry> cache,
+  List<double> fromTimes,
+  List<double> toTimes,
+) {
+  final buf = StringBuffer();
+  var i = 0;
+  for (final e in cache) {
+    for (final p in e.props) {
+      buf.write(
+        '${e.layer}\t${p.name}\t${fromTimes[i]}\t${toTimes[i]}\t${p.value}',
+      );
+      if (p.easing.isNotEmpty) buf.write('\t${p.easing}');
+      buf.writeln();
+    }
+    i++;
+  }
+  m.later('slide_keys', word: buf.toString());
+  return {for (final e in cache) e.layer};
+}
+
 /// Writes the cached keyframes at their new positions. [slid] is how far they
 /// have been moved so far; [by] is the new total offset from their original
 /// positions. Returns the layers that changed.
@@ -52,35 +76,13 @@ Iterable<int> cachedSlideWrites(
   int by,
 ) {
   if (by == slid) return const [];
-  final dur = WorkspaceController.duration;
-  for (final e in cache) {
-    final from = (e.frame + slid).clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later('unkey', layer: e.layer, name: p.name, number: from);
-    }
-  }
-  for (final e in cache) {
-    final to = (e.frame + by).clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later(
-        'key',
-        layer: e.layer,
-        name: p.name,
-        word: '$to',
-        number: p.value,
-      );
-      if (p.easing.isNotEmpty) {
-        m.later(
-          'easing',
-          layer: e.layer,
-          name: p.name,
-          number: to,
-          word: p.easing,
-        );
-      }
-    }
-  }
-  return {for (final e in cache) e.layer};
+  final dur = WorkspaceController.duration, fps = WorkspaceController.fps;
+  return _slideKeysPacked(
+    m,
+    cache,
+    [for (final e in cache) (e.frame + slid).clamp(0, dur) / fps],
+    [for (final e in cache) (e.frame + by).clamp(0, dur) / fps],
+  );
 }
 
 /// Writes a staggered slide: each keyframe's offset is spread proportionally to
@@ -96,39 +98,20 @@ Iterable<int> staggerSlideWrites(
   if (cache.length < 2) {
     return cachedSlideWrites(m, cache, slid?.firstOrNull ?? 0, by);
   }
-  final dur = WorkspaceController.duration;
+  final dur = WorkspaceController.duration, fps = WorkspaceController.fps;
   final n = cache.length - 1;
-  for (var i = 0; i < cache.length; i++) {
-    final e = cache[i], prev = slid?[i] ?? 0;
-    final from = (e.frame + prev).clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later('unkey', layer: e.layer, name: p.name, number: from);
-    }
-  }
-  for (var i = 0; i < cache.length; i++) {
-    final e = cache[i];
-    final offset = (by * i / n).round();
-    final to = (e.frame + offset).clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later(
-        'key',
-        layer: e.layer,
-        name: p.name,
-        word: '$to',
-        number: p.value,
-      );
-      if (p.easing.isNotEmpty) {
-        m.later(
-          'easing',
-          layer: e.layer,
-          name: p.name,
-          number: to,
-          word: p.easing,
-        );
-      }
-    }
-  }
-  return {for (final e in cache) e.layer};
+  return _slideKeysPacked(
+    m,
+    cache,
+    [
+      for (var i = 0; i < cache.length; i++)
+        (cache[i].frame + (slid?[i] ?? 0)).clamp(0, dur) / fps,
+    ],
+    [
+      for (var i = 0; i < cache.length; i++)
+        (cache[i].frame + (by * i / n).round()).clamp(0, dur) / fps,
+    ],
+  );
 }
 
 /// Writes a stretch (proportional scale) of cached keyframes about [anchor].
@@ -141,36 +124,16 @@ Iterable<int> stretchSlideWrites(
   double scale,
   int slid,
 ) {
-  final dur = WorkspaceController.duration;
-  for (final e in cache) {
-    final from = (e.frame + slid).clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later('unkey', layer: e.layer, name: p.name, number: from);
-    }
-  }
-  for (final e in cache) {
-    final scaled = anchor + ((e.frame - anchor) * scale).round();
-    final to = scaled.clamp(0, dur) / WorkspaceController.fps;
-    for (final p in e.props) {
-      m.later(
-        'key',
-        layer: e.layer,
-        name: p.name,
-        word: '$to',
-        number: p.value,
-      );
-      if (p.easing.isNotEmpty) {
-        m.later(
-          'easing',
-          layer: e.layer,
-          name: p.name,
-          number: to,
-          word: p.easing,
-        );
-      }
-    }
-  }
-  return {for (final e in cache) e.layer};
+  final dur = WorkspaceController.duration, fps = WorkspaceController.fps;
+  return _slideKeysPacked(
+    m,
+    cache,
+    [for (final e in cache) (e.frame + slid).clamp(0, dur) / fps],
+    [
+      for (final e in cache)
+        (anchor + ((e.frame - anchor) * scale).round()).clamp(0, dur) / fps,
+    ],
+  );
 }
 
 /// The writes that slide [keys] by [by] frames, for [WorkspaceController.live] to apply at each step of a drag.
@@ -202,7 +165,7 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
     }
   }
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', layer: t, name: n, number: at); // All are removed first so that a keyframe slid onto another's old time is not lost.
+    m.later('unkey', layer: t, name: n, number: at);
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', layer: t, name: n, word: '$to', number: v);

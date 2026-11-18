@@ -372,6 +372,39 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           ok = changes(m, (int)doc_stay(doc(m), layer, n.c_str(), number));
         else if (c == "easing")
           ok = easing_is(m, layer, n.c_str(), number, w.c_str());
+        // word: packed entries, one per line:
+        //   "layer\tprop\tfrom\tto\tvalue\teasing\n..."
+        // Each entry moves a keyframe: unkey at from, key at to with value,
+        // then set easing at to. All entries in one pass, as Lumit's
+        // slide_layers does. The app caches the property data at drag start
+        // and sends only time deltas here.
+        else if (c == "slide_keys") {
+          Doc& d = doc(m);
+          ok = 1;
+          std::istringstream lines(w);
+          std::string line;
+          // First pass: unkey all at their old positions.
+          std::vector<std::tuple<int, std::string, double, double, double,
+                                 std::string>>
+              entries;
+          while (std::getline(lines, line)) {
+            if (line.empty()) continue;
+            int t = 0;
+            char prop[128] = {}, easing[256] = {};
+            double from = 0, to = 0, val = 0;
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%lf\t%255s",
+                            &t, prop, &from, &to, &val, easing) >= 5) {
+              entries.emplace_back(t, prop, from, to, val,
+                                   easing[0] ? easing : "");
+            }
+          }
+          for (const auto& [t, prop, from, to, val, easing] : entries)
+            doc_unkey(d, t, prop.c_str(), from);
+          for (const auto& [t, prop, from, to, val, easing] : entries) {
+            doc_key(d, t, prop.c_str(), to, val);
+            if (!easing.empty()) doc_easing(d, t, prop.c_str(), to, easing.c_str());
+          }
+        }
         // name: the easing. word: its SQL expression.
         else if (c == "define")
           ok = define_is(m, n.c_str(), w.c_str());
