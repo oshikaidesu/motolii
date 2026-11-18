@@ -1,4 +1,4 @@
-// What the user has selected (Selection): a layer, several layers together, keyframes, a stretch between two keyframes,
+// What the user has selected (Selection): a layer, several layers together, keyframes, stretches between keyframes,
 // and the property a picked colour is written to.
 import 'package:flutter/foundation.dart' show VoidCallback;
 
@@ -7,7 +7,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
 
-/// What is selected in the window: one layer, the layers selected together, keyframes and one stretch between two keyframes.
+/// What is selected in the window: one layer, the layers selected together, keyframes and stretches between keyframes.
 class Selection {
   /// Creates an empty selection.
   /// [onChanged] is called after every change. [onLayerSelected] is called when a call selects a layer (alone, or
@@ -48,12 +48,13 @@ class Selection {
   /// The selected keyframes.
   Set<SelectedKeyframe> get keys => _keys;
 
-  /// The stretch selected by clicking its line, like Theatre.js's connector between two keyframes
-  /// (BasicKeyframeConnector.tsx, Apache-2.0). It belongs to one property, whereas a keyframe covers every property at that time.
-  StretchPicked? _stretch;
+  final _stretches = <StretchPicked>{};
 
-  /// The selected stretch between two keyframes of one property, or null when none is.
-  StretchPicked? get stretch => _stretch;
+  /// The selected stretches between keyframes.
+  Set<StretchPicked> get stretches => _stretches;
+
+  /// The first selected stretch, for single-stretch consumers.
+  StretchPicked? get stretch => _stretches.firstOrNull;
 
   /// Selects the layer [id], or clears the selection when null.
   void select(int? id) {
@@ -63,7 +64,7 @@ class Selection {
     lead = null;
     _aim = null;
     _keys.clear();
-    _stretch = null;
+    _stretches.clear();
     _onLayerSelected();
     _onChanged();
   }
@@ -82,7 +83,7 @@ class Selection {
   void pickKey(SelectedKeyframe k, {bool add = false}) {
     if (!add) _keys.clear();
     _keys.add(k);
-    _stretch = null;
+    _stretches.clear();
     _selected = k.layer;
     _onLayerSelected();
     _onChanged();
@@ -93,17 +94,17 @@ class Selection {
     _keys
       ..clear()
       ..addAll(ks);
-    _stretch = null;
+    _stretches.clear();
     if (_keys.isNotEmpty) _selected = _keys.first.layer;
     _onLayerSelected();
     _onChanged();
   }
 
-  /// Deselects all keyframes and the selected stretch.
+  /// Deselects all keyframes and stretches.
   void clearKeys() {
-    if (_keys.isEmpty && _stretch == null) return;
+    if (_keys.isEmpty && _stretches.isEmpty) return;
     _keys.clear();
-    _stretch = null;
+    _stretches.clear();
     _onChanged();
   }
 
@@ -123,14 +124,20 @@ class Selection {
           );
   }
 
-  /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
-  void pickStretch(int layer, String name, int from) {
-    _keys.clear();
-    _stretch = _stretchOf(layer, name, from);
-    _selected = layer;
-    _onLayerSelected();
+  /// Selects a stretch, or adds it to the selection when [add] is true. Shows the Ease panel.
+  void pickStretch(int layer, String name, int from, {bool add = false}) {
+    if (!add) {
+      _keys.clear();
+      _stretches.clear();
+    }
+    final s = _stretchOf(layer, name, from);
+    if (s != null) {
+      _stretches.add(s);
+      _selected = layer;
+      _onLayerSelected();
+    }
     _onChanged();
-    if (_stretch != null) _onStretchSelected();
+    if (s != null) _onStretchSelected();
   }
 
   String? _aim;
@@ -155,6 +162,13 @@ class Selection {
     _keys.removeWhere(
       (k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)),
     );
-    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);
+    final updated = <StretchPicked>{};
+    for (final s in _stretches) {
+      final rebuilt = _stretchOf(s.layer, s.name, s.from);
+      if (rebuilt != null) updated.add(rebuilt);
+    }
+    _stretches
+      ..clear()
+      ..addAll(updated);
   }
 }

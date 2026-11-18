@@ -68,7 +68,8 @@ class EaseTool extends StatefulWidget {
 /// The properties of the span's layer that have a keyframe where the span begins, each with the time of that keyframe.
 Map<String, double> keysAt(WorkspaceController ws, EaseSpan span) {
   // When a single property line is selected, only that property counts.
-  if (ws.stretch case final s?) return {s.name: s.at};
+  if (ws.stretches.isNotEmpty)
+    return {for (final s in ws.stretches) s.name: s.at};
   // The result is cached and recomputed only when the document is read again, not on every frame of playback.
   if (_keysAtOf[ws] case (final r, final id, final f, final at)
       when r == ws.reads && id == span.layer.id && f == span.from) {

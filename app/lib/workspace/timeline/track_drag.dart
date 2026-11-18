@@ -320,7 +320,14 @@ class TrackDrag extends ChangeNotifier {
     }
     final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1,
         between = from != null && pts.any((q) => q.$1 > f);
-    between ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
+    if (between) {
+      final add =
+          HardwareKeyboard.instance.isShiftPressed ||
+          HardwareKeyboard.instance.isMetaPressed;
+      ws.pickStretch(r.l.id, name, from, add: add);
+    } else {
+      ws.clearKeys();
+    }
   }
 
   /// Press: select keyframe or layer, or clear.
@@ -470,7 +477,10 @@ class TrackDrag extends ChangeNotifier {
         return true;
       }
       // Inside a selected stretch: slide both boundary keyframes together.
-      if (ws.stretch case final s? when s.layer == r.l.id && s.name == name) {
+      if (ws.stretches
+              .where((s) => s.layer == r.l.id && s.name == name)
+              .firstOrNull
+          case final s?) {
         final f = v.frameAt(p.dx);
         if (f >= s.from && f <= s.to) {
           final both = [

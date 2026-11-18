@@ -14,8 +14,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 // The segments of every picked keyframe, on any layer, one for each property keyed there.
 // A last keyframe has no segment after it, so the segment ending at it is used.
 List<(int, String, double)> easeStretches(WorkspaceController ws) => [
-  if (ws.stretch case final s?)
-    (s.layer, s.name, s.at)
+  if (ws.stretches.isNotEmpty)
+    for (final s in ws.stretches) (s.layer, s.name, s.at)
   else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
     if (easeSpan(ws) case final s?)
       for (final at in keysAt(ws, s).entries) (s.layer.id, at.key, at.value),

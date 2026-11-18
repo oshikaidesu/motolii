@@ -64,8 +64,10 @@ class TimelineRows {
           (keys[i], hi > lo ? (v - lo) / (hi - lo) : .5),
       ],
       laneWays: lane.curves,
-      laneOn: switch (ws.stretch) {
-        final s? when s.layer == l.id && s.name == name => keys.indexOf(s.from),
+      laneOn: switch (ws.stretches
+          .where((s) => s.layer == l.id && s.name == name)
+          .firstOrNull) {
+        final s? => keys.indexOf(s.from),
         _ => null,
       },
     );

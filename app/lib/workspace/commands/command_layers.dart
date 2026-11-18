@@ -128,12 +128,13 @@ extension LayerCommands on WorkspaceState {
           selectedMarker.value = null;
           return ws.after(removeMarker(ws, at));
         }
-        if (ws.stretch case final s?) {
-          // A selected span between keyframes resets its easing to Linear instead of deleting the layer.
-          return ws.after(
-            resetEasing(ws, s.layer, s.name, s.at),
-            (_, _) => ws.reread(),
-          );
+        if (ws.stretches.isNotEmpty) {
+          groupBegin(ws);
+          for (final s in ws.stretches) {
+            resetEasing(ws, s.layer, s.name, s.at);
+          }
+          ws.after(groupEnd(ws), (_, _) => ws.reread());
+          return;
         }
         // Selected keyframes are removed instead of the layer.
         if (ws.keys.isNotEmpty) return removeKeyframes(ws, ws.keys.toList());

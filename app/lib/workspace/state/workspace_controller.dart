@@ -185,6 +185,7 @@ class WorkspaceController extends ChangeNotifier {
   bool get manyInOrder => selection.manyInOrder;
   int? get lead => selection.lead;
   Set<SelectedKeyframe> get keys => selection.keys;
+  Set<StretchPicked> get stretches => selection.stretches;
   StretchPicked? get stretch => selection.stretch;
   void select(int? id) => selection.select(id);
   void pickMany(Iterable<int> ids, {bool inOrder = false, int? lead}) =>
@@ -193,8 +194,8 @@ class WorkspaceController extends ChangeNotifier {
       selection.pickKey(k, add: add);
   void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);
   void clearKeys() => selection.clearKeys();
-  void pickStretch(int layer, String name, int from) =>
-      selection.pickStretch(layer, name, from);
+  void pickStretch(int layer, String name, int from, {bool add = false}) =>
+      selection.pickStretch(layer, name, from, add: add);
   String? get aim => selection.aim;
   set aim(String? to) => selection.aim = to;
 
