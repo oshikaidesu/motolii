@@ -364,7 +364,7 @@ class Motolii {
           _timeLayoutCap,
         );
         if (layoutSize >= 2) {
-          timeLayout = Float64List.fromList(_timeBuf!.asTypedList(layoutSize));
+          timeLayout = _timeBuf!.asTypedList(layoutSize);
           final n = timeLayout[1].toInt();
           final base = 2 + n;
           timeIndex = {
