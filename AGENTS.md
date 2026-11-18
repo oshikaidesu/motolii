@@ -43,7 +43,7 @@
   </files>
   <commands>
     <command group="test" expected-return="0"
-            working-directory="/Users/member_ottoto/motolii/app"
+            working-directory="<repo>/app"
             timeout="120">flutter test test/inspector/inspector_sync_report_test.dart test/inspector/inspector_sync_show_test.dart --dart-define=MOTOLII_RUN_EVERY_TEST=yes</command>
   </commands>
 </mutations>
