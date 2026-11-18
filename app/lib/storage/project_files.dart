@@ -2,7 +2,7 @@
 // instead of dart:io.
 import 'dart:io';
 
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/host_platform.dart' show homeFolder, slashed;
 
 typedef ProjectFile = ({String path, DateTime modified, int size});
 
@@ -13,7 +13,7 @@ List<ProjectFile> projectFilesIn(String folder) {
   for (final f in Directory(folder).listSync().whereType<File>()) {
     if (!f.path.endsWith('.motolii')) continue;
     final s = f.statSync();
-    found.add((path: f.path, modified: s.modified, size: s.size));
+    found.add((path: slashed(f.path), modified: s.modified, size: s.size));
   }
   return found;
 }
