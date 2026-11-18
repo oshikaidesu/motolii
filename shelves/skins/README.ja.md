@@ -119,7 +119,7 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 | `onOff` | オン・オフ（Animate all など） |
 | `card` | インスペクタの札1枚 |
 
-この3つは必ず書く。ほかの関数（`segment` `flag` `chips` `track` `number` など）は書かなくてもよく、書かなければアプリのいつもの絵になる。全部は [HANDOFF.md](../../docs/app/skins/HANDOFF.md)。
+この3つは必ず書く。ほかの関数（`segment` `flag` `chips` `track` `number` など）は書かなくてもよく、書かなければアプリのいつもの絵になる。全部は [HANDOFF.md](../../docs/archive/skins/HANDOFF.md)。
 
 新しいフォームは、`lib/widgets/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/widgets/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
 

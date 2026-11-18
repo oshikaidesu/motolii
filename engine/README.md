@@ -77,14 +77,14 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 |---|---|
 | `quickjs/` | The groundwork the adapters below build on: a script's parameters and copies as types, its header of AviUtl2-style or leva-style parameters, shelf files, and anime.js's easings on QuickJS-ng (`script.h`). It includes no other adapter. |
 | `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), the functions it reads the rest of the project with (`project_reads.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
-| `after_effects/` | After Effects expressions (`ae_expr.h`) and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
+| `after_effects/` | After Effects expressions and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
 | `jolt/` | Rigid bodies moved by Jolt Physics as it is: boxes in one plane, told a mass and a force before each step of 1/60 s, with Jolt's own saved state to go on from any frame (`rigid_bodies.h`). |
-| `p5/` | p5.js sketches in p5.js itself (`p5_stand.h`), the Web Audio that p5.sound and a page that listens run on (`web_audio_stand.h`), and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
+| `p5js/` | p5.js sketches in p5.js itself (`p5_stand.h`), the Web Audio that p5.sound and a page that listens run on (`web_audio_stand.h`), and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
 | `three/` | three.js: solid shapes (`solid_three.h`), screen effects turned into ISF (`three_isf.h`), and pasted three.js Shading Language written as shelf files (`tsl_shelf.h`). |
 | `isf/` | ISF effects (`.fs`), translated to WGSL with glslang and Tint. Every shader entry ends here. |
 | `hydra/` | Hydra code, turned into GLSL by Hydra itself, then run as an ISF effect. |
 | `playcanvas/` | PlayCanvas Gaussian-splat effects (`splatfx.h`). |
-| `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing, and subtitle files (ASS, SRT, LRC, WebVTT): recognised and handed to one of the above (`adapter.h`). |
+| `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing, and subtitle files (ASS, SRT, LRC, WebVTT): recognised and handed to one of the above (`adapter_net.h`). |
 | `aviutl/` | AviUtl2 scripts, Lua and HLSL (`aviutl.h`). |
 | `subtitles/` | Subtitles and timed lyrics as they are written: FFmpeg tells them and writes SRT, LRC, WebVTT and the rest as ASS; libass draws ASS, karaoke and override tags included (`subtitles.h`). The sites adapter wraps a pasted file into a sketch that draws the moment asked. |
 | `css/` | CSS animations as posted, run by Blitz and Stylo, in Rust. A CodePen pen moving a text layer's letters (`css.h`, `css.rs`): Motolii gives each letter's box and gets back how the CSS moves it. An SVG moved by its own CSS (`svg.h`, `svg.rs`): written again for each frame with the values in its attributes, for ThorVG to draw. |
@@ -125,8 +125,8 @@ The rows come from the `target_link_libraries` lines in `CMakeLists.txt` and cha
 
 Two kinds of boundary with other people's code, each confined to a few files so that a change on the other side is fixed
 in one place. An **interop** reaches into Filament's or Dawn's private internals: only `gpu/*_interop.*`. An **adapter**
-runs code from the net unchanged: only `community/sites/adapter*.h`, `community/p5/adapter_p5_shader.h` and
-`document/scripts/adapter.h`.
+runs code from the net unchanged: only `community/sites/adapter*.h`, `community/p5js/adapter_p5_shader.h` and
+`document/scripts/import_adapter.h`.
 
 ## Conventions
 
