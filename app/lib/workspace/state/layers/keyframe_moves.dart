@@ -140,58 +140,50 @@ Iterable<int> stretchSlideWrites(
 LiveWrites slideWritesOf(Iterable<SelectedKeyframe> keys, int by) =>
     (m) => slideWrites(m, keys, by);
 
-/// Writes the move of [slideWritesOf] and returns the layers it changed. A drag on the timeline gives it to
-/// [WorkspaceController.live] at each step, so the keyframes, the stage and the panels follow the hand.
+/// Writes the move of [slideWritesOf] and returns the layers it changed.
+/// Uses the engine's slide_keys batch call: one FFI crossing for all entries.
 Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
   if (by == 0) return const [];
-  final moves =
-      <
-        (int, String, double, double, double, String)
-      >[]; // (layer, property, from, to, value, easing)
+  final buf = StringBuffer();
+  final layers = <int>{};
+  final fps = WorkspaceController.fps, dur = WorkspaceController.duration;
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
-    final at = k.frame / WorkspaceController.fps,
-        to =
-            (k.frame + by).clamp(0, WorkspaceController.duration) /
-            WorkspaceController.fps;
+    final at = k.frame / fps;
+    final to = (k.frame + by).clamp(0, dur) / fps;
     for (final n in m.moving(t)) {
-      if (!m
-          .keyTimes(t, n)
-          .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
-        continue;
-      }
-      moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
+      if (!m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / fps)) continue;
+      buf.write('$t\t$n\t$at\t$to\t${m.value(t, n, at) ?? 0}');
+      final way = m.easingOf(t, n, at);
+      if (way.isNotEmpty) buf.write('\t$way');
+      buf.writeln();
+      layers.add(t);
     }
   }
-  for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', layer: t, name: n, number: at);
-  }
-  for (final (t, n, _, to, v, way) in moves) {
-    m.later('key', layer: t, name: n, word: '$to', number: v);
-    if (way.isNotEmpty) {
-      m.later('easing', layer: t, name: n, number: to, word: way);
-    }
-  }
-  return {for (final (t, _, _, _, _, _) in moves) t};
+  if (layers.isEmpty) return const [];
+  m.later('slide_keys', word: buf.toString());
+  return layers;
 }
 
-/// Queues the removal of the keyframes [keys], and of the other properties' keyframes at the same times, in the open undo
-/// step. The step is begun and ended by the caller (see [groupBegin] and [groupEnd]).
+/// Queues the removal of the keyframes [keys], and of the other properties'
+/// keyframes at the same times, in one FFI call. The undo step is begun and
+/// ended by the caller (see [groupBegin] and [groupEnd]).
 void unkeyAtKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
   final m = ws.inside!;
+  final buf = StringBuffer();
+  final fps = WorkspaceController.fps;
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
-    final at = k.frame / WorkspaceController.fps;
+    final at = k.frame / fps;
     for (final n in m.moving(t)) {
-      if (m
-          .keyTimes(t, n)
-          .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
-        m.later('unkey', layer: t, name: n, number: at);
+      if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / fps)) {
+        buf.writeln('$t\t$n\t$at');
       }
     }
   }
+  if (buf.isNotEmpty) m.later('unkey_batch', word: buf.toString());
 }
 
 /// The keyframes [keys] as a copy: property, frames after the first one, value, easing.
@@ -221,7 +213,8 @@ List<(String, int, double, String)> keyframeCopies(
   ];
 }
 
-/// Queues [copies] on layer [t], the first at the playhead, as one undo step. Returns the ticket that closes the step.
+/// Queues [copies] on layer [t], the first at the playhead, in one FFI call.
+/// Returns the ticket that closes the undo step.
 int pasteKeyframeCopies(
   WorkspaceController ws,
   int t,
@@ -229,12 +222,14 @@ int pasteKeyframeCopies(
 ) {
   final m = ws.inside!;
   groupBegin(ws);
+  final buf = StringBuffer();
+  final fps = WorkspaceController.fps;
   for (final (n, after, v, way) in copies) {
-    final at = (ws.frame + after) / WorkspaceController.fps;
-    m.later('key', layer: t, name: n, word: '$at', number: v);
-    if (way.isNotEmpty) {
-      m.later('easing', layer: t, name: n, number: at, word: way);
-    }
+    final at = (ws.frame + after) / fps;
+    buf.write('$t\t$n\t$at\t$v');
+    if (way.isNotEmpty) buf.write('\t$way');
+    buf.writeln();
   }
+  if (buf.isNotEmpty) m.later('paste_keys', word: buf.toString());
   return groupEnd(ws);
 }

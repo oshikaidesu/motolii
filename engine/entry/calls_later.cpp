@@ -405,6 +405,46 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             if (!easing.empty()) doc_easing(d, t, prop.c_str(), to, easing.c_str());
           }
         }
+        // word: packed entries, one per line:
+        //   "layer\tprop\tat\n..."
+        // Each entry removes the keyframe of the property at that time.
+        // Batches what the app would otherwise send as N unkey calls.
+        else if (c == "unkey_batch") {
+          Doc& d = doc(m);
+          ok = 1;
+          std::istringstream lines(w);
+          std::string line;
+          while (std::getline(lines, line)) {
+            if (line.empty()) continue;
+            int t = 0;
+            char prop[128] = {};
+            double at = 0;
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf", &t, prop,
+                            &at) >= 3)
+              doc_unkey(d, t, prop, at);
+          }
+        }
+        // word: packed entries, one per line:
+        //   "layer\tprop\tat\tvalue[\teasing]\n..."
+        // Each entry adds a keyframe, optionally with its easing. Batches
+        // what the app would otherwise send as N key+easing call pairs.
+        else if (c == "paste_keys") {
+          Doc& d = doc(m);
+          ok = 1;
+          std::istringstream lines(w);
+          std::string line;
+          while (std::getline(lines, line)) {
+            if (line.empty()) continue;
+            int t = 0;
+            char prop[128] = {}, easing[256] = {};
+            double at = 0, val = 0;
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%lf\t%255s", &t,
+                            prop, &at, &val, easing) >= 4) {
+              doc_key(d, t, prop, at, val);
+              if (easing[0]) doc_easing(d, t, prop, at, easing);
+            }
+          }
+        }
         // name: the easing. word: its SQL expression.
         else if (c == "define")
           ok = define_is(m, n.c_str(), w.c_str());
