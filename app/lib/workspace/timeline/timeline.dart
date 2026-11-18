@@ -118,9 +118,7 @@ class _TimelinePaneState extends State<TimelinePane>
     final ws = WorkspaceScope.read(context);
     if (ws != workspace) {
       workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
-      workspace?.moment.removeListener(_listener);
       workspace = ws..on[WorkspaceAspect.playing]!.addListener(_listener);
-      ws.moment.addListener(_listener);
       if (ws.playing) {
         SchedulerBinding.instance.addPostFrameCallback(
           (_) => mounted ? _changed() : null,
@@ -133,7 +131,6 @@ class _TimelinePaneState extends State<TimelinePane>
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_escapeKey);
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
-    workspace?.moment.removeListener(_listener);
     _ticker.dispose();
     _zoomAnim.dispose();
     viewport.dispose();
@@ -180,6 +177,7 @@ class _TimelinePaneState extends State<TimelinePane>
         .round()
         .clamp(0, WorkspaceController.duration);
     ws.frame = _lastFrame;
+    _follow(_lastFrame);
   }
 
   void _toggle() {

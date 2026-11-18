@@ -125,22 +125,22 @@ class TimelineViewport extends ChangeNotifier {
     if (_zoom <= 1) return;
     final v = view, x = v.x(f);
     final right = _trackWidth - TimelineMetrics.padR;
+    final was = _scroll;
     if (x < 0 || x > right) {
       _scroll = clampScroll(f - visible * .1);
-      notifyListeners();
-      return;
-    }
-    final margin = _trackWidth * .08;
-    if (x < margin) {
-      _scroll = clampScroll(_scroll - visible * .04 * ((margin - x) / margin));
-    } else if (x > right - margin) {
-      _scroll = clampScroll(
-        _scroll + visible * .04 * ((x - (right - margin)) / margin),
-      );
     } else {
-      return;
+      final margin = _trackWidth * .08;
+      if (x < margin) {
+        _scroll = clampScroll(
+          _scroll - visible * .04 * ((margin - x) / margin),
+        );
+      } else if (x > right - margin) {
+        _scroll = clampScroll(
+          _scroll + visible * .04 * ((x - (right - margin)) / margin),
+        );
+      }
     }
-    notifyListeners();
+    if (_scroll != was) notifyListeners();
   }
 
   /// Scrolls so that frame [s] is at the left end, as far as the scroll limits allow.
