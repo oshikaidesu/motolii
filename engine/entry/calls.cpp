@@ -291,7 +291,9 @@ int motolii_together(Motolii* m, int on) {
     if (on) return doc_act(*m->d), m->d->act.together = true, 1;
     const int done = m->d->act.depth ? (int)doc_acted(*m->d) : 0;
     if (!m->d->act.depth) m->d->act.together = false;
-    snapshot_update(m), snapshot_time(m);
+    try {
+      snapshot_update(m), snapshot_time(m);
+    } catch (...) {}
     return done;
   });
 }
