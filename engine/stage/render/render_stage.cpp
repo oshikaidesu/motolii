@@ -55,7 +55,8 @@ Stage open_stage(int w, int h) {
   // BACKEND=webgpu selects Filament's WebGPU backend, Dawn, which is the way to
   // Windows. It needs Filament built from source, see gpu/filament_webgpu.sh.
   const char* backend = getenv("BACKEND");
-  // A Filament panic ends the app; Filament's own hook (utils/Panic.h) writes why before it does, from any thread.
+  // A Filament panic ends the app; Filament's own hook (utils/Panic.h) writes
+  // why before it does, from any thread.
   utils::Panic::setPanicHandler(
       [](void*, utils::Panic const& p) {
         fprintf(stderr, "Filament panic: %s\n", p.what());

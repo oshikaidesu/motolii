@@ -159,8 +159,7 @@ std::string isf_file(const std::string& asked) {
   const std::string vertex =
       read_text(std::filesystem::path(file).replace_extension(".vs"));
   // Shadertoy and GLSL Sandbox shaders are accepted as they come (adapter.h).
-  const std::string wgsl =
-      isf_wgsl(adapter_isf(text), stem, why, vertex);
+  const std::string wgsl = isf_wgsl(adapter_isf(text), stem, why, vertex);
   if (wgsl.empty()) {
     std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(),
                  why.substr(0, 600).c_str());

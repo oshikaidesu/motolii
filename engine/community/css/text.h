@@ -19,17 +19,17 @@ struct MotoliiText;
 // sourceText style.setFontSize(value, startIndex, numOfCharacters) counts),
 // `count` of them, and CSS declarations for them, for example
 // "4 2 font-size: 150%; color: #ff8a3d; font-variation-settings: 'wght' 700".
-// A later line wins where ranges overlap, as a later CSS rule does. May be null.
-// `fonts` lists font files, one a line: the layer's font first, then fonts to
-// fall back on for characters it lacks.
-// `size` is the font size in pixels, `line` the line height as CSS's
-// line-height <number> gives it (times the font size), `tracking` After
-// Effects' Tracking (thousandths of an em, CSS letter-spacing) and `slant` the
-// angle of CSS's font-style: oblique, in degrees: a font's own slnt axis or
-// oblique face where it has one, else its letters leaned. `wrap` is the width
-// in pixels the lines break at (0: as typed); `breakAll` breaks between any
-// letters. `align` sets each line in the widest one: 0 left, .5 centre, 1
-// right. Returns null if no font could be read.
+// A later line wins where ranges overlap, as a later CSS rule does. May be
+// null. `fonts` lists font files, one a line: the layer's font first, then
+// fonts to fall back on for characters it lacks. `size` is the font size in
+// pixels, `line` the line height as CSS's line-height <number> gives it (times
+// the font size), `tracking` After Effects' Tracking (thousandths of an em, CSS
+// letter-spacing) and `slant` the angle of CSS's font-style: oblique, in
+// degrees: a font's own slnt axis or oblique face where it has one, else its
+// letters leaned. `wrap` is the width in pixels the lines break at (0: as
+// typed); `breakAll` breaks between any letters. `align` sets each line in the
+// widest one: 0 left, .5 centre, 1 right. Returns null if no font could be
+// read.
 MotoliiText* motolii_text_new(const char* words, const char* styles,
                               const char* fonts, float size, float line,
                               float tracking, float slant, float wrap,

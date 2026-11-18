@@ -157,8 +157,7 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
       std::string(name).substr(std::string(name).size() - 7) == ":stroke";
   if (word && *word &&
       (doc_among("background bevel_color side_color back_color", name) ||
-       is_extra_stroke ||
-       (!strcmp(name, "fill") && kind == "light")))
+       is_extra_stroke || (!strcmp(name, "fill") && kind == "light")))
     if (strlen(word) != 6 || strspn(word, "0123456789abcdefABCDEF") != 6)
       return d.error = std::string(name) + " is six digits, as ff3366", false;
   // low and high say how far a control goes, not how far the user may go. A

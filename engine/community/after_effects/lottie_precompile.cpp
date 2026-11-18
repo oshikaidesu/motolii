@@ -78,10 +78,10 @@ JSModuleDef* lottie_build_load(JSContext* cx, const char* name, void* opq) {
     return nullptr;
   }
   size_t len = 0;
-  uint8_t* bytes = JS_WriteObject(cx, &len, built,
-                                  JS_WRITE_OBJ_BYTECODE |
-                                      JS_WRITE_OBJ_STRIP_SOURCE |
-                                      JS_WRITE_OBJ_STRIP_DEBUG);
+  uint8_t* bytes =
+      JS_WriteObject(cx, &len, built,
+                     JS_WRITE_OBJ_BYTECODE | JS_WRITE_OBJ_STRIP_SOURCE |
+                         JS_WRITE_OBJ_STRIP_DEBUG);
   if (bytes && len) {
     b->bytecode[n] = std::vector<uint8_t>(bytes, bytes + len);
     b->order.push_back(n);

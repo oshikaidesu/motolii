@@ -24,9 +24,9 @@ void setup_ae_expressions(JSRuntime* rt, JSContext* cx, std::string& trouble) {
     const std::string n = name;
     for (std::size_t i = 0; i < kLottieBytecodeCount; ++i) {
       if (n == kLottieBytecode[i].name) {
-        JSValue m = JS_ReadObject(cx, kLottieBytecode[i].data,
-                                  kLottieBytecode[i].size,
-                                  JS_READ_OBJ_BYTECODE);
+        JSValue m =
+            JS_ReadObject(cx, kLottieBytecode[i].data, kLottieBytecode[i].size,
+                          JS_READ_OBJ_BYTECODE);
         if (JS_IsException(m)) {
           std::fprintf(stderr, "lottie: JS_ReadObject failed for %s\n", name);
           return nullptr;
@@ -69,8 +69,7 @@ void setup_ae_expressions(JSRuntime* rt, JSContext* cx, std::string& trouble) {
   }
   auto describe = [&](JSValue v) -> std::string {
     if (!JS_IsException(v) && !JS_IsError(v)) return "?";
-    JSValue e =
-        JS_IsException(v) ? JS_GetException(cx) : JS_DupValue(cx, v);
+    JSValue e = JS_IsException(v) ? JS_GetException(cx) : JS_DupValue(cx, v);
     const char* s = JS_ToCString(cx, e);
     std::string out = s ? s : "?";
     JSValue st = JS_GetPropertyStr(cx, e, "stack");
@@ -87,8 +86,7 @@ void setup_ae_expressions(JSRuntime* rt, JSContext* cx, std::string& trouble) {
     JS_FreeValue(cx, e);
     return out;
   };
-  JSValue m =
-      JS_ReadObject(cx, shim->data, shim->size, JS_READ_OBJ_BYTECODE);
+  JSValue m = JS_ReadObject(cx, shim->data, shim->size, JS_READ_OBJ_BYTECODE);
   if (JS_IsException(m)) {
     trouble = "lottie_shim: JS_ReadObject failed: " + describe(m);
     return;
@@ -109,8 +107,7 @@ void setup_ae_expressions(JSRuntime* rt, JSContext* cx, std::string& trouble) {
 // says what a text layer reads.
 // ---------------------------------------------------------------------------
 
-std::string Script::text(double t,
-                         const std::map<std::string, double>& numbers,
+std::string Script::text(double t, const std::map<std::string, double>& numbers,
                          const std::map<std::string, std::string>& words,
                          const std::string& typed) {
   if (!says_text() || !ok()) return typed;

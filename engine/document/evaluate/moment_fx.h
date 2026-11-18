@@ -69,7 +69,8 @@ void doc_layer_shell(Doc& d, int layer, ThingFx& e, bool on);
 // stage points, so the layer's image is made again only after the stage has
 // moved that far. A face seen edge on reaches no further than three times the
 // stage's longer side.
-void doc_fx_sides(Doc& d, const filament::math::mat4& place, double seen, double* sides);
+void doc_fx_sides(Doc& d, const filament::math::mat4& place, double seen,
+                  double* sides);
 // Prepares a standing layer before the frame is rendered. Reads its placement
 // and scale under the document lock, then sets up its effect image.
 void doc_layer_stand(Doc& d, int layer, ThingFx& e);

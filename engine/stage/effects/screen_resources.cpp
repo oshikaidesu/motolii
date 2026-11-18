@@ -1,7 +1,6 @@
 // What an effect's passes read and write: the pictures and sounds it takes as
-// inputs, the uniform struct of its parameters, and the textures of its targets.
-
-#include "stage/effects/screen_fx.h"
+// inputs, the uniform struct of its parameters, and the textures of its
+// targets.
 
 #include <backend/DriverEnums.h>
 #include <backend/PixelBufferDescriptor.h>
@@ -20,6 +19,7 @@
 #include <vector>
 
 #include "gpu/screen_interop.h"
+#include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -70,7 +70,7 @@ Texture* screen_image(Stage& s, const std::string& file) {
   return t;
 }  // namespace
 
-}
+}  // namespace
 
 // Builds the input textures of an effect for the current frame. Image files are
 // loaded once. Audio inputs are rebuilt each frame from their current values
@@ -181,8 +181,10 @@ void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
       if (f.name == "duration")
         v[0] = (float)numbers(fx.numbers_key(), "clip_length", 0);
       else
-        v[0] = (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_z", w)),
-        v[1] = (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_w", h));
+        v[0] =
+            (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_z", w)),
+        v[1] =
+            (float)std::max(1.0, numbers(fx.numbers_key(), "layerRect_w", h));
     } else if ((f.name == "width" || f.name == "height") &&
                std::none_of(fx.fields.begin(), fx.fields.end(),
                             [](const ScreenFx::Field& g) {

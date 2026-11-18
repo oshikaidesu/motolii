@@ -160,7 +160,7 @@ void doc_layers_fx(Doc& d) {
         const double start = doc_number(d, layer, "start", 0, 0),
                      lasts = doc_number(d, layer, "duration", 0, -1);
         return name == "clip_time" ? d.stage->now - start
-               : lasts >= 0         ? lasts
+               : lasts >= 0        ? lasts
                                    : std::max(0.0, doc_seconds(d) - start);
       }
       // The box of the layer's image on the stage as shares of the stage: left,
@@ -248,11 +248,11 @@ void doc_layers_fx(Doc& d) {
       // `file` is the numbers_key() — either "id:path" or just "path".
       // Extract the instance ID so the parameter is looked up under the
       // instance-keyed name ("a1b2c3:js_blur_intensity") when present.
-      return doc_number(d, layer,
-                        doc_screen_parameter(fx_entry_path(file), name,
-                                             fx_entry_id(file))
-                            .c_str(),
-                        d.stage->now, usual);
+      return doc_number(
+          d, layer,
+          doc_screen_parameter(fx_entry_path(file), name, fx_entry_id(file))
+              .c_str(),
+          d.stage->now, usual);
     };
     // Before the frame: works out where the layer is seen, what its images are,
     // and what its sheet shows.
@@ -384,8 +384,7 @@ void doc_layers_read(Doc& d,
       doc_reading(s, t->second, 0.f, 0.f, white_point(s));
     doc_sheet_reads(d, r->first, 0.f, white_point(s));
     s.engine->destroy(r->second.into), s.engine->destroy(r->second.seen),
-        s.engine->destroy(r->second.deep),
-        r = d.effects.reads.erase(r);
+        s.engine->destroy(r->second.deep), r = d.effects.reads.erase(r);
   }
   if (std::none_of(laid.begin(), laid.end(),
                    [&](const auto& l) { return reads(l.first); }))

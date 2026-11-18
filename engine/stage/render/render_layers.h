@@ -17,15 +17,15 @@
 namespace motolii {
 
 // Adds a solid with one of the renderer's own materials, chosen by name in
-// `wears`. See doc_material (document/evaluate/material.h) for the Material group in the Create tab.
-// Returns the material instance, or nullptr if the name is unknown or the build
-// failed. "filament_glass": glass from own_glass above. ior is the refraction
-// index, split how far the colours part, swim how far the faces lean, vivid the
-// strength of the thin-film rainbow, and dark how deep the colour is.
-// "lacquer": blade.mat, a hard clear coat over a colour that is dark at the
-// root and as given at the tip. metal is 0 for lacquer and 1 for steel.
-// "bubble": bubble.mat. vivid is the brightness of its rim.
-// tone: the colour of the material.
+// `wears`. See doc_material (document/evaluate/material.h) for the Material
+// group in the Create tab. Returns the material instance, or nullptr if the
+// name is unknown or the build failed. "filament_glass": glass from own_glass
+// above. ior is the refraction index, split how far the colours part, swim how
+// far the faces lean, vivid the strength of the thin-film rainbow, and dark how
+// deep the colour is. "lacquer": blade.mat, a hard clear coat over a colour
+// that is dark at the root and as given at the tip. metal is 0 for lacquer and
+// 1 for steel. "bubble": bubble.mat. vivid is the brightness of its rim. tone:
+// the colour of the material.
 filament::MaterialInstance* solid_wear(
     Stage& s, Mesh* m, std::vector<filament::math::mat4f> places,
     const std::string& wears, filament::math::float3 tone, float ior,

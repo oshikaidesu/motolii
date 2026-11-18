@@ -368,10 +368,12 @@ namespace {
 // is known, so every part shares one frame.
 struct SvgPart {
   std::vector<tvg::PathCommand> cmds;
-  std::vector<std::pair<float, float>> pts;  // the shape's own transform applied
+  std::vector<std::pair<float, float>>
+      pts;             // the shape's own transform applied
   std::string fill;    // "rrggbb", or "none" for a shape with no fill
   std::string stroke;  // "rrggbb", or "" for no stroke
-  float strokeWidth = 0.f;  // in the SVG's own units, before the drawing is framed
+  float strokeWidth =
+      0.f;  // in the SVG's own units, before the drawing is framed
 };
 
 }  // namespace
@@ -387,7 +389,8 @@ int doc_svg_paths(Doc& d, const char* file) {
     return 0;  // not a vector drawing ThorVG can read
   }
   std::vector<SvgPart> parts;
-  bool faithless = false;  // a transform or gradient this cannot keep as a shape
+  bool faithless =
+      false;  // a transform or gradient this cannot keep as a shape
   float minX = 1e30f, minY = 1e30f, maxX = -1e30f, maxY = -1e30f;
   tvg::Accessor* walk = tvg::Accessor::gen();
   walk->set(

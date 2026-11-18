@@ -110,11 +110,10 @@ void look_material(LayerBuild& build) {
       rim.join = which(d, layer, (id + ":join").c_str(), "miter round bevel");
       const std::string sa = doc_word(d, layer, (id + ":stroke_align").c_str());
       rim.align = sa == "inside" ? -1 : sa == "outside" ? 1 : 0;
-      rim.dash = (float)(doc_number(d, layer, (id + ":dash").c_str(), 0, 0) /
-                         units);
-      rim.gap =
-          (float)(doc_number(d, layer, (id + ":dash_gap").c_str(), 0, 0) /
-                  units);
+      rim.dash =
+          (float)(doc_number(d, layer, (id + ":dash").c_str(), 0, 0) / units);
+      rim.gap = (float)(doc_number(d, layer, (id + ":dash_gap").c_str(), 0, 0) /
+                        units);
       rim.dashFrom =
           (float)(doc_number(d, layer, (id + ":dash_offset").c_str(), 0, 0) /
                   units);
@@ -145,7 +144,7 @@ void look_ramp(LayerBuild& build) {
   fx.rampScale = (float)build.number("gradient_scale", 1);
   fx.spread = build.word("gradient_spread") == "reflect"  ? 1
               : build.word("gradient_spread") == "repeat" ? 2
-                                                                  : 0;
+                                                          : 0;
 }
 
 // Draw the copies in one pass when no copy is cleared on its own (no script
@@ -196,8 +195,8 @@ void look_copies(LayerBuild& build) {
       doc_absent_copies(d, layer, d.stage->now);
   // The number of copies is the number that the repeat effect lays down, if
   // there is one.
-  fx.copies = repeated.empty() ? (int)build.number("copies", 1)
-                               : (int)repeated.size();
+  fx.copies =
+      repeated.empty() ? (int)build.number("copies", 1) : (int)repeated.size();
   look_copies_together(build, repeated);
 }
 
@@ -207,8 +206,7 @@ void look_text(LayerBuild& build) {
   const int layer = build.layer;
   Canvas2DFx& fx = build.fx;
   fx.wrapWidth = (float)build.number("wrap_at", 0);
-  const std::string split = build.word("split"),
-                    script = build.word("script");
+  const std::string split = build.word("split"), script = build.word("script");
   fx.splitWords = split == "words";
   fx.splitLines = split == "lines";
   // A text with a script or an expression moves letter by letter, as in
@@ -324,14 +322,13 @@ void match_stroke(LayerBuild& build) {
   build.up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() *
              math::double4{0, 1, 0, 1};
   const math::double4& up = build.up;
-  build.edge = edgeRgb < 0
-                   ? float4{0.f}
-                   : float4{float3{(float)((edgeRgb >> 16) & 255),
-                                   (float)((edgeRgb >> 8) & 255),
-                                   (float)(edgeRgb & 255)} /
-                                255.f,
-                            (float)(build.number("stroke_width", 0) /
-                                    (0.5 * s.h * up.y / up.w))};
+  build.edge = edgeRgb < 0 ? float4{0.f}
+                           : float4{float3{(float)((edgeRgb >> 16) & 255),
+                                           (float)((edgeRgb >> 8) & 255),
+                                           (float)(edgeRgb & 255)} /
+                                        255.f,
+                                    (float)(build.number("stroke_width", 0) /
+                                            (0.5 * s.h * up.y / up.w))};
   if (!stroke.empty() && edgeRgb < 0)
     build.why = "a stroke is six digits, as ff3366";
   // Image points per stage unit, where layers start.

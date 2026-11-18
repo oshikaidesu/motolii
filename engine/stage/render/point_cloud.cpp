@@ -2,7 +2,6 @@
 
 #include <backend/DriverEnums.h>
 #include <backend/PixelBufferDescriptor.h>
-#include "shelf/shelf_folders.h"
 #include <filament/Camera.h>
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -39,6 +38,7 @@
 
 #include "base/file_read.h"
 #include "community/playcanvas/splatfx.h"
+#include "shelf/shelf_folders.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {

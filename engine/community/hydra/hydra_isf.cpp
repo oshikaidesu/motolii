@@ -35,9 +35,7 @@ namespace {
 
 // Returns the contents of the file at `file`, or an empty string if it cannot
 // be read.
-std::string hydra_text(const std::string& file) {
-  return read_text(file);
-}
+std::string hydra_text(const std::string& file) { return read_text(file); }
 // QuickJS module-name normalizer. Resolves `name` relative to the directory of
 // the importing module `base` and returns the result as a newly allocated
 // string.
@@ -94,8 +92,8 @@ bool hydra_isf(const std::string& folder, const std::string& code,
   JS_SetPropertyStr(cx, g, "__step", JS_NewFloat64(cx, HYDRA_STEP));
   const std::string name = (src / "motolii.js").string();
   const std::string& make = hydra_make();
-  JSValue ran = JS_Eval(cx, make.c_str(), make.size(), name.c_str(),
-                        JS_EVAL_TYPE_MODULE);
+  JSValue ran =
+      JS_Eval(cx, make.c_str(), make.size(), name.c_str(), JS_EVAL_TYPE_MODULE);
   if (JS_IsException(ran)) {
     JSValue e = JS_GetException(cx);
     const char* s = JS_ToCString(cx, e);

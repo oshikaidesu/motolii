@@ -13,12 +13,8 @@
 
 namespace motolii {
 
-double doc_comp_wide(Doc& d) {
-  return doc_number(d, 0, "wide", 0, 1920);
-}
-double doc_comp_high(Doc& d) {
-  return doc_number(d, 0, "high", 0, 1080);
-}
+double doc_comp_wide(Doc& d) { return doc_number(d, 0, "wide", 0, 1920); }
+double doc_comp_high(Doc& d) { return doc_number(d, 0, "high", 0, 1080); }
 
 double doc_layer_ends(Doc& d, int layer) {
   const double begins = doc_literal(d, layer, "start", 0, 0),
@@ -34,8 +30,9 @@ double doc_seconds(Doc& d) {
                        : t.drawn
                            ? (t.drawn->sketch ? 0.0 : (double)t.drawn->seconds)
                        : t.solid ? (double)t.solid->seconds
-                       : fs != d.on_stage.file_seconds.end() ? (double)fs->second
-                                 : 0.0,
+                       : fs != d.on_stage.file_seconds.end()
+                           ? (double)fs->second
+                           : 0.0,
                  lasts = doc_number(d, layer, "duration", 0, own);
     // Here `lasts` defaults to `own` (the video/image/solid's intrinsic length,
     // or 0), not to -1 like the other duration reads, so a shape layer with no

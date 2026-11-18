@@ -85,14 +85,13 @@ struct BehaviourRun {
   // entries per behaviour layer (current frame plus any older ones) and is
   // kept small by dropping anything with a different t when a new t arrives.
   const std::vector<double>& all_of(const std::string& type, int by, int n,
-                                     double t, double offset, double frequency,
-                                     double apart, uint32_t seed) {
+                                    double t, double offset, double frequency,
+                                    double apart, uint32_t seed) {
     const Key k{by, t, n, offset, frequency, apart, seed};
     if (const auto it = cache.find(k); it != cache.end()) return it->second;
     // Drop older entries for this layer so the map does not grow across frames.
-    std::erase_if(cache, [by](const auto& kv) {
-      return std::get<0>(kv.first) == by;
-    });
+    std::erase_if(cache,
+                  [by](const auto& kv) { return std::get<0>(kv.first) == by; });
     std::vector<double>& out = cache[k];
     const JSValue fn = fn_of(type);
     if (!JS_IsFunction(cx, fn) || n <= 0) return out;
@@ -436,14 +435,12 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer,
     return k.copies;
   const double begins = doc_literal(d, layer, "start", 0, 0);
   // `k2` converts points of the preview to pixels of the document.
-  const double high = doc_comp_high(d),
-               k2 = high / std::max(1, d.stage->h);
+  const double high = doc_comp_high(d), k2 = high / std::max(1, d.stage->h);
   const math::double3 pos = doc_position(d, layer, now);
-  const math::double2 at =
-      doc_seen(d, (doc_above(d, layer, now, 0) *
-                   math::double4{pos.x, pos.y, pos.z, 1.0})
-                      .xyz) *
-      k2;
+  const math::double2 at = doc_seen(d, (doc_above(d, layer, now, 0) *
+                                        math::double4{pos.x, pos.y, pos.z, 1.0})
+                                           .xyz) *
+                           k2;
   float2 half{0.5f};
   doc_half(d, layer, &half);
   // Distance from the layer's position to the farthest point of its box,
@@ -453,11 +450,10 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer,
                        doc_literal(d, layer, "size", now, 1) *
                        doc_point(d, layer, now) * k2 * 1.415;
   // AbsentMotion measures time in milliseconds.
-  k.copies =
-      absent_copies(doc_absent_on(d, layer, now), layer, 1000.0 * begins,
-                    1000.0 * doc_layer_ends(d, layer), 1000.0 * now,
-                    (float)(d.stage->w * k2), (float)high, (float)at.x,
-                    (float)at.y, (float)reach);
+  k.copies = absent_copies(doc_absent_on(d, layer, now), layer, 1000.0 * begins,
+                           1000.0 * doc_layer_ends(d, layer), 1000.0 * now,
+                           (float)(d.stage->w * k2), (float)high, (float)at.x,
+                           (float)at.y, (float)reach);
   return k.copies;
 }
 
@@ -477,9 +473,9 @@ std::string doc_text_shown(Doc& d, int layer, double now, bool* moves) {
 bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
   if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return false;
   const double begins = doc_literal(d, layer, "start", 0, 0);
-  return absent_shutter(
-      doc_absent_on(d, layer, now), layer, 1000.0 * begins,
-      1000.0 * doc_layer_ends(d, layer), 1000.0 * now, 60, open, moves);
+  return absent_shutter(doc_absent_on(d, layer, now), layer, 1000.0 * begins,
+                        1000.0 * doc_layer_ends(d, layer), 1000.0 * now, 60,
+                        open, moves);
 }
 
 double doc_group_opacity(Doc& d, int layer, double now) {
@@ -573,9 +569,9 @@ double doc_line_middle(Doc& d, int layer, int copy) {
   const Canvas2D& drawn = *sh->second.drawn;
   const double pitch = drawn.linePitch,
                down = drawn.letters.size() < 2 ? 0.5
-                      : copy == 0 ? (double)drawn.letters[0].y - 0.5 * pitch
-                                  : (double)drawn.letters[(size_t)copy].x +
-                                        0.5 * pitch;
+                      : copy == 0
+                          ? (double)drawn.letters[0].y - 0.5 * pitch
+                          : (double)drawn.letters[(size_t)copy].x + 0.5 * pitch;
   return (0.5 - down) * 2.0 * half.y;
 }
 

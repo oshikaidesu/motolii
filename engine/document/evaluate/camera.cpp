@@ -81,9 +81,8 @@ DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
   // The camera's position is the layer's own world position. With no camera
   // layer the stage's own camera sits kStageBack units along +Z, looking at
   // the origin.
-  e.eye = camera
-              ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz
-              : math::double3{0.0, 0.0, kStageBack};
+  e.eye = camera ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz
+                 : math::double3{0.0, 0.0, kStageBack};
   // The camera looks in its local -Z. One unit ahead gives the look-at point.
   e.look = e.eye + (e.round * math::double4{0, 0, -1, 0}).xyz;
   e.up = (e.round * math::double4{0, 1, 0, 0}).xyz;
@@ -128,9 +127,9 @@ void doc_look(Doc& d) {
              holders.push_back(sqlite3_column_int(row, 0));
            });
   for (const int h : holders)
-    for (const std::string& file :
-         h == 0 ? script_files(doc_word(d, 0, "script"))
-                : doc_fx_list(d, h, true))
+    for (const std::string& file : h == 0
+                                       ? script_files(doc_word(d, 0, "script"))
+                                       : doc_fx_list(d, h, true))
       if (DocScript* sc = doc_script_of(d, file); sc && sc->viewer)
         told.push_back(viewer_said(file, sc->parameters, [&](size_t k) {
           return doc_number(d, h, sc->names[k].c_str(), s.now,
@@ -293,7 +292,7 @@ void doc_look(Doc& d) {
       // The sky image refers to this memory, so it must stay alive.
       auto& kept = d.look.skyBytes;
       kept.push_back(read_bytes("out/" + d.look.roomIs + "/" + d.look.roomIs +
-                                 "_skybox.ktx"));
+                                "_skybox.ktx"));
       if (!kept.back().empty())
         if (Texture* tex = ktxreader::Ktx1Reader::createTexture(
                 s.engine,
@@ -455,8 +454,7 @@ void evaluate_camera(Evaluation& evaluation) {
   // The stage view faces s.camera when the working camera is on; the camera
   // view always faces s.film. Billboards and 2D layers use the facing camera
   // so they look correct in whichever view is shown (Blender's behaviour).
-  filament::Camera* const facing_cam =
-      d.working_camera.on ? s.camera : s.film;
+  filament::Camera* const facing_cam = d.working_camera.on ? s.camera : s.film;
   d.camera.rig = facing_cam->getModelMatrix() *
                  math::mat4::translation(math::double3{0, 0, -kStageBack});
   d.camera.facing = math::mat4(d.camera.rig.upperLeft());

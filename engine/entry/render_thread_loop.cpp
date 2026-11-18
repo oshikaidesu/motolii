@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "document/document.h"
-#include "gpu/screen_interop.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -38,6 +37,7 @@
 #include "entry/motolii_handle.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"
+#include "gpu/screen_interop.h"
 #include "media/sound_playback.h"
 #include "media/video_datamosh.h"
 #include "media/video_layer.h"

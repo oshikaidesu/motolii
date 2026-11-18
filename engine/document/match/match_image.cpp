@@ -236,8 +236,7 @@ void match_image(LayerBuild& build) {
   const bool cropped = cl + ct + cr + cb > 0.0;
   const float aspect =
       doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) &&
-              (edge.w > 0.f || build.number("round", 0) > 0.0 ||
-               cropped)
+              (edge.w > 0.f || build.number("round", 0) > 0.0 || cropped)
           ? canvas_aspect(s, file.c_str())
           : 0.f;
   // A photo bakes its crop into the filled rectangle below; any other image
@@ -248,9 +247,9 @@ void match_image(LayerBuild& build) {
   else if (fxOk && aspect > 0.f)
     edged_photo(build, aspect, cropped, cl, ct, cr, cb);
   else if (fxOk && !shown.empty() &&
-           (made.drawn = image_canvas(s, shown.c_str(), mat4f{}, rollHigh,
-                                      float3{-1.f}, true, lay, fx,
-                                      build.word("marker").c_str())))
+           (made.drawn =
+                image_canvas(s, shown.c_str(), mat4f{}, rollHigh, float3{-1.f},
+                             true, lay, fx, build.word("marker").c_str())))
     s.playing.erase(made.drawn);
   deep_layers(build);
 }

@@ -3,9 +3,9 @@
 
 // What doc_evaluate sets in the materials of one layer that is on, as the
 // document has it at one time: the 3D box and its bevel, the surface, the
-// material the layer wears, the opacity and its emissive. Each function takes the
-// layer and `t`, the layer as it is on the stage, and does nothing for a layer
-// it does not apply to.
+// material the layer wears, the opacity and its emissive. Each function takes
+// the layer and `t`, the layer as it is on the stage, and does nothing for a
+// layer it does not apply to.
 
 namespace motolii {
 

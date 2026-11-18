@@ -44,8 +44,9 @@ void motolii_home(const char* folder) {
 Motolii* motolii_open(const char* document, int wide, int high) {
   // The engine uses Filament's WebGPU backend, wherever it is opened from.
   setenv("BACKEND", "webgpu", 0);
-  // The ffmpeg this build made (deps/ffmpeg.sh: LGPL only) is found before any other. Started from Finder, PATH is
-  // /usr/bin:/bin, and the shell that popen and system start would find none: Homebrew's folders are added last.
+  // The ffmpeg this build made (deps/ffmpeg.sh: LGPL only) is found before any
+  // other. Started from Finder, PATH is /usr/bin:/bin, and the shell that popen
+  // and system start would find none: Homebrew's folders are added last.
   if (const auto lgpl = doc_engine("third_party/ffmpeg_lgpl/bin");
       std::filesystem::exists(lgpl / "ffmpeg"))
     add_first_to_path(lgpl.string());

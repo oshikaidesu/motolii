@@ -3,11 +3,11 @@
 
 #include "community/jolt/rigid_bodies.h"
 
+#include <gtest/gtest.h>
+
 #include <cstddef>
 #include <string>
 #include <vector>
-
-#include <gtest/gtest.h>
 
 namespace motolii {
 namespace {

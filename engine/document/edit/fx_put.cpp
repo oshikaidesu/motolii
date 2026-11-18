@@ -167,9 +167,9 @@ bool doc_fx_file(Doc& d, int layer, const char* file, double now) {
 
 bool doc_fx_move(Doc& d, int layer, const char* name, int by) {
   std::vector<std::string> list = doc_fx_entries(d, layer, true);
-  auto at = std::find_if(
-      list.begin(), list.end(),
-      [&](const std::string& w) { return w == name || fx_entry_path(w) == name; });
+  auto at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
+    return w == name || fx_entry_path(w) == name;
+  });
   if (at == list.end())
     at = std::find_if(list.begin(), list.end(), [&](const std::string& w) {
       return doc_fx_title(w) == name;

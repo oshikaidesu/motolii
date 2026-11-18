@@ -21,9 +21,9 @@
 #include "community/p5js/adapter_p5_shader.h"
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
-#include "community/sites/site_adapter.h"
 #include "community/sites/adapter_net.h"
 #include "community/sites/adapter_shadertoy_json.h"
+#include "community/sites/site_adapter.h"
 #include "community/three/tsl_shelf.h"
 #include "document/document.h"
 #include "document/edit/arrange.h"
@@ -84,8 +84,9 @@ std::string doc_p5_shaded(const std::filesystem::path& file,
 // written as a .glb file beside the script, the material comes from the scene,
 // and the layer is placed where the scene places the part. The layer's js_part
 // property holds `p`, so that the script can find its part again (see
-// __three_each in community/p5js/p5_stand.h). Passing `solid` as 0 creates a new
-// layer; otherwise that layer is updated. Returns the layer, or 0 on failure.
+// __three_each in community/p5js/p5_stand.h). Passing `solid` as 0 creates a
+// new layer; otherwise that layer is updated. Returns the layer, or 0 on
+// failure.
 int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
                    int p, int solid) {
   const std::vector<uint8_t> shape =
@@ -194,9 +195,10 @@ std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
 std::string doc_tsl_saved(Doc& d, const std::filesystem::path& file) {
   const std::string text = read_text(file);
   std::string effect, points, why;
-  if (!tsl_shelf(doc_engine("third_party/js/three").string(),
-                 doc_engine("community/three_shading_language_to_shelf").string(),
-                 text, file.stem().string(), effect, points, why))
+  if (!tsl_shelf(
+          doc_engine("third_party/js/three").string(),
+          doc_engine("community/three_shading_language_to_shelf").string(),
+          text, file.stem().string(), effect, points, why))
     return why;
   const std::string stem = file.stem().string();
   if (!effect.empty())

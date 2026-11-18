@@ -32,8 +32,8 @@
 #include <string>
 
 #include "base/file_read.h"
-#include "shelf/shelf_folders.h"
 #include "base/json.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 

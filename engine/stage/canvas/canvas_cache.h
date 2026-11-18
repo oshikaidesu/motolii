@@ -58,7 +58,8 @@ struct Canvas2DFx {
   // Extra outlines, each outside the previous one.
   struct Rim {
     filament::math::float4 color;  // rgb + width fraction of layer height
-    int cap = -1, join = -1, align = 0;  // align: -1 inside, 0 center, 1 outside
+    int cap = -1, join = -1,
+        align = 0;  // align: -1 inside, 0 center, 1 outside
     // dash is the length of each dash; gap is the gap between them. When gap
     // is 0 it equals dash, so a dash set alone draws evenly spaced dashes.
     float dash = 0.f, gap = 0.f, dashFrom = 0.f;
@@ -67,10 +68,12 @@ struct Canvas2DFx {
   // Stacks the letters vertically, one letter height apart.
   bool column = false;
   // letters: thousandths of an em (css-inline-3). lines: CSS line-height.
-  // italic: CSS oblique angle in degrees. wrapWidth: letter heights (0 = no wrap).
+  // italic: CSS oblique angle in degrees. wrapWidth: letter heights (0 = no
+  // wrap).
   float letters = 0.f, lines = 1.2f, italic = 0.f, wrapWidth = 0.f;
   int wrap = 0;
-  // ThorVG stroke options. -1 for cap/join = ThorVG default. gap 0 = same as dash.
+  // ThorVG stroke options. -1 for cap/join = ThorVG default. gap 0 = same as
+  // dash.
   float dash = 0.f, gap = 0.f, dashFrom = 0.f;
   int cap = -1, join = -1;
   // heads: 1 end, 2 start, 3 both. headShape: 0 arrow, 1 circle, 2 box,
@@ -152,7 +155,8 @@ struct Canvas2D {
   std::atomic<int> keepAge{0};
   // The animation. Driver thread only.
   tvg::Animation* film = nullptr;
-  // Redraws each frame (e.g. CSS-animated SVG, see image_canvas). Driver thread.
+  // Redraws each frame (e.g. CSS-animated SVG, see image_canvas). Driver
+  // thread.
   std::function<void(int)> redraw;
   // 2D sketch frame producer (see canvas_sketch.h). Main thread.
   std::function<std::vector<double>(int, int)> sketch;
@@ -165,7 +169,8 @@ struct Canvas2D {
   tvg::Scene* sketchScene = nullptr;
   // ThorVG's name of the font the sketch's text is set in.
   std::string sketchFont;
-  // Sketch images by id (__bitmaps in p5_stand.h). Requested on main, read on driver.
+  // Sketch images by id (__bitmaps in p5_stand.h). Requested on main, read on
+  // driver.
   std::map<int, std::shared_ptr<std::vector<uint8_t>>> sketchPics;
   // Guards `sketchPics`.
   std::mutex sketchPicsLock;
@@ -331,12 +336,14 @@ void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
 // No-op if unchanged.
 void slots_at(Stage& s, Canvas2D* d, const std::string& slots);
 // Updates MIDI roll notes. lit[i]: 0 keeps color, 1 raises by 0.3. moves[i]:
-// per-note transform. Note i = SVG "note<i>" (midi_roll.cpp). No-op if unchanged.
+// per-note transform. Note i = SVG "note<i>" (midi_roll.cpp). No-op if
+// unchanged.
 void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
             const std::vector<tvg::Matrix>& moves,
             filament::math::float3 colour);
 // Sets the displayed words of a text (doc_text_shown). No-op if unchanged.
-// Returns false if the layer has no retype function or the text outgrew the image.
+// Returns false if the layer has no retype function or the text outgrew the
+// image.
 bool words_at(Stage& s, Canvas2D* d, const std::string& words);
 // Disk cache: ~/Library/Caches/Motolii/frames. Each frame is one zstd file,
 // named by a hash of its inputs. cache_dir creates the folder on first use and

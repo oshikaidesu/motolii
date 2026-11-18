@@ -77,8 +77,7 @@ void match_video(LayerBuild& build) {
   // The datamosh video, once rendered, plays in place of the video, from
   // its start.
   const std::string moshed = doc_mosh(d, layer);
-  const double from =
-                   moshed.empty() ? build.number("begin", 0) : 0.0,
+  const double from = moshed.empty() ? build.number("begin", 0) : 0.0,
                length = build.number("duration", -1),
                speed = build.number("speed", 1);
   made.video = video(

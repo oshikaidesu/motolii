@@ -45,10 +45,9 @@ struct Seen {
 std::vector<double> Answers(const std::string& body, int n, double t,
                             Seen* seen) {
   const auto* test = ::testing::UnitTest::GetInstance()->current_test_info();
-  const fs::path file =
-      fs::temp_directory_path() / (std::string("motolii_") +
-                                   test->test_suite_name() + test->name() +
-                                   ".js");
+  const fs::path file = fs::temp_directory_path() /
+                        (std::string("motolii_") + test->test_suite_name() +
+                         test->name() + ".js");
   std::ofstream(file) << body;
   std::vector<double> xs;
   {
@@ -58,7 +57,7 @@ std::vector<double> Answers(const std::string& body, int n, double t,
       s.reads_pictures(
           [seen](int layer, double x, double y, double rx, double ry,
                  bool post_effect, double second) {
-            seen->sampled = {double(layer),           x, y, rx, ry,
+            seen->sampled = {double(layer),           x,     y, rx, ry,
                              post_effect ? 1.0 : 0.0, second};
             return std::array<double, 4>{0.1, 0.2, 0.3, 0.4};
           },
@@ -136,8 +135,7 @@ TEST(SampleImage, GivesFourZerosWhileNoSamplerIsSet) {
 
 TEST(FromWorld, HandsItsArgumentsToTheMapperAndReturnsItsPoint) {
   Seen seen;
-  Same(Answers(Each("fromWorld(5, [1, 2, 3], 0.25)"), 2, 0, &seen),
-       {640, 360});
+  Same(Answers(Each("fromWorld(5, [1, 2, 3], 0.25)"), 2, 0, &seen), {640, 360});
   Same(seen.mapped, {5, 1, 2, 3, 0.25});
 }
 
@@ -148,9 +146,9 @@ TEST(FromWorld, ThirdNumberLeftOutIsZero) {
 }
 
 TEST(FromWorld, GivesTwoNaNWhileNoMapperIsSet) {
-  const std::vector<double> got = Answers(
-      Each("((p) => [p.length, ...p])(fromWorld(5, [1, 2, 3], 0.25))"), 3, 0,
-      nullptr);
+  const std::vector<double> got =
+      Answers(Each("((p) => [p.length, ...p])(fromWorld(5, [1, 2, 3], 0.25))"),
+              3, 0, nullptr);
   ASSERT_EQ(got.size(), 3u);
   EXPECT_DOUBLE_EQ(got[0], 2);
   EXPECT_TRUE(std::isnan(got[1])) << got[1];

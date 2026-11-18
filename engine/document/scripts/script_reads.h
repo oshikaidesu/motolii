@@ -25,14 +25,15 @@
 //     pixels of layer `id`.
 //
 //   getByteFrequencyData, getFloatFrequencyData and getFloatTimeDomainData
-//     (id, array, t): the Web's AnalyserNode methods (W3C Web Audio API, section 1.8) on the sound
-//     of video layer `id`, a sound file being a video layer that is heard and
-//     not seen: how strong each pitch is, and the wave. The second of the file
-//     is the one the layer plays at t, as for its picture. The file's sound is
-//     read whole the first time it is asked for, and that is waited for
-//     (media/sound_level.h, which says how the numbers are worked out). Before
-//     the layer comes on, after it has gone, and for any other layer: zeros.
-//     The layer's volume and its sound effects are not taken in.
+//     (id, array, t): the Web's AnalyserNode methods (W3C Web Audio API,
+//     section 1.8) on the sound of video layer `id`, a sound file being a video
+//     layer that is heard and not seen: how strong each pitch is, and the wave.
+//     The second of the file is the one the layer plays at t, as for its
+//     picture. The file's sound is read whole the first time it is asked for,
+//     and that is waited for (media/sound_level.h, which says how the numbers
+//     are worked out). Before the layer comes on, after it has gone, and for
+//     any other layer: zeros. The layer's volume and its sound effects are not
+//     taken in.
 //
 // What a picture is read from, today:
 //   - An image layer: its file, drawn by ThorVG at its own size.

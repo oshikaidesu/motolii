@@ -43,8 +43,8 @@ JSValue subtitles_frame(JSContext* cx, JSValueConst, int, JSValueConst* a, int,
 // something of p5.sound or of Web Audio that hears (loadSound, p5.FFT,
 // p5.Amplitude, an AudioContext) and p5.sound's file lies where the p5
 // distribution has it, addons/p5.sound.min.js beside the p5.js at `p5`, that
-// file is run as it is on community/p5js/web_audio_stand.h. What it hears is the
-// sound of the video or sound file at `*film` (empty: silence), which must
+// file is run as it is on community/p5js/web_audio_stand.h. What it hears is
+// the sound of the video or sound file at `*film` (empty: silence), which must
 // stay where it is for as long as `cx` lives; the file's sound is read whole
 // the first time it is asked for, and waited for. To be called after p5.js
 // has been run. Without the file, or for a sketch that names none of these,

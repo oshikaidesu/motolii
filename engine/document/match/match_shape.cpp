@@ -136,10 +136,9 @@ void drawn_shape(LayerBuild& build) {
   // (flat_mesh). A shape with an edge, a ramp, a dash, effects, a trim or
   // a bend is rendered on the CPU as a ThorVG image. A path shape uses
   // its own path as its form. With no path yet it is an empty path.
-  const std::string drawn = build.word("path"),
-                    form = shape != "path" ? shape
-                           : drawn.empty() ? "M0 0"
-                                           : drawn;
+  const std::string drawn = build.word("path"), form = shape != "path" ? shape
+                                                       : drawn.empty() ? "M0 0"
+                                                                       : drawn;
   const bool plain = !fx.thick && !wave && shape != "spiral" &&
                      shape != "null" && fx.media.empty() && fx.ramp.size() < 2;
   if (plain)

@@ -40,8 +40,7 @@ void match_light(LayerBuild& build) {
     LightManager::ShadowOptions shade;
     shade.mapSize = 2048;
     const float soft = (float)build.number("shadow_softness", 0);
-    shade.screenSpaceContactShadows =
-        build.number("contact_shadows", 0) > 0.5;
+    shade.screenSpaceContactShadows = build.number("contact_shadows", 0) > 0.5;
     if (soft > 0.f)
       shade.shadowBulbRadius =
           type == LightManager::Type::SUN ? 0.05f * soft : 0.5f * soft;
@@ -52,8 +51,7 @@ void match_light(LayerBuild& build) {
         .castShadows(build.number("shadows", 0) > 0.5)
         .shadowOptions(shade)
         .build(*s.engine, made.light);
-    if (const int group = (int)build.number("light_group", 0);
-        group > 0) {
+    if (const int group = (int)build.number("light_group", 0); group > 0) {
       auto& lights = s.engine->getLightManager();
       lights.setLightChannel(lights.getInstance(made.light), 0, false),
           lights.setLightChannel(lights.getInstance(made.light),

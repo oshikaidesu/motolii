@@ -17,14 +17,14 @@ std::filesystem::path doc_engine(const char* part) {
   dladdr((const void*)&doc_engine, &lib);
   std::error_code wrong;
   // The library is <engine>/out/libmotolii.dylib, but while the open app runs a
-  // rebuilt engine it is <engine>/out/live/libmotolii-<time>.dylib, a hot-swapped
-  // copy one folder deeper (motolii.dart _liveCopy). Anchor on the out/ folder so
-  // either depth resolves to the same <engine>; without it the extra live/ folder
-  // shifted the root and the shelves/ tree (effects, create) came back empty.
-  std::filesystem::path dir =
-      std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".",
-                                        wrong)
-          .parent_path();
+  // rebuilt engine it is <engine>/out/live/libmotolii-<time>.dylib, a
+  // hot-swapped copy one folder deeper (motolii.dart _liveCopy). Anchor on the
+  // out/ folder so either depth resolves to the same <engine>; without it the
+  // extra live/ folder shifted the root and the shelves/ tree (effects, create)
+  // came back empty.
+  std::filesystem::path dir = std::filesystem::weakly_canonical(
+                                  lib.dli_fname ? lib.dli_fname : ".", wrong)
+                                  .parent_path();
   for (std::filesystem::path p = dir; !p.empty() && p != p.parent_path();
        p = p.parent_path())
     if (p.filename() == "out") {

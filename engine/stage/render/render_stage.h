@@ -23,10 +23,10 @@
 #include <math/vec4.h>
 #include <utils/Entity.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -118,7 +118,8 @@ struct Stage {
   bool behindRead = false;
   // Run once per frame after drawing (e.g. restore material instances).
   std::vector<std::function<void()>> after;
-  // Whether a layer effect reads `behind`. Causes it to be drawn before effects.
+  // Whether a layer effect reads `behind`. Causes it to be drawn before
+  // effects.
   bool backdropRead = false;
   // Glass far faces (layer 8), recording face direction (far_side.mat).
   filament::View* view_through = nullptr;
@@ -215,7 +216,8 @@ struct Stage {
   } desk;
   // Post-process pass (screen_fx.h).
   std::function<void()> over;
-  // One-shot pre-frame work, keyed by owner (e.g. edge distance, canvas_edge.h).
+  // One-shot pre-frame work, keyed by owner (e.g. edge distance,
+  // canvas_edge.h).
   std::map<const void*, std::function<void()>> once;
   // Per-layer effect passes (layer_fx.h), drawn before the main view.
   std::vector<std::function<void()>> before;
@@ -232,8 +234,8 @@ struct Stage {
   // change so the selection box follows path operator drags live.
   // Driver→render thread; a stale read just delays by one frame.
   uint64_t bentChanges = 0;
-  // Set when a bend overflows its texture. The render loop rebuilds once to grow
-  // the sheet.
+  // Set when a bend overflows its texture. The render loop rebuilds once to
+  // grow the sheet.
   bool bentOverflow = false;
 };
 
