@@ -1,4 +1,5 @@
-// How the app reads the engine's snapshots (docs/app/BRIDGE.md): the bytes decoded as they are, and each part parsed once.
+// How the app reads the engine's snapshots (docs/app/BRIDGE.md): the bytes decoded as they are, the parts the engine
+// hands over put into what is held, and each part parsed once.
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -8,16 +9,39 @@ final _bytesToJson = const Utf8Decoder().fuse(const JsonDecoder());
 Map<String, dynamic> snapshotOf(Uint8List bytes) =>
     _bytesToJson.convert(bytes) as Map<String, dynamic>;
 
-final _parsed = Expando<Map<String, Object>>();
+// For each snapshot, by part and then by form, what was parsed from it.
+final _parsed = Expando<Map<String, Map<String, Object>>>();
 
-/// A part of [snapshot] in the form its readers want, parsed on the first read and kept with the snapshot.
+/// The [part] of [snapshot] in the form its readers want, parsed on the first read and kept with the snapshot.
+/// [as] names the form when a part is read in more than one.
 ///
 /// A snapshot is never changed, only replaced, so what was parsed from it stays true for as long as it is held.
 T parsedOnce<T extends Object>(
   Map<String, dynamic> snapshot,
-  String what,
-  T Function() parse,
-) => ((_parsed[snapshot] ??= {})[what] ??= parse()) as T;
+  String part,
+  T Function() parse, {
+  String as = '',
+}) => (((_parsed[snapshot] ??= {})[part] ??= {})[as] ??= parse()) as T;
+
+/// [held] with the [parts] the engine handed over put in; a part that is null is gone. [held] itself when there
+/// are none, so readers that compare with `identical` see that nothing changed.
+///
+/// The engine hands over only the parts that differ, so what was parsed from the others is carried along.
+Map<String, dynamic> merged(
+  Map<String, dynamic> held,
+  Map<String, dynamic> parts,
+) {
+  if (parts.isEmpty) return held;
+  final next = <String, dynamic>{...held, ...parts}
+    ..removeWhere((_, part) => part == null);
+  if (_parsed[held] case final kept?) {
+    _parsed[next] = {
+      for (final e in kept.entries)
+        if (!parts.containsKey(e.key)) e.key: e.value,
+    };
+  }
+  return next;
+}
 
 /// The words of a space-separated list.
 List<String> spaced(Object? said) => List.unmodifiable([

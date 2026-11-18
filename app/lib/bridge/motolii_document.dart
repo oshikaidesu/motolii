@@ -162,8 +162,9 @@ extension MotoliiDocument on Motolii {
     final s = layerSnapshot(layer);
     return parsedOnce(
       s,
-      'moving, as a set',
+      'moving',
       () => spaced(s['moving']).toSet(),
+      as: 'set',
     ).contains(name);
   }
 

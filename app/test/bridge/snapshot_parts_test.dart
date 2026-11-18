@@ -58,6 +58,123 @@ void main() {
     });
   });
 
+  group('merged', () {
+    test('the parts handed over replace their own, the others stay', () {
+      final held = <String, dynamic>{
+        'moving': 'x y',
+        'value': {'x': 1},
+        'lasts': 5,
+      };
+      final next = merged(held, {
+        'value': {'x': 2},
+      });
+      expect(next, {
+        'moving': 'x y',
+        'value': {'x': 2},
+        'lasts': 5,
+      });
+      expect(identical(next['moving'], held['moving']), isTrue);
+      expect(held['value'], {'x': 1}, reason: 'what was held is not changed');
+    });
+
+    test('a part that is null is gone', () {
+      expect(
+        merged(
+          {
+            'keys': <num>[1, 2],
+            'lasts': 5,
+          },
+          {'keys': null},
+        ),
+        {'lasts': 5},
+      );
+    });
+
+    test('no parts: the same snapshot, so identical still says unchanged', () {
+      final held = <String, dynamic>{'moving': 'x'};
+      expect(identical(merged(held, const {}), held), isTrue);
+    });
+
+    test('a layer not held yet is made of its parts', () {
+      expect(merged(const {}, {'moving': 'x'}), {'moving': 'x'});
+    });
+
+    test('what was parsed is carried for the parts that stay only', () {
+      final held = <String, dynamic>{'moving': 'x y', 'values': 'x y z'};
+      var parses = 0;
+      List<String> read(Map<String, dynamic> snapshot, String part) =>
+          parsedOnce(snapshot, part, () {
+            parses++;
+            return spaced(snapshot[part]);
+          });
+      Set<String> readSet(Map<String, dynamic> snapshot) =>
+          parsedOnce(snapshot, 'moving', () {
+            parses++;
+            return spaced(snapshot['moving']).toSet();
+          }, as: 'set');
+      read(held, 'moving');
+      readSet(held);
+      read(held, 'values');
+      expect(parses, 3);
+
+      final next = merged(held, {'moving': 'x'});
+      expect(identical(read(next, 'values'), read(held, 'values')), isTrue);
+      expect(parses, 3, reason: 'values stayed: not parsed again');
+      expect(read(next, 'moving'), ['x']);
+      expect(readSet(next), {'x'});
+      expect(parses, 5, reason: 'both forms of the part that came');
+      expect(read(held, 'moving'), [
+        'x',
+        'y',
+      ], reason: 'the old one is as it was');
+    });
+  });
+
+  test('reads of the document snapshot as the engine writes them', () {
+    // The texts engine/base/json_parts_test.cpp expects of the engine, inside motolii_snapshot's frame.
+    Map<String, dynamic> read(String text) => snapshotOf(bytes(text));
+    final first = read(
+      '{"document":{"layers":[1],"seconds":30},'
+      '"layer":{"1":{"keys":[0,2],"moving":"x y","value":{"x":1.5}}}}',
+    );
+    var document = merged(const {}, first['document'] as Map<String, dynamic>),
+        layer = merged(
+          const {},
+          (first['layer'] as Map<String, dynamic>)['1'] as Map<String, dynamic>,
+        );
+    expect(document, {
+      'layers': [1],
+      'seconds': 30,
+    });
+
+    // A value dragged: one part of one layer, nothing of the document.
+    final second = read('{"document":{},"layer":{"1":{"value":{"x":2}}}}');
+    final sameDocument = merged(
+      document,
+      second['document'] as Map<String, dynamic>,
+    );
+    expect(identical(sameDocument, document), isTrue);
+    layer = merged(
+      layer,
+      (second['layer'] as Map<String, dynamic>)['1'] as Map<String, dynamic>,
+    );
+    expect(layer, {
+      'keys': [0, 2],
+      'moving': 'x y',
+      'value': {'x': 2},
+    });
+
+    // Its last keyframe removed: the part is gone. No layer changed in the read after: none is named.
+    final third = read('{"document":{},"layer":{"1":{"keys":null}}}');
+    layer = merged(
+      layer,
+      (third['layer'] as Map<String, dynamic>)['1'] as Map<String, dynamic>,
+    );
+    expect(layer.containsKey('keys'), isFalse);
+    expect(read('{"document":{},"layer":{}}')['layer'], isEmpty);
+    document = sameDocument;
+  });
+
   test('spaced: the words, empty ones left out', () {
     expect(spaced('x  y scale_x '), ['x', 'y', 'scale_x']);
     expect(spaced(''), isEmpty);

@@ -25,8 +25,10 @@
 #include "document/evaluate/value_at.h"
 #include "document/kinds.h"
 #include "document/scripts/expressions.h"
+#include "document/scripts/recipes.h"
 #include "document/undo.h"
 #include "entry/motolii_handle.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 
@@ -194,12 +196,61 @@ struct SnapshotKeepsWhy {
   ~SnapshotKeepsWhy() { d.error = why; }
 };
 
+// Writes the document snapshot's tables: what a change to a layer's values
+// leaves as it was. See snapshot_update for when they are made.
+void snapshot_tables(Motolii* m, rapidjson::StringBuffer& out) {
+  SnapshotWriter t(out);
+  t.StartObject();
+  t.Key("easings"), t.String(motolii_easings(m));
+  t.Key("easingNames"), t.String(motolii_easing_names(m));
+  t.Key("effectNames"), t.String(motolii_effect_names(m));
+  // Each easing's shape, sampled at 65 evenly spaced steps of u from 0 to 1, so
+  // the app can draw its curve.
+  t.Key("easingCurves"), t.StartObject();
+  for (const std::string& easing : snapshot_words(motolii_easing_names(m))) {
+    t.Key(easing.c_str()), t.StartArray();
+    for (int i = 0; i <= 64; ++i)
+      t.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
+    t.EndArray();
+  }
+  t.EndObject();
+  // The default value of each numeric property, used when the document does not
+  // set it.
+  t.Key("usual"), t.StartObject();
+  for (const DocValue& v : doc_values)
+    if (!v.words)
+      t.Key(v.name), t.Double(doc_usual(*m->d, v.name)),
+          t.Key((std::string(v.name) + "_by").c_str()), t.Double(0);
+  t.EndObject();
+  // The properties each layer kind has, whether or not they are set. Matches
+  // doc_knows.
+  t.Key("knows"), t.StartObject();
+  for (const char* kind : {"video", "image", "text", "solid", "shape", "camera",
+                           "light", "behaviour", "stage"}) {
+    std::string all;
+    for (const DocValue& v : doc_values)
+      // The "_by" variant is the property as driven by a behaviour. The stage
+      // has none.
+      if (doc_among(v.kinds, kind))
+        all += std::string(all.empty() ? "" : " ") + v.name +
+               (v.words || !strcmp(kind, "stage")
+                    ? ""
+                    : std::string(" ") + v.name + "_by");
+    t.Key(kind), t.String(all.c_str());
+  }
+  t.EndObject();
+  t.EndObject();
+}
+
 }  // namespace
 
 void snapshot_update(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   std::set<int> again;
+  // A table other than keyframe changed (undo.cpp doc_note): an easing of the
+  // document may be among them, so the tables are made again.
+  const bool tables_touched = d.changes.layers_changed;
   bool all = d.changes.layers_changed || m->snapshots.layers.empty();
   std::string changes = d.changes.layers_changed ? "layers\n" : "";
   for (const auto& [layer, name] : d.changes.changed) {
@@ -250,67 +301,37 @@ void snapshot_update(Motolii* m) {
   for (int i = 0; i < n; ++i) w.Int(layers[i]);
   w.EndArray();
   w.EndObject();
-  // The tables are written apart: they are most of the bytes and a change to a
-  // layer leaves them as they were (see Snapshots::tables).
+  // The tables are most of the bytes and a change to a layer's values leaves
+  // them as they were, so they are made again only for a cause: none made yet,
+  // a table other than keyframe changed, or the user's own easings or the
+  // shelf's files did.
+  const int easings = doc_own_easings_made().load(),
+            files = files_changed().load();
+  const bool tables_due = tables_touched ||
+                          easings != m->snapshots.tablesEasings ||
+                          files != m->snapshots.tablesFiles;
   rapidjson::StringBuffer tables_out;
-  SnapshotWriter t(tables_out);
-  t.StartObject();
-  t.Key("easings"), t.String(motolii_easings(m));
-  t.Key("easingNames"), t.String(motolii_easing_names(m));
-  t.Key("effectNames"), t.String(motolii_effect_names(m));
-  // Each easing's shape, sampled at 65 evenly spaced steps of u from 0 to 1, so
-  // the app can draw its curve.
-  t.Key("easingCurves"), t.StartObject();
-  for (const std::string& easing : snapshot_words(motolii_easing_names(m))) {
-    t.Key(easing.c_str()), t.StartArray();
-    for (int i = 0; i <= 64; ++i)
-      t.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
-    t.EndArray();
-  }
-  t.EndObject();
-  // The default value of each numeric property, used when the document does not
-  // set it.
-  t.Key("usual"), t.StartObject();
-  for (const DocValue& v : doc_values)
-    if (!v.words)
-      t.Key(v.name), t.Double(doc_usual(*m->d, v.name)),
-          t.Key((std::string(v.name) + "_by").c_str()), t.Double(0);
-  t.EndObject();
-  // The properties each layer kind has, whether or not they are set. Matches
-  // doc_knows.
-  t.Key("knows"), t.StartObject();
-  for (const char* kind : {"video", "image", "text", "solid", "shape", "camera",
-                           "light", "behaviour", "stage"}) {
-    std::string all;
-    for (const DocValue& v : doc_values)
-      // The "_by" variant is the property as driven by a behaviour. The stage
-      // has none.
-      if (doc_among(v.kinds, kind))
-        all += std::string(all.empty() ? "" : " ") + v.name +
-               (v.words || !strcmp(kind, "stage")
-                    ? ""
-                    : std::string(" ") + v.name + "_by");
-    t.Key(kind), t.String(all.c_str());
-  }
-  t.EndObject();
-  t.EndObject();
+  if (tables_due) snapshot_tables(m, tables_out);
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
-  std::string own = {out.GetString(), out.GetSize()};
-  std::string tables = {tables_out.GetString(), tables_out.GetSize()};
-  const bool same_tables = tables == m->snapshots.tables;
-  // Nothing the app reads changed, so publish no new snapshot.
-  if (parts.empty() && own == m->snapshots.all && same_tables) return;
-  const long v = ++m->snapshots.version;
-  if (!same_tables)
-    m->snapshots.tables = std::move(tables), m->snapshots.tablesVersion = v;
-  for (auto& [layer, part] : parts)
-    m->snapshots.layers[layer] = {v, std::move(part)};
+  const long v = m->snapshots.version + 1;
+  bool differed = json_parts_keep(m->snapshots.document,
+                                  {out.GetString(), out.GetSize()}, v, false);
+  if (tables_due) {
+    differed |= json_parts_keep(m->snapshots.document,
+                                {tables_out.GetString(), tables_out.GetSize()},
+                                v, false);
+    m->snapshots.tablesEasings = easings, m->snapshots.tablesFiles = files;
+  }
+  for (const auto& [layer, json] : parts)
+    differed |= json_parts_keep(m->snapshots.layers[layer], json, v, true);
   std::set<int> are(layers, layers + n);
   are.insert(0);
   // Drop the parts of layers that no longer exist.
   for (auto it = m->snapshots.layers.begin(); it != m->snapshots.layers.end();)
     it = are.count(it->first) ? std::next(it) : m->snapshots.layers.erase(it);
-  m->snapshots.all = std::move(own);
+  // Nothing the app reads changed, so publish no new snapshot.
+  if (!differed) return;
+  m->snapshots.version = v;
   m->snapshots.pending |= 1;
 }
 
@@ -355,7 +376,6 @@ void snapshot_time(Motolii* m) {
   rapidjson::StringBuffer out;
   SnapshotWriter w(out);
   w.StartObject();
-  w.Key("now"), w.Double(at);
   w.Key("layer"), w.StartObject();
   for (int i = 0; i < n; ++i) {
     const int t = layers[i];
@@ -391,7 +411,12 @@ void snapshot_time(Motolii* m) {
   w.EndObject();
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   ++m->snapshots.timeVersion;
-  m->snapshots.time = {out.GetString(), out.GetSize()};
+  // The detail is handed over again only when it differs: with nothing picked
+  // or nothing of it moving, every frame's is the same.
+  if (std::string detail(out.GetString(), out.GetSize());
+      detail != m->snapshots.time)
+    m->snapshots.time = std::move(detail),
+    m->snapshots.timeDetailVersion = m->snapshots.timeVersion;
   m->snapshots.timeLayout = std::move(layout);
   m->snapshots.pending |= 2;
 }

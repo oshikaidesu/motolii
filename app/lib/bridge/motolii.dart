@@ -196,8 +196,6 @@ class Motolii {
   // closed port (safe); a freed NativeCallable would crash.
   final _told = ReceivePort();
   Map<String, dynamic> documentSnapshot = const {};
-  // The engine hands the tables over only when they differ: kept here between reads.
-  Map<String, dynamic> _tables = const {};
   late final _version = malloc<Long>();
   final layerSnapshots = <int, Map<String, dynamic>>{};
   Map<String, dynamic> momentSnapshot = const {'layer': {}};
@@ -308,14 +306,17 @@ class Motolii {
         which &= ~1;
       } else {
         _documentAt = _version.value;
-        if (all['tables'] case final Map<String, dynamic> t) _tables = t;
-        if (all['document'] case final Map<String, dynamic> d) {
-          documentSnapshot = {..._tables, ...d};
+        // The engine hands over only the parts newer than [_documentAt].
+        if (all['document'] case final Map<String, dynamic> parts) {
+          documentSnapshot = merged(documentSnapshot, parts);
         }
-        (all['layer'] as Map<String, dynamic>).forEach(
-          (t, part) =>
-              layerSnapshots[int.parse(t)] = part as Map<String, dynamic>,
-        );
+        (all['layer'] as Map<String, dynamic>).forEach((t, parts) {
+          final layer = int.parse(t);
+          layerSnapshots[layer] = merged(
+            layerSnapshots[layer] ?? const {},
+            parts as Map<String, dynamic>,
+          );
+        });
         final are = {0, ...layers};
         layerSnapshots.removeWhere((t, _) => !are.contains(t));
         shownOf.clear();
@@ -340,7 +341,7 @@ class Motolii {
           };
         }
       }
-      final moment = _read(2, 0, unlessAt: _momentAt);
+      final moment = _read(2, _momentAt, unlessAt: _momentAt);
       if (_version.value == _momentAt) {
         which &= ~2;
       } else {
@@ -371,14 +372,16 @@ class Motolii {
     }
   }
 
-  /// One snapshot as the engine has it now, its version left in [_version]. Null when it is still at [unlessAt]
-  /// (not decoded again) or is not JSON (logged).
+  /// What of one snapshot is newer than [since], its version left in [_version]. Null when it is still at
+  /// [unlessAt], when the engine hands nothing over (the time snapshot's detail as it was), or when it is not
+  /// JSON (logged).
   Map<String, dynamic>? _read(int which, int since, {int? unlessAt}) {
     final p = _snapshot(handle, which, since, _version);
     try {
-      return _version.value == unlessAt
+      final length = p.length;
+      return length == 0 || _version.value == unlessAt
           ? null
-          : snapshotOf(p.cast<Uint8>().asTypedList(p.length));
+          : snapshotOf(p.cast<Uint8>().asTypedList(length));
     } on FormatException catch (e, stack) {
       log(
         '${which == 1 ? 'document' : 'moment'} snapshot: JSON parse failed: $e',

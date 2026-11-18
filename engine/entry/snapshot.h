@@ -4,9 +4,11 @@
 // The app reads only these, never the document while it is being built.
 //
 // The render thread builds both while it holds the document, as JSON written
-// with rapidjson (the copy that Filament's assimp ships). Each snapshot is
-// stored whole, and the app is notified through its single listener which
-// snapshot is new.
+// with rapidjson (the copy that Filament's assimp ships). A snapshot is kept in
+// parts, each with the version it last differed at, and the app is handed only
+// the parts newer than the version it has: there is no way to be handed a
+// snapshot whole but to have none of it yet. The app is notified through its
+// single listener which snapshot is new.
 //   Document snapshot: rebuilt when the document changes. It holds every
 //   layer's text values,
 //     resting numbers, ranges, and keyframes.
@@ -19,6 +21,7 @@
 #include <string>
 #include <utility>
 
+#include "base/json_parts.h"
 #include "entry/motolii.h"
 
 namespace motolii {
@@ -28,21 +31,24 @@ namespace motolii {
 // them under lock.
 struct Snapshots {
   std::mutex lock;
-  // Each layer's part of the document snapshot and the version it was made at.
-  std::map<int, std::pair<long, std::string>> layers;
+  // The document snapshot's own parts by key, and each layer's parts by key
+  // (base/json_parts.h).
+  JsonParts document;
+  std::map<int, JsonParts> layers;
   // The number of the user's own easings when the document snapshot was last
   // made. See doc_own_easings_made.
   int easings = -1;
   // The SQLite total change count at the time the document snapshot was last
   // made.
   long rows = -1;
-  // The document snapshot's own part, and the snapshot of the current time.
-  std::string all, time;
-  // The tables a change to a layer leaves as they were (default values, the
-  // values each kind knows, easings, effect names), and the version they last
-  // differed at: the app is handed them only when they are newer than it has.
-  std::string tables;
-  long tablesVersion = 0;
+  // What the document snapshot's tables (default values, the values each kind
+  // knows, easings, effect names) were last made from: the count of the user's
+  // own easings and of the shelf's file changes. -1: not made yet.
+  int tablesEasings = -1, tablesFiles = -1;
+  // The time snapshot's detail (the selected and watched layers), and the time
+  // version it last differed at.
+  std::string time;
+  long timeDetailVersion = 0;
   // The time snapshot's per-layer layout as flat doubles: now, layer count,
   // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]).
   std::vector<double> timeLayout;

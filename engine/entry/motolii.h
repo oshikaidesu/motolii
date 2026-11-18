@@ -416,10 +416,11 @@ void motolii_export_cancel(Motolii* m);
    that counts in frames counts in these. */
 int motolii_rate(Motolii* m);
 /* Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read
-   without the project lock. which 1 is the project's snapshot: its own part,
-   and the part of each layer newer than `since`. which 2 is the time snapshot.
-   The result is JSON in a copy that the caller frees with free(). *version is
-   set to the version the snapshot is as of. */
+   without the project lock. which 1 is the project's snapshot: of its own parts
+   and of each layer's, those newer than `since` (a part that is gone is null).
+   which 2 is the time snapshot's detail, or "" when it is no newer than
+   `since`. The result is JSON in a copy that the caller frees with free().
+   *version is set to the version the snapshot is as of. */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);
 /* Returns the time snapshot's per-layer layout as a flat double array, read
    without the project lock: now, layer count, layer ids, then 26 doubles per

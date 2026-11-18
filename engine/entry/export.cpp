@@ -141,29 +141,26 @@ const char* motolii_list(Motolii* m) {
   });
 }
 // Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read
-// without the project lock. which 1 is the project's snapshot: its own part,
-// its tables if they are newer than `since` (else null), and the part of each
-// layer newer than `since`. which 2 is the time snapshot.
-// The result is a JSON copy that the caller frees with free(). *version is set
-// to the version the snapshot is as of.
+// without the project lock. which 1 is the project's snapshot: of its own parts
+// and of each layer's, those newer than `since` (a part that is gone is null).
+// which 2 is the time snapshot's detail, or "" when it is no newer than
+// `since`. The result is a JSON copy that the caller frees with free().
+// *version is set to the version the snapshot is as of.
 char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   if (which == 2)
     return *version = m->snapshots.timeVersion,
-           strdup(m->snapshots.time.c_str());
-  std::string all =
-      "{\"document\":" +
-      (m->snapshots.all.empty() ? std::string("null") : m->snapshots.all) +
-      ",\"tables\":" +
-      (m->snapshots.tablesVersion > since && !m->snapshots.tables.empty()
-           ? m->snapshots.tables
-           : std::string("null")) +
-      ",\"layer\":{";
+           strdup(m->snapshots.timeDetailVersion > since
+                      ? m->snapshots.time.c_str()
+                      : "");
+  std::string all = "{\"document\":{" +
+                    json_parts_newer(m->snapshots.document, since) +
+                    "},\"layer\":{";
   bool first = true;
-  for (const auto& [layer, part] : m->snapshots.layers)
-    if (part.first > since)
+  for (const auto& [layer, parts] : m->snapshots.layers)
+    if (const std::string said = json_parts_newer(parts, since); !said.empty())
       all +=
-          (first ? "\"" : ",\"") + std::to_string(layer) + "\":" + part.second,
+          (first ? "\"" : ",\"") + std::to_string(layer) + "\":{" + said + "}",
           first = false;
   *version = m->snapshots.version;
   return strdup((all + "}}").c_str());
