@@ -127,7 +127,7 @@ String hexOfColor(Color c) {
 Map<String, Color> usedColors(WorkspaceController ws) {
   return {
     for (final l in ws.layers)
-      if (wordOf(ws, int.parse(l.id), 'fill').split(' ').first.split('@').first
+      if (wordOf(ws, l.id, 'fill').split(' ').first.split('@').first
           case final f when f.length == 6)
         if (int.tryParse(f, radix: 16) case final v?)
           l.name: Color(0xFF000000 | v),

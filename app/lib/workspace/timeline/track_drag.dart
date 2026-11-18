@@ -48,7 +48,7 @@ class TrackDrag extends ChangeNotifier {
   // The bar being dragged. Dragging the body slides it, and dragging an end trims it.
   // The timeline only records which part was grabbed and how far the pointer moved.
   // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
-  ({String id, String part, double grab, bool moved})? _bar;
+  ({int id, String part, double grab, bool moved})? _bar;
   // The typed snap targets, collected when the drag starts.
   List<SnapTarget> _targets = const [];
 
@@ -143,7 +143,7 @@ class TrackDrag extends ChangeNotifier {
     final ws = workspace!, v = _viewport.view, r = Rect.fromPoints(b.$1, b.$2);
     // A click, not a box: the tap handler has already dealt with it.
     if (r.width < 4 && r.height < 4) return;
-    final keys = <SelectedKeyframe>[], things = <String>[];
+    final keys = <SelectedKeyframe>[], things = <int>[];
     for (var i = 0; i < _rows.order.length; i++) {
       // A box does not select points on a lane.
       if (_rows.order[i].value != null) continue;
@@ -235,13 +235,7 @@ class TrackDrag extends ChangeNotifier {
     var by = (_viewport.view.frameAt(p.dx) - h.grab).round();
     if (h.part == 'slip') {
       _bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
-      return _slip.slipBy(
-        ws,
-        int.parse(h.id),
-        by,
-        barIn: _barIn,
-        barOut: _barOut,
-      );
+      return _slip.slipBy(ws, h.id, by, barIn: _barIn, barOut: _barOut);
     }
     by = _snapped(by, [
       if (h.part != 'tail') _barIn,
@@ -336,7 +330,7 @@ class TrackDrag extends ChangeNotifier {
       return ws.after(
         timeline_service.addKeyframe(
           ws,
-          int.parse(r.l.id),
+          r.l.id,
           name,
           f.round().clamp(0, WorkspaceController.duration) /
               WorkspaceController.fps,
@@ -420,8 +414,7 @@ class TrackDrag extends ChangeNotifier {
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
       // On a lane, a click on a keyframe selects it.
-      final t = int.parse(l.id);
-      final at = timeline_service.keyframeTimes(ws, t, n),
+      final at = timeline_service.keyframeTimes(ws, l.id, n),
           f = v.frameAt(p.dx) / WorkspaceController.fps;
       return at.any(
                 (k) =>
@@ -543,7 +536,7 @@ class TrackDrag extends ChangeNotifier {
       _targets = ws.snapTargets(skip: {l.id});
       return true;
     }
-    ws.live.hold(int.parse(l.id));
+    ws.live.hold(l.id);
     ws.select(l.id);
     if (ws.playing) ws.playing = false;
     _barIn = l.inF;

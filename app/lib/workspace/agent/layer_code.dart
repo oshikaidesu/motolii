@@ -40,9 +40,9 @@ class LayerCode {
 
 /// The selected layer as the agent is told of it, or null with no layer selected.
 LayerCode? layerCode(WorkspaceController ws) {
-  final t = int.tryParse(ws.selected ?? '');
+  final t = ws.selected;
   if (!projectOpen(ws) || t == null) return null;
-  final name = ws.layers.where((l) => l.id == ws.selected).firstOrNull?.name;
+  final name = ws.layers.where((l) => l.id == t).firstOrNull?.name;
   final stretch = ws.selection.stretch;
   return LayerCode(
     t,

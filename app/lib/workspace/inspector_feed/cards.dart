@@ -19,10 +19,10 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.
 /// The values named in code are the exceptions in state/inspector_values.dart (`_onCard`, `writeNumbers`): position, scale, rotation and
 /// opacity as the stage shows them, `speed`, and the other layer a value may point at.
-List<CardDeclaration>? valueCards(WorkspaceController ws, String? id) {
+List<CardDeclaration>? valueCards(WorkspaceController ws, int? id) {
   // With nothing selected the cards belong to the stage itself, layer 0.
-  final t = id == null ? 0 : int.tryParse(id);
-  if (!projectOpen(ws) || t == null) return null;
+  final t = id ?? 0;
+  if (!projectOpen(ws)) return null;
   // The cards are rebuilt only when the set of cards, their values or the layers they may name change.
   // Ending a drag changes none of these, and the numbers on the cards come from layerTransform.
   // The inspector takes a card's current value (its @default) only when it builds the cards anew.

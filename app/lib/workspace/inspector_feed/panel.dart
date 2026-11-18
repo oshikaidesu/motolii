@@ -36,7 +36,7 @@ import 'package:motolii/workspace/workspace.dart';
 /// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the tool panel.
 class InspectorPane extends StatefulWidget {
   const InspectorPane({super.key, this.layer, this.only}); // (no layer: the Inspector; a layer and the titles of its cards: LayerCards)
-  final String? layer;
+  final int? layer;
   final List<String>? only;
   @override
   State<InspectorPane> createState() => _InspectorPanelState();
@@ -46,7 +46,7 @@ class _InspectorPanelState extends State<InspectorPane> {
   // (the inspector follows only what it shows: the document, what is picked, Animate, and the moment only while what is
   //  picked has keys; played, a thing with no keys shows the same numbers, so it is not built again each picture)
   WorkspaceController? _ws;
-  String? _id(WorkspaceController ws) => widget.layer ?? ws.selected;
+  int? _id(WorkspaceController ws) => widget.layer ?? ws.selected;
   Layer? _layerOf(WorkspaceController ws) => widget.layer == null
       ? ws.layer
       : ws.layers.where((x) => x.id == widget.layer).firstOrNull;
@@ -78,8 +78,7 @@ class _InspectorPanelState extends State<InspectorPane> {
   // (the reading of the document changed only numbers of what is picked, none that changes its cards: they are told
   //  to the fields that show them, as a moment's are; anything else, or not known: the inspector built again)
   bool _onlyNumbers(WorkspaceController ws) {
-    final c = ws.lastChange,
-        t = int.tryParse(_id(ws) ?? '') ?? (_id(ws) == null ? 0 : null);
+    final c = ws.lastChange, t = _id(ws);
     if (!projectOpen(ws) ||
         c == null ||
         c.layers ||
@@ -122,7 +121,7 @@ class _InspectorPanelState extends State<InspectorPane> {
     if (now != _seen) {
       _seen = now;
       _frame = ws.frame;
-      if (was is (int, String?, bool) &&
+      if (was is (int, int?, bool) &&
           was.$2 == _id(ws) &&
           was.$3 == ws.animating &&
           _onlyNumbers(ws)) {
@@ -241,93 +240,79 @@ class _InspectorPanelState extends State<InspectorPane> {
           ];
         }),
         title: l?.name,
-        movable: !own || int.tryParse(l?.id ?? '') == null
+        movable: !own || l == null
             ? const []
-            : effectTitles(
-                ws,
-                int.parse(l!.id),
-              ), // (its effects, up or down their stack)
-        moreCards: !own || int.tryParse(l?.id ?? '') == null
+            : effectTitles(ws, l.id), // (its effects, up or down their stack)
+        moreCards: !own || l == null
             ? const []
             : [
-                for (final c in moreCardTitles(ws, int.parse(l!.id)))
+                for (final c in moreCardTitles(ws, l.id))
                   if (l.kind != LayerKind.audio || c == 'Play') c,
               ], // (a sound's speed, Alight Motion's; nothing else)
-        cardsOff: int.tryParse(l?.id ?? '') == null
-            ? const []
-            : effectsOff(ws, int.parse(l!.id)),
+        cardsOff: l == null ? const [] : effectsOff(ws, l.id),
       ),
       actions: CardActions(
-        onCardMove: !own || int.tryParse(l?.id ?? '') == null
+        onCardMove: !own || l == null
             ? null
-            : (title, by) => moveEffect(ws, int.parse(l!.id), title, by),
+            : (title, by) => moveEffect(ws, l.id, title, by),
         onSum: (sum) => workOutSum(ws, sum),
-        onMoreCard: !own || int.tryParse(l?.id ?? '') == null
+        onMoreCard: !own || l == null
             ? null
-            : (title) => askMoreCard(ws, int.parse(l!.id), title),
+            : (title) => askMoreCard(ws, l.id, title),
         onAddEffect:
             !own ||
-                int.tryParse(l?.id ?? '') == null ||
-                l?.kind == LayerKind.audio ||
-                layerWord(ws, int.parse(l!.id), 'kind') == 'light'
+                l == null ||
+                l.kind == LayerKind.audio ||
+                layerWord(ws, l.id, 'kind') == 'light'
             ? null
             : () {
                 // (a light takes none: the engine's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
                 ws.front('Effects');
                 askDockSearch();
               },
-        onCardRemove: int.tryParse(l?.id ?? '') == null
+        onCardRemove: l == null
             ? null
-            : (title, names) => removeCard(ws, int.parse(l!.id), title, names),
+            : (title, names) => removeCard(ws, l.id, title, names),
         onAddStroke:
-            int.tryParse(l?.id ?? '') == null ||
+            l == null ||
                 !const {
                   LayerKind.text,
                   LayerKind.shape,
                   LayerKind.image,
-                }.contains(l?.kind)
+                }.contains(l.kind)
             ? null
-            : () => addStroke(ws, int.parse(l!.id)),
-        cardEdit: int.tryParse(l?.id ?? '') == null
+            : () => addStroke(ws, l.id),
+        cardEdit: l == null
             ? null
             : (title, names) =>
-                  EffectCode.ofCard(ws, int.parse(l!.id), title, names) == null
+                  EffectCode.ofCard(ws, l.id, title, names) == null
                   ? null
                   : () => EffectCode.show(ws, title), // (a card's code is a cell of the Code tab: workspace/code/code_pane.dart)
-        onCardEye: int.tryParse(l?.id ?? '') == null
+        onCardEye: l == null ? null : (title) => toggleEffect(ws, l.id, title),
+        onCardDuplicate: l == null
             ? null
-            : (title) => toggleEffect(ws, int.parse(l!.id), title),
-        onCardDuplicate: int.tryParse(l?.id ?? '') == null
-            ? null
-            : (title) => duplicateEffect(ws, int.parse(l!.id), title),
+            : (title) => duplicateEffect(ws, l.id, title),
         onCardInfo: (title) => ws.notice = aboutEffect(ws, title).isEmpty
             ? '$title: no words of its maker\'s'
             : '$title: ${aboutEffect(ws, title)}', // (in its maker's words, as the shelf searches them)
-        onCardSave: int.tryParse(l?.id ?? '') == null
+        onCardSave: l == null
             ? null
-            : (title, names) =>
-                  keepCardPreset(ws, int.parse(l!.id), title, names),
-        onCardReset: !own || int.tryParse(l?.id ?? '') == null
+            : (title, names) => keepCardPreset(ws, l.id, title, names),
+        onCardReset: !own || l == null
             ? null
-            : (names) => resetCardValues(ws, int.parse(l!.id), names),
-        onCardCopy: !own || int.tryParse(l?.id ?? '') == null
+            : (names) => resetCardValues(ws, l.id, names),
+        onCardCopy: !own || l == null
             ? null
             : (names) => copyCardValues(
                 ws,
-                int.parse(l!.id),
+                l.id,
                 names,
                 WorkspaceState.clipboard('card'),
               ), // (that card's values alone: Alight Motion's copy of one effect)
-        onCardPaste: !own || int.tryParse(l?.id ?? '') == null
+        onCardPaste: !own || l == null
             ? null
-            : () => pasteCardValues(
-                ws,
-                int.parse(l!.id),
-                WorkspaceState.clipboard('card'),
-              ),
-        shapeSvg: int.tryParse(l?.id ?? '') == null
-            ? null
-            : () => shapeSvgOf(ws, int.parse(l!.id)),
+            : () => pasteCardValues(ws, l.id, WorkspaceState.clipboard('card')),
+        shapeSvg: l == null ? null : () => shapeSvgOf(ws, l.id),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(
@@ -401,7 +386,7 @@ class _Cards extends StatelessWidget {
 /// A layer's own cards by their titles, drawn as the Inspector draws them and written the same way (a tool shows the engine's card, not its own number).
 class LayerCards extends StatelessWidget {
   const LayerCards({super.key, required this.layer, required this.only});
-  final String layer;
+  final int layer;
   final List<String> only;
   @override
   Widget build(BuildContext context) =>
@@ -409,15 +394,15 @@ class LayerCards extends StatelessWidget {
 }
 
 /// The document's name for a layer's kind, for kinds the inspector's own [Kind] has no entry for (video, image, solid).
-String? _kindWord(WorkspaceController ws, String? id) {
-  final t = int.tryParse(id ?? ''),
-      w = t == null ? '' : layerWord(ws, t, 'kind');
+String? _kindWord(WorkspaceController ws, int? id) {
+  if (id == null) return null;
+  final w = layerWord(ws, id, 'kind');
   if (w == 'behaviour') {
-    return relationKinds.contains(layerWord(ws, t!, 'file'))
+    return relationKinds.contains(layerWord(ws, id, 'file'))
         ? 'Relation'
         : 'Behaviour';
   }
-  if (w == 'film' && soundLayer(ws, t!)) return 'Sound';
+  if (w == 'film' && soundLayer(ws, id)) return 'Sound';
   return const {'film', 'picture', 'solid', 'light'}.contains(w)
       ? w.replaceRange(0, 1, w[0].toUpperCase())
       : null;

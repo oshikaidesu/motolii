@@ -14,15 +14,14 @@ String? groupRelationFile(WorkspaceController ws) => ws.inside?.relations
     .firstOrNull;
 
 /// The layers that a move already holds: a layer in one goes out through the next move rather than in.
-Set<String> layersHeldByGroups(WorkspaceController ws) {
+Set<int> layersHeldByGroups(WorkspaceController ws) {
   final m = ws.inside!;
   return {
     for (final l in ws.layers)
-      if (int.tryParse(l.id) case final b?
-          when m.word(b, 'kind') == 'behaviour' &&
-              m.word(b, 'script').endsWith('Group.js'))
-        for (final w in m.word(b, 'members').split(' '))
-          if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
+      if (m.word(l.id, 'kind') == 'behaviour' &&
+          m.word(l.id, 'script').endsWith('Group.js'))
+        for (final w in m.word(l.id, 'members').split(' '))
+          if (int.tryParse(w) case final t? when m.layers.contains(t)) t,
   };
 }
 
@@ -31,7 +30,7 @@ Set<String> layersHeldByGroups(WorkspaceController ws) {
 int queueGroupMove(
   WorkspaceController ws,
   String file,
-  List<String> who,
+  List<int> who,
   bool coming,
   double start,
   String name,
@@ -41,7 +40,7 @@ int queueGroupMove(
   ws.after(
     m.later('add', name: 'behaviour', word: 'relate'),
     null,
-    (b) => ws.select('$b'),
+    (b) => ws.select(b),
   );
   m.later('say', layer: -1, name: 'script', word: file);
   m.later('set', layer: -1, name: 'strength', number: 1);

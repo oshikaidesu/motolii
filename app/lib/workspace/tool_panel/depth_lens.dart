@@ -12,7 +12,7 @@ const depthZMax = 3000.0;
 /// The lens settings shown in the diagram. One is kept per document, so the values survive leaving the tool panel and coming back.
 class DepthLens {
   double focal = 50, focus = 1120, fstop = 2.8;
-  String? target;
+  int? target;
 
   // Matches engine/document/evaluate/camera.cpp: 24 mm sensor height, half = 12 mm.
   double get fov => 2 * math.atan(12 / focal);
@@ -39,7 +39,7 @@ final depthLenses = Expando<DepthLens>();
 ) {
   final cam = ws.layers.where((l) => l.kind == LayerKind.camera).firstOrNull;
   if (!isConnected(ws) || cam == null) return null;
-  final t = int.parse(cam.id),
+  final t = cam.id,
       at = documentNow(ws) ?? 0.0,
       p = documentPoint(ws) ?? 1.0,
           // The working camera orbits at kStageBack (6.0) units along +Z by default.
@@ -58,7 +58,7 @@ final depthLenses = Expando<DepthLens>();
 }
 
 typedef DepthSlab = ({
-  String id,
+  int id,
   String name,
   Color tone,
   double x,
@@ -77,9 +77,9 @@ List<DepthSlab> depthSlabsOf(WorkspaceController ws) {
           id: l.id,
           name: l.name,
           tone: layerKindColor(l.kind),
-          x: (layerValue(ws, int.parse(l.id), 'x', 0) ?? 0.0) * p,
-          z: eye - (layerValue(ws, int.parse(l.id), 'z', 0) ?? 0.0) * p,
-          w: layerBounds(ws, int.parse(l.id))?[2] ?? 200,
+          x: (layerValue(ws, l.id, 'x', 0) ?? 0.0) * p,
+          z: eye - (layerValue(ws, l.id, 'z', 0) ?? 0.0) * p,
+          w: layerBounds(ws, l.id)?[2] ?? 200,
         ),
   ];
 }

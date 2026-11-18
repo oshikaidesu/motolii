@@ -29,8 +29,8 @@ List<int> layersParentedTo(WorkspaceController ws, int parent) {
 ///
 /// A layer counts when any of its properties is connected to the relation. It is read from the app's snapshot of the
 /// document, which asks the engine again only after a change.
-Set<String> relationMembersOf(WorkspaceController ws) {
-  final m = ws.inside, sel = int.tryParse(ws.selected ?? '');
+Set<int> relationMembersOf(WorkspaceController ws) {
+  final m = ws.inside, sel = ws.selected;
   if (m == null ||
       sel == null ||
       layerWord(ws, sel, 'kind') != 'behaviour' ||
@@ -39,7 +39,7 @@ Set<String> relationMembersOf(WorkspaceController ws) {
   }
   return {
     for (final w in layerWord(ws, sel, 'members').split(' '))
-      if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
+      if (int.tryParse(w) case final t? when m.layers.contains(t)) t,
   }; // The relation's own list, in order. A layer it moves through another relation counts too.
 }
 
@@ -52,15 +52,15 @@ int _below(WorkspaceController ws, int r, int t) {
 }
 
 /// The relation that takes effect for the selected layer: the uppermost one whose visibility is on, or null.
-String? relationInEffectOf(WorkspaceController ws) {
-  final t = int.tryParse(ws.selected ?? '');
+int? relationInEffectOf(WorkspaceController ws) {
+  final t = ws.selected;
   if (!projectOpen(ws) || t == null) return null;
   for (
     var r = (layerValue(ws, t, 'x_by', 0) ?? 0).round(), n = 0;
     r > 0 && n < 8 && relationKinds.contains(layerWord(ws, r, 'file'));
     n++
   ) {
-    if ((layerValue(ws, r, 'visible', 0) ?? 1) > .5) return '$r';
+    if ((layerValue(ws, r, 'visible', 0) ?? 1) > .5) return r;
     r = _below(ws, r, t);
   }
   return null;
@@ -68,26 +68,26 @@ String? relationInEffectOf(WorkspaceController ws) {
 
 /// The relations the selected layer is in, the topmost first: first those it leads, then the chain its position is
 /// connected to. They are shown beside the layer, and a click selects one.
-List<String> relationsOfSelectedOf(WorkspaceController ws) {
-  final m = ws.inside, t = int.tryParse(ws.selected ?? '');
+List<int> relationsOfSelectedOf(WorkspaceController ws) {
+  final m = ws.inside, t = ws.selected;
   if (m == null || t == null || layerWord(ws, t, 'kind') == 'behaviour') {
     return const [];
   }
-  final all = <String>[
-    for (final r in m.layers) // The relations it leads.
+  final all = <int>[
+    for (final r in m.layers)
       if (layerWord(ws, r, 'kind') == 'behaviour' &&
           relationKinds.contains(layerWord(ws, r, 'file')) &&
           relationLeaderOf(ws, r) == t)
-        '$r',
+        r,
   ];
   for (
     var r = (layerValue(ws, t, 'x_by', 0) ?? 0).round();
     r > 0 &&
         all.length < 8 &&
-        !all.contains('$r') &&
+        !all.contains(r) &&
         relationKinds.contains(layerWord(ws, r, 'file'));
   ) {
-    if (!all.contains('$r')) all.add('$r');
+    if (!all.contains(r)) all.add(r);
     r = _below(ws, r, t);
   }
   return all;

@@ -31,7 +31,7 @@ class StagePointer {
   final WorkspaceController Function() ws;
 
   /// The layer under a point of the view, or null.
-  final String? Function(StageViewport v, Offset local) hit;
+  final int? Function(StageViewport v, Offset local) hit;
 
   /// The pointer in composition px, which the HUD and the rulers read.
   final ValueNotifier<Offset?> cursor;
@@ -57,21 +57,21 @@ class StagePointer {
     if (connected && camera.gizmoDragStart(v, local, wholeFrame: false)) return;
     // Guides come after the handles, which lie over everything else.
     if (drag.guideDragStart(v, local)) return;
-    final id = !connected ? null : hit(v, local), t = int.tryParse(id ?? '');
+    final id = !connected ? null : hit(v, local);
     // Layers are tested first, then the camera frames they lie in.
     if (connected &&
-        t == null &&
+        id == null &&
         camera.gizmoDragStart(v, local, wholeFrame: true)) {
       return;
     }
-    if (connected && t == null) {
+    if (connected && id == null) {
       // Nothing under the pointer: draw a lasso.
       w.select(null);
       draw.lassoDragStart(local);
       return;
     }
-    if (!connected || t == null) return;
-    drag.layerDragStart(id!, local);
+    if (!connected || id == null) return;
+    drag.layerDragStart(id, local);
   }
 
   /// Carries the drag on to [local].

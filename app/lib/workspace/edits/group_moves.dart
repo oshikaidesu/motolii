@@ -14,14 +14,10 @@ import 'package:motolii/workspace/state/layers/group_move_writes.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
-String groupMoveName(
-  WorkspaceController ws,
-  Iterable<String> who,
-  bool coming,
-) {
+String groupMoveName(WorkspaceController ws, Iterable<int> who, bool coming) {
   final names = [
     for (final id in who)
-      ws.layers.where((l) => l.id == id).firstOrNull?.name ?? id,
+      ws.layers.where((l) => l.id == id).firstOrNull?.name ?? '$id',
   ];
   final all = names.length > 4
       ? '${names.take(3).join(' ')} +${names.length - 3}'
@@ -34,7 +30,7 @@ String groupMoveName(
 /// The layers come in at [start] from a little below, transparent, each a little later than the one before.
 /// Layers that already come in through another move go out through this one instead.
 /// A move made later in the video leaves the earlier part alone.
-void makeGroupMove(WorkspaceController ws, List<String> who, double start) {
+void makeGroupMove(WorkspaceController ws, List<int> who, double start) {
   final file = groupRelationFile(ws);
   if (!projectOpen(ws) || file == null || who.isEmpty) return;
   final held = layersHeldByGroups(ws);

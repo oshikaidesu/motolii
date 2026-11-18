@@ -17,8 +17,8 @@ class StageTrail {
   // with direction arrows as in Alight Motion. Recomputed only when the document or the selection changes; null when the
   // layer stays put.
   (Object?, List<Offset>?) _trail = (null, null);
-  List<Offset>? of(WorkspaceController ws, String? selected) {
-    final t = int.tryParse(selected ?? '');
+  List<Offset>? of(WorkspaceController ws, int? selected) {
+    final t = selected;
     if (!stageConnected(ws) ||
         t == null ||
         const {

@@ -100,8 +100,7 @@ Map<String, Layer> textLayersByFile(WorkspaceController ws) {
   final m = ws.inside!;
   return {
     for (final l in ws.layers)
-      if (m.word(int.parse(l.id), 'kind') == 'text')
-        m.whole(m.word(int.parse(l.id), 'file')): l,
+      if (m.word(l.id, 'kind') == 'text') m.whole(m.word(l.id, 'file')): l,
   };
 }
 
@@ -109,7 +108,7 @@ bool isTextLayer(WorkspaceController ws, int layer) =>
     layerWord(ws, layer, 'kind') == 'text';
 
 bool selectedIsText(WorkspaceController ws) {
-  final t = int.tryParse(ws.selected ?? '');
+  final t = ws.selected;
   return t != null && isTextLayer(ws, t);
 }
 
@@ -122,7 +121,7 @@ void setFontOnSelection(
   required ({String text, int start, int end})? picked,
   required void Function(bool done, String why) told,
 }) {
-  final m = ws.inside!, t = int.tryParse(ws.selected ?? '');
+  final m = ws.inside!, t = ws.selected;
   if (t != null && m.word(t, 'kind') == 'text') {
     // Letters selected in the text take the font as a range of their own, as a word processor's font menu sets
     // the selection's font; the range names the file as its font-family (inspector/text/text_ranges.dart).
@@ -159,7 +158,7 @@ void addTextIn(
   ws.after(
     m.later('add', name: 'text', word: font),
     null,
-    (made) => ws.select('$made'),
+    (made) => ws.select(made),
   );
   applyChosenInks(ws, 'text', '');
   ws.after(m.later('together'), told);

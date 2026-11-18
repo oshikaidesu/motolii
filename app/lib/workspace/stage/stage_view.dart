@@ -65,7 +65,7 @@ class StageView extends StatefulWidget {
   /// A still image taken earlier (After Effects' Take Snapshot), laid over the stage while it is shown.
   final String? snapshot;
   final ArtScene scene;
-  final String? selected;
+  final int? selected;
   final int zoom;
   final bool grid, safe;
 
@@ -83,7 +83,7 @@ class _StageViewState extends State<StageView>
   @override
   ArtScene get scene => widget.scene;
   @override
-  String? get selected => widget.selected;
+  int? get selected => widget.selected;
   @override
   StageTool get tool => widget.tool;
   @override
@@ -100,12 +100,12 @@ class _StageViewState extends State<StageView>
   void _rebuild() => setState(() {});
 
   Offset _pan = Offset.zero;
-  String? _hover;
+  int? _hover;
   StageViewport?
   _shown; // The view as last laid out, so handle positions match the screen.
 
   @override
-  String? hitAt(Offset global) {
+  int? hitAt(Offset global) {
     final box = context.findRenderObject() as RenderBox?, v = _shown;
     return box == null || v == null
         ? null
@@ -123,7 +123,7 @@ class _StageViewState extends State<StageView>
     return selectionHandles(
       v.toScreen,
       b,
-      knob: l.kind != LayerKind.camera && l.id != 'bg',
+      knob: l.kind != LayerKind.camera,
       form: form,
       round: round,
       crop: _cropOf(),
@@ -132,8 +132,7 @@ class _StageViewState extends State<StageView>
 
   /// The selected image's crop, as the share cut from each side, while it is being cropped; empty otherwise.
   List<double> _cropOf() {
-    final ws = WorkspaceScope.read(context),
-        t = int.tryParse(widget.selected ?? '');
+    final ws = WorkspaceScope.read(context), t = widget.selected;
     if (!stageConnected(ws) ||
         t == null ||
         _cropping != widget.selected ||
@@ -145,8 +144,8 @@ class _StageViewState extends State<StageView>
 
   /// Any placed, visible layer can be cropped — a photo, a video, text, a solid or a shape — as in Google Slides.
   /// Groups, particles, audio, the camera and the background are left out.
-  bool _croppable(String? id) {
-    if (id == null || id == 'bg') return false;
+  bool _croppable(int? id) {
+    if (id == null) return false;
     final l = widget.scene.layer(id);
     return l != null &&
         const {
@@ -158,8 +157,8 @@ class _StageViewState extends State<StageView>
 
   // Double-clicking a selected image starts cropping: bars appear on its sides until a click elsewhere or Enter.
   // Figma's Crop and Keynote's image editing work this way.
-  String? _cropping;
-  String? _tapped; // Layer id clicked a moment ago, until the double-click timeout passes.
+  int? _cropping;
+  int? _tapped;
   Timer? _tapWait;
   bool _enter(KeyEvent e) {
     if (e is! KeyDownEvent) return false;
@@ -206,8 +205,7 @@ class _StageViewState extends State<StageView>
 
   /// The selected shape's kind and corner radius, for its handles.
   (String, double) _formOf() {
-    final ws = WorkspaceScope.read(context),
-        t = int.tryParse(widget.selected ?? '');
+    final ws = WorkspaceScope.read(context), t = widget.selected;
     if (t == null || stageWord(ws, t, 'kind') != 'shape') return ('', 0);
     return (stageWord(ws, t, 'shape'), stageValue(ws, t, 'round', 0) ?? 0);
   }
@@ -241,24 +239,20 @@ class _StageViewState extends State<StageView>
     margin: StageTokens.fitMargin,
   );
 
-  String? _hitLocal(StageViewport v, Offset local) {
-    // A layer off the canvas can still be grabbed by its frame and dragged back.
+  int? _hitLocal(StageViewport v, Offset local) {
     final d = v.toComposition(local),
         id = ArtGeometry.hit(widget.scene, d),
         ws = WorkspaceScope.read(context);
     if (widget.tool.group && stageConnected(ws) && id != null) {
-      // Grouping: pick the outermost ancestor by following parents.
-      return '${stageOutermost(ws, int.parse(id))}';
+      return stageOutermost(ws, id);
     }
     return id;
   }
 
-  /// The id of the selected layer's parent, or null if it has none.
-  String? _parentOf() {
-    final ws = WorkspaceScope.read(context),
-        t = int.tryParse(widget.selected ?? '');
+  int? _parentOf() {
+    final ws = WorkspaceScope.read(context), t = widget.selected;
     final p = t == null ? 0 : stageParentOf(ws, t);
-    return p > 0 ? '$p' : null;
+    return p > 0 ? p : null;
   }
 
   /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
@@ -430,7 +424,7 @@ class _StageViewState extends State<StageView>
                         ),
                       ),
                     ),
-                  if (int.tryParse(widget.selected ?? '') case final picked?
+                  if (widget.selected case final picked?
                       when stageConnected(WorkspaceScope.read(context))) // The selected path's own points, so they can be grabbed.
                     IgnorePointer(
                       child: CustomPaint(

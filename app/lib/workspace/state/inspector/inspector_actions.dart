@@ -144,12 +144,11 @@ void putDownValue(WorkspaceController ws) =>
 /// Applies a keyframe mark chosen in the inspector: a keyframe at the playhead, that keyframe removed, or no keyframes at all.
 void applyKeyframeMark(
   WorkspaceController ws,
-  String? id,
+  int? id,
   String prop,
   KeyframeState mark,
 ) {
-  final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
-  if (t == null) return;
+  final m = ws.inside!, t = id ?? 0;
   final at = ws.frame / WorkspaceController.fps, has = m.values(t).toSet();
   // Only values the layer has are keyed. A flat layer has no scale_z, and asking for a key on it was refused,
   // which rolled back the whole undo step including the number just released.

@@ -25,7 +25,7 @@ typedef _Listed = ({
   double bpm,
   int duration,
   int frameRate,
-  Map<String, int> labels,
+  Map<int, int> labels,
 });
 
 /// Reads the engine's document for the window: its layers as rows, its marks, guides and tempo.
@@ -110,13 +110,11 @@ class ProjectReader {
         );
 
   /// Reads layer [id]'s bar from the engine again, for example during a drag, so the drawn bar matches the engine.
-  void respan(String id) {
-    final m = _inside,
-        l = layers.where((l) => l.id == id).firstOrNull,
-        t = int.tryParse(id);
-    if (m == null || l == null || t == null) return;
-    l.inF = ((m.value(t, 'start', 0) ?? 0) * _frameRate).round();
-    l.outF = _outF(l.inF, m.lasts(t));
+  void respan(int id) {
+    final m = _inside, l = layers.where((l) => l.id == id).firstOrNull;
+    if (m == null || l == null) return;
+    l.inF = ((m.value(id, 'start', 0) ?? 0) * _frameRate).round();
+    l.outF = _outF(l.inF, m.lasts(id));
     shown();
   }
 
@@ -190,11 +188,11 @@ class ProjectReader {
     );
     chosenLabelColors
       ..clear()
-      ..addAll({
+      ..addAll(<int, int>{
         for (final t in m.layers)
           if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i
               when i > 0)
-            '$t': i - 1,
+            t: i - 1,
       });
     final tl = TimelineTask()..start('MARK layers');
     final holding = {
@@ -206,8 +204,8 @@ class ProjectReader {
         setEquals(holding, _holding);
     _holding = holding;
     final wasById = canReuse
-        ? {for (final l in was) l.id: l}
-        : const <String, Layer>{};
+        ? <int, Layer>{for (final l in was) l.id: l}
+        : const <int, Layer>{};
     layers
       ..clear()
       ..addAll([
@@ -217,8 +215,8 @@ class ProjectReader {
                 .reversed) // The topmost layer comes first, as in the sample.
           if (canReuse &&
               identical(m.layerSnapshot(t), _lastSnap[t]) &&
-              wasById.containsKey('$t'))
-            wasById['$t']!
+              wasById.containsKey(t))
+            wasById[t]! // reuse unchanged Layer
           else
             () {
               _lastSnap[t] = m.layerSnapshot(t);
@@ -230,7 +228,7 @@ class ProjectReader {
                 for (final s in m.layerKeyTimes(t)) (s * _frameRate).round(),
               }.toList()..sort();
               return Layer(
-                '$t',
+                t,
                 name,
                 switch (kind) {
                   'text' => LayerKind.text,
@@ -247,7 +245,7 @@ class ProjectReader {
                 _outF(from, lasts),
                 keys,
                 parent: switch (m.parentOf(t)) {
-                  > 0 && final p => '$p',
+                  > 0 && final p => p,
                   _ => null,
                 },
                 lined:
@@ -347,26 +345,26 @@ class ProjectReader {
   }
 
   // A relation's layers in its own order ('_' marks an empty place); null for any other layer.
-  static List<String>? _membersOf(Motolii m, int t) =>
+  static List<int>? _membersOf(Motolii m, int t) =>
       m.word(t, 'kind') == 'behaviour' &&
           relationKinds.contains(m.word(t, 'file'))
       ? [
           for (final s in m.word(t, 'members').split(' '))
-            if (s.isNotEmpty && s != '_') s,
+            if (s.isNotEmpty && s != '_')
+              if (int.tryParse(s) case final v?) v,
         ]
       : null;
 
   // The layers that layer [t] points at, each with its label: those its properties name, and a relation's layers.
   // Cavalry shows a connection at both ends; here it shows only at the end that names the target.
-  static List<(String, String)> _linksOf(Motolii m, int t) => [
+  static List<(String, int)> _linksOf(Motolii m, int t) => [
     for (final n in m.values(t))
       if (m.shown(n) case final s? when s.look == 'thing')
         if ((m.value(t, n, 0) ?? 0).round() case final o
             when m.layers.contains(o))
-          (s.label, '$o'),
-    for (final s in _membersOf(m, t) ?? const <String>[])
-      if (int.tryParse(s) case final o? when m.layers.contains(o))
-        ('Moves', '$o'),
+          (s.label, o),
+    for (final o in _membersOf(m, t) ?? const <int>[])
+      if (m.layers.contains(o)) ('Moves', o),
   ];
 
   // The lanes of layer [t]: its properties with keyframes (and a sketch's lines), in its own order. Ableton does the
@@ -419,8 +417,8 @@ class ProjectReader {
   }
 
   /// The shelf effects on layer [id]: those whose card the engine shows. An effect's card shows while the effect is on.
-  List<String> fxOf(String? id) {
-    final m = _inside, t = int.tryParse(id ?? '');
+  List<String> fxOf(int? id) {
+    final m = _inside, t = id;
     if (m == null || t == null) return const [];
     final shown = {for (final (title, _) in m.cards(t)) title};
     return [
@@ -436,7 +434,7 @@ class ProjectReader {
   List<(double, String)> get marks => _inside!.marks;
 
   /// The frames that J and K jump to: the marks, the other layers' ends and keyframes, and a sound's strikes.
-  Set<int> stops({Set<String> skip = const {}}) => {
+  Set<int> stops({Set<int> skip = const {}}) => {
     for (final (at, _) in marks) (at * _frameRate).round(),
     for (final l in layers)
       if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
@@ -444,7 +442,7 @@ class ProjectReader {
   };
 
   /// Typed snap targets for drags, following Lumit's SnapTarget pattern.
-  List<SnapTarget> snapTargets({Set<String> skip = const {}}) => [
+  List<SnapTarget> snapTargets({Set<int> skip = const {}}) => [
     SnapTarget(_playhead.moment.value, SnapKind.playhead),
     for (final (at, _) in marks)
       SnapTarget((at * _frameRate).round(), SnapKind.marker),
@@ -469,8 +467,8 @@ class ProjectReader {
   List<(String, double)> get guides => _inside!.guides;
 
   /// The ids of everything a group holds, however deep. Empty for other layers (see doc_under).
-  List<String> under(String id) {
-    final of = {for (final l in layers) l.id: l};
+  List<int> under(int id) {
+    final of = <int, Layer>{for (final l in layers) l.id: l};
     if (of[id]?.kind != LayerKind.group) return const [];
     return [
       for (final l in layers)

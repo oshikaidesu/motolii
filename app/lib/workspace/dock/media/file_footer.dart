@@ -47,7 +47,7 @@ class FileFooter extends StatelessWidget {
         can = media.kindOf(n.id).isNotEmpty,
         open = documentOpen(c.ws);
     // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
-    final shape = int.tryParse(c.ws.selected ?? ''),
+    final shape = c.ws.selected,
         fills =
             open &&
             shape != null &&
@@ -60,7 +60,7 @@ class FileFooter extends StatelessWidget {
         open &&
         shape != null &&
         !fills &&
-        layer != '$shape' &&
+        layer != shape &&
         const {'picture', 'film'}.contains(layerWord(c.ws, shape, 'kind')) &&
         media.kindOf(n.id) == layerWord(c.ws, shape, 'kind');
     // The other layers that show the same file, which MediaCommands.replaceAll replaces together with this one.

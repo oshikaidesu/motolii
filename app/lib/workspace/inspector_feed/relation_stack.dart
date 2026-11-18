@@ -32,7 +32,7 @@ class RelationStack extends StatelessWidget {
     final rels = relationsOfSelectedOf(ws), top = relationInEffectOf(ws);
     if (rels.isEmpty) return const SizedBox.shrink();
     String nameOf(int i) =>
-        '${ws.layers.indexWhere((l) => l.id == '$i') + 1}. ${ws.layers.where((l) => l.id == '$i').firstOrNull?.name ?? ''}';
+        '${ws.layers.indexWhere((l) => l.id == i) + 1}. ${ws.layers.where((l) => l.id == i).firstOrNull?.name ?? ''}';
     return Container(
       key: const ValueKey('ws-relation-stack'),
       padding: EdgeInsets.fromLTRB(
@@ -46,10 +46,10 @@ class RelationStack extends StatelessWidget {
         children: [
           for (final r in rels)
             () {
-              final id = int.parse(r),
+              final id = r,
                   kind = relationLabel(relationKindOf(ws, id)),
                   on = (layerValue(ws, id, 'visible', 0) ?? 1) > .5;
-              final lead = relationLeaderOf(ws, id), leads = '$lead' == t;
+              final lead = relationLeaderOf(ws, id), leads = lead == t;
               final ink = r == top ? Grey.g95 : Grey.g56;
               return Pressable(
                 key: ValueKey('ws-stack-$r'),
@@ -87,7 +87,7 @@ class RelationStack extends StatelessWidget {
                         Pressable(
                           key: ValueKey('ws-stack-free-$r'),
                           cursor: SystemMouseCursors.basic,
-                          onTap: () => freeFromRelation(ws, int.parse(t), id),
+                          onTap: () => freeFromRelation(ws, t, id),
                           builder: (_, _) =>
                               Text('×', style: TextStyles.label(Grey.g56)),
                         ),

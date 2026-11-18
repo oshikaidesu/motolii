@@ -4,16 +4,15 @@ import 'package:motolii/skin/theme.dart';
 
 /// The colours the user chose on the Note card, by layer id. Each value is an index into Ableton Live's 16 colours.
 /// Read together with the document.
-final chosenLabelColors = <String, int>{};
+final chosenLabelColors = <int, int>{};
 
 /// A layer's label colour, as Ableton gives each clip its own.
 ///
 /// Without a chosen colour it is one of sixteen, five apart from the previous layer so that neighbours differ.
 /// It is the same every time the document is opened. The layer's row, its dot on the Relations map, its frame in the
 /// preview and its name in lists all use it. A skin can override each colour (Label1 to Label16).
-Color layerLabelColor(String id) => labelColor(
-  chosenLabelColors[id] ?? ((int.tryParse(id) ?? 0) * 5) % _live.length,
-);
+Color layerLabelColor(int id) =>
+    labelColor(chosenLabelColors[id] ?? (id * 5) % _live.length);
 
 /// The label colour [k], from 0 to 15. Marks use these colours too.
 Color labelColor(int k) => ColorTheme.of('Label${k + 1}', Color(_live[k]));

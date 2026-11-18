@@ -172,7 +172,7 @@ class DrawTools extends ChangeNotifier {
         tiny = d.distance < 6 / v.scale;
     final x = ((kind == 'text' || tiny ? a.dx : mid.dx) - c.width / 2) / p,
         y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
-    final cut = _stage.tool.mask ? int.tryParse(ws.selected ?? '') : null;
+    final cut = _stage.tool.mask ? ws.selected : null;
     // Queue everything as one undo step. Layer -1 refers to the layer just added, which is selected once it exists.
     final before = stageLayers(ws).length;
     stageBeginUndoStep(ws);
@@ -238,7 +238,7 @@ class DrawTools extends ChangeNotifier {
       if (!done || made <= 0) return;
       // The new text's field takes the keyboard at once (see parameter_tile.dart).
       if (kind == 'text') textToType = true;
-      ws.select('$made');
+      ws.select(made);
     });
     // Back to the select tool after one shape, as in Alight Motion's Add and Figma. After Effects keeps the tool.
     ws.setView('stage.tool', 0);
@@ -261,7 +261,7 @@ class DrawTools extends ChangeNotifier {
     ws.after(
       stagePenPoint(
         ws,
-        layer: first ? int.tryParse(_stage.selected ?? '') ?? 0 : -1,
+        layer: first ? _stage.selected ?? 0 : -1,
         word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}',
       ),
       null,
@@ -271,7 +271,7 @@ class DrawTools extends ChangeNotifier {
       applyChosenInks(ws, 'shape', 'path');
       ws.after(
         stageEndUndoStep(ws),
-        (done, _) => done && made > 0 ? ws.select('$made') : null,
+        (done, _) => done && made > 0 ? ws.select(made) : null,
       );
     }
   }
@@ -326,7 +326,7 @@ class DrawTools extends ChangeNotifier {
     }
     ws.after(
       stageEndUndoStep(ws),
-      (done, _) => done && made > 0 ? ws.select('$made') : null,
+      (done, _) => done && made > 0 ? ws.select(made) : null,
     );
   }
 
@@ -356,7 +356,7 @@ class DrawTools extends ChangeNotifier {
     ];
     if (_stage.tool.brushTool == 3) {
       // The eraser removes from the selected drawing, as Alight Motion's eraser does from the drawing layer it is in.
-      final into = int.tryParse(ws.selected ?? '');
+      final into = ws.selected;
       if (into == null) {
         ws.notice = 'Pick a drawing to erase from';
         return;
@@ -392,7 +392,7 @@ class DrawTools extends ChangeNotifier {
     );
     ws.after(
       stageEndUndoStep(ws),
-      (done, _) => done && made > 0 ? ws.select('$made') : null,
+      (done, _) => done && made > 0 ? ws.select(made) : null,
     );
   }
 }

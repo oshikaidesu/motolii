@@ -51,14 +51,14 @@ extension EditCommands on WorkspaceState {
           removeKeyframes(ws, ws.keys);
           return;
         }
-        final t = int.tryParse(ws.selected ?? '');
+        final t = ws.selected;
         if (t == null) return;
         Clipboard.getData(Clipboard.kTextPlain)
             .then((said) => textWhenCopied = said?.text);
         copyLayerThing(ws, t);
         groupBegin(ws);
-        for (final held in ws.under('$t')) {
-          removeLayer(ws, int.parse(held));
+        for (final held in ws.under(t)) {
+          removeLayer(ws, held);
         }
         removeLayer(ws, t);
         ws.after(groupEnd(ws));
@@ -81,7 +81,7 @@ extension EditCommands on WorkspaceState {
             ? ws.after(
                 pasteLayer(ws, ws.frame / WorkspaceController.fps),
                 null,
-                (made) => ws.select('$made'),
+                (made) => ws.select(made),
               )
             : null;
         // Finder からコピーしたファイル、または画像データ (⌘⇧⌃4 のスクリーンショットなど) をクリップボードから拾って、
@@ -115,10 +115,7 @@ extension EditCommands on WorkspaceState {
             if (await pasteFiles()) return;
             return own();
           }
-          ws.after(adaptCode(ws, int.tryParse(ws.selected ?? '') ?? 0, code), (
-            done,
-            why,
-          ) async {
+          ws.after(adaptCode(ws, ws.selected ?? 0, code), (done, why) async {
             if (done) return;
             if (why.contains('not code')) {
               if (await pasteFiles()) return;
@@ -126,7 +123,7 @@ extension EditCommands on WorkspaceState {
             } else {
               ws.notice = 'Not taken: $why';
             }
-          }, (made) => made > 0 ? ws.select('$made') : null);
+          }, (made) => made > 0 ? ws.select(made) : null);
         });
       },
       'edit.copyStyle': () => copy(style: true),
@@ -136,10 +133,8 @@ extension EditCommands on WorkspaceState {
         if (!clipboardFileThere('style') || all.isEmpty) {
           return;
         }
-        for (final id in all) {
-          if (int.tryParse(id) case final t?) {
-            ws.after(pasteStyleTo(ws, t));
-          }
+        for (final t in all) {
+          ws.after(pasteStyleTo(ws, t));
         }
       },
       'edit.selectAll': () =>
@@ -161,7 +156,7 @@ extension EditCommands on WorkspaceState {
       // After Effects' Cmd+Opt+B: "set work area to duration of selected layers or, if no layers are selected, set
       // work area to composition duration". It brings back the whole project after Extract Work Area, which otherwise takes two drags.
       'edit.workToPicked': () {
-        final picked = {for (final t in pickedLayers()) '$t'},
+        final picked = pickedLayers().toSet(),
             bars = [
               for (final l in ws.layers)
                 if (picked.contains(l.id)) l,

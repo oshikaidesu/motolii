@@ -71,7 +71,7 @@ class WorkspaceController extends ChangeNotifier {
   set refit(VoidCallback? reopen) => project.refit = reopen;
   int get rev => project.rev;
   int get reads => project.reads;
-  void respan(String id) => project.respan(id);
+  void respan(int id) => project.respan(id);
   ValueNotifier<int> get seen => project.seen;
   ValueNotifier<List<(int, int)>> get kept => project.kept;
   void shown() => project.shown();
@@ -80,15 +80,15 @@ class WorkspaceController extends ChangeNotifier {
   void reread() => project.reread();
   int? get stageTexture => project.stageTexture;
   set stageTexture(int? id) => project.stageTexture = id;
-  List<String> fxOf(String? id) => project.fxOf(id);
+  List<String> fxOf(int? id) => project.fxOf(id);
   (double, double) get work => project.work;
   List<(double, String)> get marks => project.marks;
-  Set<int> stops({Set<String> skip = const {}}) => project.stops(skip: skip);
-  List<SnapTarget> snapTargets({Set<String> skip = const {}}) =>
+  Set<int> stops({Set<int> skip = const {}}) => project.stops(skip: skip);
+  List<SnapTarget> snapTargets({Set<int> skip = const {}}) =>
       project.snapTargets(skip: skip);
   Map<double, int> get markColors => project.markColors;
   List<(String, double)> get guides => project.guides;
-  List<String> under(String id) => project.under(id);
+  List<int> under(int id) => project.under(id);
   int depth(Layer l) => project.depth(l);
   ({bool layers, Set<(int, String)> values})? get lastChange =>
       project.lastChange;
@@ -168,16 +168,14 @@ class WorkspaceController extends ChangeNotifier {
   void _watch() {
     final m = inside;
     if (m == null) return;
-    final sel = int.tryParse(selected ?? '');
+    final sel = selected;
     m.subscribe({
       ?sel,
-      for (final id in many) ?int.tryParse(id),
+      ...many,
       for (final l in layers)
-        if (l.kind == LayerKind.camera) ?int.tryParse(l.id),
+        if (l.kind == LayerKind.camera) l.id,
       for (final l in layers)
-        if (int.tryParse(l.id) case final t?
-            when m.word(t, 'kind') == 'behaviour')
-          t, // Relations: the Relations tool panel draws each from its parameters at the current time.
+        if (m.word(l.id, 'kind') == 'behaviour') l.id,
       if (sel != null && m.word(sel, 'kind') == 'behaviour')
         for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
     });
@@ -192,21 +190,21 @@ class WorkspaceController extends ChangeNotifier {
     onLayerSelected: () => layout.toolPanelManual = null,
     onStretchSelected: () => layout.front('Ease'),
   );
-  String? get selected => selection.selected;
+  int? get selected => selection.selected;
   Layer? get layer => selection.layer;
-  Set<String> get many => selection.many;
+  Set<int> get many => selection.many;
   bool get manyInOrder => selection.manyInOrder;
-  String? get lead => selection.lead;
+  int? get lead => selection.lead;
   Set<SelectedKeyframe> get keys => selection.keys;
   StretchPicked? get stretch => selection.stretch;
-  void select(String? id) => selection.select(id);
-  void pickMany(Iterable<String> ids, {bool inOrder = false, String? lead}) =>
+  void select(int? id) => selection.select(id);
+  void pickMany(Iterable<int> ids, {bool inOrder = false, int? lead}) =>
       selection.pickMany(ids, inOrder: inOrder, lead: lead);
   void pickKey(SelectedKeyframe k, {bool add = false}) =>
       selection.pickKey(k, add: add);
   void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);
   void clearKeys() => selection.clearKeys();
-  void pickStretch(String layer, String name, int from) =>
+  void pickStretch(int layer, String name, int from) =>
       selection.pickStretch(layer, name, from);
   String? get aim => selection.aim;
   set aim(String? to) => selection.aim = to;
@@ -263,12 +261,12 @@ class WorkspaceController extends ChangeNotifier {
     layers: () => layers,
     onChanged: () => _tell(WorkspaceAspect.animating),
   );
-  bool lanesOpen(String id) => folds.lanesOpen(id);
-  bool aimsOpen(String id) => folds.aimsOpen(id);
-  void twirl(Iterable<String> ids) => folds.twirl(ids);
-  bool groupOpen(String id) => folds.groupOpen(id);
-  void turnGroup(String id) => folds.turnGroup(id);
-  Map<String, String> get foldedAway => folds.foldedAway;
+  bool lanesOpen(int id) => folds.lanesOpen(id);
+  bool aimsOpen(int id) => folds.aimsOpen(id);
+  void twirl(Iterable<int> ids) => folds.twirl(ids);
+  bool groupOpen(int id) => folds.groupOpen(id);
+  void turnGroup(int id) => folds.turnGroup(id);
+  Map<int, int> get foldedAway => folds.foldedAway;
 
   // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension, with the ID of that
   // one use in front where it has one, "a1b2c3:/…/blur.wgsl" (see script_files and fx_entry_id in script.h).

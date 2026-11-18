@@ -46,7 +46,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
       ]); // The keyframes stay selected at their new frames.
       return;
     }
-    final t = int.tryParse(ws.selected ?? '');
+    final t = ws.selected;
     if (t == null) return step(by);
     grabLayer(ws, t);
     dragBarPart(ws, 'bar', by / WorkspaceController.fps);
@@ -90,7 +90,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
         : renameRequested.value++,
     'thing.solo': () {
       // Live 42.15 and 42.19 S: solo the selected tracks.
-      final t = int.tryParse(ws.selected ?? '');
+      final t = ws.selected;
       if (t == null || !projectOpen(ws)) return;
       ws.after(setLayerSwitch(ws, t, 'solo', ws.layer?.solo != true));
     },

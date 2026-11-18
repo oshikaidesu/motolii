@@ -73,7 +73,7 @@ paintOf(WorkspaceController ws) {
   int align,
 })
 _paintNow(WorkspaceController ws) {
-  final t = int.tryParse(ws.selected ?? '');
+  final t = ws.selected;
   if (t == null) {
     return (
       fill: _colorOf(ws.ink),
@@ -210,7 +210,7 @@ class OptionsStrip extends StatelessWidget {
           selected: p.align,
           onSelect: (i) {
             // Aligns the selected text's lines this way, using the document's align property.
-            final t = int.tryParse(ws.selected ?? '');
+            final t = ws.selected;
             if (t == null || !stageConnected(ws)) return;
             stageBeginUndoStep(ws);
             stageSetValue(ws, layer: t, name: 'align', number: i / 2);
@@ -348,7 +348,7 @@ class _Readout extends StatelessWidget {
         // A behaviour layer has no image of its own, so there is nothing to say. A camera layer, while its bar covers
         // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
         if (box == null &&
-            stageWord(ws, int.parse(l.id), 'kind') != 'behaviour' &&
+            stageWord(ws, l.id, 'kind') != 'behaviour' &&
             !(l.kind == LayerKind.camera &&
                 (scene.layer(l.id)?.live(scene.frame) ?? false)))
           Padding(

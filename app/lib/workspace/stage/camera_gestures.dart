@@ -109,7 +109,7 @@ class CameraGestures extends ChangeNotifier {
       final g = [
             for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
           ],
-          cam = int.parse(id);
+          cam = id;
       if (g.length < 6) continue;
       final frame = [g[0], g[1], g[2], g[3]].nonNulls.toList();
       bool on(Offset? p, double reach) =>

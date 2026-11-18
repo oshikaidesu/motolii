@@ -42,7 +42,7 @@ class MediaCommands {
       [for (final f in files) _fitted(f)],
       refused: (f, why) => c.set(() => c.mem.trouble[f] = why),
       placed: (ids) {
-        c.ws.pickMany([for (final i in ids) '$i']);
+        c.ws.pickMany(ids);
         media.picked.clear();
       },
     );
@@ -138,7 +138,7 @@ class MediaCommands {
       frames: sheet.frames,
       columns: columns,
     );
-    c.ws.pickMany([for (final i in ids) '$i']);
+    c.ws.pickMany(ids);
     final missing = [
       for (final column in columns)
         if (column.drawings == null) column.name,

@@ -14,7 +14,7 @@ extension WorkspaceEffects on WorkspaceController {
   /// The effects on the selected layer, like After Effects' effects on a layer, in the order the engine applies them.
   /// Effects always belong to a layer. A whole-canvas effect is an adjustment layer showing what is behind it.
   List<String> get screenFx {
-    final t = int.tryParse(selected ?? '');
+    final t = selected;
     if (t == null) return const [];
     return fxFiles(inside?.word(t, 'fx') ?? '');
   }
@@ -27,7 +27,7 @@ extension WorkspaceEffects on WorkspaceController {
     return {
       for (final t in m.layers) ...[
         ...fxFiles(m.word(t, 'fx')),
-        ...fxOf('$t'),
+        ...fxOf(t),
         if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none')
           s,
       ],
@@ -58,7 +58,7 @@ extension WorkspaceEffects on WorkspaceController {
     applyChosenInks(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {
-      if (done && made > 0) select('$made');
+      if (done && made > 0) select(made);
     });
   }
 
@@ -74,20 +74,19 @@ extension WorkspaceEffects on WorkspaceController {
   /// Adds effect [file] after the others on the selected layer, as one undo step.
   /// With no layer selected it creates a new adjustment layer carrying the effect, as Photoshop's Adjustments panel does.
   bool _screenAdd(String file) {
-    final m = inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = selected;
     if (m == null) return false;
     if (t == null) {
       adjustment(file);
       return true;
     }
-    // The engine puts it at the end of the list (doc_fx_file). If refused, say why; a camera accepts motions only.
     after(m.later('fx_file', layer: t, word: file), _refused);
     return true;
   }
 
   /// Takes effect [file] off the selected layer, as one undo step, as the bin on its card does (doc_fx_out).
   bool screenOff(String file) {
-    final m = inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = selected;
     if (m == null || t == null) return false;
     after(m.later('fx_out', layer: t, word: file), _refused);
     return true;
@@ -120,7 +119,7 @@ extension WorkspaceEffects on WorkspaceController {
 
   /// Previews effect [file] on the selected layer without changing the document. Null ends the preview.
   void tryOn(String? file) {
-    final m = inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = selected;
     if (m == null) return;
     if (trying) after(m.later('drag_end', number: 0));
     trying = file != null && t != null;
@@ -132,7 +131,7 @@ extension WorkspaceEffects on WorkspaceController {
 
   /// The motion of the selected layer: its script file, or '' for none.
   String get motion {
-    final t = int.tryParse(selected ?? '');
+    final t = selected;
     final w = t == null ? '' : (inside?.word(t, 'script') ?? '');
     return w == 'none' ? '' : w;
   }
@@ -141,7 +140,7 @@ extension WorkspaceEffects on WorkspaceController {
   /// With no layer selected it creates a canvas-sized layer carrying the effect, as After Effects' applyPreset
   /// puts a preset on a new solid when no layer is selected (scripting guide, Layer.applyPreset).
   void fxToggle(String name) {
-    final m = inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = selected;
     if (m == null) return;
     if (t == null) {
       return whole(
@@ -155,7 +154,7 @@ extension WorkspaceEffects on WorkspaceController {
 
   /// Applies the saved preset [file] to the selected layer, or to a new canvas-sized layer when none is selected.
   void lookPut(String file) {
-    final m = inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = selected;
     if (m == null) return;
     if (t == null) {
       return whole(

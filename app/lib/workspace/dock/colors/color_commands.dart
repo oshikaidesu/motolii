@@ -117,7 +117,7 @@ class ColorCommands {
   }
 
   /// The layer the shelf colors: the selected one. A sound has nothing to color, so it counts as no selection (the next layer drawn).
-  int? get colored => switch (int.tryParse(c.ws.selected ?? '')) {
+  int? get colored => switch (c.ws.selected) {
     final t? when soundLayer(c.ws, t) => null,
     final t => t,
   };

@@ -12,7 +12,7 @@ void queueRelation(
   WorkspaceController ws,
   String kind,
   String label,
-  List<String> who,
+  List<int> who,
   bool ordered,
 ) {
   final m = ws.inside!;
@@ -21,7 +21,7 @@ void queueRelation(
   // Selected as soon as it exists, which shows its card and its row.
   ws.after(m.later('add', name: 'behaviour', word: 'relate'), null, (b) {
     made = b;
-    ws.select('$b');
+    ws.select(b);
   });
   sayWord(ws, -1, 'script', kind);
   sayWord(
@@ -45,7 +45,7 @@ void queueRelation(
         b != null &&
         ws.inside?.values(b).contains('js_leader') == true) {
       ws.after(
-        m.later('lead', layer: b, number: double.parse(who.first)),
+        m.later('lead', layer: b, number: who.first.toDouble()),
         (_, _) => ws.reread(),
       );
     }

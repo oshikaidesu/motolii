@@ -103,12 +103,12 @@ class MediaController {
         : n.meta;
   }
 
-  var _usedNow = <String, String>{};
+  var _usedNow = <String, int>{};
 
   int? _usedRev;
 
   /// Maps each file the project uses, by whole path, to the layer that uses it. If several layers use a file, the front one wins.
-  Map<String, String> get filesUsed {
+  Map<String, int> get filesUsed {
     final ws = _ws;
     if (_usedRev == ws.rev) return _usedNow;
     _usedRev = ws.rev;

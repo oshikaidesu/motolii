@@ -120,7 +120,7 @@ class _CodePaneState extends State<CodePane> {
       WorkspaceAspect.picked,
       WorkspaceAspect.view,
     });
-    final t = int.tryParse(ws.selected ?? '');
+    final t = ws.selected;
     if (!projectOpen(ws) || t == null) {
       return const _Said(
         'Pick a layer. Its code opens here, one cell for each effect and expression.',

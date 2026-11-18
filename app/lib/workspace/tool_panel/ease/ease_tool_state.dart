@@ -118,12 +118,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       final inDocument = at.isEmpty
           ? easingPreset('Linear')
           : heard(
-              layerEasingAt(
-                ws,
-                int.parse(span.layer.id),
-                at.keys.first,
-                at.values.first,
-              ),
+              layerEasingAt(ws, span.layer.id, at.keys.first, at.values.first),
             );
       if (writer.told case final t?
           when !ws.waiting || said(t) == said(inDocument)) {

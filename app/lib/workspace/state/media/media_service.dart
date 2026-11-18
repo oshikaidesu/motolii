@@ -36,19 +36,17 @@ Future<List<double>> mediaLengthsOf(
   List<String> files,
 ) => Future.wait([for (final f in files) mediaLengthOf(ws, f)]);
 
-Map<String, String> filesOfLayers(WorkspaceController ws) {
+Map<String, int> filesOfLayers(WorkspaceController ws) {
   final m = ws.inside!;
   return {
-    // The front layer is the first row, so going in reverse makes it the last entry and therefore the one kept.
     for (final l in ws.layers.reversed)
-      if (m.word(int.parse(l.id), 'file') case final f
+      if (m.word(l.id, 'file') case final f
           when f.isNotEmpty &&
               !const {
                 'behaviour',
                 'camera',
                 'light',
-              }.contains(m.word(int.parse(l.id), 'kind')))
-        // Behaviour, camera and light layers hold a kind name instead of a file.
+              }.contains(m.word(l.id, 'kind')))
         m.whole(f): l.id,
   };
 }
@@ -118,7 +116,7 @@ void placeLevel(
   m.later('together', number: 1);
   ws.after(m.later('add', word: drawings.first.$2), (done, why) {
     if (!done) refused(drawings.first.$2, why);
-  }, (made) => ws.select('$made'));
+  }, (made) => ws.select(made));
   m.later('fit', layer: -1, word: 'fit');
   m.later(
     'set',
@@ -156,7 +154,7 @@ void placeFileLayer(
       number: 1,
     ); // Adding, fitting and setting the length are one undo step.
   }
-  ws.after(m.later(verb, word: file), settled, (made) => ws.select('$made'));
+  ws.after(m.later(verb, word: file), settled, (made) => ws.select(made));
   if (fit) m.later('fit', layer: -1, word: 'fit');
   if (stillSeconds case final seconds?) {
     m.later(

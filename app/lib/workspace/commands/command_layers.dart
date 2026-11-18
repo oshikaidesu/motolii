@@ -51,7 +51,7 @@ extension LayerCommands on WorkspaceState {
           reorderLayer(ws, t, past.toDouble());
         }
       }
-      ws.after(addLayer(ws, 'shape', 'null'), null, (g) => ws.select('$g'));
+      ws.after(addLayer(ws, 'shape', 'null'), null, (g) => ws.select(g));
       if (top + 1 < order.length) {
         reorderLayer(ws, -1, (top + 1 - order.length).toDouble());
       }
@@ -101,7 +101,7 @@ extension LayerCommands on WorkspaceState {
         // Saves the layer as a preset on the Effects shelf, named after the layer (Alight Motion's Save as Preset).
         final l = ws.layer;
         if (!projectOpen(ws) || l == null) return;
-        keepLook(ws, int.parse(l.id), l.name, (done, why) {
+        keepLook(ws, l.id, l.name, (done, why) {
           ws.notice = done ? 'Look kept: ${l.name}' : 'Not kept: $why';
           ws.reread();
         });
@@ -110,7 +110,7 @@ extension LayerCommands on WorkspaceState {
         // Saves the layer with its contents among the elements on the Create shelf (Alight Motion's Save to My Elements).
         final l = ws.layer;
         if (!projectOpen(ws) || l == null) return;
-        keepElement(ws, int.parse(l.id), l.name, (done, why) {
+        keepElement(ws, l.id, l.name, (done, why) {
           ws.notice = done
               ? 'Saved to My Elements: ${l.name}'
               : 'Not saved: $why';
@@ -131,7 +131,7 @@ extension LayerCommands on WorkspaceState {
         if (ws.stretch case final s?) {
           // A selected span between keyframes resets its easing to Linear instead of deleting the layer.
           return ws.after(
-            resetEasing(ws, int.parse(s.layer), s.name, s.at),
+            resetEasing(ws, s.layer, s.name, s.at),
             (_, _) => ws.reread(),
           );
         }
@@ -143,8 +143,7 @@ extension LayerCommands on WorkspaceState {
             : [if (ws.selected != null) ws.selected!];
         // A group is removed together with the layers it holds, as copying does.
         final ts = [
-          for (final id in {for (final id in all) ...ws.under(id), ...all})
-            ?int.tryParse(id),
+          for (final id in {for (final id in all) ...ws.under(id), ...all}) id,
         ];
         if (ts.isEmpty) return;
         groupBegin(ws);
@@ -160,12 +159,12 @@ extension LayerCommands on WorkspaceState {
         ); // Nothing stays selected, so a second Delete removes nothing else.
       },
       'thing.duplicate': () {
-        final all = pickedLayers(), made = <String>[];
+        final all = pickedLayers(), made = <int>[];
         if (all.isEmpty) return;
         groupBegin(ws);
         for (final t in all) {
           ws.after(duplicateLayer(ws, t), null, (one) {
-            made.add('$one');
+            made.add(one);
             if (made.length < all.length) return;
             ws.select(
               made.last,
@@ -177,7 +176,7 @@ extension LayerCommands on WorkspaceState {
       },
       'thing.outline': () {
         // Alight Motion's Convert to Outline: turns a shape into a path of the outline it shows, whose points then belong to the Pen tool (doc_to_path).
-        final t = int.tryParse(ws.selected ?? '');
+        final t = ws.selected;
         if (t == null ||
             wordOf(ws, t, 'kind') != 'shape' ||
             const ['path', 'null', 'solid'].contains(wordOf(ws, t, 'shape'))) {
@@ -187,16 +186,16 @@ extension LayerCommands on WorkspaceState {
       },
       'thing.extractSound': () {
         // Moves a video's sound to a layer of its own and mutes the video (Alight Motion's Extract Audio).
-        final t = int.tryParse(ws.selected ?? '');
+        final t = ws.selected;
         if (t == null || wordOf(ws, t, 'kind') != 'film') return;
-        ws.after(extractSoundOf(ws, t), null, (made) => ws.select('$made'));
+        ws.after(extractSoundOf(ws, t), null, (made) => ws.select(made));
       },
       'thing.group': () => group(''),
       'thing.groupMask': () => group('mask'),
       'thing.groupExclude': () => group('exclude'),
       'thing.ungroup': () {
         // Releases the layers of the selected group where they are and removes the null, as one undo step.
-        final g = int.tryParse(ws.selected ?? '');
+        final g = ws.selected;
         if (!projectOpen(ws) || g == null || wordOf(ws, g, 'shape') != 'null') {
           return;
         }
@@ -210,24 +209,24 @@ extension LayerCommands on WorkspaceState {
         }
         removeLayer(ws, g);
         ws.after(groupEnd(ws), (_, _) => ws.reread());
-        ws.pickMany([for (final t in kids) '$t']);
+        ws.pickMany(kids);
       },
       'thing.unlinkElement': () {
         // The element becomes a plain group and no longer follows its file (AbsentMotion's Unlink from Asset, ElementUi.kt).
-        final g = int.tryParse(ws.selected ?? '');
+        final g = ws.selected;
         if (!projectOpen(ws) || g == null || wordOf(ws, g, 'element').isEmpty) {
           return;
         }
         ws.after(sayWord(ws, g, 'element', ''), (_, _) => ws.reread());
       },
       'thing.split': () {
-        final t = int.tryParse(ws.selected ?? '');
+        final t = ws.selected;
         if (t == null) return;
         // The part after the playhead becomes selected, as in Live.
         ws.after(
           splitLayerAt(ws, t, ws.frame / WorkspaceController.fps),
           null,
-          (made) => ws.select('$made'),
+          (made) => ws.select(made),
         );
       },
       'layers.sequence': () => ws.after(sequenceLayers(ws)),

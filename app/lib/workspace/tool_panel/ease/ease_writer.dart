@@ -15,11 +15,10 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 // A last keyframe has no segment after it, so the segment ending at it is used.
 List<(int, String, double)> easeStretches(WorkspaceController ws) => [
   if (ws.stretch case final s?)
-    (int.parse(s.layer), s.name, s.at)
+    (s.layer, s.name, s.at)
   else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
     if (easeSpan(ws) case final s?)
-      for (final at in keysAt(ws, s).entries)
-        (int.parse(s.layer.id), at.key, at.value),
+      for (final at in keysAt(ws, s).entries) (s.layer.id, at.key, at.value),
   for (final k in ws.keys)
     if (ws.layers.where((l) => l.id == k.layer).firstOrNull case final l?)
       for (final at in keysAt(ws, (
@@ -33,7 +32,7 @@ List<(int, String, double)> easeStretches(WorkspaceController ws) => [
         to: k.frame,
         picked: k.frame,
       )).entries)
-        (int.parse(l.id), at.key, at.value),
+        (l.id, at.key, at.value),
 ];
 
 class EaseWriter {
@@ -119,7 +118,7 @@ class EaseWriter {
             to: f,
             picked: f,
           )).entries)
-            (int.parse(l.id), at.key, at.value),
+            (l.id, at.key, at.value),
     ];
     everyKeyEase(ws, e, stretches, _heard);
   }

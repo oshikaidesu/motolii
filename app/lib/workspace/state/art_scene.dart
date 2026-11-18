@@ -20,7 +20,8 @@ class ArtLayer {
       inF = l.inF,
       outF = l.outF,
       keys = List.unmodifiable([...l.keys]..sort());
-  final String id, name;
+  final int id;
+  final String name;
   final LayerKind kind;
   final int inF, outF;
   final List<int> keys;
@@ -67,24 +68,23 @@ class ArtScene {
       gizmos = {
         if (ws.freeEye)
           for (final l in ws.layers)
-            if (l.kind == LayerKind.camera)
-              l.id: ws.inside?.gizmo(int.parse(l.id)) ?? '',
+            if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(l.id) ?? '',
       },
       _inside = ws.inside;
 
   final Motolii? _inside;
-  final _asked = <String, ArtBox?>{};
+  final _asked = <int, ArtBox?>{};
 
   /// Where the view camera stood, and each camera layer as it sees the stage.
   ///
   /// The engine's text (doc_gizmo), read with each image.
   final List<double> eye;
-  final Map<String, String> gizmos;
+  final Map<int, String> gizmos;
 
   /// A camera layer's points on the image: the four corners of its frame, the point it looks at and its position.
   ///
   /// A point is null when it lies behind the view camera.
-  List<Offset?> gizmo(String id) {
+  List<Offset?> gizmo(int id) {
     final n = (gizmos[id] ?? '')
         .trim()
         .split(' ')
@@ -100,8 +100,8 @@ class ArtScene {
   ///
   /// It is asked for only when needed (a handle on the stage, the selected layer's outline), not for every layer
   /// on every image.
-  ArtBox? box(String id) => _asked.putIfAbsent(id, () {
-    final f = _inside?.bounds(int.tryParse(id) ?? -1);
+  ArtBox? box(int id) => _asked.putIfAbsent(id, () {
+    final f = _inside?.bounds(id);
     return f == null
         ? null
         : ArtBox(
@@ -113,7 +113,7 @@ class ArtScene {
   });
 
   /// The box of every layer, asked for now.
-  Map<String, ArtBox> get boxes => {for (final l in layers) l.id: ?box(l.id)};
+  Map<int, ArtBox> get boxes => {for (final l in layers) l.id: ?box(l.id)};
 
   /// How many times the document has been read again. A change at the same frame makes a different scene.
   final int rev;
@@ -121,7 +121,7 @@ class ArtScene {
   final bool camera;
   final List<ArtLayer> layers;
 
-  ArtLayer? layer(String? id) => layers.where((l) => l.id == id).firstOrNull;
+  ArtLayer? layer(int? id) => layers.where((l) => l.id == id).firstOrNull;
   @override
   bool operator ==(Object other) =>
       other is ArtScene &&
@@ -171,13 +171,12 @@ abstract final class ArtGeometry {
   /// The box the stage frames when [id] is selected, or null when the layer has no image at this frame.
   ///
   /// The engine gives a box only to what it shows, so whether the layer is on is not worked out again here.
-  static ArtBox? boxOf(ArtScene s, String? id) =>
+  static ArtBox? boxOf(ArtScene s, int? id) =>
       s.layer(id) == null ? null : s.box(id!);
 
   /// The topmost layer under [p] (document px), or null. The background is locked: a click on it means "nothing".
-  static String? hit(ArtScene s, Offset p) {
+  static int? hit(ArtScene s, Offset p) {
     for (final l in s.layers) {
-      // The first layer in the list is the nearest, so the first box containing the point wins.
       if (s.box(l.id)?.contains(p) ?? false) return l.id;
     }
     return null;

@@ -55,15 +55,15 @@ class _RowState extends State<_Row> {
   Widget build(BuildContext context) {
     final l = widget.l,
         ws = WorkspaceScope.of(context, {WorkspaceAspect.document}),
-        t = int.tryParse(l.id);
-    final ways = t == null ? const <String>[] : layerWords(ws, t, 'blend');
+        t = l.id;
+    final ways = layerWords(ws, t, 'blend');
     final now = ways.isEmpty
         ? ''
-        : (layerWord(ws, t!, 'blend').isEmpty
+        : (layerWord(ws, t, 'blend').isEmpty
               ? ways.first
               : layerWord(ws, t, 'blend'));
     void say(String name, String word) {
-      if (t != null) sayLayer(ws, t, name, word);
+      sayLayer(ws, t, name, word);
     }
 
     final row = Container(

@@ -144,8 +144,7 @@ class WorkspaceState extends State<Workspace> {
 
   /// The selected layers: all of the multi-selection if there is one, otherwise the single selected layer.
   List<int> pickedLayers() => [
-    for (final id in ws.many.isNotEmpty ? ws.many : {?ws.selected})
-      ?int.tryParse(id),
+    ...ws.many.isNotEmpty ? ws.many : {?ws.selected},
   ];
 
   /// Applies [tell] to each selected layer, as a single undo step.
@@ -167,7 +166,7 @@ class WorkspaceState extends State<Workspace> {
   void copy({bool style = false}) {
     Clipboard.getData(Clipboard.kTextPlain)
         .then((said) => textWhenCopied = said?.text);
-    final t = int.tryParse(ws.selected ?? '');
+    final t = ws.selected;
     if (!projectOpen(ws) || t == null) return;
     if (style) {
       copyLayerStyle(ws, t);

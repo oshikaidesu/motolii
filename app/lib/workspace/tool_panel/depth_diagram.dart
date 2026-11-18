@@ -24,7 +24,7 @@ class DepthDiagram extends StatefulWidget {
     this.onCancel,
   });
   final DepthLens lens;
-  final void Function(double z, String? id) onFocus;
+  final void Function(double z, int? id) onFocus;
   final void Function(double focal) onFocal;
   final VoidCallback onDone;
   final VoidCallback? onCancel;
@@ -61,7 +61,7 @@ class _DiagramState extends State<DepthDiagram> {
     return LayoutBuilder(
       builder: (context, box) {
         final m = _Map(box.biggest);
-        String? hit(Offset p) {
+        int? hit(Offset p) {
           for (final s in slabs.reversed) {
             final r = m.slab(s.x, s.z, s.w).inflate(5);
             if (r.contains(p)) return s.id;
@@ -186,7 +186,7 @@ class _DepthPainter extends CustomPainter {
   });
   final List<DepthSlab> slabs;
   final double focal, focus, near, far;
-  final String? target;
+  final int? target;
   final bool hot;
 
   @override

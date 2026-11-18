@@ -25,22 +25,22 @@ WorkspaceController _ws() {
   return ws;
 }
 
-Layer _layer(String id, LayerKind kind, {String? parent}) =>
+Layer _layer(int id, LayerKind kind, {int? parent}) =>
     Layer(id, 'Layer $id', kind, 0, 240, const [], parent: parent);
 
 /// Group 1 holds group 2, which holds shape 3. Shape 4 is the parent of text 5 without being a group.
 WorkspaceController _nested() => _ws()
   ..layers.addAll([
-    _layer('1', LayerKind.group),
-    _layer('2', LayerKind.group, parent: '1'),
-    _layer('3', LayerKind.shape, parent: '2'),
-    _layer('4', LayerKind.shape),
-    _layer('5', LayerKind.text, parent: '4'),
+    _layer(1, LayerKind.group),
+    _layer(2, LayerKind.group, parent: 1),
+    _layer(3, LayerKind.shape, parent: 2),
+    _layer(4, LayerKind.shape),
+    _layer(5, LayerKind.text, parent: 4),
   ]);
 
-const SelectedKeyframe _a = (layer: '3', frame: 10),
-    _b = (layer: '4', frame: 20),
-    _c = (layer: '3', frame: 30);
+const SelectedKeyframe _a = (layer: 3, frame: 10),
+    _b = (layer: 4, frame: 20),
+    _c = (layer: 3, frame: 30);
 
 void main() {
   if (skipUnlessEveryTest()) return;
@@ -64,40 +64,38 @@ void main() {
 
   group('the selection', () {
     test('select tells picked once, and nothing when that layer is already the only one selected', () {
-      final ws = _ws()..layers.add(_layer('3', LayerKind.shape));
+      final ws = _ws()..layers.add(_layer(3, LayerKind.shape));
       var heard = 0;
       ws.addListener(() => heard++);
-      expect(_told(ws, () => ws.select('3')), {WorkspaceAspect.picked: 1});
-      expect((ws.selected, ws.layer?.id, heard), ('3', '3', 1));
-      expect(_told(ws, () => ws.select('3')), isEmpty);
+      expect(_told(ws, () => ws.select(3)), {WorkspaceAspect.picked: 1});
+      expect((ws.selected, ws.layer?.id, heard), (3, 3, 1));
+      expect(_told(ws, () => ws.select(3)), isEmpty);
       expect(_told(ws, () => ws.select(null)), {WorkspaceAspect.picked: 1});
       expect((ws.selected, ws.layer, heard), (null, null, 2));
     });
 
     test('select clears the layers picked together, the keyframes, the colour aim and the tool opened by hand', () {
       final ws = _ws()
-        ..pickMany(['3', '4'], inOrder: true)
+        ..pickMany([3, 4], inOrder: true)
         ..pickKey(_a)
         ..aim = 'stroke'
         ..openToolPanel('Ease');
       // Layer 3 is already the selected one, but others are picked with it.
-      expect(_told(ws, () => ws.select('3')), {WorkspaceAspect.picked: 1});
+      expect(_told(ws, () => ws.select(3)), {WorkspaceAspect.picked: 1});
       expect(ws.many, isEmpty);
       expect(ws.keys, isEmpty);
       expect((ws.aim, ws.toolPanelManual, ws.toolPanel), (null, null, 'Tools'));
     });
 
     test('pickMany replaces the layers picked together, tells picked every time, and leaves the selected layer alone', () {
-      final ws = _ws()..select('9');
-      expect(_told(ws, () => ws.pickMany(['3', '4'])), {
+      final ws = _ws()..select(9);
+      expect(_told(ws, () => ws.pickMany([3, 4])), {WorkspaceAspect.picked: 1});
+      expect(ws.many, {3, 4});
+      expect((ws.manyInOrder, ws.selected), (false, 9));
+      expect(_told(ws, () => ws.pickMany([4], inOrder: true)), {
         WorkspaceAspect.picked: 1,
       });
-      expect(ws.many, {'3', '4'});
-      expect((ws.manyInOrder, ws.selected), (false, '9'));
-      expect(_told(ws, () => ws.pickMany(['4'], inOrder: true)), {
-        WorkspaceAspect.picked: 1,
-      });
-      expect(ws.many, {'4'});
+      expect(ws.many, {4});
       expect(ws.manyInOrder, isTrue);
     });
 
@@ -105,25 +103,25 @@ void main() {
       final ws = _ws()..toolPanelManual = 'Ease';
       expect(_told(ws, () => ws.pickKey(_a)), {WorkspaceAspect.picked: 1});
       expect(ws.keys, {_a});
-      expect((ws.selected, ws.toolPanelManual), ('3', null));
+      expect((ws.selected, ws.toolPanelManual), (3, null));
       ws.pickKey(_b, add: true);
       expect(ws.keys, {_a, _b});
-      expect(ws.selected, '4');
+      expect(ws.selected, 4);
       ws.pickKey(_c);
       expect(ws.keys, {_c});
-      expect(ws.selected, '3');
+      expect(ws.selected, 3);
     });
 
     test('pickKeys selects exactly these keyframes and the layer of the first; with none, the layer stays', () {
-      final ws = _ws()..select('9');
+      final ws = _ws()..select(9);
       expect(_told(ws, () => ws.pickKeys([_b, _a])), {
         WorkspaceAspect.picked: 1,
       });
       expect(ws.keys, {_a, _b});
-      expect(ws.selected, '4');
+      expect(ws.selected, 4);
       expect(_told(ws, () => ws.pickKeys([])), {WorkspaceAspect.picked: 1});
       expect(ws.keys, isEmpty);
-      expect(ws.selected, '4');
+      expect(ws.selected, 4);
     });
 
     test('clearKeys tells picked only when a keyframe was selected, and the layer stays', () {
@@ -132,16 +130,16 @@ void main() {
       ws.pickKey(_a);
       expect(_told(ws, ws.clearKeys), {WorkspaceAspect.picked: 1});
       expect(ws.keys, isEmpty);
-      expect(ws.selected, '3');
+      expect(ws.selected, 3);
     });
 
     test('with no engine, pickStretch selects the layer, finds no stretch and fronts nothing', () {
       final ws = _ws()..pickKey(_a);
-      expect(_told(ws, () => ws.pickStretch('4', 'opacity', 10)), {
+      expect(_told(ws, () => ws.pickStretch(4, 'opacity', 10)), {
         WorkspaceAspect.picked: 1,
       });
       expect(ws.keys, isEmpty);
-      expect((ws.selected, ws.stretch, ws.fronted), ('4', null, null));
+      expect((ws.selected, ws.stretch, ws.fronted), (4, null, null));
     });
 
     test('aim tells picked when it changes', () {
@@ -207,7 +205,7 @@ void main() {
     test('the working camera is the eye while a camera layer exists', () {
       final ws = _ws();
       expect(ws.freeEye, isFalse);
-      ws.layers.add(_layer('1', LayerKind.camera));
+      ws.layers.add(_layer(1, LayerKind.camera));
       expect(ws.freeEye, isTrue);
     });
 
@@ -261,38 +259,32 @@ void main() {
   group('the rows', () {
     test('twirl opens the lanes of the layers when none of them is open, else shuts them all, and tells animating', () {
       final ws = _ws();
-      expect(_told(ws, () => ws.twirl(['3', '4'])), {
-        WorkspaceAspect.animating: 1,
-      });
+      expect(_told(ws, () => ws.twirl([3, 4])), {WorkspaceAspect.animating: 1});
       expect(
-        (ws.lanesOpen('3'), ws.lanesOpen('4'), ws.aimsOpen('3')),
+        (ws.lanesOpen(3), ws.lanesOpen(4), ws.aimsOpen(3)),
         (true, true, true),
       );
-      ws.twirl(['3']);
-      expect((ws.lanesOpen('3'), ws.lanesOpen('4')), (false, true));
-      ws.twirl(['3', '4']);
-      expect((ws.lanesOpen('3'), ws.lanesOpen('4')), (false, false));
+      ws.twirl([3]);
+      expect((ws.lanesOpen(3), ws.lanesOpen(4)), (false, true));
+      ws.twirl([3, 4]);
+      expect((ws.lanesOpen(3), ws.lanesOpen(4)), (false, false));
     });
 
     test('turnGroup opens or closes a group and its own lanes with it, and tells animating', () {
       final ws = _ws();
-      expect(ws.groupOpen('1'), isFalse);
-      expect(_told(ws, () => ws.turnGroup('1')), {
-        WorkspaceAspect.animating: 1,
-      });
-      expect((ws.groupOpen('1'), ws.lanesOpen('1')), (true, true));
-      expect(_told(ws, () => ws.turnGroup('1')), {
-        WorkspaceAspect.animating: 1,
-      });
-      expect((ws.groupOpen('1'), ws.lanesOpen('1')), (false, false));
+      expect(ws.groupOpen(1), isFalse);
+      expect(_told(ws, () => ws.turnGroup(1)), {WorkspaceAspect.animating: 1});
+      expect((ws.groupOpen(1), ws.lanesOpen(1)), (true, true));
+      expect(_told(ws, () => ws.turnGroup(1)), {WorkspaceAspect.animating: 1});
+      expect((ws.groupOpen(1), ws.lanesOpen(1)), (false, false));
     });
 
     test('under lists everything a group holds, however deep, and nothing for another kind of layer', () {
       final ws = _nested();
-      expect(ws.under('1'), ['2', '3']);
-      expect(ws.under('2'), ['3']);
-      expect(ws.under('4'), isEmpty);
-      expect(ws.under('no such layer'), isEmpty);
+      expect(ws.under(1), [2, 3]);
+      expect(ws.under(2), [3]);
+      expect(ws.under(4), isEmpty);
+      expect(ws.under(-1), isEmpty);
     });
 
     test('depth counts the groups around a layer', () {
@@ -302,13 +294,13 @@ void main() {
 
     test('foldedAway maps each layer a closed group hides to the outermost closed group above it', () {
       final ws = _nested();
-      expect(ws.foldedAway, {'2': '1', '3': '1'});
-      ws.turnGroup('1');
-      expect(ws.foldedAway, {'3': '2'});
-      ws.turnGroup('2');
+      expect(ws.foldedAway, {2: 1, 3: 1});
+      ws.turnGroup(1);
+      expect(ws.foldedAway, {3: 2});
+      ws.turnGroup(2);
       expect(ws.foldedAway, isEmpty);
-      ws.turnGroup('1');
-      expect(ws.foldedAway, {'2': '1', '3': '1'});
+      ws.turnGroup(1);
+      expect(ws.foldedAway, {2: 1, 3: 1});
     });
   });
 

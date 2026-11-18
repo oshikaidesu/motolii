@@ -45,12 +45,12 @@ void copyKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
 
 /// Pastes the copied keyframes onto the selected layer as one undo step, the first at the playhead, and selects them.
 void pasteKeyframes(WorkspaceController ws) {
-  final t = int.tryParse(ws.selected ?? '');
+  final t = ws.selected;
   if (!projectOpen(ws) || t == null || copiedKeyframes.isEmpty) return;
   final closed = pasteKeyframeCopies(ws, t, copiedKeyframes);
   final pasted = [
     for (final f in {for (final k in copiedKeyframes) ws.frame + k.$2})
-      (layer: '$t', frame: f),
+      (layer: t, frame: f),
   ];
   ws.after(closed, (_, _) {
     ws

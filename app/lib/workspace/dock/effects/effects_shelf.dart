@@ -80,7 +80,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
   Widget build(BuildContext context) {
     final ws = c.ws;
     if (!projectOpen(ws)) return EmptyShelf(c.query);
-    final picked = int.tryParse(ws.selected ?? '') != null;
+    final picked = ws.selected != null;
     final commands = EffectCommands(c, widget.effects);
     final look = shelfLooks['Effects']!;
     final entries = effectEntries(

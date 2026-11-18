@@ -44,13 +44,9 @@ List<(String, List<String>)> layerCardsOf(WorkspaceController ws, int t) =>
 /// name shown there. Like After Effects' parent list.
 Map<String, int> otherLayers(WorkspaceController ws, int t) {
   final rows = ws.layers.where(
-    (l) =>
-        l.id != '$t' && layerWord(ws, int.parse(l.id), 'kind') != 'behaviour',
+    (l) => l.id != t && layerWord(ws, l.id, 'kind') != 'behaviour',
   );
-  return {
-    for (final l in rows)
-      '${ws.layers.indexOf(l) + 1}. ${l.name}': int.parse(l.id),
-  };
+  return {for (final l in rows) '${ws.layers.indexOf(l) + 1}. ${l.name}': l.id};
 }
 
 /// The name of the colour whose first number is [n], or null. The engine stores an ISF colour as three numbers

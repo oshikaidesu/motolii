@@ -75,12 +75,9 @@ class StageDesk {
 
   // With the engine drawing the pane: tells it which layer is selected and which is hovered whenever they change.
   (int, int)? _toldPick;
-  void pick(String? selected, String? hover) {
+  void pick(int? selected, int? hover) {
     if (id == null || !_link.attached) return;
-    final now = (
-      int.tryParse(selected ?? '') ?? 0,
-      int.tryParse(hover ?? '') ?? 0,
-    );
+    final now = (selected ?? 0, hover ?? 0);
     if (now == _toldPick) return;
     _toldPick = now;
     _link.pick(now.$1, now.$2);

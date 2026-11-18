@@ -43,7 +43,7 @@ EffectEntries effectEntries({
   final ws = c.ws;
   final on = ws.fxOf(ws.selected),
       screen = ws.screenFx,
-      picked = int.tryParse(ws.selected ?? '') != null;
+      picked = ws.selected != null;
   final look = shelfLooks['Effects']!;
   // Overlays on a tile's image, none on a small tile.
   // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
@@ -245,10 +245,7 @@ List<EffectEntry> effectLost({
 
 /// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
 String _said(WorkspaceController ws, String name) {
-  final v = layerEffectValue(ws, name),
-      t = int.tryParse(
-        ws.selected ?? '',
-      ); // The selected layer's id, or null when none is selected.
+  final v = layerEffectValue(ws, name), t = ws.selected;
   final now = t == null ? '' : wordOf(ws, t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';
 }

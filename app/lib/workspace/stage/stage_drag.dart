@@ -69,13 +69,13 @@ class StageDrag extends ChangeNotifier {
 
   /// Collects the lines that dragging layer [id] snaps to: the canvas, the guides and the other layers' bounds.
   /// Layers in the same parent chain as [id] are left out.
-  void _snapFrom(String id) {
+  void _snapFrom(int id) {
     final boxes = _stage.scene.boxes, ws = _stage.workspace;
     final grabbed = boxes[id];
     if (!_stage.tool.snap || grabbed == null || !stageConnected(ws)) {
       return _snapTo = null;
     }
-    final mine = stageOutermost(ws, int.parse(id)), c = ArtGeometry.comp;
+    final mine = stageOutermost(ws, id), c = ArtGeometry.comp;
     final xs = <(double, double)>[(0, c.width)],
         ys = <(double, double)>[(0, c.height)];
     for (final g in _stage.scene.guidesX) {
@@ -85,7 +85,7 @@ class StageDrag extends ChangeNotifier {
       ys.add((g, g));
     }
     for (final MapEntry(:key, :value) in boxes.entries) {
-      if (stageOutermost(ws, int.parse(key)) == mine) continue;
+      if (stageOutermost(ws, key) == mine) continue;
       final r = _bounds(value);
       xs.add((r.left, r.right));
       ys.add((r.top, r.bottom));
@@ -181,7 +181,7 @@ class StageDrag extends ChangeNotifier {
   bool handleDragStart(StageViewport v, Offset local) {
     final ws = _stage.workspace;
     // Dragging a handle of the selected layer. The engine works out the change from where the drag started.
-    final picked = int.tryParse(_stage.selected ?? '');
+    final picked = _stage.selected;
     if (stageConnected(ws) && picked != null) {
       String? by, grip;
       var near = 8.0;
@@ -257,12 +257,11 @@ class StageDrag extends ChangeNotifier {
   }
 
   /// Takes hold of the layer [id] at [local], to move it as a whole, and selects it.
-  void layerDragStart(String id, Offset local) {
-    final ws = _stage.workspace, t = int.tryParse(id);
-    if (!stageConnected(ws) || t == null) return;
-    ws.live.hold(t);
+  void layerDragStart(int id, Offset local) {
+    final ws = _stage.workspace;
+    if (!stageConnected(ws)) return;
+    ws.live.hold(id);
     ws.select(id);
-    // Grabbing a layer stops playback.
     if (ws.playing) ws.playing = false;
     held = (from: local, moved: false, by: null);
     _snapFrom(id);
@@ -408,7 +407,7 @@ class StageDrag extends ChangeNotifier {
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
   /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
   String? heldSays(String? by) {
-    final ws = _stage.workspace, t = int.tryParse(_stage.selected ?? '');
+    final ws = _stage.workspace, t = _stage.selected;
     final f = t == null ? null : stageBounds(ws, t);
     if (f == null) return null;
     return switch (by) {

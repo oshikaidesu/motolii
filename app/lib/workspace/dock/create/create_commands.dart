@@ -35,7 +35,7 @@ class CreateCommands {
       c.ws.after(
         makeRecipe(c.ws, name),
         _troubled(name),
-        (made) => c.ws.select('$made'),
+        (made) => c.ws.select(made),
       );
       return;
     }
@@ -58,7 +58,7 @@ class CreateCommands {
     }
     if (shadingOfTile[name] case final wears?) {
       // Replaces the picked layer's material. With nothing picked, creates a ball wearing it and selects the ball.
-      final t = int.tryParse(c.ws.selected ?? '');
+      final t = c.ws.selected;
       final told = _troubled(name);
       if (t != null) {
         if (!kindsThatWear.contains(wordOf(c.ws, t, 'kind'))) {
@@ -74,7 +74,7 @@ class CreateCommands {
       c.ws.after(
         addLayer(c.ws, 'solid', 'ball'),
         null,
-        (made) => c.ws.select('$made'),
+        (made) => c.ws.select(made),
       );
       applyChosenInks(c.ws, 'solid', 'ball');
       sayWord(c.ws, -1, 'shading', wears);
@@ -87,7 +87,7 @@ class CreateCommands {
         c.ws.after(
           addElement(c.ws, e, c.ws.frame / WorkspaceController.fps),
           _troubled(name),
-          (made) => c.ws.select('$made'),
+          (made) => c.ws.select(made),
         );
       }
       return;
@@ -99,7 +99,7 @@ class CreateCommands {
     c.ws.after(
       addLayer(c.ws, asked.$1, asked.$1 == 'text' ? c.ws.bodyFace : asked.$2),
       null,
-      (made) => c.ws.select('$made'),
+      (made) => c.ws.select(made),
     );
     applyChosenInks(c.ws, asked.$1, asked.$2);
     for (final e
@@ -118,23 +118,21 @@ class CreateCommands {
   void _createFromCode(CreateTile tile) {
     final code = CodeFile(tile.file!);
     c.ws.after(
-      adaptCode(c.ws, int.tryParse(c.ws.selected ?? '') ?? 0, code.file),
+      adaptCode(c.ws, c.ws.selected ?? 0, code.file),
       _troubled(tile.name),
       (made) {
         if (made <= 0) return;
         if (code.name != code.plain) {
           c.ws.after(sayWord(c.ws, made, 'name', code.name));
         }
-        c.ws.select('$made');
+        c.ws.select(made);
       },
     );
   }
 
   /// Puts an expression on the picked layer, or on a new layer when none is picked.
   void _putExpression(CreateTile tile) {
-    final name = tile.name,
-        file = tile.file!,
-        t = int.tryParse(c.ws.selected ?? '');
+    final name = tile.name, file = tile.file!, t = c.ws.selected;
     void told(String why) => c.set(
       () =>
           why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
@@ -149,7 +147,7 @@ class CreateCommands {
       return c.ws.after(
         makeRecipe(c.ws, name),
         (done, why) => told(done ? '' : why),
-        (made) => c.ws.select('$made'),
+        (made) => c.ws.select(made),
       );
     }
     final first =

@@ -234,25 +234,12 @@ class FontsShelf extends StatelessWidget {
                 c.mem.trouble[sel.family] ??
                 '${sel.path!.split('.').last.toUpperCase()} · ${parentFolderOf(sel.path!).split('/').last}',
             // Applies to the selected text layer, or places a new text layer when none is selected.
-            action:
-                layerWord(
-                      c.ws,
-                      int.tryParse(c.ws.selected ?? '') ?? 0,
-                      'kind',
-                    ) !=
-                    'text'
+            action: layerWord(c.ws, c.ws.selected ?? 0, 'kind') != 'text'
                 ? 'Place'
                 : 'Apply',
             done: onText,
             doneLabel: 'In use',
-            // True when no text layer is selected, so the action creates a new one.
-            fresh:
-                layerWord(
-                  c.ws,
-                  int.tryParse(c.ws.selected ?? '') ?? 0,
-                  'kind',
-                ) !=
-                'text',
+            fresh: layerWord(c.ws, c.ws.selected ?? 0, 'kind') != 'text',
             onAction: () => commands.setFont(sel),
           ),
       ],

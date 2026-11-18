@@ -21,32 +21,30 @@ String relationLabel(String kind) {
 }
 
 /// The selected layers a relation can hold. A relation that is selected with them, as Select All does, is left out.
-List<String> relatableLayers(WorkspaceController ws) => [
-  for (final id in ws.many)
-    if (int.tryParse(id) case final t?
-        when layerWord(ws, t, 'kind') != 'behaviour')
-      id,
+List<int> relatableLayers(WorkspaceController ws) => [
+  for (final t in ws.many)
+    if (layerWord(ws, t, 'kind') != 'behaviour') t,
 ];
 
 /// The layers an expression goes on as a row: the layers selected together, or the layers in the picked group.
 ///
 /// Fewer than two means none: the expression goes on the picked layer, as a card of its own.
-List<String> expressionRow(WorkspaceController ws) {
-  final picked = int.tryParse(ws.selected ?? '');
+List<int> expressionRow(WorkspaceController ws) {
+  final picked = ws.selected;
   if (relatableLayers(ws) case final many when many.length >= 2) return many;
   if (!projectOpen(ws) ||
       picked == null ||
       layerWord(ws, picked, 'shape') != 'null') {
     return const [];
   }
-  final children = [for (final t in layersParentedTo(ws, picked)) '$t'];
+  final children = [for (final t in layersParentedTo(ws, picked)) t];
   return children.length >= 2 ? children : const [];
 }
 
 /// Makes a relation of [kind] from the layers selected together, or from [of] when given.
 ///
 /// [kind] is a file in relations/*.js, or any file with each(i, n, t, k): layer i of the row is then copy i of n.
-void makeRelation(WorkspaceController ws, String kind, {List<String>? of}) {
+void makeRelation(WorkspaceController ws, String kind, {List<int>? of}) {
   final who = of ?? relatableLayers(ws), ordered = of == null && ws.manyInOrder;
   if (!projectOpen(ws) || who.length < 2) return;
   if (kind.endsWith('Group.js')) {
@@ -63,22 +61,13 @@ void makeRelation(WorkspaceController ws, String kind, {List<String>? of}) {
 /// a plain click selects it alone, Command (Ctrl) adds or removes it, Shift takes the rows from the last one picked to it.
 /// [order] is the rows in reading order; leave it empty where there are no rows (the stage), and Shift adds like Command.
 /// A layer that was selected alone joins what is picked.
-void clickLayer(
-  WorkspaceController ws,
-  String id, {
-  List<String> order = const [],
-}) {
+void clickLayer(WorkspaceController ws, int id, {List<int> order = const []}) {
   final (:add, :span) = clickKeys();
   if (!add && !span) return ws.select(id);
   final alone = ws.selected;
   final now = ws.many.isNotEmpty
       ? {...ws.many}
-      : {
-          if (alone != null &&
-              !relationMembersOf(ws).contains(alone) &&
-              int.tryParse(alone) != null)
-            alone,
-        };
+      : {if (alone != null && !relationMembersOf(ws).contains(alone)) alone};
   final r = pickOnClick(
     now: now,
     lead: ws.selection.lead ?? (ws.many.isNotEmpty ? ws.many.last : alone),

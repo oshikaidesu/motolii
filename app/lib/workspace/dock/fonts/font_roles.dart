@@ -33,8 +33,7 @@ class FontRoles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final commands = FontCommands(c, controller);
-    final t = int.tryParse(c.ws.selected ?? ''),
-        onText = t != null && isTextLayer(c.ws, t);
+    final t = c.ws.selected, onText = t != null && isTextLayer(c.ws, t);
     Widget role(String r, String label, String face) {
       final f =
           fonts.where((f) => f.path == face).firstOrNull ??

@@ -21,8 +21,7 @@ typedef SlideEntry = ({
 List<SlideEntry> cacheSlide(Motolii m, Iterable<SelectedKeyframe> keys) {
   final out = <SlideEntry>[];
   for (final k in keys) {
-    final t = int.tryParse(k.layer);
-    if (t == null) continue;
+    final t = k.layer;
     final at = k.frame / WorkspaceController.fps;
     final props = <({String name, double value, String easing})>[];
     for (final n in m.moving(t)) {
@@ -148,8 +147,7 @@ Iterable<int> slideWrites(Motolii m, Iterable<SelectedKeyframe> keys, int by) {
   final layers = <int>{};
   final fps = WorkspaceController.fps, dur = WorkspaceController.duration;
   for (final k in keys) {
-    final t = int.tryParse(k.layer);
-    if (t == null) continue;
+    final t = k.layer;
     final at = k.frame / fps;
     final to = (k.frame + by).clamp(0, dur) / fps;
     for (final n in m.moving(t)) {
@@ -174,8 +172,7 @@ void unkeyAtKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
   final buf = StringBuffer();
   final fps = WorkspaceController.fps;
   for (final k in keys) {
-    final t = int.tryParse(k.layer);
-    if (t == null) continue;
+    final t = k.layer;
     final at = k.frame / fps;
     for (final n in m.moving(t)) {
       if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / fps)) {
@@ -195,21 +192,20 @@ List<(String, int, double, String)> keyframeCopies(
   final first = keys.map((k) => k.frame).reduce((a, b) => a < b ? a : b);
   return [
     for (final k in keys)
-      if (int.tryParse(k.layer) case final t?)
-        for (final n in m.moving(t))
-          if (m
-              .keyTimes(t, n)
-              .any(
-                (s) =>
-                    (s - k.frame / WorkspaceController.fps).abs() <
-                    .5 / WorkspaceController.fps,
-              ))
-            (
-              n,
-              k.frame - first,
-              m.value(t, n, k.frame / WorkspaceController.fps) ?? 0,
-              m.easingOf(t, n, k.frame / WorkspaceController.fps),
-            ),
+      for (final n in m.moving(k.layer))
+        if (m
+            .keyTimes(k.layer, n)
+            .any(
+              (s) =>
+                  (s - k.frame / WorkspaceController.fps).abs() <
+                  .5 / WorkspaceController.fps,
+            ))
+          (
+            n,
+            k.frame - first,
+            m.value(k.layer, n, k.frame / WorkspaceController.fps) ?? 0,
+            m.easingOf(k.layer, n, k.frame / WorkspaceController.fps),
+          ),
   ];
 }
 

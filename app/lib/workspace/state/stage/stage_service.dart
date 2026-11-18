@@ -64,14 +64,12 @@ List<(Offset, Offset)> stagePathHandles(WorkspaceController ws, int layer) =>
     ws.inside?.handles(layer) ?? const [];
 
 /// The camera the Camera tool acts on: the selected one when it is a camera, else the first camera of the project.
-int? stageCameraLayer(WorkspaceController ws, String? selected) {
-  final m = ws.inside, picked = int.tryParse(selected ?? '');
+int? stageCameraLayer(WorkspaceController ws, int? selected) {
+  final m = ws.inside;
   if (m == null) return null;
-  if (picked != null && m.word(picked, 'kind') == 'camera') return picked;
+  if (selected != null && m.word(selected, 'kind') == 'camera') return selected;
   for (final l in ws.layers) {
-    if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'camera') {
-      return t;
-    }
+    if (m.word(l.id, 'kind') == 'camera') return l.id;
   }
   return null;
 }

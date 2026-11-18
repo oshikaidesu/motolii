@@ -28,19 +28,19 @@ class Selection {
   final CompositionSettings _composition;
   final VoidCallback _onChanged, _onLayerSelected, _onStretchSelected;
 
-  String? _selected; // Nothing is selected when a document opens.
+  int? _selected; // Nothing is selected when a document opens.
 
   /// The id of the selected layer, or null when none is.
-  String? get selected => _selected;
+  int? get selected => _selected;
 
   /// The selected layer, or null when none is.
   Layer? get layer => _layers().where((l) => l.id == _selected).firstOrNull;
 
   /// The layers selected together, outlined in the preview. A relation is made of them. Selecting one layer clears them.
-  final many = <String>{};
+  final many = <int>{};
 
   /// The layer the last click picked, which a Shift-click's range starts from (see pickOnClick). Null after a plain selection.
-  String? lead;
+  int? lead;
 
   /// Whether [many] were picked one by one, so that the first leads. A box selection has no order.
   bool manyInOrder = false;
@@ -57,7 +57,7 @@ class Selection {
   StretchPicked? get stretch => _stretch;
 
   /// Selects the layer [id], or clears the selection when null.
-  void select(String? id) {
+  void select(int? id) {
     if (id == _selected && many.isEmpty) return;
     _selected = id;
     many.clear();
@@ -70,7 +70,7 @@ class Selection {
   }
 
   /// Selects several layers. With [inOrder] the first one leads.
-  void pickMany(Iterable<String> ids, {bool inOrder = false, String? lead}) {
+  void pickMany(Iterable<int> ids, {bool inOrder = false, int? lead}) {
     many
       ..clear()
       ..addAll(ids);
@@ -108,11 +108,8 @@ class Selection {
     _onChanged();
   }
 
-  StretchPicked? _stretchOf(String layer, String name, int from) {
-    final t = int.tryParse(layer),
-        at = t == null
-            ? const <double>[]
-            : _engine()?.keyTimes(t, name) ?? const <double>[];
+  StretchPicked? _stretchOf(int layer, String name, int from) {
+    final at = _engine()?.keyTimes(layer, name) ?? const <double>[];
     final i = at.indexWhere(
       (s) => (s * _composition.frameRate).round() == from,
     );
@@ -128,7 +125,7 @@ class Selection {
   }
 
   /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
-  void pickStretch(String layer, String name, int from) {
+  void pickStretch(int layer, String name, int from) {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);
     _selected = layer;

@@ -63,7 +63,7 @@ void putEffectFile(
 }) {
   final m = ws.inside;
   if (m == null) return;
-  final t = int.tryParse(ws.selected ?? '');
+  final t = ws.selected;
   final (word, title) = _said(t == null ? '' : m.word(t, 'fx'), file);
   if (open) showCodeCell(ws, title); // (its cell in the Code tab)
   if (t == null) {

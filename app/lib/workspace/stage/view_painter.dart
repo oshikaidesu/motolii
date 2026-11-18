@@ -77,10 +77,10 @@ class ViewPainter extends CustomPainter {
   final List<Offset>? trail;
 
   /// The id of the selected layer's parent. Its frame is drawn grey, like Alight Motion's parent outline.
-  final String? parent;
+  final int? parent;
   final ArtScene scene;
   final StageViewport v;
-  final String? sel, hover;
+  final int? sel, hover;
   final bool grid, safe;
 
   Path _boxPath(ArtBox b) =>
@@ -163,7 +163,7 @@ class ViewPainter extends CustomPainter {
           selectionHandles(
             v.toScreen,
             b,
-            knob: l.kind != LayerKind.camera && l.id != 'bg',
+            knob: l.kind != LayerKind.camera,
             form: form.$1,
             round: form.$2,
             crop: crop,
@@ -262,7 +262,7 @@ class ViewPainter extends CustomPainter {
   /// Draws a camera in the custom view: its crossed frame as in AbsentMotion's DrawCameraFrames, lines from its
   /// position to the frame corners, and its point of interest as in After Effects. The selected camera also gets
   /// corner handles, because the frame size sets the lens.
-  void _gizmo(Canvas c, String id) {
+  void _gizmo(Canvas c, int id) {
     final g = [
           for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
         ],
@@ -310,7 +310,7 @@ class ViewPainter extends CustomPainter {
     final h = selectionHandles(
           v.toScreen,
           b,
-          knob: l.kind != LayerKind.camera && l.id != 'bg',
+          knob: l.kind != LayerKind.camera,
           form: form.$1,
           round: form.$2,
           crop: crop,

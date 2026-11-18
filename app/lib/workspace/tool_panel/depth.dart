@@ -147,7 +147,7 @@ class _DepthToolState extends State<DepthTool> {
 class _LensNumbers extends StatelessWidget {
   const _LensNumbers({required this.lens, required this.camera});
   final DepthLens lens;
-  final String? camera;
+  final int? camera;
   @override
   Widget build(BuildContext context) {
     final d = lens.dof;

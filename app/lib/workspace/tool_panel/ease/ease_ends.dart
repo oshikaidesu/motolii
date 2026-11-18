@@ -24,7 +24,7 @@ mixin EaseEnds on State<EaseTool> {
     EaseSpan span,
     bool start,
   ) sync* {
-    final t = int.parse(span.layer.id);
+    final t = span.layer.id;
     for (final name in layerMoving(ws, t)) {
       // When one property line is selected, only that property's ends are used.
       if (ws.stretch case final s? when s.name != name) continue;
@@ -101,7 +101,7 @@ mixin EaseEnds on State<EaseTool> {
       return;
     }
     if (_pull == null && done && by.abs() < 1e-4) return;
-    final t = int.parse(span.layer.id),
+    final t = span.layer.id,
         key = start ? span.from : span.to,
         outside = start ? span.from - 1 : span.to + 1;
     if (_pull == null) {
@@ -179,7 +179,7 @@ mixin EaseEnds on State<EaseTool> {
     double by,
   ) {
     if (!isConnected(ws) || span == null) return null;
-    final t = int.parse(span.layer.id);
+    final t = span.layer.id;
     for (final (name, _, vs, i) in _pull ?? [..._ends(ws, span, start)]) {
       final now = _from(ws, span).containsKey(name)
           ? _toward(span, ws, name, vs[i], by)

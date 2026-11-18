@@ -45,7 +45,8 @@ class Layer {
     this.retimed = const [],
     this.media,
   });
-  final String id, name;
+  final int id;
+  final String name;
   final LayerKind kind;
   int inF, outF;
   final List<int> keys;
@@ -54,7 +55,7 @@ class Layer {
   final List<Stretch> stretches;
 
   /// The id of the parent layer, if any.
-  final String? parent;
+  final int? parent;
 
   /// Whether this is a sketch whose drawn lines are parameters of it. When opened, each line gets a row.
   final bool lined;
@@ -68,11 +69,11 @@ class Layer {
   final ({String shape, Color? colour, bool outline})? form;
 
   /// A relation's layers, in its own order. Null for any other layer.
-  final List<String>? members;
+  final List<int>? members;
 
   /// The layers it points at, each with its label: those its properties name (Parent, Leader, Join, Into...), and a
   /// relation's layers ('Moves'). Like the Parent & Link column of After Effects.
-  final List<(String, String)> links;
+  final List<(String, int)> links;
 
   /// Its properties with keyframes (and a sketch's lines), in its own order: each a lane under its row, as in Ableton.
   final List<Lane> lanes;
@@ -117,7 +118,7 @@ class Layer {
 
   /// The layers this one is inside: its parent, that layer's parent and so on, nearest first.
   /// [byId] maps the id of every layer to the layer.
-  Iterable<Layer> ancestors(Map<String, Layer> byId) sync* {
+  Iterable<Layer> ancestors(Map<int, Layer> byId) sync* {
     var p = byId[parent];
     for (var n = 0; p != null && n < 64; p = byId[p.parent], n++) {
       // The limit of 64 matches the stage's own walk up a layer's parents.
@@ -166,13 +167,7 @@ class Lane {
 typedef Stretch = ({int from, int to, String way, List<double> shape});
 
 /// A keyframe the user selected: its layer and frame.
-typedef SelectedKeyframe = ({String layer, int frame});
+typedef SelectedKeyframe = ({int layer, int frame});
 
 /// A stretch of one property selected by its line in the timeline, from the keyframe at [at] seconds to the next keyframe of that property.
-typedef StretchPicked = ({
-  String layer,
-  String name,
-  double at,
-  int from,
-  int to,
-});
+typedef StretchPicked = ({int layer, String name, double at, int from, int to});

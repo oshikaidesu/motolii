@@ -23,14 +23,14 @@ class TimelineMediaCache extends ChangeNotifier {
   // A video's thumbnails on its bar: one frame from the middle of each sixth of the video, whatever its start or speed.
   // The engine makes them small (GStreamer, on another isolate) and the app reads them as images.
   // They are requested again only when the project changes.
-  final _frames = <String, (Object, List<ui.Image>?)>{};
-  final _framesAsked = <String, Object>{};
+  final _frames = <int, (Object, List<ui.Image>?)>{};
+  final _framesAsked = <int, Object>{};
   // A video's waveform on its bar: read once on another isolate, then laid on the project's frames where the video plays.
   // It is requested again only when the project changes.
   // Per layer id: the project read, the from and to frames, and the loudness of each frame.
-  final _waves = <String, (int, int, int, List<double>?)>{};
-  final _asked = <String>{};
-  final _waveAsked = <String, (int, int, int)>{};
+  final _waves = <int, (int, int, int, List<double>?)>{};
+  final _asked = <int>{};
+  final _waveAsked = <int, (int, int, int)>{};
   // The length of each video file in seconds; 0 while it is being read.
   final _filmSeconds = <String, double>{};
 
@@ -56,13 +56,9 @@ class TimelineMediaCache extends ChangeNotifier {
     if (_beatsAsked == ws.reads) return _beats?.$2 ?? const [];
     final asks = <Future<List<double>>>[];
     for (final l in ws.layers) {
-      final t = int.tryParse(l.id),
-          rise = t == null
-              ? 0.0
-              : timeline_service.layerValue(ws, t, 'beats', 0) ?? 0;
+      final rise = timeline_service.layerValue(ws, l.id, 'beats', 0) ?? 0;
       if (rise > 0 && waveOf(ws, l) != null) {
-        // Only after its sound has been read.
-        asks.add(timeline_service.strikesOf(ws, t!, rise));
+        asks.add(timeline_service.strikesOf(ws, l.id, rise));
       }
     }
     final reads = _beatsAsked = ws.reads;
@@ -121,7 +117,7 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// The image of an image layer, decoded once at a small height and repeated along the bar as in Alight Motion
   /// (see docs/design/alight_motion_ui.md). Null if Flutter cannot decode the file.
-  List<ui.Image>? _stillOf(String file, String id) {
+  List<ui.Image>? _stillOf(String file, int id) {
     if (_frames[id] case (final k, final f) when k == file) return f;
     if (_framesAsked[id] != file) {
       _framesAsked[id] = file;
@@ -142,8 +138,8 @@ class TimelineMediaCache extends ChangeNotifier {
 
   /// The loudness of a video layer's sound over its bar, or null while it is unknown or the layer has no sound.
   List<double>? waveOf(WorkspaceController ws, Layer l) {
-    final t = int.tryParse(l.id);
-    if (!timeline_service.isConnected(ws) || t == null) return null;
+    if (!timeline_service.isConnected(ws)) return null;
+    final t = l.id;
     if (l.media?.still != false) return null;
     final key = (ws.reads, l.inF, l.outF);
     final had = _waves[l.id];

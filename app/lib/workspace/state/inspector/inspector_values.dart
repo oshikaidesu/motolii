@@ -70,9 +70,9 @@ double _unshown(WorkspaceController ws, int t, String n, double x) {
 
 /// Only the position, scale and rotation of a layer, as the canvas readout shows them.
 /// [layerTransform] reads all of the cards' numbers instead.
-Map<String, double> layerPlacement(WorkspaceController ws, String id) {
-  final m = ws.inside, t = int.tryParse(id);
-  if (m == null || t == null) return const {};
+Map<String, double> layerPlacement(WorkspaceController ws, int id) {
+  final m = ws.inside, t = id;
+  if (m == null) return const {};
   final at = drawnTime(ws);
   double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
   return {
@@ -91,10 +91,10 @@ Map<String, double> layerPlacement(WorkspaceController ws, String id) {
 }
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
-Map<String, double> layerTransform(WorkspaceController ws, String? id) {
+Map<String, double> layerTransform(WorkspaceController ws, int? id) {
   if (ws.inside case final m?) {
     // The document's own values, as the inspector counts them.
-    final t = int.tryParse(id ?? '');
+    final t = id;
     if (id == null) {
       // With nothing selected these are the stage's own cards, layer 0.
       final at = drawnTime(ws);
@@ -121,18 +121,16 @@ Map<String, double> layerTransform(WorkspaceController ws, String? id) {
 /// While the user is dragging ([live]) the value is only displayed. On release it becomes the document's, by the document's rules.
 void writeNumbers(
   WorkspaceController ws,
-  String? id,
+  int? id,
   Map<String, double> changed, {
   required bool live,
 }) {
   // With nothing selected the target is the stage's own layer 0.
-  final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
+  final m = ws.inside!, t = id ?? 0;
   // A word chosen on one of the engine's own cards is written as that word, in one undo step.
   final said = {
     for (final e in changed.entries)
-      if (t != null &&
-          e.key.startsWith('v_') &&
-          m.words(t, e.key.substring(2)).isNotEmpty)
+      if (e.key.startsWith('v_') && m.words(t, e.key.substring(2)).isNotEmpty)
         e.key: e.value,
   };
   if (said.isNotEmpty) {
@@ -140,7 +138,7 @@ void writeNumbers(
     // One undo step, without waiting.
     m.later('together', number: 1);
     for (final e in said.entries) {
-      final ways = m.words(t!, e.key.substring(2));
+      final ways = m.words(t, e.key.substring(2));
       for (final o in [t, ..._withIt(ws, t)]) {
         m.later(
           'say',
@@ -160,7 +158,6 @@ void writeNumbers(
     };
     if (changed.isEmpty) return;
   }
-  if (t == null) return;
   if (changed['v_speed'] case final speed? when t > 0) {
     // Speed stretches the layer in time around the hold point, like Time Stretch in After Effects. It applies on release, not during the drag.
     changed = {...changed}..remove('v_speed');
@@ -227,10 +224,10 @@ void writeNumbers(
 final _found = <String, double>{};
 
 /// The other layers selected together with [t].
-List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains('$t')
+List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains(t)
     ? [
         for (final id in ws.many)
-          if (int.tryParse(id) case final o? when o != t) o,
+          if (id != t) id,
       ]
     : const [];
 
@@ -240,11 +237,11 @@ List<int> _withIt(WorkspaceController ws, int t) => ws.many.contains('$t')
 /// If the engine refuses, the words return to the document's own when it is read again.
 bool writeWords(
   WorkspaceController ws,
-  String? id,
+  int? id,
   Map<String, String> changed, {
   bool live = false,
 }) {
-  final t = int.tryParse(id ?? '');
+  final t = id;
   if (t == null) return false;
   Iterable<int> say(Motolii m) {
     for (final e in changed.entries) {
@@ -271,10 +268,10 @@ void tellRefusal(WorkspaceController ws, String? why) {
 }
 
 /// The selected layer's words in the inspector's ids, such as a text's content or how it blends with what is behind.
-Map<String, String> inspectorWords(WorkspaceController ws, String? id) {
+Map<String, String> inspectorWords(WorkspaceController ws, int? id) {
   // With nothing selected these are the stage's own cards.
-  final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
-  if (m == null || t == null) return const {};
+  final m = ws.inside, t = id ?? 0;
+  if (m == null) return const {};
   return {
     ..._cardColors(ws, t, drawnTime(ws)),
     // Which light it is (sun, point, spot). The Light card draws it that way.

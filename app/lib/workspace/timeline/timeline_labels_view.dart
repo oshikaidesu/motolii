@@ -22,9 +22,9 @@ mixin TimelineLabelsView<T extends StatefulWidget>
   void scrollBy(Offset d);
 
   /// The layer's row number and name, as After Effects' Parent column shows it. Several layers may share a name.
-  String numbered(WorkspaceController ws, String id) {
+  String numbered(WorkspaceController ws, int id) {
     final i = ws.layers.indexWhere((l) => l.id == id);
-    return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
+    return i < 0 ? '$id' : '${i + 1} ${ws.layers[i].name}';
   }
 
   // The lane a property row shows.

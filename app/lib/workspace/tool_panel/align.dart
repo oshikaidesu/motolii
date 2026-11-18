@@ -26,7 +26,7 @@ class AlignTool extends StatelessWidget {
   /// The visible bounds of the selected layer: the upright box around its outline as the engine reports it.
   /// Null when no layer is selected or nothing is visible.
   static Rect? _seen(WorkspaceController ws) {
-    final t = int.tryParse(ws.selected ?? '');
+    final t = ws.selected;
     return t == null ? null : layerSeen(ws, t);
   }
 
@@ -35,8 +35,7 @@ class AlignTool extends StatelessWidget {
   /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
   /// so the second pass corrects the remaining offset.
   static void align(WorkspaceController ws, int side, [int pass = 0]) {
-    final t = int.tryParse(ws.selected ?? ''),
-        r = t == null ? null : layerSeen(ws, t);
+    final t = ws.selected, r = t == null ? null : layerSeen(ws, t);
     if (t == null || r == null) return;
     final pic = ArtGeometry.comp;
     final dx = switch (side) {

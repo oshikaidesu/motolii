@@ -12,7 +12,7 @@ abstract interface class StageHandles {
   Map<String, Offset> get handles;
 
   /// The layer under a screen point, as a click there would select it, or null when there is none.
-  String? hitAt(Offset global);
+  int? hitAt(Offset global);
 }
 
 /// The selection's handles where they are drawn, by name.

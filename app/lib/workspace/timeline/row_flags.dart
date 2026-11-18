@@ -17,35 +17,29 @@ class RowFlags {
   /// Whether the layer [id] is hidden.
   ///
   /// Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas.
-  bool isHidden(String id) =>
-      workspace.layers.any((l) => l.id == id && l.hidden);
+  bool isHidden(int id) => workspace.layers.any((l) => l.id == id && l.hidden);
 
   /// Hides the layer [id], or shows it again. It is one undo step.
-  void toggleHidden(String id) {
+  void toggleHidden(int id) {
     workspace.after(
-      timeline_service.setLayerVisible(workspace, int.parse(id), isHidden(id)),
+      timeline_service.setLayerVisible(workspace, id, isHidden(id)),
     );
   }
 
   /// Whether the layer [id] is solo. While any layer is solo, only the solo layers are shown.
-  bool isSolo(String id) => workspace.layers.any((l) => l.id == id && l.solo);
+  bool isSolo(int id) => workspace.layers.any((l) => l.id == id && l.solo);
 
   /// Whether the layer [id] is locked. The engine refuses to change a locked layer and reports an error.
-  bool isLocked(String id) =>
-      workspace.layers.any((l) => l.id == id && l.locked);
+  bool isLocked(int id) => workspace.layers.any((l) => l.id == id && l.locked);
 
   /// Whether the layer [id] is clipped to the layer below it.
-  bool isClipped(String id) =>
+  bool isClipped(int id) =>
       workspace.layers.any((l) => l.id == id && l.clipped);
 
   /// Clips the layer [id] to the layer below it, or removes the clip. It is one undo step.
-  void toggleClipped(String id) {
+  void toggleClipped(int id) {
     workspace.after(
-      timeline_service.setLayerClipped(
-        workspace,
-        int.parse(id),
-        !isClipped(id),
-      ),
+      timeline_service.setLayerClipped(workspace, id, !isClipped(id)),
     );
   }
 
@@ -53,11 +47,11 @@ class RowFlags {
   bool get anySolo => workspace.layers.any((l) => isSolo(l.id));
 
   /// Turns the switch [name] of the layer [id] on or off. [name] is `solo` or `lock`, as the project spells it.
-  void toggle(String name, String id) {
+  void toggle(String name, int id) {
     workspace.after(
       timeline_service.setLayerSwitch(
         workspace,
-        int.parse(id),
+        id,
         name,
         !(name == 'solo' ? isSolo(id) : isLocked(id)),
       ),

@@ -259,7 +259,7 @@ class _EaseGraphState extends State<EaseGraph> {
 ///
 /// They are drawn in the layer's own colour and cannot be edited, as Blender shows curves it will not let the user change.
 List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
-  final t = int.tryParse(span?.layer.id ?? '');
+  final t = span?.layer.id;
   if (!isConnected(ws) ||
       t == null ||
       span == null ||
@@ -278,6 +278,6 @@ List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
   if (lag <= 0 || members.length < 2) return const [];
   return [
     for (final (i, id) in members.indexed)
-      if (i > 0) (lag * i, layerLabelColor(id)),
+      if (i > 0) (lag * i, layerLabelColor(int.tryParse(id) ?? 0)),
   ];
 }

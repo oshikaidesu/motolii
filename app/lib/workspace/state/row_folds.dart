@@ -21,18 +21,17 @@ class RowFolds {
 
   // Which layers show their keyframed properties in lanes under their rows. The user opens them (After Effects' twirl,
   // Ableton's unfolded track). With Animate on, every layer is open and only the ones the user shut are tracked.
-  final _lanesOpen = <String>{}, _lanesShut = <String>{};
+  final _lanesOpen = <int>{}, _lanesShut = <int>{};
 
   /// Whether layer [id] shows its keyframed properties in lanes under its row.
-  bool lanesOpen(String id) =>
+  bool lanesOpen(int id) =>
       _animating() ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
 
   /// Whether the user opened the lanes of what a relation aims at. Animate opens keyframe lanes only.
-  bool aimsOpen(String id) =>
-      _lanesOpen.contains(id) && !_lanesShut.contains(id);
+  bool aimsOpen(int id) => _lanesOpen.contains(id) && !_lanesShut.contains(id);
 
   /// Opens the lanes of the layers [ids] when none of them is open, else shuts them all.
-  void twirl(Iterable<String> ids) {
+  void twirl(Iterable<int> ids) {
     final open = ids.any(lanesOpen), s = _animating() ? _lanesShut : _lanesOpen;
     open == _animating() ? s.addAll(ids) : s.removeAll(ids);
     _onChanged();
@@ -43,13 +42,13 @@ class RowFolds {
 
   // The open groups. A closed group is one row, like a precomposed layer or Alight Motion's group (the triangle is
   // Apple Motion's and Cavalry's). Only the rows fold; the document does not know and the file does not save it.
-  final _groupsOpen = <String>{};
+  final _groupsOpen = <int>{};
 
   /// Whether the group [id] shows its members as rows.
-  bool groupOpen(String id) => _groupsOpen.contains(id);
+  bool groupOpen(int id) => _groupsOpen.contains(id);
 
   /// Opens the group [id], or closes it when it is open.
-  void turnGroup(String id) {
+  void turnGroup(int id) {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
     // The group's own keyframe lanes follow it: one triangle per row, as in Apple Motion.
     _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);
@@ -57,9 +56,10 @@ class RowFolds {
   }
 
   /// Each layer hidden by a closed group, mapped to the row standing for it: the outermost closed group above it (Cavalry marks that row).
-  Map<String, String> get foldedAway {
+  Map<int, int> get foldedAway {
     final layers = _layers();
-    final of = {for (final l in layers) l.id: l}, away = <String, String>{};
+    final of = <int, Layer>{for (final l in layers) l.id: l};
+    final away = <int, int>{};
     for (final l in layers) {
       for (final p in l.ancestors(of)) {
         if (p.kind == LayerKind.group && !groupOpen(p.id)) away[l.id] = p.id;

@@ -74,7 +74,7 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
   // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
   (double, double)? _before;
   // The id of the layer row being renamed with Cmd+R, as in Live.
-  String? _renaming;
+  int? _renaming;
 
   /// Starts listening for the requests of the app's commands. Called from initState.
   void listenForRequests() {
@@ -317,23 +317,21 @@ mixin TimelineRequests<T extends StatefulWidget> on State<T> {
     setState(() => _renaming = ws.layer!.id);
   }
 
-  void _renamed(String id, String? said) {
+  void _renamed(int id, String? said) {
     final ws = workspace, words = said?.trim() ?? '';
     setState(() => _renaming = null);
-    final t = int.tryParse(id),
-        was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
-    if (t != null &&
-        words.isNotEmpty &&
+    final was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
+    if (words.isNotEmpty &&
         words != was &&
         ws != null &&
         timeline_service.isConnected(ws)) {
-      ws.after(timeline_service.renameLayer(ws, t, words));
+      ws.after(timeline_service.renameLayer(ws, id, words));
     }
   }
 
   /// The name field over the row being renamed.
   /// Enter or clicking away commits the name. Esc restores the old one.
-  Widget? renameField(int i, String id, double top) => _renaming != id
+  Widget? renameField(int i, int id, double top) => _renaming != id
       ? null
       : Positioned(
           left: Shape.s(28),

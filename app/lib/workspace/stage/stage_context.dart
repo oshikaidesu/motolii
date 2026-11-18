@@ -17,7 +17,7 @@ abstract interface class StageContext {
   ArtScene get scene;
 
   /// The id of the selected layer, or null when none is selected.
-  String? get selected;
+  int? get selected;
 
   /// The active tool and its options.
   StageTool get tool;

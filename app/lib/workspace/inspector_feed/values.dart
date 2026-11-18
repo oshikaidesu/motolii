@@ -9,13 +9,13 @@ export 'package:motolii/workspace/state/inspector/inspector_values.dart'
 
 /// How the inspector is displayed, such as its folds and whether an effect's Advanced section is open.
 /// This is part of the app's view, not the document.
-Map<String, bool> layerFlags(WorkspaceController ws, String? id) => {
+Map<String, bool> layerFlags(WorkspaceController ws, int? id) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool)
       e.key.substring(10): e.value as bool,
 };
 
-bool writeFlags(WorkspaceController ws, String? id, Map<String, bool> changed) {
+bool writeFlags(WorkspaceController ws, int? id, Map<String, bool> changed) {
   // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (effect_code.dart).
   bool looked(String k) =>
       k.endsWith('.open') ||

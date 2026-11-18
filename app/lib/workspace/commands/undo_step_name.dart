@@ -18,7 +18,7 @@ String undoStepName(WorkspaceController ws, String verb) {
   }
   String nameOf(int t) => t == 0
       ? 'Stage'
-      : ws.layers.where((l) => l.id == '$t').firstOrNull?.name ?? 'a thing';
+      : ws.layers.where((l) => l.id == t).firstOrNull?.name ?? 'a thing';
   final said = [
     for (final e in byThing.entries.take(3))
       '${nameOf(e.key)} ${e.value.take(3).join(', ')}${e.value.length > 3 ? '…' : ''}',

@@ -8,9 +8,9 @@ import 'package:motolii/workspace/state/inspector/inspector_values.dart'
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The keyframe mark of every keyable value of a layer, plus one per property (the strongest mark of its values).
-Map<String, KeyframeState> keyframeMarks(WorkspaceController ws, String? id) {
-  final t = id == null ? 0 : int.tryParse(id);
-  if (!projectOpen(ws) || t == null) return const {};
+Map<String, KeyframeState> keyframeMarks(WorkspaceController ws, int? id) {
+  final t = id ?? 0;
+  if (!projectOpen(ws)) return const {};
   final at = drawnTime(ws);
   final marks = {
     for (final MapEntry(:key, :value) in keyableValuesOf(ws, t).entries)

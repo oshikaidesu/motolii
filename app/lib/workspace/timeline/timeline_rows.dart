@@ -39,8 +39,8 @@ class TimelineRows {
   ///
   /// `layer` is the index of the row's layer. `value` is the property a lane shows, and null for the layer's own row.
   /// `aim` is set on a row that names one of the layer's targets; such a row has an empty value and no keyframes.
-  List<({int layer, String? value, (String, String)? aim})> get order => _order;
-  List<({int layer, String? value, (String, String)? aim})> _order = const [];
+  List<({int layer, String? value, (String, int)? aim})> get order => _order;
+  List<({int layer, String? value, (String, int)? aim})> _order = const [];
 
   double _lift = 0; // how far a label row has been carried up or down
 
@@ -83,7 +83,7 @@ class TimelineRows {
         lit = {
           ...ws.many,
           // The layers the selected relation moves.
-          for (final id in ws.layer?.members ?? const <String>[])
+          for (final id in ws.layer?.members ?? const <int>[])
             if (ids.contains(id)) id,
           for (final p in [?sel, ...ws.many]) ?away[p],
         };
@@ -174,7 +174,7 @@ class TimelineRows {
       ws.after(
         timeline_service.reorderLayer(
           ws,
-          int.parse(l.id),
+          l.id,
           (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble(),
         ),
       );

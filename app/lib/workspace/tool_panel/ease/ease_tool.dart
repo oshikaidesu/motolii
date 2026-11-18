@@ -74,9 +74,9 @@ Map<String, double> keysAt(WorkspaceController ws, EaseSpan span) {
       when r == ws.reads && id == span.layer.id && f == span.from) {
     return at;
   }
-  final at = easeKeysAt(ws, int.parse(span.layer.id), span.from);
+  final at = easeKeysAt(ws, span.layer.id, span.from);
   _keysAtOf[ws] = (ws.reads, span.layer.id, span.from, at);
   return at;
 }
 
-final _keysAtOf = Expando<(int, String, int, Map<String, double>)>();
+final _keysAtOf = Expando<(int, int, int, Map<String, double>)>();
