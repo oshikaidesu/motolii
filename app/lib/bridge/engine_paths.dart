@@ -75,8 +75,3 @@ String findProgram(
   }
   return name;
 }
-
-/// Opens [path] as the system's file manager would: the Finder's `open`, Windows' explorer.
-Future<ProcessResult> openWithSystem(String path) => Platform.isWindows
-    ? Process.run('explorer', [path.replaceAll('/', r'\')])
-    : Process.run('open', [path]);

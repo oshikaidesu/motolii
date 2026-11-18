@@ -1,6 +1,11 @@
 #include "flutter_window.h"
 
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+#include <shlobj.h>
+
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "live_texture.h"
@@ -27,6 +32,18 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   AttachLiveTextures(flutter_controller_->engine());
+  // An opened document joins the system's recent documents (Explorer's Recent, a taskbar Jump List), as the Mac's
+  // RecentDocuments in MainFlutterWindow.swift: channel "motolii/recent", method "note" (its path).
+  static flutter::MethodChannel<flutter::EncodableValue> recent(
+      flutter_controller_->engine()->messenger(), "motolii/recent", &flutter::StandardMethodCodec::GetInstance());
+  recent.SetMethodCallHandler([](const auto& call, auto result) {
+    const auto* path = std::get_if<std::string>(call.arguments());
+    if (call.method_name() != "note" || !path) return result->NotImplemented();
+    std::wstring wide(MultiByteToWideChar(CP_UTF8, 0, path->c_str(), -1, nullptr, 0), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, path->c_str(), -1, wide.data(), (int)wide.size());
+    SHAddToRecentDocs(SHARD_PATHW, wide.c_str());
+    result->Success();
+  });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
