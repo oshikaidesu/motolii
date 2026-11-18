@@ -7,6 +7,8 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart' show slideWrites;
+import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
+    show SlideEntry, cacheSlide;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -130,6 +132,13 @@ Iterable<int> slideKeyframeWrites(
   Iterable<SelectedKeyframe> keys,
   int by,
 ) => slideWrites(ws.inside!, keys, by);
+
+/// Snapshots which properties each selected keyframe carries, for a cached
+/// drag. Called once at drag start through the state boundary.
+List<SlideEntry> cacheSelectedSlide(
+  WorkspaceController ws,
+  List<SelectedKeyframe> keys,
+) => cacheSlide(ws.inside!, keys);
 
 /// The length of the video [file] in seconds, read on another isolate. 0 for an image or an unreadable file.
 Future<double> filmSeconds(WorkspaceController ws, String file) =>

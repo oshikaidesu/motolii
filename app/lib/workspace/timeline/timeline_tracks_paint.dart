@@ -166,6 +166,22 @@ class TimelineTracksPainter extends CustomPainter {
       };
       c.drawRect(Rect.fromLTWH(sx, 0, 1, s.height), p..color = ink);
     }
+    if (drag.stretchHandles case (final lo, final hi)?) {
+      for (final f in [lo, hi]) {
+        final hx = view.x(f).roundToDouble();
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(hx - 2.5, 0, 5, s.height),
+            const Radius.circular(2),
+          ),
+          p..color = WindowTokens.accent.withValues(alpha: .5),
+        );
+        c.drawRect(
+          Rect.fromLTWH(hx - .5, 0, 1, s.height),
+          p..color = WindowTokens.accent,
+        );
+      }
+    }
   }
 
   void _row(Canvas c, Size s, TimelineRow r, double cy) {

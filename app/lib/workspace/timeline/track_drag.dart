@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
 import 'package:motolii/workspace/edits/make_relation.dart' show clickLayer;
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
+    show SlideEntry, cachedSlideWrites, staggerSlideWrites, stretchSlideWrites;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -72,8 +74,27 @@ class TrackDrag extends ChangeNotifier {
 
   // The keyframe being dragged, together with the other selected keyframes.
   ({List<SelectedKeyframe> keys, int grab, int by})? _slide;
+  // Property data cached at drag start so each step only issues writes.
+  List<SlideEntry> _slideCache = const [];
+  // Per-entry offsets for stagger mode; null when not staggering.
+  List<int>? _staggerSlid;
   // How far the slide has been written into the document so far, in frames.
   int _slid = 0;
+  // The stretch-handle drag: scales selected keyframes proportionally about an anchor.
+  ({int anchor, int from, int to, double grab})? _stretch;
+
+  /// The stretch handles shown when ≥2 keyframes are selected: (left frame, right frame), or null.
+  (int, int)? get stretchHandles {
+    final ws = workspace;
+    if (ws == null || ws.keys.length < 2) return null;
+    int lo = WorkspaceController.duration, hi = 0;
+    for (final k in ws.keys) {
+      if (k.frame < lo) lo = k.frame;
+      if (k.frame > hi) hi = k.frame;
+    }
+    return lo < hi ? (lo, hi) : null;
+  }
+
   // When and where a lane was last clicked, to detect a double-click.
   DateTime? _lanePressed;
   Offset _laneAt = Offset.zero;
@@ -156,21 +177,54 @@ class TrackDrag extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (_stretch case final st?) {
+      final f = _viewport.view.frameAt(p.dx).round();
+      final ws = workspace!;
+      final span = st.to - st.from;
+      if (span <= 0) return;
+      ws.live.move((m) {
+        final newEdge = f.clamp(0, WorkspaceController.duration);
+        final newSpan = (newEdge - st.anchor).abs().clamp(
+          1,
+          WorkspaceController.duration,
+        );
+        final scale = newSpan / span;
+        final changed = stretchSlideWrites(
+          m,
+          _slideCache,
+          st.anchor,
+          scale,
+          _slid,
+        );
+        _slid = 0;
+        return changed;
+      }, keysOnly: true);
+      notifyListeners();
+      return;
+    }
     if (_slide case final s?) {
       final by = _snapped(_viewport.view.frameAt(p.dx).round() - s.grab, [
         s.grab,
       ]);
       _slide = (keys: s.keys, grab: s.grab, by: by);
       final ws = workspace!;
-      // Each step goes into the drag's undo step from where the keyframes now are, so a step skipped on the way
-      // loses nothing.
-      ws.live.move((_) {
-        final step = by - _slid;
-        final now = [
-          for (final k in s.keys) (layer: k.layer, frame: k.frame + _slid),
-        ];
+      final stagger =
+          HardwareKeyboard.instance.isControlPressed &&
+          HardwareKeyboard.instance.isAltPressed;
+      ws.live.move((m) {
+        final Iterable<int> changed;
+        if (stagger && _slideCache.length >= 2) {
+          changed = staggerSlideWrites(m, _slideCache, _staggerSlid, by);
+          _staggerSlid = [
+            for (var i = 0; i < _slideCache.length; i++)
+              (by * i / (_slideCache.length - 1)).round(),
+          ];
+        } else {
+          changed = cachedSlideWrites(m, _slideCache, _slid, by);
+          _staggerSlid = null;
+        }
         _slid = by;
-        return timeline_service.slideKeyframeWrites(ws, now, step);
+        return changed;
       }, keysOnly: true);
       notifyListeners();
       return;
@@ -212,8 +266,18 @@ class TrackDrag extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (_stretch != null) {
+      _stretch = null;
+      _slideCache = const [];
+      _slid = 0;
+      final ws = workspace!;
+      keep ? ws.live.done(null, (_) => ws.reread()) : ws.live.cancel();
+      return;
+    }
     if (_slide != null) {
       _slide = null;
+      _slideCache = const [];
+      _staggerSlid = null;
       _slid = 0;
       final ws = workspace!;
       keep ? ws.live.done(null, (_) => ws.reread()) : ws.live.cancel();
@@ -344,7 +408,14 @@ class TrackDrag extends ChangeNotifier {
 
   /// The cursor for the pointer at [p]: what a click or a drag from there would do.
   MouseCursor cursorAt(Offset p) {
-    final ws = workspace!, v = _viewport.view, r = _rows.rowAt(p.dy);
+    final ws = workspace!, v = _viewport.view;
+    if (stretchHandles case (final lo, final hi)?) {
+      final lx = v.x(lo), hx = v.x(hi);
+      if ((p.dx - lx).abs() <= 6 || (p.dx - hx).abs() <= 6) {
+        return SystemMouseCursors.resizeLeftRight;
+      }
+    }
+    final r = _rows.rowAt(p.dy);
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     if (r.value case final n?) {
@@ -380,6 +451,26 @@ class TrackDrag extends ChangeNotifier {
     final ws = workspace!, v = _viewport.view;
     final r = _rows.rowAt(p.dy);
     if (!timeline_service.isConnected(ws) || r == null) return false;
+    // Stretch handles: when ≥2 keyframes are selected, dragging near the left
+    // or right end of the selection scales all keyframes proportionally, as
+    // Lumit's key block stretch does.
+    if (stretchHandles case (final lo, final hi)?) {
+      final lx = v.x(lo), hx = v.x(hi);
+      if ((p.dx - lx).abs() <= 6) {
+        _stretch = (anchor: hi, from: lo, to: hi, grab: v.frameAt(p.dx));
+        _slideCache = timeline_service.cacheSelectedSlide(ws, ws.keys.toList());
+        _targets = ws.snapTargets(skip: {for (final k in ws.keys) k.layer});
+        if (ws.playing) ws.playing = false;
+        return true;
+      }
+      if ((p.dx - hx).abs() <= 6) {
+        _stretch = (anchor: lo, from: lo, to: hi, grab: v.frameAt(p.dx));
+        _slideCache = timeline_service.cacheSelectedSlide(ws, ws.keys.toList());
+        _targets = ws.snapTargets(skip: {for (final k in ws.keys) k.layer});
+        if (ws.playing) ws.playing = false;
+        return true;
+      }
+    }
     // A lane's keyframes can be dragged in time, like those on the main row.
     if (r.value != null) {
       final name = r.value!;
@@ -403,6 +494,7 @@ class TrackDrag extends ChangeNotifier {
         if (!ws.keys.contains(held)) ws.pickKey(held);
         if (ws.playing) ws.playing = false;
         _slide = (keys: all, grab: frame, by: 0);
+        _slideCache = timeline_service.cacheSelectedSlide(ws, all);
         _targets = ws.snapTargets(skip: {r.l.id});
         return true;
       }
@@ -416,6 +508,7 @@ class TrackDrag extends ChangeNotifier {
           ];
           if (ws.playing) ws.playing = false;
           _slide = (keys: both, grab: f.round(), by: 0);
+          _slideCache = timeline_service.cacheSelectedSlide(ws, both);
           _targets = ws.snapTargets(skip: {r.l.id});
           return true;
         }
@@ -446,6 +539,7 @@ class TrackDrag extends ChangeNotifier {
       if (!ws.keys.contains(held)) ws.pickKey(held);
       if (ws.playing) ws.playing = false;
       _slide = (keys: all, grab: k, by: 0);
+      _slideCache = timeline_service.cacheSelectedSlide(ws, all);
       _targets = ws.snapTargets(skip: {l.id});
       return true;
     }
