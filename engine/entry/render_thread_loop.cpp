@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "document/document.h"
+#include "entry/crash_report.h"
 #include "gpu/screen_interop.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
@@ -120,6 +121,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       uint64_t beat;
       {
         m->render_thread.status = "waiting for a change or a beat";
+        breadcrumb("waiting");
         std::unique_lock<std::mutex> hold(m->render_thread.asked_lock);
         const bool running = m->live &&
                              (m->playback.playing || m->render_thread.changed),
@@ -177,6 +179,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       }
       lap(0);
       m->render_thread.status = "doing the changes asked";
+      breadcrumb("changes");
       {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         const long rows = sqlite3_total_changes(m->d->file);
@@ -209,6 +212,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         m->render_thread.changed = true;
       }
       m->render_thread.status = "telling the window";
+      breadcrumb("notify");
       snapshot_notify(m);
       if (!m->playback.playing)
         for (auto& [who, h] : m->playback.heard)
@@ -228,6 +232,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           listener(m->window.shown_with.load());
       lap(3);
       m->render_thread.status = "keeping pictures ahead";
+      breadcrumb("cache");
       const auto t = std::chrono::steady_clock::now();
       if (!todo.empty() || m->playback.playing || m->render_thread.changed)
         m->render_thread.stirred = t;
@@ -342,6 +347,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       const auto videos_from = std::chrono::steady_clock::now();
       const long late_before = video_late;
       m->render_thread.status = "putting the films at the moment";
+      breadcrumb("films");
       for (const auto& now : videos) now();
       // No frame yet or seek in flight → redraw next beat.
       const bool again =
@@ -356,6 +362,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         m->timing.videos_most = std::max(m->timing.videos_most, ms);
       }
       m->render_thread.status = "putting the sounds at the moment";
+      breadcrumb("sounds");
       heard(sounds, m->playback.heard, m->playback.now, m->playback.playing);
       const auto evaluated = std::chrono::steady_clock::now();
       {
@@ -364,6 +371,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
                           RATE);
       }
       m->render_thread.status = "drawing";
+      breadcrumb("draw");
       // During playback, use a cached frame if one exists.
       if (!m->playback.playing || m->d->working_camera.asked ||
           m->window.second ||

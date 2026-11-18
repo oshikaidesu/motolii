@@ -3,11 +3,13 @@
 
 #include <utils/Panic.h>
 
+#include <atomic>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <exception>
 #include <execinfo.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -16,6 +18,7 @@
 namespace motolii {
 
 static char report_path[512] = {};
+static char crumb_path[512] = {};
 static bool installed = false;
 
 static void make_dir() {
@@ -25,6 +28,7 @@ static void make_dir() {
   snprintf(dir, sizeof dir, "%s/Library/Caches/Motolii", home);
   mkdir(dir, 0755);
   snprintf(report_path, sizeof report_path, "%s/crash_report.txt", dir);
+  snprintf(crumb_path, sizeof crumb_path, "%s/breadcrumb.txt", dir);
 }
 
 // Signal-safe: only async-signal-safe functions (open, write, close, backtrace).
@@ -39,18 +43,19 @@ static void write_signal_report(int sig) {
     case SIGSEGV: name = "SIGSEGV"; break;
     case SIGBUS:  name = "SIGBUS"; break;
     case SIGTRAP: name = "SIGTRAP"; break;
+    case SIGILL:  name = "SIGILL"; break;
+    case SIGFPE:  name = "SIGFPE"; break;
   }
 
-  // Timestamp (signal-safe: raw seconds).
   time_t now = time(nullptr);
-  char header[256];
-  int n = snprintf(header, sizeof header, "signal: %s (%d)\ntime: %ld\n\n",
-                   name, sig, (long)now);
+  char header[512];
+  int n = snprintf(header, sizeof header,
+                   "signal: %s (%d)\ntime: %ld\nbreadcrumb: %s\n\n",
+                   name, sig, (long)now, last_breadcrumb());
   write(fd, header, (size_t)n);
 
   void* frames[64];
   int count = backtrace(frames, 64);
-  // backtrace_symbols_fd is async-signal-safe on macOS.
   backtrace_symbols_fd(frames, count, fd);
 
   close(fd);
@@ -58,7 +63,6 @@ static void write_signal_report(int sig) {
 
 static void signal_handler(int sig) {
   write_signal_report(sig);
-  // Re-raise so the default handler runs (core dump, termination).
   signal(sig, SIG_DFL);
   raise(sig);
 }
@@ -75,7 +79,8 @@ static void panic_handler(void*, utils::Panic const& p) {
   localtime_r(&now, &lt);
   strftime(timebuf, sizeof timebuf, "%Y-%m-%d %H:%M:%S", &lt);
 
-  fprintf(f, "Filament panic\ntime: %s\nreason: %s\n\n", timebuf, p.what());
+  fprintf(f, "Filament panic\ntime: %s\nreason: %s\nbreadcrumb: %s\n\n",
+          timebuf, p.what(), last_breadcrumb());
 
   void* frames[64];
   int count = backtrace(frames, 64);
@@ -87,11 +92,47 @@ static void panic_handler(void*, utils::Panic const& p) {
   fclose(f);
 }
 
+static void terminate_handler() {
+  // Catch unhandled C++ exceptions that bypass Filament's panic.
+  if (!report_path[0]) { std::abort(); return; }
+  FILE* f = fopen(report_path, "w");
+  if (f) {
+    time_t now = time(nullptr);
+    char timebuf[64];
+    struct tm lt;
+    localtime_r(&now, &lt);
+    strftime(timebuf, sizeof timebuf, "%Y-%m-%d %H:%M:%S", &lt);
+
+    const char* what = "unknown";
+    try { throw; } catch (const std::exception& e) { what = e.what(); } catch (...) {}
+
+    fprintf(f, "std::terminate\ntime: %s\nreason: %s\nbreadcrumb: %s\n\n",
+            timebuf, what, last_breadcrumb());
+
+    void* frames[64];
+    int count = backtrace(frames, 64);
+    char** symbols = backtrace_symbols(frames, count);
+    if (symbols) {
+      for (int i = 0; i < count; ++i) fprintf(f, "%s\n", symbols[i]);
+      free(symbols);
+    }
+    fclose(f);
+  }
+  std::abort();
+}
+
+// The breadcrumb: a short string describing what the engine is doing now.
+// Written by the render thread and read by signal handlers, so it uses a lock-
+// free ring of two buffers.
+static char crumb_buf[2][256] = {};
+static std::atomic<int> crumb_idx{0};
+
 void install_crash_handlers() {
   if (installed) return;
   installed = true;
   make_dir();
   utils::Panic::setPanicHandler(panic_handler, nullptr);
+  std::set_terminate(terminate_handler);
   struct sigaction sa {};
   sa.sa_handler = signal_handler;
   sa.sa_flags = SA_RESETHAND;
@@ -99,6 +140,18 @@ void install_crash_handlers() {
   sigaction(SIGABRT, &sa, nullptr);
   sigaction(SIGSEGV, &sa, nullptr);
   sigaction(SIGBUS, &sa, nullptr);
+  sigaction(SIGILL, &sa, nullptr);
+  sigaction(SIGFPE, &sa, nullptr);
+}
+
+void breadcrumb(const char* what) {
+  int next = 1 - crumb_idx.load(std::memory_order_relaxed);
+  snprintf(crumb_buf[next], sizeof crumb_buf[0], "%s", what);
+  crumb_idx.store(next, std::memory_order_release);
+}
+
+const char* last_breadcrumb() {
+  return crumb_buf[crumb_idx.load(std::memory_order_acquire)];
 }
 
 const char* crash_report_path() {
