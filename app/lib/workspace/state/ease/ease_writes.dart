@@ -14,12 +14,20 @@ void _define(Motolii m, String word) {
   }
 }
 
+// Packs easing writes into the tab-delimited format that the engine's
+// "set_easings" call reads, and sends them in one FFI call.
+void _sendBatch(Motolii m, String to, List<(int, String, double)> stretches) {
+  final buf = StringBuffer();
+  for (final (t, name, at) in stretches) {
+    buf.writeln('$t\t$name\t$at\t$to');
+  }
+  if (buf.isNotEmpty) m.later('set_easings', word: buf.toString());
+}
+
 // Defines the easing in the document and puts it on each of the stretches (layer, property, time).
 void _send(Motolii m, String to, List<(int, String, double)> stretches) {
   _define(m, to);
-  for (final (t, name, at) in stretches) {
-    m.later('easing', layer: t, name: name, number: at, word: to);
-  }
+  _sendBatch(m, to, stretches);
   _define(m, to);
 }
 
@@ -31,9 +39,7 @@ void liveEase(
 ) {
   ws.live.move((m) {
     _define(m, said(e));
-    for (final (t, name, at) in stretches) {
-      m.later('easing', layer: t, name: name, number: at, word: said(e));
-    }
+    _sendBatch(m, said(e), stretches);
     return {for (final (t, _, _) in stretches) t};
   });
 }
@@ -60,9 +66,7 @@ void everyKeyEase(
 ) {
   ws.live.done((m) {
     _define(m, said(e));
-    for (final (t, name, at) in stretches) {
-      m.later('easing', layer: t, name: name, number: at, word: said(e));
-    }
+    _sendBatch(m, said(e), stretches);
     return const [];
   }, then);
 }

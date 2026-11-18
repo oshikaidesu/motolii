@@ -445,6 +445,24 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             }
           }
         }
+        // word: packed entries, one per line:
+        //   "layer\tprop\tat\teasing_name\n..."
+        // Sets the easing on each stretch in one pass. Batches what the
+        // app would otherwise send as N easing calls during a drag.
+        else if (c == "set_easings") {
+          ok = 1;
+          std::istringstream lines(w);
+          std::string line;
+          while (std::getline(lines, line)) {
+            if (line.empty()) continue;
+            int t = 0;
+            char prop[128] = {}, easing[256] = {};
+            double at = 0;
+            if (std::sscanf(line.c_str(), "%d\t%127[^\t]\t%lf\t%255s", &t,
+                            prop, &at, easing) >= 4)
+              easing_is(m, t, prop, at, easing);
+          }
+        }
         // name: the easing. word: its SQL expression.
         else if (c == "define")
           ok = define_is(m, n.c_str(), w.c_str());
