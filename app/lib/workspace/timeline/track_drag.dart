@@ -320,7 +320,7 @@ class TrackDrag extends ChangeNotifier {
     }
     final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1,
         between = from != null && pts.any((q) => q.$1 > f);
-    between ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
+    between ? ws.pickStretch(r.l.id, name, from) : ws.clearStretch();
   }
 
   /// Press: select keyframe or layer, or clear.
@@ -371,7 +371,7 @@ class TrackDrag extends ChangeNotifier {
     if (f >= l.inF && f <= l.outF) {
       clickLayer(ws, l.id, order: [for (final k in ws.layers) k.id]);
     } else {
-      ws.clearKeys();
+      ws.clearStretch();
     }
   }
 

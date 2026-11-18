@@ -21,19 +21,19 @@ List<(int, String, double)> easeStretches(WorkspaceController ws) => [
       for (final at in keysAt(ws, s).entries) (s.layer.id, at.key, at.value),
   for (final k in ws.keys)
     if (ws.layers.where((l) => l.id == k.layer).firstOrNull case final l?)
-      for (final at in keysAt(ws, (
-        layer: l,
-        from: l.keys.any((f) => f > k.frame)
-            ? k.frame
-            : (l.keys
-                      .where((f) => f < k.frame)
-                      .fold<int?>(null, (a, f) => a == null || f > a ? f : a) ??
-                  k.frame),
-        to: k.frame,
-        picked: k.frame,
-      )).entries)
+      for (final at in keysAt(ws, _spanOfKey(l, k.frame)).entries)
         (l.id, at.key, at.value),
 ];
+
+// The span a picked keyframe belongs to, using the same last-keyframe fallback as easeSpan.
+EaseSpan _spanOfKey(Layer l, int frame) {
+  final keys = [...l.keys]..sort();
+  final next = keys.where((f) => f > frame).firstOrNull,
+      prev = keys.where((f) => f < frame).lastOrNull;
+  return next != null
+      ? (layer: l, from: frame, to: next, picked: frame)
+      : (layer: l, from: prev ?? frame, to: frame, picked: frame);
+}
 
 class EaseWriter {
   EaseWriter({

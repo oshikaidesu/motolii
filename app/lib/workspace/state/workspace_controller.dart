@@ -71,7 +71,12 @@ class WorkspaceController extends ChangeNotifier {
   set refit(VoidCallback? reopen) => project.refit = reopen;
   int get rev => project.rev;
   int get reads => project.reads;
-  void respan(int id) => project.respan(id);
+  void respan(int id) {
+    project.respan(id);
+    if (stretch case final s? when s.layer == id) {
+      selection.syncWithLayers();
+    }
+  }
   ValueNotifier<int> get seen => project.seen;
   ValueNotifier<List<(int, int)>> get kept => project.kept;
   void shown() => project.shown();
@@ -204,6 +209,7 @@ class WorkspaceController extends ChangeNotifier {
       selection.pickKey(k, add: add);
   void pickKeys(Iterable<SelectedKeyframe> ks) => selection.pickKeys(ks);
   void clearKeys() => selection.clearKeys();
+  void clearStretch() => selection.clearStretch();
   void pickStretch(int layer, String name, int from) =>
       selection.pickStretch(layer, name, from);
   String? get aim => selection.aim;
