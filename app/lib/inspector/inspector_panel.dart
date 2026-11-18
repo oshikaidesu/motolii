@@ -78,10 +78,10 @@ class AddEffectRow extends StatelessWidget {
             ),
           ),
           // + Stroke adds another stroke slot to the layer, so a text can wear
-          // several outlines (After Effects' Add Stroke on the Fill menu).
+          // several outlines.
           if (doc.actions.onAddStroke case final stroke?)
             word('add-stroke', '+ Stroke', stroke),
-          // Copy and paste the whole effect stack with its parameters, as Alight Motion's Copy Effects and Paste Effects do.
+          // Copy and paste the whole effect stack with its parameters
           if (doc.layer.movable.isNotEmpty)
             if (doc.actions.onCardCopy case final copy?)
               word('effects-copy', 'Copy all', () => copy(names)),

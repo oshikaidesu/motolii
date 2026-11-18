@@ -147,7 +147,6 @@ const _strip = 22.0;
 
 /// The default arrangement: the media shelves (one strip of tabs) and Stage over Timeline (with Code behind it) and Ease on the left,
 /// Inspector over Camera on the right.
-///
 /// Side and lower panes start at their reference sizes in px. The panes without a size share what is left.
 /// The filling panes must be given no weight: `multi_split_view` turns sizes into weights and would scale them against any weight given.
 DockingArea workspacePreset(
@@ -180,9 +179,8 @@ DockingArea workspacePreset(
   ),
 ]);
 
-/// The workspaces the top bar switches between, as After Effects' Window > Workspace and Blender's tabs: each a
+/// The workspaces the top bar switches between
 /// starting arrangement, the first the window opens with, and the panes each brings to the front on its first opening.
-///
 /// Code is for writing code: Inspector (with the shelves) on the left, Code in the middle, Stage on the right and
 /// Timeline under them, so that the line, the picture and the playhead are in sight together. It is the file
 /// shelves/workspaces/code.layout (null here), the arrangement the author made by dragging the panes in the window.

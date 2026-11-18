@@ -1,5 +1,4 @@
 // Tags shared by all shelves (Colors: hot, cold, pastel; Fonts: serif, gothic; Media: its kinds).
-//
 // - A search matches an item by its name, its tags or, for a color, its code. Each word of the search is matched on its own.
 // - The word being typed is completed from the tags the shelf has seen.
 // - The user's own tags are read once from ~/.motolii/tags.json, as {"Colors|coda": ["title", "warm"]}.
@@ -81,7 +80,6 @@ class ShelfTags {
   }
 
   /// An item chosen after a search becomes the first result the next time the same words are typed.
-  ///
   /// This follows Alfred's Keyword Latching (alfredapp.com/help/kb/understanding-result-ordering).
   /// It is stored in ~/.motolii/latched.json as {"Effects|adjustment layer": the item's id}. A test can point it elsewhere.
   Map<String, String>? _latches;

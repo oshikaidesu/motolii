@@ -82,7 +82,7 @@ class ColorCommands {
     }
     if (c.ws.aim case final aim?) {
       // The target is a card's color link: set that property of the selected layer, or of the stage.
-      // A stroke colored while it has no width gets width 6, as Alight Motion does when it adds a border
+      // A stroke colored while it has no width gets width 6
       // and as the drawing tools do (applyChosenInks). All of it is one undo step.
       final edged =
           aim == 'stroke' &&
@@ -150,7 +150,6 @@ class ColorCommands {
   }
 
   /// The Mac's eyedropper (NSColorSampler, used in MainFlutterWindow.swift). The sampled color is applied to the target at once,
-  /// as Keynote's eyedropper does.
   Future<void> sample() async {
     final hex = await const MethodChannel('motolii/sampler')
         .invokeMethod<String>('sample');

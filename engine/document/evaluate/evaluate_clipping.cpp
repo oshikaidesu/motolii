@@ -227,7 +227,7 @@ void layer_clipped(Doc& d, int layer, DocShownLayer& t,
   const auto top = tops.find(group);
   // True for a layer in a mask group other than its top. The top cuts it.
   const bool grouped = top != tops.end() && top->second != layer;
-  // The group's top is only a shape and is not seen, as in Alight Motion.
+  // The group's top is only a shape and is not seen
   if (top != tops.end() && top->second == layer) {
     if (MaterialInstance* look = t.video   ? t.video->look
                                  : t.drawn ? t.drawn->look
@@ -282,7 +282,6 @@ void layer_clipped(Doc& d, int layer, DocShownLayer& t,
 // uses Filament's scissor on the layer's materials, set to the rectangle that
 // the previous layer covers now. When that layer is turned or leaning, the
 // rectangle is the upright box around it.
-//
 // A group made to mask, through its Null's group_mask as in Alight Motion's
 // Group and Mask and Group and Exclude, works the same way. Its top layer is
 // the shape and is not seen itself. The other layers in the group are seen

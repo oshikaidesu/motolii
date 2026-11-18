@@ -1,5 +1,4 @@
 // Keyboard commands that follow Ableton Live 12.
-//
 // Source: the Live reference manual, chapter 42 "Live Keyboard Shortcuts" (www.ableton.com/en/manual/live-keyboard-shortcuts/).
 // Each command names the manual section it comes from. Where Live has no such key, the app that does is named.
 // This file defines what each command does to the workspace state. keymap.dart maps keys to commands,
@@ -13,7 +12,6 @@ import 'package:motolii/workspace/state/media/timeline_service.dart'
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The frame where playback started.
-///
 /// Live 42.20: Space plays from the start marker and stops back there. Shift+Space continues from where playback stopped.
 int? _playFrom;
 
@@ -23,7 +21,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     ws.frame = ws.frame + by;
   }
 
-  /// Moves the playhead to the nearest stop in direction [way] (After Effects' J and K).
+  /// Moves the playhead to the nearest stop in direction [way].
   void hop(int way) {
     final all = ws.stops().where((f) => (f - ws.frame) * way > 0).toList()
       ..sort();
@@ -31,7 +29,6 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
   }
 
   /// Moves the selected keyframes by [by] frames, else the selected layer's bar. With nothing selected it moves the playhead.
-  ///
   /// Live 42.16: Nudge Selection Left/Right. Live moves its insert marker the same way.
   void nudge(int by) {
     if (!projectOpen(ws)) return;
@@ -53,7 +50,7 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     ws.after(endBarDrag(ws, true));
   }
 
-  /// Selects the layer [by] rows from the selected one (Live 42.15 and 42.16: the arrow keys move between tracks).
+  /// Selects the layer [by] rows from the selected one.
   void row(int by) {
     if (ws.layers.isEmpty) return;
     final i = ws.layers.indexWhere((l) => l.id == ws.selected);

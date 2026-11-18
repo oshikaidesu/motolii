@@ -19,7 +19,6 @@ import 'package:motolii/workspace/window/settings/settings_popover.dart'
     show SettingsPage;
 
 /// Builds the sections for the given settings [page].
-///
 /// [onChanged] triggers a setState in the popover so that the UI reflects the new value.
 List<AbstractSettingsSection> settingsSections({
   required SettingsPage page,

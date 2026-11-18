@@ -116,7 +116,7 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
       '  /// @label(${shownFactOf(ws, '${base}_x')!.label.substring(0, shownFactOf(ws, '${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in layerCardsOf(ws, t))
-      // A sound layer has a volume and nothing to place on the canvas, as in Alight Motion's audio layer
+      // A sound layer has a volume and nothing to place on the canvas
       // (docs/design/alight_motion_ui.md).
       // The Matte card is shown only when the layer is clipped (clip=1): the clip toggle is in the timeline.
       if ((title == 'Sound' || !soundLayer(ws, t)) &&

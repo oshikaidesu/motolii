@@ -5,7 +5,6 @@ import 'package:motolii/widgets/controls.dart' show Badge;
 import 'package:motolii/widgets/media.dart' show Draw;
 
 /// Draws the layer mark in [ink], for use as the child of a [Badge].
-///
 /// The badge is 16 square and its corner radius is 0.32 of that.
 void drawLayerMark(Canvas c, Size s, Color ink) {
   final u = s.width / 20, o = s.center(Offset.zero);

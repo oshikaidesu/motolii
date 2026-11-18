@@ -20,7 +20,6 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 
 /// The graph: value up, time across.
-///
 /// The user drags handles, and only a drag or hover repaints it. The two ends each stand on a bar, left and right,
 /// and are dragged up and down them. [onEnd] receives which end moved and how far, measured in the bars' own scale:
 /// 1 is the distance between the two key values as they first were. [ends] is where the ends stand.
@@ -65,7 +64,6 @@ class EaseGraph extends StatefulWidget {
   final String? Function(bool start, double by)? endSays;
 
   /// [jump] draws the dashed jump at a dragged end. [overshoot] lets the view and the handles go past 0 and 1,
-  /// as Alight Motion's Enable Overshoot does.
   final bool jump, overshoot;
 
   /// Progress of a preview of the easing, 0 to 1, shown when there is no span to follow (ease_trial.dart).
@@ -84,7 +82,7 @@ class _EaseGraphState extends State<EaseGraph> {
   double _endFrom = 0;
   // The vertical range, frozen while something is dragged so the graph does not move under the pointer.
   (double, double)? _reachHeld;
-  // Where the drag began, and where the handle was then. The handle moves by the pointer's movement, as in Alight Motion.
+  // Where the drag began, and where the handle was then. The handle moves by the pointer's movement
   Offset _from = Offset.zero, _handle = Offset.zero;
 
   (double, double) get _reach =>
@@ -256,8 +254,7 @@ class _EaseGraphState extends State<EaseGraph> {
 }
 
 /// Copies of a behaviour's curve, one per member layer after the first, each delayed by its lag times its position.
-///
-/// They are drawn in the layer's own colour and cannot be edited, as Blender shows curves it will not let the user change.
+/// They are drawn in the layer's own colour and cannot be edited
 List<(double, Color)> _ghosts(WorkspaceController ws, EaseSpan? span) {
   final t = span?.layer.id;
   if (!isConnected(ws) ||

@@ -1,10 +1,8 @@
 // Shares Filament's WebGPU device with other code that draws with WebGPU
 // (ThorVG) and orders that code's drawing relative to Filament's.
-//
 // Filament 1.77.2 has no public API for either. With
 // filament_dawn_compute.patch, its WebGPU platform remembers the device it
 // created, and Texture::Builder::import accepts a WGPUTexture from that device.
-//
 // Like compute_interop, this code is built inside Filament's own build because
 // it needs the engine's private headers. It is part of libmotolii_door.a.
 #pragma once

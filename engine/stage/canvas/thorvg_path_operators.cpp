@@ -1,14 +1,11 @@
 // thorvg_path_operators.cpp: Path operators and stroke tessellation for 2D
 // shapes.
-//
 // tvg_bend applies the After Effects path operators (round corners, pucker &
 // bloat, zig zag, offset paths) using the modifiers of ThorVG's Lottie reader.
 // They run in that order, with the offset last, which is how ThorVG chains
 // them.
-//
 // tvg_edge turns the outline of a shape into triangles the way ThorVG's WebGPU
 // engine strokes it.
-//
 // This file is separate from the rest of the canvas code because ThorVG's
 // internal headers declare many names that would clash with ours. Only the two
 // functions declared in path_operations.h are visible to the rest of the
@@ -29,12 +26,10 @@ namespace motolii {
 // Appends the path to `into` using cubic curves only, as an After Effects path
 // does. A line becomes a straight cubic and a closed path ends back at its
 // start. These are the only forms the operators understand.
-//
-// `sharp` places the handles of a line on its end points, as After Effects
+// `sharp` places the handles of a line on its end points
 // writes them. Round corners look for that, and pucker & bloat bend from it.
 // When false, the handles are spaced evenly along the line, which a zig zag
 // needs for its ridges.
-//
 // `fine` is the longest piece allowed. Each line and curve is cut into pieces
 // no longer than `fine`, so that an operator that bends the path later has
 // points along its whole length. A `fine` of 0 leaves everything whole. A
@@ -126,7 +121,6 @@ static bool numbers(const Point* p, uint32_t n) {
 
 // Replaces the contents of `shape` with the given path after applying the
 // operators.
-//
 // `round` is the corner radius, `bloat` the pucker & bloat amount, `zigzag` the
 // zig zag size with `ridges` ridges per segment (`smooth` selects smooth rather
 // than corner points), and `offset` the offset distance. An operator whose
@@ -172,13 +166,11 @@ void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt,
 
 // Converts the outline of a path into triangles, using the trim, dash and
 // stroker code of ThorVG's WebGPU engine. No tessellator cuts the result.
-//
 // `width` is the stroke width in points. `cap` and `join` are ThorVG's
 // StrokeCap and StrokeJoin values. `dash` is the length of each dash and of
 // each gap; 0 means no dashing, and `dashFrom` is where the pattern starts.
 // `from` and `to` select the part of the path's length to stroke, as After
 // Effects trim paths does; as in ThorVG's trim, values past 1 wrap around.
-//
 // Writes vertex positions to `xy` as x, y pairs and triangle indices to `idx`.
 // Both are empty if an input is not finite or the trim leaves nothing.
 void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt,

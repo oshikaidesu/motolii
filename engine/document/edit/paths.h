@@ -50,11 +50,11 @@ int doc_points(Doc& d, int layer, double now, double* xy, int room,
 // command: the point before becomes smooth, with its handle turned through).
 // Clicking on the first point again closes the path. On a closed path, a click
 // on one of its points removes that point, a click on its outline puts a point
-// there, and a click elsewhere begins another path, as Illustrator's pen does.
+// there, and a click elsewhere begins another path
 // With layer 0 a new path shape is begun, with its first point, as one undo
 // step. Returns the layer number, or 0 on failure.
 int doc_pen(Doc& d, int layer, double x, double y, double hx, double hy);
-// Takes a video's sound out to a layer of its own, as Alight Motion's Extract
+// Takes a video's sound out to a layer of its own
 // Audio does. The new layer is a hidden copy of the video with " (sound)" added
 // to its name. The copy is still heard, because the sound of a hidden video
 // plays (see match.h). The video itself is no longer heard, since its volume is
@@ -90,7 +90,7 @@ int doc_curve(Doc& d, const char* said);
 // are those of AbsentMotion: 0 a pen, as wide all along; 1 a brush, as wide as
 // the pressure says; 2 a fill, which fills the area the stroke goes round; 3 an
 // eraser, a stroke added to the drawing of layer `into`, which removes what
-// that drawing has drawn, as AbsentMotion's eraser clears within its drawing
+// that drawing has drawn
 // layer. Returns the shape that was made or erased from, or 0 on failure.
 int doc_brush(Doc& d, const char* said, int into = 0);
 // Converts a flat shape into a path shape of the outline it shows, as Alight

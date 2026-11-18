@@ -2,7 +2,6 @@
 // (shelves/relations/*.js) through the document's own evaluation: doc_literal
 // asks the value of a layer, which goes to doc_related, doc_related_all, the
 // script's relate() and, for a leader, layerValue() back into the document.
-//
 // The expected numbers are worked out by hand from each file's header and from
 // Cavalry's Radial and Linear distributions, not read from the engine:
 //   Row    x = centre + gap * (n - (count - 1) / 2), y = centre.
@@ -17,7 +16,6 @@
 // Scale_Assist.js and Field.js are expressions (each()); they are run with
 // Script::copies, the call the document makes, and the formulas are in the
 // files.
-//
 // A Doc cannot be made by doc_open or changed by doc_add, doc_set or doc_relate
 // here: each of them ends in doc_match, which builds the stage in Filament, and
 // open_stage needs a Metal device (stage/render/render_stage.cpp). So the

@@ -29,7 +29,6 @@ abstract final class MaterialTiles {
   };
 
   /// Extra settings that make a ball show what its material looks like.
-  ///
   /// Each entry is the fill colour, extra parameter values, and an optional sun placed behind the ball as
   /// (Y rotation in degrees, intensity). The sun is for materials where light through the ball or a rim is the point.
   /// Without these, Lit, Cloth and Subsurface all look like the same pale ball (default colour d9d2c3).

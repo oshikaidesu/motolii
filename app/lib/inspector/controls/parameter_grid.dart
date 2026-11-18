@@ -11,7 +11,6 @@ import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/dice_painter.dart';
 
 /// An effect's parameters as blocks that fill the panel's width.
-///
 /// A normal panel shows three blocks across, and a wider one shows more, so thirty parameters stay a short list.
 /// The order is the shader's. A block that needs room, such as a point, a size or a choice, takes two columns.
 class ParameterGrid extends StatelessWidget {

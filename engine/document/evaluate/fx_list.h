@@ -18,7 +18,6 @@ struct Doc;
 // the effect stack of After Effects. The "fx" property names them in order;
 // each is the file alone, without the ID an entry may carry (fx_entry_id in
 // script.h), so the same file put on twice is here twice.
-//
 // When `off` is true the list includes the effects that are turned off, as
 // cards list them (fx_off, the eye on an effect in Alight Motion). Otherwise
 // only effects that are on are returned, and after them the effect being tried
@@ -60,7 +59,6 @@ double doc_most(Doc& d, int layer, const char* name, double otherwise);
 // Fills `fx` with how far a flat layer's shape reaches beyond its box, either
 // at time `at` or, with `most` set, as far as it reaches at its largest. Also
 // checks that the layer's effect files exist and can be run.
-//
 // Returns false when one cannot, and then `why` says which.
 bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
             std::string& why);

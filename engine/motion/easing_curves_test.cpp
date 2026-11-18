@@ -1,5 +1,4 @@
 // Tests for the easing kinds in motion/easing_curves.h.
-//
 // The expected values come from:
 //   - CSS Easing Functions Level 1 (https://www.w3.org/TR/css-easing-1/):
 //     cubic-bezier(), the keywords ease, ease-in, ease-out and ease-in-out,

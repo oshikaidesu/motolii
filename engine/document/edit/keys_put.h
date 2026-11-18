@@ -2,7 +2,6 @@
 #define MOTOLII_DOCUMENT_EDIT_KEYS_PUT_H_
 
 // Keyframes on a property, and changing a property the way a user edit does.
-//
 // A property either stays or is keyed. A property that stays has one row at
 // time 0 with no easing, which is what `set` writes. A keyed property has
 // keyframes. A keyframe is a keyframe even when it is the only one. The first
@@ -31,7 +30,6 @@ bool doc_key(Doc& d, int layer, const char* name, double at, double is);
 // so the value that stayed is deleted when keyframes arrive. One prepared
 // statement is reused for every keyframe. The whole call is one act, and the
 // stage is rebuilt once at its end.
-//
 // `easing`, when not null, is the easing of every keyframe. A MIDI import uses
 // Hold.
 bool doc_key_many(Doc& d, int layer, const char* name, int n, const double* at,

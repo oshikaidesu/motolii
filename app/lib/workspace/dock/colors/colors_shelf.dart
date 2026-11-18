@@ -103,7 +103,7 @@ class ColorsShelf extends StatelessWidget {
       commands.fill(wordOfStops(next));
     }
 
-    // The paint type, as in Alight Motion's tabs and Figma. Switching a color to a gradient fades it to clear, as Figma does.
+    // The paint type, as in Alight Motion's tabs and Figma. Switching a color to a gradient fades it to clear
     // Switching a gradient to a color keeps the selected stop's color.
     Widget kind(String label, bool on, VoidCallback go) => Chip(
       key: ValueKey('colour-kind-$label'),

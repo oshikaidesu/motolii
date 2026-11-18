@@ -10,7 +10,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart' show WorkspaceState;
 
 /// The context menu for layer [l], opened by a right-click on its bar, its row or the stage.
-///
 /// It follows Ableton Live's clip menu (Rename, Duplicate, Split, Deactivate, Delete) and Figma's right-click on a layer.
 /// Each row runs the same command as the menu bar and the keys, and shows the key the user has bound to it.
 /// As in Finder and Figma, a right-click on one of the selected layers keeps them all, so the rows act on all of them;
@@ -57,7 +56,6 @@ List<ContextMenuItem> layerContextMenu(
 }
 
 /// The context menu for a right-click where there is no layer: the empty stage, or the timeline below the rows.
-///
 /// It offers what can be done there, as Finder's and Figma's right-click on empty space does.
 List<ContextMenuItem> emptyContextMenu(
   BuildContext context,

@@ -39,7 +39,6 @@ class DockHover extends StatefulWidget {
   final bool picks;
 
   /// Called with true when the pointer enters and false when it leaves.
-  ///
   /// It is also called with false if the tile is removed while the pointer is over it,
   /// because a MouseRegion that is unmounted under the pointer sends no exit event.
   final ValueChanged<bool>? onHover;

@@ -1,5 +1,4 @@
-// The window zoom factor: zooms the whole window in 1% steps, like Ableton's Zoom Display or a browser's Cmd+ and Cmd-.
-//
+// The window zoom factor: zooms the whole window in 1% steps
 // The zoom is saved in ~/.motolii/window.xml, beside the skin setting.
 import 'package:flutter/foundation.dart' show ValueNotifier;
 

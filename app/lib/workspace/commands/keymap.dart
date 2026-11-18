@@ -1,5 +1,4 @@
 // Keyboard shortcuts and the commands they run, in the manner of VS Code's keybindings.json.
-//
 // The app's default table is loaded first, then the user's file ~/.motolii/keybindings.json overrides it.
 // That file is a list such as {"key": "cmd+shift+z", "command": "edit.redo"}. A command starting with '-' removes the key from that command.
 // Flutter's Shortcuts and Actions carry the keys, and the menus show the same keys.
@@ -85,7 +84,7 @@ const defaultKeys = <(String, String)>[
     'frame.first',
   ), // Live 42.20: move the insert marker to the beginning.
   ('end', 'frame.last'),
-  // The canvas tools, with the letters stage.dart lists, as in After Effects and Photoshop.
+  // The canvas tools, with the letters stage.dart lists
   ('v', 'tool.select'),
   ('m', 'tool.move'),
   ('r', 'tool.rectangle'),

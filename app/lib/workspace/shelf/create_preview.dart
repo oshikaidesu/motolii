@@ -1,5 +1,4 @@
 // Motion previews for the recipe tiles on the Create shelf.
-//
 // The engine creates each recipe on a project of its own, in another isolate so the window never waits (state/recipe_motions.dart).
 // It reports where every layer and copy is at each time step, in 3D (motolii_path3). The tile draws those positions as points, seen a
 // little from above and turning, and loops them. Nothing is cached on disk: the motion is recomputed whenever the shelf
@@ -101,7 +100,6 @@ class _MotionPainter extends CustomPainter {
 }
 
 /// A path shape's outline in its tile, in its own colour and fitted to the tile, drawn by flutter_svg.
-///
 /// The path uses M, L, C and Z commands, so its numbers alternate x and y.
 class _Outline extends StatelessWidget {
   const _Outline(this.part);

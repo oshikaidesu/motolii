@@ -1,10 +1,9 @@
 #ifndef MOTOLII_DOCUMENT_EVALUATE_BODIES_H_
 #define MOTOLII_DOCUMENT_EVALUATE_BODIES_H_
-// The rigid bodies of a project, as Blender's Rigid Body World is one per
+// The rigid bodies of a project
 // scene: every copy (a layer, or a letter of a split text) whose expressions
 // say a mass is a body, and all of them fall, touch and pile up together,
 // moved by Jolt Physics (community/jolt/rigid_bodies.h).
-//
 // Each frame, 60 a second from the start of the project:
 //   1. the expressions of every layer with bodies are asked as at any other
 //      time, and what they say of each copy is told to Jolt: its mass, the
@@ -13,8 +12,7 @@
 //   3. each body's place is kept for that frame (kept_frames.h), so going back
 //      in time costs nothing and a change makes only the frames after it again.
 // A body with mass 0 follows its layer, keyframes and all, and pushes what it
-// meets (Blender's "Animated"); with a mass it is Jolt's from where it is.
-//
+// meets; with a mass it is Jolt's from where it is.
 // One metre is 100 pixels of the project, the default Pixels Per Unit of a
 // Unity sprite and the pixels_per_meter of bevy_rapier's 2D examples: Jolt
 // counts in metres and is accurate for bodies of 0.1 to 10 m

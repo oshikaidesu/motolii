@@ -1,12 +1,10 @@
 #ifndef MOTOLII_DOCUMENT_SCRIPTS_EXPRESSIONS_H_
 #define MOTOLII_DOCUMENT_SCRIPTS_EXPRESSIONS_H_
 // Layer expressions: scripts that place the copies of a layer.
-//
 // An expression is a .js file that defines each(i, n, t, k). For copy i of n it
 // returns where the copy lies, how it is rotated, how large it is and how
 // opaque. This is the Repeater of After Effects, its Grid, Ring and Stagger,
 // and the Animators of Cavalry. See docs/design/create_and_program_shelves.md.
-//
 // A layer holds any number of expressions in its effect list and treats them
 // like effects: they can be added, turned off, reordered and removed the same
 // way. They run in list order after the layer's own script, which still places
@@ -39,7 +37,6 @@ std::vector<DocScript*> doc_expressions_on(Doc& d, int layer);
 // Finds the macro that turns the parameter `name` of an expression (declared in
 // script.h with
 // "// --macro@") and returns the macro's label, or "" when no macro turns it.
-//
 // *adds receives what the macro adds to the parameter's own value at time `at`.
 // That is (high - low) * (macro - macro default), where low and high are the
 // range the macro maps to (Min + (Max - Min) * macro) and the default is the
@@ -60,7 +57,6 @@ double doc_macro_own(Doc& d, int layer, const char* name, double at, double is);
 // Runs each script in `scs` in turn for n copies at time `said` and returns the
 // composed copies. Every parameter is read once per script. A select parameter
 // with no value set takes the first word of its list.
-//
 // `clock` is the time passed to each script. `gone` is how much earlier the
 // layer ends because of an Out, so the duration given to the script ends before
 // the layer does.

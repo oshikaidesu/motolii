@@ -15,8 +15,7 @@ import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// The timeline's rows as they are laid out: each layer's own row, then, while it is expanded, a row naming each of
 /// its targets and a lane for each of its animated properties.
-///
-/// The lanes follow Ableton's automation lanes (Live 12 manual 25.5), where every automated envelope has its own lane.
+/// The lanes follow Ableton's automation lanes, where every automated envelope has its own lane.
 class TimelineRows {
   /// The rows of the workspace that `workspaceOf` returns, placed by `viewport`, showing what `media` and `slip`
   /// have read of each layer's file.
@@ -36,7 +35,6 @@ class TimelineRows {
   WorkspaceController? get workspace => _workspaceOf();
 
   /// The rows in the order [layOut] last placed them, from the top.
-  ///
   /// `layer` is the index of the row's layer. `value` is the property a lane shows, and null for the layer's own row.
   /// `aim` is set on a row that names one of the layer's targets; such a row has an empty value and no keyframes.
   List<({int layer, String? value, (String, int)? aim})> get order => _order;

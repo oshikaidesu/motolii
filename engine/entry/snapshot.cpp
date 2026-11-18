@@ -182,7 +182,6 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
 }
 
 // Preserves the document's last error text across a snapshot build.
-//
 // Building a snapshot is the engine's own reading, not a request from the
 // caller. The error from the caller's last refused call must therefore survive
 // whatever these reads do. It is saved on construction and restored on
@@ -239,7 +238,7 @@ void snapshot_update(Motolii* m) {
     w.Key("work"), w.StartArray(), w.Double(a), w.Double(b), w.EndArray();
   }
   w.Key("point"), w.Double(motolii_point(m));
-  // Seconds spent editing the project, like Alight Motion's Total Edit Time.
+  // Seconds spent editing the project
   w.Key("edited"), w.Double(doc_edited(*m->d));
   w.Key("marks"), w.String(motolii_marks(m));
   w.Key("markColours"), w.String(motolii_mark_colours(m));

@@ -8,7 +8,6 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// What the Inspector shows when nothing is selected.
-///
 /// A centered hint tells the user why the inspector is empty (After Effects' Effect Controls belongs to a layer, and
 /// Alight Motion shows none). Below it, a soft "Stage settings" toggle reveals the stage's own cards (Apple Motion's
 /// Project pane does the same).

@@ -1,4 +1,4 @@
-// A plain-words name for the last undo or redo step, as After Effects' and Premiere Pro's Edit menu show it
+// A plain-words name for the last undo or redo step
 // ("Undo Change Warmth"). Reads [WorkspaceController.lastChange].
 import 'package:motolii/workspace/state/document/document_reads.dart'
     show isConnected;

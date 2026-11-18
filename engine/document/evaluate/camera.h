@@ -36,7 +36,6 @@ struct DocLook {
   // Which room lights the stage now (see doc_look).
   std::string roomIs;
   // Each room's IndirectLight, keyed by room name. Owned by the engine;
-  // lives and dies with the Doc.
   std::map<std::string, filament::IndirectLight*> rooms;
   // Each room's Skybox, keyed by room name. Owned by the engine.
   std::map<std::string, filament::Skybox*> skies;
@@ -64,7 +63,7 @@ struct DocCamera {
   bool blurred = false;
 };
 
-// The window's working camera, like After Effects' working 3D views and
+// The window's working camera
 // Alight Motion's view without the camera. Never saved in the project.
 struct DocWorkingCamera {
   // True when the window was asked to look through its working camera.

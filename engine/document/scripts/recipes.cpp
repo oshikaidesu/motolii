@@ -37,7 +37,7 @@ namespace {
 // Returns the tile fields for a file, as "\timage\thome\tsame".
 // image: the preview image drawn for the file in
 // ~/Library/Caches/Motolii/tiles. Its animation frames sit beside it as
-// home_0..7.png, as Alight Motion's tiles animate. Until it exists this is the
+// home_0..7.png
 // .png beside the file, as fx_tiles.sh writes for the library, or empty if
 // there is none yet. home: where the image for the file is written. The name is
 // a hash of the file's path and modification time, the modification time of the
@@ -151,7 +151,7 @@ std::vector<DocRecipe> doc_recipes_read() {
       // In 3D the sketch's solids stand in the world. In 2D what it paints
       // becomes an image layer.
       r.lines = {r.code ? "make solid cube" : "make picture " + r.path};
-      // Scale the image layer to fill the frame (doc_fit, like After Effects'
+      // Scale the image layer to fill the frame (doc_fit
       // Fit to Comp).
       if (!r.code) r.lines.push_back("fit fit");
       all.push_back(r);

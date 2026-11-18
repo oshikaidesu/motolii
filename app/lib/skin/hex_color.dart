@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart' show Color;
 
 /// Parses a hex colour as the project and the theme file write it: `rrggbb` or `rrggbbaa` (alpha last), with or without a `#`.
-///
 /// Returns null if [word] is not such a hex colour.
 /// flutter_colorpicker's colorFromHex is not used because it reads `aarrggbb`.
 Color? colorOfHex(String word) {

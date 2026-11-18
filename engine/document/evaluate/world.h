@@ -88,7 +88,7 @@ struct DocSolver {
 // depend on all the others.
 // Returns an empty vector if there is no script or it failed; the layers
 // underneath then show unchanged, and the script's error is reported. If
-// relate() takes a fourth argument, the script keeps state, as Cavalry's Value
+// relate() takes a fourth argument, the script keeps state
 // Solver and Context's saveObject do: it receives its own result from the
 // previous frame, and null at the first frame. While Strength is 0 the relation
 // sleeps, as Houdini's Activation does, and the layers underneath show; when it

@@ -61,7 +61,7 @@ Widget? stageHeldSays({required StageDrag drag, required Offset? last}) {
           vertical: Shape.s(4),
         ),
         decoration: BoxDecoration(
-          // Dark pill with a thin accent-tinted outline, like Figma's drag tag: reads over any stage colour.
+          // Dark pill with a thin accent-tinted outline
           color: Grey.g10.withValues(alpha: .92),
           borderRadius: Shape.round(4),
           border: Border.all(color: WindowTokens.line),

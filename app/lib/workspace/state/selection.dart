@@ -10,7 +10,6 @@ import 'package:motolii/workspace/state/layer.dart';
 /// What is selected in the window: one layer, the layers selected together, keyframes and one stretch between two keyframes.
 class Selection {
   /// Creates an empty selection.
-  ///
   /// [onChanged] is called after every change. [onLayerSelected] is called when a call selects a layer (alone, or
   /// through its keyframe or its stretch), before [onChanged]. [onStretchSelected] is called after [onChanged] when a
   /// stretch was found and selected.

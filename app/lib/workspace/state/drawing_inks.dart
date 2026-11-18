@@ -74,7 +74,7 @@ class DrawingInks {
     }
     final line = shape == 'line';
     if (ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ink);
-    // With no ink chosen, a shape gets a random colour as in Alight Motion (AbsentMotion's addShape, randomColor): any hue,
+    // With no ink chosen, a shape gets a random colour as in Alight Motion: any hue,
     // saturation 0.3 to 0.8, value 0.55 to 1. It is written to the document so the Inspector and Colors shelf show it.
     if (ink.isEmpty && kind == 'shape') {
       final r = math.Random(),

@@ -22,11 +22,10 @@ class MediaCommands {
   final MediaController media;
 
   /// Places the selected [files] on the canvas, each as a new layer starting at the current time, and selects the new layers.
-  ///
   /// A video lasts as long as it plays, using the length from the discoverer. A video of unknown length lasts to the
   /// end of the project. A still image lasts as long as chosen under it, and End stacks the stills together.
   /// If every file has a length, the layers are laid one after another in the order selected with the engine's
-  /// Stagger, as Alight Motion does when adding several files.
+  /// Stagger
   Future<void> placeFiles(List<String> files) async {
     if (levelOf(files, media.kindOf) case final drawings?) {
       return _placeLevel(drawings);
@@ -49,7 +48,6 @@ class MediaCommands {
   }
 
   /// Places a level, OpenToonz's term and CLIP STUDIO's animation folder, on the canvas as one layer.
-  ///
   /// The lowest drawing is the layer's file and is fitted to the canvas. The layer's Drawing property gets one hold
   /// keyframe per drawing, valued with the drawing's own number rather than its position, so a drawing added in between
   /// or a gap does not move the others. A hold lasts until the next keyframe, as in a timesheet (XDTS frames, read by
@@ -66,7 +64,7 @@ class MediaCommands {
     media.picked.clear();
   }
 
-  /// Whether [file] is fitted inside the canvas and centred, as Alight Motion places photos and videos (imageLayer and
+  /// Whether [file] is fitted inside the canvas and centred
   /// videoLayer in AbsentMotion's editor/EditorActions.kt and VideoActions.kt). Vector images such as Lottie and SVG
   /// are placed as they are.
   bool _fitted(String file) =>
@@ -113,7 +111,6 @@ class MediaCommands {
   }
 
   /// Places the timesheet [file] on the canvas, starting at the current time.
-  ///
   /// Each column becomes a level as [_placeLevel] makes one, named after the column as OpenToonz does, and as long as
   /// the sheet. Each change gets a hold keyframe on the level's Drawing property at 24 frames per second, as DiTiS reads
   /// a sheet. The bottom column comes first, everything is one undo step, and the new layers are selected.
@@ -153,7 +150,6 @@ class MediaCommands {
   }
 
   /// Replaces what every entry of [all] shows with [file], in one undo step.
-  ///
   /// Alight Motion's Media Info does the same for the whole scene (replaceMedia in AbsentMotion's model/Media.kt,
   /// which changes the file's uri and every fill of it). After Effects and Premiere Pro call it Replace Footage.
   void replaceAll(List<(int, String)> all, String file) => replaceSourcesIn(
@@ -163,7 +159,7 @@ class MediaCommands {
     refused: (why) => c.ws.notice = 'Not replaced: $why',
   );
 
-  /// Fills the shape layer [shape] with the image [file], as in Alight Motion's Fill > Media.
+  /// Fills the shape layer [shape] with the image [file]
   void fillShape(int shape, String file) => fillShapeWith(c.ws, shape, file);
 
   /// Makes the image or video layer [layer] show [file] instead, keeping its position, size, keyframes and effects.

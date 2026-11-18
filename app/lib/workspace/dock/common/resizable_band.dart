@@ -7,7 +7,6 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 
 /// A band whose height the user sets by dragging the grip on its lower edge.
-///
 /// The height is clamped to 44..[max]. A double-click on the grip sets it back to [reset].
 class ResizableBand extends StatefulWidget {
   const ResizableBand({

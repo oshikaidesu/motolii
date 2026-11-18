@@ -21,7 +21,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
   /// Scrolls the rows (and the tracks beside them) by the wheel or two-finger movement [d].
   void scrollBy(Offset d);
 
-  /// The layer's row number and name, as After Effects' Parent column shows it. Several layers may share a name.
+  /// The layer's row number and name
   String numbered(WorkspaceController ws, int id) {
     final i = ws.layers.indexWhere((l) => l.id == id);
     return i < 0 ? '$id' : '${i + 1} ${ws.layers[i].name}';
@@ -62,7 +62,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                             child: NakedButton(
                               enableFeedback: false,
                               mouseCursor: SystemMouseCursors.basic,
-                              // Pressing selects the target layer, like Cavalry's connection list.
+                              // Pressing selects the target layer
                               onPressed: () => ws.select(other),
                               child: Row(
                                 children: [
@@ -84,7 +84,7 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                               ),
                             ),
                           )
-                        // A property lane shows the property name under its layer's name, as Ableton names a lane after its control.
+                        // A property lane shows the property name under its layer's name
                         else if (rows.order[i].value case final n?)
                           Positioned(
                             key: ValueKey(

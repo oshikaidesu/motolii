@@ -1,5 +1,4 @@
 // Snapping for the end of a bar, a keyframe or the playhead.
-//
 // A drag lands on the nearest target within 12 points, and a bar snaps by
 // whichever end is nearer. The kind of the target is reported so the caller
 // can show what caught the drag — Lumit's rule that "the target must be

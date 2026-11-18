@@ -97,7 +97,7 @@ class EaseNumbers extends StatefulWidget {
   /// Called with the changed easing.
   final ValueChanged<Ease> onChanged;
 
-  /// Whether a Bezier may go past 0 and 1 in Y, like Alight Motion's Enable Overshoot.
+  /// Whether a Bezier may go past 0 and 1 in Y
   final bool overshoot;
 
   /// Called when the user toggles Overshoot.

@@ -32,7 +32,7 @@ double doc_layer_ends(Doc& d, int layer);
 
 // The work area is the stretch of the project that is played round and exported
 // as a video, as in After Effects. If it is not set, it is all of the project.
-// Marks are named times of the project, like After Effects' composition
+// Marks are named times of the project
 // markers. Both are keyframes of layer 0, the stage itself, and every change to
 // them is an undo step.
 

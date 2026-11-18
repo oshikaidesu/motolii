@@ -2,11 +2,9 @@
 #define MOTOLII_MEDIA_VIDEO_LAYER_H_
 
 // Video layers: plays a video file as a flat quad in the stage.
-//
 // Any file GStreamer can read is accepted; GStreamer chooses the demuxers and
 // decoders. The quad is a normal layer in the stage, drawn with flat.mat like
 // ThorVG images, so mattes, glass and chroma keying (`green`) all work on it.
-//
 // GStreamer decodes with the machine's hardware decoder. Each decoded frame
 // stays on the GPU (an IOSurface on macOS) and is shared with Filament's WebGPU
 // device without a copy, through Dawn's SharedTextureMemory. The luma and
@@ -15,7 +13,6 @@
 // is chosen by the video's own timestamps, because the frame rate of a phone
 // video is not constant. A video that carries a rotation tag, such as one shot
 // in portrait, is rotated.
-//
 // Works only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh with
 // KIT_EXTRA, see puppet.sh), where Filament requests the texture sharing
 // (filament_dawn_compute.patch). Only the macOS interop is implemented so far.

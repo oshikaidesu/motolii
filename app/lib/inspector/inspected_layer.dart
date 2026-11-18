@@ -2,7 +2,6 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
 /// The layer the Inspector shows, as its caller describes it: its kind and name, and its cards.
-///
 /// With no layer selected its kind is [Kind.none], and its cards are whatever the caller shows then.
 class InspectedLayer {
   /// Creates the description of the layer an Inspector shows.

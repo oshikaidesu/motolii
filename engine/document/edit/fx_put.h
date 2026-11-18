@@ -23,11 +23,10 @@ std::string doc_effect_names();
 // other than a .am motion.
 bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list);
 // Puts an effect file at the end of the layer's effect list, as one undo step.
-// A file that is there already is put on once more, as After Effects does: each
+// A file that is there already is put on once more
 // use gets an ID of its own in front of its file (fx_entry_id in script.h), and
 // a shader's values are kept under it (doc_fx_values_id). doc_fx_out takes one
 // out.
-//
 // `now` is the time at which a transition is put on, or NAN when there is none.
 // A transition runs from that time: its progress is keyed 0 then and 1 a second
 // later, so the layer goes away and what is under it shows. This is how the
@@ -36,7 +35,6 @@ bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list);
 // current time. A second is the default length of a transition in editors such
 // as Premiere Pro and Final Cut Pro, which uses 30 frames. The user can make it
 // longer or shorter by moving the keys.
-//
 // A transition is an ISF effect, see ISF_Spec. It has a progress input and an
 // endImage input for the image it goes to.
 bool doc_fx_file(Doc& d, int layer, const char* file, double now = NAN);

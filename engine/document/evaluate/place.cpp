@@ -332,7 +332,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
       own = math::mat4::translation(middle) * own *
             math::mat4::translation(-middle);
   // Copies placed evenly along another shape's outline, each rotated to follow
-  // the direction of the outline there, like Cavalry's Duplicator on a shape.
+  // the direction of the outline there
   if (member)
     if (const int on = (int)doc_literal(d, layer, "copy_on", 0, 0);
         on && on != layer && doc_number(d, on, "copy_on", 0, 0) == 0.0) {

@@ -94,7 +94,6 @@ class _ToolHeader extends StatelessWidget {
 }
 
 /// Every tool as a tile with its icon, name and what it acts on.
-///
 /// The column count follows the width. Rows share the height but keep at least [_minTile], otherwise the grid scrolls.
 /// A tile never grows beyond [_maxTile].
 class _Catalog extends StatelessWidget {

@@ -26,7 +26,6 @@ List<int> layersParentedTo(WorkspaceController ws, int parent) {
 }
 
 /// The layers a relation moves, when the selected layer is a relation; otherwise none.
-///
 /// A layer counts when any of its properties is connected to the relation. It is read from the app's snapshot of the
 /// document, which asks the engine again only after a change.
 Set<int> relationMembersOf(WorkspaceController ws) {

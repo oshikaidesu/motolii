@@ -31,7 +31,6 @@ class AlignTool extends StatelessWidget {
   }
 
   /// Aligns the selected layer to [side]: 0 left, 1 horizontal center, 2 right, 3 top, 4 vertical center, 5 bottom.
-  ///
   /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
   /// so the second pass corrects the remaining offset.
   static void align(WorkspaceController ws, int side, [int pass = 0]) {

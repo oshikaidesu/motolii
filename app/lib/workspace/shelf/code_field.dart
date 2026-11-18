@@ -2,7 +2,6 @@
 // code_forge handles scrolling, line numbers, folding, bracket matching,
 // indentation guides, and minimap internally. This file is the only place
 // that imports it.
-//
 // As a cell of the Code tab ([CodeField.fit]) it is as tall as its code until the strip under it is dragged, and the
 // wheel scrolls the tab, not the code, until the code is clicked: a page of editors scrolls so (GitHub's, a notebook's).
 import 'dart:async';
@@ -28,7 +27,6 @@ import 'package:motolii/workspace/code/expression_prompts.dart';
 typedef CodeMark = ({int line, int from, int to});
 
 /// An editor for code.
-///
 /// Typed text is passed to [write] shortly after the last key. A card's code
 /// writes it to the layer's own copy of the file (EffectCode).
 class CodeField extends StatefulWidget {

@@ -60,7 +60,6 @@ std::atomic<int>& doc_own_easings_made();
 // way('Cyclic', u)). When applied to a keyframe the expression is written into
 // the project, so the project plays the same wherever it is opened. The user's
 // easing of a name takes precedence over the library's.
-//
 // There is one cache for the whole program. It is read by every project's
 // render thread and by every app request, so a mutex guards it and callers get
 // a copy.

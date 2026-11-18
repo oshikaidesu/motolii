@@ -1,5 +1,4 @@
 // Renders a MIDI file as a piano roll in SVG.
-//
 // The SVG is produced by bladeSk's PianoRollSvg.js, used unmodified
 // (third_party/midi_roll, MIT) and run in QuickJS the way three_isf.cpp runs
 // three.js. The script's MIDI parser (midi-parser-js) is GPL-3 and is not
@@ -7,7 +6,6 @@
 // element reads (see midi_notes.h) in the shape MidiParser.parse returns:
 // timeDivision, formatType, and track[].event[] with deltaTime, type (9 for
 // note on, 8 for note off), channel and data.
-//
 // The look follows ALMaMPlayer (github.com/almam72/ALMAMPlayer; only its
 // numbers are used). The whole song is one row, 300 points per second
 // (GlobalVariables.speed). The row height is 688 divided by the range of the

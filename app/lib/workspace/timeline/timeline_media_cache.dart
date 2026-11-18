@@ -11,7 +11,6 @@ import 'package:motolii/workspace/state/media/timeline_service.dart'
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The media the timeline has read for its rows, kept until the project changes.
-///
 /// Each getter answers at once with what is known and asks the engine for what is missing. The engine answers on
 /// another isolate, and the listeners are notified when an answer has been stored. After [dispose] late answers are
 /// dropped.

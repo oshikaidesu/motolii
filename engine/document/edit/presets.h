@@ -3,7 +3,6 @@
 
 // presets.h: saving, applying and pasting presets, copies and elements of
 // layers, and packaging a project with its files.
-//
 // A preset is a document of its own that holds one layer, numbered 1. It stores
 // that layer's keyframes in the same layout as a project (name, at, value,
 // easing), together with the easings they use. It leaves out what the layer is
@@ -16,7 +15,6 @@
 // {motolii}/... or {own}/... (see doc_folders), so that a preset made on one
 // machine finds its files on another. Only text values are rewritten; a number
 // stays a number.
-//
 // Compare After Effects animation presets (.ffx: effects and their keyframes)
 // and Alight Motion's Save as Preset and Paste Style.
 
@@ -49,7 +47,6 @@ bool doc_preset_put(Doc& d, int layer, const char* path);
 // Live. The behaviours the copy carried and the layers a group held are created
 // anew after it, in their order, moved in time by the same amount, with every
 // link among them renumbered. All of this is one undo step.
-//
 // `also` is extra SQL run in the same step. It can use the table pasted_as,
 // which maps each layer number in the copy to its new number. `before` is SQL
 // run first. `into` is the number of a layer that is already here: it replaces
@@ -62,7 +59,7 @@ int doc_preset_paste(Doc& d, const char* path, double now,
 // folder (see doc_folders), replacing a file of that name. Compare Alight
 // Motion's Save as Preset and After Effects' Save Animation Preset. `only`
 // keeps those properties alone, with their keyframes, as for the card of one
-// effect, as Alight Motion's preset of one effect. Returns false and sets
+// effect
 // d.error on failure.
 bool doc_preset_keep(Doc& d, int layer, const std::string& name,
                      const std::string& only = "");
@@ -86,7 +83,7 @@ int doc_pack(Doc& d, const std::string& folder, const std::string& name);
 // doc_folders), listed the same way as the effects, followed by the files in
 // the elements folders. The name is the file's name and the picture is the .png
 // beside it, or empty. The label is "Look" for a preset and "Element" for an
-// element, as in Alight Motion's My Elements (see doc_element_keep).
+// element
 std::string doc_preset_names();
 // Saves the layer, with everything it holds, as an element named `name` in the
 // user's elements folder, replacing a file of that name. Compare Alight

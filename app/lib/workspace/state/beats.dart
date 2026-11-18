@@ -1,5 +1,5 @@
 // The document's beats. When the document has a tempo, the timeline grid follows them.
-// Modelled on Ableton Live's Tempo field and editing grid (Live manual, section 6.10): four beats to a bar.
+// Modelled on Ableton Live's Tempo field and editing grid: four beats to a bar.
 import 'package:motolii/skin/tokens.dart' show halfWidth;
 
 /// Parses a typed number, ignoring full-width characters and surrounding spaces. Returns null if it is not a number.

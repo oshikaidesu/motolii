@@ -31,7 +31,6 @@ class StagePane extends StatelessWidget {
 }
 
 /// The tools as app commands (`tool.select`, `tool.text` ...). Their letters are in the keymap (keymap.dart).
-///
 /// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
 /// Photoshop do, not only while the stage has focus.
 Map<String, VoidCallback> stageToolCommands(WorkspaceController ws) => {
@@ -82,7 +81,6 @@ class _StageState extends State<_Stage> {
   }
 
   /// After Effects' Take Snapshot: keeps the frame at the playhead as a still image (the engine's Export Frame).
-  ///
   /// While Show Snapshot is held the still is shown over the stage, to compare an earlier look with the current one.
   /// Nothing is undone.
   void _take() {
@@ -121,7 +119,7 @@ class _StageState extends State<_Stage> {
       // A shelf tile dropped here does what its double click does, as dropping a device on a track does in Ableton.
       onWillAcceptWithDetails: (_) => true,
       onAcceptWithDetails: (d) {
-        // Apply to the layer under the drop, as After Effects does for an effect dragged onto a layer in the
+        // Apply to the layer under the drop
         // Composition panel. Over no layer, apply to the selected layer, as a double click does.
         if ((_view.currentState as StageHandles?)?.hitAt(d.offset)
             case final id?) {
@@ -287,7 +285,7 @@ class _StageState extends State<_Stage> {
   }
 }
 
-/// A shape tool clicked twice adds a shape as large as the canvas at once, as in After Effects.
+/// A shape tool clicked twice adds a shape as large as the canvas at once
 void _whole(WorkspaceController ws, String kind) {
   ws.whole(kind);
   ws.setView('stage.tool', 0);
@@ -374,7 +372,6 @@ class _ToolColumn extends StatelessWidget {
 }
 
 /// Fill and stroke swatches of the drawing tools, fill above and stroke below.
-///
 /// Clicking one makes it the target of the Colors shelf: it is brought to the front, ringed, and the shelf opens.
 /// This follows the main and sub colour icons of CLIP STUDIO PAINT and the Fill and Stroke boxes of Illustrator.
 /// With no layer selected, the swatches show the fill and stroke the next drawn layer will get.

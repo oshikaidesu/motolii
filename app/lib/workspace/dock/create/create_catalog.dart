@@ -24,7 +24,6 @@ String createFact(WorkspaceController ws) {
 }
 
 /// The engine's create scripts, each shown as a tile, as the group Recipes. A script builds a whole image in one call,
-/// as Cavalry's tutorials do.
 (String, List<CreateTile>) recipeGroup(WorkspaceController ws) {
   // Scripts that are expressions are left out: their tiles are in the Expression group.
   final expressions = {for (final (name, _) in expressionRecipes()) name};

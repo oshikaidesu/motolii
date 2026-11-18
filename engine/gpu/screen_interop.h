@@ -1,6 +1,5 @@
 // Full-screen and mesh passes with a user-supplied WGSL fragment shader, drawn
 // through Filament's own driver (compute_interop does the same for compute).
-//
 // Filament 1.77.2 has no public API for running your own shader over an image.
 // Its post-processing draws a full-screen triangle with a program, and so does
 // this code. The Filament authors say this is "currently not directly possible
@@ -10,7 +9,6 @@
 // beginRenderPass, then draw(pipeline, getFullScreenRenderPrimitive(), 0, 3,
 // 1). Filament is built from the source in third_party, so the internals this
 // relies on stay as written until that source is changed on purpose.
-//
 // The shader is a fragment shader with this entry point:
 //   fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) ->
 //   @location(0) vec4f
@@ -19,7 +17,6 @@
 // with its sampler at binding 2k+1. If the shader has parameters they are bound
 // as
 //   @binding(2 * images) var<uniform> <name>: <struct>
-//
 // Calls are queued like any other Filament call. A `draw` issued between the
 // render of the image it reads and the render of whatever shows its result is
 // ordered with them on the GPU.
@@ -44,7 +41,6 @@ struct Screen;
 // rejects the shader. In that case `why` receives Dawn's message. The shader is
 // first tried on Filament's own device inside an error scope, so a bad shader
 // cannot disturb anything else.
-//
 // `parameterBytes` is the size of the shader's uniform struct, or 0 for none.
 // `textureCount` is the number of images the shader reads. Image i is at
 // `@binding(2i)`, its sampler at `2i+1`, and the parameters at `2 *
@@ -66,7 +62,6 @@ Screen* screen(filament::Engine*, const char* name, const char* fragment,
 void parameters(filament::Engine*, Screen*, const void* data, uint32_t bytes,
                 int pass = 0);
 // Draws one pass reading the images `from` and writing to `to`.
-//
 // `to`: the render target, or null for the screen.
 // `w`, `h`: size of the target in pixels.
 // `pass`: which pass's parameters to use. Pass 0 also starts a new frame of

@@ -40,7 +40,7 @@ String wordOfStops(List<(Color, double)> stops) {
   ].join(' ');
 }
 
-/// The gradient editor: a bar with its stops beneath, as in Figma and Canva.
+/// The gradient editor: a bar with its stops beneath
 /// - Pressing the bar adds a stop there, in the color the bar has at that point.
 /// - Pressing a stop selects it, and the square above then edits its color.
 /// - Dragging a stop along the bar moves it.

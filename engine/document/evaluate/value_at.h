@@ -131,7 +131,7 @@ std::string doc_word(Doc& d, int layer, const char* name);
 // nested element, the element's clock applies; otherwise the stage time is
 // returned unchanged.
 double doc_element_now(Doc& d, int layer, double at);
-// Applies time quantization (Alight Motion's; After Effects' Posterize Time). A
+// Applies time quantization. A
 // layer with a frame_rate is sampled only at its own frames, counted from its
 // start, so an animated value is read at the frame that contains `at`. Without
 // a frame_rate the time is as smooth as the stage. Inside a nested element the

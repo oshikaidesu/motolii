@@ -4,10 +4,8 @@
 import 'package:flutter/services.dart' show HardwareKeyboard;
 
 /// The selection after a click on [id].
-///
 /// [now] is what is picked, in the order it was picked. [lead] is the item the last plain or added click was on; a range starts from it.
 /// [order] is every item in reading order, for ranges; leave it empty where there is no row order (the stage), and a range is then an addition.
-///
 /// - A plain click (neither key): only [id] is picked, and it becomes the lead.
 /// - [add] (Command, or Ctrl on Windows and Linux): [id] is added, or removed if it was picked. An added [id] becomes the lead.
 ///   A removed one leaves the lead where it was, unless it was the lead: then the lead is the last item still picked, or null.
@@ -15,7 +13,6 @@ import 'package:flutter/services.dart' show HardwareKeyboard;
 ///   the lead and going toward [id], whichever way that is. The lead stays, so a second Shift-click extends from the same item.
 ///   With no lead, or with the lead or [id] not in [order], it is an addition, as [add] is.
 /// - [add] and [span] together: that range is added to [now]; what was picked stays.
-///
 /// The result is a new set in pick order; [now] is not changed.
 ({Set<T> picked, T? lead}) pickOnClick<T>({
   required Set<T> now,

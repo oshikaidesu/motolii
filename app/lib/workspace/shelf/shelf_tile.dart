@@ -17,23 +17,18 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 export '../../bridge/motolii.dart' show ShelfItem;
 
 /// One item of a shelf, drawn as its shelf's [look] says, or as a row when [list] is true.
-///
 /// It draws whatever it is given, as ValuesCard draws whatever Params it is given. What goes where depends on the form.
-///
 /// [ShelfForm.under] in the grid, from the bottom of the stack up:
 /// - the image: [art], else the item's animated image, else the plain card;
 /// - [over], laid on the image as Positioned children of its Stack;
 /// - a border over everything while [lit], [picked] or hovered;
 /// - the name bar, with [naming] in its place while a name is being edited. [ink] and [bold] style the name unless it is picked.
 /// With [small] only the image is drawn.
-///
 /// The Create tile is the same [ShelfForm.under]: its glyph or motion is the [art], its shortcut key an [over] child,
 /// and its name sits in the bar like the others.
-///
 /// [ShelfForm.under] as a row: the image at the look's rowArt size, the name, [says] under it
 /// when given, then [after] at the end of the row. [ink] also colours the name in a row; if null, it is g91 rather than
 /// the bar's g76. [indent] is added on the left.
-///
 /// [ShelfForm.words] as a card: [after] at the top right, [art] (the sample, set by the caller in its typeface), then
 /// [says] with [marks] after it on the same line. As a row: [art] over [says] and [marks], then [after] at the end.
 class ShelfTile extends StatelessWidget {
@@ -327,7 +322,6 @@ class ShelfTile extends StatelessWidget {
 }
 
 /// The shelves' shared layout: [count] tiles, as many across as fit (gridColumns, gridCellWidth) or [cols], then [footer].
-///
 /// Only the tiles in view are built, using Flutter's lazy grid. A Wrap built all 1,293 effects each time the shelf opened.
 /// - [list]: the same grid one column wide, each row as high as the look's row.
 /// - [small]: the tiles are their images alone.

@@ -4,7 +4,6 @@
 // FNV-1a 64-bit hash of a byte run. The one engine-wide copy of the loop, so
 // cache keys and change checks match without each file keeping its own three
 // lines of primes.
-//
 // FNV-1a (Fowler-Noll-Vo, 1991): start with the 64-bit offset basis, and for
 // each byte XOR it in, then multiply by the 64-bit prime. Not for security:
 // cache keys and change checks only.

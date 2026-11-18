@@ -46,7 +46,7 @@ class FileFooter extends StatelessWidget {
     final layer = media.filesUsed[n.id],
         can = media.kindOf(n.id).isNotEmpty,
         open = documentOpen(c.ws);
-    // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
+    // With a shape layer selected, an image file fills the shape
     final shape = c.ws.selected,
         fills =
             open &&
@@ -68,7 +68,7 @@ class FileFooter extends StatelessWidget {
         ? layersShowingFileOf(c.ws, shape)
         : const <(int, String)>[];
     return FutureBuilder<String>(
-      // The description comes from GStreamer's discoverer, like Alight Motion's Media Info. The key gives each file its own state.
+      // The description comes from GStreamer's discoverer
       key: ValueKey(n.id),
       future: can && open ? mediaInfoFor(c.ws, n.id) : null,
       builder: (context, info) => ShelfFooter(
@@ -245,7 +245,7 @@ const _stillSteps = [
   0.0,
 ]; // Seconds. 0 means until the end of the project.
 
-/// Plays a sound file before it is placed, as Alight Motion does before adding a song. Clicking plays it with macOS's
+/// Plays a sound file before it is placed
 /// afplay. Clicking again, or selecting another file, stops it.
 class _Listen extends StatefulWidget {
   const _Listen(this.n, this.media);

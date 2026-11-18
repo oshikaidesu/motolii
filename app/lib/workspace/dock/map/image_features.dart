@@ -17,7 +17,6 @@ class ImageFeatures {
 
   /// Feature vector for images, from their colours reduced to 16 x 16 pixels (Torralba, Fergus and Freeman, "80 million
   /// tiny images", 2008). Several images are concatenated.
-  ///
   /// Returns null when one of them cannot be read yet, so it is asked for again next time. Cached while the window is open.
   Future<Float32List?> tiny(List<String> files) async {
     final key = files.join('\n');
@@ -28,7 +27,6 @@ class ImageFeatures {
   }
 
   /// Feature vector of several images from the CLIP image encoder [model].
-  ///
   /// Each image is resized to 224 x 224, as CLIP's own Resize does, and gives 512 numbers. The images are concatenated so
   /// that two effects are compared frame by frame at the same times, as in ViSiL's frame-to-frame similarity
   /// (Kordopatis-Zilos et al., ICCV 2019). Every effect's tile is drawn at the same times. Returns null if an image cannot
@@ -114,9 +112,8 @@ Future<Float32List?> _read(List<String> files) async {
   return out;
 }
 
-/// Joins several feature vectors per item side by side, as FontMap does for fonts (FontCLIP's numbers beside the tags'
+/// Joins several feature vectors per item side by side
 /// and shapes', weighted 1, 0.5 and 0.2).
-///
 /// Each part is scaled to a total spread of 1, then multiplied by its entry in [weights]. Parts listed in [even] are
 /// first standardised per dimension (z-score). An item the first part has no vector for is left out (null). An item
 /// missing from another part gets that part's mean, so the part says nothing about it.

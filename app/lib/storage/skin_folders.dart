@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:motolii/storage/host_platform.dart' show homeFolder;
 
 /// The folders skins are read from, later ones winning when two skins have the same name.
-///
 /// The user's own folder wins over shelves/skins. ~/.motolii/skins is an older location, still read so that a skin worn
 /// from there is not lost.
 List<String> skinFolders({required String shelves, required String own}) => [

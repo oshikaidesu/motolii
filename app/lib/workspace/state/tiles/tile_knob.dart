@@ -10,19 +10,16 @@ import 'package:motolii/workspace/state/tiles/tile_frames.dart';
 import 'package:motolii/workspace/state/tiles/tile_media.dart';
 
 /// Picks the parameter that stands for an effect on its tile, and the two values it moves between.
-///
 /// Candidates are tried in this order, and the first one that visibly changes the picture wins:
 /// 1. [first], the parameter the weights in [TileReview.weighed] say shows the effect most.
-/// 2. Parameters named like a clock: progress, rotY, evolution, phase (After Effects has Evolution and Transition Completion).
+/// 2. Parameters named like a clock: progress, rotY, evolution, phase.
 /// 3. The parameters in [filed], whose values the effect table set: the one that changes the picture most.
 /// 4. The remaining parameters in file order, single numbers before the parts of a vector. Parameters that only fade
 ///    the effect, redraw it at every value or pick from a list are skipped.
-///
 /// Each candidate is tried half way to the far end of its range, at most eight times, and the change is measured
 /// with ffmpeg as in shelves/effects/sources/fx_first.sh. For an angle the far end is where it began, so half way is
 /// used. A progress or rotY then goes the whole way. Any other parameter goes only as far as the change is plainly
 /// visible, short of wiping the picture out.
-///
 /// If [alone] is set only [first] is tried, because an effect that runs by the clock is left to run.
 /// Returns null when no parameter shows the effect.
 (String, double, double)? tellingKnob(

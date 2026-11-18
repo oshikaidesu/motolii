@@ -33,7 +33,6 @@ const std::string& viewer_text(const std::string& file) {
 // Parses `text` into `doc`. Returns true if it is a viewer settings file: a
 // JSON object with a "view" object and no "layers" (an After Effects file has
 // layers).
-//
 // The text is first adjusted to what Filament's own writer produces and its
 // reader accepts (jsmn, not strict, numbers by strtof): a comma before a
 // closing brace (its agxToneMapper), none after a list (its

@@ -50,7 +50,7 @@ class EasingPresetTile extends StatelessWidget {
           );
   }
 
-  // Every tile is the same size and only its ink shows which one is in use, as in AbsentMotion's CurveThumb.
+  // Every tile is the same size and only its ink shows which one is in use
   // The tile lifts slightly while hovered.
   Widget _tile() => Pressable(
     onTap: onTap,
@@ -96,7 +96,6 @@ Widget easeHeld(Widget card, double side) {
 }
 
 /// Paints an easing as AbsentMotion's EasingIcons.kt does, in its own square.
-///
 /// The icon shows what the easing does rather than its exact curve, which would be too fine to read at this size.
 /// An easing with no drawing of its own is painted as its real curve.
 class EaseIcon extends CustomPainter {

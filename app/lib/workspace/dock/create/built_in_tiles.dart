@@ -144,7 +144,6 @@ final lightGroup = (
 );
 
 /// Materials: Filament's own and the engine's, under the names a user knows (the engine's word is the shading value, see doc.h doc_material).
-///
 /// A material goes on the picked layer in place of the one it has, one at a time. Any visible layer can wear one: a flat layer
 /// wears it on its own plane, and an image layer takes its color. With nothing picked, a ball wearing the material is created.
 /// Materials are in Create, not among the colors. Each tile shows a ball wearing the material (material_tiles.dart).
@@ -240,9 +239,8 @@ final layerOfTile = {
 };
 
 /// Transform values set on a layer right after its tile creates it, in the same undo step.
-///
 /// Floor follows Cinema 4D's Floor object: a Cube laid flat under the preview, because a flat Rectangle is unlit and takes no shadow.
-/// Sun shines from above and in front, as After Effects' new light looks at the middle of the composition from there.
+/// Sun shines from above and in front
 /// With no rotation a Sun would shine along the floor and light nothing on it.
 const startValuesOfTile = <String, Map<String, double>>{
   'Floor': {'scale_x': 12, 'scale_y': .01, 'scale_z': 12, 'y': -.48},

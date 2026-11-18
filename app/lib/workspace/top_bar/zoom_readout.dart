@@ -6,7 +6,6 @@ import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/workspace/state/window_zoom.dart';
 
 /// The zoom readout in the top bar.
-///
 /// Dragging sideways changes the zoom by 1% per 3 px and saves it when the drag ends. Double-clicking resets it to [WindowZoom.usual].
 class ZoomReadout extends StatefulWidget {
   const ZoomReadout({super.key});

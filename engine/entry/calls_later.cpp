@@ -53,7 +53,6 @@ using namespace motolii;
 // not done yet, 0 if it was refused, and 1 if it is done. After a refusal
 // motolii_answer_why returns the reason, and after `ask` what the script
 // answered. For add and create the result is the new layer.
-//
 // `call` selects the change and `layer`, `name`, `word` and `number` are its
 // arguments. Their meaning depends on the call and is given beside each call
 // below. The accepted calls are also listed in the error message at the end of

@@ -52,7 +52,7 @@ extension ArrangeCommands on WorkspaceState {
       'arrange.flipY': () => eachPicked((t) => flipLayer(ws, t, 'y')),
       for (final (_, how) in workspaceTimes)
         'time.$how': () {
-          // Acts on the selected layers in the order they were selected (Alight Motion's timing).
+          // Acts on the selected layers in the order they were selected.
           final all = pickedLayers();
           if (all.isNotEmpty) {
             ws.after(

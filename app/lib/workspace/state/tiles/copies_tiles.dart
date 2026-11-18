@@ -1,12 +1,10 @@
 // Tiles for the Copies entries on the Create shelf: the Repeater and any copy expressions the user added (dock_make_3.dart).
-//
 // They are drawn the way the Effects shelf draws its tiles (tile_queue.dart and effect_tiles.dart):
 // - The engine draws them in another isolate, on a project of its own.
 // - Each tile has the sixteen times of tileMoments. They are shrunk with sips, and ffmpeg encodes the moving
 //   ones as JPEG.
 // - They are cached in ~/Library/Caches/Motolii/tiles, named by the file path and its modification time.
 // - TileMoving plays them under the pointer.
-//
 // A tile shows the head of the Repeater recipe (create/repeats/repeater.js): a circle with five copies. The file's own
 // header lines change it: "// make shape", "// set size" and "// set copies". After Effects expressions work in the
 // pixels of a composition, here a 1080 square. The file's expression (fx_file) is then applied to that layer.
@@ -73,7 +71,6 @@ abstract final class CopiesTiles {
       });
 
   /// Builds the tile's layer for expression file [f]: the shape its header names, with the expression applied.
-  ///
   /// Returns whether the engine accepted the expression as code.
   static bool _put(Motolii m, String f) {
     // The header's shape, for example the lines of a maze.
@@ -124,7 +121,6 @@ abstract final class CopiesTiles {
   static bool _answered(Motolii m, int ticket) => _answer(m, ticket) == 1;
 
   /// Waits for the engine's answer to request [ticket].
-  ///
   /// Returns -1 if there is no answer within ten seconds. For a created recipe the answer is the new layer.
   static int _answer(Motolii m, int ticket) {
     var a = -1;

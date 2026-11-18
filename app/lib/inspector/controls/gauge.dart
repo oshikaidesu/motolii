@@ -6,7 +6,6 @@ import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// A small live picture of a value, shown beside its label.
-///
 /// It draws a pie for a percentage, a bar for a level and a dot for a point.
 class Gauge extends StatelessWidget {
   const Gauge(this.v, this.p, {super.key, this.x, this.y});

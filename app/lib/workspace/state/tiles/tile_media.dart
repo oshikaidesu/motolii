@@ -1,4 +1,4 @@
-// Runs ffmpeg for the effect tiles, and measures how far an effect changed its picture, as AbsentMotion's effect_thumbs.py
+// Runs ffmpeg for the effect tiles, and measures how far an effect changed its picture
 // does, so that a tile which shows nothing is told so.
 import 'package:motolii/bridge/engine_paths.dart' show findProgram, motoliiDir;
 import 'package:motolii/storage/shelf_disk.dart';

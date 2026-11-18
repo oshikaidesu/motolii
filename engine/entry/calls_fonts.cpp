@@ -2,7 +2,6 @@
 // light / italic / symbols / ornaments), and the English names of the
 // non-Latin scripts the font covers (japanese / korean / chinese / …). Used
 // by the Fonts shelf for sorting and filtering.
-//
 // The one implementation here reads font tables through macOS's CoreText, the
 // only font API linked into the engine right now. For Windows and Linux, swap
 // in a reader that returns the same space-separated tags from the font's own

@@ -95,7 +95,7 @@ void broke_one(Motolii* m, const char* why) {
 // can read it without opening the project. This follows how AbsentMotion keeps
 // a project thumbnail (MainActivity.kt, saveThumbnail: a still 256 pixels on
 // its longer side, drawn at the playhead when the editor closes). The poster is
-// drawn at the project's poster_at time if it is set, as in Alight Motion's Set
+// drawn at the project's poster_at time if it is set
 // Project Thumbnail, otherwise at the current time. It is then scaled down with
 // thumbnail_at, which uses GStreamer's own scaling and reads a .png as it reads
 // a video. It is stored in the table poster, which is not an undo step because

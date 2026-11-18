@@ -48,7 +48,7 @@ int motolii_export(Motolii* m, const char* mp4) {
     m->d->video_export.written_fraction = 0.0;
     m->d->video_export.cancelled = false;
     // The render thread that handled this call holds the project lock. Release
-    // it while each frame is drawn, as in live playback. Between frames the
+    // it while each frame is drawn
     // render thread runs the calls that were asked in the meantime, so an app
     // that asked for the export does not stand still. They read the project but
     // do not change it, and the time of the frame being written is set again

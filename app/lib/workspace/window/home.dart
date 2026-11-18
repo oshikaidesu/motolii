@@ -1,5 +1,4 @@
 // The home screen: a sidebar, a preview of the chosen project, and a bento of every project.
-//
 // It is drawn flat, in the manner of a design tool's concept art: solid blocks, one outline width, very large type, and
 // the tool's own marks (a bounding box with handles, a tag beside a cursor, a pen path) used as the decoration.
 // A collage of those marks covers the whole window; the parts above it are opaque, so it shows wherever they leave room.

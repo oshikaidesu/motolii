@@ -1,5 +1,4 @@
 // Poster forms: the app's controls as a Swiss geometric poster, after Posterlad's Checkers and the Xavito deVito gig poster.
-//
 // Flat red, yellow, blue, green and pink on paper, with circles, half circles, quarters, triangles, stripes and heavy
 // grotesque text. Each control is built from those blocks. Press and hover behaviour comes from naked_ui.
 import 'dart:math' as math;
@@ -97,7 +96,6 @@ class PosterForms extends Forms {
   const PosterForms();
 
   /// A yellow block with the label, next to a black square with a paper circle.
-  ///
   /// On hover the circle becomes a red quarter. While pressed the whole button sinks.
   @override
   Widget action(BuildContext context, ActionSpec a) => NakedButton(
@@ -132,7 +130,6 @@ class PosterForms extends Forms {
   );
 
   /// A black slot with a yellow disc, and ON or OFF in capitals beside it.
-  ///
   /// When on, the slot turns green and the disc rolls to the right.
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => BaseControls.toggle(
@@ -164,7 +161,6 @@ class PosterForms extends Forms {
   );
 
   /// A header of solid colour with the title in heavy black type and a shape at its end.
-  ///
   /// The colour is one of the poster blocks, chosen from the title. The rows sit on paper beneath, framed by a black rule.
   @override
   Widget card(BuildContext context, CardSpec c) {

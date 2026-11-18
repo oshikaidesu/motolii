@@ -4,7 +4,6 @@
 // The file holds either plain points (a position and a red, green and blue
 // color, as a scan produces) or Gaussian splats as written by 3D Gaussian
 // Splatting (f_dc color, logit opacity, log scales and a rotation quaternion).
-//
 // Splats are drawn the way antimatter15/splat draws them (MIT license,
 // Copyright (c) 2023 Kevin Kwok):
 //   - The data of every splat is stored once in a float texture: center,
@@ -19,7 +18,6 @@
 //     which slot is uploaded again.
 //   - Splats are blended from the farthest to the nearest with Filament's
 //   transparent blending.
-//
 // A point of a plain scan is drawn round, with a size taken from the distance
 // to its neighbors. The cloud is scaled to 1 tall and centered at its
 // placement, as gltf_model.h does for a glTF file. The returned Mesh is only a

@@ -144,7 +144,7 @@ int doc_element_above(Doc& d, int layer) {
 // blank. Follows Alight Motion's Re-timing and the at() function of NestedClock
 // in AbsentMotion's NestedScenes.kt (Apache-2.0, Copyright 2026 The
 // AbsentMotion authors). Times are in seconds and are not rounded to frame
-// centers. Freeze holds the center of the last frame, as AbsentMotion's
+// centers. Freeze holds the center of the last frame
 // middle() does, rather than the time just after the scene end. Returns -1e9
 // when the element is not visible at `at` (the Blank method).
 double doc_element_clock(Doc& d, int el, double at) {
@@ -257,7 +257,7 @@ const DocKeys& doc_keys_of(Doc& d, int layer, const char* name) {
 double doc_keys_at(Doc& d, const DocKeys& k, double at, double otherwise) {
   if (k.at.empty()) return otherwise;
   if (k.at.size() == 1 || at <= k.at.front()) return k.value.front();
-  // Past the last keyframe the keys can repeat, as in After Effects' loopOut:
+  // Past the last keyframe the keys can repeat
   // "cycle", "pingpong" or "offset", applied to all keys. With "offset" each
   // repeat starts where the previous one ended.
   double on = 0.0;

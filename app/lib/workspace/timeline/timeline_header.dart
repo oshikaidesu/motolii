@@ -255,7 +255,6 @@ class TimelineHeader extends StatelessWidget {
 }
 
 /// Parses a typed time the way Premiere Pro's timecode field reads it.
-///
 /// Digits are read from the right as frames, seconds and minutes, so 852, 8:52 and 8.52 all mean 8 seconds 52 frames.
 /// A leading + or - makes the time relative to [now] (+30 is 30 frames later). Returns null if [said] is not a time.
 int? parseTimecode(String said, int now, int fps) {
@@ -343,7 +342,6 @@ class _RoundButton extends StatelessWidget {
 }
 
 /// The project's tempo, shown beside the frame rate as in Ableton Live's Control Bar.
-///
 /// Clicking it lets the user type a value. Tap sets it from presses made in time with the beat; more presses give a more
 /// accurate value (see "Tapping the Tempo" in the Live manual). With no tempo set, no beats are shown.
 class _Tempo extends StatefulWidget {

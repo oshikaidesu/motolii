@@ -6,7 +6,6 @@ import 'package:material_color_utilities/hct/hct.dart';
 import 'package:motolii/skin/theme.dart';
 
 /// The app's one motion: 120 ms, ease-out, started the moment the input lands.
-///
 /// Every state change (hover, select, drop) uses this and nothing else.
 abstract final class Motion {
   static const dur = Duration(milliseconds: 120);
@@ -36,7 +35,6 @@ abstract final class DarkGrey {
 enum Shade { dark, light }
 
 /// The grey ramp for the current [Grey.shade], using [DarkGrey]'s names.
-///
 /// Each step keeps its role in both shades: ground (the gutter), body, card, well, raised, lines, quiet text, text, strong text.
 /// Only the lightness turns around: in the light shade the cards are the brightest and the text the darkest.
 /// The dark shade is exactly [DarkGrey].
@@ -143,18 +141,15 @@ abstract final class Shape {
   static BorderRadius round(double x) => BorderRadius.all(r(x));
 
   /// A margin of [x] px, scaled by the skin's `Spacing`.
-  ///
   /// Spacing is limited to twice the default, because more than that pushes the dock's tabs out of the window.
   static double s(double x) => x * ColorTheme.number('Spacing', 1).clamp(0, 2);
 
   /// A size of [x] px for a part such as a row height, a strip or a rail, scaled by the skin's `Size`.
-  ///
   /// Size is limited to 0.85 at the smallest, because smaller parts leave no room for the text.
   static double z(double x) => x * ColorTheme.number('Size', 1).clamp(.85, 1.5);
 }
 
 /// A laid-out single line of [s] in style [st], to measure or paint on a canvas.
-///
 /// The caller disposes it.
 TextPainter lineText(String s, TextStyle st) => TextPainter(
   text: TextSpan(text: s, style: st),
@@ -238,7 +233,6 @@ abstract final class TextStyles {
 }
 
 /// Shorthand boldness for the app's text styles.
-///
 /// A header, a tab label or a card title that reads heavier than the surrounding
 /// text uses `TextStyles.name(c).bold` rather than copying the font weight by
 /// hand, so every "stronger" word across the app sits at the same w700 weight.
@@ -248,7 +242,6 @@ extension BoldStyle on TextStyle {
 }
 
 /// Typed text with the full-width letters and digits of a Japanese input method turned into plain ones.
-///
 /// For example `１２８：３０` becomes `128:30`.
 String halfWidth(String said) => said.replaceAllMapped(
   RegExp('[！-～]'),

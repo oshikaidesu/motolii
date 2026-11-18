@@ -1,5 +1,4 @@
 // A skin's drawn parts, in the manner of KDE Plasma and Kvantum.
-//
 // The theme's `Parts` role names a folder. An SVG there named for a part (`tp.eye.svg`, `glyph.select.svg`, `undo.svg`)
 // is drawn in place of the built-in drawing, in the colour the app gives that part.
 // A `frame.<part>.svg` is stretched around that part in its own colours (see SkinFrame in widgets/skin_frame.dart).
@@ -20,7 +19,6 @@ abstract final class SkinParts {
   static String? _dir;
 
   /// Loads the pictures from the folder the theme names, and again whenever the theme changes.
-  ///
   /// The app is rebuilt once the new pictures are loaded.
   static void follow() {
     void read() {
@@ -57,7 +55,6 @@ abstract final class SkinParts {
   }
 
   /// Draws the skin's picture [name] into [s] in [color], scaled to fit.
-  ///
   /// Returns false when the skin has no such picture, and the caller then draws its own.
   static bool draw(Canvas c, Size s, String name, Color color) {
     final p = _pics[name];
@@ -85,7 +82,6 @@ abstract final class SkinParts {
   static bool has(String name) => _pics[name]?.size.isEmpty == false;
 
   /// Draws the skin's frame [name] around [r], as CSS border-image does, in the picture's own colours.
-  ///
   /// The corners are drawn as they are and the edges and middle are stretched.
   /// The corner size is the SVG's `data-slice`, or a third of its smaller side when it has none.
   static void frame(Canvas c, Rect r, String name) {

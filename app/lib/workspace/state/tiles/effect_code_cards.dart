@@ -20,7 +20,6 @@ final _code = RegExp(r'\.(wgsl|fs|js)$');
 
 /// The file of the card [title] on layer [thing] and the layer property that names it: the Script card's one file, or the
 /// effect file of the layer's [fx] entries. Null when the card has no code.
-///
 /// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
 /// not by the title alone, because two cards can share a title.
 /// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
@@ -74,7 +73,6 @@ String? codeFileOf(String fx, String title, List<String> names) {
 }
 
 /// The card title for an effect file, named as the engine does (document/cards.h doc_fx_title).
-///
 /// An effect applied again ("Glow~2.fs") gets its original's title and its number.
 /// An ISF effect gets its file name (isf.cpp titles the WGSL it generates that way).
 /// Any other file gets the name in its first line ("// Repeater: …"), else its file name with each _ as a space

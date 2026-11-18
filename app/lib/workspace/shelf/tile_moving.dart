@@ -32,7 +32,6 @@ class _Beat {
 
 /// A tile's image. An animated one plays forward and back at 24 frames a second while [playing], so it neither steps
 /// nor jumps where it loops (effect_tiles.dart). Otherwise, or when no animation sits beside the file, the still is shown.
-///
 /// It is keyed by the file's modification time, so a widget given the same file keeps its image. An equal image
 /// provider is not resolved again.
 class TileMoving extends StatefulWidget {

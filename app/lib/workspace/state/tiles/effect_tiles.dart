@@ -1,4 +1,4 @@
-// Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/design/alight_motion_ui.md).
+// Every effect on the shelf has a tile that shows what it does
 // AbsentMotion shows each effect from a table written beforehand (tools/effect_showcase.json). Here the effect file itself tells the tile what to
 // show, so a file the user puts in needs no table line and no developer. What is read from the file (engine/document/scripts/recipes.h, isf_tags):
 // - A transition's progress goes from 0 to 1. An effect that runs by the clock, or keeps its previous frame, is left to run.
@@ -13,7 +13,6 @@
 // anything else on the photo layer. Pictures are shrunk with sips (192 px); moving ones are JPEG from ffmpeg. They are compared with the sample's
 // own pictures using ffmpeg's psnr. If the effect changes nothing (over 40 dB: helpers of other scripts, PSD ones, scripts that stop on a call
 // not supported yet), the tile is marked `home.same` and the shelf says so.
-//
 // The user's own folder is watched while the app is open (dart:io watch, FSEvents on a Mac). When a file is put in or taken out there, the
 // shelves are read again (docs/app/BRIDGE.md rule 8) and its tile is drawn ahead of the rest.
 import 'dart:async';
@@ -66,7 +65,7 @@ abstract final class EffectTiles {
   /// How wide a tile's pictures are read. A picture drawn again under its own name is evicted at this width, or Flutter's image cache shows the old one.
   static const readWide = tileReadWide;
 
-  /// The times its pictures are drawn at (AbsentMotion's 16 at 12 per second), and the index of the still: well into the motion.
+  /// The times its pictures are drawn at, and the index of the still: well into the motion.
   static final moments = tileMoments;
   static const still = tileStill;
 

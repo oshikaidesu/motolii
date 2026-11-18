@@ -1,6 +1,5 @@
 // skia_path_operations.cpp: Path operations on 2D shapes, implemented with
 // Skia.
-//
 // Cavalry draws its shape paths with the same Skia code. The functions here
 // provide:
 //   - Boolean operations on two paths: union, difference, intersection and
@@ -13,10 +12,8 @@
 //   resampling,
 //     trimming, placing points along a path, and voxelizing.
 //   - Hit testing against a path.
-//
 // Editing SVG path data like a pen tool (anchors, handles, adding and removing
 // points) is in skia_svg_edit.cpp.
-//
 // This file is separate from the rest of the canvas code because Skia's headers
 // declare many names that would clash with ours. Only the functions declared in
 // path_operations.h are visible to the rest of the engine. Built by skia.sh.
@@ -160,7 +157,7 @@ bool sk_rough(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
          tvg_of(built.detach(), outCmds, outPts);
 }
 
-// Morphs path A (ac, ap) into path B (bc, bp), as Cavalry's Morph does. `t` is
+// Morphs path A (ac, ap) into path B (bc, bp)
 // the progress from 0 for A to 1 for B. Each outline is sampled at 256 evenly
 // spaced points with Skia's contour measure. Two closed outlines are made to
 // run in the same direction, and B starts at the point nearest to the start of
@@ -258,7 +255,7 @@ int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   return (int)out.size() / 8;
 }
 
-// Resamples a path into straight lines, as Cavalry's Resample Path does. Each
+// Resamples a path into straight lines
 // outline is walked at `n` evenly spaced points with Skia's contour measure, so
 // curves become polygons and every outline has the same number of points.
 // Returns false if the result is empty.
@@ -318,7 +315,7 @@ bool sk_trim(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   return !outCmds.empty();
 }
 
-// Finds `n` places along a path, evenly spaced by length, as Cavalry's
+// Finds `n` places along a path, evenly spaced by length
 // Duplicator does on a shape's outline. All outlines are treated as one path,
 // one after another. On a closed path the last place does not coincide with the
 // first. The places are shifted along the path by `from`, a fraction of the
@@ -356,7 +353,7 @@ int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
   return (int)out.size() / 3;
 }
 
-// Replaces a path with squares of side `cell`, as Cavalry's Voxelize does. A
+// Replaces a path with squares of side `cell`
 // square is included when the middle of its grid cell lies inside the path. The
 // path is scan-converted onto the grid with SkRegion, where a pixel is inside
 // if its center is. The grid has at most 256 cells on a side, so `cell` is

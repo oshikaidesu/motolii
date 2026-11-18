@@ -83,7 +83,7 @@ extension WorkspaceMenuItems on WorkspaceState {
   ) => PlatformMenu(
     label: 'Edit',
     menus: [
-      // Undo's label picks up what the last change touched ("Undo: Stage distance"), as After Effects and
+      // Undo's label picks up what the last change touched ("Undo: Stage distance")
       // Premiere Pro name undo steps. Redo's label stays plain, because the engine does not report the next
       // forward step; the `ws.notice` after a redo spells out what came back.
       PlatformMenuItemGroup(

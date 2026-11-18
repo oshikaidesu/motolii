@@ -64,12 +64,10 @@ std::string find_utf8(const std::u32string& s) {
 // is Japanese WordNet from NICT, in third_party/wordnet_ja/ja_en.tsv, cut from
 // its wnjpn.db as its SOURCE.txt describes. The ja_en.tsv files in the words
 // folders of the shelves add to it, see doc_folders.
-//
 // Katakana is turned into hiragana; the two Unicode blocks are 0x60 apart. At
 // each position the longest dictionary word is taken, as a dictionary's longest
 // match. A kana alone, such as a particle, is not a word. Letters of other
 // scripts are not looked up, because an English word typed is for RapidFuzz.
-//
 // Returns one list of English words for each Japanese word found. The result is
 // empty if the query is not Japanese or no word of it is known.
 std::vector<std::vector<std::string>> find_english(const std::string& query) {
@@ -127,7 +125,6 @@ std::vector<std::vector<std::string>> find_english(const std::string& query) {
 // nearest first, one per line as "id\tscore\n". `items` has one item per line
 // as "id\tname and label\twhat it does". At most `limit` results are returned,
 // or 5 when `limit` is 0. Nothing of the project is read.
-//
 // A query with Japanese words is translated by find_english and searched as a
 // search engine searches a query widened by synonyms. The English words of each
 // Japanese word are joined by OR, and the words are joined by AND. If that
@@ -135,7 +132,6 @@ std::vector<std::vector<std::string>> find_english(const std::string& query) {
 // FTS5 with the porter tokenizer, so "melt" finds "melts", ranked by bm25. An
 // English word that is in many items, such as mix or level, therefore weighs
 // less than one that is in few, such as melt or afterimage.
-//
 // Any other query goes to RapidFuzz, MIT license, in third_party/rapidfuzz,
 // used as its process.extract does, without a score cutoff. The name is scored
 // with WRatio, which is extract's default scorer. What the item does is a

@@ -1,6 +1,5 @@
 // Selection gestures for the app's text fields: a click places the caret, a double-click selects a word, a drag selects a range
 // and a Shift-click extends it.
-//
 // This wraps Flutter's TextSelectionGestureDetectorBuilder around the field the way TextField wraps its EditableText
 // (see material/text_field.dart in Flutter: buildGestureDetector, translucent behavior, EditableText keyed by the delegate,
 // rendererIgnoresPointer). A bare EditableText only places the caret and cannot select a word by double-click.
@@ -38,7 +37,6 @@ class _TextGesturesState extends State<TextGestures>
 }
 
 /// The app's single text field for typing.
-///
 /// [onDone] is called once when the user leaves the field, with the typed text. Return leaves with the text; Esc cancels,
 /// restores the old text and passes null. The field owns its controller and focus node. The caller only decides whether it is shown.
 class TypedField extends StatefulWidget {

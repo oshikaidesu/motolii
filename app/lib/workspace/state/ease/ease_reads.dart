@@ -17,7 +17,6 @@ Map<String, double> easeKeysAt(WorkspaceController ws, int layer, int from) => {
 
 /// The easings of the document that the eight built-in tiles do not cover (Elastic, Cyclic, Random, Steps,
 /// ElasticSteps and any the document defines), each as an [Ease] whose curve is sampled from the engine.
-///
 /// The result is recomputed only when the document is read again, so a newly defined easing shows at once.
 final _untiledOf = Expando<(String, List<Ease>)>();
 List<Ease> easingsWithoutTile(WorkspaceController ws) {

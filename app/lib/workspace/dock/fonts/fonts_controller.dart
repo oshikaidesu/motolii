@@ -17,7 +17,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 export 'package:motolii/storage/font_recent.dart' show fontRecentAt;
 
 /// The size in pixels of a font's dot on the map.
-///
 /// The engine draws each family's sample word into [FontsController.dotsDrawn], because not every font is loaded in
 /// Flutter. The embedding input is that image at half size, where each pixel averages four.
 const fontDotSize = (96, 32);
@@ -127,7 +126,6 @@ class FontsController {
       });
 
   /// The sample text for a font: line 0 is for its dot on the map, and lines 1 and 2 are the two lines FontMap uses for FontCLIP.
-  ///
   /// A font that cannot show Latin letters uses its own sample text. Line 0 is its first word, and lines 1 and 2 are the
   /// two halves of its words. For a script with no spaces between words the halves are of its letters.
   String wordOf(String path, int line) {

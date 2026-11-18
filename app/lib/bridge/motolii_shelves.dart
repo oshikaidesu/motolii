@@ -61,7 +61,6 @@ extension MotoliiShelves on Motolii {
   );
 
   /// The tile image of an effect or motion: a sample of what it does. Empty if none.
-  ///
   /// Look it up by name or by file. A file-based effect can share a name with a built-in one, such as Datamosh and datamosh.wgsl.
   String tileImage(String name) {
     _said();
@@ -168,7 +167,6 @@ extension MotoliiShelves on Motolii {
 
   /// The characters of [words] that the font file lacks (each once, empty if none), and the font that draws them instead
   /// (empty if no font has them all).
-  ///
   /// This is the engine's motolii_font_lacks. It checks the font's cmap and tries Noto Sans JP first.
   (String, String) fontLacks(String font, String words) {
     final said = withStrings(
@@ -183,7 +181,6 @@ extension MotoliiShelves on Motolii {
       withStrings([file], (s) => bindings.motolii_kind_of(s[0]).toDartString());
 
   /// The five items that best match the text the user typed, best first (like RapidFuzz's extract).
-  ///
   /// Each result is an id, name and label, and what the item does. The engine's motolii_find tolerates typos, partial
   /// words and abbreviations. Items scoring below [least] are left out, as with RapidFuzz's score_cutoff (0 keeps all).
   List<String> find(

@@ -24,7 +24,6 @@ double interp_smoothstep(double edge0, double edge1, double x) {
 }
 // Bounce easing. p[0] is the length of the first bounce and p[1] the factor by
 // which each following bounce shrinks. Returns the eased value for progress u.
-//
 // This matches Alight Motion (as implemented in AbsentMotion,
 // absent_motion.cpp) except in one case. Alight Motion does not draw a bounce
 // that would end after the span, however high it is, so the room left at the
@@ -32,7 +31,6 @@ double interp_smoothstep(double edge0, double edge1, double x) {
 // Here a final, lower bounce is fitted into that room, so the value lands on
 // the second keyframe. Its height scales with the room and grows from zero as
 // the room grows.
-//
 // No other tool cuts a bounce short this way: Dan Ebberts' version runs past
 // the second keyframe, and Penner's and GSAP's are fitted to the span. Fitting
 // all bounces, as GSAP does, would lose the length parameter and the stillness

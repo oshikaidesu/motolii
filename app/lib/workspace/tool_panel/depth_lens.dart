@@ -30,7 +30,6 @@ class DepthLens {
 final depthLenses = Expando<DepthLens>();
 
 /// Reads the first camera layer of the document into [lens] and returns its layer id and its distance from the eye.
-///
 /// The focus is stored in canvas points measured from the eye. When the camera has no focus value, the focus is the eye distance.
 /// Returns null when the document has no camera.
 ({int camera, double eye})? depthLensOf(

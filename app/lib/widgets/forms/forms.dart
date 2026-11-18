@@ -1,9 +1,7 @@
 // The app's controls, headless in the manner of React Aria and Radix.
-//
 // The app decides what a control is and does: its label, its value, what a press does.
 // A skin's [Forms] decides how it looks and how it is put together, in Dart.
 // Press, hover, focus and selection are handled by naked_ui, so a form only draws and never reimplements behaviour.
-//
 // A skin names its forms in theme.xml, for example <Forms Value="poster"/>.
 // A new form is a file in lib/widgets/forms plus a line in [forms]. Saved while the app runs through live.sh, it shows at once.
 import 'package:flutter/widgets.dart';
@@ -56,7 +54,6 @@ class SwitchSpec {
 }
 
 /// A card of the inspector.
-///
 /// It carries the title, the colour of its kind, whether it is open, the callback that toggles it, a widget at the end
 /// of the header, and the body rows. [head] and [own] are the app's default header and the whole default card.
 class CardSpec {
@@ -130,7 +127,6 @@ class TrackSpec {
 }
 
 /// How a skin draws the app's controls.
-///
 /// Dragging a number, typing it and dragging a timeline row stay in the app. A form is given the pieces and returns the widget.
 abstract class Forms {
   const Forms();
@@ -164,7 +160,6 @@ abstract class Forms {
   Widget number(BuildContext context, NumberSpec n) => usualNumber(context, n);
 
   /// The bar of a layer in the timeline: its fill colour, height and corner radius, and the band behind its row.
-  ///
   /// The bar keeps its kind colour, as clips do in Ableton, and is a little lighter when selected.
   Color trackFill(Color kind, {required bool dim, required bool selected}) =>
       dim

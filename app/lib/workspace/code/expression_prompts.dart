@@ -2,7 +2,6 @@
 // expression may use here, each with how it is written and what it does.
 // The names are the Functions list's, from the reference and what the running expression has
 // (expression_reference.dart), so the two cannot disagree.
-//
 // The editor (code_forge, shelf/code_field.dart) lists the names said alone among its own completions. Its list
 // cannot be drawn by another, so the list drawn here, with what each name does under it and the names after an
 // object (`thisComp.`), is not shown yet.

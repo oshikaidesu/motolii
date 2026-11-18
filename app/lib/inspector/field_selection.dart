@@ -5,11 +5,9 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:motolii/widgets/picks.dart' show pickOnClick;
 
 /// The number fields of the Inspector that are selected together, so that an edit of one changes them all.
-///
 /// Shift-click selects a rectangle of the grid of fields, one row per card with its fields in order, like a spreadsheet.
 class FieldSelection {
   /// Creates an empty selection.
-  ///
   /// [rows] gives the ids of the fields, one list per card; it is read once, at the first [pick].
   /// [onChanged] is called whenever what shows as selected changes.
   FieldSelection({required this._rows, required this._onChanged});

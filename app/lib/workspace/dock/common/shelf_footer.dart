@@ -9,7 +9,6 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The footer of a shelf: the selected item (preview, name, facts), where it would go (the selected layer), and its one action.
-///
 /// A double-click anywhere on the footer runs the action, the same way a
 /// shelf tile's double-click does, so the user can apply without aiming at
 /// the small button. (B149, for Fonts and the other shelves that reuse this.)

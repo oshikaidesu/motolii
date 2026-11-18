@@ -1,5 +1,5 @@
 // The Source card's inside: a filmstrip of the video's file, with the in-point (begin) marked where play starts.
-// Take the marker along the strip to slip the clip, as Premiere Pro's Slip and the pale bar in Motolii's timeline do.
+// Take the marker along the strip to slip the clip
 // The "In" number stays below as the card's tile, so a value may also be typed.
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';

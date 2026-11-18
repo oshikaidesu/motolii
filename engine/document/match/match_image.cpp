@@ -178,7 +178,7 @@ void edged_photo(LayerBuild& build, float aspect, bool cropped, double cl,
                     (float)doc_number(d, layer, "round", 0, 0));
 }
 
-// Stand up its 3D layers where they are, as After Effects shows them.
+// Stand up its 3D layers where they are
 void deep_layers(LayerBuild& build) {
   Stage& s = build.s;
   DocShownLayer& made = build.made;

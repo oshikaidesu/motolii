@@ -1,9 +1,7 @@
 // The one gesture gateway. Every continuous drag — carry or live writes — goes through here, so the undo step has one
 // owner and Escape / pointer loss / dispose all have one cancel path.
-//
 // Carry: the engine holds values in memory, updates are coalesced and cheap, one commit at release. Used by the stage
 // (move, resize, rotate, crop), bar drag/trim/slip and depth.
-//
 // Live writes: each step writes to SQLite and `show`s the result. Used by keyframe slide, Ease, colours, inspector
 // words and the transform pad.
 import 'package:motolii/bridge/motolii.dart';

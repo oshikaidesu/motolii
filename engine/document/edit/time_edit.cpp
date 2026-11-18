@@ -24,7 +24,7 @@ namespace motolii {
 
 namespace {
 
-// Moves every animated property of `layer` by `by` seconds, as After Effects
+// Moves every animated property of `layer` by `by` seconds
 // moves a layer's keyframes. A property counts as animated if it has more than
 // one keyframe, a keyframe that is not at time 0, or an easing. A property with
 // a single keyframe at time 0 and no easing is a constant and stays. Returns
@@ -82,7 +82,7 @@ int doc_split(Doc& d, int layer, double at) {
   // run.
   if (const double on = doc_own_clock(d, layer, at - start); ok && on != 0.0)
     ok = doc_set(d, made, "begin", doc_number(d, layer, "begin", 0, 0) + on);
-  // Place the later part directly above the earlier part, as After Effects'
+  // Place the later part directly above the earlier part
   // Split Layer places the new layer.
   ok = ok && doc_lay_above(d, made, layer);
   return doc_acted(d) && ok ? made : 0;

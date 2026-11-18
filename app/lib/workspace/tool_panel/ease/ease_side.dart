@@ -186,7 +186,7 @@ void _drawReverse(Canvas c, Size s, Color ink) {
   );
 }
 
-/// The arrow in a bottom corner of the graph that moves to the previous or next curve (AbsentMotion's StretchButton).
+/// The arrow in a bottom corner of the graph that moves to the previous or next curve.
 class EaseStep extends StatelessWidget {
   const EaseStep({super.key, required this.span, required this.back});
   final EaseSpan? span;

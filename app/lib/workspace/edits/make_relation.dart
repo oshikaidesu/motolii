@@ -1,5 +1,4 @@
 // Relations between layers selected together (WorkspaceController.many).
-//
 // Making a relation adds a behaviour layer written as a file in relations/*.js and puts the selected layers in it as
 // they look now: their order, and what each was in before. A file that has a Leader makes the first layer selected its
 // leader, when the layers were selected one by one.
@@ -27,7 +26,6 @@ List<int> relatableLayers(WorkspaceController ws) => [
 ];
 
 /// The layers an expression goes on as a row: the layers selected together, or the layers in the picked group.
-///
 /// Fewer than two means none: the expression goes on the picked layer, as a card of its own.
 List<int> expressionRow(WorkspaceController ws) {
   final picked = ws.selected;
@@ -42,7 +40,6 @@ List<int> expressionRow(WorkspaceController ws) {
 }
 
 /// Makes a relation of [kind] from the layers selected together, or from [of] when given.
-///
 /// [kind] is a file in relations/*.js, or any file with each(i, n, t, k): layer i of the row is then copy i of n.
 void makeRelation(WorkspaceController ws, String kind, {List<int>? of}) {
   final who = of ?? relatableLayers(ws), ordered = of == null && ws.manyInOrder;

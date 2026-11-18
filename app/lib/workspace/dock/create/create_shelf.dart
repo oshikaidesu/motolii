@@ -283,7 +283,7 @@ bool _isRecipe(ShelfContext c, String name) {
 }
 
 /// A tile for an item the user added or pasted, with Rename… on its menu (library tiles have none), and for pasted
-/// code a way to its file, as Live's browser has (Live 12 manual, 4.2.1, 4.5 and 4.7.7).
+/// code a way to its file
 /// The new name is stored beside the file and never changes the file (shelf_add.dart shelfRename).
 class _OwnTile extends StatefulWidget {
   const _OwnTile(this.m, this.c, {super.key});

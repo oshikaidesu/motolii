@@ -80,7 +80,7 @@ class TileStudio extends TileStage {
     small = alone == 0 && TileReview.entry(dir, f)['_lay'] == 'small';
     if (small) m.set(photo, 'size', 0.6);
     for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {
-      // Nothing shows on the whole photo, so use a card moving past, where its edge and motion effects show (AbsentMotion's "move").
+      // Nothing shows on the whole photo, so use a card moving past, where its edge and motion effects show.
       // A transition goes on the photo with the road under it. So does an effect that shows what is behind (rain on a pane over
       // nothing was black) and one for cut-outs, which gets its card over the road: a glass or a shape needs a background to refract.
       final passes =

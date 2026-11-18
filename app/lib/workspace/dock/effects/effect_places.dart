@@ -127,7 +127,6 @@ class EffectPlacesState extends State<EffectPlaces> {
   }
 
   /// Adds a new deck and starts editing its name at once, like a new bin in Premiere or a new folder in Finder.
-  ///
   /// [thing] is put in the new deck. The list of decks on an effect ends in this entry, as with YouTube's Save
   /// and Spotify's Add to Playlist. [words] is saved as the deck's search, so effects that appear later join it too
   /// (Lightroom's Create Smart Collection, Ableton's Add Label). When made from the +, the new deck is opened.
@@ -429,7 +428,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                     if (widget.mapped && c.mem.fxPlace == '@${d.name}')
                       _held(d),
                   ],
-                  // The effects bundled by their authors, collapsed, like Ableton's Packs.
+                  // The effects bundled by their authors, collapsed
                   _row(
                     'Packs',
                     open: open,

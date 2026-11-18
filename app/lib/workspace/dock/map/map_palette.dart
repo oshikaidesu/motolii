@@ -8,13 +8,11 @@ import 'package:material_color_utilities/material_color_utilities.dart'
 
 /// A colour for each item, by where it lies on the map, following DataMapPlot
 /// (TutteInstitute/datamapplot 45a0123, datamapplot/palette_handling.py; MIT).
-///
 /// This is palette_from_datamap with every item as its own label, as its interactive plot does (create_plots.py):
 /// - The hue goes round the map's middle by angle, spaced by distance from the middle (radius_weight_power 1).
 /// - Chroma runs from 20 to 90 and lightness from 80 down to palette_min_lightness, outward from the middle among the
 ///   items in the same sector (theta_range π/16).
-/// - The result goes through pastel_palette (degree 2), as DataMapPlot's dark mode does.
-///
+/// - The result goes through pastel_palette (degree 2)
 /// palette_min_lightness is 30, not DataMapPlot's 10: at 10 the outermost 45 of 328 fonts fell below the 3:1 contrast
 /// that WCAG 2.1 (1.4.11) requires for graphics against the map's background. JCh comes from CAM16
 /// (material_color_utilities), where colorspacious uses its predecessor CIECAM02.

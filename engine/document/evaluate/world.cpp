@@ -182,7 +182,7 @@ namespace {
 // stands and adds to the speed. This is the contract of d3-force: "read the
 // node's current position and then add to the node's velocity", so d3's own
 // forces run unchanged. What each relation adds is weighted by its Strength and
-// Falloff (Cavalry's Falloff is a multiplier on Strength). The weighted
+// Falloff. The weighted
 // additions are summed, as the POP Solver's microsolvers "accumulate forces",
 // and the world then moves each layer by its speed once, as d3-force's tick
 // does. A rule can therefore change without a jerk, because the speed carries
@@ -194,7 +194,6 @@ namespace {
 // that is this file's own earlier behavior; Houdini's would coast. A plain
 // relation between two layers that push is passed over, and the world stands on
 // what is under the lowest one.
-//
 // Layout of the values for each layer. "Told" is the input sent to the scripts:
 // the values in doc_relate_names, then the speed. "Kept" is what is cached per
 // frame: the 8 values the layer shows, its position, its speed, and the

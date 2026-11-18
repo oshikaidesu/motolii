@@ -1,10 +1,9 @@
 // Easings stacked as cards.
-//
 // - Pressing a preset replaces the selected card. Dropping one on the graph or the flow adds it. Dragging a card out removes it.
 // - Each card acts on the result of the cards above it, according to its kind:
 //   - Most cards map the value through themselves, like GSAP's timingEase and Blender's modifier stack. Steps cards do this too.
 //   - Wave cards scale with the result above, like GSAP's amplitudeEase.
-//   - Shake cards add to the result above, like Blender's Noise modifier.
+//   - Shake cards add to the result above
 // - Between two cards the flow shows which of these applies: an arrow, a x or a +.
 // - The document stores the stack as one custom easing built from `way()` (document/undo.h),
 //   so it is saved, undone and listed like any other easing.
@@ -26,7 +25,6 @@ import 'package:motolii/widgets/media.dart' show Draw;
 const _all = -1;
 
 /// The flow of cards, top to bottom, each acting on the result above it (like Blender's modifier stack).
-///
 /// - An empty dashed slot under the last card shows that another can be added, as in Monster Train.
 /// - The combined result is shown small at the foot. Selecting it makes the graph show the whole stack, which has no handles.
 /// - Selecting a card makes the graph show that card with its handles.

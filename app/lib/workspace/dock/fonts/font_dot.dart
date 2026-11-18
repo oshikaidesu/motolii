@@ -15,7 +15,6 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// A font's dot on the map, inked by where it lies on the [map] (see [ShelfMap.paletteOf]).
-///
 /// Unlike the effect thumbnails, a word is a single ink, so colour can tell which island of fonts it belongs to.
 /// FontMap colours fonts by category in the same way.
 class FontDot extends StatefulWidget {

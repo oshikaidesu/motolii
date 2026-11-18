@@ -39,7 +39,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The stage viewport.
-///
 /// It draws the scene, handles pointer input for selecting, moving and drawing layers, and reports the pointer position.
 class StageView extends StatefulWidget {
   const StageView({
@@ -62,7 +61,7 @@ class StageView extends StatefulWidget {
   /// The engine's image of the stage as a Flutter texture id. When null, the stand-in art is painted.
   final int? texture;
 
-  /// A still image taken earlier (After Effects' Take Snapshot), laid over the stage while it is shown.
+  /// A still image taken earlier, laid over the stage while it is shown.
   final String? snapshot;
   final ArtScene scene;
   final int? selected;

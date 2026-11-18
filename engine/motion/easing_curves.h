@@ -2,14 +2,12 @@
 #define MOTOLII_MOTION_EASING_CURVES_H_
 
 // Easing kinds: how a value moves between two keyframes.
-//
 // The nine kinds are those of Alight Motion (help center, "Animation Easing
 // Curves": Cubic Bezier, Bounce, Elastic, Cyclic, Random, Steps, Elastic Steps,
 // plus Hold and Linear). They were ported unchanged from an earlier Motolii
 // implementation (rust_ae/Motolii, motolii/crates/motolii-doc/src/eval/track.rs
 // and bezier.rs), keeping the same names, parameter order, formulas and
 // rejected parameter values.
-//
 // interp_ease() takes u, the progress through the span between two keyframes (0
 // to 1), and returns how far the value has moved from the first keyframe's
 // value to the second's. The result is 0 at the start and 1 at the end (Cyclic
@@ -38,7 +36,6 @@ struct Interp {
   double p[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 };
 // Describes each kind, indexed by Interp::Kind.
-//
 // name: the kind's name. numbers: how many parameters it has. names: the
 // parameter names, separated by spaces. usual: the default parameters, used
 // when none are given. lo and hi: the range the editor allows for each
@@ -79,7 +76,7 @@ inline const struct {
      {0, 0, 0, 0, 0, 0},
      {1, 1, 1, 1, 1, 1}},
     // Steps: the default length of 0.25 gives four steps, the last reaching 1
-    // at the end, as in Alight Motion (screenshot 135 in
+    // at the end
     // docs/design/alight_motion_ui.md). The earlier implementation's 0.178 gave
     // six steps.
     {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},

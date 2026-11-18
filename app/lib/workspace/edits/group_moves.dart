@@ -1,12 +1,10 @@
 // Moves of the Move in relation (relations/Group.js): layers animate in or out together.
-//
 // A move is defined by:
 // - which layers it moves, in order;
 // - when it runs: two keyframes on the group's strength, with each layer starting one lag after the previous one;
 // - where it goes: the relation's own x, y, spread, scatter, size, opacity and rotation are one end, the layers' own
 //   positions the other;
 // - the easing between the two keyframes.
-//
 // The move is read from the document and queued on the engine without waiting. The position of a layer at the other
 // end is asked of the engine (where it shows at full strength) and is never computed here.
 import 'package:motolii/workspace/state/engine_access.dart';
@@ -26,7 +24,6 @@ String groupMoveName(WorkspaceController ws, Iterable<int> who, bool coming) {
 }
 
 /// Makes a move of the layers [who] as one undo step and selects it.
-///
 /// The layers come in at [start] from a little below, transparent, each a little later than the one before.
 /// Layers that already come in through another move go out through this one instead.
 /// A move made later in the video leaves the earlier part alone.

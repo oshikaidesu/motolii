@@ -410,7 +410,7 @@ double motolii_point(Motolii* m) {
 }
 // Returns how the app reads a property of the layer, as "times from": the app
 // shows the value times `times` plus `from`. Places are counted in points of
-// the image from its top left corner, as After Effects counts them. Scale and
+// the image from its top left corner
 // opacity are in hundredths. The turn about z is clockwise; a camera's turns
 // are as they are, and its pitch looks down. The anchor is in hundredths of the
 // box from its top left, front -50 to back 50. A camera's distance is in points

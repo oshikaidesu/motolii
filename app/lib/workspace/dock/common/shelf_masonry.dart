@@ -5,7 +5,6 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/grid_columns.dart';
 
 /// A shelf's sections as cards in one column while the shelf is narrow.
-///
 /// As the shelf widens, columns of at least 300 px stand side by side, and each section goes to the shortest column so far.
 /// [weights] estimate the section heights, in rows.
 class ShelfMasonry extends StatelessWidget {

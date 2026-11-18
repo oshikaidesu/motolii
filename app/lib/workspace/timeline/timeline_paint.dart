@@ -46,8 +46,7 @@ class TimelineRow {
   final (int, int)? whole; // The whole length of a video as it lies, cut or not: the pale slip-edit bar of After Effects.
   final List<Stretch> stretches; // The easing of each stretch between keyframes, drawn between them.
 
-  /// A property's own lane in place of a bar, as Ableton's automation lane.
-  ///
+  /// A property's own lane in place of a bar
   /// Holds each keyframe's frame and where its value stands between the lowest and highest value of the property's
   /// keyframes (0 to 1). Null for a layer's row.
   final List<(int, double)>? lane;
@@ -68,7 +67,7 @@ class TimelineRow {
   final List<int> keys;
   final Set<int> picked;
 
-  /// [clipped] means the layer is cut to the layer under it; a mark before its name shows this, as in Alight Motion.
+  /// [clipped] means the layer is cut to the layer under it; a mark before its name shows this
   final bool selected, dim, locked, clipped;
   @override
   bool operator ==(Object other) =>
@@ -122,7 +121,6 @@ double markerFlagWidth(String name) =>
     lineText(name, TextStyles.micro(Grey.g13).bold).width + 8;
 
 /// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
-///
 /// Logic Pro likewise shows a marker's name only as far as the following marker. [xs] holds the x of every marker.
 double markerFlagRoom(String name, double x, Iterable<double> xs) {
   final next = xs
@@ -135,7 +133,6 @@ double markerFlagRoom(String name, double x, Iterable<double> xs) {
 // ---------------------------------------------------------------- tracks
 
 /// Paints the playhead: a thin line with a small head.
-///
 /// Repaints from [viewport] and [moment] via [repaint], so a scroll and the advancing playhead repaint without
 /// rebuilding the timeline's widgets.
 class TimelinePlayheadPainter extends CustomPainter {
@@ -242,9 +239,8 @@ class TimelineOverviewPainter extends CustomPainter {
 
 // ---------------------------------------------------------------- kind chip
 
-/// A row's small thumbnail, as Alight Motion shows at the left of each row
+/// A row's small thumbnail
 /// (screenshots 95 and 106 in docs/design/alight_motion_ui.md).
-///
 /// An image or video layer shows its image, a shape shows its form in its own fill, and other kinds show the mark of
 /// their kind. Alight Motion's camera and audio are marks too. Its screenshots show no text thumbnail, so text keeps its mark.
 class TimelineThumbnail extends StatelessWidget {

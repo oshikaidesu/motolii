@@ -2,7 +2,6 @@
 #define MOTOLII_MOTION_EASING_NAMES_H_
 
 // Named easings that use Cavalry's Magic Easing names.
-//
 // Each entry is an expression of u, the progress through the span between two
 // keyframes (0 to 1), and evaluates to how far the value has moved (0 at the
 // start, 1 at the end). The same table is used by keyframe evaluation

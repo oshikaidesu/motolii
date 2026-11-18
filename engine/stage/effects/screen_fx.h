@@ -7,11 +7,9 @@
 // the parameters in one `var<uniform>` struct. The parameters are declared in
 // the leading comment lines of the file, as a script's are (see script.h, for
 // example "// --track@name:...").
-//
 // The stage draws its image into a texture of its own instead of the screen,
 // and the effect draws that texture to the screen through Filament's driver
 // (see gpu/screen_interop.h), in order with the stage's other images.
-//
 // A struct member that the leading comments do not declare is filled in by the
 // stage when it has one of these names: `time` (seconds), `frame` (frame number
 // at 60 per second), `aspect` (width over height), `resolution`, `width` and
@@ -82,7 +80,6 @@ struct ScreenFx {
   bool alpha = false;
   // ISF passes are drawn in turn (see the parameter `pass`). Each pass draws
   // into a target owned by the effect or, for the last pass, to the output.
-  //
   // A target is double-buffered: one texture is read while the other is drawn
   // into, then they swap. A persistent target keeps its last image, which is
   // read on the next frame. A `fine` target uses a 16-bit float format. The
@@ -189,7 +186,6 @@ struct ScreenStack {
   double thingSeen[4] = {0, 0, 0, 0};
   // Where the layer itself lies, in the form of `frame`. A generator paints
   // only there, so this is what it measures by, like the width and height of
-  // After Effects' PF_InData.
   double own[4] = {0, 0, 1, 1};
   // For a layer: the rectangle (left, top, width, height, each a share of the
   // image) that its effects measure by, inside the larger image they draw on.
@@ -218,7 +214,7 @@ struct ScreenStack {
   // Draws an image unchanged, for an effect whose last pass draws into its own
   // target.
   interop::Screen* copy = nullptr;
-  // A layer's effects as steps in order, like After Effects' effect stack (see
+  // A layer's effects as steps in order
   // thing_effects_draw in layer_fx.h). A step of 0 is the next entry of `fx`,
   // drawn by Filament; 'a' is an AviUtl2 script.
   std::vector<char> steps;

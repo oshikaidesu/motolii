@@ -26,13 +26,11 @@ class ColorPalette {
 }
 
 /// A gradient: its colors run down the layer as a straight linear ramp. Linear or radial is chosen in the inspector.
-///
 /// [blend] is how the colors are mixed between stops, and it is saved with the gradient:
 /// - rgb
 /// - oklab: the way an eye mixes, with no muddy middle between blue and yellow
 /// - hue: around the hue circle
 /// - steps: each color is held until the next
-///
 /// The engine does the mixing (gradient_blend, CSS Color 4's color-interpolation-method).
 class ShelfGradient {
   const ShelfGradient(

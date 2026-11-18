@@ -30,7 +30,6 @@ typedef FontsRead = ({
 /// Reads the font files the engine can set text in: the fonts of this machine, the bundled fallback font, the user's own and
 /// the document's folder. A font is named after its file. A collection (.ttc) is one row and only its first face is used,
 /// because ThorVG sets no other (see thorvg_ttc.patch).
-///
 /// A font that can set [sampleLine] is offered with that line. A font with other letters is offered with a sample in its
 /// own script, as fonts.google.com does (samples.json, from Google Fonts' gflanguages), so the user never sees
 /// missing-glyph boxes. The bundled fonts and the user's own are offered as well.
@@ -182,7 +181,6 @@ String fontKindOf(WorkspaceController ws, String path) {
 }
 
 /// Embeds each font with FontCLIP ([model]) from a specimen image drawn as FontMap draws it for FontCLIP.
-///
 /// FontMap's code is tfrere/fontmap, pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG. The specimen has
 /// "Hamburge" over "fonstiv" in a 224 pixel square with a 12 pixel margin. Each line fits in its half, at most 200 wide
 /// and 85 tall, is set at size 75 or smaller and is centred on its half. The text is black on white.

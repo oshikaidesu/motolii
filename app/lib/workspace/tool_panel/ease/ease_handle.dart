@@ -1,4 +1,4 @@
-// Draggable handles on an easing curve, ported one for one from AbsentMotion's Keyframes.kt (Alight Motion's easing kinds).
+// Draggable handles on an easing curve, ported one for one from AbsentMotion's Keyframes.kt.
 // The Kotlin is ported rather than run because Kotlin does not run in this app.
 // A yellow handle changes the shape of the curve; a white one marks where the curve starts and ends.
 // Each handle carries the function that turns its new position into the changed easing.
@@ -54,7 +54,7 @@ double _legal(double v, double lo, double hi) => v.clamp(lo, hi);
 /// The handles of an easing. Bezier has its two control points; the other kinds take theirs from the numbers in the name.
 List<EaseHandle> easeHandles(Ease e) {
   if (easeIsTurned(said(e))) {
-    // A reversed easing uses the handles of the original, flipped end for end, as AbsentMotion's handles() does.
+    // A reversed easing uses the handles of the original, flipped end for end
     return [
       for (final h in easeHandles(heard(easeTurn(said(e)))))
         EaseHandle(
@@ -333,7 +333,7 @@ List<EaseHandle> easeHandles(Ease e) {
   return const [];
 }
 
-/// The vertical range the graph shows for an easing, as in AbsentMotion's EasingPanel.kt geoOf.
+/// The vertical range the graph shows for an easing
 (double, double) easeReach(Ease e, [bool overshoot = false]) => overshoot
     ? (-2, 3)
     : easeIsTurned(said(e))

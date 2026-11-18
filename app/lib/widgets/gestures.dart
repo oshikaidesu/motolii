@@ -1,6 +1,5 @@
 // The numbers of [docs/app/GESTURES.md] section 12, read by every part so the
 // document and the code never drift apart (UAT 188–191).
-//
 // Add a value here instead of writing it in a part. If a part needs a value
 // that is not here, add it here first with the same name as in the document.
 import 'package:motolii/skin/tokens.dart';

@@ -22,7 +22,6 @@ class CodeFile {
   String get plain => '$form $tail'.trim();
 
   /// The display name: the user's own name if set, otherwise what the file says about itself.
-  ///
   /// That is the site title adapter_net.h wrote at the head of the file, or the description of a multi-tab file.
   String get name {
     try {
@@ -91,7 +90,6 @@ class CodeFile {
 }
 
 /// The user's code files, most recently written first.
-///
 /// A Hydra or p5 source is hidden when the shader it became sits beside it, because that shader stands for it.
 List<CodeFile> codeFiles() {
   final all = [

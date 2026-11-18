@@ -83,7 +83,7 @@ class CreateCommands {
     }
     if (!layerOfTile.containsKey(name)) {
       if (elementFile(c.ws, name) case final e?) {
-        // Added at the playhead, in the middle, and selected, as in AbsentMotion's addElement.
+        // Added at the playhead, in the middle, and selected
         c.ws.after(
           addElement(c.ws, e, c.ws.frame / WorkspaceController.fps),
           _troubled(name),

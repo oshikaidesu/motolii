@@ -20,7 +20,6 @@ String tileHome(String kind, String key) {
 }
 
 /// A queue that draws the tiles of one kind, each requested once, in another isolate.
-///
 /// [draw] draws up to [batch] jobs at a time and returns the paths it drew. With [moving], the frames beside each still
 /// are evicted from the image cache too. [progress] reports how many are drawn out of how many.
 class TileQueue<T> {
@@ -44,7 +43,6 @@ class TileQueue<T> {
   void Function(List<String> homes)? onDrawn;
 
   /// Returns the tile at [home], or '' when it is not drawn yet or the engine could not draw it.
-  ///
   /// [job] is queued once.
   String of(String home, T job) {
     if (existsFile(home)) return home;
@@ -56,7 +54,6 @@ class TileQueue<T> {
   }
 
   /// Queues [job] once per [key], at index [at] or at the end, whatever is on disk (the caller has decided the tile is stale).
-  ///
   /// Returns false when [key] was already requested, or under flutter test, where nothing is drawn.
   bool ask(String key, T job, {int? at}) {
     if (envVar('FLUTTER_TEST') == 'true' || !_asked.add(key)) {
@@ -104,7 +101,6 @@ class TileQueue<T> {
 }
 
 /// Draws each job's tile on a project of its own (1080 square, in a temp folder named from [prefix]) at [homeOf].
-///
 /// [one] draws a single tile. If it returns false or throws, a `.none` file marks that the engine could not draw it.
 /// Returns the paths of the tiles made.
 List<String> drawTiles<T>(

@@ -55,7 +55,6 @@ List<(String, String)> easeDefines(String word) => [
 const easeSteps = 192;
 
 /// The cards stacked as one easing. A single card is returned as it is.
-///
 /// The stack carries both the even samples (to fit the view) and an exact evaluator, so the curve is drawn as steeply as it
 /// really is — a stack of steep beziers is near vertical, and reading it from the samples alone would show it as steps.
 Ease easeLaid(List<Ease> cards) => cards.length == 1

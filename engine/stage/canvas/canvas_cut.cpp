@@ -214,7 +214,7 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
       };
       switch (shape) {
         case 1: {
-          // A circle at the end, like Cavalry's circleHead.
+          // A circle at the end
           put(0.f, 0.f);
           for (int i = 0; i <= 24; ++i)
             put(0.4f * std::cos(TAU * (float)i / 24.f),
@@ -223,13 +223,13 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
             m.idx.insert(m.idx.end(), {k, k + 1 + i, k + 2 + i});
           break;
         }
-        // A square, like Cavalry's boxHead.
+        // A square
         case 2:
           put(0.35f, -0.35f), put(0.35f, 0.35f), put(-0.35f, 0.35f),
               put(-0.35f, -0.35f), quad(k);
           break;
         case 3: {
-          // An open V as thick as the edge, like Cavalry's chevronHead.
+          // An open V as thick as the edge
           const float w = 0.5f * d->edgeWide / l;
           put(0.5f, w), put(0.5f, -w), put(-0.4f, -0.45f - w),
               put(-0.4f, -0.45f + w), quad(k);
@@ -244,7 +244,7 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
               put(-0.5f * d->edgeWide / l, 0.45f),
               put(-0.5f * d->edgeWide / l, -0.45f), quad(k);
           break;
-        // A triangle, like Cavalry's basicArrowHead.
+        // A triangle
         default:
           put(0.5f, 0.f), put(-0.5f, 0.4f), put(-0.5f, -0.4f),
               m.idx.insert(m.idx.end(), {k, k + 1, k + 2});

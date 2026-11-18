@@ -2,7 +2,6 @@
 #define MOTOLII_ENTRY_SNAPSHOT_H_
 // Builds the two JSON snapshots that the app reads (see docs/app/BRIDGE.md).
 // The app reads only these, never the document while it is being built.
-//
 // The render thread builds both while it holds the document, as JSON written
 // with rapidjson (the copy that Filament's assimp ships). Each snapshot is
 // stored whole, and the app is notified through its single listener which
@@ -57,7 +56,6 @@ struct Snapshots {
 
 // Rebuilds the parts of the document snapshot that changed. Runs on the render
 // thread while it holds the document.
-//
 // A layer is rebuilt when its properties changed. Every layer is rebuilt when a
 // layer was added or removed, or when a layer was renamed, because a name
 // determines which cards other layers offer. The document-wide part is always
@@ -67,7 +65,6 @@ void snapshot_update(Motolii* m);
 
 // Rebuilds the time snapshot for the current time. Runs on the render thread
 // while it holds the document, whenever the time is set.
-//
 // For each layer it holds the bounding box, the box as seen, the gizmo, and the
 // transform values as the stage shows them. For the selected layer and the
 // layers the app watches it also holds the values that move at this time. For

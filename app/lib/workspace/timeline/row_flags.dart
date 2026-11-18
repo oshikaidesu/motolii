@@ -4,7 +4,6 @@ import 'package:motolii/workspace/state/media/timeline_service.dart'
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The hidden, solo and locked switches of the layers of a workspace, and the commands that turn them.
-///
 /// Solo and lock are stored in the project, as in After Effects. Reading a switch reads the last snapshot of the
 /// project, so no engine call is made while a row is built.
 class RowFlags {
@@ -15,7 +14,6 @@ class RowFlags {
   final WorkspaceController workspace;
 
   /// Whether the layer [id] is hidden.
-  ///
   /// Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas.
   bool isHidden(int id) => workspace.layers.any((l) => l.id == id && l.hidden);
 

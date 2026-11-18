@@ -136,7 +136,6 @@ struct DocCopyMaterials {
 // camera and lens, layer order and depth sorting, scenes, per-layer materials
 // and copies, lights, clipping and the 3D layers of imported After Effects
 // compositions.
-//
 // A text layer whose words no longer fit, or a cel layer whose drawing changed,
 // is rebuilt with doc_match and evaluation stops there. Nothing in the document
 // is modified.

@@ -75,7 +75,7 @@ class Layer {
   /// relation's layers ('Moves'). Like the Parent & Link column of After Effects.
   final List<(String, int)> links;
 
-  /// Its properties with keyframes (and a sketch's lines), in its own order: each a lane under its row, as in Ableton.
+  /// Its properties with keyframes (and a sketch's lines), in its own order: each a lane under its row
   final List<Lane> lanes;
 
   /// For a group with an intro and outro (its Element card), the frames where the intro ends and the outro starts.

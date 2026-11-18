@@ -1,14 +1,11 @@
 // Compute shader access through Filament's driver.
-//
 // Filament 1.77.2 has no public API for compute shaders or storage buffers. Its
 // WebGPU backend can run them once filament_dawn_compute.patch is applied. This
 // header exposes only that access: a program (WGSL), buffers, a set of buffers
 // bound to a program, and a dispatch. When Filament gets a public API, only
 // compute_interop.cpp needs to change.
-//
 // This code is built inside Filament's own build because it needs the engine's
 // private headers. It is part of libmotolii_door.a; see CMakeLists.txt.
-//
 // Calls are queued like any other Filament call. A `run` issued between
 // beginFrame and the render that uses its result executes in order on the GPU,
 // and nothing waits. `read` is for tests only and waits for the GPU.

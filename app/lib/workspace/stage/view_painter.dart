@@ -76,7 +76,7 @@ class ViewPainter extends CustomPainter {
   /// The selected layer's path over time in canvas coordinates, or null if it does not move or is not read yet.
   final List<Offset>? trail;
 
-  /// The id of the selected layer's parent. Its frame is drawn grey, like Alight Motion's parent outline.
+  /// The id of the selected layer's parent. Its frame is drawn grey
   final int? parent;
   final ArtScene scene;
   final StageViewport v;

@@ -6,7 +6,6 @@ import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
 /// Keeps the values the Inspector edits and the values their owner holds the same, passing each way only what differs.
-///
 /// It remembers what the owner gave or has been told. An edit is reported to the owner once,
 /// and what the owner says replaces what the Inspector shows, except a value that is being dragged.
 class InspectorSync {
@@ -43,7 +42,6 @@ class InspectorSync {
   }
 
   /// Reports through [edits] whatever [doc] holds that the owner has not seen: values, key marks, strings, switches and Animate all.
-  ///
   /// Strings and switches the owner refuses go back to what it last had.
   // During a drag, report only the current values and make no undo step, since nothing is settled.
   void report(InspectorValues doc, InspectorEdits edits) => doc.inGesture
@@ -116,7 +114,6 @@ class InspectorSync {
   }
 
   /// Shows in [doc] the owner's [snapshot], which replaced [previous]. Switches are taken only from an owner that hears of them ([InspectorEdits.onFlags]).
-  ///
   /// Returns true when something changed that no field watches, so the whole panel must be rebuilt to show it.
   bool show(
     InspectorValues doc,
@@ -160,7 +157,6 @@ class InspectorSync {
   }
 
   /// Shows in [doc] the owner's values and key marks at a new time, unless a drag is in progress.
-  ///
   /// Returns true when a value changed that no field watches, such as a choice, so the whole panel must be rebuilt to show it.
   bool showAt(
     InspectorValues doc,

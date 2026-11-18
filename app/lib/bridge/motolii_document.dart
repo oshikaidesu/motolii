@@ -50,7 +50,6 @@ extension MotoliiDocument on Motolii {
   );
 
   /// What the undo steps changed since the last call (calling clears it).
-  ///
   /// `layers` is true when a layer was added or removed. `values` holds each changed property as (layer, name),
   /// taken from each step's changeset.
   ({bool layers, Set<(int, String)> values}) changes() {

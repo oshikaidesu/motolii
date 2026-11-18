@@ -1,5 +1,4 @@
 // Plays an easing when there is no segment to apply it to.
-//
 // It runs once when the easing changes, and repeatedly while the pointer is over the graph, as the curves on easings.net do.
 // It stops by itself, so a panel left alone with nothing picked uses no frames.
 import 'package:flutter/widgets.dart';

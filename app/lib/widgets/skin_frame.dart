@@ -4,7 +4,6 @@ import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/widgets/media.dart' show Draw;
 
 /// A part's frame from the skin: `frame.<name>.svg` stretched around [child].
-///
 /// While [hover] is true, `frame.<name>.hover.svg` is used instead when the skin has it.
 /// Without either picture, [usual] is the decoration.
 class SkinFrame extends StatelessWidget {

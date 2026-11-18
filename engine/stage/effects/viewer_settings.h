@@ -1,7 +1,6 @@
 #ifndef MOTOLII_STAGE_EFFECTS_VIEWER_SETTINGS_H_
 #define MOTOLII_STAGE_EFFECTS_VIEWER_SETTINGS_H_
 // Filament's own settings file as a whole-screen effect on the shelf.
-//
 // The file is the JSON of Filament's libs/viewer, as saved and read by
 // gltf_viewer:
 // {"view": {"colorGrading": {...}, "bloom": {...}, "fog": {...}, ...}} (see

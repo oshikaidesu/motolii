@@ -2,7 +2,6 @@
 #define MOTOLII_ENTRY_CALLS_H_
 // calls.h: the calls of motolii.h that read and change the open project's
 // layers, properties, keyframes, easings, marks and shelf lists.
-//
 // A call that changes the project runs on the render thread through
 // on_render_thread. A call that only reads goes through by_look.
 #include "entry/motolii.h"

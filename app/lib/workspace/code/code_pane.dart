@@ -1,5 +1,4 @@
 // The Code tab: the code of the selected layer, one cell for each of its cards that has code, in the order the cards act.
-//
 // It opens beside the Timeline, so the preview stays in sight above it and a line of code has the width of the window.
 // A cell is the card's own code (EffectCode, shelf/effect_code.dart): the card in the Inspector and its cell here are
 // one text, and typing here moves the card's sliders. A cell is as tall as its code and the tab scrolls, as a
@@ -326,7 +325,7 @@ class _CellState extends State<_Cell> {
   bool _tagging = false;
   String _typed = '';
 
-  /// What the head says beside the title: the property an After Effects expression is on, as After Effects' Timeline
+  /// What the head says beside the title: the property an After Effects expression is on
   /// names it under the layer (`// --property:rotation` says Expression: Rotation, read as engine/community/sites/adapter.cpp
   /// reads it); for any other code, what it is written in, said by the file's ending.
   String get _on {

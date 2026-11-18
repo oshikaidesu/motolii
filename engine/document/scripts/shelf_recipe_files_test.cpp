@@ -1,6 +1,5 @@
 // Tests that every file named by a file on the shelves exists, so that moving
 // or renaming a file can never quietly break a recipe, a script or an effect.
-//
 // These tests read the real shelves/ folder of this repository. The expected
 // value is always the same and comes from outside the engine: the named file
 // is there. Which lines name a file, and where each path is looked for, come
@@ -24,7 +23,6 @@
 // shelf half this file takes over. What may lead nowhere on purpose (a file
 // fetched or made at build time, a module the engine gives) is listed, each
 // with its reason, in .githooks/path_check_allow.txt, which is read here too.
-//
 // Not covered here: a preset (.motolii) naming "{motolii}/..." files, because
 // reading one needs SQLite, which the test binary does not link.
 

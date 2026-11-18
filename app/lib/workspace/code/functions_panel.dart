@@ -1,6 +1,5 @@
 // The Functions list of the Code tab: what the code of the cell beside it may say, each name with the line that says
 // what it does. Pressing a name writes it where the cursor is.
-//
 // For an After Effects expression the names and their words are After Effects' own reference (expression_reference.dart)
 // and the groups are After Effects' objects (Layer, Property, Comp…). Which names run here is asked of the running
 // script each time its file changes, so the list cannot drift from the engine: a name the runtime lacks is listed

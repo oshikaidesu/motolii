@@ -267,9 +267,8 @@ const _angleW = {
 };
 
 /// Whether a parameter's label names an angle.
-///
 /// It accepts the words [infer] treats as angles plus the ones AviUtl scripts use (角度, 回転).
-/// A label for how fast something turns, such as 回転速度 or spin speed, is not an angle: it is a slider, as in After Effects.
+/// A label for how fast something turns, such as 回転速度 or spin speed, is not an angle: it is a slider
 bool angleLabel(String label) =>
     (_any(paramWords(label), _angleW) ||
         RegExp('角度|回転|色相|向き|方向').hasMatch(label)) &&

@@ -2,12 +2,10 @@
 #define MOTOLII_STAGE_CANVAS_PATH_OPERATIONS_H_
 
 // Path operations on 2D shapes, used by the canvas and by the document.
-//
 // The sk_* functions are defined in skia_path_operations.cpp, with Skia. The
 // tvg_* functions are defined in thorvg_path_operators.cpp, with ThorVG's
 // internal code. Each of those files is built apart because the headers of Skia
 // and of ThorVG's internals declare names that clash with ours.
-//
 // A path is passed as the arrays of ThorVG's Shape: `cmds` with `cmdsCnt`
 // commands and `pts`
 // (`ptsCnt` points). Paths that come back are written to vectors that the
@@ -98,7 +96,6 @@ bool sk_stroke_align(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
                      std::vector<tvg::Point>& outPts);
 
 // The sk_svg_* functions read and edit SVG path data like a pen tool.
-//
 // Writes the path's anchor points to `xy` as x, y pairs and returns how many
 // there are.
 int sk_svg_anchors(const char* data, std::vector<float>& xy);

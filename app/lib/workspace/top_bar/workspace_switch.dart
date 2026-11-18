@@ -1,4 +1,4 @@
-// The top bar's workspaces, as After Effects' workspace bar and Blender's workspace tabs: one press puts the panes
+// The top bar's workspaces
 // in the arrangement for a kind of work (workspaces, workspace_panes.dart); the window keeps what was made of each.
 import 'package:flutter/widgets.dart';
 

@@ -12,7 +12,6 @@ const stageZooms = ['Fit', '50%', '100%'];
 const _fixedScales = [0.0, .5, 1.0];
 
 /// Where the composition lies on the screen.
-///
 /// The composition's top-left corner is at [origin], it is drawn at [scale] screen pixels per composition pixel, and
 /// [area] is the part of the pane it is shown in.
 @immutable
@@ -21,7 +20,6 @@ class StageViewport {
   const StageViewport(this.origin, this.scale, this.area, this.composition);
 
   /// The viewport of a pane of [size] that has a [ruler] band along its top and its left.
-  ///
   /// At [zoom] 0 the composition is fitted into the rest of the pane with [margin] left free on every side, and never
   /// drawn smaller than a fiftieth of its size. At a later step of [stageZooms] it has that step's scale. It is
   /// centred in the area and then moved by [pan].
@@ -68,7 +66,6 @@ class StageViewport {
   Offset toComposition(Offset p) => (p - origin) / scale;
 
   /// The [pan] nearest to the one asked for that keeps the composition in reach.
-  ///
   /// The composition may be moved off the middle of [area] until 60 screen pixels of it are left inside, on each axis.
   Offset clampPan(Offset pan) {
     final limit = Offset(

@@ -99,7 +99,6 @@ const char* motolii_media_info(const char* file) {
   // of CI Macs have none and report "IOServiceMatching failed for:
   // AppleM2ScalerParavirtDriver". Videos keep VideoToolbox because no software
   // HEVC decoder is available here.
-  //
   // The handler below answers the autoplug-select signal of uridecodebin. For
   // image caps it skips hardware factories, which GStreamer 1.18 marks with the
   // HARDWARE factory type. Otherwise it tries the factory. The discoverer's

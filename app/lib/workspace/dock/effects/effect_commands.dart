@@ -37,7 +37,7 @@ class EffectCommands {
     return go;
   }
 
-  // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
+  // Effects are listed whatever is selected
   // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
   // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
   VoidCallback? off(EffectEntry e) =>
@@ -68,7 +68,7 @@ class EffectCommands {
         '${was ? 'Removed from' : 'Added to'} ${to?.name ?? 'Favorites'}';
   }
 
-  // Actions on an effect are in its right-click menu and the footer's three-dot button, as in Ableton's item menu.
+  // Actions on an effect are in its right-click menu and the footer's three-dot button
   // [tags] and [rename] open the tile's own field, and [newDeck] the list's name field; the shelf owns those.
   List<ContextMenuItem> menuItems(
     EffectListing l,

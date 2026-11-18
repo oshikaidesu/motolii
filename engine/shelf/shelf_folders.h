@@ -22,18 +22,15 @@ std::atomic<int>& files_changed();
 std::filesystem::path doc_engine(const char* part);
 // Returns the folders that files of one kind are read from, in increasing
 // priority.
-//
 // First comes the library's folder, shelves/<folder>, beside the engine/
 // directory whose out/ holds this library. Then come the user's own folders,
 // under MOTOLII_OWN, or %APPDATA%/Motolii on Windows, or ~/Library/Application
 // Support/Motolii on a Mac. When a file name occurs in several folders, the
 // user's file wins.
-//
 // A shelf is named as the app shows it: Create, Expression, Ease. Before the
 // shelves were renamed the user's folders were recipes, animators and ways. A
 // folder under an old name is still read, before the folder under the new name,
 // so files put there stay on the shelf.
-//
 // Some folders hold data the engine reads and are not shelves. The library's
 // copy of those is in engine/third_party/ with its license. The user's own
 // folder of that name still adds to it.

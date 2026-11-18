@@ -36,7 +36,7 @@ const _months = [
 // AbsentMotion's dateHeader in English: d MMMM yyyy.
 String homeDay(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}';
 
-/// The aspect ratio and resolution, then the frame rate, as AbsentMotion shows them.
+/// The aspect ratio and resolution, then the frame rate
 /// A known ratio gives "9:16" and the shorter side as "1080p"; any other gives "1080x1350".
 List<String> homeFacts(HomeProject d) {
   final f = d.facts;
@@ -93,7 +93,7 @@ String homeAge(DateTime changed) {
   return '${diff.inDays ~/ 365}y ago';
 }
 
-/// Copies the project next to it, named "Name Copy" (AbsentMotion's naming), with a number added if that name is taken.
+/// Copies the project next to it, named "Name Copy", with a number added if that name is taken.
 void duplicateProject(String folder, HomeProject d) {
   final to = firstFree(
     '$folder/${d.name} Copy.motolii',

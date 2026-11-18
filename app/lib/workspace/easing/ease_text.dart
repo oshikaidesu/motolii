@@ -44,13 +44,11 @@ List<String> easeCards(String said) => [
 bool easeIsLaid(String said) => said.contains(easeStackMark);
 
 /// Whether [said] is an easing given by points, like CSS linear().
-///
 /// It is one word, so spaces are written as ~. anime.js evaluates it (document/undo.h).
 bool easeIsPoints(String said) => said.startsWith('linear(');
 bool easeIsTurned(String said) => said.startsWith(_turned);
 
 /// The text form of an easing played backwards, or the original when [said] is already reversed.
-///
 /// AbsentMotion has a "reverse" option. The document has no such thing, so it is stored as a custom easing, like stacked easings.
 String easeTurn(String said) => easeIsTurned(said)
     ? said.substring(_turned.length).replaceAll(easeSpaceMark, ' ')

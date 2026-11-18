@@ -28,7 +28,6 @@ bool isSoundLayer(Motolii m, int t) => ProjectReader.isSound(m, t);
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
 /// Every panel listens to this and nothing else, and never keeps a copy of it.
 /// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
-///
 /// The state itself is held by the classes this one owns ([project], [selection], [playhead], [layout], [notices],
 /// [inks], [folds]). Each tells its changes through this controller, and the members listed under each forward to it.
 class WorkspaceController extends ChangeNotifier {

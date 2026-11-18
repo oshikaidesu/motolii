@@ -1,5 +1,4 @@
 // The ruler's marks and what a drag on the ruler does: it scrubs the playhead, moves the work area, or moves a marker.
-//
 // The project's markers work like Ableton Live's locators. A marker can be dragged by its flag and keeps its name;
 // dragging it off the ruler, up or down, deletes it. Each of these is one undo step.
 import 'package:flutter/foundation.dart';
@@ -17,11 +16,9 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// The work area and the markers as the ruler draws them, and the drag in hand on the ruler.
-///
 /// It notifies its listeners when a drag changes what the ruler draws.
 class RulerMarks extends ChangeNotifier {
   /// The marks of the workspace that `workspaceOf` returns, laid out by `viewport`.
-  ///
   /// `snapTo` gives the snapping to a set of frames, or null while snapping is off.
   RulerMarks({
     required this._workspaceOf,
@@ -50,7 +47,7 @@ class RulerMarks extends ChangeNotifier {
   (double, String)? _markHeld;
   int _markTo = 0;
   // Where on its flag the marker was grabbed, in frames.
-  // It is kept during the drag, as Live does for locators (6.4) and as _workGrab does for the work area.
+  // It is kept during the drag
   // Without it the marker jumped to the pointer, and one grabbed by the end of its name moved 0.47 s.
   double _markGrab = 0;
   bool _markOff = false;
@@ -214,7 +211,6 @@ class RulerMarks extends ChangeNotifier {
   };
 
   /// Frames where the selected group's intro ends and its outro starts, for marking on the ruler.
-  ///
   /// They are the End of intro and Start of outro values of the group's Element card (the engine's doc_element_clock).
   List<int> get retimed => workspace!.layer?.retimed ?? const [];
 }

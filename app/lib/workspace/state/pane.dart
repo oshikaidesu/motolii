@@ -14,7 +14,6 @@ typedef StripBuilder = DockingArea Function(PaneStrip at, {double? size});
 typedef Arrangement = DockingArea Function(StripBuilder strip);
 
 /// One pane: its name (also its id), the glyph on its tab, and how to build its body.
-///
 /// An [iconOnly] tab shows the glyph alone. It suits panes whose body already shows the name in a header, and keeps a strip of many tabs narrow.
 class Pane {
   const Pane(

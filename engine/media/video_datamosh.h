@@ -2,7 +2,6 @@
 #define MOTOLII_MEDIA_VIDEO_DATAMOSH_H_
 
 // Datamosh done on the compressed video itself, not with a shader.
-//
 // FFmpeg re-encodes the video with its keyframes dropped, using its noise
 // bitstream filter with drop='key*gt(n,0)'. After the cut, the motion of the
 // other video is applied to the last image of this one, so the result has the

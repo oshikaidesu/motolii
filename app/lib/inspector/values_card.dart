@@ -45,7 +45,7 @@ class ValuesCard extends StatelessWidget {
             if (!(host?.drawn.contains(p.id) ?? false)) p,
         ];
     // The main params show first. The advanced ones are folded under a row named for what they are.
-    // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack, as in After Effects.
+    // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack
     final at = doc.layer.movable.indexOf(card.name);
     final sect = Section(
       title: card.name,
@@ -91,7 +91,7 @@ class ValuesCard extends StatelessWidget {
                     for (final p in card.params) p.id,
                   ]),
                 if (at >= 0) ...[
-                  // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
+                  // An effect's header has the eye, the ⋮ menu with the rest, and the bin
                   if (doc.actions.onCardEye != null)
                     Pressable(
                       key: ValueKey(
@@ -154,7 +154,7 @@ class ValuesCard extends StatelessWidget {
                       for (final p in card.params) p.id,
                     ]),
                 ],
-                // The ≡ grip drags an effect up or down its stack, as in Alight Motion and After Effects' Effect Controls.
+                // The ≡ grip drags an effect up or down its stack
                 if (at >= 0 &&
                     doc.actions.onCardMove != null &&
                     doc.layer.movable.length > 1)
@@ -278,7 +278,7 @@ void _drawGrip(Canvas c, Size s, Color ink) {
   }
 }
 
-/// Draws the bin that removes an effect, like AbsentMotion's Trash on its header.
+/// Draws the bin that removes an effect
 void _drawBin(Canvas c, Size s, Color color) {
   final p = Paint()
     ..color = color

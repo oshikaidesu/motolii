@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 
 /// A card as the engine declares it, for an effect or a layer's own values: a name and a WGSL uniform struct.
-///
 /// workspace/inspector_feed/cards.dart writes the struct from motolii_cards (card_table.h).
 /// The card's fields are whatever [infer] makes of it.
 class CardDeclaration {

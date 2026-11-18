@@ -162,10 +162,10 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
     if (strlen(word) != 6 || strspn(word, "0123456789abcdefABCDEF") != 6)
       return d.error = std::string(name) + " is six digits, as ff3366", false;
   // low and high say how far a control goes, not how far the user may go. A
-  // number typed, keyed or set beyond them is accepted, as After Effects'
+  // number typed, keyed or set beyond them is accepted
   // Slider Control accepts values past its Slider Range and Cavalry accepts
   // values past its slider. A value is held to its range only where a named
-  // source holds the same value so. A switch is on or off, like After Effects'
+  // source holds the same value so. A switch is on or off
   // layer switches Video, Solo and Lock, each a box that is ticked or not. An
   // opacity is from none to whole: After Effects' Opacity is 0 to 100%, and so
   // are the End Opacity of its Drop Shadow and of its Repeater. An alpha is 0

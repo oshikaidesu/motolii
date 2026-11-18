@@ -4,7 +4,6 @@ import 'dart:ui' show Size;
 import 'package:motolii/storage/window_settings.dart' show WindowFile;
 
 /// The composition's frame rate, length and size.
-///
 /// They start at the user's saved defaults (Project Defaults in the settings panel) and are read from the document when
 /// one is opened.
 class CompositionSettings {

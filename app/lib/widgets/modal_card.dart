@@ -144,7 +144,6 @@ class ChipGroup extends StatelessWidget {
 }
 
 /// A label beside a dropdown (an HTML `<select>`): a long list of choices that a short list would show as chips.
-///
 /// It uses naked_ui's NakedSelect, as [Chooser] does: the arrow keys move through the list, Return picks, Esc closes,
 /// and it opens upward where there is no room below. Each option is a `(value, label)`; [value] is the chosen one.
 class MenuRow<T> extends StatelessWidget {

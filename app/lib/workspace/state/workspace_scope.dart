@@ -7,7 +7,6 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Gives the widgets below access to the window's [WorkspaceController].
-///
 /// A widget names the aspects it reads with [WorkspaceScope.of] and rebuilds only when one of those changes.
 class WorkspaceScope extends StatefulWidget {
   const WorkspaceScope({super.key, required this.ws, required this.child});

@@ -58,7 +58,6 @@ class TransformHome {
 }
 
 /// The preview of [values] on a canvas of [size], seen from the front.
-///
 /// The layer is drawn from its [home]: in the middle and at the usual size there, so what moved or grew since shows as far
 /// as it went. Its turn and the ratio of its sides are its own. A nearer layer is drawn larger, in every space.
 class TransformLayout {
@@ -232,7 +231,7 @@ class TransformLayout {
           'v_scale_y': value('v_scale_y') * eased(fy),
         };
       case TransformZone.pivot:
-        // The anchor is a share of the layer's box, and may lie outside it, as After Effects' Anchor Point may.
+        // The anchor is a share of the layer's box, and may lie outside it
         final d = local(now) - local(last);
         return {
           'v_anchor_x': cur('v_anchor_x') + d.dx / (2 * half.dx) * 100 * rate,

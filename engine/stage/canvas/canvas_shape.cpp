@@ -107,7 +107,7 @@ void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h,
         : shape->moveTo(pts[k][0], pts[k][1]);
     shape->close();
   }
-  // A rect with its corners cut straight, as Cavalry's rectangle with chamfer.
+  // A rect with its corners cut straight
   // Each corner loses `inner` of the shorter half side.
   else if (!strcmp(form, "chamfer")) {
     const float c = std::clamp(inner, 0.f, 1.f) * std::min(rx, ry), x0 = in,

@@ -1,8 +1,6 @@
 // doc_cards_of: which cards the inspector shows for a layer, and the cards a layer can be given besides (`more`).
-//
 // The expected cards are read off engine/document/card_table.h by hand, not taken from the engine: a card shows while the
 // property it names reads one of the words it lists, and a card marked "added" shows only once one of its values is set.
-//
 // A Doc cannot be made by doc_open here (it builds the stage in Filament, which needs a Metal device), so the layers are rows
 // of an in-memory SQLite file with the same keyframe table doc_open makes.
 

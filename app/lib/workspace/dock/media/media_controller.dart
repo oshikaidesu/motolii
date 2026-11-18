@@ -10,7 +10,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the Media shelf keeps while the window is open: the folders read from the disk, the files the project uses,
 /// the files picked together, and how much of the next file is placed.
-///
 /// Folders are read once each and off the UI thread.
 class MediaController {
   /// [reads] is the counter the shelves listen to; it goes up each time a folder has been read. [tags] is the

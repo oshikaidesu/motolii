@@ -4,7 +4,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/media.dart' show glyph;
 
 /// The disclosure triangle on a card's heading.
-///
 /// It points right when the card is folded and down when it is open, so the user can see that the card folds before touching it.
 class DisclosureTriangle extends StatelessWidget {
   const DisclosureTriangle({super.key, required this.open, required this.hot});

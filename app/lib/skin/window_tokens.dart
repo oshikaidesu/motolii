@@ -70,7 +70,7 @@ abstract final class WindowTokens {
   static Color get toneParticles =>
       ColorTheme.of('Clip6', const Color(0xFFF2A65A));
   static Color get toneAudio => ColorTheme.of('Clip7', const Color(0xFF5CC8E8));
-  // The marks on the ruler for a layer's intro and outro, like Alight Motion's small yellow ones.
+  // The marks on the ruler for a layer's intro and outro
   static Color get toneMark =>
       ColorTheme.of('ElementMark', const Color(0xFFF2C94C));
 

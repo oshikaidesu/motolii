@@ -4,7 +4,6 @@
 // Read a file's contents in one call. The one engine-wide copy of the
 // "open ifstream, stringstream, rdbuf, str()" pattern so every effect
 // dialect, every adapter and every cache spells the read the same way.
-//
 // read_text reads a text file into a std::string.
 // read_bytes reads a binary blob (ktx, filamat, gltf, png, ttf) into a
 // std::vector<uint8_t>. A file that cannot be opened returns an empty

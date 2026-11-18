@@ -15,14 +15,14 @@ struct Doc;
 // Duplicates `layer` and places the copy directly above it, as one undo step.
 // Returns the copy's number, or 0 on failure.
 int doc_copy_above(Doc& d, int layer);
-// Cuts a layer in two at time `at`, as Ableton Live's Split (Cmd+E) and
+// Cuts a layer in two at time `at`
 // AbsentMotion's Scene.splitAt do. The original ends at `at`. A copy begins at
 // `at`, lies directly above the original, and keeps every keyframe where it is
 // on the timeline. A video's copy continues from where the first part stops.
 // One undo step. Returns the copy's number, as doc_duplicate does, or 0 with
 // d.error set on failure.
 int doc_split(Doc& d, int layer, double at);
-// Takes the work area out and closes the gap, as After Effects' Edit > Extract
+// Takes the work area out and closes the gap
 // Work Area, Premiere Pro's Extract and DaVinci Resolve's Ripple Delete do.
 // Every layer that crosses an edge of the work area is split there with
 // doc_split, so that a video's later part continues further into the video. The
@@ -40,7 +40,7 @@ bool doc_extract(Doc& d);
 // changed, the drag is dropped and the stage is rebuilt from the project.
 // Returns false with d.error set if no drag was in progress.
 bool doc_let_go(Doc& d, bool keep);
-// Lines up layers one after another in time, like After Effects' Sequence
+// Lines up layers one after another in time
 // Layers (Keyframe Assistant). It applies to the layers that have a length and
 // stand on their own: visible, unlocked, without a parent, and not a camera or
 // a light. They are taken from the front of the stack. Each begins where the
@@ -74,7 +74,7 @@ bool doc_time_align(Doc& d, const std::vector<int>& layers,
 // or an unknown `hold`.
 bool doc_time_stretch(Doc& d, int layer, double speed, const std::string& hold,
                       double now);
-// Resets the named properties of a layer to their defaults, as After Effects'
+// Resets the named properties of a layer to their defaults
 // Reset does for a group of properties: their keyframes and set values are
 // deleted, and so are those of
 // `<name>_loop`. `names` is a space-separated list. One undo step. Returns

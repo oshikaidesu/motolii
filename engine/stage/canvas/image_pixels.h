@@ -3,14 +3,12 @@
 
 // A still picture file as pixels on the CPU, and After Effects' sampleImage()
 // over them: what lets an expression read the colour of another layer.
-//
 // The semantics are those of After Effects' expression reference
 // (ae-expressions.docsforadobe.dev/layer/general/, sampleImage): the point is
 // in the picture's own space with [0, 0] at the centre of the upper-left pixel;
 // the radius is the distance from the point to the edges of a rectangle (so
 // [0.5, 0.5], the default, is one pixel); the result is [red, green, blue,
 // alpha], the alpha-weighted average of the pixels in the rectangle.
-//
 // What that page does not say, and is chosen here: values are 0 to 1 as the
 // picture is drawn (no colour-space conversion); a pixel the rectangle covers
 // in part counts by the area it covers; what lies outside the picture counts as

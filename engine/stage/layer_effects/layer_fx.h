@@ -179,7 +179,7 @@ void thing_fx_face(Stage& s, ThingFx& e, const filament::math::mat4& place,
                    filament::math::float2 half, double room = 0.0,
                    double dense = 0.0, const double* sides = nullptr);
 
-// Stands a flat layer's image in the world, as After Effects does for a layer
+// Stands a flat layer's image in the world
 // with masks, effects and transformations. The image is filmed square to the
 // layer's face and covers as much of the stage as e.sides says, plus a margin
 // that the effects measure by: 128 stage points, as BAKE_MARGIN in

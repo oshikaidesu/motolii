@@ -6,8 +6,7 @@ import 'package:motolii/skin/theme.dart';
 /// Read together with the document.
 final chosenLabelColors = <int, int>{};
 
-/// A layer's label colour, as Ableton gives each clip its own.
-///
+/// A layer's label colour
 /// Without a chosen colour it is one of sixteen, five apart from the previous layer so that neighbours differ.
 /// It is the same every time the document is opened. The layer's row, its dot on the Relations map, its frame in the
 /// preview and its name in lists all use it. A skin can override each colour (Label1 to Label16).

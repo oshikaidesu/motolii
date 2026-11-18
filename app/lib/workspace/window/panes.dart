@@ -1,5 +1,4 @@
 // The window's panes: panels laid out by the `docking` package.
-//
 // A tab can be dragged onto another strip or split off to a side, and every divider can be resized.
 // A tab cannot be detached into its own window, because that needs the native shell.
 // Colors come from WindowTokens, so both the light and dark shades apply.

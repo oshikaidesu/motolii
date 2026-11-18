@@ -18,7 +18,6 @@ import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 // ---------------------------------------------------------------- ruler
 
 /// Paints the ruler: work-area band, time ticks, beats, retimed ends and marker flags.
-///
 /// Repaints from [viewport] and [ruler] via [repaint], so the timeline need not rebuild its widgets on every scroll or
 /// ruler drag. Snapshot fields are set at construction for [shouldRepaint]; [paint] reads live data from the objects.
 class TimelineRulerPainter extends CustomPainter {
@@ -49,7 +48,7 @@ class TimelineRulerPainter extends CustomPainter {
   /// The project's own beats: a tick each, taller where a bar begins.
   final Beats? tempo;
 
-  /// Frames of the selected element's end of intro and start of outro: small yellow marks at the ruler's top, as in Alight Motion.
+  /// Frames of the selected element's end of intro and start of outro: small yellow marks at the ruler's top
   final List<int> retimed;
 
   @override

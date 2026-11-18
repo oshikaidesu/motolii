@@ -9,7 +9,6 @@ import 'package:motolii/workspace/state/pane.dart';
 /// state each panel keeps by name.
 class PanelLayout {
   /// Creates it with no tabs and nothing brought to the front.
-  ///
   /// [onViewChanged] is called when a value of [view] changes, [onFronted] every time a panel is brought to the front.
   PanelLayout({
     required this._layers,
@@ -33,7 +32,7 @@ class PanelLayout {
     _onViewChanged();
   }
 
-  /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
+  /// Whether the preview uses the working camera, not the document's camera layer.
   /// Always true when a camera layer exists: the stage is a fixed world view, the Camera View shows what the camera sees.
   bool get freeEye => _layers().any((l) => l.kind == LayerKind.camera);
 

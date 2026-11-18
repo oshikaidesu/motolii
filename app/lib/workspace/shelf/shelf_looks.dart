@@ -6,13 +6,11 @@ import 'package:motolii/skin/tokens.dart';
 export '../../bridge/motolii.dart' show ShelfItem;
 
 /// The two forms a tile can take.
-///
 /// - [under]: the name in a bar under the 16:9 image (Effects, Create, Media).
 /// - [words]: the art is text set in a typeface (Fonts).
 enum ShelfForm { under, words }
 
 /// How one shelf's tiles look: an entry of [shelfLooks].
-///
 /// Sizes are in logical pixels and scale with the skin's size (Shape.z) where drawn; [cell] scales only when [sized].
 class ShelfLook {
   const ShelfLook(

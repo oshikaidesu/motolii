@@ -1,5 +1,4 @@
 // Tests for h264_encoder() and h264_quality() in base/video_encoder.h.
-//
 // The expected values come from the contract written above those functions:
 // a listing line is six flag characters, a name and a description; the first
 // flag is V for video; the answer is the first of the eight listed names that

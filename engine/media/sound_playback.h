@@ -2,7 +2,6 @@
 #define MOTOLII_MEDIA_SOUND_PLAYBACK_H_
 
 // Plays the sound of layers while the canvas plays.
-//
 // The layers that have sound are listed in Stage::sounding, the same sounds
 // that an exported video mixes. Each one gets a GStreamer playbin that plays
 // only the audio of its file. The playbin is sought to the position that the

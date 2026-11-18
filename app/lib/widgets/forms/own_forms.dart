@@ -39,8 +39,7 @@ class OwnForms extends Forms {
   );
 
   /// The word On or Off next to a switch, so the state is never shown by colour alone.
-  ///
-  /// The word and the switch are one control, as in AbsentMotion's SwitchRow (SettingsDrawer.kt): pressing either toggles it.
+  /// The word and the switch are one control
   @override
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,

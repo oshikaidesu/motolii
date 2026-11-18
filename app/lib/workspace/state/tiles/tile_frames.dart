@@ -8,7 +8,7 @@ const tileStill = 10;
 /// image cache shows the old one.
 const tileReadWide = 256;
 
-/// The times its pictures are drawn at (AbsentMotion's 16 at 12 per second).
+/// The times its pictures are drawn at.
 final tileMoments = [for (var k = 0; k < 16; k++) 0.1 + k / 12];
 
 /// Its moving pictures: home_0.jpg … home_15.jpg beside its still.

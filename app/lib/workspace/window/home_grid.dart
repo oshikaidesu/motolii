@@ -11,7 +11,6 @@ import 'package:motolii/workspace/window/home_card.dart'
     show homeButton, homeCaps;
 
 /// Lays [cards] out as bento blocks of up to six: a tall card beside two rows of unequal ones.
-///
 /// Every other block is mirrored. A card fills whatever cell it gets, so its picture is cropped, not stretched.
 /// Each block carries the gap below it.
 List<Widget> homeBento(List<Widget> cards, double rowTall, double gap) {
@@ -209,7 +208,6 @@ class HomeToggle extends StatelessWidget {
 }
 
 /// One of the two buttons beside the preview: its label at the top, its glyph large in the far corner.
-///
 /// [solid] draws it as a block of colour; otherwise it is an outline.
 class HomeActionCard extends StatelessWidget {
   const HomeActionCard({

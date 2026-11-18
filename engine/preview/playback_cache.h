@@ -3,7 +3,6 @@
 
 // Caches rendered stage frames on disk for playback, like Final Cut Pro's
 // background render or After Effects' disk cache.
-//
 // The work area tells us what will be played. While the render thread is idle,
 // each frame in it is drawn once, the way an exported video frame is drawn. A
 // frame that took longer than one frame period to draw would be late during
@@ -61,7 +60,7 @@ struct StageCache {
   // Guards runs.
   std::mutex runsLock;
   // The cached frames as ranges, "from to from to", for the app to mark on its
-  // timeline, like After Effects' green line.
+  // timeline
   std::string runs;
   // Index of the frame being read from disk ahead of time on its own thread, or
   // -1.

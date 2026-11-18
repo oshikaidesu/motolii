@@ -97,7 +97,7 @@ std::string doc_name(Doc& d, int layer) {
   if (is.empty()) is = doc_word(d, layer, "shape");
   if (is.empty() && doc_word(d, layer, "kind") == "behaviour") {
     // A behavior is named by its file. When several share a file, the second
-    // and later get a number, as Blender names duplicates with .001.
+    // and later get a number
     const std::string file = doc_word(d, layer, "file");
     int nth = 0, all = 0;
     for (const int t : doc_layers(d))

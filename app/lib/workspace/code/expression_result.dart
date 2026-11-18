@@ -1,9 +1,8 @@
 // The line under an After Effects expression's cell in the Code tab: what the expression gave at the playhead, or why
-// it failed, as After Effects shows an expression's error under it and a browser's console shows a value as it is
+// it failed
 // typed. The engine keeps what the expression last gave or threw (`__ae_last`, engine/community/sites/adapter.cpp);
 // the line asks the running expression for it each time the playhead moves or the code is written, one question at a
 // time.
-//
 // An error is written as After Effects writes it, "Error at line 3: ReferenceError: amp is not defined". For a name
 // that is not defined there is a quick fix, as VS Code puts one beside an error: Add slider "amp" does what After
 // Effects' Slider Control and pick whip do, a slider named amp that the expression reads.
@@ -32,7 +31,7 @@ class ExpressionResult extends StatefulWidget {
   const ExpressionResult(this.file, {super.key, this.write, this.mark})
     : onlyError = false;
 
-  /// Only a red "Error" when the expression fails, for a folded cell's head, as After Effects puts a warning beside
+  /// Only a red "Error" when the expression fails, for a folded cell's head
   /// the property in the Timeline and VS Code marks a file's tab.
   const ExpressionResult.mark(this.file, {super.key})
     : write = null,

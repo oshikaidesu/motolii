@@ -43,7 +43,6 @@ class InspectorNumberField extends StatefulWidget {
   final Widget? glyph;
 
   /// Whether a press on [glyph] belongs to the glyph (a dial, a die) instead of starting a drag on the number.
-  ///
   /// Every number in the Inspector drags sideways, whatever it means, so only a glyph may behave differently.
   final bool glyphOwnsPointer;
 
@@ -60,7 +59,6 @@ class InspectorNumberField extends StatefulWidget {
 }
 
 /// Placed around a card's fields by the card. It lets their numbers be dragged past the slider's ends.
-///
 /// [flag] is a document flag. A right click on any of the fields toggles it, and holding Option does the same for a single drag
 /// (a quasimode, as in Raskin's The Humane Interface). The slider range is only what the effect vouches for. Beyond it the value
 /// may go as far as the engine accepts, as with Houdini's non-strict ranges (FloatParmTemplate minIsStrict).
@@ -89,7 +87,6 @@ bool goingPast(BuildContext c, InspectorValues doc) {
 const unitMinWidth = 72.0, decimalsMinWidth = 60.0;
 
 /// The Inspector's side of a number field.
-///
 /// [NumberField] handles dragging and typing. This state adds the document it reads and writes, the range it holds the value to,
 /// multi-selection of fields, the keyframe mark and the right-click menu.
 class InspectorNumberFieldState extends State<InspectorNumberField> {

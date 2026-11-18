@@ -22,7 +22,6 @@ import 'package:motolii/widgets/switch_track.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
-///
 /// Every block still shows the number and takes typing, scrubbing and the sideways slide. The picture is added, never a replacement.
 /// Numbers always scrub sideways. A picture may handle the pointer its own way: a dial turns, a pad moves both ways.
 class ParameterTile extends StatelessWidget {
@@ -54,7 +53,6 @@ class ParameterTile extends StatelessWidget {
   }
 
   /// How strongly the parameter changes the result (`Parameter.weight`, 0 to 10), as a step from 0 to 3.
-  ///
   /// Each step above 0 tints the block with its own colour, so strength reads as a gradation of colour, not as yes or no,
   /// and the block stays quiet enough that the rest is still read. The tint follows GitHub's dark-page labels (Primer):
   /// the background is the colour at 0.18 alpha and the text is the colour itself.
@@ -291,7 +289,6 @@ class ParameterTile extends StatelessWidget {
 }
 
 /// A handle for a 2D value that the user drags like a trackpad. Sideways changes X (or width), up and down changes Y (or height).
-///
 /// The picture shows the current value. One drag is one undo step. For a point, Y follows the canvas (down increases it);
 /// for a size, up increases the height.
 class _PadGlyph extends StatefulWidget {

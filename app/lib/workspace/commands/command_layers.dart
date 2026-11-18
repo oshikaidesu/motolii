@@ -28,7 +28,7 @@ extension LayerCommands on WorkspaceState {
     final ws = this.ws;
     // Groups the selected layers under a new null layer placed at their centre, as one undo step.
     // Like Figma's group, it is not a container of its own.
-    // [mask] is 'mask' or 'exclude' (Alight Motion's Group and Mask, Group and Exclude): the top layer's shape
+    // [mask] is 'mask' or 'exclude': the top layer's shape
     // then shows the others within it, or cuts them out. The engine side is group_mask in document/evaluate/evaluate.h.
     // See docs/design/alight_motion_ui.md.
     void group(String mask) {
@@ -41,7 +41,7 @@ extension LayerCommands on WorkspaceState {
       );
       final order = stageLayers(ws), top = order.lastIndexWhere(all.contains);
       groupBegin(ws);
-      // The group's row takes the place of the top layer and the rest gather under it (After Effects' Pre-compose, Figma's group).
+      // The group's row takes the place of the top layer and the rest gather under it.
       for (final (i, t) in order.indexed.toList().reversed) {
         final past = order
             .sublist(math.min(i, top), top)
@@ -68,7 +68,7 @@ extension LayerCommands on WorkspaceState {
           ];
       setNumber(ws, -1, 'start', from);
       // The group also keeps the length of its contents. Its Element card's Re-timing plays that content longer or shorter.
-      // In Alight Motion a group is a scene of that length (AbsentMotion's StructureActions.kt: totalTime = end - start).
+      // In Alight Motion a group is a scene of that length.
       if (ends.reduce(math.max).isFinite) {
         for (final n in const ['duration', 'element_length']) {
           setNumber(ws, -1, n, ends.reduce(math.max) - from);
@@ -98,7 +98,7 @@ extension LayerCommands on WorkspaceState {
 
     return {
       'thing.saveLook': () {
-        // Saves the layer as a preset on the Effects shelf, named after the layer (Alight Motion's Save as Preset).
+        // Saves the layer as a preset on the Effects shelf, named after the layer.
         final l = ws.layer;
         if (!projectOpen(ws) || l == null) return;
         keepLook(ws, l.id, l.name, (done, why) {
@@ -107,7 +107,7 @@ extension LayerCommands on WorkspaceState {
         });
       },
       'thing.saveElement': () {
-        // Saves the layer with its contents among the elements on the Create shelf (Alight Motion's Save to My Elements).
+        // Saves the layer with its contents among the elements on the Create shelf.
         final l = ws.layer;
         if (!projectOpen(ws) || l == null) return;
         keepElement(ws, l.id, l.name, (done, why) {
@@ -118,13 +118,13 @@ extension LayerCommands on WorkspaceState {
         });
       },
       'thing.deactivate': () {
-        // Every selected layer takes the state opposite to the one clicked or first selected, as Live's 0 on several clips.
+        // Every selected layer takes the state opposite to the one clicked or first selected
         final hidden = ws.layers.any((l) => l.id == ws.selected && l.hidden);
         eachPicked((t) => setLayerVisible(ws, t, hidden));
       },
       'thing.remove': () {
         if (selectedMarker.value case (final at, _)?) {
-          // A selected marker is deleted first, as Live deletes a locator like a clip.
+          // A selected marker is deleted first
           selectedMarker.value = null;
           return ws.after(removeMarker(ws, at));
         }
@@ -185,7 +185,7 @@ extension LayerCommands on WorkspaceState {
         ws.after(outlineLayer(ws, t), (_, _) => ws.reread());
       },
       'thing.extractSound': () {
-        // Moves a video's sound to a layer of its own and mutes the video (Alight Motion's Extract Audio).
+        // Moves a video's sound to a layer of its own and mutes the video.
         final t = ws.selected;
         if (t == null || wordOf(ws, t, 'kind') != 'film') return;
         ws.after(extractSoundOf(ws, t), null, (made) => ws.select(made));
@@ -212,7 +212,7 @@ extension LayerCommands on WorkspaceState {
         ws.pickMany(kids);
       },
       'thing.unlinkElement': () {
-        // The element becomes a plain group and no longer follows its file (AbsentMotion's Unlink from Asset, ElementUi.kt).
+        // The element becomes a plain group and no longer follows its file.
         final g = ws.selected;
         if (!projectOpen(ws) || g == null || wordOf(ws, g, 'element').isEmpty) {
           return;
@@ -222,7 +222,7 @@ extension LayerCommands on WorkspaceState {
       'thing.split': () {
         final t = ws.selected;
         if (t == null) return;
-        // The part after the playhead becomes selected, as in Live.
+        // The part after the playhead becomes selected
         ws.after(
           splitLayerAt(ws, t, ws.frame / WorkspaceController.fps),
           null,

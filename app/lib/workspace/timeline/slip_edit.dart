@@ -1,5 +1,4 @@
 // Slip editing for video layers that are trimmed shorter than the source file.
-//
 // The part of the source outside the trim is drawn as a pale bar along the row. Dragging it changes which part of the
 // source the layer shows, while the layer's in and out points stay where they are.
 // This follows After Effects' slip edit and Premiere Pro's Slip tool.
@@ -14,7 +13,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 
 /// The slip edit of a video layer: where its whole source file lies along the row, and the drag that moves it.
-///
 /// It notifies its listeners each time a drag has slipped the layer.
 class SlipEdit extends ChangeNotifier {
   /// Slip editing that reads the length of each source file from `media`.
@@ -26,7 +24,6 @@ class SlipEdit extends ChangeNotifier {
   (int, int)? _whole;
 
   /// The frame range the whole source file would cover at the layer's current trim, or null.
-  ///
   /// It is null when the layer is not a video or the file's length has not been read yet.
   (int, int)? wholeOf(WorkspaceController ws, Layer l) {
     final media = l.media;
@@ -57,7 +54,6 @@ class SlipEdit extends ChangeNotifier {
   }
 
   /// Slips the layer [t] by [by] frames from where the drag started, as far as its source reaches.
-  ///
   /// [barIn] and [barOut] are the layer's in and out frames when the drag started; they do not move.
   void slipBy(
     WorkspaceController ws,

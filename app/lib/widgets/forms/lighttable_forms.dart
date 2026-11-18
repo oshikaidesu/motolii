@@ -1,9 +1,7 @@
 // Light-table forms: film seen on a lit opal table.
-//
 // - Black film with sprocket holes at the edges: the Render button's leader and each card's left edge.
 // - Graphite text, and a coloured sticker dot for a card's kind.
 // - A grease-pencil orange loop around whatever is selected or under the pointer.
-//
 // Press and hover behaviour comes from naked_ui.
 import 'dart:math' as math;
 
@@ -30,7 +28,6 @@ TextStyle _mono(Color c, double size) => TextStyles.name(c).copyWith(
 );
 
 /// A grease-pencil loop around its box.
-///
 /// The loop is never closed cleanly: it overshoots its start, wobbles and leans a little. The same seed gives the same loop.
 class _Loop extends CustomPainter {
   const _Loop(this.seed, {this.ink = _grease});
@@ -73,7 +70,6 @@ class _Loop extends CustomPainter {
 }
 
 /// Black film with sprocket holes that let the table's light show through.
-///
 /// By default the holes run left to right along the top and bottom edges.
 /// If [down] is true there is a single row of holes in a strip [strip] wide at the left edge.
 class _Sprockets extends CustomPainter {
@@ -202,7 +198,6 @@ class LightTableForms extends Forms {
   );
 
   /// A strip of film down the card's left edge.
-  ///
   /// The header shows a coloured sticker dot for the card's kind, the title and the edge-print arrow.
   @override
   Widget card(BuildContext context, CardSpec c) {

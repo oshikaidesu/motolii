@@ -1,5 +1,5 @@
 // Marks which frames are cached on disk for playback (see engine/stage/stage_cache.h).
-// A thin line under the ruler's work-area band shows each cached range, as After Effects marks its cached frames.
+// A thin line under the ruler's work-area band shows each cached range
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
@@ -9,7 +9,6 @@ import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 /// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
-///
 /// Repaints from [viewport] and [kept] via [repaint].
 class TimelineCachePainter extends CustomPainter {
   TimelineCachePainter({required this.viewport, required this.kept})

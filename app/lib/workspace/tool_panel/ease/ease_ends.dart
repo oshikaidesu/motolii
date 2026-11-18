@@ -11,7 +11,6 @@ import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool_state.dart';
 
 /// For each span whose ends the user has moved, each property's two key values as they first were, and the scale of its bars.
-///
 /// The ends stay where they were left. Their position is read from the keys, so an undo moves them back.
 final _endsFrom = Expando<Map<String, Map<String, (double, double, double)>>>();
 

@@ -78,7 +78,6 @@ void putEffectFile(
 }
 
 /// Returns the file name to use among the layer's effects [fx], and the title of its card.
-///
 /// If the layer already has an effect of that name, it is renamed as the engine's Duplicate does ("Empty~2.fs",
 /// doc_fx_duplicate). That happens for the same file, and for an empty effect beside an empty expression, which are
 /// both titled Empty. Its values and title are then its own, because the engine finds a card by its title

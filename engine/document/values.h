@@ -33,7 +33,7 @@ inline const DocShown doc_shown[] = {
     {"text", "words", "", "Text", 0, 0, nullptr},
     {"text_styles", "words", "", "Styles", 0, 0, nullptr},
     {"file", "file", "", "Font", 0, 0, nullptr},
-    // An image that fills a shape, as in Alight Motion's Fill > Media. It is
+    // An image that fills a shape
     // chosen from the Fill button of the Media shelf.
     {"fill_media", "file", "", "Media", 0, 0, nullptr},
     {"size", "", "px", "Size", 0, 2, nullptr},
@@ -75,7 +75,7 @@ inline const DocShown doc_shown[] = {
     {"copy_fill_way", "", "", "Order", 0, 0, "Copies"},
     // How much of a relation's effect applies.
     {"strength", "share", "%", "Strength", 0, 1, nullptr},
-    // The shape inside which a behaviour or a relation works, like Cavalry's
+    // The shape inside which a behaviour or a relation works
     // Falloff.
     {"region", "thing", "", "Falloff", 0, 0, nullptr},
     {"falloff_soft", "stage", "px", "Soft", 0, 2, nullptr},
@@ -92,11 +92,11 @@ inline const DocShown doc_shown[] = {
     {"time_remap_loop", "", "", "Loop", 0, 0, nullptr},
     {"retime", "", "", "Re-timing", 0, 0, nullptr},
     {"retime_in", "", "s", "End of intro", 0, 10, nullptr},
-    // Retiming of a nested element, as in Alight Motion.
+    // Retiming of a nested element
     {"retime_out", "", "s", "Start of outro", 0, 10, nullptr},
     // 0 means the layer is sampled as smoothly as the stage.
     {"frame_rate", "", "fps", "Frame rate", 0, 60, nullptr},
-    // A value of 1 is shown as 100%, as Alight Motion shows it.
+    // A value of 1 is shown as 100%
     {"volume", "share", "%", "Volume", 0, 2, nullptr},
     {"beats", "", "dB", "Beats", 0, 30, nullptr},
     {"clip_matte", "", "", "Cut by", 0, 0, nullptr},
@@ -204,7 +204,6 @@ inline const DocShown doc_shown[] = {
     {"crop_top", "share", "%", "Top", 0, 0.95, nullptr},
     {"crop_right", "share", "%", "Right", 0, 0.95, nullptr},
     // The crop sliders stop at 0.95, almost the whole image, which is as far as
-    // Alight Motion goes.
     {"crop_bottom", "share", "%", "Bottom", 0, 0.95, nullptr},
     {"room", "", "", "Room", 0, 0, nullptr},
     {"environment", "", "×", "Bright", 0, 10, nullptr},

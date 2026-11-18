@@ -6,7 +6,6 @@ import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What a gesture controller of the stage reads from the view that owns it.
-///
 /// The view's State implements this. A controller reads it each time it acts, so it works on the scene, the
 /// selection and the tool the view has at that moment.
 abstract interface class StageContext {
@@ -26,7 +25,6 @@ abstract interface class StageContext {
   Map<String, Offset> get handles;
 
   /// The selected image's crop while it is being cropped: the share cut from its left, top, right and bottom.
-  ///
   /// Empty when no image is being cropped.
   List<double> get crop;
 }

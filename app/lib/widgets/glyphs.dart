@@ -7,7 +7,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/media.dart' show glyph;
 
 /// A set of named marks, such as the enums here, the timeline's and the dock's. The one [Glyph] widget draws any of them.
-///
 /// [skin] is the key under which a skin may supply its own drawing. [stroke] gives the stroke width for a glyph of width `w`.
 /// [draw] paints the mark with a stroke paint and a fill paint.
 abstract interface class GlyphKind {

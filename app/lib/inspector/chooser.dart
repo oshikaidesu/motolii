@@ -14,7 +14,6 @@ import 'package:motolii/widgets/disclosure_triangle.dart';
 
 /// A dropdown for choosing one of [options]. The value under [id] is the option's index, kept once, in numbers,
 /// as a segmented control keeps it; the words are only what [options] says that index is.
-///
 /// A short list belongs in a segmented control and a long one opens a list. It never cycles with previous and next buttons.
 /// naked_ui's NakedSelect (the select of the W3C ARIA Authoring Practices) owns the keys, the outside press, the focus and the placing:
 /// the arrow keys move through the list, Return picks, Esc closes, and it opens upward where there is no room below.

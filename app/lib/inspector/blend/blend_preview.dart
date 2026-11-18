@@ -2,7 +2,6 @@
 // chosen mode, so the mode's effect is seen. Clicking the mode name opens a list of all modes; hovering one shows it
 // in the schematic before committing. Scrubbing left-right across the schematic cycles through modes and wraps around.
 // The Clip to below tile stays below, so it may also be toggled there.
-//
 // The disc and the ground are a schematic, not the layer's own pixels, and the modes the canvas has no blend for
 // (linear burn and light, vivid and pin light, darker and lighter colour, subtract, divide) are shown by their nearest
 // neighbour. The layer's own render on the stage is the engine's, see engine/document/evaluate/material.h.

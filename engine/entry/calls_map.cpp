@@ -1,7 +1,6 @@
 // Implements the shelf maps declared in motolii.h: motolii_map lays items out
 // on a plane so that similar ones lie near each other, motolii_likeness
 // describes images as vectors, and motolii_type_frame draws a font specimen.
-//
 // XLN Audio's XO lays out samples by how alike they sound using t-SNE, and
 // IDEO's Font Map lays out fonts by their drawn letters. The shelves use the
 // same idea. The t-SNE is qdtsne (MIT, third_party/qdtsne), used as in its
@@ -58,7 +57,7 @@ int motolii_map(const float* points, int n, int dims, double* xy) {
 // another, each 224 x 224 pixels in RGBA. The pixels are normalized with CLIP's
 // own mean and standard deviation (clip.py, _transform's Normalize) and run
 // with the ONNX Runtime C++ API (Env, Session, Run). Each output vector is
-// scaled to length 1 (L2 normalization), as FontMap does with its FontCLIP
+// scaled to length 1 (L2 normalization)
 // vectors. Writes n * dims floats to out. A model, once opened, stays open for
 // the life of the process. Returns n, or 0 if the model file does not exist or
 // its output is not n x dims.

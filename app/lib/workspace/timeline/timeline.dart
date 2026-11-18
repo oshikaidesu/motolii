@@ -1,5 +1,4 @@
 // The workspace's Timeline panel.
-//
 // It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
 // The project lives in WorkspaceController. This panel keeps only how it is viewed, each part in an object the State owns:
 // the zoom and scroll (TimelineViewport), the rows as laid out (TimelineRows), the media read for them

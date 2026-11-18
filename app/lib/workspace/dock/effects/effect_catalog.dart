@@ -86,7 +86,7 @@ EffectListing effectListing({
   required Map<String, ShelfItem> seen,
 }) {
   final ws = c.ws;
-  // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
+  // Search matches the name, or what the effect does in its author's words
   // It also matches the tags read from the effect (ShelfTags), each word on its own.
   // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
   Set<String> tagsOf(String id) =>
@@ -140,7 +140,7 @@ EffectListing effectListing({
           ? c.mem.fxPlace
           : 'All',
       pack = place.startsWith('/') ? place.substring(1) : null;
-  // On the map, the map shows all effects and the selected deck sits beside it to add and remove effects, like Hearthstone's
+  // On the map, the map shows all effects and the selected deck sits beside it to add and remove effects
   // Collection Manager. Elsewhere a deck shows what it holds as tiles.
   final building =
       c.mem.mapped.contains('Effects') && (deck != null || place == '★');

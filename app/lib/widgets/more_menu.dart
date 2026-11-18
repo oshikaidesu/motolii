@@ -7,8 +7,7 @@ import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/context_menu.dart'
     show ContextMenuItem, MenuHost;
 
-/// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
-///
+/// The ⋮ button of an effect card
 /// It opens a short list over the panel, styled like Chooser's lists, of the other things the user can do with the card.
 /// Picking an item runs it and closes the list.
 class CardMore extends StatefulWidget {
@@ -22,7 +21,7 @@ class CardMore extends StatefulWidget {
   });
   final String name, word;
 
-  /// [above] opens the list upward, for a button at the foot of the window (AbsentMotion's AboveAnchor).
+  /// [above] opens the list upward, for a button at the foot of the window.
   final bool above, big;
   final List<(String key, String label, VoidCallback does)> items;
   @override

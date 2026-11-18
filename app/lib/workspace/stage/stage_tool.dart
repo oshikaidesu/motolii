@@ -34,7 +34,6 @@ class StageTool {
   });
 
   /// What the selected tool creates when dragged across the stage (rect, circle, line, text, brush).
-  ///
   /// Null means the user is selecting and moving layers instead.
   final String? make;
 

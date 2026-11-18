@@ -138,13 +138,12 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
     d->bent = bend, d->joined = join, d->morphed = morph, d->traced = trace;
     const float high = d->plainHigh;
     // When tracing, the traced path replaces the shape's own path, like
-    // Cavalry's Trails.
     const bool traces = !trace.by.empty();
     std::vector<tvg::PathCommand> pathBy = traces ? trace.by : d->plain;
     std::vector<tvg::Point> pathAt = traces ? trace.at : d->plainAt;
     if (bend[8] >= 2.f) {
       // Resample the outline to bend[8] points joined by straight lines before
-      // the operators run, like Cavalry's Resample Path.
+      // the operators run
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       if (sk_resample(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
@@ -169,13 +168,13 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
         outline_put(d->outline, c, p);
     }
     if (morph.much > 0.f) {
-      // Morph toward the other path by morph.much, like Cavalry's Morph. Both
+      // Morph toward the other path by morph.much
       // paths are walked at even steps and matched point to point.
       const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
       if (morph.how > 1) {
-        // A blend, like Illustrator's and Cavalry's: morph.how evenly spaced
+        // A blend
         // steps from this path to the other, combined into one path.
         std::vector<tvg::PathCommand> all;
         std::vector<tvg::Point> at;
@@ -204,7 +203,6 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
     }
     if (bend[9] > 0.f) {
       // Voxelize into squares of side bend[9] times the height, last of all,
-      // like Cavalry's Voxelize.
       const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;

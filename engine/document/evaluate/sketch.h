@@ -5,7 +5,6 @@
 // the shapes, vertices and camera view that the sketch has drawn (__mesh_at in
 // p5_mesh.h). This file rebuilds them as one mesh in the scene, the same way a
 // sheet's mesh is rebuilt (reshape in render_stage.h).
-//
 // Each shape is fetched from the script once and laid out here, because a
 // script is too slow to repeat a thousand spheres every frame. A sketch can
 // therefore draw any number of copies, and every shape matches what p5 itself

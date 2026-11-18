@@ -27,7 +27,7 @@ struct DocCard {
 
 // Each entry is a card with a title and the space separated properties it
 // shows. The order is the order of the cards. First come the properties that
-// every layer has, as After Effects' Properties panel keeps Layer Transform at
+// every layer has
 // the top for all layer types. Then Alight Motion's Opacity and Blending, which
 // is how the layer lies on what is under it. Then the cards of each kind of
 // layer, such as Text and Paragraph or Shape Properties.
@@ -54,11 +54,11 @@ inline const DocCard doc_cards[] = {
     // After Effects' Source Text and Character panels and Cavalry's Text shape:
     // what the text says,
     // its font, its size and its alignment.
-    // Shown for text without being asked, as Alight Motion keeps Edit Text
+    // Shown for text without being asked
     // among a text's tiles (see LayerTools.kt in engine/third_party/
     // AbsentMotion). Slant, wrapping the lines in a box or setting them down
     // the page, and splitting into letters or words that each have their own
-    // expression sit with the rest of the text, as After Effects' Character and
+    // expression sit with the rest of the text
     // Paragraph panels do.
     {"Text",
      "text text_styles file size letter_spacing line_spacing align split "
@@ -75,7 +75,7 @@ inline const DocCard doc_cards[] = {
      "stroke stroke_width"},
     // There is no Copies card. The number of copies and the copies' own values
     // are on the card of
-    // the first expression, see doc_cards_of, as After Effects' Repeater keeps
+    // the first expression, see doc_cards_of
     // its Copies, Offset
     // and Transform (Start and End Opacity) inside it.
     // A flat layer lit from within. Above 1 the canvas's bloom picks it up
@@ -102,7 +102,7 @@ inline const DocCard doc_cards[] = {
      "trim trim_offset morph morph_to morph_steps "
      "resample rough rough_detail fill_rule trail trail_length",
      "kind", "text shape image"},
-    // Where in its file a video starts (Premiere Pro's Slip), how loud it is
+    // Where in its file a video starts, how loud it is
     // heard and exported, and the beats the timeline's ruler marks.
     {"Media", "begin volume beats", "kind", "video"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
@@ -111,11 +111,11 @@ inline const DocCard doc_cards[] = {
     {"Parent", "parent_rotate parent_size roll roll_radius", "parent", "!0"},
     // A group's re-timing, kept with it as an element: how it plays when it is
     // put in a longer or
-    // shorter place, as Alight Motion's Element settings Re-timing and its
+    // shorter place
     // marks.
     {"Element", "retime retime_in retime_out", "shape", "null"},
     {"Connect", "connect connect_to connect_reach", nullptr, nullptr, true},
-    // The shapes of the open ends of a line, as Cavalry's heads and Alight
+    // The shapes of the open ends of a line
     // Motion's line start and
     // end.
     {"Line", "cap join dash dash_gap dash_offset heads head_shape head_start "

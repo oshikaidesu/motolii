@@ -1,7 +1,6 @@
 // Tests for motion/easing_godot.h: Godot's Tween easing functions, compiled
 // with our own stand-in for Godot's math header
 // (third_party/godot_easing/core/math/math_funcs.h).
-//
 // The expected values come from Robert Penner's easing equations, which
 // Godot's file says it is derived from: http://robertpenner.com/easing/ (the
 // equations, and chapter 7 of "Programming Macromedia Flash MX", which

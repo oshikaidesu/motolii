@@ -38,13 +38,13 @@ extension EditCommands on WorkspaceState {
           ? null
           : requestUndo(ws, redo: true),
       'edit.cut': () {
-        // Unless the user is typing text, copy the selected layer and then remove it, as one undo step each, as Live does.
+        // Unless the user is typing text, copy the selected layer and then remove it, as one undo step each
         if (typed(
           const CopySelectionTextIntent.cut(SelectionChangedCause.keyboard),
         )) {
           return;
         }
-        // Cut keyframes: copy then delete, as After Effects does.
+        // Cut keyframes: copy then delete
         if (ws.keys.isNotEmpty) {
           copiedKeyframes = const [];
           copyKeyframes(ws, ws.keys);
@@ -73,7 +73,7 @@ extension EditCommands on WorkspaceState {
         if (typed(const PasteTextIntent(SelectionChangedCause.keyboard))) {
           return;
         }
-        // Pastes the app's own clipboard: the copied keyframes, else the copied layer at the playhead (Live's paste at the insert marker).
+        // Pastes the app's own clipboard: the copied keyframes, else the copied layer at the playhead.
         // The pasted layer is selected.
         void own() => copiedKeyframes.isNotEmpty
             ? pasteKeyframes(ws)
@@ -85,7 +85,7 @@ extension EditCommands on WorkspaceState {
               )
             : null;
         // Finder からコピーしたファイル、または画像データ (⌘⇧⌃4 のスクリーンショットなど) をクリップボードから拾って、
-        // 1 ファイル 1 レイヤーとして置く (UAT 230/231/306). 以降のコード/キーフレームペーストは走らない。
+        // 1 ファイル 1 レイヤーとして置く. 以降のコード/キーフレームペーストは走らない。
         Future<bool> pasteFiles() async {
           final paths = await clipboardFilePaths();
           if (paths.isEmpty) return false;
@@ -141,12 +141,12 @@ extension EditCommands on WorkspaceState {
           typed(const SelectAllTextIntent(SelectionChangedCause.keyboard))
           ? null
           : ws.pickMany([for (final l in ws.layers) l.id]), // Unless the user is typing: all layers, as Ableton's Cmd+A in the arrangement.
-      // Selects nothing, as a click below the rows does (After Effects and Premiere Pro: Edit > Deselect All).
+      // Selects nothing, as a click below the rows does.
       // This is the only way to deselect when one layer covers the whole canvas.
       'edit.deselectAll': () => ws
         ..clearKeys()
         ..select(null),
-      // Removes the work area and closes the gap (After Effects' Edit > Extract Work Area, under Split Layer).
+      // Removes the work area and closes the gap.
       'edit.extractWork': () => ws.after(
         extractWorkArea(ws),
         (done, why) => done || why.isEmpty

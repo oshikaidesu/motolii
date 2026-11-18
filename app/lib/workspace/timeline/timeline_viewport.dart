@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 
 /// Where frames land on the track area at one moment: x = padL + (frame - scroll) * pixelsPerFrame.
-///
 /// Painters are given one of these and repaint when it differs from the last one.
 @immutable
 class TimelineView {
@@ -36,7 +35,6 @@ class TimelineView {
 }
 
 /// The timeline's zoom and scroll, and the size of its track area.
-///
 /// It notifies its listeners when a gesture changes the zoom or the scroll. [layout] does not notify, because it is
 /// called while the timeline is being built.
 class TimelineViewport extends ChangeNotifier {

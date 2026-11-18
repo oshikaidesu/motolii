@@ -9,7 +9,6 @@ import 'package:motolii/skin/tokens.dart';
 
 /// The collage behind the whole home screen: the marks of a design tool and of this app, many of them, at every size
 /// and a little askew, each overlapping its neighbours, under a shade that keeps it in the background.
-///
 /// Rows are counted from the foot of the window and columns from its left, and each place draws from its own seed, so
 /// a mark stays where it is when the window is resized.
 class HomeCollage extends CustomPainter {

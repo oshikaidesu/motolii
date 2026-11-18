@@ -20,7 +20,6 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Shows the project size.
-///
 /// A click opens the project box. A double-click turns the chip into a text field: a width alone keeps the aspect
 /// ratio, and "1080x1920" sets both. Dragging sideways changes the width by 1% per 3 px with the aspect ratio kept,
 /// and the project is reopened at the new size when the drag ends.
@@ -31,7 +30,6 @@ class SizeChip extends StatefulWidget {
 }
 
 /// The shapes and resolutions of Alight Motion's new-project box.
-///
 /// A resolution is the length of the shorter side, as in its 2160p to 270p. Choosing a shape and a resolution sets
 /// the project size and reopens the project at it.
 const sizeShapes = [
@@ -205,7 +203,7 @@ class _SizeChipState extends State<SizeChip> {
               ),
           ]),
           SizedBox(height: Shape.s(12)),
-          // How long a new layer lasts (Alight Motion's New Layer Length). End runs to the end of the project.
+          // How long a new layer lasts. End runs to the end of the project.
           MenuRow<int>(
             menuKey: const ValueKey('size-len'),
             label: 'New layer length',

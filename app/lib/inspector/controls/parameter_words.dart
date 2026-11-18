@@ -1,4 +1,4 @@
-// The field for a words value: free text that may span lines, like Cavalry's string attribute.
+// The field for a words value: free text that may span lines
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/inspector_scope.dart';

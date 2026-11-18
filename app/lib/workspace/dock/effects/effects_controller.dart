@@ -27,7 +27,7 @@ class EffectsController {
   /// or an effect in a Premiere bin.
   final carried = Expando<String>();
 
-  /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
+  /// Effect files sorted by name
   /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
   /// Computed once per list of files. Each entry is the name as shown and the engine's item.
   final byName = Expando<List<(String, ShelfItem)>>();

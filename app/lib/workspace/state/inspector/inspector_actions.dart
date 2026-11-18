@@ -87,7 +87,7 @@ void toggleEffect(WorkspaceController ws, int t, String title) => ws.after(
   (_, _) => ws.reread(),
 );
 
-/// Puts the effect [title] of layer [t] on again after itself, with its values (Alight Motion's Duplicate).
+/// Puts the effect [title] of layer [t] on again after itself, with its values.
 void duplicateEffect(WorkspaceController ws, int t, String title) => ws.after(
   ws.inside!.later('fx_duplicate', layer: t, word: title),
   (done, why) => done ? ws.reread() : ws.notice = why,

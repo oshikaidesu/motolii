@@ -40,7 +40,6 @@ class ArtLayer {
 }
 
 /// What the stage draws: the frame, the layers, and whether the camera layer frames the view.
-///
 /// Two scenes are equal when they would draw the same image.
 @immutable
 class ArtScene {
@@ -76,13 +75,11 @@ class ArtScene {
   final _asked = <int, ArtBox?>{};
 
   /// Where the view camera stood, and each camera layer as it sees the stage.
-  ///
   /// The engine's text (doc_gizmo), read with each image.
   final List<double> eye;
   final Map<int, String> gizmos;
 
   /// A camera layer's points on the image: the four corners of its frame, the point it looks at and its position.
-  ///
   /// A point is null when it lies behind the view camera.
   List<Offset?> gizmo(int id) {
     final n = (gizmos[id] ?? '')
@@ -97,7 +94,6 @@ class ArtScene {
   }
 
   /// A layer's box on the image as the engine sees it at this time, or null when the layer is not shown.
-  ///
   /// It is asked for only when needed (a handle on the stage, the selected layer's outline), not for every layer
   /// on every image.
   ArtBox? box(int id) => _asked.putIfAbsent(id, () {
@@ -169,7 +165,6 @@ abstract final class ArtGeometry {
   static Offset get centre => comp.center(Offset.zero);
 
   /// The box the stage frames when [id] is selected, or null when the layer has no image at this frame.
-  ///
   /// The engine gives a box only to what it shows, so whether the layer is on is not worked out again here.
   static ArtBox? boxOf(ArtScene s, int? id) =>
       s.layer(id) == null ? null : s.box(id!);

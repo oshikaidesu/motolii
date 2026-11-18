@@ -25,7 +25,6 @@ class _CameraViewState extends State<CameraView> {
   }
 
   /// Tells the engine whether this image is wanted, after every frame the app draws.
-  ///
   /// It is wanted only while the tab is in front. The tab view keeps a hidden tab built but Offstage, so a tab
   /// nobody looks at costs no second image.
   void _look(Duration _) {

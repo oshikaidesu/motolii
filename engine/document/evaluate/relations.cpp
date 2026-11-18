@@ -34,7 +34,6 @@ namespace {
 // reads out[copy] from the cached array. This stays one QuickJS call per
 // frame no matter how many copies the layer has, so the per-copy work is
 // plain C++. A TSL compute node will replace the JS call itself later.
-//
 // The JS runtime loads on first use and stays while the engine runs. All
 // calls take a mutex because QuickJS is not thread-safe: every path that
 // reaches a behaviour value (evaluate layer, sketch, scripts...) can touch

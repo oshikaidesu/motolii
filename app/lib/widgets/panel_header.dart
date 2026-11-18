@@ -5,7 +5,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 /// A panel's header: the title on the left, [trailing] on the right, a hairline underneath.
-///
 /// [height], [color] and [padding] are for headers that need to be taller, darker or tighter.
 /// [child] replaces the whole row.
 class PanelHeader extends StatelessWidget {

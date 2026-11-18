@@ -22,7 +22,7 @@ std::vector<std::string> doc_stroke_list(Doc& d, int layer);
 // property.
 std::string doc_stroke_join(const std::vector<std::string>& list);
 // Adds a new extra stroke on the layer with a fresh instance ID. The stroke
-// is drawn outside of the preceding ones, like After Effects adding one more
+// is drawn outside of the preceding ones
 // outline.
 bool doc_stroke_add(Doc& d, int layer);
 // Takes the extra stroke with instance ID `id` off the layer and deletes its

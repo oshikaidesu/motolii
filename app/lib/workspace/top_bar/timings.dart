@@ -23,7 +23,6 @@ import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// A red dot with a count of problems, shown only when there are any.
-///
 /// It counts frames longer than 1/60 s while something moved (in the app or the engine) and times the app waited
 /// for the engine, which should never happen. A click lists the latest, each with its clock time and slow part.
 class Waited extends StatefulWidget {
@@ -109,7 +108,6 @@ class _WaitedState extends State<Waited> {
   }
 
   /// Handles Flutter's per-frame timings ([FrameTiming]).
-  ///
   /// A frame whose build (UI thread) or raster (raster thread) took longer than one frame budget missed 60 fps.
   /// A frame is counted only while something moves: it must start within two budgets of the previous frame's raster
   /// end while playing or while the user is interacting, and not in the first 3 seconds after launch.

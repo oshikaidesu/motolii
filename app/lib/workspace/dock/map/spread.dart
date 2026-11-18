@@ -6,17 +6,14 @@ import 'package:flutter/widgets.dart';
 import 'package:force_graph/force_graph.dart'
     show CollideForce, Force, ForceNode, ForceSimulation;
 
-/// A tile's collision radius on the map, in canvas pixels (FontMap uses 13).
+/// A tile's collision radius on the map, in canvas pixels.
 const mapTileRadius = 13.0;
 
 /// Pushes [at] apart until no two are within two [mapTileRadius] of each other, keeping each near where it was.
-///
 /// [at] holds positions from 0 to 1 on each axis. [aspect] is the viewport's width to height. The canvas has the area of
 /// FontMap's 1920 x 1080, in the shape of the viewport. Returns the positions on that canvas.
-///
 /// This follows FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers: 40 px padding, radius 13, 140 ticks
 /// and a pull back to the start position of 0.03. It uses force_graph (MIT), a Dart port of d3-force, with d3's cooling.
-///
 /// [squeeze], from 0 to 1, also pulls every item toward the middle, at most at d3's default forceX strength of 0.1.
 /// This is Obsidian's graph "Center force". Afterwards the pulls are removed and 40 more collision ticks clear any
 /// overlap they caused, as FontMap's cartogram.js (src/experiments/engine/cartogram.js, relax) does.

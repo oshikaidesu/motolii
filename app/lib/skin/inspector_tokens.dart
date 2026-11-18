@@ -18,7 +18,6 @@ class InspectorSkin {
 
   /// The spacing rule: card content is inset [inset] at the sides and [insetY] top and bottom.
   /// A card's title sits [titleGap] above its content, and cards are [gap] apart and from the panel edge.
-  ///
   /// The spacing is tight on purpose. The panel is read as a list, so more rows on screen beats air.
   /// Containers (cards, the canvas) are square and tile edge to edge.
   /// Things the user touches or reads (fields, chips, badges, switches) are round.

@@ -20,13 +20,11 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// A document colour (six hex digits) as a Flutter [Color], or null when there is none.
-///
 /// A gradient is read as its first stop, with the stop's position left out.
 Color? _colorOf(String word) =>
     colorOfHex(word.split(' ').first.split('@').first)?.withAlpha(255);
 
 // The paint values last read, with the key they were read for.
-//
 // The strip is rebuilt on every image during playback. These values do not change with time, so they are read
 // once per document revision and selection instead of waiting for the engine to report the current time.
 (
@@ -44,7 +42,6 @@ Color? _colorOf(String word) =>
 _paintRead;
 
 /// What the selected layer is painted with and how it is set.
-///
 /// With nothing selected, it is the fill and stroke the next drawn layer gets.
 ({
   Color? fill,
@@ -214,7 +211,7 @@ class OptionsStrip extends StatelessWidget {
             if (t == null || !stageConnected(ws)) return;
             stageBeginUndoStep(ws);
             stageSetValue(ws, layer: t, name: 'align', number: i / 2);
-            // Anchors the text where it stands, as After Effects' point text does.
+            // Anchors the text where it stands
             stageSetValue(ws, layer: t, name: 'anchor_x', number: i - 1.0);
             // Does not wait for the result.
             ws.after(stageEndUndoStep(ws));
@@ -346,7 +343,7 @@ class _Readout extends StatelessWidget {
               .copyWith(fontWeight: FontWeight.w600),
         ),
         // A behaviour layer has no image of its own, so there is nothing to say. A camera layer, while its bar covers
-        // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
+        // the current frame, also has no size: only its name is shown
         if (box == null &&
             stageWord(ws, l.id, 'kind') != 'behaviour' &&
             !(l.kind == LayerKind.camera &&

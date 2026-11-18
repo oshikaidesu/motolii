@@ -38,7 +38,6 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 Ease? easeCopied;
 
 /// Whether dragging an end of a segment up or down makes the value jump there.
-///
 /// When on, a keyframe one frame outside the segment keeps its old value, so the value jumps at the keyframe.
 /// When off, only the keyframe's value moves and the neighbouring segment follows. Kept until the app closes.
 bool easeJump = true;

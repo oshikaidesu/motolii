@@ -28,7 +28,6 @@ const char* motolii_effects(Motolii* m) {
   return by_look(m, [=] {
     // The file types are .wgsl, .fs, .mjs, .js, .json and .am. A .json file
     // holds Filament's own settings, see viewer_settings.h. A .am file is an
-    // AbsentMotion motion, see absent_motion.h.
     const std::string files = doc_folder_names("effects",
                                                ".wgsl .fs .mjs .js .json .am"),
                       aviutl = doc_aviutl_names();

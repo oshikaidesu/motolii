@@ -10,7 +10,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// The Fill card's inside (see host_cards.dart).
-///
 /// The gradient's own settings are whichever params the engine folds under the
 /// gradient (Parameter.fold == its label, set in values.h), not a list named
 /// here — the engine's fold is the source of truth for the grouping, as in the

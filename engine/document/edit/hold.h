@@ -2,7 +2,6 @@
 #define MOTOLII_DOCUMENT_EDIT_HOLD_H_
 
 // Dragging a layer, or a value of a layer.
-//
 // A drag has three steps: doc_hold starts it, doc_carry updates it, and the end
 // of the drag either keeps or discards it. This is the one form of every
 // pointer drag: a layer on the stage, its bar on the timeline, a number. While
@@ -11,7 +10,6 @@
 // is discarded, nothing happened. All the arithmetic of a drag lives here,
 // once. The app reports where the pointer is and never works out what the
 // document should hold.
-//
 // doc_carry takes a mode `by` and two numbers a and b. The modes are:
 //   "place"   Move the layer on the stage. a, b are how far the pointer has
 //   moved since it took

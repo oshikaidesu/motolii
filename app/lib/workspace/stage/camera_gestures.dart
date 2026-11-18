@@ -14,7 +14,6 @@ import 'package:motolii/workspace/state/stage/stage_service.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The gestures that move a camera on the stage: the Camera tool's drag, a drag on a camera's gizmo, and the wheel.
-///
 /// A camera drag is a drag on the stage like any other, so it is begun and carried on through the [StageDrag] given
 /// here. Listeners are told when a drag has changed what the stage draws.
 class CameraGestures extends ChangeNotifier {
@@ -66,7 +65,6 @@ class CameraGestures extends ChangeNotifier {
   }
 
   /// Starts the Camera tool's drag at [local], which orbits the camera around its point of interest.
-  ///
   /// With no camera in the project, nothing is held and a notice says so.
   void orbitDragStart(Offset local) {
     // As with After Effects' Unified Camera tool, dragging orbits the camera around its point of interest.
@@ -91,11 +89,9 @@ class CameraGestures extends ChangeNotifier {
   }
 
   /// Starts a drag on a camera gizmo in the custom view and returns whether one was hit.
-  ///
-  /// - The camera's position handle orbits it around its point of interest, as in After Effects.
+  /// - The camera's position handle orbits it around its point of interest
   /// - A corner of the selected camera's frame resizes the frame, which sets the lens.
   /// - The frame itself or the point of interest moves the camera.
-  ///
   /// [wholeFrame] makes any point in the frame count as a hit, not only its handles.
   bool gizmoDragStart(
     StageViewport v,
@@ -152,7 +148,6 @@ class CameraGestures extends ChangeNotifier {
   }
 
   /// Carries a camera drag on to [local].
-  ///
   /// Returns false, having done nothing, when the drag in progress is not an orbit or a gizmo's.
   bool dragUpdate(Offset local) {
     final h = _drag.held, ws = _stage.workspace;

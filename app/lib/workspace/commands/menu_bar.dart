@@ -1,5 +1,4 @@
 // The workspace's commands by name, which a key, a menu item or the command line runs. The menu bar built from them is menu_items.dart.
-//
 // setState is called from an extension on the State itself, which the analyzer only allows in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
 
@@ -38,7 +37,7 @@ extension WorkspaceMenus on WorkspaceState {
         home = true;
       }),
       'file.poster': () {
-        // The frame the project picture is drawn at from now on (Alight Motion's Set Project Thumbnail).
+        // The frame the project picture is drawn at from now on.
         // The playhead frame is divided by 60 because the preview runs at sixty frames a second.
         if (setProjectPoster(ws, ws.frame / 60)) {
           ws.notice = 'Project picture: ${ws.frame}';

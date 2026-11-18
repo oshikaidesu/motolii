@@ -64,7 +64,6 @@ class EffectCode extends StatefulWidget {
       cards.showCodeCell(ws, title);
 
   /// The code of the card [title] of the layer [thing], or null if the card has no code.
-  ///
   /// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
   /// not by the title alone, because two cards can share a title (state/effect_code_cards.dart codeOfCard).
   static EffectCode? ofCard(

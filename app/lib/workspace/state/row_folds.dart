@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:motolii/workspace/state/layer.dart';
 
 /// Which rows the user has opened in the timeline: the lanes of keyframed properties under a layer, and the members of a group.
-///
 /// Only the rows fold. The document does not know of it and the file does not save it.
 class RowFolds {
   /// Creates it with every row closed. [animating] says whether Animate is on, which opens every layer's lanes.
@@ -50,12 +49,12 @@ class RowFolds {
   /// Opens the group [id], or closes it when it is open.
   void turnGroup(int id) {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
-    // The group's own keyframe lanes follow it: one triangle per row, as in Apple Motion.
+    // The group's own keyframe lanes follow it: one triangle per row
     _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);
     _onChanged();
   }
 
-  /// Each layer hidden by a closed group, mapped to the row standing for it: the outermost closed group above it (Cavalry marks that row).
+  /// Each layer hidden by a closed group, mapped to the row standing for it: the outermost closed group above it.
   Map<int, int> get foldedAway {
     final layers = _layers();
     final of = <int, Layer>{for (final l in layers) l.id: l};

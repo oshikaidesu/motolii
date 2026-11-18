@@ -5,7 +5,6 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 
 /// What a shelf shows when the search finds nothing, or when the shelf is empty.
-///
 /// A centered placeholder: a muted search glyph when the user is searching, and one soft line of text under it. Picks
 /// up from Apple Music / Spotify's "no results" layout — more human than a plain mid-grey sentence.
 class EmptyShelf extends StatelessWidget {

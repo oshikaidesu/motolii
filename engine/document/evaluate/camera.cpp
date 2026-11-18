@@ -454,7 +454,7 @@ void evaluate_camera(Evaluation& evaluation) {
   working_view_shown(evaluation, camera);
   // The stage view faces s.camera when the working camera is on; the camera
   // view always faces s.film. Billboards and 2D layers use the facing camera
-  // so they look correct in whichever view is shown (Blender's behaviour).
+  // so they look correct in whichever view is shown.
   filament::Camera* const facing_cam =
       d.working_camera.on ? s.camera : s.film;
   d.camera.rig = facing_cam->getModelMatrix() *

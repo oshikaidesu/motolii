@@ -81,7 +81,6 @@ class ShelfContext {
   void pick(String id) => set(() => mem.sel[shelf] = id);
 
   /// Returns [picked] if the footer should show it, otherwise null.
-  ///
   /// Opening the footer shortens the tiles, so a tile low on the shelf could move away before the second click of a
   /// double-click. A closed footer therefore opens only once a second click can no longer come, following Microsoft's
   /// "How to distinguish between single and double clicks". The selection itself does not wait,
@@ -98,7 +97,6 @@ class ShelfContext {
       query.isEmpty || name.toLowerCase().contains(query.toLowerCase());
 
   /// The ids of the five closest [items], best first, for when the search text finds nothing.
-  ///
   /// Each item is its id, name and description. The engine does the matching, as it does for the effects shelf:
   /// RapidFuzz for a misspelled or partial word and Japanese WordNet for a Japanese word. Every shelf uses it.
   /// Empty while nothing is typed. [least] is the score below which an item is left out (see Motolii.find).

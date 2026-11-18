@@ -2,7 +2,7 @@
 #define MOTOLII_DOCUMENT_EDIT_ELEMENTS_H_
 
 // Elements: a layer kept as a file of its own, put into other projects and
-// followed when the file changes (Alight Motion's My Elements). They are
+// followed when the file changes. They are
 // stored like presets (presets.cpp); this file is the keeping, the adding and
 // the following.
 

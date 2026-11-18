@@ -8,7 +8,6 @@ import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/workspace/dock/media/file_node.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
-///
 /// It follows OpenToonz (xdtsio.cpp, loadXdtsScene and getCellFrameIdTrack). Each track of the first time table
 /// (fieldId 0) is a column, named by the header name at its trackNo, with the bottom column first.
 /// Each item is a change at its frame that holds until the next item, and the last one holds to the end of the sheet.
@@ -72,7 +71,6 @@ sheetOf(String text) {
 }
 
 /// Returns the drawings of one level, lowest number first, if [files] are all drawings of it, otherwise null.
-///
 /// The drawings are image files in one folder with the same name apart from a number at the end, such as
 /// animation_0001.png, which OpenToonz reads in tfilepath.cpp. At least [least] drawings are needed.
 /// [kindOf] says what kind of layer a file makes; a drawing is a 'picture'.
@@ -98,7 +96,6 @@ List<(int, String)>? levelOf(
 }
 
 /// Finds the drawings of the level [name] for the timesheet file [sheet].
-///
 /// A level's name is the part before the '.' or '_' and the number, as in OpenToonz's tfilepath.cpp getLevelNameW
 /// (A.0001.png, A_0001.png). It looks in the sheet's folder, then in a subfolder of that name, as CLIP STUDIO writes
 /// foo/A/ (OpenToonz's xdtsimportpopup.cpp, updateSuggestions).

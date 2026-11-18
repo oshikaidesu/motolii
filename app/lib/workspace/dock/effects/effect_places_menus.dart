@@ -78,7 +78,6 @@ class EffectPlacesMenus {
   /// The context menu of the Favorites row, modeled on Lightroom Classic's menu on the Quick Collection:
   /// Set as Target Collection, Save Quick Collection… and Clear Quick Collection
   /// (Adobe's "Work with photo collections"; Thomas Fitzgerald's "Quick Lightroom Tip: Clear Quick Collection", 2016).
-  ///
   /// Save turns the starred effects into a deck, opens it, and starts editing its name, as New Deck from the + does.
   /// Once the deck is named, the Favorites are emptied for the next batch, as Lightroom does while
   /// "Clear Quick Collection After Saving" is on. Here the name is edited in the row, so there is no dialog to turn that off.

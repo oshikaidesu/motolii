@@ -1,5 +1,4 @@
 // How a number field looks, kept out of the field's own file to avoid an import cycle.
-//
 // The field's file is imported by the inspector, and the inspector is imported by the forms, so the field cannot import
 // the forms. Instead the forms call [bindNumber] when they load.
 import 'dart:math' as math;
@@ -52,18 +51,15 @@ class NumberSpec {
   final Color? keyDot;
 
   /// Draws the keyframe mark hollow: the property can be keyframed but has no keyframe here.
-  ///
   /// This follows Alight Motion's empty diamond beside a value.
   final bool keyEmpty;
 
   /// Lays out the caption and the number in one row with no frame: the caption first, the number at the right.
-  ///
   /// Used for the small numbers in a tool panel.
   final bool inline;
 }
 
-/// A keyframe mark for a value: a diamond, as in Alight Motion beside each value and in the timeline.
-///
+/// A keyframe mark for a value: a diamond
 /// Filled means a keyframe at this time, faint means keyframes at other times, and [empty] means none yet.
 /// When the user presses it, the field adds a keyframe there (see lib/widgets/number_field_state.dart).
 Widget keyDiamond(Color colour, {bool empty = false}) => Transform.rotate(

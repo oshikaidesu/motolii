@@ -2,13 +2,11 @@
 #define MOTOLII_STAGE_CANVAS_CANVAS_SKETCH_H_
 
 // canvas_sketch.h: Draws a 2D p5.js sketch onto a ThorVG canvas.
-//
 // The sketch runs without a web page (see p5_stand.h). On each frame its paint
 // commands become ThorVG shapes on the layer's canvas. The canvas keeps its
 // previous contents, because Canvas::draw(false) makes WgCompositor load what
 // is already there. This matches a p5.js canvas: a sketch that never clears the
 // canvas accumulates its painting, and a frame costs only what it adds.
-//
 // The paint commands arrive as a flat array of doubles, which is built by
 // p5_stand.h. Each command has a header of 12 numbers followed by `n` path or
 // text numbers and `more` gradient numbers. The header is laid out as follows:
@@ -42,7 +40,6 @@ void sketch_draw(Canvas2D* d, const std::vector<double>& o);
 // the script that runs the sketch, `fontFile` is the font used for text, `high`
 // is passed on to place_canvas, `lay` is the layer name and `fx` the canvas
 // effects. Returns null if the sketch has no size.
-//
 // A sketch has no end, so the canvas is given 36000 frames, which is ten
 // minutes at the 60 frames a second that the clock in p5_stand.h runs at.
 Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run,

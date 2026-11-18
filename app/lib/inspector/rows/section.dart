@@ -11,7 +11,6 @@ import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/forms/forms.dart';
 
 /// A card: a heading and its rows. Clicking the heading folds the card.
-///
 /// Alt-click folds or opens every card of the document at once, like Option-click on a disclosure triangle in Finder's list view.
 class Section extends StatelessWidget {
   const Section({

@@ -12,7 +12,6 @@ namespace motolii {
 // pipeline decodes, scales and encodes to PNG, is paused at its first frame,
 // and that frame is taken and written. The pipeline needs no stage, so any
 // thread may call this.
-//
 // If `seconds` is greater than 0 the frame is that many seconds into the video.
 // Otherwise, if `fraction` is greater than 0, it is that fraction of the
 // video's duration, from 0 to 1 and at most 0.98, so that moving the pointer

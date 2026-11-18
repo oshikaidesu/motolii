@@ -1,6 +1,6 @@
 // A shelf's map: items laid out so that similar ones lie near each other, like XLN Audio XO's Space.
 // Positions come from the engine's t-SNE (motolii_map), then items are pushed apart until none covers another
-// ([spreadApart], after FontMap) and optionally drawn together (Obsidian's graph "Center force"). The shelf's chips and
+// ([spreadApart], after FontMap) and optionally drawn together. The shelf's chips and
 // search words narrow which items are shown, as XO's filters do. Flutter's InteractiveViewer pans and zooms. Below the
 // map, a similarity list shows the items nearest the picked one (XO's Similarity List, Splice's Similar Sounds). The user
 // steps through it with its arrows or the left and right keys. The map is laid out again when the shelf's contents
@@ -53,7 +53,6 @@ class ShelfMap {
   }
 
   /// Pushes [_laid] apart for the current viewport and draws it together by [squeeze] ([spreadApart]).
-  ///
   /// One run is active at a time. It repeats until its result matches the latest layout, aspect and squeeze.
   Future<void> _spread() =>
       _spreading ??
@@ -83,10 +82,8 @@ class ShelfMap {
       ));
 
   /// Lays out [items], each an id and the source it is read from.
-  ///
   /// [read] turns the sources into feature vectors, or null for an item to leave off the map. [also] is any other input
   /// the layout depends on; all items are laid out again when it changes.
-  ///
   /// Items laid out before stay where they were. A new or changed item goes to the median of its 25 nearest placed items,
   /// as openTSNE adds points to an existing map (prepare_partial, initialization "median", k 25; BSD-3). Everything goes
   /// through t-SNE only when nothing was laid out before.
@@ -209,7 +206,7 @@ class ShelfMap {
   }
 
   /// Returns [id] followed by the [k] - 1 items of [among] nearest to it, nearest first (XO's Similarity List).
-  /// Distances use the t-SNE positions before overlap removal, as FontMap does for its similar fonts.
+  /// Distances use the t-SNE positions before overlap removal
   List<String> alike(String id, Iterable<String> among, int k) {
     final at = _laid.isEmpty ? places.value : _laid, p = at[id];
     if (p == null) return const [];

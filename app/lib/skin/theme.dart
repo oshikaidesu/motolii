@@ -1,23 +1,18 @@
 // The app's colour theme, in the manner of Ableton Live's .ask files: a flat list of roles, each a colour.
-//
 //   <Motolii><Theme>
 //     <ChosenDefault Value="#b3c66b"/>
 //     <Grey07 Value="#131313"/>
 //   </Theme></Motolii>
-//
 // The file is skins/<name>/theme.xml of the current skin, found in the user's own skins folder or in shelves/.
 // The skin name is stored in window.xml.
 // A role the file does not set keeps the built-in value, as in VS Code.
-//
 // - The meaning roles keep Ableton's names: ChosenDefault, ChosenPlay, ChosenRecord, Alert, SelectionBackground,
 //   ControlOnForeground, Clip1-16. The keyframe mark is named after Blender's (Keyframe).
 // - The grey ramp keeps the app's own step names, Grey00 to Grey100. Each step has a role in both shades:
 //   ground, body, card, well, raised, lines, quiet text, text, strong text.
 // - A role may also be a number or a word, as in AviUtl2's style.conf and Obsidian's variables. These set the skin's shapes and type:
-//
 //     <Shade Value="light"/>  <Corner Value="3"/>  <TextScale Value="1.1"/>  <FontSans Value="Space Grotesk"/>
 //     <FontSansFile Value="~/.motolii/fonts/SpaceGrotesk.ttf"/>
-//
 // A `Font...File` role is loaded as a font under the family name given by the matching `Font...` role when the theme is read.
 import 'dart:async';
 import 'dart:typed_data' show ByteData;
@@ -43,7 +38,6 @@ abstract final class ColorTheme {
   static final words = ValueNotifier<Map<String, String>>(const {});
 
   /// The theme file to read instead of the current skin's.
-  ///
   /// Null means the skin's own file. A test sets it so that the skin the developer wears does not change the test.
   static String? at;
 
@@ -61,7 +55,6 @@ abstract final class ColorTheme {
   static String word(String role, String usual) => words.value[role] ?? usual;
 
   /// The user's own skins folder.
-  ///
   /// Each skin is a folder in it, like every shelf (doc_folders), with its theme.xml beside the pictures and fonts it brings.
   static String get skins => '$_skinsOwn/skins';
 
@@ -100,7 +93,6 @@ abstract final class ColorTheme {
   static void Function()? _changed;
 
   /// Reads the theme file at [path].
-  ///
   /// If it is missing or unreadable, the built-in colours and shapes are used.
   static void load(String path) {
     try {
@@ -129,7 +121,6 @@ abstract final class ColorTheme {
   }
 
   /// The folder of the theme file read last.
-  ///
   /// A path named by a role is relative to this folder unless it is absolute (`/...`) or starts at home (`~/...`).
   static String folder = '';
   static String place(String w) => w.isEmpty || w.startsWith('/')

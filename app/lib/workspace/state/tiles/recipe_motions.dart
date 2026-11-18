@@ -19,7 +19,6 @@ import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The moving parts of a recipe.
-///
 /// Each part has a colour, and for each copy its positions over time (x y z size per time step). [outline] is the SVG
 /// path of a path shape, or '' for other kinds. [evenOdd] selects the even-odd fill rule and [edge] means only the
 /// outline is drawn.
@@ -48,7 +47,6 @@ abstract final class RecipeMotions {
   static Completer<void>? _ended;
 
   /// Stops the computation after the current recipe, closes its project, and waits for the isolate to finish.
-  ///
   /// This keeps the isolate from opening projects while the app exits, for example when the window closes or a test file
   /// ends. A later [ask] starts again.
   static Future<void> stop() async {
@@ -70,7 +68,6 @@ abstract final class RecipeMotions {
 
   /// Creates every recipe in [recipes] on a project of its own, reads its motion, and closes the project. Only the
   /// first call does anything. The engine is the one of [ws].
-  ///
   /// Each recipe's tile can show as soon as its motion is read. A recipe with many copies takes seconds, and the ones
   /// after it do not wait for all of them.
   static void ask(WorkspaceController ws, List<String> recipes) {

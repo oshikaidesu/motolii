@@ -27,7 +27,6 @@ Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(
 );
 
 /// Adds an easing curve to [p] from x [xa] to [xb], sampled finely enough for the pixels on screen.
-///
 /// Sampling at 192 steps is more than a short stretch has pixels for, and a long one still looks like a curve.
 /// Skia flattens curves into line segments as well.
 void _wayLine(
@@ -240,7 +239,7 @@ class TimelineTracksPainter extends CustomPainter {
       p..color = notch,
     );
     if (r.frames case final f? when f.length == 1) {
-      // A single image is repeated along the bar at its own aspect ratio, as in Alight Motion.
+      // A single image is repeated along the bar at its own aspect ratio
       final im = f.single,
           step = math.max(4.0, bar.height * im.width / math.max(1, im.height));
       for (var x = bar.left + 5; x < bar.right - 5; x += step) {
@@ -254,7 +253,7 @@ class TimelineTracksPainter extends CustomPainter {
         );
       }
     } else if (r.frames case final f? when f.isNotEmpty) {
-      // A video shows a strip of frames, each filling its part of the bar with its centre kept, as in Alight Motion.
+      // A video shows a strip of frames, each filling its part of the bar with its centre kept
       final step = (bar.width - 10) / f.length;
       for (final (i, im) in f.indexed) {
         final at = Rect.fromLTWH(
@@ -334,7 +333,7 @@ class TimelineTracksPainter extends CustomPainter {
       );
     }
     for (final st in r.stretches) {
-      // The easing between each keyframe and the next, drawn as a thin line inside the bar, as Ableton draws automation.
+      // The easing between each keyframe and the next, drawn as a thin line inside the bar
       final xa = view.x(st.from), xb = view.x(st.to);
       if (xb - xa < 6 || xb < 0 || xa > s.width) continue;
       final h = bar.height * .72, base = cy + h / 2;
@@ -392,8 +391,7 @@ class TimelineTracksPainter extends CustomPainter {
     }
   }
 
-  /// Draws a property lane, like an envelope in an Ableton Live lane (Live 12 manual 25.5).
-  ///
+  /// Draws a property lane, like an envelope in an Ableton Live lane.
   /// Keyframes are breakpoints at their values, lowest at the bottom, joined by each keyframe's easing curve.
   /// Nothing is drawn before the first or after the last keyframe, because with many lanes a full-width line says nothing.
   /// The line is a lighter shade of the bar's colour, like the bar's own easing lines.

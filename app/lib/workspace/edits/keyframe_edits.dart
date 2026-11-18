@@ -1,5 +1,4 @@
 // Editing keyframes on the timeline: slide, remove, copy and paste.
-//
 // Sliding works like dragging keyframes in After Effects. Every property of the layer that has a keyframe at that
 // time keeps its value and easing at the new time, all as one undo step. The edit is queued on the engine without
 // waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.

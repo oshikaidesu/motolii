@@ -94,7 +94,6 @@ abstract final class BaseControls {
   );
 
   /// Round filter chips in a horizontal scroll view, with the active chip in the accent colour.
-  ///
   /// It scrolls like any horizontal list on a Mac: a trackpad's sideways swipe, or the mouse wheel with Shift held
   /// (Flutter's ScrollBehavior.pointerAxisModifiers). The wheel alone scrolls the vertical list around it, not this one.
   static Widget chips(BuildContext context, ChipsSpec c) => SizedBox(
@@ -161,7 +160,6 @@ abstract final class BaseControls {
   );
 
   /// One layer name in the timeline: a band, an accent edge when selected, the kind icon and the three toggles.
-  ///
   /// If [banded] is false the row has no band or edge. A [mark] is drawn at the left.
   static Widget track(
     BuildContext context,

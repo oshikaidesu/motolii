@@ -2,7 +2,6 @@
 // it does and its arguments. It is read from the type declarations of the npm package expression-globals-typescript
 // (MIT, Tim Haywood) as they are, engine/third_party/js/expression-globals-typescript/index.d.ts. Nothing of the
 // reference is written here by hand.
-//
 // The reference says what an expression may name. Which of the names run here is asked of the engine's own runtime
 // (runsHere below builds the question; Motolii.later 'ask' puts it to the file's running script), as a browser's
 // console completes a name by looking at the object itself.
@@ -180,7 +179,6 @@ Map<String, String> referenceRoots(List<ReferenceEntry> reference) {
 /// `{"Layer.wiggle": "bare", "Layer.sampleImage": "member"}`: a name is `bare` when the expression can say it alone,
 /// `member` when it is reached through its object, and left out when the runtime does not have it. The answer is ''
 /// for a script that is not an After Effects expression.
-///
 /// The whole question is one expression compiled once by the runtime's own AE.compile, with `?.` between the steps so
 /// that an object the runtime lacks answers `undefined` and stops nothing.
 String runsHere(List<ReferenceEntry> reference) {

@@ -2,7 +2,6 @@
 #define MOTOLII_MEDIA_SOUND_LEVEL_H_
 
 // Measures the sound of an audio or video file.
-//
 // Provides the loudness over the length of the file, measured with GStreamer's
 // level element. The file is decoded as fast as possible, not played. Also
 // provides the strikes, the times where the sound gets suddenly louder, such as

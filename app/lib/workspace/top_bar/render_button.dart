@@ -1,5 +1,4 @@
 // The top bar's Render button and the dialog it opens: file, folder, format, size, resolution, rate, quality, options.
-//
 // The dialog is read top to bottom: a thin outline shows the composition's own shape and size (the only visual anchor,
 // so a glance says what is being rendered); under it the file name, chosen format tabs and the destination folder;
 // then two ChipGroups for the picture (resolution, rate, quality) and options (motion blur, background); a summary
@@ -26,7 +25,6 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/top_bar/size_chip.dart';
 
 /// The one loud action: a flat lime pill with dark ink.
-///
 /// Pressing it opens the render dialog. The dialog follows the Mac export panel pattern used by Final Cut Pro and iMovie:
 /// an outline of what will be rendered on top, the file name and destination grouped together, then the picture settings
 /// and options. The whole dialog is about 430 px wide, so the labels do not need their own column.

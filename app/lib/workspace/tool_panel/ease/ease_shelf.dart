@@ -52,7 +52,6 @@ class EaseGrip extends StatelessWidget {
 }
 
 /// The shelf of easings.
-///
 /// The saved easings come first, followed by an empty slot for the next one. Below a divider are the easings from the
 /// project and from the shelves/ease folder, so a file put there appears as one more tile.
 /// Clicking a tile replaces the whole easing on the keyframe interval, so the user can try one after another.

@@ -1,6 +1,5 @@
 // The workspace's right-click menu.
-//
-// It lists what can be done to the item under the pointer, so the mouse alone is enough (Ableton Live's context menus, Figma's right-click).
+// It lists what can be done to the item under the pointer, so the mouse alone is enough.
 // naked_ui's NakedMenu (on Flutter's RawMenuAnchor) places the panel, flipping and shifting it at the window's edge, moves between rows with the arrow keys,
 // closes on Esc and on a resize. Every menu is a [MenuHost] around it: this one, the ⋮ of a card (more_menu.dart) and the right-click of a number.
 // A row is a label. A disabled row shows why it cannot be done, and the keyboard shortcut is dimmed on the right.
@@ -22,7 +21,6 @@ import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// One row of a menu.
-///
 /// A null [go] means the row cannot be done now, and [why] says why. [keys] is the keyboard shortcut shown beside it.
 /// The shortcut is never the only way to run it. [ContextMenuItem.rule] is a divider between groups.
 class ContextMenuItem {
@@ -45,8 +43,7 @@ class ContextMenuItem {
       picked = -1,
       pick = null;
 
-  /// A row of colours to choose from, as Ableton Live's context menus end with the clip or track colours.
-  ///
+  /// A row of colours to choose from
   /// [picked] is the index of the current colour, or -1 for none. [pick] is called with the index of the one clicked.
   const ContextMenuItem.colors(this.colors, this.picked, this.pick)
     : label = '',
@@ -72,7 +69,6 @@ class ContextMenu extends StatefulWidget {
 }
 
 /// A floating panel of [items], [width] wide, scrolling when taller than [max].
-///
 /// Choosing an item runs it and then calls [close]. The workspace context menu and the inspector's ⋮ and right-click lists all use this.
 class ContextMenuList extends StatelessWidget {
   const ContextMenuList({
@@ -215,7 +211,6 @@ class ContextMenuList extends StatelessWidget {
 }
 
 /// A menu: the one wrapper around naked_ui's [NakedMenu] that every menu in the app is made with, so they all behave alike.
-///
 /// [child] is what the menu is attached to; [positioning] says where the panel sits against it.
 /// A press on [child] toggles the menu (NakedMenu's trigger); a [SizedBox.shrink] makes it a point, as the right-click menu does.
 class MenuHost extends StatelessWidget {
@@ -309,7 +304,6 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
   }
 
   /// Opens the menu with [items] at [at], a position within the child.
-  ///
   /// Another menu that is open closes first: only one is open at a time.
   void show(Offset at, List<ContextMenuItem> items) {
     setState(() {

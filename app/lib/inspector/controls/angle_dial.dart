@@ -7,7 +7,6 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// A dial for an angle. The user turns it by dragging around its centre, or drags the number beside it.
-///
 /// One turn of the pointer is one turn of the value, so the dial always follows the pointer's direction. A drag is one undo step.
 class AngleDial extends StatefulWidget {
   const AngleDial({super.key, required this.id, required this.p});

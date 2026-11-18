@@ -26,7 +26,7 @@ using filament::math::mat4f;
 
 namespace {
 
-// Converts text for a column of vertical writing, like After Effects' Vertical
+// Converts text for a column of vertical writing
 // Type. Punctuation that lies along a line is replaced by its Unicode
 // <vertical> presentation form. The long vowel mark has no such form there, so
 // it becomes a stroke as heavy as the letters. There is no outside source for

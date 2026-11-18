@@ -51,7 +51,6 @@ extension MotoliiMoment on Motolii {
       : (momentSnapshot['now'] as num?)?.toDouble() ?? 0;
 
   /// A property's own value at [at], not what a relation makes of it (see [shows]).
-  ///
   /// A property without keyframes comes from the project snapshot. An animated one comes from the time snapshot.
   double? value(int layer, String name, double at) {
     if (!moving(layer).contains(name) || at == 0) {
@@ -83,7 +82,6 @@ extension MotoliiMoment on Motolii {
   }
 
   /// Handles a read that neither snapshot holds, such as another time of a layer that is not watched.
-  ///
   /// It does not ask the engine, because the app would block (docs/app/BRIDGE.md rule 1). Ask with [shownAt] or watch
   /// the layer with [subscribe]. A message is printed once per property.
   double? _unasked(String what, int layer, String name, double at) {
@@ -122,7 +120,6 @@ extension MotoliiMoment on Motolii {
   String gizmo(int layer) => _momentOf(layer)?['gizmo'] as String? ?? '';
 
   /// A layer's box on the canvas at the stage's time, or null if it is not shown.
-  ///
   /// The numbers are center (x, y), width, height (canvas points from the top left), rotation (degrees, clockwise),
   /// the rotation anchor (x, y) and depth (0 is flat).
   List<double>? bounds(int layer) {

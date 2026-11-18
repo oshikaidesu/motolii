@@ -63,7 +63,7 @@ extension WorkspaceEffects on WorkspaceController {
   }
 
   /// Adds a canvas-sized layer filled with whatever is behind it, so its effects apply to everything below
-  /// (After Effects' Adjustment Layer). [file] is an effect to put on it.
+  ///. [file] is an effect to put on it.
   void adjustment([String? file]) => whole('rect', (m) {
     m
       ..later('say', layer: -1, name: 'fill', word: 'behind')
@@ -137,7 +137,7 @@ extension WorkspaceEffects on WorkspaceController {
   }
 
   /// Adds the shelf effect [name] to the selected layer with its default values, or removes it. Either is one undo step.
-  /// With no layer selected it creates a canvas-sized layer carrying the effect, as After Effects' applyPreset
+  /// With no layer selected it creates a canvas-sized layer carrying the effect
   /// puts a preset on a new solid when no layer is selected (scripting guide, Layer.applyPreset).
   void fxToggle(String name) {
     final m = inside, t = selected;

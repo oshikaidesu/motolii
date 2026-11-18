@@ -1,6 +1,6 @@
 // The whole project in miniature under the tracks. The visible part is
 // highlighted and can be dragged. Dragging either end of the visible window
-// zooms the lanes, as After Effects' navigator and Lumit's navigator do.
+// zooms the lanes
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';

@@ -2,7 +2,6 @@
 #define MOTOLII_STAGE_LIVE_H_
 
 // Presents the stage's frames to the app without copying them.
-//
 // The main view draws into one of three pixel buffers that the GPU and the app
 // share (CVPixelBuffers on IOSurfaces, as Filament's Metal backend creates
 // them). Each buffer is exposed to Dawn as a texture, the same call
@@ -53,7 +52,6 @@ struct Live {
   void* marks[N] = {};
   // The Live that covers the editing window's whole stage pane (see desk_lay in
   // render.h). While it is set, the stage is drawn there instead of into this
-  // Live's own buffers.
   Live* desk = nullptr;
 };
 

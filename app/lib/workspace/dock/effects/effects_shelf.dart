@@ -120,7 +120,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       deckSettle(deck, known);
     }
     final lost = effectLost(c: c, deck: deck, known: known);
-    // Up to ten recent effects show above the tiles while nothing narrows the list, as Alight Motion's effect browser opens on its last ten
+    // Up to ten recent effects show above the tiles while nothing narrows the list
     // at EffectBrowser.kt:217. A list out of sight is not revisited, so the recent ones stay in view.
     final inSight =
         place == 'All' &&

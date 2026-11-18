@@ -2,7 +2,6 @@
 import 'package:motolii/storage/shelf_disk.dart' show readJsonFile;
 
 /// How AbsentMotion shows an effect, from its tools/effect_showcase.json (Apache-2.0).
-///
 /// The effect is looked up by name: the `am_<name>.wgsl` file name, or for an .am file (moved by its own motion.cpp)
 /// the name on its `--absent:` line. Returns null for a file the table does not list. The fields are:
 /// - knobs: parameter values that make the effect plain to see. Names are as from_absent.py made them: skslc's `R_`

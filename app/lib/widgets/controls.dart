@@ -43,7 +43,6 @@ class Pressable extends StatelessWidget {
 }
 
 /// A small square button holding one glyph.
-///
 /// By default it looks like the dock's header button: raised when [on], one step lighter on hover, no fill at rest, 20 wide,
 /// with a colour fade. When [rest] and [ink] are given it looks like a tool panel or stage tile instead:
 /// accent fill when [on], [rest] fill and [ink] at rest, WindowTokens.radius corners, no margin and no fade.
@@ -113,7 +112,6 @@ class IconPress extends StatelessWidget {
 }
 
 /// A small filled tile holding one mark, so an item shows what it is before its name is read.
-///
 /// By default it is a square with chip-radius corners holding a glyph. [radius] changes the corners; half of [size] makes a circle.
 /// With [onTap] it is a button.
 class Badge extends StatelessWidget {
@@ -175,7 +173,6 @@ class Badge extends StatelessWidget {
 }
 
 /// How a [Chip] looks: sizes, fill and ink at rest, on hover and when on, the text style, and an optional edge.
-///
 /// Heights, paddings and the dot are in design pixels, scaled by Shape.
 class ChipLook {
   const ChipLook({

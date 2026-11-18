@@ -48,7 +48,6 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
 }
 
 /// A thin horizontal slider with one or two handles.
-///
 /// The track is grey and the part up to the handle, or between the two handles, is filled.
 /// The groove, colours, handle shape and the minimum gap between two handles are arguments.
 class MiniSlider extends StatelessWidget {

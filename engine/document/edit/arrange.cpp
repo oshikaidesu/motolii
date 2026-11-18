@@ -172,7 +172,7 @@ bool doc_fit(Doc& d, int layer, const std::string& how) {
     if (d.act.ok && !doc_match(d)) d.act.ok = false;
   }
   // While measuring, the layer is fitted to the canvas whichever camera the
-  // window looks through, as After Effects' Fit to Comp does. The camera is
+  // window looks through
   // switched off here and restored by `back`.
   const bool viewCamera = d.working_camera.asked;
   if (viewCamera) d.working_camera.asked = false, doc_evaluate(d, now);

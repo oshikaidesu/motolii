@@ -1,6 +1,5 @@
 // Test program: checks that ThorVG's WebGPU engine runs on Dawn, the same Dawn
 // that Filament's WebGPU backend is built with.
-//
 // It creates a Dawn device, gives ThorVG that device and a texture of it, draws
 // a red disc on a cleared texture, reads the texture back, and checks the
 // pixels. ThorVG is built unchanged from third_party/thorvg_src (v1.1.2)

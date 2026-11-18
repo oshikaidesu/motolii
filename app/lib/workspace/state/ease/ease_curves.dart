@@ -50,7 +50,6 @@ Ease easeCard(String word, Motolii? m) {
 final _curves = <String, List<double>>{};
 
 /// The easing sampled at evenly spaced steps, for the timeline to draw at any size.
-///
 /// It is computed once per text form. Many samples are needed because 17 points cannot hold eight waves.
 List<double> easeCurve(String way, Motolii m) {
   if (_curves.length > 512) _curves.clear();
