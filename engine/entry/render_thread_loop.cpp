@@ -425,6 +425,14 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       m->render_thread.evaluating = false;
       m->render_thread.changed = false;
       m->playback.playing = false;
+    } catch (...) {
+      std::fprintf(stderr, "motolii: the hand's round threw (unknown) while %s\n",
+                   m->render_thread.status.load());
+      m->error = "the hand's round threw (unknown)";
+      ++m->timing.rounds_threw;
+      m->render_thread.evaluating = false;
+      m->render_thread.changed = false;
+      m->playback.playing = false;
     }
   }
   for (auto& [who, h] : m->playback.heard) heard_off(h);

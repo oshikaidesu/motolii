@@ -37,6 +37,7 @@
 #include "document/undo.h"
 #include "entry/calls.h"
 #include "entry/calls_sound.h"
+#include "entry/crash_report.h"
 #include "entry/motolii.h"
 #include "entry/motolii_handle.h"
 #include "entry/on_render_thread.h"
@@ -61,6 +62,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
     m->render_thread.asked.push_back([m, c, n, w, layer = layer, number,
                                       ticket]() mutable {
       if (layer == -1) layer = m->later.last_added;
+      breadcrumb(c.c_str());
       const long rows = sqlite3_total_changes(m->d->file);
       int ok = 0;
       std::string said;
@@ -492,11 +494,23 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         ok = 0;
         std::fprintf(stderr, "motolii: %s threw: %s\n", c.c_str(), e.what());
         m->error = std::string(c) + " threw: " + e.what();
+      } catch (...) {
+        ok = 0;
+        std::fprintf(stderr, "motolii: %s threw (unknown)\n", c.c_str());
+        m->error = std::string(c) + " threw (unknown)";
       }
       // Rebuild previews before answering so the app sees the new state.
-      if (sqlite3_total_changes(m->d->file) != rows)
-        m->revision.fetch_add(1, std::memory_order_release), snapshot_update(m),
-            snapshot_time(m);
+      try {
+        if (sqlite3_total_changes(m->d->file) != rows)
+          m->revision.fetch_add(1, std::memory_order_release),
+              snapshot_update(m), snapshot_time(m);
+      } catch (const std::exception& e) {
+        std::fprintf(stderr, "motolii: snapshot after %s threw: %s\n",
+                     c.c_str(), e.what());
+      } catch (...) {
+        std::fprintf(stderr, "motolii: snapshot after %s threw (unknown)\n",
+                     c.c_str());
+      }
       m->render_thread.changed = true;
       {
         std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);

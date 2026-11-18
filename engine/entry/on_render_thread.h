@@ -109,7 +109,14 @@ auto on_render_thread(Motolii* m, Does does,
           m->revision.fetch_add(1, std::memory_order_release);
           // Inside a motolii_together act, the snapshots are made once when the
           // act ends, as the stage is.
-          if (!m->d->act.depth) snapshot_update(m), snapshot_time(m);
+          if (!m->d->act.depth) {
+            try {
+              snapshot_update(m), snapshot_time(m);
+            } catch (...) {
+              // A snapshot failure must not propagate through the future into
+              // the FFI caller (undefined behaviour). The change itself landed.
+            }
+          }
         }
         return out;
       },
