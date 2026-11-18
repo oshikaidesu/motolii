@@ -10,8 +10,7 @@ import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
-/// Shift is finer and Cmd or Ctrl is ten times coarser (manual, section 42.6).
-/// The same keys apply to a scrub, a wheel, the arrow keys and a drag on a picture of the value.
+/// Shift = finer, Cmd/Ctrl = coarser. Applies to scrub, wheel, arrows and drag.
 double dragRate() {
   final k = HardwareKeyboard.instance;
   if (k.isShiftPressed) return Gestures.fine;
@@ -157,9 +156,7 @@ class NumberFieldState extends State<NumberField> {
     _moved = false;
   }
 
-  // A horizontal wheel or two-finger slide changes every number the same way: right is more, left is less.
-  // It uses the drag's rate (perPx) and modifier keys, so a slide and a scrub of equal length change the value equally.
-  // A vertical slide is not claimed and scrolls the panel. No button needs to be held.
+  // Horizontal wheel/slide scrubs the value. Vertical is not claimed (scrolls the panel).
   void _onSignal(PointerSignalEvent e) {
     if (e is! PointerScrollEvent || _editing || widget.perPx == null) return;
     final d = e.scrollDelta;
@@ -179,10 +176,7 @@ class NumberFieldState extends State<NumberField> {
   }
 
   void _by(double d) {
-    // A slide or nudge moves the value by `d` from where it is now.
-    // Wheel, two-finger slide and arrow key changes are grouped into one undo
-    // step by opening a gesture on the first change and closing it after the
-    // hand rests for burstRest (GESTURES wheel.2).
+    // Grouped into one undo step until the hand rests for burstRest.
     if (_burst == null && !_drag) widget.onGrab?.call();
     _burst?.cancel();
     _burst = Timer(Gestures.burstRest, () {
@@ -197,7 +191,7 @@ class NumberFieldState extends State<NumberField> {
 
   KeyEventResult _key(FocusNode n, KeyEvent e) {
     if (_editing && !_ef.hasFocus) {
-      // The editor receives keys one frame late. Characters typed in that frame are inserted here so fast typing does not drop them.
+      // The editor receives keys one frame late; insert here so fast typing is not dropped.
       final c = e.character ?? '', at = _ctl.selection;
       if (e is! KeyDownEvent || !RegExp(r'^[0-9.\-+*/]$').hasMatch(c)) {
         return _editKey(n, e);
@@ -247,7 +241,6 @@ class NumberFieldState extends State<NumberField> {
   }
 
   void _startEdit([String? typed]) {
-    // `typed` is the character the user started typing with.
     if (!mounted || _editing) return;
     final v = widget.value();
     _ctl.text = typed ?? (v == null ? '' : widget.text(v, double.infinity));
@@ -266,7 +259,6 @@ class NumberFieldState extends State<NumberField> {
   KeyEventResult _editKey(FocusNode n, KeyEvent e) {
     if (e is! KeyDownEvent) return KeyEventResult.ignored;
     if (e.logicalKey == LogicalKeyboardKey.escape) {
-      // Esc while typing discards the text and restores the old value.
       _close();
       return KeyEventResult.handled;
     }
@@ -276,8 +268,7 @@ class NumberFieldState extends State<NumberField> {
       return KeyEventResult.handled;
     }
     if (e.logicalKey == LogicalKeyboardKey.tab && widget.keys) {
-      //, Figma and Blender, Tab keeps this number and opens the next field for typing.
-      // If the typed number is not accepted, focus stays here.
+      // Tab commits this number and opens the next field for typing.
       if (_commit()) {
         final back = HardwareKeyboard.instance.isShiftPressed;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -294,7 +285,7 @@ class NumberFieldState extends State<NumberField> {
     if (widget.step case final step?
         when e.logicalKey == LogicalKeyboardKey.arrowUp ||
             e.logicalKey == LogicalKeyboardKey.arrowDown) {
-      // and Figma, the arrows move the number typed so far by one step.
+      // Arrows move the number typed so far by one step.
       final t = double.tryParse(halfWidth(_ctl.text).trim()) ?? widget.value();
       if (t == null) return KeyEventResult.handled;
       final up = e.logicalKey == LogicalKeyboardKey.arrowUp ? 1 : -1;
@@ -317,13 +308,12 @@ class NumberFieldState extends State<NumberField> {
 
   bool _commit() {
     if (_ctl.text.trim().isEmpty) {
-      // Nothing typed: same as Esc.
       _close();
       return true;
     }
     final t = _typed();
     if (t == null) {
-      // Invalid text keeps the field open and shows "Number required".
+      // Invalid: keep field open.
       setState(() => _err = true);
       return false;
     }
@@ -362,13 +352,13 @@ class NumberFieldState extends State<NumberField> {
         final Widget value = v == null
             ? Text('Mixed', style: TextStyles.label(Grey.g76))
             : FittedBox(
-                // A number wider than its field is drawn smaller, never cut off.
+                // Wider numbers are scaled down, never cut off.
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text.rich(
                   TextSpan(
                     children: [
-                      // Fixed decimal places, as Push shows them, so the width does not jump as the number changes.
+                      // Fixed decimal places so width doesn't jump.
                       TextSpan(text: widget.text(v, w), style: style),
                       if (widget.unit?.call(v, w) case final unit?
                           when unit.isNotEmpty)

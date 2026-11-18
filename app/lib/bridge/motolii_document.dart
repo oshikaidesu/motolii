@@ -1,5 +1,4 @@
-// The project snapshot reader (docs/app/BRIDGE.md D): layers, their properties and keyframes, cards, easings, markers and guides.
-// The engine rebuilds the snapshot whenever the project changes.
+// Reading layers, properties, keyframes, cards, easings, markers and guides from the engine's snapshot.
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 
@@ -7,7 +6,7 @@ extension MotoliiDocument on Motolii {
   Map<String, dynamic> layerSnapshot(int layer) =>
       layerSnapshots[layer] ?? const {};
 
-  /// The default of a property the project does not store, if the layer's kind has that property (the engine's `doc_usual` and `doc_knows` tables).
+  /// The default of an unset property, or null if the kind doesn't have it.
   double? usual(int layer, String name) {
     if (!layerSnapshots.containsKey(layer)) return null;
     final kind = layer == 0 ? 'stage' : word(layer, 'kind');
@@ -25,33 +24,31 @@ extension MotoliiDocument on Motolii {
 
   double get seconds => (documentSnapshot['seconds'] as num?)?.toDouble() ?? 0;
 
-  /// A layer's string property by name (kind, file, shape, blend, text, fill). Empty if it has none.
+  /// A layer's string property. Empty if unset.
   String word(int layer, String name) =>
       ((layerSnapshot(layer)['word'] as Map<String, dynamic>?)?[name]
           as String?) ??
       '';
 
-  /// How long a layer is on, in seconds. A negative value means it never ends.
+  /// Duration in seconds. Negative = never ends.
   double lasts(int layer) =>
       (layerSnapshot(layer)['lasts'] as num?)?.toDouble() ?? -1;
 
-  /// The time of every keyframe of any property of a layer, each once and in order. The timeline bar draws these.
+  /// All keyframe times of a layer, deduplicated and in order.
   List<double> layerKeyTimes(int layer) =>
       Motolii.numbers(layerSnapshot(layer)['keys']);
 
-  /// The times of a property's keyframes. Empty if it has none.
+  /// Keyframe times of a single property.
   List<double> keyTimes(int layer, String name) => Motolii.numbers(
     (layerSnapshot(layer)['keyTimes'] as Map<String, dynamic>?)?[name],
   );
 
-  /// The value of each keyframe of a property, in the order of [keyTimes].
+  /// Keyframe values, in [keyTimes] order.
   List<double> keyValues(int layer, String name) => Motolii.numbers(
     (layerSnapshot(layer)['keyValues'] as Map<String, dynamic>?)?[name],
   );
 
-  /// What the undo steps changed since the last call (calling clears it).
-  /// `layers` is true when a layer was added or removed. `values` holds each changed property as (layer, name),
-  /// taken from each step's changeset.
+  /// What changed since the last call (calling clears it).
   ({bool layers, Set<(int, String)> values}) changes() {
     final lines = ((documentSnapshot['changes'] as String?) ?? '').split('\n');
     return (
@@ -73,19 +70,19 @@ extension MotoliiDocument on Motolii {
         : 1;
   }
 
-  /// The stage size in the project. It differs from the open stage until the project is reopened (see [fits]).
+  /// The project's stage size. May differ from the open stage until reopened (see [fits]).
   (int, int) get size => switch (documentSnapshot['size']) {
     [final int w, final int h] => (w, h),
     _ => (0, 0),
   };
 
-  /// The work area in seconds: the range that loops on playback and is exported. If unset it covers the whole project. Changing it is an undo step.
+  /// The work area in seconds (loops on playback and is exported).
   (double, double) get work => switch (documentSnapshot['work']) {
     [final num a, final num b] => (a.toDouble(), b.toDouble()),
     _ => (0.0, 0.0),
   };
 
-  /// The markers, each a time and a name, in time order. Setting a marker's name to empty removes it.
+  /// Markers as (time, name). Empty name removes it.
   List<(double, String)> get marks => [
     for (final line in ((documentSnapshot['marks'] as String?) ?? '').split(
       '\n',
@@ -94,7 +91,7 @@ extension MotoliiDocument on Motolii {
         (double.parse(line.substring(0, i)), line.substring(i + 1)),
   ];
 
-  /// The app's choices saved with the project. They are not undo steps. Keyed by name.
+  /// Per-project app settings (not undo steps).
   Map<String, String> get settings => {
     for (final line in ((documentSnapshot['settings'] as String?) ?? '').split(
       '\n',
@@ -103,7 +100,7 @@ extension MotoliiDocument on Motolii {
         line.substring(0, i): line.substring(i + 1),
   };
 
-  /// The markers that have a colour, mapping each marker's time to a label colour from 1 to 16.
+  /// Marker time → label colour (1–16).
   Map<double, int> get markColors => {
     for (final line
         in ((documentSnapshot['markColours'] as String?) ?? '').split('\n'))
@@ -111,7 +108,7 @@ extension MotoliiDocument on Motolii {
         double.parse(line.substring(0, i)): int.parse(line.substring(i + 1)),
   };
 
-  /// The guides: 'x' for vertical and 'y' for horizontal, each at a distance in points from the canvas's left or top edge.
+  /// Guides: ('x'=vertical, 'y'=horizontal) at a distance in points from the edge.
   List<(String, double)> get guides => [
     for (final line in ((documentSnapshot['guides'] as String?) ?? '').split(
       '\n',
@@ -119,23 +116,21 @@ extension MotoliiDocument on Motolii {
       if (line.length > 2) (line[0], double.parse(line.substring(2))),
   ];
 
-  /// Whether the open stage matches the project's size. It is false after a resize or an undo of one, until the project is reopened.
+  /// False after a resize until the project is reopened.
   bool get fits => (documentSnapshot['fits'] as bool?) ?? true;
 
-  /// The names of a layer's properties that can have keyframes.
   List<String> moving(int layer) => _spaced(layerSnapshot(layer)['moving']);
 
-  /// The names of all of a layer's properties.
   List<String> values(int layer) => _spaced(layerSnapshot(layer)['values']);
 
-  /// The cards that show a layer's properties, besides its position and fill. Each is a title and its property names.
+  /// The layer's property cards as (title, [property names]).
   List<(String, List<String>)> cards(int layer) => [
     ..._cardsIn(layerSnapshot(layer)['cards']),
     for (final c in _cardsIn(layerSnapshot(layer)['more']))
       if (asked[layer]?.contains(c.$1) ?? false) c,
   ];
 
-  /// The titles of the cards a layer can have but is not showing. They appear in the More shelf and are not shown unless the user asks.
+  /// Cards the layer can have but isn't showing (the More shelf).
   List<String> moreCards(int layer) => [
     for (final (title, _) in _cardsIn(layerSnapshot(layer)['more']))
       if (!(asked[layer]?.contains(title) ?? false)) title,
@@ -158,20 +153,20 @@ extension MotoliiDocument on Motolii {
         ), // An effect with no parameters gives a card with none (see doc_cards_of).
   ];
 
-  /// The titles of a layer's effect cards in effect order (motolii_fx_titles). Reorder them with `fx_move`.
+  /// Effect card titles in order. Reorder with `fx_move`.
   List<String> fxTitles(int layer) => [
     for (final t in ((layerSnapshot(layer)['fx'] as String?) ?? '').split(';'))
       if (t.isNotEmpty) t,
   ];
 
-  /// The lowest and highest value of a numeric property. Null if the layer has no such property.
+  /// (low, high) range, or null.
   (double, double)? range(int layer, String name) =>
       switch ((layerSnapshot(layer)['range'] as Map<String, dynamic>?)?[name]) {
         [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()),
         _ => null,
       };
 
-  /// The strings a property may take, such as blend modes. Empty if any string is allowed or the layer has no such property.
+  /// Allowed values for a word property. Empty = any string.
   List<String> words(int layer, String name) =>
       _spaced((layerSnapshot(layer)['words'] as Map<String, dynamic>?)?[name]);
 
@@ -193,11 +188,11 @@ extension MotoliiDocument on Motolii {
     ], (s) => bindings.motolii_easing_at(handle, s[0], u));
   }
 
-  /// An easing evaluated exactly by the engine, not interpolated from the snapshot's few samples. Use it for large curves.
+  /// Exact easing evaluation (not interpolated from snapshot samples).
   double easingExact(String easing, double u) =>
       withStrings([easing], (s) => bindings.motolii_easing_at(handle, s[0], u));
 
-  /// Every keyframed span of a layer as (from, to, easing), with times in seconds, so the timeline can draw each easing.
+  /// Keyframed spans as (from, to, easing) in seconds.
   List<(double, double, String)> layerStretches(int layer) => [
     for (final l
         in ((layerSnapshot(layer)['stretches'] as String?) ?? '').split('\n'))
@@ -205,7 +200,7 @@ extension MotoliiDocument on Motolii {
         (double.parse(a), double.parse(b), w),
   ];
 
-  /// The easing of the span that starts at a property's keyframe. Empty if there is no keyframe at [at].
+  /// The easing at a keyframe. Empty if no keyframe at [at].
   String easingOf(int layer, String name, double at) {
     final keys = keyTimes(layer, name),
         easings =
@@ -222,15 +217,12 @@ extension MotoliiDocument on Motolii {
         : easings[i] as String;
   }
 
-  /// Canvas points per stage unit at z = 0.
   double get point => (documentSnapshot['point'] as num?)?.toDouble() ?? 1;
 
   /// Total time spent editing the project, in whole seconds.
   int get edited => ((documentSnapshot['edited'] as num?) ?? 0).round();
 
-  /// How a stored value converts to the displayed one: shown = value * scale + offset, returned as (scale, offset).
-  /// For example positions are in canvas points from the top left, and fractions are shown as percentages.
-  /// Asked once per layer and name.
+  /// Display transform: shown = value * scale + offset.
   (double, double) reading(int layer, String name) {
     final f =
         (((layerSnapshot(layer)['reading'] as Map<String, dynamic>?)?[name]

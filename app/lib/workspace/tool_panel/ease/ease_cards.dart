@@ -1,13 +1,5 @@
-// Easings stacked as cards.
-// - Pressing a preset replaces the selected card. Dropping one on the graph or the flow adds it. Dragging a card out removes it.
-// - Each card acts on the result of the cards above it, according to its kind:
-//   - Most cards map the value through themselves, like GSAP's timingEase and Blender's modifier stack. Steps cards do this too.
-//   - Wave cards scale with the result above, like GSAP's amplitudeEase.
-//   - Shake cards add to the result above
-// - Between two cards the flow shows which of these applies: an arrow, a x or a +.
-// - The document stores the stack as one custom easing built from `way()` (document/undo.h),
-//   so it is saved, undone and listed like any other easing.
-// - A Linear card changes nothing that passes through it.
+// Easings stacked as cards, each acting on the result above it.
+// Stored as one custom easing built from `way()` (document/undo.h).
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
@@ -24,12 +16,7 @@ import 'package:motolii/widgets/media.dart' show Draw;
 // Drag data of the tile at the foot of the flow, which stands for all the cards (EaseShapes.onKeep).
 const _all = -1;
 
-/// The flow of cards, top to bottom, each acting on the result above it.
-/// - An empty dashed slot under the last card shows that another can be added, as in Monster Train.
-/// - The combined result is shown small at the foot. Selecting it makes the graph show the whole stack, which has no handles.
-/// - Selecting a card makes the graph show that card with its handles.
-/// - Dragging a card up or down moves it. Dropping a preset on a card inserts it before that card.
-///   Dragging a card out of the flow removes it.
+/// The flow of easing cards, top to bottom.
 class EaseCards extends StatelessWidget {
   const EaseCards({
     super.key,
@@ -88,7 +75,7 @@ class EaseCards extends StatelessWidget {
   Widget build(BuildContext context) {
     final side = Size.square(this.side);
     Widget card(int i, Ease c) => Pressable(
-      // Hovering shows a x that removes the card, like the rows in Cavalry, Bitwig and Serum.
+      // Hovering shows a x that removes the card.
       builder: (_, h) => Stack(
         clipBehavior: Clip.none,
         children: [
@@ -245,7 +232,7 @@ class EaseCards extends StatelessWidget {
   }
 }
 
-/// A round x button that removes an item, like the rows in Cavalry, Bitwig and Serum.
+/// A round x button that removes an item.
 class EaseOff extends StatelessWidget {
   const EaseOff({super.key, required this.onTap});
   final VoidCallback onTap;
@@ -293,7 +280,7 @@ void _drawArrow(Canvas c, Size s, bool across) {
   );
 }
 
-/// A dashed empty frame showing that another card can be added, as in Monster Train.
+/// A dashed empty frame showing that another card can be added.
 class EaseSlot extends StatelessWidget {
   const EaseSlot({super.key, required this.side, required this.ink});
 

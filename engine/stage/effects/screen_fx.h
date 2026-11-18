@@ -118,126 +118,70 @@ struct ScreenStack {
   bool readsBehind = false;
   // True if an effect draws to the full stage (e.g. AviUtl2 obj.draw).
   bool wide = false;
-  // Where the layer itself is seen, in stage points: left, top, right, bottom.
   double thingSeen[4] = {0, 0, 0, 0};
-  // Where the layer itself lies, in the form of `frame`. A generator paints
-  // only there, so this is what it measures by, like the width and height of
+  // The layer's own rectangle on the image; a generator measures by this.
   double own[4] = {0, 0, 1, 1};
-  // For a layer: the rectangle (left, top, width, height, each a share of the
-  // image) that its effects measure by, inside the larger image they draw on.
-  // This is After Effects' width and height as against its buffer (PF_InData).
+  // The share of the image that effects measure by (layer vs full image).
   double frame[4] = {0, 0, 1, 1};
-  // For a layer: where it is seen, in stage points (see thing_fx_aim in
-  // layer_fx.h).
   double box[4] = {0, 0, 0, 0};
-  // The stage's background color as 0xRRGGBB, or -1 for none.
   int ground = -1;
-  // Every effect built so far, by file. They are kept because building a shader
-  // can take as long as drawing several frames.
+  // Kept because shader compilation can take several frames.
   std::map<std::string, ScreenFx*> built;
-  // The stage's image, drawn to a texture instead of the screen.
   filament::Texture* shot = nullptr;
   filament::Texture* depth = nullptr;
-  // A transition's end image when none is chosen: nothing, as the Transition
-  // effects of After Effects (Linear Wipe, Radial Wipe) reveal. Made once and
-  // kept.
+  // A transition's end image when none is chosen: transparent.
   filament::Texture* clear = nullptr;
-  // The render target that draws into `shot` and `depth`.
   filament::RenderTarget* target = nullptr;
-  // Two intermediate images, used in turn between effects.
   filament::Texture* between[2] = {nullptr, nullptr};
   filament::RenderTarget* betweenTarget[2] = {nullptr, nullptr};
-  // Draws an image unchanged, for an effect whose last pass draws into its own
-  // target.
+  // Passthrough copy for effects whose last pass draws into their own target.
   interop::Screen* copy = nullptr;
-  // A layer's effects as steps in order
-  // thing_effects_draw in layer_fx.h). A step of 0 is the next entry of `fx`,
-  // drawn by Filament; 'a' is an AviUtl2 script.
+  // Steps in order: 0 = next GPU effect, 'a' = AviUtl2 script.
   std::vector<char> steps;
-  // The AviUtl2 scripts to run in order, for step 'a' (see
-  // community/aviutl/aviutl_fx.h).
   std::vector<std::shared_ptr<struct AviutlRun>> aviutl;
-  // The native WGPUTexture handles of shot, between[0] and between[1].
   void* device[3] = {nullptr, nullptr, nullptr};
-  // The layer's image as the camera sees it, with its effects applied, for the
-  // current frame.
   filament::Texture* seen = nullptr;
-  // Returns the values of an audio input at the current time, given the
-  // effect's file, the input's name, whether the spectrum (fft) or the waveform
-  // is wanted, and how many values (0 means as many as are read). If the
-  // function is empty or returns nothing, the input is silent.
+  // Audio input values at the current time. Empty/null = silent.
   std::function<std::vector<float>(const std::string& file,
                                    const std::string& name, bool fft, int wide)>
       sounds;
 };
-// Creates a stage-sized RGBA8 texture that can be drawn into and sampled.
 filament::Texture* screen_texture(Stage& s);
-// Returns the frame rate an effect is told (ISF's FRAMEINDEX and TIMEDELTA,
-// Shadertoy's iFrameRate, AviUtl's obj.framerate). It is the document's frame
-// rate, at which its time is sampled (see time_is); when none is set, the 60
-// per second the stage draws at.
+// The frame rate effects see: the document's frame_rate, or 60 when none.
 inline double screen_rate(const Stage& s) {
   return s.frames > 0.0 ? s.frames : 60.0;
 }
-// Copies image `from` to `to` at the rectangle `at` (left, bottom, width,
-// height) as it is, and leaves the rest of `to` clear. Used by the app's stage
-// to draw its whole-screen effects as an exported video has them (see
-// stage/live.h). One copy effect is created per engine and reused.
+// Copies `from` to `to` at rectangle `at`, clearing the rest.
 void screen_place(Stage& s, filament::Texture* from, filament::RenderTarget* to,
                   uint32_t w, uint32_t h, const int* at);
-// Converts an image's colors from linear light to sRGB, or from sRGB to linear
-// when `toSrgb` is false, using the transfer function of IEC 61966-2-1. The
-// colors are unpremultiplied for the conversion and premultiplied again. A
-// layer's own image is drawn in linear light (its view's post-processing is
-// off, see layer_fx.h), while the effects laid on it are written for sRGB, as
-// their original hosts provide them (Skia for AbsentMotion, ISF, ThorVG,
-// AviUtl2). The stage's own whole-screen effects are drawn after its
-// post-processing, so they are in sRGB already.
+// Converts between linear light and sRGB (IEC 61966-2-1). Layer images are in
+// linear (post-processing off); effects expect sRGB. Unpremultiplies, converts,
+// premultiplies.
 void screen_tone(Stage& s, filament::Texture* from, filament::RenderTarget* to,
                  uint32_t w, uint32_t h, bool toSrgb);
-// Draws one effect: reads `from` (the stage's image or the output of the effect
-// before) and draws to `to` through the effect's passes. The images the shader
-// reads are, in order, `from`, then each target (ISF) or the array of past
-// frames, then the other inputs. w, h: the size of the image drawn into; the
-// stage's size by default, or a layer's own image size. over: lay the last pass
-// over what `to` already holds, as a layer's effects are laid over what is
-// under the layer, instead of replacing it.
+// Draws one effect through its passes. w,h default to stage size. over: blend
+// the last pass over `to` instead of replacing it.
 void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx,
                  filament::Texture* from, filament::RenderTarget* to,
                  const ScreenNumbers& numbers, uint32_t w = 0, uint32_t h = 0,
                  bool over = false);
-// Rebuilds an effect in place when its file has been written over, so that a
-// saved shader shows at once. It is checked only when the window reports that a
-// file changed. If the new file cannot be read or built, the previous version
-// stays and the reason is printed to stderr.
+// Hot-reloads an effect from its file. Previous version stays on failure.
 void screen_fresh(Stage& s, ScreenFx& fx);
-// Returns true if any effect file of the stack has been written over since the
-// effect was built. This is what wakes a stage that is not drawing.
+// True if any effect file changed since it was built (wakes a sleeping stage).
 bool screen_moved(const ScreenStack& st);
-// Returns the effect of `file` in the stack, read and built the first time it
-// is asked for. A file that cannot be read or built is remembered with a null
-// interop and the reason in trouble (printed to stderr once), so it is not read
-// again each time.
+// Returns the built effect for `file`, building on first access. Failed files
+// are remembered (null interop) so they are not retried.
 ScreenFx* screen_built(Stage& s, ScreenStack& st, const std::string& file);
-// Sets the stack's effects to `files` (paths separated by spaces), building
-// those that are not built yet, and routes the stage's drawing through them.
-// Does nothing if `files` is unchanged.
+// Sets the stack to `files` (space-separated). No-op if unchanged.
 void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
                     ScreenNumbers numbers);
 
-// The parts of an effect that its passes read and write, set up for
-// screen_fx.cpp (defined in screen_resources.cpp).
-// Builds the input textures of an effect for the current frame: image files
-// once, audio inputs again each frame.
+// Builds input textures for the current frame (images once, audio each frame).
 void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx);
-// Fills the parameter uniform struct of `fx` for one pass and uploads it.
-// `pass` is the pass index. pw and ph give the size of the image drawn into in
-// pixels, or 0 for the stage size.
+// Fills and uploads the parameter uniform for one pass. pw/ph = 0 → stage size.
 void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
                        int pass = 0, double pw = 0, double ph = 0);
-// Makes or drops the textures of the effect's targets. If `drop` is true the
-// textures are destroyed and not recreated. pw and ph give the size of the
-// image drawn into, or 0 for the stage size.
+// Creates or destroys target textures. drop = destroy only. pw/ph = 0 → stage.
 void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t pw = 0,
                     uint32_t ph = 0);
 

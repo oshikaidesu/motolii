@@ -1,10 +1,6 @@
-// The workspace's right-click menu.
-// It lists what can be done to the item under the pointer, so the mouse alone is enough.
-// naked_ui's NakedMenu (on Flutter's RawMenuAnchor) places the panel, flipping and shifting it at the window's edge, moves between rows with the arrow keys,
-// closes on Esc and on a resize. Every menu is a [MenuHost] around it: this one, the ⋮ of a card (more_menu.dart) and the right-click of a number.
-// A row is a label. A disabled row shows why it cannot be done, and the keyboard shortcut is dimmed on the right.
-// What the two libraries lack is written once, below: a right press held down and let go over a row runs it,
-// a left press outside closes the menu and does nothing else, and the menu closes when the window goes to the back.
+// The workspace's right-click menu, built on naked_ui's NakedMenu.
+// What the library lacks is added here: right-press-and-release runs a row,
+// left press outside closes without side effects, and hiding the window closes the menu.
 import 'package:flutter/gestures.dart'
     show
         GestureArenaMember,
@@ -20,9 +16,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/gestures.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
-/// One row of a menu.
-/// A null [go] means the row cannot be done now, and [why] says why. [keys] is the keyboard shortcut shown beside it.
-/// The shortcut is never the only way to run it. [ContextMenuItem.rule] is a divider between groups.
+/// One row of a menu. Null [go] = disabled; [ContextMenuItem.rule] = divider.
 class ContextMenuItem {
   const ContextMenuItem(
     this.label,
@@ -43,8 +37,7 @@ class ContextMenuItem {
       picked = -1,
       pick = null;
 
-  /// A row of colours to choose from
-  /// [picked] is the index of the current colour, or -1 for none. [pick] is called with the index of the one clicked.
+  /// A row of colour swatches. [picked] = current index (-1 = none).
   const ContextMenuItem.colors(this.colors, this.picked, this.pick)
     : label = '',
       go = null,
@@ -53,7 +46,6 @@ class ContextMenuItem {
       id = null;
   final String label, keys, why;
 
-  /// The row's widget key, when it should not be derived from the label.
   final String? id;
   final VoidCallback? go;
   final List<Color> colors;
@@ -68,8 +60,7 @@ class ContextMenu extends StatefulWidget {
   State<ContextMenu> createState() => ContextMenuState();
 }
 
-/// A floating panel of [items], [width] wide, scrolling when taller than [max].
-/// Choosing an item runs it and then calls [close]. The workspace context menu and the inspector's ⋮ and right-click lists all use this.
+/// A floating panel of [items]. Choosing an item runs it and calls [close].
 class ContextMenuList extends StatelessWidget {
   const ContextMenuList({
     super.key,
@@ -210,9 +201,7 @@ class ContextMenuList extends StatelessWidget {
   );
 }
 
-/// A menu: the one wrapper around naked_ui's [NakedMenu] that every menu in the app is made with, so they all behave alike.
-/// [child] is what the menu is attached to; [positioning] says where the panel sits against it.
-/// A press on [child] toggles the menu (NakedMenu's trigger); a [SizedBox.shrink] makes it a point, as the right-click menu does.
+/// The one wrapper around [NakedMenu] that every menu in the app uses.
 class MenuHost extends StatelessWidget {
   const MenuHost({
     super.key,
@@ -252,10 +241,7 @@ class MenuHost extends StatelessWidget {
   );
 }
 
-/// Closes a floating list on a press outside it. Every menu and select uses it (see [MenuHost], and the Inspector's Chooser).
-/// A left press does nothing else, as outside a macOS or Windows menu;
-/// a right press still reaches what is under it, so a right-click elsewhere opens a menu there.
-/// (TapRegion.consumeOutsideTaps takes every button, so it is not used.)
+/// Closes on press outside. Left press is consumed; right press passes through.
 class PressOutside extends StatelessWidget {
   const PressOutside({
     super.key,
@@ -291,9 +277,7 @@ class _Swallow extends GestureArenaMember {
 class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
   final _m = MenuController();
   List<ContextMenuItem> _items = const [];
-  // Where the pointer was when the menu opened, in global coordinates.
   Offset? _from;
-  // Whether [_let] is listening for the release.
   bool _listening = false;
 
   void _stopListening() {
@@ -303,8 +287,7 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
     _listening = false;
   }
 
-  /// Opens the menu with [items] at [at], a position within the child.
-  /// Another menu that is open closes first: only one is open at a time.
+  /// Opens the menu with [items] at [at]. Only one menu at a time.
   void show(Offset at, List<ContextMenuItem> items) {
     setState(() {
       _items = items;
@@ -320,8 +303,7 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
     });
   }
 
-  // The first release after opening: over an enabled row, and away from where the menu opened, it runs that row.
-  // A plain right-click lets go where it opened, so the menu stays open, as on macOS and Windows.
+  // Release over an enabled row (away from the open point) runs it.
   void _let(PointerEvent e) {
     if (e is! PointerUpEvent && e is! PointerCancelEvent) return;
     _stopListening();
@@ -354,19 +336,19 @@ class ContextMenuState extends State<ContextMenu> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // The window went to the back or was hidden. (RawMenuAnchor itself closes on a resize and on a scroll above the anchor.)
+  // Window went to background.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed && _m.isOpen) _m.close();
   }
 
-  // Where the menu was opened, within the child. The menu is attached to a point there, so it opens at the pointer.
+  // The menu is anchored at this point inside the child.
   Offset _at = Offset.zero;
 
   @override
   Widget build(BuildContext context) =>
       NotificationListener<ScrollNotification>(
-        // What the menu was opened on scrolled away: a scroll inside the child, which RawMenuAnchor does not see.
+        // Close if the content under the menu scrolls (RawMenuAnchor does not detect this).
         onNotification: (_) {
           if (_m.isOpen) _m.close();
           return false;

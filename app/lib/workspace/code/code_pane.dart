@@ -1,16 +1,5 @@
-// The Code tab: the code of the selected layer, one cell for each of its cards that has code, in the order the cards act.
-// It opens beside the Timeline, so the preview stays in sight above it and a line of code has the width of the window.
-// A cell is the card's own code (EffectCode, shelf/effect_code.dart): the card in the Inspector and its cell here are
-// one text, and typing here moves the card's sliders. A cell is as tall as its code and the tab scrolls, as a
-// notebook's cells do (Jupyter). Any number of cells stay open; pressing a cell's head folds it.
-// "Edit code" on a card in the Inspector unfolds its cell and scrolls to it (EffectCode.show).
-// A cell is a card, so its head does what the card's head does in the Inspector: dragging it moves the effect up or
-// down the layer's stack (fx_move), the eye switches it off, the bin takes it away. The strip under a cell's code
-// makes it taller or shorter; the height is kept with the window's view, as which cells are folded is.
-// Pressing a cell's name twice names the card, as a name is changed in Finder. The name is written in the code's first
-// line ("// Name: what it does"), where the engine and the shelf read it, so it is kept in one place.
-// Beside the cells is the list of what the code may say (functions_panel.dart), for the cell last asked for, or the
-// first one open. The word "Functions" in the head hides and shows it.
+// The Code tab: a cell per card of the selected layer that has code, in the order they act.
+// Each cell shares its text with the Inspector card; typing here moves sliders.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';

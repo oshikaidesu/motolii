@@ -1,5 +1,4 @@
-// The workspace state that every panel reads (WorkspaceController): the document's layers as rows, the selection, the playhead and the view.
-// It owns one class for each of those and the one channel they all notify through. What is applied to the canvas is in effects.dart.
+// The workspace state every panel reads: layers, selection, playhead and view.
 import 'dart:developer' show Timeline;
 
 import 'package:flutter/widgets.dart';
@@ -22,14 +21,11 @@ import 'package:motolii/workspace/state/row_folds.dart';
 import 'package:motolii/workspace/state/selection.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 
-/// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
+/// Whether layer [t] is a sound-only video layer.
 bool isSoundLayer(Motolii m, int t) => ProjectReader.isSound(m, t);
 
-/// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
-/// Every panel listens to this and nothing else, and never keeps a copy of it.
-/// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
-/// The state itself is held by the classes this one owns ([project], [selection], [playhead], [layout], [notices],
-/// [inks], [folds]). Each tells its changes through this controller, and the members listed under each forward to it.
+/// The window's state. Every panel listens to this and nothing else, and never keeps a copy.
+/// Nothing ticks while idle; the playhead advances only while [playing].
 class WorkspaceController extends ChangeNotifier {
   /// One counter per aspect, so a listener of one aspect never hears the others.
   late final on = {
@@ -41,19 +37,17 @@ class WorkspaceController extends ChangeNotifier {
     notifyListeners(); // WorkspaceScope passes the aspect on to the widgets below.
   }
 
-  // One for the whole app, because widgets read the three getters below without a controller at hand.
+  // Global so widgets can read fps/length/size without a controller at hand.
   static final _composition = CompositionSettings();
 
-  /// The composition's frame rate and length in frames. After [join] they come from the document.
+  /// The composition's frame rate and length in frames.
   static int get fps => _composition.frameRate;
   static int get duration => _composition.duration;
 
-  /// The composition's size in pixels. After [join] it is the document's own size.
+  /// The composition's size in pixels.
   static Size get comp => _composition.size;
 
-  /// What is read from the engine's document: the layers as rows, the marks, the guides and the tempo, and the
-  /// requests still on their way to the engine.
-  /// The gesture in progress: what a drag, typing or a wheel writes while it lasts, shown at once, one undo step.
+  /// What is read from the engine's document, and the gesture in progress.
   late final live = LiveEdit(this);
 
   late final project = ProjectReader(
@@ -100,28 +94,25 @@ class WorkspaceController extends ChangeNotifier {
     void Function(int answer)? got,
   ]) => project.after(ticket, then, got);
 
-  /// Connects the window to the engine [inside]: reads its document, then the inks and fonts saved with it.
+  /// Connects the window to the engine [inside].
   void join(Motolii inside) {
     project.join(inside);
-    // Choices saved with the document: its inks and fonts.
     inks.restore(inside.settings);
   }
 
-  /// The document's name.
   String? document;
 
-  /// The folder holding the document's file. The dock offers it, so a new document is one step from its footage.
+  /// The folder holding the document's file.
   String? documentFolder;
 
-  /// Host callbacks: reopen the document at another size, and export it as a video.
+  /// Host callbacks: resize and export.
   void Function(int wide, int high)? onSize;
   VoidCallback? onRender;
 
-  /// Where the next export is written. Set by the settings window; null means the window's default.
+  /// Where the next export is written. Null = default beside the project.
   String? renderTo;
 
-  /// The inks and fonts a new layer is given: fill, stroke colour and gradient blend, and the fonts for a new title and
-  /// a new body text. Saved with the document but not undo steps, like a PowerPoint theme.
+  /// The inks and fonts a new layer is given. Saved with the document but not undo steps.
   late final inks = DrawingInks(engine: () => inside);
   String get ink => inks.ink;
   set ink(String v) => inks.ink = v;
@@ -138,7 +129,7 @@ class WorkspaceController extends ChangeNotifier {
   String get bodyFace => inks.bodyFace;
   String get titleFace => inks.titleFace;
 
-  /// The one line the window tells the user, and what clicking it does.
+  /// The notice line and its tap action.
   late final notices = Notices(onChanged: () => _tell(WorkspaceAspect.notice));
   String? get notice => notices.notice;
   set notice(String? said) => notices.notice = said;
@@ -162,8 +153,7 @@ class WorkspaceController extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Tells the engine (Motolii.subscribe) which layers' changing values to report: the selected layers, the cameras for the
-  /// Depth tool panel, the relations for the Relations tool panel's map, and the members of a selected relation.
+  /// Tells the engine which layers' changing values to report.
   void _watch() {
     final m = inside;
     if (m == null) return;
@@ -180,7 +170,7 @@ class WorkspaceController extends ChangeNotifier {
     });
   }
 
-  /// What is selected: a layer, the layers selected together, keyframes and a stretch between two keyframes.
+  /// Selection: layer(s), keyframes and a stretch between two keyframes.
   late final selection = Selection(
     engine: () => inside,
     layers: () => layers,
@@ -208,7 +198,7 @@ class WorkspaceController extends ChangeNotifier {
   String? get aim => selection.aim;
   set aim(String? to) => selection.aim = to;
 
-  /// The playhead: the frame shown, and whether the preview is playing.
+  /// The playhead.
   late final playhead = Playhead(
     engine: () => inside,
     composition: _composition,
@@ -223,8 +213,7 @@ class WorkspaceController extends ChangeNotifier {
   set strikes(List<int> frames) => playhead.strikes = frames;
   String timecode([int? f]) => playhead.timecode(f);
 
-  /// The window's panels: the tabs, the panel brought to the front, the tool open in the tool panel, and the view
-  /// state each panel keeps by name.
+  /// Panel layout and per-panel view state.
   late final layout = PanelLayout(
     layers: () => layers,
     onViewChanged: () => _tell(WorkspaceAspect.view),
@@ -246,7 +235,7 @@ class WorkspaceController extends ChangeNotifier {
   String get toolPanel => layout.toolPanel;
   void route(String to) => layout.route(to);
 
-  /// Whether every change the user makes is keyframed. The top bar's Animate and the inspector's Animate all share it; the engine owns it.
+  /// Whether every change the user makes is keyframed. Engine-owned.
   bool get animating => inside?.keyingNow ?? false;
   set animating(bool on) {
     inside?.keying(on);
@@ -254,7 +243,7 @@ class WorkspaceController extends ChangeNotifier {
     _tell(WorkspaceAspect.animating);
   }
 
-  /// Which rows of the timeline are open: the keyframe lanes under a layer, and the members of a group.
+  /// Which timeline rows are expanded.
   late final folds = RowFolds(
     animating: () => animating,
     layers: () => layers,
@@ -267,14 +256,13 @@ class WorkspaceController extends ChangeNotifier {
   void turnGroup(int id) => folds.turnGroup(id);
   Map<int, int> get foldedAway => folds.foldedAway;
 
-  // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension, with the ID of that
-  // one use in front where it has one, "a1b2c3:/…/blur.wgsl" (see script_files and fx_entry_id in script.h).
+  // Splits an effect list entry into (id, path). Format: "a1b2c3:/…/blur.wgsl".
   static final _files = RegExp(
     r'(?:[0-9a-f]{6}:)?/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
   );
   static final _useId = RegExp(r'^[0-9a-f]{6}:(?=.)');
 
-  /// The entries of an effect list as the engine keeps them, each with its ID where it has one. For writing a list back.
+  /// The entries of an effect list, each with its ID where it has one.
   static List<String> fxEntries(String fx) => [
     for (final f in _files.allMatches(fx).map((m) => m[0]!))
       if (f != 'none') f,
@@ -288,13 +276,12 @@ class WorkspaceController extends ChangeNotifier {
     for (final e in fxEntries(fx)) fxFile(e),
   ];
 
-  // Whether an effect is being previewed on the selected layer while the pointer is on its tile (see doc_carry_effect).
-  // The preview is not part of the document and ends when the pointer leaves, and before any apply. Final Cut Pro's
-  // effects browser and DaVinci Resolve's Live Preview work the same way. With nothing selected, nothing is shown.
+  // Whether an effect is being previewed on the selected layer while hovering its tile.
+  // Not part of the document; ends when the pointer leaves or before any apply.
   bool trying = false;
 }
 
-/// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
+/// Default font for new text layers (platform-universal).
 final defaultTextFont = DrawingInks.defaultTextFont;
 
 /// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.

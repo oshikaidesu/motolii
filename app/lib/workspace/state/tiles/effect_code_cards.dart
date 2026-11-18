@@ -1,6 +1,4 @@
-// The code of one card of a layer, as the engine and the disk know it: which file a card's code is, its title, whether the
-// file is the user's own copy and no other card's, and the copy made when a shelf's file is first edited. The Code tab's cell
-// (workspace/shelf/effect_code.dart) shows it.
+// A card's code file: which file it is, its title, own-copy status, and the copy-on-first-edit mechanism.
 import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -18,15 +16,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 // Drawn code, or an expression (a .js with each(), document/scripts/expressions.h).
 final _code = RegExp(r'\.(wgsl|fs|js)$');
 
-/// The file of the card [title] on layer [thing] and the layer property that names it: the Script card's one file, or the
-/// effect file of the layer's [fx] entries. Null when the card has no code.
-/// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
-/// not by the title alone, because two cards can share a title.
-/// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
-/// (`js_<stem>_<param>`, document/scripts/scripts.h doc_script_of), so the file is the one whose name they all begin with.
-/// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
-/// If two files fit, the one whose title matches the card wins, then the longer name.
-/// A card with no parameters of its own (the engine still gives it a card, doc_cards_of) is matched by title alone.
+/// The code file and slot for the card [title] on layer [thing]. Null when the card has no code.
+/// Matched by parameter names (`js_<stem>_<param>`), not by title alone (two cards can share a title).
 ({String word, String slot})? codeOfCard(
   WorkspaceController ws,
   int thing,
@@ -72,11 +63,8 @@ String? codeFileOf(String fx, String title, List<String> names) {
   return best?.$1;
 }
 
-/// The card title for an effect file, named as the engine does (document/cards.h doc_fx_title).
-/// An effect applied again ("Glow~2.fs") gets its original's title and its number.
-/// An ISF effect gets its file name (isf.cpp titles the WGSL it generates that way).
-/// Any other file gets the name in its first line ("// Repeater: …"), else its file name with each _ as a space
-/// and the first letter capitalised.
+/// The card title for an effect file (matches doc_fx_title).
+/// First-line name ("// Repeater: …"), else filename with _ → space.
 String codeTitleOf(String w) {
   final file = codeSource(w),
       stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
@@ -100,8 +88,7 @@ String codeSource(String w) => existsFile(w)
     ? w
     : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
 
-/// Whether the file [word] of the layer [thing] belongs to that card alone: one of the user's own copies, used by
-/// no other card on any layer.
+/// Whether [word] is the user's own copy, used by no other card on any layer.
 bool codeAlone(WorkspaceController ws, int thing, String word, String slot) {
   final m = ws.inside!, file = codeSource(word);
   if (!file.startsWith('$motoliiOwn/programs/$slot/')) return false;
@@ -113,9 +100,8 @@ bool codeAlone(WorkspaceController ws, int thing, String word, String slot) {
   return true;
 }
 
-/// Gives the card's file [word] a copy of its own, as its first edit does: the file and the ones the engine reads
-/// beside it go to `programs/<slot>/<stamp>/`, and the layer's slot names the copy. Returns the copy as the slot
-/// names it, the copied file, and the engine's ticket for reading it.
+/// Copies the card's file and its companions to `programs/<slot>/<stamp>/`.
+/// Returns the slot name, the copied file path, and the engine's read ticket.
 (String, String, int) codeCopyOwn(
   WorkspaceController ws,
   int thing,
@@ -141,13 +127,11 @@ bool codeAlone(WorkspaceController ws, int thing, String word, String slot) {
   return (said, to, m.later('code', word: to));
 }
 
-/// Whether the card of the code [word] takes a name of the user's: its title is the name in the code's first line
-/// (doc_fx_title). An ISF's title is its file's name and an effect put on again has its original's, so those do not.
+/// Whether the card's title comes from the code's first line (and can therefore be renamed).
 bool codeNamedInText(String word, String slot) =>
     slot == 'fx' && !word.endsWith('.fs') && codeSource(word) == word;
 
-/// [text] with the card's name in its first line ("// Repeater: what it does") changed to [name]. Code that has no
-/// such line gets one. The file keeps its name, so its values and keys, which are named after the file, stay.
+/// [text] with the first-line name changed to [name]. The file keeps its name so values and keys stay.
 String codeRenamed(String text, String name) {
   final end = text.indexOf('\n'),
       first = end < 0 ? text : text.substring(0, end);
@@ -169,8 +153,7 @@ String codeNameRefused(String name, Iterable<String> taken) {
   return taken.contains(n) ? 'Another card of this layer is named $n' : '';
 }
 
-/// Names the card of the code [word] of layer [thing] [name], by writing it in the code's first line as a change of
-/// the code is written: to the layer's own copy, made first if the file is the shelf's or another card's too.
+/// Renames the card by writing [name] in the code's first line, copy-on-write if needed.
 void codeRename(
   WorkspaceController ws,
   int thing,
@@ -191,7 +174,7 @@ void codeRename(
   });
 }
 
-/// Copies the files the engine reads beside [from] to the copy's folder [dir].
+/// Copies companion files (ISF .vs, first.tsv, images) to [dir].
 void codeBeside(String from, String word, String dir) {
   final home = from.substring(0, from.lastIndexOf('/'));
   if (from.endsWith('.fs')) {
@@ -211,8 +194,7 @@ void codeBeside(String from, String word, String dir) {
   shelfCopyImages(from, dir);
 }
 
-/// The view keys the Code tab keeps: the titles of the cells that are folded, and the card last asked for with a count,
-/// so that asking for the same card again is heard.
+/// View state for the Code tab: folded cell titles and the last-requested card.
 const codeFolded = 'code.folded', codeAsked = 'code.asked';
 
 /// Opens the Code tab on the card [title]: its cell is unfolded and scrolled into sight.

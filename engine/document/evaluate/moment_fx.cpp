@@ -67,8 +67,7 @@ bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
 void doc_layers_fx(Doc& d) {
   Stage& s = *d.stage;
   s.before.clear(), s.aim.clear(), s.after.clear(), d.effects.beforeOf.clear();
-  // Pairs of negative depth and layer. Sorting them puts the deepest layers
-  // first, so a layer's image is made before that of the group it lies in.
+  // Sort deepest first so a group's children render before the group itself.
   std::vector<std::pair<int, int>> order;
   for (const auto& [layer, e] : d.effects.layerFx) {
     int deep = 0;
@@ -80,22 +79,18 @@ void doc_layers_fx(Doc& d) {
   std::stable_sort(
       order.begin(), order.end(),
       [](const auto& a, const auto& b) { return a.first < b.first; });
-  // Each layer is drawn alone into an image and its effects run on that image,
-  // before the stage's own view. See engine/stage/layer_effects/layer_fx.h.
+  // Each layer is drawn alone, effects applied, before the stage's own view.
   for (const auto& [deep, layer] : order) {
     ThingFx& e = d.effects.layerFx.at(layer);
     thing_effects(s, e.st, doc_fx_join(doc_fx_steps_with_ids(d, layer)));
     e.solidFile.clear();
-    // If the fx names a solid's shape, the layer's image is laid on that solid.
-    // If several are named, the last one is used.
+    // Last solid shape in the fx list wins.
     for (const std::string& w : doc_fx_list(d, layer))
       if (solid_is(w)) e.solidFile = w;
     e.pointsFile.clear();
     for (const std::string& w : doc_fx_list(d, layer))
       if (points_is(w)) e.pointsFile = w;
-    // A flat layer has four corners and nothing between them to move: with a
-    // points file and no solid of its own, it is laid on the shelf's Plane, a
-    // sheet of many points (the user's own solids/Plane.js first).
+    // A flat layer with a points file but no solid uses the shelf's Plane.
     if (e.solidFile.empty() && !e.pointsFile.empty()) {
       std::string plane;
       for (const std::filesystem::path& folder : doc_folders("solids"))
@@ -104,10 +99,7 @@ void doc_layers_fx(Doc& d) {
           plane = (folder / "Plane.js").string();
       e.solidFile = plane;
     }
-    // If a solid is named, read its parameters as the document holds them now,
-    // by their own names, and make the solid with them before the frame. If the
-    // layer no longer names a solid, remove the old solid so that the layer's
-    // own sheet shows again.
+    // Build the solid with current parameters; remove it if no longer named.
     if (const DocScript* sc =
             e.solidFile.empty() ? nullptr : doc_script_of(d, e.solidFile)) {
       e.parameters.clear(), e.words.clear();
@@ -128,8 +120,7 @@ void doc_layers_fx(Doc& d) {
     } else if (e.solid)
       take_off(s, e.solid), delete e.solid, e.solid = nullptr,
                                             e.solidSaid.clear();
-    // If the fx names a file that moves a solid's points, run it on the solid
-    // with its numbers as the document holds them now.
+    // Run the points file on the solid with current parameters.
     if (const DocScript* sc =
             e.pointsFile.empty() ? nullptr : doc_script_of(d, e.pointsFile)) {
       e.pointsKnobs.clear();
@@ -145,17 +136,12 @@ void doc_layers_fx(Doc& d) {
                                       int wide) {
       return doc_sound_now(d, layer, file, name, fft, wide);
     };
-    // Answers an effect's questions about the layer by parameter name. The
-    // render callback calls this while the image is drawn, so it locks the
-    // document.
+    // Called from the render callback; locks the document.
     const ScreenNumbers numbers = [&d, layer = layer, &e = e](
                                       const std::string& file,
                                       const std::string& name, double usual) {
       std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-      // clip_time is the number of seconds into the layer's clip and
-      // clip_length is how long the clip lasts. They are the ISF effect
-      // parameters of the same names (see engine/community/isf/isf.cpp). A clip
-      // with no duration lasts until the end of the project.
+      // ISF clip_time / clip_length. No duration = until project end.
       if (name == "clip_time" || name == "clip_length") {
         const double start = doc_number(d, layer, "start", 0, 0),
                      lasts = doc_number(d, layer, "duration", 0, -1);
@@ -163,17 +149,11 @@ void doc_layers_fx(Doc& d) {
                : lasts >= 0         ? lasts
                                    : std::max(0.0, doc_seconds(d) - start);
       }
-      // The box of the layer's image on the stage as shares of the stage: left,
-      // top, width and height, chosen by the last letter of the name. Effects
-      // use it to read what is behind the layer (see
-      // shelves/effects/sources/from_absent.py).
+      // Layer's box on the stage as shares, by last letter (xyzw).
       if (name.rfind("backdropBox_", 0) == 0) {
         const Stage& s = *d.stage;
-        // The image of what is behind the layer is as large as the work box
-        // (the whole desk while editing, the comp on export; see
-        // doc_layers_read and thing_fx_work), so the layer's place on it is
-        // measured from the work box's corner, not the comp's. This keeps the
-        // read aligned when the panel shows past the comp's edge.
+        // Measured from the work box's corner, not the comp's, so it stays
+        // aligned when the panel shows past the comp's edge.
         double work[4];
         thing_fx_work(s, work);
         const size_t i = std::string("xyzw").find(name.back());
@@ -182,10 +162,7 @@ void doc_layers_fx(Doc& d) {
                : i == 2 ? (e.box[2] - e.box[0]) / (work[2] - work[0])
                         : (e.box[3] - e.box[1]) / (work[3] - work[1]);
       }
-      // The layer's own rectangle on its image, in the image's pixels: where
-      // its corner is and how large it is, chosen by the last letter of the
-      // name. This is AbsentMotion's layer rectangle (see
-      // shelves/effects/sources/from_absent.py).
+      // Layer's own rectangle on its image, in pixels, by last letter (xyzw).
       if (name.rfind("layerRect_", 0) == 0) {
         double frame[8];
         if (!doc_fx_frame(d, layer, e, frame)) return 0.0;
@@ -200,10 +177,7 @@ void doc_layers_fx(Doc& d) {
       // An AviUtl2 script asking about the other layers.
       if (name.rfind("aviutl.", 0) == 0)
         return doc_aviutl_asked(d, layer, e.box, name, usual);
-      // Where the layer is on its image now, how it is turned and how large it
-      // is, so that an effect's pattern can stay stuck to the layer. The image
-      // is the box where the layer is seen, so positions are relative to that
-      // box.
+      // Position on image, rotation, extent — relative to the effect's box.
       if (name == "origin_x" || name == "origin_y" || name == "turn" ||
           name == "extent") {
         double frame[8];
@@ -217,11 +191,8 @@ void doc_layers_fx(Doc& d) {
           file.ends_with("am_directionalblur.wgsl") &&
           doc_word(d, layer, "fx").find("am_directionalblur.wgsl") ==
               std::string::npos) {
-        // The step of the layer's Motion Blur: as far, and in the same
-        // direction, as the layer's middle moves while its shutter is open, in
-        // pixels of its image. This is quick smear. It
-        // applies only when the effect comes from the Motion Blur setting and
-        // is not named in the layer's fx.
+        // Motion Blur: length and angle from the layer's movement while the
+        // shutter is open. Only when the effect is from the setting, not fx.
         double open = 0.0, was[8], is[8];
         bool moves = false;
         const double now = d.stage->now;
@@ -233,21 +204,16 @@ void doc_layers_fx(Doc& d) {
         const math::double3 way = (doc_shown_at(d, layer, now + 0.5 * open)[3] -
                                    doc_shown_at(d, layer, now - 0.5 * open)[3])
                                       .xyz;
-        // A standing layer moves along its own image, so project the movement
-        // onto the image's axes.
+        // Project movement onto the image's axes for a standing layer.
         const double dx = e.world ? dot(way, e.square[0].xyz) * e.own[4]
                                   : is[0] - was[0],
                      dy = e.world ? -dot(way, e.square[1].xyz) * e.own[4]
                                   : is[1] - was[1];
-        // The blur effect reads behind the layer along the angle it is given.
-        // The angle therefore points opposite to the direction of travel, so
-        // that the blur trails behind the layer.
+        // Angle points opposite to travel so blur trails behind the layer.
         return name == "blurLength" ? ppp * std::hypot(dx, dy)
                                     : std::atan2(-dy, -dx) * 180.0 / M_PI;
       }
-      // `file` is the numbers_key() — either "id:path" or just "path".
-      // Extract the instance ID so the parameter is looked up under the
-      // instance-keyed name ("a1b2c3:js_blur_intensity") when present.
+      // Extract instance ID from numbers_key ("id:path" or "path").
       return doc_number(d, layer,
                         doc_screen_parameter(fx_entry_path(file), name,
                                              fx_entry_id(file))
@@ -257,22 +223,17 @@ void doc_layers_fx(Doc& d) {
     // Before the frame: works out where the layer is seen, what its images are,
     // and what its sheet shows.
     s.aim.push_back([&s, &d, layer = layer, &e = e] {
-      // The effect's image covers the work box: the whole preview panel while
-      // editing (so a duplicate or mirror that spreads past the comp fills the
-      // panel and is not cut), or the comp when writing out. See thing_fx_work.
+      // The effect image covers the work box (see thing_fx_work).
       double work[4], box[4], seen[4];
       thing_fx_work(s, work);
       std::copy(work, work + 4, box);
       {
         std::lock_guard<std::recursive_timed_mutex> hold(
             d.lock);  // (asked while the picture is drawn)
-        // A group's image is the whole stage, as an Alight Motion group's scene
-        // is as large as the stage.
+        // A group's image is the whole stage.
         const bool found = !doc_holds_fx(d, layer) &&
                            doc_seen_box(d, layer, d.stage->now, seen);
-        // Where the layer is seen, limited to the part on the stage, is its
-        // image. Add room around it for what its effects
-        // draw outside it: a margin of 128 pixels.
+        // 128-pixel margin around the visible box for effects that draw outside.
         if (found) {
           const double m = 128.0 / thing_fx_ppp(s);
           box[0] = std::max(work[0], seen[0] - m),
@@ -280,17 +241,13 @@ void doc_layers_fx(Doc& d) {
           box[2] = std::min(work[2], seen[2] + m),
           box[3] = std::min(work[3], seen[3] + m);
         }
-        // If none of the layer is on the stage, use the whole work box.
+        // Fall back to the whole work box if nothing is visible.
         if (box[2] - box[0] < 1 || box[3] - box[1] < 1)
           std::copy(work, work + 4, box);
         e.st.frame[0] = 0, e.st.frame[1] = 0, e.st.frame[2] = 1,
         e.st.frame[3] = 1;
         const bool shown = found && !e.shell && !e.st.wide;
-        // Normally the frame is the box where the layer is seen, as shares of
-        // the stage, and the image covers the whole stage.
-        // effects are cut by the scene in the same way
-        // (engine/third_party/AbsentMotion/app/src/main/cpp/effects.cpp,
-        // EffectRuntime::draw).
+        // Frame = layer's visible box as shares of the stage.
         if (!e.shell && !e.st.wide) {
           e.st.frame[0] = (box[0] - work[0]) / (work[2] - work[0]),
           e.st.frame[1] = (box[1] - work[1]) / (work[3] - work[1]),
@@ -304,9 +261,7 @@ void doc_layers_fx(Doc& d) {
           e.st.own[1] = (seen[1] - work[1]) / (work[3] - work[1]),
           e.st.own[2] = (seen[2] - seen[0]) / (work[2] - work[0]),
           e.st.own[3] = (seen[3] - seen[1]) / (work[3] - work[1]);
-        // An AviUtl2 script that draws the layer uses the whole stage as its
-        // frame, as an AviUtl2 object is drawn on the screen. The box where the
-        // layer is seen is passed to the effect in thingSeen.
+        // AviUtl2 scripts use the whole stage as their frame.
         if (e.st.wide) {
           std::copy(found ? seen : box, (found ? seen : box) + 4,
                     e.st.thingSeen);
@@ -314,9 +269,7 @@ void doc_layers_fx(Doc& d) {
         }
       }
       if (!e.solidFile.empty()) return doc_layer_solid_aim(d, layer, e);
-      // The layer's sheet is shown on screen only, not in the image of what is
-      // behind it that its effect reads. The glass material leaves itself out
-      // in the same way (see engine/stage/render/render_layers.h).
+      // Hide the sheet from the backdrop image (same as glass self-exclusion).
       if (e.st.readsBehind) {
         s.backdropRead = true;
         for (const Stage::Renderable& made : s.renderables)
@@ -325,8 +278,7 @@ void doc_layers_fx(Doc& d) {
                 s.engine->getRenderableManager().getInstance(made.thing), 0xFF,
                 0x02);
       }
-      // The background color as hex RRGGBB, or -1 if there is none. An effect
-      // that reads the frame sees it where nothing is drawn.
+      // -1 when transparent.
       e.st.ground =
           d.look.backdropIs.size() == 6
               ? (int)std::strtol(d.look.backdropIs.c_str(), nullptr, 16)
@@ -343,8 +295,7 @@ void doc_layers_fx(Doc& d) {
                                      TextureSampler::MagFilter::NEAREST)
                     : TextureSampler(TextureSampler::MinFilter::LINEAR,
                                      TextureSampler::MagFilter::LINEAR));
-      // The emissive of the effect result is picked up by the stage's bloom,
-      // as a layer without effects is (see evaluate_glow).
+      // Feed emissive to bloom (see evaluate_glow).
       if (e.look) {
         std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
         e.look->setParameter("glowing", (float)doc_number(d, layer, "emissive",
@@ -352,7 +303,7 @@ void doc_layers_fx(Doc& d) {
       }
     });
     d.effects.beforeOf.push_back(layer);
-    // In the frame: draws the layer alone and runs its effects.
+    // In the frame: draw the layer alone, run its effects.
     s.before.push_back([&d, layer = layer, &e = e, numbers] {
       if (!e.solidFile.empty()) return doc_layer_solid(d, layer, e, numbers);
       thing_effects_draw(*d.stage, e.st, e.view, numbers);
@@ -366,14 +317,13 @@ void doc_layers_fx(Doc& d) {
 void doc_layers_read(Doc& d,
                      const std::vector<std::pair<int, DocShownLayer*>>& laid) {
   Stage& s = *d.stage;
-  // A flat layer of glass sees what is behind it through itself (see
-  // engine/materials/flat.mat).
+  // Glass and blend-mode layers read the backdrop (see flat.mat).
   const auto reads = [&](int layer) {
     return doc_blend_way(doc_word(d, layer, "blend")) ||
            doc_word(d, layer, "fill") == "behind" ||
            doc_sheet_material(d, layer) == "glass";
   };
-  // Release the backdrop of layers that no longer read or that are gone.
+  // Release backdrops of layers that stopped reading or were removed.
   for (auto r = d.effects.reads.begin(); r != d.effects.reads.end();) {
     if (d.on_stage.shown.count(r->first) && reads(r->first)) {
       ++r;
@@ -407,12 +357,8 @@ void doc_layers_read(Doc& d,
     const int layer = laid[i].first;
     if (reads(layer)) {
       DocEffects::Read& r = d.effects.reads[layer];
-      // The image of what is behind the layer is as large as the view draws:
-      // the whole desk while editing (so an effect that reads past the comp --
-      // from_absent's backdrop -- sees the off-stage too, not a cut at the
-      // comp's edge), the comp on export. view_behind is already aimed there by
-      // desk_lay, so the image only needs to match its size. See thing_fx_work
-      // and backdropBox_, which reads this image over the work box.
+      // Sized to the view (desk in editor, comp on export). Already aimed by
+      // desk_lay; see thing_fx_work and backdropBox_.
       const uint32_t rw = s.desk.w ? s.desk.w : (uint32_t)s.w,
                      rh = s.desk.w ? s.desk.h : (uint32_t)s.h;
       if (!r.seen || r.w != rw || r.h != rh) {
@@ -467,25 +413,21 @@ void doc_layers_read(Doc& d,
   }
 }
 
-// -- moment_fx_parts: the parts of one layer's effects that the functions above
-// put together. --
+// -- per-layer effect parts --
 
-// Prepares a solid layer before the frame is rendered. Draws the layer square
-// to its own face, runs its effects, and lays the result on the solid's faces
-// where the solid lies.
+// Prepares a solid layer: draws square to its face, runs effects, maps to solid.
 void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
   Stage& s = *d.stage;
   math::mat4 place;
   float2 half{0.5f};
   {
-    // The render callback calls this while the frame is drawn, so lock the
-    // document first.
+    // Render callback runs mid-draw; lock first.
     std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
     place = doc_place(d, layer, d.stage->now), doc_half(d, layer, &half);
   }
   thing_fx_face(s, e, place, half);
   thing_fx_textures(s, e.st, e.view);
-  // Shrink the layer's own sheet to nothing so that it is not shown.
+  // Hide the layer's own sheet.
   e.look->setParameter("place", mat4f::scaling(float3{0.f}));
   if (!e.solid || !e.solidLook) return;
   move(s, e.solid, [&](int, const mat4f&) { return mat4f(place); });
@@ -496,9 +438,7 @@ void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
       TextureSampler(TextureSampler::MinFilter::LINEAR,
                      TextureSampler::MagFilter::LINEAR, wrap));
 }
-// While the stage is drawn, puts the layer's effect image on its faces (on is
-// true). When on is false, puts back the faces' original materials. Does
-// nothing if the layer is not shown or is already in the requested state.
+// Swaps the faces' materials to/from the effect image. No-op if already set.
 void doc_layer_shell(Doc& d, int layer, ThingFx& e, bool on) {
   const auto t = d.on_stage.shown.find(layer);
   if (t == d.on_stage.shown.end() || on != e.looks.empty()) return;
@@ -517,14 +457,9 @@ void doc_layer_shell(Doc& d, int layer, ThingFx& e, bool on) {
             });
   if (!on) e.looks.clear();
 }
-// Computes how far the stage reaches from a standing layer along each side of
-// the layer's face, and writes four values to sides: toward -x, +x, -y and +y
-// of the layer's own axes, in layer units. The stage's corners are projected
-// back onto the layer's plane. seen is the length in stage points of one layer
-// unit where the layer lies. Each value is rounded up to a multiple of 256
-// stage points, so the layer's image is made again only after the stage has
-// moved that far. A face seen edge on reaches no further than three times the
-// stage's longer side.
+// How far the stage extends from a standing layer along its face axes, in layer
+// units. Rounded to 256-point steps so the image is reused across small moves.
+// Capped at 3× the stage's longer side for edge-on faces.
 void doc_fx_sides(Doc& d, const math::mat4& place, double seen, double* sides) {
   const math::double3 x = normalize(place[0].xyz),
                       y = normalize(place[1].xyz - dot(place[1].xyz, x) * x);
@@ -547,38 +482,30 @@ void doc_fx_sides(Doc& d, const math::mat4& place, double seen, double* sides) {
   for (int i = 0; i < 4; ++i)
     sides[i] = std::ceil(std::min(sides[i], most) / step) * step;
 }
-// Prepares a standing layer before the frame is rendered. Reads its placement
-// and scale under the document lock, then sets up its effect image.
+// Prepares a standing layer: reads placement under lock, sets up effect image.
 void doc_layer_stand(Doc& d, int layer, ThingFx& e) {
   math::mat4 place;
   float2 half{0.5f};
   double seen = 0.0;
   {
-    // The render callback calls this while the frame is drawn, so lock the
-    // document first.
+    // Render callback runs mid-draw; lock first.
     std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
     place = doc_shown_at(d, layer, d.stage->now), doc_half(d, layer, &half);
     const math::double2 a = doc_seen(d, place[3].xyz),
                         b = doc_seen(d, place[3].xyz +
                                             normalize(d.camera.facing[0].xyz));
-    // Length in stage points of one layer unit where the layer lies, across the
-    // camera's line of sight.
     seen = length(b - a);
     doc_fx_sides(d, place, seen, e.sides);
   }
   thing_fx_stand(*d.stage, e, place, half, seen);
 }
-// Writes where the layer lies on its effect image to frame, in the form
-// doc_frame uses for the stage. A standing layer is in the middle of the image
-// and upright. Returns false if the layer has no frame.
+// Where the layer lies on its effect image. false if no frame.
 bool doc_fx_frame(Doc& d, int layer, const ThingFx& e, double* frame) {
   if (!e.world) return doc_frame(d, layer, d.stage->now, frame);
   std::copy(e.own, e.own + 4, frame), frame[4] = 0;
   return true;
 }
-// Runs while the frame is rendered. Draws the effects of a solid layer. If the
-// solid's file reads the image, also updates the solid from it, using the
-// precision parameter (default 160).
+// Draws a solid layer's effects; updates the solid from the image if needed.
 void doc_layer_solid(Doc& d, int layer, ThingFx& e,
                      const ScreenNumbers& numbers) {
   Stage& s = *d.stage;
@@ -590,26 +517,10 @@ void doc_layer_solid(Doc& d, int layer, ThingFx& e,
                                               : 160)),
         thing_fx_solid(s, e, true);
 }
-// Answers an AviUtl2 script's questions about the other layers (see
-// engine/community/aviutl/aviutl_fx.h). The script's layers are the document's
-// layers in stacking order, with the furthest back as layer 1. AviUtl2 draws
-// layer 1 first and the higher layers over it (see doc_laid). box is the
-// layer's box on the stage, and usual is the value to return when the layer has
-// no number. The supported names are:
-// - aviutl.layer: this layer's own number.
-// - aviutl.layer_max: the number of layers.
-// - aviutl.layerN[.name][@seconds]: the value of layer N, taken the given
-// number of seconds from
-//   its start, or now if there is no @seconds. This follows
-//   obj.getvalue("layer1.x", time) in AviUtl2's script API. x and y are pixels
-//   of the script's frame measured from its middle, as obj.x is. rz is the
-//   rotation, alpha is the opacity, and time is the time from the layer's
-//   start.
-// - aviutl.groupN: the layer of the Nth group this layer is in, where 0 is the
-// nearest. This
-//   follows obj.getoption("group_info").
-// Returns NaN, which the script sees as nil, if the layer does not exist or is
-// not shown.
+// AviUtl2 script queries about other layers (see aviutl_fx.h). Layers are in
+// stacking order, 1 = furthest back (doc_laid). Returns NaN for missing layers.
+// Names: aviutl.layer, aviutl.layer_max, aviutl.layerN[.prop][@seconds],
+// aviutl.groupN.
 double doc_aviutl_asked(Doc& d, int layer, const double* box,
                         const std::string& name, double usual) {
   const std::vector<int>& laid = doc_laid(d);
@@ -655,10 +566,7 @@ double doc_aviutl_asked(Doc& d, int layer, const double* box,
   return NAN;
 }
 
-// Sets how a layer reads what is under it: the blend mode way, whether it fills
-// with what is behind it (behind), and the image of what lies under it
-// (picture). It is set on every material of the layer that has a blendWay
-// parameter.
+// Sets backdrop reading on every material that has a blendWay parameter.
 void doc_reading(Stage& s, DocShownLayer& t, float way, float behind,
                  Texture* picture) {
   const Camera& eye = s.view->getCamera();
@@ -677,9 +585,7 @@ void doc_reading(Stage& s, DocShownLayer& t, float way, float behind,
                                    TextureSampler::MagFilter::NEAREST));
       });
 }
-// The same as doc_reading for a layer with effects. What such a layer lays on
-// the stage is its sheet, so its blend mode is applied after its effects, as in
-// After Effects, where a layer's blending mode comes after its effects.
+// doc_reading for a layer with effects: blend mode is applied after effects.
 void doc_sheet_reads(Doc& d, int layer, float way, Texture* picture) {
   const auto own = d.effects.layerFx.find(layer);
   if (own == d.effects.layerFx.end() || !own->second.look ||

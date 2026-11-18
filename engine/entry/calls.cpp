@@ -133,8 +133,7 @@ int motolii_layers(Motolii* m, int* layers, int room) {
     return (int)all.size();
   });
 }
-// Returns the text value of property `name` of the layer, or the layer's name
-// when `name` is "name". The string is valid until the same thread calls again.
+// String valid until the same thread calls again.
 const char* motolii_word(Motolii* m, int layer, const char* name) {
   return by_look(m, [=] {
     return (said_word() = !strcmp(name, "name") ? doc_name(*m->d, layer)
@@ -142,12 +141,10 @@ const char* motolii_word(Motolii* m, int layer, const char* name) {
         .c_str();
   });
 }
-// Returns how long the layer lasts.
 double motolii_lasts(Motolii* m, int layer) {
   return by_look(m, [=] { return doc_lasts(*m->d, layer); });
 }
-// Copies up to `room` keyframe times of property `name` into `at`. Returns the
-// total number of keyframes, which can exceed `room`.
+// Returns total keyframe count (may exceed `room`).
 int motolii_key_times(Motolii* m, int layer, const char* name, double* at,
                       int room) {
   return by_look(m, [=] {
@@ -157,20 +154,13 @@ int motolii_key_times(Motolii* m, int layer, const char* name, double* at,
     return (int)all.size();
   });
 }
-// Samples where the layer is and how it is turned over time. Fills `path` with
-// `n` entries of four numbers each: x, y, the rotation about z in degrees, and
-// the scale. The times run from `from` up to but not including `to`. `copy` is
-// the number of the copy to sample, or 0 for the layer itself. Returns `n`, or
-// 0 if the layer is unknown.
+// Fills `path` with n×(x, y, rotate_z, scale) samples from `from` to `to`.
 int motolii_path(Motolii* m, int layer, int copy, double from, double to, int n,
                  double* path) {
   return by_look(m, [=] {
     if (!doc_knows(doc(m), layer) || n < 1) return 0;
-    // Use the stage's own placement at times of this call's choosing; the
-    // preview's current time is left alone.
     for (int i = 0; i < n; ++i) {
       const double at = from + (to - from) * i / n;
-      // Place as a copy, or as the layer itself, the way the stage places it.
       const math::mat4 p =
           doc_place(*m->d, layer, at, 0, copy,
                     copy > 0 || doc_staggered(*m->d, layer, at));
@@ -181,8 +171,7 @@ int motolii_path(Motolii* m, int layer, int copy, double from, double to, int n,
     return n;
   });
 }
-// Like motolii_path, but each entry is x, y, z in stage units followed by the
-// scale, so that a preview can draw the path seen from any side.
+// Like motolii_path but entries are (x, y, z, scale) in stage units.
 int motolii_path3(Motolii* m, int layer, int copy, double from, double to,
                   int n, double* path) {
   return by_look(m, [=] {
@@ -198,14 +187,9 @@ int motolii_path3(Motolii* m, int layer, int copy, double from, double to,
     return n;
   });
 }
-// Turns auto-keying on or off, or reads it. Auto-keying makes every change a
-// keyframe. With `on` below 0 the call only returns the current state; it is a
-// read answered at once, not queued behind the render thread's frame. Otherwise
-// it returns whether auto-keying is now on.
+// on < 0: read only (not queued). Otherwise sets and returns the new state.
 int motolii_keying(Motolii* m, int on) {
   if (on < 0) return (int)m->window.keying.load();
-  // Record the new state at once and let the render thread pick it up on its
-  // next turn.
   m->window.keying = on != 0;
   return posted(m, "keying",
                 [m, on] {
@@ -215,45 +199,37 @@ int motolii_keying(Motolii* m, int on) {
                 }),
          on != 0;
 }
-// Starts a drag on the layer. Returns nonzero on success.
 int motolii_drag_start(Motolii* m, int layer) {
   return on_render_thread(m, [=] { return (int)doc_hold(doc(m), layer); });
 }
-// Queues a drag update. `by` names what is being dragged and `a` and `b` are
-// its new values; the meaning depends on `by`, see doc_carry. A refused update
-// is reported when the drag ends.
+// Queued; see doc_carry for `by` semantics.
 int motolii_drag_update(Motolii* m, const char* by, double a, double b) {
   return posted(m, std::string("carry ") + by, [m, by = std::string(by), a, b] {
     Doc& d = doc(m);
-    // The app's previews of the held layer follow too, as `show` makes them.
     if (doc_carry(d, by.c_str(), a, b))
       d.changes.changed.insert({d.held.layer, ""}), snapshot_update(m);
   });
 }
-// Reads the work area into *from and *to. Returns 1.
 int motolii_work_of(Motolii* m, double* from, double* to) {
   return by_look(m, [=] { return doc_work(*m->d, from, to), 1; });
 }
-// Returns the guides, one per line: x or y, a space, and the position.
+// Format: "x|y position\n" per line.
 const char* motolii_guides(Motolii* m) {
   return by_look(m, [=] { return (said_word() = doc_guides(*m->d)).c_str(); });
 }
-// Returns the marks, one per line in time order: the time, a space, and the
-// name.
+// Format: "time name\n" per line in time order.
 const char* motolii_marks(Motolii* m) {
   return by_look(m, [=] { return (said_word() = doc_marks(*m->d)).c_str(); });
 }
-// Returns the mark colors as text.
 const char* motolii_mark_colours(Motolii* m) {
   return by_look(
       m, [=] { return (said_word() = doc_mark_colours(*m->d)).c_str(); });
 }
-// Returns the project settings, one per line: the name, a space, and the value.
+// Format: "name value\n" per line.
 const char* motolii_settings(Motolii* m) {
   return by_look(m,
                  [=] { return (said_word() = doc_settings(*m->d)).c_str(); });
 }
-// Returns 1 if the project's size is the preview's size, otherwise 0.
 int motolii_fits(Motolii* m) {
   return by_look(m, [=] {
     int wide = m->s->w, high = m->s->h;
@@ -268,23 +244,17 @@ int motolii_fits(Motolii* m) {
     return (int)(wide == m->s->w && high == m->s->h);
   });
 }
-// Stores the preview's size in *wide and *high. Returns 1.
 int motolii_size_of(Motolii* m, int* wide, int* high) {
   return by_look(m, [=] { return *wide = m->s->w, *high = m->s->h, 1; });
 }
-// Returns the words that text property `name` of the layer accepts, or "" if
-// any text is allowed or the property is not text.
 const char* motolii_words(Motolii* m, int layer, const char* name) {
   return by_look(
       m, [=] { return (said_word() = doc_words(*m->d, layer, name)).c_str(); });
 }
-// Copies into `at`, up to `room` entries, every time at which any keyframed
-// property of the layer has a keyframe, each time once and in ascending order.
-// Returns the total count. The timeline draws its keyframe marks from this in
-// one call instead of asking property by property.
+// All distinct keyframe times of the layer's keyframed properties, ascending.
+// One query instead of property-by-property.
 int motolii_layer_key_times(Motolii* m, int layer, double* at, int room) {
-  // One SQLite query. A property counts as keyframed by the DOC_KEYED rule: it
-  // has more than one keyframe, a keyframe not at time 0, or an easing.
+  // DOC_KEYED rule: >1 keyframe, a keyframe not at t=0, or an easing.
   return by_look(m, [=] {
     int i = 0;
     doc_rows(
@@ -301,41 +271,31 @@ int motolii_layer_key_times(Motolii* m, int layer, double* at, int room) {
     return i;
   });
 }
-// Returns the names of the layer's properties that can have keyframes,
-// separated by spaces.
 const char* motolii_moving(Motolii* m, int layer) {
   return by_look(
       m, [=] { return (said_word() = doc_moving(*m->d, layer)).c_str(); });
 }
-// Returns the names of all properties of the layer, separated by spaces.
 const char* motolii_values(Motolii* m, int layer) {
   return by_look(m,
                  [=] { return (said_word() = doc_has(*m->d, layer)).c_str(); });
 }
-// Stores the display range of numeric property `name` in *low and *high.
-// Returns nonzero on success.
 int motolii_range(Motolii* m, int layer, const char* name, double* low,
                   double* high) {
   return by_look(m,
                  [=] { return (int)doc_range(*m->d, layer, name, low, high); });
 }
-// Begins or ends a group of changes that form one undo step. A nonzero `on`
-// begins it. 0 ends it and returns whether the group succeeded. Previews that
-// were held back while the group was open are made once when it ends.
+// Groups changes into one undo step. Previews held back during the group are
+// made once when it ends.
 int motolii_together(Motolii* m, int on) {
   return on_render_thread(m, [=] {
     if (on) return doc_act(*m->d), m->d->act.together = true, 1;
     const int done = m->d->act.depth ? (int)doc_acted(*m->d) : 0;
     if (!m->d->act.depth) m->d->act.together = false;
-    // Make the previews that were held back while the group was open.
     snapshot_update(m), snapshot_time(m);
     return done;
   });
 }
-// Returns every segment between two keyframes of the layer's keyframed
-// properties, one per line as "from\tto\teasing\n". The timeline draws how the
-// value goes between the two keyframes from this. The engine decides what the
-// segments are; the app only draws them.
+// Format: "from\tto\teasing\n" per segment. The app draws; the engine decides.
 const char* motolii_layer_stretches(Motolii* m, int layer) {
   return by_look(m, [=] {
     std::string all;
@@ -366,11 +326,8 @@ namespace motolii {
 
 namespace {
 
-// Returns how many points of the image one stage unit is, for layers whose z is
-// 0. The camera of the stage looks from 6 units away with a vertical field of
-// view of 30 degrees; see motolii_open. That fixes the scale at the middle of
-// the preview whatever camera the stage looks through now. The result is the
-// image height divided by the visible height.
+// Points per stage unit at z=0. Fixed by the 6-unit distance and 30° FoV of
+// the stage camera (motolii_open), regardless of the document's own camera.
 double point_of(Motolii* m) {
   return m->s->h / (2.0 * 6.0 * std::tan(15.0 * TAU / 360.0));
 }
@@ -379,20 +336,11 @@ double point_of(Motolii* m) {
 
 }  // namespace motolii
 
-// Returns how many points of the image one stage unit is, for layers whose z is
-// 0.
 double motolii_point(Motolii* m) {
   return by_look(m, [=] { return point_of(m); });
 }
-// Returns how the app reads a property of the layer, as "times from": the app
-// shows the value times `times` plus `from`. Places are counted in points of
-// the image from its top left corner
-// opacity are in hundredths. The turn about z is clockwise; a camera's turns
-// are as they are, and its pitch looks down. The anchor is in hundredths of the
-// box from its top left, front -50 to back 50. A camera's distance is in points
-// of the image, the stage's own camera being 6 units away. Any other property
-// follows its look: stage is points, down is points down the image, and share
-// is hundredths. Otherwise the value is shown as it is.
+// Returns "times from" for converting a property's engine value to the display
+// value the app shows: display = engine × times + from.
 const char* motolii_reading(Motolii* m, int layer, const char* name) {
   return by_look(m, [=] {
     const double p = point_of(m), w = m->s->w, h = m->s->h;
@@ -432,16 +380,13 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
     return (said_word() = line).c_str();
   });
 }
-// Returns the SVG path of a shape layer's outline at the current time, with
-// all path operators applied. Coordinates are centred at the origin, 1 unit
-// high (-0.5..+0.5 in y, -0.5*wide..+0.5*wide in x). "" if not a shape.
+// SVG path of the shape's outline with all operators applied. Coordinates are
+// centred at origin, 1 unit high. "" if not a shape.
 const char* motolii_shape_svg(Motolii* m, int layer) {
   return by_look(m, [=] {
     Doc& d = *m->d;
     const std::string kind = doc_word(d, layer, "kind");
-    // Text has no shape form, so preview it as a plain square. The letter
-    // outlines read as noise at this size; a square shows the path operators
-    // (round/bloat/zigzag/offset) clearly, which is what the Paths card is for.
+    // Text: use a square so path operators are visible (letter outlines are noise).
     const bool text = kind == "text";
     const std::string form = text ? std::string("rect") : doc_word(d, layer, "shape");
     if (!text && (kind != "shape" || form.empty() ||

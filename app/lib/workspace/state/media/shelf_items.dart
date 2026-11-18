@@ -1,12 +1,6 @@
-// Adding an effect or expression from a layer to the shelf under a name the user chooses ("Add to shelf" on the
-// card's code, effect_code.dart), and renaming one added that way from its tile's menu.
-// What is added belongs to the user: it goes in their own folder (motoliiOwn), never in the library's (engine/).
-// An effect (.fs, .wgsl) goes in effects/, where the Effects shelf reads the user's effects (doc_folders).
-// An expression (a .js with each()) goes in expressions/, the Expression group's folder. The engine also reads it
-// as a motion, but Create shows it only once, as the user's (dock_make_expressions.dart).
-// Nothing is overwritten: a name already on the shelf, or an existing file of that name, is refused.
-// A rename writes the name beside the file (<file>.name, as pasted code does: CodeFile.rename in dock/create/code_file.dart).
-// The file stays where it is, so documents that use it still find it.
+// Adding an effect or expression to the user's own shelf folder, and renaming one.
+// User files go in motoliiOwn (effects/ or expressions/), never in the library.
+// Nothing is overwritten. A rename writes a sidecar .name file; the original stays put.
 import 'package:motolii/bridge/engine_paths.dart'
     show motoliiOwn, motoliiShelves;
 import 'package:motolii/storage/disk.dart' show existsFile;
@@ -21,21 +15,21 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 String get _ownEffects => '$motoliiOwn/effects';
 String get _ownExpressions => '$motoliiOwn/expressions';
 
-/// A .js with each(), or a pen's CSS, which moves a text's letters (engine/community/css).
+/// A .js with each(), or a pen's CSS.
 bool shelfIsExpression(String file) =>
     file.endsWith('.js') || file.endsWith('.css');
 
-/// The display name written beside a file the user added, or null if there is none or the file is not theirs.
+/// The display name the user gave this file, or null.
 String? shelfNamed(String file) {
   if (!shelfAdded(file)) return null;
   return shelfSidecarText(file)?.trim();
 }
 
-/// Whether the user added the file to a shelf. Library files were not, so they cannot be renamed.
+/// Whether the user added this file (library files cannot be renamed).
 bool shelfAdded(String file) =>
     file.startsWith('$_ownEffects/') || file.startsWith('$_ownExpressions/');
 
-/// The path of the file that holds the name the user gave [file] (beside it, with the extension changed to .name).
+/// The .name sidecar path beside [file].
 String shelfSidecarPath(String file) =>
     '${file.substring(0, file.lastIndexOf('.'))}.name';
 
@@ -49,8 +43,7 @@ String? shelfSidecarText(String file) {
 void shelfSidecarWrite(String file, String text) =>
     writeText(shelfSidecarPath(file), text);
 
-/// The items of a shelf that the search text [query] finds, as their ids, best first. The engine does the matching
-/// (Motolii.find); items scoring below [least] are left out.
+/// Shelf items matching [query], best first. Items below [least] are dropped.
 List<String> nearShelfItems(
   WorkspaceController ws,
   String query,
@@ -64,8 +57,7 @@ void shelfSidecarDelete(String file) {
   if (existsFile(p)) deleteFile(p);
 }
 
-/// The expressions the user added as (name, file), sorted by name.
-/// The name is the one written beside the file, else the one in its header, else the file name.
+/// The user's expressions as (name, file), sorted. Name: sidecar → header → filename.
 List<(String, String)> shelfExpressions() {
   final dir = _ownExpressions;
   return [
@@ -91,8 +83,7 @@ String? _headName(String file) {
   }
 }
 
-/// The names on the Effects shelf already: the library's and the user's, and the names the layer's own effects and
-/// presets are known by. None when no project is open.
+/// Names already on the Effects shelf. Empty when no project is open.
 Set<String> shelfTakenNames(WorkspaceController ws) {
   final m = ws.inside;
   if (m == null) return const {};
@@ -103,7 +94,7 @@ Set<String> shelfTakenNames(WorkspaceController ws) {
   };
 }
 
-/// Why [name] cannot be used on a shelf whose names are [taken], or '' if it can. The name is also a file name.
+/// Why [name] is invalid, or '' if it can be used.
 String _whyNot(String name, Iterable<String> taken) {
   if (name.isEmpty) return 'Give it a name';
   if (name.startsWith('.') || RegExp(r'[/\\:~\t\n]').hasMatch(name)) {
@@ -115,8 +106,7 @@ String _whyNot(String name, Iterable<String> taken) {
   return '';
 }
 
-/// Adds [code] (the card's current code, read from [from]) to its shelf as [name].
-/// Returns why it could not be added, or '' on success. [taken] holds the names already on that shelf, from the library and the user.
+/// Adds [code] to the shelf as [name]. Returns '' on success or the reason it failed.
 String shelfAdd(
   WorkspaceController ws,
   String from,
@@ -130,8 +120,7 @@ String shelfAdd(
       expression = shelfIsExpression(from);
   final dir = expression ? _ownExpressions : _ownEffects,
       file = '$dir/$name$ext';
-  // A user's file of the same name takes precedence over the library's (doc_folder_files), but neither is overwritten.
-  // The library groups effects by what they do (blur/, color/…), so search it recursively.
+  // Neither the user's folder nor the library is overwritten. Library is searched recursively.
   final library = '$motoliiShelves/effects';
   if (existsFile(file) ||
       (!expression &&
@@ -143,7 +132,7 @@ String shelfAdd(
     return '"$name$ext" is already there';
   }
   makeFolder(dir);
-  // The card title and shelf name: an ISF takes its file name (isf.cpp), anything else its first line (doc_fx_title).
+  // ISF uses filename; other formats use first-line title.
   if (ext != '.fs') {
     final lines = code.split('\n'), first = lines.first;
     final head =
@@ -164,8 +153,7 @@ String shelfAdd(
   return '';
 }
 
-/// Copies the images the header of the effect file [from] names (`--image@name:path`) from beside it to [dir], keeping their folders.
-/// A path that starts with / or is not there is left; with [overwrite] false a file already in [dir] is kept.
+/// Copies `--image@name:path` files from beside [from] to [dir].
 void shelfCopyImages(String from, String dir, {bool overwrite = true}) {
   final home = from.substring(0, from.lastIndexOf('/'));
   for (final l in linesOf(from)) {
@@ -181,9 +169,7 @@ void shelfCopyImages(String from, String dir, {bool overwrite = true}) {
   }
 }
 
-/// Copies the files the engine reads beside an effect's file (see codeBeside in effect_code_cards.dart).
-/// That is an ISF's .vs, its lines of first.tsv (under the new name, appended to the folder's), and the images its
-/// header names (copied only where none exists, so nothing is overwritten).
+/// Copies the sidecar files the engine reads beside an effect: .vs, first.tsv lines, header images.
 void _beside(String from, String to, String dir) {
   final home = from.substring(0, from.lastIndexOf('/')),
       name = from
@@ -211,8 +197,7 @@ void _beside(String from, String to, String dir) {
   shelfCopyImages(from, dir, overwrite: false);
 }
 
-/// Renames a file the user added to [to] by writing the name beside it. Returns why it failed, or '' on success.
-/// [taken] holds the shelf's names except this file's own.
+/// Renames a user-added file. Returns '' on success or the reason it failed.
 String shelfRename(
   WorkspaceController ws,
   String file,

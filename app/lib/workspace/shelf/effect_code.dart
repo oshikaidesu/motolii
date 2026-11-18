@@ -1,12 +1,5 @@
-// The code of one card of a layer: an effect's, an expression's, or the Script card's (slot: 'script'). The Code tab
-// shows it as a cell (workspace/code/code_pane.dart), and "Edit code" on the card in the Inspector opens that cell.
-// It edits a .wgsl, an ISF .fs, or an expression (a .js with each() among its fx: document/scripts/expressions.h).
-// Typing affects only this layer's effect. The shelf's file is never overwritten: the first edit copies it to a folder
-// of the user's own (programs/fx/<stamp>/) under the same file name, and the layer's fx points at the copy.
-// Keeping the file name keeps everything attached to it: the parameter names (js_<stem>_<param>, doc_screen_knob)
-// and the card title (doc_fx_title), so the effect's visibility, place and values stay.
-// Files the engine reads from the same folder are copied along: an ISF's .vs (isf.cpp), its line in first.tsv
-// (script_first), and the images its header names (screen_fx.h). The engine's side is in state/effect_code_cards.dart.
+// A card's code cell in the Code tab: .wgsl, ISF .fs, or expression .js.
+// The first edit copies the shelf file to the user's own folder (copy-on-write); the filename stays so values and keys stay.
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
@@ -63,9 +56,7 @@ class EffectCode extends StatefulWidget {
   static void show(WorkspaceController ws, String title) =>
       cards.showCodeCell(ws, title);
 
-  /// The code of the card [title] of the layer [thing], or null if the card has no code.
-  /// The Script card has one file. Any other card is matched to a file of the layer's effects by its parameter [names],
-  /// not by the title alone, because two cards can share a title (state/effect_code_cards.dart codeOfCard).
+  /// The code of the card [title] on layer [thing], or null if the card has no code.
   static EffectCode? ofCard(
     WorkspaceController ws,
     int thing,
@@ -97,14 +88,13 @@ class EffectCode extends StatefulWidget {
   static String? fileOf(String fx, String title, List<String> names) =>
       cards.codeFileOf(fx, title, names);
 
-  /// The card title for an effect file, named as the engine does (document/cards.h doc_fx_title).
+  /// The card title for an effect file (matches doc_fx_title).
   static String titleOf(String w) => cards.codeTitleOf(w);
 
-  /// The file to read for an effect [w]. An effect applied again ("Glow~2.fs") reads its original's file (fx_source, isf.h).
+  /// The file to read for an effect [w]. A re-applied effect reads its original.
   static String source(String w) => cards.codeSource(w);
 
-  /// Whether the file [word] of the layer [thing] belongs to that card alone: one of the user's own copies, used by
-  /// no other card on any layer.
+  /// Whether [word] is the user's own copy, used by no other card.
   static bool alone(
     WorkspaceController ws,
     int thing,
@@ -112,15 +102,12 @@ class EffectCode extends StatefulWidget {
     String slot,
   ) => cards.codeAlone(ws, thing, word, slot);
 
-  /// Whether the card takes a name of the user's, and the naming of it: the name is the one in the code's first line
-  /// (state/effect_code_cards.dart codeRename).
+  /// Whether the card takes a user-given name (from the code's first line).
   bool get named => cards.codeNamedInText(word, slot);
   void rename(String name, void Function(bool done, String why) told) =>
       cards.codeRename(ws, thing, word, slot, name, told);
 
-  /// Gives the card's file [word] a copy of its own, as its first edit does: the file and the ones the engine reads
-  /// beside it go to `programs/<slot>/<stamp>/`, and the layer's slot names the copy. Returns the copy as the slot
-  /// names it, the copied file, and the engine's ticket for reading it.
+  /// Copy-on-write: copies the file and its companions to `programs/<slot>/<stamp>/`.
   static (String, String, int) copyOwn(
     WorkspaceController ws,
     int thing,
@@ -167,9 +154,8 @@ class _EffectCodeState extends State<EffectCode> {
     super.dispose();
   }
 
-  // The copy is first made from the original and accepted by the engine, then overwritten with the typed text.
-  // A half-typed effect or expression then keeps showing the last version the engine accepted, which a copy
-  // that was never accepted could not (isf.cpp, doc_script_of).
+  // The copy is made from the original first, then overwritten with the typed text.
+  // This way the engine keeps showing the last accepted version while typing.
   void _write(String text) {
     if (_making) {
       _typed = text;
@@ -203,8 +189,7 @@ class _EffectCodeState extends State<EffectCode> {
     if (mounted) setState(() => _why = done ? '' : why.trim());
   });
 
-  // Adds the card's code to the shelf under [name]: an effect to the Effects shelf, an expression to Create's Copies
-  // (shelf_add.dart). The name is typed in place of the title, like Rename in Finder.
+  // Adds the card's code to the shelf under [name].
   void _add(String? name) {
     setState(() => _adding = null);
     if (name == null) return;
@@ -299,7 +284,7 @@ class _EffectCodeState extends State<EffectCode> {
               mark: _mark,
             ),
           ),
-        // What the expression gives at the playhead, under it puts an expression's error.
+        // Expression result at the playhead.
         ExpressionResult(
           EffectCode.source(_mine ?? widget.word),
           write: _write,
