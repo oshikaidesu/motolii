@@ -23,6 +23,7 @@ k.h                           # shelves/README: an example of a header's name in
 app/build/*                   # what flutter writes while it runs (AGENTS.md 構成の目標 4)
 out/cmake/*                   # engine/README: what the builder writes under engine/out/
 engine/third_party/filament_src/*   # fetched by engine/deps/filament.sh; engine/.gitignore keeps third_party/* out
+*p5.sound.min.js              # p5's own add-on, put beside p5 by whoever wants it (shelves/README); not kept in this repository
 webgpu.h                      # Dawn's header, named in docs/engine/WINDOWS.md as what Dawn offers on Windows
 dawn/native/*                 # Dawn's headers (the same)
 third_party/ffmpeg_lgpl/*      # made by engine/deps/ffmpeg.sh (its configure line is CONFIGURE.txt); engine/.gitignore keeps third_party/* out

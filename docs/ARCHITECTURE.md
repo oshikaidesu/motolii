@@ -102,7 +102,7 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `skins/` | none | `skin/theme.dart` `ColorTheme.skinNames` |
 | `behaviours/` | `document/scripts/recipes.h` | none (behaviours are engine-side expressions: noise, oscillator, random) |
 | `workspaces/` | none | `workspace/workspace.dart` reads layout presets |
-| `extensions/hydra/` | `document/scripts/adapter.h`, `community/hydra/hydra_isf.cpp` | none |
+| `extensions/hydra/` | `document/scripts/import_adapter.h`, `community/hydra/hydra_isf.cpp` | none |
 | `engine/third_party/wordnet_ja/` (data, not a shelf) | `entry/calls_find.cpp` `find_english` (`doc_folders("words")`) | none |
 | `engine/third_party/noto_sans_jp/` (data, not a shelf) | `stage/canvas/canvas_renderables.h` `type_fallback` (`doc_folders("fonts")`) | `workspace/dock/fonts/fonts_shelf.dart` |
 | `engine/third_party/gflanguages/` (data, not a shelf) | none | `workspace/dock/fonts/fonts_controller.dart` (`samples.json`) |
