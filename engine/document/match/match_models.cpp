@@ -182,6 +182,10 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
   const char* model = wear.model;
   made.sketch = shape == "sketch";
   made.shape = made.sketch ? sketch_mesh() : built_in_mesh(shape);
+  if (!made.shape) {
+    build.why = "the shape " + shape + " is not built";
+    return;
+  }
   MaterialInstance* look =
       glass ? thick_glass(s, made.shape, {mat4f{}})
       : own && !made.sketch
