@@ -495,6 +495,38 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             d.changes.changed.insert({layer, ""}), snapshot_update(m),
                 snapshot_time(m);
           }
+        }
+        // word: space-delimited layer ids. Like "show" but marks all
+        // layers and rebuilds the snapshots once instead of N times.
+        else if (c == "show_layers") {
+          Doc& d = doc(m);
+          ok = 1;
+          if (d.act.depth && d.act.unmatched)
+            d.act.unmatched = false, doc_forget(d),
+                ok = changes(m, (int)doc_match(d));
+          if (d.act.depth) {
+            std::istringstream in(w);
+            int t;
+            while (in >> t) d.changes.changed.insert({t, ""});
+            snapshot_update(m), snapshot_time(m);
+          }
+        }
+        // word: space-delimited layer ids. Like "show_keys" but clears
+        // keyframe caches for all layers and rebuilds once.
+        else if (c == "show_keys_layers") {
+          Doc& d = doc(m);
+          ok = 1;
+          if (d.act.depth) {
+            d.act.unmatched = false;
+            std::istringstream in(w);
+            int t;
+            while (in >> t) {
+              doc_forget_keys(d, t);
+              d.changes.changed.insert({t, ""});
+            }
+            doc_evaluate(d, d.stage->now);
+            snapshot_update(m), snapshot_time(m);
+          }
         } else if (c == "effect")
           ok = changes(m, (int)doc_effect(doc(m), layer, n.c_str(), number));
         // word: where the pointer is and its handle as "x y hx hy", in image

@@ -72,9 +72,15 @@ class LiveEdit {
     }
     _going = true;
     var shown = 0;
-    final show = keysOnly ? 'show_keys' : 'show';
-    for (final t in {...writes(m)}.ifEmpty(0)) {
-      shown = m.later(show, layer: t);
+    final layers = {...writes(m)};
+    if (layers.length > 1) {
+      final show = keysOnly ? 'show_keys_layers' : 'show_layers';
+      shown = m.later(show, word: layers.join(' '));
+    } else {
+      final show = keysOnly ? 'show_keys' : 'show';
+      for (final t in layers.ifEmpty(0)) {
+        shown = m.later(show, layer: t);
+      }
     }
     ws.after(shown, (_, _) {
       _going = false;
