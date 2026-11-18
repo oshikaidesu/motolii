@@ -322,8 +322,7 @@ class ProjectReader {
           relationKinds.contains(m.word(t, 'file'))
       ? [
           for (final s in m.word(t, 'members').split(' '))
-            if (s.isNotEmpty && s != '_')
-              if (int.tryParse(s) case final v?) v,
+            if (s.isNotEmpty && s != '_') ?int.tryParse(s),
         ]
       : null;
 

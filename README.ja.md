@@ -34,7 +34,7 @@ After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lo
 - Apple Silicon の Mac（確かめたのは M4、macOS 15.5）。
 - App Store の Xcode（Command Line Tools だけでは画面をビルドできません）。入れたら一度開いて追加の部品を入れ、`sudo xcodebuild -license accept`。
 - Homebrew：[brew.sh](https://brew.sh/ja/) の 1 行。
-- Flutter 3.47.2（stable）を `PATH` に：[flutter.dev/get-started](https://docs.flutter.dev/get-started/install)。
+- Flutter 3.50.0（stable）を `PATH` に：[flutter.dev/get-started](https://docs.flutter.dev/get-started/install)。
 - Python 3：macOS に付いている物（Xcode を入れると入る）でよい。
 - 空き容量：Xcode と Flutter のほかに約 10 GB。
 

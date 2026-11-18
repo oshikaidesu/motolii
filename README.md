@@ -34,7 +34,7 @@ You need:
 - A Mac with Apple silicon (checked on an M4, macOS 15.5).
 - Xcode from the App Store (the Command Line Tools alone can't build the UI). Open it once to add its components, then `sudo xcodebuild -license accept`.
 - Homebrew: the one line on [brew.sh](https://brew.sh/).
-- Flutter 3.47.2 (stable) on your `PATH`: [flutter.dev/get-started](https://docs.flutter.dev/get-started/install).
+- Flutter 3.50.0 (stable) on your `PATH`: [flutter.dev/get-started](https://docs.flutter.dev/get-started/install).
 - Python 3: the one macOS has (it comes with Xcode).
 - About 10 GB of disk besides Xcode and Flutter.
 

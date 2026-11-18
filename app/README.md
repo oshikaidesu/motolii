@@ -5,7 +5,7 @@ The Flutter (macOS) user interface of Motolii. It draws nothing itself and holds
 ## Prerequisites
 
 - macOS on Apple silicon.
-- Flutter 3.47.2 (pinned in [`.fvmrc`](.fvmrc) and in CI).
+- Flutter 3.50.0 (pinned in [`.fvmrc`](.fvmrc) and in CI).
 - The engine, built first: `../engine/build.sh`. See [`../engine/README.md`](../engine/README.md).
 
 ## Run

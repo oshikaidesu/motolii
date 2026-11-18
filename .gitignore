@@ -44,3 +44,6 @@ __pycache__/
 # and its stop hook reads reports/alight_checklist.md, which is gone
 /.cursor/
 docs/archive/internal/
+
+# Each machine counts its own turns (.claude/hooks/uat_goal_reminder.sh).
+/.claude/hooks/.turn_count

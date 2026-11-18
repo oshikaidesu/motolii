@@ -121,7 +121,7 @@ Tests written by the same hand that wrote the code tend to repeat its mistakes, 
 
 ## What CI runs
 
-[.github/workflows/checks.yml](../.github/workflows/checks.yml) runs on every push and pull request, on Ubuntu with Flutter 3.47.2:
+[.github/workflows/checks.yml](../.github/workflows/checks.yml) runs on every push and pull request, on Ubuntu with Flutter 3.50.0:
 
 - `dart format --output=none --set-exit-if-changed .`
 - `flutter analyze`

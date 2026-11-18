@@ -10,9 +10,7 @@ class MyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context),
-        m = ws.inside,
-        layer = int.tryParse(ws.selected ?? '');
+    final ws = WorkspaceScope.of(context), m = ws.inside, layer = ws.selected;
     if (m == null || layer == null) {
       return Center(
         child: Text('Pick a layer', style: TextStyles.label(Grey.g56)),
