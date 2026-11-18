@@ -234,6 +234,60 @@ SCENE 行も式で回せる：`scene = ["屋上", "スタジオ", "街"][floor(b
 
 BoxCam（ステージ上の枠をドラッグして画角を決める方式）が一番使いやすい理由は、ユーザーの思考（「この範囲を見せたい」）と操作（枠をドラッグ）が一致するから。リードモデルは BoxCam の 3D 拡張。枠が主でカメラ点が従という主従関係は同じ。
 
+## Filament ハードコード解放リスト
+
+Filament が持っているが、Motolii でハードコードまたは未使用のまま眠っている機能。World タブで解放する。
+
+### 現在ハードコードされている値
+
+| 箇所 | 値 | あるべき姿 |
+|------|-----|-----------|
+| IBL 環境マップ | `"small_studio"` 固定 | ユーザーが選べる（kinds.h に 5 種列挙済み） |
+| IBL 初期強度 | `60000.f` 固定 | `environment` プロパティ（0〜10）を初期ロードにも反映 |
+| ライト基準強度 | `60000.f * strong` | 基準値がハードコード |
+| ワーキングカメラ FOV | `setProjection(30.0, ...)` 固定 | レイヤーカメラは focal_length から算出してるのにワーキングカメラは 30° 固定 |
+| センサーサイズ | `12.0` mm（= 24mm フルフレーム固定） | プロパティとして出す候補 |
+| トーンマッピング | `LinearToneMapper` 固定 | ACES, Filmic 等を選べるべき |
+| Exposure | `0.f` 固定 | キーフレーム可能にすべき |
+
+### Filament にあるが未使用
+
+| 機能 | Filament API | World タブでの形 |
+|------|-------------|-----------------|
+| Bloom | `View::setBloomOptions` | ENVIRONMENT 行のスライダー |
+| SSAO | `View::setAmbientOcclusionOptions` | ENVIRONMENT 行のトグル |
+| Fog | `View::setFogOptions` | ENVIRONMENT 行のスライダー群 |
+| ColorGrading（フル） | `ColorGrading::Builder` | shelves に既にエフェクトとして存在。接続するだけ |
+| Skybox 動的切り替え | `Skybox::Builder` | ENVIRONMENT 行の IBL 選択 |
+
+### stage プロパティ（既にエンジンにある、移動先は World タブ）
+
+| プロパティ | 現在の場所 | World タブでの場所 |
+|-----------|-----------|------------------|
+| `room` | stage の words | ENVIRONMENT 行の IBL 選択 |
+| `environment` | stage の数値 | ENVIRONMENT 行の IBL 強度 |
+| `environment_rotate` | stage の数値 | ENVIRONMENT 行の IBL 回転 |
+| `background` | stage の words | ENVIRONMENT 行の背景色 |
+| `behind` | stage の words | ENVIRONMENT 行の背景種別（colour/room） |
+| `bpm` / `bpm_from` | stage の数値 | AUDIO 行のテンポ情報 |
+
+## World タブの UI — Premiere 型トラック
+
+WORLD の中身は重ならない（カメラ・ライト・環境は同時に存在するが重ね順がない）。AE 型のレイヤー積み重ねではなく、**Premiere 型の種類別トラック**。LAYERS タブが AE 型（重ね順あり）、WORLD タブが Premiere 型（種類別）。
+
+```
+ ── WORLD ──────────────────────────────────────
+ SCENE       │ [===A===|===B===|===A===]         場所スコープ
+ C1 Camera   │ ┌──┐┌──┐ ░░░░░░ ┌──┐┌──┐        フィルムストリップ or 式
+ C2 Camera   │ ┌──┐          ┌──┐
+ L1 Light    │ ━━━◆━━━━━━━━━━━━◆━━━━━           キーフレーム
+ ENVIRONMENT │ [IBL: studio] [tone: linear]       設定 + キーフレーム
+              │  bloom: off  fog: off  ssao: off
+ AUDIO       │ ♪━━━━━━━━━━━━━━━━━━━━━━━          波形 + BPM
+```
+
+各トラックの種別（C / L / ENVIRONMENT / AUDIO）が Premiere の V / A と同じ区別の役割を果たす。
+
 ## camera_target_mode.md との関係
 
 [camera_target_mode.md](camera_target_mode.md) のターゲットモードは「パシャ」の下位互換。ターゲットモードは「何を見るか」を選ぶ。フィルムストリップは「どう見えるか」を直接指定する。ターゲットモードはフィルムストリップの裏側で動く仕組み（ターゲットレイヤーに向けてカメラ位置を逆算する）として統合できる。リードモデルはターゲットモードの物理的な比喩。
