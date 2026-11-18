@@ -1,6 +1,7 @@
 // The time snapshot reader (docs/app/BRIDGE.md M): where layers are and what they show at the snapshot's time.
 // Hot-path data (bounds, seen, shows) comes from the binary time layout; detail
 // data (gizmo, value, points, handles) from the JSON detail snapshot.
+import 'dart:typed_data' show Float64List;
 import 'dart:ui' show Offset, Rect;
 
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -128,7 +129,7 @@ extension MotoliiMoment on Motolii {
     final base = timeIndex[layer];
     if (base != null) {
       if (timeLayout[base].isNaN) return null;
-      return [for (var i = 0; i < 8; i++) timeLayout[base + i]];
+      return Float64List.sublistView(timeLayout, base, base + 8);
     }
     return switch (_momentOf(layer)?['bounds']) {
       final List<dynamic> f => Motolii.numbers(f),
