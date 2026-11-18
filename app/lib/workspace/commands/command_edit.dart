@@ -22,7 +22,15 @@ import 'package:motolii/workspace/state/stage/stage_service.dart'
     show stageSeconds;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     show setWorkArea;
+import 'package:motolii/workspace/easing/ease_text.dart' show heard, said;
+import 'package:motolii/workspace/state/ease/ease_writes.dart' show settleEase;
+import 'package:motolii/workspace/state/layers/layer_reads.dart'
+    show layerEasingAt;
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool_state.dart'
+    show easeCopied;
+import 'package:motolii/workspace/tool_panel/ease/ease_writer.dart'
+    show easeStretches;
 import 'package:motolii/workspace/workspace.dart';
 
 extension EditCommands on WorkspaceState {
@@ -42,6 +50,18 @@ extension EditCommands on WorkspaceState {
         if (typed(
           const CopySelectionTextIntent.cut(SelectionChangedCause.keyboard),
         )) {
+          return;
+        }
+        // Cut stretches: copy easing then reset to Linear
+        if (ws.stretches.isNotEmpty) {
+          final s = ws.stretch!;
+          final easing = layerEasingAt(ws, s.layer, s.name, s.at);
+          if (easing.isNotEmpty) easeCopied = heard(easing);
+          groupBegin(ws);
+          for (final s in ws.stretches) {
+            resetEasing(ws, s.layer, s.name, s.at);
+          }
+          ws.after(groupEnd(ws), (_, _) => ws.reread());
           return;
         }
         // Cut keyframes: copy then delete
@@ -67,10 +87,24 @@ extension EditCommands on WorkspaceState {
       'edit.copy': () {
         if (typed(CopySelectionTextIntent.copy)) return;
         copiedKeyframes = const [];
+        if (ws.stretches.isNotEmpty) {
+          final s = ws.stretch!;
+          final easing = layerEasingAt(ws, s.layer, s.name, s.at);
+          if (easing.isNotEmpty) easeCopied = heard(easing);
+          return;
+        }
         ws.keys.isEmpty ? copy() : copyKeyframes(ws, ws.keys);
       },
       'edit.paste': () {
         if (typed(const PasteTextIntent(SelectionChangedCause.keyboard))) {
+          return;
+        }
+        // Paste easing onto selected stretches.
+        if (ws.stretches.isNotEmpty && easeCopied != null) {
+          final all = easeStretches(ws);
+          if (all.isNotEmpty) {
+            settleEase(ws, said(easeCopied!), all, (_) {});
+          }
           return;
         }
         // Pastes the app's own clipboard: the copied keyframes, else the copied layer at the playhead.
