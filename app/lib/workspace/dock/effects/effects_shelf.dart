@@ -7,6 +7,7 @@ import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
+import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -301,6 +302,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     ),
             ),
           ),
+          if (sel != null && pic(sel.id).isNotEmpty)
+            SizedBox(
+              key: const ValueKey('ws-fx-preview'),
+              height: Shape.z(140),
+              child: TileMoving(pic(sel.id), playing: true),
+            ),
           if (sel != null)
             ShelfFooter(
               title: sel.name,
