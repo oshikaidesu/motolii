@@ -45,8 +45,21 @@ class TimelineRows {
   /// The lane for the property [name] of [l]: its keyframe times and values as the window last read them.
   TimelineRow laneRow(Layer l, String name) {
     final ws = workspace!, flags = RowFlags(ws);
-    final lane = l.lanes.firstWhere((a) => a.name == name),
-        keys = [for (final s in lane.at) (s * WorkspaceController.fps).round()];
+    final lane = l.lanes.where((a) => a.name == name).firstOrNull;
+    if (lane == null) {
+      return TimelineRow(
+        name: name,
+        kind: l.kind,
+        inF: l.inF,
+        outF: l.outF,
+        keys: const [],
+        picked: const {},
+        lane: const [],
+      );
+    }
+    final keys = [
+      for (final s in lane.at) (s * WorkspaceController.fps).round(),
+    ];
     final lo = lane.values.fold(double.infinity, math.min),
         hi = lane.values.fold(-double.infinity, math.max);
     return TimelineRow(

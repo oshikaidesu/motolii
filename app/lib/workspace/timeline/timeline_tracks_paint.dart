@@ -185,8 +185,22 @@ class TimelineTracksPainter extends CustomPainter {
 
   void _row(Canvas c, Size s, TimelineRow r, double cy) {
     final view = viewport.view;
-    // A lane with no points is a row that only shows what it targets, so nothing is drawn.
     if (r.lane case final pts?) {
+      // Draw the bar's extent behind the lane, so the lane has a visible in/out range.
+      final x0 = view.x(r.inF), x1 = math.max(view.x(r.outF), x0 + 4);
+      if (x1 >= 0 && x0 <= s.width) {
+        final fill = trackBarFill(r);
+        final h = TimelineMetrics.row - 9;
+        final top = cy - TimelineMetrics.row / 2 + 4;
+        c.drawRect(
+          Rect.fromLTWH(x0, top, x1 - x0, h),
+          Paint()..color = fill.withValues(alpha: .10),
+        );
+        // Trim marks at both ends.
+        final grip = Color.lerp(fill, Grey.g00, .28)!.withValues(alpha: .4);
+        c.drawRect(Rect.fromLTWH(x0, top, 2, h), Paint()..color = grip);
+        c.drawRect(Rect.fromLTWH(x1 - 2, top, 2, h), Paint()..color = grip);
+      }
       return pts.isEmpty ? null : _lane(c, s, r, pts, cy);
     }
     final p = Paint(),

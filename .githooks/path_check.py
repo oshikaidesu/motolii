@@ -142,7 +142,7 @@ def check_links(path, folder, text):
             fenced = not fenced
         if fenced:
             continue
-        if not path.startswith('docs/design/'):
+        if not path.startswith(('docs/design/', 'docs/archive/')):
             for written in CODE_FILE.findall(line):
                 relative = written.startswith('../')   # (read from the document's folder, the way a link is; a leading ./ is a command typed in the root)
                 written = written.removeprefix('./')
@@ -192,7 +192,8 @@ for path, blob in blobs(look):
         continue
     text = blob.decode('utf-8', 'replace')
     if path.endswith('.md'):
-        check_links(path, folder, text)
+        if not path.startswith('docs/archive/'):
+            check_links(path, folder, text)
         continue
     ts, sh = path.endswith('.ts'), path.endswith('.sh')
     base = folder

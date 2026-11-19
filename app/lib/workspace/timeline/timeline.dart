@@ -117,9 +117,7 @@ class _TimelinePaneState extends State<TimelinePane>
     final ws = WorkspaceScope.read(context);
     if (ws != workspace) {
       workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
-      workspace?.moment.removeListener(_listener);
       workspace = ws..on[WorkspaceAspect.playing]!.addListener(_listener);
-      ws.moment.addListener(_listener);
       if (ws.playing) {
         SchedulerBinding.instance.addPostFrameCallback(
           (_) => mounted ? _changed() : null,
@@ -132,7 +130,6 @@ class _TimelinePaneState extends State<TimelinePane>
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_escapeKey);
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
-    workspace?.moment.removeListener(_listener);
     _ticker.dispose();
     _zoomAnim.dispose();
     viewport.dispose();
@@ -152,7 +149,17 @@ class _TimelinePaneState extends State<TimelinePane>
     if (ws.playing && !_ticker.isActive) {
       _ticker.start();
       _lastFrame = -1;
-      if (ws.frame >= WorkspaceController.duration) ws.frame = 0;
+      if (ws.frame >= WorkspaceController.duration) {
+        ws.frame = 0;
+      } else if (timeline_service.isLooping(ws)) {
+        // When loop is on and the playhead is outside the work area, jump to its start so playback is not silent.
+        final (wFrom, wTo) = ws.work;
+        final wIn = (wFrom * WorkspaceController.fps).round();
+        final wOut = (wTo * WorkspaceController.fps).round();
+        if (wIn < wOut && (ws.frame < wIn || ws.frame >= wOut)) {
+          ws.frame = wIn;
+        }
+      }
     } else if (!ws.playing && _ticker.isActive) {
       _ticker.stop();
     }
@@ -169,6 +176,7 @@ class _TimelinePaneState extends State<TimelinePane>
         .round()
         .clamp(0, WorkspaceController.duration);
     ws.frame = _lastFrame;
+    _follow(_lastFrame);
   }
 
   void _toggle() {

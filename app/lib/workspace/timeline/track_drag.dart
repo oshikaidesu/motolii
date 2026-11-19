@@ -330,7 +330,7 @@ class TrackDrag extends ChangeNotifier {
           HardwareKeyboard.instance.isMetaPressed;
       ws.pickStretch(r.l.id, name, from, add: add);
     } else {
-      ws.clearKeys();
+      ws.clearStretch();
     }
   }
 
@@ -382,7 +382,7 @@ class TrackDrag extends ChangeNotifier {
     if (f >= l.inF && f <= l.outF) {
       clickLayer(ws, l.id, order: [for (final k in ws.layers) k.id]);
     } else {
-      ws.clearKeys();
+      ws.clearStretch();
     }
   }
 
@@ -489,7 +489,7 @@ class TrackDrag extends ChangeNotifier {
             both,
             property: name,
           );
-          _targets = ws.snapTargets(skip: {r.l.id});
+          _targets = ws.snapTargets(skip: {r.l.id, ...ws.many});
           return true;
         }
       }

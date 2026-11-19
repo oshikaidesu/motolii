@@ -27,3 +27,4 @@ engine/third_party/filament_src/*   # fetched by engine/deps/filament.sh; engine
 webgpu.h                      # Dawn's header, named in docs/engine/WINDOWS.md as what Dawn offers on Windows
 dawn/native/*                 # Dawn's headers (the same)
 third_party/ffmpeg_lgpl/*      # made by engine/deps/ffmpeg.sh (its configure line is CONFIGURE.txt); engine/.gitignore keeps third_party/* out
+*/p5.sound.min.js              # from p5's distribution, not kept in this repository; shelves/README says so

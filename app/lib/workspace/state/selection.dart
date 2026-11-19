@@ -108,6 +108,13 @@ class Selection {
     _onChanged();
   }
 
+  /// Deselects the selected stretch without touching keyframes.
+  void clearStretch() {
+    if (_stretch == null) return;
+    _stretch = null;
+    _onChanged();
+  }
+
   StretchPicked? _stretchOf(int layer, String name, int from) {
     final at = _engine()?.keyTimes(layer, name) ?? const <double>[];
     final i = at.indexWhere(

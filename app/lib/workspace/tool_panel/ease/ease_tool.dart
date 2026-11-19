@@ -22,20 +22,19 @@ EaseSpan? easeSpan(WorkspaceController ws) {
   }
   if (ws.keys.isEmpty) {
     // With no keyframe selected, use the span the playhead is in on the selected layer.
-    // Alight Motion does the same when the playhead is between two keyframes: docs/design/alight_motion_ui.md.
-    final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull,
-        f = ws.frame;
-    final keys = layer == null ? const <int>[] : ([...layer.keys]..sort());
+    final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull;
+    if (layer == null) return null;
+    final f = ws.frame;
+    final keys = [...layer.keys]..sort();
     final from = keys.where((k) => k <= f).lastOrNull,
         to = keys.where((k) => k > f).firstOrNull,
         before = keys.where((k) => k < f).lastOrNull;
     if (from == f && to == null && before != null) {
-      // On the last keyframe, use the span that ends there, as if that keyframe were selected below.
-      return (layer: layer!, from: before, to: f, picked: 0);
+      return (layer: layer, from: before, to: f, picked: 0);
     }
     return from == null || to == null
         ? null
-        : (layer: layer!, from: from, to: to, picked: 0);
+        : (layer: layer, from: from, to: to, picked: 0);
   }
   final picked = ws.keys.toList()..sort((a, b) => a.frame.compareTo(b.frame));
   final k = picked.first,
