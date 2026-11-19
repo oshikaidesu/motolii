@@ -1,0 +1,37 @@
+# Static checks clang-tidy runs on the engine's own code (not third_party/).
+#   clang-tidy -p out/cmake <file>
+# compile_commands.json is in out/cmake/ (CMAKE_EXPORT_COMPILE_COMMANDS ON).
+Checks: >
+  -*,
+  bugprone-*,
+  cppcoreguidelines-*,
+  performance-*,
+  misc-use-after-move,
+  misc-unconventional-assign-operator,
+  readability-container-size-empty,
+  readability-misleading-indentation,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-pro-type-vararg,
+
+WarningsAsErrors: >
+  bugprone-use-after-move,
+  bugprone-dangling-handle,
+  bugprone-move-forwarding-reference,
+  bugprone-inaccurate-erase,
+  bugprone-string-constructor,
+
+HeaderFilterRegex: '^.*/engine/(base|community|document|entry|gpu|media|motion|preview|shelf|stage|views)/.*'
+
+CheckOptions:
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'std::shared_ptr;std::function'

@@ -141,6 +141,13 @@ endif()
 add_library(skia_libraries INTERFACE)
 target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${SKIA}/out/path/libskia.a)
 
+# ---- Sanitizers: ASan + UBSan (opt-in).  ./build.sh sanitize, or cmake -DMOTOLII_SANITIZE=ON.
+option(MOTOLII_SANITIZE "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(MOTOLII_SANITIZE)
+  add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+  add_link_options(-fsanitize=address,undefined)
+endif()
+
 # ---- What every module is compiled with.
 
 add_library(motolii_flags INTERFACE)

@@ -43,6 +43,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   ffigen: ^23.0.0
+  very_good_analysis: ^11.0.0
+  convenient_test: ^1.6.2
+  convenient_test_common: ^1.6.2
 
 flutter:
   uses-material-design: true

@@ -51,8 +51,10 @@ fi
 # libmotolii.dll, a folder the runner puts on PATH with GStreamer's (app/windows/runner/main.cpp).
 [[ $OSTYPE == (msys|cygwin)* ]] && cp -u third_party/onnxruntime/lib/*.dll third_party/ffmpeg_lgpl/bin/*.dll $MOTOLII_LIBRARIES/bin/*.dll out/
 case "$1" in
-  lib)  cmake --build out/cmake --target motolii ;;
-  test) cmake --build out/cmake && ctest --test-dir out/cmake --output-on-failure ;;
-  *)    cmake --build out/cmake ;;
+  lib)      cmake --build out/cmake --target motolii ;;
+  test)     cmake --build out/cmake && ctest --test-dir out/cmake --output-on-failure ;;
+  sanitize) cmake -S . -B out/cmake_san -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DMOTOLII_SANITIZE=ON $WINDOWS > /dev/null
+            cmake --build out/cmake_san ;;
+  *)        cmake --build out/cmake ;;
 esac
 build_unlock
