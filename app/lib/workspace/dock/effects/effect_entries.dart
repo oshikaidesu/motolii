@@ -7,8 +7,8 @@ import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/widgets/app_glyphs.dart' show AppGlyphs;
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/workspace/dock/common/star_button.dart';
 import 'package:motolii/workspace/dock/effects/effect_drawings.dart';
@@ -46,30 +46,11 @@ EffectEntries effectEntries({
       picked = ws.selected != null;
   final look = shelfLooks['Effects']!;
   // Overlays on a tile's image, none on a small tile.
-  // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
-  // and the star when starred or hovered.
-  List<Widget> Function(bool) marks(
-    String id,
-    bool small, {
-    String? on,
-    String? same,
-  }) =>
+  // A small icon badge for the reason the sample is unchanged; the star when starred or hovered.
+  List<Widget> Function(bool) marks(String id, bool small, {String? same}) =>
       (h) => [
-        if (on != null && !small)
-          Positioned(
-            left: 3,
-            top: 3,
-            child: Chip(
-              label: on,
-              look: ChipLook.tag(WindowTokens.accent, edge: true),
-            ),
-          ),
         if (same != null && !small)
-          Positioned(
-            left: 3,
-            bottom: 3,
-            child: Chip(label: same, look: ChipLook.tag(Grey.g63, edge: true)),
-          ), // Shows why the sample is unchanged: what it lacks, or that the engine does not draw it yet.
+          Positioned(left: 2, bottom: 2, child: _sameBadge(same)),
         if (!small && (c.starred(id) || h))
           Positioned(
             right: 0,
@@ -141,7 +122,6 @@ EffectEntries effectEntries({
         over: marks(
           id,
           small,
-          on: !lit ? null : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
           same: screened && i.same ? TileReview.sameTag(id) : null,
         ),
       ),
@@ -229,18 +209,39 @@ List<EffectEntry> effectLost({
               onTap: () => c.pick(t.id),
               onMenu: menu,
               over: (_) => [
-                Positioned(
-                  left: 3,
-                  bottom: 3,
-                  child: Chip(
-                    label: 'NOT HERE',
-                    look: ChipLook.tag(Grey.g63, edge: true),
-                  ),
-                ),
+                Positioned(left: 2, bottom: 2, child: _sameBadge('NOT HERE')),
               ],
             ),
           ),
   ];
+}
+
+// sameTag text → icon badge. A 10px glyph in a translucent disc, far smaller than the text chip it replaces.
+Widget _sameBadge(String tag) {
+  final glyph = switch (tag) {
+    'FOR SOUND' => AppGlyphs.audio,
+    'FOR VIDEO' => AppGlyphs.video,
+    'FOR 2 LAYERS' => AppGlyphs.copies,
+    'PART OF A SET' => AppGlyphs.link,
+    'FOR CUT-OUTS' => AppGlyphs.shape,
+    'NEEDS BACKDROP' => AppGlyphs.image,
+    'FOR PATHS' => AppGlyphs.line,
+    'NEEDS INPUT' => AppGlyphs.tools,
+    'UNSUPPORTED' => AppGlyphs.close,
+    'NOT HERE' => AppGlyphs.close,
+    _ => AppGlyphs.close,
+  };
+  return Container(
+    width: Shape.z(16),
+    height: Shape.z(16),
+    decoration: BoxDecoration(
+      color: Grey.g00.withValues(alpha: .8),
+      borderRadius: Shape.round(8),
+    ),
+    child: Center(
+      child: Glyph(glyph, size: Shape.z(10), color: Grey.g76),
+    ),
+  );
 }
 
 /// The description of a layer effect: the document's value for it, and what the selected layer has for it now.
