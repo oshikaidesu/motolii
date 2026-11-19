@@ -268,6 +268,24 @@ class TrackDrag extends ChangeNotifier {
     ws.live.letGo(keep: keep && h.moved);
   }
 
+  /// The frame of the keyframe on [l]'s lane [name] closest to [x], within the hit radius; null when none is.
+  int? _keyNear(Layer l, String name, double x) {
+    final lane = l.lanes.where((a) => a.name == name).firstOrNull;
+    if (lane == null) return null;
+    final v = _viewport.view;
+    int? pickFrame;
+    double pickDx = TimelineMetrics.keyPicked + 2;
+    for (final k in lane.at) {
+      final frame = (k * WorkspaceController.fps).round();
+      final dx = (v.x(frame) - x).abs();
+      if (dx <= pickDx) {
+        pickDx = dx;
+        pickFrame = frame;
+      }
+    }
+    return pickFrame;
+  }
+
   /// Click on a property lane: select keyframe, select span between two, or double-click to add.
   void tapUp(Offset p) {
     final ws = workspace!, r = _rows.rowAt(p.dy), v = _viewport.view;
@@ -281,21 +299,7 @@ class TrackDrag extends ChangeNotifier {
         row = _rows.laneRow(r.l, name),
         pts = row.lane ?? const [];
     if (pts.isEmpty) return;
-    // Closest keyframe within the hit radius.
-    final lane = r.l.lanes.where((a) => a.name == name).firstOrNull;
-    int? pickFrame;
-    double pickDx = TimelineMetrics.keyPicked + 2;
-    if (lane != null) {
-      for (final k in lane.at) {
-        final frame = (k * WorkspaceController.fps).round();
-        final dx = (v.x(frame) - p.dx).abs();
-        if (dx <= pickDx) {
-          pickDx = dx;
-          pickFrame = frame;
-        }
-      }
-    }
-    if (pickFrame case final frame?) {
+    if (_keyNear(r.l, name, p.dx) case final frame?) {
       ws.pickKeys([(layer: r.l.id, frame: frame)]);
       return;
     }
@@ -427,15 +431,15 @@ class TrackDrag extends ChangeNotifier {
     // Stretch handles: near the left/right ends of a multi-key selection.
     if (stretchHandles case (final lo, final hi)?) {
       final lx = v.x(lo), hx = v.x(hi);
-      if ((p.dx - lx).abs() <= 6) {
-        _stretch = (anchor: hi, from: lo, to: hi, grab: v.frameAt(p.dx));
-        _slideCache = timeline_service.cacheSelectedSlide(ws, ws.keys.toList());
-        _targets = ws.snapTargets(skip: {for (final k in ws.keys) k.layer});
-        if (ws.playing) ws.playing = false;
-        return true;
-      }
-      if ((p.dx - hx).abs() <= 6) {
-        _stretch = (anchor: lo, from: lo, to: hi, grab: v.frameAt(p.dx));
+      final left = (p.dx - lx).abs() <= 6;
+      if (left || (p.dx - hx).abs() <= 6) {
+        // The end that is not held stays where it is.
+        _stretch = (
+          anchor: left ? hi : lo,
+          from: lo,
+          to: hi,
+          grab: v.frameAt(p.dx),
+        );
         _slideCache = timeline_service.cacheSelectedSlide(ws, ws.keys.toList());
         _targets = ws.snapTargets(skip: {for (final k in ws.keys) k.layer});
         if (ws.playing) ws.playing = false;
@@ -446,20 +450,7 @@ class TrackDrag extends ChangeNotifier {
     if (r.value != null) {
       final name = r.value!;
       if (RowFlags(ws).isLocked(r.l.id)) return true;
-      final lane = r.l.lanes.where((a) => a.name == name).firstOrNull;
-      int? pickFrame;
-      double pickDx = TimelineMetrics.keyPicked + 2;
-      if (lane != null) {
-        for (final k in lane.at) {
-          final frame = (k * WorkspaceController.fps).round();
-          final dx = (v.x(frame) - p.dx).abs();
-          if (dx <= pickDx) {
-            pickDx = dx;
-            pickFrame = frame;
-          }
-        }
-      }
-      if (pickFrame case final frame?) {
+      if (_keyNear(r.l, name, p.dx) case final frame?) {
         final held = (layer: r.l.id, frame: frame),
             all = ws.keys.contains(held) ? ws.keys.toList() : [held];
         if (!ws.keys.contains(held)) ws.pickKey(held);
