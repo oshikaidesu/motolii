@@ -1900,6 +1900,30 @@ class MotoliiBindings {
         int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Double>, int)
       >();
 
+  ffi.Pointer<ffi.Double> motolii_time_numbers(
+    ffi.Pointer<Motolii> m,
+    ffi.Pointer<ffi.Int> count,
+  ) {
+    return _motolii_time_numbers(m, count);
+  }
+
+  late final _motolii_time_numbersPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Double> Function(
+            ffi.Pointer<Motolii>,
+            ffi.Pointer<ffi.Int>,
+          )
+        >
+      >('motolii_time_numbers');
+  late final _motolii_time_numbers = _motolii_time_numbersPtr
+      .asFunction<
+        ffi.Pointer<ffi.Double> Function(
+          ffi.Pointer<Motolii>,
+          ffi.Pointer<ffi.Int>,
+        )
+      >();
+
   int motolii_together(ffi.Pointer<Motolii> m, int on) {
     return _motolii_together(m, on);
   }

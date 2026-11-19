@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "base/json_parts.h"
+#include "base/triple_buffer.h"
 #include "entry/motolii.h"
 
 namespace motolii {
@@ -56,7 +57,9 @@ struct Snapshots {
   // The time snapshot's per-layer layout as flat doubles: now, layer count,
   // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]), then
   // the last frame's two times in ms: the render thread's own and the GPU's.
-  std::vector<double> timeLayout;
+  // Filled by the render thread and read by the app's thread without a lock
+  // or a copy (motolii_time_numbers).
+  TripleBuffer<std::vector<double>> timeLayout;
   // The version of the document snapshot and of the time snapshot.
   long version = 0, timeVersion = 0;
   // Which snapshots are new since the window was last notified: 1 for the

@@ -430,6 +430,12 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version);
    thread's own and the GPU's. NaN means absent. Returns the number of doubles
    written, or needed when `out` is NULL or `capacity` is too small. */
 int motolii_time_layout(Motolii* m, double* out, int capacity);
+/* Returns the same numbers where the engine keeps them, without a copy, and
+   how many there are in *count. For one thread only, the app's (and
+   motolii_time_layout with it): the numbers stay as they are until that thread
+   calls either again, while the engine fills another copy, and they are gone
+   when the project is closed. */
+const double* motolii_time_numbers(Motolii* m, int* count);
 /* Sets the app's one listener: a Dart port, posted to from the render thread
    with Dart's own Dart_PostCObject (dart_native_api.h; Dart's
    NativeApi.postCObject) when new snapshots exist, the message an integer bit

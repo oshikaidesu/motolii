@@ -201,10 +201,15 @@ class Motolii {
   final layerSnapshots = <int, Map<String, dynamic>>{};
   Map<String, dynamic> momentSnapshot = const {'layer': {}};
   // Binary: [now, count, ids..., 26-doubles-per-layer..., the last frame's two times]. NaN = absent.
-  static const _timeLayoutCap = 2 + 1024 + 1024 * 26 + 2;
   final load = EngineLoad();
   late final bool _hasTimeLayout = _lib.providesSymbol('motolii_time_layout');
+  // The numbers read where the engine keeps them, with no copy (motolii_time_numbers). They stay as they are
+  // until they are asked for again, and are the engine's: gone when it is closed.
+  late final bool _hasTimeNumbers = _lib.providesSymbol('motolii_time_numbers');
+  late final _count = malloc<Int>();
+  // For an engine without that call: a copy, in a buffer as large as the layers need.
   Pointer<Double>? _timeBuf;
+  int _timeRoom = 0;
   Float64List timeLayout = Float64List(0);
   Map<int, int> timeIndex = const {};
   int _documentAt = -1, _momentAt = -1;
@@ -334,15 +339,30 @@ class Motolii {
     if (which & 2 != 0) {
       // The frame's own times, at the layout's end (an older engine writes none).
       (double, double)? frameTook;
-      if (_hasTimeLayout) {
-        _timeBuf ??= malloc<Double>(_timeLayoutCap);
-        final layoutSize = bindings.motolii_time_layout(
+      var layoutSize = 0;
+      if (_hasTimeNumbers) {
+        final numbers = bindings.motolii_time_numbers(handle, _count);
+        layoutSize = _count.value;
+        if (layoutSize >= 2) timeLayout = numbers.asTypedList(layoutSize);
+      } else if (_hasTimeLayout) {
+        layoutSize = bindings.motolii_time_layout(
           handle,
-          _timeBuf!,
-          _timeLayoutCap,
+          _timeBuf ?? nullptr,
+          _timeRoom,
         );
+        if (layoutSize > _timeRoom) {
+          if (_timeBuf case final was?) malloc.free(was);
+          _timeBuf = malloc<Double>(_timeRoom = layoutSize);
+          layoutSize = bindings.motolii_time_layout(
+            handle,
+            _timeBuf!,
+            _timeRoom,
+          );
+        }
+        if (layoutSize >= 2) timeLayout = _timeBuf!.asTypedList(layoutSize);
+      }
+      if (_hasTimeNumbers || _hasTimeLayout) {
         if (layoutSize >= 2) {
-          timeLayout = _timeBuf!.asTypedList(layoutSize);
           final n = timeLayout[1].toInt();
           final base = 2 + n;
           // Where each layer's numbers lie depends on the layers and their order alone: the index is made
@@ -434,8 +454,13 @@ class Motolii {
   void close() {
     _addListener(handle, nullptr, 0);
     _told.close();
+    // The numbers are the engine's own memory: not read once it is closed.
+    timeLayout = Float64List(0);
+    timeIndex = const {};
     _close(handle);
     malloc.free(_version);
+    malloc.free(_count);
+    if (_timeBuf case final copy?) malloc.free(copy);
   }
 }
 

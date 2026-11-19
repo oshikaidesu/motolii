@@ -165,13 +165,18 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
   *version = m->snapshots.version;
   return strdup((all + "}}").c_str());
 }
-// The time snapshot's per-layer layout as flat doubles, copied out under lock.
+// The time snapshot's per-layer layout as flat doubles, copied out.
 int motolii_time_layout(Motolii* m, double* out, int capacity) {
-  std::lock_guard<std::mutex> hold(m->snapshots.lock);
-  const int n = (int)m->snapshots.timeLayout.size();
-  if (out && capacity >= n)
-    std::memcpy(out, m->snapshots.timeLayout.data(), n * sizeof(double));
+  const std::vector<double>& layout = m->snapshots.timeLayout.front();
+  const int n = (int)layout.size();
+  if (out && capacity >= n) std::memcpy(out, layout.data(), n * sizeof(double));
   return n;
+}
+// The same where it is kept: no lock and no copy (base/triple_buffer.h).
+const double* motolii_time_numbers(Motolii* m, int* count) {
+  const std::vector<double>& layout = m->snapshots.timeLayout.front();
+  *count = (int)layout.size();
+  return layout.data();
 }
 // Sets the app's one listener, which is posted to when new snapshots exist.
 void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),

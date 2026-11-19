@@ -313,8 +313,9 @@ void snapshot_update(Motolii* m) {
   // drag): what is read from rows alone is as it was, and is not read again.
   const bool rows_written = sqlite3_total_changes(d.file) != m->snapshots.rows;
   m->snapshots.rows = sqlite3_total_changes(d.file);
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
   // What was done to a layer says how much of its snapshot is made again
   // (DocChanges::reshaped): its numbers alone, unless a row was put or taken, a
   // word written, or a value changed that decides its cards. A layer not held
@@ -382,8 +383,9 @@ void snapshot_update(Motolii* m) {
 std::string snapshot_stale(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
   rapidjson::StringBuffer own, tables;
   snapshot_own(m, own, true, "", layers, n);
   snapshot_tables(m, tables);
@@ -424,15 +426,19 @@ void snapshot_time(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   const double at = m->playback.now;
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
 
   // Binary layout: flat doubles for every layer's hot data.
   // [now, count, ids..., records..., load] where each record is 26 doubles:
   //   bounds[8], seen[4], shows[14] (value, driven pairs × 7),
   // and the load is the last frame's two times in ms: the render thread's own
   // and the GPU's.
-  std::vector<double> layout;
+  // Filled where the app will read it (Snapshots::timeLayout): the app is not
+  // reading this copy, and it is handed over whole at the end.
+  std::vector<double>& layout = m->snapshots.timeLayout.back();
+  layout.clear();
   layout.reserve(2 + (size_t)n + (size_t)n * 26 + 2);
   layout.push_back(at);
   layout.push_back(n);
@@ -450,9 +456,14 @@ void snapshot_time(Motolii* m) {
       for (double b : box) layout.push_back(b);
     else
       for (int j = 0; j < 4; ++j) layout.push_back(NAN);
+    // The values as shown are worked out for the layers the app shows them
+    // of: the picked one, the one under the pointer and the watched ones. With
+    // thousands of layers, seven for each on every frame is most of the work.
+    const bool read = t == m->window.pick || t == m->window.hover ||
+                      m->window.watched.count(t);
     for (const char* name : show_names) {
       double v = 0;
-      if (const int got = doc_shows(d, t, name, at, &v))
+      if (const int got = read ? doc_shows(d, t, name, at, &v) : 0)
         layout.push_back(v), layout.push_back(got == 2 ? 1.0 : 0.0);
       else
         layout.push_back(NAN), layout.push_back(NAN);
@@ -507,7 +518,7 @@ void snapshot_time(Motolii* m) {
       detail != m->snapshots.time)
     m->snapshots.time = std::move(detail),
     m->snapshots.timeDetailVersion = m->snapshots.timeVersion;
-  m->snapshots.timeLayout = std::move(layout);
+  m->snapshots.timeLayout.publish();
   m->snapshots.pending |= 2;
 }
 
