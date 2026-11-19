@@ -39,4 +39,4 @@ for f in effected effected_world effected_solid thick_glass far_side far_look bu
         $MATC -a webgpu -a metal -p desktop -TBLENDING=$parts[4] -TSHADE=$parts[2] $lit -D$parts[3] -o out/filament_webgpu/flat_$parts[1].filamat materials/flat.mat > out/filament_webgpu/flat_$parts[1].log 2>&1 || echo "no WebGPU material: flat_$parts[1] (out/filament_webgpu/flat_$parts[1].log)"
     done
     [ $f = bubble ] && { $MATC -a webgpu -a metal -p desktop -DWORN -o out/filament_webgpu/bubble_worn.filamat materials/bubble.mat > out/filament_webgpu/bubble_worn.log 2>&1 || echo "no WebGPU material: bubble_worn"; }   # (a thing wearing Bubble: stage/render/render_layers.h solid_wear)
-done
+done; true   # (the loop's last test is false for every material but bubble, and would be this script's own status)
