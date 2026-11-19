@@ -4,8 +4,8 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/state/document/document_reads.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
@@ -76,9 +76,7 @@ class LoadBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final over = percent >= 100 || (most ?? 0) >= 100;
-    final ink = over
-        ? ColorTheme.of('Alert', const Color(0xFFE5484D))
-        : Grey.g63;
+    final ink = over ? WindowTokens.alert : Grey.g63;
     final wide = Shape.z(28), high = Shape.z(4);
     return Semantics(
       label: '$label $percent%',

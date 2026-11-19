@@ -2,8 +2,8 @@
 // the contract written there: the bar fills to the per cent, stays inside itself over 100, and marks the most.
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/top_bar/load_meter.dart';
 
 void main() {
@@ -36,7 +36,7 @@ void main() {
     tester,
   ) async {
     await show(tester, const LoadBar(label: 'GPU', percent: 140));
-    final alert = ColorTheme.of('Alert', const Color(0xFFE5484D));
+    final alert = WindowTokens.alert;
     expect(find.text('140%'), findsOneWidget);
     expect(
       boxes(tester, alert).single.width,
