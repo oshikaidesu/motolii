@@ -139,12 +139,7 @@ int motolii_work_out(Motolii* m, const char* sum, double* is) {
 // case *is is the property's own value, not the driven one.
 int motolii_shows(Motolii* m, int layer, const char* name, double at,
                   double* is) {
-  return by_look(m, [=] {
-    if (!doc_value(*m->d, layer, name, at, is)) return 0;
-    if (!doc_driven_by(*m->d, layer, name)) return 1;
-    *is = doc_literal(*m->d, layer, doc_lasting(name), at, *is);
-    return 2;
-  });
+  return by_look(m, [=] { return doc_shows(*m->d, layer, name, at, is); });
 }
 // Copies up to `room` layer numbers into `layers`, in the order they lie with
 // the one furthest back first. Returns the total number of layers, which can

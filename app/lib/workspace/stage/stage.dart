@@ -103,20 +103,14 @@ class _StageState extends State<_Stage> {
 
   @override
   Widget build(BuildContext context) {
-    // The scene follows the playhead and the image being shown.
-    WorkspaceScope.frameOf(context);
-    WorkspaceScope.pictureOf(context);
+    // The header and the tools around the image are built for these alone. What follows the playhead and the
+    // image being shown is built in [_AtFrame], on every frame.
     final ws = WorkspaceScope.of(context, {
-          WorkspaceAspect.document,
-          WorkspaceAspect.picked,
-          WorkspaceAspect.stage,
-          WorkspaceAspect.view,
-        }),
-        scene = WorkspaceController.timed(
-          'stage scene',
-          () => ArtScene.of(ws, camera: !ws.freeEye),
-        );
-    _tellEye(ws);
+      WorkspaceAspect.document,
+      WorkspaceAspect.picked,
+      WorkspaceAspect.stage,
+      WorkspaceAspect.view,
+    });
     return DragTarget<VoidCallback>(
       // A shelf tile dropped here does what its double click does, as dropping a device on a track does in Ableton.
       onWillAcceptWithDetails: (_) => true,
@@ -209,60 +203,67 @@ class _StageState extends State<_Stage> {
                                 stageZooms.length - 1,
                               ),
                             ),
-                            child: StageView(
-                              key: _view,
-                              scene: scene,
-                              selected: ws.selected,
-                              zoom: _zoom,
-                              grid: _grid,
-                              safe: _safe,
-                              cursor: _cursor,
-                              onPoke: _focus.requestFocus,
-                              texture: ws.stageTexture,
-                              snapshot: _showing ? _shot : null,
-                              tool: StageTool(
-                                make: const [
-                                  null,
-                                  null,
-                                  'rect',
-                                  'circle',
-                                  'pen',
-                                  'text',
-                                  'brush',
-                                  'camera',
-                                ][_tool],
-                                brushSize: const [
-                                  8.0,
-                                  16.0,
-                                  32.0,
-                                ][_opts['brush.size'] ?? 1],
-                                brushTool: const [
-                                  1,
-                                  0,
-                                  2,
-                                  3,
-                                ][_opts['brush.kind'] ?? 0],
-                                axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0,
-                                fromCentre: (_opts['ell.from'] ?? 0) == 1,
-                                snap:
-                                    _tool < 2 &&
-                                    (_opts[_tool == 0
-                                                ? 'sel.snap'
-                                                : 'move.snap'] ??
-                                            1) ==
-                                        1,
-                                pivots: (_opts['sel.pivot'] ?? 0) == 1,
-                                group:
-                                    _tool == 0 &&
-                                    (_opts['sel.level'] ?? 0) == 1,
-                                mask:
-                                    (_opts[_tool == 2
-                                                ? 'rect.mode'
-                                                : 'pen.mode'] ??
-                                            0) ==
-                                        1 &&
-                                    (_tool == 2 || _tool == 4),
-                              ),
+                            child: _AtFrame(
+                              builder: (context, scene) {
+                                _tellEye(ws);
+                                return StageView(
+                                  key: _view,
+                                  scene: scene,
+                                  selected: ws.selected,
+                                  zoom: _zoom,
+                                  grid: _grid,
+                                  safe: _safe,
+                                  cursor: _cursor,
+                                  onPoke: _focus.requestFocus,
+                                  texture: ws.stageTexture,
+                                  snapshot: _showing ? _shot : null,
+                                  tool: StageTool(
+                                    make: const [
+                                      null,
+                                      null,
+                                      'rect',
+                                      'circle',
+                                      'pen',
+                                      'text',
+                                      'brush',
+                                      'camera',
+                                    ][_tool],
+                                    brushSize: const [
+                                      8.0,
+                                      16.0,
+                                      32.0,
+                                    ][_opts['brush.size'] ?? 1],
+                                    brushTool: const [
+                                      1,
+                                      0,
+                                      2,
+                                      3,
+                                    ][_opts['brush.kind'] ?? 0],
+                                    axis: _tool == 1
+                                        ? _opts['move.axis'] ?? 0
+                                        : 0,
+                                    fromCentre: (_opts['ell.from'] ?? 0) == 1,
+                                    snap:
+                                        _tool < 2 &&
+                                        (_opts[_tool == 0
+                                                    ? 'sel.snap'
+                                                    : 'move.snap'] ??
+                                                1) ==
+                                            1,
+                                    pivots: (_opts['sel.pivot'] ?? 0) == 1,
+                                    group:
+                                        _tool == 0 &&
+                                        (_opts['sel.level'] ?? 0) == 1,
+                                    mask:
+                                        (_opts[_tool == 2
+                                                    ? 'rect.mode'
+                                                    : 'pen.mode'] ??
+                                                0) ==
+                                            1 &&
+                                        (_tool == 2 || _tool == 4),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -271,17 +272,40 @@ class _StageState extends State<_Stage> {
                   ],
                 ),
               ),
-              OptionsStrip(
-                tool: _tool,
-                opts: _opts,
-                onOpt: (k, v) => setState(() => _opts[k] = v),
-                scene: scene,
-                layer: ws.layer,
-                ws: ws,
+              _AtFrame(
+                builder: (context, scene) => OptionsStrip(
+                  tool: _tool,
+                  opts: _opts,
+                  onOpt: (k, v) => setState(() => _opts[k] = v),
+                  scene: scene,
+                  layer: ws.layer,
+                  ws: ws,
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Builds what follows the playhead and the image being shown, with the scene as it is then: on every frame, and
+/// whenever what surrounds it is built. What surrounds it is not built for a frame.
+class _AtFrame extends StatelessWidget {
+  const _AtFrame({required this.builder});
+  final Widget Function(BuildContext context, ArtScene scene) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    WorkspaceScope.frameOf(context);
+    WorkspaceScope.pictureOf(context);
+    final ws = WorkspaceScope.read(context);
+    return builder(
+      context,
+      WorkspaceController.timed(
+        'stage scene',
+        () => ArtScene.of(ws, camera: !ws.freeEye),
       ),
     );
   }

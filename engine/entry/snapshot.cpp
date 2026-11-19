@@ -162,15 +162,20 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w,
   // For each property that has keyframes, an array with one entry for each
   // keyframe, written by `one` from the property's name and the keyframe's
   // time.
+  // The keyframe times of each value that has any, read once for the three
+  // parts below.
+  std::vector<std::pair<const std::string*, std::vector<double>>> keyed;
+  for (const std::string& n : names)
+    if (std::vector<double> at = doc_key_times(*m->d, layer, n.c_str());
+        !at.empty()) {
+      if (at.size() > 512) at.resize(512);
+      keyed.emplace_back(&n, std::move(at));
+    }
   const auto per_key = [&](const char* key, const auto& one) {
     w.Key(key), w.StartObject();
-    for (const std::string& n : names) {
-      double at[512];
-      const int k =
-          std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
-      if (k <= 0) continue;
-      w.Key(n.c_str()), w.StartArray();
-      for (int i = 0; i < k; ++i) one(n, at[i]);
+    for (const auto& [n, times] : keyed) {
+      w.Key(n->c_str()), w.StartArray();
+      for (const double at : times) one(*n, at);
       w.EndArray();
     }
     w.EndObject();
@@ -393,7 +398,7 @@ void snapshot_time(Motolii* m) {
       for (int j = 0; j < 4; ++j) layout.push_back(NAN);
     for (const char* name : show_names) {
       double v = 0;
-      if (const int got = motolii_shows(m, t, name, at, &v))
+      if (const int got = doc_shows(d, t, name, at, &v))
         layout.push_back(v), layout.push_back(got == 2 ? 1.0 : 0.0);
       else
         layout.push_back(NAN), layout.push_back(NAN);

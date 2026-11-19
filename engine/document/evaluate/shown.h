@@ -58,6 +58,11 @@ filament::math::mat4 doc_shown_at(Doc& d, int layer, double now);
 // as seen, the pivot x and y, and the depth. Returns false when the layer is
 // not shown.
 bool doc_frame(Doc& d, int layer, double now, double* frame);
+// The value `name` of a layer as the stage shows it at `at`, into *is. Returns
+// 0 if the layer has no such value, 1 if the value is its own, 2 if a relation
+// or behaviour gives it. motolii_shows is this behind the C API's lock and
+// timing; the time snapshot asks it seven times a layer on every frame.
+int doc_shows(Doc& d, int layer, const char* name, double at, double* is);
 
 }  // namespace motolii
 
