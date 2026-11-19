@@ -274,6 +274,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           !m->render_thread.changed &&
           t - m->render_thread.stirred > std::chrono::milliseconds(300)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
+        doc_settle(*m->d);
         int begun = 0;
         for (auto& [layer, shown] : m->d->on_stage.shown)
           if (shown.drawn) begun += frames_ahead(*m->s, shown.drawn, 2);
@@ -493,7 +494,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   for (auto& [who, h] : m->playback.heard) heard_off(h);
   // Closed by motolii_close, or because its listener is gone (snapshot_notify).
   if (m->display.beat) m->display.beat->stop();
-  if (m->d) sqlite3_close(m->d->file);
+  if (m->d) doc_close_file(*m->d);
   // Filament's own teardown, on the thread that built the engine (open_stage):
   // Engine::destroy frees whatever the stage still holds, its job threads and
   // GPU memory. Its shutdown destroys leftover materials before their leftover

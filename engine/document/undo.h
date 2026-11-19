@@ -33,6 +33,11 @@ struct DocAct {
   bool together = false;
   // SQLite's own record of what the open act changes.
   sqlite3_session* session = nullptr;
+  // True once this opening's steps go to SQLite's write-ahead log (doc_act).
+  bool write_ahead = false;
+  // sqlite3_total_changes when the log was last emptied into the file
+  // (doc_settle).
+  int settled = 0;
 };
 
 // What the undo steps changed, kept for the app and for the relations that
@@ -73,7 +78,21 @@ Doc* doc_open(Stage& s, const char* path);
 // transaction and starts recording changes to the keyframe and easing tables.
 // Every call must be matched by doc_acted. All changes made in between become
 // one undo step.
+//
+// From its first step a project's commits go to SQLite's write-ahead log: a
+// commit is then an append, where the rollback journal is a file made, synced
+// and deleted beside the project at every step. A project only looked at is
+// left untouched, and doc_close_file puts the journal back, so the file at rest
+// is the one file it was. While it is being changed, doc_settle keeps that file
+// whole, and the log lies beside it as two files of SQLite's own (-wal, -shm).
 void doc_act(Doc& d);
+// Empties the write-ahead log into the project's own file, so that the file
+// alone is the whole project (a copy made of it, a service that syncs it).
+// Does nothing while a step is open or when none was made since the last call.
+void doc_settle(Doc& d);
+// Puts the project's file back to the rollback journal it is kept with at rest
+// and closes it.
+void doc_close_file(Doc& d);
 // Ends an undo step begun by doc_act. When the outermost call ends, the
 // recorded changes are stored as one undo step and the transaction is
 // committed, or rolled back if any change failed. Returns false if the step was

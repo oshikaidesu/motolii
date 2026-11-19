@@ -140,9 +140,27 @@ bool doc_upgrade(sqlite3* file, const std::string& schema, std::string& why) {
   sqlite3_exec(file, "rollback", nullptr, nullptr, nullptr);
   return false;
 }
+void doc_settle(Doc& d) {
+  const int changes = sqlite3_total_changes(d.file);
+  if (!d.act.write_ahead || d.act.depth || changes == d.act.settled) return;
+  d.act.settled = changes;
+  sqlite3_wal_checkpoint_v2(d.file, "main", SQLITE_CHECKPOINT_TRUNCATE, nullptr,
+                            nullptr);
+}
+
+void doc_close_file(Doc& d) {
+  if (d.act.write_ahead)
+    sqlite3_exec(d.file, "pragma main.journal_mode = delete", nullptr, nullptr,
+                 nullptr);
+  sqlite3_close(d.file);
+}
+
 Doc* doc_open(Stage& s, const char* path) {
   Doc* d = new Doc;
   if (sqlite3_open(path, &d->file) != SQLITE_OK) return nullptr;
+  // No temporary files beside the project: what SQLite sorts stays in memory.
+  sqlite3_exec(d->file, "pragma temp_store = memory", nullptr, nullptr,
+               nullptr);
   // SQL function bezier(u, x1, y1, x2, y2): how far a cubic Bezier easing with
   // handles (x1, y1) and (x2, y2) has gone at u. It is the same function the
   // built-in Bezier easing uses, and an easing defined in the project can call
@@ -339,6 +357,23 @@ Doc* doc_open(Stage& s, const char* path) {
 
 void doc_act(Doc& d) {
   if (d.act.depth++) return;
+  // "main." because without it SQLite changes the attached presets' files too.
+  // Refused while a statement is still reading: it is asked again next step.
+  if (!d.act.write_ahead) {
+    sqlite3_stmt* mode = nullptr;
+    if (sqlite3_prepare_v2(d.file, "pragma main.journal_mode = wal", -1, &mode,
+                           nullptr) == SQLITE_OK &&
+        sqlite3_step(mode) == SQLITE_ROW)
+      d.act.write_ahead =
+          !strcmp((const char*)sqlite3_column_text(mode, 0), "wal");
+    sqlite3_finalize(mode);
+    // NORMAL cannot corrupt a file that has the log
+    // (sqlite.org/pragma.html#pragma_synchronous): a power cut may lose the
+    // steps since doc_settle, not the project.
+    if (d.act.write_ahead)
+      sqlite3_exec(d.file, "pragma main.synchronous = normal", nullptr, nullptr,
+                   nullptr);
+  }
   sqlite3_exec(d.file, "begin", nullptr, nullptr, nullptr);
   sqlite3session_create(d.file, "main", &d.act.session);
   sqlite3session_attach(d.act.session, "keyframe");
