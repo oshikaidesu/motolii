@@ -23,7 +23,8 @@ OUT=$PWD/third_party/onnxruntime
 [ -d $OUT/lib ] && exit 0
 [ -n "$SHA" ] || { echo "onnxruntime-$name-$V.tgz: no SHA-256 is pinned for this platform yet: download it once, take 'shasum -a 256', and put it in deps/onnxruntime.sh"; exit 1; }
 tmp=$(mktemp -d)
-curl -fL -s -o $tmp/ort.tgz https://github.com/microsoft/onnxruntime/releases/download/v$V/onnxruntime-$name-$V.tgz
+# -S: a failure says why (it used to end with a bare exit code). --retry: a download cut off is asked for again.
+curl -fL -sS --retry 5 --retry-all-errors -o $tmp/ort.tgz https://github.com/microsoft/onnxruntime/releases/download/v$V/onnxruntime-$name-$V.tgz
 [ "$(shasum -a 256 $tmp/ort.tgz | cut -d' ' -f1)" = $SHA ] || { echo "onnxruntime-$name-$V.tgz: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
 mkdir -p $OUT && tar -xzf $tmp/ort.tgz -C $OUT --strip-components 1
 rm -rf $tmp

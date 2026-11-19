@@ -273,6 +273,9 @@ void snapshot_update(Motolii* m) {
     again.insert(layer);
   }
   d.changes.changed.clear(), d.changes.layers_changed = false;
+  // No row written since the snapshot was last made (a value only held by a
+  // drag): what is read from rows alone is as it was, and is not read again.
+  const bool rows_written = sqlite3_total_changes(d.file) != m->snapshots.rows;
   m->snapshots.rows = sqlite3_total_changes(d.file);
   int layers[1024];
   const int n = std::min(motolii_layers(m, layers, 1024), 1024);
@@ -318,12 +321,14 @@ void snapshot_update(Motolii* m) {
     w.Key("work"), w.StartArray(), w.Double(a), w.Double(b), w.EndArray();
   }
   w.Key("point"), w.Double(motolii_point(m));
-  // Seconds spent editing the project, like Alight Motion's Total Edit Time.
-  w.Key("edited"), w.Double(doc_edited(*m->d));
-  w.Key("marks"), w.String(motolii_marks(m));
-  w.Key("markColours"), w.String(motolii_mark_colours(m));
-  w.Key("settings"), w.String(motolii_settings(m));
-  w.Key("guides"), w.String(motolii_guides(m));
+  if (rows_written) {
+    // Seconds spent editing the project, like Alight Motion's Total Edit Time.
+    w.Key("edited"), w.Double(doc_edited(*m->d));
+    w.Key("marks"), w.String(motolii_marks(m));
+    w.Key("markColours"), w.String(motolii_mark_colours(m));
+    w.Key("settings"), w.String(motolii_settings(m));
+    w.Key("guides"), w.String(motolii_guides(m));
+  }
   w.Key("changes"), w.String(changes.c_str());
   w.Key("layers"), w.StartArray();
   for (int i = 0; i < n; ++i) w.Int(layers[i]);

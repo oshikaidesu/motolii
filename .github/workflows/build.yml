@@ -44,6 +44,7 @@ jobs:
           channel: stable
       - run: engine/build.sh test
       - run: engine/edit.sh build.motolii < /dev/null   # (a document opened by what was built)
+      - run: engine/snapshot_parts_check.sh   # (the app is handed only the parts of the snapshot that differ, by what was built)
       - uses: actions/cache/save@v4   # (kept even when a step before failed)
         if: always() && steps.deps.outputs.cache-hit != 'true'
         with:

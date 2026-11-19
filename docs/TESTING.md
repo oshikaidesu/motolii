@@ -57,6 +57,14 @@ Each module has its own test program, `motolii_<module>_test`, linked with that 
 cmake --build out/cmake --target motolii_motion_test && ctest --test-dir out/cmake -R '^Easing'
 ```
 
+### What the app is handed
+
+```
+engine/snapshot_parts_check.sh
+```
+
+Builds the engine if needed, then edits a new document under `engine/out/` through `edit.sh` and its `snapshot` call, and checks what the app would be handed of the document's snapshot after each step ([app/BRIDGE.md](app/BRIDGE.md)): everything when it has nothing, a layer's numbers alone for a number set anew, its words for a word written, nothing when nothing was done. Prints `ok: 8 snapshots` or what was wrong. CI's build runs it.
+
 ### Picture comparison
 
 See below. It is a build.

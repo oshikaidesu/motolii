@@ -29,7 +29,9 @@ static const char* const calls =
     "cards <layer>\n"
     "  create <script> | create_scripts | effect <layer> <name> | effects | "
     "shelf | presets | together on|off | undo | redo | list | at <seconds> | "
-    "still <file.png> | export <file.mp4>\n";
+    "still <file.png> | export <file.mp4>\n"
+    "  snapshot   (what the app would be handed now: the parts of the "
+    "document's snapshot newer than those this shell last printed)\n";
 
 // Opens the project named by the first argument and runs the calls read from
 // standard input.
@@ -42,6 +44,8 @@ int main(int argc, char** argv) {
     std::sscanf(size, "%dx%d", &wide, &high);
   Motolii* m = motolii_open(argv[1], wide, high);
   if (!m) return std::printf("FAIL the document could not be opened\n"), 1;
+  // The version of the document's snapshot that `snapshot` last printed.
+  long snapshot_seen = -1;
   for (std::string line; std::getline(std::cin, line);) try {
       std::istringstream said(line);
       std::vector<std::string> w;
@@ -306,6 +310,13 @@ int main(int argc, char** argv) {
         const int n = motolii_pack(m, w[1].c_str(), rest(2).c_str());
         ok = n >= 0;
         if (ok) std::printf("  %d files\n", n);
+      } else if (call == "snapshot" && w.size() == 1) {
+        long version = 0;
+        char* parts = motolii_snapshot(m, 1, snapshot_seen, &version);
+        std::printf("snapshot %ld %s\n", version, parts);
+        std::free(parts);
+        snapshot_seen = version;
+        continue;
       } else if (call == "help") {
         std::printf("%s", calls);
         continue;
