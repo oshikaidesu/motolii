@@ -51,6 +51,12 @@ void doc_note(Doc& d, int size, void* changeset) {
     if (!layer || !name) continue;
     const std::string n = (const char*)sqlite3_value_text(name);
     d.changes.changed.insert({sqlite3_value_int(layer), n});
+    // Column 3 is the value; it is in the new row only when it changed.
+    sqlite3_value* value = nullptr;
+    if (op != SQLITE_UPDATE ||
+        (sqlite3changeset_new(it, 3, &value) == SQLITE_OK && value &&
+         sqlite3_value_type(value) == SQLITE_TEXT))
+      d.changes.reshaped.insert(sqlite3_value_int(layer));
     if (sqlite3_value_int(layer) != last)
       d.changes.touched.push_back(last = sqlite3_value_int(layer));
     // A kind written or removed means that a layer came or went.

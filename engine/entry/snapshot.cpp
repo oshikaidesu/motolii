@@ -86,15 +86,21 @@ std::vector<std::string> snapshot_names(Motolii* m, int layer) {
   return {all.begin(), all.end()};
 }
 
-// Writes one layer's part of the document snapshot as a JSON object.
-void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
+// Writes one layer's part of the document snapshot as a JSON object, of the
+// values named `names`. With `numbers_only`, only what a number set anew or a
+// keyframe moved can change: how long it lasts, its resting values and its
+// keyframes. Its names, cards, words and ranges are left as they were.
+void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w,
+                    const std::vector<std::string>& names, bool numbers_only) {
   w.StartObject();
   w.Key("lasts"), w.Double(motolii_lasts(m, layer));
-  w.Key("values"), w.String(motolii_values(m, layer));
-  w.Key("moving"), w.String(motolii_moving(m, layer));
-  w.Key("cards"), w.String(motolii_cards(m, layer));
-  w.Key("more"), w.String(motolii_cards_more(m, layer));
-  w.Key("fx"), w.String(motolii_fx_titles(m, layer));
+  if (!numbers_only) {
+    w.Key("values"), w.String(motolii_values(m, layer));
+    w.Key("moving"), w.String(motolii_moving(m, layer));
+    w.Key("cards"), w.String(motolii_cards(m, layer));
+    w.Key("more"), w.String(motolii_cards_more(m, layer));
+    w.Key("fx"), w.String(motolii_fx_titles(m, layer));
+  }
   w.Key("stretches"), w.String(motolii_layer_stretches(m, layer));
   {
     double at[512];
@@ -103,12 +109,13 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
     for (int i = 0; i < n; ++i) w.Double(at[i]);
     w.EndArray();
   }
-  const std::vector<std::string> names = snapshot_names(m, layer);
-  w.Key("word"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_word(m, layer, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
+  if (!numbers_only) {
+    w.Key("word"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_word(m, layer, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+  }
   // Resting values: the value at time 0. A property missing here has its
   // default value, the document's "usual", if its layer kind defines one.
   w.Key("value"), w.StartObject();
@@ -128,28 +135,30 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
           w.Double(v);
     }
   w.EndObject();
-  w.Key("range"), w.StartObject();
-  for (const std::string& n : names)
-    if (double lo = 0, hi = 0; motolii_range(m, layer, n.c_str(), &lo, &hi))
-      w.Key(n.c_str()), w.StartArray(), w.Double(lo), w.Double(hi),
-          w.EndArray();
-  w.EndObject();
-  w.Key("words"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_words(m, layer, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
-  w.Key("reading"), w.StartObject();
-  for (const std::string& n : names)
-    w.Key(n.c_str()), w.String(motolii_reading(m, layer, n.c_str()));
-  w.EndObject();
-  // How each property is displayed to the user: the built-in table plus any a
-  // script defines.
-  w.Key("shown"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_shown(m, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
+  if (!numbers_only) {
+    w.Key("range"), w.StartObject();
+    for (const std::string& n : names)
+      if (double lo = 0, hi = 0; motolii_range(m, layer, n.c_str(), &lo, &hi))
+        w.Key(n.c_str()), w.StartArray(), w.Double(lo), w.Double(hi),
+            w.EndArray();
+    w.EndObject();
+    w.Key("words"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_words(m, layer, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+    w.Key("reading"), w.StartObject();
+    for (const std::string& n : names)
+      w.Key(n.c_str()), w.String(motolii_reading(m, layer, n.c_str()));
+    w.EndObject();
+    // How each property is displayed to the user: the built-in table plus any a
+    // script defines.
+    w.Key("shown"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_shown(m, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+  }
   // For each property that has keyframes, an array with one entry for each
   // keyframe, written by `one` from the property's name and the keyframe's
   // time.
@@ -262,12 +271,26 @@ void snapshot_update(Motolii* m) {
   m->snapshots.rows = sqlite3_total_changes(d.file);
   int layers[1024];
   const int n = std::min(motolii_layers(m, layers, 1024), 1024);
-  std::map<int, std::string> parts;
+  // What was done to a layer says how much of its snapshot is made again
+  // (DocChanges::reshaped): its numbers alone, unless a row was put or taken, a
+  // word written, or a value changed that decides its cards. A layer not held
+  // yet is made whole.
+  const std::string shaping = motolii_shaping(m);
+  std::set<int> whole = d.changes.reshaped;
+  for (const auto& [layer, name] : d.changes.changed)
+    if (doc_among(shaping, name)) whole.insert(layer);
+  d.changes.reshaped.clear();
+  // Each layer made again, and whether whole.
+  std::map<int, std::pair<std::string, bool>> parts;
   const auto build = [&](int layer) {
+    const bool numbers_only = !all && !whole.count(layer) &&
+                              m->snapshots.names.count(layer) &&
+                              m->snapshots.layers.count(layer);
+    if (!numbers_only) m->snapshots.names[layer] = snapshot_names(m, layer);
     rapidjson::StringBuffer out;
     SnapshotWriter w(out);
-    snapshot_layer(m, layer, w);
-    parts[layer] = {out.GetString(), out.GetSize()};
+    snapshot_layer(m, layer, w, m->snapshots.names[layer], numbers_only);
+    parts[layer] = {{out.GetString(), out.GetSize()}, !numbers_only};
   };
   // Layer 0 is the stage itself; its cards are the stage's.
   if (all || again.count(0)) build(0);
@@ -322,13 +345,16 @@ void snapshot_update(Motolii* m) {
                                 v, false);
     m->snapshots.tablesEasings = easings, m->snapshots.tablesFiles = files;
   }
-  for (const auto& [layer, json] : parts)
-    differed |= json_parts_keep(m->snapshots.layers[layer], json, v, true);
+  for (const auto& [layer, made] : parts)
+    differed |=
+        json_parts_keep(m->snapshots.layers[layer], made.first, v, made.second);
   std::set<int> are(layers, layers + n);
   are.insert(0);
   // Drop the parts of layers that no longer exist.
   for (auto it = m->snapshots.layers.begin(); it != m->snapshots.layers.end();)
     it = are.count(it->first) ? std::next(it) : m->snapshots.layers.erase(it);
+  std::erase_if(m->snapshots.names,
+                [&](const auto& held) { return !are.count(held.first); });
   // Nothing the app reads changed, so publish no new snapshot.
   if (!differed) return;
   m->snapshots.version = v;

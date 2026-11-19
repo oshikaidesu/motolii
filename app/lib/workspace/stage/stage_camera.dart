@@ -45,7 +45,7 @@ class _CameraViewState extends State<CameraView> {
   @override
   Widget build(BuildContext context) {
     final id = WorkspaceScope.of(context, {
-      WorkspaceAspect.document,
+      WorkspaceAspect.structure,
       WorkspaceAspect.stage,
     }).stageTexture;
     return ColoredBox(

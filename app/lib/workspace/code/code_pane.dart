@@ -114,8 +114,9 @@ class _CodePaneState extends State<CodePane> {
 
   @override
   Widget build(BuildContext context) {
+    // The cells are the picked layer's cards and their code: words, not numbers.
     final ws = WorkspaceScope.of(context, {
-      WorkspaceAspect.document,
+      WorkspaceAspect.structure,
       WorkspaceAspect.picked,
       WorkspaceAspect.view,
     });

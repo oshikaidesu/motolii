@@ -52,6 +52,12 @@ struct DocChanges {
   std::vector<int> touched;
   // Whether a layer was added or removed since the app last asked.
   bool layers_changed = false;
+  // The layers of `changed` that had more done to them than a number of theirs
+  // set anew: a row put or taken (a value first set or cleared, a keyframe), or
+  // a word written. Only those can have other cards, names or words than
+  // before; the app's snapshot of any other is made again in its numbers alone
+  // (snapshot_update).
+  std::set<int> reshaped;
 };
 
 // Upgrades the database `schema` of `file` from the old table names to the

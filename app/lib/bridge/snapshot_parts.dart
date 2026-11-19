@@ -43,6 +43,28 @@ Map<String, dynamic> merged(
   return next;
 }
 
+/// The parts of a layer's snapshot that a number set anew or a keyframe moved can change (the engine's
+/// snapshot_layer makes these alone then). Any other part, or a part of the document's own but what it says
+/// of the change itself, is its structure: names, words, cards, ranges, sizes.
+const numberParts = {
+  'lasts',
+  'stretches',
+  'keys',
+  'value',
+  'keyTimes',
+  'keyValues',
+  'keyEasings',
+};
+
+/// Whether [parts] of a layer's snapshot hold more than its numbers.
+bool hasStructure(Map<String, dynamic> parts) =>
+    parts.keys.any((part) => !numberParts.contains(part));
+
+/// Whether [parts] of the document's own snapshot hold more than its account of the change (what changed, the
+/// time spent editing).
+bool hasDocumentStructure(Map<String, dynamic> parts) =>
+    parts.keys.any((part) => part != 'changes' && part != 'edited');
+
 /// The words of a space-separated list.
 List<String> spaced(Object? said) => List.unmodifiable([
   for (final w in ((said as String?) ?? '').split(' '))

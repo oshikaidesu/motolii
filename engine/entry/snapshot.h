@@ -20,6 +20,7 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "base/json_parts.h"
 #include "entry/motolii.h"
@@ -35,6 +36,9 @@ struct Snapshots {
   // (base/json_parts.h).
   JsonParts document;
   std::map<int, JsonParts> layers;
+  // The names of each layer's values as they were when its snapshot was last
+  // made whole. They stay the same until it is made whole again.
+  std::map<int, std::vector<std::string>> names;
   // The number of the user's own easings when the document snapshot was last
   // made. See doc_own_easings_made.
   int easings = -1;

@@ -210,6 +210,10 @@ class Motolii {
   int _documentAt = -1, _momentAt = -1;
   final snapshotWatch = SnapshotWatch();
 
+  /// Whether a read since this was last put down brought more than numbers (see [hasStructure]). Whoever tells
+  /// the window of a read puts it down.
+  bool structureTaken = false;
+
   /// Called when a snapshot is new.
   void Function({
     required bool document,
@@ -310,13 +314,15 @@ class Motolii {
         _documentAt = _version.value;
         // The engine hands over only the parts newer than [_documentAt].
         if (all['document'] case final Map<String, dynamic> parts) {
+          structureTaken |= hasDocumentStructure(parts);
           documentSnapshot = merged(documentSnapshot, parts);
         }
         (all['layer'] as Map<String, dynamic>).forEach((t, parts) {
           final layer = int.parse(t);
+          structureTaken |= hasStructure(parts as Map<String, dynamic>);
           layerSnapshots[layer] = merged(
             layerSnapshots[layer] ?? const {},
-            parts as Map<String, dynamic>,
+            parts,
           );
         });
         final are = {0, ...layers};

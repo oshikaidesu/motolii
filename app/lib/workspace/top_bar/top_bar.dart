@@ -31,9 +31,10 @@ class TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The names and the length it shows are structure: a value dragged leaves the bar alone.
     final ws = WorkspaceScope.of(context, {
       WorkspaceAspect.animating,
-      WorkspaceAspect.document,
+      WorkspaceAspect.structure,
       WorkspaceAspect.picked,
     });
     return Container(
