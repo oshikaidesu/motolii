@@ -19,7 +19,27 @@ class ArtLayer {
       kind = l.kind,
       inF = l.inF,
       outF = l.outF,
+      _keysOf = l.keys,
       keys = List.unmodifiable([...l.keys]..sort());
+
+  // The copy made of each layer. With thousands of layers, one that is as it was is not copied again when
+  // another changes; a layer's bar can be moved in place, so the copy is checked against it.
+  static final _made = Expando<ArtLayer>();
+  factory ArtLayer.of(Layer l) {
+    final made = _made[l];
+    if (made != null &&
+        made.inF == l.inF &&
+        made.outF == l.outF &&
+        made.name == l.name &&
+        made.kind == l.kind &&
+        identical(made._keysOf, l.keys)) {
+      return made;
+    }
+    return _made[l] = ArtLayer(l);
+  }
+
+  // The layer's own list of keys this was made from.
+  final List<int> _keysOf;
   final int id;
   final String name;
   final LayerKind kind;
@@ -66,7 +86,7 @@ class ArtScene {
       final guides = ws.guides;
       read = _read[ws] = (
         rev: ws.rev,
-        layers: List.unmodifiable([for (final l in ws.layers) ArtLayer(l)]),
+        layers: List.unmodifiable([for (final l in ws.layers) ArtLayer.of(l)]),
         guidesX: List.unmodifiable([
           for (final (a, at) in guides)
             if (a == 'x') at,

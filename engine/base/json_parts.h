@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "base/json.h"
 
@@ -47,6 +48,35 @@ inline bool json_parts_keep(JsonParts& parts, const std::string& json, long v,
       if (!seen.count(key) && part.json != "null")
         part = {v, "null"}, differed = true;
   return differed;
+}
+
+// The keys of the parts held that are not what the JSON object `json` holds
+// now: a member whose text differs or that is not held and, with `whole`, a
+// part held that `json` no longer has. A check that what was kept part by part
+// is what making it whole gives; nothing is changed.
+inline std::vector<std::string> json_parts_stale(const JsonParts& parts,
+                                                 const std::string& json,
+                                                 bool whole) {
+  std::vector<std::string> stale;
+  rapidjson::Document read;
+  read.Parse(json.c_str(), json.size());
+  if (!read.IsObject()) return stale;
+  std::set<std::string> seen;
+  for (auto member = read.MemberBegin(); member != read.MemberEnd(); ++member) {
+    rapidjson::StringBuffer out;
+    rapidjson::Writer<rapidjson::StringBuffer> w(out);
+    member->value.Accept(w);
+    const std::string key = member->name.GetString();
+    seen.insert(key);
+    const auto held = parts.find(key);
+    if (held == parts.end() ||
+        held->second.json != std::string(out.GetString(), out.GetSize()))
+      stale.push_back(key);
+  }
+  if (whole)
+    for (const auto& [key, part] : parts)
+      if (!seen.count(key) && part.json != "null") stale.push_back(key);
+  return stale;
 }
 
 // The parts newer than `since`, as the inside of a JSON object ("" for none).

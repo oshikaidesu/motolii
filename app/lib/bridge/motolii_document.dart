@@ -5,6 +5,37 @@ import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/snapshot_parts.dart';
 
 extension MotoliiDocument on Motolii {
+  /// Puts what a read of the document snapshot handed over (the parts that differ) into what is held, and notes
+  /// what came ([structureTaken], [layersTaken], [layerListTaken]).
+  void put(Map<String, dynamic> all) {
+    var listCame = false, shownCame = false;
+    if (all['document'] case final Map<String, dynamic> parts) {
+      structureTaken |= hasDocumentStructure(parts);
+      listCame = parts.containsKey('layers');
+      documentSnapshot = merged(documentSnapshot, parts);
+    }
+    (all['layer'] as Map<String, dynamic>? ?? const {}).forEach((t, parts) {
+      final layer = int.parse(t);
+      parts as Map<String, dynamic>;
+      if (parts.isEmpty) return;
+      structureTaken |= hasStructure(parts);
+      shownCame |= parts.containsKey('shown');
+      layersTaken.add(layer);
+      layerSnapshots[layer] = merged(layerSnapshots[layer] ?? const {}, parts);
+    });
+    if (listCame) {
+      // A layer that is gone leaves the list, and only then is its snapshot let go.
+      layerListTaken = true;
+      final are = {0, ...layers};
+      layerSnapshots.removeWhere((t, _) => !are.contains(t));
+      layersTaken.removeWhere((t) => !are.contains(t));
+    }
+    if (listCame || shownCame) shownOf.clear();
+  }
+
+  /// Whether [layer] is one of the document's layers.
+  bool has(int layer) => layer != 0 && layerSnapshots.containsKey(layer);
+
   Map<String, dynamic> layerSnapshot(int layer) =>
       layerSnapshots[layer] ?? const {};
 

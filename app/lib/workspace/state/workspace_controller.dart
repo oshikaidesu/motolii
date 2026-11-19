@@ -37,7 +37,8 @@ class WorkspaceController extends ChangeNotifier {
     for (final a in WorkspaceAspect.values) a: ValueNotifier<int>(0),
   };
   void _tell(WorkspaceAspect a) {
-    if (a == WorkspaceAspect.picked || a == WorkspaceAspect.document) _watch();
+    // What is watched follows the selection and which layers there are, not their numbers.
+    if (a == WorkspaceAspect.picked || a == WorkspaceAspect.structure) _watch();
     on[a]!.value++;
     notifyListeners(); // WorkspaceScope passes the aspect on to the widgets below.
   }

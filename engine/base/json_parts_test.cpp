@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <vector>
 
 namespace motolii {
 namespace {
@@ -77,6 +78,44 @@ TEST(JsonParts, TextOutsideAsciiComesBackAsItWent) {
                   true);
   EXPECT_EQ("\"word\":{\"name\":\"レイヤー \\\"1\\\"\"}",
             json_parts_newer(parts, 0));
+}
+
+TEST(JsonPartsStale, WhatWasKeptFromTheSameObjectIsNotStale) {
+  JsonParts parts;
+  const std::string now = R"({"moving":"x y","value":{"x":1.5}})";
+  json_parts_keep(parts, now, 1, true);
+  EXPECT_TRUE(json_parts_stale(parts, now, true).empty());
+}
+
+TEST(JsonPartsStale, APartThatDiffersOrIsNotHeldIsNamed) {
+  JsonParts parts;
+  json_parts_keep(parts, R"({"moving":"x y","value":{"x":1.5}})", 1, true);
+  EXPECT_EQ(
+      (std::vector<std::string>{"value", "cards"}),
+      json_parts_stale(
+          parts, R"({"moving":"x y","value":{"x":2},"cards":"T: x"})", true));
+}
+
+TEST(JsonPartsStale, APartHeldThatIsGoneIsNamedOnlyWhenWhole) {
+  JsonParts parts;
+  json_parts_keep(parts, R"({"keys":[0,2],"lasts":5})", 1, true);
+  EXPECT_EQ((std::vector<std::string>{"keys"}),
+            json_parts_stale(parts, R"({"lasts":5})", true));
+  EXPECT_TRUE(json_parts_stale(parts, R"({"lasts":5})", false).empty());
+}
+
+TEST(JsonPartsStale, APartAlreadyKnownGoneIsNotStale) {
+  JsonParts parts;
+  json_parts_keep(parts, R"({"keys":[0,2],"lasts":5})", 1, true);
+  json_parts_keep(parts, R"({"lasts":5})", 2, true);
+  EXPECT_TRUE(json_parts_stale(parts, R"({"lasts":5})", true).empty());
+}
+
+TEST(JsonPartsStale, NothingIsChanged) {
+  JsonParts parts;
+  json_parts_keep(parts, R"({"lasts":5})", 1, true);
+  json_parts_stale(parts, R"({"lasts":6,"keys":[1]})", true);
+  EXPECT_EQ(R"("lasts":5)", json_parts_newer(parts, 0));
 }
 
 }  // namespace
