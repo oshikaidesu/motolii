@@ -175,6 +175,75 @@ void main() {
     document = sameDocument;
   });
 
+  group('structure', () {
+    test('a value dragged or a keyframe moved brings numbers alone', () {
+      expect(
+        hasStructure({
+          'value': {'x': 2},
+        }),
+        isFalse,
+      );
+      expect(
+        hasStructure({
+          'lasts': 5,
+          'stretches': '',
+          'keys': <num>[],
+          'value': <String, dynamic>{},
+          'keyTimes': <String, dynamic>{},
+          'keyValues': <String, dynamic>{},
+          'keyEasings': <String, dynamic>{},
+        }),
+        isFalse,
+      );
+      expect(hasStructure(const {}), isFalse);
+    });
+
+    test('a word, a card or a range among them is structure', () {
+      for (final part in [
+        'word',
+        'cards',
+        'more',
+        'fx',
+        'values',
+        'moving',
+        'range',
+        'words',
+        'reading',
+        'shown',
+      ]) {
+        expect(
+          hasStructure({'value': <String, dynamic>{}, part: ''}),
+          isTrue,
+          reason: part,
+        );
+      }
+    });
+
+    test(
+      'the document: its account of the change is not structure, the rest is',
+      () {
+        expect(
+          hasDocumentStructure({'changes': '3 x\n', 'edited': 12.5}),
+          isFalse,
+        );
+        expect(hasDocumentStructure(const {}), isFalse);
+        for (final part in [
+          'seconds',
+          'size',
+          'layers',
+          'marks',
+          'easingNames',
+        ]) {
+          expect(
+            hasDocumentStructure({'changes': '', part: 0}),
+            isTrue,
+            reason: part,
+          );
+        }
+      },
+    );
+  });
+
   test('spaced: the words, empty ones left out', () {
     expect(spaced('x  y scale_x '), ['x', 'y', 'scale_x']);
     expect(spaced(''), isEmpty);

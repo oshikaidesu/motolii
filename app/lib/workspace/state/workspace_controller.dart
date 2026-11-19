@@ -62,6 +62,7 @@ class WorkspaceController extends ChangeNotifier {
     playhead: playhead,
     onLayersRead: () => selection.syncWithLayers(),
     onChanged: () => _tell(WorkspaceAspect.document),
+    onStructure: () => _tell(WorkspaceAspect.structure),
     onListed: () => _tell(WorkspaceAspect.layers),
     onStageTextureChanged: () => _tell(WorkspaceAspect.stage),
   );

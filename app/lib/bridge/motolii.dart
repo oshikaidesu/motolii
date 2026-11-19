@@ -210,6 +210,10 @@ class Motolii {
   int _documentAt = -1, _momentAt = -1;
   final snapshotWatch = SnapshotWatch();
 
+  /// Whether a read since this was last put down brought more than numbers (see [hasStructure]). Whoever tells
+  /// the window of a read puts it down.
+  bool structureTaken = false;
+
   /// Called when a snapshot is new.
   void Function({
     required bool document,
@@ -310,13 +314,15 @@ class Motolii {
         _documentAt = _version.value;
         // The engine hands over only the parts newer than [_documentAt].
         if (all['document'] case final Map<String, dynamic> parts) {
+          structureTaken |= hasDocumentStructure(parts);
           documentSnapshot = merged(documentSnapshot, parts);
         }
         (all['layer'] as Map<String, dynamic>).forEach((t, parts) {
           final layer = int.parse(t);
+          structureTaken |= hasStructure(parts as Map<String, dynamic>);
           layerSnapshots[layer] = merged(
             layerSnapshots[layer] ?? const {},
-            parts as Map<String, dynamic>,
+            parts,
           );
         });
         final are = {0, ...layers};
@@ -339,10 +345,23 @@ class Motolii {
           timeLayout = _timeBuf!.asTypedList(layoutSize);
           final n = timeLayout[1].toInt();
           final base = 2 + n;
-          timeIndex = {
-            for (var i = 0; i < n; i++)
-              timeLayout[2 + i].toInt(): base + i * 26,
-          };
+          // Where each layer's numbers lie depends on the layers and their order alone: the index is made
+          // again only when those differ, not on every frame.
+          var i = 0, same = timeIndex.length == n;
+          if (same) {
+            for (final id in timeIndex.keys) {
+              if (timeLayout[2 + i++] != id) {
+                same = false;
+                break;
+              }
+            }
+          }
+          if (!same) {
+            timeIndex = {
+              for (var i = 0; i < n; i++)
+                timeLayout[2 + i].toInt(): base + i * 26,
+            };
+          }
           if (base + n * 26 case final end when layoutSize >= end + 2) {
             frameTook = (timeLayout[end], timeLayout[end + 1]);
           }

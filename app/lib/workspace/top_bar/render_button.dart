@@ -115,7 +115,7 @@ class _RenderState extends State<RenderButton> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document});
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.structure});
     return OverlayPortal(
       controller: _open,
       overlayChildBuilder: (_) => _dialog(ws),

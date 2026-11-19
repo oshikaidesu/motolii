@@ -41,10 +41,11 @@ class ColorsShelf extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A colour is a word of its layer: built again when a word or the selection changes, not for a number.
     WorkspaceScope.of(context, {
       WorkspaceAspect.picked,
-      WorkspaceAspect.document,
-    }); // Rebuilds when the target or the selection changes.
+      WorkspaceAspect.structure,
+    });
     colors.saved.read();
     final commands = ColorCommands(c, colors);
     final usedCount = <Color, int>{};

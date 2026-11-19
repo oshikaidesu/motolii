@@ -11,6 +11,7 @@
 
 #include "document/document.h"
 #include "document/edit/arrange.h"
+#include "document/edit/relate.h"
 #include "document/evaluate/camera.h"
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/place.h"
@@ -199,6 +200,13 @@ bool doc_frame(Doc& d, int layer, double now, double* frame) {
       frame[2] = box[2], frame[3] = box[3], frame[4] = 0.0;
   }
   return true;
+}
+
+int doc_shows(Doc& d, int layer, const char* name, double at, double* is) {
+  if (!doc_value(d, layer, name, at, is)) return 0;
+  if (!doc_driven_by(d, layer, name)) return 1;
+  *is = doc_literal(d, layer, doc_lasting(name), at, *is);
+  return 2;
 }
 
 }  // namespace motolii

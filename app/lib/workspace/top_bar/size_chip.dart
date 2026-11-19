@@ -101,7 +101,7 @@ class _SizeChipState extends State<SizeChip> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document}),
+    final ws = WorkspaceScope.of(context, {WorkspaceAspect.structure}),
         w0 = ArtGeometry.comp.width,
         h0 = ArtGeometry.comp.height;
     final shownW = (_scrub ?? w0).round(), shownH = (shownW * h0 / w0).round();

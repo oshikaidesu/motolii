@@ -32,6 +32,7 @@ class ProjectReader {
     required this._playhead,
     required this._onLayersRead,
     required this._onChanged,
+    required this._onStructure,
     required this._onListed,
     required this._onStageTextureChanged,
   });
@@ -40,6 +41,7 @@ class ProjectReader {
   final Playhead _playhead;
   final VoidCallback _onLayersRead,
       _onChanged,
+      _onStructure,
       _onListed,
       _onStageTextureChanged;
 
@@ -288,6 +290,10 @@ class ProjectReader {
     _onLayersRead();
     tl.finish();
     if (!same) _onListed();
+    if (m.structureTaken) {
+      m.structureTaken = false;
+      _onStructure();
+    }
     _onChanged();
   }
 
