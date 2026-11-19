@@ -42,7 +42,7 @@ const DocValue* doc_script_value(Doc& d, int layer, const char* name) {
   // One use's own value ("a1b2c3:js_blur_size") is what the file declares
   // under the name without the ID.
   if (!fx_entry_id(name).empty()) name += 7;
-  if (strncmp(name, "js_", 3)) return nullptr;
+  if (strncmp(name, "js_", 3) != 0) return nullptr;
   for (const DocScript* sc : doc_scripts_on(d, layer))
     for (const DocValue& one : sc->values)
       if (!strcmp(one.name, name)) return &one;

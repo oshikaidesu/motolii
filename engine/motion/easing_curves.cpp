@@ -126,7 +126,7 @@ int interp_said(const std::string& text, Interp* is, std::string* why) {
   said >> name;
   for (size_t k = 0; k < sizeof interp_kinds / sizeof *interp_kinds; ++k) {
     const auto& kind = interp_kinds[k];
-    if (strcasecmp(name.c_str(), kind.name)) continue;
+    if (strcasecmp(name.c_str(), kind.name) != 0) continue;
     Interp built;
     built.kind = (Interp::Kind)k;
     int n = 0;

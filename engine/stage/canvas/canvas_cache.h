@@ -277,8 +277,8 @@ struct Canvas2D {
     std::vector<filament::math::float3> pos;
     std::vector<filament::math::float2> uv;
     std::vector<uint32_t> idx, ends;
-    uint32_t fillPoints, fillEnd;
-    size_t bytes;
+    uint32_t fillPoints = 0, fillEnd = 0;
+    size_t bytes = 0;
   };
   struct Cuts {
     std::unordered_map<uint64_t, Cut> all;

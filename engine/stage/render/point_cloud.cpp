@@ -375,6 +375,7 @@ Mesh* points(Stage& s, const char* file, std::string& why,
         if (sort->stop) return;
         row = sort->asked, sort->fresh = false;
       }
+      if (depth.empty()) continue;
       int32_t least = INT32_MAX, most = INT32_MIN;
       for (size_t i = 0; i < depth.size(); ++i) {
         const float3& p = sort->middles[i];

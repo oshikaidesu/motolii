@@ -104,7 +104,9 @@ static void terminate_handler() {
     strftime(timebuf, sizeof timebuf, "%Y-%m-%d %H:%M:%S", &lt);
 
     const char* what = "unknown";
-    try { throw; } catch (const std::exception& e) { what = e.what(); } catch (...) {}
+    if (auto ep = std::current_exception()) {
+      try { std::rethrow_exception(ep); } catch (const std::exception& e) { what = e.what(); } catch (...) {}
+    }
 
     fprintf(f, "std::terminate\ntime: %s\nreason: %s\nbreadcrumb: %s\n\n",
             timebuf, what, last_breadcrumb());
