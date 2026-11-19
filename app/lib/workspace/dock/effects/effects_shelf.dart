@@ -6,7 +6,6 @@ import 'package:motolii/workspace/dock/effects/effect_entries.dart';
 import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
-import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:flutter/services.dart';
@@ -120,15 +119,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
       deckSettle(deck, known);
     }
     final lost = effectLost(c: c, deck: deck, known: known);
-    // Up to ten recent effects show above the tiles while nothing narrows the list
-    // at EffectBrowser.kt:217. A list out of sight is not revisited, so the recent ones stay in view.
-    final inSight =
-        place == 'All' &&
-            chip == 'All' &&
-            c.query.isEmpty &&
-            !c.mem.mapped.contains('Effects')
-        ? recent.take(10).toList()
-        : const <EffectEntry>[]; // On the map only the map shows, as in XO's Space: the recent box took half the shelf.
     final listed = building ? shown : [...shown, ...lost];
     // What the deck holds in the order added, then what its words find. Effects not on this machine come last.
     final holds = place == '★'
@@ -223,20 +213,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
           active: chip,
           onPick: c.pickChip,
         ), // Tags first, as Shadertoy's filters head its results; the kinds follow, since there are over a hundred.
-        if (inSight.isNotEmpty)
-          ShelfGrid(
-            look,
-            key: const ValueKey('ws-fx-recent'),
-            cols: 5,
-            small: true,
-            shrinkWrap: true,
-            pad: EdgeInsets.only(
-              top: WindowTokens.gutter,
-              bottom: WindowTokens.gutter,
-            ),
-            count: inSight.length,
-            tile: (i) => tile(inSight[i], true),
-          ), // Two rows as in Alight Motion's box, one row until a sixth effect: a single tile in a row looked empty over the shelf.
         Expanded(
           child: CallbackShortcuts(
             // B runs the target action on the selected effect, like the menu's single row, as in Lightroom's Library grid.
@@ -325,12 +301,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     ),
             ),
           ),
-          if (sel != null && pic(sel.id).isNotEmpty) // A large moving sample of the selected effect, as Alight Motion's effect browser opens.
-            SizedBox(
-              key: const ValueKey('ws-fx-preview'),
-              height: Shape.z(140),
-              child: TileMoving(pic(sel.id), playing: true),
-            ),
           if (sel != null)
             ShelfFooter(
               title: sel.name,
