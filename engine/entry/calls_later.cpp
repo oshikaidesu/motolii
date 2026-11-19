@@ -169,6 +169,10 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // words (motolii_answer_why). Nothing of the project is changed.
         else if (c == "ask")
           said = doc_script_asked(doc(m), n, w), ok = 1;
+        // A check: the parts of the document's snapshot held that making it
+        // whole would not give (snapshot_stale), as the answer's words.
+        else if (c == "snapshot_check")
+          said = snapshot_stale(m), ok = 1;
         // The result is the new layer.
         else if (c == "duplicate")
           ok = m->later.last_added = changes(m, doc_copy_above(doc(m), layer));

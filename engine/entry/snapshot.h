@@ -81,6 +81,14 @@ struct Snapshots {
 // ask only for what is newer than what it has.
 void snapshot_update(Motolii* m);
 
+// Makes the whole document snapshot afresh, without regard to what was said to
+// have changed, and returns the parts held that differ from it, as
+// "layer/part" or "document/part" separated by spaces; "" when what is held is
+// what making it whole gives. Changes nothing. For checks (edit.sh's `snapshot
+// check`): snapshot_update makes again only what a change is recorded to touch,
+// and this is what says a record was wrong.
+std::string snapshot_stale(Motolii* m);
+
 // Rebuilds the time snapshot for the current time. Runs on the render thread
 // while it holds the document, whenever the time is set.
 //

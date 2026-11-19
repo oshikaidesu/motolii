@@ -65,6 +65,20 @@ engine/snapshot_parts_check.sh
 
 Builds the engine if needed, then edits a new document under `engine/out/` through `edit.sh` and its `snapshot` call, and checks what the app would be handed of the document's snapshot after each step ([app/BRIDGE.md](app/BRIDGE.md)): everything when it has nothing, a layer's numbers alone for a number set anew, its words for a word written, nothing when nothing was done. Prints `ok: 8 snapshots` or what was wrong. CI's build runs it.
 
+### Edits at random
+
+```
+engine/random_edits_check.sh
+SEED=40 STEPS=1000 RUNS=10 engine/random_edits_check.sh
+```
+
+Edits new documents under `engine/out/random_edits/` at random through `edit.sh`: layers added and removed, numbers set, keyframes put, words written, drags held and kept or given up, steps undone and redone, several changes as one step. After every step it asks two things, and a wrong answer to either is a failure, with no crash needed:
+
+- `snapshot check`: are the parts of the snapshot the engine holds what making the snapshot whole gives? The engine makes again only what a change is recorded to touch ([app/BRIDGE.md](app/BRIDGE.md)); this is what finds a record that was wrong.
+- Do the parts handed over one read at a time add up to the whole snapshot?
+
+The steps come from the seed alone. A failure prints its seed, is cut down to the fewest steps that still fail, and is written as `seed_N.calls`, which `edit.sh` reads. CI's build runs seeds 1 to 3, 200 steps each. It goes through the engine's C calls, not through the window: what the window does with what it is handed is tested in `app/test/bridge/`.
+
 ### Picture comparison
 
 See below. It is a build.

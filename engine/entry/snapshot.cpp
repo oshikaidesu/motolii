@@ -210,6 +210,42 @@ struct SnapshotKeepsWhy {
   ~SnapshotKeepsWhy() { d.error = why; }
 };
 
+// Writes the document snapshot's own part: its length, size and work range,
+// what changed, and its layers. What is read from rows alone (the time spent
+// editing, markers, settings, guides) is written only with `rows_written`.
+void snapshot_own(Motolii* m, rapidjson::StringBuffer& out, bool rows_written,
+                  const std::string& changes, const int* layers, int n) {
+  SnapshotWriter w(out);
+  w.StartObject();
+  w.Key("seconds"), w.Double(motolii_seconds(m));
+  w.Key("rate"), w.Int(motolii_rate(m));
+  {
+    int wide = 0, high = 0;
+    motolii_size_of(m, &wide, &high);
+    w.Key("size"), w.StartArray(), w.Int(wide), w.Int(high), w.EndArray();
+  }
+  w.Key("fits"), w.Bool(motolii_fits(m) != 0);
+  {
+    double a = 0, b = 0;
+    motolii_work_of(m, &a, &b);
+    w.Key("work"), w.StartArray(), w.Double(a), w.Double(b), w.EndArray();
+  }
+  w.Key("point"), w.Double(motolii_point(m));
+  if (rows_written) {
+    // Seconds spent editing the project, like Alight Motion's Total Edit Time.
+    w.Key("edited"), w.Double(doc_edited(*m->d));
+    w.Key("marks"), w.String(motolii_marks(m));
+    w.Key("markColours"), w.String(motolii_mark_colours(m));
+    w.Key("settings"), w.String(motolii_settings(m));
+    w.Key("guides"), w.String(motolii_guides(m));
+  }
+  w.Key("changes"), w.String(changes.c_str());
+  w.Key("layers"), w.StartArray();
+  for (int i = 0; i < n; ++i) w.Int(layers[i]);
+  w.EndArray();
+  w.EndObject();
+}
+
 // Writes the document snapshot's tables: what a change to a layer's values
 // leaves as it was. See snapshot_update for when they are made.
 void snapshot_tables(Motolii* m, rapidjson::StringBuffer& out) {
@@ -305,35 +341,7 @@ void snapshot_update(Motolii* m) {
   for (int i = 0; i < n; ++i)
     if (all || again.count(layers[i])) build(layers[i]);
   rapidjson::StringBuffer out;
-  SnapshotWriter w(out);
-  w.StartObject();
-  w.Key("seconds"), w.Double(motolii_seconds(m));
-  w.Key("rate"), w.Int(motolii_rate(m));
-  {
-    int wide = 0, high = 0;
-    motolii_size_of(m, &wide, &high);
-    w.Key("size"), w.StartArray(), w.Int(wide), w.Int(high), w.EndArray();
-  }
-  w.Key("fits"), w.Bool(motolii_fits(m) != 0);
-  {
-    double a = 0, b = 0;
-    motolii_work_of(m, &a, &b);
-    w.Key("work"), w.StartArray(), w.Double(a), w.Double(b), w.EndArray();
-  }
-  w.Key("point"), w.Double(motolii_point(m));
-  if (rows_written) {
-    // Seconds spent editing the project, like Alight Motion's Total Edit Time.
-    w.Key("edited"), w.Double(doc_edited(*m->d));
-    w.Key("marks"), w.String(motolii_marks(m));
-    w.Key("markColours"), w.String(motolii_mark_colours(m));
-    w.Key("settings"), w.String(motolii_settings(m));
-    w.Key("guides"), w.String(motolii_guides(m));
-  }
-  w.Key("changes"), w.String(changes.c_str());
-  w.Key("layers"), w.StartArray();
-  for (int i = 0; i < n; ++i) w.Int(layers[i]);
-  w.EndArray();
-  w.EndObject();
+  snapshot_own(m, out, rows_written, changes, layers, n);
   // The tables are most of the bytes and a change to a layer's values leaves
   // them as they were, so they are made again only for a cause: none made yet,
   // a table other than keyframe changed, or the user's own easings or the
@@ -369,6 +377,47 @@ void snapshot_update(Motolii* m) {
   if (!differed) return;
   m->snapshots.version = v;
   m->snapshots.pending |= 1;
+}
+
+std::string snapshot_stale(Motolii* m) {
+  Doc& d = *m->d;
+  const SnapshotKeepsWhy keep{d};
+  int layers[1024];
+  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+  rapidjson::StringBuffer own, tables;
+  snapshot_own(m, own, true, "", layers, n);
+  snapshot_tables(m, tables);
+  std::map<int, std::string> whole;
+  const auto make = [&](int layer) {
+    rapidjson::StringBuffer out;
+    SnapshotWriter w(out);
+    snapshot_layer(m, layer, w, snapshot_names(m, layer), false);
+    whole[layer] = {out.GetString(), out.GetSize()};
+  };
+  make(0);
+  for (int i = 0; i < n; ++i) make(layers[i]);
+  std::lock_guard<std::mutex> hold(m->snapshots.lock);
+  std::string stale;
+  const auto said = [&](const std::string& of, const JsonParts& held,
+                        const std::string& json, bool all) {
+    for (const std::string& key : json_parts_stale(held, json, all))
+      // What changed is an account of the last step, not of the document.
+      if (key != "changes") stale += (stale.empty() ? "" : " ") + of + key;
+  };
+  said("document/", m->snapshots.document, {own.GetString(), own.GetSize()},
+       false);
+  said("document/", m->snapshots.document,
+       {tables.GetString(), tables.GetSize()}, false);
+  static const JsonParts none;
+  for (const auto& [layer, json] : whole) {
+    const auto held = m->snapshots.layers.find(layer);
+    said(std::to_string(layer) + "/",
+         held == m->snapshots.layers.end() ? none : held->second, json, true);
+  }
+  for (const auto& [layer, held] : m->snapshots.layers)
+    if (!whole.count(layer))
+      stale += (stale.empty() ? "" : " ") + std::to_string(layer) + "/gone";
+  return stale;
 }
 
 void snapshot_time(Motolii* m) {

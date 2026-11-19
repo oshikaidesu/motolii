@@ -31,7 +31,9 @@ static const char* const calls =
     "shelf | presets | together on|off | undo | redo | list | at <seconds> | "
     "still <file.png> | export <file.mp4>\n"
     "  snapshot   (what the app would be handed now: the parts of the "
-    "document's snapshot newer than those this shell last printed)\n";
+    "document's snapshot newer than those this shell last printed) | snapshot "
+    "whole | snapshot check   (the parts held that are not what making it "
+    "whole gives)\n";
 
 // Opens the project named by the first argument and runs the calls read from
 // standard input.
@@ -316,6 +318,26 @@ int main(int argc, char** argv) {
         std::printf("snapshot %ld %s\n", version, parts);
         std::free(parts);
         snapshot_seen = version;
+        std::fflush(stdout);
+        continue;
+      }
+      // The whole snapshot, as a reader with nothing is handed it.
+      else if (call == "snapshot" && w.size() == 2 && w[1] == "whole") {
+        long version = 0;
+        char* parts = motolii_snapshot(m, 1, -1, &version);
+        std::printf("whole %ld %s\n", version, parts);
+        std::free(parts);
+        std::fflush(stdout);
+        continue;
+      }
+      // The parts held that making the snapshot whole would not give: none
+      // when every change was recorded as what it was.
+      else if (call == "snapshot" && w.size() == 2 && w[1] == "check") {
+        const int ticket = motolii_later(m, "snapshot_check", 0, "", "", 0);
+        while (motolii_answer(m, ticket) < 0)
+          std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::printf("stale %s\n", motolii_answer_why(m));
+        std::fflush(stdout);
         continue;
       } else if (call == "help") {
         std::printf("%s", calls);
