@@ -38,6 +38,13 @@ List<CardDeclaration>? valueCards(WorkspaceController ws, int? id) {
   return cards;
 }
 
+/// The weight of the value [n] in [weights], which are keyed `js_<stem>_<knob>`: the engine puts the ID of the one use
+/// of an effect in front of its values ("a1b2c3:js_blur_size"), and every use of a file weighs the same.
+double? weightOf(Map<String, double> weights, String n) =>
+    weights[n.replaceFirst(_useId, '')];
+
+final _useId = RegExp(r'^[0-9a-f]{6}:');
+
 final _cardsMade = <int, (String, List<CardDeclaration>, Object?)>{};
 
 List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
@@ -53,7 +60,10 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
   String field(String n) {
     final sh = shownFactOf(ws, n),
         label =
-            '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
+            '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${switch (weightOf(weights, n)) {
+              null => '',
+              final w => ' @weight($w)',
+            }}';
     if (sh?.look == 'thing') {
       // Another layer, listed by the names the timeline shows: None first, then the others. The stored number is the document's.
       final others = otherLayers(ws, t),
@@ -113,7 +123,10 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
   // and choosing from the Colors shelf sets all three numbers.
   // Without this, a white colour took three number fields.
   String colour(String base) =>
-      '  /// @label(${shownFactOf(ws, '${base}_x')!.label.substring(0, shownFactOf(ws, '${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
+      '  /// @label(${shownFactOf(ws, '${base}_x')!.label.substring(0, shownFactOf(ws, '${base}_x')!.label.length - 2)})${switch (weightOf(weights, '${base}_x')) {
+        null => '',
+        final w => ' @weight($w)',
+      }} @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in layerCardsOf(ws, t))
       // A sound layer has a volume and nothing to place on the canvas
