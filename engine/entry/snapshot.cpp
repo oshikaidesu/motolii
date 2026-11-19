@@ -343,10 +343,12 @@ void snapshot_time(Motolii* m) {
   const int n = std::min(motolii_layers(m, layers, 1024), 1024);
 
   // Binary layout: flat doubles for every layer's hot data.
-  // [now, count, ids..., records...] where each record is 26 doubles:
-  //   bounds[8], seen[4], shows[14] (value, driven pairs × 7).
+  // [now, count, ids..., records..., load] where each record is 26 doubles:
+  //   bounds[8], seen[4], shows[14] (value, driven pairs × 7),
+  // and the load is the last frame's two times in ms: the render thread's own
+  // and the GPU's.
   std::vector<double> layout;
-  layout.reserve(2 + (size_t)n + (size_t)n * 26);
+  layout.reserve(2 + (size_t)n + (size_t)n * 26 + 2);
   layout.push_back(at);
   layout.push_back(n);
   for (int i = 0; i < n; ++i) layout.push_back(layers[i]);
@@ -371,6 +373,9 @@ void snapshot_time(Motolii* m) {
         layout.push_back(NAN), layout.push_back(NAN);
     }
   }
+
+  layout.push_back(m->resolution.frame_ms);
+  layout.push_back(m->resolution.gpu_ms);
 
   // JSON detail: only selected/watched layers' values, gizmo, points, handles.
   rapidjson::StringBuffer out;

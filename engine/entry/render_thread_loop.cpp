@@ -460,6 +460,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       const auto ms = [](auto a, auto b) {
         return 1e3 * std::chrono::duration<double>(b - a).count();
       };
+      m->resolution.frame_ms = ms(round_at, rendered);
       // A frame took the render thread longer than a beat to make, so the next
       // beat came while it was busy. That is a missed 60 fps. It is reported
       // with the time of each part.

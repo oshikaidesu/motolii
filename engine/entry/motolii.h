@@ -426,7 +426,8 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version);
    without the project lock: now, layer count, layer ids, then 26 doubles per
    layer (bounds[8], seen[4], shows[14]: x, x_driven, y, y_driven, z, z_driven,
    rotate, rotate_driven, scale_x, scale_x_driven, scale_y, scale_y_driven,
-   opacity, opacity_driven). NaN means absent. Returns the number of doubles
+   opacity, opacity_driven), then the last frame's two times in ms: the render
+   thread's own and the GPU's. NaN means absent. Returns the number of doubles
    written, or needed when `out` is NULL or `capacity` is too small. */
 int motolii_time_layout(Motolii* m, double* out, int capacity);
 /* Sets the app's one listener: a Dart port, posted to from the render thread
