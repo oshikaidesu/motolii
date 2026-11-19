@@ -83,8 +83,7 @@ Future<void> _open(WidgetTester t) async {
 
 void main() {
   final guidelines = <String, AccessibilityGuideline>{
-    'androidTapTargetGuideline': androidTapTargetGuideline,
-    'iOSTapTargetGuideline': iOSTapTargetGuideline,
+    // Mobile tap-target sizes (48×48 Android, 44×44 iOS) do not apply to a desktop app.
     'labeledTapTargetGuideline': labeledTapTargetGuideline,
     'textContrastGuideline': textContrastGuideline,
   };
