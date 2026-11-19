@@ -48,29 +48,63 @@ class ArtScene {
 
   /// The document's guides, in composition px.
   final List<double> guidesX, guidesY;
-  ArtScene.of(WorkspaceController ws, {required this.camera})
-    : frame = ws.frame,
-      // The document's own name.
-      title = ws.document == null
-          ? 'CODA_main'
-          : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
-      guidesX = [
-        for (final (a, at) in ws.guides)
-          if (a == 'x') at,
-      ],
-      guidesY = [
-        for (final (a, at) in ws.guides)
-          if (a == 'y') at,
-      ],
-      layers = List.unmodifiable([for (final l in ws.layers) ArtLayer(l)]),
-      rev = ws.rev,
-      eye = ws.eye,
-      gizmos = {
-        if (ws.freeEye)
-          for (final l in ws.layers)
-            if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(l.id) ?? '',
-      },
-      _inside = ws.inside;
+  // What a scene takes from the document alone, made once a reading of it ([WorkspaceController.rev]): the stage
+  // makes a scene on every frame, and the layers and guides are the same until the document is read again.
+  static final _read =
+      Expando<
+        ({
+          int rev,
+          List<ArtLayer> layers,
+          List<double> guidesX,
+          List<double> guidesY,
+        })
+      >();
+
+  factory ArtScene.of(WorkspaceController ws, {required bool camera}) {
+    var read = _read[ws];
+    if (read == null || read.rev != ws.rev) {
+      final guides = ws.guides;
+      read = _read[ws] = (
+        rev: ws.rev,
+        layers: List.unmodifiable([for (final l in ws.layers) ArtLayer(l)]),
+        guidesX: List.unmodifiable([
+          for (final (a, at) in guides)
+            if (a == 'x') at,
+        ]),
+        guidesY: List.unmodifiable([
+          for (final (a, at) in guides)
+            if (a == 'y') at,
+        ]),
+      );
+    }
+    return ArtScene._(
+      ws,
+      camera: camera,
+      layers: read.layers,
+      guidesX: read.guidesX,
+      guidesY: read.guidesY,
+    );
+  }
+
+  ArtScene._(
+    WorkspaceController ws, {
+    required this.camera,
+    required this.layers,
+    required this.guidesX,
+    required this.guidesY,
+  }) : frame = ws.frame,
+       // The document's own name.
+       title = ws.document == null
+           ? 'CODA_main'
+           : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
+       rev = ws.rev,
+       eye = ws.eye,
+       gizmos = {
+         if (ws.freeEye)
+           for (final l in ws.layers)
+             if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(l.id) ?? '',
+       },
+       _inside = ws.inside;
 
   final Motolii? _inside;
   final _asked = <int, ArtBox?>{};
