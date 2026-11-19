@@ -37,7 +37,7 @@ Dialogue: 0,0:00:00.00,0:00:04.00,Kara,,0,0,0,,{\move(640,300,640,180,0,600)\fad
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 struct Counted {
@@ -62,7 +62,7 @@ TEST(PastedSubtitles,
      AnAssFileIsASketchOfItsOwnSizeAndItsKaraokeFillsAndTurns) {
   const fs::path file = fs::temp_directory_path() / "motolii_karaoke.ass";
   std::ofstream(file) << kKaraoke;
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   ASSERT_TRUE(s.sketch());
   EXPECT_TRUE(s.flat());
@@ -83,7 +83,7 @@ TEST(PastedSubtitles,
 TEST(PastedSubtitles, AFrameMinutesInIsDrawnAloneAndNothingIsKept) {
   const fs::path file = fs::temp_directory_path() / "motolii_song.srt";
   std::ofstream(file) << "1\n00:02:59,000 --> 00:03:01,000\nthe last line\n";
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   const std::vector<double> late = s.paints(3 * 60 * 60, -1, -1);
   ASSERT_GT(late.size(), 1u);
@@ -113,7 +113,7 @@ int Wide(Script& s, int ms) {
 void LinesComeOnTime(const char* text, const char* name) {
   const fs::path file = fs::temp_directory_path() / name;
   std::ofstream(file) << text;
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   ASSERT_TRUE(s.sketch());
   EXPECT_EQ(Wide(s, 200), 0) << name;

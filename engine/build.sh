@@ -4,9 +4,18 @@
 #                     materials (materials/build.sh), then CMake (CMakeLists.txt), which compiles what changed
 #   ./build.sh lib    the same, only the library; then restart the app (a native library cannot be hot reloaded)
 #   ./build.sh test   the same, then the C++ tests (ctest)
+# On Windows: MSYS2's zsh inside the VS x64 developer prompt, with GStreamer's MSVC installer, vcpkg's x64-windows
+# (sqlite3[session] luajit quickjs-ng gtest) and Corrosion said by GSTREAMER_1_0_ROOT_MSVC_X86_64, MOTOLII_LIBRARIES
+# and MOTOLII_CORROSION (docs/archive/engine/WINDOWS.md):  set MSYS2_PATH_TYPE=inherit, then <msys64>\usr\bin\zsh engine/build.sh
 set -e
 cd "$(dirname "$0")"
 source tools/build_lock.sh; build_lock "$@"   # one build at a time on this machine
+if [[ $OSTYPE == (msys|cygwin)* ]]; then
+    # What deps/ builds by hand is compiled for MSVC's runtime DLL, as Filament and the engine are.
+    export CC=clang CXX=clang++ AR=llvm-ar CFLAGS=-fms-runtime-lib=dll MSYS=winsymlinks:nativestrict
+    WINDOWS=(-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DGSTREAMER=$(cygpath -m $GSTREAMER_1_0_ROOT_MSVC_X86_64)
+             -DLIBRARIES=$(cygpath -m $MOTOLII_LIBRARIES) -DCorrosion_DIR=$(cygpath -m $MOTOLII_CORROSION)/lib/cmake/Corrosion)
+fi
 
 # Dependencies and materials: run when one of their scripts or sources is newer than the last run (out/deps.stamp).
 # Each deps script fetches one library into third_party/ and builds it with its own build system.
@@ -37,7 +46,10 @@ fi
 
 # Only the first time (no build.ninja yet). After that cmake --build (ninja) re-runs CMake itself when a
 # CMakeLists.txt is newer, and re-globs the CONFIGURE_DEPENDS headers, so configuring again here is redundant.
-[ -f out/cmake/build.ninja ] || cmake -S . -B out/cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON > /dev/null
+[ -f out/cmake/build.ninja ] || cmake -S . -B out/cmake -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $WINDOWS > /dev/null
+# Windows looks for a DLL's own DLLs on PATH, not beside it: those not in GStreamer's folder go beside
+# libmotolii.dll, a folder the runner puts on PATH with GStreamer's (app/windows/runner/main.cpp).
+[[ $OSTYPE == (msys|cygwin)* ]] && cp -u third_party/onnxruntime/lib/*.dll third_party/ffmpeg_lgpl/bin/*.dll $MOTOLII_LIBRARIES/bin/*.dll out/
 case "$1" in
   lib)  cmake --build out/cmake --target motolii ;;
   test) cmake --build out/cmake && ctest --test-dir out/cmake --output-on-failure ;;

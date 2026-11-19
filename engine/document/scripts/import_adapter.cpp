@@ -69,8 +69,8 @@ void doc_door_keys(Doc& d, int layer, const std::string& fx,
 std::string doc_p5_shaded(const std::filesystem::path& file,
                           std::vector<HydraParameter>& moving,
                           std::string& why) {
-  Script run(file.string(),
-             (doc_engine("third_party/js/p5") / "p5.min.js").string());
+  Script run(file.generic_string(),
+             (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
   const std::string got = run.said("__shaded_take(30)");
   std::string fs, vs;
   if (!run.ok()) return why = run.trouble(), "";
@@ -93,7 +93,7 @@ int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
       run.bytes("__three_glb(" + std::to_string(p) + ")");
   const std::filesystem::path glb =
       file.parent_path() /
-      (file.stem().string() + "-" + std::to_string(p) + ".glb");
+      (file.stem().generic_string() + "-" + std::to_string(p) + ".glb");
   std::ofstream out(glb, std::ios::binary);
   out.write((const char*)shape.data(), (std::streamsize)shape.size());
   out.close();
@@ -104,11 +104,12 @@ int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
   double metal = 0, rough = 1;
   std::string colour;
   says >> most >> colour >> metal >> rough;
-  if (!solid && !(solid = doc_add(d, "solid", glb.string().c_str()))) return 0;
+  if (!solid && !(solid = doc_add(d, "solid", glb.generic_string().c_str())))
+    return 0;
   doc_say(d, solid, "fill", colour.c_str());
   doc_set(d, solid, "metallic", metal), doc_set(d, solid, "roughness", rough),
       doc_set(d, solid, "copies", std::min(most, 1000));
-  doc_say(d, solid, "script", file.string().c_str()),
+  doc_say(d, solid, "script", file.generic_string().c_str()),
       doc_set(d, solid, "js_part", p);
   return solid;
 }
@@ -119,8 +120,8 @@ int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
 // longer exists are removed. Returns the reason the code cannot run, or an
 // empty string.
 std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
-  Script run(file.string(),
-             (doc_engine("third_party/js/p5") / "p5.min.js").string());
+  Script run(file.generic_string(),
+             (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
   const int parts = std::atoi(run.said("__three_parts()").c_str());
   if (!run.ok()) return run.trouble();
   if (!parts) return "this three.js scene drew no meshes";
@@ -129,7 +130,7 @@ std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
   std::map<int, std::vector<int>> stood;
   std::vector<int> gone;
   for (const int t : doc_layers(d))
-    if (doc_word(d, t, "script") == file.string())
+    if (doc_word(d, t, "script") == file.generic_string())
       stood[(int)doc_number(d, t, "parent", 0, 0)].push_back(t);
   doc_act(d);
   const bool together = d.act.together;
@@ -158,11 +159,11 @@ std::string doc_hydra_saved(Doc& d, const std::filesystem::path& file,
                             const std::string& text) {
   std::string why, isf;
   std::vector<HydraParameter> moving;
-  if (!hydra_isf(doc_folders("extensions/hydra").back().string(),
+  if (!hydra_isf(doc_folders("extensions/hydra").back().generic_string(),
                  adapter_page(text), 30.0, isf, moving, why))
     return why;
   const std::string made =
-      std::filesystem::path(file).replace_extension(".fs").string();
+      std::filesystem::path(file).replace_extension(".fs").generic_string();
   std::ofstream(made) << isf;
   doc_act(d);
   for (const int t : doc_layers(d))
@@ -180,7 +181,7 @@ std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
   std::vector<HydraParameter> moving;
   if (doc_p5_shaded(file, moving, why).empty()) return why;
   const std::string made =
-      std::filesystem::path(file).replace_extension(".fs").string();
+      std::filesystem::path(file).replace_extension(".fs").generic_string();
   doc_act(d);
   for (const int t : doc_layers(d))
     if (doc_word(d, t, "fx").find(made) != std::string::npos)
@@ -195,12 +196,12 @@ std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
 std::string doc_tsl_saved(Doc& d, const std::filesystem::path& file) {
   const std::string text = read_text(file);
   std::string effect, points, why;
-  if (!tsl_shelf(
-          doc_engine("third_party/js/three").string(),
-          doc_engine("community/three_shading_language_to_shelf").string(),
-          text, file.stem().string(), effect, points, why))
+  if (!tsl_shelf(doc_engine("third_party/js/three").generic_string(),
+                 doc_engine("community/three_shading_language_to_shelf")
+                     .generic_string(),
+                 text, file.stem().generic_string(), effect, points, why))
     return why;
-  const std::string stem = file.stem().string();
+  const std::string stem = file.stem().generic_string();
   if (!effect.empty())
     std::ofstream(file.parent_path() / (stem + ".effect.wgsl")) << effect;
   if (!points.empty())
@@ -219,7 +220,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
       (word =
            adapter_openprocessing(
                work, doc_folders("sites").back() / "openprocessing" / work, why)
-               .string())
+               .generic_string())
           .empty())
     return d.error = why, 0;
   std::string text = word;
@@ -289,9 +290,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // (image_canvas).
   if (form == "svg") {
     const std::filesystem::path file = stored(".svg");
-    if (const int on = doc_svg_paths(d, file.string().c_str())) return on;
+    if (const int on = doc_svg_paths(d, file.generic_string().c_str()))
+      return on;
     doc_act(d);
-    const int on = doc_add(d, "image", file.string().c_str());
+    const int on = doc_add(d, "image", file.generic_string().c_str());
     return doc_acted(d) && on ? on : 0;
   }
   // A pen's CSS moves the letters of the text layer picked, or of a new text
@@ -307,7 +309,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     if (!on) return d.act.ok = false, doc_acted(d), 0;
     if (doc_word(d, on, "split").empty() || doc_word(d, on, "split") == "none")
       doc_say(d, on, "split", "letters");
-    doc_fx_file(d, on, file.string().c_str(), d.stage->now);
+    doc_fx_file(d, on, file.generic_string().c_str(), d.stage->now);
     return doc_acted(d) ? on : 0;
   }
   // An After Effects expression goes on the selected layer as one of its
@@ -318,7 +320,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
       return d.error = "select the layer this expression is for, then paste", 0;
     const std::filesystem::path file = stored(".js");
     doc_act(d);
-    doc_fx_file(d, picked, file.string().c_str(), d.stage->now);
+    doc_fx_file(d, picked, file.generic_string().c_str(), d.stage->now);
     return doc_acted(d) ? picked : 0;
   }
   // three.js Shading Language is written as shelf files by three.js's own
@@ -327,16 +329,16 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // mesh's points as a points file on the same layer.
   if (form == "tsl") {
     std::string effect, points, why;
-    if (!tsl_shelf(
-            doc_engine("third_party/js/three").string(),
-            doc_engine("community/three_shading_language_to_shelf").string(),
-            came, adapter_name(form), effect, points, why))
+    if (!tsl_shelf(doc_engine("third_party/js/three").generic_string(),
+                   doc_engine("community/three_shading_language_to_shelf")
+                       .generic_string(),
+                   came, adapter_name(form), effect, points, why))
       return d.error = why, 0;
     // The original TSL is stored as a .js file so the user can edit and
     // hot-reload it (doc_tsl_saved). The WGSL files are named after the .js
     // stem so that doc_tsl_saved can find and overwrite them on save.
     const std::filesystem::path tsl_file = stored(".js");
-    const std::string stem = tsl_file.stem().string();
+    const std::string stem = tsl_file.stem().generic_string();
     std::filesystem::path made[2];
     if (!effect.empty()) {
       made[0] = tsl_file.parent_path() / (stem + ".effect.wgsl");
@@ -354,7 +356,7 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     if (!layer) return d.act.ok = false, doc_acted(d), 0;
     for (const std::filesystem::path& file : made)
       if (!file.empty())
-        doc_fx_file(d, layer, file.string().c_str(), d.stage->now);
+        doc_fx_file(d, layer, file.generic_string().c_str(), d.stage->now);
     return doc_acted(d) ? layer : 0;
   }
   const bool hydra = form == "hydra",
@@ -365,8 +367,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // converter is hydra_isf.cpp.
   if (hydra) {
     std::string why, isf;
-    if (!hydra_isf(doc_folders("extensions/hydra").back().string(), text, 30.0,
-                   isf, moving, why))
+    if (!hydra_isf(doc_folders("extensions/hydra").back().generic_string(),
+                   text, 30.0, isf, moving, why))
       return d.error = why, 0;
     text = isf;
   }
@@ -389,7 +391,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // The Hydra code as it was written is kept beside the converted effect. The
   // Create tab lists this file under Code.
   if (hydra)
-    std::ofstream(file.parent_path() / (file.stem().string() + ".hydra"))
+    std::ofstream(file.parent_path() /
+                  (file.stem().generic_string() + ".hydra"))
         << came;
   // A p5.js sketch that paints its canvas with a shader is imported as that
   // shader, an effect like any other, and not as an image of its output.
@@ -397,10 +400,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   if (form.empty() && adapter_has(told, "hader(") &&
       (shaded = doc_p5_shaded(file, moving, why)).empty() && !why.empty())
     return d.error = why, 0;
-  const std::string fx =
-      shaded.empty()
-          ? file.string()
-          : std::filesystem::path(file).replace_extension(".fs").string();
+  const std::string fx = shaded.empty() ? file.generic_string()
+                                        : std::filesystem::path(file)
+                                              .replace_extension(".fs")
+                                              .generic_string();
   const bool effect = shader || !shaded.empty();
   // Begin the undo step.
   doc_act(d);
@@ -421,8 +424,9 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     // under a group layer when there is more than one. The layers are placed in
     // the 3D world and are not a picture of it.
   } else if (form == "three") {
-    Script run(file.string(),
-               (doc_engine("third_party/js/p5") / "p5.min.js").string());
+    Script run(
+        file.generic_string(),
+        (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
     const int parts = std::atoi(run.said("__three_parts()").c_str());
     if (!run.ok())
       return d.error = run.trouble(), d.act.ok = false, doc_acted(d), 0;
@@ -447,14 +451,15 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   } else if (told.find("WEBGL") != std::string::npos) {
     if ((layer = doc_add(d, "solid", "cube")))
       doc_say(d, layer, "name", name.c_str()),
-          doc_say(d, layer, "script", file.string().c_str());
+          doc_say(d, layer, "script", file.generic_string().c_str());
     // If the script failed on its first run, report that. A white box is not
     // what the sketch drew.
-    if (DocScript* sc = layer ? doc_script_of(d, file.string()) : nullptr;
+    if (DocScript* sc =
+            layer ? doc_script_of(d, file.generic_string()) : nullptr;
         sc && sc->run && !sc->run->ok())
       return d.error = sc->run->trouble(), d.act.ok = false, doc_acted(d), 0;
     // Any other p5.js sketch becomes an image layer fitted to the canvas.
-  } else if ((layer = doc_add(d, "image", file.string().c_str())))
+  } else if ((layer = doc_add(d, "image", file.generic_string().c_str())))
     doc_say(d, layer, "name", name.c_str()), doc_fit(d, layer, "fit");
   // What moves in the code becomes keyframes, so that it can be edited.
   if (layer && !moving.empty()) {
@@ -472,7 +477,8 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
           .time_since_epoch()
           .count();
   long long& seen = doc_scripts_kept(d).sketches[file].saved;
-  const std::string ext = std::filesystem::path(file).extension().string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   const std::string text = read_text(file);
   const bool three = ext == ".js" && adapter_form(text) == "three";
   const bool shaded =

@@ -1,6 +1,8 @@
 // The calls about easings: putting one on a keyframe, defining one in the
 // project, listing the project's easings and the numbers each kind takes, and
 // drawing one.
+#include <strings.h>
+
 #include "document/edit/easings_put.h"
 #include "document/scripts/recipes.h"
 #include "entry/calls.h"

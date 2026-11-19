@@ -35,8 +35,9 @@ const char* video_flash_check(const char* film, const char* folder) {
   // ignored and nothing is reported.
   try {
     iris::Configuration settled;
-    settled.Init(settings.string().c_str());
-    settled.SetResultsPath((std::filesystem::path(folder) / "").string());
+    settled.Init(settings.generic_string().c_str());
+    settled.SetResultsPath(
+        (std::filesystem::path(folder) / "").generic_string());
     iris::VideoAnalyser looks(&settled);
     looks.AnalyseVideo(true, film);
     if (std::filesystem::is_regular_file(looks.GetResultJsonPath()))

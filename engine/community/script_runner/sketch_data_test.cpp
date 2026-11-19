@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 TEST(SketchData, LoadTableLoadJsonAndFetchReadTheFilesThatCameWithIt) {
@@ -28,7 +28,8 @@ TEST(SketchData, LoadTableLoadJsonAndFetchReadTheFilesThatCameWithIt) {
   fs::create_directories(dir / "bars");
   std::ofstream(dir / "bars" / "rows.csv") << "name,height\na,30\nb,50\nc,70\n";
   std::ofstream(dir / "bars" / "look.json") << R"({"name": "bars", "gap": 10})";
-  std::ofstream(dir / "bars" / "words.txt") << "one\ntwo\n";
+  std::ofstream(dir / "bars" / "words.txt", std::ios::binary)
+      << "one\ntwo\n";  // (binary: no CR on Windows)
   std::ofstream(file) << R"(let rows, look, said = '';
 function preload() {
   rows = loadTable('rows.csv', 'csv', 'header');
@@ -42,7 +43,7 @@ function draw() {
   background(0);
   for (let r = 0; r < rows.getRowCount(); r++) rect(r * 50, 0, 40, rows.getNum(r, 'height'));
 })";
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   s.said("__to(2)");
   EXPECT_EQ(s.said("rows.getRowCount()+','+rows.getNum(2,'height')"), "3,70");

@@ -97,9 +97,16 @@ uint64_t stage_cache_key(Doc& d, int w, int h) {
                    : script_files((const char*)sqlite3_column_text(row, 3))) {
             struct stat st{};
             if (stat(one.c_str(), &st) == 0)
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+              add(std::to_string(std::filesystem::last_write_time(one)
+                                     .time_since_epoch()
+                                     .count()) +
+                  "." + std::to_string(st.st_size));
+#else
               add(std::to_string(st.st_mtimespec.tv_sec) + "." +
                   std::to_string(st.st_mtimespec.tv_nsec) + "." +
                   std::to_string(st.st_size));
+#endif
           }
       });
   doc_rows(
@@ -142,7 +149,7 @@ void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision,
     std::thread([prefix = std::string(gone)] {
       std::error_code e;
       for (const auto& f : std::filesystem::directory_iterator(cache_dir(), e))
-        if (f.path().filename().string().rfind(prefix, 0) == 0)
+        if (f.path().filename().generic_string().rfind(prefix, 0) == 0)
           std::filesystem::remove(f.path(), e);
     }).detach();
   }

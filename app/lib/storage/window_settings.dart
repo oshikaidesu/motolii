@@ -1,13 +1,15 @@
 // Window settings that persist between runs (the zoom and the skin), stored in ~/.motolii/window.xml like this:
 //   <Motolii><Window><Zoom Value="1.17"/><Skin Value="labs"/></Window></Motolii>
+
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
+
 import 'dart:io';
 
 import 'package:motolii/storage/json_file.dart' show fileKeep;
 
 /// Reads and writes the window settings file.
 abstract final class WindowFile {
-  static File get _file =>
-      File('${Platform.environment['HOME']}/.motolii/window.xml');
+  static File get _file => File('$homeFolder/.motolii/window.xml');
 
   static Map<String, String> _all() {
     try {

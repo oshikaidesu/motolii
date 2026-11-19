@@ -111,16 +111,100 @@ const char* motolii_font_tags(const char* path) {
 
 #else
 
-// Windows and Linux: HarfBuzz (hb_face_create / hb_ot_name_list_names) or
-// FreeType (FT_Get_Sfnt_Name) read the 'name' and 'OS/2' tables that the
-// macOS branch above gets through CoreText. Both libraries are linked
-// through Skia, so a Win/Linux build only needs to open the face and parse
-// the same tags out of these tables. Until then the Fonts shelf treats every
-// font as Latin only (no tags, no scripts), which falls back to the English
-// sample line.
-const char* motolii_font_tags(const char* path) {
-  (void)path;
-  return "";
-}
+// The same kinds on Windows, as DirectWrite reads them: the family class of the
+// font's OS/2 table (the class CoreText's symbolic traits carry), its weight,
+// style and fixed pitch, and the languages whose letters it has. (Linux would
+// read the same tables with HarfBuzz or FreeType.)
+#include <dwrite_3.h>
+#include <windows.h>
 
+#include <cctype>
+#include <cstdint>
+#include <cstring>
+#include <string>
+
+const char* motolii_font_tags(const char* path) {
+  static thread_local std::string out;
+  out.clear();
+  static IDWriteFactory3* write = [] {
+    IDWriteFactory3* f = nullptr;
+    DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory3),
+                        (IUnknown**)&f);
+    return f;
+  }();
+  const int wide = MultiByteToWideChar(CP_UTF8, 0, path, -1, nullptr, 0);
+  std::wstring name(wide > 0 ? wide - 1 : 0, L'\0');
+  MultiByteToWideChar(CP_UTF8, 0, path, -1, name.data(), wide);
+  IDWriteFontFile* file = nullptr;
+  IDWriteFontFace* face = nullptr;
+  BOOL supported = FALSE;
+  DWRITE_FONT_FILE_TYPE file_kind;
+  DWRITE_FONT_FACE_TYPE face_kind;
+  UINT32 faces = 0;
+  if (write &&
+      SUCCEEDED(write->CreateFontFileReference(name.c_str(), nullptr, &file)) &&
+      SUCCEEDED(file->Analyze(&supported, &file_kind, &face_kind, &faces)) &&
+      supported &&
+      SUCCEEDED(write->CreateFontFace(face_kind, 1, &file, 0,
+                                      DWRITE_FONT_SIMULATIONS_NONE, &face))) {
+    const void* table = nullptr;
+    UINT32 size = 0;
+    void* context = nullptr;
+    BOOL exists = FALSE;
+    int weight = 400;
+    bool italic = false;
+    if (SUCCEEDED(
+            face->TryGetFontTable(DWRITE_MAKE_OPENTYPE_TAG('O', 'S', '/', '2'),
+                                  &table, &size, &context, &exists)) &&
+        exists) {
+      const auto* b = (const uint8_t*)table;
+      // usWeightClass at 4, sFamilyClass at 30 (its class in the high byte),
+      // fsSelection at 62 (bit 0 italic).
+      if (size >= 32) {
+        weight = b[4] << 8 | b[5];
+        const int kind = b[30];
+        if (kind >= 1 && kind <= 7)
+          out += "serif ";
+        else if (kind == 8)
+          out += "sans ";
+        else if (kind == 9)
+          out += "ornaments ";
+        else if (kind == 10)
+          out += "script ";
+        else if (kind == 12)
+          out += "symbols ";
+      }
+      if (size >= 64) italic = b[63] & 1;
+      face->ReleaseFontTable(context);
+    }
+    IDWriteFontFace1* face1 = nullptr;
+    if (SUCCEEDED(
+            face->QueryInterface(__uuidof(IDWriteFontFace1), (void**)&face1))) {
+      if (face1->IsMonospacedFont()) out += "mono ";
+      face1->Release();
+    }
+    // CoreText's weight above 0.3 is about 600 here, below -0.3 about 300.
+    if (weight >= 600) out += "bold ";
+    if (weight <= 300) out += "light ";
+    if (italic || face->GetSimulations() & DWRITE_FONT_SIMULATIONS_OBLIQUE)
+      out += "italic ";
+    // The scripts beyond Latin, each by a letter only its own writing has.
+    const struct {
+      UINT32 letter;
+      const char* said;
+    } languages[] = {
+        {0x3042, "japanese"}, {0xD55C, "korean"}, {0x8FD9, "chinese"},
+        {0x0416, "russian"},  {0x03AC, "greek"},  {0x0639, "arabic"},
+        {0x05D0, "hebrew"},   {0x0E01, "thai"},   {0x0915, "hindi"}};
+    for (const auto& l : languages) {
+      UINT16 glyph = 0;
+      if (SUCCEEDED(face->GetGlyphIndices(&l.letter, 1, &glyph)) && glyph)
+        out += std::string(l.said) + " ";
+    }
+  }
+  if (face) face->Release();
+  if (file) file->Release();
+  if (!out.empty()) out.pop_back();
+  return out.c_str();
+}
 #endif

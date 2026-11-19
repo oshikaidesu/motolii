@@ -2,7 +2,7 @@
 // instead of dart:io.
 import 'dart:io';
 
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/host_platform.dart' show homeFolder, slashed;
 
 typedef ProjectFile = ({String path, DateTime modified, int size});
 
@@ -13,7 +13,7 @@ List<ProjectFile> projectFilesIn(String folder) {
   for (final f in Directory(folder).listSync().whereType<File>()) {
     if (!f.path.endsWith('.motolii')) continue;
     final s = f.statSync();
-    found.add((path: f.path, modified: s.modified, size: s.size));
+    found.add((path: slashed(f.path), modified: s.modified, size: s.size));
   }
   return found;
 }
@@ -33,3 +33,18 @@ bool moveProjectFile(String from, String to) {
 
 /// The user's Trash folder, as the Finder keeps it.
 String trashFolder() => '$homeFolder/.Trash';
+
+/// Moves [file] to Windows' Recycle Bin, as Explorer's Delete does (.NET's FileSystem.DeleteFile with SendToRecycleBin).
+/// False if it could not be moved.
+bool recycleFile(String file) {
+  try {
+    return Process.runSync('powershell', [
+          '-NoProfile',
+          '-Command',
+          "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${file.replaceAll('/', r'\').replaceAll("'", "''")}', 'OnlyErrorDialogs', 'SendToRecycleBin')",
+        ]).exitCode ==
+        0;
+  } on ProcessException {
+    return false;
+  }
+}

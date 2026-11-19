@@ -2,6 +2,8 @@
 // result in globals as flat typed arrays: __pos, __nrm, __uv, __idx and
 // __repeat. Normals are computed if the geometry has none, and an unindexed
 // geometry gets a sequential index. On failure it sets __why.
+// three.js and shapes from the web call console.warn/log; QuickJS has no console, so a warning would throw.
+globalThis.console ??= { log() {}, info() {}, warn() {}, error() {}, debug() {} };
 const k = globalThis.__k;
 if (globalThis.__cover) k.alpha = { width: k.coverW, height: k.coverH, values: new Uint8Array(globalThis.__cover) };
 try {

@@ -59,7 +59,7 @@ struct BehaviourRun {
     const std::filesystem::path p = std::filesystem::absolute(
         doc_engine("..") / "shelves" / "behaviours" / (type + ".js"));
     const std::string key = "__all_" + type;
-    const std::string wrap = "import { all } from '" + p.string() +
+    const std::string wrap = "import { all } from '" + p.generic_string() +
                              "';\nglobalThis['" + key + "'] = all;\n";
     JSValue ran = JS_Eval(cx, wrap.c_str(), wrap.size(),
                           (type + ".behaviour").c_str(), JS_EVAL_TYPE_MODULE);

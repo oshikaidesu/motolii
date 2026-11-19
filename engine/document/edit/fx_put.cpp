@@ -81,10 +81,11 @@ std::string doc_effect_names() {
     const std::filesystem::path picture =
         script_shelf_file((doc_folders("effects").front() /
                            ("thing_" + std::string(e.value) + ".png"))
-                              .string());
+                              .generic_string());
     all += (all.empty() ? "" : "\n") + std::string(e.name) + "\t" + e.value +
            "\t" + e.label + "\t" +
-           (std::filesystem::exists(picture, wrong) ? picture.string() : "") +
+           (std::filesystem::exists(picture, wrong) ? picture.generic_string()
+                                                    : "") +
            "\t\t\t" + e.about;
   }
   return all;

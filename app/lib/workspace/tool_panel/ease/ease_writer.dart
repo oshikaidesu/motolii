@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/workspace/state/ease/ease_writes.dart';
+import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/layers/layer_reads.dart';
 import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';

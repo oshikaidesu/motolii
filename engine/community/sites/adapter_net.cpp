@@ -16,7 +16,7 @@
 namespace motolii {
 
 bool adapter_fetch(const std::string& url, const std::filesystem::path& to) {
-  const std::string file = to.string();
+  const std::string file = to.generic_string();
   const char* line[] = {
       "curl",        "-fsSL",     "--proto", "=http,https", "--proto-redir",
       "=http,https", "-m",        "60",      "-o",          file.c_str(),

@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 
 #include <fstream>
+#include <mutex>
 #include <regex>
 #include <sstream>
 
@@ -125,12 +126,23 @@ std::string isf_file(const std::string& asked) {
   // A three.js effect is converted to ISF first (three_isf.cpp).
   if (std::filesystem::path(file).extension() != ".fs" && !three_is(file))
     return file;
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+  std::error_code missing;
+  const auto when = std::filesystem::last_write_time(file, missing);
+  const auto size = std::filesystem::file_size(file, missing);
+  if (missing) return "";
+  const std::string key =
+      "isf 15|" + file + "|" +
+      std::to_string((long long)when.time_since_epoch().count()) + "|" +
+      std::to_string(size);
+#else
   struct stat st{};
   if (stat(file.c_str(), &st) != 0) return "";
   const std::string key = "isf 15|" + file + "|" +
                           std::to_string(st.st_mtimespec.tv_sec) + "." +
                           std::to_string(st.st_mtimespec.tv_nsec) + "|" +
                           std::to_string(st.st_size);
+#endif
   // What each file, as it is now, became: its last good output, or "" if it
   // could not be made.
   static std::map<std::string, std::string> built;
@@ -140,7 +152,7 @@ std::string isf_file(const std::string& asked) {
   const std::filesystem::path dir = cache_folder("isf");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.wgsl", (unsigned long long)hash);
-  const std::string out = (dir / name).string();
+  const std::string out = (dir / name).generic_string();
   std::error_code e;
   if (std::filesystem::exists(out, e)) return built[key] = isf_built(file, out);
   std::string text = read_text(file);
@@ -154,7 +166,7 @@ std::string isf_file(const std::string& asked) {
     }
     text = isf;
   }
-  const std::string stem = std::filesystem::path(file).stem().string();
+  const std::string stem = std::filesystem::path(file).stem().generic_string();
   // The file's own vertex shader, if there is one beside it.
   const std::string vertex =
       read_text(std::filesystem::path(file).replace_extension(".vs"));

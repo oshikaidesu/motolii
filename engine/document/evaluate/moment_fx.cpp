@@ -96,7 +96,7 @@ void doc_layers_fx(Doc& d) {
       for (const std::filesystem::path& folder : doc_folders("solids"))
         if (std::error_code wrong;
             std::filesystem::exists(folder / "Plane.js", wrong))
-          plane = (folder / "Plane.js").string();
+          plane = (folder / "Plane.js").generic_string();
       e.solidFile = plane;
     }
     // Build the solid with current parameters; remove it if no longer named.

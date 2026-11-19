@@ -140,7 +140,7 @@ std::string midi_roll_file(const std::string& file, double bpm,
   const std::filesystem::path dir = cache_folder("midi");
   char name[40];
   std::snprintf(name, sizeof name, "%016llx.svg", (unsigned long long)hash);
-  const std::string out = (dir / name).string();
+  const std::string out = (dir / name).generic_string();
   if (std::filesystem::exists(out, e) &&
       std::filesystem::exists(
           std::filesystem::path(out).replace_extension(".notes"), e))

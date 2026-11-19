@@ -289,7 +289,7 @@ void cache_write(std::filesystem::path file, std::vector<uint8_t> pixels) {
         }
         std::filesystem::path part = job.first;
         part += ".part";
-        if (FILE* f = std::fopen(part.c_str(), "wb")) {
+        if (FILE* f = std::fopen(part.generic_string().c_str(), "wb")) {
           const bool whole = std::fwrite(packed.data(), 1, n, f) == n;
           std::fclose(f);
           std::error_code e;
@@ -317,7 +317,8 @@ void cache_write(std::filesystem::path file, std::vector<uint8_t> pixels) {
 
 bool cache_read(const std::filesystem::path& file, std::vector<uint8_t>& pixels,
                 size_t size) {
-  FILE* f = file.empty() ? nullptr : std::fopen(file.c_str(), "rb");
+  FILE* f =
+      file.empty() ? nullptr : std::fopen(file.generic_string().c_str(), "rb");
   if (!f) return false;
   std::fseek(f, 0, SEEK_END);
   std::vector<uint8_t> packed((size_t)std::max(0L, std::ftell(f)));

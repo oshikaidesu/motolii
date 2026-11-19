@@ -1,4 +1,6 @@
 // The easings the user saved on the Ease tool's shelf: one name string each, in ~/.motolii/ease_kept.json.
+import 'package:motolii/storage/host_platform.dart' show homeFolder;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,9 +9,7 @@ import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 /// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
 /// Saving works like saving a device preset in Ableton Live (manual, 23.2.5 Saving Presets).
 /// The list lives in ~/.motolii/ease_kept.json, next to colors.json.
-File _keptFile = File(
-  '${Platform.environment['HOME']}/.motolii/ease_kept.json',
-);
+File _keptFile = File('$homeFolder/.motolii/ease_kept.json');
 List<String>? _kept;
 
 /// Points the list at another file and forgets what was read. Tests use this, as they do with coloursAt.

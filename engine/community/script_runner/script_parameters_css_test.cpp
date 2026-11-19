@@ -25,7 +25,7 @@ std::vector<ScriptParameter> ParamsOf(const std::string& body) {
                         (std::string("motolii_css_params_") +
                          test->test_suite_name() + "_" + test->name() + ".js");
   std::ofstream(file) << body;
-  auto out = script_parameters(file.string());
+  auto out = script_parameters(file.generic_string());
   fs::remove(file);
   return out;
 }

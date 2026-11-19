@@ -53,7 +53,7 @@ namespace {
 std::string doc_cel_file(const std::string& file, double n) {
   if (n < 0) return "";
   const std::filesystem::path p(file);
-  const std::string stem = p.stem().string();
+  const std::string stem = p.stem().generic_string();
   size_t from = stem.size();
   while (from > 0 && std::isdigit((unsigned char)stem[from - 1])) --from;
   if (from == stem.size()) return file;
@@ -61,8 +61,8 @@ std::string doc_cel_file(const std::string& file, double n) {
   if (number.size() < stem.size() - from)
     number.insert(0, stem.size() - from - number.size(), '0');
   return (p.parent_path() /
-          (stem.substr(0, from) + number + p.extension().string()))
-      .string();
+          (stem.substr(0, from) + number + p.extension().generic_string()))
+      .generic_string();
 }
 
 // A level: sets `shown` to the drawing that its keyframes name now, held until
@@ -81,7 +81,7 @@ void level_drawing(LayerBuild& build, std::string& shown) {
     // it in.
     if (!shown.empty() && !std::filesystem::is_regular_file(shown))
       why = "no drawing " + std::to_string((long long)made.cel) + " beside " +
-            std::filesystem::path(file).filename().string(),
+            std::filesystem::path(file).filename().generic_string(),
       shown.clear();
   }
 }
@@ -127,19 +127,20 @@ void sketch_picture(LayerBuild& build) {
   // The instance already run to check the sketch. It is reused when no
   // video is under the sketch.
   std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;
-  auto run =
-      ready && under.empty()
-          ? std::exchange(ready, nullptr)
-          : std::make_shared<Script>(
-                file, (doc_engine("third_party/js/p5") / "p5.min.js").string(),
-                under);
+  auto run = ready && under.empty()
+                 ? std::exchange(ready, nullptr)
+                 : std::make_shared<Script>(
+                       file,
+                       (doc_engine("third_party/js/p5") / "p5.min.js")
+                           .generic_string(),
+                       under);
   if (!run->flat())
     why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
   else if (fxOk && (made.drawn = sketch_canvas(
                         s, run,
                         (doc_engine("third_party/filament_src/assets/fonts") /
                          "Roboto-Medium.ttf")
-                            .string(),
+                            .generic_string(),
                         1.f, lay, fx)))
     s.playing.erase(made.drawn);
 }
@@ -207,7 +208,7 @@ long long doc_sketch_written(Doc& d, const std::string& file) {
   if (wrong || stamp == one.seen) return one.whole;
   one.seen = stamp;
   auto run = std::make_shared<Script>(
-      file, (doc_engine("third_party/js/p5") / "p5.min.js").string());
+      file, (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
   if (run->flat()) one.whole = stamp, one.ready = run;
   if (run->ok())
     doc_scripts_kept(d).why.erase(file);
@@ -228,7 +229,8 @@ void match_image(LayerBuild& build) {
   level_drawing(build, shown);
   float rollHigh = 1.f;
   piano_roll(build, shown, rollHigh);
-  const std::string ext = std::filesystem::path(file).extension().string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   const double cl = build.number("crop_left", 0),
                ct = build.number("crop_top", 0),
                cr = build.number("crop_right", 0),

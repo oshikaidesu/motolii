@@ -1,7 +1,6 @@
 #include "entry/calls_time.h"
 
 #include <sqlite3.h>
-#include <unistd.h>
 
 #include <algorithm>
 #include <chrono>
@@ -15,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "base/posix.h"
 #include "document/document.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -110,7 +110,7 @@ int motolii_poster(Motolii* m, const char* png) {
     const std::string whole =
         (std::filesystem::temp_directory_path() /
          ("motolii_poster_whole_" + std::to_string(getpid()) + ".png"))
-            .string();
+            .generic_string();
     const double at = doc_number(d, 0, "poster_at", 0, -1);
     time_is(*m->s, at >= 0 ? at : (double)m->playback.now);
     const bool shot = shoot(*m->s, whole.c_str());

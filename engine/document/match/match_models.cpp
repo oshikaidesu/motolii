@@ -63,8 +63,9 @@ Mesh* built_in_mesh(const std::string& shape) {
     file = "Torus.js", numbers["radius"] = 0.74, numbers["tube"] = 0.13 / 0.37;
   std::string full;
   for (const std::filesystem::path& folder : doc_folders("solids"))
-    if (std::error_code wrong; std::filesystem::exists(folder / file, wrong))
-      full = (folder / file).string();
+    if (std::error_code wrong;
+        std::filesystem::exists(folder / file, wrong))
+      full = (folder / file).generic_string();
   if (full.empty()) return nullptr;
   SolidMesh built;
   std::string why;
@@ -180,6 +181,10 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
   const char* model = wear.model;
   made.sketch = shape == "sketch";
   made.shape = made.sketch ? sketch_mesh() : built_in_mesh(shape);
+  if (!made.shape) {
+    build.why = "the shape " + shape + " is not built";
+    return;
+  }
   MaterialInstance* look =
       glass ? thick_glass(s, made.shape, {mat4f{}})
       : own && !made.sketch

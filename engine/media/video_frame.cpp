@@ -37,6 +37,7 @@ void video_give_back(Stage& s, Video::Planes& planes) {
                      });
 }
 
+#ifdef __APPLE__
 // Returns the CoreVideo pixel buffer behind a frame, or null if the frame is in
 // CPU memory.
 CVPixelBufferRef video_surface(GstSample* sample) {
@@ -46,6 +47,7 @@ CVPixelBufferRef video_surface(GstSample* sample) {
                                  : nullptr;
   return meta ? meta->pixbuf : nullptr;
 }
+#endif
 
 namespace {
 
@@ -195,6 +197,12 @@ bool video_show_copied(Stage& s, Video* v) {
 // Until that finishes, which takes a frame or two, the quad keeps the frame it
 // had. Returns false if the held frame is not on the quad yet.
 bool video_show(Stage& s, Video* v) {
+#ifndef __APPLE__
+  // shortcut: elsewhere every frame is copied through the CPU; share the
+  // decoder's D3D12 frame (SharedTextureMemoryDXGISharedHandle,
+  // docs/archive/engine/WINDOWS.md) when playback of many videos needs it.
+  return video_show_copied(s, v);
+#else
   CVPixelBufferRef held = video_surface(v->held);
   IOSurfaceRef surface = held ? CVPixelBufferGetIOSurface(held) : nullptr;
   if (!surface) return video_show_copied(s, v);
@@ -280,6 +288,7 @@ bool video_show(Stage& s, Video* v) {
   if (v->on && v->on != v->held) gst_sample_unref(v->on);
   v->on = v->held;
   return true;
+#endif
 }
 }  // namespace
 

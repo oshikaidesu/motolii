@@ -87,8 +87,8 @@ std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
   std::string& path = r->path;
   for (const std::filesystem::path& dir :
        aviutl_shared(std::filesystem::path(file).parent_path()))
-    path += (path.empty() ? "" : ";") + dir.string() + "/?.lua;" +
-            dir.string() + "/?/init.lua";
+    path += (path.empty() ? "" : ";") + dir.generic_string() + "/?.lua;" +
+            dir.generic_string() + "/?/init.lua";
   lua_State* L = r->L = with ? with : luaL_newstate();
   // The first script on a layer creates the Lua state with the libraries that
   // lua.txt allows. Scripts after it on the same layer run in that state.
@@ -112,7 +112,7 @@ std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
         "package.loadlib, package.cpath = nil, ''\npackage.path = [==[" +
         path + "]==]\n";
     if (luaL_dostring(L, sandbox.c_str()) ||
-        luaL_dofile(L, aviutl_globals_path().string().c_str()))
+        luaL_dofile(L, aviutl_globals_path().generic_string().c_str()))
       r->trouble = lua_tostring(L, -1);
   }
   lua_newtable(L);
@@ -173,7 +173,8 @@ std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
       r->own.rfind("\xEF\xBB\xBF", 0) == 0 ? r->own.substr(3) : r->own;
   if (luaL_loadbuffer(
           L, text.data(), text.size(),
-          ("@" + std::filesystem::path(file).filename().string()).c_str()))
+          ("@" + std::filesystem::path(file).filename().generic_string())
+              .c_str()))
     r->trouble = lua_tostring(L, -1);
   else
     r->chunk = luaL_ref(L, LUA_REGISTRYINDEX);

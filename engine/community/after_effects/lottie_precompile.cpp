@@ -63,7 +63,7 @@ JSModuleDef* lottie_build_load(JSContext* cx, const char* name, void* opq) {
   const std::string src = read_file(path);
   if (src.empty()) {
     std::fprintf(stderr, "lottie_precompile: missing %s (%s)\n", name,
-                 path.string().c_str());
+                 path.generic_string().c_str());
     return nullptr;
   }
   JSValue built = JS_Eval(cx, src.c_str(), src.size(), name,
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
   }
   write_output(out_cc, b);
   std::fprintf(stderr, "lottie_precompile: wrote %zu modules to %s\n",
-               b.order.size(), out_cc.string().c_str());
+               b.order.size(), out_cc.generic_string().c_str());
   JS_FreeContext(cx);
   JS_FreeRuntime(rt);
   return 0;

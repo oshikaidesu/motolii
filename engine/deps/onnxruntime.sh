@@ -17,6 +17,7 @@ case "$(uname -s)-$(uname -m)" in
     Darwin-arm64)   name=osx-arm64;      SHA=2e1344a1926ee50eb25b38153cb6992c3567515aef0e677a1a520a1798896d6f ;;
     Linux-x86_64)   name=linux-x64;      SHA= ;;
     Linux-aarch64)  name=linux-aarch64;  SHA= ;;
+    MSYS*-x86_64|MINGW*-x86_64)  name=win-x64;  SHA=5869e26bb25314375f2d5ef1877e3ea06b1543d6c710e6e4a1ec2f7177ab4b2c ;;
     *) echo "onnxruntime: no release is known for $(uname -s) $(uname -m) here"; exit 1 ;;
 esac
 OUT=$PWD/third_party/onnxruntime
@@ -26,7 +27,12 @@ tmp=$(mktemp -d)
 # -S: a failure says why (it used to end with a bare exit code). --retry: a download cut off is asked for again.
 # A 404 here since 2026-11-17 is GitHub no longer having microsoft/onnxruntime at all; what was fetched before is
 # unaffected. Another place to fetch from is a choice for a person: the SHA-256 above is of this file only.
-curl -fL -sS --retry 3 -o $tmp/ort.tgz https://github.com/microsoft/onnxruntime/releases/download/v$V/onnxruntime-$name-$V.tgz
-[ "$(shasum -a 256 $tmp/ort.tgz | cut -d' ' -f1)" = $SHA ] || { echo "onnxruntime-$name-$V.tgz: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
-mkdir -p $OUT && tar -xzf $tmp/ort.tgz -C $OUT --strip-components 1
+kind=tgz; [[ $name == win-* ]] && kind=zip   # (Windows' release is a zip)
+curl -fL -sS --retry 3 -o $tmp/ort.$kind https://github.com/microsoft/onnxruntime/releases/download/v$V/onnxruntime-$name-$V.$kind
+[ "$(shasum -a 256 $tmp/ort.$kind | cut -d' ' -f1)" = $SHA ] || { echo "onnxruntime-$name-$V.$kind: its SHA-256 is not the one this script knows"; rm -rf $tmp; exit 1; }
+if [ $kind = zip ]; then
+    (cd $tmp && unzip -q ort.zip) && mkdir -p $OUT && mv $tmp/onnxruntime-$name-$V/* $OUT/
+else
+    mkdir -p $OUT && tar -xzf $tmp/ort.tgz -C $OUT --strip-components 1
+fi
 rm -rf $tmp

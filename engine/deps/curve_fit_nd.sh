@@ -9,4 +9,8 @@ source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, t
 C=$PWD/third_party/curve_fit_nd
 [ -d $C ] || { mkdir -p $C && git init -q $C && git -C $C -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/ideasman42/curve-fit-nd 7b8611f66c7bf029a19eb86ce9e388e55fad5e6f && git -C $C checkout -q FETCH_HEAD; }
 mkdir -p $C/build
-[ -f $C/build/libcurve_fit_nd.a ] || (cd $C/build && cc -O2 -DNDEBUG -c -I ../c ../c/intern/*.c && ar rcs libcurve_fit_nd.a *.o)
+if [[ $OSTYPE == (msys|cygwin)* ]]; then   # (build.sh's clang, for MSVC's runtime DLL)
+    [ -f $C/build/libcurve_fit_nd.a ] || (cd $C/build && $CC $CFLAGS -O2 -DNDEBUG -c -I ../c ../c/intern/*.c && $AR rcs libcurve_fit_nd.a *.o)
+else
+    [ -f $C/build/libcurve_fit_nd.a ] || (cd $C/build && cc -O2 -DNDEBUG -c -I ../c ../c/intern/*.c && ar rcs libcurve_fit_nd.a *.o)
+fi

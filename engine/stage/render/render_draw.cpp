@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "base/posix.h"
 #include "base/video_encoder.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
@@ -49,12 +50,8 @@ void move(Stage& s, const Mesh* m,
 
 bool film(Stage& s, const char* path, int frameCount,
           const std::function<bool(double)>& pose, const FilmWay& said) {
-  // Quotes a file name for the shell.
-  const auto quoted = [](std::string name) {
-    for (size_t at = 0; (at = name.find('\'', at)) != std::string::npos;
-         at += 4)
-      name.replace(at, 1, "'\\''");
-    return "'" + name + "'";
+  const auto quoted = [](const std::string& name) {
+    return shell_quoted(name);
   };
   std::string files, each, all;
   int n = 0;
@@ -90,20 +87,35 @@ bool film(Stage& s, const char* path, int frameCount,
     each += how.data();
     all += "[a" + std::to_string(++n) + "]";
   }
-  const std::string ending = std::filesystem::path(path).extension().string();
-  const std::string h264 = ending == ".mp4" ? h264_encoder_here() : "";
+  const std::string ending =
+      std::filesystem::path(path).extension().generic_string();
+  const std::string h264 = ending == ".mp4" ? h264_encoder_here() : "",
+#ifdef _WIN32  // (the system's own HEVC encoder, as for H.264:
+               // MediaFoundation's here)
+                    hevc = ending == ".mov" && !said.alpha ? hevc_encoder_here()
+                                                           : "";
+#else
+                    hevc = "hevc_videotoolbox";
+#endif
   if (ending == ".mp4" && h264.empty()) {
     std::fprintf(stderr, "film: this ffmpeg lists no H.264 encoder\n");
     return false;
   }
+  if (ending == ".mov" && !said.alpha && hevc.empty()) {
+    std::fprintf(stderr, "film: this ffmpeg lists no HEVC encoder\n");
+    return false;
+  }
   const bool silent = ending == ".gif" || ending == ".png" || ending == ".jpg";
   const std::string sound =
-      n && !silent ? files + " -filter_complex \"" + each + all +
-                         "amix=inputs=" + std::to_string(n) +
-                         ":normalize=0:duration=longest,alimiter[a]\" -map 0:v "
-                         "-map '[a]' -c:a aac -b:a 160k -t " +
-                         std::to_string(frameCount / 60.0)
-                   : "";
+      n && !silent
+          ? files + " -filter_complex \"" + each + all +
+                "amix=inputs=" + std::to_string(n) +
+                ":normalize=0:duration=longest,alimiter[a]\" -map 0:v "
+                "-map \"[a]\" -c:a aac -b:a 160k -t " +  // (in double quotes,
+                                                         // which cmd reads as
+                                                         // sh does)
+                std::to_string(frameCount / 60.0)
+          : "";
   const std::string scale = said.high > 0
                                 ? "scale=-2:" + std::to_string(said.high) +
                                       ":flags=lanczos"
@@ -121,16 +133,17 @@ bool film(Stage& s, const char* path, int frameCount,
           ? " -an -vf \"fps=15," + (scale.empty() ? "" : scale + ",") +
                 "split[a][b];[a]palettegen[p];[b][p]paletteuse\" " +
                 quoted(path)
-      : ending == ".png"
-          ? " -an" + sized + rate + " -c:v png " +
-                quoted(
-                    std::filesystem::path(path).replace_extension().string() +
-                    "_%04d.png")
+      : ending == ".png" ? " -an" + sized + rate + " -c:v png " +
+                               quoted(std::filesystem::path(path)
+                                          .replace_extension()
+                                          .generic_string() +
+                                      "_%04d.png")
       : ending == ".jpg"
           ? " -an" + sized + rate + " -c:v mjpeg -q:v 2 -pix_fmt yuvj420p " +
-                quoted(
-                    std::filesystem::path(path).replace_extension().string() +
-                    "_%04d.jpg")
+                quoted(std::filesystem::path(path)
+                           .replace_extension()
+                           .generic_string() +
+                       "_%04d.jpg")
       : ending == ".mov" && said.alpha
           // Transparency in ProRes 4444, ffmpeg's own encoder: the same on
           // every system, which HEVC with alpha is not (only Apple's
@@ -147,12 +160,23 @@ bool film(Stage& s, const char* path, int frameCount,
           // transfer is close enough that most players give the preview and the
           // exported file the same look.
           : ending == ".mov"
-                ? sized + rate + " -c:v hevc_videotoolbox " +
-                      (said.mbps > 0.0 ? "-b:v " + mbps
-                                       : std::string("-q:v 65")) +
-                      " -pix_fmt yuv420p -tag:v hvc1 -colorspace bt709 "
-                      "-color_primaries bt709 -color_trc bt709 -movflags "
-                      "+faststart " +
+                // HEVC by the system's own encoder (base/video_encoder.h):
+                // VideoToolbox's -q:v 65 on a Mac, a bit rate elsewhere.
+                // MediaFoundation's own HEVC encoder is the graphics card's:
+                // Windows has no software one unless the HEVC Video Extensions
+                // are bought, and without -hw_encoding 1 ffmpeg takes that
+                // missing one and fails. The card takes its frames as NV12
+                // only, the same 4:2:0 as yuv420p with the two colours
+                // interleaved.
+                ? sized + rate + " -c:v " + hevc +
+                      (hevc == "hevc_mf" ? " -hw_encoding 1 " : " ") +
+                      (said.mbps > 0.0               ? "-b:v " + mbps
+                       : hevc == "hevc_videotoolbox" ? std::string("-q:v 65")
+                                                     : std::string("-b:v 8M")) +
+                      (hevc == "hevc_mf" ? " -pix_fmt nv12"
+                                         : " -pix_fmt yuv420p") +
+                      " -tag:v hvc1 -colorspace bt709 -color_primaries bt709 "
+                      "-color_trc bt709 -movflags +faststart " +
                       quoted(path)
                 // H.264 by whichever encoder the LGPL-only ffmpeg has
                 // (base/video_encoder.h). On a Mac that is VideoToolbox, whose
@@ -173,7 +197,9 @@ bool film(Stage& s, const char* path, int frameCount,
       way;
   // If ffmpeg gives up, writing to it fails and is reported by the return value
   // instead of SIGPIPE ending this program.
+#ifdef SIGPIPE
   std::signal(SIGPIPE, SIG_IGN);
+#endif
   FILE* to = popen(cmd.c_str(), "w");
   if (!to) return false;
   std::vector<uint8_t> pic((size_t)s.w * s.h * 4);

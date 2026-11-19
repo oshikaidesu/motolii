@@ -1,6 +1,13 @@
-// Adding an effect or expression to the user's own shelf folder, and renaming one.
-// User files go in motoliiOwn (effects/ or expressions/), never in the library.
-// Nothing is overwritten. A rename writes a sidecar .name file; the original stays put.
+// Adding an effect or expression from a layer to the shelf under a name the user chooses ("Add to shelf" on the
+// card's code, effect_code.dart), and renaming one added that way from its tile's menu.
+// What is added belongs to the user: it goes in their own folder (motoliiOwn), never in the library's (engine/).
+// An effect (.fs, .wgsl) goes in effects/, where the Effects shelf reads the user's effects (doc_folders).
+// An expression (a .js with each()) goes in expressions/, the Expression group's folder. The engine also reads it
+// as a motion, but Create shows it only once, as the user's (dock_make_expressions.dart).
+// Nothing is overwritten: a name already on the shelf, or an existing file of that name, is refused.
+// A rename writes the name beside the file (<file>.name, as pasted code does: CodeFile.rename in dock/create/code_file.dart).
+// The file stays where it is, so documents that use it still find it.
+import 'package:motolii/storage/host_platform.dart' show isRooted;
 import 'package:motolii/bridge/engine_paths.dart'
     show motoliiOwn, motoliiShelves;
 import 'package:motolii/storage/disk.dart' show existsFile;
@@ -159,7 +166,7 @@ void shelfCopyImages(String from, String dir, {bool overwrite = true}) {
   for (final l in linesOf(from)) {
     final image = RegExp(r'^//.*--image@[^:]*:(.+)$').firstMatch(l)?[1]?.trim();
     if (image == null ||
-        image.startsWith('/') ||
+        isRooted(image) ||
         !existsFile('$home/$image') ||
         (!overwrite && existsFile('$dir/$image'))) {
       continue;

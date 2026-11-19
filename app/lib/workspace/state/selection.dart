@@ -110,8 +110,8 @@ class Selection {
 
   /// Deselects the selected stretch without touching keyframes.
   void clearStretch() {
-    if (_stretch == null) return;
-    _stretch = null;
+    if (_stretches.isEmpty) return;
+    _stretches.clear();
     _onChanged();
   }
 

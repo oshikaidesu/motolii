@@ -20,9 +20,19 @@ fi
 # (a depth-only pass keeps a material's fragment stage: without it a shadow is its whole quad, whatever it cuts away)
 (cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_depth_fragment.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_depth_fragment.patch"; })
 (cd "$SRC" && { git apply --reverse --check "$P/tint/tint_msl_let.patch" 2>/dev/null || git apply "$P/tint/tint_msl_let.patch"; })   # (a first open of a 立体 took 76 s in Apple's compiler, on one shader, for a `const`)
+WINDOWS=()
+if [[ $OSTYPE == (msys|cygwin)* ]]; then
+    # (Dawn on D3D12 and the DXGI handles the live frames and videos are shared by: stage/live_shared_windows.cpp)
+    (cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_windows.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_windows.patch"; })
+    # Filament builds on Windows with MSVC alone, and refuses MSYS2's environment; the runtime DLL, as the engine's.
+    # (Dawn loads d3dcompiler_47.dll from System32: the engine is a DLL the app copies about, out/live/)
+    WINDOWS=(-DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DUSE_STATIC_CRT=OFF -DDAWN_FORCE_SYSTEM_COMPONENT_LOAD=ON)
+    GPU=$(cygpath -m "$GPU")
+    unset MSYSTEM
+fi
 mkdir -p "$SRC/out/wgpu"
 cd "$SRC/out/wgpu"
 [ -f build.ninja ] || cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DFILAMENT_SUPPORTS_WEBGPU=ON -DFILAMENT_SKIP_SAMPLES=ON \
-    -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$GPU" ../..
+    -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$GPU" $WINDOWS ../..
 ninja matc
 ninja install > /dev/null   # (the headers and libraries the renderer builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)

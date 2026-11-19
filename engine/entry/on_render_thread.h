@@ -4,7 +4,6 @@
 // result: on_render_thread runs it on the render thread, and by_look runs it on
 // the caller's own thread while it holds the document. Both time the call for
 // motolii_spent. posted, in render_thread.h, queues a call without waiting.
-#include <pthread.h>
 #include <sqlite3.h>
 
 #include <algorithm>
@@ -15,6 +14,7 @@
 #include <mutex>
 #include <string>
 
+#include "base/posix.h"
 #include "document/document.h"
 #include "entry/calls_time.h"
 #include "entry/motolii.h"

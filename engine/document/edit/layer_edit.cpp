@@ -224,7 +224,7 @@ const char* doc_kind_of(const char* file) {
               {"image", "png jpg jpeg webp svg json lot mid js"},
               {"solid", "glb gltf ply"},
               {"text", "ttf otf ttc"}};
-  std::string end = std::filesystem::path(file).extension().string();
+  std::string end = std::filesystem::path(file).extension().generic_string();
   for (char& c : end) c = (char)std::tolower((unsigned char)c);
   if (doc_among(doc_shapes, file)) return "solid";
   if (doc_among("rect circle polygon star line null ring arc arrow squircle "

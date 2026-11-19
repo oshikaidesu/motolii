@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 
+#include "base/posix.h"  // (setenv and unsetenv, Windows' too)
 #include "community/quickjs/script.h"
 #include "document/scripts/folders.h"
 #include "document/scripts/recipes.h"
@@ -81,7 +82,7 @@ std::vector<fs::path> ShelfFiles(const std::string& extensions) {
       at.disable_recursion_pending();
       continue;
     }
-    const std::string extension = at->path().extension().string();
+    const std::string extension = at->path().extension().generic_string();
     if (at->is_regular_file(wrong) && !extension.empty() &&
         (" " + extensions + " ").find(" " + extension + " ") !=
             std::string::npos)
@@ -130,7 +131,7 @@ std::vector<DocRecipe> LibraryRecipes() {
   const bool had_own = own != nullptr;
   const std::string kept = had_own ? own : "";
   const fs::path nowhere = fs::path(testing::TempDir()) / "motolii_no_shelves";
-  setenv("MOTOLII_OWN", nowhere.c_str(), 1);
+  setenv("MOTOLII_OWN", nowhere.generic_string().c_str(), 1);
   std::vector<DocRecipe> recipes = doc_recipes_read();
   if (had_own)
     setenv("MOTOLII_OWN", kept.c_str(), 1);
@@ -342,7 +343,7 @@ TEST(ShelfFiles, EveryRelativePathInAShellScriptExists) {
       std::smatch went;
       // went[1] is what follows the script's folder: "/..." or nothing.
       if (std::regex_search(line, went, cd))
-        base = fs::path(file.parent_path().string() + went[1].str());
+        base = fs::path(file.parent_path().generic_string() + went[1].str());
       for (std::sregex_iterator found(line.begin(), line.end(), relative), end;
            found != end; ++found) {
         const std::string written = (*found)[2];

@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 std::vector<ScriptParameter> ParamsOf(const std::string& body) {
@@ -33,7 +33,7 @@ std::vector<ScriptParameter> ParamsOf(const std::string& body) {
                         (std::string("motolii_params_") +
                          test->test_suite_name() + "_" + test->name() + ".js");
   std::ofstream(file) << body;
-  auto out = script_parameters(file.string());
+  auto out = script_parameters(file.generic_string());
   fs::remove(file);
   return out;
 }
@@ -45,7 +45,7 @@ std::vector<ScriptCopy> RunCopies(const std::string& body, double t,
                         (std::string("motolii_effect_slider_") +
                          test->test_suite_name() + "_" + test->name() + ".js");
   std::ofstream(file) << body;
-  Script s(file.string(), P5());
+  Script s(file.generic_string(), P5());
   EXPECT_TRUE(s.ok()) << s.trouble();
   auto out = s.copies(1, t, numbers, {}, 1.0);
   fs::remove(file);

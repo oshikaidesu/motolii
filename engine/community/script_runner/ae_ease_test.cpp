@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 // A script holding the expression `fn(time, 0, 1, 0, 1)`, as ae_stagger.js
@@ -51,7 +51,7 @@ struct Expression {
 
 void Follows(const std::string& fn, const double (&want)[9]) {
   Expression e(fn);
-  Script s(e.file.string(), P5());
+  Script s(e.file.generic_string(), P5());
   ASSERT_TRUE(s.ok()) << s.trouble();
   for (int i = 1; i <= 9; ++i) {
     const double u = i / 10.0;

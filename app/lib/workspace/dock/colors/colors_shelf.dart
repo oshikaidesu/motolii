@@ -1,4 +1,5 @@
 // The Colors shelf (pop palettes, a swatch field, saved gradients).
+import 'package:motolii/storage/host_platform.dart' show isRooted;
 import 'package:motolii/workspace/dock/colors/color_saved_bar.dart';
 
 import 'package:flutter/widgets.dart';
@@ -359,7 +360,7 @@ const _blends = {
 String? _pickedPhoto(ShelfContext c) {
   final id = (c.ws.view['dock.Media'] as ShelfMemory?)?.sel['Media'];
   return id != null &&
-          id.startsWith('/') &&
+          isRooted(id) &&
           RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(id)
       ? id
       : null;

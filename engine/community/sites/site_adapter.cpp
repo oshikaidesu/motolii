@@ -231,7 +231,7 @@ std::string adapter_page(
     const std::string src = told ? name[1].str() : "",
                       base = std::filesystem::path(src.substr(0, src.find('?')))
                                  .filename()
-                                 .string();
+                                 .generic_string();
     if (std::error_code wrong; told && adapter_has(src, "://")) {
       if (const std::string got = fetched && !adapter_has(tag, "module") &&
                                           !std::regex_match(base, ours)

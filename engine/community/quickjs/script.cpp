@@ -63,7 +63,7 @@ std::string script_shelf_file(const std::string& file) {
   static std::map<std::string, std::map<std::string, std::string>> by;
   for (std::filesystem::path p = std::filesystem::path(file).parent_path();
        !p.empty() && p != p.parent_path(); p = p.parent_path()) {
-    const std::string kind = p.filename().string();
+    const std::string kind = p.filename().generic_string();
     if (kind != "effects" && kind != "create" && kind != "relations" &&
         kind != "expressions" && kind != "solids" && kind != "looks" &&
         kind != "recipes" && kind != "animators")
@@ -81,10 +81,11 @@ std::string script_shelf_file(const std::string& file) {
       auto& names = by[now];
       for (const auto& e :
            std::filesystem::recursive_directory_iterator(shelf, wrong))
-        names.emplace(e.path().filename().string(), e.path().string());
+        names.emplace(e.path().filename().generic_string(),
+                      e.path().generic_string());
     }
     const auto at =
-        by[now].find(std::filesystem::path(file).filename().string());
+        by[now].find(std::filesystem::path(file).filename().generic_string());
     return at == by[now].end() ? file : at->second;
   }
   return file;
@@ -299,12 +300,19 @@ void script_first(const std::string& file,
   if (slash == std::string::npos) return;
   const std::string table = file.substr(0, slash) + "/first.tsv",
                     name = file.substr(slash + 1);
+#ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
+  std::error_code missing;
+  const auto written = std::filesystem::last_write_time(table, missing);
+  const long long when =
+      missing ? -1 : (long long)written.time_since_epoch().count();
+#else
   struct stat st{};
   const long long when =
       stat(table.c_str(), &st) == 0
           ? (long long)st.st_mtimespec.tv_sec * 1000000000LL +
                 st.st_mtimespec.tv_nsec
           : -1;
+#endif
   std::lock_guard<std::mutex> one(hold);
   auto& [stamp, values] = read[table];
   if (stamp != when) {

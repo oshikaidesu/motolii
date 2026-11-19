@@ -44,15 +44,15 @@ char* tsl_name(JSContext* cx, const char* base, const char* name, void* held) {
   if (n == kPasted)
     to = n;
   else if (n == "three" || n == "three/webgpu")
-    to = (run.three / "three.webgpu.js").string();
+    to = (run.three / "three.webgpu.js").generic_string();
   else if (n == "three/tsl")
-    to = (run.three / "three.tsl.js").string();
+    to = (run.three / "three.tsl.js").generic_string();
   else if (n[0] == '.' || n[0] == '/') {
     std::filesystem::path p =
         n[0] == '/' ? std::filesystem::path(n)
                     : std::filesystem::path(base).parent_path() / n;
     if (p.extension().empty()) p += ".js";
-    to = p.lexically_normal().string();
+    to = p.lexically_normal().generic_string();
   } else
     to = kAbsent + n + ">";
   return js_strdup(cx, to.c_str());
@@ -132,7 +132,7 @@ bool tsl_shelf(const std::string& three, const std::string& writers,
   // three.js are the same modules from_page.js patched.
   const std::string driver =
       "import { stand, drawnMesh, made } from '" +
-      (std::filesystem::path(writers) / "from_page.js").string() +
+      (std::filesystem::path(writers) / "from_page.js").generic_string() +
       "';\ntry {\n  stand();\n  await import('" + kPasted +
       "');\n  const mesh = drawnMesh();\n"
       "  if (!mesh) globalThis.__why = 'the code draws no mesh with a node "

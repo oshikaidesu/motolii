@@ -66,11 +66,11 @@ std::string doc_tile(const std::string& ref,
   const uint64_t hash = fnv1a64(key);
   char name[24];
   std::snprintf(name, sizeof name, "%016llx.png", (unsigned long long)hash);
-  const std::string drawn = (cache_folder("tiles") / name).string();
+  const std::string drawn = (cache_folder("tiles") / name).generic_string();
   const std::string picture =
       std::filesystem::exists(drawn, wrong) ? drawn
       : !beside.empty() && std::filesystem::exists(beside, wrong)
-          ? beside.string()
+          ? beside.generic_string()
           : "";
   return "\t" + picture + "\t" + drawn + "\t" +
          (std::filesystem::exists(drawn + ".same", wrong) ? "same" : "");
@@ -132,8 +132,8 @@ std::vector<DocRecipe> doc_recipes_read() {
   std::vector<DocRecipe> all;
   for (const auto& f : doc_folder_files("create", ".js")) {
     DocRecipe r;
-    r.path = f.string();
-    const std::string text = read_text(f.string());
+    r.path = f.generic_string();
+    const std::string text = read_text(f.generic_string());
     // Detect which program the pasted sketch comes from and convert it to plain
     // JavaScript (adapter.h).
     const std::string form = adapter_form(text), told = adapter_js(text, form);
@@ -144,7 +144,7 @@ std::vector<DocRecipe> doc_recipes_read() {
       // The sketch makes its own layers and motion, see
       // docs/design/create_and_program_shelves.md. The code flag is set for a
       // WEBGL sketch.
-      r.name = f.stem().string(),
+      r.name = f.stem().generic_string(),
       r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net",
       r.code = told.find("WEBGL") != std::string::npos,
       r.program = adapter_name(form);
@@ -228,13 +228,13 @@ std::string doc_folder_names(const char* folder, const char* extension) {
   for (const auto& f : doc_folder_files(folder, extension)) {
     // A .json file that is not Filament's own settings is not an effect.
     // Sashimono's obj.effect table reads sashimono_aviutl.json.
-    if (f.extension() == ".json" && !viewer_is(f.string())) continue;
+    if (f.extension() == ".json" && !viewer_is(f.generic_string())) continue;
     // An ISF effect is converted to WGSL by reading its head. A file that
     // cannot be converted is not listed.
-    const std::string read = isf_file(f.string());
+    const std::string read = isf_file(f.generic_string());
     if (read.empty()) continue;
     std::ifstream in(read);
-    std::string first, name = f.stem().string(), label, about;
+    std::string first, name = f.stem().generic_string(), label, about;
     // (A CSS file, which has no // comments, gives its name as /* Name: ...
     // */.)
     if (std::getline(in, first) &&
@@ -256,11 +256,12 @@ std::string doc_folder_names(const char* folder, const char* extension) {
     std::replace(about.begin(), about.end(), '\t', ' ');
     // The last two fields are the description and the tags read from the file
     // by isf_tags or doc_wgsl_tags.
-    all += (all.empty() ? "" : "\n") + name + "\t" + f.string() + "\t" + label +
-           doc_tile(f.string(),
+    all += (all.empty() ? "" : "\n") + name + "\t" + f.generic_string() + "\t" +
+           label +
+           doc_tile(f.generic_string(),
                     std::filesystem::path(f).replace_extension(".png")) +
            "\t" + about + "\t" +
-           (f.extension() == ".fs"     ? isf_tags(f.string())
+           (f.extension() == ".fs"     ? isf_tags(f.generic_string())
             : f.extension() == ".wgsl" ? doc_wgsl_tags(f)
                                        : "");
   }
@@ -283,24 +284,24 @@ std::string doc_aviutl_names() {
     for (auto e = std::filesystem::recursive_directory_iterator(dir, wrong);
          !wrong && e != std::filesystem::recursive_directory_iterator();
          e.increment(wrong))
-      if (e->is_regular_file(wrong) && aviutl_is(e->path().string()))
+      if (e->is_regular_file(wrong) && aviutl_is(e->path().generic_string()))
         files.push_back(e->path());
     wrong.clear();
     std::sort(files.begin(), files.end());
     for (const auto& f : files) {
       const auto stamp = std::filesystem::last_write_time(f, wrong);
-      auto& [when, lines] = read[f.string()];
+      auto& [when, lines] = read[f.generic_string()];
       if (lines.empty() || when != stamp) {
         when = stamp, lines.clear();
         std::ifstream in(f);
-        const bool many = f.filename().string()[0] == '@';
-        std::string name = many ? "" : f.stem().string(), label;
+        const bool many = f.filename().generic_string()[0] == '@';
+        std::string name = many ? "" : f.stem().generic_string(), label;
         // Also read the tags from the script, as isf_tags does for an ISF file.
         // The extension gives AviUtl's own kinds: a custom object .obj2 is a
         // "generator" and a scene change .scn2 is a "transition". obj.getaudio
         // marks "sound" and obj.time or obj.frame marks "time".
         bool sound = false, clock = false;
-        const std::string ext = f.extension().string();
+        const std::string ext = f.extension().generic_string();
         // Writes the line for the script read so far, then resets the tags.
         const auto put = [&] {
           std::string tags;
@@ -312,10 +313,10 @@ std::string doc_aviutl_names() {
             if (on) tags += (tags.empty() ? "" : " ") + std::string(word);
           if (!name.empty())
             lines +=
-                name + "\t" + f.string() +
+                name + "\t" + f.generic_string() +
                 (many ? "#" + aviutl_word(name) : "") + "\t" + label +
                 doc_tile(
-                    f.string() + (many ? "#" + aviutl_word(name) : ""),
+                    f.generic_string() + (many ? "#" + aviutl_word(name) : ""),
                     many ? std::filesystem::path()
                          : std::filesystem::path(f).replace_extension(".png")) +
                 "\t\t" + tags + "\n";
@@ -374,7 +375,7 @@ std::map<std::string, std::string> doc_own_easings() {
           name = line.substr(2, line.find(':') - 2);
       }
       name.erase(0, name.find_first_not_of(' '));
-      if (name.empty()) name = e.path().stem().string();
+      if (name.empty()) name = e.path().stem().generic_string();
       // The user's folder is read last, so the user's easing of a name replaces
       // the library's.
       if (expression.find_first_not_of(' ') != std::string::npos)

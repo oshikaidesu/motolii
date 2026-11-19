@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 // What the script last asked the engine for. Empty if it never asked.
@@ -51,7 +51,7 @@ std::vector<double> Answers(const std::string& body, int n, double t,
   std::ofstream(file) << body;
   std::vector<double> xs;
   {
-    Script s(file.string(), P5());
+    Script s(file.generic_string(), P5());
     EXPECT_TRUE(s.ok()) << s.trouble();
     if (seen) {
       s.reads_pictures(

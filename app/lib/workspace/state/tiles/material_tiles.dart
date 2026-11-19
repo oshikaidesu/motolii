@@ -10,6 +10,7 @@ import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/script_files.dart' show writtenAt;
 import 'package:motolii/storage/shelf_disk.dart';
 import 'package:motolii/workspace/state/tiles/tile_queue.dart';
+import 'package:motolii/storage/host_platform.dart' show hostIsMacOS;
 
 abstract final class MaterialTiles {
   static final _tiles = TileQueue<(String, String)>(draw);
@@ -100,7 +101,9 @@ abstract final class MaterialTiles {
         }
         final still = '${home.substring(0, home.length - 4)}_still.png';
         if (!m.at(0) || !m.still(still)) return false;
-        runTool('sips', ['-Z', '192', still]);
+        if (hostIsMacOS) {
+          runTool('sips', ['-Z', '192', still]); // (see copies_tiles.dart)
+        }
         moveFile(still, home);
         return true;
       });

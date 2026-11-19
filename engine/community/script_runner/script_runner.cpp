@@ -80,7 +80,7 @@ Script::Script(const std::string& file, const std::string& p5,
     JS_SetContextOpaque(own->cx, &own->film);
     own->film.beside = (std::filesystem::path(file).parent_path() /
                         std::filesystem::path(file).stem())
-                           .string();
+                           .generic_string();
     JSValue g = JS_GetGlobalObject(own->cx);
     JS_SetPropertyStr(own->cx, g, "__text_read",
                       JS_NewCFunction(own->cx, text_read, "__text_read", 1));
@@ -144,8 +144,9 @@ Script::Script(const std::string& file, const std::string& p5,
     const std::string cavalry =
         read_text(doc_engine("community/script_runner/cavalry_prelude.js"));
     std::string wgsl_why;
-    tsl_each(doc_engine("third_party/js/three").string(),
-             doc_engine("community/three_shading_language_to_shelf").string(),
+    tsl_each(doc_engine("third_party/js/three").generic_string(),
+             doc_engine("community/three_shading_language_to_shelf")
+                 .generic_string(),
              cavalry, ways, src, own->wgsl, wgsl_why);
     if (std::getenv("MOTOLII_TSL_WHY") && !wgsl_why.empty())
       std::fprintf(stderr, "tsl_each: %s\n", wgsl_why.c_str());

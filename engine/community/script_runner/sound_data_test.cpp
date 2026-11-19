@@ -39,7 +39,7 @@ const float kNoSound = -std::numeric_limits<float>::infinity();
 std::string P5() {
   return (fs::path(__FILE__).parent_path().parent_path().parent_path() /
           "third_party" / "js" / "p5" / "p5.min.js")
-      .string();
+      .generic_string();
 }
 
 // What the test's reader answers with: the decibels of each pitch, and the
@@ -69,7 +69,7 @@ std::vector<double> Answers(const std::string& body, int n, const Sound* sound,
   std::ofstream(file) << body;
   std::vector<double> xs;
   {
-    Script s(file.string(), P5());
+    Script s(file.generic_string(), P5());
     EXPECT_TRUE(s.ok()) << s.trouble();
     if (sound) {
       s.reads_sound([sound, seen](int layer, bool spectrum, double second) {

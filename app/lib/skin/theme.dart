@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/storage/font_bytes.dart' show readFontBytes;
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/host_platform.dart' show homeFolder, isRooted;
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
 import 'package:motolii/storage/skin_folders.dart';
 import 'package:motolii/storage/text_file.dart' show readTextNow;
@@ -105,7 +105,7 @@ abstract final class ColorTheme {
 
   /// The folder of the theme file read last. Role paths are relative to it.
   static String folder = '';
-  static String place(String w) => w.isEmpty || w.startsWith('/')
+  static String place(String w) => w.isEmpty || isRooted(w)
       ? w
       : (w.startsWith('~/') ? '$homeFolder${w.substring(1)}' : '$folder/$w');
 

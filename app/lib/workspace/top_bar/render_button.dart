@@ -3,6 +3,8 @@
 // so a glance says what is being rendered); under it the file name, chosen format tabs and the destination folder;
 // then two ChipGroups for the picture (resolution, rate, quality) and options (motion blur, background); a summary
 // line (work area, frame count, rough size) and the Cancel / Render buttons. See [RenderButton] class comment.
+import 'package:motolii/storage/host_platform.dart'
+    show isRooted, hostIsWindows;
 import 'package:motolii/widgets/modal_card.dart';
 
 import 'dart:math' as math;
@@ -79,9 +81,15 @@ class _RenderState extends State<RenderButton> {
   }
 
   // The export formats the engine writes, chosen by file extension (see render_draw.h).
-  static const _formats = [
+  static final _formats = [
     ('MP4', '.mp4', "H.264, with the films' sound"),
-    ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"),
+    (
+      'HEVC',
+      '.mov',
+      hostIsWindows
+          ? "HEVC by Windows' own encoder, with the films' sound"
+          : "HEVC by the Mac's own encoder, with the films' sound",
+    ),
     ('GIF', '.gif', '15 frames a second, no sound'),
     ('PNG', '.png', 'a picture each, name_0001.png on'),
     ('JPEG', '.jpg', 'a JPEG each, name_0001.jpg on'),
@@ -104,9 +112,7 @@ class _RenderState extends State<RenderButton> {
       name = '$name.mp4';
     }
     ws.view['render.ext'] = _ending;
-    ws.renderTo = name.startsWith('/')
-        ? name
-        : '${ws.documentFolder ?? '.'}/$name';
+    ws.renderTo = isRooted(name) ? name : '${ws.documentFolder ?? '.'}/$name';
     _open.hide();
     ws.onRender?.call();
   }

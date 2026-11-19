@@ -62,8 +62,8 @@ const std::map<std::string, AviutlRemade>& aviutl_remakes() {
       AviutlRemade& one = read[e.name.GetString()];
       // The file is in a folder named for what it does, such as effects/blur/
       // or effects/color/.
-      one.file =
-          script_shelf_file((dir / e.value["file"].GetString()).string());
+      one.file = script_shelf_file(
+          (dir / e.value["file"].GetString()).generic_string());
       for (const auto& p : e.value["params"].GetObject())
         one.params[p.name.GetString()] = {p.value[0].GetString(),
                                           p.value[1].GetString(),
@@ -165,7 +165,8 @@ int aviutl_called(lua_State* L, AviutlRun& r, const std::string& n) {
   const size_t at = n.rfind('@');
   const std::string part = at == std::string::npos ? "" : n.substr(0, at),
                     stem = n.substr(at + 1), file = aviutl_path(r.file);
-  if (const std::string mine = std::filesystem::path(file).stem().string();
+  if (const std::string mine =
+          std::filesystem::path(file).stem().generic_string();
       mine != stem && mine != "@" + stem)
     return -1;
   AviutlCalled& c = r.called[part];

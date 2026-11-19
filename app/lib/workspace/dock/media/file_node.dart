@@ -1,4 +1,6 @@
 // A file or folder as the Media shelf shows it, and the words the shelf uses for the kinds of media.
+import 'package:motolii/storage/host_platform.dart'
+    show isRooted, hostIsWindows;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
@@ -23,15 +25,21 @@ class FileNode {
   bool get folder => g == AppGlyphs.folder;
 
   /// A file or folder on disk: its id is its full path.
-  bool get disk => id.startsWith('/');
+  bool get disk => isRooted(id);
 }
 
 /// The last part of [path]: a file's or folder's own name.
 String basename(String path) => path.substring(path.lastIndexOf('/') + 1);
 
-/// The folder [path] is in.
-String dirname(String path) =>
-    path.lastIndexOf('/') <= 0 ? '/' : path.substring(0, path.lastIndexOf('/'));
+/// The folder [path] is in. A disk's root is its own folder: / on the Mac, C:/ on Windows.
+String dirname(String path) {
+  final cut = path.lastIndexOf('/');
+  if (cut <= 0) return '/';
+  return path.substring(
+    0,
+    hostIsWindows && cut == 2 && path[1] == ':' ? 3 : cut,
+  );
+}
 
 /// The chip a file or folder is counted under, by its mark.
 String kindLabelOf(FileNode n) => switch (n.g) {
