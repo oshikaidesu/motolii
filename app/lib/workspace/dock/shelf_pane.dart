@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/dock/colors/color_palette.dart';
@@ -234,7 +235,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                 ),
               ],
               // Lit while tiles are being drawn. A click draws the selected tile again, or all of them when none is selected.
-              if (name == 'Effects')
+              if (name == 'Effects') ...[
                 ListenableBuilder(
                   listenable: EffectTiles.progress,
                   builder: (context, _) => IconPress(
@@ -245,6 +246,18 @@ class _ShelfPaneState extends State<ShelfPane> {
                     onTap: effectTilesAgain(ws, file: c.sel),
                   ),
                 ),
+                SizedBox(
+                  width: Shape.z(48),
+                  child: MiniSlider(
+                    key: const ValueKey('ws-fx-tile-size'),
+                    values: [_mem.fxTileSize],
+                    min: 50,
+                    max: 140,
+                    width: Shape.z(48),
+                    onChanged: (v) => setState(() => _mem.fxTileSize = v.first),
+                  ),
+                ),
+              ],
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: Shape.z(88)),
                 child: ListenableBuilder(

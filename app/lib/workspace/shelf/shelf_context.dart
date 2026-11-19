@@ -58,6 +58,9 @@ class ShelfMemory {
 
   /// Effects: whether the list is open. When closed in a narrow shelf, it shows only the chosen row.
   bool fxListOpen = false;
+
+  /// Effects: the tile cell size the user chose with the slider. 76 is the default (shelfLooks).
+  double fxTileSize = 76;
 }
 
 /// What a shelf body needs from the dock for one build: the memory, the search text, the project, and a way to change local state.

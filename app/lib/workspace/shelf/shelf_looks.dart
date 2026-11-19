@@ -36,6 +36,20 @@ class ShelfLook {
   /// Whether [cell] scales with the skin's size.
   final bool sized;
 
+  ShelfLook withCell(double cell) => ShelfLook(
+    form,
+    cell: cell,
+    sized: sized,
+    min: min,
+    aspect: aspect,
+    height: height,
+    row: row,
+    rowArt: rowArt,
+    rowGap: rowGap,
+    top: top,
+    eased: eased,
+  );
+
   /// The least number of cells across.
   final int min;
 

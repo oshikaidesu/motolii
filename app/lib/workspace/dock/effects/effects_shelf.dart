@@ -82,7 +82,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     if (!projectOpen(ws)) return EmptyShelf(c.query);
     final picked = ws.selected != null;
     final commands = EffectCommands(c, widget.effects);
-    final look = shelfLooks['Effects']!;
+    final look = shelfLooks['Effects']!.withCell(c.mem.fxTileSize);
     final entries = effectEntries(
       c: c,
       effects: widget.effects,
@@ -302,18 +302,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     ),
             ),
           ),
-          if (sel != null && pic(sel.id).isNotEmpty)
-            SizedBox(
-              key: const ValueKey('ws-fx-preview'),
-              height: Shape.z(140),
-              child: TileMoving(pic(sel.id), playing: true),
-            ),
           if (sel != null)
             ShelfFooter(
+              preview: pic(sel.id).isEmpty
+                  ? null
+                  : ClipRRect(
+                      borderRadius: Shape.round(WindowTokens.radius),
+                      child: TileMoving(pic(sel.id), playing: true),
+                    ),
               title: sel.name,
               meta: sel.label.isEmpty
                   ? sel.said
-                  : '${sel.label} · ${sel.said} · double-click to add', // A click selects, a double-click applies.
+                  : '${sel.label} · ${sel.said} · double-click to add',
               action: sel.on ? 'Remove' : 'Add',
               fresh: !picked,
               onAction: commands.off(sel) ?? sel.apply,
@@ -330,7 +330,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   ),
                 ),
               ),
-            ), // With nothing selected, the effect goes on a layer of its own.
+            ),
         ],
       ),
     );
