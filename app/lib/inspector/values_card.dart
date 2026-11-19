@@ -12,6 +12,7 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/rows/section.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/shelf_meta.dart' show shelfMetaByName;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
@@ -168,7 +169,17 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
-        CardMetaRow(card.name),
+        CardMetaRow(
+          card.name,
+          meta: shelfMetaByName(card.name),
+          padding: EdgeInsets.fromLTRB(
+            InspectorSkin.inset,
+            0,
+            InspectorSkin.inset,
+            InspectorSkin.titleGap,
+          ),
+          fieldKey: ValueKey('card-meta-tag:${card.name}'),
+        ),
         ?host?.body(card),
         if (heroes.isNotEmpty) ParameterGrid(heroes),
         // The fold row shows only when something sits under it: the card's own

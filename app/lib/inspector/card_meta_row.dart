@@ -1,18 +1,32 @@
 // The metadata line under a card's Section head: author · licence, and user tags as editable chips.
-// Shared by ValuesCard (Inspector) and, through the same ShelfTags, the Code tab.
+// Shared by ValuesCard (Inspector) and the Code tab's cells.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/storage/shelf_meta.dart' show shelfMetaByName;
+import 'package:motolii/storage/shelf_meta.dart' show ShelfMeta;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 
 class CardMetaRow extends StatefulWidget {
-  const CardMetaRow(this.name, {super.key});
+  const CardMetaRow(
+    this.name, {
+    super.key,
+    required this.meta,
+    this.license = false,
+    required this.padding,
+    required this.fieldKey,
+  });
   final String name;
+
+  /// What the shelf's meta.yaml says about the card, and whether the licence is said after the author.
+  final ShelfMeta? meta;
+  final bool license;
+  final EdgeInsets padding;
+
+  /// The key of the field a new tag is typed in.
+  final Key fieldKey;
   @override
   State<CardMetaRow> createState() => _CardMetaRowState();
 }
@@ -23,21 +37,18 @@ class _CardMetaRowState extends State<CardMetaRow> {
 
   @override
   Widget build(BuildContext context) {
-    final meta = shelfMetaByName(widget.name);
+    final meta = widget.meta;
     final userTags = ShelfTags.shared.ownOf('Effects', widget.name);
     if ((meta == null || meta.isEmpty) && userTags.isEmpty && !_tagging) {
       return const SizedBox.shrink();
     }
     final parts = <String>[
       if (meta != null && meta.author.isNotEmpty) 'by ${meta.author}',
+      if (widget.license && meta != null && meta.license.isNotEmpty)
+        meta.license,
     ];
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        InspectorSkin.inset,
-        0,
-        InspectorSkin.inset,
-        InspectorSkin.titleGap,
-      ),
+      padding: widget.padding,
       child: Wrap(
         spacing: Shape.s(4),
         runSpacing: Shape.s(2),
@@ -115,7 +126,7 @@ class _CardMetaRowState extends State<CardMetaRow> {
           width: Shape.z(100),
           height: Shape.s(16),
           child: TypedField(
-            key: ValueKey('card-meta-tag:${widget.name}'),
+            key: widget.fieldKey,
             text: '',
             style: TextStyles.label(Grey.g91),
             cursor: Grey.g76,
