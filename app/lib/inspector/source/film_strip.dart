@@ -1,31 +1,25 @@
 // The Source card's inside: a filmstrip of the video's file, with the in-point (begin) marked where play starts.
 // Take the marker along the strip to slip the clip, as Premiere Pro's Slip and the pale bar in Motolii's timeline do.
 // The "In" number stays below as the card's tile, so a value may also be typed.
-import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/handle_drag.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 
 /// The Source card's inside (see host_cards.dart).
-class FilmStrip extends StatefulWidget {
+class FilmStrip extends StatelessWidget {
   const FilmStrip(this.card, {super.key});
   final CardDeclaration card;
 
   static double get height => Shape.z(44);
 
   @override
-  State<FilmStrip> createState() => _FilmStripState();
-}
-
-class _FilmStripState extends State<FilmStrip> {
-  bool _held = false, _near = false;
-
-  @override
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
-    final begin = {for (final p in widget.card.params) p.id: p}['begin'];
+    final begin = {for (final p in card.params) p.id: p}['begin'];
     final lo = begin?.min ?? 0, hi = begin?.max ?? 60;
     final span = hi - lo <= 0 ? 60.0 : hi - lo;
     return ListenableBuilder(
@@ -41,49 +35,19 @@ class _FilmStripState extends State<FilmStrip> {
             double sOf(double x) =>
                 lo + ((x - pad) / (w - pad * 2)).clamp(0.0, 1.0) * span;
             final at = doc.get('v_begin') ?? lo;
-            return MouseRegion(
-              cursor: _held || _near
-                  ? SystemMouseCursors.grab
-                  : MouseCursor.defer,
-              onHover: (e) {
-                final n = (e.localPosition.dx - xOf(at)).abs() <= 14;
-                if (n != _near) setState(() => _near = n);
-              },
-              onExit: (_) => setState(() => _near = false),
-              child: Listener(
-                onPointerDown: (e) {
-                  if (e.buttons != kPrimaryButton) return;
-                  doc.beginGesture();
-                  setState(() => _held = true);
-                  doc.set('v_begin', sOf(e.localPosition.dx));
-                },
-                onPointerMove: (e) {
-                  if (!_held) return;
-                  doc.set('v_begin', sOf(e.localPosition.dx));
-                },
-                onPointerUp: (_) => _let(),
-                onPointerCancel: (_) => _let(),
-                child: CustomPaint(
-                  key: const ValueKey('film-strip'),
-                  size: Size(w, FilmStrip.height),
-                  painter: _FilmPaint(
-                    at: xOf(at),
-                    pad: pad,
-                    lit: _held || _near,
-                  ),
-                ),
+            return HandleDrag(
+              near: (p) => (p.dx - xOf(at)).abs() <= 14,
+              onDrag: (p) => doc.set('v_begin', sOf(p.dx)),
+              builder: (lit) => CustomPaint(
+                key: const ValueKey('film-strip'),
+                size: Size(w, FilmStrip.height),
+                painter: _FilmPaint(at: xOf(at), pad: pad, lit: lit),
               ),
             );
           },
         ),
       ),
     );
-  }
-
-  void _let() {
-    if (!_held) return;
-    InspectorScope.of(context).doc.endGesture();
-    setState(() => _held = false);
   }
 }
 
@@ -94,8 +58,7 @@ class _FilmPaint extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    final body = RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8));
-    c.drawRRect(body, Paint()..color = Grey.g07);
+    final body = drawWell(c, s);
     // The sprockets, top and bottom, and the frame lines, so the strip reads as film.
     final hole = Paint()..color = Grey.g15;
     const holeW = 7.0, holeH = 4.0;

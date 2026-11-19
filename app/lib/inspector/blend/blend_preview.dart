@@ -20,6 +20,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable, Segmented;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/list_select.dart';
+import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 import 'package:motolii/widgets/switch_track.dart';
 
 /// The Blending card's inside (see host_cards.dart).
@@ -312,10 +313,7 @@ class _BlendPaint extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
+    drawWell(c, s);
     // Schematic: warm gradient ground with a cool disc overlaid using the chosen mode.
     final box = Rect.fromLTWH(8, 8, s.height * 1.6, s.height - 16);
     final r = RRect.fromRectAndRadius(box, const Radius.circular(6));
