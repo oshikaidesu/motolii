@@ -41,7 +41,7 @@ class ShelfTile extends StatelessWidget {
   });
 
   /// The name bar's height under a picture.
-  static const bar = 18.0;
+  static const bar = 14.0;
   final ShelfItem item;
   final ShelfLook look;
   final bool list, small, picked, lit, bold, picks;
@@ -133,7 +133,7 @@ class ShelfTile extends StatelessWidget {
               if (!small)
                 _box(
                   height: Shape.z(bar),
-                  padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+                  padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
                   alignment: Alignment.centerLeft,
                   color: dockFill(picked, h, WindowTokens.card),
                   // A name wider than its tile is drawn smaller, never cut.
