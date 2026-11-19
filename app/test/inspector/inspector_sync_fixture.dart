@@ -23,7 +23,8 @@ Color syncTone() => const Color(0xFF000000);
 
 /// The owner of the values. It writes down everything it is told, in order; '{' and '}' are the ends of one undo step.
 class SyncOwner {
-  SyncOwner({required bool hearsFlags}) {
+  /// With [takesLater] it takes a step only when [takeStep] is called, as an owner on another thread does.
+  SyncOwner({required bool hearsFlags, bool takesLater = false}) {
     edits = InspectorEdits(
       onValues: (changed, {required live}) =>
           told.add([live ? 'values, live' : 'values', Map.of(changed)]),
@@ -47,8 +48,15 @@ class SyncOwner {
       },
       onRoute: (panel) => told.add(['route', panel]),
       onAim: (slot) => told.add(['aim', slot]),
+      whenTaken: takesLater ? untaken.add : null,
     );
   }
+
+  /// The steps told and not taken yet, oldest first.
+  final untaken = <void Function()>[];
+
+  /// Takes the oldest step not taken yet.
+  void takeStep() => untaken.removeAt(0)();
 
   final told = <Object>[];
   bool takesWords = true, takesFlags = true;
@@ -75,10 +83,11 @@ InspectorValues syncDoc() {
 (InspectorValues, InspectorSync, SyncOwner) syncStarted({
   InspectorSnapshot snapshot = const InspectorSnapshot(),
   bool hearsFlags = true,
+  bool takesLater = false,
 }) {
   final doc = syncDoc(),
       sync = InspectorSync()..start(doc, snapshot),
-      owner = SyncOwner(hearsFlags: hearsFlags);
+      owner = SyncOwner(hearsFlags: hearsFlags, takesLater: takesLater);
   doc.addListener(() => sync.report(doc, owner.edits));
   return (doc, sync, owner);
 }

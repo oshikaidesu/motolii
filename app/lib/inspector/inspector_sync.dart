@@ -8,7 +8,8 @@ import 'package:motolii/inspector/inspector_values.dart';
 /// Keeps the values the Inspector edits and the values their owner holds the same, passing each way only what differs.
 ///
 /// It remembers what the owner gave or has been told. An edit is reported to the owner once,
-/// and what the owner says replaces what the Inspector shows, except a value that is being dragged.
+/// and what the owner says replaces what the Inspector shows, except a value that is being dragged
+/// and a number the owner was told and has not taken yet ([InspectorEdits.whenTaken]).
 class InspectorSync {
   // What the caller has been told of or gave. Only what differs from it is reported.
   final _seen = <String, double>{};
@@ -19,9 +20,19 @@ class InspectorSync {
   // The strings a drag in progress has told live. When it ends they are told once more as settled, even unchanged.
   final _liveWords = <String, String>{};
   bool _animating = false;
+  // The numbers told settled that the owner has not taken yet, each with the telling it was last in.
+  final _untaken = <String, int>{};
+  // What the owner last showed of those meanwhile: from before it took them, so not shown until it has.
+  final _ownerSaid = <String, double>{};
+  int _tellings = 0;
+
+  /// Called when, the owner having taken a step, a number that no field watches is shown: the panel is to be rebuilt.
+  void Function()? onUnwatched;
 
   /// Fills a new [doc] with the owner's [snapshot], which is then what the owner is known to have seen.
   void start(InspectorValues doc, InspectorSnapshot snapshot) {
+    _untaken.clear();
+    _ownerSaid.clear();
     doc
       ..numbers.addAll(snapshot.numbers)
       ..strings.addAll(snapshot.words)
@@ -46,11 +57,53 @@ class InspectorSync {
   ///
   /// Strings and switches the owner refuses go back to what it last had.
   // During a drag, report only the current values and make no undo step, since nothing is settled.
-  void report(InspectorValues doc, InspectorEdits edits) => doc.inGesture
-      ? _reportAll(doc, edits)
-      : edits.together(() => _reportAll(doc, edits));
+  void report(InspectorValues doc, InspectorEdits edits) {
+    if (doc.inGesture) {
+      _reportAll(doc, edits);
+      return;
+    }
+    var settled = const <String>{};
+    edits.together(() => settled = _reportAll(doc, edits));
+    final whenTaken = edits.whenTaken;
+    if (settled.isEmpty || whenTaken == null) return;
+    final telling = ++_tellings;
+    for (final id in settled) {
+      _untaken[id] = telling;
+    }
+    whenTaken(() => _taken(doc, telling));
+  }
 
-  void _reportAll(InspectorValues doc, InspectorEdits edits) {
+  // The owner took the step told as [telling]: its numbers follow the owner again, starting from what it last showed.
+  // A number told again since waits for that later telling.
+  void _taken(InspectorValues doc, int telling) {
+    final back = <String, double>{};
+    _untaken.removeWhere((id, last) {
+      if (last > telling) return false;
+      if (_ownerSaid.remove(id) case final said?) back[id] = said;
+      return true;
+    });
+    // Never during a drag.
+    if (back.isEmpty || doc.inGesture) return;
+    _seen.addAll(back);
+    if (doc.showAt(back, const {})) onUnwatched?.call();
+  }
+
+  // [said] without the numbers the owner has not taken yet; what it says of those is kept for [_taken].
+  Map<String, double> _followed(Map<String, double> said) {
+    if (_untaken.isEmpty) return said;
+    final followed = <String, double>{};
+    for (final e in said.entries) {
+      if (_untaken.containsKey(e.key)) {
+        _ownerSaid[e.key] = e.value;
+      } else {
+        followed[e.key] = e.value;
+      }
+    }
+    return followed;
+  }
+
+  // Returns the numbers told as settled.
+  Set<String> _reportAll(InspectorValues doc, InspectorEdits edits) {
     if (doc.animateAll != _animating) {
       edits.onAnimateAll(_animating = doc.animateAll);
     }
@@ -59,6 +112,7 @@ class InspectorSync {
           for (final e in doc.numbers.entries)
             if (_seen[e.key] != e.value) e.key: e.value,
         };
+    final settled = live ? const <String>{} : changed.keys.toSet();
     if (changed.isNotEmpty) {
       if (!live) _seen.addAll(changed);
       edits.onValues(changed, live: live);
@@ -103,7 +157,7 @@ class InspectorSync {
         }
       }
     }
-    if (words.isEmpty) return;
+    if (words.isEmpty) return settled;
     if (edits.onWords(words, live: live)) {
       _seenWords.addAll(words);
     } else {
@@ -113,6 +167,7 @@ class InspectorSync {
             : doc.strings.remove(id);
       }
     }
+    return settled;
   }
 
   /// Shows in [doc] the owner's [snapshot], which replaced [previous]. Switches are taken only from an owner that hears of them ([InspectorEdits.onFlags]).
@@ -129,9 +184,10 @@ class InspectorSync {
     // A value being dragged is never overwritten, even during playback.
     // Numbers and key marks are sent to the fields that show them; strings, flags, choices and the rest cause a full rebuild.
     if (!doc.inGesture) {
+      final numbers = _followed(snapshot.numbers);
       // A value that no field watches changed, so rebuild to show it.
-      if (doc.showAt(snapshot.numbers, const {})) rebuild = true;
-      _seen.addAll(snapshot.numbers);
+      if (doc.showAt(numbers, const {})) rebuild = true;
+      _seen.addAll(numbers);
     }
     if (edits.onFlags != null) {
       if (snapshot.flags.entries.any((e) => doc.flags[e.key] != e.value)) {
@@ -169,8 +225,9 @@ class InspectorSync {
   ) {
     // Never during a drag.
     if (doc.inGesture) return false;
-    _seen.addAll(values);
+    final followed = _followed(values);
+    _seen.addAll(followed);
     _seenKeys.addAll(marks);
-    return doc.showAt(values, marks);
+    return doc.showAt(followed, marks);
   }
 }

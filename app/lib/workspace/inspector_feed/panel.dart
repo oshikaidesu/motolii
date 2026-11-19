@@ -156,6 +156,8 @@ class _InspectorPanelState extends State<InspectorPane> {
   }
 
   Timer? _settle;
+  // The ticket of the end of the step the inspector last told (together).
+  int _stepEnd = 0;
 
   // (the engine showed something new while the document and the pick stayed (a hand carrying on the stage, a relation
   //  at a moment): the numbers told to the fields that show them; nothing built again)
@@ -349,8 +351,11 @@ class _InspectorPanelState extends State<InspectorPane> {
           // (one step, asked without waiting: begun and ended in the engine's queue around what is told)
           groupBegin(ws);
           tells();
-          ws.after(groupEnd(ws));
+          ws.after(_stepEnd = groupEnd(ws));
         },
+        // (the engine answers the step's end once it has taken it, its snapshots read first)
+        whenTaken: (taken) =>
+            projectOpen(ws) ? ws.after(_stepEnd, (_, _) => taken()) : taken(),
       ),
       live: _live,
       child: child,

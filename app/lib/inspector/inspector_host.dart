@@ -119,6 +119,11 @@ class _InspectorHostState extends State<InspectorHost> {
     _wire(doc);
   }
 
+  // A number shown once the owner had taken a step, and no field watches it.
+  void _unwatched() {
+    if (mounted) setState(() => _tick++);
+  }
+
   void _atMoment() {
     final (values, marks) = widget.live.value;
     // A value that no field watches changed, such as a choice, so rebuild to show it.
@@ -128,6 +133,7 @@ class _InspectorHostState extends State<InspectorHost> {
   @override
   void initState() {
     super.initState();
+    _sync.onUnwatched = _unwatched;
     widget.live.addListener(_atMoment);
   }
 

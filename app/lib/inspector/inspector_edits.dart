@@ -15,6 +15,7 @@ class InspectorEdits {
     required this.onRoute,
     required this.onAim,
     this.onFlags,
+    this.whenTaken,
   });
 
   /// Values changed in the inspector. [live] is true while a drag is still in progress, and the call is repeated once when the drag ends.
@@ -42,6 +43,11 @@ class InspectorEdits {
 
   /// Wraps one change of the inspector, values then key marks, so the caller can record it as one undo step.
   final void Function(VoidCallback tells) together;
+
+  /// For a caller that takes a step some time after it is told: asked right after [together], it calls [taken]
+  /// once it has taken that step, whatever it made of it. Until then what it shows of the numbers in the step
+  /// is from before the step, and the inspector keeps showing its own. Null when the caller takes a step at once.
+  final void Function(VoidCallback taken)? whenTaken;
 
   /// A panel link asked to open a panel (`Browser › Fonts`, `Ease`); the caller opens it.
   final ValueChanged<String> onRoute;
