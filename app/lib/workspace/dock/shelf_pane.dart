@@ -246,6 +246,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                     onTap: effectTilesAgain(ws, file: c.sel),
                   ),
                 ),
+                SizedBox(width: Shape.s(6)),
                 SizedBox(
                   width: Shape.z(48),
                   child: MiniSlider(
