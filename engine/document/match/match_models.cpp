@@ -63,8 +63,7 @@ Mesh* built_in_mesh(const std::string& shape) {
     file = "Torus.js", numbers["radius"] = 0.74, numbers["tube"] = 0.13 / 0.37;
   std::string full;
   for (const std::filesystem::path& folder : doc_folders("solids"))
-    if (std::error_code wrong;
-        std::filesystem::exists(folder / file, wrong))
+    if (std::error_code wrong; std::filesystem::exists(folder / file, wrong))
       full = (folder / file).string();
   if (full.empty()) return nullptr;
   SolidMesh built;
@@ -112,22 +111,21 @@ ModelSurface model_surface(LayerBuild& build) {
   const std::string material = doc_material(d, layer);
   const bool glass = material == "glass",
              coloured = !fill.empty() && fill != "glass";
-  const Surface surface{
-      (float)build.number("metallic", 0.08),
-      (float)build.number("roughness", 0.6),
-      (float)build.number("reflectance", 0.5),
-      (float)build.number("clear_coat", 0),
-      (float)build.number("clear_coat_roughness", 0),
-      (float)build.number("emissive", 0),
-      (float)build.number("sheen", 0),
-      (float)build.number("anisotropy", 0),
-      (float)build.number("thickness", 0.5)};
+  const Surface surface{(float)build.number("metallic", 0.08),
+                        (float)build.number("roughness", 0.6),
+                        (float)build.number("reflectance", 0.5),
+                        (float)build.number("clear_coat", 0),
+                        (float)build.number("clear_coat_roughness", 0),
+                        (float)build.number("emissive", 0),
+                        (float)build.number("sheen", 0),
+                        (float)build.number("anisotropy", 0),
+                        (float)build.number("thickness", 0.5)};
   const std::string shading = build.word("shading");
   // With clip on, use the material variant that a matte can cut.
-  const char* model = build.number("clip", 0) > 0.5 &&
-                              (shading.empty() || shading == "lit")
-                          ? "floor_lit_matte.filamat"
-                          : surface_model(shading);
+  const char* model =
+      build.number("clip", 0) > 0.5 && (shading.empty() || shading == "lit")
+          ? "floor_lit_matte.filamat"
+          : surface_model(shading);
   // True when the material is one of the built-in ones rather than
   // Filament's lit surface. It is applied by solid_wear.
   const bool own = doc_among("filament_glass lacquer bubble", material);
@@ -189,8 +187,7 @@ void built_in_model(LayerBuild& build, const ModelSurface& wear) {
                           (int)build.number("copies", 1))
           : add(s, made.shape, made.sketch ? "sketch.filamat" : model,
                 std::vector<mat4f>(
-                    (size_t)std::max(1,
-                                     (int)build.number("copies", 1)),
+                    (size_t)std::max(1, (int)build.number("copies", 1)),
                     mat4f{}));
   made.look = look;
   if (look && glass) glassy(d, layer, look);

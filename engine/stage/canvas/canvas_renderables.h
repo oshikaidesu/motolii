@@ -31,9 +31,13 @@ inline void canvas_redraw_now(Canvas2D* d) {
   d->canvas->sync();
 }
 
-// Measures the bent outline and stores it in d->bentBox. Bumps s.bentChanges
-// on move, sets s.bentOverflow when the bend overflows the texture. Driver
-// thread only (reads ThorVG shape).
+// Measures the bent outline of `d->shape` and stores it, normalised to the
+// sheet's texture, in d->bentBox (see Canvas2D). Does nothing without a shape
+// or a texture size. Bumps s.bentChanges when the box moved, so the window's
+// box is snapshotted again, and sets s.bentOverflow when the bend reaches past
+// the texture, so the sheet is grown once. Driver thread only, because it reads
+// a ThorVG shape. Called by place_canvas after a build and by bend_at after a
+// bend, so the grabbed box follows a path operator live without a full rebuild.
 void canvas_measure_bent(Stage& s, Canvas2D* d);
 
 // Builds a Canvas2D from a ThorVG paint → Filament texture → flat sheet.

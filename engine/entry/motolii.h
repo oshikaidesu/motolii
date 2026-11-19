@@ -416,26 +416,34 @@ void motolii_export_cancel(Motolii* m);
    that counts in frames counts in these. */
 int motolii_rate(Motolii* m);
 /* Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read
-   without the project lock. which 1 is the project's snapshot: its own part,
-   and the part of each layer newer than `since`. which 2 is the time snapshot.
-   The result is JSON in a copy that the caller frees with free(). *version is
-   set to the version the snapshot is as of. */
+   without the project lock. which 1 is the project's snapshot: of its own parts
+   and of each layer's, those newer than `since` (a part that is gone is null).
+   which 2 is the time snapshot's detail, or "" when it is no newer than
+   `since`. The result is JSON in a copy that the caller frees with free().
+   *version is set to the version the snapshot is as of. */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);
 /* Returns the time snapshot's per-layer layout as a flat double array, read
    without the project lock: now, layer count, layer ids, then 26 doubles per
    layer (bounds[8], seen[4], shows[14]: x, x_driven, y, y_driven, z, z_driven,
    rotate, rotate_driven, scale_x, scale_x_driven, scale_y, scale_y_driven,
-   opacity, opacity_driven). NaN means absent. Returns the number of doubles
+   opacity, opacity_driven), then the last frame's two times in ms: the render
+   thread's own and the GPU's. NaN means absent. Returns the number of doubles
    written, or needed when `out` is NULL or `capacity` is too small. */
 int motolii_time_layout(Motolii* m, double* out, int capacity);
+/* Returns the same numbers where the engine keeps them, without a copy, and
+   how many there are in *count. For one thread only, the app's (and
+   motolii_time_layout with it): the numbers stay as they are until that thread
+   calls either again, while the engine fills another copy, and they are gone
+   when the project is closed. */
+const double* motolii_time_numbers(Motolii* m, int* count);
 /* Sets the app's one listener: a Dart port, posted to from the render thread
-   with Dart's own Dart_PostCObject (dart_native_api.h; Dart's NativeApi.postCObject)
-   when new snapshots exist, the message an integer bit mask: 1 the project's
-   snapshot, 2 the time snapshot, 4 the cached frames (motolii_cache), 8 an
-   answer to a change queued with motolii_later (motolii_answer); with nothing
-   new, a null once a second. A post that
-   fails means the port is closed, its isolate gone (a hot restart): the engine
-   then closes itself, as motolii_close does. post NULL: no listener. */
+   with Dart's own Dart_PostCObject (dart_native_api.h; Dart's
+   NativeApi.postCObject) when new snapshots exist, the message an integer bit
+   mask: 1 the project's snapshot, 2 the time snapshot, 4 the cached frames
+   (motolii_cache), 8 an answer to a change queued with motolii_later
+   (motolii_answer); with nothing new, a null once a second. A post that fails
+   means the port is closed, its isolate gone (a hot restart): the engine then
+   closes itself, as motolii_close does. post NULL: no listener. */
 void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),
                           int64_t port);
 /* While on, the app's main thread must not wait on the render thread. A change

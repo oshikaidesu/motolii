@@ -30,8 +30,8 @@
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/match.h"
-#include "document/scripts/import_adapter.h"
 #include "document/scripts/expressions.h"
+#include "document/scripts/import_adapter.h"
 #include "document/scripts/recipes.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
@@ -137,6 +137,10 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         // Evaluates JS in a running script. Answer is in motolii_answer_why.
         else if (c == "ask")
           said = doc_script_asked(doc(m), n, w), ok = 1;
+        // A check: the parts of the document's snapshot held that making it
+        // whole would not give (snapshot_stale), as the answer's words.
+        else if (c == "snapshot_check")
+          said = snapshot_stale(m), ok = 1;
         else if (c == "duplicate")
           ok = m->later.last_added = changes(m, doc_copy_above(doc(m), layer));
         else if (c == "split")
@@ -308,9 +312,9 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           ok = 1;
           std::istringstream lines(w);
           std::string line;
-          // Two-pass: unkey all first, then re-key, to avoid collisions.
-          std::vector<std::tuple<int, std::string, double, double, double,
-                                 std::string>>
+          // First pass: unkey all at their old positions.
+          std::vector<
+              std::tuple<int, std::string, double, double, double, std::string>>
               entries;
           while (std::getline(lines, line)) {
             if (line.empty()) continue;
@@ -327,7 +331,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
             doc_unkey(d, t, prop.c_str(), from);
           for (const auto& [t, prop, from, to, val, easing] : entries) {
             doc_key(d, t, prop.c_str(), to, val);
-            if (!easing.empty()) doc_easing(d, t, prop.c_str(), to, easing.c_str());
+            if (!easing.empty())
+              doc_easing(d, t, prop.c_str(), to, easing.c_str());
           }
         }
         // word: "layer\tprop\tat\n..." per line. Batched unkey.
@@ -412,7 +417,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           ok = 1;
           if (d.act.depth && d.act.unmatched)
             d.act.unmatched = false, doc_forget(d),
-                ok = changes(m, (int)doc_match(d));
+            ok = changes(m, (int)doc_match(d));
           if (d.act.depth) {
             std::istringstream in(w);
             int t;

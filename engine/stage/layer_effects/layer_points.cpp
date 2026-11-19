@@ -29,9 +29,7 @@ struct PointsFx {
 };
 
 namespace {
-std::string points_text(const std::string& file) {
-  return read_text(file);
-}
+std::string points_text(const std::string& file) { return read_text(file); }
 }  // namespace
 
 bool points_is(const std::string& file) {
@@ -83,7 +81,8 @@ void thing_fx_points(Stage& s, ThingFx& e) {
     // Only a file that writes normals has its normals made frames.
     if (text.find("@binding(10)") != std::string::npos) {
       const Kind two[2] = {Kind::STORAGE, Kind::STORAGE};
-      p.frames = interop::program(s.engine, "frames", kFrames().c_str(), two, 2);
+      p.frames =
+          interop::program(s.engine, "frames", kFrames().c_str(), two, 2);
     }
   }
   if (!p.program) return;

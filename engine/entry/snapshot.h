@@ -3,9 +3,11 @@
 // Builds the two JSON snapshots that the app reads (see docs/app/BRIDGE.md).
 // The app reads only these, never the document while it is being built.
 // The render thread builds both while it holds the document, as JSON written
-// with rapidjson (the copy that Filament's assimp ships). Each snapshot is
-// stored whole, and the app is notified through its single listener which
-// snapshot is new.
+// with rapidjson (the copy that Filament's assimp ships). A snapshot is kept in
+// parts, each with the version it last differed at, and the app is handed only
+// the parts newer than the version it has: there is no way to be handed a
+// snapshot whole but to have none of it yet. The app is notified through its
+// single listener which snapshot is new.
 //   Document snapshot: rebuilt when the document changes. It holds every
 //   layer's text values,
 //     resting numbers, ranges, and keyframes.
@@ -17,7 +19,10 @@
 #include <mutex>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "base/json_parts.h"
+#include "base/triple_buffer.h"
 #include "entry/motolii.h"
 
 namespace motolii {
@@ -27,19 +32,33 @@ namespace motolii {
 // them under lock.
 struct Snapshots {
   std::mutex lock;
-  // Each layer's part of the document snapshot and the version it was made at.
-  std::map<int, std::pair<long, std::string>> layers;
+  // The document snapshot's own parts by key, and each layer's parts by key
+  // (base/json_parts.h).
+  JsonParts document;
+  std::map<int, JsonParts> layers;
+  // The names of each layer's values as they were when its snapshot was last
+  // made whole. They stay the same until it is made whole again.
+  std::map<int, std::vector<std::string>> names;
   // The number of the user's own easings when the document snapshot was last
   // made. See doc_own_easings_made.
   int easings = -1;
   // The SQLite total change count at the time the document snapshot was last
   // made.
   long rows = -1;
-  // The document snapshot's own part, and the snapshot of the current time.
-  std::string all, time;
+  // What the document snapshot's tables (default values, the values each kind
+  // knows, easings, effect names) were last made from: the count of the user's
+  // own easings and of the shelf's file changes. -1: not made yet.
+  int tablesEasings = -1, tablesFiles = -1;
+  // The time snapshot's detail (the selected and watched layers), and the time
+  // version it last differed at.
+  std::string time;
+  long timeDetailVersion = 0;
   // The time snapshot's per-layer layout as flat doubles: now, layer count,
-  // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]).
-  std::vector<double> timeLayout;
+  // layer ids, then 26 doubles per layer (bounds[8], seen[4], shows[14]), then
+  // the last frame's two times in ms: the render thread's own and the GPU's.
+  // Filled by the render thread and read by the app's thread without a lock
+  // or a copy (motolii_time_numbers).
+  TripleBuffer<std::vector<double>> timeLayout;
   // The version of the document snapshot and of the time snapshot.
   long version = 0, timeVersion = 0;
   // Which snapshots are new since the window was last notified: 1 for the
@@ -62,6 +81,14 @@ struct Snapshots {
 // rebuilt. Each layer's part keeps the version it was built at, so the app can
 // ask only for what is newer than what it has.
 void snapshot_update(Motolii* m);
+
+// Makes the whole document snapshot afresh, without regard to what was said to
+// have changed, and returns the parts held that differ from it, as
+// "layer/part" or "document/part" separated by spaces; "" when what is held is
+// what making it whole gives. Changes nothing. For checks (edit.sh's `snapshot
+// check`): snapshot_update makes again only what a change is recorded to touch,
+// and this is what says a record was wrong.
+std::string snapshot_stale(Motolii* m);
 
 // Rebuilds the time snapshot for the current time. Runs on the render thread
 // while it holds the document, whenever the time is set.

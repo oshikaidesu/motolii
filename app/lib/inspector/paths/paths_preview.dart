@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:path_parsing/path_parsing.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 
 class PathsPreview extends StatelessWidget {
   const PathsPreview({
@@ -126,10 +127,7 @@ class _PreviewPaint extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
+    drawWell(c, s);
     final cx = s.width / 2, cy = s.height / 2;
     final r = math.min(s.width, s.height) * 0.32;
     final path =

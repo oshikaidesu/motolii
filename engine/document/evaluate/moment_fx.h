@@ -43,12 +43,18 @@ struct DocEffects {
 void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e);
 // Swaps the layer's faces between its effect image (on) and original materials.
 void doc_layer_shell(Doc& d, int layer, ThingFx& e, bool on);
-// Writes four values to sides: how far the stage reaches along -x, +x, -y, +y
-// of the layer's own axes. Rounded up to 256 px multiples to avoid rebuilding
-// every frame.
-void doc_fx_sides(Doc& d, const filament::math::mat4& place, double seen, double* sides);
-// Prepares a standing layer: reads placement under the doc lock, sets up its
-// effect image.
+// Computes how far the stage reaches from a standing layer along each side of
+// the layer's face, and writes four values to sides: toward -x, +x, -y and +y
+// of the layer's own axes, in layer units. The stage's corners are projected
+// back onto the layer's plane. seen is the length in stage points of one layer
+// unit where the layer lies. Each value is rounded up to a multiple of 256
+// stage points, so the layer's image is made again only after the stage has
+// moved that far. A face seen edge on reaches no further than three times the
+// stage's longer side.
+void doc_fx_sides(Doc& d, const filament::math::mat4& place, double seen,
+                  double* sides);
+// Prepares a standing layer before the frame is rendered. Reads its placement
+// and scale under the document lock, then sets up its effect image.
 void doc_layer_stand(Doc& d, int layer, ThingFx& e);
 // Writes the layer's position on its effect image to frame. Returns false if
 // the layer has no frame.

@@ -17,6 +17,7 @@ import 'package:motolii/storage/window_paths.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/commands/menu_bar.dart';
 import 'package:motolii/workspace/commands/menu_items.dart';
+import 'package:motolii/workspace/commands/menu_shown.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/state/document/command_writes.dart'
@@ -69,7 +70,7 @@ class WorkspaceState extends State<Workspace> {
     // Rebuild the window in place whenever the theme file is written.
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
     SkinParts.follow();
-    // Rebuild so the Edit menu's undo/redo labels follow the current document step.
+    // The Edit menu's undo label and the window's title follow the document.
     ws.on[WorkspaceAspect.document]!.addListener(_rebuildMenus);
     onDroppedFiles(_addDroppedPaths);
     final doc = widget.document ?? untitledProjectPath();
@@ -98,8 +99,21 @@ class WorkspaceState extends State<Workspace> {
     ws.after(groupEnd(ws));
   }
 
+  // The menus as last made, whose actions are the ones run; the list the menu bar was handed, which runs them
+  // (menu_shown.dart); and what that list shows.
+  List<PlatformMenuItem> _menusNow = const [], _menusHanded = const [];
+  String _menusShown = '';
+  // What the last build showed of what a read of the document can change. Null: no project was open.
+  (String?, String)? _framed;
+
+  // A read of the document comes with every step of a drag: the window is built again only when what it shows
+  // of the document differs.
   void _rebuildMenus() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final open = projectOpen(ws);
+    if (open) _menusNow = menus();
+    final frame = open ? (ws.document, menusShown(_menusNow)) : null;
+    if (frame != _framed) setState(() {});
   }
 
   /// Opens another project in place of the current one.
@@ -424,12 +438,21 @@ class WorkspaceState extends State<Workspace> {
       ),
     );
     // The project is still opening, so no panel is built yet.
-    if (!projectOpen(ws)) return ColoredBox(color: WindowTokens.ground);
+    if (!projectOpen(ws)) {
+      _framed = null;
+      return ColoredBox(color: WindowTokens.ground);
+    }
+    _menusNow = menus();
+    if (menusShown(_menusNow) case final shown when shown != _menusShown) {
+      _menusShown = shown;
+      _menusHanded = menusCalling(_menusNow, () => _menusNow);
+    }
+    _framed = (ws.document, _menusShown);
     return Title(
       title: ws.document ?? 'Motolii',
       color: WindowTokens.ground,
       child: PlatformMenuBar(
-        menus: menus(),
+        menus: _menusHanded,
         child: KeymapShortcuts(
           keymap: keymap,
           commands: commands(),

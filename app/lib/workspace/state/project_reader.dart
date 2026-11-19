@@ -23,7 +23,7 @@ typedef _Listed = ({
   double bpm,
   int duration,
   int frameRate,
-  Map<int, int> labels,
+  int labels,
 });
 
 class ProjectReader {
@@ -32,6 +32,7 @@ class ProjectReader {
     required this._playhead,
     required this._onLayersRead,
     required this._onChanged,
+    required this._onStructure,
     required this._onListed,
     required this._onStageTextureChanged,
   });
@@ -40,6 +41,7 @@ class ProjectReader {
   final Playhead _playhead;
   final VoidCallback _onLayersRead,
       _onChanged,
+      _onStructure,
       _onListed,
       _onStageTextureChanged;
 
@@ -134,9 +136,19 @@ class ProjectReader {
         _ => m.rate,
       };
 
-  // Kept between reads to skip unchanged layers in _reread.
+  // Kept between reads: each layer's snapshot as it was read, where each layer is in [layers], and the layers
+  // that are parents.
   final _lastSnap = <int, Map<String, dynamic>>{};
+  final _place = <int, int>{};
   Set<int> _holding = const {};
+  // Counts the reads that changed a layer's label colour.
+  int _labels = 0;
+
+  static int? _labelOf(Motolii m, int t) =>
+      switch (m.words(t, 'label').indexOf(m.word(t, 'label'))) {
+        > 0 && final i => i - 1,
+        _ => null,
+      };
 
   void reread() => Timeline.timeSync('ws reread', _reread);
   void _reread() {
@@ -155,28 +167,81 @@ class ProjectReader {
     }
     rev++;
     reads++;
-    final was = List.of(layers), wasListed = _listed;
+    final wasListed = _listed;
     final oldDuration = _composition.duration;
     _composition.duration = Timeline.timeSync(
       'MARK seconds',
       () => (m.seconds * _frameRate).round().clamp(1, 1 << 20),
     );
-    chosenLabelColors
-      ..clear()
-      ..addAll(<int, int>{
-        for (final t in m.layers)
-          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i
-              when i > 0)
-            t: i - 1,
-      });
     final tl = TimelineTask()..start('MARK layers');
-    final holding = {
-      for (final t in m.layers) m.parentOf(t),
-    }; // The ids of layers that are parents.
-    final canReuse =
-        !frameRateChanged &&
-        _composition.duration == oldDuration &&
-        setEquals(holding, _holding);
+    final timesKept = !frameRateChanged && _composition.duration == oldDuration;
+    // With the list of layers and their parents as they were, only the layers that came are made again: a read
+    // costs what changed, not how many layers there are.
+    final same =
+        wasListed != null &&
+            timesKept &&
+            !m.layerListTaken &&
+            m.layersTaken.every(
+              (t) =>
+                  t == 0 ||
+                  _place[t] != null &&
+                      layers[_place[t]!].parent == _parentOf(m, t),
+            )
+        ? _rereadTaken(m)
+        : _rereadAll(m, timesKept);
+    m.layersTaken.clear();
+    m.layerListTaken = false;
+    _listed = (
+      marks: m.marks,
+      work: m.work,
+      markColors: m.markColors,
+      bpm: bpm,
+      duration: _composition.duration,
+      frameRate: _frameRate,
+      labels: _labels,
+    );
+    _onLayersRead();
+    tl.finish();
+    if (!same || !_sameListed(wasListed, _listed)) _onListed();
+    if (m.structureTaken) {
+      m.structureTaken = false;
+      _onStructure();
+    }
+    _onChanged();
+  }
+
+  // Makes again the layers that came. Whether each is as it was.
+  bool _rereadTaken(Motolii m) {
+    var same = true;
+    for (final t in m.layersTaken) {
+      if (t == 0) continue;
+      final i = _place[t]!, l = _layerOf(m, t);
+      same &= layers[i].same(l);
+      layers[i] = l;
+      _byId[t] = l;
+      final label = _labelOf(m, t);
+      if (label != chosenLabelColors[t]) {
+        _labels++;
+        label == null
+            ? chosenLabelColors.remove(t)
+            : chosenLabelColors[t] = label;
+      }
+    }
+    return same;
+  }
+
+  // Makes the list again, each layer whose snapshot is the one last read kept. Whether the list is as it was.
+  bool _rereadAll(Motolii m, bool timesKept) {
+    final was = List.of(layers);
+    final labels = <int, int>{for (final t in m.layers) t: ?_labelOf(m, t)};
+    if (!mapEquals(labels, chosenLabelColors)) {
+      _labels++;
+      chosenLabelColors
+        ..clear()
+        ..addAll(labels);
+    }
+    final holding = {for (final t in m.layers) m.parentOf(t)};
+    final canReuse = timesKept && setEquals(holding, _holding);
     _holding = holding;
     final wasById = canReuse
         ? <int, Layer>{for (final l in was) l.id: l}
@@ -188,107 +253,93 @@ class ProjectReader {
             in m
                 .layers
                 .reversed) // The topmost layer comes first, as in the sample.
-          if (canReuse &&
-              identical(m.layerSnapshot(t), _lastSnap[t]) &&
+          if (identical(m.layerSnapshot(t), _lastSnap[t]) &&
               wasById.containsKey(t))
-            wasById[t]! // reuse unchanged Layer
+            wasById[t]!
           else
-            () {
-              _lastSnap[t] = m.layerSnapshot(t);
-              final kind = m.word(t, 'kind'),
-                  from = ((m.value(t, 'start', 0) ?? 0) * _frameRate).round(),
-                  lasts = m.lasts(t);
-              final name = m.word(t, 'name');
-              final keys = <int>{
-                for (final s in m.layerKeyTimes(t)) (s * _frameRate).round(),
-              }.toList()..sort();
-              return Layer(
-                t,
-                name,
-                switch (kind) {
-                  'text' => LayerKind.text,
-                  'camera' => LayerKind.camera,
-                  'film' when isSound(m, t) => LayerKind.audio,
-                  'film' || 'picture' => LayerKind.image,
-                  'shape'
-                      when m.word(t, 'shape') == 'null' &&
-                          holding.contains(t) =>
-                    LayerKind.group,
-                  _ => LayerKind.shape,
-                },
-                from,
-                _outF(from, lasts),
-                keys,
-                parent: switch (m.parentOf(t)) {
-                  > 0 && final p => p,
-                  _ => null,
-                },
-                lined:
-                    (kind == 'picture' || kind == 'solid') &&
-                    m.values(t).any((n) => n.startsWith('js_line_')),
-                hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
-                solo: (m.value(t, 'solo', 0) ?? 0) > .5,
-                locked: (m.value(t, 'lock', 0) ?? 0) > .5,
-                clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-                stretches: [
-                  for (final (a, b, way) in m.layerStretches(t))
-                    (
-                      from: (a * _frameRate).round(),
-                      to: (b * _frameRate).round(),
-                      way: way,
-                      shape: easeCurve(way, m),
-                    ),
-                ],
-                form: _formOf(m, t),
-                members: _membersOf(m, t),
-                links: _linksOf(m, t),
-                lanes: _lanesOf(m, t),
-                retimed: [
-                  for (final n in const ['retime_in', 'retime_out'])
-                    if ((m.value(t, n, 0) ?? 0) > 0)
-                      (((m.value(t, 'start', 0) ?? 0) + m.value(t, n, 0)!) *
-                              _frameRate)
-                          .round(),
-                ],
-                media: switch (kind) {
-                  'film' => (
-                    file: m.whole(m.word(t, 'file')),
-                    begin: m.value(t, 'begin', 0) ?? 0,
-                    speed: m.value(t, 'speed', 0) ?? 1,
-                    still: false,
-                  ),
-                  'picture' => (
-                    file: m.whole(m.word(t, 'file')),
-                    begin: 0.0,
-                    speed: 1.0,
-                    still: true,
-                  ),
-                  _ => null,
-                },
-              );
-            }(),
+            _layerOf(m, t),
       ]);
-    // Drop stale entries for layers that no longer exist.
-    final current = {for (final t in m.layers) t};
-    _lastSnap.removeWhere((t, _) => !current.contains(t));
-    _listed = (
-      marks: m.marks,
-      work: m.work,
-      markColors: m.markColors,
-      bpm: bpm,
-      duration: _composition.duration,
-      frameRate: _frameRate,
-      labels: Map.of(chosenLabelColors),
-    );
-    final same =
-        was.length == layers.length &&
+    _place
+      ..clear()
+      ..addAll({for (final (i, l) in layers.indexed) l.id: i});
+    _byId.clear();
+    _lastSnap.removeWhere((t, _) => !_place.containsKey(t));
+    return was.length == layers.length &&
         [for (var i = 0; i < was.length; i++) was[i].same(layers[i])]
-            .every((same) => same) &&
-        _sameListed(wasListed, _listed);
-    _onLayersRead();
-    tl.finish();
-    if (!same) _onListed();
-    _onChanged();
+            .every((same) => same);
+  }
+
+  static int? _parentOf(Motolii m, int t) => switch (m.parentOf(t)) {
+    > 0 && final p => p,
+    _ => null,
+  };
+
+  Layer _layerOf(Motolii m, int t) {
+    _lastSnap[t] = m.layerSnapshot(t);
+    final kind = m.word(t, 'kind'),
+        from = ((m.value(t, 'start', 0) ?? 0) * _frameRate).round(),
+        lasts = m.lasts(t);
+    final keys = <int>{
+      for (final s in m.layerKeyTimes(t)) (s * _frameRate).round(),
+    }.toList()..sort();
+    return Layer(
+      t,
+      m.word(t, 'name'),
+      switch (kind) {
+        'text' => LayerKind.text,
+        'camera' => LayerKind.camera,
+        'film' when isSound(m, t) => LayerKind.audio,
+        'film' || 'picture' => LayerKind.image,
+        'shape' when m.word(t, 'shape') == 'null' && _holding.contains(t) =>
+          LayerKind.group,
+        _ => LayerKind.shape,
+      },
+      from,
+      _outF(from, lasts),
+      keys,
+      parent: _parentOf(m, t),
+      lined:
+          (kind == 'picture' || kind == 'solid') &&
+          m.values(t).any((n) => n.startsWith('js_line_')),
+      hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
+      solo: (m.value(t, 'solo', 0) ?? 0) > .5,
+      locked: (m.value(t, 'lock', 0) ?? 0) > .5,
+      clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
+      stretches: [
+        for (final (a, b, way) in m.layerStretches(t))
+          (
+            from: (a * _frameRate).round(),
+            to: (b * _frameRate).round(),
+            way: way,
+            shape: easeCurve(way, m),
+          ),
+      ],
+      form: _formOf(m, t),
+      members: _membersOf(m, t),
+      links: _linksOf(m, t),
+      lanes: _lanesOf(m, t),
+      retimed: [
+        for (final n in const ['retime_in', 'retime_out'])
+          if ((m.value(t, n, 0) ?? 0) > 0)
+            (((m.value(t, 'start', 0) ?? 0) + m.value(t, n, 0)!) * _frameRate)
+                .round(),
+      ],
+      media: switch (kind) {
+        'film' => (
+          file: m.whole(m.word(t, 'file')),
+          begin: m.value(t, 'begin', 0) ?? 0,
+          speed: m.value(t, 'speed', 0) ?? 1,
+          still: false,
+        ),
+        'picture' => (
+          file: m.whole(m.word(t, 'file')),
+          begin: 0.0,
+          speed: 1.0,
+          still: true,
+        ),
+        _ => null,
+      },
+    );
   }
 
   _Listed? _listed;
@@ -301,7 +352,7 @@ class ProjectReader {
       a.bpm == b.bpm &&
       a.duration == b.duration &&
       a.frameRate == b.frameRate &&
-      mapEquals(a.labels, b.labels);
+      a.labels == b.labels;
 
   static ({String shape, Color? colour, bool outline})? _formOf(
     Motolii m,
@@ -322,19 +373,17 @@ class ProjectReader {
           relationKinds.contains(m.word(t, 'file'))
       ? [
           for (final s in m.word(t, 'members').split(' '))
-            if (s.isNotEmpty && s != '_')
-              if (int.tryParse(s) case final v?) v,
+            if (s.isNotEmpty && s != '_') ?int.tryParse(s),
         ]
       : null;
 
   static List<(String, int)> _linksOf(Motolii m, int t) => [
     for (final n in m.values(t))
       if (m.shown(n) case final s? when s.look == 'thing')
-        if ((m.value(t, n, 0) ?? 0).round() case final o
-            when m.layers.contains(o))
+        if ((m.value(t, n, 0) ?? 0).round() case final o when m.has(o))
           (s.label, o),
     for (final o in _membersOf(m, t) ?? const <int>[])
-      if (m.layers.contains(o)) ('Moves', o),
+      if (m.has(o)) ('Moves', o),
   ];
 
   // Properties with keyframes (and a sketch's lines), in the layer's own order.
@@ -429,9 +478,21 @@ class ProjectReader {
 
   List<(String, double)> get guides => _inside!.guides;
 
+  final _byId = <int, Layer>{};
+
+  /// Each layer by its id. A read keeps it; it is made here only for a list filled without one.
+  Map<int, Layer> get byId {
+    if (_byId.length != layers.length) {
+      _byId
+        ..clear()
+        ..addAll({for (final l in layers) l.id: l});
+    }
+    return _byId;
+  }
+
   /// All descendant layer ids of a group, however deep.
   List<int> under(int id) {
-    final of = <int, Layer>{for (final l in layers) l.id: l};
+    final of = byId;
     if (of[id]?.kind != LayerKind.group) return const [];
     return [
       for (final l in layers)
@@ -440,10 +501,8 @@ class ProjectReader {
   }
 
   /// Nesting depth (indent level) of layer [l].
-  int depth(Layer l) => l
-      .ancestors({for (final x in layers) x.id: x})
-      .where((p) => p.kind == LayerKind.group)
-      .length;
+  int depth(Layer l) =>
+      l.ancestors(byId).where((p) => p.kind == LayerKind.group).length;
 
   /// What the undo steps changed (null after a drag). Panels use this to skip rebuilds.
   ({bool layers, Set<(int, String)> values})? lastChange;

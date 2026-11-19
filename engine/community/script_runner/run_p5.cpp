@@ -31,23 +31,21 @@ void setup_p5_sketch(JSContext* cx, const std::string& src,
   // engine holds no JavaScript it does not run.
   const auto eval = [&](const char* name) {
     const std::string js = read_text(p5Stand / (std::string(name) + ".js"));
-    JS_FreeValue(cx, JS_Eval(cx, js.c_str(), js.size(), name,
-                             JS_EVAL_TYPE_GLOBAL));
+    JS_FreeValue(cx,
+                 JS_Eval(cx, js.c_str(), js.size(), name, JS_EVAL_TYPE_GLOBAL));
   };
   eval("p5_before");
   JS_FreeValue(cx, JS_Eval(cx, p5js.c_str(), p5js.size(), "p5.min.js",
-                            JS_EVAL_TYPE_GLOBAL));
+                           JS_EVAL_TYPE_GLOBAL));
   // p5.sound itself, for a sketch that listens (script_natives.h).
-  if (const std::string wrong =
-          sketch_hears(cx, src, p5, &film_path);
+  if (const std::string wrong = sketch_hears(cx, src, p5, &film_path);
       !wrong.empty())
     trouble = wrong;
   for (const char* stand : {"p5_after", "p5_three", "p5_mesh"}) eval(stand);
   if (const std::string needs = adapter_library(form); !needs.empty()) {
     const std::string lib = adapter_library_text(
-        form,
-        read_text(std::filesystem::path(p5).parent_path().parent_path() /
-                  needs));
+        form, read_text(std::filesystem::path(p5).parent_path().parent_path() /
+                        needs));
     JS_FreeValue(cx, JS_Eval(cx, lib.c_str(), lib.size(), needs.c_str(),
                              JS_EVAL_TYPE_GLOBAL));
   }
@@ -58,11 +56,11 @@ void setup_p5_sketch(JSContext* cx, const std::string& src,
                              // third_party/js; the other two it says it needs
                              // only run forceSimulation, which the world does
                              // for it: document/evaluate/world.h)
-      const std::string read_ = read_text(
-          std::filesystem::path(p5).parent_path().parent_path() / lib /
-          (std::string(lib) + ".min.js"));
+      const std::string read_ =
+          read_text(std::filesystem::path(p5).parent_path().parent_path() /
+                    lib / (std::string(lib) + ".min.js"));
       JS_FreeValue(cx, JS_Eval(cx, read_.c_str(), read_.size(), lib,
-                                JS_EVAL_TYPE_GLOBAL));
+                               JS_EVAL_TYPE_GLOBAL));
     }
   for (const std::string& needs :
        adapter_needs(code)) {  // (a library from the net: fetched by the
@@ -73,10 +71,9 @@ void setup_p5_sketch(JSContext* cx, const std::string& src,
     JS_FreeValue(cx, JS_Eval(cx, lib.c_str(), lib.size(), needs.c_str(),
                              JS_EVAL_TYPE_GLOBAL));
   }
-  if (!film_path.empty() &&
-      (src.find("createCapture") != std::string::npos ||
-       src.find("createVideo") != std::string::npos ||
-       src.find("loadImage") != std::string::npos))
+  if (!film_path.empty() && (src.find("createCapture") != std::string::npos ||
+                             src.find("createVideo") != std::string::npos ||
+                             src.find("loadImage") != std::string::npos))
     film.open(film_path,
               320);  // (as much of it as a webcam sketch reads, and light)
   JSValue g = JS_GetGlobalObject(cx);
@@ -90,14 +87,11 @@ void setup_p5_sketch(JSContext* cx, const std::string& src,
     subtitles = std::make_unique<Subtitles>(code);
     JSValue size = JS_NewArray(cx),
             them = JS_NewInt64(cx, (int64_t)(intptr_t)subtitles.get());
-    JS_SetPropertyUint32(cx, size, 0,
-                         JS_NewInt32(cx, subtitles->width()));
-    JS_SetPropertyUint32(cx, size, 1,
-                         JS_NewInt32(cx, subtitles->height()));
+    JS_SetPropertyUint32(cx, size, 0, JS_NewInt32(cx, subtitles->width()));
+    JS_SetPropertyUint32(cx, size, 1, JS_NewInt32(cx, subtitles->height()));
     JS_SetPropertyStr(cx, g, "__subtitles_size", size);
-    JS_SetPropertyStr(
-        cx, g, "__subtitles_frame",
-        JS_NewCFunctionData(cx, subtitles_frame, 2, 0, 1, &them));
+    JS_SetPropertyStr(cx, g, "__subtitles_frame",
+                      JS_NewCFunctionData(cx, subtitles_frame, 2, 0, 1, &them));
     JS_FreeValue(cx, them);
   }
   JS_FreeValue(cx, g);
@@ -173,9 +167,8 @@ int Script::width() {
                              : 0;
 }
 int Script::height() {
-  return own->sketch && ok()
-             ? std::atoi(script_said(own->cx, "height").c_str())
-             : 0;
+  return own->sketch && ok() ? std::atoi(script_said(own->cx, "height").c_str())
+                             : 0;
 }
 std::vector<int> Script::lines() const {
   std::vector<int> all;

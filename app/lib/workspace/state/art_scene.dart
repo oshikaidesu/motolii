@@ -19,7 +19,27 @@ class ArtLayer {
       kind = l.kind,
       inF = l.inF,
       outF = l.outF,
+      _keysOf = l.keys,
       keys = List.unmodifiable([...l.keys]..sort());
+
+  // The copy made of each layer. With thousands of layers, one that is as it was is not copied again when
+  // another changes; a layer's bar can be moved in place, so the copy is checked against it.
+  static final _made = Expando<ArtLayer>();
+  factory ArtLayer.of(Layer l) {
+    final made = _made[l];
+    if (made != null &&
+        made.inF == l.inF &&
+        made.outF == l.outF &&
+        made.name == l.name &&
+        made.kind == l.kind &&
+        identical(made._keysOf, l.keys)) {
+      return made;
+    }
+    return _made[l] = ArtLayer(l);
+  }
+
+  // The layer's own list of keys this was made from.
+  final List<int> _keysOf;
   final int id;
   final String name;
   final LayerKind kind;
@@ -47,29 +67,63 @@ class ArtScene {
 
   /// The document's guides, in composition px.
   final List<double> guidesX, guidesY;
-  ArtScene.of(WorkspaceController ws, {required this.camera})
-    : frame = ws.frame,
-      // The document's own name.
-      title = ws.document == null
-          ? 'CODA_main'
-          : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
-      guidesX = [
-        for (final (a, at) in ws.guides)
-          if (a == 'x') at,
-      ],
-      guidesY = [
-        for (final (a, at) in ws.guides)
-          if (a == 'y') at,
-      ],
-      layers = List.unmodifiable([for (final l in ws.layers) ArtLayer(l)]),
-      rev = ws.rev,
-      eye = ws.eye,
-      gizmos = {
-        if (ws.freeEye)
-          for (final l in ws.layers)
-            if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(l.id) ?? '',
-      },
-      _inside = ws.inside;
+  // What a scene takes from the document alone, made once a reading of it ([WorkspaceController.rev]): the stage
+  // makes a scene on every frame, and the layers and guides are the same until the document is read again.
+  static final _read =
+      Expando<
+        ({
+          int rev,
+          List<ArtLayer> layers,
+          List<double> guidesX,
+          List<double> guidesY,
+        })
+      >();
+
+  factory ArtScene.of(WorkspaceController ws, {required bool camera}) {
+    var read = _read[ws];
+    if (read == null || read.rev != ws.rev) {
+      final guides = ws.guides;
+      read = _read[ws] = (
+        rev: ws.rev,
+        layers: List.unmodifiable([for (final l in ws.layers) ArtLayer.of(l)]),
+        guidesX: List.unmodifiable([
+          for (final (a, at) in guides)
+            if (a == 'x') at,
+        ]),
+        guidesY: List.unmodifiable([
+          for (final (a, at) in guides)
+            if (a == 'y') at,
+        ]),
+      );
+    }
+    return ArtScene._(
+      ws,
+      camera: camera,
+      layers: read.layers,
+      guidesX: read.guidesX,
+      guidesY: read.guidesY,
+    );
+  }
+
+  ArtScene._(
+    WorkspaceController ws, {
+    required this.camera,
+    required this.layers,
+    required this.guidesX,
+    required this.guidesY,
+  }) : frame = ws.frame,
+       // The document's own name.
+       title = ws.document == null
+           ? 'CODA_main'
+           : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''),
+       rev = ws.rev,
+       eye = ws.eye,
+       gizmos = {
+         if (ws.freeEye)
+           for (final l in ws.layers)
+             if (l.kind == LayerKind.camera) l.id: ws.inside?.gizmo(l.id) ?? '',
+       },
+       _inside = ws.inside;
 
   final Motolii? _inside;
   final _asked = <int, ArtBox?>{};

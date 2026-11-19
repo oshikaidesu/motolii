@@ -34,9 +34,7 @@ namespace {
 
 // Returns the whole contents of `file`, or an empty string if it cannot be
 // read.
-std::string solid_text(const std::string& file) {
-  return read_text(file);
-}
+std::string solid_text(const std::string& file) { return read_text(file); }
 
 }  // namespace
 

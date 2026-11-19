@@ -32,5 +32,11 @@ int? documentEdited(WorkspaceController ws) => ws.inside?.edited;
 /// The engine's diagnostics, one line each. Null when not connected.
 String? engineBroken(WorkspaceController ws) => ws.inside?.broken;
 
+/// How much of a frame's time the engine took for the frames drawn since the last call (see `EngineLoad.take`).
+/// Null when not connected or when it drew none.
+({double cpu, double cpuMost, double gpu})? engineLoadTaken(
+  WorkspaceController ws,
+) => ws.inside?.load.take();
+
 /// How many diagnostics the engine has recorded. Null when not connected.
 int? engineBrokenCount(WorkspaceController ws) => ws.inside?.brokenCount;

@@ -113,8 +113,7 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
       kept.copies = midi_copies(
           midi_of(notes), n,
           (said - doc_literal(d, layer, "start", 0, 0)) * speed,
-          doc_comp_high(d) / 1080.0 * doc_stage_pixel(d, layer, said),
-          h);
+          doc_comp_high(d) / 1080.0 * doc_stage_pixel(d, layer, said), h);
     }
     const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
     out.c = c, out.by = 1;
@@ -163,16 +162,15 @@ DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
 }
 }  // namespace
 
-std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n,
-                                        double said) {
+std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n, double said) {
   const std::vector<DocScript*> scs = doc_placing_scs(d, layer);
   if (scs.empty() || doc_laying.count(layer)) return {};
   const double gone = doc_literal(d, layer, "begin", 0, 0),
                begins = doc_literal(d, layer, "start", 0, 0) - gone;
   doc_laying.insert(layer);
-  std::vector<ScriptCopy> all = doc_expressions_lay(
-      d, layer, scs, n, said, doc_own_time(d, layer, said, said - begins),
-      gone);
+  std::vector<ScriptCopy> all =
+      doc_expressions_lay(d, layer, scs, n, said,
+                          doc_own_time(d, layer, said, said - begins), gone);
   doc_laying.erase(layer);
   return all;
 }
@@ -280,9 +278,9 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
           doc_placing_absent(d, layer, said);
       !moving.empty()) {
     const double begins = doc_literal(d, layer, "start", 0, 0);
-    const AbsentMoved m = absent_motion(moving, layer, 1000.0 * begins,
-                                        1000.0 * doc_layer_ends(d, layer),
-                                        1000.0 * said);
+    const AbsentMoved m =
+        absent_motion(moving, layer, 1000.0 * begins,
+                      1000.0 * doc_layer_ends(d, layer), 1000.0 * said);
     // The size of one document pixel in stage units where the layer stands, as
     // for the copies of a script.
     const double pixel = doc_stage_pixel(d, layer, said);
@@ -384,8 +382,8 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
       }
     }
   const math::mat4 above = doc_above(d, layer, now, deeper),
-                   there =
-                       above * math::mat4::translation(doc_position(d, layer, now));
+                   there = above *
+                           math::mat4::translation(doc_position(d, layer, now));
   // Alight Motion's Parenting Helper, as bevy_alight_motion implements it
   // (MIT/Apache-2.0, src/animation/parenthelper.rs). The parent's rotation and
   // size are applied scaled by their weights, plus the rolling of a wheel.

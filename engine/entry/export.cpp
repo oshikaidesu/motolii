@@ -141,35 +141,42 @@ const char* motolii_list(Motolii* m) {
   });
 }
 // Returns a snapshot of the project for the app (docs/app/BRIDGE.md), read
-// without the project lock. which 1 is the project's snapshot: its own part,
-// and the part of each layer newer than `since`. which 2 is the time snapshot.
-// The result is a JSON copy that the caller frees with free(). *version is set
-// to the version the snapshot is as of.
+// without the project lock. which 1 is the project's snapshot: of its own parts
+// and of each layer's, those newer than `since` (a part that is gone is null).
+// which 2 is the time snapshot's detail, or "" when it is no newer than
+// `since`. The result is a JSON copy that the caller frees with free().
+// *version is set to the version the snapshot is as of.
 char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   if (which == 2)
     return *version = m->snapshots.timeVersion,
-           strdup(m->snapshots.time.c_str());
-  std::string all =
-      "{\"document\":" +
-      (m->snapshots.all.empty() ? std::string("null") : m->snapshots.all) +
-      ",\"layer\":{";
+           strdup(m->snapshots.timeDetailVersion > since
+                      ? m->snapshots.time.c_str()
+                      : "");
+  std::string all = "{\"document\":{" +
+                    json_parts_newer(m->snapshots.document, since) +
+                    "},\"layer\":{";
   bool first = true;
-  for (const auto& [layer, part] : m->snapshots.layers)
-    if (part.first > since)
+  for (const auto& [layer, parts] : m->snapshots.layers)
+    if (const std::string said = json_parts_newer(parts, since); !said.empty())
       all +=
-          (first ? "\"" : ",\"") + std::to_string(layer) + "\":" + part.second,
+          (first ? "\"" : ",\"") + std::to_string(layer) + "\":{" + said + "}",
           first = false;
   *version = m->snapshots.version;
   return strdup((all + "}}").c_str());
 }
-// The time snapshot's per-layer layout as flat doubles, copied out under lock.
+// The time snapshot's per-layer layout as flat doubles, copied out.
 int motolii_time_layout(Motolii* m, double* out, int capacity) {
-  std::lock_guard<std::mutex> hold(m->snapshots.lock);
-  const int n = (int)m->snapshots.timeLayout.size();
-  if (out && capacity >= n)
-    std::memcpy(out, m->snapshots.timeLayout.data(), n * sizeof(double));
+  const std::vector<double>& layout = m->snapshots.timeLayout.front();
+  const int n = (int)layout.size();
+  if (out && capacity >= n) std::memcpy(out, layout.data(), n * sizeof(double));
   return n;
+}
+// The same where it is kept: no lock and no copy (base/triple_buffer.h).
+const double* motolii_time_numbers(Motolii* m, int* count) {
+  const std::vector<double>& layout = m->snapshots.timeLayout.front();
+  *count = (int)layout.size();
+  return layout.data();
 }
 // Sets the app's one listener, which is posted to when new snapshots exist.
 void motolii_add_listener(Motolii* m, bool (*post)(int64_t port, void* message),

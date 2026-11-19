@@ -4,8 +4,6 @@
 // does, using IRIS's own settings in config/appsettings.json.
 #include "media/video_flash_check.h"
 
-#include "shelf/shelf_folders.h"
-
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -13,6 +11,7 @@
 #include "iris/Configuration.h"
 #include "iris/Log.h"
 #include "iris/VideoAnalyser.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 

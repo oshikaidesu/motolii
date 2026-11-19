@@ -141,7 +141,7 @@ void main() {
     // Add a keyframe on each layer's first keyable property at the project midpoint.
     final mid = WorkspaceController.duration ~/ 2;
     for (final l in ws.layers) {
-      final t = int.parse(l.id);
+      final t = l.id;
       final props = m.moving(t);
       if (props.isNotEmpty) {
         m.later(

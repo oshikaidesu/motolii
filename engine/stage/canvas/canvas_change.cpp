@@ -24,15 +24,17 @@ void canvas_measure_bent(Stage& s, Canvas2D* d) {
   if (d->shape->bounds(&x, &y, &w, &h) != tvg::Result::Success || w <= 0.f ||
       h <= 0.f)
     return;
-  // The bend's bounds, 0..1 over the texture's width and height. The box reaches
-  // past 0..1 when the bend overflows the texture, which is how a clip is seen.
-  const float4 box{x / d->canvasWide, y / d->canvasHigh, (x + w) / d->canvasWide,
-                   (y + h) / d->canvasHigh};
+  // The bend's bounds, 0..1 over the texture's width and height. The box
+  // reaches past 0..1 when the bend overflows the texture, which is how a clip
+  // is seen.
+  const float4 box{x / d->canvasWide, y / d->canvasHigh,
+                   (x + w) / d->canvasWide, (y + h) / d->canvasHigh};
   const float4 was = d->bentBox;
   const bool first = !d->bentSeen;
   d->bentBox = box, d->bentSeen = true;
-  const float moved = std::max({std::fabs(box.x - was.x), std::fabs(box.y - was.y),
-                                std::fabs(box.z - was.z), std::fabs(box.w - was.w)});
+  const float moved =
+      std::max({std::fabs(box.x - was.x), std::fabs(box.y - was.y),
+                std::fabs(box.z - was.z), std::fabs(box.w - was.w)});
   // Tell the render loop to snapshot the box again once it has actually moved.
   if (first || moved > 1e-4f) ++s.bentChanges;
   // The outline reaches past the texture, so the image clips it: ask for one

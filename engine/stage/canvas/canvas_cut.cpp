@@ -118,9 +118,8 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
             rings.emplace_back();
             break;
         }
-      tess_fill(rings,
-                d->fx.evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO, 0,
-                point, m.idx);
+      tess_fill(rings, d->fx.evenOdd ? TESS_WINDING_ODD : TESS_WINDING_NONZERO,
+                0, point, m.idx);
     }
     if (m.idx.empty()) none();
     d->fillPoints = (uint32_t)m.pos.size(), d->fillEnd = (uint32_t)m.idx.size();

@@ -59,9 +59,9 @@ std::string wrap_cavalry_expression(JSContext* cx, const std::string& src,
 void run_cavalry_whole(JSContext* cx, JSRuntime* rt, const std::string& src,
                        const std::string& file,
                        const std::map<std::string, double>& numbers,
-                       const std::map<std::string, std::string>& words,
-                       int n, double t, double unit,
-                       std::vector<ScriptCopy>& all, std::string& trouble) {
+                       const std::map<std::string, std::string>& words, int n,
+                       double t, double unit, std::vector<ScriptCopy>& all,
+                       std::string& trouble) {
   JS_UpdateStackTop(rt);
   JSValue g = JS_GetGlobalObject(cx);
   for (const auto& [name, v] : numbers)

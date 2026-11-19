@@ -5,13 +5,10 @@
 // The disc and the ground are a schematic, not the layer's own pixels, and the modes the canvas has no blend for
 // (linear burn and light, vivid and pin light, darker and lighter colour, subtract, divide) are shown by their nearest
 // neighbour. The layer's own render on the stage is the engine's, see engine/document/evaluate/material.h.
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
-import 'package:naked_ui/naked_ui.dart'
-    show NakedSelect, NakedSelectOption, OverlayPositionConfig;
 
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
@@ -19,10 +16,10 @@ import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/context_menu.dart' show PressOutside;
 import 'package:motolii/widgets/controls.dart' show Pressable, Segmented;
 import 'package:motolii/widgets/disclosure_triangle.dart';
+import 'package:motolii/widgets/list_select.dart';
+import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 import 'package:motolii/widgets/switch_track.dart';
 
 /// The Blending card's inside (see host_cards.dart).
@@ -137,39 +134,22 @@ class _BlendPreviewState extends State<BlendPreview> {
                           top: 0,
                           right: 0,
                           bottom: 0,
-                          child: NakedSelect<int>(
+                          child: ListSelect<int>(
                             value: actualI,
-                            useRootOverlay: true,
-                            closeOnClickOutside: false,
-                            consumeOutsideTaps: false,
-                            positioning: OverlayPositionConfig(
-                              sideOffset: Shape.s(4),
-                            ),
+                            options: [
+                              for (final (i, word) in opts.indexed)
+                                (i, word.replaceAll('_', ' ')),
+                            ],
+                            itemHeight: 22,
+                            maxItems: 10,
+                            minWidth: 160,
+                            wider: textLeft,
+                            hover: _pending,
                             onChanged: (i) {
-                              _pending.value = null;
-                              if (i != null) {
-                                doc.beginGesture();
-                                doc.set('v_blend', i.toDouble());
-                                doc.endGesture();
-                              }
+                              doc.beginGesture();
+                              doc.set('v_blend', i.toDouble());
+                              doc.endGesture();
                             },
-                            overlayBuilder: (context, info) => PressOutside(
-                              group: info.tapRegionGroupId,
-                              shut: () {
-                                _pending.value = null;
-                                MenuController.maybeOf(context)?.close();
-                              },
-                              child: MouseRegion(
-                                onExit: (_) => _pending.value = null,
-                                child: SizedBox(
-                                  width: math.max(
-                                    info.anchorRect.width + textLeft,
-                                    160,
-                                  ),
-                                  child: _listWidget(actualI, opts),
-                                ),
-                              ),
-                            ),
                             builder: (_, st, _) => ValueListenableBuilder<int?>(
                               valueListenable: _pending,
                               builder: (_, pending, _) => Container(
@@ -288,68 +268,6 @@ class _BlendPreviewState extends State<BlendPreview> {
     );
   }
 
-  Widget _listWidget(int cur, List<String> opts) => Container(
-    padding: EdgeInsets.all(Shape.s(3)),
-    decoration: BoxDecoration(
-      color: Grey.g15,
-      borderRadius: Shape.round(8),
-      border: Border.all(color: Grey.g26),
-      boxShadow: WindowTokens.lift,
-    ),
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: 10 * 22.0),
-      child: ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        itemExtent: 22.0,
-        itemCount: opts.length,
-        itemBuilder: (_, i) => NakedSelectOption<int>(
-          value: i,
-          builder: (_, st, _) {
-            final sel = i == cur, on = st.isHovered || st.isFocused;
-            return MouseRegion(
-              // Enter sets the pending mode; exit clears it. The outer MouseRegion.onExit
-              // handles leaving the whole list, so individual exits only clear if still theirs.
-              onEnter: (_) => _pending.value = i,
-              onExit: (_) {
-                if (_pending.value == i) _pending.value = null;
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-                decoration: BoxDecoration(
-                  color: on ? Grey.g26 : (sel ? Grey.g20 : null),
-                  borderRadius: Shape.round(5),
-                ),
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        opts[i].replaceAll('_', ' '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyles.name(sel || on ? Grey.g95 : Grey.g76),
-                      ),
-                    ),
-                    if (sel)
-                      Container(
-                        width: Shape.z(5),
-                        height: Shape.z(5),
-                        decoration: BoxDecoration(
-                          color: Grey.g95,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ),
-  );
-
   void _let() {
     if (!_held) return;
     InspectorScope.of(context).doc.endGesture();
@@ -394,10 +312,7 @@ class _BlendPaint extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
+    drawWell(c, s);
     // Schematic: warm gradient ground with a cool disc overlaid using the chosen mode.
     final box = Rect.fromLTWH(8, 8, s.height * 1.6, s.height - 16);
     final r = RRect.fromRectAndRadius(box, const Radius.circular(6));

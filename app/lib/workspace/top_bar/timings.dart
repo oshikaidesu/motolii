@@ -16,7 +16,6 @@ import 'package:flutter/widgets.dart';
 
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/workspace/state/document/document_reads.dart';
@@ -227,7 +226,7 @@ class _WaitedState extends State<Waited> {
               width: Shape.z(6),
               height: Shape.z(6),
               decoration: BoxDecoration(
-                color: ColorTheme.of('Alert', const Color(0xFFE5484D)),
+                color: WindowTokens.alert,
                 shape: BoxShape.circle,
               ),
             ),

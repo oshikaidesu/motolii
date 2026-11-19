@@ -1,15 +1,22 @@
-// doc_cards_of: which cards the inspector shows for a layer, and the cards a layer can be given besides (`more`).
-// The expected cards are read off engine/document/card_table.h by hand, not taken from the engine: a card shows while the
-// property it names reads one of the words it lists, and a card marked "added" shows only once one of its values is set.
-// A Doc cannot be made by doc_open here (it builds the stage in Filament, which needs a Metal device), so the layers are rows
-// of an in-memory SQLite file with the same keyframe table doc_open makes.
+// doc_cards_of: which cards the inspector shows for a layer, and the cards a
+// layer can be given besides (`more`).
+//
+// The expected cards are read off engine/document/card_table.h by hand, not
+// taken from the engine: a card shows while the property it names reads one of
+// the words it lists, and a card marked "added" shows only once one of its
+// values is set.
+//
+// A Doc cannot be made by doc_open here (it builds the stage in Filament, which
+// needs a Metal device), so the layers are rows of an in-memory SQLite file
+// with the same keyframe table doc_open makes.
+
+#include "document/cards.h"
 
 #include <gtest/gtest.h>
 #include <sqlite3.h>
 
 #include <string>
 
-#include "document/cards.h"
 #include "document/document.h"
 #include "document/evaluate/value_at.h"
 
@@ -18,22 +25,28 @@ namespace {
 
 class Layer {
  public:
-  Layer(const char* kind) : d(new Doc) {  // (not freed, as the engine never frees one either)
+  Layer(const char* kind)
+      : d(new Doc) {  // (not freed, as the engine never frees one either)
     sqlite3_open(":memory:", &d->file);
     sqlite3_exec(d->file,
-                 "create table keyframe(layer integer, name text, at numeric, value, easing text, primary key(layer, name, at)) "
+                 "create table keyframe(layer integer, name text, at numeric, "
+                 "value, easing text, primary key(layer, name, at)) "
                  "without rowid;",
                  nullptr, nullptr, nullptr);
     Say("kind", kind);
   }
   void Say(const char* name, const char* word) {
     sqlite3_exec(d->file,
-                 sqlite3_mprintf("insert or replace into keyframe(layer, name, at, value) values(1, %Q, 0.0, %Q)", name, word),
+                 sqlite3_mprintf("insert or replace into keyframe(layer, name, "
+                                 "at, value) values(1, %Q, 0.0, %Q)",
+                                 name, word),
                  nullptr, nullptr, nullptr);
   }
   void Put(const char* name, double is) {
     sqlite3_exec(d->file,
-                 sqlite3_mprintf("insert or replace into keyframe(layer, name, at, value) values(1, %Q, 0.0, %!.17g)", name, is),
+                 sqlite3_mprintf("insert or replace into keyframe(layer, name, "
+                                 "at, value) values(1, %Q, 0.0, %!.17g)",
+                                 name, is),
                  nullptr, nullptr, nullptr);
   }
   // The cards shown, and the cards that could be added.
@@ -46,9 +59,12 @@ class Layer {
   Doc* d;
 };
 
-bool Has(const std::string& cards, const char* title) { return cards.find(std::string(title) + ":") != std::string::npos; }
+bool Has(const std::string& cards, const char* title) {
+  return cards.find(std::string(title) + ":") != std::string::npos;
+}
 
-// Surface is an "added" card: until a value of it is set it is only on offer (`more`).
+// Surface is an "added" card: until a value of it is set it is only on offer
+// (`more`).
 TEST(Cards, ASolidIsOfferedTheLitSurfaceWithNoMaterialSaid) {
   Layer solid("solid");
   solid.Cards();
@@ -57,14 +73,19 @@ TEST(Cards, ASolidIsOfferedTheLitSurfaceWithNoMaterialSaid) {
 }
 
 TEST(Cards, AMaterialSaidShowsItsOwnCardOnly) {
-  for (const auto& [shading, card] : {std::pair{"glass", "Glass"}, {"filament_glass", "Glass"}, {"lacquer", "Lacquer"},
-                                      {"bubble", "Bubble"}, {"cloth", "Surface"}, {"subsurface", "Surface"}}) {
+  for (const auto& [shading, card] : {std::pair{"glass", "Glass"},
+                                      {"filament_glass", "Glass"},
+                                      {"lacquer", "Lacquer"},
+                                      {"bubble", "Bubble"},
+                                      {"cloth", "Surface"},
+                                      {"subsurface", "Surface"}}) {
     Layer solid("solid");
     solid.Say("shading", shading);
     const std::string cards = solid.Cards();
     EXPECT_TRUE(Has(cards, card)) << shading << ": " << cards;
     for (const char* other : {"Surface", "Glass", "Lacquer", "Bubble"})
-      if (std::string(other) != card) EXPECT_FALSE(Has(cards, other)) << shading << " shows " << other;
+      if (std::string(other) != card)
+        EXPECT_FALSE(Has(cards, other)) << shading << " shows " << other;
   }
 }
 
@@ -77,20 +98,23 @@ TEST(Cards, AFlatLayerIsOfferedNoSurfaceUntilItIsPlacedInDepth) {
   EXPECT_TRUE(Has(image.more, "Surface")) << image.more;
 }
 
-// After Effects' Character and Paragraph panels are one place for text: the splitting, slant and wrapping are on the Text card,
-// extra strokes live on their own Stroke cards (added as the user asks for them), and there is no card of their own for the
-// Character/Paragraph split.
+// After Effects' Character and Paragraph panels are one place for text: the
+// splitting, slant and wrapping are on the Text card, extra strokes live on
+// their own Stroke cards (added as the user asks for them), and there is no
+// card of their own for the Character/Paragraph split.
 TEST(Cards, ATextLayerKeepsItsSplitSlantAndWrapOnTheTextCard) {
   Layer text("text");
   const std::string cards = text.Cards();
   const size_t at = cards.find("Text:");
   ASSERT_NE(at, std::string::npos) << cards;
   const std::string line = cards.substr(at, cards.find(';', at) - at);
-  for (const char* name : {" split", " italic", " wrap", " wrap_at"}) EXPECT_NE(line.find(name), std::string::npos) << line;
+  for (const char* name : {" split", " italic", " wrap", " wrap_at"})
+    EXPECT_NE(line.find(name), std::string::npos) << line;
   EXPECT_FALSE(Has(cards, "Type")) << cards;
 }
 
-// Each extra stroke on a text has its own Stroke card, keyed by a per-instance id so the same layer can wear several.
+// Each extra stroke on a text has its own Stroke card, keyed by a per-instance
+// id so the same layer can wear several.
 TEST(Cards, ATextLayerGetsAStrokeCardPerInstanceInItsStrokesList) {
   Layer text("text");
   EXPECT_FALSE(Has(text.Cards(), "Stroke")) << text.Cards();
@@ -112,10 +136,12 @@ TEST(Cards, TrimPathsShowsOnceTheShapeTrims) {
   shape.Put("trim", 0.5);
   const std::string cards = shape.Cards();
   EXPECT_TRUE(Has(cards, "Trim Paths")) << cards;
-  EXPECT_NE(cards.find("trim trim_begin trim_offset"), std::string::npos) << cards;
+  EXPECT_NE(cards.find("trim trim_begin trim_offset"), std::string::npos)
+      << cards;
 }
 
-// These cards are chosen by what the layer has set, not by a condition of their own: until then they are on offer.
+// These cards are chosen by what the layer has set, not by a condition of their
+// own: until then they are on offer.
 TEST(Cards, TrimPathsAndTheOtherAddedCardsAreOnOfferBeforeTheyAreSet) {
   Layer shape("shape");
   shape.Cards();

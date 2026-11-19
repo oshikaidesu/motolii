@@ -132,25 +132,41 @@ bool film(Stage& s, const char* path, int frameCount,
                     std::filesystem::path(path).replace_extension().string() +
                     "_%04d.jpg")
       : ending == ".mov" && said.alpha
-          // Transparency in ProRes 4444, ffmpeg's own encoder: the same on every system, which HEVC with alpha is not
-          // (only Apple's VideoToolbox writes it). QuickTime and Final Cut read it; -vendor apl0 is how Apple's own
-          // files are marked. The file is larger than HEVC's.
-          ? sized + rate + " -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -vendor apl0 " + quoted(path)
-      // HEVC and H.264 are tagged BT.709 (colorspace, primaries, transfer) so YouTube / Bilibili do not shift the
-      // colours when they transcode (UAT 215 / 376). Motolii's own stage draws in sRGB → BT.709 transfer is close
-      // enough that most players give the preview and the exported file the same look.
-      : ending == ".mov"
-          ? sized + rate + " -c:v hevc_videotoolbox " +
-                (said.mbps > 0.0 ? "-b:v " + mbps : std::string("-q:v 65")) +
-                " -pix_fmt yuv420p -tag:v hvc1 -colorspace bt709 -color_primaries bt709 -color_trc bt709 -movflags +faststart " +
+          // Transparency in ProRes 4444, ffmpeg's own encoder: the same on
+          // every system, which HEVC with alpha is not (only Apple's
+          // VideoToolbox writes it). QuickTime and Final Cut read it; -vendor
+          // apl0 is how Apple's own files are marked. The file is larger than
+          // HEVC's.
+          ? sized + rate +
+                " -c:v prores_ks -profile:v 4444 -pix_fmt yuva444p10le -vendor "
+                "apl0 " +
                 quoted(path)
-          // H.264 by whichever encoder the LGPL-only ffmpeg has (base/video_encoder.h). On a Mac that is VideoToolbox,
-          // whose -q:v 68 is within 1 VMAF point of libx264 -crf 17 (95.9 against 96.2 on 180 frames of a photo
-          // moving, 95.8 against 96.7 on one standing still; 2 points are not told apart, ottverse.com's study of
-          // VMAF 95), in a file 0.7 to 2.8 times as large.
-          : sized + rate + " -c:v " + h264 + h264_quality(h264, said.mbps) +
-                "-g 60 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -movflags +faststart " +
-                quoted(path);
+          // HEVC and H.264 are tagged BT.709 (colorspace, primaries, transfer)
+          // so YouTube / Bilibili do not shift the colours when they transcode
+          // (UAT 215 / 376). Motolii's own stage draws in sRGB → BT.709
+          // transfer is close enough that most players give the preview and the
+          // exported file the same look.
+          : ending == ".mov"
+                ? sized + rate + " -c:v hevc_videotoolbox " +
+                      (said.mbps > 0.0 ? "-b:v " + mbps
+                                       : std::string("-q:v 65")) +
+                      " -pix_fmt yuv420p -tag:v hvc1 -colorspace bt709 "
+                      "-color_primaries bt709 -color_trc bt709 -movflags "
+                      "+faststart " +
+                      quoted(path)
+                // H.264 by whichever encoder the LGPL-only ffmpeg has
+                // (base/video_encoder.h). On a Mac that is VideoToolbox, whose
+                // -q:v 68 is within 1 VMAF point of libx264 -crf 17 (95.9
+                // against 96.2 on 180 frames of a photo moving, 95.8
+                // against 96.7 on one standing still; 2 points are not told
+                // apart, ottverse.com's study of VMAF 95), in a file 0.7 to 2.8
+                // times as large.
+                : sized + rate + " -c:v " + h264 +
+                      h264_quality(h264, said.mbps) +
+                      "-g 60 -pix_fmt yuv420p -colorspace bt709 "
+                      "-color_primaries bt709 -color_trc bt709 -movflags "
+                      "+faststart " +
+                      quoted(path);
   const std::string cmd =
       "ffmpeg -loglevel error -y -f rawvideo -pix_fmt rgba -s " +
       std::to_string(s.w) + "x" + std::to_string(s.h) + " -r 60 -i -" + sound +

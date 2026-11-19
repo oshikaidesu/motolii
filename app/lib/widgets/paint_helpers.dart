@@ -1,4 +1,4 @@
-// Helpers for drawing in a painter: a painted glyph for a press tile, text and dashed lines.
+// Helpers for drawing in a painter: a painted glyph for a press tile, a card's well, text and dashed lines.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -6,6 +6,13 @@ import 'package:motolii/skin/tokens.dart';
 /// A painted glyph for an [IconPress] tile: fills the tile, in the ink the press gives.
 Widget Function(Color) paintInk(CustomPainter Function(Color ink) glyph) =>
     (ink) => SizedBox.expand(child: CustomPaint(painter: glyph(ink)));
+
+/// Fills [s] with the dark rounded well a card's drawing sits in, and gives its outline to clip to.
+RRect drawWell(Canvas c, Size s) {
+  final body = RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8));
+  c.drawRRect(body, Paint()..color = Grey.g07);
+  return body;
+}
 
 /// Draws a line of text in a painter, anchored by [ax] / [ay] (0 left/top, 1 right/bottom).
 void toolText(

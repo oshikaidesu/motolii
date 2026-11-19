@@ -23,7 +23,6 @@
 #include "motion/easing_names.h"
 namespace motolii {
 
-
 // cavalry_prelude.js and rows_prelude.js sit beside this file and are read by
 // script_runner.cpp when a QuickJS context is opened. The engine ships no
 // Cavalry- or row-related JavaScript as C++ string literals: the source is
@@ -122,7 +121,8 @@ void* numbers_in(JSContext* cx, JSValueConst v, int kind, size_t* count) {
   if (JS_GetTypedArrayType(v) != kind) return nullptr;
   size_t from = 0, bytes = 0, each = 0, all = 0;
   JSValue held = JS_GetTypedArrayBuffer(cx, v, &from, &bytes, &each);
-  if (JS_IsException(held)) return JS_FreeValue(cx, JS_GetException(cx)), nullptr;
+  if (JS_IsException(held))
+    return JS_FreeValue(cx, JS_GetException(cx)), nullptr;
   uint8_t* at = JS_GetArrayBuffer(cx, &all, held);
   JS_FreeValue(cx, held);
   *count = each ? bytes / each : 0;
@@ -143,9 +143,9 @@ JSValue film_sound_wave(JSContext* cx, JSValueConst, int argc, JSValueConst* a,
                         int, JSValueConst* data) {
   size_t n = 0;
   double seconds = 0;
-  float* to = argc >= 1 ? (float*)numbers_in(cx, a[0], JS_TYPED_ARRAY_FLOAT32,
-                                             &n)
-                        : nullptr;
+  float* to = argc >= 1
+                  ? (float*)numbers_in(cx, a[0], JS_TYPED_ARRAY_FLOAT32, &n)
+                  : nullptr;
   if (argc >= 2) JS_ToFloat64(cx, &seconds, a[1]);
   if (to) sound_wave(film_sound(cx, data), seconds, to, (int)n);
   return JS_UNDEFINED;
@@ -161,9 +161,9 @@ JSValue film_sound_seconds(JSContext* cx, JSValueConst, int, JSValueConst*, int,
 JSValue analyser_ask(JSContext* cx, JSValueConst, int argc, JSValueConst* a) {
   size_t n = 0, half = 0;
   double tau = 0.8;
-  const float* wave = argc >= 2 ? (const float*)numbers_in(
-                                      cx, a[0], JS_TYPED_ARRAY_FLOAT32, &n)
-                                : nullptr;
+  const float* wave =
+      argc >= 2 ? (const float*)numbers_in(cx, a[0], JS_TYPED_ARRAY_FLOAT32, &n)
+                : nullptr;
   double* smooth =
       wave ? (double*)numbers_in(cx, a[1], JS_TYPED_ARRAY_FLOAT64, &half)
            : nullptr;
@@ -183,7 +183,8 @@ std::string sketch_hears(JSContext* cx, const std::string& src,
     names = names || src.find(heard) != std::string::npos;
   const std::filesystem::path p5Dir = std::filesystem::path(p5).parent_path();
   const std::string sound = read_text(p5Dir / "addons" / "p5.sound.min.js");
-  const std::string webAudio = read_text(p5Dir / "stand" / "web_audio_stand.js");
+  const std::string webAudio =
+      read_text(p5Dir / "stand" / "web_audio_stand.js");
   if (!names || sound.empty() || webAudio.empty()) return "";
   JSValue g = JS_GetGlobalObject(cx),
           of = JS_NewInt64(cx, (int64_t)(intptr_t)film);

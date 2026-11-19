@@ -25,8 +25,10 @@
 #include "document/evaluate/value_at.h"
 #include "document/kinds.h"
 #include "document/scripts/expressions.h"
+#include "document/scripts/recipes.h"
 #include "document/undo.h"
 #include "entry/motolii_handle.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 
@@ -84,15 +86,21 @@ std::vector<std::string> snapshot_names(Motolii* m, int layer) {
   return {all.begin(), all.end()};
 }
 
-// Writes one layer's part of the document snapshot as a JSON object.
-void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
+// Writes one layer's part of the document snapshot as a JSON object, of the
+// values named `names`. With `numbers_only`, only what a number set anew or a
+// keyframe moved can change: how long it lasts, its resting values and its
+// keyframes. Its names, cards, words and ranges are left as they were.
+void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w,
+                    const std::vector<std::string>& names, bool numbers_only) {
   w.StartObject();
   w.Key("lasts"), w.Double(motolii_lasts(m, layer));
-  w.Key("values"), w.String(motolii_values(m, layer));
-  w.Key("moving"), w.String(motolii_moving(m, layer));
-  w.Key("cards"), w.String(motolii_cards(m, layer));
-  w.Key("more"), w.String(motolii_cards_more(m, layer));
-  w.Key("fx"), w.String(motolii_fx_titles(m, layer));
+  if (!numbers_only) {
+    w.Key("values"), w.String(motolii_values(m, layer));
+    w.Key("moving"), w.String(motolii_moving(m, layer));
+    w.Key("cards"), w.String(motolii_cards(m, layer));
+    w.Key("more"), w.String(motolii_cards_more(m, layer));
+    w.Key("fx"), w.String(motolii_fx_titles(m, layer));
+  }
   w.Key("stretches"), w.String(motolii_layer_stretches(m, layer));
   {
     double at[512];
@@ -101,12 +109,13 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
     for (int i = 0; i < n; ++i) w.Double(at[i]);
     w.EndArray();
   }
-  const std::vector<std::string> names = snapshot_names(m, layer);
-  w.Key("word"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_word(m, layer, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
+  if (!numbers_only) {
+    w.Key("word"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_word(m, layer, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+  }
   // Resting values: the value at time 0. A property missing here has its
   // default value, the document's "usual", if its layer kind defines one.
   w.Key("value"), w.StartObject();
@@ -126,40 +135,47 @@ void snapshot_layer(Motolii* m, int layer, SnapshotWriter& w) {
           w.Double(v);
     }
   w.EndObject();
-  w.Key("range"), w.StartObject();
-  for (const std::string& n : names)
-    if (double lo = 0, hi = 0; motolii_range(m, layer, n.c_str(), &lo, &hi))
-      w.Key(n.c_str()), w.StartArray(), w.Double(lo), w.Double(hi),
-          w.EndArray();
-  w.EndObject();
-  w.Key("words"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_words(m, layer, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
-  w.Key("reading"), w.StartObject();
-  for (const std::string& n : names)
-    w.Key(n.c_str()), w.String(motolii_reading(m, layer, n.c_str()));
-  w.EndObject();
-  // How each property is displayed to the user: the built-in table plus any a
-  // script defines.
-  w.Key("shown"), w.StartObject();
-  for (const std::string& n : names)
-    if (const std::string s = motolii_shown(m, n.c_str()); !s.empty())
-      w.Key(n.c_str()), w.String(s.c_str());
-  w.EndObject();
+  if (!numbers_only) {
+    w.Key("range"), w.StartObject();
+    for (const std::string& n : names)
+      if (double lo = 0, hi = 0; motolii_range(m, layer, n.c_str(), &lo, &hi))
+        w.Key(n.c_str()), w.StartArray(), w.Double(lo), w.Double(hi),
+            w.EndArray();
+    w.EndObject();
+    w.Key("words"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_words(m, layer, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+    w.Key("reading"), w.StartObject();
+    for (const std::string& n : names)
+      w.Key(n.c_str()), w.String(motolii_reading(m, layer, n.c_str()));
+    w.EndObject();
+    // How each property is displayed to the user: the built-in table plus any a
+    // script defines.
+    w.Key("shown"), w.StartObject();
+    for (const std::string& n : names)
+      if (const std::string s = motolii_shown(m, n.c_str()); !s.empty())
+        w.Key(n.c_str()), w.String(s.c_str());
+    w.EndObject();
+  }
   // For each property that has keyframes, an array with one entry for each
   // keyframe, written by `one` from the property's name and the keyframe's
   // time.
+  // The keyframe times of each value that has any, read once for the three
+  // parts below.
+  std::vector<std::pair<const std::string*, std::vector<double>>> keyed;
+  for (const std::string& n : names)
+    if (std::vector<double> at = doc_key_times(*m->d, layer, n.c_str());
+        !at.empty()) {
+      if (at.size() > 512) at.resize(512);
+      keyed.emplace_back(&n, std::move(at));
+    }
   const auto per_key = [&](const char* key, const auto& one) {
     w.Key(key), w.StartObject();
-    for (const std::string& n : names) {
-      double at[512];
-      const int k =
-          std::min(motolii_key_times(m, layer, n.c_str(), at, 512), 512);
-      if (k <= 0) continue;
-      w.Key(n.c_str()), w.StartArray();
-      for (int i = 0; i < k; ++i) one(n, at[i]);
+    for (const auto& [n, times] : keyed) {
+      w.Key(n->c_str()), w.StartArray();
+      for (const double at : times) one(*n, at);
       w.EndArray();
     }
     w.EndObject();
@@ -193,35 +209,11 @@ struct SnapshotKeepsWhy {
   ~SnapshotKeepsWhy() { d.error = why; }
 };
 
-}  // namespace
-
-void snapshot_update(Motolii* m) {
-  Doc& d = *m->d;
-  const SnapshotKeepsWhy keep{d};
-  std::set<int> again;
-  bool all = d.changes.layers_changed || m->snapshots.layers.empty();
-  std::string changes = d.changes.layers_changed ? "things\n" : "";
-  for (const auto& [layer, name] : d.changes.changed) {
-    changes += std::to_string(layer) + " " + name + "\n";
-    if (name == "name") all = true;
-    again.insert(layer);
-  }
-  d.changes.changed.clear(), d.changes.layers_changed = false;
-  m->snapshots.rows = sqlite3_total_changes(d.file);
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
-  std::map<int, std::string> parts;
-  const auto build = [&](int layer) {
-    rapidjson::StringBuffer out;
-    SnapshotWriter w(out);
-    snapshot_layer(m, layer, w);
-    parts[layer] = {out.GetString(), out.GetSize()};
-  };
-  // Layer 0 is the stage itself; its cards are the stage's.
-  if (all || again.count(0)) build(0);
-  for (int i = 0; i < n; ++i)
-    if (all || again.count(layers[i])) build(layers[i]);
-  rapidjson::StringBuffer out;
+// Writes the document snapshot's own part: its length, size and work range,
+// what changed, and its layers. What is read from rows alone (the time spent
+// editing, markers, settings, guides) is written only with `rows_written`.
+void snapshot_own(Motolii* m, rapidjson::StringBuffer& out, bool rows_written,
+                  const std::string& changes, const int* layers, int n) {
   SnapshotWriter w(out);
   w.StartObject();
   w.Key("seconds"), w.Double(motolii_seconds(m));
@@ -238,37 +230,50 @@ void snapshot_update(Motolii* m) {
     w.Key("work"), w.StartArray(), w.Double(a), w.Double(b), w.EndArray();
   }
   w.Key("point"), w.Double(motolii_point(m));
-  // Seconds spent editing the project
-  w.Key("edited"), w.Double(doc_edited(*m->d));
-  w.Key("marks"), w.String(motolii_marks(m));
-  w.Key("markColours"), w.String(motolii_mark_colours(m));
-  w.Key("settings"), w.String(motolii_settings(m));
-  w.Key("guides"), w.String(motolii_guides(m));
-  w.Key("easings"), w.String(motolii_easings(m));
-  w.Key("easingNames"), w.String(motolii_easing_names(m));
-  w.Key("effectNames"), w.String(motolii_effect_names(m));
+  if (rows_written) {
+    // Seconds spent editing the project, like Alight Motion's Total Edit Time.
+    w.Key("edited"), w.Double(doc_edited(*m->d));
+    w.Key("marks"), w.String(motolii_marks(m));
+    w.Key("markColours"), w.String(motolii_mark_colours(m));
+    w.Key("settings"), w.String(motolii_settings(m));
+    w.Key("guides"), w.String(motolii_guides(m));
+  }
+  w.Key("changes"), w.String(changes.c_str());
+  w.Key("layers"), w.StartArray();
+  for (int i = 0; i < n; ++i) w.Int(layers[i]);
+  w.EndArray();
+  w.EndObject();
+}
+
+// Writes the document snapshot's tables: what a change to a layer's values
+// leaves as it was. See snapshot_update for when they are made.
+void snapshot_tables(Motolii* m, rapidjson::StringBuffer& out) {
+  SnapshotWriter t(out);
+  t.StartObject();
+  t.Key("easings"), t.String(motolii_easings(m));
+  t.Key("easingNames"), t.String(motolii_easing_names(m));
+  t.Key("effectNames"), t.String(motolii_effect_names(m));
   // Each easing's shape, sampled at 65 evenly spaced steps of u from 0 to 1, so
   // the app can draw its curve.
-  w.Key("easingCurves"), w.StartObject();
+  t.Key("easingCurves"), t.StartObject();
   for (const std::string& easing : snapshot_words(motolii_easing_names(m))) {
-    w.Key(easing.c_str()), w.StartArray();
+    t.Key(easing.c_str()), t.StartArray();
     for (int i = 0; i <= 64; ++i)
-      w.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
-    w.EndArray();
+      t.Double(motolii_easing_at(m, easing.c_str(), i / 64.0));
+    t.EndArray();
   }
-  w.EndObject();
-  w.Key("changes"), w.String(changes.c_str());
+  t.EndObject();
   // The default value of each numeric property, used when the document does not
   // set it.
-  w.Key("usual"), w.StartObject();
+  t.Key("usual"), t.StartObject();
   for (const DocValue& v : doc_values)
     if (!v.words)
-      w.Key(v.name), w.Double(doc_usual(*m->d, v.name)),
-          w.Key((std::string(v.name) + "_by").c_str()), w.Double(0);
-  w.EndObject();
+      t.Key(v.name), t.Double(doc_usual(*m->d, v.name)),
+          t.Key((std::string(v.name) + "_by").c_str()), t.Double(0);
+  t.EndObject();
   // The properties each layer kind has, whether or not they are set. Matches
   // doc_knows.
-  w.Key("knows"), w.StartObject();
+  t.Key("knows"), t.StartObject();
   for (const char* kind : {"video", "image", "text", "solid", "shape", "camera",
                            "light", "behaviour", "stage"}) {
     std::string all;
@@ -280,47 +285,165 @@ void snapshot_update(Motolii* m) {
                (v.words || !strcmp(kind, "stage")
                     ? ""
                     : std::string(" ") + v.name + "_by");
-    w.Key(kind), w.String(all.c_str());
+    t.Key(kind), t.String(all.c_str());
   }
-  w.EndObject();
-  w.Key("layers"), w.StartArray();
-  for (int i = 0; i < n; ++i) w.Int(layers[i]);
-  w.EndArray();
-  w.EndObject();
+  t.EndObject();
+  t.EndObject();
+}
+
+}  // namespace
+
+void snapshot_update(Motolii* m) {
+  Doc& d = *m->d;
+  const SnapshotKeepsWhy keep{d};
+  std::set<int> again;
+  // A table other than keyframe changed (undo.cpp doc_note): an easing of the
+  // document may be among them, so the tables are made again.
+  const bool tables_touched = d.changes.layers_changed;
+  bool all = d.changes.layers_changed || m->snapshots.layers.empty();
+  std::string changes = d.changes.layers_changed ? "layers\n" : "";
+  for (const auto& [layer, name] : d.changes.changed) {
+    changes += std::to_string(layer) + " " + name + "\n";
+    if (name == "name") all = true;
+    again.insert(layer);
+  }
+  d.changes.changed.clear(), d.changes.layers_changed = false;
+  // No row written since the snapshot was last made (a value only held by a
+  // drag): what is read from rows alone is as it was, and is not read again.
+  const bool rows_written = sqlite3_total_changes(d.file) != m->snapshots.rows;
+  m->snapshots.rows = sqlite3_total_changes(d.file);
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
+  // What was done to a layer says how much of its snapshot is made again
+  // (DocChanges::reshaped): its numbers alone, unless a row was put or taken, a
+  // word written, or a value changed that decides its cards. A layer not held
+  // yet is made whole.
+  const std::string shaping = motolii_shaping(m);
+  std::set<int> whole = d.changes.reshaped;
+  for (const auto& [layer, name] : d.changes.changed)
+    if (doc_among(shaping, name)) whole.insert(layer);
+  d.changes.reshaped.clear();
+  // Each layer made again, and whether whole.
+  std::map<int, std::pair<std::string, bool>> parts;
+  const auto build = [&](int layer) {
+    const bool numbers_only = !all && !whole.count(layer) &&
+                              m->snapshots.names.count(layer) &&
+                              m->snapshots.layers.count(layer);
+    if (!numbers_only) m->snapshots.names[layer] = snapshot_names(m, layer);
+    rapidjson::StringBuffer out;
+    SnapshotWriter w(out);
+    snapshot_layer(m, layer, w, m->snapshots.names[layer], numbers_only);
+    parts[layer] = {{out.GetString(), out.GetSize()}, !numbers_only};
+  };
+  // Layer 0 is the stage itself; its cards are the stage's.
+  if (all || again.count(0)) build(0);
+  for (int i = 0; i < n; ++i)
+    if (all || again.count(layers[i])) build(layers[i]);
+  rapidjson::StringBuffer out;
+  snapshot_own(m, out, rows_written, changes, layers, n);
+  // The tables are most of the bytes and a change to a layer's values leaves
+  // them as they were, so they are made again only for a cause: none made yet,
+  // a table other than keyframe changed, or the user's own easings or the
+  // shelf's files did.
+  const int easings = doc_own_easings_made().load(),
+            files = files_changed().load();
+  const bool tables_due = tables_touched ||
+                          easings != m->snapshots.tablesEasings ||
+                          files != m->snapshots.tablesFiles;
+  rapidjson::StringBuffer tables_out;
+  if (tables_due) snapshot_tables(m, tables_out);
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
-  std::string own = {out.GetString(), out.GetSize()};
-  // Nothing the app reads changed, so publish no new snapshot.
-  if (parts.empty() && own == m->snapshots.all) return;
-  const long v = ++m->snapshots.version;
-  for (auto& [layer, part] : parts)
-    m->snapshots.layers[layer] = {v, std::move(part)};
+  const long v = m->snapshots.version + 1;
+  bool differed = json_parts_keep(m->snapshots.document,
+                                  {out.GetString(), out.GetSize()}, v, false);
+  if (tables_due) {
+    differed |= json_parts_keep(m->snapshots.document,
+                                {tables_out.GetString(), tables_out.GetSize()},
+                                v, false);
+    m->snapshots.tablesEasings = easings, m->snapshots.tablesFiles = files;
+  }
+  for (const auto& [layer, made] : parts)
+    differed |=
+        json_parts_keep(m->snapshots.layers[layer], made.first, v, made.second);
   std::set<int> are(layers, layers + n);
   are.insert(0);
   // Drop the parts of layers that no longer exist.
   for (auto it = m->snapshots.layers.begin(); it != m->snapshots.layers.end();)
     it = are.count(it->first) ? std::next(it) : m->snapshots.layers.erase(it);
-  m->snapshots.all = std::move(own);
+  std::erase_if(m->snapshots.names,
+                [&](const auto& held) { return !are.count(held.first); });
+  // Nothing the app reads changed, so publish no new snapshot.
+  if (!differed) return;
+  m->snapshots.version = v;
   m->snapshots.pending |= 1;
+}
+
+std::string snapshot_stale(Motolii* m) {
+  Doc& d = *m->d;
+  const SnapshotKeepsWhy keep{d};
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
+  rapidjson::StringBuffer own, tables;
+  snapshot_own(m, own, true, "", layers, n);
+  snapshot_tables(m, tables);
+  std::map<int, std::string> whole;
+  const auto make = [&](int layer) {
+    rapidjson::StringBuffer out;
+    SnapshotWriter w(out);
+    snapshot_layer(m, layer, w, snapshot_names(m, layer), false);
+    whole[layer] = {out.GetString(), out.GetSize()};
+  };
+  make(0);
+  for (int i = 0; i < n; ++i) make(layers[i]);
+  std::lock_guard<std::mutex> hold(m->snapshots.lock);
+  std::string stale;
+  const auto said = [&](const std::string& of, const JsonParts& held,
+                        const std::string& json, bool all) {
+    for (const std::string& key : json_parts_stale(held, json, all))
+      // What changed is an account of the last step, not of the document.
+      if (key != "changes") stale += (stale.empty() ? "" : " ") + of + key;
+  };
+  said("document/", m->snapshots.document, {own.GetString(), own.GetSize()},
+       false);
+  said("document/", m->snapshots.document,
+       {tables.GetString(), tables.GetSize()}, false);
+  static const JsonParts none;
+  for (const auto& [layer, json] : whole) {
+    const auto held = m->snapshots.layers.find(layer);
+    said(std::to_string(layer) + "/",
+         held == m->snapshots.layers.end() ? none : held->second, json, true);
+  }
+  for (const auto& [layer, held] : m->snapshots.layers)
+    if (!whole.count(layer))
+      stale += (stale.empty() ? "" : " ") + std::to_string(layer) + "/gone";
+  return stale;
 }
 
 void snapshot_time(Motolii* m) {
   Doc& d = *m->d;
   const SnapshotKeepsWhy keep{d};
   const double at = m->playback.now;
-  int layers[1024];
-  const int n = std::min(motolii_layers(m, layers, 1024), 1024);
+  const std::vector<int> all_layers = doc_layers(d);
+  const int* layers = all_layers.data();
+  const int n = (int)all_layers.size();
 
   // Binary layout: flat doubles for every layer's hot data.
-  // [now, count, ids..., records...] where each record is 26 doubles:
-  //   bounds[8], seen[4], shows[14] (value, driven pairs × 7).
-  std::vector<double> layout;
-  layout.reserve(2 + (size_t)n + (size_t)n * 26);
+  // [now, count, ids..., records..., load] where each record is 26 doubles:
+  //   bounds[8], seen[4], shows[14] (value, driven pairs × 7),
+  // and the load is the last frame's two times in ms: the render thread's own
+  // and the GPU's.
+  // Filled where the app will read it (Snapshots::timeLayout): the app is not
+  // reading this copy, and it is handed over whole at the end.
+  std::vector<double>& layout = m->snapshots.timeLayout.back();
+  layout.clear();
+  layout.reserve(2 + (size_t)n + (size_t)n * 26 + 2);
   layout.push_back(at);
   layout.push_back(n);
   for (int i = 0; i < n; ++i) layout.push_back(layers[i]);
-  static const char* show_names[] = {"x",       "y",       "z",
-                                     "rotate",  "scale_x", "scale_y",
-                                     "opacity"};
+  static const char* show_names[] = {"x",       "y",       "z",      "rotate",
+                                     "scale_x", "scale_y", "opacity"};
   for (int i = 0; i < n; ++i) {
     const int t = layers[i];
     double frame[8], box[4];
@@ -332,20 +455,27 @@ void snapshot_time(Motolii* m) {
       for (double b : box) layout.push_back(b);
     else
       for (int j = 0; j < 4; ++j) layout.push_back(NAN);
+    // The values as shown are worked out for the layers the app shows them
+    // of: the picked one, the one under the pointer and the watched ones. With
+    // thousands of layers, seven for each on every frame is most of the work.
+    const bool read = t == m->window.pick || t == m->window.hover ||
+                      m->window.watched.count(t);
     for (const char* name : show_names) {
       double v = 0;
-      if (const int got = motolii_shows(m, t, name, at, &v))
+      if (const int got = read ? doc_shows(d, t, name, at, &v) : 0)
         layout.push_back(v), layout.push_back(got == 2 ? 1.0 : 0.0);
       else
         layout.push_back(NAN), layout.push_back(NAN);
     }
   }
 
+  layout.push_back(m->resolution.frame_ms);
+  layout.push_back(m->resolution.gpu_ms);
+
   // JSON detail: only selected/watched layers' values, gizmo, points, handles.
   rapidjson::StringBuffer out;
   SnapshotWriter w(out);
   w.StartObject();
-  w.Key("now"), w.Double(at);
   w.Key("layer"), w.StartObject();
   for (int i = 0; i < n; ++i) {
     const int t = layers[i];
@@ -381,8 +511,13 @@ void snapshot_time(Motolii* m) {
   w.EndObject();
   std::lock_guard<std::mutex> hold(m->snapshots.lock);
   ++m->snapshots.timeVersion;
-  m->snapshots.time = {out.GetString(), out.GetSize()};
-  m->snapshots.timeLayout = std::move(layout);
+  // The detail is handed over again only when it differs: with nothing picked
+  // or nothing of it moving, every frame's is the same.
+  if (std::string detail(out.GetString(), out.GetSize());
+      detail != m->snapshots.time)
+    m->snapshots.time = std::move(detail),
+    m->snapshots.timeDetailVersion = m->snapshots.timeVersion;
+  m->snapshots.timeLayout.publish();
   m->snapshots.pending |= 2;
 }
 

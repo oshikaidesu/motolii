@@ -19,12 +19,15 @@ TEST(PathWith, EmptyPathGivesJustTheExtraDirectories) {
 }
 
 TEST(PathWith, FinderLikePathGetsBothAppended) {
-  EXPECT_EQ("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin", path_with("/usr/bin:/bin"));
+  EXPECT_EQ("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin",
+            path_with("/usr/bin:/bin"));
 }
 
 TEST(PathWith, OnlyTheMissingOneIsAdded) {
-  EXPECT_EQ("/usr/bin:/usr/local/bin:/opt/homebrew/bin", path_with("/usr/bin:/usr/local/bin"));
-  EXPECT_EQ("/opt/homebrew/bin:/usr/bin:/usr/local/bin", path_with("/opt/homebrew/bin:/usr/bin"));
+  EXPECT_EQ("/usr/bin:/usr/local/bin:/opt/homebrew/bin",
+            path_with("/usr/bin:/usr/local/bin"));
+  EXPECT_EQ("/opt/homebrew/bin:/usr/bin:/usr/local/bin",
+            path_with("/opt/homebrew/bin:/usr/bin"));
 }
 
 TEST(PathWith, BothPresentLeavesPathUnchanged) {
@@ -37,7 +40,8 @@ TEST(PathWith, OrderOfMoreIsKept) {
 }
 
 TEST(PathWith, TrailingSlashEntryIsDistinct) {
-  EXPECT_EQ("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin", path_with("/opt/homebrew/bin/"));
+  EXPECT_EQ("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin",
+            path_with("/opt/homebrew/bin/"));
 }
 
 TEST(PathWith, EmptyMoreReturnsPathUnchanged) {
@@ -46,7 +50,8 @@ TEST(PathWith, EmptyMoreReturnsPathUnchanged) {
 
 TEST(PathWith, CustomMoreIsUsed) {
   EXPECT_EQ("/usr/bin:/custom/bin", path_with("/usr/bin", {"/custom/bin"}));
-  EXPECT_EQ("/usr/bin:/custom/bin", path_with("/usr/bin:/custom/bin", {"/custom/bin"}));
+  EXPECT_EQ("/usr/bin:/custom/bin",
+            path_with("/usr/bin:/custom/bin", {"/custom/bin"}));
 }
 
 class AddToPathTest : public ::testing::Test {
@@ -57,8 +62,10 @@ class AddToPathTest : public ::testing::Test {
     if (had_path_) saved_ = path;
   }
   void TearDown() override {
-    if (had_path_) ::setenv("PATH", saved_.c_str(), 1);
-    else ::unsetenv("PATH");
+    if (had_path_)
+      ::setenv("PATH", saved_.c_str(), 1);
+    else
+      ::unsetenv("PATH");
   }
   static std::string Path() { return std::getenv("PATH"); }
 

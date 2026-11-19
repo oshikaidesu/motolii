@@ -82,9 +82,9 @@ std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
     if (std::filesystem::path(path).extension() == ".am")
       if (const DocScript* sc = doc_script_of(d, path);
           sc && (sc->absent == "motionblur" || sc->absent == "shutterblur"))
-        path =
-            (std::filesystem::path(path).parent_path() / "am_directionalblur.wgsl")
-                .string();
+        path = (std::filesystem::path(path).parent_path() /
+                "am_directionalblur.wgsl")
+                   .string();
     result.push_back(id.empty() ? path : id + ":" + path);
   }
   return result;

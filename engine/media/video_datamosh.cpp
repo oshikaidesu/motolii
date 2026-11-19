@@ -1,9 +1,5 @@
 #include "media/video_datamosh.h"
 
-#include "base/cache_folder.h"
-#include "base/hash.h"
-#include "base/video_encoder.h"
-
 #include <sys/stat.h>
 
 #include <atomic>
@@ -16,6 +12,10 @@
 #include <string>
 #include <system_error>
 #include <thread>
+
+#include "base/cache_folder.h"
+#include "base/hash.h"
+#include "base/video_encoder.h"
 
 namespace motolii {
 

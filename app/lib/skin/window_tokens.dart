@@ -29,6 +29,9 @@ abstract final class WindowTokens {
 
   /// The one accent (same as the Inspector's) and the ink drawn on it.
   static Color get accent => Accent.fill;
+
+  /// Something is wrong or used up: the diagnostics dot, a load over its frame. A skin's Alert role overrides it.
+  static Color get alert => ColorTheme.of('Alert', const Color(0xFFE5484D));
   static Color get accentHot =>
       Color.lerp(accent, const Color(0xFFFFFFFF), .14)!;
   static Color get onAccent => Accent.on;

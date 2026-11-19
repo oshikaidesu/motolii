@@ -63,7 +63,7 @@ for (const [name, f] of Object.entries(T) as [string, any][]) {
       const head = [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)`, "// --label:3d"]
       let text: string
       try {
-        if (f.normal) material.colorNode = varying(vec3(f.normal(args)), "v_shape_normal")   // (the author's normals for the moved shape, "material.normalNode = rotator.normal ( {", docs/rotator.md:52)
+        if (f.normal) material.colorNode = varying(vec3(f.normal(args)), "v_shape_normal")   // (the author's normals for the moved shape, "material.normalNode = rotator.normal ( {", engine/third_party/tsl/boytchev__tsl-textures/docs/rotator.md:52)
         text = pointsText(new THREE.Mesh(ball, material), head, tracks, of)
       } catch (e: any) {   // (its normals do not build as WGSL: the points alone)
         console.log(`${name}: without its normals, ${String(e?.message ?? e).slice(0, 100)}`)

@@ -1,6 +1,7 @@
 // The app's top bar: wordmark, project name, selected layer, size, light or dark mode, and the Render button.
 import 'package:motolii/workspace/commands/command_keys.dart' show keysOf;
 import 'package:motolii/workspace/commands/keymap.dart' show CommandIntent;
+import 'package:motolii/workspace/top_bar/load_meter.dart';
 import 'package:motolii/workspace/top_bar/render_button.dart';
 
 import 'package:flutter/widgets.dart';
@@ -30,9 +31,10 @@ class TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The names and the length it shows are structure: a value dragged leaves the bar alone.
     final ws = WorkspaceScope.of(context, {
       WorkspaceAspect.animating,
-      WorkspaceAspect.document,
+      WorkspaceAspect.structure,
       WorkspaceAspect.picked,
     });
     return Container(
@@ -75,6 +77,7 @@ class TopBar extends StatelessWidget {
           const ZoomReadout(),
           const _ShadeSwitch(),
           SizedBox(width: Shape.s(10)),
+          const LoadMeter(),
           const Waited(),
           const _Saved(),
           SizedBox(width: Shape.s(12)),

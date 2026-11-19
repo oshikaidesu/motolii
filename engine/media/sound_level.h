@@ -51,11 +51,11 @@ inline constexpr int sound_rate = 48000, sound_size = 2048, sound_rows = 60,
 const SoundRead* sound_of(const std::string& file, bool wait = false);
 
 // One asking of the Web's AnalyserNode (W3C Web Audio API, section 1.8.6, "FFT
-// windowing and smoothing over time"): `latest` holds the `size` samples heard last, the
-// oldest first, `size` a power of two. They are put under a Blackman window
-// and transformed (the transform is GStreamer's gst_fft_f32), each pitch's
-// size divided by `size` and smoothed with what the asking before left in
-// `smooth` (size / 2 values, zeros before the first asking) by `tau`, the
+// windowing and smoothing over time"): `latest` holds the `size` samples heard
+// last, the oldest first, `size` a power of two. They are put under a Blackman
+// window and transformed (the transform is GStreamer's gst_fft_f32), each
+// pitch's size divided by `size` and smoothed with what the asking before left
+// in `smooth` (size / 2 values, zeros before the first asking) by `tau`, the
 // smoothingTimeConstant. `smooth` is left holding the result; 20 x log10 of a
 // value is its decibels.
 void analyser_asked(const float* latest, int size, double tau, double* smooth);

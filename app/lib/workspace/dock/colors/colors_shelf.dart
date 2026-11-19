@@ -4,7 +4,6 @@ import 'package:motolii/workspace/dock/colors/color_saved_bar.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
-import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip;
@@ -42,10 +41,11 @@ class ColorsShelf extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A colour is a word of its layer: built again when a word or the selection changes, not for a number.
     WorkspaceScope.of(context, {
       WorkspaceAspect.picked,
-      WorkspaceAspect.document,
-    }); // Rebuilds when the target or the selection changes.
+      WorkspaceAspect.structure,
+    });
     colors.saved.read();
     final commands = ColorCommands(c, colors);
     final usedCount = <Color, int>{};
@@ -162,12 +162,7 @@ class ColorsShelf extends StatelessWidget {
           if (c.mem.trouble['fill'] case final why?)
             Padding(
               padding: EdgeInsets.only(top: Shape.s(4)),
-              child: Text(
-                why,
-                style: TextStyles.label(
-                  ColorTheme.of('Alert', const Color(0xFFE5484D)),
-                ),
-              ),
+              child: Text(why, style: TextStyles.label(WindowTokens.alert)),
             ),
           SizedBox(height: Shape.s(6)),
           Row(

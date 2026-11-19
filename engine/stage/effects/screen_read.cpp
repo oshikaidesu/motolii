@@ -2,8 +2,6 @@
 // Filament's driver takes, and the layout of its parameters, passes and
 // targets is filled into the ScreenFx.
 
-#include "stage/effects/screen_fx.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -20,6 +18,7 @@
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
 #include "shelf/shelf_folders.h"
+#include "stage/effects/screen_fx.h"
 
 namespace motolii {
 

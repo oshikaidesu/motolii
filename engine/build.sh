@@ -22,7 +22,9 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     ./deps/jolt.sh
     ./deps/curve_fit_nd.sh
     ./deps/ffmpeg.sh
-    ./deps/onnxruntime.sh
+    # The one dependency the rest can be built without (entry/calls_map.cpp). When it is fetched later, delete
+    # out/cmake/CMakeCache.txt so that CMake links it.
+    ./deps/onnxruntime.sh || echo "onnxruntime: not fetched; this build is without the shelf maps' image likeness" >&2
     ./deps/iris.sh
     ./deps/midi_roll.sh
     [ -f third_party/skia_src/out/path/libpathops.a ] || ./deps/skia.sh

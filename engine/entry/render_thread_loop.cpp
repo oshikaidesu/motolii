@@ -39,6 +39,7 @@
 #include "entry/motolii_handle.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"
+#include "gpu/screen_interop.h"
 #include "media/sound_playback.h"
 #include "media/video_datamosh.h"
 #include "media/video_layer.h"
@@ -242,6 +243,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           !m->render_thread.changed &&
           t - m->render_thread.stirred > std::chrono::milliseconds(300)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
+        doc_settle(*m->d);
         int begun = 0;
         for (auto& [layer, shown] : m->d->on_stage.shown)
           if (shown.drawn) begun += frames_ahead(*m->s, shown.drawn, 2);
@@ -404,7 +406,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       const auto ms = [](auto a, auto b) {
         return 1e3 * std::chrono::duration<double>(b - a).count();
       };
-      // Frame took longer than one beat: missed 60 fps.
+      m->resolution.frame_ms = ms(round_at, rendered);
+      // A frame took the render thread longer than a beat to make, so the next
+      // beat came while it was busy. That is a missed 60 fps. It is reported
+      // with the time of each part.
       if (ms(round_at, rendered) > BEAT_MS && moving(drew_before, beat)) {
         char why[200];
         std::snprintf(why, sizeof why,
@@ -437,9 +442,12 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   }
   for (auto& [who, h] : m->playback.heard) heard_off(h);
   if (m->display.beat) m->display.beat->stop();
-  if (m->d) sqlite3_close(m->d->file);
-  // Teardown on the engine thread. The engine is shared across stages so it
-  // outlives this stage; only per-stage resources are destroyed.
+  if (m->d) doc_close_file(*m->d);
+  // Filament's own teardown, on the thread that built the engine (open_stage):
+  // Engine::destroy frees whatever the stage still holds, its job threads and
+  // GPU memory. Its shutdown destroys leftover materials before their leftover
+  // instances (FEngine::shutdown), which a debug build of Filament would stop
+  // at; that check is Filament's feature flag, turned off for the teardown.
   if (m->s && m->s->engine) {
     for (interop::Screen* sc : m->s->edge_screens)
       if (sc) interop::drop(m->s->engine, sc);

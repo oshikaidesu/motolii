@@ -40,10 +40,12 @@ jobs:
       - run: brew bundle
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
       - run: engine/build.sh test
       - run: engine/edit.sh build.motolii < /dev/null   # (a document opened by what was built)
+      - run: engine/snapshot_parts_check.sh   # (the app is handed only the parts of the snapshot that differ, by what was built)
+      - run: engine/random_edits_check.sh   # (documents edited at random: what the app would hold is the document, at every step)
       - uses: actions/cache/save@v4   # (kept even when a step before failed)
         if: always() && steps.deps.outputs.cache-hit != 'true'
         with:

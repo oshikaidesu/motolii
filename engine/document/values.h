@@ -50,7 +50,8 @@ inline const DocShown doc_shown[] = {
     {"gradient", "", "", "Gradient", 0, 0, nullptr},
     // The gradient's own settings fold under it (Gradient), so the Fill card
     // groups them from this, not from a list named in the UI (match_look.cpp
-    // reads them; app/.../fill_body.dart shows them while a gradient is chosen).
+    // reads them; app/.../fill_body.dart shows them while a gradient is
+    // chosen).
     {"gradient_angle", "angle", "°", "Angle", -180, 180, "Gradient"},
     {"points", "count", "", "Points", 3, 32, nullptr},
     {"inner", "share", "%", "Inner radius", 0.05, 1, nullptr},

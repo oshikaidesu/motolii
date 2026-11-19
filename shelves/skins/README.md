@@ -120,7 +120,7 @@ A form is one Dart class (`lib/widgets/forms/poster_forms.dart` is a sample). Th
 | `onOff` | On and off switches (Animate all and others) |
 | `card` | One card of the inspector |
 
-The others (`segment`, `flag`, `chips`, `track`, `number` and more) are optional and have a usual drawing. They are listed in [HANDOFF.md](../../docs/app/skins/HANDOFF.md).
+The others (`segment`, `flag`, `chips`, `track`, `number` and more) are optional and have a usual drawing. They are listed in [HANDOFF.md](../../docs/archive/skins/HANDOFF.md).
 
 To add a form, write a class that extends `Forms` in `lib/widgets/forms/<name>_forms.dart`, add one line to `forms` in `lib/widgets/forms/forms.dart`, and write `<Forms Value="<name>"/>` in the skin's theme.xml.
 

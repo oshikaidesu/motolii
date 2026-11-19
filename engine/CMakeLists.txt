@@ -419,12 +419,15 @@ add_library(motolii_entry OBJECT
   entry/window.cpp)
 target_link_libraries(motolii_entry PUBLIC motolii_flags motolii_base motolii_shelf motolii_stage_render motolii_media motolii_motion motolii_stage_canvas motolii_document motolii_stage motolii_preview)
 # ONNX Runtime is the release deps/onnxruntime.sh fetches: one library that carries its own dependencies.
-if(NOT EXISTS ${THIRD_PARTY}/onnxruntime/lib)
-  message(FATAL_ERROR "third_party/onnxruntime is not fetched: run engine/deps/onnxruntime.sh")
+# Where it could not be fetched the engine is built without it (entry/calls_map.cpp): everything else of the engine
+# does not wait on one download.
+if(EXISTS ${THIRD_PARTY}/onnxruntime/lib)
+  target_link_directories(motolii_entry PUBLIC ${THIRD_PARTY}/onnxruntime/lib)
+  target_link_libraries(motolii_entry PUBLIC onnxruntime)
+  target_link_options(motolii_entry PUBLIC -Wl,-rpath,${THIRD_PARTY}/onnxruntime/lib)
+else()
+  message(WARNING "third_party/onnxruntime is not fetched (engine/deps/onnxruntime.sh): built without the shelf maps' image likeness")
 endif()
-target_link_directories(motolii_entry PUBLIC ${THIRD_PARTY}/onnxruntime/lib)
-target_link_libraries(motolii_entry PUBLIC onnxruntime)
-target_link_options(motolii_entry PUBLIC -Wl,-rpath,${THIRD_PARTY}/onnxruntime/lib)
 
 # ---- What each module can include. Headers are written by their path from this folder ("stage/render/render.h"), so
 # one include folder for everybody would let a module include any other. Instead each module is compiled with a folder

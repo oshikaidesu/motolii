@@ -9,9 +9,9 @@
 #include <geometry/SurfaceOrientation.h>
 #include <ktxreader/Ktx1Reader.h>
 #include <utils/EntityManager.h>
+#include <utils/Panic.h>
 
 #include <fstream>
-#include <mutex>
 
 #include "base/file_read.h"
 
@@ -50,26 +50,25 @@ backend::BufferDescriptor copied(const void* from, size_t bytes) {
       copy, bytes, [](void* buffer, size_t, void*) { free(buffer); });
 }
 
-// One Filament engine for the process. Dawn's WebGPU backend crashes when two
-// engines share the same GPU device, so every Stage borrows this one.
-static Engine* shared_engine = nullptr;
-static std::mutex engine_mutex;
-
 Stage open_stage(int w, int h) {
   Stage s{w, h};
   const char* backend = getenv("BACKEND");
-  {
-    std::lock_guard<std::mutex> lock(engine_mutex);
-    if (!shared_engine) {
-      shared_engine = Engine::Builder()
-                          .backend(backend && !strcmp(backend, "webgpu")
-                                       ? Engine::Backend::WEBGPU
-                                       : Engine::Backend::METAL)
-                          .build();
-      shared_engine->setFeatureFlag("engine.color_grading.use_1d_lut", true);
-    }
-  }
-  s.engine = shared_engine;
+  // A Filament panic ends the app; Filament's own hook (utils/Panic.h) writes
+  // why before it does, from any thread.
+  utils::Panic::setPanicHandler(
+      [](void*, utils::Panic const& p) {
+        fprintf(stderr, "Filament panic: %s\n", p.what());
+      },
+      nullptr);
+  s.engine = Engine::Builder()
+                 .backend(backend && !strcmp(backend, "webgpu")
+                              ? Engine::Backend::WEBGPU
+                              : Engine::Backend::METAL)
+                 .build();
+  // An image that does nothing to its colours gets them through exactly.
+  // Filament may then use its one-dimensional lookup table instead of a coarse
+  // block of values. With the block a white of 255 comes out as 249.
+  s.engine->setFeatureFlag("engine.color_grading.use_1d_lut", true);
   s.renderer = s.engine->createRenderer();
   s.scene = s.engine->createScene();
   s.view = s.engine->createView();

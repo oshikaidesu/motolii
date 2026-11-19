@@ -5,7 +5,13 @@
 // IDEO's Font Map lays out fonts by their drawn letters. The shelves use the
 // same idea. The t-SNE is qdtsne (MIT, third_party/qdtsne), used as in its
 // quick start.
+// ONNX Runtime is fetched (deps/onnxruntime.sh). Where it could not be, the
+// engine is built without it and motolii_likeness answers as it does for a
+// model that is not there: the maps are then laid out without images' likeness.
+#if __has_include(<onnxruntime_cxx_api.h>)
 #include <onnxruntime_cxx_api.h>
+#define MOTOLII_HAS_ONNXRUNTIME 1
+#endif
 #include <thorvg.h>
 
 #include <algorithm>
@@ -67,6 +73,9 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n,
   if (!model || !rgba || !out || n < 1 || dims < 1 ||
       !std::filesystem::is_regular_file(model))
     return 0;
+#if !defined(MOTOLII_HAS_ONNXRUNTIME)
+  return 0;
+#else
   static std::mutex opening;
   static std::map<std::string, std::unique_ptr<Ort::Session>> open;
   try {
@@ -115,6 +124,7 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n,
   } catch (const Ort::Exception&) {
     return 0;
   }
+#endif
 }
 
 // Draws words in the font file as white on black into grey, a w x h image with

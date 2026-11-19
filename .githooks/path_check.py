@@ -13,7 +13,8 @@
 # [name]: path and <img src="path">, from the .md's folder as GitHub resolves them ('/' from the root); a web address,
 # mailto: or #anchor alone is skipped. A file name in `code` (ending .dart .cpp .h .sh ...) must be the end of a tracked
 # path, so a renamed file cannot linger in a document. docs/design/ is exempt: its notes are dated records, and the
-# paths in them are as they were on that day.
+# paths in them are as they were on that day. docs/archive/ is not read at all, for the same reason: what is put
+# away there names the tree as it was when it was put away.
 # What is fetched or made at build time is in path_check_allow.txt, each with why.
 #   pre-commit: the staged shelf files; all of them when a staged change deletes or renames anything.
 #   --all [--rev REV]: every shelf file (of REV's tree), for CI and for trying it on a commit from the past.
@@ -44,7 +45,7 @@ for f in list(folders):
 
 def wanted(p):
     if p.endswith('.md'):   # (not the authors' own documents, whose links go into their repos)
-        return '/aviutl_scripts/' not in '/' + p and not p.startswith('engine/third_party/')
+        return '/aviutl_scripts/' not in '/' + p and not p.startswith(('engine/third_party/', 'docs/archive/'))
     if p.startswith('shelves/'):
         return not p.startswith('shelves/aviutl_scripts/') and p.endswith(
             ('.js', '.mjs', '.wgsl', '.fs', '.am', '.way', '.motolii', '.sh', '.py'))

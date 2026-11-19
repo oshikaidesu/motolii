@@ -2,31 +2,25 @@
 // flat is held — turning about the point where Speed holds it (its start, the playhead, or its end: speed_hold).
 // Take the handle up or down to set the speed Time-Remap graph is dragged. The Speed, Hold at and
 // Frame rate tiles stay below, so a value may also be typed or chosen.
-import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/handle_drag.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 
 /// The Play card's inside (see host_cards.dart).
-class PlayGraph extends StatefulWidget {
+class PlayGraph extends StatelessWidget {
   const PlayGraph(this.card, {super.key});
   final CardDeclaration card;
 
   static double get height => Shape.z(64);
 
   @override
-  State<PlayGraph> createState() => _PlayGraphState();
-}
-
-class _PlayGraphState extends State<PlayGraph> {
-  bool _held = false, _near = false;
-
-  @override
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
-    final params = {for (final p in widget.card.params) p.id: p};
+    final params = {for (final p in card.params) p.id: p};
     final speed = params['speed'];
     if (speed == null) return const SizedBox.shrink();
     final lo = speed.min ?? -4, hi = speed.max ?? 4;
@@ -64,37 +58,17 @@ class _PlayGraphState extends State<PlayGraph> {
               doc.set('v_speed', speed.scrubbed(nv, v, past: false));
             }
 
-            return MouseRegion(
-              cursor: _held || _near
-                  ? SystemMouseCursors.grab
-                  : MouseCursor.defer,
-              onHover: (e) {
-                final n =
-                    (e.localPosition - Offset(handleX, handleY)).distance <= 16;
-                if (n != _near) setState(() => _near = n);
-              },
-              onExit: (_) => setState(() => _near = false),
-              child: Listener(
-                onPointerDown: (e) {
-                  if (e.buttons != kPrimaryButton) return;
-                  doc.beginGesture();
-                  setState(() => _held = true);
-                  setFrom(e.localPosition.dy);
-                },
-                onPointerMove: (e) {
-                  if (_held) setFrom(e.localPosition.dy);
-                },
-                onPointerUp: (_) => _let(),
-                onPointerCancel: (_) => _let(),
-                child: CustomPaint(
-                  key: const ValueKey('play-graph'),
-                  size: Size(w, h),
-                  painter: _PlayPaint(
-                    pivot: Offset(pivotX, midY),
-                    handle: Offset(handleX, handleY),
-                    pad: pad,
-                    lit: _held || _near,
-                  ),
+            return HandleDrag(
+              near: (at) => (at - Offset(handleX, handleY)).distance <= 16,
+              onDrag: (at) => setFrom(at.dy),
+              builder: (lit) => CustomPaint(
+                key: const ValueKey('play-graph'),
+                size: Size(w, h),
+                painter: _PlayPaint(
+                  pivot: Offset(pivotX, midY),
+                  handle: Offset(handleX, handleY),
+                  pad: pad,
+                  lit: lit,
                 ),
               ),
             );
@@ -102,12 +76,6 @@ class _PlayGraphState extends State<PlayGraph> {
         ),
       ),
     );
-  }
-
-  void _let() {
-    if (!_held) return;
-    InspectorScope.of(context).doc.endGesture();
-    setState(() => _held = false);
   }
 }
 
@@ -124,10 +92,7 @@ class _PlayPaint extends CustomPainter {
 
   @override
   void paint(Canvas c, Size s) {
-    c.drawRRect(
-      RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)),
-      Paint()..color = Grey.g07,
-    );
+    drawWell(c, s);
     // The time baseline: where Speed is 1 (unchanged).
     final midY = s.height / 2;
     c.drawLine(

@@ -1,19 +1,22 @@
 #ifndef MOTOLII_BASE_VIDEO_ENCODER_H_
 #define MOTOLII_BASE_VIDEO_ENCODER_H_
-// Which H.264 encoder to ask ffmpeg for. The ffmpeg this engine runs is LGPL only (deps/ffmpeg.sh), so it has no libx264;
-// each OS has its own: VideoToolbox on a Mac, MediaFoundation on Windows, VAAPI on Linux, NVENC / QSV / AMF on a
-// graphics card, OpenH264 in software anywhere. So the choice is made from what that ffmpeg lists, not from the OS.
+// Which H.264 encoder to ask ffmpeg for. The ffmpeg this engine runs is LGPL
+// only (deps/ffmpeg.sh), so it has no libx264; each OS has its own:
+// VideoToolbox on a Mac, MediaFoundation on Windows, VAAPI on Linux, NVENC /
+// QSV / AMF on a graphics card, OpenH264 in software anywhere. So the choice is
+// made from what that ffmpeg lists, not from the OS.
 #include <cstdio>
 #include <sstream>
 #include <string>
 
 namespace motolii {
 
-// The first encoder of this list that `listing` (the text of `ffmpeg -hide_banner -encoders`) names as a video
-// encoder; "" if none. A line is: six flag characters (the first is V for video), the name, a description.
+// The first encoder of this list that `listing` (the text of `ffmpeg
+// -hide_banner -encoders`) names as a video encoder; "" if none. A line is: six
+// flag characters (the first is V for video), the name, a description.
 inline std::string h264_encoder(const std::string& listing) {
   static const char* const wanted[] = {
-      "h264_videotoolbox", "h264_nvenc", "h264_qsv",     "h264_amf",
+      "h264_videotoolbox", "h264_nvenc", "h264_qsv",    "h264_amf",
       "h264_mf",           "h264_vaapi", "libopenh264", "libx264"};
   std::istringstream lines(listing);
   std::string line, found[8];
@@ -29,9 +32,11 @@ inline std::string h264_encoder(const std::string& listing) {
   return "";
 }
 
-// The ffmpeg arguments that set an encoder's quality, with a space on each side. Only VideoToolbox (-q:v 68, measured
-// against libx264 -crf 17 with VMAF, stage/render/render_draw.cpp) and libx264 are tuned: the others get a bit rate,
-// `mbps` or 8 Mbit/s, and still have to be measured the same way on their own OS.
+// The ffmpeg arguments that set an encoder's quality, with a space on each
+// side. Only VideoToolbox (-q:v 68, measured against libx264 -crf 17 with VMAF,
+// stage/render/render_draw.cpp) and libx264 are tuned: the others get a bit
+// rate, `mbps` or 8 Mbit/s, and still have to be measured the same way on their
+// own OS.
 inline std::string h264_quality(const std::string& encoder, double mbps) {
   const std::string m = std::to_string(mbps > 0.0 ? mbps : 8.0) + "M";
   if (encoder == "h264_videotoolbox")
@@ -41,7 +46,8 @@ inline std::string h264_quality(const std::string& encoder, double mbps) {
   return " -b:v " + m + " ";
 }
 
-// The encoder of the ffmpeg that PATH finds first, asked once (popen; "" if there is no ffmpeg or it has none).
+// The encoder of the ffmpeg that PATH finds first, asked once (popen; "" if
+// there is no ffmpeg or it has none).
 inline std::string h264_encoder_here() {
   static const std::string chosen = [] {
     std::string listing;

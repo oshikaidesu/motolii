@@ -40,7 +40,8 @@ const DocShown* doc_shown_of(Doc& d, const char* name) {
   // Per-instance stored names carry a 6-hex instance-ID prefix, as in
   // "a1b2c3:stroke_width" (fx effects, extra strokes). The display metadata is
   // the same for every instance of a property, so fall back to the base name.
-  if (const std::string base = fx_entry_path(name); base != name && !base.empty())
+  if (const std::string base = fx_entry_path(name);
+      base != name && !base.empty())
     return doc_shown_of(d, base.c_str());
   return nullptr;
 }
@@ -168,8 +169,8 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
     // Its letters may each have their own opacity.
     if (ext == ".css") {
       std::filesystem::path html = fx_source(file);
-      s.css = read_text(html), s.html = read_text(html.replace_extension(".html")),
-      s.clears = true;
+      s.css = read_text(html),
+      s.html = read_text(html.replace_extension(".html")), s.clears = true;
       return &s;
     }
     // A .wgsl or ISF .fs file is drawn, not run, see
@@ -187,8 +188,9 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
       return &s;
     }
     doc_scripts_kept(d).why.erase(file);
-    s.clears = read_text(screen ? isf_file(file) : fx_source(file))
-                   .find("opacity") != std::string::npos;
+    s.clears =
+        read_text(screen ? isf_file(file) : fx_source(file)).find("opacity") !=
+        std::string::npos;
   }
   return &s;
 }

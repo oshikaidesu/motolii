@@ -1,10 +1,9 @@
 #include "community/jolt/rigid_bodies.h"
 
-#include <Jolt/Jolt.h>
-
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/JobSystemSingleThreaded.h>
 #include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
 #include <Jolt/Physics/Body/BodyLock.h>
@@ -127,12 +126,11 @@ void RigidBodies::step(const std::vector<RigidBodyTold>& told) {
     // A body whose layer is not on, or has just come on, is put where it is
     // told, at rest.
     if (!t.present || !was)
-      bodies.SetPositionRotationAndVelocity(id, at(t), turned(t.turn),
-                                            JPH::Vec3::sZero(),
-                                            JPH::Vec3::sZero());
-    const JPH::EMotionType type =
-        t.present && t.mass > 0 ? JPH::EMotionType::Dynamic
-                                : JPH::EMotionType::Kinematic;
+      bodies.SetPositionRotationAndVelocity(
+          id, at(t), turned(t.turn), JPH::Vec3::sZero(), JPH::Vec3::sZero());
+    const JPH::EMotionType type = t.present && t.mass > 0
+                                      ? JPH::EMotionType::Dynamic
+                                      : JPH::EMotionType::Kinematic;
     if (bodies.GetMotionType(id) != type)
       bodies.SetMotionType(id, type, JPH::EActivation::Activate);
     if (!t.present) continue;

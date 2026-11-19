@@ -26,8 +26,8 @@ double doc_comp_high(Doc& d);
 
 // Returns the time (in seconds, measured from 0) at which the layer stops being
 // shown: its `start` plus its `duration`, or `start` plus [doc_seconds] if the
-// layer has no `duration` keyframe. For AbsentMotion effects (community/absent_motion)
-// multiply the result by 1000 to get milliseconds.
+// layer has no `duration` keyframe. For AbsentMotion effects
+// (community/absent_motion) multiply the result by 1000 to get milliseconds.
 double doc_layer_ends(Doc& d, int layer);
 
 // The work area is the stretch of the project that is played round and exported

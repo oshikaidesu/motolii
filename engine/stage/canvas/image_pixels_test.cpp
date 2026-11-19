@@ -3,7 +3,9 @@
 // the engine, with these pixels (red, green, blue, alpha out of 255):
 //     x = 0            1            2            3
 //   y = 0  red 255,0,0,255   red 255,0,0,255   blue 0,0,255,255   clear 0,0,0,0
-//   y = 1  green (0,255,0,255) x3                          white 255,255,255,128
+//   y = 1  green (0,255,0,255) x3                          white
+//   255,255,255,128
+//
 // The expected numbers are worked out from those pixels and from After Effects'
 // sampleImage() (ae-expressions.docsforadobe.dev/layer/general/): [0, 0] is the
 // centre of the upper-left pixel; the radius is the distance from the point to

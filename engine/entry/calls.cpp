@@ -1,10 +1,10 @@
 #include "entry/calls.h"
 
-#include <regex>
 #include <thorvg.h>
 
 #include <algorithm>
 #include <cstdio>
+#include <regex>
 #include <string>
 
 #include "document/cards.h"
@@ -117,12 +117,7 @@ int motolii_work_out(Motolii* m, const char* sum, double* is) {
 // value, not the driven one).
 int motolii_shows(Motolii* m, int layer, const char* name, double at,
                   double* is) {
-  return by_look(m, [=] {
-    if (!doc_value(*m->d, layer, name, at, is)) return 0;
-    if (!doc_driven_by(*m->d, layer, name)) return 1;
-    *is = doc_literal(*m->d, layer, doc_lasting(name), at, *is);
-    return 2;
-  });
+  return by_look(m, [=] { return doc_shows(*m->d, layer, name, at, is); });
 }
 // Layers in stacking order (furthest back first). Returns total count.
 int motolii_layers(Motolii* m, int* layers, int room) {
@@ -390,14 +385,19 @@ const char* motolii_shape_svg(Motolii* m, int layer) {
     const std::string kind = doc_word(d, layer, "kind");
     // Text: use a square so path operators are visible (letter outlines are noise).
     const bool text = kind == "text";
-    const std::string form = text ? std::string("rect") : doc_word(d, layer, "shape");
-    if (!text && (kind != "shape" || form.empty() ||
-                  form == "path" || form == "null" || form == "solid"))
+    const std::string form =
+        text ? std::string("rect") : doc_word(d, layer, "shape");
+    if (!text && (kind != "shape" || form.empty() || form == "path" ||
+                  form == "null" || form == "solid"))
       return (said_word() = "").c_str();
     const bool line = form == "line", wave = form == "wave";
-    const double high = line ? 0.04 : wave ? 0.3 : 1.0,
+    const double high = line   ? 0.04
+                        : wave ? 0.3
+                               : 1.0,
                  wide = doc_number(d, layer, "wide", 0,
-                                   line ? 25 : wave ? 10 : 1);
+                                   line   ? 25
+                                   : wave ? 10
+                                          : 1);
     const int h = 1024, w = std::max(2, (int)std::lround(1024.0 * wide));
     Canvas2D made;
     tvg::Shape* shape = tvg::Shape::gen();
@@ -423,13 +423,14 @@ const char* motolii_shape_svg(Motolii* m, int layer) {
     const auto num = [&](const char* name, double usual) {
       return (float)doc_number(d, layer, name, at, usual);
     };
-    tvg_bend(shape, made.plain.data(), (uint32_t)made.plain.size(),
-             made.plainAt.data(), (uint32_t)made.plainAt.size(),
-             line ? 0.f : std::clamp(num("round", 0), 0.f, 0.5f) * made.plainSide,
-             100.f * std::clamp(num("bloat", 0), -1.f, 1.f),
-             num("zigzag", 0) * (float)h,
-             (int)std::clamp(num("zigzag_ridges", 5), 0.f, 100.f),
-             num("zigzag_smooth", 0) > 0.5f, num("offset", 0) * (float)h, 0.f);
+    tvg_bend(
+        shape, made.plain.data(), (uint32_t)made.plain.size(),
+        made.plainAt.data(), (uint32_t)made.plainAt.size(),
+        line ? 0.f : std::clamp(num("round", 0), 0.f, 0.5f) * made.plainSide,
+        100.f * std::clamp(num("bloat", 0), -1.f, 1.f),
+        num("zigzag", 0) * (float)h,
+        (int)std::clamp(num("zigzag_ridges", 5), 0.f, 100.f),
+        num("zigzag_smooth", 0) > 0.5f, num("offset", 0) * (float)h, 0.f);
     const tvg::PathCommand* cmds;
     const tvg::Point* pts;
     uint32_t cmdsCnt = 0, ptsCnt = 0;

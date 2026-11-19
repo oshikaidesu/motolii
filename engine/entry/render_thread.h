@@ -74,6 +74,9 @@ struct DynamicResolution {
   long judged = 0;
   // The median GPU time of the last frames and the largest seen.
   double gpu_ms = 0.0, gpu_most = 0.0;
+  // The render thread's own time for the last frame it drew: the changes, the
+  // moment and the drawing. The app's load meter shows it beside gpu_ms.
+  double frame_ms = 0.0;
   // The scale at which the stage's views are drawn now.
   double scale = 1.0;
 };
