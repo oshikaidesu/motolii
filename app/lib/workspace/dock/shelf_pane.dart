@@ -255,7 +255,12 @@ class _ShelfPaneState extends State<ShelfPane> {
                     min: 50,
                     max: 140,
                     width: Shape.z(48),
-                    onChanged: (v) => setState(() => _mem.fxTileSize = v.first),
+                    onChanged: (v) {
+                      final stepped = (v.first / 10).roundToDouble() * 10;
+                      if (stepped != _mem.fxTileSize) {
+                        setState(() => _mem.fxTileSize = stepped);
+                      }
+                    },
                   ),
                 ),
               ],
