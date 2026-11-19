@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Motolii</title>
-<meta name="description" content="ネットで見つけた表現を、すぐ自分の映像に。オープンソースのモーショングラフィックス編集ソフト Motolii。">
+<meta name="description" content="離れていた表現の、交差点。After Effects の式も Shadertoy も p5.js も CSS も Lottie も、貼れば動くオープンソースの動画編集ソフト Motolii。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Motolii">
-<meta property="og:description" content="ネットで見つけた表現を、すぐ自分の映像に。オープンソースのモーショングラフィックス編集ソフト。">
+<meta property="og:description" content="離れていた表現の、交差点。貼れば動く、オープンソースの動画編集ソフト。">
 <meta property="og:url" content="https://oshikaidesu.github.io/motolii/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -248,7 +248,33 @@
   .mitem p { font-size: .83rem; color: var(--fg-dim); line-height: 1.55; margin: 0; }
   .mitem .ms { margin-top: 2px; font-family: var(--font-mono); font-size: .71rem; color: var(--fg-faint); }
 
+  /* 実画面 */
+  .shot { margin-top: clamp(40px, 6vw, 60px); border: 1px solid var(--line-strong); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); background: #111; }
+  .shot .title { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #262d2a; background: #1b201e; font-size: .76rem; color: #8a938f; }
+  .shot .lights { display: flex; gap: 6px; }
+  .shot .lights i { width: 10px; height: 10px; border-radius: 50%; background: #323a36; }
+  .shot img { width: 100%; height: auto; }
+
+  /* 画面ツアー */
+  .tour { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .stop { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .stop.wide { grid-column: 1 / -1; }
+  .stop .pic { background: #111; border-bottom: 1px solid var(--line); display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+  .stop .pic img { width: 100%; height: auto; }
+  .stop .pic.tall { max-height: 520px; }
+  .stop .pic.tall img { width: 72%; }
+  .stop .pic.pair { gap: 2px; }
+  .stop .pic.pair img { width: 50%; }
+  .stop .txt { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 7px; }
+  .stop .where { font-family: var(--font-display); font-size: .68rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .stop h3 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; }
+  .stop p { font-size: .9rem; color: var(--fg-dim); line-height: 1.65; }
+  .tints { display: inline-flex; gap: 6px; vertical-align: middle; }
+  .tints i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .tour-more { margin-top: 22px; }
+
   @media (max-width: 860px) {
+    .tour { grid-template-columns: 1fr; }
     .spotlight { grid-template-columns: 1fr; }
     .sp-visual { border-left: 0; border-top: 1px solid var(--line); }
     .trio { grid-template-columns: 1fr; gap: 12px; }
@@ -274,6 +300,7 @@
     <div class="brand"><span class="mark"></span>Motolii</div>
     <nav>
       <a class="navlink" href="#features">特長</a>
+      <a class="navlink" href="#tour">画面</a>
       <a class="navlink" href="#build">ビルド</a>
       <a class="ghb" href="https://github.com/oshikaidesu/motolii" target="_blank" rel="noopener">GitHub</a>
       <button class="toggle" id="themeBtn" aria-label="ダーク／ライトを切り替え" title="テーマ切り替え">◐</button>
@@ -285,43 +312,16 @@
   <section class="hero">
     <div class="wrap">
       <div class="status"><span class="dot"></span>開発中。いまは Apple Silicon の Mac だけで動きます（M4 / macOS 15.5 で確認）</div>
-      <h1>ネットで見つけた表現を、<br><span class="soft">すぐ自分の映像に。</span></h1>
-      <p class="lede">気に入ったシェーダーやスクリプトを見つけたとき、対応プラグインが出るのを待たなくていい。Web にある表現をそのまま動かせる、MV・モーショングラフィックス向けのオープンソース動画編集ソフトです。</p>
+      <h1>離れていた表現の、<br><span class="soft">交差点。</span></h1>
+      <p class="lede">Shadertoy のシェーダーが曲のビートに反応する。After Effects の式と CSS アニメーションが同じテキストの上で動く。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。オープンソースの動画編集ソフト。</p>
       <div class="cta">
         <a class="btn primary" href="https://github.com/oshikaidesu/motolii" target="_blank" rel="noopener">GitHub で見る →</a>
         <a class="btn sub" href="#build">ビルドして動かす</a>
       </div>
 
-      <!-- 仮組みのアプリ画面モック（実スクショは後日差し替え） -->
-      <div class="mock" aria-label="アプリ画面のイメージ（仮）">
-        <div class="title"><span class="lights"><i></i><i></i><i></i></span>Untitled.motolii — 画面イメージ（仮）</div>
-        <div class="grid">
-          <div class="panel shelf">
-            <div class="plabel">Effects</div>
-            <div class="tiles"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
-          </div>
-          <div class="panel preview">
-            <div class="stage"><span class="glyph">モ</span></div>
-          </div>
-          <div class="panel inspector">
-            <div class="plabel">Inspector</div>
-            <div class="card">
-              <div class="cn">Transform</div>
-              <div class="prow"><div class="pchip w1"><span>Position</span><b>960, 540</b></div></div>
-              <div class="prow"><div class="pchip w2"><span>Scale</span><b>120%</b></div></div>
-              <div class="prow"><div class="pchip"><span>Opacity</span><b>100</b></div></div>
-            </div>
-            <div class="card">
-              <div class="cn">Glow</div>
-              <div class="prow"><div class="pchip w3"><span>Amount</span><b>0.62</b></div></div>
-              <div class="prow"><div class="pchip"><span>Radius</span><b>18</b></div></div>
-            </div>
-          </div>
-          <div class="panel timeline">
-            <div class="trow"><div class="tn">Text</div><div class="track"><div class="span" style="left:14%;right:52%"></div><div class="kf" style="left:14%"></div><div class="kf" style="left:48%"></div></div></div>
-            <div class="trow"><div class="tn">Shape</div><div class="track"><div class="span" style="left:34%;right:18%"></div><div class="kf" style="left:34%"></div><div class="kf" style="left:82%"></div></div></div>
-          </div>
-        </div>
+      <div class="shot">
+        <div class="title"><span class="lights"><i></i><i></i><i></i></span>Motolii</div>
+        <img src="pictures/tabs/window.jpg" alt="Motolii の画面：左に素材と棚、真ん中に Stage、下に Timeline、右に Inspector" width="1600" height="928">
       </div>
     </div>
   </section>
@@ -356,7 +356,7 @@
           <div class="before">「こう動かしたい」はあるのに、式の書き方が分からない。</div>
           <h3>AI に頼むと、式もエフェクトも書いてくれる</h3>
           <p>レイヤーを選んで、やりたいことを言葉で書くだけ。エージェントが After Effects の式や ISF エフェクトを書いて、保存した瞬間にプレビューが変わります。新しい動きは新しいカードで増え、いまあるコードは頼んだときだけ直します。</p>
-          <p class="sp-note">ACP 対応なので、Claude Code でも Gemini でも、好きなエージェントをそのまま使えます。</p>
+          <p class="sp-note">ACP 対応なので、Claude Agent でも Codex でも Gemini CLI でも、好きなエージェントをそのまま使えます。</p>
         </div>
         <div class="sp-visual">
           <div class="chat">
@@ -398,6 +398,174 @@
     </div>
   </section>
 
+  <section id="tour">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">画面</span>
+        <h2>タブごとに見る</h2>
+        <p>いまの実際の画面。</p>
+      </div>
+
+      <div class="tour">
+        <article class="stop wide">
+          <div class="pic pair">
+            <img src="pictures/tabs/effects_wide.jpg" alt="Effects の棚（グリッド）" loading="lazy">
+            <img src="pictures/tabs/effects_map.jpg" alt="Effects の棚（マップ）" loading="lazy">
+          </div>
+          <div class="txt">
+            <span class="where">Effects</span>
+            <h3>1,300 以上のエフェクトを、見た目で探す</h3>
+            <p>タイルはそのエフェクトの実際の動き。マップに切り替えると、仕上がりの近いもの同士が t-SNE で寄る。名前を知らなくても探せる。マウスを乗せると Stage の絵に仮にかかる。最近使った物、お気に入り、この動画で使用中、自作、デッキ、パックで絞れる。デッキはコードにして人に渡せる。音・動画・2 レイヤーが要る物や未対応の物はバッジで分かる。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic pair">
+            <img src="pictures/tabs/inspector_weights.jpg" alt="Inspector（ふつうの幅）" loading="lazy" style="width:30%">
+            <img src="pictures/tabs/inspector_wide.jpg" alt="Inspector（広げた幅）" loading="lazy" style="width:70%">
+          </div>
+          <div class="txt">
+            <span class="where">Inspector</span>
+            <h3>値は行ではなくブロック。効く値には色 <span class="tints"><i style="background:#FAD689"></i><i style="background:#DC9FB4"></i><i style="background:#69B0AC"></i></span></h3>
+            <p>名前とスライダーを横に並べる「行」は、パネルを広げても間延びするだけ。Motolii の値はタイル状のブロックで、広げると列が増える。ふつうの幅で 3 列、値が 30 個あってもカードは短い。同梱エフェクト約 1,280 本は、値を 1 つずつ動かして絵の変わり方を 0〜10 で調べてある。効く値ほど浅黄・撫子・青磁。ほとんど変わらない値はグレー。</p>
+            <p>カードはどれもエンジンの宣言から 1 つの部品で描く。新しいエフェクトや新しい種類のレイヤーにも、画面のコードを足さずにカードが付く。作者とライセンス、タグ、キーフレームの印もカードごとに出る。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic"><img src="pictures/tabs/code_workspace.jpg" alt="Code ワークスペース" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Code ワークスペース</span>
+            <h3>コード・絵・タイムラインを同時に</h3>
+            <p>上の CODE で切り替わる並び。真ん中に Code、隣に Stage、下に Timeline。左に Agent と Inspector と棚。エージェントに頼む、セルで変更を読む、Stage で見る、をタブを替えずにやれる。並びは <code>shelves/workspaces/code.layout</code> のファイルで、好きに並べ替えられる。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic"><img src="pictures/tabs/code.jpg" alt="Code タブ" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Code</span>
+            <h3>カードのコードをセルで書く</h3>
+            <p>コードを持つカードごとに 1 セル。セルとカードは同じテキストで、打てばスライダーと絵が動く。AE の式は補完が効き、セルの下に再生位置での値か「Error at line 3」のようなエラーが出る。横の Functions は AE と同じ分け方の一覧で、Motolii でまだ動かない名前には印が付く。セルの並べ替え・オフ・削除・改名・折り畳み、棚への保存ができる。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/agent.jpg" alt="Agent タブ" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Agent</span>
+            <h3>ACP のエージェントなら何でも</h3>
+            <p>Zed や JetBrains と同じ ACP レジストリから選ぶ。Claude Agent・Codex・Gemini CLI・Cursor・Cline など。頼むと、Inspector の全カードと値、各カードのコード、Timeline で選んだ区間、AE の式のリファレンスが一緒に渡る。コードは頼む前にレイヤー専用の写しになるので、棚の元ファイルは変わらない。新しい物は新しいカードになる。道具の呼び出しは差分付きで並ぶ。モデル・effort・モードはエージェントが申告した物がそのまま出る。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/fonts_map.jpg" alt="Fonts の棚（マップ）" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Fonts</span>
+            <h3>フォントもマップで</h3>
+            <p>各フォントはそのフォント自身の字形で並ぶ。マップでは似た字形が寄る（FontCLIP のモデルがあればそれで）。上に見出しと本文の 2 つ。押すと選んだテキストにかかり、何も選んでいなければ新しいテキストができる。使用中・最近・スター、書体や文字の種類で絞れる。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic"><img src="pictures/tabs/stage.jpg" alt="Stage" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Stage</span>
+            <h3>今のフレームを直接いじる</h3>
+            <p>選択・移動・矩形・楕円・ペン・テキスト・ブラシ・カメラ。何も無い所をドラッグすると投げ縄。ブラシは筆圧が効く。ルーラーからガイドを引き出せて、端とガイドにスナップする。選んだレイヤーの軌跡、ナビゲーター、カメラのギズモ。Snapshot を押している間だけ、取っておいたフレームと見比べられる。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic"><img src="pictures/tabs/timeline.jpg" alt="Timeline" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Timeline</span>
+            <h3>BPM と拍のグリッド</h3>
+            <p>テンポをタップすると拍のグリッドが出て、キーフレームやレイヤーの端が拍にスナップする。バーの上にはキーフレームの間のカーブ、動画のコマ、音の波形。切った動画はスリップ編集で中身だけずらせる。マーカーはその場でドラッグ・改名。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/colors.jpg" alt="Colors の棚" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Colors</span>
+            <h3>スポイト、写真、ベント</h3>
+            <p>色相リングと 16 進。Mac のスポイトで画面のどこからでも拾える。Media で選んだ写真からパレットを作れる。パレットは図形を敷き詰めた「ベント」でも見られる。単色・グラデーション・なし。テキストは選んだ文字だけに色を付けられる。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/create.jpg" alt="Create の棚" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Create</span>
+            <h3>新しく作る物は全部ここ</h3>
+            <p>テキスト・カメラ・調整レイヤー、図形、立体（Ring・Gem・Cube・Floor）、ライト（Sun・Point・Spot）、質感（Glass・Lacquer・Bubble など）、レシピ、式。式のタイルを複数のレイヤーにかけるとリレーションになる。貼ったコードもタイルで残る。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/looks.jpg" alt="Looks の棚" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Looks</span>
+            <h3>見た目ごと保存して、別のレイヤーへ</h3>
+            <p>エフェクトと値のひとまとまりを保存しておき、ダブルクリックでかける。Gold・Brass・Neon Edges・Long Shadow などが入っている。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic tall"><img src="pictures/tabs/media.jpg" alt="Media の棚" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Media</span>
+            <h3>フォルダから置く</h3>
+            <p>プロジェクトのフォルダとディスクのファイルブラウザ。置く・差し替える・図形を塗る。複数選ぶと順に並べて置く。CLIP STUDIO や OpenToonz の XDTS タイムシートを読んで、レベルごとにレイヤーにできる。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic"><img src="pictures/tabs/ease.jpg" alt="Ease タブ" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Ease</span>
+            <h3>イージングは重ねられる</h3>
+            <p>ハンドルをつかんで直接。カードを重ねると、上の結果にさらにかかる。プリセットは乗せると動き、中身は <code>a + (b - a) * bezier(u, …)</code> のような 1 行の式のファイル。</p>
+          </div>
+        </article>
+
+        <article class="stop">
+          <div class="pic"><img src="pictures/tabs/depth.jpg" alt="Depth タブ" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">Depth</span>
+            <h3>ピントは真上から</h3>
+            <p>レンズを上から見た図に、レイヤーが奥行きの位置で並ぶ。板を押すとそこにピント。横にドラッグで焦点距離。被写界深度と手前・奥の限界も出る。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic pair">
+            <img src="pictures/tabs/blend.jpg" alt="Blend" loading="lazy" style="width:36%">
+            <img src="pictures/tabs/align.jpg" alt="Align" loading="lazy" style="width:36%">
+          </div>
+          <div class="txt">
+            <span class="where">Tool Panel</span>
+            <h3>Blend と Align</h3>
+            <p>Blend は重なり順と合成モードを、重なる円で見せる一覧。Align は選んだレイヤーをキャンバスの端や中央に揃える。自分の道具も Dart 数行でここに足せる。</p>
+          </div>
+        </article>
+
+        <article class="stop wide">
+          <div class="pic"><img src="pictures/tabs/home.jpg" alt="ホーム画面" loading="lazy"></div>
+          <div class="txt">
+            <span class="where">ホームと書き出し</span>
+            <h3>続きから開く。MP4 から連番まで書き出す</h3>
+            <p>ホームには前回のプロジェクトが大きく出る。プロジェクトはカードで並び、複製・書き出し・ゴミ箱もカードから。保存はいつも自動。Render は MP4（H.264）・HEVC の .mov・GIF・PNG 連番・JPEG 連番。解像度・フレームレート・画質・モーションブラー・背景を選べる。</p>
+          </div>
+        </article>
+      </div>
+
+      <p class="tour-more"><a href="https://github.com/oshikaidesu/motolii/blob/main/docs/TABS.ja.md" target="_blank" rel="noopener">タブごとの紹介（全部）→</a></p>
+    </div>
+  </section>
+
   <div class="numbers">
     <div class="wrap">
       <div class="ngrid">
@@ -418,7 +586,7 @@
         <ul class="reqs">
           <li><span>◇</span>Apple Silicon の Mac（確認は M4 / macOS 15.5）</li>
           <li><span>◇</span>App Store の Xcode ＋ Homebrew</li>
-          <li><span>◇</span>Flutter 3.47.2（stable）、Python 3</li>
+          <li><span>◇</span>Flutter 3.50.0（stable）、Python 3</li>
           <li><span>◇</span>空き容量 約 10 GB</li>
         </ul>
       </div>
@@ -455,15 +623,15 @@ app/tool/live.sh</code></pre>
     </div>
     <div class="col">
       <h4>文書</h4>
-      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/using/highlights.ja.md" target="_blank" rel="noopener">特長</a>
-      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/using/guide.ja.md" target="_blank" rel="noopener">ガイド</a>
+      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/TABS.ja.md" target="_blank" rel="noopener">タブごとの紹介</a>
+      <a href="https://github.com/oshikaidesu/motolii/blob/main/docs/GUIDE.md" target="_blank" rel="noopener">ガイド</a>
       <a href="https://github.com/oshikaidesu/motolii/blob/main/README.ja.md" target="_blank" rel="noopener">README</a>
     </div>
   </div>
 </footer>
 
 <script>
-  // ほかにも（docs/using/highlights.ja.md 準拠）
+  // ほかにも
   var MORE = [
     ["名前だけじゃ、何が起きるか分からない", "エフェクトのタイルは、実際に当てて 16 枚撮った動くプレビュー。総当たりで試さなくても、見れば分かります。", "16 枚で自動生成"],
     ["パラメータが多すぎて、どこを触ればいいか", "値はカードで並び、よく効くものほど色がつきます。見た目でアタリがつくから、迷いません。", "青磁・撫子・浅黄"],

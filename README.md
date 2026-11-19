@@ -16,6 +16,26 @@ After Effects expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie and more. Past
 - **Effects are files.** A `.wgsl`, a `.fs`, a `.js` — open them, read how they work, change them, or let an AI agent do it with you. Motolii speaks [ACP](https://github.com/anthropics/agent-client-protocol), the same protocol Zed and JetBrains use. Not a black box.
 - **One layer, many languages.** A CSS animation, an After Effects expression and a shader effect compose on the same text, in the order you stack them.
 
+## The window
+
+Every tab, with pictures: [The window, tab by tab](docs/TABS.md)
+
+<p>
+<img src="docs/pictures/tabs/effects_map.jpg" width="49%">
+<img src="docs/pictures/tabs/fonts_map.jpg" width="49%">
+</p>
+
+- **Maps.** The Effects and Fonts shelves switch to a map where similar-looking items sit together (t-SNE). Browse 1,300+ effects without knowing their names.
+- **Values as blocks, not rows.** The Inspector lays values out as tiles. A wider panel gets more columns, so an effect with many values stays a short card. Every bundled effect was reviewed value by value (0 to 10); the values that change the picture most are tinted pale yellow, pink and celadon.
+- **Hover to try.** Hover an effect tile and it is tried on the Stage. Hover an ease preset and it plays.
+- **Code tab and Code workspace.** The layer's code as cells. AE expressions get completion, and each cell shows its value at the playhead or its error. **CODE** in the top bar puts code, Stage and Timeline in view together.
+- **Agent tab.** Any ACP agent (Claude Agent, Codex, Gemini CLI, Cursor, …). It gets the layer's cards, values and code. New things arrive as new cards; existing code changes only when asked.
+- **Relations.** `Follow`, `Gravity`, `flock`, `spring`, `collide` and more move many layers at once. Short JavaScript files in `shelves/relations/`.
+- **BPM.** Tap the tempo in the Timeline; a beat grid appears and edits snap to it.
+- **Stacked easings.** Easings stack like effects. A preset is a one-line formula file.
+- **Colour.** The Mac's eyedropper, palettes from photos, colour on selected letters only.
+- **Replaceable.** Skins are folders, keys are a VS Code style `keybindings.json`, a panel is a few lines of Dart. The author and licence of each effect used go into the export log.
+
 ## Status
 
 Motolii is still in development and has been tried only on a Mac with Apple silicon (an M4, macOS 15.5); Windows and Linux have not been tried yet. There is no packaged app yet, so trying it means building it from source.
@@ -112,6 +132,7 @@ What is **not** covered: most After Effects built-in effects (Glow, Turbulent Di
 
 ## Documentation
 
+- [The window, tab by tab](docs/TABS.md): every tab and what you can do in it, with pictures.
 - [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
 - [Effect licences](docs/design/effect_licences.md): how Motolii handles credit and attribution for bundled effects.
 - [Testing](docs/TESTING.md): how to run each kind of test.
