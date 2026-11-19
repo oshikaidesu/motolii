@@ -55,7 +55,8 @@ std::string doc_fx_values_id(Doc& d, const std::string& entry) {
   const std::string id = fx_entry_id(entry), file = fx_entry_path(entry);
   if (id.empty() || doc_expression(d, file)) return "";
   // As thing_effects (layer_fx.cpp) chooses what it builds as a shader.
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   return aviutl_is(file) || ext == ".mjs" || ext == ".am" || ext == ".json" ||
                  solid_is(file) || points_is(file)
              ? ""
@@ -68,7 +69,8 @@ bool doc_fx_files(const std::vector<std::string>& list) {
   // engine/community/absent_motion/absent_motion.h.
   // Filament's own settings belong to the stage.
   return std::any_of(list.begin(), list.end(), [](const std::string& w) {
-    const std::string ext = std::filesystem::path(w).extension().generic_string();
+    const std::string ext =
+        std::filesystem::path(w).extension().generic_string();
     return ext != ".mjs" && ext != ".am" && ext != ".json";
   });
 }
@@ -82,9 +84,9 @@ std::vector<std::string> doc_fx_steps_with_ids(Doc& d, int layer) {
     if (std::filesystem::path(path).extension() == ".am")
       if (const DocScript* sc = doc_script_of(d, path);
           sc && (sc->absent == "motionblur" || sc->absent == "shutterblur"))
-        path =
-            (std::filesystem::path(path).parent_path() / "am_directionalblur.wgsl")
-                .generic_string();
+        path = (std::filesystem::path(path).parent_path() /
+                "am_directionalblur.wgsl")
+                   .generic_string();
     result.push_back(id.empty() ? path : id + ":" + path);
   }
   return result;

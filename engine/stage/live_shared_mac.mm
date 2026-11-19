@@ -15,8 +15,9 @@ bool live_buffers(Live* l) {
     (id)kCVPixelBufferMetalCompatibilityKey : @YES
   };
   for (void*& b : l->buffer)
-    if (CVPixelBufferCreate(kCFAllocatorDefault, (size_t)l->w, (size_t)l->h, kCVPixelFormatType_32BGRA,
-                            (__bridge CFDictionaryRef)like, (CVPixelBufferRef*)&b) != kCVReturnSuccess)
+    if (CVPixelBufferCreate(kCFAllocatorDefault, (size_t)l->w, (size_t)l->h,
+                            kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)like,
+                            (CVPixelBufferRef*)&b) != kCVReturnSuccess)
       return false;
   return true;
 }

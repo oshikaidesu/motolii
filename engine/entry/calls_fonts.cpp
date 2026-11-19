@@ -154,8 +154,9 @@ const char* motolii_font_tags(const char* path) {
     BOOL exists = FALSE;
     int weight = 400;
     bool italic = false;
-    if (SUCCEEDED(face->TryGetFontTable(DWRITE_MAKE_OPENTYPE_TAG('O', 'S', '/', '2'),
-                                        &table, &size, &context, &exists)) &&
+    if (SUCCEEDED(
+            face->TryGetFontTable(DWRITE_MAKE_OPENTYPE_TAG('O', 'S', '/', '2'),
+                                  &table, &size, &context, &exists)) &&
         exists) {
       const auto* b = (const uint8_t*)table;
       // usWeightClass at 4, sFamilyClass at 30 (its class in the high byte),
@@ -178,8 +179,8 @@ const char* motolii_font_tags(const char* path) {
       face->ReleaseFontTable(context);
     }
     IDWriteFontFace1* face1 = nullptr;
-    if (SUCCEEDED(face->QueryInterface(__uuidof(IDWriteFontFace1),
-                                       (void**)&face1))) {
+    if (SUCCEEDED(
+            face->QueryInterface(__uuidof(IDWriteFontFace1), (void**)&face1))) {
       if (face1->IsMonospacedFont()) out += "mono ";
       face1->Release();
     }
@@ -192,11 +193,10 @@ const char* motolii_font_tags(const char* path) {
     const struct {
       UINT32 letter;
       const char* said;
-    } languages[] = {{0x3042, "japanese"}, {0xD55C, "korean"},
-                     {0x8FD9, "chinese"},  {0x0416, "russian"},
-                     {0x03AC, "greek"},    {0x0639, "arabic"},
-                     {0x05D0, "hebrew"},   {0x0E01, "thai"},
-                     {0x0915, "hindi"}};
+    } languages[] = {
+        {0x3042, "japanese"}, {0xD55C, "korean"}, {0x8FD9, "chinese"},
+        {0x0416, "russian"},  {0x03AC, "greek"},  {0x0639, "arabic"},
+        {0x05D0, "hebrew"},   {0x0E01, "thai"},   {0x0915, "hindi"}};
     for (const auto& l : languages) {
       UINT16 glyph = 0;
       if (SUCCEEDED(face->GetGlyphIndices(&l.letter, 1, &glyph)) && glyph)

@@ -174,7 +174,8 @@ std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
       r->own.rfind("\xEF\xBB\xBF", 0) == 0 ? r->own.substr(3) : r->own;
   if (luaL_loadbuffer(
           L, text.data(), text.size(),
-          ("@" + std::filesystem::path(file).filename().generic_string()).c_str()))
+          ("@" + std::filesystem::path(file).filename().generic_string())
+              .c_str()))
     r->trouble = lua_tostring(L, -1);
   else
     r->chunk = luaL_ref(L, LUA_REGISTRYINDEX);

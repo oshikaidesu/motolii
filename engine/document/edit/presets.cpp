@@ -86,9 +86,9 @@ void doc_preset_detach(Doc& d) {
 // matches no path.
 std::pair<std::string, std::string> doc_preset_roots() {
   const auto at = doc_folders("looks");
-  return {
-      at[0].parent_path().generic_string() + "/",
-      at.size() > 1 ? at[1].parent_path().generic_string() + "/" : std::string("\x01")};
+  return {at[0].parent_path().generic_string() + "/",
+          at.size() > 1 ? at[1].parent_path().generic_string() + "/"
+                        : std::string("\x01")};
 }
 
 bool doc_preset_save(Doc& d, int layer, const char* path, bool whole,
@@ -346,8 +346,9 @@ bool doc_preset_keep(Doc& d, int layer, const std::string& name,
                          std::filesystem::exists(dir / (named + ".motolii")));
        ++n)
     named = name + " " + std::to_string(n);
-  return doc_preset_save(
-      d, layer, (dir / (named + ".motolii")).generic_string().c_str(), false, only);
+  return doc_preset_save(d, layer,
+                         (dir / (named + ".motolii")).generic_string().c_str(),
+                         false, only);
 }
 
 int doc_pack(Doc& d, const std::string& folder, const std::string& name) {
@@ -410,9 +411,11 @@ std::string doc_preset_names() {
     for (const auto& f : doc_folder_files(kind, ".motolii")) {
       const std::filesystem::path picture =
           std::filesystem::path(f).replace_extension(".png");
-      all += (all.empty() ? "" : "\n") + f.stem().generic_string() + "\t" + f.generic_string() +
+      all += (all.empty() ? "" : "\n") + f.stem().generic_string() + "\t" +
+             f.generic_string() +
              (kind[0] == 'l' ? "\tLook\t" : "\tElement\t") +
-             (std::filesystem::exists(picture, wrong) ? picture.generic_string() : "");
+             (std::filesystem::exists(picture, wrong) ? picture.generic_string()
+                                                      : "");
     }
   return all;
 }

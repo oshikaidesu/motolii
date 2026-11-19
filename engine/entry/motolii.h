@@ -18,7 +18,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* A DLL on Windows shows only what is marked so: every call below, while the engine itself is built. */
+/* A DLL on Windows shows only what is marked so: every call below, while the
+ * engine itself is built. */
 #if defined(_WIN32) && defined(MOTOLII_EXPORTS)
 #pragma clang attribute push(__declspec(dllexport), apply_to = function)
 #endif

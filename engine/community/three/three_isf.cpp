@@ -81,7 +81,8 @@ std::string three_said(const std::string& file, std::string& why) {
   JSContext* cx = JS_NewContext(rt);
   JS_SetModuleLoaderFunc(rt, nullptr, three_load, nullptr);
   const std::string wrap =
-      "import * as m from '" + std::filesystem::absolute(file).generic_string() +
+      "import * as m from '" +
+      std::filesystem::absolute(file).generic_string() +
       "';\n"
       "const S = Object.values(m).find(v => v && typeof v === 'object' && "
       "typeof v.fragmentShader === 'string');\n"
@@ -148,9 +149,10 @@ std::string three_isf(const std::string& file, std::string& why) {
   rapidjson::StringBuffer head;
   rapidjson::Writer<rapidjson::StringBuffer> w(head);
   w.StartObject();
-  w.Key("CREDIT"), w.String(("three.js (MIT, github.com/mrdoob/three.js): " +
-                             std::filesystem::path(file).filename().generic_string())
-                                .c_str());
+  w.Key("CREDIT"),
+      w.String(("three.js (MIT, github.com/mrdoob/three.js): " +
+                std::filesystem::path(file).filename().generic_string())
+                   .c_str());
   w.Key("ISFVSN"), w.String("2");
   w.Key("INPUTS"), w.StartArray();
   std::string defines;

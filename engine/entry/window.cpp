@@ -47,7 +47,8 @@ Motolii* motolii_open(const char* document, int wide, int high) {
   // The ffmpeg this build made (deps/ffmpeg.sh: LGPL only) is found before any other. Started from Finder, PATH is
   // /usr/bin:/bin, and the shell that popen and system start would find none: Homebrew's folders are added last.
   if (const auto lgpl = doc_engine("third_party/ffmpeg_lgpl/bin");
-      (std::filesystem::exists(lgpl / "ffmpeg") || std::filesystem::exists(lgpl / "ffmpeg.exe")))
+      (std::filesystem::exists(lgpl / "ffmpeg") ||
+       std::filesystem::exists(lgpl / "ffmpeg.exe")))
     add_first_to_path(lgpl.generic_string());
   add_to_path();
   // A document being opened reads the folders as they are now. They are read
@@ -112,7 +113,8 @@ void* front_of(Live* l) {
   void* front = live_front(l);
 #ifdef _WIN32
   if (!front) return nullptr;
-  auto* frame = static_cast<MotoliiSharedFrame*>(std::malloc(sizeof(MotoliiSharedFrame)));
+  auto* frame =
+      static_cast<MotoliiSharedFrame*>(std::malloc(sizeof(MotoliiSharedFrame)));
   *frame = {front, l->w, l->h};
   return frame;
 #else

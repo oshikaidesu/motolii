@@ -1,4 +1,5 @@
-// Tests for h264_encoder(), hevc_encoder() and h264_quality() in base/video_encoder.h.
+// Tests for h264_encoder(), hevc_encoder() and h264_quality() in
+// base/video_encoder.h.
 //
 // The expected values come from the contract written above those functions:
 // a listing line is six flag characters, a name and a description; the first
@@ -73,14 +74,18 @@ TEST(VideoEncoder, LongerNameContainingTheWantedOneDoesNotCount) {
 }
 
 TEST(VideoEncoder, HevcOnWindowsIsMediaFoundation) {
-  // What the LGPL-only ffmpeg built on Windows (deps/ffmpeg.sh, --enable-mediafoundation) lists.
-  std::string listing = kBanner + video("h264_mf") + video("hevc_mf") + audio("aac_mf");
+  // What the LGPL-only ffmpeg built on Windows (deps/ffmpeg.sh,
+  // --enable-mediafoundation) lists.
+  std::string listing =
+      kBanner + video("h264_mf") + video("hevc_mf") + audio("aac_mf");
   EXPECT_EQ(hevc_encoder(listing), "hevc_mf");
   EXPECT_EQ(h264_encoder(listing), "h264_mf");
 }
 
 TEST(VideoEncoder, HevcPrefersVideoToolboxOverLibx265) {
-  EXPECT_EQ(hevc_encoder(kBanner + video("libx265") + video("hevc_videotoolbox")), "hevc_videotoolbox");
+  EXPECT_EQ(
+      hevc_encoder(kBanner + video("libx265") + video("hevc_videotoolbox")),
+      "hevc_videotoolbox");
   EXPECT_EQ(hevc_encoder(kBanner + video("libx264")), "");
 }
 

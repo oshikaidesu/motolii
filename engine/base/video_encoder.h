@@ -8,13 +8,15 @@
 #include <string>
 #include <vector>
 
-#include "base/posix.h"   // (popen and null_device, Windows' too)
+#include "base/posix.h"  // (popen and null_device, Windows' too)
 
 namespace motolii {
 
-// The first encoder of `wanted` that `listing` (the text of `ffmpeg -hide_banner -encoders`) names as a video
-// encoder; "" if none. A line is: six flag characters (the first is V for video), the name, a description.
-inline std::string encoder_among(const std::string& listing, const std::vector<std::string>& wanted) {
+// The first encoder of `wanted` that `listing` (the text of `ffmpeg
+// -hide_banner -encoders`) names as a video encoder; "" if none. A line is: six
+// flag characters (the first is V for video), the name, a description.
+inline std::string encoder_among(const std::string& listing,
+                                 const std::vector<std::string>& wanted) {
   std::istringstream lines(listing);
   std::string line;
   std::vector<std::string> found(wanted.size());
@@ -32,15 +34,18 @@ inline std::string encoder_among(const std::string& listing, const std::vector<s
 
 // The H.264 encoder to use, of those `listing` names.
 inline std::string h264_encoder(const std::string& listing) {
-  return encoder_among(listing, {"h264_videotoolbox", "h264_nvenc", "h264_qsv", "h264_amf", "h264_mf", "h264_vaapi",
-                                 "libopenh264", "libx264"});
+  return encoder_among(
+      listing, {"h264_videotoolbox", "h264_nvenc", "h264_qsv", "h264_amf",
+                "h264_mf", "h264_vaapi", "libopenh264", "libx264"});
 }
 
-// The HEVC encoder to use, in the same order: the system's own first (VideoToolbox, then a graphics card's,
-// MediaFoundation on Windows, VAAPI on Linux), libx265 last.
+// The HEVC encoder to use, in the same order: the system's own first
+// (VideoToolbox, then a graphics card's, MediaFoundation on Windows, VAAPI on
+// Linux), libx265 last.
 inline std::string hevc_encoder(const std::string& listing) {
-  return encoder_among(listing, {"hevc_videotoolbox", "hevc_nvenc", "hevc_qsv", "hevc_amf", "hevc_mf", "hevc_vaapi",
-                                 "libx265"});
+  return encoder_among(
+      listing, {"hevc_videotoolbox", "hevc_nvenc", "hevc_qsv", "hevc_amf",
+                "hevc_mf", "hevc_vaapi", "libx265"});
 }
 
 // The ffmpeg arguments that set an encoder's quality, with a space on each side. Only VideoToolbox (-q:v 68, measured
@@ -55,11 +60,15 @@ inline std::string h264_quality(const std::string& encoder, double mbps) {
   return " -b:v " + m + " ";
 }
 
-// What the ffmpeg that PATH finds first lists with -encoders, asked once (popen; "" if there is no ffmpeg).
+// What the ffmpeg that PATH finds first lists with -encoders, asked once
+// (popen; "" if there is no ffmpeg).
 inline const std::string& encoders_here() {
   static const std::string listing = [] {
     std::string said;
-    if (FILE* from = popen((std::string("ffmpeg -hide_banner -encoders 2> ") + null_device).c_str(), "r")) {
+    if (FILE* from = popen(
+            (std::string("ffmpeg -hide_banner -encoders 2> ") + null_device)
+                .c_str(),
+            "r")) {
       char block[4096];
       for (size_t n; (n = std::fread(block, 1, sizeof block, from)) > 0;)
         said.append(block, n);

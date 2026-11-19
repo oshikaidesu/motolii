@@ -317,7 +317,8 @@ void cache_write(std::filesystem::path file, std::vector<uint8_t> pixels) {
 
 bool cache_read(const std::filesystem::path& file, std::vector<uint8_t>& pixels,
                 size_t size) {
-  FILE* f = file.empty() ? nullptr : std::fopen(file.generic_string().c_str(), "rb");
+  FILE* f =
+      file.empty() ? nullptr : std::fopen(file.generic_string().c_str(), "rb");
   if (!f) return false;
   std::fseek(f, 0, SEEK_END);
   std::vector<uint8_t> packed((size_t)std::max(0L, std::ftell(f)));

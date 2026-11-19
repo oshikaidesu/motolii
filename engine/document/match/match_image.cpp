@@ -127,12 +127,13 @@ void sketch_picture(LayerBuild& build) {
   // The instance already run to check the sketch. It is reused when no
   // video is under the sketch.
   std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;
-  auto run =
-      ready && under.empty()
-          ? std::exchange(ready, nullptr)
-          : std::make_shared<Script>(
-                file, (doc_engine("third_party/js/p5") / "p5.min.js").generic_string(),
-                under);
+  auto run = ready && under.empty()
+                 ? std::exchange(ready, nullptr)
+                 : std::make_shared<Script>(
+                       file,
+                       (doc_engine("third_party/js/p5") / "p5.min.js")
+                           .generic_string(),
+                       under);
   if (!run->flat())
     why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
   else if (fxOk && (made.drawn = sketch_canvas(
@@ -228,7 +229,8 @@ void match_image(LayerBuild& build) {
   level_drawing(build, shown);
   float rollHigh = 1.f;
   piano_roll(build, shown, rollHigh);
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   const double cl = build.number("crop_left", 0),
                ct = build.number("crop_top", 0),
                cr = build.number("crop_right", 0),

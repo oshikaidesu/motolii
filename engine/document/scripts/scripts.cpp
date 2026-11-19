@@ -71,7 +71,8 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
   // Checked already. This must come first, because the code below opens the
   // file.
   if (s.stamp >= 0 && s.seen == files_changed()) return &s;
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   // Files that are drawn as effects, or only named by their parameters, and not
   // run as scripts. These are WGSL and ISF shaders, three.js effects, see
   // engine/community/three/three_isf.cpp, solid shapes, see

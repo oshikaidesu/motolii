@@ -131,9 +131,10 @@ std::string isf_file(const std::string& asked) {
   const auto when = std::filesystem::last_write_time(file, missing);
   const auto size = std::filesystem::file_size(file, missing);
   if (missing) return "";
-  const std::string key = "isf 15|" + file + "|" +
-                          std::to_string((long long)when.time_since_epoch().count()) + "|" +
-                          std::to_string(size);
+  const std::string key =
+      "isf 15|" + file + "|" +
+      std::to_string((long long)when.time_since_epoch().count()) + "|" +
+      std::to_string(size);
 #else
   struct stat st{};
   if (stat(file.c_str(), &st) != 0) return "";

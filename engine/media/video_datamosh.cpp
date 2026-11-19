@@ -39,41 +39,57 @@ std::string mosh_quoted(std::string name) {
 #endif
 
 #ifdef _WIN32
-// What ffprobe says of the first video stream of `film` for `entries`, its last line break dropped.
-std::string mosh_probe(const std::string& film, const char* entries, const char* format) {
+// What ffprobe says of the first video stream of `film` for `entries`, its last
+// line break dropped.
+std::string mosh_probe(const std::string& film, const char* entries,
+                       const char* format) {
   std::string said;
-  if (FILE* from = popen(("ffprobe -v error -select_streams v:0 -show_entries " + std::string(entries) + " -of " +
-                          format + " " + shell_quoted(film))
-                             .c_str(),
-                         "r")) {
+  if (FILE* from = popen(
+          ("ffprobe -v error -select_streams v:0 -show_entries " +
+           std::string(entries) + " -of " + format + " " + shell_quoted(film))
+              .c_str(),
+          "r")) {
     char block[256];
-    for (size_t n; (n = std::fread(block, 1, sizeof block, from)) > 0;) said.append(block, n);
+    for (size_t n; (n = std::fread(block, 1, sizeof block, from)) > 0;)
+      said.append(block, n);
     pclose(from);
   }
-  while (!said.empty() && (said.back() == '\n' || said.back() == '\r')) said.pop_back();
+  while (!said.empty() && (said.back() == '\n' || said.back() == '\r'))
+    said.pop_back();
   return said;
 }
 
-// The steps of mosh_file's zsh line, for Windows, which has no zsh: one ffmpeg at a time, each its own cmd line.
-// True if out.mp4 was made in `work`.
-bool mosh_steps(const std::string& film, const std::string& with, double at, const std::filesystem::path& work) {
-  const auto in = [&](const char* file) { return shell_quoted((work / file).generic_string()); };
-  const std::string like = mosh_probe(film, "stream=width,height", "csv=s=x:p=0"),
+// The steps of mosh_file's zsh line, for Windows, which has no zsh: one ffmpeg
+// at a time, each its own cmd line. True if out.mp4 was made in `work`.
+bool mosh_steps(const std::string& film, const std::string& with, double at,
+                const std::filesystem::path& work) {
+  const auto in = [&](const char* file) {
+    return shell_quoted((work / file).generic_string());
+  };
+  const std::string like =
+                        mosh_probe(film, "stream=width,height", "csv=s=x:p=0"),
                     rate = mosh_probe(film, "stream=r_frame_rate", "csv=p=0");
   const size_t x = like.find('x');
-  const std::string w = like.substr(0, x), h = x == std::string::npos ? "" : like.substr(x + 1);
+  const std::string w = like.substr(0, x),
+                    h = x == std::string::npos ? "" : like.substr(x + 1);
   const std::string ffmpeg = "ffmpeg -nostdin -hide_banner -loglevel error -y ",
                     enc = " -an -c:v mpeg4 -bf 0 -g 100000 -q:v 3 ";
   std::ofstream(work / "list.txt") << "file 'a.avi'\nfile 'b.avi'\n";
   bool ok = !w.empty() && !h.empty() && !rate.empty();
   for (const std::string& step :
-       {ffmpeg + "-i " + shell_quoted(film) + " -t " + std::to_string(at) + " -vf fps=" + rate + enc + in("a.avi"),
-        ffmpeg + "-i " + shell_quoted(with) + " -vf \"fps=" + rate + ",scale=" + w + ":" + h +
-            ":force_original_aspect_ratio=decrease,pad=" + w + ":" + h + ":(ow-iw)/2:(oh-ih)/2\"" + enc + in("b.avi"),
-        ffmpeg + "-f concat -safe 0 -i " + in("list.txt") + " -c copy " + in("both.avi"),
-        ffmpeg + "-i " + in("both.avi") + " -c copy -bsf:v \"noise=drop='key*gt(n\\,0)'\" " + in("moshed.avi"),
-        ffmpeg + "-i " + in("moshed.avi") + " -c:v " + h264_encoder_here() + h264_quality(h264_encoder_here(), 0.0) +
-            "-pix_fmt yuv420p " + in("out.mp4")})
+       {ffmpeg + "-i " + shell_quoted(film) + " -t " + std::to_string(at) +
+            " -vf fps=" + rate + enc + in("a.avi"),
+        ffmpeg + "-i " + shell_quoted(with) + " -vf \"fps=" + rate + ",scale=" +
+            w + ":" + h + ":force_original_aspect_ratio=decrease,pad=" + w +
+            ":" + h + ":(ow-iw)/2:(oh-ih)/2\"" + enc + in("b.avi"),
+        ffmpeg + "-f concat -safe 0 -i " + in("list.txt") + " -c copy " +
+            in("both.avi"),
+        ffmpeg + "-i " + in("both.avi") +
+            " -c copy -bsf:v \"noise=drop='key*gt(n\\,0)'\" " +
+            in("moshed.avi"),
+        ffmpeg + "-i " + in("moshed.avi") + " -c:v " + h264_encoder_here() +
+            h264_quality(h264_encoder_here(), 0.0) + "-pix_fmt yuv420p " +
+            in("out.mp4")})
     ok = ok && shell(step) == 0;
   return ok;
 }
@@ -93,7 +109,8 @@ std::string mosh_file(const std::string& film, double at,
     const auto when = std::filesystem::last_write_time(f, e);
     const auto size = std::filesystem::file_size(f, e);
     if (!e)
-      key += "|" + std::to_string((long long)when.time_since_epoch().count()) + "." + std::to_string(size);
+      key += "|" + std::to_string((long long)when.time_since_epoch().count()) +
+             "." + std::to_string(size);
 #else
     struct stat st{};
     if (stat(f.c_str(), &st) == 0)
@@ -118,7 +135,9 @@ std::string mosh_file(const std::string& film, double at,
     std::filesystem::create_directories(work, e);
 #ifdef _WIN32
     bool ok = mosh_steps(film, with, at, work);
-    if (ok) std::filesystem::rename(std::filesystem::path(work) / "out.mp4", out, e), ok = !e;
+    if (ok)
+      std::filesystem::rename(std::filesystem::path(work) / "out.mp4", out, e),
+          ok = !e;
 #else
     const std::string w = mosh_quoted(work);
     // Encode both videos as MPEG-4 part 2 in AVI with a single keyframe each,

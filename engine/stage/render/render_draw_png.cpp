@@ -1,5 +1,6 @@
-// shoot (render_draw.h) where there is no Cocoa: the frame written by stb_image_write, which Filament carries.
-// On macOS render_draw.mm writes it with NSBitmapImageRep instead.
+// shoot (render_draw.h) where there is no Cocoa: the frame written by
+// stb_image_write, which Filament carries. On macOS render_draw.mm writes it
+// with NSBitmapImageRep instead.
 #include <cstdint>
 #include <vector>
 

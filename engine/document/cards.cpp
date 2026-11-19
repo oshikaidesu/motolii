@@ -157,7 +157,8 @@ std::string doc_fx_title(const std::string& name) {
   if (const std::string source = fx_source(name); source != name) {
     // An effect duplicated from another: the title of its source plus its
     // number, such as "Glow 2". It has its own card.
-    const std::string stem = std::filesystem::path(name).stem().generic_string();
+    const std::string stem =
+        std::filesystem::path(name).stem().generic_string();
     return doc_fx_title(source) + " " + stem.substr(stem.rfind('~') + 1);
   }
   // Title as the shelf names it: the name in the file's first comment line,

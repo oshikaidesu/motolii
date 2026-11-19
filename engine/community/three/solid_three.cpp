@@ -135,8 +135,8 @@ bool solid_three(const std::string& file,
   JS_SetPropertyStr(cx, g, "__why", JS_NewString(cx, ""));
   const std::string code =
       "import { solid } from '" +
-      std::filesystem::absolute(file).lexically_normal().generic_string() + "';\n" +
-      solid_wrap();
+      std::filesystem::absolute(file).lexically_normal().generic_string() +
+      "';\n" + solid_wrap();
   // Each call evaluates the wrapper as a module with a fresh name. The shape
   // script itself is imported by path, so it is loaded only once.
   const std::string name = "<solid " + std::to_string(++built) + ">";

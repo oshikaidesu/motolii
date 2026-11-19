@@ -21,9 +21,11 @@ static std::filesystem::path loaded_from() {
 #ifdef _WIN32
   HMODULE self = nullptr;
   wchar_t name[MAX_PATH] = {};
-  GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+  GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                         GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                      (LPCWSTR)&loaded_from, &self);
-  return GetModuleFileNameW(self, name, MAX_PATH) ? std::filesystem::path(name) : std::filesystem::path(".");
+  return GetModuleFileNameW(self, name, MAX_PATH) ? std::filesystem::path(name)
+                                                  : std::filesystem::path(".");
 #else
   Dl_info lib{};
   dladdr((const void*)&loaded_from, &lib);
@@ -61,7 +63,8 @@ std::vector<std::filesystem::path> doc_folders(const char* folder) {
   std::filesystem::path own;
   if (const char* o = std::getenv("MOTOLII_OWN"))
     own = o;
-#ifdef _WIN32  // (the user's own folder: %APPDATA%/Motolii, the app's engine_paths.dart)
+#ifdef _WIN32  // (the user's own folder: %APPDATA%/Motolii, the app's
+               // engine_paths.dart)
   else if (const char* app = std::getenv("APPDATA"))
     own = std::filesystem::path(app) / "Motolii";
 #endif

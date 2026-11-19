@@ -51,7 +51,8 @@ bool aviutl_text(const std::string& file, std::string& own, std::string& all,
   if (!std::filesystem::is_regular_file(aviutl_path(file), wrong))
     return why = "there is no such file: " + file, false;
   own = all = read_text(aviutl_path(file));
-  if (std::filesystem::path(aviutl_path(file)).filename().generic_string()[0] != '@')
+  if (std::filesystem::path(aviutl_path(file)).filename().generic_string()[0] !=
+      '@')
     return true;
   // An "@" file holds several scripts, each starting at a line "@name"
   // (lua.txt). If no script is named, the first one is used.

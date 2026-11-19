@@ -69,8 +69,9 @@ std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {
                                   stem + ".obj2", "@" + stem + ".obj2"}) {
         std::string own, all, why;
         if (std::filesystem::exists(dir / f, wrong) &&
-            aviutl_text((dir / f).generic_string() + (part.empty() ? "" : "#" + part),
-                        own, all, why))
+            aviutl_text(
+                (dir / f).generic_string() + (part.empty() ? "" : "#" + part),
+                own, all, why))
           texts.insert(texts.begin(), own), found = true;
       }
       if (found) break;

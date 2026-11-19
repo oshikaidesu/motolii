@@ -84,7 +84,8 @@ std::string doc_effect_names() {
                               .generic_string());
     all += (all.empty() ? "" : "\n") + std::string(e.name) + "\t" + e.value +
            "\t" + e.label + "\t" +
-           (std::filesystem::exists(picture, wrong) ? picture.generic_string() : "") +
+           (std::filesystem::exists(picture, wrong) ? picture.generic_string()
+                                                    : "") +
            "\t\t\t" + e.about;
   }
   return all;

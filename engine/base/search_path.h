@@ -4,10 +4,10 @@
 // by the shell that popen and system start. The engine adds those two folders to its own PATH once, and its
 // children (ffmpeg, ffprobe, the shell) inherit it.
 #include <cstdlib>
-
-#include "base/posix.h"
 #include <string>
 #include <vector>
+
+#include "base/posix.h"
 
 namespace motolii {
 
@@ -35,7 +35,8 @@ inline std::string path_with(const std::string& path,
 // Unchanged if `dir` is already first; an empty `path` gives just `dir` (never a trailing ':').
 inline std::string path_first(const std::string& path, const std::string& dir) {
   if (path.empty()) return dir;
-  if (path == dir || path.compare(0, dir.size() + 1, dir + path_separator) == 0) return path;
+  if (path == dir || path.compare(0, dir.size() + 1, dir + path_separator) == 0)
+    return path;
   return dir + path_separator + path;
 }
 

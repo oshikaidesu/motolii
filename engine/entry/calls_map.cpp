@@ -77,9 +77,9 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n,
       std::lock_guard<std::mutex> one(opening);
       auto& session = open[model];
       if (!session)
-        session =
-            std::make_unique<Ort::Session>(env, std::filesystem::path(model).c_str(),   // (wide on Windows)
-                                          Ort::SessionOptions{});
+        session = std::make_unique<Ort::Session>(
+            env, std::filesystem::path(model).c_str(),  // (wide on Windows)
+            Ort::SessionOptions{});
       s = session.get();
     }
     const float mean[3] = {0.48145466f, 0.4578275f, 0.40821073f},

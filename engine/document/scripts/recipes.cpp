@@ -256,7 +256,8 @@ std::string doc_folder_names(const char* folder, const char* extension) {
     std::replace(about.begin(), about.end(), '\t', ' ');
     // The last two fields are the description and the tags read from the file
     // by isf_tags or doc_wgsl_tags.
-    all += (all.empty() ? "" : "\n") + name + "\t" + f.generic_string() + "\t" + label +
+    all += (all.empty() ? "" : "\n") + name + "\t" + f.generic_string() + "\t" +
+           label +
            doc_tile(f.generic_string(),
                     std::filesystem::path(f).replace_extension(".png")) +
            "\t" + about + "\t" +

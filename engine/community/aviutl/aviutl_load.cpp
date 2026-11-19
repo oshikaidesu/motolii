@@ -151,7 +151,8 @@ std::string aviutl_font_file(const std::string& name, bool bold, bool italic,
   }
   if (said) CFRelease(said);
 #endif
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   if (file.empty() ||
       (ext != ".ttf" && ext != ".otf" && ext != ".TTF" && ext != ".OTF") ||
       tvg::Text::load(file.c_str()) != tvg::Result::Success) {
@@ -251,7 +252,8 @@ const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words,
 
 const AviutlBuf* aviutl_image(AviutlRun& r, std::string file) {
   if (!file.empty() && file[0] != '/')
-    file = (std::filesystem::path(r.file).parent_path() / file).generic_string();
+    file =
+        (std::filesystem::path(r.file).parent_path() / file).generic_string();
   std::error_code wrong;
   if (file.empty() || !std::filesystem::is_regular_file(file, wrong))
     return nullptr;

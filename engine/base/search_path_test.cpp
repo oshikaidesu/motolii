@@ -13,7 +13,8 @@
 namespace motolii {
 namespace {
 
-// A PATH written as on the Mac, with the separator of this OS (base/posix.h's path_separator).
+// A PATH written as on the Mac, with the separator of this OS (base/posix.h's
+// path_separator).
 std::string P(std::string path) {
   for (char& c : path)
     if (c == ':') c = path_separator;
@@ -26,12 +27,15 @@ TEST(PathWith, EmptyPathGivesJustTheExtraDirectories) {
 }
 
 TEST(PathWith, FinderLikePathGetsBothAppended) {
-  EXPECT_EQ(P("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin"), path_with(P("/usr/bin:/bin")));
+  EXPECT_EQ(P("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin"),
+            path_with(P("/usr/bin:/bin")));
 }
 
 TEST(PathWith, OnlyTheMissingOneIsAdded) {
-  EXPECT_EQ(P("/usr/bin:/usr/local/bin:/opt/homebrew/bin"), path_with(P("/usr/bin:/usr/local/bin")));
-  EXPECT_EQ(P("/opt/homebrew/bin:/usr/bin:/usr/local/bin"), path_with(P("/opt/homebrew/bin:/usr/bin")));
+  EXPECT_EQ(P("/usr/bin:/usr/local/bin:/opt/homebrew/bin"),
+            path_with(P("/usr/bin:/usr/local/bin")));
+  EXPECT_EQ(P("/opt/homebrew/bin:/usr/bin:/usr/local/bin"),
+            path_with(P("/opt/homebrew/bin:/usr/bin")));
 }
 
 TEST(PathWith, BothPresentLeavesPathUnchanged) {
@@ -44,7 +48,8 @@ TEST(PathWith, OrderOfMoreIsKept) {
 }
 
 TEST(PathWith, TrailingSlashEntryIsDistinct) {
-  EXPECT_EQ(P("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin"), path_with("/opt/homebrew/bin/"));
+  EXPECT_EQ(P("/opt/homebrew/bin/:/opt/homebrew/bin:/usr/local/bin"),
+            path_with("/opt/homebrew/bin/"));
 }
 
 TEST(PathWith, EmptyMoreReturnsPathUnchanged) {
@@ -53,7 +58,8 @@ TEST(PathWith, EmptyMoreReturnsPathUnchanged) {
 
 TEST(PathWith, CustomMoreIsUsed) {
   EXPECT_EQ(P("/usr/bin:/custom/bin"), path_with("/usr/bin", {"/custom/bin"}));
-  EXPECT_EQ(P("/usr/bin:/custom/bin"), path_with(P("/usr/bin:/custom/bin"), {"/custom/bin"}));
+  EXPECT_EQ(P("/usr/bin:/custom/bin"),
+            path_with(P("/usr/bin:/custom/bin"), {"/custom/bin"}));
 }
 
 class AddToPathTest : public ::testing::Test {
@@ -98,7 +104,8 @@ TEST(PathFirst, EmptyPathGivesJustTheDirectory) {
 }
 
 TEST(PathFirst, FinderLikePathGetsTheDirectoryFirst) {
-  EXPECT_EQ(P("/x/bin:/usr/bin:/bin"), path_first(P("/usr/bin:/bin"), "/x/bin"));
+  EXPECT_EQ(P("/x/bin:/usr/bin:/bin"),
+            path_first(P("/usr/bin:/bin"), "/x/bin"));
 }
 
 TEST(PathFirst, DirectoryAlreadyFirstLeavesPathUnchanged) {

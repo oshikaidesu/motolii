@@ -280,7 +280,8 @@ Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place,
                        const Canvas2DFx& fx, const char* marker) {
   // ThorVG ends the program when given a folder, so accept regular files only.
   if (!std::filesystem::is_regular_file(file)) return nullptr;
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   const bool lottie = ext == ".json" || ext == ".lot";
   std::string text;
   if (ext == ".svg") text = read_text(file);

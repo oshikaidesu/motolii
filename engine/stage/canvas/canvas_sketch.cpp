@@ -305,7 +305,8 @@ Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run,
         // Any font will do for a sketch, so use the one that Filament also
         // loads.
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success)
-          d->sketchFont = std::filesystem::path(fontFile).stem().generic_string();
+          d->sketchFont =
+              std::filesystem::path(fontFile).stem().generic_string();
         d->sketchScene = tvg::Scene::gen();
         // Paint coordinates are in the sketch canvas's own pixels, and
         // pixelDensity(2) gives it twice as many pixels as its width says.
@@ -346,7 +347,8 @@ Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile,
         // Any font will do for a sketch, so use the one that Filament also
         // loads.
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success)
-          d->sketchFont = std::filesystem::path(fontFile).stem().generic_string();
+          d->sketchFont =
+              std::filesystem::path(fontFile).stem().generic_string();
         d->sketchScene = tvg::Scene::gen();
         d->sketch = [run, d, pic](int at, int had) {
           std::vector<double> o = run->paints(at, had, pic);

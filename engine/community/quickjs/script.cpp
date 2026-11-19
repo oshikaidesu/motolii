@@ -81,7 +81,8 @@ std::string script_shelf_file(const std::string& file) {
       auto& names = by[now];
       for (const auto& e :
            std::filesystem::recursive_directory_iterator(shelf, wrong))
-        names.emplace(e.path().filename().generic_string(), e.path().generic_string());
+        names.emplace(e.path().filename().generic_string(),
+                      e.path().generic_string());
     }
     const auto at =
         by[now].find(std::filesystem::path(file).filename().generic_string());
@@ -302,7 +303,8 @@ void script_first(const std::string& file,
 #ifdef _WIN32  // (no st_mtimespec: the file's time in 100 ns steps)
   std::error_code missing;
   const auto written = std::filesystem::last_write_time(table, missing);
-  const long long when = missing ? -1 : (long long)written.time_since_epoch().count();
+  const long long when =
+      missing ? -1 : (long long)written.time_since_epoch().count();
 #else
   struct stat st{};
   const long long when =

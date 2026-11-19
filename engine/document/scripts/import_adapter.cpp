@@ -103,7 +103,8 @@ int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file,
   double metal = 0, rough = 1;
   std::string colour;
   says >> most >> colour >> metal >> rough;
-  if (!solid && !(solid = doc_add(d, "solid", glb.generic_string().c_str()))) return 0;
+  if (!solid && !(solid = doc_add(d, "solid", glb.generic_string().c_str())))
+    return 0;
   doc_say(d, solid, "fill", colour.c_str());
   doc_set(d, solid, "metallic", metal), doc_set(d, solid, "roughness", rough),
       doc_set(d, solid, "copies", std::min(most, 1000));
@@ -195,7 +196,8 @@ std::string doc_tsl_saved(Doc& d, const std::filesystem::path& file) {
   const std::string text = read_text(file);
   std::string effect, points, why;
   if (!tsl_shelf(doc_engine("third_party/js/three").generic_string(),
-                 doc_engine("community/three_shading_language_to_shelf").generic_string(),
+                 doc_engine("community/three_shading_language_to_shelf")
+                     .generic_string(),
                  text, file.stem().generic_string(), effect, points, why))
     return why;
   const std::string stem = file.stem().generic_string();
@@ -287,7 +289,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // (image_canvas).
   if (form == "svg") {
     const std::filesystem::path file = stored(".svg");
-    if (const int on = doc_svg_paths(d, file.generic_string().c_str())) return on;
+    if (const int on = doc_svg_paths(d, file.generic_string().c_str()))
+      return on;
     doc_act(d);
     const int on = doc_add(d, "image", file.generic_string().c_str());
     return doc_acted(d) && on ? on : 0;
@@ -325,10 +328,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // mesh's points as a points file on the same layer.
   if (form == "tsl") {
     std::string effect, points, why;
-    if (!tsl_shelf(
-            doc_engine("third_party/js/three").generic_string(),
-            doc_engine("community/three_shading_language_to_shelf").generic_string(),
-            came, adapter_name(form), effect, points, why))
+    if (!tsl_shelf(doc_engine("third_party/js/three").generic_string(),
+                   doc_engine("community/three_shading_language_to_shelf")
+                       .generic_string(),
+                   came, adapter_name(form), effect, points, why))
       return d.error = why, 0;
     // The original TSL is stored as a .js file so the user can edit and
     // hot-reload it (doc_tsl_saved). The WGSL files are named after the .js
@@ -363,8 +366,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // converter is hydra_isf.cpp.
   if (hydra) {
     std::string why, isf;
-    if (!hydra_isf(doc_folders("extensions/hydra").back().generic_string(), text, 30.0,
-                   isf, moving, why))
+    if (!hydra_isf(doc_folders("extensions/hydra").back().generic_string(),
+                   text, 30.0, isf, moving, why))
       return d.error = why, 0;
     text = isf;
   }
@@ -387,7 +390,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   // The Hydra code as it was written is kept beside the converted effect. The
   // Create tab lists this file under Code.
   if (hydra)
-    std::ofstream(file.parent_path() / (file.stem().generic_string() + ".hydra"))
+    std::ofstream(file.parent_path() /
+                  (file.stem().generic_string() + ".hydra"))
         << came;
   // A p5.js sketch that paints its canvas with a shader is imported as that
   // shader, an effect like any other, and not as an image of its output.
@@ -395,10 +399,10 @@ int doc_door(Doc& d, const std::string& said, int picked) {
   if (form.empty() && adapter_has(told, "hader(") &&
       (shaded = doc_p5_shaded(file, moving, why)).empty() && !why.empty())
     return d.error = why, 0;
-  const std::string fx =
-      shaded.empty()
-          ? file.generic_string()
-          : std::filesystem::path(file).replace_extension(".fs").generic_string();
+  const std::string fx = shaded.empty() ? file.generic_string()
+                                        : std::filesystem::path(file)
+                                              .replace_extension(".fs")
+                                              .generic_string();
   const bool effect = shader || !shaded.empty();
   // Begin the undo step.
   doc_act(d);
@@ -419,8 +423,9 @@ int doc_door(Doc& d, const std::string& said, int picked) {
     // under a group layer when there is more than one. The layers are placed in
     // the 3D world and are not a picture of it.
   } else if (form == "three") {
-    Script run(file.generic_string(),
-               (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
+    Script run(
+        file.generic_string(),
+        (doc_engine("third_party/js/p5") / "p5.min.js").generic_string());
     const int parts = std::atoi(run.said("__three_parts()").c_str());
     if (!run.ok())
       return d.error = run.trouble(), d.act.ok = false, doc_acted(d), 0;
@@ -448,7 +453,8 @@ int doc_door(Doc& d, const std::string& said, int picked) {
           doc_say(d, layer, "script", file.generic_string().c_str());
     // If the script failed on its first run, report that. A white box is not
     // what the sketch drew.
-    if (DocScript* sc = layer ? doc_script_of(d, file.generic_string()) : nullptr;
+    if (DocScript* sc =
+            layer ? doc_script_of(d, file.generic_string()) : nullptr;
         sc && sc->run && !sc->run->ok())
       return d.error = sc->run->trouble(), d.act.ok = false, doc_acted(d), 0;
     // Any other p5.js sketch becomes an image layer fitted to the canvas.
@@ -470,7 +476,8 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
           .time_since_epoch()
           .count();
   long long& seen = doc_scripts_kept(d).sketches[file].saved;
-  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  const std::string ext =
+      std::filesystem::path(file).extension().generic_string();
   const std::string text = read_text(file);
   const bool three = ext == ".js" && adapter_form(text) == "three";
   const bool shaded =
