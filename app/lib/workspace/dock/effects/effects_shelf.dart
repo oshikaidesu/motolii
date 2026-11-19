@@ -7,6 +7,7 @@ import 'package:motolii/workspace/dock/effects/effect_commands.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effect_map_pane.dart';
 import 'package:motolii/workspace/shelf/shelf_looks.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart' show DockHover;
 import 'package:motolii/workspace/shelf/tile_moving.dart';
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +70,52 @@ class _EffectsShelfState extends State<EffectsShelf> {
     );
     if (why.isNotEmpty) c.ws.notice = 'Not renamed: $why';
   }
+
+  Widget? _footerTags(
+    String id,
+    Map<String, ShelfItem> seen,
+    String activeChip,
+    ShelfContext c,
+  ) {
+    final effectTags = widget.effects.tags.of(
+      'Effects',
+      id,
+      seen[id]?.tags ?? const {},
+    );
+    if (effectTags.isEmpty) return null;
+    return Wrap(
+      spacing: Shape.s(4),
+      runSpacing: Shape.s(3),
+      children: [
+        if (seen[id]?.label case final kind? when kind.isNotEmpty)
+          _tagChip(kind, activeChip == kind, c),
+        for (final t in effectTags) _tagChip('#$t', activeChip == '#$t', c),
+      ],
+    );
+  }
+
+  Widget _tagChip(String label, bool on, ShelfContext c) => DockHover(
+    onTap: () => c.pickChip(on ? 'All' : label),
+    builder: (context, h) => AnimatedContainer(
+      duration: Motion.dur,
+      curve: Motion.ease,
+      padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
+      height: Shape.z(16),
+      decoration: BoxDecoration(
+        color: on
+            ? WindowTokens.accent
+            : (h ? WindowTokens.raised : WindowTokens.well),
+        borderRadius: Shape.round(WindowTokens.chipRadius),
+      ),
+      child: Center(
+        child: Text(
+          label,
+          style: TextStyles.micro(on ? WindowTokens.onAccent : Grey.g76)
+              .copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500),
+        ),
+      ),
+    ),
+  );
 
   @override
   void dispose() {
@@ -317,6 +364,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               action: sel.on ? 'Remove' : 'Add',
               fresh: !picked,
               onAction: commands.off(sel) ?? sel.apply,
+              extra: _footerTags(sel.id, seen, chip, c),
               more: Builder(
                 builder: (b) => IconPress(
                   dockMark(AppGlyphs.more),

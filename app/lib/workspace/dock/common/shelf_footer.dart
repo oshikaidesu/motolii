@@ -25,6 +25,7 @@ class ShelfFooter extends StatelessWidget {
     this.fresh = false,
     this.lasts,
     this.more,
+    this.extra,
   });
 
   /// Whether the action creates a new layer instead of changing the selected one. The target then reads 'to new layer'.
@@ -32,6 +33,9 @@ class ShelfFooter extends StatelessWidget {
 
   /// A widget beside the action button, such as a three-dot menu as in Spotify.
   final Widget? more;
+
+  /// Extra content below the meta line, such as tags.
+  final Widget? extra;
 
   /// A widget beside the target saying how long the new layer lasts. The user chooses it before the layer is placed.
   final Widget? lasts;
@@ -79,7 +83,7 @@ class ShelfFooter extends StatelessWidget {
           child: Row(
             children: [
               if (preview case final p?) ...[
-                SizedBox.square(dimension: Shape.z(34), child: p),
+                SizedBox(width: Shape.z(60), height: Shape.z(34), child: p),
                 SizedBox(width: Shape.s(8)),
               ],
               Expanded(
@@ -147,6 +151,10 @@ class ShelfFooter extends StatelessWidget {
                         ],
                       ],
                     ),
+                    if (extra case final e?) ...[
+                      SizedBox(height: Shape.s(4)),
+                      e,
+                    ],
                   ],
                 ),
               ),
