@@ -221,31 +221,133 @@ class _AgentPaneState extends State<AgentPane> {
       final word = _find.text.toLowerCase();
       final shown = [
         for (final a in list.data!)
-          if (a.name.toLowerCase().contains(word)) a,
+          if (a.name.toLowerCase().contains(word) ||
+              a.description.toLowerCase().contains(word))
+            a,
       ];
       if (list.data!.isEmpty) {
         return _note('No agent list: offline, and never read before');
       }
+      if (shown.isEmpty) return _note('No matching agents');
+      final ready = [
+        for (final a in shown)
+          if (a.installed) a,
+      ];
+      final rest = [
+        for (final a in shown)
+          if (!a.installed) a,
+      ];
       return ListView(
         padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
         children: [
-          for (final a in shown)
-            DockHover(
-              onTap: () => _choose(a),
-              builder: (context, h) => Container(
-                height: Shape.z(24),
-                color: h ? WindowTokens.card : null,
-                padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  a.name,
-                  style: TextStyles.name(h ? Grey.g95 : Grey.g91),
-                ),
-              ),
-            ),
+          if (ready.isNotEmpty) ...[
+            _section('INSTALLED', ready.length),
+            for (final a in ready) _agentRow(a),
+          ],
+          if (rest.isNotEmpty) ...[
+            if (ready.isNotEmpty) SizedBox(height: Shape.s(6)),
+            _section(ready.isNotEmpty ? 'REGISTRY' : 'ALL AGENTS', rest.length),
+            for (final a in rest) _agentRow(a),
+          ],
         ],
       );
     },
+  );
+
+  Widget _section(String title, int count) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      WindowTokens.inset,
+      Shape.s(4),
+      WindowTokens.inset,
+      Shape.s(2),
+    ),
+    child: Row(
+      children: [
+        Text(
+          title,
+          style: TextStyles.micro(Grey.g56)
+              .copyWith(fontWeight: FontWeight.w700, letterSpacing: .4),
+        ),
+        SizedBox(width: Shape.s(4)),
+        Text('$count', style: TextStyles.micro(Grey.g44)),
+      ],
+    ),
+  );
+
+  Widget _agentRow(AgentEntry a) => DockHover(
+    onTap: () => _choose(a),
+    builder: (context, h) => Container(
+      color: h ? WindowTokens.card : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: WindowTokens.inset,
+        vertical: Shape.s(5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: Shape.z(6),
+                height: Shape.z(6),
+                decoration: BoxDecoration(
+                  color: a.installed ? Accent.fill : Grey.g38,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: Shape.s(6)),
+              Expanded(
+                child: Text(
+                  a.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.name(
+                    h ? Grey.g100 : Grey.g91,
+                  ).copyWith(fontWeight: a.installed ? FontWeight.w600 : null),
+                ),
+              ),
+              if (a.installed || a.method.isNotEmpty) ...[
+                SizedBox(width: Shape.s(6)),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Shape.s(5),
+                    vertical: Shape.s(1),
+                  ),
+                  decoration: BoxDecoration(
+                    color: a.installed
+                        ? WindowTokens.accent
+                        : WindowTokens.well,
+                    borderRadius: Shape.round(WindowTokens.chipRadius),
+                  ),
+                  child: Text(
+                    a.installed ? 'ready' : a.method,
+                    style:
+                        TextStyles.micro(
+                          a.installed ? WindowTokens.onAccent : Grey.g56,
+                        ).copyWith(
+                          fontSize: TextStyles.px(9),
+                          fontWeight: a.installed ? FontWeight.w700 : null,
+                        ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (a.description.isNotEmpty) ...[
+            SizedBox(height: Shape.s(2)),
+            Padding(
+              padding: EdgeInsets.only(left: Shape.z(6) + Shape.s(6)),
+              child: Text(
+                a.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.micro(Grey.g56),
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
   );
 
   Widget _note(String s) => Padding(

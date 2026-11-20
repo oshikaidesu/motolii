@@ -13,8 +13,19 @@ const _registry =
     'https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json';
 
 class AgentEntry {
-  const AgentEntry(this.id, this.name, this.line, this.env);
-  final String id, name;
+  const AgentEntry(
+    this.id,
+    this.name,
+    this.line,
+    this.env, {
+    this.description = '',
+    this.method = '',
+    this.installed = false,
+  });
+  final String id, name, description, method;
+
+  /// True when a native binary for this agent is already present locally.
+  final bool installed;
 
   /// The agent's command, word by word, and its env, as the registry gives them.
   final List<String> line;
@@ -41,20 +52,44 @@ Future<List<AgentEntry>> agentRegistry(String ownFolder) async {
   final agents = (jsonDecode(text) as Map)['agents'] as List;
   return [
     for (final a in agents.cast<Map>())
-      if (_command(a['distribution'] as Map) case (final line, final env))
-        AgentEntry('${a['id']}', '${a['name']}', line, env),
+      if (_command(a['distribution'] as Map) case (
+        final line,
+        final env,
+        final method,
+      ))
+        AgentEntry(
+          '${a['id']}',
+          '${a['name']}',
+          line,
+          env,
+          description: '${a['description'] ?? ''}'.trim(),
+          method: method,
+          installed: method == 'binary' && hostHasProgram(line.first),
+        ),
   ];
 }
 
-(List<String>, Map<String, String>)? _command(Map d) {
-  final (List<String> line, Map? env) = switch (d) {
+(List<String>, Map<String, String>, String)? _command(Map d) {
+  Map<String, String> envOf(Map? env) => {
+    for (final e in (env ?? const {}).entries) '${e.key}': '${e.value}',
+  };
+  if (d case {'binary': final Map b} when b[_platform] is Map) {
+    final p = b[_platform] as Map;
+    final line = ['${p['cmd']}'.split('/').last, ..._words(p['args'])];
+    if (line.isNotEmpty && hostHasProgram(line.first)) {
+      return (line, envOf(p['env'] as Map?), 'binary');
+    }
+  }
+  final (List<String> line, Map? env, String method) = switch (d) {
     {'npx': final Map n} => (
       ['npx', '-y', '${n['package']}', ..._words(n['args'])],
       n['env'] as Map?,
+      'npx',
     ),
     {'uvx': final Map u} => (
       ['uvx', '${u['package']}', ..._words(u['args'])],
       u['env'] as Map?,
+      'uvx',
     ),
     {'binary': final Map b} when b[_platform] is Map => (
       [
@@ -62,14 +97,12 @@ Future<List<AgentEntry>> agentRegistry(String ownFolder) async {
         ..._words((b[_platform] as Map)['args']),
       ],
       (b[_platform] as Map)['env'] as Map?,
+      'binary',
     ),
-    _ => (const <String>[], null),
+    _ => (const <String>[], null, ''),
   };
   if (line.isEmpty) return null;
-  return (
-    line,
-    {for (final e in (env ?? const {}).entries) '${e.key}': '${e.value}'},
-  );
+  return (line, envOf(env), method);
 }
 
 List<String> _words(Object? args) => [

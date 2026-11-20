@@ -48,3 +48,38 @@ List<String> get windowsFontFolders => Platform.isWindows
 
 /// The system's temporary folder.
 String get tempFolder => Directory.systemTemp.path;
+
+/// Whether [name] exists as an executable in PATH or common user tool folders.
+bool hostHasProgram(String name) {
+  if (name.isEmpty) return false;
+  if (name.contains('/') || name.contains(r'\')) {
+    final s = FileStat.statSync(name);
+    return s.type == FileSystemEntityType.file &&
+        (Platform.isWindows || s.mode & 0x49 != 0);
+  }
+  final sep = Platform.isWindows ? ';' : ':';
+  final named = Platform.isWindows ? '$name.exe' : name;
+  final home = homeFolder;
+  final dirs = <String>[
+    ...(Platform.environment['PATH'] ?? '').split(sep),
+    if (!Platform.isWindows) ...[
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      if (home != null) ...[
+        '$home/.local/bin',
+        '$home/.cargo/bin',
+        '$home/.bun/bin',
+      ],
+    ],
+  ];
+  for (final d in dirs) {
+    if (d.isEmpty) continue;
+    final path = d.endsWith('/') ? '$d$named' : '$d/$named';
+    final s = FileStat.statSync(path);
+    if (s.type == FileSystemEntityType.file &&
+        (Platform.isWindows || s.mode & 0x49 != 0)) {
+      return true;
+    }
+  }
+  return false;
+}
