@@ -16,6 +16,8 @@ class MainFlutterWindow: NSWindow {
     ColourSampler.attach(to: flutterViewController)
     PasteboardFiles.attach(to: flutterViewController)
     RecentDocuments.attach(to: flutterViewController)
+    WindowShade.attach(to: flutterViewController, window: self)
+    self.appearance = NSAppearance(named: .darkAqua)
 
     super.awakeFromNib()
     // after the xib has restored its own frame
@@ -165,6 +167,22 @@ enum RecentDocuments {
         return result(FlutterMethodNotImplemented)
       }
       NSDocumentController.shared.noteNewRecentDocumentURL(URL(fileURLWithPath: path))
+      result(nil)
+    }
+  }
+}
+
+/// Keeps the native macOS title bar appearance aligned with Motolii's Light/Dark shade.
+enum WindowShade {
+  static func attach(to controller: FlutterViewController, window: NSWindow) {
+    let channel = FlutterMethodChannel(name: "motolii/shade", binaryMessenger: controller.registrar(forPlugin: "MotoliiShade").messenger)
+    channel.setMethodCallHandler { call, result in
+      guard call.method == "set", let args = call.arguments as? [String: Any], let light = args["light"] as? Bool else {
+        return result(FlutterMethodNotImplemented)
+      }
+      DispatchQueue.main.async {
+        window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
+      }
       result(nil)
     }
   }

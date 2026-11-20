@@ -10,6 +10,7 @@ import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
+import 'package:motolii/storage/window_shade.dart' show syncWindowShade;
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart'
     show Badge, Chip, ChipLook, IconPress, Pressable;
@@ -196,6 +197,7 @@ class _ShadeSwitch extends StatelessWidget {
   const _ShadeSwitch();
   static void flip() {
     Grey.shade.value = Grey.light ? Shade.dark : Shade.light;
+    syncWindowShade(Grey.light);
     WidgetsBinding.instance.reassembleApplication();
   }
 

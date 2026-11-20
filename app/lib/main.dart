@@ -8,9 +8,12 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/window_shade.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   // Catch widget-tree errors (layout, build, paint).
   // presentError keeps the default formatted console dump; log() also sends to DevTools.
   FlutterError.onError = (details) {
@@ -28,6 +31,10 @@ void main() {
     return false; // Let the platform also handle it (crash reporter etc.).
   };
   ColorTheme.setSkinRoots(shelves: motoliiShelves, own: motoliiOwn);
+  void pushShade() => syncWindowShade(Grey.light);
+  Grey.shade.addListener(pushShade);
+  ColorTheme.shadeSaid.addListener(pushShade);
+  pushShade();
   runZonedGuarded(
     () => runApp(
       WidgetsApp(
