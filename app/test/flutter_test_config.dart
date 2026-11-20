@@ -7,9 +7,19 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
-    await (FontLoader(
-      'Inter',
-    )..addFont(rootBundle.load('fonts/Inter-Variable.ttf'))).load();
+    final inter = FontLoader('Inter');
+    for (final file in const [
+      'fonts/Inter-Regular.ttf',
+      'fonts/Inter-Italic.ttf',
+      'fonts/Inter-Medium.ttf',
+      'fonts/Inter-SemiBold.ttf',
+      'fonts/Inter-Bold.ttf',
+      'fonts/Inter-ExtraBold.ttf',
+      'fonts/Inter-Black.ttf',
+    ]) {
+      inter.addFont(rootBundle.load(file));
+    }
+    await inter.load();
     await (FontLoader(
       'Noto Sans JP',
     )..addFont(rootBundle.load('fonts/NotoSansJP-Regular.otf'))).load();
