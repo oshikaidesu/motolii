@@ -19,6 +19,18 @@
 
 ---
 
+## 画面操作
+
+画面操作（computer use）には **Cua Driver** (`cua-driver`) を使う。
+組み込みの computer-use ツールやスクリーンショットベースの代替は使わない。
+
+- コマンド: `cua-driver mcp`（stdio MCP サーバー）
+- 許可: macOS のアクセシビリティ・画面収録は付与済み
+- 方式: アクセシビリティツリー＋スクリーンショットのハイブリッド
+- 対応: click / type / drag / scroll / 要素名指定
+
+---
+
 確かめ方・後始末：始める前に `git config core.hooksPath .githooks`。組み立て・調査の出力は `engine/out/`・`app/build/`・`docs/internal/` の外に出さない。ビルドは 1 本ずつ（同時だと機械が落ちる）。手を止める前にコミットし、取り込み終わった worktree とブランチはその場で消す。
 
 確かめる順番：
