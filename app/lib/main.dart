@@ -13,7 +13,6 @@ import 'package:motolii/storage/window_shade.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
   // Catch widget-tree errors (layout, build, paint).
   // presentError keeps the default formatted console dump; log() also sends to DevTools.
   FlutterError.onError = (details) {
@@ -31,18 +30,21 @@ void main() {
     return false; // Let the platform also handle it (crash reporter etc.).
   };
   ColorTheme.setSkinRoots(shelves: motoliiShelves, own: motoliiOwn);
-  void pushShade() => syncWindowShade(Grey.light);
-  Grey.shade.addListener(pushShade);
-  ColorTheme.shadeSaid.addListener(pushShade);
-  pushShade();
   runZonedGuarded(
-    () => runApp(
-      WidgetsApp(
-        color: const Color(0xFF000000),
-        debugShowCheckedModeBanner: false,
-        builder: (c, _) => Workspace(document: motoliiDoc),
-      ),
-    ),
+    () {
+      WidgetsFlutterBinding.ensureInitialized();
+      void pushShade() => syncWindowShade(Grey.light);
+      Grey.shade.addListener(pushShade);
+      ColorTheme.shadeSaid.addListener(pushShade);
+      pushShade();
+      runApp(
+        WidgetsApp(
+          color: const Color(0xFF000000),
+          debugShowCheckedModeBanner: false,
+          builder: (c, _) => Workspace(document: motoliiDoc),
+        ),
+      );
+    },
     (error, stack) =>
         log('$error', name: 'zone', error: error, stackTrace: stack),
   );
