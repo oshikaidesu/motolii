@@ -27,8 +27,8 @@ class ShelfSection extends StatelessWidget {
   Widget build(BuildContext context) => DockHover(
     onTap: onTap,
     builder: (context, h) => Container(
-      height: Shape.z(24),
-      color: h && onTap != null ? WindowTokens.raised : WindowTokens.card,
+      height: Shape.z(22),
+      color: h && onTap != null ? WindowTokens.card : null,
       padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset),
       child: Row(
         children: [
@@ -46,8 +46,8 @@ class ShelfSection extends StatelessWidget {
             SizedBox(width: Shape.s(6)),
           ],
           Container(
-            width: Shape.z(8),
-            height: Shape.z(8),
+            width: Shape.z(6),
+            height: Shape.z(6),
             decoration: BoxDecoration(
               color: hue ?? Grey.g56,
               borderRadius: Shape.round(2),
@@ -59,8 +59,8 @@ class ShelfSection extends StatelessWidget {
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.micro(Grey.g91).bold
-                  .copyWith(letterSpacing: .9),
+              style: TextStyles.micro(Grey.g63).bold
+                  .copyWith(letterSpacing: .8),
             ),
           ),
           // The trailing widget is scaled down in a narrow shelf, never clipped.

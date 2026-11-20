@@ -204,6 +204,10 @@ abstract final class TextStyles {
     fontFamilyFallback: const ['Noto Sans JP', '.AppleSystemUIFont'],
     fontSize: px(size),
     fontWeight: w,
+    // Inter is bundled as a single variable font, so Flutter needs the wght axis explicitly.
+    fontVariations: [
+      FontVariation.weight((w ?? FontWeight.w400).value.toDouble()),
+    ],
     color: ink(c ?? dim),
     height: height,
     letterSpacing: ls,
@@ -219,7 +223,7 @@ abstract final class TextStyles {
   ]) => _sans(c, Grey.g91, size, w, height, .05);
   static TextStyle label([Color? c]) => _sans(c, Grey.g63, 11, null, 1, .1);
   static TextStyle micro([Color? c]) =>
-      _sans(c, Grey.g63, 11, FontWeight.w500, 1, .15);
+      _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
   static TextStyle value([Color? c]) => TextStyle(
     fontFamily: mono,
     fontFamilyFallback: const ['Noto Sans JP', '.AppleSystemUIFont'],
@@ -238,7 +242,10 @@ abstract final class TextStyles {
 /// hand, so every "stronger" word across the app sits at the same w700 weight.
 extension BoldStyle on TextStyle {
   /// This style with [FontWeight.w700] instead of its default weight.
-  TextStyle get bold => copyWith(fontWeight: FontWeight.w700);
+  TextStyle get bold => copyWith(
+    fontWeight: FontWeight.w700,
+    fontVariations: const [FontVariation.weight(700)],
+  );
 }
 
 /// Typed text with the full-width letters and digits of a Japanese input method turned into plain ones.

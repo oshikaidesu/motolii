@@ -57,10 +57,19 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
     ))
       ...TileReview.weighed(shelvesFolder(), f),
   };
+  String usSpelling(String s) => s
+      .replaceAll('Colours', 'Colors')
+      .replaceAll('Colour', 'Color')
+      .replaceAll('colours', 'colors')
+      .replaceAll('colour', 'color');
   String field(String n) {
     final sh = shownFactOf(ws, n),
+        shownLabel = usSpelling(
+          sh?.label ??
+              n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase()),
+        ),
         label =
-            '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${switch (weightOf(weights, n)) {
+            '@label($shownLabel)${switch (weightOf(weights, n)) {
               null => '',
               final w => ' @weight($w)',
             }}';
@@ -73,7 +82,7 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, int t) {
       return '  /// $label @enum(${['None', ...others.keys.map((o) => o.replaceAll(',', ' '))].join(', ')}) @default(${at + 1})\n  $n: u32,';
     }
     if (layerWords(ws, t, n) case final words when words.isNotEmpty) {
-      return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(layerWord(ws, t, n)))})\n  $n: u32,';
+      return '  /// $label @enum(${words.map(usSpelling).join(', ')}) @default(${math.max(0, words.indexOf(layerWord(ws, t, n)))})\n  $n: u32,';
     }
     if (layerRangeOf(ws, t, n) case (final lo0, final hi0)) {
       final a = shownNumber(

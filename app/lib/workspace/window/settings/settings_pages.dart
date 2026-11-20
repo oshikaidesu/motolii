@@ -355,7 +355,7 @@ List<AbstractSettingsSection> settingsSections({
         ],
       ),
       SettingsSection(
-        title: Text('CUSTOMISE'),
+        title: Text('CUSTOMIZE'),
         tiles: [
           SettingsTile(
             title: const Text('Keybindings File'),
@@ -366,7 +366,7 @@ List<AbstractSettingsSection> settingsSections({
     ],
     SettingsPage.labels => [
       SettingsSection(
-        title: Text('LABEL COLOURS'),
+        title: Text('LABEL COLORS'),
         tiles: [
           CustomSettingsTile(
             child: Padding(

@@ -136,27 +136,31 @@ class ParameterTile extends StatelessWidget {
                 right: InspectorSkin.tilePad - 3,
                 top: 4,
                 width: InspectorSkin.glyph,
-                height: InspectorSkin.glyph,
+                height: Shape.z(16),
                 child: Center(child: glyph),
               ),
             Padding(
               padding: EdgeInsets.fromLTRB(
                 InspectorSkin.tilePad,
                 Shape.s(4),
-                glyph != null
-                    ? InspectorSkin.glyph + InspectorSkin.tilePad
-                    : InspectorSkin.tilePad,
+                InspectorSkin.tilePad,
                 Shape.s(3),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    p.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyles.micro(Grey.g63).copyWith(height: 1.1),
+                  Padding(
+                    // Reserve top-right room for the swatch without narrowing the value row below.
+                    padding: EdgeInsets.only(
+                      right: glyph != null ? InspectorSkin.glyph : 0,
+                    ),
+                    child: Text(
+                      p.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.micro(Grey.g63).copyWith(height: 1.1),
+                    ),
                   ),
                   bottom,
                 ],

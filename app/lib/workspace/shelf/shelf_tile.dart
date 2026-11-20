@@ -41,7 +41,7 @@ class ShelfTile extends StatelessWidget {
   });
 
   /// The name bar's height under a picture.
-  static const bar = 14.0;
+  static const bar = 17.0;
   final ShelfItem item;
   final ShelfLook look;
   final bool list, small, picked, lit, bold, picks;
@@ -110,10 +110,10 @@ class ShelfTile extends StatelessWidget {
         );
 
   Widget _under(bool h) {
-    final round = Shape.round(WindowTokens.radius);
+    final round = Shape.round(WindowTokens.chipRadius);
     return Stack(
       children: [
-        // The tile's body is one rounded card: the image, then the name bar.
+        // Compact card: tight 16:9 image with a slim name bar underneath.
         ClipRRect(
           borderRadius: round,
           child: Column(
@@ -125,7 +125,19 @@ class ShelfTile extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     ColoredBox(color: WindowTokens.well),
-                    ?(art?.call(h) ?? _image(h)),
+                    art?.call(h) ??
+                        _image(h) ??
+                        ColoredBox(
+                          color: WindowTokens.card,
+                          child: Center(
+                            child: Text(
+                              item.name.isNotEmpty
+                                  ? item.name[0].toUpperCase()
+                                  : '',
+                              style: TextStyles.title(Grey.g38),
+                            ),
+                          ),
+                        ),
                     ...?over?.call(h),
                   ],
                 ),
@@ -136,26 +148,23 @@ class ShelfTile extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
                   alignment: Alignment.centerLeft,
                   color: dockFill(picked, h, WindowTokens.card),
-                  // A name wider than its tile is drawn smaller, never cut.
                   child:
                       naming ??
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          item.name,
-                          maxLines: 1,
-                          style: TextStyles.micro(
-                            dockInk(picked, ink ?? Grey.g76),
-                          ).copyWith(fontWeight: bold ? FontWeight.w700 : null),
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyles.name(
+                          dockInk(picked, ink ?? (h ? Grey.g95 : Grey.g76)),
+                          9.5,
+                          bold ? FontWeight.w600 : FontWeight.w400,
+                          1.2,
                         ),
                       ),
                 ),
             ],
           ),
         ),
-        // The ring is drawn over everything but ignores presses, so the star under it can still be pressed.
-        // It eases from clear, to a soft grey on hover, to the accent when lit or picked.
         if (lit || picked || h)
           Positioned.fill(
             child: IgnorePointer(
@@ -342,14 +351,26 @@ class ShelfGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final round = pad ?? EdgeInsets.only(top: look.top),
-          wide = box.maxWidth - round.horizontal;
+      final tiled = !list && !small;
+      final gap = tiled ? 3.0 : WindowTokens.gutter;
+      final round =
+          pad ??
+          (list
+              ? EdgeInsets.only(top: look.top)
+              : EdgeInsets.fromLTRB(
+                  Shape.s(4),
+                  look.top,
+                  Shape.s(4),
+                  WindowTokens.inset,
+                ));
+      final wide = box.maxWidth - round.horizontal;
       final across = list
           ? 1
           : cols ??
                 gridColumns(
                   wide,
                   look.sized ? Shape.z(look.cell) : look.cell,
+                  gap: gap,
                   min: look.min,
                 );
       return CustomScrollView(
@@ -361,15 +382,14 @@ class ShelfGrid extends StatelessWidget {
             sliver: SliverGrid.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: across,
-                crossAxisSpacing: WindowTokens.gutter,
-                mainAxisSpacing: WindowTokens.gutter,
+                crossAxisSpacing: gap,
+                mainAxisSpacing: gap,
                 mainAxisExtent: list
                     ? Shape.z(look.row)
                     : switch (look.height) {
                         final x? => Shape.z(x),
-                        // A tile is its image plus its name bar.
                         null =>
-                          gridCellWidth(wide, across) / look.aspect +
+                          gridCellWidth(wide, across, gap: gap) / look.aspect +
                               (small ? 0 : Shape.z(ShelfTile.bar)),
                       },
               ),

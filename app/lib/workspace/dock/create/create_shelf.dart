@@ -223,7 +223,12 @@ Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
   );
   if (m.recipe && _isRecipe(c, m.name)) {
     // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.
-    return Positioned.fill(child: RecipeMotionView(m.name));
+    return Positioned.fill(
+      child: RecipeMotionView(
+        m.name,
+        fallback: Padding(padding: EdgeInsets.all(Shape.s(6)), child: mark()),
+      ),
+    );
   }
   if (m.pasted) {
     // Pasted code: a few seconds of what it draws, as one looping file (code_tiles.dart). The key holds the time it was

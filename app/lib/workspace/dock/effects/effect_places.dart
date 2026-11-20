@@ -14,6 +14,7 @@ import 'package:motolii/workspace/dock/common/shelf_section.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// Default height when over the tiles. Double-click the grip to reset.
 const defaultEffectListHeight = 176.0;
@@ -327,6 +328,71 @@ class EffectPlacesState extends State<EffectPlaces> {
     ),
   );
 
+  /// Compact rounded selector shown when the places list is folded in a narrow shelf.
+  Widget _foldedPlace(
+    String place, {
+    required VoidCallback onTap,
+    ValueChanged<Offset>? menu,
+  }) {
+    final (name, g, n) = _said(place);
+    final narrowed = place != 'All';
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset,
+        Shape.s(2),
+        WindowTokens.inset,
+        Shape.s(2),
+      ),
+      child: DockHover(
+        key: ValueKey('ws-fx-place-$place'),
+        onTap: onTap,
+        onMenu: menu,
+        builder: (context, h) => AnimatedContainer(
+          duration: Motion.dur,
+          curve: Motion.ease,
+          height: Shape.z(22),
+          padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
+          decoration: BoxDecoration(
+            color: h ? WindowTokens.raised : WindowTokens.card,
+            borderRadius: Shape.round(WindowTokens.radius),
+            border: Border.all(
+              color: narrowed
+                  ? WindowTokens.accentInk.withValues(alpha: .5)
+                  : WindowTokens.line,
+            ),
+          ),
+          child: Row(
+            children: [
+              Glyph(AppGlyphs.chevron, size: Shape.z(7), color: Grey.g56),
+              SizedBox(width: Shape.s(6)),
+              Glyph(
+                g,
+                size: Shape.z(11),
+                color: narrowed ? WindowTokens.accentInk : Grey.g63,
+              ),
+              SizedBox(width: Shape.s(6)),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.name(Grey.g91)
+                      .copyWith(fontWeight: FontWeight.w500),
+                ),
+              ),
+              if (n != null)
+                Text(
+                  '$n',
+                  style: TextStyles.value(Grey.g56)
+                      .copyWith(fontSize: TextStyles.px(10)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = widget.c,
@@ -373,10 +439,8 @@ class EffectPlacesState extends State<EffectPlaces> {
                   c.set(() => c.mem.fxListOpen = true);
                   return false;
                 },
-                builder: (context, _, _) => _row(
+                builder: (context, _, _) => _foldedPlace(
                   c.mem.fxPlace,
-                  open: false,
-                  lit: true,
                   onTap: () => c.set(() => c.mem.fxListOpen = true),
                   menu: deck != null
                       ? (at) => _open(at, menus.deck(deck))

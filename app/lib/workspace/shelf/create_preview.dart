@@ -22,10 +22,13 @@ Timer? _ticking;
 
 /// A recipe's motion drawn in its tile, looping by itself.
 class RecipeMotionView extends StatelessWidget {
-  const RecipeMotionView(this.recipe, {super.key});
+  const RecipeMotionView(this.recipe, {super.key, this.fallback});
 
   /// The recipe whose motion is shown.
   final String recipe;
+
+  /// Shown while the motion is being computed or when the recipe produces no points.
+  final Widget? fallback;
   @override
   Widget build(BuildContext context) {
     _ticking ??= Timer.periodic(
@@ -36,7 +39,9 @@ class RecipeMotionView extends StatelessWidget {
       valueListenable: RecipeMotions.ready,
       builder: (context, _, _) {
         final motion = RecipeMotions.of(recipe);
-        if (motion == null || motion.isEmpty) return const SizedBox.shrink();
+        if (motion == null || motion.isEmpty) {
+          return fallback ?? const SizedBox.shrink();
+        }
         // A single path shape that does not move is drawn as its outline.
         if (motion case [final one]
             when one.outline.isNotEmpty && one.copies.length <= 1) {

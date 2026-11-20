@@ -39,32 +39,37 @@ class LinkLine extends StatelessWidget {
       },
       builder: (_, h) => SizedBox(
         height: Shape.z(18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: blockValue(Grey.g95),
-              ),
-            ),
-            // In a narrow tile the name is cut short like the value, never running over the edge.
-            Flexible(
-              child: Text(
-                to.shelf,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyles.micro(h ? Grey.g95 : Grey.g56),
-              ),
-            ),
-            SizedBox(width: Shape.s(2)),
-            glyph(
-              7,
-              (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56),
-              h,
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (_, box) {
+            // In a narrow tile with a full value (like #FF4880), drop the shelf word so the value is not truncated.
+            final showShelf = value.length <= 3 || box.maxWidth >= Shape.z(130);
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: blockValue(Grey.g95),
+                  ),
+                ),
+                if (showShelf) ...[
+                  SizedBox(width: Shape.s(4)),
+                  Text(
+                    to.shelf,
+                    maxLines: 1,
+                    style: TextStyles.micro(h ? Grey.g95 : Grey.g56),
+                  ),
+                ],
+                SizedBox(width: Shape.s(3)),
+                glyph(
+                  7,
+                  (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56),
+                  h,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

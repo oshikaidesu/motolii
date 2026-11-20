@@ -251,8 +251,7 @@ class SheetForms extends Forms {
   @override
   Widget chips(BuildContext context, ChipsSpec c) => SizedBox(
     height: Shape.z(28),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    child: FadedHorizontalScroll(
       padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
       child: Row(
         children: [

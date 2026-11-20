@@ -98,8 +98,7 @@ abstract final class BaseControls {
   /// (Flutter's ScrollBehavior.pointerAxisModifiers). The wheel alone scrolls the vertical list around it, not this one.
   static Widget chips(BuildContext context, ChipsSpec c) => SizedBox(
     height: Shape.z(28),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    child: FadedHorizontalScroll(
       padding: EdgeInsets.fromLTRB(
         WindowTokens.inset,
         Shape.s(2),
@@ -237,6 +236,80 @@ abstract final class BaseControls {
                 ],
               ),
       ),
+    );
+  }
+}
+
+/// Horizontal scroll view that fades any edge with hidden overflow so scrollable chip rows read as scrollable.
+class FadedHorizontalScroll extends StatefulWidget {
+  const FadedHorizontalScroll({super.key, required this.child, this.padding});
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  @override
+  State<FadedHorizontalScroll> createState() => _FadedHorizontalScrollState();
+}
+
+class _FadedHorizontalScrollState extends State<FadedHorizontalScroll> {
+  final _scroll = ScrollController();
+  bool _left = false, _right = false;
+
+  void _sync(ScrollMetrics m) {
+    final l = m.pixels > 0.5;
+    final r = m.pixels < m.maxScrollExtent - 0.5;
+    if (l != _left || r != _right) {
+      setState(() {
+        _left = l;
+        _right = r;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final view = NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) {
+        _sync(n.metrics);
+        return false;
+      },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          _sync(n.metrics);
+          return false;
+        },
+        child: SingleChildScrollView(
+          controller: _scroll,
+          scrollDirection: Axis.horizontal,
+          padding: widget.padding,
+          child: widget.child,
+        ),
+      ),
+    );
+    if (!_left && !_right) return view;
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (bounds) {
+        final f = bounds.width <= 0
+            ? 0.0
+            : (18.0 / bounds.width).clamp(0.0, 0.25);
+        final opaque = Grey.g100;
+        final clear = opaque.withValues(alpha: 0);
+        return LinearGradient(
+          colors: [
+            _left ? clear : opaque,
+            opaque,
+            opaque,
+            _right ? clear : opaque,
+          ],
+          stops: [0.0, _left ? f : 0.0, _right ? 1.0 - f : 1.0, 1.0],
+        ).createShader(bounds);
+      },
+      child: view,
     );
   }
 }

@@ -343,41 +343,50 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             child: list(true),
                           )
                         else
-                          SizedBox(height: Shape.z(22), child: list(true)), // One row for the list leaves room for tiles: the whole list left 3.3 rows of tiles, or 1.7 with the footer open.
+                          SizedBox(height: Shape.z(26), child: list(true)), // One row for the list leaves room for tiles: the whole list left 3.3 rows of tiles, or 1.7 with the footer open.
                         Expanded(child: tiles),
                       ],
                     ),
             ),
           ),
           if (sel != null)
-            ShelfFooter(
-              preview: pic(sel.id).isEmpty
-                  ? null
-                  : ClipRRect(
-                      borderRadius: Shape.round(WindowTokens.radius),
-                      child: TileMoving(pic(sel.id), playing: true),
-                    ),
-              title: sel.name,
-              meta: sel.label.isEmpty
-                  ? sel.said
-                  : '${sel.label} · ${sel.said} · double-click to add',
-              action: sel.on ? 'Remove' : 'Add',
-              fresh: !picked,
-              onAction: commands.off(sel) ?? sel.apply,
-              extra: _footerTags(sel.id, seen, chip, c),
-              more: Builder(
-                builder: (b) => IconPress(
-                  dockMark(AppGlyphs.more),
-                  key: const ValueKey('ws-fx-more'),
-                  tip: 'More',
-                  onTap: () => menuOn(
-                    sel,
-                    (b.findRenderObject() as RenderBox).localToGlobal(
-                      Offset.zero,
+            ListenableBuilder(
+              listenable: widget.effects.map.places,
+              builder: (context, _) {
+                if (c.mem.mapped.contains('Effects') &&
+                    !widget.effects.map.places.value.containsKey(sel.id)) {
+                  return const SizedBox.shrink();
+                }
+                return ShelfFooter(
+                  preview: pic(sel.id).isEmpty
+                      ? null
+                      : ClipRRect(
+                          borderRadius: Shape.round(WindowTokens.radius),
+                          child: TileMoving(pic(sel.id), playing: true),
+                        ),
+                  title: sel.name,
+                  meta: sel.label.isEmpty
+                      ? sel.said
+                      : '${sel.label} · ${sel.said} · double-click to add',
+                  action: sel.on ? 'Remove' : 'Add',
+                  fresh: !picked,
+                  onAction: commands.off(sel) ?? sel.apply,
+                  extra: _footerTags(sel.id, seen, chip, c),
+                  more: Builder(
+                    builder: (b) => IconPress(
+                      dockMark(AppGlyphs.more),
+                      key: const ValueKey('ws-fx-more'),
+                      tip: 'More',
+                      onTap: () => menuOn(
+                        sel,
+                        (b.findRenderObject() as RenderBox).localToGlobal(
+                          Offset.zero,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
         ],
       ),

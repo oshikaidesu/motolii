@@ -30,6 +30,8 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/tiles/effect_tiles_service.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/media/shelf_reads.dart'
+    show elementsOf, presetsOf;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -279,7 +281,10 @@ class _ShelfPaneState extends State<ShelfPane> {
                       'Colors' =>
                         '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),
-                      'Looks' => '0',
+                      'Looks' => () {
+                        final n = presetsOf(ws).length + elementsOf(ws).length;
+                        return '$n ${n == 1 ? 'look' : 'looks'}';
+                      }(),
                       _ => '',
                     },
                     maxLines: 1,

@@ -90,7 +90,7 @@ class ColorSavedBar extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Colours',
+            'Colors',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyles.label(Grey.g76)
@@ -203,7 +203,7 @@ class PaletteDetails extends StatelessWidget {
                 ],
               ),
         title: p.name,
-        meta: '$whose · ${p.colors.length} colours',
+        meta: '$whose · ${p.colors.length} colors',
         action: 'Remove',
         done: !p.saved,
         doneLabel: 'Starter',
