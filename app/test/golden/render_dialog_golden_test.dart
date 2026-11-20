@@ -79,6 +79,23 @@ void main() {
                 Chip(label: '8 Mbps', on: false, onTap: null),
                 Chip(label: '16 Mbps', on: false, onTap: null),
               ]),
+              SizedBox(height: Shape.s(16)),
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  height: Shape.z(38),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: WindowTokens.accent,
+                    borderRadius: Shape.round(6),
+                  ),
+                  child: Text(
+                    'Render',
+                    style: TextStyles.name(WindowTokens.onAccent)
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

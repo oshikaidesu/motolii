@@ -32,8 +32,8 @@ class SavedDisplay extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: onGo == null
-          ? TextStyles.label(active ? Grey.g91 : Grey.g63)
-          : TextStyles.label(active ? Grey.g91 : Grey.g63)
+          ? TextStyles.label(active ? Grey.g91 : Grey.g76)
+          : TextStyles.label(active ? Grey.g91 : Grey.g76)
                 .copyWith(decoration: TextDecoration.underline),
     );
     final body = ConstrainedBox(

@@ -2,6 +2,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 
 /// What a shelf shows when the search finds nothing, or when the shelf is empty.
@@ -27,11 +28,26 @@ class EmptyShelf extends StatelessWidget {
             color: Grey.g44,
           ),
           SizedBox(height: Shape.s(10)),
-          Text(
-            said ?? 'Nothing matches “$query”',
-            textAlign: TextAlign.center,
-            style: TextStyles.label(Grey.g63),
-          ),
+          if (said != null || !searching)
+            Text(
+              said ?? 'Nothing matches “$query”',
+              textAlign: TextAlign.center,
+              style: TextStyles.label(Grey.g63),
+            )
+          else
+            Text.rich(
+              TextSpan(
+                style: TextStyles.label(Grey.g63),
+                children: [
+                  const TextSpan(text: 'Nothing matches '),
+                  TextSpan(
+                    text: '”$query”',
+                    style: TextStyles.label(WindowTokens.accentInk),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
         ],
       ),
     );

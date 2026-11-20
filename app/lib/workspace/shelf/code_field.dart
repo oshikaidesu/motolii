@@ -288,7 +288,7 @@ class _CodeFieldState extends State<CodeField> {
       ),
       innerPadding: _pad,
       enableFolding: !fit,
-      enableMinimap: !fit,
+      enableMinimap: !fit && _lines >= 30,
       enableGuideLines: !fit,
       enableGutter: true,
       enableGutterDivider: false,

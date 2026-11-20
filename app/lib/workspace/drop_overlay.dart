@@ -29,7 +29,7 @@ class DropOverlay extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: WindowTokens.accent,
-            borderRadius: Shape.round(10),
+            borderRadius: Shape.round(4),
           ),
           child: Text(
             'Drop files to add layers',

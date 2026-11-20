@@ -202,7 +202,15 @@ class ShelfTile extends StatelessWidget {
               children: [
                 art?.call(h) ??
                     _image(h) ??
-                    ColoredBox(color: WindowTokens.card),
+                    ColoredBox(
+                      color: WindowTokens.card,
+                      child: Center(
+                        child: Text(
+                          item.name.isNotEmpty ? item.name[0] : '',
+                          style: TextStyles.micro(Grey.g38),
+                        ),
+                      ),
+                    ),
               ],
             ),
           ),

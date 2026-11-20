@@ -17,7 +17,7 @@ class DisclosureTriangle extends StatelessWidget {
     turns: open ? .25 : 0,
     duration: Motion.dur,
     curve: Motion.ease,
-    child: glyph(8, (c, s) => _drawFold(c, s, hot ? Grey.g95 : Grey.g56), hot),
+    child: glyph(10, (c, s) => _drawFold(c, s, hot ? Grey.g95 : Grey.g56), hot),
   );
 }
 

@@ -7,6 +7,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/list_select.dart';
 
@@ -110,7 +111,24 @@ class _ModalCardState extends State<ModalCard> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: widget.across,
                   children: [
-                    Text(widget.title, style: TextStyles.title(Grey.g95).bold),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: TextStyles.title(Grey.g95).bold,
+                          ),
+                        ),
+                        NakedButton(
+                          onPressed: widget.onClose,
+                          child: Glyph(
+                            AppGlyphs.close,
+                            size: Shape.z(14),
+                            color: Grey.g56,
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: Shape.s(12)),
                     ...widget.children,
                   ],
