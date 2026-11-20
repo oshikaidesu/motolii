@@ -217,9 +217,9 @@ abstract final class TextStyles {
     FontWeight? w,
     double height = 1,
   ]) => _sans(c, Grey.g91, size, w, height, .05);
-  static TextStyle label([Color? c]) => _sans(c, Grey.g63, 10, null, 1, .1);
+  static TextStyle label([Color? c]) => _sans(c, Grey.g63, 11, null, 1, .1);
   static TextStyle micro([Color? c]) =>
-      _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
+      _sans(c, Grey.g63, 11, FontWeight.w500, 1, .15);
   static TextStyle value([Color? c]) => TextStyle(
     fontFamily: mono,
     fontFamilyFallback: const ['Noto Sans JP', '.AppleSystemUIFont'],
@@ -229,7 +229,7 @@ abstract final class TextStyles {
     decoration: TextDecoration.none,
   );
   static TextStyle title([Color? c]) =>
-      _sans(c, Grey.g95, 13, FontWeight.w600, 1.1);
+      _sans(c, Grey.g95, 16, FontWeight.w600, 1);
 }
 
 /// Shorthand boldness for the app's text styles.
