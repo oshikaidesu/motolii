@@ -2,27 +2,41 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:motolii/storage/font_bytes.dart';
 
-/// The font files handed to Flutter so far. Flutter keeps a loaded font for as long as the app runs, so this set
-/// lasts as long, whichever window asked.
-final _loaded = <String>{};
+/// Font files whose loading has started, and those that loaded successfully.
+final _loading = <String>{};
+final _ready = <String>{};
 
-/// Returns the font family that sets text in the font file [path], loading its bytes the first time it is asked.
-/// FontLoader is Flutter's way to use a font that is not bundled with the app. Until the file is read, and if it has
-/// gone, text falls back to the style's fallback families.
-String fontFileFamily(String path) {
-  if (_loaded.add(path)) {
-    Zone.root.run(
-      () =>
-          (FontLoader(path)
-                ..addFont(readFontBytes(path).then(ByteData.sublistView)))
-              .load()
-              .catchError((Object _) {}),
-    );
+/// Increments whenever an external font file finishes loading so widgets displaying it can rebuild.
+final fontFilesReady = ValueNotifier<int>(0);
+
+/// Loads [path] into Flutter's font registry if not already loaded.
+Future<void> loadFontFile(String path) async {
+  if (path.isEmpty || _ready.contains(path)) return;
+  _loading.add(path);
+  try {
+    final bytes = await readFontBytes(path);
+    await (FontLoader(
+      path,
+    )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+    if (_ready.add(path)) fontFilesReady.value++;
+  } on Object {
+    // Missing or unreadable font keeps the caller's fallback family instead of rendering tofu.
   }
-  return path;
+}
+
+/// Returns the font family for [path] once loaded, or null while loading / if unreadable so the
+/// caller's existing fontFamily and fallbacks remain active without falling back to Ahem tofu.
+String? fontFileFamily(String path) {
+  if (path.isEmpty) return null;
+  if (_ready.contains(path)) return path;
+  if (_loading.add(path)) {
+    Zone.root.run(() => unawaited(loadFontFile(path)));
+  }
+  return null;
 }
 
 /// One variable-font axis: its four-letter tag (wght, wdth, slnt, GRAD, ...), the name the font gives it, and its

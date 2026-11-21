@@ -16,6 +16,7 @@ import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/values_card.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/font_files.dart' show loadFontFile;
 
 import '../main_tests_only.dart';
 
@@ -268,6 +269,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
+    // Load the real bundled Noto Sans JP font so the Text card preview renders
+    // actual Japanese + Latin glyphs instead of Ahem tofu.
+    await tester.runAsync(() => loadFontFile('fonts/NotoSansJP-Regular.otf'));
+
     CardDeclaration decl(String name, String wgsl) =>
         CardDeclaration(name, wgsl, toneOf: () => InspectorSkin.toneLayer);
 
@@ -369,9 +374,9 @@ void main() {
                           'v_hanging': 1,
                         },
                         words: const {
-                          'v_text': 'Motolii Motion',
+                          'v_text': 'Motolii 組版。',
                           'v_text_styles': '0 7 color: #59C3E8',
-                          'v_file': 'NotoSansJP-Medium.otf',
+                          'v_file': 'fonts/NotoSansJP-Regular.otf',
                           'v_font_features': 'tnum',
                         },
                         actions: CardActions(

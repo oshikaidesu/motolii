@@ -82,7 +82,18 @@ class _TextBodyState extends State<TextBody> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    fontFilesReady.addListener(_onFontReady);
+  }
+
+  void _onFontReady() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    fontFilesReady.removeListener(_onFontReady);
     _range?.dispose();
     super.dispose();
   }
@@ -94,9 +105,10 @@ class _TextBodyState extends State<TextBody> {
         styles = doc.strings['v_text_styles'] ?? '',
         file = doc.strings['v_file'] ?? '';
     final wrapping = (doc.get('v_wrap') ?? 0).round() != 0;
+    final loadedFamily = file.isEmpty ? null : fontFileFamily(file);
     final base = TextStyles.name(Grey.g95).copyWith(
       fontWeight: FontWeight.w400,
-      fontFamily: file.isEmpty ? null : fontFileFamily(file),
+      fontFamily: loadedFamily,
       fontSize: 15,
       height: 1.3,
     );
