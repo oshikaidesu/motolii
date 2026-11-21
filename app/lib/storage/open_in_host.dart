@@ -3,12 +3,66 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:motolii/storage/host_platform.dart' show hostIsWindows, slashed;
+import 'package:motolii/storage/host_platform.dart'
+    show homeFolder, hostHasProgram, hostIsMacOS, hostIsWindows, slashed;
 
 /// Opens [path] in the app that owns it.
 Future<ProcessResult> openInHost(String path) => hostIsWindows
     ? Process.run('explorer', [path.replaceAll('/', r'\')])
     : Process.run('open', [path]);
+
+({String name, List<String> command})? _detectedEditor() {
+  final env =
+      (Platform.environment['VISUAL'] ?? Platform.environment['EDITOR'] ?? '')
+          .trim();
+  if (env.isNotEmpty) {
+    final parts = env.split(RegExp(r'\s+'));
+    if (parts.isNotEmpty && hostHasProgram(parts.first)) {
+      final base = slashed(parts.first).split('/').last;
+      return (name: base, command: parts);
+    }
+  }
+  if (hostIsMacOS) {
+    final home = homeFolder;
+    const apps = [
+      ('Cursor', 'Cursor.app'),
+      ('VS Code', 'Visual Studio Code.app'),
+      ('Zed', 'Zed.app'),
+      ('Windsurf', 'Windsurf.app'),
+      ('Antigravity', 'Antigravity.app'),
+    ];
+    for (final (name, bundle) in apps) {
+      for (final root in [
+        '/Applications',
+        if (home != null) '$home/Applications',
+      ]) {
+        if (Directory('$root/$bundle').existsSync()) {
+          return (name: name, command: ['open', '-a', '$root/$bundle']);
+        }
+      }
+    }
+  }
+  const clis = [
+    ('Cursor', 'cursor'),
+    ('VS Code', 'code'),
+    ('Zed', 'zed'),
+    ('Windsurf', 'windsurf'),
+  ];
+  for (final (name, bin) in clis) {
+    if (hostHasProgram(bin)) return (name: name, command: [bin]);
+  }
+  return null;
+}
+
+/// Display name of the external IDE detected on this machine (e.g. `Cursor`, `VS Code`, `Zed`).
+String externalEditorName() => _detectedEditor()?.name ?? 'Editor';
+
+/// Opens [path] in the detected external IDE, falling back to the OS default app.
+Future<ProcessResult> openInEditor(String path) {
+  final ed = _detectedEditor();
+  if (ed == null) return openInHost(path);
+  return Process.run(ed.command.first, [...ed.command.skip(1), path]);
+}
 
 /// Opens the folder [path] in the Finder (Explorer on Windows), making it, and any folder above it, first if it is not
 /// there.

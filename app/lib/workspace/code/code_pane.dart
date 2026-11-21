@@ -19,13 +19,17 @@ import 'package:motolii/inspector/card_meta_row.dart';
 import 'package:motolii/inspector/values_card.dart' show CardBin, CardGrip;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/open_in_host.dart'
+    show externalEditorName, openInEditor;
 import 'package:motolii/storage/shelf_meta.dart' show shelfMetaOfFile;
 import 'package:motolii/storage/text_file.dart' show readText;
+import 'package:motolii/widgets/app_glyphs.dart' show AppGlyphs;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
+import 'package:motolii/widgets/tip.dart' show Tip;
 import 'package:motolii/workspace/code/expression_result.dart';
 import 'package:motolii/workspace/code/functions_panel.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
@@ -341,6 +345,18 @@ class _CellState extends State<_Cell> {
     };
   }
 
+  /// Opens this cell's file in the detected external IDE, making a layer-local copy first if it is still a shelf original.
+  void _openInIde() {
+    final c = widget.code;
+    final ws = c.ws;
+    if (EffectCode.alone(ws, c.thing, c.word, c.slot)) {
+      openInEditor(EffectCode.source(c.word));
+      return;
+    }
+    final (_, to, read) = EffectCode.copyOwn(ws, c.thing, c.word, c.slot);
+    ws.after(read, (_, _) => openInEditor(to));
+  }
+
   /// The head: a press folds the cell, a drag moves it. Its eye and bin are the card's in the Inspector.
   Widget _head() => Container(
     height: Shape.z(26),
@@ -386,6 +402,22 @@ class _CellState extends State<_Cell> {
                 Text(_on, style: TextStyles.micro(Grey.g56)),
                 SizedBox(width: Shape.s(10)),
               ],
+            ),
+          ),
+        ),
+        Tip(
+          'Open in ${externalEditorName()}',
+          child: Pressable(
+            key: ValueKey('code-cell-ide:${widget.title}'),
+            onTap: _openInIde,
+            builder: (_, h) => Padding(
+              padding: EdgeInsets.only(right: Shape.s(6)),
+              child: Glyph(
+                AppGlyphs.link,
+                size: 12,
+                color: h ? Grey.g95 : Grey.g56,
+                fade: true,
+              ),
             ),
           ),
         ),
