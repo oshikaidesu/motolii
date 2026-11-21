@@ -160,15 +160,21 @@ fn range_fonts(styles: &str) -> Vec<String> {
 /// Matches Unicode character classes used by `@class` composite-font rules in `text_styles`.
 fn char_matches_class(c: char, cls: &str) -> bool {
     let u = c as u32;
+    let is_latin = matches!(u, 0x0041..=0x024F | 0x1E00..=0x1EFF | 0xFF21..=0xFF3A | 0xFF41..=0xFF5A);
     match cls {
         "kanji" => {
             matches!(u, 0x4E00..=0x9FFF | 0x3400..=0x4DBF | 0xF900..=0xFAFF | 0x3005 | 0x20000..=0x2A6DF)
         }
         "hiragana" => matches!(u, 0x3040..=0x309F),
         "katakana" => matches!(u, 0x30A0..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F),
-        "upper" => c.is_uppercase(),
-        "lower" => c.is_lowercase(),
-        "latin" => c.is_ascii_alphabetic() || c.is_uppercase() || c.is_lowercase(),
+        "hangul" => matches!(u, 0xAC00..=0xD7AF | 0x1100..=0x11FF | 0x3130..=0x318F | 0xA960..=0xA97F | 0xD7B0..=0xD7FF),
+        "upper" => is_latin && c.is_uppercase(),
+        "lower" => is_latin && c.is_lowercase(),
+        "latin" => is_latin && c.is_alphabetic(),
+        "cyrillic" => matches!(u, 0x0400..=0x052F),
+        "greek" => matches!(u, 0x0370..=0x03FF | 0x1F00..=0x1FFF),
+        "arabic" => matches!(u, 0x0600..=0x06FF | 0x0750..=0x077F),
+        "thai" => matches!(u, 0x0E00..=0x0E7F),
         "digit" => c.is_ascii_digit() || ('０'..='９').contains(&c),
         "punct" => matches!(
             c,
@@ -1134,5 +1140,17 @@ mod tests {
         // Column height shrinks when hiragana is scaled to 75%.
         assert!(scaled.lines[0][0] < plain.lines[0][0] - 10.0, "plain={} scaled={}", plain.lines[0][0],
                 scaled.lines[0][0]);
+    }
+
+    #[test]
+    fn hangul_and_script_classes_match_cleanly() {
+        assert!(super::char_matches_class('한', "hangul"));
+        assert!(super::char_matches_class('글', "hangul"));
+        assert!(!super::char_matches_class('A', "hangul"));
+        assert!(super::char_matches_class('А', "cyrillic"));
+        assert!(!super::char_matches_class('А', "upper"));
+        assert!(super::char_matches_class('A', "upper"));
+        assert!(super::char_matches_class('Ω', "greek"));
+        assert!(super::char_matches_class('ก', "thai"));
     }
 }

@@ -10,10 +10,15 @@ const textCharClasses = <({String id, String label, String tip})>[
   (id: 'kanji', label: '漢字', tip: 'Kanji (漢字)'),
   (id: 'hiragana', label: 'かな', tip: 'Hiragana (ひらがな)'),
   (id: 'katakana', label: 'カナ', tip: 'Katakana (カタカナ)'),
-  (id: 'upper', label: 'ABC', tip: 'Uppercase Latin (大文字)'),
-  (id: 'lower', label: 'abc', tip: 'Lowercase Latin (小文字)'),
-  (id: 'digit', label: '123', tip: 'Digits (数字)'),
-  (id: 'punct', label: '、。', tip: 'Punctuation (約物・句読点)'),
+  (id: 'hangul', label: '한글', tip: 'Hangul (한국어)'),
+  (id: 'upper', label: 'ABC', tip: 'Uppercase Latin'),
+  (id: 'lower', label: 'abc', tip: 'Lowercase Latin'),
+  (id: 'cyrillic', label: 'АБВ', tip: 'Cyrillic'),
+  (id: 'greek', label: 'ΑΒΓ', tip: 'Greek'),
+  (id: 'arabic', label: 'عربي', tip: 'Arabic'),
+  (id: 'thai', label: 'ไทย', tip: 'Thai'),
+  (id: 'digit', label: '123', tip: 'Digits'),
+  (id: 'punct', label: '、。', tip: 'Punctuation'),
 ];
 
 /// Whether Unicode scalar value [u] belongs to character class [cls].
@@ -31,6 +36,12 @@ bool charMatchesClass(int u, String cls) {
       return (u >= 0x30A0 && u <= 0x30FF) ||
           (u >= 0x31F0 && u <= 0x31FF) ||
           (u >= 0xFF66 && u <= 0xFF9F);
+    case 'hangul':
+      return (u >= 0xAC00 && u <= 0xD7AF) ||
+          (u >= 0x1100 && u <= 0x11FF) ||
+          (u >= 0x3130 && u <= 0x318F) ||
+          (u >= 0xA960 && u <= 0xA97F) ||
+          (u >= 0xD7B0 && u <= 0xD7FF);
     case 'upper':
       return (u >= 0x41 && u <= 0x5A) ||
           (u >= 0xFF21 && u <= 0xFF3A) ||
@@ -41,6 +52,14 @@ bool charMatchesClass(int u, String cls) {
           (u >= 0xDF && u <= 0xFF && u != 0xF7);
     case 'latin':
       return charMatchesClass(u, 'upper') || charMatchesClass(u, 'lower');
+    case 'cyrillic':
+      return u >= 0x0400 && u <= 0x052F;
+    case 'greek':
+      return (u >= 0x0370 && u <= 0x03FF) || (u >= 0x1F00 && u <= 0x1FFF);
+    case 'arabic':
+      return (u >= 0x0600 && u <= 0x06FF) || (u >= 0x0750 && u <= 0x077F);
+    case 'thai':
+      return u >= 0x0E00 && u <= 0x0E7F;
     case 'digit':
       return (u >= 0x30 && u <= 0x39) || (u >= 0xFF10 && u <= 0xFF19);
     case 'punct':
@@ -49,6 +68,30 @@ bool charMatchesClass(int u, String cls) {
     default:
       return false;
   }
+}
+
+/// Character classes actually present in [text] (plus any already styled in
+/// [styles]), in canonical display order. Returns empty when the text consists
+/// of at most one class and no class rules exist, keeping single-script notes quiet.
+List<({String id, String label, String tip})> detectedCharClasses(
+  String text,
+  String styles,
+) {
+  final custom = styledClasses(styles);
+  final present = <String>{...custom};
+  for (final u in text.runes) {
+    for (final c in textCharClasses) {
+      if (!present.contains(c.id) && charMatchesClass(u, c.id)) {
+        present.add(c.id);
+        break;
+      }
+    }
+  }
+  if (present.length <= 1 && custom.isEmpty) return const [];
+  return [
+    for (final c in textCharClasses)
+      if (present.contains(c.id)) c,
+  ];
 }
 
 /// The letters selected in [text], as the start and count text_styles takes, or null when nothing is selected or

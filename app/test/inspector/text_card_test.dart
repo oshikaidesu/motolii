@@ -64,6 +64,7 @@ void main() {
 
   Future<void> mount(
     WidgetTester tester, {
+    String text = 'Hello',
     String styles = '',
     String file = '',
     String fontMeta = '',
@@ -102,7 +103,7 @@ void main() {
             ),
             snapshot: InspectorSnapshot(
               words: {
-                'v_text': 'Hello',
+                'v_text': text,
                 'v_text_styles': styles,
                 if (file.isNotEmpty) 'v_file': file,
               },
@@ -326,7 +327,7 @@ void main() {
   testWidgets(
     'selecting a composite character class scopes Size to @hiragana without touching layer Size',
     (tester) async {
-      await mount(tester);
+      await mount(tester, text: 'Hello あいう');
       await tester.tap(find.byKey(const ValueKey('text:class:hiragana')));
       await tester.pump();
       expect(find.text('かな font'), findsOneWidget);
@@ -337,6 +338,31 @@ void main() {
       )['v_text_styles']!;
       expect(styles, startsWith('@hiragana font-size: '));
       expect(numbers.any((n) => n.containsKey('v_size')), isFalse);
+    },
+  );
+
+  testWidgets(
+    'composite class footer auto-detects Korean Hangul and hides for single-script text',
+    (tester) async {
+      await mount(tester, text: 'Motolii 안녕 2026');
+      expect(find.byKey(const ValueKey('text:class:hangul')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:class:upper')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:class:digit')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:class:kanji')), findsNothing);
+      expect(find.byKey(const ValueKey('text:class:hiragana')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('text:class:hangul')));
+      await tester.pump();
+      expect(find.text('한글 font'), findsOneWidget);
+      await dragSize(tester);
+      final styles = words.lastWhere(
+        (w) => w.containsKey('v_text_styles'),
+      )['v_text_styles']!;
+      expect(styles, startsWith('@hangul font-size: '));
+
+      // Single-script text hides the footer completely.
+      await mount(tester, text: 'あいうえお');
+      expect(find.byKey(const ValueKey('text:class:all')), findsNothing);
     },
   );
 }

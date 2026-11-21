@@ -12,7 +12,7 @@ import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/controls/well_pill.dart' show maybeTip;
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/text/text_ranges.dart'
-    show styledClasses, textCharClasses;
+    show detectedCharClasses, styledClasses;
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
@@ -286,15 +286,18 @@ class _TextNotebookState extends State<TextNotebook> {
                 );
               },
             ),
-            // Borderless composite character-class footer: select All or a script
-            // class (漢字 / かな / カナ / ABC / abc / 123) to edit its font/size ratio
-            // with the same compact rows below.
+            // Borderless composite character-class footer: auto-detected from
+            // the scripts actually present in the text (only shown when 2+
+            // classes mix or a class rule is already configured).
             if (widget.pickedCount == null)
-              _ClassScopeFooter(
-                activeClass: widget.activeClass,
-                customized: styledClasses(widget.styles),
-                onSelect: widget.onSelectClass,
-              ),
+              if (detectedCharClasses(widget.text, widget.styles)
+                  case final classes when classes.isNotEmpty)
+                _ClassScopeFooter(
+                  classes: classes,
+                  activeClass: widget.activeClass,
+                  customized: styledClasses(widget.styles),
+                  onSelect: widget.onSelectClass,
+                ),
           ],
         ),
       ),
@@ -303,14 +306,16 @@ class _TextNotebookState extends State<TextNotebook> {
 }
 
 /// Quiet borderless footer along the notebook's bottom edge for composite
-/// character-class scoping (`All` / `漢字` / `かな` / `カナ` / `ABC` / `abc` / `123`).
+/// character-class scoping, populated dynamically from the scripts in the text.
 class _ClassScopeFooter extends StatelessWidget {
   const _ClassScopeFooter({
+    required this.classes,
     required this.activeClass,
     required this.customized,
     required this.onSelect,
   });
 
+  final List<({String id, String label, String tip})> classes;
   final String? activeClass;
   final Set<String> customized;
   final ValueChanged<String?> onSelect;
@@ -366,12 +371,15 @@ class _ClassScopeFooter extends StatelessWidget {
         color: Grey.g10.withValues(alpha: 0.45),
         border: Border(top: BorderSide(color: Grey.g20)),
       ),
-      child: Row(
-        children: [
-          item(null, 'All', 'Edit whole layer'),
-          for (final cls in textCharClasses.take(6))
-            item(cls.id, cls.label, 'Composite rule: ${cls.tip}'),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            item(null, 'All', 'Edit whole layer'),
+            for (final cls in classes)
+              item(cls.id, cls.label, 'Composite rule: ${cls.tip}'),
+          ],
+        ),
       ),
     );
   }
