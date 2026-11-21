@@ -100,6 +100,11 @@ Gradient (Sashimono):
   author: Sashimono Edit
   license: MIT
 
+Halo Glow:
+  author: PALF MovieWorks
+  license: MIT
+  source: "https://github.com/palf-gh/HaloGlow"
+
 Highlighter Overlay:
   author: VIDVOX
 
