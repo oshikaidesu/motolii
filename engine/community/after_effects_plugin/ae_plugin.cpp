@@ -212,7 +212,19 @@ long long plugin_stamp(const std::string& path) {
   std::error_code ec;
   auto t = std::filesystem::last_write_time(path, ec);
   if (ec) return -1;
-  return (long long)t.time_since_epoch().count();
+  long long best = (long long)t.time_since_epoch().count();
+  // On macOS a .plugin is a bundle directory; rebuilding the binary inside
+  // Contents/MacOS/ may not bump the outer bundle's mtime.
+  const std::filesystem::path macos_dir =
+      std::filesystem::path(path) / "Contents" / "MacOS";
+  if (std::filesystem::is_directory(macos_dir, ec)) {
+    for (const auto& entry : std::filesystem::directory_iterator(macos_dir, ec)) {
+      if (ec) break;
+      auto bt = entry.last_write_time(ec);
+      if (!ec) best = std::max(best, (long long)bt.time_since_epoch().count());
+    }
+  }
+  return best;
 }
 
 }  // namespace
@@ -237,6 +249,10 @@ std::string ae_plugin_title(const std::string& path) {
     if (c == '_') c = ' ';
   if (!t.empty()) t[0] = (char)std::toupper((unsigned char)t[0]);
   return t;
+}
+
+long long ae_plugin_stamp(const std::string& path) {
+  return plugin_stamp(fx_entry_path(path));
 }
 
 AePluginInfo ae_plugin_probe(const std::string& path) {

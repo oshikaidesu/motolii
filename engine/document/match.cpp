@@ -15,6 +15,7 @@ bool doc_match(Doc& d) {
   // The frame rate of the document. Time is shown in whole frames from the next
   // frame on.
   s.frames = doc_number(d, 0, "frame_rate", 0, 0);
+  s.aePreviewMode = (int)doc_number(d, 0, "ae_preview", 0, 0);
   Rebuild rebuild{d, s};
   match_describe_layers(rebuild);
   match_tear_down_changed(rebuild);

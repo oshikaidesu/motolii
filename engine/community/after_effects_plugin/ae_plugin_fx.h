@@ -41,6 +41,9 @@ struct AePluginRun {
   // Adaptive Half-resolution preview: promoted once a full-res preview frame
   // exceeds 16 ms; export (s.desk.w == 0) always renders at full resolution.
   bool use_half_preview = false;
+  // Binary hot-reload tracking against files_changed() and ae_plugin_stamp().
+  long long stamp = -1;
+  int seen = -1;
 
   std::string numbers_key() const {
     return instance_id.empty() ? file : instance_id + ":" + file;

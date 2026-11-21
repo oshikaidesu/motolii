@@ -45,6 +45,10 @@ std::string ae_plugin_worker();
 // Returns a clean display title derived from the plugin's file name.
 std::string ae_plugin_title(const std::string& path);
 
+// Returns a modification stamp covering the plugin binary itself (including
+// Contents/MacOS/* inside a macOS .plugin bundle), or -1 if unreadable.
+long long ae_plugin_stamp(const std::string& path);
+
 // Probes `path` via the worker (cached in memory and on disk by mtime).
 // Returns ok=false on timeout, crash, or unsupported plugin without throwing.
 AePluginInfo ae_plugin_probe(const std::string& path);

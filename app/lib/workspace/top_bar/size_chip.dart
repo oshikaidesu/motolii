@@ -240,6 +240,28 @@ class _SizeChipState extends State<SizeChip> {
                   ),
           ),
           SizedBox(height: Shape.s(12)),
+          // Interactive preview resolution policy for native AE plugins (exports always render full).
+          ChipGroup('AE Preview', [
+            for (final (mode, label) in const [
+              (0, 'Auto (FSR)'),
+              (1, 'Full'),
+              (2, 'Half (FSR)'),
+            ])
+              Chip(
+                key: ValueKey('size-ae-preview-$mode'),
+                label: label,
+                on: (layerValue(ws, 0, 'ae_preview', 0) ?? 0).round() == mode,
+                onTap: !isConnected(ws)
+                    ? null
+                    : () => setDocumentNumber(
+                        ws,
+                        'ae_preview',
+                        mode.toDouble(),
+                        (_, _) => ws.reread(),
+                      ),
+              ),
+          ]),
+          SizedBox(height: Shape.s(12)),
           Text(
             '$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second',
             style: TextStyles.value(Grey.g76),

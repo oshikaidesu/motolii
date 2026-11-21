@@ -14,6 +14,8 @@
 #include <cstring>
 #include <sstream>
 
+#include "shelf/shelf_folders.h"
+
 namespace motolii {
 
 using filament::RenderTarget;
@@ -123,6 +125,8 @@ std::shared_ptr<AePluginRun> ae_plugin_open(Stage& s,
   r->stage = &s;
   r->instance_id = fx_entry_id(entry);
   r->file = fx_entry_path(entry);
+  r->stamp = ae_plugin_stamp(r->file);
+  r->seen = files_changed();
   r->info = ae_plugin_probe(r->file);
   if (!r->info.ok) r->trouble = "plugin probe failed: " + r->file;
   return r;
@@ -133,16 +137,40 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
                          const ScreenTextures& textures, uint32_t w,
                          uint32_t h) {
   if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
+  // Hot-reload the isolated worker when a plugin developer rebuilds the binary.
+  if (r.seen != files_changed()) {
+    r.seen = files_changed();
+    const long long now_stamp = ae_plugin_stamp(r.file);
+    if (now_stamp >= 0 && now_stamp != r.stamp) {
+      r.stamp = now_stamp;
+      r.proc.stop();
+      r.info = ae_plugin_probe(r.file);
+      r.stuck.reset();
+      r.use_half_preview = false;
+      r.reported = false;
+    }
+  }
   if (!r.info.ok || !from || !w || !h)
     return screen_place(s, from, to, w, h, nullptr);
 
-  // During interactive editing (s.desk.w > 0), heavy CPU plugins (>16ms full
-  // frame) drop to Half resolution (downsample 1/2) and upscale back with AMD
-  // FSR 1.0 on the GPU. Export (s.desk.w == 0) always renders at full res.
-  bool half = s.desk.w > 0 && r.use_half_preview && w >= 640 && h >= 360;
+  // During interactive editing (s.desk.w > 0), honor s.aePreviewMode:
+  //   0 = Auto (Half + FSR 1.0 once a full-res frame exceeds 16 ms)
+  //   1 = Full (always 100%)
+  //   2 = Half (always Half + FSR 1.0)
+  // Exports (s.desk.w == 0) always render at 100% full resolution.
+  const bool can_half = w >= 640 && h >= 360;
+  bool half = false;
+  if (s.desk.w > 0 && can_half) {
+    if (s.aePreviewMode == 2)
+      half = true;
+    else if (s.aePreviewMode == 0)
+      half = r.use_half_preview;
+  }
   if (const char* env = std::getenv("MOTOLII_AE_HALF")) {
-    if (env[0] == '1') half = w >= 640 && h >= 360;
-    else if (env[0] == '0') half = false;
+    if (env[0] == '1')
+      half = can_half;
+    else if (env[0] == '0')
+      half = false;
   }
   const uint32_t ds_den = half ? 2u : 1u;
   const uint32_t rw = half ? std::max(1u, w / 2) : w;
@@ -350,7 +378,7 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     screen_upscale(s, r.out_tex, to, w, h);
   else
     screen_place(s, r.out_tex, to, w, h, nullptr);
-  if (!half && s.desk.w > 0 && !r.use_half_preview) {
+  if (!half && s.desk.w > 0 && s.aePreviewMode == 0 && !r.use_half_preview) {
     const double elapsed_ms =
         std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - t_start)

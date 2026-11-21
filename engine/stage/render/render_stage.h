@@ -203,6 +203,9 @@ struct Stage {
   filament::Texture* fsr_mid_tex = nullptr;
   filament::RenderTarget* fsr_mid_rt = nullptr;
   uint32_t fsr_mid_w = 0, fsr_mid_h = 0;
+  // Interactive preview resolution policy for native AE plugins (0 = Auto FSR,
+  // 1 = Full, 2 = Half FSR). Exports (desk.w == 0) always render full res.
+  int aePreviewMode = 0;
   // canvas_edge's three processing screens: seeds, flood, length.
   std::array<interop::Screen*, 3> edge_screens = {nullptr, nullptr, nullptr};
   // glTF asset/texture loaders (gltf_model.h).

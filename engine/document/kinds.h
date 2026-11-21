@@ -94,6 +94,8 @@ inline const DocValue doc_values[] = {
     {"poster_at", "stage", -1, 1e6, false, nullptr},
     // 0 means to the end of the project.
     {"layer_length", "stage", 0, 3600, false, nullptr},
+    // 0 = Auto (Half + FSR 1.0 when >16ms), 1 = Full, 2 = Half (FSR 1.0).
+    {"ae_preview", "stage", 0, 2, false, nullptr},
     // 0 means no tempo. The timeline grid follows this.
     {"bpm", "stage", 0, 999, false, nullptr},
     {"bpm_from", "stage", 0, 1e6, false, nullptr},
