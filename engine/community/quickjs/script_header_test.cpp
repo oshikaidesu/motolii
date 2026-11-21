@@ -433,5 +433,65 @@ TEST(ScriptHeaderLeva, ScriptWithoutKnobsHasNoHead) {
   EXPECT_EQ(leva_head("// const knobs = { count: 5 };\n"), "");
 }
 
+TEST(WgslAttributes, ParsesRangeToggleColorPointGroupAndLabel) {
+  const std::string wgsl = R"(
+@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> knobs: Params;
+struct Params {
+  @auto time: f32,
+  @range(0, 8, 0.01, 1.5) intensity: f32,
+  @group("Tone")
+  @label("Glow Tint")
+  @color(1.0, 0.5, 0.25) tint: vec3<f32>,
+  @toggle(1) glowOnly: u32,
+  @group()
+  @point(0.25, 0.75) center: vec2f,
+};
+)";
+  const auto p = wgsl_attribute_parameters(wgsl);
+  ASSERT_EQ(p.size(), 7u);
+  EXPECT_EQ(p[0].name, "intensity");
+  EXPECT_EQ(p[0].label, "Intensity");
+  EXPECT_EQ(p[0].kind, "track");
+  EXPECT_DOUBLE_EQ(p[0].low, 0.0);
+  EXPECT_DOUBLE_EQ(p[0].high, 8.0);
+  EXPECT_DOUBLE_EQ(p[0].step, 0.01);
+  EXPECT_DOUBLE_EQ(p[0].usual, 1.5);
+  EXPECT_EQ(p[0].group, "");
+
+  EXPECT_EQ(p[1].name, "tint_x");
+  EXPECT_EQ(p[1].label, "Glow Tint R");
+  EXPECT_EQ(p[1].group, "Tone");
+  EXPECT_DOUBLE_EQ(p[1].usual, 1.0);
+  EXPECT_EQ(p[2].name, "tint_y");
+  EXPECT_DOUBLE_EQ(p[2].usual, 0.5);
+  EXPECT_EQ(p[3].name, "tint_z");
+  EXPECT_DOUBLE_EQ(p[3].usual, 0.25);
+
+  EXPECT_EQ(p[4].name, "glowOnly");
+  EXPECT_EQ(p[4].label, "Glow Only");
+  EXPECT_EQ(p[4].kind, "check");
+  EXPECT_DOUBLE_EQ(p[4].usual, 1.0);
+  EXPECT_EQ(p[4].group, "Tone");
+
+  EXPECT_EQ(p[5].name, "center_x");
+  EXPECT_EQ(p[5].group, "Center");
+  EXPECT_DOUBLE_EQ(p[5].usual, 0.25);
+  EXPECT_EQ(p[6].name, "center_y");
+  EXPECT_DOUBLE_EQ(p[6].usual, 0.75);
+
+  const std::string stripped = wgsl_strip_ui_attributes(wgsl);
+  EXPECT_NE(stripped.find("@group(0) @binding(0)"), std::string::npos);
+  EXPECT_NE(stripped.find("@group(0) @binding(2)"), std::string::npos);
+  EXPECT_EQ(stripped.find("@range"), std::string::npos);
+  EXPECT_EQ(stripped.find("@color"), std::string::npos);
+  EXPECT_EQ(stripped.find("@toggle"), std::string::npos);
+  EXPECT_EQ(stripped.find("@group(\"Tone\")"), std::string::npos);
+  EXPECT_EQ(stripped.find("@label"), std::string::npos);
+  EXPECT_EQ(stripped.find("@auto"), std::string::npos);
+  EXPECT_EQ(std::count(wgsl.begin(), wgsl.end(), '\n'),
+            std::count(stripped.begin(), stripped.end(), '\n'));
+}
+
 }  // namespace
 }  // namespace motolii

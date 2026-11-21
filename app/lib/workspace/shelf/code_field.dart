@@ -21,7 +21,53 @@ import 'package:motolii/skin/code_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/workspace/code/expression_prompts.dart';
+
+// WGSL + WESL UI attributes (@range, @color, @toggle, @group, @label, @auto)
+// highlighter for re_highlight.
+final Mode _langWgsl = Mode(
+  name: 'WGSL',
+  keywords: {
+    'keyword':
+        'alias break case const const_assert continue continuing default '
+        'diagnostic discard else enable false fn for if let loop override '
+        'requires return struct switch true var while',
+    'type':
+        'bool f16 f32 i32 u32 atomic ptr array sampler sampler_comparison '
+        'vec2 vec3 vec4 vec2f vec3f vec4f vec2i vec3i vec4i vec2u vec3u vec4u '
+        'vec2h vec3h vec4h mat2x2 mat2x3 mat2x4 mat3x2 mat3x3 mat3x4 mat4x2 '
+        'mat4x3 mat4x4 mat2x2f mat3x3f mat4x4f texture_1d texture_2d '
+        'texture_2d_array texture_3d texture_cube texture_cube_array '
+        'texture_multisampled_2d texture_storage_1d texture_storage_2d '
+        'texture_storage_2d_array texture_storage_3d texture_depth_2d '
+        'uniform storage private workgroup function read write read_write',
+    'built_in':
+        'abs acos acosh all any asin asinh atan atan2 atanh bitcast ceil clamp '
+        'cos cosh countLeadingZeros countOneBits countTrailingZeros cross '
+        'degrees determinant distance dot exp exp2 extractBits faceForward '
+        'firstLeadingBit firstTrailingBit floor fma fract frexp insertBits '
+        'inverseSqrt ldexp length log log2 max min mix modf normalize pow '
+        'quantizeToF16 radians reflect refract reverseBits round saturate '
+        'select sign sin sinh smoothstep sqrt step tan tanh textureDimensions '
+        'textureGather textureLoad textureNumLayers textureNumLevels '
+        'textureSample textureSampleBias textureSampleCompare '
+        'textureSampleGrad textureSampleLevel textureStore transpose trunc '
+        'workgroupBarrier storageBarrier',
+  },
+  contains: [
+    Mode(className: 'comment', begin: r'//', end: r'$'),
+    Mode(className: 'comment', begin: r'/\*', end: r'\*/'),
+    Mode(className: 'string', begin: '"', end: '"'),
+    // WGSL / WESL attributes such as @range(...), @color(...), @fragment, @binding(0).
+    Mode(className: 'meta', begin: r'@[A-Za-z_][A-Za-z0-9_]*'),
+    Mode(
+      className: 'number',
+      begin: r'\b(?:0[xX][0-9a-fA-F]+[iu]?|(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?[fh]?|\d+(?:[eE][+-]?\d+[fh]?|[iufh]))\b|\b\d+\b',
+    ),
+  ],
+);
 
 /// A stretch of code that is wrong: its line, counted from 1, and its columns.
 typedef CodeMark = ({int line, int from, int to});
@@ -80,6 +126,7 @@ class _CodeFieldState extends State<CodeField> {
   bool _ready = false;
 
   static Mode _languageFor(String file) {
+    if (file.endsWith('.wgsl')) return _langWgsl;
     if (file.endsWith('.fs') || file.endsWith('.glsl')) return langGlsl;
     if (file.endsWith('.css')) return langCss;
     if (file.endsWith('.lua') ||
@@ -90,9 +137,65 @@ class _CodeFieldState extends State<CodeField> {
     return langJavascript;
   }
 
+  /// Splits leading `//` directive comments (when ≥ 3 lines and containing `--`)
+  /// so the Code tab can fold boilerplate headers by default while keeping the
+  /// underlying file intact on save.
+  static (String header, String body, int directiveCount) _splitHeader(
+    String text,
+  ) {
+    final lines = text.split('\n');
+    var end = 0, directives = 0;
+    while (end < lines.length) {
+      final t = lines[end].trimLeft();
+      if (t.startsWith('//')) {
+        if (t.contains('--')) directives++;
+        end++;
+      } else if (t.isEmpty && end > 0) {
+        end++;
+      } else {
+        break;
+      }
+    }
+    if (directives < 3 || end >= lines.length) return ('', text, 0);
+    return (
+      '${lines.sublist(0, end).join('\n')}\n',
+      lines.sublist(end).join('\n'),
+      directives,
+    );
+  }
+
+  String _foldedHeader = '';
+  int _headerDirectives = 0;
+  bool _headerExpanded = false;
+
+  String _visibleText(String full) {
+    if (!widget.fit || _headerExpanded) {
+      _foldedHeader = '';
+      _headerDirectives = 0;
+      return full;
+    }
+    final (head, body, count) = _splitHeader(full);
+    _foldedHeader = head;
+    _headerDirectives = count;
+    return head.isEmpty ? full : body;
+  }
+
+  void _toggleHeader() {
+    final full = _foldedHeader + _controller.text;
+    setState(() {
+      _headerExpanded = !_headerExpanded;
+      final shown = _visibleText(full);
+      _ready = false;
+      _controller.text = shown;
+      _lines = '\n'.allMatches(shown).length + 1;
+      _ready = true;
+    });
+  }
+
   void _save() {
-    if (_written == _controller.text) return;
-    widget.write(_written = _controller.text);
+    final full = _foldedHeader + _controller.text;
+    if (_written == full) return;
+    widget.write(_written = full);
   }
 
   void _onChanged() {
@@ -103,7 +206,8 @@ class _CodeFieldState extends State<CodeField> {
   }
 
   /// The lines the editor's height was last worked out for, when it is as tall as its code.
-  late int _lines = '\n'.allMatches(_written).length + 1;
+  late final String _initialShown = _visibleText(_written);
+  late int _lines = '\n'.allMatches(_initialShown).length + 1;
 
   // code_forge fills the height it is given and cannot be as tall as its code by itself (its Column holds an
   // Expanded), so a cell's height is worked out from the count of lines. The controller may tell its listeners
@@ -176,7 +280,10 @@ class _CodeFieldState extends State<CodeField> {
     }
     final now = readTextNow(widget.file);
     if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {
-      _controller.text = _written = now;
+      _written = now;
+      final shown = _visibleText(now);
+      _controller.text = shown;
+      _lines = '\n'.allMatches(shown).length + 1;
     }
   }
 
@@ -238,10 +345,45 @@ class _CodeFieldState extends State<CodeField> {
     // One more line than the code, to type on, as a notebook's cell has (Jupyter).
     final line = fontSize * _lineHeight,
         tall = widget.height ?? (_lines + 1) * line + _pad.vertical;
+    final hasHeader =
+        _foldedHeader.isNotEmpty ||
+        (_headerExpanded && _splitHeader(_written).$1.isNotEmpty);
+    final headerCount = _headerDirectives > 0
+        ? _headerDirectives
+        : _splitHeader(_written).$3;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (hasHeader)
+          Pressable(
+            key: const ValueKey('code-cell-header-toggle'),
+            onTap: _toggleHeader,
+            builder: (_, hot) => Container(
+              height: Shape.z(20),
+              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
+              decoration: BoxDecoration(
+                color: hot ? WindowTokens.raised : WindowTokens.well,
+                border: Border(
+                  top: BorderSide(color: WindowTokens.line),
+                  left: BorderSide(color: WindowTokens.line),
+                  right: BorderSide(color: WindowTokens.line),
+                ),
+              ),
+              child: Row(
+                children: [
+                  DisclosureTriangle(open: _headerExpanded, hot: hot),
+                  SizedBox(width: Shape.s(5)),
+                  Text(
+                    _headerExpanded
+                        ? 'Hide header directives'
+                        : 'Header ($headerCount directives)',
+                    style: TextStyles.micro(hot ? Grey.g91 : Grey.g56),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SizedBox(
           height: tall,
           child: DecoratedBox(
@@ -270,7 +412,7 @@ class _CodeFieldState extends State<CodeField> {
       focusNode: _focus,
       language: _languageFor(widget.file),
       editorTheme: theme,
-      initialText: _written,
+      initialText: _initialShown,
       lineWrap: !fit,
       // A cell's code is scrolled once it has the keys; until then the wheel scrolls the tab the cells are in.
       verticalScrollPhysics: !fit || _focus.hasFocus

@@ -92,7 +92,8 @@ bool screen_read(ScreenFx& fx, std::string& code) {
            false;
   if (!std::filesystem::exists(file))
     return fx.trouble = "there is no such file: " + fx.file, false;
-  code = read_text(file);
+  const std::string raw_code = read_text(file);
+  code = wgsl_strip_ui_attributes(raw_code);
   if (code.find("layerRect") == std::string::npos &&
       code.find("frameRect") == std::string::npos)
     screen_framed(code);
@@ -209,8 +210,11 @@ bool screen_read(ScreenFx& fx, std::string& code) {
   // `file` is WGSL here (isf_file gave it), so its parameters are its header
   // lines.
   std::ifstream header(file);
-  const std::vector<ScriptParameter> declared =
-      script_header_parameters(header);
+  std::vector<ScriptParameter> declared = script_header_parameters(header);
+  if (std::filesystem::path(file).extension() == ".wgsl") {
+    auto attrParams = wgsl_attribute_parameters(raw_code);
+    declared.insert(declared.end(), attrParams.begin(), attrParams.end());
+  }
   for (const ScriptParameter& k : declared)
     if (k.kind == "picture" || k.kind == "sound") {
       fx.others.push_back(k.name), fx.sounds.push_back({});

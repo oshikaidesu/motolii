@@ -157,6 +157,12 @@ std::string sketch_marked(const std::string& src,
 // community/script_runner/script_parameters.h, reads the other dialects and
 // leaves the rest to this.
 std::vector<ScriptParameter> script_header_parameters(std::istream& from);
+// Reads WESL-style UI attributes (@range, @toggle, @color, @point, @group,
+// @label) declared on the uniform struct of a WGSL shader (wgsl-play style).
+std::vector<ScriptParameter> wgsl_attribute_parameters(const std::string& code);
+// Strips Motolii/WESL UI attributes from WGSL source while preserving line
+// numbers and leaving standard WGSL @group(N) bindings untouched.
+std::string wgsl_strip_ui_attributes(const std::string& code);
 // Sets default values for an effect's parameters where its own defaults show
 // nothing on the image. Alight Motion's rule is that an effect is seen as it is
 // first put on a layer; see the section on first values in

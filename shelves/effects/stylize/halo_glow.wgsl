@@ -15,57 +15,32 @@
 // --pass@g2:0,1,s0.25,s0.25
 // --pass@g1:0,1,s0.5,s0.5
 // --pass@:0,0,s1,s1
-// --track@intensity:Intensity,0,8,1,0.01
-// --track@size:Size,0,512,64,0.5
-// --track@threshold:Threshold,0,200,25,0.5
-// --track@softness:Threshold Softness,0,100,50,0.5
-// --group:Shape
-// --track@width:Width,10,400,100,1
-// --track@height:Height,10,400,100,1
-// --track@falloff:Falloff,0,100,50,0.5
-// --group
-// --group:Tone
-// --track@gamma:Gamma,0.1,3,1,0.01
-// --track@saturation:Saturation,0,200,100,1
-// --track@colourStrength:Colour Strength,0,100,0,1
-// --track@c1r:Colour 1 R,0,1,1,0.01
-// --track@c1g:Colour 1 G,0,1,0.894,0.01
-// --track@c1b:Colour 1 B,0,1,0.769,0.01
-// --track@c2r:Colour 2 R,0,1,1,0.01
-// --track@c2g:Colour 2 G,0,1,1,0.01
-// --track@c2b:Colour 2 B,0,1,1,0.01
-// --group
-// --group:Output
-// --track@glowOpacity:Glow Opacity,0,100,100,1
-// --track@sourceOpacity:Source Opacity,0,100,100,1
-// --check@glowOnly:Glow Only,0
-// --group
 diagnostic(off, derivative_uniformity);
 
 struct Knobs {
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  intensity: f32,
-  size: f32,
-  threshold: f32,
-  softness: f32,
-  width: f32,
-  height: f32,
-  falloff: f32,
-  gamma: f32,
-  saturation: f32,
-  colourStrength: f32,
-  c1r: f32,
-  c1g: f32,
-  c1b: f32,
-  c2r: f32,
-  c2g: f32,
-  c2b: f32,
-  glowOpacity: f32,
-  sourceOpacity: f32,
-  glowOnly: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 8, 0.01, 1)    intensity: f32,
+  @range(0, 512, 0.5, 64)  size: f32,
+  @range(0, 200, 0.5, 25)  threshold: f32,
+  @label("Threshold Softness")
+  @range(0, 100, 0.5, 50)  softness: f32,
+  @group("Shape")
+  @range(10, 400, 1, 100)  width: f32,
+  @range(10, 400, 1, 100)  height: f32,
+  @range(0, 100, 0.5, 50)  falloff: f32,
+  @group("Tone")
+  @range(0.1, 3, 0.01, 1)  gamma: f32,
+  @range(0, 200, 1, 100)   saturation: f32,
+  @range(0, 100, 1, 0)     colourStrength: f32,
+  @color(1.0, 0.894, 0.769) colour1: vec3<f32>,
+  @color(1.0, 1.0, 1.0)     colour2: vec3<f32>,
+  @group("Output")
+  @range(0, 100, 1, 100)   glowOpacity: f32,
+  @range(0, 100, 1, 100)   sourceOpacity: f32,
+  @toggle(0)               glowOnly: u32,
 };
 
 @group(0) @binding(0) var picture: texture_2d<f32>;
@@ -274,8 +249,8 @@ fn hg_glow_from_filtered(b_in: vec4<f32>) -> vec4<f32> {
   let l0 = max(sat * u + (1.0 - sat) * vec3<f32>(yu), vec3<f32>(0.0));
   let y0 = hg_luma(l0);
   let t = clamp(y0, 0.0, 1.0);
-  let c1 = to_linear(clamp(vec3<f32>(knobs.c1r, knobs.c1g, knobs.c1b), vec3<f32>(0.0), vec3<f32>(1.0)));
-  let c2 = to_linear(clamp(vec3<f32>(knobs.c2r, knobs.c2g, knobs.c2b), vec3<f32>(0.0), vec3<f32>(1.0)));
+  let c1 = to_linear(clamp(knobs.colour1, vec3<f32>(0.0), vec3<f32>(1.0)));
+  let c2 = to_linear(clamp(knobs.colour2, vec3<f32>(0.0), vec3<f32>(1.0)));
   let tint = mix(c1, c2, t);
   let cs = clamp(knobs.colourStrength, 0.0, 100.0) * 0.01;
   let l = mix(l0, vec3<f32>(y0) * tint, cs);
@@ -292,7 +267,7 @@ fn hg_glow_from_filtered(b_in: vec4<f32>) -> vec4<f32> {
 }
 
 fn hg_composite(src: vec4<f32>, glow: vec4<f32>) -> vec4<f32> {
-  if (knobs.glowOnly > 0.5) { return glow; }
+  if (knobs.glowOnly != 0u) { return glow; }
   let sp = clamp(knobs.sourceOpacity, 0.0, 100.0) * 0.01;
   let s_rgb = src.rgb * sp;
   let sa = clamp(src.a, 0.0, 1.0) * sp;
@@ -350,7 +325,7 @@ fn main(@location(0) door_on: vec2<f32>) -> @location(0) vec4<f32> {
 
   let src = read_source_linear(uv);
   if (knobs.intensity <= 0.0 || knobs.size <= 0.0 || knobs.glowOpacity <= 0.0) {
-    if (knobs.glowOnly > 0.5) { return vec4<f32>(0.0); }
+    if (knobs.glowOnly != 0u) { return vec4<f32>(0.0); }
     let sp = clamp(knobs.sourceOpacity, 0.0, 100.0) * 0.01;
     return linear_premul_to_srgb(src * sp);
   }

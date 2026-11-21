@@ -170,6 +170,13 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
   }
   auto headerParams = script_header_parameters(*from);
   parameters.insert(parameters.end(), headerParams.begin(), headerParams.end());
+  if (std::filesystem::path(file).extension() == ".wgsl") {
+    std::ifstream wgsl_in(file);
+    std::stringstream wgsl_all;
+    wgsl_all << wgsl_in.rdbuf();
+    auto attrParams = wgsl_attribute_parameters(wgsl_all.str());
+    parameters.insert(parameters.end(), attrParams.begin(), attrParams.end());
+  }
   return parameters;
 }
 
