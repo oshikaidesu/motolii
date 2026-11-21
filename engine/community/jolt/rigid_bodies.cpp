@@ -1,9 +1,11 @@
 #include "community/jolt/rigid_bodies.h"
 
+// clang-format off
+#include <Jolt/Jolt.h>
+// clang-format on
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/JobSystemSingleThreaded.h>
 #include <Jolt/Core/TempAllocator.h>
-#include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
 #include <Jolt/Physics/Body/BodyLock.h>
