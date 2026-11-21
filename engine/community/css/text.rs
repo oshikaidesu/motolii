@@ -157,60 +157,116 @@ fn range_fonts(styles: &str) -> Vec<String> {
     files
 }
 
-/// Parsed per-range declarations from `styles`.
+/// Matches Unicode character classes used by `@class` composite-font rules in `text_styles`.
+fn char_matches_class(c: char, cls: &str) -> bool {
+    let u = c as u32;
+    match cls {
+        "kanji" => {
+            matches!(u, 0x4E00..=0x9FFF | 0x3400..=0x4DBF | 0xF900..=0xFAFF | 0x3005 | 0x20000..=0x2A6DF)
+        }
+        "hiragana" => matches!(u, 0x3040..=0x309F),
+        "katakana" => matches!(u, 0x30A0..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F),
+        "upper" => c.is_uppercase(),
+        "lower" => c.is_lowercase(),
+        "latin" => c.is_ascii_alphabetic() || c.is_uppercase() || c.is_lowercase(),
+        "digit" => c.is_ascii_digit() || ('０'..='９').contains(&c),
+        "punct" => matches!(
+            c,
+            '、' | '。' | '，' | '．' | '！' | '？' | '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】'
+                | '・' | '…' | 'ー' | '〜' | '～' | '：' | '；' | '!' | '?' | ',' | '.' | ':' | ';' | '(' | ')'
+                | '[' | ']' | '{' | '}' | '-' | '—' | '"' | '\''
+        ),
+        _ => false,
+    }
+}
+
+/// Parsed per-range declarations from `styles`, with `@class` composite rules expanded first
+/// so explicit positional ranges (`start count ...`) always win when they overlap.
 struct RangeStyle {
     start: usize,
     end: usize,
     decls: Vec<(String, String)>,
 }
 
-fn parse_range_styles(styles: &str, n: usize) -> Vec<RangeStyle> {
-    styles
-        .lines()
-        .filter_map(|l| {
-            let mut it = l.trim().splitn(3, char::is_whitespace);
-            let start: usize = it.next()?.parse().ok()?;
-            let count: usize = it.next()?.parse().ok()?;
-            let mut decls = Vec::new();
-            for d in it.next().unwrap_or("").split(';') {
-                if let Some((k, v)) = d.trim().split_once(':') {
-                    let (k, v) = (k.trim(), v.trim());
-                    if !k.is_empty() && !v.is_empty() {
-                        decls.push((k.to_string(), v.to_string()));
-                    }
-                }
+fn parse_decls(raw: &str) -> Vec<(String, String)> {
+    let mut decls = Vec::new();
+    for d in raw.split(';') {
+        if let Some((k, v)) = d.trim().split_once(':') {
+            let (k, v) = (k.trim(), v.trim());
+            if !k.is_empty() && !v.is_empty() {
+                decls.push((k.to_string(), v.to_string()));
             }
-            Some(RangeStyle { start: start.min(n), end: (start + count).min(n), decls })
-        })
-        .filter(|r| r.start < r.end && !r.decls.is_empty())
-        .collect()
+        }
+    }
+    decls
+}
+
+fn parse_range_styles(styles: &str, chars: &[char]) -> Vec<RangeStyle> {
+    let n = chars.len();
+    let mut class_ranges = Vec::new();
+    let mut pos_ranges = Vec::new();
+    for line in styles.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix('@') {
+            let mut it = rest.splitn(2, char::is_whitespace);
+            let Some(cls) = it.next() else { continue };
+            let decls = parse_decls(it.next().unwrap_or(""));
+            if decls.is_empty() {
+                continue;
+            }
+            let mut i = 0;
+            while i < n {
+                if !char_matches_class(chars[i], cls) {
+                    i += 1;
+                    continue;
+                }
+                let start = i;
+                while i < n && char_matches_class(chars[i], cls) {
+                    i += 1;
+                }
+                class_ranges.push(RangeStyle { start, end: i, decls: decls.clone() });
+            }
+            continue;
+        }
+        let mut it = trimmed.splitn(3, char::is_whitespace);
+        let (Some(s_tok), Some(c_tok)) = (it.next(), it.next()) else { continue };
+        let (Ok(start), Ok(count)) = (s_tok.parse::<usize>(), c_tok.parse::<usize>()) else { continue };
+        let decls = parse_decls(it.next().unwrap_or(""));
+        let s = start.min(n);
+        let e = (start + count).min(n);
+        if s < e && !decls.is_empty() {
+            pos_ranges.push(RangeStyle { start: s, end: e, decls });
+        }
+    }
+    class_ranges.extend(pos_ranges);
+    class_ranges
 }
 
 /// The words as HTML: each run of characters that the same ranges cover, in a span with their declarations in order.
 fn spans(words: &str, styles: &str, fallback: &str) -> String {
-    let n = words.chars().count();
-    let ranges: Vec<(usize, usize, String)> = styles
-        .lines()
-        .filter_map(|l| {
-            let mut it = l.trim().splitn(3, char::is_whitespace);
-            let start: usize = it.next()?.parse().ok()?;
-            let count: usize = it.next()?.parse().ok()?;
-            let css = it.next().unwrap_or("").trim().split(';').map(|d| {
-                let d = d.trim();
-                if d.split_once(':').is_some_and(|(k, _)| k.trim() == "font-family") {
-                    format!("{d}, {fallback}")
-                } else {
-                    d.to_string()
-                }
-            });
-            Some((start.min(n), (start + count).min(n), css.collect::<Vec<_>>().join("; ")))
+    let chars: Vec<char> = words.chars().collect();
+    let n = chars.len();
+    let ranges: Vec<(usize, usize, String)> = parse_range_styles(styles, &chars)
+        .into_iter()
+        .map(|r| {
+            let css: Vec<String> = r
+                .decls
+                .into_iter()
+                .map(|(k, v)| {
+                    if k == "font-family" {
+                        format!("{k}: {v}, {fallback}")
+                    } else {
+                        format!("{k}: {v}")
+                    }
+                })
+                .collect();
+            (r.start, r.end, css.join("; "))
         })
-        .filter(|r| r.0 < r.1 && !r.2.is_empty())
+        .filter(|r| !r.2.is_empty())
         .collect();
     let mut cuts: Vec<usize> = ranges.iter().flat_map(|r| [r.0, r.1]).chain([0, n]).collect();
     cuts.sort_unstable();
     cuts.dedup();
-    let chars: Vec<char> = words.chars().collect();
     let mut html = String::new();
     for w in cuts.windows(2) {
         let piece: String = chars[w[0]..w[1]].iter().collect();
@@ -359,7 +415,7 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
     let m = first.metrics(Size::new(size), LocationRef::default());
     let chars: Vec<char> = words.chars().collect();
     let n = chars.len();
-    let ranges = parse_range_styles(styles, n);
+    let ranges = parse_range_styles(styles, &chars);
 
     // Load range fonts alongside the layer/fallback fonts.
     let mut font_bytes: Vec<Vec<u8>> = fonts.to_vec();
@@ -1048,5 +1104,35 @@ mod tests {
         let meta = font_meta(&jp).unwrap();
         assert!(meta.contains("palt"), "{meta}");
         assert!(meta.contains("vert"), "{meta}");
+    }
+
+    #[test]
+    fn class_rules_scale_hiragana_and_latin_case_while_explicit_range_wins() {
+        let jp = noto_jp();
+        // Kanji '漢' (100%), hiragana 'あ' (70%), uppercase 'A' (130%), lowercase 'a' (70%),
+        // with explicit range overriding index 1 ('あ') to 150%.
+        let styles = "@hiragana font-size: 70%\n@upper font-size: 130%\n@lower font-size: 70%\n1 1 font-size: 150%";
+        let t = set("漢ああAa", styles, std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 0.0, false, 0.0, false,
+                    "normal", false, "")
+            .unwrap();
+        // Index 0 ('漢') ~100px, index 1 ('あ' overridden) ~150px, index 2 ('あ' @hiragana) ~70px.
+        assert!(t.letters[1][1] > t.letters[0][1] + 25.0, "{:?}", t.letters);
+        assert!(t.letters[2][1] < t.letters[0][1] - 15.0, "{:?}", t.letters);
+        // Uppercase 'A' (index 3) is wider than lowercase 'a' (index 4).
+        assert!(t.letters[3][1] > t.letters[4][1] + 25.0, "{:?}", t.letters);
+    }
+
+    #[test]
+    fn class_rules_apply_in_vertical_typesetting() {
+        let jp = noto_jp();
+        let plain = set("漢あ", "", std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 0.0, false, 0.0, true, "normal",
+                        false, "")
+            .unwrap();
+        let scaled = set("漢あ", "@hiragana font-size: 75%", std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 0.0,
+                         false, 0.0, true, "normal", false, "")
+            .unwrap();
+        // Column height shrinks when hiragana is scaled to 75%.
+        assert!(scaled.lines[0][0] < plain.lines[0][0] - 10.0, "plain={} scaled={}", plain.lines[0][0],
+                scaled.lines[0][0]);
     }
 }

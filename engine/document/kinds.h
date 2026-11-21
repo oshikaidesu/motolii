@@ -268,7 +268,7 @@ inline const DocValue doc_values[] = {
     // Box width in multiples of line height (community/css/text.h).
     {"wrap", "text", 0, 0, false,
      "none character word smart ellipsis vertical"},
-    {"wrap_at", "text", 0, 1000, false, nullptr},
+    {"wrap_at", "text", 0, 1000, true, nullptr},
     {"writing", "text", 0, 0, false, "horizontal vertical"},
     {"metrics", "text", 0, 0, false, "fixed proportional half_width"},
     {"kinsoku", "text", 0, 0, false, "normal strict loose none"},
@@ -276,11 +276,11 @@ inline const DocValue doc_values[] = {
     {"font_features", "text", 0, 0, false, ""},
     {"split", "text", 0, 0, false, "none letters words lines"},
     // Thousandths of an em (css-inline-3 range).
-    {"letter_spacing", "text", -1000, 10000, false, nullptr},
+    {"letter_spacing", "text", -1000, 10000, true, nullptr},
     // CSS line-height <number>, never below 0 (css-inline-3).
-    {"line_spacing", "text", 0, 1e4, false, nullptr},
+    {"line_spacing", "text", 0, 1e4, true, nullptr},
     // CSS font-style oblique angle (css-fonts-4).
-    {"italic", "text", -90, 90, false, nullptr},
+    {"italic", "text", -90, 90, true, nullptr},
     // gradient_angle: degrees clockwise, 0 = top to bottom.
     // gradient_scale: length as share of reach.
     {"gradient", "text shape", 0, 0, false, "linear radial"},

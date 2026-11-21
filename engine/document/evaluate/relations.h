@@ -150,6 +150,11 @@ const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer, double now);
 // given, is set to whether an effect changes the text.
 std::string doc_text_shown(Doc& d, int layer, double now,
                            bool* moves = nullptr);
+// Whether any keyframeable typesetting number (letter_spacing, line_spacing,
+// italic, wrap_at) has keyframes on `layer`, and their rounded signature at
+// time `now` so doc_evaluate rebuilds the text when a frame changes them.
+bool doc_text_metrics_moves(Doc& d, int layer);
+std::string doc_text_metrics_sig(Doc& d, int layer, double now);
 // Returns whether AbsentMotion's Motion Blur or Shutter Blur is on the layer.
 // If so, `open` receives how long the shutter is open in seconds at the stage's
 // 60 frames a second, and `moves` whether the motion path is smeared.

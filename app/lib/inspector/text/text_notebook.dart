@@ -11,6 +11,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/controls/well_pill.dart' show maybeTip;
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/text/text_ranges.dart'
+    show styledClasses, textCharClasses;
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
@@ -33,6 +35,8 @@ class TextNotebook extends StatefulWidget {
     required this.styles,
     required this.base,
     required this.pickedCount,
+    required this.activeClass,
+    required this.onSelectClass,
     required this.styled,
     required this.onDone,
     required this.onPick,
@@ -45,6 +49,8 @@ class TextNotebook extends StatefulWidget {
   final String styles;
   final TextStyle base;
   final int? pickedCount;
+  final String? activeClass;
+  final ValueChanged<String?> onSelectClass;
   final InlineSpan Function(String text, TextStyle style) styled;
   final void Function(String?) onDone;
   final void Function(TextEditingValue) onPick;
@@ -102,7 +108,7 @@ class _TextNotebookState extends State<TextNotebook> {
   Widget build(BuildContext context) {
     final doc = widget.doc;
     final layer = widget.layer;
-    final scoped = widget.pickedCount != null;
+    final scoped = widget.pickedCount != null || widget.activeClass != null;
     final vertical =
         layer.containsKey('writing') &&
         (doc.get('v_writing') ?? 0).round() == 1;
@@ -280,8 +286,92 @@ class _TextNotebookState extends State<TextNotebook> {
                 );
               },
             ),
+            // Borderless composite character-class footer: select All or a script
+            // class (漢字 / かな / カナ / ABC / abc / 123) to edit its font/size ratio
+            // with the same compact rows below.
+            if (widget.pickedCount == null)
+              _ClassScopeFooter(
+                activeClass: widget.activeClass,
+                customized: styledClasses(widget.styles),
+                onSelect: widget.onSelectClass,
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Quiet borderless footer along the notebook's bottom edge for composite
+/// character-class scoping (`All` / `漢字` / `かな` / `カナ` / `ABC` / `abc` / `123`).
+class _ClassScopeFooter extends StatelessWidget {
+  const _ClassScopeFooter({
+    required this.activeClass,
+    required this.customized,
+    required this.onSelect,
+  });
+
+  final String? activeClass;
+  final Set<String> customized;
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget item(String? id, String label, String tip) {
+      final selected = activeClass == id;
+      final hasRule = id != null && customized.contains(id);
+      return maybeTip(
+        context,
+        tip,
+        Pressable(
+          key: ValueKey('text:class:${id ?? 'all'}'),
+          onTap: () => onSelect(selected && id != null ? null : id),
+          builder: (_, hot) {
+            final col = selected
+                ? Accent.fill
+                : (hot ? Grey.g95 : (hasRule ? Grey.g76 : Grey.g56));
+            return Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(4),
+                vertical: Shape.s(2),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(label, style: TextStyles.micro(col)),
+                  if (hasRule)
+                    Padding(
+                      padding: EdgeInsets.only(left: Shape.s(2)),
+                      child: Container(
+                        width: 3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Accent.fill,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return Container(
+      height: Shape.z(20),
+      padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
+      decoration: BoxDecoration(
+        color: Grey.g10.withValues(alpha: 0.45),
+        border: Border(top: BorderSide(color: Grey.g20)),
+      ),
+      child: Row(
+        children: [
+          item(null, 'All', 'Edit whole layer'),
+          for (final cls in textCharClasses.take(6))
+            item(cls.id, cls.label, 'Composite rule: ${cls.tip}'),
+        ],
       ),
     );
   }

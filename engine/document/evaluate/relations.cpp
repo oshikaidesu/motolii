@@ -469,6 +469,22 @@ std::string doc_text_shown(Doc& d, int layer, double now, bool* moves) {
                      typed);
 }
 
+bool doc_text_metrics_moves(Doc& d, int layer) {
+  for (const char* name :
+       {"letter_spacing", "line_spacing", "italic", "wrap_at"})
+    if (!doc_keys_of(d, layer, name).at.empty()) return true;
+  return false;
+}
+
+std::string doc_text_metrics_sig(Doc& d, int layer, double now) {
+  auto q = [&](const char* name, double def, double scale) {
+    return std::to_string(
+        std::llround(doc_number(d, layer, name, now, def) * scale));
+  };
+  return q("letter_spacing", 0, 100) + "," + q("line_spacing", 1.2, 1000) +
+         "," + q("italic", 0, 100) + "," + q("wrap_at", 0, 100);
+}
+
 bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
   if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return false;
   const double begins = doc_literal(d, layer, "start", 0, 0);

@@ -62,6 +62,7 @@ typedef _Letters = ({int start, int count});
 class _TextBodyState extends State<TextBody> {
   InspectorValues? _range;
   String? _made;
+  String? _activeClass;
   final _axesBy = <String, List<FontAxis>>{};
   final _metaBy = <String, FontMeta>{};
 
@@ -119,21 +120,40 @@ class _TextBodyState extends State<TextBody> {
       valueListenable: wordsPicked,
       builder: (context, p, _) {
         final picked = pickedLetters(text, p);
+        final activeClass = picked != null ? null : _activeClass;
+        final scoped = picked != null || activeClass != null;
         final all = (start: 0, count: text.runes.length);
         final letters = picked ?? all;
-        final font = fontFileOf(
-          rangeValue(
-            styles,
-            letters.start,
-            letters.count,
-            'font-family',
-            otherwise: "'$file'",
-          ),
-        );
-        final shownFont = picked != null ? font : file;
+        final font = activeClass != null
+            ? fontFileOf(
+                classValue(
+                  styles,
+                  activeClass,
+                  'font-family',
+                  otherwise: "'$file'",
+                ),
+              )
+            : fontFileOf(
+                rangeValue(
+                  styles,
+                  letters.start,
+                  letters.count,
+                  'font-family',
+                  otherwise: "'$file'",
+                ),
+              );
+        final shownFont = scoped ? font : file;
         final meta = _metaOf(doc, shownFont ?? '');
         final axes = meta.axes;
-        final range = _values(doc, styles, letters, picked != null, axes, font);
+        final range = _values(
+          doc,
+          styles,
+          letters,
+          activeClass,
+          scoped,
+          axes,
+          font,
+        );
 
         Widget numCell(
           InspectorValues target,
@@ -147,7 +167,7 @@ class _TextBodyState extends State<TextBody> {
         );
 
         // Compact 24px rows for continuous keyframeable values.
-        final glyphRow = picked == null
+        final glyphRow = !scoped
             ? <Widget>[
                 if (layer['size'] case final s?) numCell(doc, s),
                 if (layer['italic'] case final s?) numCell(doc, s),
@@ -164,7 +184,7 @@ class _TextBodyState extends State<TextBody> {
                   ),
               ];
 
-        final flowRow = picked == null
+        final flowRow = !scoped
             ? <Widget>[
                 if (layer['letter_spacing'] case final t?)
                   numCell(doc, t, label: 'Track'),
@@ -179,10 +199,16 @@ class _TextBodyState extends State<TextBody> {
           for (final a in axes) numCell(range, _axis(a)),
         ];
 
+        final fontLabel = picked != null
+            ? 'Range font'
+            : (activeClass != null
+                  ? '${textCharClasses.firstWhere((c) => c.id == activeClass, orElse: () => (id: activeClass, label: activeClass, tip: activeClass)).label} font'
+                  : 'Font');
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Ruled notebook editor with borderless ruler & margin rail affordances.
+            // 1. Ruled notebook editor with borderless ruler, margin rail, and class scope footer.
             TextNotebook(
               doc: doc,
               layer: layer,
@@ -190,12 +216,18 @@ class _TextBodyState extends State<TextBody> {
               styles: styles,
               base: base,
               pickedCount: picked?.count,
-              styled: (t, style) => _spans(t, styles, style),
+              activeClass: activeClass,
+              onSelectClass: (cls) => setState(() => _activeClass = cls),
+              styled: (t, style) =>
+                  _spans(t, styles, style, highlightClass: activeClass),
               onDone: (said) => _typed(doc, text, said),
               onPick: (v) {
                 _typing(doc, text, v.text);
-                wordsPicked.value =
-                    v.selection.isValid && !v.selection.isCollapsed
+                final hasSel = v.selection.isValid && !v.selection.isCollapsed;
+                if (hasSel && _activeClass != null) {
+                  setState(() => _activeClass = null);
+                }
+                wordsPicked.value = hasSel
                     ? (
                         text: v.text,
                         start: v.selection.start,
@@ -209,13 +241,14 @@ class _TextBodyState extends State<TextBody> {
             if (layer.containsKey('file')) ...[
               SizedBox(height: Shape.s(5)),
               InspectorScope(
-                doc: picked != null ? range : doc,
+                doc: scoped ? range : doc,
                 tick: x.tick,
                 child: _FontRow(
+                  label: fontLabel,
                   value: shownFont == null
                       ? 'Mixed'
                       : (shownFont.isEmpty ? 'Default' : shownFont),
-                  scoped: picked != null,
+                  scoped: scoped,
                 ),
               ),
             ],
@@ -234,7 +267,7 @@ class _TextBodyState extends State<TextBody> {
                   axisCells.sublist(i, math.min(i + 3, axisCells.length)),
                 ),
               ],
-            if (picked == null && layer.containsKey('font_features'))
+            if (!scoped && layer.containsKey('font_features'))
               TextFeaturesFold(
                 doc: doc,
                 supported: meta.features,
@@ -250,31 +283,52 @@ class _TextBodyState extends State<TextBody> {
     InspectorValues doc,
     String styles,
     _Letters letters,
-    bool picked,
+    String? activeClass,
+    bool scoped,
     List<FontAxis> axes,
     String? font,
   ) {
     final made =
-        '$styles|${letters.start}|${letters.count}|$picked|$font|${axes.length}';
+        '$styles|${letters.start}|${letters.count}|$activeClass|$scoped|$font|${axes.length}';
     if (_range != null && made == _made) return _range!;
     _range?.dispose();
     _made = made;
-    String? at(String property, String? otherwise) => rangeValue(
-      styles,
-      letters.start,
-      letters.count,
-      property,
-      otherwise: otherwise,
-    );
+    String? at(String property, String? otherwise) => activeClass != null
+        ? classValue(styles, activeClass, property, otherwise: otherwise)
+        : rangeValue(
+            styles,
+            letters.start,
+            letters.count,
+            property,
+            otherwise: otherwise,
+          );
     double? number(String? css, double Function(double) scale) =>
         _number(css).let(scale);
-    final axesOf = [
-      for (var i = letters.start; i < letters.start + letters.count; i++)
-        _variations(
-          rangeValue(styles, i, 1, 'font-variation-settings', otherwise: '') ??
-              '',
-        ),
-    ];
+    final axesOf = activeClass != null
+        ? [
+            _variations(
+              classValue(
+                    styles,
+                    activeClass,
+                    'font-variation-settings',
+                    otherwise: '',
+                  ) ??
+                  '',
+            ),
+          ]
+        : [
+            for (var i = letters.start; i < letters.start + letters.count; i++)
+              _variations(
+                rangeValue(
+                      styles,
+                      i,
+                      1,
+                      'font-variation-settings',
+                      otherwise: '',
+                    ) ??
+                    '',
+              ),
+          ];
     final range = _RangeValues(doc)..actions = doc.actions;
     range.numbers
       ..['v_size'] = number(at('font-size', '100%'), (v) => v) ?? double.nan
@@ -300,33 +354,35 @@ class _TextBodyState extends State<TextBody> {
         range.strings['v_fill'] = c;
     }
     final shown = Map.of(range.numbers);
+    final shownFont = range.strings['v_file'];
+    final shownFill = range.strings['v_fill'];
+    String writeProp(String current, String property, String? value) =>
+        activeClass != null
+        ? styleClass(current, activeClass, property, value)
+        : styleRange(current, letters.start, letters.count, property, value);
+
     range.addListener(() {
       var next = styles;
+      if (range.strings['v_file'] != shownFont &&
+          range.strings['v_file'] != null) {
+        final f = range.strings['v_file']!;
+        next = writeProp(next, 'font-family', f.isEmpty ? null : "'$f'");
+      }
+      if (range.strings['v_fill'] != shownFill &&
+          range.strings['v_fill'] != null) {
+        next = writeProp(next, 'color', range.strings['v_fill']);
+      }
       for (final e in range.numbers.entries) {
         if (shown[e.key] == e.value) continue;
         final v = e.value;
         next = switch (e.key) {
-          'v_size' => styleRange(
+          'v_size' => writeProp(next, 'font-size', '${_css(v)}%'),
+          'v_letter_spacing' => writeProp(
             next,
-            letters.start,
-            letters.count,
-            'font-size',
-            '${_css(v)}%',
-          ),
-          'v_letter_spacing' => styleRange(
-            next,
-            letters.start,
-            letters.count,
             'letter-spacing',
             '${_css(v / 1000)}em',
           ),
-          'v_baseline' => styleRange(
-            next,
-            letters.start,
-            letters.count,
-            'baseline-shift',
-            '${_css(v)}em',
-          ),
+          'v_baseline' => writeProp(next, 'baseline-shift', '${_css(v)}em'),
           _ => next,
         };
       }
@@ -337,27 +393,40 @@ class _TextBodyState extends State<TextBody> {
             a.tag: v,
       };
       if (changed.isNotEmpty) {
-        final each = [
-          for (final m in axesOf) {...m, ...changed},
-        ];
-        next = styleRange(
-          next,
-          letters.start,
-          letters.count,
-          'font-variation-settings',
-          null,
-        );
-        for (var from = 0, i = 1; i <= each.length; i++) {
-          if (i < each.length && _same(each[i], each[from])) continue;
-          next = styleRange(
+        if (activeClass != null) {
+          final merged = {...axesOf.first, ...changed};
+          next = styleClass(
             next,
-            letters.start + from,
-            i - from,
+            activeClass,
             'font-variation-settings',
-            [for (final e in each[from].entries) "'${e.key}' ${_css(e.value)}"]
+            [for (final e in merged.entries) "'${e.key}' ${_css(e.value)}"]
                 .join(', '),
           );
-          from = i;
+        } else {
+          final each = [
+            for (final m in axesOf) {...m, ...changed},
+          ];
+          next = styleRange(
+            next,
+            letters.start,
+            letters.count,
+            'font-variation-settings',
+            null,
+          );
+          for (var from = 0, i = 1; i <= each.length; i++) {
+            if (i < each.length && _same(each[i], each[from])) continue;
+            next = styleRange(
+              next,
+              letters.start + from,
+              i - from,
+              'font-variation-settings',
+              [
+                for (final e in each[from].entries)
+                  "'${e.key}' ${_css(e.value)}",
+              ].join(', '),
+            );
+            from = i;
+          }
         }
       }
       if (next != styles) doc.str('v_text_styles', next);
@@ -526,8 +595,13 @@ class _CompactRow extends StatelessWidget {
 
 /// Slim 28px Font link row.
 class _FontRow extends StatelessWidget {
-  const _FontRow({required this.value, required this.scoped});
+  const _FontRow({
+    required this.label,
+    required this.value,
+    required this.scoped,
+  });
 
+  final String label;
   final String value;
   final bool scoped;
 
@@ -541,10 +615,7 @@ class _FontRow extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Text(
-          scoped ? 'Range font' : 'Font',
-          style: TextStyles.micro(scoped ? Accent.fill : Grey.g63),
-        ),
+        Text(label, style: TextStyles.micro(scoped ? Accent.fill : Grey.g63)),
         SizedBox(width: Shape.s(8)),
         Expanded(
           child: LinkLine(to: LinkTo.fonts, value: value, id: 'v_file'),
@@ -571,22 +642,45 @@ class _RangeValues extends InspectorValues {
   }
 }
 
-InlineSpan _spans(String text, String styles, TextStyle base) {
+InlineSpan _spans(
+  String text,
+  String styles,
+  TextStyle base, {
+  String? highlightClass,
+}) {
+  final classes = readClassRules(styles);
   final ranges = readRanges(styles);
-  if (ranges.isEmpty) return TextSpan(text: text, style: base);
+  if (classes.isEmpty && ranges.isEmpty && highlightClass == null) {
+    return TextSpan(text: text, style: base);
+  }
   final runes = text.runes.toList(), runs = <TextSpan>[];
-  Map<String, String> setsAt(int i) => {
-    for (final r in ranges)
-      if (i >= r.start && i < r.start + r.count) ...r.sets,
-  };
+  (Map<String, String>, bool) styleAt(int i) {
+    final u = runes[i];
+    final sets = <String, String>{};
+    for (final c in classes) {
+      if (charMatchesClass(u, c.name)) sets.addAll(c.sets);
+    }
+    for (final r in ranges) {
+      if (i >= r.start && i < r.start + r.count) sets.addAll(r.sets);
+    }
+    final lit = highlightClass != null && charMatchesClass(u, highlightClass);
+    return (sets, lit);
+  }
+
   var from = 0;
   for (var i = 1; i <= runes.length; i++) {
-    final sets = setsAt(from);
-    if (i < runes.length && _same(setsAt(i), sets)) continue;
+    final (sets, lit) = styleAt(from);
+    if (i < runes.length) {
+      final (nextSets, nextLit) = styleAt(i);
+      if (nextLit == lit && _same(nextSets, sets)) continue;
+    }
+    final s = _style(base, sets);
     runs.add(
       TextSpan(
         text: String.fromCharCodes(runes, from, i),
-        style: _style(base, sets),
+        style: lit
+            ? s.copyWith(backgroundColor: Accent.fill.withValues(alpha: 0.18))
+            : s,
       ),
     );
     from = i;

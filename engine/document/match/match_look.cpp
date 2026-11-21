@@ -215,7 +215,8 @@ void look_text(LayerBuild& build) {
   Doc& d = build.d;
   const int layer = build.layer;
   Canvas2DFx& fx = build.fx;
-  fx.wrapWidth = (float)build.number("wrap_at", 0);
+  const double at = build.s.now;
+  fx.wrapWidth = (float)doc_number(d, layer, "wrap_at", at, 0);
   const std::string split = build.word("split"), script = build.word("script");
   fx.splitWords = split == "words";
   fx.splitLines = split == "lines";
@@ -251,9 +252,12 @@ void look_text(LayerBuild& build) {
     feats += userFeats;
   }
   fx.fontFeatures = feats;
-  fx.letters = (float)build.number("letter_spacing", 0),
-  fx.lines = (float)build.number("line_spacing", 1.2),
-  fx.italic = (float)build.number("italic", 0);
+  fx.letters = (float)doc_number(d, layer, "letter_spacing", at, 0),
+  fx.lines = (float)doc_number(d, layer, "line_spacing", at, 1.2),
+  fx.italic = (float)doc_number(d, layer, "italic", at, 0);
+  build.made.textMove = doc_text_metrics_moves(d, layer);
+  if (build.made.textMove)
+    build.made.textSig = doc_text_metrics_sig(d, layer, at);
 }
 
 // Returns which of the space-separated `words` the layer's property `name` is,

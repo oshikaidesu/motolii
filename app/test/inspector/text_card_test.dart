@@ -322,4 +322,21 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'selecting a composite character class scopes Size to @hiragana without touching layer Size',
+    (tester) async {
+      await mount(tester);
+      await tester.tap(find.byKey(const ValueKey('text:class:hiragana')));
+      await tester.pump();
+      expect(find.text('かな font'), findsOneWidget);
+
+      await dragSize(tester);
+      final styles = words.lastWhere(
+        (w) => w.containsKey('v_text_styles'),
+      )['v_text_styles']!;
+      expect(styles, startsWith('@hiragana font-size: '));
+      expect(numbers.any((n) => n.containsKey('v_size')), isFalse);
+    },
+  );
 }

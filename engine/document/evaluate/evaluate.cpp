@@ -45,6 +45,11 @@ bool rebuilt_changed_layer(Doc& d, double now) {
           else
             return (void)doc_match(d), true;
         }
+  // A text layer whose keyframed typesetting numbers changed is rebuilt.
+  if (now == s.now)
+    for (auto& [layer, t] : d.on_stage.shown)
+      if (t.textMove && doc_text_metrics_sig(d, layer, now) != t.textSig)
+        return (void)doc_match(d), true;
   // A cel layer whose keyframes now select a different drawing is rebuilt on
   // its own with doc_match.
   if (now == s.now)

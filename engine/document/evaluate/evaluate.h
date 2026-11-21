@@ -74,6 +74,10 @@ struct DocShownLayer {
   // them as time goes (see doc_text_shown).
   std::string words;
   bool wordsMove = false;
+  // Keyframed typesetting numbers (letter_spacing, line_spacing, italic,
+  // wrap_at) as made, and whether any of them has keyframes.
+  std::string textSig;
+  bool textMove = false;
   // A level's drawing as made, and whether its keyframes change it as time
   // goes.
   double cel = -2;

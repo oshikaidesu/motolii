@@ -121,8 +121,11 @@ void told_effects(Rebuild& rebuild) {
     // Rebuilt when a light is added or removed.
     if (doc_lit(d, layer)) of += " lit";
     // The text as the text effects show it now. Rebuilt when it changes.
-    if (of.find("kind=text") != std::string::npos)
+    if (of.find("kind=text") != std::string::npos) {
       of += " shown=" + doc_text_shown(d, layer, s.now);
+      if (doc_text_metrics_moves(d, layer))
+        of += " tmet=" + doc_text_metrics_sig(d, layer, s.now);
+    }
     // The drawing of a level shown now. Rebuilt when its keyframes change it.
     if (of.find("kind=image") != std::string::npos &&
         !doc_keys_of(d, layer, "cel").at.empty())
