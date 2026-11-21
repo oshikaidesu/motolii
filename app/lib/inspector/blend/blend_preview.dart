@@ -16,6 +16,7 @@ import 'package:motolii/inspector/controls/well_pill.dart'
     show WellPill, maybeTip;
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/list_select.dart';
@@ -27,7 +28,7 @@ class BlendPreview extends StatefulWidget {
   final CardDeclaration card;
 
   static double get height => Shape.z(52);
-  static double get matteHeight => Shape.z(52);
+  static double get matteHeight => InspectorSkin.tile;
 
   @override
   State<BlendPreview> createState() => _BlendPreviewState();
@@ -221,23 +222,24 @@ class _BlendPreviewState extends State<BlendPreview> {
     final feather = doc.get('v_clip_feather') ?? (featherP?.def ?? 0);
 
     return Padding(
-      padding: EdgeInsets.only(top: Shape.s(6)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: EdgeInsets.only(top: InspectorSkin.tileGap),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _MatteWell(
-            doc: doc,
-            matteOpts: matteOpts,
-            matteIndex: matteI,
-            isLuma: isLuma,
-            inverted: inverted,
-            feather: feather,
-            featherParam: featherP,
+          Expanded(
+            child: _MatteWell(
+              doc: doc,
+              matteOpts: matteOpts,
+              matteIndex: matteI,
+              isLuma: isLuma,
+              inverted: inverted,
+              feather: feather,
+              featherParam: featherP,
+            ),
           ),
           if (featherP != null) ...[
-            SizedBox(height: Shape.s(4)),
-            ParameterTile(featherP),
+            SizedBox(width: InspectorSkin.tileGap),
+            SizedBox(width: Shape.z(104), child: ParameterTile(featherP)),
           ],
         ],
       ),
@@ -353,8 +355,8 @@ class _MatteWellState extends State<_MatteWell> {
                 ),
               ),
               Positioned(
-                left: 13,
-                bottom: 11,
+                left: 10,
+                top: (BlendPreview.matteHeight - Shape.z(20)) / 2,
                 child: maybeTip(
                   context,
                   'Cut by $matteLabel',
@@ -368,8 +370,8 @@ class _MatteWellState extends State<_MatteWell> {
                 ),
               ),
               Positioned(
-                right: 13,
-                bottom: 11,
+                right: 10,
+                top: (BlendPreview.matteHeight - Shape.z(20)) / 2,
                 child: maybeTip(
                   context,
                   widget.inverted ? 'Invert matte: On' : 'Invert matte: Off',
@@ -458,7 +460,7 @@ class _MattePaint extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     drawWell(c, s);
-    final plate = Rect.fromLTWH(8, 6, s.width - 16, s.height - 12);
+    final plate = Rect.fromLTWH(6, 5, s.width - 12, s.height - 10);
     final rrect = RRect.fromRectAndRadius(plate, const Radius.circular(5));
 
     c.save();

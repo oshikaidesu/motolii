@@ -58,7 +58,7 @@ final hostCards =
         fold: null,
       ),
       'Media': (
-        drawn: const {},
+        drawn: FilmStrip.drawn,
         absorbs: const {},
         body: (card) => FilmStrip(card),
         fold: null,
