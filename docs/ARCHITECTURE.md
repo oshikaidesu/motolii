@@ -1,137 +1,135 @@
 # Architecture
 
-How Motolii is built, for a developer about to read or change the code.
+Technical overview of Motolii's codebase for contributors.
 
-A Flutter app drives a C++ engine through a small C API (`engine/entry/motolii.h`). One render thread in the engine owns the project (a SQLite file) and the GPU. Filament, built from source with its WebGPU (Dawn) backend and a few patches, draws the 3D scene and composites the layers. ThorVG's WebGPU engine draws 2D art and text on the same Dawn device. GStreamer reads video and sound, and ffmpeg writes the exported video. Shared effects are compiled to WGSL with the toolchain Filament already ships (glslang to SPIR-V to Tint). The finished frame reaches the app without a copy, through CVPixelBuffers backed by IOSurface.
+Motolii pairs a Flutter desktop frontend (`app/`) with a C++ engine (`engine/`, compiled as `libmotolii.dylib`) over a narrow C FFI surface (`engine/entry/motolii.h`). A single render thread in the engine owns both the project database (SQLite) and the GPU device. Filament — built from source with its WebGPU (Dawn) backend and Motolii patches — renders 3D scenes and composites layers, while ThorVG's WebGPU backend draws 2D vector art and text on the same Dawn device. GStreamer decodes video and audio, FFmpeg encodes exports, and finished frames reach Flutter zero-copy via IOSurface-backed `CVPixelBuffer`s.
 
-Two words are specific to Motolii. A *shelf* is one of the tabs on the left of the window, where the bundled content and the user's own files appear, as in Blender's Asset Shelf. A *skin* is a theme for the app. Other names follow After Effects, Filament, Flutter and Blender. [`design/renamed_words.md`](design/renamed_words.md) maps older names in the code to the present ones.
+Terminology follows After Effects, Filament, Flutter, and Blender, with two Motolii-specific terms:
+- **Shelf:** Left-dock asset tabs displaying bundled and user-supplied items (following Blender's Asset Shelf).
+- **Skin:** A drop-in theme folder customizing UI colors, metrics, fonts, and SVG parts.
 
-## Overview
+See [`design/renamed_words.md`](design/renamed_words.md) for historical symbol/name mappings.
+
+## System overview
 
 ```mermaid
 flowchart TB
-  subgraph Window["App (app/, Flutter, macOS)"]
-    UI["Timeline, Inspector, shelves"]
+  subgraph App["App (app/, Flutter, macOS)"]
+    UI["Timeline, Inspector, Shelves"]
     FFI["bridge/motolii.dart (dart:ffi)"]
   end
-  subgraph Inside["Engine (engine/, libmotolii.dylib)"]
-    API["entry/motolii.h: the C calls"]
-    Hand["entry/render_thread.h: one render thread that owns the project and the GPU"]
-    Doc["document/: the project (SQLite), undo"]
-    Render["stage/render, stage/canvas: draw the frame"]
-    FX["stage/effects, community/: effects"]
-    Script["community/quickjs: QuickJS-ng (recipes, three.js), LuaJIT (AviUtl2)"]
+  subgraph Engine["Engine (engine/, libmotolii.dylib)"]
+    API["entry/motolii.h (C API)"]
+    Thread["entry/render_thread.h (single render thread owning project + GPU)"]
+    Doc["document/ (SQLite project, undo)"]
+    Render["stage/render, stage/canvas (frame rendering)"]
+    FX["stage/effects, community/ (effects & plugins)"]
+    Script["community/quickjs, aviutl (QuickJS-ng, LuaJIT)"]
   end
   subgraph Libs["Libraries"]
-    Filament["Filament 1.77.2 (rebuilt on WebGPU, patched)"]
-    ThorVG["ThorVG (WebGPU engine, patched)"]
+    Filament["Filament 1.77.2 (WebGPU backend, patched)"]
+    ThorVG["ThorVG (WebGPU backend, patched)"]
     Dawn["Dawn (WebGPU)"]
-    Gst["GStreamer (reads video and sound)"]
-    FF["ffmpeg (writes mp4)"]
+    Gst["GStreamer (media decode & audio playback)"]
+    FF["FFmpeg (video/image export)"]
     SQLite["SQLite"]
   end
-  UI --> FFI --> API --> Hand
-  Hand --> Doc --> SQLite
-  Hand --> Render --> Filament --> Dawn
+  UI --> FFI --> API --> Thread
+  Thread --> Doc --> SQLite
+  Thread --> Render --> Filament --> Dawn
   Render --> ThorVG --> Dawn
-  Hand --> FX
-  Hand --> Script
+  Thread --> FX
+  Thread --> Script
   Render --> Gst
   Render --> FF
-  Render -- "3 CVPixelBuffers (IOSurface), no copy" --> UI
+  Render -- "3 IOSurface CVPixelBuffers (zero-copy)" --> UI
 ```
 
-## The two halves and the boundary between them
+## Process & module boundaries
 
-| Boundary | Where | Rule |
+| Boundary | Location | Contract |
 |---|---|---|
-| App entry | `app/lib/main.dart` opens `app/lib/workspace/workspace.dart` (`Workspace`: the whole window, opening a project, the menus). App state lives in `app/lib/workspace/state/workspace_controller.dart` (`WorkspaceController`). | [`app/README.md`](../app/README.md) maps the app's files. A new panel is added through `Workspace`'s `extra` list of `Pane`s. |
-| App to engine | `engine/entry/motolii.h` (about 490 lines). On the Dart side: `app/lib/bridge/motolii.dart` and `motolii_bindings.dart`, which ffigen generates. | The app holds no values. It reads and changes everything through C calls, and the project is the source of truth. The contract is in [`app/BRIDGE.md`](app/BRIDGE.md). |
-| Inside the engine | `engine/entry/render_thread.h` | Only the render thread touches the project and the GPU. The app never waits for it: a write is queued and returns at once, and a read takes a snapshot the render thread built (rules 1, 3 and 6 in [`app/BRIDGE.md`](app/BRIDGE.md)). |
-| Engine to app (frames) | `engine/stage/live.h` | The preview is drawn into three CVPixelBuffers on IOSurfaces. Each is imported into Dawn as a texture and used as a Filament render target. The app (a Flutter external texture, `app/macos/Runner/MainFlutterWindow.swift`) reads the same buffers. |
-| Third-party code | `engine/deps/patches/<library>/` | Third-party code is not edited in place. A pinned version is fetched and patches are applied (see section 2 of [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)). |
+| App entry | `app/lib/main.dart` → `app/lib/workspace/workspace.dart` (`Workspace`) and `app/lib/workspace/state/workspace_controller.dart` (`WorkspaceController`) | See [`app/README.md`](../app/README.md). Custom panels register through `Workspace`'s `extra` `Pane` list. |
+| App ↔ Engine FFI | `engine/entry/motolii.h` (~490 lines); Dart bindings in `app/lib/bridge/motolii.dart` and ffigen-generated `motolii_bindings.dart` | The UI holds no authoritative project state. All reads and writes go through the C API ([`app/BRIDGE.md`](app/BRIDGE.md)). |
+| Render thread | `engine/entry/render_thread.h` | Only the render thread touches the SQLite project and GPU. Writes enqueue asynchronously and return immediately; reads consume immutable snapshots built on the render thread ([`app/BRIDGE.md`](app/BRIDGE.md) rules 1, 3, 6). |
+| Zero-copy preview frames | `engine/stage/live.h` | Renders into three IOSurface-backed `CVPixelBuffer`s imported into Dawn as Filament render targets and exposed to Flutter as an external texture (`app/macos/Runner/MainFlutterWindow.swift`). |
+| Upstream patches | `engine/deps/patches/<library>/` | Third-party dependencies are never edited in place; pinned versions are fetched and patched at build time ([`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) §2). |
 
-## How a frame is drawn
+## Rendering pipeline
 
-- **Filament** v1.77.2 is built from source with the WebGPU (Dawn) backend (`engine/deps/filament.sh`), because the released SDK has no WebGPU. Patches in `engine/deps/patches/filament/`:
-  - `filament_dawn_compute.patch` adds a compute entry point, a way to lend out the Dawn device, and `Texture::Builder::import` to accept an external texture.
-  - `filament_webgpu_viewport.patch` converts Filament's bottom-left viewport origin to WebGPU's top-left origin, and `filament_webgpu_depth_fragment.patch` changes how the WebGPU backend's pipeline cache sets up depth and fragment state.
-  - `engine/deps/patches/glslang/glslang_hlsl.patch` turns on glslang's HLSL reader, which AviUtl2 scripts need.
-- **ThorVG** runs its WebGPU engine on the same Dawn device as Filament (`engine/deps/thorvg.sh`, `engine/gpu/thorvg_on_dawn.cpp`, `engine/stage/canvas/canvas.h`). What it draws becomes a plane in the Filament scene, so masks, glass and keying work on it.
-- Boolean operations on shapes use only the path part of **Skia** (`engine/deps/skia.sh`). Flat shapes are triangulated by **libtess2**.
-- The frame timing comes from Thermion's `FrameScheduler`, driven by CVDisplayLink (`engine/third_party/thermion_frame/`).
+- **Filament v1.77.2** is compiled from source with the WebGPU (Dawn) backend (`engine/deps/filament.sh`). Patches under `engine/deps/patches/filament/`:
+  - `filament_dawn_compute.patch`: adds a compute dispatch entry point, exposes the Dawn device, and adds `Texture::Builder::import` for external textures.
+  - `filament_webgpu_viewport.patch` & `filament_webgpu_depth_fragment.patch`: align Filament's viewport origin with WebGPU's top-left origin and adjust WebGPU pipeline cache depth/fragment state.
+  - `engine/deps/patches/glslang/glslang_hlsl.patch`: enables glslang's HLSL frontend required by AviUtl2 shaders.
+- **ThorVG** runs its WebGPU engine on Filament's shared Dawn device (`engine/deps/thorvg.sh`, `engine/gpu/thorvg_on_dawn.cpp`, `engine/stage/canvas/canvas.h`). 2D vector drawings composite as planes inside Filament, inheriting masks, glass materials, and keying.
+- **Skia** (path operations only, `engine/deps/skia.sh`) performs boolean path ops; **libtess2** triangulates 2D shapes.
+- **Frame pacing** uses Thermion's `FrameScheduler` driven by `CVDisplayLink` (`engine/third_party/thermion_frame/`).
 
-### Effects
+### Effect runtimes
 
-| Source | Route | Where |
+| Format | Execution path | Location |
 |---|---|---|
-| ISF (`.fs`, GLSL) | glslang to SPIR-V to Tint to WGSL, using the tools built with Filament | `engine/community/isf/isf.cpp` |
-| WGSL (`.wgsl`) | Used as is. A head line declares parameters in AviUtl2 style. An image placed beside the file is loaded once by ThorVG through `--image@name:file`. | `engine/stage/effects/screen_fx.h`, `engine/stage/layer_effects/layer_fx.h` |
-| AviUtl2 (`.anm2`, `.obj2`) | Lua runs in LuaJIT, as in AviUtl2, and the calls on `obj` are answered by engine functions. HLSL inside goes through glslang's HLSL reader, SPIR-V and Tint to WGSL. | `engine/community/aviutl/` (`aviutl_run.h`, `aviutl_fx.h`) |
-| After Effects plugins (`.plugin`, `.aex`) | Probed and rendered in an isolated persistent worker process (`motolii_ae_worker`, built on [aexlo](https://github.com/potistudio/aexlo)) over timed binary pipe IPC; straight RGBA8 frames cross the process boundary and plugins are never bundled. | `engine/community/after_effects_plugin/` (`ae_plugin.h`, `ae_plugin_fx.h`, `ae_worker_proc.h`) |
-| three.js shapes (`shelves/solids/*.js`) | QuickJS-ng runs three.js and the engine takes the resulting BufferGeometry | `engine/community/three/solid_three.cpp` |
-| Recipes (`shelves/create/*/*.js`) | QuickJS-ng. A recipe creates layers and values once. | `engine/community/quickjs/script.cpp` |
-| TSL | three.js's own WGSLNodeBuilder runs in QuickJS. This is a tool: only the resulting `.wgsl` files are on the shelf. | `engine/community/three_shading_language_to_shelf/`, and the `sl_*.wgsl`, `tt_*.wgsl`, `nf_*.wgsl` and `tf_*.wgsl` files in `shelves/effects/` |
+| ISF (`.fs`, GLSL) | Compiled via Filament's bundled glslang → SPIR-V → Tint → WGSL | `engine/community/isf/isf.cpp` |
+| WGSL (`.wgsl`) | Executed natively on WebGPU. Parameters declared in AviUtl2-style header comments; adjacent images loaded once via ThorVG (`--image@name:file`). | `engine/stage/effects/screen_fx.h`, `engine/stage/layer_effects/layer_fx.h` |
+| AviUtl2 (`.anm2`, `.obj2`) | Lua runs in LuaJIT with engine-backed `obj` APIs; embedded HLSL compiles via glslang → SPIR-V → Tint → WGSL. | `engine/community/aviutl/` (`aviutl_run.h`, `aviutl_fx.h`) |
+| After Effects plugins (`.plugin`, `.aex`) | Probed and rendered inside an isolated persistent worker (`motolii_ae_worker`, backed by [aexlo](https://github.com/potistudio/aexlo)) over timed binary pipe IPC. Straight RGBA8 buffers cross process boundaries; plugins are never bundled. | `engine/community/after_effects_plugin/` (`ae_plugin.h`, `ae_plugin_fx.h`, `ae_worker_proc.h`) |
+| three.js solids (`shelves/solids/*.js`) | Evaluated in QuickJS-ng to extract `BufferGeometry`. | `engine/community/three/solid_three.cpp` |
+| Recipes (`shelves/create/*/*.js`) | Executed once in QuickJS-ng to instantiate layers and keyframes. | `engine/community/quickjs/script.cpp` |
+| three.js TSL | Converted to WGSL via `WGSLNodeBuilder` in QuickJS-ng (bundled outputs live in `shelves/effects/`). | `engine/community/three_shading_language_to_shelf/` |
 
-## How video and sound are read
+## Media I/O
 
-- **GStreamer** reads video in any format; it chooses the parts. The engine pastes each frame onto a plane (`engine/media/video_layer.h`, `gstreamer_file_source.h`).
-- Sound during editing plays through GStreamer's `playbin` (`engine/media/sound_playback.h`).
-- Export draws 60 frames per second and pipes them to **ffmpeg**. The layers' sound is mixed by ffmpeg as well (`film` in `engine/stage/render/render_draw.h`).
+- **Decode:** GStreamer decodes video into plane textures (`engine/media/video_layer.h`, `gstreamer_file_source.h`).
+- **Audio playback:** GStreamer `playbin` (`engine/media/sound_playback.h`).
+- **Export:** Renders at the target frame rate and pipes frames and mixed audio to FFmpeg (`engine/stage/render/render_draw.h`).
 
-## The project file
+## Project storage
 
-- A `.motolii` file is a SQLite database. Tables hold layers, values, keyframes and the easings between keys. Easings are expressions, and SQLite functions `bezier()` and `anime()` evaluate them (`engine/document/undo.cpp`).
-- Undo records each change in the `undo_step` table (`engine/document/undo.h`).
-- Layer kinds are video, image, text, solid, shape, camera and light, plus behaviour layers (`engine/document/kinds.h`).
-- `engine/document/edit/` changes the project and `engine/document/evaluate/` computes what it shows at a given time.
+- `.motolii` files are SQLite databases storing layers, properties, keyframes, and easing expressions (evaluated via custom SQLite functions `bezier()` and `anime()` in `engine/document/undo.cpp`).
+- Undo history is recorded in `undo_step` (`engine/document/undo.h`).
+- Layer types: `video`, `image`, `text`, `solid`, `shape`, `camera`, `light`, and `behaviour` (`engine/document/kinds.h`).
+- `engine/document/edit/` mutates project state; `engine/document/evaluate/` evaluates the scene at any timestamp.
 
 ## Where the shelves are read
 
-The engine finds a shelf's folder in `shelves/` and in the user's own folder of the same name. One function, `doc_folders` in `engine/shelf/shelf_folders.h`, decides where those are. The app side is `motoliiShelves` and `motoliiOwn` in `app/lib/bridge/engine_paths.dart`. The user's folders named `recipes/`, `animators/` and `ways/` are also read, as the earlier names of `create/`, `expressions/` and `ease/`. Files saved in a project under an old shelf path are redirected to the present shelf by `script_shelf_file` in `engine/community/quickjs/script.cpp`.
+Both bundled (`shelves/`) and user folders are resolved through `doc_folders` (`engine/shelf/shelf_folders.h`) on the engine side, and `motoliiShelves` / `motoliiOwn` (`app/lib/bridge/engine_paths.dart`) on the Flutter side. Legacy user folders (`recipes/`, `animators/`, `ways/`) remain supported, and `script_shelf_file` (`engine/community/quickjs/script.cpp`) transparently remaps old saved paths.
 
 | Folder | Engine | App (`app/lib/`) |
 |---|---|---|
-| `effects/` | `document/scripts/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
-| `aviutl_scripts/` | `document/scripts/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
-| `ae_plugins/` | `document/scripts/recipes.h` `doc_ae_plugin_names` | `workspace/state/tiles/effect_tiles.dart`, `effect_decks_store.dart` `effectPack` |
-| `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
-| `expressions/` | `entry/calls_shelf.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
-| `relations/` (expressions に統合) | `entry/calls_shelf.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
+| `effects/` | `document/scripts/recipes.h` (`doc_folder_names`) | `workspace/state/tiles/effect_tiles.dart` |
+| `aviutl_scripts/` | `document/scripts/recipes.h` (`doc_aviutl_names`) | `workspace/state/tiles/effect_decks_store.dart` (`effectPack`) |
+| `ae_plugins/` | `document/scripts/recipes.h` (`doc_ae_plugin_names`) | `workspace/state/tiles/effect_tiles.dart`, `workspace/state/tiles/effect_decks_store.dart` (`effectPack`) |
+| `create/` | `document/scripts/recipes.h` (`doc_recipes_read`) | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
+| `expressions/` | `entry/calls_shelf.cpp` (`motolii_animators`) | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` |
+| `relations/` | `entry/calls_shelf.cpp` (`motolii_relations`) | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/edit/presets.h` | `bridge/motolii_shelves.dart` |
-| `solids/` | `community/three/solid_three.cpp` | none |
-| `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/ease/ease_shelf.dart` |
-| `skins/` | none | `skin/theme.dart` `ColorTheme.skinNames` |
-| `behaviours/` | `document/scripts/recipes.h` | none (behaviours are engine-side expressions: noise, oscillator, random) |
-| `workspaces/` | none | `workspace/workspace.dart` reads layout presets |
-| `extensions/hydra/` | `document/scripts/import_adapter.h`, `community/hydra/hydra_isf.cpp` | none |
-| `engine/third_party/wordnet_ja/` (data, not a shelf) | `entry/calls_find.cpp` `find_english` (`doc_folders("words")`) | none |
-| `engine/third_party/noto_sans_jp/` (data, not a shelf) | `stage/canvas/canvas_renderables.h` `type_fallback` (`doc_folders("fonts")`) | `workspace/dock/fonts/fonts_shelf.dart` |
-| `engine/third_party/gflanguages/` (data, not a shelf) | none | `workspace/dock/fonts/fonts_controller.dart` (`samples.json`) |
+| `solids/` | `community/three/solid_three.cpp` | — |
+| `ease/` | `document/scripts/recipes.h` (`doc_own_easings`) | `workspace/tool_panel/ease/ease_shelf.dart` |
+| `skins/` | — | `skin/theme.dart` (`ColorTheme.skinNames`) |
+| `behaviours/` | `document/scripts/recipes.h` | — |
+| `workspaces/` | — | `workspace/workspace.dart` |
+| `extensions/hydra/` | `document/scripts/import_adapter.h`, `community/hydra/hydra_isf.cpp` | — |
+| `engine/third_party/wordnet_ja/` | `entry/calls_find.cpp` (`find_english`) | — |
+| `engine/third_party/noto_sans_jp/` | `stage/canvas/canvas_renderables.h` (`type_fallback`) | `workspace/dock/fonts/fonts_shelf.dart` |
+| `engine/third_party/gflanguages/` | — | `workspace/dock/fonts/fonts_controller.dart` (`samples.json`) |
 
-## Shelf metadata and user tags
+## Metadata, user tags, and credits
 
-Each shelf folder may contain a `meta.yaml` keyed by effect name, with `author`, `license` and `source` fields. The app reads these through `app/lib/storage/shelf_meta.dart` (`shelfMetaOfFile`, `shelfMetaByName`). ISF effects have metadata generated from their CREDIT headers; AviUtl2 scripts have metadata from their SOURCE.txt.
+- Shelf folders may include a `meta.yaml` mapping effect names to `author`, `license`, and `source` (`app/lib/storage/shelf_meta.dart`). ISF effects derive metadata from `CREDIT` headers; AviUtl2 packages from `SOURCE.txt`.
+- In the UI, `CardMetaRow` (Inspector) and `_metaRow` (`code_pane.dart`) display attribution and editable tag chips.
+- User tags persist in `~/.motolii/tags.json` via `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`).
+- The Effects shelf's **Mine** place (`app/lib/workspace/dock/effects/effect_places.dart`) filters to items under `ownFolder()`.
+- On export, `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) writes a credits text file beside the output video listing every effect used, grouped by license.
 
-In the GUI, metadata appears in two places: at the bottom of each effect card in the Inspector (the `CardMetaRow` widget), and in each cell of the Code tab (the `_metaRow` in `code_pane.dart`). Both show "by Author · License" and the user's tag chips. Pressing the "+" chip opens an autocomplete field to add a tag; pressing the "×" on a chip removes it.
+## Home screen & settings
 
-User tags are stored in `~/.motolii/tags.json` and managed by `ShelfTags.shared` (`app/lib/workspace/dock/common/shelf_tags.dart`).
+`app/lib/workspace/window/home.dart` opens as an overlay on launch, listing projects from `WindowFile.projectsFolder` with a **Continue** card (`WindowFile.lastProject`) and **New Project** action. Window preferences persist in `~/.motolii/window.xml` (`app/lib/storage/window_settings.dart`).
 
-The Effects shelf (the "Effects" tab on the left dock) has a "Mine" filter row (`workspace/dock/effects/effect_places.dart`) that shows only effects from the user's own folder (`ownFolder()`).
+## Top-level directories
 
-On export (File > Export Video, or the Render button in the top bar), `writeCreditsFile` (`app/lib/workspace/state/effect_credits.dart`) automatically writes a credits text file beside the exported video, listing every effect used, grouped by licence.
-
-## Home screen
-
-The home screen (`app/lib/workspace/window/home.dart`) shows on startup as an overlay over the workspace. It lists projects from the user's folder, grouped by date or sorted by name. A "Continue" card at the top shows the last project (`WindowFile.lastProject`). The "New Project" button creates a fresh document. The × button in the top-right corner closes the home screen and returns to the workspace. The folder icon beside "Projects" opens a system dialog to change the projects folder (`WindowFile.projectsFolder`). Settings persist in `~/.motolii/window.xml` through `app/lib/storage/window_settings.dart`.
-
-Skins are switched from View > Skin in the menu bar; the available skins come from `shelves/skins/` and the user's own skins folder (`skin/theme.dart` `ColorTheme.skinNames`).
-
-## Where things live
-
-| Folder | What it holds |
+| Directory | Contents |
 |---|---|
-| `app/` | The Flutter app. [`app/README.md`](../app/README.md) lists every folder. |
-| `engine/` | The C++ engine. [`engine/README.md`](../engine/README.md) lists every folder and the build. |
-| `shelves/` | Content that users and contributors add: effects, recipes, expressions, skins. |
-| `docs/` | Documentation. [`README.md`](README.md) is the index. |
+| `app/` | Flutter desktop app ([`app/README.md`](../app/README.md)) |
+| `engine/` | C++ engine ([`engine/README.md`](../engine/README.md)) |
+| `shelves/` | Bundled effects, scripts, presets, and skins ([`shelves/README.md`](../shelves/README.md)) |
+| `docs/` | Project documentation ([`docs/README.md`](README.md)) |

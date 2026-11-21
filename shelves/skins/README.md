@@ -1,156 +1,137 @@
-# How to make a skin
+# Creating Skins
 
 [日本語](README.ja.md)
 
-This is the first page for anyone who wants to make a skin: one folder (a `theme.xml`, plus pictures or fonts if you like) that changes only how the app looks. Put it in your own `skins/` folder and it appears under View › Skin.
+A **skin** customizes Motolii's visual appearance (colors, typography, corner radii, spacing, SVG icons, and control frames) without changing any engine behavior.
 
-A skin is a theme: the colours, type, shapes and SVG parts of the window. Nothing on the engine side (project, motion, pictures) changes.
-A skin is one folder, placed in the `skins/` folder inside your own folder (on a Mac `~/Library/Application Support/Motolii/`, on Windows `%APPDATA%\Motolii\`; `MOTOLII_OWN` changes it, as for every other shelf). A shelf is one of the tabs on the left of the window, where bundled and user content appears, as in Blender's Asset Shelf. If a name is the same, yours wins. A skin in the older location `~/.motolii/skins/` is still read.
+Each skin is a folder placed under `skins/` in your user folder:
+- **macOS:** `~/Library/Application Support/Motolii/skins/`
+- **Windows:** `%APPDATA%\Motolii\skins\`
+- **Override:** `$MOTOLII_OWN/skins/` (legacy `~/.motolii/skins/` is also still loaded)
 
-The samples in this folder (they appear under View › Skin as they are):
+User skins override bundled skins of the same name.
 
-| Skin | Look |
+## Bundled examples
+
+These skins ship with Motolii and appear under **View › Skin**:
+
+| Skin | Style |
 |---|---|
-| `labs` | Black text on white, round pills, pale icons. A worked-out sample: every grey step is written and the icon pictures are replaced |
-| `lighttable` | Film on a glowing light table. Milky ground, black bands, grease-pencil orange only where you touch |
-| `paper` | The shortest sample: only three colours and square corners |
-| `poster` | A Swiss geometric poster. Flat red, yellow, blue, green and pink, heavy grotesque type |
-| `sheet` | A ground of one sheet of paper and ink lines. Red only for where you are now (mode, key) |
-| `streets` | Black boxes, white text, money green, square corners. The Render button and the cards have frames of their own (`parts/frame.*.svg`) |
+| `labs` | Black text on white, pill shapes, subtle icons. Overrides every grey ramp step and replaces SVG icons |
+| `lighttable` | Film on a backlit light table: milky background, black bars, grease-pencil orange accents |
+| `paper` | Minimal example using only 3 colors and square corners |
+| `poster` | Swiss geometric poster: flat primary accents and bold grotesque typography |
+| `sheet` | Paper ground with ink borders; red reserved for active state |
+| `streets` | High-contrast dark boxes, green accents, square corners, custom SVG frames (`parts/frame.*.svg`) |
 
+## Folder layout
+
+```text
+<user-folder>/skins/my_skin/
+  theme.xml      # Colors, dimensions, and fonts (required; sufficient on its own)
+  parts/*.svg    # Custom SVG icons and frames (optional)
+  *.otf / *.ttf  # Bundled font files (optional)
+  preview.png    # Preview screenshot (optional)
 ```
-<your folder>/skins/my_skin/
-  theme.xml      <- colours, shapes, fonts (this alone is a skin)
-  parts/*.svg    <- icon pictures (optional)
-  *.otf / *.ttf  <- font files (optional)
-  preview.png    <- a screenshot of the app wearing the skin (optional)
-```
 
-## 1. The shortest skin
+## 1. Minimal skin
 
-Three colours change the whole app. The grey steps (ground, card, line, quiet text and so on) are all made from `Background` and `Foreground`, and a light ground gives a light skin.
+Just three colors are enough to theme the entire UI. All intermediate grey shades (backgrounds, cards, borders, secondary text, etc.) are interpolated automatically between `Background` and `Foreground`. Using a light `Background` automatically produces a light theme.
 
 ```xml
 <Motolii>
-	<Theme>
-		<Background Value="#f1ead9"/>
-		<Foreground Value="#2b2118"/>
-		<ChosenDefault Value="#e0452b"/>
-		<Corner Value="0"/>
-		<FontSans Value="Georgia"/>
-	</Theme>
+  <Theme>
+    <Background Value="#f1ead9"/>
+    <Foreground Value="#2b2118"/>
+    <ChosenDefault Value="#e0452b"/>
+    <Corner Value="0"/>
+    <FontSans Value="Georgia"/>
+  </Theme>
 </Motolii>
 ```
 
-This is the sample [paper](./paper/theme.xml). For a worked-out sample see [labs](./labs/theme.xml) (every grey step is written and the icon pictures are replaced).
+See [paper/theme.xml](./paper/theme.xml) for this minimal example, or [labs/theme.xml](./labs/theme.xml) for a full override with custom grey steps and SVG icons.
 
-## 2. Wear it, fix it, look at it
+## 2. Applying & live-reloading
 
-- **Wear it**: put the folder in `skins/` in your own folder and choose it from the app's menu **View › Skin**. **Show Skins Folder** opens that folder. **Default** goes back to the app's usual look.
-- **Fix it**: save `theme.xml` while wearing it and the app rereads it at once.
-- A name you leave out keeps the app's usual value. All the names are in [ROLES.md](ROLES.md). [labs](./labs/theme.xml) is a sample that writes every grey step.
+- **Apply:** Put the folder in your `skins/` directory and select it from **View › Skin** (use **Show Skins Folder** to open the directory, or **Default** to revert).
+- **Live reload:** Saving `theme.xml` while the skin is active reloads the UI immediately.
+- Omitted keys fall back to Motolii's defaults. See [ROLES.md](ROLES.md) for the complete list of keys.
 
-## 3. Colours
+## 3. Colors
 
-Write `<Name Value="#rrggbb"/>` (with transparency, `#rrggbbaa`). All the names are in [ROLES.md](ROLES.md) (keep them the same as the names the app reads).
+Colors use `#rrggbb` or `#rrggbbaa` (with alpha). See [ROLES.md](ROLES.md) for all role names.
 
-- **Background / Foreground**: the colour of a panel's ground and the colour of text. The colours you write become the ground and the text as they are, and the other grey steps (gaps, cards, fields, lines, quiet text and so on) are made between these two. A light ground gives a light skin (`Shade` is not needed).
-- **Grey00 to Grey100**: to decide the grey steps one by one (only the steps you write are overridden). Which step is where in the app is in the table of [ROLES.md](ROLES.md). [labs](./labs/theme.xml) is an example that writes the steps one by one.
-- **ChosenDefault**: the accent (what is selected, what is pressed, the fill of Render). The text on it is **ControlOnForeground**.
-- **Clip1 to Clip7**: the colours of layer kinds (1 shape, 2 text, 3 image or video, 4 camera, 5 group, 6 particles, 7 audio). They are used for the timeline's bars and for the cards and marks of that kind. **Keyframe**: the mark of a keyframe.
-- **Tone…**: the colour of each kind of card in the inspector (layer, blend, place, text animation, time, layout).
+- **`Background` / `Foreground`:** Base surface and primary text colors. All intermediate grey tokens are derived between them automatically.
+- **`Grey00`–`Grey100`:** Optional per-step overrides for fine-grained contrast control (see [labs/theme.xml](./labs/theme.xml)).
+- **`ChosenDefault` / `ControlOnForeground`:** Accent color (selections, active controls, Render button) and the text/icon color rendered on top of it.
+- **`Clip1`–`Clip7` & `Keyframe`:** Layer type colors (`1` shape, `2` text, `3` image/video, `4` camera, `5` group, `6` particles, `7` audio) and keyframe markers.
+- **`Tone…`:** Inspector card category tints.
 
-## 4. Shapes (numbers)
+## 4. Dimensions & scale
 
-Each one is "how many times the usual". 1 is the usual size.
+All numeric factors are multipliers relative to the default (`1.0`):
 
-| Name | What changes | Range that takes effect | Example |
+| Key | Controls | Valid range | Example |
 |---|---|---|---|
-| `Corner` | How round corners are | 0 to 10 | 0 is square, 3.5 is a round pill |
-| `Spacing` | Margins and gaps | 0 to 2 | 1.25 is roomy |
-| `Size` | The size of every part of the app (rows, bands, columns, cards, icons, figures) | 0.85 to 1.5 | 1.15 is larger |
-| `TextScale` | The size of text | 0.85 to 1.3 | 1.08 |
+| `Corner` | Corner radius multiplier | `0`–`10` | `0` (square), `3.5` (pill) |
+| `Spacing` | Padding and gaps | `0`–`2` | `1.25` (spacious) |
+| `Size` | Overall UI control scale (rows, bars, cards, icons) | `0.85`–`1.5` | `1.15` |
+| `TextScale` | Typography scale | `0.85`–`1.3` | `1.08` |
 
-The app does not break when you write a number outside the range, a word that is not a number (`NaN`, `big`), a colour that cannot be read, or a font or folder that does not exist. A number is pulled to the end of its range, and anything else becomes the usual value. The ranges reach as far as text is not clipped and parts do not overflow.
+Out-of-range numbers are clamped safely; invalid values, malformed colors, or missing fonts/paths fall back cleanly to defaults without crashing.
 
-## 5. Fonts
+## 5. Typography
 
 ```xml
 <FontSans Value="Avenir Next"/>
 <FontMono Value="JetBrains Mono"/>
 ```
 
-For a font already on the Mac, the name is enough. Even a wide font (Monaco and the like) does not clip text; where it does not fit, it is drawn smaller. If it gets too small, raise `Size` a little. For a font that is not installed, put the file in the skin's folder and write where it is.
+System-installed fonts only need their family name. To ship custom fonts with your skin, place the `.ttf`/`.otf` file inside the skin folder and specify `*File`:
 
 ```xml
 <FontSans Value="Inter"/>
 <FontSansFile Value="Inter.ttf"/>
 ```
 
-## 6. Icon pictures (SVG)
+## 6. Custom SVG icons & frames
 
 ```xml
 <Parts Value="parts"/>
 ```
 
-With this, `name.svg` in that folder is drawn in place of the app's icon. All the names are in [PARTS.md](PARTS.md) (the play button is `tp.play.svg`, the select tool is `glyph.select.svg`, and so on).
+Motolii replaces built-in icons with matching `<name>.svg` files inside the `Parts` folder (see [PARTS.md](PARTS.md) for all icon IDs such as `tp.play.svg` and `glyph.select.svg`).
 
-- Draw in a `viewBox="0 0 24 24"` frame.
-- The app repaints the colour with the colour of that place, so only the shape matters (any colour will do).
-- A name you do not have stays the app's usual picture. Replacing just one is fine.
-- The folder may be given relative to theme.xml, as `~/`, or as an absolute path. Keep it relative and the whole folder can be handed out.
+- Author icons on a `viewBox="0 0 24 24"` canvas.
+- Icons are recolored dynamically by the UI, so stroke/fill color inside the SVG does not matter.
+- Missing icons fall back to Motolii's defaults (you can override as few as one icon).
+- Use paths relative to `theme.xml` so the skin remains portable.
 
-### Frames: change the shape of a part
+### 9-slice control frames
 
-Put `parts/frame.render.svg` (the Render button) or `parts/frame.card.svg` (a card of the inspector) and the shape of that part changes entirely. The four corners are kept, the sides are stretched, and it fits a part of any size. The colours stay as drawn. How to write one is in "Frames" of [PARTS.md](PARTS.md).
+Adding `parts/frame.render.svg` (Render button) or `parts/frame.card.svg` (Inspector card) replaces the control's frame geometry using 9-slice scaling (corners stay fixed, edges stretch, SVG colors are preserved). See the "Frames" section of [PARTS.md](PARTS.md).
 
-## 6b. Forms: change how a part is put together (headless UI)
+## 7. Custom Forms (headless UI, Dart)
 
-Colours, numbers, icons and frames only change appearance. A form goes further: it changes what shape a button is, how choices line up and how a card is built. It is split the way React Aria and Radix split "headless UI":
+Colors, metrics, icons, and frames customize appearance via XML alone. To change the structure of controls themselves (button layout, toggle styling, card chrome), Motolii exposes a headless **Forms** layer built on [naked_ui](https://pub.dev/packages/naked_ui):
 
-- **What the app passes in**: the words of a part, its current value and what a press does (`ActionSpec`, `ChoiceSpec`, `SwitchSpec`, `CardSpec` and others in `lib/widgets/forms/forms.dart`)
-- **What a hand does**: [naked_ui](https://pub.dev/packages/naked_ui) (press, hover, select, toggle, and screen-reader support)
-- **What the form writes**: only how these are put together and drawn
+- **App supplies data & callbacks:** `ActionSpec`, `ChoiceSpec`, `SwitchSpec`, `CardSpec` in `lib/widgets/forms/forms.dart`.
+- **`naked_ui` handles interaction & accessibility:** press, hover, focus, selection, and semantics.
+- **A `Forms` subclass builds the visual widget tree** (see `lib/widgets/forms/poster_forms.dart`).
 
-A form is one Dart class (`lib/widgets/forms/poster_forms.dart` is a sample). The three functions every form must write:
+Required overrides: `action` (Render button), `onOff` (toggles), and `card` (Inspector card). Other controls (`segment`, `flag`, `chips`, `track`, `number`, etc.) are optional and fall back to defaults. Register the class in `lib/widgets/forms/forms.dart` and reference it with `<Forms Value="<name>"/>` in `theme.xml`. Note that custom `Forms` require compiling into the app, whereas XML/SVG/font skins are drop-in.
 
-| Form function | Part of the app |
-|---|---|
-| `action` | The Render button |
-| `onOff` | On and off switches (Animate all and others) |
-| `card` | One card of the inspector |
+## 8. Scope & limitations
 
-The others (`segment`, `flag`, `chips`, `track`, `number` and more) are optional and have a usual drawing. They are listed in [HANDOFF.md](../../docs/archive/skins/HANDOFF.md).
+- **Not affected by skins:** Stage viewport content (including pasteboard), dock panel layout, global window zoom (`~/.motolii/window.xml`), and editor behavior.
+- **Text fitting:** Labels shrink or wrap (up to 2 lines) rather than truncating with `…`. If you increase `TextScale`, raise `Size` proportionally so rows and cards have enough vertical room.
+- **No in-app skin editor yet:** Skins are authored directly in `theme.xml`.
 
-To add a form, write a class that extends `Forms` in `lib/widgets/forms/<name>_forms.dart`, add one line to `forms` in `lib/widgets/forms/forms.dart`, and write `<Forms Value="<name>"/>` in the skin's theme.xml.
+## 9. Sharing & LLM prompt
 
-**To try it at once**: open the app with `app/tool/live.sh`, and the open app redraws the moment you save the form file (its state stays as it is).
+To share a skin, zip its folder; recipients extract it into their `skins/` folder and enable it via **View › Skin**.
 
-A form is compiled into the app, so a skin that brings one cannot be worn by just dropping it in place (colours, numbers, icons and frames can).
+Example prompt for generating a skin with an AI coding agent:
 
-## 7. What a skin does not change
-
-- **The inside of the preview**: including the dark area outside its frame, it is the work's own picture.
-- **Layout**: where panels sit and how big they are is each person's choice, in the dock.
-- **The scale of the whole app**: this is the viewer's preference. Scrub "100%" in the top bar in steps of 1% (it is kept in `~/.motolii/window.xml`).
-- **How things move**: a skin is only the look.
-
-## 8. Handing it out
-
-Zip the folder as it is. Whoever receives it puts it in `skins/` in their own folder and chooses it in View › Skin.
-
-## 9. Asking an LLM
-
-A request you can hand over as it is:
-
-> Read `shelves/skins/README.md` and `shelves/skins/ROLES.md`, then write a skin of "(the look you want)" to `~/Library/Application Support/Motolii/skins/<name>/theme.xml`. Open the app with `app/tool/live.sh`, look, fix whatever bothers you, and look again. Repeat until no text is unreadable and no accent colour is lost.
-
-## Text is never clipped
-
-When text becomes wider than its box, the app does not cut it with "…". It draws the text smaller until it fits (a long name wraps to two lines). Even with a large `Size`, `TextScale` or `Spacing`, or a wide font, words are not split or lost.
-The pass mark is no clipping, no overflow, and no tab disappearing.
-
-## What is not possible yet
-
-- There is no tool in the app to pick colours and make a skin. You write theme.xml.
-- Making text larger (`TextScale`) does not change the height of rows or cards; only `Size` does. If you make text larger, raise `Size` by about the same amount, and less text has to be shrunk to fit.
+> Read `shelves/skins/README.md` and `shelves/skins/ROLES.md`, then create a skin matching "<desired look>" at `~/Library/Application Support/Motolii/skins/<name>/theme.xml`. Launch the app with `app/tool/live.sh`, inspect the UI, and iterate until all text is legible and accent colors have clear contrast.

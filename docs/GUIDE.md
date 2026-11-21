@@ -47,7 +47,7 @@
 | **Fonts** | フォント一覧。テキストレイヤーのフォントを選ぶ |
 | **Colors** | カラーパレット。色を保存・整理できる。選んだ色は Inspector の Fill / Stroke に使われる |
 | **Create** | レシピ（テンプレート）と式（エクスプレッション）。レシピはレイヤーと値の一式を作る。式はアニメーションの動きを定義する |
-| **Looks** | ルック（見た目のプリセット）の棚。（現在は骨格のみで未実装） |
+| **Looks** | レイヤーのエフェクトと値を保存したプリセット（ルック）の棚 |
 
 ### メインエリア
 
@@ -361,15 +361,18 @@ View > Skin から見た目を変えられる。`shelves/skins/` のスキンと
 
 ### 自分のファイルを追加する
 
-`~/Library/Application Support/Motolii/` の中に自分のファイルを置ける。
+`~/Library/Application Support/Motolii/`（Windows は `%APPDATA%\Motolii\`）の中に自分のファイルを配置すると、再起動なしで各棚に反映されます。
 
 | フォルダ | 中身 |
 |---|---|
-| `effects/` | エフェクト。Effects 棚の Mine フィルターに出る |
-| `expressions/` | 式。Create 棚に出る |
-| `ease/` | イージングプリセット。Ease 棚に出る |
-| `skins/` | スキン。View > Skin に出る |
-| `create/` | レシピ。Create 棚に出る |
+| `effects/` | ISF（`.fs`）・WGSL（`.wgsl`）エフェクト。Effects 棚の Mine フィルターに表示 |
+| `ae_plugins/` | ネイティブ After Effects プラグイン（`.plugin` / `.aex`、シンボリックリンク可）。Effects 棚に表示 |
+| `aviutl_scripts/` | AviUtl2 スクリプトパッケージ（フォルダごと）。Effects 棚に表示 |
+| `expressions/` | エクスプレッション（`.js` / `.css`）。Create 棚に表示 |
+| `relations/` | 複数レイヤー連動リレーション（`.js`）。Create 棚に表示 |
+| `ease/` | イージングプリセット（`.way`）。Ease 棚に表示 |
+| `skins/` | スキンフォルダ。View > Skin に表示 |
+| `create/` | レシピ・p5.js スケッチ。Create 棚に表示 |
 
 ### キーボードショートカット
 

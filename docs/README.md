@@ -1,19 +1,19 @@
-# Documents
+# Documentation
 
-The entrance to the repository is the [README](../README.md). The code's own entrances are [`app/README.md`](../app/README.md) and [`engine/README.md`](../engine/README.md). Where to put a file you found is in [`shelves/README.md`](../shelves/README.md).
+Start with the repository [README](../README.md) for an overview and build instructions. Code entry points are documented in [`app/README.md`](../app/README.md) and [`engine/README.md`](../engine/README.md); see [`shelves/README.md`](../shelves/README.md) for placing custom effects, scripts, and plugins.
 
-| Document | For | What it is |
+| Document | Audience | Summary |
 |---|---|---|
-| [`design/effect_licences.md`](design/effect_licences.md) | **Anyone bundling or using effects** | How Motolii handles credit and attribution for bundled effects |
-| [`TABS.md`](TABS.md) ([日本語](TABS.ja.md)) | Anyone looking at the app | Every tab and what you can do in it, with pictures |
-| [`GUIDE.md`](GUIDE.md) | Anyone using the app | How to use Motolii: from opening to exporting, every panel and operation |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Anyone changing the code | The whole design: how the app, the engine, drawing and video connect. Read it first |
-| [`TESTING.md`](TESTING.md) | Anyone changing the code | How to run each kind of test, what CI runs, how to add a test |
-| [`app/BRIDGE.md`](app/BRIDGE.md) | People changing the app (Flutter) | The contract between the app and the engine |
-| [`app/GESTURES.md`](app/GESTURES.md) | People changing the app | What a press, a drag, a wheel and each key mean on every control. Read it before making a panel |
-| [`design/uat_scenarios.md`](design/uat_scenarios.md) | Anyone testing the product | What a user does and what they should see, numbered |
-| [`design/uat_order.md`](design/uat_order.md) | Anyone testing the product | The UAT scenarios grouped by what to fix and in what order |
-| [`design/renamed_words.md`](design/renamed_words.md) | Anyone reading old code or commits | Names that changed and what they became |
-| [`archive/`](archive/) | — | Planning notes and older docs, kept for history |
+| [`TABS.md`](TABS.md) ([日本語](TABS.ja.md)) | Users | Visual overview of every tab and panel |
+| [`GUIDE.md`](GUIDE.md) | Users (Japanese) | Complete workflow guide from creating a project to exporting |
+| [`design/effect_licences.md`](design/effect_licences.md) | Effect authors & contributors | Attribution model, export credit files, and bundling boundaries |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Developers | End-to-end architecture across Flutter, C++ engine, WebGPU, and shelves |
+| [`TESTING.md`](TESTING.md) | Developers | Test suites (C++, Flutter, golden, mutation) and CI workflow |
+| [`app/BRIDGE.md`](app/BRIDGE.md) | Flutter developers | FFI contract between the Flutter UI and C++ engine |
+| [`app/GESTURES.md`](app/GESTURES.md) | Flutter developers | Pointer, drag, scroll, and keyboard interaction specs |
+| [`design/uat_scenarios.md`](design/uat_scenarios.md) | QA / testers | Numbered end-to-end user acceptance test scenarios |
+| [`design/uat_order.md`](design/uat_order.md) | QA / testers | Prioritized UAT execution and fix order |
+| [`design/renamed_words.md`](design/renamed_words.md) | Developers | Terminology glossary for legacy symbol and file renames |
+| [`archive/`](archive/) | Reference | Historical planning notes and superseded docs |
 
-How to contribute: [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md).
+For contribution guidelines, see [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md).

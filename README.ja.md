@@ -4,61 +4,61 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**離れていた表現の、交差点。**
+**クリエイティブコーディングとモーショングラフィックスの交差点。**
 
-Shadertoy のシェーダーが曲のビートに反応する。After Effects の式と CSS アニメーションが同じテキストの上で動く。p5.js のスケッチが Lottie の上に重なる。ネットのコードを貼れば、そのまま動く。
+Shadertoy のシェーダーを音楽のビートに反応させる。After Effects のエクスプレッションと CSS `@keyframes` を同じテキストレイヤーに重ねる。p5.js のスケッチを Lottie アニメーションの背後に合成する。Web 上で見つけたコードを貼るだけで、そのまま映像として動きます。
 
-After Effects の式も、Shadertoy も、Cavalry も、p5.js も、CSS も、Lottie も。貼るだけで動く、オープンソースの動画編集ソフト。[全部で 20 以上](#何が動く)。
+Motolii は After Effects のプラグインやエクスプレッション、Shadertoy、Cavalry、p5.js、CSS、Lottie、AviUtl2 スクリプトなど、[20 種類以上の形式](#対応フォーマット)に対応するオープンソースの動画編集ソフトです。
 
-![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
+![Motolii の画面：左に素材と棚、中央に Stage プレビュー、下に Timeline、右に Inspector](docs/pictures/window.jpg)
 
-- **GPU ネイティブ。** 式は GPU シェーダーにコンパイルされる。数千コピーが 60fps で動く。
-- **エフェクトはただのファイル。** `.wgsl`、`.fs`、`.js` — 開いて、仕組みを読んで、変えられる。好きな AI エージェントと一緒に書くこともできる（[ACP](https://github.com/anthropics/agent-client-protocol) 対応）。ブラックボックスじゃない。
-- **1 レイヤーに複数言語。** CSS アニメーション、After Effects の式、シェーダーエフェクトが同じテキストの上で、重ねた順に動く。
+- **GPU ネイティブ。** シェーダーやエクスプレッションが WebGPU 上で動作し、数千コピーでも 60 fps を維持できます。
+- **エフェクトはプレーンファイル。** `.wgsl`・`.fs`・`.js` はローカルファイルとしてそのまま開いて編集でき、[ACP](https://github.com/anthropics/agent-client-protocol)（Zed や JetBrains と同じプロトコル）経由で AI エージェントと一緒に書くこともできます。
+- **1 レイヤーに複数言語を混在。** CSS アニメーション、After Effects エクスプレッション、GPU シェーダー、ネイティブプラグインを同じレイヤー上に好きな順序で重ねられます。
 
-## 画面とタブ
+## 画面構成と主な機能
 
-タブごとの説明と画像：[タブごとの紹介](docs/TABS.ja.md)
+すべてのタブの解説とスクリーンショットは [タブ・パネル一覧](docs/TABS.ja.md) を参照してください。
 
 <p>
 <img src="docs/pictures/tabs/effects_map.jpg" width="49%">
 <img src="docs/pictures/tabs/fonts_map.jpg" width="49%">
 </p>
 
-- **マップ表示。** エフェクトとフォントの棚は、見た目の近いもの同士を t-SNE で並べた地図に切り替えられる。1,300 以上のエフェクトを名前を知らずに探せる。
-- **値は行ではなくブロック。** Inspector の値はタイル状に並ぶ。パネルを広げると列が増えるので、値の多いエフェクトでもカードは短い。同梱エフェクトは値ごとに効き具合を 0〜10 で調べてあり、効く値ほど浅黄・撫子・青磁で色が付く。
-- **乗せて試す。** エフェクトのタイルにマウスを乗せると、Stage の絵に仮にかかる。イージングのプリセットは乗せると動く。
-- **Code タブと Code ワークスペース。** レイヤーのコードをセルで並べて書く。AE の式は補完が効き、セルの下に再生位置での値かエラーが出る。上の CODE で、コード・Stage・Timeline が一度に見える並びになる。
-- **Agent タブ。** ACP 対応のエージェント（Claude Agent・Codex・Gemini CLI・Cursor など）に頼める。レイヤーのカード・値・コードが渡る。新しい物は新しいカードとして足され、元のコードは頼まない限り変わらない。
-- **リレーション。** `Follow`・`Gravity`・`flock`・`spring`・`collide` など。複数のレイヤーをまとめて動かす。`shelves/relations/` の短い JavaScript。
-- **BPM。** Timeline でテンポをタップすると拍のグリッドが出て、編集が拍にスナップする。
-- **イージングを重ねる。** エフェクトと同じように重なる。プリセットは 1 行の式のファイル。
-- **色。** Mac のスポイト、写真からのパレット、選んだ文字だけの色。
-- **差し替えられる。** スキンはフォルダ、キー割り当ては VS Code と同じ `keybindings.json`、パネルは Dart 数行で足せる。使ったエフェクトの作者とライセンスは書き出しのログに残る。
+- **マップ表示。** Effects タブや Fonts タブを t-SNE による 2D 類似度マップに切り替えられます。1,300 以上のエフェクトを名前ではなく見た目の印象から探せます。
+- **タイル型 Inspector。** パラメータを行ではなくコンパクトなブロックで配置し、パネル幅に応じて自動で列数が増えます。同梱エフェクトは視覚的な効き具合を 0〜10 で事前評価し、影響の大きいパラメータを浅黄・撫子・青磁で色分けしています。
+- **ホバープレビュー。** エフェクトタイルにカーソルを乗せるだけで Stage 上に仮適用して結果を確認できます。イージングプリセットもホバーで動きを再生できます。
+- **Code タブ & Code ワークスペース。** レイヤーに適用されたコードをノートブック形式のセルで編集できます。AE エクスプレッションの補完、再生ヘッド位置での評価結果、エラー行表示に対応。トップバーの **CODE** で Code・Stage・Timeline を並べて作業できます。
+- **Agent タブ。** Claude Agent・Codex・Gemini CLI・Cursor など ACP 対応の AI エージェントをそのまま接続できます。選択レイヤーのカード・パラメータ値・コードがコンテキストとして渡され、新規提案は新しいカードとして追加されます（既存コードは明示的に依頼したときのみ編集）。
+- **リレーション。** `Follow`・`Gravity`・`flock`・`spring`・`collide` など、複数レイヤーを連動させる動きを `shelves/relations/` の短い JavaScript で定義できます。
+- **BPM グリッド。** Timeline でテンポをタップするだけで拍グリッドが表示され、ビートにスナップしながら編集できます。
+- **スタック可能なイージング。** イージングをエフェクトのように重ねられます。プリセットは 1 行の数式ファイル（`.way`）です。
+- **カラーツール。** macOS 標準スポイト、画像からのパレット自動抽出、テキストの選択文字単位での着色に対応。
+- **高いカスタマイズ性と透明性。** フォルダ単位のスキン、VS Code 形式の `~/.motolii/keybindings.json`、数行の Dart で追加できるパネル。書き出し時には使用エフェクトの作者・ライセンス一覧のクレジットファイルを自動出力します。
 
-## いまの状態
+## 現在の開発状況
 
-現在は開発途中で、確かめたのは Apple Silicon の Mac（M4、macOS 15.5）だけで、Windows と Linux はまだ試していません。配布用アプリはまだ用意していないため、試す場合はソースコードからビルドする必要があります。
+Motolii は現在開発中で、Apple Silicon Mac（M4、macOS 15.5）でのみ動作確認済みです。Windows / Linux 版は未検証で、配布用アプリバンドルも未公開のため、現時点ではソースコードからビルドして実行する必要があります。
 
-- **動く**：動画・写真・文字・図形・3D モデル・点群・Lottie アニメーションを同じシーンに置く、キーフレームとイージング、自動保存と取り消し、再生（動画の音も鳴る）、MP4 への書き出し。
-- **動く**：ネットのエフェクト。ISF（`.fs`）と WGSL（`.wgsl`）のファイルは、エフェクトのフォルダに置くと、アプリを再起動せずにエフェクト一覧に出ます。p5.js のスケッチと Shadertoy のシェーダーは、貼り付けるとレイヤーになります。対応形式のコードでも、すべてが正しく動作するわけではありません。
-- **一部**：AviUtl2 のスクリプト、Alight Motion の機能。
-- **まだ**：Windows、配布できる `.app`（エンジンが Homebrew の部品を読むので、ビルドした Mac の外では動かない）、MIDI の音。
+- **動作する機能：** 動画・画像・テキスト・ベクターシェイプ・3D モデル（`.glb`/`.gltf`）・点群・Lottie アニメーションの混在編集、キーフレームとスタック型イージング、自動保存と Undo/Redo、音声付き再生、MP4 / MOV / GIF / 連番画像書き出し。
+- **動作する外部形式：** `effects/` に置いた ISF（`.fs`）/ WGSL（`.wgsl`）や、`ae_plugins/` に置いた After Effects プラグインは再起動なしで一覧に反映されます。Shadertoy・p5.js・CSS・TSL などのコードは `⌘V` で貼り付けるだけでレイヤー／エフェクト化されます（※すべての外部コード・プラグインの動作を保証するものではありません）。
+- **一部対応：** AviUtl2 スクリプト、Alight Motion 互換機能。
+- **未対応・今後の課題：** Windows / Linux 実機検証、単体配布可能な `.app` バンドル（現在は Homebrew ライブラリへ動的リンク）、MIDI 音声再生。
 
-形式ごとの動作状況と数、知っている不具合は[仕様](docs/archive/using/specifications.ja.md)にあります。
+形式ごとの詳細な対応状況と既知の制限は [仕様書（アーカイブ）](docs/archive/using/specifications.ja.md) を参照してください。
 
-## ビルドして動かす
+## ビルドと実行
 
-要る物：
+### 必要な環境
 
-- Apple Silicon の Mac（確かめたのは M4、macOS 15.5）。
-- App Store の Xcode（Command Line Tools だけでは画面をビルドできません）。入れたら一度開いて追加の部品を入れ、`sudo xcodebuild -license accept`。
-- Homebrew：[brew.sh](https://brew.sh/ja/) の 1 行。
-- Flutter 3.50.0（stable）を `PATH` に：[flutter.dev/get-started](https://docs.flutter.dev/get-started/install)。
-- Python 3：macOS に付いている物（Xcode を入れると入る）でよい。
-- 空き容量：Xcode と Flutter のほかに約 10 GB。
+- Apple Silicon 搭載 Mac（検証環境：M4、macOS 15.5）
+- App Store 版 Xcode（Command Line Tools のみではビルド不可。インストール後に一度起動して追加コンポーネントを導入し、`sudo xcodebuild -license accept` を実行）
+- [Homebrew](https://brew.sh/ja/)
+- [Flutter](https://docs.flutter.dev/get-started/install) 3.50.0（stable、`PATH` に追加済み）
+- Python 3（macOS / Xcode 付属のもので動作）
+- 約 10 GB の空きディスク容量（Xcode・Flutter 除く）
 
-そのあと、1 行ずつ：
+### 手順
 
 ```bash
 git clone https://github.com/oshikaidesu/motolii.git
@@ -68,87 +68,85 @@ engine/build.sh
 app/tool/live.sh
 ```
 
-- `brew bundle` で、`Brewfile` の物（GStreamer・SQLite・ffmpeg・cmake など）が入ります。
-- `engine/build.sh` がエンジンをビルドします。初回は Filament をソースから組みます（M4 で約 5 分）。`engine/out/libmotolii.dylib` ができれば成功です。
-- `app/tool/live.sh` でアプリが開きます。初回はビルドで 1〜3 分止まって見えます。
+- `brew bundle` で `Brewfile` に定義された依存ツール（GStreamer・SQLite・FFmpeg・CMake など）を導入します。
+- `engine/build.sh` でサードパーティ依存の取得と C++ エンジンのビルドを行います。初回は Filament をソースからビルドするため M4 で約 5 分かかり、成功すると `engine/out/libmotolii.dylib` が生成されます。
+- `app/tool/live.sh` で Flutter アプリをビルド・起動します（初回は 1〜3 分程度かかります）。
 
-プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。
+プロジェクトは `~/Movies/Motolii/Untitled.motolii` に自動保存され、書き出した動画も同じフォルダに出力されます。
 
-テストを走らせるには：エンジンは `engine/build.sh test`（CMake の ctest）、アプリは `cd app && flutter test`。詳しくは [Testing](docs/TESTING.md)。
+テストの実行：C++ テストは `engine/build.sh test`（`ctest`）、Flutter テストは `cd app && flutter test`。詳細は [Testing](docs/TESTING.md) を参照してください。
 
-手順の詳しい説明と困った時の直し方は[ガイド](docs/archive/using/guide.ja.md)にあります。
+トラブルシューティングは [ビルドガイド（アーカイブ）](docs/archive/using/guide.ja.md) にまとめています。
 
-## 何が動く
+## 対応フォーマット
 
-コードを貼る（⌘V）かファイルを落とす。言語は自動で判定されます。
+コードの貼り付け（`⌘V`）またはフォルダへの配置で、形式は自動判定されます。
 
-| 世界 | 入れ方 | 動かすエンジン |
+| フォーマット | 追加方法 | 実行ランタイム |
 |---|---|---|
-| **Shadertoy** | ⌘V | ISF → WGSL（glslang + Tint） |
-| **GLSL Sandbox** | ⌘V | 同上 |
-| **twigl** | ⌘V | 同上 |
-| **Bonzomatic** | ⌘V | 同上 |
-| **ISF (.fs)** | `effects/` に置く | glslang → SPIR-V → WGSL |
-| **WGSL (.wgsl)** | `effects/` に置く | そのまま |
-| **p5.js / Processing** | ⌘V | QuickJS-ng |
-| **Paper.js** | ⌘V | QuickJS-ng |
-| **Two.js** | ⌘V | QuickJS-ng |
-| **Canvas 2D** | ⌘V | QuickJS-ng |
-| **Dwitter** | ⌘V | QuickJS-ng |
-| **tixy.land** | ⌘V | QuickJS-ng |
-| **Turtletoy** | ⌘V | QuickJS-ng |
-| **Hydra** | ⌘V | QuickJS-ng → WGSL |
-| **After Effects の式** | ⌘V or 式カード | lottie-web（QuickJS-ng） |
-| **After Effects プラグイン (.plugin, .aex)** | `ae_plugins/` に置く（シンボリックリンク可） | [aexlo](https://github.com/potistudio/aexlo)（隔離ワーカー） |
-| **Cavalry のスクリプト** | 式カード | QuickJS-ng |
-| **CSS @keyframes** | テキストレイヤーで ⌘V | Stylo（Firefox の CSS エンジン） |
-| **アニメーション SVG** | ⌘V or D&D | ThorVG + Stylo |
-| **three.js TSL** | ⌘V | WGSLNodeBuilder（QuickJS-ng） |
-| **AviUtl2 (.anm2, .obj2)** | `aviutl_scripts/` に置く | LuaJIT |
-| **Lottie (.json)** | D&D | ThorVG |
-| **字幕 (ASS/SRT/LRC/VTT)** | D&D | libass（FFmpeg 経由） |
+| **Shadertoy** | 貼り付け（`⌘V`） | ISF → WGSL（glslang + Tint） |
+| **GLSL Sandbox** | 貼り付け（`⌘V`） | 同上 |
+| **twigl** | 貼り付け（`⌘V`） | 同上 |
+| **Bonzomatic** | 貼り付け（`⌘V`） | 同上 |
+| **ISF (`.fs`)** | `effects/` に配置 | glslang → SPIR-V → WGSL |
+| **WGSL (`.wgsl`)** | `effects/` に配置 | WebGPU ネイティブ |
+| **p5.js / Processing** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Paper.js** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Two.js** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Canvas 2D** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Dwitter** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **tixy.land** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Turtletoy** | 貼り付け（`⌘V`） | QuickJS-ng |
+| **Hydra** | 貼り付け（`⌘V`） | QuickJS-ng → WGSL |
+| **After Effects エクスプレッション** | 貼り付け（`⌘V`）または Expression カード | lottie-web（QuickJS-ng） |
+| **After Effects プラグイン (`.plugin`, `.aex`)** | `ae_plugins/` に配置（シンボリックリンク可） | [aexlo](https://github.com/potistudio/aexlo)（隔離ワーカー） |
+| **Cavalry スクリプト** | Expression カード | QuickJS-ng |
+| **CSS `@keyframes`** | テキストレイヤーへ貼り付け（`⌘V`） | Stylo（Firefox CSS エンジン） |
+| **アニメーション SVG** | 貼り付け（`⌘V`）またはドラッグ＆ドロップ | ThorVG + Stylo |
+| **three.js TSL** | 貼り付け（`⌘V`） | WGSLNodeBuilder（QuickJS-ng） |
+| **AviUtl2 (`.anm2`, `.obj2`)** | `aviutl_scripts/` に配置 | LuaJIT |
+| **Lottie (`.json`)** | ドラッグ＆ドロップ | ThorVG |
+| **字幕 (`ASS`/`SRT`/`LRC`/`VTT`)** | ドラッグ＆ドロップ | libass（FFmpeg 経由） |
 
-対応形式のコードでも、すべてが正しく動作するわけではありません。数と詳細は[仕様](docs/archive/using/specifications.ja.md)にあります。
+各ファイルの配置ルールは [`shelves/README.ja.md`](shelves/README.ja.md) を参照してください。
 
-ファイルの種類ごとの置き場所は [`shelves/README.ja.md`](shelves/README.ja.md) にあります。
+### After Effects 互換機能
 
-### After Effects 互換
+After Effects で培った既存資産を、そのまま Motolii に持ち込めます。
 
-After Effects で育てた既存資産を、そのまま Motolii に持ち込めます。
+- **ネイティブプラグイン（`.plugin` / `.aex`）** — 手持ちのサードパーティ製 After Effects プラグイン（Deep Glow、Quick Chromatic Aberration、Zink Tools、Satori など）をユーザーフォルダの `ae_plugins/` に配置またはシンボリックリンクするだけで、パラメータカード・`#ae` / `#cpu`（または `#gpu`）タグ・ライブプレビュー付きで Effects タブに表示されます。[aexlo](https://github.com/potistudio/aexlo) を隔離ワーカープロセスで動かすため、プラグイン側がハング・クラッシュしてもエディタ本体は落ちません。
+- **エクスプレッション** — 独自再実装ではなく、lottie-web の `ExpressionManager` を QuickJS-ng のバイトコードにコンパイルしてそのまま実行しています。`thisComp`・`thisLayer`・`thisProperty`・`sampleImage`・`fromWorld`・`wiggle`・`linear`・`ease`・キーフレーム参照・他レイヤー参照がそのまま動作します。
+- **Lottie（`.json`）** — Bodymovin 書き出しの Lottie を ThorVG で再生し、埋め込みエクスプレッションも JerryScript でランタイム評価します（ベイク不要）。キーフレーム・イージング・パス・親子付け・プリコンポジション・タイムリマップ・ループ・マット・ブレンドモードに加え、`thorvg_z.patch` による 3D レイヤー・カメラにも対応しています。
 
-- **ネイティブプラグイン（`.plugin` / `.aex`）** — 手持ちのサードパーティ製 After Effects プラグイン（Deep Glow、Quick Chromatic Aberration、Zink Tools、Satori など）を自分の `ae_plugins/` フォルダに置くかシンボリックリンクするだけで、パラメータ・`#ae` / `#cpu`（または `#gpu`）タグ・ライブプレビュー付きで Effects タブに並びます。実行には [aexlo](https://github.com/potistudio/aexlo) を使い、隔離されたワーカープロセスで動かすため、プラグイン側がハング・クラッシュしてもエディタ本体は落ちません。
-- **エクスプレッション** — After Effects の式は**そのまま動きます**。再実装ではありません。lottie-web の ExpressionManager をバイトコードにコンパイルして QuickJS-ng で実行しています — Web で式を動かしているのと同じコードです。`thisComp`・`thisLayer`・`thisProperty`・`sampleImage`・`fromWorld`・`wiggle`・`linear`・`ease`・キーフレーム参照・他レイヤー参照が動きます。チュートリアルや掲示板の式をコピペすれば、そのまま動きます。
-- **Lottie（`.json`）** — Bodymovin が書き出す Lottie ファイルは ThorVG が再生します。ThorVG は Lottie に埋まっている式も JerryScript でランタイム評価します — 書き出し時に焼かれた値ではありません。キーフレーム・イージング・パス・親子・プリコンポジション・タイムリマップ・ループ・マット・ブレンドモードは ThorVG が処理します。3D レイヤーとカメラは Motolii 側でパッチ（`thorvg_z.patch`）を当てて対応しています。
+Cavalry スクリプトもそのまま動作します（`cavalry.Point`・`cavalry.PointCloud`・`cavalry.random` を提供、裸の `{ }` 式は自動で `each()` にラップ）。コミュニティ製の配置スクリプト 26 本を `shelves/create/cavalry/` に同梱しています。
 
-Cavalry のスクリプトもそのまま動きます。`cavalry.Point`・`cavalry.PointCloud`・`cavalry.random` を提供し、裸の `{ }` 式は自動で `each()` にラップされます。Cavalry コミュニティの配置スクリプト 26 本が `shelves/create/cavalry/` に入っています。
+**非対応の範囲：** Adobe 独自の組み込みエフェクト、未実装の AEGP ホスト API（コンプカメラ参照やテキストドキュメント操作など）に依存する一部プラグイン、AE 内部音声グラフ依存の音声連動プロパティ。これらは Motolii 独自の GPU シェーダーエフェクトと音声解析機能で補完しています。
 
-**対応していないもの**：Adobe 独自の組み込みエフェクト、未実装の AEGP ホスト API（コンプカメラ参照やテキストドキュメント操作など）に依存する一部プラグイン、および AE 内部の音声グラフに依存する音声連動プロパティ。これらは Motolii 独自の GPU シェーダーエフェクトと音声解析で補っています。
+## ディレクトリ構成
 
-## フォルダの並び
-
-| 場所 | 中身 |
+| ディレクトリ | 内容 |
 |---|---|
-| [`app/`](app/README.md) | Flutter のアプリ。画面は操作だけを受けます |
-| [`engine/`](engine/README.md) | C++ のエンジン。絵を描き、`libmotolii.dylib` になります |
-| [`shelves/`](shelves/README.ja.md) | アプリが動く時に読む、同梱のコミュニティの作品（エフェクト・スクリプト・イージング・スキン） |
-| [`docs/`](docs/README.md) | 文書 |
+| [`app/`](app/README.md) | Flutter 製デスクトップ UI（表示と入力処理を担当） |
+| [`engine/`](engine/README.md) | C++ 製レンダリング＆プロジェクトエンジン（`libmotolii.dylib`） |
+| [`shelves/`](shelves/README.ja.md) | 同梱のコミュニティ製エフェクト・スクリプト・イージング・スキン |
+| [`docs/`](docs/README.md) | 各種ドキュメント |
 
-`app/README.md` と `engine/README.md` は英語です。
+## ドキュメント
 
-## 文書
+- [タブ・パネル一覧](docs/TABS.ja.md) — 全タブの機能紹介（スクリーンショット付き）
+- [使い方ガイド](docs/GUIDE.md) — プロジェクト作成から書き出しまでの操作リファレンス
+- [アーキテクチャ](docs/ARCHITECTURE.md) — アプリ・エンジン・描画・棚の全体設計（英語）
+- [エフェクトのライセンス管理](docs/design/effect_licences.md) — クレジット出力とライセンス境界（英語）
+- [テスト](docs/TESTING.md) — 各テストスイートの実行方法（英語）
+- [ブリッジ仕様](docs/app/BRIDGE.md) — Flutter と C++ エンジン間の FFI 契約（英語）
+- [ジェスチャー仕様](docs/app/GESTURES.md) — 各コントロールの操作仕様（英語）
+- [コントリビューションガイド](.github/CONTRIBUTING.ja.md) — ビルド・設計原則・PR の出し方
+- [アーカイブ](docs/archive/) — 過去の設計メモ・旧ドキュメント
 
-- [タブごとの紹介](docs/TABS.ja.md)：すべてのタブと、そこでできること（画像付き）。
-- [作り](docs/ARCHITECTURE.md)：全体の作り：アプリ・エンジン・描画・動画のつながり（英語）。
-- [テスト](docs/TESTING.md)：テストの種類ごとの回し方（英語）。
-- [ブリッジ](docs/app/BRIDGE.md)：Flutter アプリと C++ エンジンの間の契約（英語）。
-- [ジェスチャー](docs/app/GESTURES.md)：各コントロールでの押し・ドラッグ・ホイール・キーの意味（英語）。
-- [関わり方](.github/CONTRIBUTING.ja.md)：ビルド、決まり、手を付けやすい所。
-- [アーカイブ](docs/archive/)：以前の文書（特長・仕様・ガイド・画面紹介）。
+## コントリビューション
 
-## 開発に加わる
-
-質問・相談は [Discussions](https://github.com/oshikaidesu/motolii/discussions)、不具合は [Issues](https://github.com/oshikaidesu/motolii/issues) へ。日本語・英語のどちらでも。Pull Request も受けます：[`.github/CONTRIBUTING.ja.md`](.github/CONTRIBUTING.ja.md)、行動規範（[`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md)）、脆弱性の知らせ方（[`.github/SECURITY.md`](.github/SECURITY.md)）を見てください。
+質問や相談は [Discussions](https://github.com/oshikaidesu/motolii/discussions)、バグ報告や機能要望は [Issues](https://github.com/oshikaidesu/motolii/issues) へどうぞ（日本語・英語どちらも歓迎）。Pull Request を送る際は [`.github/CONTRIBUTING.ja.md`](.github/CONTRIBUTING.ja.md)、[`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md)、[`SECURITY.md`](.github/SECURITY.md) をご確認ください。
 
 ## ライセンス
 
-Motolii 自身の物は [Apache License 2.0](LICENSE-APACHE) と [MIT](LICENSE-MIT) のどちらでも、使う人が選べます（ダブルライセンス）。送ってもらった貢献も、特に断りが無ければ同じ二つのライセンスで受けます。同梱した他の人の作品は、それぞれのライセンスに従います（[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)）。
+[Apache License 2.0](LICENSE-APACHE) または [MIT](LICENSE-MIT) のデュアルライセンスです（利用者が選択できます）。特段の明記がない限り、Motolii へのコントリビューションも同一のデュアルライセンスで提供されるものとします。同梱されているサードパーティ製アセット・ライブラリはそれぞれのライセンスに従います（[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)）。

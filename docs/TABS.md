@@ -1,35 +1,35 @@
-# The window, tab by tab
+# Tabs & Panels
 
 [日本語](TABS.ja.md)
 
-Every tab of Motolii and what you can do in it. The pictures are shared by every language and carry no words of their own.
+A visual guide to every tab and panel in Motolii. Screenshots are language-neutral and shared across docs.
 
-![The whole window: shelves on the left, Stage in the middle, Timeline below, Inspector on the right](pictures/tabs/window.jpg)
+![Motolii window overview: shelves on the left, Stage in the center, Timeline at the bottom, and Inspector on the right](pictures/tabs/window.jpg)
 
-| Where | Tabs |
+| Area | Tabs |
 |---|---|
-| Left: the shelves | [Media](#media) · [Effects](#effects) · [Fonts](#fonts) · [Colors](#colors) · [Create](#create) · [Looks](#looks) |
-| Middle | [Stage](#stage) · [Camera View](#camera-view) |
+| Left (Shelves) | [Media](#media) · [Effects](#effects) · [Fonts](#fonts) · [Colors](#colors) · [Create](#create) · [Looks](#looks) |
+| Center | [Stage](#stage) · [Camera View](#camera-view) |
 | Bottom | [Timeline](#timeline) · [Code](#code) · [Ease](#ease) |
 | Right | [Inspector](#inspector) · [Agent](#agent) · [Depth](#depth) · [Tool Panel](#tool-panel) ([Blend](#blend), [Align](#align)) |
-| Around them | [Top bar](#top-bar) · [Workspaces](#workspaces) · [Home](#home) |
+| Chrome | [Top bar](#top-bar) · [Workspaces](#workspaces) · [Home](#home) |
 
-Every tab can be dragged to another place or beside another tab. Every shelf has the same frame: a search field, filter chips, and a footer for the item you picked. Hover a tile to play its preview. When nothing matches a search, the five nearest items are shown.
+Any tab can be dragged to dock elsewhere or alongside another tab. Every shelf shares the same structure: search bar, filter chips, and an action footer for the selected item. Hovering a tile plays its animated preview; when a search has no exact match, the five closest matches are suggested.
 
 ---
 
-## The shelves
+## Shelves
 
 ### Media
 
 <img src="pictures/tabs/media.jpg" width="240" align="right">
 
-A file browser for the project folder and the whole disk.
+File browser for both your project directory and the rest of the filesystem.
 
-- A folder tree beside or above the contents; thumbnails or a list; breadcrumbs.
-- **Place**, **Replace** or **Fill shape** from the footer. Several picked files are placed in order.
-- Filter chips by kind: folders, 3D, audio, fonts, …
-- Reads XDTS timesheets (CLIP STUDIO, OpenToonz) and places each drawing level on its own layer.
+- Folder tree beside or above the file list, thumbnail or list views, and breadcrumbs.
+- Footer actions: **Place**, **Replace**, or **Fill shape**. Multi-selected files are placed in order.
+- Filter chips by asset type: folders, 3D models, audio, fonts, etc.
+- Imports XDTS exposure sheets (CLIP STUDIO PAINT, OpenToonz) and places each drawing cel level on its own layer.
 
 <br clear="right">
 
@@ -37,20 +37,20 @@ A file browser for the project folder and the whole disk.
 
 <img src="pictures/tabs/effects.jpg" width="240" align="right">
 
-Every effect the engine can apply: over 1,300 ship with Motolii, and an `.fs` or `.wgsl` file dropped in your `effects/` folder — or a native After Effects plugin (`.plugin` / `.aex`) placed or symlinked in `ae_plugins/` — appears here without a restart.
+Every effect supported by the engine: 1,300+ bundled effects, plus any `.fs` / `.wgsl` shader placed in `effects/` or native After Effects plugin (`.plugin` / `.aex`) placed or symlinked in `ae_plugins/` — detected automatically without restarting.
 
-- Hovering a whole-picture effect tries it on the Stage before you apply it.
-- **Places:** All, Recent, Favorites, In This Video, Mine, your decks, and packs.
-- **Decks:** drag tiles onto a deck to group them; a deck shows a 2×2 cover, and can be shared as a deck code you paste.
-- Tags such as `#time`, `#generator`, `#multipass`, `#feedback`, `#sound`, `#ae`, `#cpu` and `#gpu` filter the shelf.
-- A badge says when an effect needs a sound, a video, two layers or something not supported yet.
-- Double-click or drag a tile onto the Stage to apply it.
+- **Hover preview:** Hovering a whole-picture effect previews it live on the Stage before applying.
+- **Places:** All, Recent, Favorites, In This Video, Mine, custom decks, and effect packs.
+- **Decks:** Drag tiles onto a deck to organize collections; decks display a 2×2 cover and can be shared as pasteable deck codes.
+- **Tag filters:** Filter by `#time`, `#generator`, `#multipass`, `#feedback`, `#sound`, `#ae`, `#cpu`, `#gpu`, and custom tags.
+- **Requirement badges:** Indicates when an effect requires audio, video, a second layer, or an unsupported feature.
+- Double-click a tile or drag it onto the Stage to apply.
 
 <br clear="right">
 
-#### The map
+#### Visual Map
 
-Switch the shelf from the grid to the **map** and effects that look alike sit near each other. Each tile's picture becomes a vector (from CLIP when its model is installed, otherwise from its colours), and the engine lays them out with t-SNE.
+Switch the Effects shelf from Grid to **Map** to browse effects arranged by visual similarity. Each preview thumbnail is embedded as a vector (using CLIP if installed, or color features otherwise) and laid out via t-SNE.
 
 <p>
 <img src="pictures/tabs/effects_wide.jpg" width="49%">
@@ -61,13 +61,13 @@ Switch the shelf from the grid to the **map** and effects that look alike sit ne
 
 <img src="pictures/tabs/fonts.jpg" width="240" align="right">
 
-Each font is shown in its own face.
+Browse installed fonts rendered in their own typefaces.
 
-- **Title** and **Body** at the top: the project's two theme fonts. With a text layer selected, a role applies its font; **+** adds a new text in it.
-- Clicking a font sets it on the selected text layer, or makes a new text layer.
-- Chips: Used, Recent, Starred, and the scripts and styles the font covers (sans, serif, bold, greek, arabic, japanese, …).
-- A badge marks fonts with no Latin letters.
-- Grid, list or **map**. The map places similar fonts together (with FontCLIP when its model is installed, otherwise from the rendered letters).
+- **Title** and **Body** theme fonts at the top: click a role to apply it to the selected text layer, or click **+** to create a new text layer in that font.
+- Clicking any font applies it to the selected text layer, or creates a new text layer if none is selected.
+- Filter chips for Used, Recent, Starred, styles, and scripts (`sans`, `serif`, `bold`, `greek`, `arabic`, `japanese`, etc.).
+- Badge indicator for fonts without Latin glyphs.
+- Grid, List, and **Map** views (the map clusters similar typefaces using FontCLIP when available, or rendered glyph features otherwise).
 
 <br clear="right">
 
@@ -80,14 +80,14 @@ Each font is shown in its own face.
 
 <img src="pictures/tabs/colors.jpg" width="240" align="right">
 
-Picking colors, palettes and gradients for the selected layer's fill or stroke.
+Color picker, palettes, and gradients for the selected layer's fill and stroke.
 
-- A hue ring around a saturation and brightness square, and a hex field.
-- **Sample**: the Mac's own eyedropper picks a color from anywhere on the screen.
-- **Photo**: a palette taken from the image picked in Media.
-- Palettes as a grid or a **bento** of shapes, thrown again on request.
-- Solid, Gradient (stops, with the way colors mix between them) or None.
-- On a text layer, colors only the letters you selected.
+- Hue ring with saturation/brightness square and hex input.
+- **Sample:** Native macOS eyedropper to pick colors from anywhere on screen.
+- **Photo:** Extract a color palette from the image selected in Media.
+- View palettes as a grid or a regeneratable **Bento** layout.
+- Solid, Gradient (with color stops and interpolation modes), or None.
+- On text layers, applies colors to the selected character range only.
 
 <br clear="right">
 
@@ -95,13 +95,13 @@ Picking colors, palettes and gradients for the selected layer's fill or stroke.
 
 <img src="pictures/tabs/create.jpg" width="240" align="right">
 
-Tiles that make something new.
+Creation tiles for adding layers, presets, and code snippets.
 
-- **Layers:** Text, Camera, Adjustment. **Shapes.** **Solids:** Ring, Gem, Cube, Floor. **Lights:** Sun, Point, Spot.
-- **Materials:** Lit, Cloth, Glass, Lacquer, Bubble, …, each previewed on a ball.
-- **Recipes:** a layer and its values in one go.
-- **Expressions:** an expression tile applied to several selected layers makes a *relation* between them.
-- Code you pasted is kept here as a tile.
+- **Layers:** Text, Camera, Adjustment. **Shapes.** **3D Solids:** Ring, Gem, Cube, Floor. **Lights:** Sun, Point, Spot.
+- **Materials:** Lit, Cloth, Glass, Lacquer, Bubble, etc., previewed on spheres.
+- **Recipes:** Multi-layer templates created with preconfigured values in one click.
+- **Expressions:** Applying an expression tile to multiple selected layers creates a **relation** between them.
+- Pasted code snippets are saved here as reusable tiles.
 
 <br clear="right">
 
@@ -109,121 +109,121 @@ Tiles that make something new.
 
 <img src="pictures/tabs/looks.jpg" width="240" align="right">
 
-Looks saved from a layer: its effects and values together, applied to another layer by a double-click. Gold, Brass, Neon Edges, Long Shadow and others ship with Motolii, and a look you save appears here.
+Reusable presets combining a layer's effects and parameter values. Double-click to apply to another layer. Ships with built-in looks (Gold, Brass, Neon Edges, Long Shadow, etc.) alongside your saved looks.
 
 <br clear="right">
 
 ---
 
-## The middle
+## Center
 
 ### Stage
 
 ![Stage](pictures/tabs/stage.jpg)
 
-The current frame, edited directly.
+Direct viewport manipulation for the current frame.
 
-- **Tools:** Select (V), Move (M), Rectangle (R), Ellipse (E), Pen (P), Text (T), Brush (B), Camera (C). Dragging on empty space draws a lasso selection.
-- **Brush** strokes respond to pen pressure, as Brush, Pen, Fill or Eraser.
-- Fit / 50% / 100%, Safe areas, Grid, and **Snapshot** (hold to compare with the frame you kept).
-- Rulers with guides pulled out of them; snapping to edges and guides.
-- The selected layer's motion path, a navigator, and a camera gizmo to orbit, dolly and resize the frame.
-- An options strip under the picture: fill, stroke, corner radius, font and position of the selected layer.
+- **Tools:** Select (`V`), Move (`M`), Rectangle (`R`), Ellipse (`E`), Pen (`P`), Text (`T`), Brush (`B`), Camera (`C`). Dragging empty space starts a marquee selection.
+- **Brush** supports pen pressure with Brush, Pen, Fill, and Eraser modes.
+- Fit / 50% / 100% zoom, Safe Areas, Grid, and **Snapshot** (hold to compare against a saved reference frame).
+- Rulers with draggable guides and edge/guide snapping.
+- Motion paths for the selected layer, mini navigator, and 3D camera gizmo (orbit, dolly, frame resize).
+- Context options strip beneath the canvas for fill, stroke, corner radius, font, and position.
 
 ### Camera View
 
 ![Camera View](pictures/tabs/camera_view.jpg)
 
-What the active camera sees, without the editing marks: look at the 3D scene through the lens while you edit on the Stage.
+Clean preview through the active camera with no gizmos or selection overlays, letting you inspect the final framing while editing on the Stage.
 
 ---
 
-## The bottom
+## Bottom
 
 ### Timeline
 
 ![Timeline](pictures/tabs/timeline.jpg)
 
-- Layers as bars: move, trim, reorder; hide, solo and lock.
-- Keyframes, and the easing curve between them, drawn on the bar. Video frames and audio waveforms in the rows.
-- **BPM** with **Tap** tempo: tap along with the music; the beat grid appears on the ruler and edits snap to beats.
-- Snapping to layer ends, keyframes, markers, the playhead and the work area.
-- Markers you drag and rename in place.
-- **Slip edit** on trimmed video: the unused part of the source shows as a pale bar.
-- A line under the ruler shows which frames are cached; an overview strip shows the whole length.
+- Layer bars supporting move, trim, reorder, hide, solo, and lock.
+- Inline keyframe diamonds, easing curves, video filmstrips, and audio waveforms.
+- **BPM** and **Tap** tempo: tap along with music to generate a beat grid with snap-to-beat editing.
+- Snaps to layer edges, keyframes, markers, playhead, and work area bounds.
+- Draggable markers with inline renaming.
+- **Slip editing** on trimmed clips, showing unused source media as a dimmed bar.
+- Frame cache indicator beneath the ruler and a full-timeline overview bar.
 
 ### Code
 
 ![Code](pictures/tabs/code.jpg)
 
-The selected layer's code, laid out like a notebook: one cell for each card that has code, in the order the cards act on the picture.
+Notebook-style code editor for the selected layer: one cell per code-backed card, ordered top-to-bottom in execution order.
 
-- A cell and its card in the Inspector are the same code. Type in the cell and the card's sliders move, and the picture follows. "Edit code" on a card opens its cell.
-- Under an After Effects expression, a line shows what it gives at the playhead, or the error and its line ("Error at line 3: ReferenceError: amp is not defined").
-- Names are completed as you type, as in VS Code, each with what it does. Beside the cells, the **Functions** list shows every name the code may use, grouped as After Effects groups them (Layer, Property, Comp, …). The reference is After Effects' own, read from type declarations, and the engine is asked which names really run here; a name that does not run yet is marked. Press a name to write it at the cursor.
-- A cell is a card: drag its head to move the effect up or down the stack, switch it off with the eye, remove it, fold it, drag its bottom edge to make it taller. Press its name twice to rename it; the name is kept in the code's first line.
-- **+ New expression** starts an empty one, and **Add to shelf** keeps the code as a tile you can use again.
-- Whatever the code is written in (AE expression, Cavalry, JavaScript, ISF, WGSL, …), the cell says so in its head.
+- Cells stay in sync with Inspector cards — editing code updates sliders and the Stage immediately. Click **Edit code** on any Inspector card to jump to its cell.
+- After Effects expressions display the live evaluated value at the playhead, or an inline error with line number (e.g. `Error at line 3: ReferenceError: amp is not defined`).
+- VS Code-style autocompletion with inline docs, plus a **Functions** sidebar grouped like After Effects (`Layer`, `Property`, `Comp`, etc.). Unsupported symbols are flagged dynamically by querying the engine; click any symbol to insert it at the cursor.
+- Each cell behaves like a stackable card: drag headers to reorder, toggle visibility with the eye icon, delete, collapse, resize vertically, or double-click the title to rename.
+- **+ New expression** creates a blank cell; **Add to shelf** saves the snippet for reuse.
+- Cell headers indicate the source language (AE Expression, Cavalry, JavaScript, ISF, WGSL, etc.).
 
 ### Ease
 
 <img src="pictures/tabs/ease.jpg" width="320" align="right">
 
-The easing between two keyframes.
+Easing curve editor for spans between keyframes.
 
-- A graph with bezier handles you drag; exact numbers when you need them.
-- **Stacked easings:** each card works on the result of the one above.
-- Preset shapes you drag onto the graph, and a shelf of saved easings that slides out.
-- Hover a preset to see it played before you pick it.
-- Copy a curve, step to the previous or next span, drag a span's end values on the side bars.
-- An ease preset is a one-line formula file (`a + (b - a) * bezier(u, …)`) in the `ease/` folder.
+- Interactive cubic Bézier graph with optional numeric entry.
+- **Stackable easings:** stack multiple easing cards sequentially on the same span.
+- Draggable curve presets and a slide-out shelf of saved easings.
+- Hovering any preset plays its motion live before you apply it.
+- Copy curves, step between adjacent keyframe spans, and drag span endpoint values directly on the side bars.
+- Each preset is a single-line formula file (`a + (b - a) * bezier(u, …)`) in `ease/`.
 
 <br clear="right">
 
 ---
 
-## The right
+## Right
 
 ### Inspector
 
 <img src="pictures/tabs/inspector.jpg" width="280" align="right">
 
-Every value of the selected layer, in cards. Transform, Text, Fill, Blending, Paths, Media, Play, Time Remap, Camera, Light, the 3D material cards (Shine, Surface, Glass, Lacquer, Bubble, Bevel, …), a card per effect, Script, Relation and Falloff: the engine declares them all, and one piece of the app, the values card, draws every one the same way. No card is drawn by hand, so a new effect or a new kind of layer gets its card without a line of UI code.
+All properties of the selected layer organized into collapsible cards (`Transform`, `Text`, `Fill`, `Blending`, `Paths`, `Media`, `Play`, `Time Remap`, `Camera`, `Light`, 3D material cards, effect cards, `Script`, `Relation`, and `Falloff`). Every card is generated dynamically from engine declarations using a single unified card widget, so new effects and layer types appear automatically without custom UI code.
 
 <br clear="right">
 
-#### Values as blocks, not rows
+#### Block layout instead of rows
 
-A property row (a name on the left, a slider on the right) wastes the panel: make the panel wider and the rows only get longer and emptier. So a value is a **block**: its name on top, the number large under it, a small picture of the value in the corner (a dial for an angle, a gauge for an amount, a pad for a point). Blocks fill the width like tiles: three across in a normal panel, more as you widen it, so an effect with thirty values stays a short card. A value that needs room (a point, a size, a choice) takes two columns. Every block still takes typing and sideways scrubbing.
+Traditional label-and-slider rows waste horizontal space as you widen the panel. Motolii displays each parameter as a compact **block**: label on top, large numeric readout below, and a visual indicator in the corner (dial for angles, gauge for scalars, 2D pad for points). Blocks flow into a multi-column grid (3 columns at default width, expanding automatically when widened), keeping even 30-parameter effects compact. Multi-value controls (points, sizes, dropdowns) span two columns. Every block supports direct typing and horizontal scrubbing.
 
 <p>
 <img src="pictures/tabs/inspector_weights.jpg" width="32%">
 <img src="pictures/tabs/inspector_wide.jpg" width="66%">
 </p>
 
-#### Colour on the values that matter
+#### Impact-based parameter highlighting
 
-Eight values in a row do not say which one matters. Every effect that ships with Motolii (about 1,280 of them) was reviewed value by value: how much does moving this one alone change the picture, from 0 to 10. The Inspector shows the answer as colour. The values that change the picture most are tinted 浅黄 (*usuki*, pale yellow), the next 撫子 (*nadeshiko*, pink), then 青磁 (*seiji*, celadon); the ones that barely show stay grey. The same review picks what an effect's tile moves on the shelf.
+When an effect exposes many parameters, it is hard to tell which ones actually drive the look. Roughly 1,280 bundled effects were evaluated parameter-by-parameter for visual impact (0–10). The Inspector highlights high-impact controls using traditional Japanese tints — *usuki* (pale yellow), *nadeshiko* (pink), and *seiji* (celadon) — while low-impact controls remain neutral grey. The same scores determine which parameters animate in shelf preview tiles.
 
-#### More on every card
+#### Card features
 
-- **Transform** with a small canvas you drag, and an anchor box of 27 points. **Text** styles a range of letters. **Fill** has the stroke folded in. **Blending** shows a preview.
-- Every card shows its author and licence (here, *by VIDVOX*), and tags you can edit.
-- A keyframe mark beside every value; Copy / Paste / Reset on every card.
-- The relations a layer belongs to are listed at the top.
+- **Transform** includes a draggable mini-canvas and a 27-point anchor grid; **Text** styles character ranges; **Fill** integrates stroke controls; **Blending** includes a live preview.
+- Displays author attribution (e.g. *by VIDVOX*) and editable tags.
+- Per-parameter keyframe toggles and per-card Copy / Paste / Reset actions.
+- Active layer relations are listed at the top.
 
 ### Agent
 
 <img src="pictures/tabs/agent.jpg" width="280" align="right">
 
-Pick a layer and say what you want. The agent writes the layer's effects and expressions; the picture changes when it saves.
+Select a layer and describe the look or motion you want — an AI agent writes or edits effects and expressions, updating the Stage as soon as files are saved.
 
-- The list is the ACP (Agent Client Protocol) registry, the same one Zed and JetBrains read: Claude Agent, Codex, Gemini CLI, Cursor, Cline, Google Antigravity and many more, all equal. Search it like a shelf and pick one; it starts through `npx`, `uvx` or its own binary. A copy of the list is kept, so it opens offline. Signing in uses the ways the agent itself offers.
-- A request carries every card of the Inspector with its values now, the code of each card, the stretch between keyframes you picked in the Timeline, and the After Effects expression reference with the names that run here. Files go as links, the way Zed sends a file mentioned with `@`.
-- Before a request, each code file is made the layer's own copy, so the agent never touches the shelf's original. Something new goes in a fresh folder and arrives on the layer as a **new card**; code already there changes only when you ask for it.
-- Each tool call is a row with its state, the files it touched and the lines it took out and put in. When the agent asks for leave to do something, its own choices appear as buttons.
-- Model, effort and mode are whatever the agent declares, in one button; Motolii keeps no list of models. A ring shows how much of the context is in use, and the menu gives the usage limits (5-hour, 7-day) the agent reports.
-- Replies are laid out as Markdown, and the conversation stays when you move the tab. The magpie is Motolii's mascot, and the agent's face.
+- Uses the [ACP (Agent Client Protocol)](https://github.com/anthropics/agent-client-protocol) registry shared with Zed and JetBrains, supporting Claude Agent, Codex, Gemini CLI, Cursor, Cline, Google Antigravity, and more via `npx`, `uvx`, or local binaries. The registry is cached locally for offline access, and authentication uses each agent's own login flow.
+- Each prompt automatically includes all Inspector cards and current values, card source code, the selected Timeline keyframe span, and the live After Effects expression reference. Referenced files attach as `@`-style links.
+- Before sending a request, shelf code is cloned into a layer-local copy so shelf originals are never modified. Newly created effects appear as **new cards**, while existing code is edited only when requested.
+- Tool calls appear inline with status, touched files, diff line counts, and interactive permission prompts.
+- Model, reasoning effort, and mode selectors are populated dynamically from the connected agent, alongside a context usage ring and 5-hour / 7-day usage limit readout.
+- Responses render as Markdown and persist across tab switches. The magpie icon is Motolii's mascot.
 
 <br clear="right">
 
@@ -231,11 +231,11 @@ Pick a layer and say what you want. The agent writes the layer's effects and exp
 
 <img src="pictures/tabs/depth.jpg" width="280" align="right">
 
-The camera's lens from above, with each layer as a slab at its depth.
+Top-down view of the camera frustum with each layer rendered as a slab at its Z depth.
 
-- Drag the focus line or the depth-of-field band; click a slab to focus on it.
-- Drag sideways to change the focal length.
-- Focal length, aperture, depth of field, near and far at a glance.
+- Drag the focus plane or depth-of-field band, or click any layer slab to focus directly on it.
+- Drag horizontally to adjust focal length.
+- Displays focal length, aperture, depth of field, and near/far limits at a glance.
 
 <br clear="right">
 
@@ -243,7 +243,7 @@ The camera's lens from above, with each layer as a slab at its depth.
 
 <img src="pictures/tabs/tool_panel.jpg" width="280" align="right">
 
-A shelf of tools. A tool you open stays pinned in the panel. A panel of your own can be added here in a few lines of Dart (see [`app/lib/workspace/README.md`](../app/lib/workspace/README.md)).
+Dockable utility tools. Custom panels can be added in a few lines of Dart (see [`app/lib/workspace/README.md`](../app/lib/workspace/README.md)).
 
 <br clear="right">
 
@@ -251,7 +251,7 @@ A shelf of tools. A tool you open stays pinned in the panel. A panel of your own
 
 <img src="pictures/tabs/blend.jpg" width="280" align="right">
 
-The layer stack with each layer's blend mode, drawn as overlapping discs. Open a row for every mode and the layer's Blending card.
+Visual overview of the layer stack's blend modes represented as overlapping circles. Expand any row to switch blend modes or open that layer's Blending controls.
 
 <br clear="right">
 
@@ -259,40 +259,40 @@ The layer stack with each layer's blend mode, drawn as overlapping discs. Open a
 
 <img src="pictures/tabs/align.jpg" width="280" align="right">
 
-Align the selected layers to the canvas edges and centres, by what is visible of them.
+Align selected layers to canvas edges or centers based on their visible bounds.
 
 <br clear="right">
 
 ---
 
-## Around the tabs
+## Chrome
 
 ### Top bar
 
 ![Top bar](pictures/tabs/top_bar.jpg)
 
-- The Motolii mark opens Home. Undo and Redo name the step they undo.
-- The size chip: drag or type the frame size, or pick a common shape or resolution.
-- **Standard / Code** workspaces (below).
-- Window zoom, light or dark, a CPU and GPU meter, a dot for slow frames and engine errors, and when the project was last saved.
-- **Render:** MP4 (H.264), HEVC `.mov`, GIF, PNG sequence or JPEG sequence; resolution, rate, quality, motion blur and background; the free disk space is shown.
+- Motolii logo returns to Home; Undo / Redo buttons display the name of the action.
+- Composition size chip: scrub, type dimensions, or choose standard aspect ratios and resolutions.
+- **Standard / Code** workspace switcher (see below).
+- Window zoom, light/dark theme toggle, CPU/GPU meter, slow-frame / engine-error indicator, and last-saved timestamp.
+- **Render:** Export MP4 (H.264), HEVC `.mov`, GIF, PNG sequence, or JPEG sequence with resolution, frame rate, quality, motion blur, background options, and available disk space display.
 
 ### Workspaces
 
-Two arrangements of the same tabs, switched in the top bar. Each keeps what you made of it.
+Two preset arrangements of the same tabs, switchable from the top bar. Any manual layout tweaks are remembered per workspace.
 
-- **Standard:** shelves on the left, Stage over Timeline, Ease beside the Timeline, Inspector and Depth on the right.
-- **Code:** the window rearranged for writing code. The Code tab takes the middle, the Stage sits beside it, and the Timeline runs underneath, so the line you write, the picture it makes and the playhead are all in sight at once. Inspector and Agent share the left column with the shelves: ask the agent, read its change in the cell, see it on the Stage, without switching tabs. Ease, Depth and Tool Panel wait at the bottom right. The first time you open it, Agent and Ease come to the front.
+- **Standard:** Shelves on the left, Stage above Timeline, Ease beside Timeline, Inspector and Depth on the right.
+- **Code:** Layout optimized for coding — Code in the center, Stage on the right, Timeline below, with Inspector and Agent docked alongside the shelves on the left so you can prompt, edit code, and watch the Stage simultaneously. Ease, Depth, and Tool Panel sit at the bottom right.
 
-  ![The Code workspace: Agent on the left, Code in the middle, Stage on the right, Timeline below](pictures/tabs/code_workspace.jpg)
+  ![Code workspace: Agent on the left, Code in the center, Stage on the right, and Timeline at the bottom](pictures/tabs/code_workspace.jpg)
 
-  The arrangement is not written in code: it is the file [`shelves/workspaces/code.layout`](../shelves/workspaces/code.layout), made by dragging the tabs in the window. Rearrange it as you like; Motolii remembers each workspace as you left it.
+  Layout presets are stored as data files ([`shelves/workspaces/code.layout`](../shelves/workspaces/code.layout)) rather than hardcoded UI.
 
 ### Home
 
 ![Home](pictures/tabs/home.jpg)
 
-- **Continue editing** the last project, shown large.
-- Every project as a card, sorted by date or name; search and a recent list on the side.
-- Open, Duplicate, Export or move a project to the Trash from its card; select several to export them together.
-- **New Project**, and **Change folder** for where projects are kept (`~/Movies/Motolii` at first).
+- Prominent **Continue editing** card for your most recent project.
+- Project grid sorted by date or name, with search and recent filters.
+- Per-project Open, Duplicate, Export, and Move to Trash actions, plus multi-select batch export.
+- **New Project** and **Change folder** to switch the projects directory (default: `~/Movies/Motolii`).

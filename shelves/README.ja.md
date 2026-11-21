@@ -1,41 +1,47 @@
-# shelves/ — 見つけた表現を置く所
+# `shelves/` — 同梱アセットとユーザーコンテンツの配置ガイド
 
 [English](README.md)
 
-Motolii に最初から入っている表現と、見つけた表現を置く場所です。ファイルを置く人は、まず次の「見つけたファイルはどれか」を読んでください。
+Motolii に同梱されているエフェクト・スクリプト・プリセット・スキンの配置場所と、自分で追加するファイルの配置ルールです。
 
-置くのは利用者のフォルダの中です（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可）。そこに下と同じ名前のフォルダを作ってファイルを置くと、再起動なしで同じ所に並びます。同じ名前のファイルなら、利用者の物が勝ちます。
+カスタムファイルを追加する場合は、以下の**ユーザーフォルダ**内に同じ名前のフォルダを作成して配置してください：
 
-## 見つけたファイルはどれか
+- **macOS:** `~/Library/Application Support/Motolii/`
+- **Windows:** `%APPDATA%\Motolii\`
+- **変更する場合:** 環境変数 `MOTOLII_OWN` で任意のフォルダを指定可能
 
-上から見て、最初に当てはまる行のフォルダに置きます。フォルダは利用者のフォルダの中です（上のとおり）。
+ユーザーフォルダにファイルを置くと再起動なしで即座に反映されます。同梱ファイルと同名の場合はユーザー側のファイルが優先されます。
 
-| 見つけた物 | 置く所 |
+## ファイル種別ごとの配置先
+
+上から順に最初に一致する行のフォルダ（ユーザーフォルダ内）へ配置してください。
+
+| ファイル・形式 | 配置先 |
 |---|---|
-| ISF のシェーダー（`.fs`）、WGSL（`.wgsl`） | `effects/`（中の分類フォルダはどれでもよい） |
-| After Effects のエクスプレッション（`wiggle(2, 50)`、`thisComp...` など、貼られたままの形） | `expressions/`（式だけを書いた `.js`）。1 行目に `// --property:position`（または `rotation`、`scale`、`opacity`）と書くと、どの値に掛けるかが決まる。書かなければ、2 つ組は位置、数 1 つは回転 |
-| 1 つの動きを、コピーや文字を 1 つずつ（`i` 番目に）決める JavaScript（`function each`） | `expressions/` |
-| 文字を動かす CodePen のペンの CSS（`@keyframes`。Splitting.js の `.char`・`.word` を使うもの） | `expressions/`（`.css`。同じ名前の `.html` を隣に置くと、ペンの HTML として使う）。文字レイヤーに ⌘V で貼ってもよい |
-| 複数のレイヤーを、お互いの位置を見ながらまとめて動かす JavaScript（`function relate`・`function force`） | `relations/` |
-| 1 回で図形や絵を作る物（先頭に `// make` の行がある `.js`）、点を並べるスクリプト、p5.js のスケッチのファイル | `create/` |
-| 動きの緩急の式（`.way`） | `ease/` |
-| 値と効果のひとまとまり（`.motolii`） | `looks/` |
-| 3D の形（`export function solid` を持つ `.js`） | `solids/` |
-| アプリの見た目 | `skins/`（フォルダごと） |
-| AviUtl2 のパッケージ | `aviutl_scripts/`（フォルダごと） |
-| After Effects のネイティブプラグイン（macOS の `.plugin`、Windows の `.aex`） | `ae_plugins/`（ファイルやフォルダを置くかシンボリックリンク。Motolii には同梱しません） |
-| TSL で書かれた three.js のページ（材質に `colorNode` や `positionNode` がある物） | **貼る。** 色はエフェクトに、点を動かす部分は点を動かすファイルになり、選んでいるレイヤーに掛かる。何も選んでいなければ、キャンバスいっぱいの四角に掛かる。できたファイルは、自分のフォルダーの `programs/` に残る |
-| Shadertoy・GLSL Sandbox・twigl・Bonzomatic のシェーダー、p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra などのコード | **置かずに貼る**。コードをコピーして、アプリで ⌘V。Create タブの Code に残ります（Hydra は先に `extensions/hydra/get.sh`） |
+| ISF シェーダー（`.fs`）、WGSL シェーダー（`.wgsl`） | `effects/`（サブフォルダ構成は自由） |
+| ネイティブ After Effects プラグイン（macOS: `.plugin`、Windows: `.aex`） | `ae_plugins/`（配置またはシンボリックリンク。Motolii 本体には同梱しません） |
+| AviUtl2 スクリプトパッケージ（`.anm2`・`.obj2`・`@` ファイル） | `aviutl_scripts/`（パッケージフォルダごと） |
+| コピー／文字ごとのアニメーションスクリプト（`function each`） | `expressions/` |
+| After Effects エクスプレッション（`wiggle(2, 50)`、`thisComp...` 等） | `expressions/`（式だけを書いた `.js`）。1 行目に `// --property:position`（`rotation` / `scale` / `opacity`）で対象プロパティを指定。省略時は 2 要素配列が位置、単一数値が回転になります |
+| CodePen の CSS テキストアニメーション（`@keyframes`、Splitting.js の `.char`・`.word`） | `expressions/`（`.css`、必要に応じて同名の `.html` を併置）。テキストレイヤーへ直接 `⌘V` 貼り付けも可 |
+| 複数レイヤー連動スクリプト（`function relate` / `function force`） | `relations/` |
+| レイヤーレシピ（`// make` 行付き `.js`）、点配置スクリプト、p5.js スケッチ | `create/` |
+| イージング数式プリセット（`.way`） | `ease/` |
+| 保存したレイヤールック（`.motolii`） | `looks/` |
+| 3D ジオメトリ生成スクリプト（`export function solid` を持つ `.js`） | `solids/` |
+| UI スキン | `skins/`（フォルダごと） |
+| three.js TSL ページ（`colorNode` や `positionNode` を持つマテリアル） | **貼り付け（`⌘V`）。** 色ノードはエフェクト、頂点変形ノードはジオメトリ変形ファイルとして選択レイヤー（未選択時は画面全体矩形）へ適用され、ユーザーフォルダの `programs/` に保存されます |
+| Shadertoy・GLSL Sandbox・twigl・Bonzomatic・p5.js・Dwitter・tixy・Turtletoy・Two.js・Paper.js・Hydra | **ファイル配置ではなく `⌘V` で貼り付け。** Create タブの Code に保存されます（Hydra は初回のみ `extensions/hydra/get.sh` の実行が必要） |
 
-ファイルは頭の数行で自分の名前とつまみを言います。下の「頭の書き方」を見てください。
+先頭のコメント行で表示名とパラメータを宣言できます（[ヘッダディレクティブ](#ヘッダディレクティブ)参照）。
 
-## `.js` の決まり
+## `.js` スクリプトの仕様
 
-どの `.js` も、先頭の `//` の行（頭）に名前とつまみを書き、その後ろにコードを書きます。頭は、`//` で始まる行と空行が続く間です。コードの行が来たところで終わります。
+すべての `.js` ファイルは先頭の連続した `//` コメント行（および空行）をヘッダとして扱い、最初のコード行でヘッダが終了します。
 
-### 動き：`expressions/`（`function each`）
+### モーションスクリプト：`expressions/`（`function each`）
 
-コピー 1 つずつ、その位置と形を返します。
+コピーや文字 1 つずつ（`i` 番目）のトランスフォーム・スタイルを返します。
 
 ```js
 // Rise: each copy lifts a little higher than the one before, and fades in
@@ -45,29 +51,29 @@ function each(i, n, t, k) {
 }
 ```
 
-| 項目 | 中身 |
+| 項目 | 仕様 |
 |---|---|
-| 関数の名前 | `each`（普通のスクリプトとして走るので、`import` は使えません） |
-| `i` | このコピーの番号（0 から） |
-| `n` | コピーの数。テキストでは、分割（Split）で分けた数：文字ごと・単語ごと・行ごと（Lines：テキスト自身の改行で切った 1 行が 1 コピー。行は自分の中央を軸に回り、拡大します） |
-| `t` | レイヤーが始まってからの秒 |
-| `k` | 頭で宣言したつまみ。`--track` と `--check` は数（check は 0 か 1）、`--select` は選んだ言葉。ほかに `k.duration`（レイヤーの長さ・秒。0 以下は未設定）、`k.round`（プロジェクトの長さ・秒）、`k.px`（プロジェクトの 1 ピクセルのステージの単位）、`k.id`（このレイヤーの番号）、`k.time`（プロジェクトの今の秒。`t` はレイヤーの始まりから数える） |
-| `at`（5 つ目。省略可） | `at.x`・`at.y`・`at.z`：このコピーが、このレイヤーのスクリプトと前の expression で、ここまでに置かれた場所（無ければ 0） |
-| 返す物 | オブジェクト。読む名前は `x`・`y`・`z`（ステージの単位）、`size`・`scale_x`・`scale_y`・`scale_z`（1 でそのまま）、`rotate`・`rotate_x`・`rotate_y`（度）、`opacity`（0〜1）、`colour`（立体のコピーの色）。書かなかった名前や数でない値は、そのままです |
-| ほかの expression と重なる時 | 位置と角度は足し、`size`・`scale_*`・`opacity` は掛けます。`colour` は最後に返した物 |
-| 剛体（リジッドボディ） | `each` が `mass` を返したコピーは固い箱になり、Jolt Physics が動かします：落ちて、プロジェクトの他の剛体に乗り、積もります。`mass` が 0 なら、レイヤーが置いた場所にキーフレームごと留まり、他を支えたり押したりします（床）。ほかに Jolt 自身の名前で読むもの：`force`（`[x, y]` の組、ニュートン。レイヤーの expression の分を足して毎フレーム渡す）、`gravityFactor`、`restitution`、`friction`。1 メートルはプロジェクトの 100 ピクセル。`rigid_body.js` と `wind.js` を見てください |
-| 使える関数 | `ease(名前, u)`（`u` は 0〜1。名前は `SlowIn` `SlowOut` `SlowInSlowOut` `VerySlowIn` `VerySlowOut` `SpringOut` `SmallSpringOut` `BounceOut` `Overshoot`。ほかの名前は `u` を返す）。`animate(i, n, t, k, a)`（Cavalry の Animator と同じ形。`a` は `{ what, from, to, way }`、ほかに `out`・`random`・`seed`。`k.length`・`k.delay` を読むので頭で宣言します。例：`expressions/fade_in.js`）。`cavalry.random(low, high, seed, sequence)`。After Effects の式は `AE.compile`・`AE.run`（例：`create/repeats/ae_stagger.js`） |
-| ほかのレイヤーを読む | `layerValue(id, 名前, t, 無い時の値, コピー)`：レイヤー `id` の値（`x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`）。`sampleImage(id, 点, 半径, postEffect, t)`：After Effects の `sampleImage`。レイヤー `id` の絵の、`点` のまわり `半径`（`[x, y]`。省くと半ピクセル）の四角の平均 `[赤, 緑, 青, アルファ]`（0〜1）。点はそのレイヤーのピクセル（`[0, 0]` は左上のピクセルの中心）。画像レイヤーはファイルを、動画レイヤーは `t` 秒に出ているコマを読みます。ほかのレイヤーと絵の外は `[0, 0, 0, 0]`。`postEffect` は受け取るだけで、まだ使いません（マスク・キー・エフェクトの前のファイルを読みます）。`fromWorld(id, 点, t)`：After Effects の `fromWorld`。ステージの点（ステージの単位）が、レイヤー `id` のどのピクセルかを返します。頭の `// --picture@video:Video` はカードで選ぶレイヤーで、`k.video` がその番号。`layerValue(k.id, 'x', k.time, 0, i)` は、このレイヤーのコピー `i` が、この expression が動かす前にいる場所です（例：`expressions/away_from_dark.js`。文字が下の動画を読みます）。`getByteFrequencyData(id, 配列, t)`・`getFloatFrequencyData(id, 配列, t)`・`getFloatTimeDomainData(id, 配列, t)`：レイヤー `id`（動画か音）の音を読みます。Web の `AnalyserNode` の同じ名前のメソッド（[W3C Web Audio API](https://www.w3.org/TR/webaudio-1.1/#AnalyserNode)）で、レイヤーの番号を先頭に、秒を最後に足したものです。1 つ目は `Uint8Array` に高さごとの強さ（0〜255）を、2 つ目は `Float32Array` に同じものをデシベルで入れます（バイトは −100 dB〜−30 dB）。高さは 1024 個で、`i` 番目は `i` × 23.4375 Hz。48,000 Hz のページで、初めの設定のままの `AnalyserNode`（`fftSize` 2048）に毎秒 60 回たずねた時の数です。短い配列には低い方から入ります。3 つ目は `Float32Array` に波の最新 2048 サンプル（−1〜1）を入れます。レイヤーが出ていない時と音が無い時は無音。同じ秒はいつも同じ数です。頭の `// --sound@sound:Sound,fft,512` はカードで選ぶ音のレイヤーで、`k.sound` がその番号（例：`expressions/rise_to_sound.js`。文字が 1 つずつ自分の高さの音で上がります）。この 6 つのどれかを書いたファイルは 1 スレッドで走ります |
-| 使えない物 | p5.js の関数と定数（`sin`・`PI`・`random`・`noise`・`createVector` など）。`Math.sin` のように書きます |
+| 関数名 | `each`（通常スクリプトとして実行されるため `import` は使用不可） |
+| `i` | 0 始まりのコピー番号 |
+| `n` | 総コピー数。テキスト分割（Split）時は文字数・単語数・行数（`Lines` は改行ごとに 1 コピーとし、行の中央基準で回転・拡縮） |
+| `t` | レイヤー開始からの経過秒数 |
+| `k` | ヘッダ宣言パラメータ（`--track`・`--check` は数値、`--check` は `0`/`1`、`--select` は選択文字列）。組み込み値：`k.duration`（レイヤー長・秒、`<= 0` は未設定）、`k.round`（プロジェクト長・秒）、`k.px`（1 ピクセルのステージ単位長）、`k.wide` / `k.high`（コンポジション解像度）、`k.id`（レイヤー ID）、`k.time`（コンポジション現在時刻・秒） |
+| `at`（第 5 引数・省略可） | レイヤースクリプトおよび先行エクスプレッションによる累積位置 `{ x, y, z }`（なければ `0`） |
+| 戻り値オブジェクト | 読み取るキー：`x`, `y`, `z`（ステージ単位）、`size`, `scale_x`, `scale_y`, `scale_z`（`1` で等倍）、`rotate`, `rotate_x`, `rotate_y`（度）、`opacity`（`0..1`）、`colour`（3D 立体コピーの色）。未指定や非数値のキーは変更されません |
+| 複数重ね時の合成 | 位置・回転は加算、`size`・`scale_*`・`opacity` は乗算、`colour` は最後の戻り値を採用 |
+| 剛体物理（Jolt Physics） | `mass` を返すと Jolt Physics による 2D 剛体ボックスとして落下・衝突・積み上げをシミュレーションします。`mass: 0` はキーフレームに従う静的／キネマティック剛体（床など）。追加プロパティ：`force`（`[x, y]` ニュートン、複数式で合算）、`gravityFactor`、`restitution`、`friction`。スケールは `1 m = 100 px`。例：`rigid_body.js`・`wind.js` |
+| 組み込みヘルパー | `ease(name, u)`（`u` は `0..1`。`SlowIn` / `SlowOut` / `SlowInSlowOut` / `VerySlowIn` / `VerySlowOut` / `SpringOut` / `SmallSpringOut` / `BounceOut` / `Overshoot`、未定義名は `u` を返す）。`animate(i, n, t, k, a)`（Cavalry Animator 互換、`a = { what, from, to, way }`、省略可 `out` / `random` / `seed`。ヘッダに `k.length`・`k.delay` の宣言が必要。例：`expressions/fade_in.js`）。`cavalry.random(low, high, seed, sequence)`。AE 式用：`AE.compile` / `AE.run`（例：`create/repeats/ae_stagger.js`） |
+| 他レイヤー・音声 API | `layerValue(id, name, t, fallback, copy)`、`sampleImage(id, point, radius, postEffect, t)`、`fromWorld(id, point, t)`（詳細は下の「リレーション」参照）。`// --picture@video:Video` でカードからレイヤーを選択可能（`k.video` にレイヤー ID）。`layerValue(k.id, 'x', k.time, 0, i)` で適用前位置を参照可能（例：`expressions/away_from_dark.js`）。音声：`getByteFrequencyData(id, array, t)`・`getFloatFrequencyData(id, array, t)`・`getFloatTimeDomainData(id, array, t)`（`// --sound@sound:Sound,fft,512` と併用。例：`expressions/rise_to_sound.js`）。これら 6 関数を使うファイルはシングルスレッド実行になります |
+| 使用不可 | p5.js のグローバル関数・定数（`sin`・`PI`・`random`・`noise`・`createVector` 等）。標準の `Math.*` を使用してください |
 
-### 関係：`relations/`（`function relate` か `function force`）
+### リレーション：`relations/`（`function relate` / `function force`）
 
-たくさんのレイヤー（`things`）を一度に受け取ります。p5.js が走るので、`sin`・`TWO_PI`・`lerp`・`constrain`・`noise`・`createVector`・`ease` などが使えます。
+複数レイヤー（`things`）を一括で制御します。p5.js 環境で実行されるため、`sin`・`TWO_PI`・`lerp`・`constrain`・`noise`・`createVector`・`ease` 等が利用できます。
 
-`relate` は新しい値を返します。
+`relate` は更新したいプロパティの配列を返します：
 
 ```js
-// Wave: each goes up and down by where it stands along the row
+// Wave: X 座標に応じて各レイヤーを上下に波打たせる
 // --track@height:Height,0,2,.45,0.01
 // --track@speed:Speed,0,4,.6,0.01
 function relate(things, t, k) {
@@ -75,18 +81,24 @@ function relate(things, t, k) {
 }
 ```
 
-| 項目 | 中身 |
+| 項目 | 仕様 |
 |---|---|
-| `things` の 1 つ | `i`（番号）、`id`（レイヤーの番号）、`w`・`h`（今の幅と高さ、大きさを含む）、`near`（0〜1：関係の Falloff の形がどれだけ覆っているか。無ければ 1）、`x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`（今の値） |
-| `t`・`k` | 秒、つまみ（上と同じ） |
-| 返す物 | `{ i, 変えたい値… }` の配列。書いた値だけが変わり、書かない値はそのまま。何も返さなければ、`things` を直接書き換えた結果を使います |
-| 重み | 引数が 3 つの時、結果は `near` で薄められます |
-| 4 つ目の引数 | `relate(things, t, k, was)`：前のフレームで返した物（`i` で引く。最初のフレームは `null`）。この時は `near` で薄めません（`near` は自分で使います。例：`relations/stay.js`）。1 フレーム前が要るので、最初から 60 フレーム毎秒で順に走ります |
+| `things[i]` のプロパティ | `i`（インデックス）、`id`（レイヤー ID）、`w`・`h`（スケール込みの現在幅・高さ）、`near`（`0..1`：Falloff シェイプの重み、無ければ `1`）、`from`（参加時の `{ x, y }`、不明時は `NaN`。`a.x + target - a.from.x` でユーザー移動量を保持可能。例：`relations/Row.js`）、および `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity` |
+| `t`, `k` | コンポジション現在時刻（秒）と宣言パラメータ。`// --picture@leader:Leader` で対象レイヤーを選択可能（`k.leader` がレイヤー ID、未選択時 `0`） |
+| `layerKeys(id, name)`, `layerNamed(name)` | レイヤー `id` のプロパティ `name` のキーフレーム時刻配列（昇順、無ければ `[]`）／名前からレイヤー ID を取得（無ければ `0`） |
+| `layerValue(id, name, t, fallback, copy)` | 時刻 `t` のレイヤー `id` の値（`x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity`、リレーション適用後）を返します（キー未設定時は `fallback`、例：`relations/Follow.js`）。`copy`（0 始まり）指定時はテキスト文字などの中心座標を返します（例：`relations/Letter.js`）。対象外プロパティは `NaN` |
+| `sampleImage(id, point, radius, postEffect, t)` | After Effects 互換の `sampleImage`。レイヤー `id` のピクセル座標 `point`（`[0, 0]` が左上ピクセル中心）周辺 `radius`（`[rx, ry]`、省略時 `0.5 px`）のアルファ加重平均 `[r, g, b, a]`（`0..1`）を返します。画像は元ファイル、動画は時刻 `t` のフレームを参照（範囲外や他種別は `[0, 0, 0, 0]`）。`postEffect` は引数として受け取りますが現状はエフェクト適用前を参照します |
+| `fromWorld(id, point, t)` | ステージ単位の座標（`[x, y]` または `[x, y, z]`）を時刻 `t` におけるレイヤー `id` のピクセル座標に変換します（`sampleImage` へ渡す用途）。画像を持たないレイヤーでは `[NaN, NaN]` |
+| `getByteFrequencyData`, `getFloatFrequencyData`, `getFloatTimeDomainData` | Web Audio API の `AnalyserNode`（[W3C 仕様](https://www.w3.org/TR/webaudio-1.1/#AnalyserNode)）互換関数。引数 `(id, array, t)` で動画・音声レイヤーの音を解析します。周波数ビン 1024 本（`i` 番目 = `i × 23.4375 Hz`、`48 kHz`・`fftSize = 2048` 相当）、バイト値は `-100 dB..-30 dB` を `0..255` にマッピング。時間波形は直近 2048 サンプル（`-1..1`）。同一時刻では常に同一結果を返し、非表示・無音時は 0 |
+| `lag` パラメータ | `lag` という名前の track を宣言すると、各レイヤーの Strength 評価時刻を順に `lag` 秒ずつずらします（例：`relations/Group.js`） |
+| 戻り値 | `{ i, ...変更プロパティ }` の配列。何も返さない場合は `things` への破壊的変更をそのまま反映 |
+| Falloff 重み付け | 引数 3 つ（`things, t, k`）のときは結果の差分に自動で `near` を掛けます |
+| 第 4 引数（状態保持） | `relate(things, t, k, was)` とすると前フレームの戻り値（`i` で参照、初回は `null`）を受け取ります。この場合 `near` は自動適用されないため自前で掛けてください（例：`relations/stay.js`）。`t = 0` から 60 fps で逐次シミュレーションされます |
 
-`force` は押します（d3-force と同じ形）。返す物は無く、`things` を書き換えます。
+`force` は `d3-force` 形式で `things` を直接更新します（戻り値なし）：
 
 ```js
-// Spring: each goes after where it would be left alone, past it and back
+// Spring: 元の位置へ減衰バネで引き戻す
 // --track@mass:Mass,.05,10,1,0.01
 // --track@damping:Damping,0,30,4,0.01
 // --track@limit:Speed Limit,0,60,60,0.1
@@ -100,14 +112,14 @@ function force(things, t, k) {
 }
 ```
 
-`force` の `things` は、上の値のほかに `vx`・`vy`・`vz`（速さ）、`home`（`x`・`y`・`z`：この関係が無い時の場所）、`index` を持ちます。読み戻されるのは `x`・`y`・`z`・`size`・`rotate`・`rotate_x`・`rotate_y`・`opacity`・`vx`・`vy`・`vz` です。自分で足した値は次のフレームも残ります。ファイルに `d3.` と書くと、d3-force-3d が使えます（例：`relations/collide.js`）。最初から 60 フレーム毎秒で順に走ります。
+`force` では `vx`・`vy`・`vz`（速度）、`home`（基準位置 `{ x, y, z }`）、`index` が追加されます。読み戻されるのは `x`, `y`, `z`, `size`, `rotate`, `rotate_x`, `rotate_y`, `opacity`, `vx`, `vy`, `vz` で、独自に追加したプロパティも次フレームに引き継がれます。コード内で `d3.` を参照すると `d3-force-3d` が有効になります（例：`relations/collide.js`）。60 fps で逐次シミュレーションされます。
 
-### レシピ：`create/`（`// make` の行）
+### レシピ：`create/`（`// make` コマンド）
 
-先頭の行に名前、その下の行に「命令」を 1 行ずつ書きます。レイヤーを作って値を入れる手順です。コードは無くても構いません。
+1 行目に名前、続けてレイヤー生成とプロパティ設定のコマンドを 1 行ずつ記述します（コード本体は省略可能）。
 
 ```js
-// White Flash: the stage goes white for an instant where the playhead is, gone in 0.4 seconds
+// White Flash: 再生ヘッド位置で 0.4 秒間フラッシュする
 // make shape rect
 // here
 // say fill ffffff
@@ -117,10 +129,10 @@ function force(things, t, k) {
 // key opacity 0.4 0
 ```
 
-動きを自分で持つ時は、頭の後ろに `each` を書きます。そのファイルが、最初のレイヤーのスクリプトになります。
+ヘッダの後ろに `function each(...)` を書くと、このファイル自体が最初のレイヤーのスクリプトとして設定されます：
 
 ```js
-// Bobbing Row: five dots that bob one after another
+// Bobbing Row: 5 つの円が位相をずらして上下に揺れる
 // make shape circle
 // say fill ffd166
 // set size 0.1
@@ -131,23 +143,22 @@ function each(i, n, t, k) {
 }
 ```
 
-| 命令 | 意味 |
+| コマンド | 意味 |
 |---|---|
-| `make 種類 中身` | 最初のレイヤーを作る。必ず最初の命令にします（そうでないファイルは一覧に出ません）。`make shape rect`（`rect` `circle` `polygon` `star` `line` `ring` `arc` `arrow` `squircle` `cog` `path` `spiral` `chamfer` `null`）、`make solid cube`（`ring` `gem` `cube` `ball` `sketch`）、`make picture ファイルの道` |
-| `then 種類 中身` | もう 1 つレイヤーを作る。以後の `set`・`say`・`key` はそのレイヤーに入る |
-| `set 値 数` | 数の値を入れる。数の代わりに `first`（このレシピの最初のレイヤー）、`before`（1 つ前に作ったレイヤー）、`behind`（最初のレイヤーのすぐ下の順）も書けます。値の名前は `engine/document/kinds.h` の表（`size`・`copies`・`opacity`・`duration` など）。スクリプトのつまみは `js_つまみの名前` |
-| `say 値 言葉` | 言葉の値を入れる（`fill ff3366`・`path M 0 0 …`・`copy_fill 色 色 …`）。`say script this` はこのファイルのコード、`say script Repeater` は名前で別のレシピ、`say script expressions/wave.js` は棚のファイル |
-| `here` | 今のプレイヘッドから始める（無ければプロジェクトの頭から、一緒に回る）。`key` の秒はここから数えます |
-| `fit fit` / `fit fill` / `fit stretch` | 絵に合わせる（収める・覆う・引き伸ばす） |
-| `key 値 秒 数` | その秒に値のキーを打つ |
+| `make <種別> <値>` | 最初のレイヤーを生成（必ず先頭コマンドにする）。シェイプ：`make shape rect`（`rect` / `circle` / `polygon` / `star` / `line` / `ring` / `arc` / `arrow` / `squircle` / `cog` / `path` / `spiral` / `chamfer` / `null`）、立体：`make solid cube`（`ring` / `gem` / `cube` / `ball` / `sketch`）、画像：`make picture <パス>` |
+| `then <種別> <値>` | 追加レイヤーを生成。以降の `set`・`say`・`key` はこのレイヤーに適用 |
+| `set <プロパティ> <数値>` | 数値プロパティを設定（名称は `engine/document/kinds.h`、スクリプトパラメータは `js_<名前>`）。特殊値：`first`（最初のレイヤー ID）、`before`（直前のレイヤー ID）、`behind`（最初のレイヤーの直下順） |
+| `say <プロパティ> <文字列>` | 文字列プロパティを設定（`fill ff3366`、`path M 0 0 ...`、`copy_fill ...`）。`script` では `this`（このファイル自身）、別レシピ名（例：`Repeater`）、棚パス（`expressions/wave.js`）を指定可能 |
+| `here` | 現在の再生ヘッド位置を開始時刻にする（省略時は `t = 0`）。`key` の時刻はこの開始点からの相対秒 |
+| `fit fit` / `fit fill` / `fit stretch` | コンポジションに合わせて収める／覆う／引き伸ばす |
+| `key <プロパティ> <秒> <数値>` | 指定秒にキーフレームを設定 |
 
-守ること：
+注意点：
+- ヘッダ内の説明コメントはコマンドキーワード（`make`・`then`・`set`・`say`・`here`・`fit`・`key`）で始めないようにしてください（それ以外の行は無視されます）。
+- `function each` を含むファイルは Create タブの Expression にも表示されます。
+- `// make` を持たず `function draw`・`function setup`・`createCanvas` を含む p5.js スケッチは、ファイル名を使って自動的にレシピ化されます。
 
-- `//` の行は、`--` で始まる物（つまみ。次の節）、`--label:`、命令のどれかです。最初の `//` の行から、コードの前までの `//` の行は、命令として読まれます。説明の文を書く時は、命令の言葉（`make`・`then`・`set`・`say`・`here`・`fit`・`key`）で始まらないようにします。ほかの言葉で始まる行は読み飛ばされます。
-- ファイルに `function each` がある物は、Create の Expression にも出ます。
-- 先頭に `// make` が無く、`function draw`・`function setup`・`createCanvas` がある p5.js のスケッチは、名前をファイル名にして、そのまま 1 つのレシピになります。
-
-### p5.js のスケッチ
+### p5.js スケッチ
 
 ```js
 function setup() { createCanvas(400, 400); }
@@ -157,126 +168,125 @@ function draw() {
 }
 ```
 
-- p5.js 1.11.13 がそのまま走ります（ブラウザは無し）。1 秒 60 フレームで、時間は前にだけ進みます。
-- 2D は絵になり、プロジェクトに合わせて置かれます。`WEBGL` で描いた `box`・`sphere`・`plane`・`ellipsoid`・`cylinder`・`cone`・`torus` は、3D の立体のコピーになります。
-- 描く行ごとに、その行の形の強さを決めるつまみ（`circle 3` のような名前）が 1 つできます。
-- `loadImage` の絵は、ファイルと同じ名前のフォルダ（`Fire.js` なら `Fire/`）から、ファイル名だけで読みます。
-- p5.sound は、そのファイルを p5 の隣に置くとそのまま走ります（`engine/third_party/js/p5/addons/p5.sound.min.js`。同じ p5 の配布物に入っています。このリポジトリには入れていません）。スケッチは、下にある動画・音のレイヤーを聞きます。`loadSound` はどのファイル名でもその音を返し、`p5.FFT` と `p5.Amplitude` は Chrome と同じ数で読みます。音はタイムラインの位置どおりです。クリックで音を始めるスケッチは、1 回だけクリックされます。スケッチが鳴らす音は書き出しには入らず、オシレーターは無音です。ファイルが無い時は、p5.sound の名前だけがあって無音です。
+- ブラウザなしで p5.js 1.11.13 をそのまま 60 fps で逐次実行します。
+- 2D 描画はコンポジションに合わせた画像レイヤーになり、`WEBGL` の `box`・`sphere`・`plane`・`ellipsoid`・`cylinder`・`cone`・`torus` は 3D 立体のコピーになります。
+- 各描画行ごとに強度スライダー（例：`circle 3`）が自動生成されます。
+- `loadImage` はスケッチと同名の隣接フォルダ（`Fire.js` なら `Fire/`）からファイル名のみで読み込みます。
+- `p5.sound` は `engine/third_party/js/p5/addons/p5.sound.min.js`（リポジトリ非同梱）を配置すると動作し、下位レイヤーの動画・音声を Chrome 互換の `p5.FFT` / `p5.Amplitude` 値で解析します。クリック開始型スケッチには自動で 1 回クリックを送信し、書き出し時はスケッチ側のオシレーター音はミュートされます。
 
-### 緩急：`ease/`（`.way`）
+### イージングプリセット：`ease/`（`.way`）
 
-1 行目に名前、あとに式を書きます。
+1 行目に名前、2 行目以降に数式を記述します：
 
 ```
-// Snappy: fast away from the first key, a long soft landing on the next
+// Snappy: 初速が速く、後半をなめらかに着地させる
 a + (b - a) * bezier(u, .2, 0, 0, 1)
 ```
 
-`a` は最初のキーの値、`b` は次のキーの値、`u` は間をどこまで来たか（0〜1）、`p1`〜`p4` は数です。`u` が 0 の時は `a`、1 の時は `b` になる式にします。`bezier(u, x1, y1, x2, y2)` と `way('名前', u)` が使えます。
+変数：`a`（始点値）、`b`（終点値）、`u`（進行度 `0..1`）、`p1`〜`p4`（数値引数）。`u = 0` で `a`、`u = 1` で `b` になる式にしてください。`bezier(u, x1, y1, x2, y2)` と `way('名前', u)` が利用できます。
 
-### その他
+### その他の形式
 
-- `expressions/` の After Effects のエクスプレッション：ファイルは式だけ。`index` と `textIndex` はコピーや文字を 1 から数える。そのコピー自身の値を After Effects の数え方で受け取る：位置はプロジェクトの画素で左上から、y は下向き。回転は度で時計回り。スケールと不透明度は百分率。`effect("ラベル")("Slider")` は、頭の `--track@` のうち名前がそのラベル（小文字）の物を読む。自分のレイヤーの `position`、`rotation`、`scale`、`opacity`、`transform` は裸の名前で書ける。`valueAtTime(t)` は、掛けている値の別の秒を読む。`loopOut()` と `loopIn()` は、その値のキーフレームをもう一度たどる（`cycle`、`pingpong`、`offset`、`continue`）。`thisComp.layer("名前")` はその名前のレイヤー（`transform`、`sampleImage`、`fromWorld`）。何も数えない式（`index`、`textIndex`、`textTotal` を書かない式）は After Effects と同じくレイヤーを丸ごと動かし、数える式は文字やコピーを 1 つずつ動かす。例：`wiggle(2, 50)` とだけ書いたファイル。
-- `solids/`：`export function solid(k)` が three.js の BufferGeometry を返します。`k` はつまみと、`k.w`・`k.h`（物の幅と高さ）です。見本：`solids/Box.js`。
-- `effects/` の `.wgsl`：頭の `--track@` でつまみを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で絵を返します。絵は `texture_2d<f32>`、つまみは 1 つの `var<uniform>` の構造体です。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があれば、ステージが入れます。見本：`effects/glitch/rgbshift.wgsl`。
-- `effects/` の `.fs`：ISF（Vidvox の形式）をそのまま置きます。
-- `effects/` の `.wgsl` で計算シェーダー（`@compute`）を持つ物：同じレイヤーの立体（`solids/` の形）の点を、毎フレーム動かす。グループ 0 の並び：0 に `f32` だけの uniform 構造体（先頭が `time`、続けて頭の `--track@` を書いた順に 1 つずつ）、2 に形の点（`array<f32>`、x y z の順）、4 にテクスチャ座標（u v の順）、6 に描く点（ここへ書く）、8 に形の法線（x y z の順）、10 に描く法線（書いてもよい。0 のままの点は形の法線のまま）、12 に形の接線（x y z w の順）。使う物だけ宣言すればよい。立体を持たないレイヤー（平らな絵、文字）は、点の多い平面 `solids/Plane.js` に載せられる。入口は `@compute @workgroup_size(64)`、点 `i` は `global_invocation_id.x`。例：`effects/geometry/tg_simple_points.wgsl`。
+- **After Effects エクスプレッション（`expressions/`）：** 式のみを書いた `.js`。`index`・`textIndex` は 1 始まり。値は AE 準拠（左上原点ピクセル・Y 下向き、時計回り度数、スケール／不透明度はパーセント）。`effect("ラベル")("Slider")`、裸の `position`・`rotation`・`scale`・`opacity`・`transform`、`valueAtTime(t)`、`loopOut()` / `loopIn()`（`cycle` / `pingpong` / `offset` / `continue`）、`thisComp.layer("名前")`（`transform` / `sampleImage` / `fromWorld`）に対応。`index`・`textIndex`・`textTotal` を参照する式はコピー／文字単位、それ以外はレイヤー全体に作用します。
+- **3D 立体（`solids/`）：** `export function solid(k)` で three.js の `BufferGeometry` を返します（`k` にはパラメータと `k.w`・`k.h` が入ります。例：`solids/Box.js`）。
+- **WGSL フラグメントエフェクト（`effects/*.wgsl`）：** ヘッダでパラメータを宣言し、`fn fs_main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f` で色を返します。入力は `texture_2d<f32>`、パラメータは単一の `var<uniform>` 構造体。構造体に `time`・`frame`・`aspect`・`resolution`・`width`・`height` があると自動供給されます（例：`effects/glitch/rgbshift.wgsl`）。
+- **ISF シェーダー（`effects/*.fs`）：** Vidvox ISF 形式をそのまま配置できます。
+- **WGSL コンピュート頂点変形（`@compute` を持つ `effects/*.wgsl`）：** 同じレイヤーの `solids/` メッシュ頂点を毎フレーム変形します（平面レイヤーは自動的に `solids/Plane.js` に載ります）。グループ 0 のバインディング：`0` `f32` uniform 構造体（先頭 `time`、以降 `--track@` 宣言順）、`2` 元頂点（`array<f32>`, xyz）、`4` UV（uv）、`6` 出力頂点、`8` 元法線（xyz）、`10` 出力法線（0 の点は元法線を維持）、`12` 元接線（xyzw）。使用するバインディングのみ宣言可能。エントリポイントは `@compute @workgroup_size(64)`、`global_invocation_id.x` が頂点番号（例：`effects/geometry/tg_simple_points.wgsl`）。
 
-## 頭の書き方
+## ヘッダディレクティブ
 
-頭の 1 行目は `// 名前: 説明`。名前は最初の `:` の前です。`.fs` 以外で 1 行目が無い物は、ファイル名が名前になります（`create/` の p5.js のスケッチも同じ）。
+1 行目は `// 名前: 説明` と書きます（最初の `:` の前が表示名になります。ヘッダ無し、`.fs`、裸の p5.js スケッチはファイル名を使用）。
 
-つまみは 1 行に 1 つ、`// --種類@名前:ラベル,…` と書きます。名前はコードから `k.名前` で読む名前です。`@` と `:` のどちらも要ります。要らない行（説明）は読み飛ばされます。
+パラメータは 1 行につき 1 つ `// --<種別>@<変数名>:<ラベル>,...` と書きます（コードからは `k.<変数名>` で参照、`@` と `:` は必須）：
 
-| 行 | 意味 |
+| ディレクティブ | 意味 |
 |---|---|
-| `// --track@名前:ラベル,最小,最大,初めの値,刻み` | 数。刻みは省略できます |
-| `// --check@名前:ラベル,初めの値` | 入り切り（1 か 0） |
-| `// --select@名前:ラベル,言葉1,言葉2,…` | 言葉から 1 つ。最初の言葉が初めの値。`k.名前` は選んだ言葉 |
-| `// --picture@名前:ラベル` | 別のレイヤーの絵を読む（効果のみ） |
-| `// --sound@名前:ラベル,fft,512` | カードで選ぶ、音を読むレイヤー。`k.名前` がその番号（無ければ 0）。ISF で書いた効果では、その効果の音の入力（`fft` か `wave`、値の数） |
-| `// --group:名前` … `// --group` | 間のつまみを、その名前の畳める組にする |
-| `// --macro@名前:ラベル,初めの値 -> つまみ 最小 最大, …` | 0〜1 のつまみ 1 つで、ほかのつまみを動かす |
-| `// --label:言葉` | 一覧の分類の名前。`create/` では、閉じたパックの印 |
-| `// --about:言葉` | 効果の説明（効果の一覧で使う） |
-| `// --tag:言葉 言葉` | 効果の検索タグ（`#basic` で当たり前のものが出る）。ファイル自身から読み取るタグに足される |
+| `// --track@名前:ラベル,最小,最大,初期値,刻み` | 数値スライダー（刻みは省略可） |
+| `// --check@名前:ラベル,初期値` | チェックボックス（`0` または `1`） |
+| `// --select@名前:ラベル,選択肢1,選択肢2,...` | ドロップダウン（先頭が初期値、`k.名前` は選択文字列） |
+| `// --picture@名前:ラベル` | 他レイヤーの画像入力（エフェクト専用） |
+| `// --sound@名前:ラベル,fft,512` | 音声レイヤー選択（`k.名前` がレイヤー ID、未選択は `0`。ISF では `fft` / `wave` 音声入力を設定） |
+| `// --group:グループ名` … `// --group` | 折り畳み可能なパラメータグループ |
+| `// --macro@名前:ラベル,初期値 -> 対象 最小 最大, ...` | 単一の `0..1` スライダーで複数パラメータを連動制御 |
+| `// --label:カテゴリ` | 棚のカテゴリ名（`create/` ではパックの区切り） |
+| `// --about:説明` | Effects タブに表示する説明文 |
+| `// --tag:タグ1 タグ2` | 検索タグを追加（例：`#basic`）。ファイルから自動抽出されるタグに結合されます |
 
-つまみの代わりに、先頭の `const knobs = { distance: 2, … }`（leva の形）も読みます。
+先頭の `const knobs = { distance: 2, ... }`（leva 記法）も読み込みに対応しています。
 
-## 置いたあと
+## ホットリロード
 
-保存すると、すぐに出ます（再起動は要りません）。同じファイルを保存し直すと、絵にもすぐ効きます。
+フォルダへ保存すると再起動なしで即座に一覧へ現れます。適用中のファイルを上書き保存すると、プレビューにもリアルタイム反映されます。
 
-- `effects/`：Effects タブにタイルが出ます。レイヤーを選び、タイルを押して **Add**。
-- `create/`：Create タブにタイルが出ます。押して **Create**。
-- `expressions/`：Create タブの Expression。レイヤーを選んでタイルを押し、**Put on**（そのレイヤーに 1 枚のカードとして付き、つまみはインスペクターに出ます）。何も選ばなければ、新しい物を作ります。
-- `relations/`：Create タブの Expression に、エクスプレッションと並んで出ます。グループを選ぶか、レイヤーを 2 つ以上選んで、タイルを押すと、まとめて動きます。1 つのレイヤーなら、そのコピーや文字が動きます。
+- `effects/`・`ae_plugins/`・`aviutl_scripts/`：**Effects** タブに表示。
+- `create/`：**Create** タブの Recipes に表示。
+- `expressions/`・`relations/`：**Create** タブの Expression に表示（リレーションはグループや複数選択レイヤーを連動させ、単一レイヤーではコピーや文字に作用します）。
 
+## フォルダ一覧
 
-## フォルダの一覧
-
-| フォルダ | アプリのどこに出るか | 置くファイル | 出る名前 |
+| フォルダ | 表示先 | 対象ファイル | 表示名 |
 |---|---|---|---|
-| `effects/` | Effects タブのタイル（レイヤーの効果・画面全体の効果） | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament の設定） | 1 行目の `// 名前:`、無ければファイル名。`.fs` はファイル名そのまま |
-| `aviutl_scripts/` | Effects タブのタイル。パッケージ名がチップになる | AviUtl2 のパッケージ（`.anm2`・`.obj2`・`@` ファイル）をフォルダごと、手を入れずに | スクリプトの名前と `--label:`。パッケージ名はフォルダの `__` の後ろ |
-| `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックも Recipes に出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
-| `expressions/` | Create タブの Expression（文字やレイヤーの出入りの動き、コピーを順に揺らす波。Cavalry の Animators と oscillator） | `.js`（`function each`） | 1 行目の `// 名前:` |
-| `relations/` | Create タブの Expression に、エクスプレッションと並んで出る（たくさんのレイヤーを一度に動かす。グループか、いっしょに選んだレイヤーに付ける） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
-| `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
-| `solids/` | レイヤーの効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、プロジェクトが名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
-| `ease/` | 下の Ease のタイル（キーとキーの間の動き方） | `.way`（式 1 行） | 1 行目の `// 名前:`、無ければファイル名 |
-| `workspaces/` | 上のバーの Code ワークスペース（パネルの並べ方） | `code.layout`（`docking` の書き出す並べ方の文字列） | 常に Code。ワークスペースはこういうファイル。Standard はまだコード（`app/lib/workspace/workspace_panes.dart`）に書いてある |
-| `skins/` | View › Skin の一覧（アプリの見た目の着せ替え） | フォルダごと（`theme.xml` と、あれば絵・書体）。作り方は [`skins/README.md`](skins/README.md) | フォルダ名 |
-| `extensions/` | 項目としては出ない。Hydra のコードを貼る前に 1 回だけ使う | `hydra/get.sh` | — |
+| `effects/` | Effects タブ | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament 設定） | 1 行目の `// 名前:` またはファイル名（`.fs` は常にファイル名） |
+| `ae_plugins/` | Effects タブ（サブフォルダがパックになる） | `.plugin`（macOS）・`.aex`（Windows）※ユーザー配置／シンボリックリンク専用 | ファイル名 stem（`_` を空白化） |
+| `aviutl_scripts/` | Effects タブ（パッケージがパックになる） | AviUtl2 パッケージ（`.anm2`・`.obj2`・`@` ファイル） | スクリプト名と `--label:`。パック名はフォルダ名の `__` 以降 |
+| `create/` | Create タブ（Recipes。`function each` 付きは Expression にも表示） | `.js` | 1 行目の `// 名前:`（ヘッダなし p5 スケッチはファイル名） |
+| `expressions/` | Create タブ（Expression） | `.js`・`.css` | 1 行目の `// 名前:` |
+| `relations/` | Create タブ（Expression） | `.js` | 1 行目の `// 名前:` またはファイル名 |
+| `looks/` | Effects / Looks タブ | `.motolii` ＋ `.png` サムネイル | ファイル名そのまま |
+| `solids/` | レイヤーが参照する 3D ジオメトリ | `.js`（`export function solid`） | 1 行目の `// 名前:` |
+| `ease/` | Ease 棚 | `.way` | 1 行目の `// 名前:` またはファイル名 |
+| `workspaces/` | トップバーの Code ワークスペース | `code.layout` | `Code`（`Standard` は `app/lib/workspace/workspace_panes.dart` に定義） |
+| `skins/` | `View › Skin` メニュー | フォルダ（`theme.xml`・画像・フォント。詳細は [`skins/README.ja.md`](skins/README.ja.md)） | フォルダ名 |
+| `extensions/` | 補助スクリプト（棚には非表示） | `hydra/get.sh` | — |
 
-前の名前（`recipes/`・`animators/`・`ways/`）のフォルダに置いた物も、そのまま読みます。
+旧フォルダ名（`recipes/`・`animators/`・`ways/`）に置かれたファイルも後方互換のため引き続き読み込まれます。
 
-## 下のフォルダ
+## サブフォルダ構成
 
-`effects/` と `create/` は、下のフォルダまで全部読みます。下のフォルダの名前は画面に出ず、置く人が場所を選ぶための物です。書類は効果やレシピをファイル名で探し直すので、下のフォルダを替えても書類は壊れません。
+`effects/` と `create/` は再帰的に読み込まれます。サブフォルダ名は管理用で UI には表示されず、プロジェクトはファイル名で参照を解決するため、サブフォルダ間でファイルを移動しても既存プロジェクトは壊れません。
 
-`effects/` の下は、After Effects の Effects & Presets の分類の名前に合わせています（[Adobe の効果の一覧](https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effect-list.html)）。AE に無い物は、なぜ別にしたかを書きます。
+`effects/` のサブフォルダは [After Effects の Effects & Presets カテゴリ](https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effect-list.html)に準拠しています：
 
-| フォルダ | AE の分類 | 置く物 |
+| サブフォルダ | AE カテゴリ | 用途 |
 |---|---|---|
 | `blur/` | Blur & Sharpen | ぼかし・シャープ |
-| `color/` | Color Correction | 色・明るさの補正 |
-| `distort/` | Distort | 絵を歪める |
-| `generate/` | Generate | 絵を作る（波形・模様・切り抜きの形） |
-| `stylize/` | Stylize | 絵の見た目を変える（網点・光・縁） |
-| `transition/` | Transition | 2 つの絵の切り替え |
-| `key/` | Keying と Matte | 色や明るさで抜く・マスク |
-| `utility/` | Utility | 見た目より道具の物（アルファ・カラーバー・時刻・タイムコード） |
-| `move/` | 無い | 物そのものを時間で動かす（揺れ・繰り返し・回転）。AE では効果でなく式（`wiggle()`・`loopOut()`）でやる事なので、AE の分類に入る先が無い |
-| `geometry/` | 無い | 形と 3D の立体・裏返し・回転。AE では Perspective と Generate に分かれる。名前は、ここにある ISF の効果自身が `CATEGORIES` に書く `Geometry Adjustment` から |
-| `glitch/` | 無い | 壊れた映像の見た目（データモッシュ・VHS・RGB のずれ）。AE では Stylize と Time に散る。名前は、ここにある ISF の効果自身が `CATEGORIES` に書く `Glitch` から |
-| `sources/` | 分類ではない | 効果の出どころ：各パックのライセンス、取り込んだ脚本、タイルを描く見本の写真、AviUtl の効果の対応表。棚の 257 本の効果の頭の出典の行がこの場所を出典として名指すので、名前は替えない |
+| `color/` | Color Correction | 色調・明るさ補正 |
+| `distort/` | Distort | 歪み・ワープ |
+| `generate/` | Generate | 波形・模様・図形などの生成 |
+| `stylize/` | Stylize | ハーフトーン・グロー・輪郭・ルック |
+| `transition/` | Transition | トランジション |
+| `key/` | Keying & Matte | キーイング・マット |
+| `utility/` | Utility | アルファ操作・カラーバー・タイムコード等の補助 |
+| `move/` | *(該当なし)* | 時間による移動・揺れ・繰り返し（AE では式で扱う領域） |
+| `geometry/` | *(該当なし)* | 形状・3D 変形・反転（ISF の `Geometry Adjustment`） |
+| `glitch/` | *(該当なし)* | データモッシュ・VHS・RGB ずれ（ISF の `Glitch`） |
+| `sources/` | *(メタデータ)* | パック別ライセンス・変換スクリプト・サンプル画像・AviUtl 対応表（257 本のヘッダが参照するため改名不可） |
 
-`create/` の下は、利用者が手にする物の名前です。
+`create/` のサブフォルダ：
 
-| フォルダ | 置く物 |
+| サブフォルダ | 用途 |
 |---|---|
-| `shapes/` | 1 つの形（矢印・ハート・吹き出し…。AbsentMotion の形） |
-| `cavalry/` | 点を曲線や立体に並べる配置（Canvalry の Distribution をそのまま） |
-| `repeats/` | 1 つの物を何個も並べて、順に動かす模様（AE の Repeater、Cavalry の Duplicator） |
-| `over_footage/` | 映像の上に重ねる物（動く物を追う枠・白いフラッシュ・ポスター） |
+| `shapes/` | 単一シェイプ（AbsentMotion シェイプ） |
+| `cavalry/` | 点配置スクリプト（Cavalry Distribution） |
+| `repeats/` | Repeater / Duplicator 系プリセット |
+| `over_footage/` | 映像オーバーレイ（トラッキング枠・フラッシュ・ポスター） |
 
-## 空に見えるフォルダ
+## ほぼ空に見えるフォルダについて
 
-- `extensions/hydra/` は `get.sh` しかありません。Hydra（hydra-synth）は AGPL-3.0 なので、このリポジトリにも配る物にも入れません。`get.sh` を走らせると利用者のフォルダの `extensions/hydra/` に取って来て、Motolii はそちらを読みます。消せば元のままです。Hydra のコードを貼る人が取りに来る物なので、ここに置いています。
-- `ease/` は見本 1 つ（`snappy.way`）です。プリセットは利用者の持ち物なので、利用者のフォルダの `ease/` に置く物が本体です。
+- `extensions/hydra/` は `get.sh` のみを配置しています。Hydra（`hydra-synth`）は AGPL-3.0 のためリポジトリや配布物に含めず、`get.sh` でユーザーフォルダの `extensions/hydra/` へ取得して読み込みます。
+- `ease/` はサンプル 1 件（`snappy.way`）のみ同梱しています。自作プリセットはユーザーフォルダの `ease/` に追加してください。
 
-## 名前の決まり
+## 命名規約
 
-ファイル名を直す前に、上の「出る名前」を見てください。書類は置いた物をファイル名で探すので、一度配ったファイルの名前は、出ない物でも替えません（`create/repeats/ae_grid.js` の `ae_` もそのまま）。
+プロジェクトファイルはエフェクトやレシピをファイル名で解決するため、**一度公開したファイル名は改名しないでください**（表示名がヘッダから取得されるファイルも含みます）。
 
-- 1 行目に `// 名前:` がある物（`effects/` の `.js`・`.wgsl`、`create/`、`expressions/`、`relations/`、`solids/`、`ease/`）：ファイル名は出ないので、形は問いません。今あるのは出どころの名前のままです（`solids/` は Alight Motion の名前の空白を `_` にした物、`create/shapes/am_*` は AbsentMotion の形）。
-- ファイル名がそのまま出る物（`looks/`、`effects/` の `.fs`、頭の無い p5 のスケッチ `create/repeats/Cube Wave.js` など、`// 名前:` の無い `relations/`）：空白も大文字もそのまま書きます。ISF の `.fs` は配られた時の名前のままです。
-- `aviutl_scripts/`：`<作者>__<パッケージ>/` で、AviUtl2 のカタログの作者名とパッケージ名です。中は配られた形のまま、`LICENSE` と `SOURCE.txt` を添えます。
-- ここに置くのは 1 つで 1 項目になる物だけです。何かの部品（例：押し出した形の UV を作る `face_uv.js`）は、それを動かすコードの隣（`engine/community/three/`：棚の `solids/` を動かす `solid_three.cpp` の隣）に置きます。`face_uv.js` は Motolii が書いた部品で、持ち込んだ表現ではないので、棚ではなく `engine/` に置きます（AGENTS.md 構成の目標 3）。
+- `// 名前:` ヘッダを持つファイル（`effects/` の `.js`/`.wgsl`、`create/`、`expressions/`、`relations/`、`solids/`、`ease/`）：元の出所のファイル名を維持します（`solids/` はスネークケース、`create/shapes/am_*` は AbsentMotion 由来）。
+- ファイル名がそのまま表示名になるファイル（`looks/`、`effects/*.fs`、ヘッダなしの p5.js スケッチや `relations/`）：空白と大文字を含めて読みやすく命名します。
+- `aviutl_scripts/`：AviUtl2 カタログの `<作者>__<パッケージ>/` 形式とし、中身は配布形式のまま `LICENSE` と `SOURCE.txt` を添えます。
+- 共有ヘルパー部品（例：`face_uv.js`）は `shelves/` ではなく `engine/community/` 側に配置します（`shelves/` にはユーザーに 1 項目として見えるアセットのみ置きます）。
 
-## ここに無い物
+## `shelves/` 外のデータ
 
-- 字が足りない時の代わりの書体（Noto Sans JP）と Fonts タブの見本の文、Effects の検索で日本語を英語に引く表（日本語 WordNet）は、置いて増やす物ではなく中身が読むデータなので、ライセンスと一緒に `engine/third_party/` にあります。利用者のフォルダの `fonts/`・`words/` に置いた物は足されます。
-- どのフォルダをどのコードが読むかは [`docs/ARCHITECTURE.md` の「棚を読む所」](../docs/ARCHITECTURE.md#棚を読む所)。
-- 中身を作る脚本（`effects/sources/`・`create/shapes/absent_shapes.sh`）は手で走らせる物で、組み立ては呼びません。
+- フォールバックフォント（Noto Sans JP）、フォントプレビュー文（`gflanguages`）、日英検索辞書（日本語 WordNet）は `engine/third_party/` にライセンス付きで配置しています。ユーザーフォルダの `fonts/`・`words/` に置いたファイルが追加読み込みされます。
+- 各フォルダの読み込み実装箇所は [`docs/ARCHITECTURE.md#where-the-shelves-are-read`](../docs/ARCHITECTURE.md#where-the-shelves-are-read) を参照してください。
+- アセット生成スクリプト（`effects/sources/`・`create/shapes/absent_shapes.sh`）は手動実行用で、ビルドからは呼ばれません。

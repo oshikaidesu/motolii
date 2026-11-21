@@ -1,157 +1,138 @@
 # Testing
 
-*How to run each kind of test in Motolii, what it covers, what CI runs, how to add a test, and the rule about what a test may assert.*
+How to run every test suite in Motolii, what CI checks, and how to write new tests.
 
-## Running the tests
+## Quick reference
 
-Run these from the repository root unless a command says otherwise.
+Run commands from the repository root unless noted otherwise.
 
-### Static checks (no build, safe at any time)
+### Static checks (no build required)
 
-- Dart: `cd app && dart analyze lib`. A pass prints no errors.
-- C++: `./engine/check_syntax.sh` runs `clang++ -fsyntax-only` on every source of ours with the flags CMake gives it, and writes nothing. A pass prints `ok: <count> sources`. Pass part of a path to check only the sources that contain it, for example `./engine/check_syntax.sh document/undo.cpp`.
-- Paths: `python3 .githooks/path_check.py --all` prints every path a shelf file or a Markdown file names that does not exist. A pass prints nothing.
+- **Dart:** `cd app && dart analyze lib`
+- **C++:** `./engine/check_syntax.sh` runs `clang++ -fsyntax-only` with CMake's flags (pass a path fragment to scope it, e.g. `./engine/check_syntax.sh document/undo.cpp`).
+- **Markdown & shelf paths:** `python3 .githooks/path_check.py --all` checks that every path referenced in docs and shelf files exists.
 
-### Flutter tests (`app/test/`)
+### Flutter unit & widget tests (`app/test/`)
 
-```
+```bash
 cd app && flutter test
 ```
 
-This runs the main tests only: the files whose header names a source outside the code for their expected values (a specification, another product, a shipped file, arithmetic worked by hand). Today they are `accessibility_guidelines_test`, `skin_folders_test`, `bridge/find_program_test`, `inspector/controls/parameter_reach_test`, `inspector/fill_card_test`, `inspector/text/text_ranges_test`, `inspector/text_card_test`, `inspector/transform_card_test`, `widgets/context_menu_test`, `widgets/modal_card_dismiss_test`, `widgets/picks_test`, `widgets/tip_test`, `workspace/stage/stage_viewport_test` and `workspace/window/home_project_test`. Every other file pins what the code gave (see "The rule for tests") and starts its `main` with `if (skipUnlessEveryTest()) return;` from [app/test/main_tests_only.dart](../app/test/main_tests_only.dart), so it shows as one skipped test. To run every test, ask for it by name:
+By default, `flutter test` runs only **specification-backed tests** (tests whose expected values come from external specifications, published fixtures, or explicit calculations). Characterization tests that pin current behavior call `skipUnlessEveryTest()` from [`app/test/main_tests_only.dart`](../app/test/main_tests_only.dart) and are skipped unless explicitly enabled:
 
-```
+```bash
 cd app && flutter test --dart-define=MOTOLII_RUN_EVERY_TEST=yes
 ```
 
-`--run-skipped` is not the way: it also runs the own-folder case of `skin_folders_test`, which then writes into the maker's real `~/.motolii`. To make a file a main test, take its `skipUnlessEveryTest` line out and name its outside source in its header.
+> Avoid `--run-skipped`, which also runs the user-folder test in `skin_folders_test.dart` against your real `~/.motolii`. To test it safely, pass a temp folder: `MOTOLII_OWN=$(mktemp -d) flutter test test/skin_folders_test.dart`.
 
-A pass ends with `All tests passed!`. To run one file, name it: `flutter test test/widgets/number_format_test.dart` (add the `--dart-define` above if it is not a main test). Most files need no engine. `app/test/skin_folders_test.dart` skips its own-folder case unless `MOTOLII_OWN` points at an empty folder: `MOTOLII_OWN=$(mktemp -d) flutter test test/skin_folders_test.dart`. `app/test/accessibility_guidelines_test.dart` opens the real `Workspace` and needs `engine/out/libmotolii.dylib` (it is skipped when the library is missing), so it needs a built engine.
+Most Flutter tests require no compiled engine; `app/test/accessibility_guidelines_test.dart` opens the real `Workspace` and is skipped if `engine/out/libmotolii.dylib` is not built.
 
-### Frame timing (needs a window)
+### Frame timing (requires a macOS GUI session)
 
-```
+```bash
 cd app && FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos \
   --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
 ```
 
-This scrolls the Workspace timeline with 120 mouse-wheel notches and fails if any frame misses Flutter's build or raster budget (about 16 ms), or if no frame was drawn. A pass exits 0. The summary is written to `app/build/test_output/frame_timing.timeline_summary.json`. `flutter test` does not pick this up, because it lives in `app/integration_test/`.
+Scrolls the Timeline by 120 wheel notches and fails if any frame exceeds the ~16 ms 60 fps budget. Writes `app/build/test_output/frame_timing.timeline_summary.json`.
 
-### C++ unit tests
+### C++ unit tests (`ctest`)
 
-```
+```bash
 engine/build.sh test
 ```
 
-Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test, written with GoogleTest; CMake finds them by name (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). There are 18 today, in `engine/base/`, `engine/motion/`, `engine/document/`, `engine/community/quickjs/`, `engine/community/script_runner/`, `engine/community/jolt/` and `engine/stage/canvas/`.
+Builds the engine and runs all GoogleTest targets (`<name>_test.cpp` files discovered by [`engine/CMakeLists.txt`](../engine/CMakeLists.txt)). To build and run a single module's tests from `engine/`:
 
-The CSS adapter is Rust and has its own tests, which CMake does not run: three layouts of letters (flex, grid, wrapped words) with the places Chrome gave them.
-
-```
-cargo test --release --manifest-path engine/community/css/Cargo.toml --target-dir engine/out/cargo_test
-```
-
-Each module has its own test program, `motolii_<module>_test`, linked with that module and the modules it declares. To build and run one module's tests alone, from `engine/`:
-
-```
+```bash
 cmake --build out/cmake --target motolii_motion_test && ctest --test-dir out/cmake -R '^Easing'
 ```
 
-### What the app is handed
+The Rust CSS adapter has standalone tests not invoked by CMake:
 
+```bash
+cargo test --release --manifest-path engine/community/css/Cargo.toml --target-dir engine/out/cargo_test
 ```
+
+### Snapshot diff verification
+
+```bash
 engine/snapshot_parts_check.sh
 ```
 
-Builds the engine if needed, then edits a new document under `engine/out/` through `edit.sh` and its `snapshot` call, and checks what the app would be handed of the document's snapshot after each step ([app/BRIDGE.md](app/BRIDGE.md)): everything when it has nothing, a layer's numbers alone for a number set anew, its words for a word written, nothing when nothing was done. Prints `ok: 8 snapshots` or what was wrong. CI's build runs it.
+Drives `edit.sh` on a temporary project under `engine/out/` and verifies incremental snapshot updates match the [`app/BRIDGE.md`](app/BRIDGE.md) contract (full snapshot initially, targeted deltas on edits, empty when unchanged). Runs in CI.
 
-### Edits at random
+### Randomized edit fuzzing
 
-```
+```bash
 engine/random_edits_check.sh
 SEED=40 STEPS=1000 RUNS=10 engine/random_edits_check.sh
 ```
 
-Edits new documents under `engine/out/random_edits/` at random through `edit.sh`: layers added and removed, numbers set, keyframes put, words written, drags held and kept or given up, steps undone and redone, several changes as one step. After every step it asks two things, and a wrong answer to either is a failure, with no crash needed:
+Applies random sequences of edits, drags, and undo/redo steps through `edit.sh` under `engine/out/random_edits/`, checking after every step that:
+1. Incremental snapshots match a full rebuild (`snapshot check`).
+2. Sequential partial reads reconstruct the complete snapshot.
 
-- `snapshot check`: are the parts of the snapshot the engine holds what making the snapshot whole gives? The engine makes again only what a change is recorded to touch ([app/BRIDGE.md](app/BRIDGE.md)); this is what finds a record that was wrong.
-- Do the parts handed over one read at a time add up to the whole snapshot?
+Failures are automatically minimized into a replayable `seed_N.calls` file. CI runs seeds 1–3 for 200 steps each.
 
-The steps come from the seed alone. A failure prints its seed, is cut down to the fewest steps that still fail, and is written as `seed_N.calls`, which `edit.sh` reads. CI's build runs seeds 1 to 3, 200 steps each. It goes through the engine's C calls, not through the window: what the window does with what it is handed is tested in `app/test/bridge/`.
+### Visual regression comparison (`drawings_unchanged.sh`)
 
-### Picture comparison
+```bash
+engine/drawings_unchanged.sh <old-commit>
+```
 
-See below. It is a build.
+Builds `<old-commit>` in a separate worktree, renders every Create recipe and Effects motion at `0.0s`, `0.7s`, and `1.9s` with an isolated `MOTOLII_OWN`, and compares PNG outputs byte-for-byte with `cmp`. Cached baselines live in `engine/out/drawings/`; pass `DRAWINGS_LIMIT=2` for a quick smoke check.
 
-## What is covered
+Exit codes: `0` = all matched, `1` = differences or missing commit/font, `2` = engine error or refused call.
 
-| Kind | Where | What it checks |
+## Test coverage summary
+
+| Suite | Location | Coverage |
 |---|---|---|
-| Unit and widget | `app/test/skin`, `app/test/widgets`, `app/test/inspector`, `app/test/workspace` | Number and colour formatting, theme tokens, inspector state and parameter inference, key bindings, timeline painters, tool-panel easing, settings files, workspace state, text ranges, fill/text/transform cards, context menus, picks, tooltips, modal dismiss |
-| Golden | `app/test/golden/` | Visual snapshots of the code field, drop overlay, render dialog and saved progress |
-| Skin folders | `app/test/skin_folders_test.dart` | The skins in `shelves/skins` and the user's own folder all appear in View > Skin |
-| Accessibility | `app/test/accessibility_guidelines_test.dart` | Flutter's tap-target size and label guidelines, text contrast, and that opening the app raises no layout exception |
-| Frame timing | `app/integration_test/`, `app/test_driver/` | Timeline scrolling stays inside the frame budget |
-| C++ unit | `engine/` (`*_test.cpp`, 18 files) | Easing curves, script headers, shelf recipe paths, search paths, video encoder, rigid bodies, AE parameters, CSS parameters, image pixels, cards, relate files, sample images, sketch data, sound data, subtitles |
-| Pictures | `engine/drawings_unchanged.sh` | Every shelf recipe and motion draws the same as at an older commit |
-| Static | analyzer, `check_syntax.sh`, `path_check.py` | Dart and C++ compile cleanly; documents name real paths |
+| Flutter unit & widget | `app/test/{skin,widgets,inspector,workspace}` | Formatting, theme tokens, inspector inference, keybindings, timeline painters, easing, settings, cards, menus, viewport |
+| Golden snapshots | `app/test/golden/` | Code field, drop overlay, render dialog, saved progress |
+| Skin loading | `app/test/skin_folders_test.dart` | Bundled and user `skins/` discovery |
+| Accessibility | `app/test/accessibility_guidelines_test.dart` | Tap target size/labels, text contrast, zero layout exceptions on startup |
+| Frame timing | `app/integration_test/`, `app/test_driver/` | 60 fps Timeline scrolling budget |
+| C++ unit tests | `engine/**/*_test.cpp` | Easing, script headers, shelf recipes, AE plugin probing, search paths, video encoder, Jolt rigid bodies, AE/CSS params, pixels, cards, relations, audio, subtitles |
+| Visual regression | `engine/drawings_unchanged.sh` | Byte-identical renders against a baseline commit |
+| Static checks | `dart analyze`, `check_syntax.sh`, `path_check.py` | Clean compilation and valid path references |
 
-Most files under `app/test/` pin what the code does today (their header comment says the expected values are what the code gave when written). They are characterization tests: they catch a change, and are not evidence that the behaviour is right.
+## External guidelines & benchmarks
 
-## Picture comparison
+Tracked against external standards (last full check: 2026-11-08, macOS):
 
-`engine/drawings_unchanged.sh <old-commit>` builds the engine at `<old-commit>` in a separate worktree, then draws every recipe of the Create shelf and every motion of the Effects shelf (applied to the text MOTOLII) with that engine and with this checkout's, on a fresh document at 0.0, 0.7 and 1.9 seconds. Each pair of PNGs is compared byte for byte with `cmp`. It reads and writes nothing of the user's own: it uses an empty `MOTOLII_OWN` folder and temporary documents.
-
-Use it after a change that can alter what is drawn (the engine, a shelf item, a shader). Do not use it after moving code. It has three parts and only the build holds the machine's build lock (`engine/tools/build_lock.sh`): it builds each engine once, lets the lock go, calls the built `out/edit_wgpu` for every picture, then compares the PNGs. The old engine's pictures are kept in `engine/out/drawings/` per old commit, so a second run against the same commit draws only this checkout; `rm -rf engine/out/drawings` forgets them. `DRAWINGS_LIMIT=2` limits it to the first two of each kind, to see that it runs.
-
-Output ends with `N of M matched`, then a line for each pair that `differs:` and each item that exists on one side only (named, not compared). Exit codes:
-
-- 0: every compared picture matched.
-- 1: some pictures differ, or the commit or the font was not found.
-- 2: a call was refused, the engine stopped answering, or a picture was not made; the count does not stand.
-
-## External requirements
-
-Expected values come from the sources below, not from Motolii. Status is as last run on 2026-11-08, on macOS, without a window unless noted.
-
-| Requirement | Source | What it checks | Status |
+| Standard | Reference | Check | Recorded status |
 |---|---|---|---|
-| Tap targets at least 48x48 (Android) | https://docs.flutter.dev/ui/accessibility/accessibility-testing and https://api.flutter.dev/flutter/flutter_test/meetsGuideline.html | `androidTapTargetGuideline` | Fails, 65 nodes |
-| Tap targets at least 44x44 (iOS) | same | `iOSTapTargetGuideline` | Fails, 65 nodes |
-| Tappable nodes have a semantic label | same | `labeledTapTargetGuideline` | Fails, 47 nodes |
-| Text contrast | same | `textContrastGuideline` | Passes (weak evidence: the first screen only, drawn in the test font) |
-| No rendering exception when the app opens | same | `takeException` count is 0 | Fails, 1 overflow (`RenderFlex overflowed by 9.9 pixels`) |
-| Frame budget of about 16 ms at 60 fps while scrolling the timeline | https://docs.flutter.dev/cookbook/testing/integration/profiling | `traceAction` and `TimelineSummary` | Fails on the build budget (2 runs, raster budget met) |
-| WCAG 2.2 SC 1.4.3 Contrast (Minimum) | https://www.w3.org/TR/WCAG22/#contrast-minimum | Not run; whether the Flutter threshold matches is unchecked | Reference only |
-| WCAG 2.2 SC 2.5.8 Target Size (Minimum), 24x24 CSS px | https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html | Not run; closer to a mouse-driven desktop app than 48 and 44 | Reference only |
-| Lint rules | https://pub.dev/packages/flutter_lints (included by `analysis_options.yaml`) | `flutter analyze` | Run by CI |
+| Tap targets ≥ 48×48 (Android) | [Flutter Accessibility Testing](https://docs.flutter.dev/ui/accessibility/accessibility-testing) | `androidTapTargetGuideline` | Failing (65 nodes) |
+| Tap targets ≥ 44×44 (iOS) | Same | `iOSTapTargetGuideline` | Failing (65 nodes) |
+| Semantic labels on tappables | Same | `labeledTapTargetGuideline` | Failing (47 nodes) |
+| Text contrast | Same | `textContrastGuideline` | Passing (initial screen only) |
+| Zero startup layout exceptions | Same | `takeException == 0` | Failing (1 overflow) |
+| 60 fps timeline scroll (~16 ms) | [Flutter Integration Profiling](https://docs.flutter.dev/cookbook/testing/integration/profiling) | `TimelineSummary` | Failing build budget (raster met) |
+| WCAG 2.2 SC 1.4.3 / SC 2.5.8 | [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/) | Reference only | Not yet automated |
+| Dart lints | [`flutter_lints`](https://pub.dev/packages/flutter_lints) | `flutter analyze` | Enforced in CI |
 
-Reference only (no test runs these yet): the glTF-Validator and glTF Sample Assets from Khronos (https://github.com/KhronosGroup/glTF-Validator, https://github.com/KhronosGroup/glTF-Sample-Assets) for glTF loading; the ISF documentation (https://docs.isf.video) and the Vidvox shaders (https://github.com/Vidvox/ISF-Files) for ISF; the Lottie specification and JSON Schema (https://lottie.github.io/lottie-spec/latest/) and ThorVG's Lottie files (https://github.com/thorvg/thorvg/tree/main/test/res) for Lottie; the After Effects expression reference (https://ae-expressions.docsforadobe.dev) for expression names.
+Additional external references (not yet automated): [glTF-Validator](https://github.com/KhronosGroup/glTF-Validator), [glTF-Sample-Assets](https://github.com/KhronosGroup/glTF-Sample-Assets), [ISF docs](https://docs.isf.video), [Vidvox/ISF-Files](https://github.com/Vidvox/ISF-Files), [Lottie Spec](https://lottie.github.io/lottie-spec/latest/), [ThorVG test assets](https://github.com/thorvg/thorvg/tree/main/test/res), and [After Effects Expression Reference](https://ae-expressions.docsforadobe.dev).
 
-## How to add a test
+## Adding tests & test policy
 
-- Dart: add `<name>_test.dart` under the matching folder of `app/test/` (widget and unit tests), or under `app/integration_test/` with a driver in `app/test_driver/` (tests that need a real window). Files a test writes go under `app/build/test_output/`.
-- C++: add `<name>_test.cpp` beside the code it tests, in one of the folders listed in `engine/CMakeLists.txt`. CMake finds it by name; it needs GoogleTest.
-- Pictures: no file to add; a new recipe or motion on a shelf is compared automatically.
-- Follow the rule below.
+- **Dart:** Place `<name>_test.dart` under the matching folder in `app/test/` (or `app/integration_test/` with a driver in `app/test_driver/`).
+- **C++:** Place `<name>_test.cpp` next to the module it tests and ensure the folder is listed in `engine/CMakeLists.txt`.
+- **Policy:** Expected values in specification tests must derive from an external source (a spec, upstream sample, or human-approved golden), never simply copied from the implementation under test. Characterization tests that pin existing behavior must be labeled `characterization:` on line 1. Always verify a regression test fails before applying the fix.
 
-## The rule for tests
+## CI workflows
 
-A test's expected value must come from outside the code under test: a specification, a published sample, or a recorded picture a person approved. A test that only pins current behaviour is allowed if its first line says `characterization:`; it guards against change and is not evidence of correctness. A test must be seen failing before the fix it covers. Work is done when it is shown with something the user can see (a picture, the window, an exported file).
-
-Tests written by the same hand that wrote the code tend to repeat its mistakes, which is why earlier self-written tests were removed on 2026-11-08.
-
-## What CI runs
-
-[.github/workflows/checks.yml](../.github/workflows/checks.yml) runs on every push and pull request, on Ubuntu with Flutter 3.50.0:
-
-- `dart format --output=none --set-exit-if-changed .`
-- `flutter analyze`
-- `dart_code_linter` banned-import check (no Material or Cupertino)
-- `flutter test` (the main tests only; CI never runs every test)
-- `clang-format --dry-run --Werror` over the engine's own sources (clang-format 23.1.5, the root `.clang-format`)
-- `ast-grep scan` (the rules in `app/tool/rules/`)
-- `jscpd` copy-paste detection on `app/lib/`
-- `python3 .githooks/path_check.py --all`
-
-[.github/workflows/build.yml](../.github/workflows/build.yml) runs on pushes to main, pull requests that touch `engine/`, `shelves/`, `app/` or the `Brewfile`, and by hand, on macOS 15: `engine/build.sh test` (the build, then ctest), then `engine/edit.sh build.motolii` (a document opened by what was built). It runs no picture comparison.
+- **[`.github/workflows/checks.yml`](../.github/workflows/checks.yml)** (Ubuntu, Flutter 3.50.0, every push & PR):
+  - `dart format --output=none --set-exit-if-changed .`
+  - `flutter analyze`
+  - `dart_code_linter` banned-import check (forbids Material / Cupertino imports)
+  - `flutter test` (main specification tests)
+  - `clang-format --dry-run --Werror` (v23.1.5)
+  - `ast-grep scan` (`app/tool/rules/`)
+  - `jscpd` duplicate-code check on `app/lib/`
+  - `python3 .githooks/path_check.py --all`
+- **[`.github/workflows/build.yml`](../.github/workflows/build.yml)** (macOS 15, pushes/PRs touching `engine/`, `shelves/`, `app/`, or `Brewfile`):
+  - `engine/build.sh test`
+  - `engine/edit.sh build.motolii` smoke test

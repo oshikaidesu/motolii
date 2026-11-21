@@ -1,74 +1,79 @@
-# Contributing
+# Contributing to Motolii
 
 [日本語](CONTRIBUTING.ja.md)
 
-## What you can do
+## Ways to contribute
 
-- **Issues**: bugs, a build that stopped, or "I want to use this expression" (a URL and what is good about it). There are templates. English or Japanese.
-- **Pull requests**: welcome. Motolii is dual licensed under Apache-2.0 or MIT; unless you explicitly state otherwise, what you send is under the same two licences.
-- **Authors of bundled works**: if you want the way your work is bundled changed, or it removed, open an issue and it will be done ([`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)).
+- **Issues:** Report bugs, build failures, or suggest creative formats/examples to support (include a URL and what makes it useful). Issue templates are available in English and Japanese.
+- **Pull requests:** Welcome! Motolii is dual-licensed under Apache-2.0 or MIT; unless you explicitly state otherwise, your contributions are accepted under the same dual license.
+- **Authors of bundled works:** If you want attribution updated or your work removed from the repository, open an issue and we will update or remove it promptly (see [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)).
 
-Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to the Security tab, not to issues ([`.github/SECURITY.md`](SECURITY.md)).
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report security vulnerabilities through the GitHub Security tab rather than public issues (see [`.github/SECURITY.md`](SECURITY.md)).
 
-## Building
+## Development setup
 
-As in [`README.md`](../README.md) ("Build and run"); each step in detail is in the [guide](../docs/archive/using/guide.md). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
+Follow the build steps in [`README.md`](../README.md#build-and-run) (detailed troubleshooting is in the [build guide](../docs/archive/using/guide.md)). Enable the pre-commit formatting hook once per clone:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`engine/README.md`](../engine/README.md) and [`app/README.md`](../app/README.md).
+Codebase overviews: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`engine/README.md`](../engine/README.md), and [`app/README.md`](../app/README.md).
 
-Words in the code and the docs are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
+Use standard terminology from After Effects, Filament, Flutter, and Blender: app, engine, layer, project, preview (`Stage` in code), and shelf (for the left-side asset panels, following Blender's Asset Shelf). Avoid inventing custom jargon.
 
-## Checks
+## Running checks
 
-Run these before you send a pull request. CI runs the same on every push and pull request (`.github/workflows/checks.yml`):
+Run these locally before opening a pull request — CI runs the same suite on every push and PR (`.github/workflows/checks.yml`):
 
 ```bash
 cd app && dart format . && flutter analyze && flutter test
 ```
 
-For C++, `./engine/check_syntax.sh` checks syntax without building, `engine/build.sh` builds, and `engine/build.sh test` builds and runs the C++ tests. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
+For C++ engine changes:
+- `./engine/check_syntax.sh` — fast syntax check without building
+- `engine/build.sh` — incremental engine build
+- `engine/build.sh test` — build and run C++ unit tests (`ctest`)
 
-## Stance
+Full builds run on GitHub Actions (`.github/workflows/build.yml`, Apple Silicon macOS) on pushes/PRs touching `engine/`, `shelves/`, `app/`, or `Brewfile`. See [`docs/TESTING.md`](../docs/TESTING.md) for testing details.
 
-The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
+## Engineering philosophy
+
+**Custom code is long-term debt.** Prefer reusing well-tested upstream implementations in their native form rather than reimplementing them. Bundle third-party works unmodified with their license and source metadata, keep upstream modifications isolated as build-time `.patch` files, and cite references in every commit.
 
 ## Design principles
 
-Decided by the author. A change that breaks one of them is not merged, even when its reasoning is sound. [`AGENTS.md`](../AGENTS.md) carries the same five for AI agents.
+These principles are non-negotiable; changes violating them will not be merged. AI contributors follow the same principles in [`AGENTS.md`](../AGENTS.md).
 
-1. **Expressions from the net are not translated.** Pasted code (After Effects expressions, Cavalry, p5.js, shaders) is compiled once and run as it is. The same behaviour is not re-implemented in C++.
-2. **No value is fixed without a source.** Nothing is greyed out or refused. A slider's range is for display and does not limit what can be typed. Where input is limited, the source that limits the same value is cited.
-3. **No web page is embedded in the app.** A visual editor reads from the code and writes its edits back to the code; there is no second copy of the code.
-4. **A small request is met with a mechanism Motolii already has.** Research outside the repository is for when Motolii has nothing.
-5. **Dart holds looks only.** Presses, overlays and selection are handed to an implementation the app already depends on, and no dependency is added. The same hand-written code appearing several times is a copy, not a split: in the Inspector the effect card (`ValuesCard`) is the original, and other cards, number fields, chips and switches fold into it.
+1. **Run web expressions natively — don't reimplement them.** Pasted After Effects expressions, Cavalry scripts, p5.js sketches, and shaders run via their real runtimes rather than custom C++ replicas.
+2. **Never hardcode arbitrary parameter limits.** Slider ranges are for display ergonomics and never reject typed values outside the range. Any strict limit must cite an upstream specification.
+3. **No embedded webviews.** Visual inspectors read directly from source code and write edits back to that code — never maintain a second shadow copy of settings.
+4. **Solve small tasks with existing Motolii mechanisms.** Don't introduce new frameworks or dependencies when an existing pattern already solves the problem.
+5. **Keep Dart strictly focused on presentation.** Delegate input primitives, overlays, selection, and sliders to Flutter / `naked_ui` rather than rewriting them. The Inspector's effect card (`ValuesCard`) is the single source of truth; fold duplicate custom cards, chips, switches, and number fields into it rather than maintaining parallel copies.
 
-## Rules
+## Contribution guidelines
 
-1. **Look before you write.** Look at the tree (`engine/` the engine, `app/` the app, `shelves/` the bundled content) and at existing implementations on the net. If something can be used the way its author meant, use it.
-2. **One job a file.** Split by what each part is for and name it so. Experiments stay on your own branch; main holds only what the app uses.
-3. **Commit messages.**
-   - The **subject** (first line) is 72 characters at most and says what changed. For example `Remove the unused Foo card`, `Fix Y in Z`.
-   - After one blank line, the **body** says why it changed, what was checked and what is not done yet.
-   - If you borrowed something, say where from (URL, version or commit) in the body. Example: `git show d46f69cac`.
-4. **Bundling other people's work.**
-   - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
-   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
-   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (patches in `engine/deps/patches/<library>/`; `engine/deps/thorvg.sh` is an example).
-   - Add a row to [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
+1. **Search before building.** Check `engine/`, `app/`, `shelves/`, and existing OSS before writing new code.
+2. **One responsibility per file.** Keep modules small and clearly named; keep experiments on feature branches and merge only production code to `main`.
+3. **Commit messages:**
+   - Subject line: ≤ 72 characters summarizing what changed (e.g. `fix(inspector): preserve focus on slider drag`).
+   - Body (after a blank line): explain *why*, what was verified, and any remaining limitations.
+   - Cite upstream sources (URL, version, or commit SHA) for borrowed code or algorithms.
+4. **Adding third-party works:**
+   - Keep the author's folder structure unmodified with `LICENSE` and `SOURCE.txt` (`author`, `license`, `from`, `page`).
+   - Never bundle works published without explicit license text — fetch them at build time instead (see `engine/deps/midi_roll.sh`).
+   - Keep patches to upstream dependencies in `engine/deps/patches/<library>/` applied at build time (see `engine/deps/thorvg.sh`).
+   - Update [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
 ## Good first tasks
 
-| What | Where to start | Difficulty |
+| Task | Starting points | Difficulty |
 |---|---|---|
-| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/archive/design/aviutl2_converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/archive/design/tsl_collection.md` | Medium |
+| Redistributable macOS `.app` bundle: package Homebrew dynamic libraries (GStreamer, GLib, SQLite, LuaJIT, QuickJS, FFmpeg) inside the `.app` using [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
+| Implement remaining AviUtl2 script APIs (`obj.computeshader`, built-in effects, etc.) following AviUtl2's lua.txt and `sashimono-edit` | `docs/archive/design/aviutl2_converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–Hard |
+| Expand TSL effects on the Effects shelf | `engine/community/three_shading_language_to_shelf/`, `docs/archive/design/tsl_collection.md` | Medium |
 
-## Known gaps
+## Known limitations
 
-- Tried only on macOS on Apple silicon; Windows and Linux have not been tried yet.
-- The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
+- Verified only on Apple Silicon macOS; Windows and Linux builds are not yet verified.
+- `libmotolii.dylib` dynamically links Homebrew libraries, so built `.app` bundles are not yet portable across machines.

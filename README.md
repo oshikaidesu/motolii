@@ -4,61 +4,61 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**A crossroads of expressions that were apart.**
+**Where creative coding and motion design meet.**
 
-A Shadertoy shader reacting to the beat of a song. CSS @keyframes animating the letters while a p5.js sketch draws behind them. An After Effects expression and a Lottie animation on the same layer. Paste code from the web; it works as it was published.
+React to audio with a Shadertoy shader. Combine CSS `@keyframes` and After Effects expressions on the same text layer. Composite a p5.js sketch behind a Lottie animation. Paste code from the web and run it as published.
 
-After Effects expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie and more. Paste it; it runs. An open-source video editor — [20+ formats and counting](#what-runs).
+Motolii is an open-source video editor supporting [20+ creative formats](#supported-formats) — After Effects plugins and expressions, Shadertoy, Cavalry, p5.js, CSS, Lottie, AviUtl2 scripts, and more.
 
-![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
+![Motolii UI: media and asset shelves on the left, Stage preview in the center, Timeline at the bottom, and Inspector on the right](docs/pictures/window.jpg)
 
-- **GPU-native.** Expressions compile to GPU shaders. Thousands of copies stay at 60 fps.
-- **Effects are files.** A `.wgsl`, a `.fs`, a `.js` — open them, read how they work, change them, or let an AI agent do it with you. Motolii speaks [ACP](https://github.com/anthropics/agent-client-protocol), the same protocol Zed and JetBrains use. Not a black box.
-- **One layer, many languages.** A CSS animation, an After Effects expression and a shader effect compose on the same text, in the order you stack them.
+- **GPU-native.** Shaders and expressions run on WebGPU, keeping thousands of copies smooth at 60 fps.
+- **Effects are plain files.** `.wgsl`, `.fs`, and `.js` effects live right on disk — inspect them, edit them directly, or co-edit them with an AI agent over [ACP](https://github.com/anthropics/agent-client-protocol) (the same protocol used by Zed and JetBrains).
+- **Mix languages on one layer.** Stack CSS animations, After Effects expressions, GPU shaders, and native plugins on the same layer in any order.
 
-## The window
+## Interface overview
 
-Every tab, with pictures: [The window, tab by tab](docs/TABS.md)
+See [Tabs & Panels](docs/TABS.md) for a visual tour of every tab.
 
 <p>
 <img src="docs/pictures/tabs/effects_map.jpg" width="49%">
 <img src="docs/pictures/tabs/fonts_map.jpg" width="49%">
 </p>
 
-- **Maps.** The Effects and Fonts shelves switch to a map where similar-looking items sit together (t-SNE). Browse 1,300+ effects without knowing their names.
-- **Values as blocks, not rows.** The Inspector lays values out as tiles. A wider panel gets more columns, so an effect with many values stays a short card. Every bundled effect was reviewed value by value (0 to 10); the values that change the picture most are tinted pale yellow, pink and celadon.
-- **Hover to try.** Hover an effect tile and it is tried on the Stage. Hover an ease preset and it plays.
-- **Code tab and Code workspace.** The layer's code as cells. AE expressions get completion, and each cell shows its value at the playhead or its error. **CODE** in the top bar puts code, Stage and Timeline in view together.
-- **Agent tab.** Any ACP agent (Claude Agent, Codex, Gemini CLI, Cursor, …). It gets the layer's cards, values and code. New things arrive as new cards; existing code changes only when asked.
-- **Relations.** `Follow`, `Gravity`, `flock`, `spring`, `collide` and more move many layers at once. Short JavaScript files in `shelves/relations/`.
-- **BPM.** Tap the tempo in the Timeline; a beat grid appears and edits snap to it.
-- **Stacked easings.** Easings stack like effects. A preset is a one-line formula file.
-- **Colour.** The Mac's eyedropper, palettes from photos, colour on selected letters only.
-- **Replaceable.** Skins are folders, keys are a VS Code style `keybindings.json`, a panel is a few lines of Dart. The author and licence of each effect used go into the export log.
+- **Visual Maps.** Switch the Effects and Fonts shelves to a 2D t-SNE similarity map to browse 1,300+ effects visually without remembering names.
+- **Tile-based Inspector.** Parameters render as compact multi-column blocks rather than long rows, scaling cleanly when you widen the panel. Bundled effects are scored by visual impact (0–10) and color-coded (pale yellow, pink, celadon) so high-impact controls stand out immediately.
+- **Hover to preview.** Hover an effect tile to preview it live on the Stage, or hover an easing preset to preview its motion curve.
+- **Code tab & Code workspace.** Edit every effect or expression on a layer as stacked notebook cells with AE expression autocompletion, live evaluated values, and inline error reporting. Switch to the **CODE** workspace in the top bar to keep Code, Stage, and Timeline visible side by side.
+- **Agent tab.** Connect any ACP-compatible AI agent (Claude Agent, Codex, Gemini CLI, Cursor, etc.) with full context of the selected layer's cards, parameter values, and code. New effects arrive as new cards, and existing code is modified only when requested.
+- **Relations.** Drive multiple layers together (`Follow`, `Gravity`, `flock`, `spring`, `collide`, etc.) using small JavaScript files in `shelves/relations/`.
+- **BPM grid.** Tap tempo directly in the Timeline to generate a beat grid with snap-to-beat editing.
+- **Stackable easings.** Stack multiple easings like effects. Each preset is a one-line formula file.
+- **Color tools.** Native macOS eyedropper, automatic palettes extracted from images, and per-character text styling.
+- **Customizable & transparent.** Folder-based skins, VS Code-style `~/.motolii/keybindings.json`, minimal Dart panels, and automatic export credit logs listing authors and licenses for every effect used.
 
-## Status
+## Current status
 
-Motolii is still in development and has been tried only on a Mac with Apple silicon (an M4, macOS 15.5); Windows and Linux have not been tried yet. There is no packaged app yet, so trying it means building it from source.
+Motolii is under active development and has been verified on Apple Silicon macOS (M4, macOS 15.5). Windows and Linux builds are not yet verified, and prebuilt app bundles are not yet published — trying Motolii currently requires building from source.
 
-- **Works**: placing video, photos, text, shapes, 3D models, point clouds and Lottie animations in one scene; keyframes and easing; autosave and undo; playback (with a video's sound); MP4 export.
-- **Works**: effects from the web. An ISF (`.fs`) or WGSL (`.wgsl`) file put in the effects folder appears in the effects list without restarting the app; a p5.js sketch or a Shadertoy shader is pasted in and becomes a layer. Not all code in a supported format runs correctly.
-- **Partly**: AviUtl2 scripts; Alight Motion's features.
-- **Not yet**: Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound.
+- **Working:** Video, images, text, vector shapes, 3D models (`.glb`/`.gltf`), point clouds, and Lottie animations in one scene; keyframes and stackable easings; autosave and undo/redo; audio/video playback; MP4/MOV/GIF/image-sequence export.
+- **Working:** External creative formats — drop `.fs`/`.wgsl` shaders in `effects/` or native After Effects plugins in `ae_plugins/` to load them without restarting, or paste Shadertoy/p5.js/CSS/TSL code directly with ⌘V. (Not every third-party file or script is guaranteed to run cleanly.)
+- **Partial:** AviUtl2 scripts; Alight Motion compatibility features.
+- **Not yet ready:** Verified Windows/Linux builds, redistributable `.app` bundle (the engine currently links Homebrew libraries dynamically), and MIDI audio playback.
 
-How each format runs, with counts, and the known bug: [Specifications](docs/archive/using/specifications.md).
+For per-format details and known limitations, see [Specifications](docs/archive/using/specifications.md).
 
 ## Build and run
 
-You need:
+### Requirements
 
-- A Mac with Apple silicon (checked on an M4, macOS 15.5).
-- Xcode from the App Store (the Command Line Tools alone can't build the UI). Open it once to add its components, then `sudo xcodebuild -license accept`.
-- Homebrew: the one line on [brew.sh](https://brew.sh/).
-- Flutter 3.50.0 (stable) on your `PATH`: [flutter.dev/get-started](https://docs.flutter.dev/get-started/install).
-- Python 3: the one macOS has (it comes with Xcode).
-- About 10 GB of disk besides Xcode and Flutter.
+- Apple Silicon Mac (tested on M4, macOS 15.5)
+- Xcode from the App Store (Command Line Tools alone are not sufficient; launch Xcode once to install components, then run `sudo xcodebuild -license accept`)
+- [Homebrew](https://brew.sh/)
+- [Flutter](https://docs.flutter.dev/get-started/install) 3.50.0 (stable) on your `PATH`
+- Python 3 (bundled with macOS / Xcode)
+- ~10 GB of free disk space (excluding Xcode and Flutter)
 
-Then, one line at a time:
+### Commands
 
 ```bash
 git clone https://github.com/oshikaidesu/motolii.git
@@ -68,86 +68,85 @@ engine/build.sh
 app/tool/live.sh
 ```
 
-- `brew bundle` installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …).
-- `engine/build.sh` builds the engine. The first time it builds Filament from source (~5 minutes on an M4); `engine/out/libmotolii.dylib` existing means it worked.
-- `app/tool/live.sh` opens the app. The first time it seems to stall for 1–3 minutes while it builds.
+- `brew bundle` installs dependencies listed in `Brewfile` (GStreamer, SQLite, FFmpeg, CMake, etc.).
+- `engine/build.sh` fetches third-party libraries and builds the C++ engine. The first run compiles Filament from source (~5 minutes on an M4) and produces `engine/out/libmotolii.dylib`.
+- `app/tool/live.sh` builds and launches the Flutter app (the first build takes ~1–3 minutes).
 
-The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it.
+Projects are auto-saved under `~/Movies/Motolii/Untitled.motolii`, and exported videos are written beside the project file.
 
-To run the tests: `engine/build.sh test` for the engine (CMake's ctest) and `cd app && flutter test` for the app. More in [Testing](docs/TESTING.md).
+To run tests: `engine/build.sh test` for C++ tests (`ctest`) and `cd app && flutter test` for Flutter tests. See [Testing](docs/TESTING.md) for details.
 
-Each step in detail and what to do if something goes wrong: [Guide](docs/archive/using/guide.md).
+For troubleshooting, see the [Build Guide](docs/archive/using/guide.md).
 
-## What runs
+## Supported formats
 
-Paste code (⌘V) or drop a file. The language is detected automatically.
+Paste code (`⌘V`) or drop files into your shelf folders — formats are detected automatically.
 
-| World | How it gets in | Run by |
+| Format | How to add | Runtime |
 |---|---|---|
-| **Shadertoy** | ⌘V | ISF → WGSL via glslang and Tint |
-| **GLSL Sandbox** | ⌘V | same |
-| **twigl** | ⌘V | same |
-| **Bonzomatic** | ⌘V | same |
-| **ISF (.fs)** | file in `effects/` | glslang → SPIR-V → WGSL |
-| **WGSL (.wgsl)** | file in `effects/` | as is |
-| **p5.js / Processing** | ⌘V | QuickJS-ng |
-| **Paper.js** | ⌘V | QuickJS-ng |
-| **Two.js** | ⌘V | QuickJS-ng |
-| **Canvas 2D** | ⌘V | QuickJS-ng |
-| **Dwitter** | ⌘V | QuickJS-ng |
-| **tixy.land** | ⌘V | QuickJS-ng |
-| **Turtletoy** | ⌘V | QuickJS-ng |
-| **Hydra** | ⌘V | QuickJS-ng → WGSL |
-| **After Effects expressions** | ⌘V or expression card | lottie-web in QuickJS-ng |
-| **After Effects plugins (.plugin, .aex)** | place or symlink in `ae_plugins/` | [aexlo](https://github.com/potistudio/aexlo) (isolated worker) |
-| **Cavalry scripts** | expression card | QuickJS-ng |
-| **CSS @keyframes** | ⌘V on a text layer | Stylo (Firefox's CSS engine) |
-| **Animated SVG** | ⌘V or D&D | ThorVG + Stylo |
-| **three.js TSL** | ⌘V | WGSLNodeBuilder in QuickJS-ng |
-| **AviUtl2 (.anm2, .obj2)** | file in `aviutl_scripts/` | LuaJIT |
-| **Lottie (.json)** | D&D | ThorVG |
-| **Subtitles (ASS/SRT/LRC/VTT)** | D&D | libass via FFmpeg |
+| **Shadertoy** | Paste (`⌘V`) | ISF → WGSL (glslang + Tint) |
+| **GLSL Sandbox** | Paste (`⌘V`) | Same |
+| **twigl** | Paste (`⌘V`) | Same |
+| **Bonzomatic** | Paste (`⌘V`) | Same |
+| **ISF (`.fs`)** | Place in `effects/` | glslang → SPIR-V → WGSL |
+| **WGSL (`.wgsl`)** | Place in `effects/` | Native WebGPU |
+| **p5.js / Processing** | Paste (`⌘V`) | QuickJS-ng |
+| **Paper.js** | Paste (`⌘V`) | QuickJS-ng |
+| **Two.js** | Paste (`⌘V`) | QuickJS-ng |
+| **Canvas 2D** | Paste (`⌘V`) | QuickJS-ng |
+| **Dwitter** | Paste (`⌘V`) | QuickJS-ng |
+| **tixy.land** | Paste (`⌘V`) | QuickJS-ng |
+| **Turtletoy** | Paste (`⌘V`) | QuickJS-ng |
+| **Hydra** | Paste (`⌘V`) | QuickJS-ng → WGSL |
+| **After Effects expressions** | Paste (`⌘V`) or Expression card | lottie-web in QuickJS-ng |
+| **After Effects plugins (`.plugin`, `.aex`)** | Place or symlink in `ae_plugins/` | [aexlo](https://github.com/potistudio/aexlo) (isolated worker) |
+| **Cavalry scripts** | Expression card | QuickJS-ng |
+| **CSS `@keyframes`** | Paste (`⌘V`) on a text layer | Stylo (Firefox CSS engine) |
+| **Animated SVG** | Paste (`⌘V`) or drag & drop | ThorVG + Stylo |
+| **three.js TSL** | Paste (`⌘V`) | WGSLNodeBuilder in QuickJS-ng |
+| **AviUtl2 (`.anm2`, `.obj2`)** | Place in `aviutl_scripts/` | LuaJIT |
+| **Lottie (`.json`)** | Drag & drop | ThorVG |
+| **Subtitles (`ASS`/`SRT`/`LRC`/`VTT`)** | Drag & drop | libass via FFmpeg |
 
-Not all code in a supported format runs correctly. Counts and details: [Specifications](docs/archive/using/specifications.md).
-
-See also [`shelves/README.md`](shelves/README.md) for where each kind of file goes.
+See [`shelves/README.md`](shelves/README.md) for where each file type belongs.
 
 ### After Effects compatibility
 
-Bring your existing After Effects assets with you:
+Bring your existing After Effects assets directly into Motolii:
 
-- **Native plugins (`.plugin` / `.aex`)** — Drop or symlink your existing third-party After Effects plugins (e.g. Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, …) into your user `ae_plugins/` folder and they appear directly in the Effects shelf with their own parameters, `#ae` / `#cpu` (or `#gpu`) tags, and live preview tiles. Plugins run through [aexlo](https://github.com/potistudio/aexlo) inside an isolated worker process so a hanging or crashing plugin cannot take the editor down. Plugins that depend on host-only AEGP camera/comp APIs or Adobe's private built-in suites are not yet covered.
-- **Expressions** — Motolii runs After Effects expressions **as they are**, without reimplementing them. The runtime is lottie-web's ExpressionManager compiled to bytecode and evaluated in QuickJS-ng — the same code that runs expressions on the web. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access and cross-layer references all work. Paste an expression from a tutorial or a forum; it runs.
-- **Lottie (`.json`)** — Lottie files exported by Bodymovin play through ThorVG, which also evaluates Lottie-embedded expressions at runtime with JerryScript — they are not baked. Keyframes, easing, paths, parents, precompositions, time remapping, loops, mattes and blend modes are handled by ThorVG. Motolii adds 3D layer and camera support on top (`thorvg_z.patch`).
+- **Native plugins (`.plugin` / `.aex`)** — Drop or symlink third-party After Effects plugins (Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, etc.) into your user `ae_plugins/` folder. They appear in the Effects shelf with auto-generated parameter cards, `#ae` / `#cpu` (or `#gpu`) tags, and live preview tiles. Plugins execute inside an isolated worker process via [aexlo](https://github.com/potistudio/aexlo) so a crashing or hanging plugin cannot bring down the editor.
+- **Expressions** — After Effects expressions run directly without reimplementation, using lottie-web's `ExpressionManager` compiled to QuickJS-ng bytecode. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access, and cross-layer references all work out of the box.
+- **Lottie (`.json`)** — Bodymovin exports play via ThorVG, which evaluates embedded expressions at runtime with JerryScript rather than baking them. Keyframes, easings, paths, parenting, precomps, time remapping, loops, mattes, and blend modes are supported, plus 3D layer and camera support via `thorvg_z.patch`.
 
-Cavalry scripts also run as they are: the `cavalry.Point`, `cavalry.PointCloud` and `cavalry.random` APIs are provided, and a bare `{ }` expression is wrapped into `each()` automatically. Twenty-six distribution scripts from the Cavalry community ship in `shelves/create/cavalry/`.
+Cavalry scripts also run natively (`cavalry.Point`, `cavalry.PointCloud`, `cavalry.random`), and bare `{ }` expressions are automatically wrapped into `each()`. Twenty-six Cavalry community distribution scripts ship in `shelves/create/cavalry/`.
 
-What is **not** covered: Adobe's private built-in effects, plugins requiring unimplemented AEGP host suites (such as comp cameras or text documents), and audio-reactive properties tied to AE's internal audio graph. Motolii covers those with its own GPU shader effects and sound analysis.
+**Not covered:** Adobe's private built-in effects, plugins requiring unimplemented AEGP host suites (such as comp cameras or text documents), and audio-reactive properties tied to AE's internal audio graph. Motolii covers those with its own GPU shader effects and Web Audio-compatible sound analysis.
 
 ## Repository layout
 
-| Folder | What it is |
+| Directory | Description |
 |---|---|
-| [`app/`](app/README.md) | The Flutter app: the UI, which only takes input |
-| [`engine/`](engine/README.md) | The C++ engine, which draws; it becomes `libmotolii.dylib` |
-| [`shelves/`](shelves/README.md) | The bundled community content the app reads at run time: effects, scripts, eases, skins |
-| [`docs/`](docs/README.md) | Documents |
+| [`app/`](app/README.md) | Flutter desktop UI (presentation and input handling) |
+| [`engine/`](engine/README.md) | C++ rendering and project engine (`libmotolii.dylib`) |
+| [`shelves/`](shelves/README.md) | Bundled community effects, scripts, easings, and skins |
+| [`docs/`](docs/README.md) | Guides, architecture notes, and testing docs |
 
 ## Documentation
 
-- [The window, tab by tab](docs/TABS.md): every tab and what you can do in it, with pictures.
-- [Architecture](docs/ARCHITECTURE.md): the whole design: how the app, the engine, drawing and video connect.
-- [Effect licences](docs/design/effect_licences.md): how Motolii handles credit and attribution for bundled effects.
-- [Testing](docs/TESTING.md): how to run each kind of test.
-- [Bridge](docs/app/BRIDGE.md): the contract between the Flutter app and the C++ engine.
-- [Gestures](docs/app/GESTURES.md): what a press, a drag, a wheel and each key mean on every control.
-- [Contributing](.github/CONTRIBUTING.md): building, the rules, good first tasks.
-- [Archive](docs/archive/): older docs kept for history (highlights, specifications, guide, screen tour).
+- [Tabs & Panels](docs/TABS.md) — Visual overview of every tab and feature
+- [User Guide](docs/GUIDE.md) — End-to-end guide from creating a project to exporting (Japanese)
+- [Architecture](docs/ARCHITECTURE.md) — System design: Flutter app, C++ engine, WebGPU rendering, and shelves
+- [Effect Licenses](docs/design/effect_licences.md) — Attribution, export credit files, and bundling boundaries
+- [Testing](docs/TESTING.md) — C++, Flutter, golden, and mutation test suites
+- [Bridge Contract](docs/app/BRIDGE.md) — FFI contract between Flutter and the C++ engine
+- [Gestures](docs/app/GESTURES.md) — Pointer, drag, wheel, and keyboard interaction specs
+- [Contributing](.github/CONTRIBUTING.md) — Setup, design principles, and contribution guidelines
+- [Archive](docs/archive/) — Historical design notes and older documentation
 
 ## Contributing
 
-Questions go to [Discussions](https://github.com/oshikaidesu/motolii/discussions) and bugs to [Issues](https://github.com/oshikaidesu/motolii/issues), in English or Japanese. Pull requests are welcome: see [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md), the [Code of Conduct](.github/CODE_OF_CONDUCT.md) and [`.github/SECURITY.md`](.github/SECURITY.md).
+Questions are welcome in [Discussions](https://github.com/oshikaidesu/motolii/discussions) and bug reports in [Issues](https://github.com/oshikaidesu/motolii/issues) (English or Japanese). For pull requests, please see [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md), and [`SECURITY.md`](.github/SECURITY.md).
 
 ## License
 
-Licensed under either of [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions. Bundled third-party works keep their own licences ([`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)).
+Dual-licensed under [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. Unless explicitly stated otherwise, any contribution intentionally submitted for inclusion in Motolii is dual-licensed as above without additional terms or conditions. Bundled third-party works retain their own licenses (see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)).
