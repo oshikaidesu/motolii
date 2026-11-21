@@ -37,27 +37,32 @@ FontMeta parseFontMeta(String raw) {
   return (features: features, axes: axes);
 }
 
-/// Curated OpenType feature descriptions shown as quick toggles when the font supports them.
-/// Metrics features (`palt`, `vpal`, `halt`, `vhal`, `kern`, `vkrn`, `vert`, `vrt2`) are driven
-/// directly by the Metrics and Direction controls above and omitted here to avoid duplication.
-const otFeatureDescriptions = <String, String>{
-  'liga': 'Standard ligatures (liga)',
-  'dlig': 'Discretionary ligatures (dlig)',
-  'tnum': 'Tabular figures (tnum)',
-  'pnum': 'Proportional figures (pnum)',
-  'onum': 'Oldstyle figures (onum)',
-  'zero': 'Slashed zero (zero)',
-  'smcp': 'Small capitals (smcp)',
-  'swsh': 'Swash alternates (swsh)',
-  'fwid': 'Full-width forms (fwid)',
-  'hwid': 'Half-width forms (hwid)',
-  'jp04': 'JIS2004 forms (jp04)',
-  'jp90': 'JIS90 forms (jp90)',
-  'ruby': 'Ruby notation forms (ruby)',
-  'ss01': 'Stylistic set 1 (ss01)',
-  'ss02': 'Stylistic set 2 (ss02)',
-  'ss03': 'Stylistic set 3 (ss03)',
-  'ss04': 'Stylistic set 4 (ss04)',
+/// Metadata for a curated OpenType feature: human label, specimen text, and
+/// contrasting off-state tag so users can visually compare OFF vs ON in the
+/// active font without memorizing 4-letter codes.
+typedef OtFeatureSpec = ({String name, String sample, String? contrastOff});
+
+/// Curated OpenType features shown with live before/after glyph comparison when
+/// the font supports them. Metrics features (`palt`, `vpal`, `halt`, `vhal`,
+/// `kern`, `vkrn`, `vert`, `vrt2`) are driven by the notebook paper/ruler above.
+const otFeatureSpecs = <String, OtFeatureSpec>{
+  'liga': (name: 'Ligatures', sample: 'fi', contrastOff: null),
+  'dlig': (name: 'Discretionary lig.', sample: 'st', contrastOff: null),
+  'tnum': (name: 'Tabular figures', sample: '10', contrastOff: 'pnum'),
+  'pnum': (name: 'Proportional figures', sample: '10', contrastOff: 'tnum'),
+  'onum': (name: 'Oldstyle figures', sample: '123', contrastOff: 'lnum'),
+  'zero': (name: 'Slashed zero', sample: '0', contrastOff: null),
+  'smcp': (name: 'Small caps', sample: 'Aa', contrastOff: null),
+  'swsh': (name: 'Swash', sample: 'Q', contrastOff: null),
+  'fwid': (name: 'Full-width', sample: 'A1', contrastOff: 'hwid'),
+  'hwid': (name: 'Half-width', sample: 'A1', contrastOff: 'fwid'),
+  'jp04': (name: 'JIS2004 forms', sample: '辻', contrastOff: 'jp90'),
+  'jp90': (name: 'JIS90 forms', sample: '辻', contrastOff: 'jp04'),
+  'ruby': (name: 'Ruby forms', sample: 'あ', contrastOff: null),
+  'ss01': (name: 'Style set 1', sample: 'Aa1', contrastOff: null),
+  'ss02': (name: 'Style set 2', sample: 'Aa1', contrastOff: null),
+  'ss03': (name: 'Style set 3', sample: 'Aa1', contrastOff: null),
+  'ss04': (name: 'Style set 4', sample: 'Aa1', contrastOff: null),
 };
 
 /// Parses a `v_font_features` string (space/comma separated tokens or CSS `'tag' 1`) into

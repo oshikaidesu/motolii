@@ -235,7 +235,11 @@ class _TextBodyState extends State<TextBody> {
                 ),
               ],
             if (picked == null && layer.containsKey('font_features'))
-              TextFeaturesStrip(doc: doc, supported: meta.features),
+              TextFeaturesFold(
+                doc: doc,
+                supported: meta.features,
+                fontFamily: loadedFamily,
+              ),
           ],
         );
       },

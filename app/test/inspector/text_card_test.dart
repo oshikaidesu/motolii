@@ -271,9 +271,15 @@ void main() {
         file: '/fonts/NotoSansJP-VF.ttf',
         fontMeta: 'features: kern liga palt tnum jp04 vert\naxis: wght\tWeight\t100\t400\t900',
       );
+      expect(find.text('Weight'), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:ot:toggle')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:ot:tnum')), findsNothing);
+
+      // Expand the OpenType fold to show live before/after glyph comparisons.
+      await tester.tap(find.byKey(const ValueKey('text:ot:toggle')));
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('text:ot:tnum')), findsOneWidget);
       expect(find.byKey(const ValueKey('text:ot:jp04')), findsOneWidget);
-      expect(find.text('Weight'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('text:ot:tnum')));
       await tester.pump();

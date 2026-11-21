@@ -204,6 +204,7 @@ Widget _host(
   Kind kind = Kind.shape,
   Map<String, double> numbers = const {},
   Map<String, String> words = const {},
+  Map<String, bool> flags = const {},
   CardActions actions = const CardActions(),
   bool openAnchor = false,
 }) {
@@ -212,7 +213,7 @@ Widget _host(
   );
   return InspectorHost(
     layer: InspectedLayer(kind: kind, title: 'Sample', cards: cards),
-    snapshot: InspectorSnapshot(numbers: numbers, words: words),
+    snapshot: InspectorSnapshot(numbers: numbers, words: words, flags: flags),
     actions: actions,
     edits: InspectorEdits(
       onValues: (_, {required live}) {},
@@ -264,7 +265,7 @@ void main() {
   testWidgets('host cards contact sheet', (tester) async {
     const colW = 340.0;
     const totalW = colW * 3 + 48.0;
-    const totalH = 776.0;
+    const totalH = 886.0;
     tester.view.physicalSize = const Size(totalW, totalH);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -379,9 +380,10 @@ void main() {
                           'v_file': 'fonts/NotoSansJP-Regular.otf',
                           'v_font_features': 'tnum',
                         },
+                        flags: const {'text.ot': true},
                         actions: CardActions(
                           fontMeta: (_) =>
-                              'features: kern liga palt tnum jp04 ss01 vert',
+                              'features: kern liga palt tnum jp04 jp90 vert',
                         ),
                       ),
                       _host(
