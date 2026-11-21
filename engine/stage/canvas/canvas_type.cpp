@@ -264,19 +264,30 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         shape->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z),
                     fx.hollow ? 0 : 255);
         const float stroke = edge.w * tall;
-        if (stroke > 0.f)
-          shape->strokeWidth(stroke),
-              shape->strokeFill(byte_of(edge.x), byte_of(edge.y),
-                                byte_of(edge.z));
-        // Half of the outline lies outside the letters, so the texture grows by
-        // that much on all sides.
-        float outline = stroke;
+        // Outside alignment extends the full stroke width beyond the glyphs,
+        // center half, inside none.
+        float outline = fx.edgeAlign > 0   ? 2.f * stroke
+                        : fx.edgeAlign < 0 ? 0.f
+                                           : stroke;
         for (const Canvas2DFx::Rim& rim : fx.rims)
-          outline += 2.f * rim.color.w * tall;
+          if (rim.align >= 0) outline += 2.f * rim.color.w * tall;
         const float dx = -x + 0.5f * outline, dy = -y + 0.5f * outline;
         shape->translate(dx, dy);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
+        const bool separateEdge = stroke > 0.f && fx.edgeAlign != 0;
+        if (stroke > 0.f && !separateEdge) {
+          shape->strokeWidth(stroke);
+          stroke_paint(shape, edge.xyz, fx.edgeRamp, fx.edgeRampAt, (float)*w,
+                       (float)*h, fx);
+          if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);
+          if (fx.join >= 0) shape->strokeJoin((tvg::StrokeJoin)fx.join);
+          if (fx.dash > 0.f) {
+            const float dashGap[2] = {fx.dash * tall,
+                                      (fx.gap > 0.f ? fx.gap : fx.dash) * tall};
+            shape->strokeDash(dashGap, 2, fx.dashFrom * tall);
+          }
+        }
         d->em = sized * kPixelsPerPoint / (float)*h;
         d->plainHigh = (float)*h;
         d->plainSide = (float)std::min(*w, *h);
@@ -395,26 +406,32 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           ends.push_back((ends.empty() ? 0.f : ends.back()) + stroke);
         for (size_t k = 0; k < ends.size() && k < 3; ++k) d->bands[k] = ends[k];
         d->bands.w = (float)std::min<size_t>(ends.size(), 3);
-        std::vector<tvg::Paint*> under;
-        float wider = stroke;
-        for (const Canvas2DFx::Rim& rim : fx.rims) {
-          wider += 2.f * rim.color.w * tall;
-          const uint8_t r = byte_of(rim.color.x), g = byte_of(rim.color.y),
-                        b = byte_of(rim.color.z);
-          tvg::Shape* round = (tvg::Shape*)shape->duplicate();
-          round->fill(r, g, b), round->strokeWidth(wider),
-              round->strokeFill(r, g, b);
-          under.push_back(round);
-        }
+        const float baseOut = stroke <= 0.f       ? 0.f
+                              : fx.edgeAlign > 0  ? stroke
+                              : fx.edgeAlign == 0 ? 0.5f * stroke
+                                                  : 0.f;
+        const float baseIn = stroke <= 0.f       ? 0.f
+                             : fx.edgeAlign < 0  ? stroke
+                             : fx.edgeAlign == 0 ? 0.5f * stroke
+                                                 : 0.f;
         const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
-          if (under.empty()) return top;
-          tvg::Scene* all = tvg::Scene::gen();
-          for (auto it = under.rbegin(); it != under.rend(); ++it)
-            all->add(*it);
-          all->add(top);
-          return all;
+          return stroke_with_rims(top, shape, baseOut, baseIn, tall, (float)*w,
+                                  (float)*h, fx);
         };
-        if (fx.ramp.size() < 2 && colored.empty()) return over_rims(shape);
+        const auto make_primary_edge = [&]() -> tvg::Shape* {
+          return stroke_layer(shape, stroke, fx.edgeAlign, edge.xyz,
+                              fx.edgeRamp, fx.edgeRampAt, fx.cap, fx.join,
+                              fx.dash * tall, fx.gap * tall, fx.dashFrom * tall,
+                              (float)*w, (float)*h, fx);
+        };
+        if (fx.ramp.size() < 2 && colored.empty()) {
+          if (!separateEdge) return over_rims(shape);
+          tvg::Shape* edged = make_primary_edge();
+          d->letterEdge = edged;
+          tvg::Scene* top = tvg::Scene::gen();
+          top->add(shape), top->add(edged);
+          return over_rims(top);
+        }
         // With a color ramp, or ranges of their own color, draw a sheet as
         // large as the text in the fill, the ramp and the ranges' colors, and
         // show it only where the letters are, using ThorVG's alpha mask.
@@ -435,16 +452,29 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
                       byte_of(c[7]));
           sheet->add(piece);
         }
+        // Build primary edge and extra rims before transferring `shape` to
+        // `sheet->mask` so `shape` stays intact as the glyph outline source.
+        tvg::Shape* edged = stroke > 0.f ? make_primary_edge() : nullptr;
+        if (edged) d->letterEdge = edged;
+        tvg::Shape* baseCopy =
+            fx.rims.empty() ? nullptr
+                            : static_cast<tvg::Shape*>(shape->duplicate());
+        if (baseCopy) baseCopy->strokeWidth(0.f);
+        shape->strokeWidth(0.f);
+        shape->fill(255, 255, 255, 255);
         sheet->mask(shape, tvg::MaskMethod::Alpha);
-        if (stroke <= 0.f) return over_rims(sheet);
-        // The mask shows the sheet's colours on the outline too, so the
-        // outline is drawn again over the sheet, as a fill and stroke show.
-        tvg::Shape* edged = (tvg::Shape*)shape->duplicate();
-        edged->fill(0, 0, 0, 0);
-        d->letterEdge = edged;
-        tvg::Scene* top = tvg::Scene::gen();
-        top->add(sheet), top->add(edged);
-        return over_rims(top);
+        tvg::Paint* result = sheet;
+        if (edged) {
+          tvg::Scene* top = tvg::Scene::gen();
+          top->add(sheet), top->add(edged);
+          result = top;
+        }
+        if (baseCopy) {
+          result = stroke_with_rims(result, baseCopy, baseOut, baseIn, tall,
+                                    (float)*w, (float)*h, fx);
+          tvg::Paint::rel(baseCopy);
+        }
+        return result;
       },
       place, high, float3{-1.f}, true, lay, fx);
 }

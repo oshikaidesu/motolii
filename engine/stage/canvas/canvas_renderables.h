@@ -62,11 +62,33 @@ Canvas2D* image_canvas(
 // stops that ThorVG mixes linearly.
 
 // Returns a ThorVG gradient (caller passes to a paint, which takes ownership).
-// angle: degrees, 0 = top-to-bottom. scale: multiple of extent. blend: see above.
+// angle: degrees, 0 = top-to-bottom. scale: multiple of extent. blend: see
+// above.
 tvg::Fill* ramp_of(const std::vector<filament::math::float4>& given, float w,
                    float h, bool radial = false, float angle = 0.f,
                    float scale = 1.f, int spread = 0,
                    const std::vector<float>& givenAt = {}, int blend = 0);
+
+// Applies a solid or gradient stroke paint onto `shape`.
+void stroke_paint(tvg::Shape* shape, filament::math::float3 rgb,
+                  const std::vector<filament::math::float4>& ramp,
+                  const std::vector<float>& rampAt, float w, float h,
+                  const Canvas2DFx& fx);
+
+// Duplicates `base` as a stroke-only shape aligned inside (-1), center (0) or
+// outside (1) using ThorVG alpha / inverse-alpha masking.
+tvg::Shape* stroke_layer(tvg::Shape* base, float strokeW, int align,
+                         filament::math::float3 rgb,
+                         const std::vector<filament::math::float4>& ramp,
+                         const std::vector<float>& rampAt, int cap, int join,
+                         float dash, float gap, float dashFrom, float w,
+                         float h, const Canvas2DFx& fx);
+
+// Wraps `top` with `fx.rims` (outside rims behind, center/inside rims in
+// front).
+tvg::Paint* stroke_with_rims(tvg::Paint* top, tvg::Shape* base, float baseOut,
+                             float baseIn, float rimScale, float w, float h,
+                             const Canvas2DFx& fx);
 
 // Characters of `words` missing from the font (cmap via stb_truetype). Cached.
 // .ttc: only first face (thorvg_ttc.patch).
@@ -77,10 +99,12 @@ std::string type_lacks(const std::string& fontFile, const std::string& words);
 std::string type_fallback(const std::string& fontFile,
                           const std::string& words);
 
-// Whether ThorVG can set `words` in the font file. Thread-safe after ThorVG init.
+// Whether ThorVG can set `words` in the font file. Thread-safe after ThorVG
+// init.
 bool type_sets(const char* fontFile, const char* words);
 // Adds text to the scene (community/css/text.h). Missing characters use a
-// fallback font (type_fallback). edge: xyz color, w width as fraction of height.
+// fallback font (type_fallback). edge: xyz color, w width as fraction of
+// height.
 Canvas2D* type(Stage& s, const char* words, const char* fontFile,
                const char* styles, const filament::math::mat4f& place,
                float high,

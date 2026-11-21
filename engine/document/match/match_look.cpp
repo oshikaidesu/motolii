@@ -80,6 +80,19 @@ void fill_colours(const std::string& fill, std::vector<float4>& ramp,
   if (ramp.size() == 1 && ramp[0].w < 1.f) ramp.clear(), rgb = -1;
 }
 
+// Normalizes optional CSS-style stop positions onto [0, 1] in monotonic order.
+void normalize_ramp_at(const std::vector<float4>& ramp,
+                       std::vector<float>& rampAt, std::vector<float>& outAt) {
+  if (ramp.size() > 1 && std::any_of(rampAt.begin(), rampAt.end(),
+                                     [](float a) { return a >= 0.f; })) {
+    for (size_t i = 0; i < rampAt.size(); ++i) {
+      if (rampAt[i] < 0.f) rampAt[i] = (float)i / (float)(rampAt.size() - 1);
+      if (i > 0) rampAt[i] = std::max(rampAt[i], rampAt[i - 1]);
+    }
+    outAt = rampAt;
+  }
+}
+
 // Reads the layer's depth, light and material, and its extra outlines.
 void look_material(LayerBuild& build) {
   Doc& d = build.d;
@@ -97,8 +110,11 @@ void look_material(LayerBuild& build) {
     const std::string id = fx_entry_id(entry);
     if (id.empty()) continue;
     const std::string word = doc_word(d, layer, (id + ":stroke").c_str());
-    if (word.size() != 6) continue;
-    const long hex = std::strtol(word.c_str(), nullptr, 16);
+    std::vector<float4> rimRamp;
+    std::vector<float> rimRampAt;
+    long hex = -1;
+    fill_colours(word, rimRamp, rimRampAt, hex);
+    if (hex < 0) continue;
     const double wide =
         doc_number(d, layer, (id + ":stroke_width").c_str(), 0, 0) / units;
     if (wide > 0.0) {
@@ -106,6 +122,10 @@ void look_material(LayerBuild& build) {
       rim.color = float4{(float)((hex >> 16) & 255) / 255.f,
                          (float)((hex >> 8) & 255) / 255.f,
                          (float)(hex & 255) / 255.f, (float)wide};
+      if (rimRamp.size() > 1) {
+        rim.ramp = rimRamp;
+        normalize_ramp_at(rimRamp, rimRampAt, rim.rampAt);
+      }
       rim.cap = which(d, layer, (id + ":cap").c_str(), "butt round square");
       rim.join = which(d, layer, (id + ":join").c_str(), "miter round bevel");
       const std::string sa = doc_word(d, layer, (id + ":stroke_align").c_str());
@@ -128,17 +148,7 @@ void look_ramp(LayerBuild& build) {
   std::vector<float>& rampAt = build.rampAt;
   Canvas2DFx& fx = build.fx;
   if (ramp.size() > 1) fx.ramp = ramp;
-  // Positions were given. A stop without a position is spread evenly. A stop
-  // positioned before the one ahead of it moves to that one's position, as in
-  // the colour stop fix-up of CSS Images Level 3.
-  if (ramp.size() > 1 && std::any_of(rampAt.begin(), rampAt.end(),
-                                     [](float a) { return a >= 0.f; })) {
-    for (size_t i = 0; i < rampAt.size(); ++i) {
-      if (rampAt[i] < 0.f) rampAt[i] = (float)i / (float)(rampAt.size() - 1);
-      if (i > 0) rampAt[i] = std::max(rampAt[i], rampAt[i - 1]);
-    }
-    fx.rampAt = rampAt;
-  }
+  normalize_ramp_at(ramp, rampAt, fx.rampAt);
   fx.radial = build.word("gradient") == "radial",
   fx.rampAngle = (float)build.number("gradient_angle", 0),
   fx.rampScale = (float)build.number("gradient_scale", 1);
@@ -255,6 +265,8 @@ void look_edge_ends(LayerBuild& build) {
   // Indices into ThorVG's StrokeCap and StrokeJoin, in its order.
   fx.cap = which(d, layer, "cap", "butt round square"),
   fx.join = which(d, layer, "join", "miter round bevel");
+  const std::string sa = build.word("stroke_align");
+  fx.edgeAlign = sa == "inside" ? -1 : sa == "outside" ? 1 : 0;
   fx.rampBlend =
       std::max(0, which(d, layer, "gradient_blend", "rgb oklab hue steps"));
   fx.heads = std::max(0, which(d, layer, "heads", "none end start both")),
@@ -313,11 +325,13 @@ void match_stroke(LayerBuild& build) {
   // height, at scale 1 where layers start.
   build.stroke = build.word("stroke");
   const std::string& stroke = build.stroke;
-  build.edgeRgb = stroke.size() == 6 &&
-                          stroke.find_first_not_of("0123456789abcdefABCDEF") ==
-                              std::string::npos
-                      ? std::strtol(stroke.c_str(), nullptr, 16)
-                      : -1;
+  std::vector<float4> edgeRamp;
+  std::vector<float> edgeRampAt;
+  fill_colours(stroke, edgeRamp, edgeRampAt, build.edgeRgb);
+  if (edgeRamp.size() > 1) {
+    build.fx.edgeRamp = edgeRamp;
+    normalize_ramp_at(edgeRamp, edgeRampAt, build.fx.edgeRampAt);
+  }
   const long edgeRgb = build.edgeRgb;
   build.up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() *
              math::double4{0, 1, 0, 1};
@@ -330,7 +344,7 @@ void match_stroke(LayerBuild& build) {
                                     (float)(build.number("stroke_width", 0) /
                                             (0.5 * s.h * up.y / up.w))};
   if (!stroke.empty() && edgeRgb < 0)
-    build.why = "a stroke is six digits, as ff3366";
+    build.why = "a stroke is six digits, as ff3366, or colours for a gradient";
   // Image points per stage unit, where layers start.
   build.units = 0.5 * s.h * up.y / up.w;
 }

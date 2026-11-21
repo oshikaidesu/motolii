@@ -29,10 +29,12 @@ struct Params {
   fill: vec3<f32>,
   /// @label(Gradient) @enum(linear, radial) @default(0)
   gradient: u32,
-  /// @label(Stroke) @unit(colour)
+  /// @label(Stroke) @unit(colours)
   stroke: vec3<f32>,
   /// @label(Stroke width) @ui(bar) @range(0, 16) @unit(px) @default(0)
   stroke_width: f32,
+  /// @label(Align) @enum(center, inside, outside) @default(0)
+  stroke_align: u32,
   // @advanced(Gradient)
   /// @label(Angle) @ui(angle) @range(-180, 180) @unit(°) @default(0)
   gradient_angle: f32,
@@ -182,5 +184,42 @@ void main() {
     await tester.dragFrom(center + const Offset(0, 17), const Offset(25, -17));
     await tester.pump();
     expect(told.any((m) => m.containsKey('v_gradient_angle')), isTrue);
+  });
+
+  testWidgets(
+    'gradient stroke enables gradient controls and shows color count',
+    (tester) async {
+      await mount(
+        tester,
+        numbers: {'v_gradient': 0, 'v_stroke_width': 4},
+        words: {'v_fill': '#202630', 'v_stroke': '#F5C242 #F06A5B'},
+      );
+      expect(find.text('2 colors'), findsOneWidget);
+      expect(find.text('Angle'), findsOneWidget);
+      expect(find.byKey(const ValueKey('fill-mode-pill')), findsOneWidget);
+    },
+  );
+
+  testWidgets('tapping stroke align cycles center -> inside -> outside', (
+    tester,
+  ) async {
+    final told = <Map<String, double>>[];
+    await mount(
+      tester,
+      numbers: {'v_stroke_width': 4, 'v_stroke_align': 0},
+      words: {'v_stroke': '#F5C242'},
+      onValues: (m) => told.add(Map.of(m)),
+    );
+    final btn = find.byKey(const ValueKey('stroke-align:v_stroke_align'));
+    expect(btn, findsOneWidget);
+    await tester.tap(btn);
+    await tester.pump();
+    expect(told.any((m) => m['v_stroke_align'] == 1.0), isTrue);
+    await tester.tap(btn);
+    await tester.pump();
+    expect(told.any((m) => m['v_stroke_align'] == 2.0), isTrue);
+    await tester.tap(btn);
+    await tester.pump();
+    expect(told.last['v_stroke_align'], 0.0);
   });
 }

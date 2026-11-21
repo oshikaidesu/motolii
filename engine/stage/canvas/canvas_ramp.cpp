@@ -172,4 +172,81 @@ tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h,
   return g;
 }
 
+void stroke_paint(tvg::Shape* shape, float3 rgb,
+                  const std::vector<float4>& ramp,
+                  const std::vector<float>& rampAt, float w, float h,
+                  const Canvas2DFx& fx) {
+  if (ramp.size() > 1)
+    shape->strokeFill(ramp_of(ramp, w, h, fx.radial, fx.rampAngle, fx.rampScale,
+                              fx.spread, rampAt, fx.rampBlend));
+  else
+    shape->strokeFill(byte_of(rgb.x), byte_of(rgb.y), byte_of(rgb.z), 255);
+}
+
+tvg::Shape* stroke_layer(tvg::Shape* base, float strokeW, int align, float3 rgb,
+                         const std::vector<float4>& ramp,
+                         const std::vector<float>& rampAt, int cap, int join,
+                         float dash, float gap, float dashFrom, float w,
+                         float h, const Canvas2DFx& fx) {
+  tvg::Shape* s = static_cast<tvg::Shape*>(base->duplicate());
+  s->fill(0, 0, 0, 0);
+  // Double width for inside/outside because the fill mask keeps one half.
+  s->strokeWidth(align == 0 ? strokeW : 2.f * strokeW);
+  stroke_paint(s, rgb, ramp, rampAt, w, h, fx);
+  if (cap >= 0) s->strokeCap((tvg::StrokeCap)cap);
+  if (join >= 0) s->strokeJoin((tvg::StrokeJoin)join);
+  if (dash > 0.f) {
+    const float dashGap[2] = {dash, gap > 0.f ? gap : dash};
+    s->strokeDash(dashGap, 2, dashFrom);
+  } else {
+    s->strokeDash(nullptr, 0);
+  }
+  if (align != 0) {
+    tvg::Shape* mask = static_cast<tvg::Shape*>(base->duplicate());
+    mask->fill(255, 255, 255, 255);
+    mask->strokeWidth(0.f);
+    mask->strokeDash(nullptr, 0);
+    s->mask(mask,
+            align < 0 ? tvg::MaskMethod::Alpha : tvg::MaskMethod::InvAlpha);
+  }
+  return s;
+}
+
+tvg::Paint* stroke_with_rims(tvg::Paint* top, tvg::Shape* base, float baseOut,
+                             float baseIn, float rimScale, float w, float h,
+                             const Canvas2DFx& fx) {
+  if (fx.rims.empty()) return top;
+  std::vector<tvg::Paint*> behind, ahead;
+  float widerOut = baseOut, widerIn = baseIn;
+  for (const Canvas2DFx::Rim& rim : fx.rims) {
+    const float rw = rim.color.w * rimScale;
+    if (rw <= 0.f) continue;
+    const float dash = rim.dash * rimScale, gap = rim.gap * rimScale,
+                dashFrom = rim.dashFrom * rimScale;
+    if (rim.align > 0) {
+      widerOut += rw;
+      behind.push_back(stroke_layer(base, widerOut, 1, rim.color.xyz, rim.ramp,
+                                    rim.rampAt, rim.cap, rim.join, dash, gap,
+                                    dashFrom, w, h, fx));
+    } else if (rim.align < 0) {
+      widerIn += rw;
+      ahead.push_back(stroke_layer(base, widerIn, -1, rim.color.xyz, rim.ramp,
+                                   rim.rampAt, rim.cap, rim.join, dash, gap,
+                                   dashFrom, w, h, fx));
+    } else {
+      ahead.push_back(stroke_layer(base, rw, 0, rim.color.xyz, rim.ramp,
+                                   rim.rampAt, rim.cap, rim.join, dash, gap,
+                                   dashFrom, w, h, fx));
+    }
+  }
+  if (behind.empty() && ahead.empty()) return top;
+  tvg::Scene* all = tvg::Scene::gen();
+  // Widest outside rim first so narrower rims stack cleanly on top.
+  for (auto it = behind.rbegin(); it != behind.rend(); ++it) all->add(*it);
+  all->add(top);
+  // Widest inside rim first so narrower inside rims stack toward the edge.
+  for (auto it = ahead.rbegin(); it != ahead.rend(); ++it) all->add(*it);
+  return all;
+}
+
 }  // namespace motolii

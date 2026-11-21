@@ -49,7 +49,9 @@ void told_properties(Rebuild& rebuild) {
       sqlite3_mprintf(
           "select layer, group_concat(name || '=' || value, ' ') from (select "
           "* from keyframe where layer > 0 and (name in (%s) or name glob "
-          "'*_by') and not (name in ('metallic', 'roughness', 'reflectance') "
+          "'*_by' or name glob '*:stroke*' or name glob '*:cap' or name glob "
+          "'*:join' or name glob '*:dash*') and not (name in ('metallic', "
+          "'roughness', 'reflectance') "
           "and layer in (select layer from keyframe where name = 'kind' and "
           "value != 'solid')) order by layer, name) group by layer",
           doc_making),
@@ -139,14 +141,17 @@ void told_held_values(Rebuild& rebuild) {
     for (const auto& [name, is] : d.held.said)
       if (name[0] != ' ') held->second += " " + name + "~" + is;
   if (const auto held = told.find(d.held.layer); held != told.end())
-    for (const auto& [name, is] : d.held.tried)
+    for (const auto& [name, is] : d.held.tried) {
+      const size_t colon = name.rfind(':');
+      const std::string base =
+          colon == std::string::npos ? name : name.substr(colon + 1);
       // A property that moves is redrawn at every time by doc_evaluate anyway.
       // It triggers a rebuild only when it switches on or off.
-      if (strstr(doc_making, ("'" + name + "'").c_str()) &&
-          !doc_sheet_told(d, d.held.layer, name)) {
+      if (strstr(doc_making, ("'" + base + "'").c_str()) &&
+          !doc_sheet_told(d, d.held.layer, base)) {
         bool moves = false;
         for (const DocValue& one : doc_values)
-          moves = moves || (one.moves && name == one.name);
+          moves = moves || (one.moves && base == one.name);
         const auto from = d.held.from.find(name);
         // During a drag, reflect value changes in `of` even for moves=true
         // properties so that match_tear_down_changed rebuilds the layer.
@@ -159,6 +164,7 @@ void told_held_values(Rebuild& rebuild) {
                  (from->second != 0.0) != (is != 0.0))
           held->second += " " + name + "~" + (is != 0.0 ? "on" : "off");
       }
+    }
 }
 
 }  // namespace

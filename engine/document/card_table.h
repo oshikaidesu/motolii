@@ -72,7 +72,7 @@ inline const DocCard doc_cards[] = {
     // which sit on its image.
     {"Fill",
      "fill fill_media gradient gradient_angle gradient_scale gradient_spread "
-     "stroke stroke_width"},
+     "stroke stroke_width stroke_align"},
     // There is no Copies card. The number of copies and the copies' own values
     // are on the card of
     // the first expression, see doc_cards_of
@@ -87,8 +87,7 @@ inline const DocCard doc_cards[] = {
     // Playback and media of the layer: clip in-point, markers/animations,
     // playback speed, frame rate, volume and beats (shown by default for video;
     // offered via More for other layers).
-    {"Media",
-     "begin marker animation speed speed_hold frame_rate volume beats",
+    {"Media", "begin marker animation speed speed_hold frame_rate volume beats",
      "kind", "!stage", true},
     // A program's own time, for a program that paints a flat image and for one
     // that has a body, see

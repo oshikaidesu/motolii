@@ -58,6 +58,8 @@ struct Canvas2DFx {
   // Extra outlines, each outside the previous one.
   struct Rim {
     filament::math::float4 color;  // rgb + width fraction of layer height
+    std::vector<filament::math::float4> ramp;
+    std::vector<float> rampAt;
     int cap = -1, join = -1,
         align = 0;  // align: -1 inside, 0 center, 1 outside
     // dash is the length of each dash; gap is the gap between them. When gap
@@ -65,6 +67,11 @@ struct Canvas2DFx {
     float dash = 0.f, gap = 0.f, dashFrom = 0.f;
   };
   std::vector<Rim> rims;
+  // Primary stroke alignment (-1 inside, 0 center, 1 outside) and optional
+  // gradient ramp.
+  int edgeAlign = 0;
+  std::vector<filament::math::float4> edgeRamp;
+  std::vector<float> edgeRampAt;
   // Stacks the letters vertically, one letter height apart.
   bool column = false;
   // letters: thousandths of an em (css-inline-3). lines: CSS line-height.

@@ -202,17 +202,20 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
                                     4096.f / std::max(wide, 1e-3f));
         *h = std::max(2, 2 * (int)std::ceil(0.5f * tall));
         *w = std::max(2, 2 * (int)std::ceil(0.5f * tall * wide));
-        // Half the stroke width. The path is inset by it so that all of the
-        // stroke is visible. It is a whole number of points so that corners
-        // land on whole points, because ThorVG's rounded corners treat a side
-        // as straight only when it is exactly so (tvgLottieModifier.cpp,
-        // _colinear).
+        // Stroke width capped to half the shorter side; inset keeps the outside
+        // portion inside the canvas. Whole points keep ThorVG's corner rounding
+        // colinear (_colinear in tvgLottieModifier.cpp).
+        const float strokeW =
+            std::min(edge.w * (float)*h, 0.5f * (float)std::min(*w, *h));
         const float in =
-            std::round(0.5f * std::min(edge.w * (float)*h,
-                                       0.5f * (float)std::min(*w, *h)));
+            fx.edgeAlign < 0 ? 0.f
+            : fx.edgeAlign > 0
+                ? std::round(std::min(strokeW, 0.25f * (float)std::min(*w, *h)))
+                : std::round(0.5f * strokeW);
+        const float drawW = fx.edgeAlign == 0 ? 2.f * in : std::round(strokeW);
         // Line width of a wave or spiral: the stroke width, or a fraction of
         // the height.
-        const float thick = in > 0.f ? 2.f * in : 0.08f * (float)*h;
+        const float thick = drawW > 0.f ? drawW : 0.08f * (float)*h;
         tvg::Shape* shape = d->shape = tvg::Shape::gen();
         flat_path(d, shape, form, *w, *h, in, points, inner, round, 0.f);
         shape->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z),
@@ -221,63 +224,60 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
           shape->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial,
                               fx.rampAngle, fx.rampScale, fx.spread, fx.rampAt,
                               fx.rampBlend));
-        if (in > 0.f)
-          shape->strokeWidth(2.f * in),
-              shape->strokeFill(byte_of(edge.x), byte_of(edge.y),
-                                byte_of(edge.z));
+        const bool openLine = !strcmp(form, "wave") || !strcmp(form, "spiral");
+        const bool separateEdge = !openLine && drawW > 0.f && fx.edgeAlign != 0;
+        if (drawW > 0.f && !separateEdge) {
+          shape->strokeWidth(drawW);
+          stroke_paint(shape, edge.xyz, fx.edgeRamp, fx.edgeRampAt, (float)*w,
+                       (float)*h, fx);
+        }
         // Wave and spiral show only their line, in the edge color or else the
         // fill color, with round ends.
-        if (!strcmp(form, "wave") || !strcmp(form, "spiral")) {
-          const float3 ink = in > 0.f ? float3{edge.x, edge.y, edge.z} : colour;
+        if (openLine) {
           shape->fill(0, 0, 0, 0);
-          shape->strokeWidth(thick),
-              shape->strokeFill(byte_of(ink.x), byte_of(ink.y), byte_of(ink.z));
+          shape->strokeWidth(thick);
+          if (drawW > 0.f)
+            stroke_paint(shape, edge.xyz, fx.edgeRamp, fx.edgeRampAt, (float)*w,
+                         (float)*h, fx);
+          else
+            stroke_paint(shape, colour, fx.ramp, fx.rampAt, (float)*w,
+                         (float)*h, fx);
           shape->strokeCap(tvg::StrokeCap::Round);
         }
-        if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);
-        if (fx.join >= 0) shape->strokeJoin((tvg::StrokeJoin)fx.join);
-        // Dashes and gaps, as fractions of the height. gap at 0 equals dash,
-        // so a dash set alone draws evenly spaced dashes.
-        if (fx.dash > 0.f) {
-          const float dashGap[2] = {
-              fx.dash * (float)*h,
-              (fx.gap > 0.f ? fx.gap : fx.dash) * (float)*h};
-          shape->strokeDash(dashGap, 2, fx.dashFrom * (float)*h);
-        }
-        // Extra rims: stacked under the main shape, widest first.
-        const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
-          if (fx.rims.empty()) return top;
-          std::vector<tvg::Paint*> under;
-          float wider = in > 0.f ? 2.f * in : 0.f;
-          for (const Canvas2DFx::Rim& rim : fx.rims) {
-            wider += 2.f * rim.color.w * (float)*h;
-            const uint8_t r = byte_of(rim.color.x), g = byte_of(rim.color.y),
-                          b = byte_of(rim.color.z);
-            tvg::Shape* out = (tvg::Shape*)shape->duplicate();
-            out->fill(r, g, b, 255);
-            out->strokeWidth(wider);
-            out->strokeFill(r, g, b, 255);
-            if (rim.align == -1) {
-              // Inside: clip the rim to the fill boundary.
-              tvg::Shape* clip = (tvg::Shape*)shape->duplicate();
-              clip->fill(255, 255, 255, 255);
-              clip->strokeWidth(0.f);
-              out->mask(clip, tvg::MaskMethod::Alpha);
-            }
-            if (rim.cap >= 0) out->strokeCap((tvg::StrokeCap)rim.cap);
-            if (rim.join >= 0) out->strokeJoin((tvg::StrokeJoin)rim.join);
-            if (rim.dash > 0.f) {
-              const float dashGap[2] = {rim.dash,
-                                        rim.gap > 0.f ? rim.gap : rim.dash};
-              out->strokeDash(dashGap, 2, rim.dashFrom);
-            }
-            under.push_back(out);
+        if (!separateEdge) {
+          if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);
+          if (fx.join >= 0) shape->strokeJoin((tvg::StrokeJoin)fx.join);
+          // Dashes and gaps, as fractions of the height. gap at 0 equals dash,
+          // so a dash set alone draws evenly spaced dashes.
+          if (fx.dash > 0.f) {
+            const float dashGap[2] = {
+                fx.dash * (float)*h,
+                (fx.gap > 0.f ? fx.gap : fx.dash) * (float)*h};
+            shape->strokeDash(dashGap, 2, fx.dashFrom * (float)*h);
           }
-          tvg::Scene* all = tvg::Scene::gen();
-          for (auto it = under.rbegin(); it != under.rend(); ++it)
-            all->add(*it);
-          all->add(top);
-          return all;
+        }
+        const float baseOut = drawW <= 0.f        ? 0.f
+                              : fx.edgeAlign > 0  ? drawW
+                              : fx.edgeAlign == 0 ? 0.5f * drawW
+                                                  : 0.f;
+        const float baseIn = drawW <= 0.f        ? 0.f
+                             : fx.edgeAlign < 0  ? drawW
+                             : fx.edgeAlign == 0 ? 0.5f * drawW
+                                                 : 0.f;
+        const auto add_primary_edge = [&](tvg::Paint* body) -> tvg::Paint* {
+          if (!separateEdge) return body;
+          tvg::Shape* edgeShape = stroke_layer(
+              shape, drawW, fx.edgeAlign, edge.xyz, fx.edgeRamp, fx.edgeRampAt,
+              fx.cap, fx.join, fx.dash * (float)*h, fx.gap * (float)*h,
+              fx.dashFrom * (float)*h, (float)*w, (float)*h, fx);
+          tvg::Scene* pair = tvg::Scene::gen();
+          pair->add(body);
+          pair->add(edgeShape);
+          return pair;
+        };
+        const auto over_rims = [&](tvg::Paint* top) -> tvg::Paint* {
+          return stroke_with_rims(add_primary_edge(top), shape, baseOut, baseIn,
+                                  (float)*h, (float)*w, (float)*h, fx);
         };
         // Fill with an image. It covers the shape and is visible only where the
         // shape is filled, using ThorVG's alpha mask, as a ramp does on letters

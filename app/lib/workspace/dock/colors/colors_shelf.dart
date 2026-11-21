@@ -60,7 +60,9 @@ class ColorsShelf extends StatelessWidget {
         : wordOf(c.ws, t, name);
     final stops = stopsIn(word),
         gradient = stops.length > 1,
-        none = name == 'stroke' ? word.isEmpty : word == 'none';
+        isStroke = name == 'stroke' || name.endsWith(':stroke'),
+        allowsGradient = name == 'fill' || isStroke,
+        none = isStroke ? word.isEmpty : word == 'none';
     if (colors.stop >= stops.length) colors.stop = 0;
     // The picker shows the color of the target, or of the selected gradient stop, as CLIP STUDIO PAINT's wheel shows the main or sub color.
     if (word != colors.wheelFrom) {
@@ -141,7 +143,7 @@ class ColorsShelf extends StatelessWidget {
                     return Text(
                       '${name == 'fill'
                           ? 'Fill'
-                          : name == 'stroke'
+                          : isStroke
                           ? 'Stroke'
                           : name[0].toUpperCase() + name.substring(1)} of $who',
                       maxLines: 1,
@@ -179,7 +181,7 @@ class ColorsShelf extends StatelessWidget {
                   ),
                 ),
               ),
-              if (name == 'fill') ...[
+              if (allowsGradient) ...[
                 SizedBox(width: Shape.s(4)),
                 kind(
                   'Gradient',
@@ -193,11 +195,7 @@ class ColorsShelf extends StatelessWidget {
                 ),
               ],
               SizedBox(width: Shape.s(4)),
-              kind(
-                'None',
-                none,
-                () => commands.fill(name == 'stroke' ? '' : 'none'),
-              ),
+              kind('None', none, () => commands.fill(isStroke ? '' : 'none')),
               const Spacer(),
               if (gradient && stops.length > 2)
                 Chip(

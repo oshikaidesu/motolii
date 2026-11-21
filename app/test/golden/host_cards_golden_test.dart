@@ -61,10 +61,12 @@ struct Params {
   fill: vec3<f32>,
   /// @label(Gradient) @enum(linear, radial) @default(0)
   gradient: u32,
-  /// @label(Stroke) @unit(colour)
+  /// @label(Stroke) @unit(colours)
   stroke: vec3<f32>,
   /// @label(Stroke width) @ui(bar) @range(0, 16) @unit(px) @default(2)
   stroke_width: f32,
+  /// @label(Align) @enum(center, inside, outside) @default(2)
+  stroke_align: u32,
   // @advanced(Gradient)
   /// @label(Angle) @ui(angle) @range(-180, 180) @unit(°) @default(45)
   gradient_angle: f32,
@@ -77,7 +79,7 @@ struct Params {
 
 const _extraStroke = '''
 struct Params {
-  /// @label(Stroke) @unit(colour)
+  /// @label(Stroke) @unit(colours)
   a1b2c3:stroke: vec3<f32>,
   /// @label(Width) @ui(bar) @range(0, 16) @unit(px) @default(4)
   a1b2c3:stroke_width: f32,
@@ -85,7 +87,7 @@ struct Params {
   a1b2c3:cap: u32,
   /// @label(Join) @enum(miter, round, bevel) @default(1)
   a1b2c3:join: u32,
-  /// @label(Align) @enum(center, inside, outside) @default(2)
+  /// @label(Align) @enum(center, inside, outside) @default(1)
   a1b2c3:stroke_align: u32,
 }
 ''';
@@ -275,11 +277,17 @@ void main() {
                     children: [
                       _host(
                         [decl('Fill', _fill), decl('Stroke', _extraStroke)],
-                        numbers: const {'v_gradient': 0},
+                        numbers: const {
+                          'v_gradient': 0,
+                          'v_stroke_width': 4,
+                          'v_stroke_align': 2,
+                          'v_a1b2c3:stroke_width': 3,
+                          'v_a1b2c3:stroke_align': 1,
+                        },
                         words: const {
                           'v_fill': '#59C3E8 #D64B7A',
-                          'v_stroke': '#FFFFFF',
-                          'v_a1b2c3:stroke': '#FFB84D',
+                          'v_stroke': '#FFB84D #FF5A79',
+                          'v_a1b2c3:stroke': '#FFFFFF',
                         },
                         actions: CardActions(
                           onAddStroke: () {},

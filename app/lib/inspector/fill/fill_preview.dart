@@ -20,8 +20,9 @@ import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 import 'package:motolii/widgets/tip.dart' show Tip;
 
-/// One rendered stroke layer in the preview (color and width in px).
-typedef FillPreviewStroke = ({Color color, double width});
+/// One rendered stroke layer in the preview.
+/// `align`: -1 inside, 0 center (both), 1 outside.
+typedef FillPreviewStroke = ({List<Color> colors, double width, int align});
 
 /// Parses space-separated hex colors (e.g. `#59C3E8 #D64B7A` or `59C3E8 D64B7A`)
 /// from a layer's `v_fill` string.
@@ -86,7 +87,7 @@ class _FillPreviewState extends State<FillPreview> {
   bool get _canDragHandle => _canDragAngle || _canDragRadius;
 
   (Offset center, Offset handle) _handlePoints(Size s) {
-    final rect = Rect.fromLTWH(8, 8, s.width - 16, s.height - 16);
+    final rect = Rect.fromLTWH(11, 11, s.width - 22, s.height - 22);
     final c = rect.center;
     if (widget.radial) {
       final maxR = rect.width * 0.34;
@@ -108,7 +109,7 @@ class _FillPreviewState extends State<FillPreview> {
       final deg = (math.atan2(-d.dx, d.dy) * 180 / math.pi).roundToDouble();
       doc.set('v_gradient_angle', widget.angleParam!.typed(deg));
     } else if (_canDragRadius) {
-      final rect = Rect.fromLTWH(8, 8, s.width - 16, s.height - 16);
+      final rect = Rect.fromLTWH(11, 11, s.width - 22, s.height - 22);
       final maxR = rect.width * 0.34;
       final next = (d.distance / maxR * 4.0).clamp(0.1, 4.0);
       doc.set('v_gradient_scale', widget.scaleParam!.typed(next));
@@ -240,8 +241,8 @@ class _FillPreviewState extends State<FillPreview> {
               ),
               if (widget.hasGradient && widget.gradOptions.length >= 2)
                 Positioned(
-                  left: 14,
-                  bottom: 13,
+                  left: 16,
+                  bottom: 15,
                   child: _maybeTip(
                     context,
                     'Gradient type ($modeLabel)',
@@ -256,8 +257,8 @@ class _FillPreviewState extends State<FillPreview> {
                 ),
               if (widget.hasGradient && widget.spreadOptions.length >= 2)
                 Positioned(
-                  right: 14,
-                  bottom: 13,
+                  right: 16,
+                  bottom: 15,
                   child: _maybeTip(
                     context,
                     'Past end ($spreadLabel)',
@@ -417,11 +418,49 @@ class _FillPreviewPainter extends CustomPainter {
     _ => TileMode.clamp,
   };
 
+  Shader _buildShader(Rect bounds, List<Color> cols) {
+    final stretch = scale.clamp(0.15, 4.0);
+    if (radial) {
+      final radius = math.max(bounds.width, bounds.height) * 0.45 * stretch;
+      return ui.Gradient.radial(bounds.center, radius, cols, null, _tileMode);
+    }
+    // True pixel-space direction matching the angle handle.
+    final rad = angle * math.pi / 180;
+    final dir = Offset(-math.sin(rad), math.cos(rad));
+    final halfSpan =
+        (dir.dx.abs() * bounds.width + dir.dy.abs() * bounds.height) *
+        0.5 *
+        stretch;
+    return ui.Gradient.linear(
+      bounds.center - dir * halfSpan,
+      bounds.center + dir * halfSpan,
+      cols,
+      null,
+      _tileMode,
+    );
+  }
+
+  Paint _strokePaint(Rect rect, double sw, List<Color> cols) {
+    final p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = sw;
+    if (cols.length >= 2) {
+      p.shader = _buildShader(rect.inflate(sw / 2), cols);
+    } else {
+      p.color = cols.firstOrNull ?? Grey.g91;
+    }
+    return p;
+  }
+
   @override
   void paint(Canvas c, Size s) {
     drawWell(c, s);
-    final plate = Rect.fromLTWH(8, 8, s.width - 16, s.height - 16);
-    final rrect = RRect.fromRectAndRadius(plate, const Radius.circular(6));
+    final plate = Rect.fromLTWH(11, 11, s.width - 22, s.height - 22);
+    const baseRadius = 5.0;
+    final rrect = RRect.fromRectAndRadius(
+      plate,
+      const Radius.circular(baseRadius),
+    );
 
     // Checkerboard under transparent / empty fills.
     c.save();
@@ -450,40 +489,14 @@ class _FillPreviewPainter extends CustomPainter {
       )..layout(maxWidth: plate.width - 16);
       tp.paint(c, plate.center - Offset(tp.width / 2, tp.height / 2));
     } else if (colors.length >= 2 && hasGradient) {
-      final Shader shader;
-      final stretch = scale.clamp(0.15, 4.0);
-      if (radial) {
-        final radius = math.max(plate.width, plate.height) * 0.45 * stretch;
-        shader = ui.Gradient.radial(
-          plate.center,
-          radius,
-          colors,
-          null,
-          _tileMode,
-        );
-      } else {
-        // True pixel-space direction matching the angle handle.
-        final rad = angle * math.pi / 180;
-        final dir = Offset(-math.sin(rad), math.cos(rad));
-        final halfSpan =
-            (dir.dx.abs() * plate.width + dir.dy.abs() * plate.height) *
-            0.5 *
-            stretch;
-        shader = ui.Gradient.linear(
-          plate.center - dir * halfSpan,
-          plate.center + dir * halfSpan,
-          colors,
-          null,
-          _tileMode,
-        );
-      }
-      c.drawRect(plate, Paint()..shader = shader);
+      c.drawRect(plate, Paint()..shader = _buildShader(plate, colors));
     } else if (colors.isNotEmpty) {
       c.drawRect(plate, Paint()..color = colors.first);
     }
     c.restore();
 
-    // Stacked strokes drawn as nested outlines from outermost to innermost.
+    // Stacked strokes drawn at their true alignment (outside / center / inside)
+    // with solid or gradient stroke paint.
     final active = [
       for (final st in strokes)
         if (st.width > 0) st,
@@ -497,20 +510,32 @@ class _FillPreviewPainter extends CustomPainter {
           ..strokeWidth = 1,
       );
     } else {
-      var inset = 0.0;
-      for (final st in active.reversed) {
-        final sw = (st.width * 0.45).clamp(1.2, 4.5);
-        final rect = plate.deflate(inset + sw / 2);
-        if (rect.width <= 4 || rect.height <= 4) break;
-        final radius = math.max(1.5, 6.0 - inset);
+      var outOffset = 0.0;
+      var inOffset = 0.0;
+      for (final st in active) {
+        final sw = (st.width * 0.45).clamp(1.4, 4.5);
+        final Rect rect;
+        final double radius;
+        if (st.align > 0) {
+          final reach = outOffset + sw / 2;
+          if (reach > 8.5) continue;
+          rect = plate.inflate(reach);
+          radius = baseRadius + reach;
+          outOffset += sw;
+        } else if (st.align < 0) {
+          final inset = inOffset + sw / 2;
+          rect = plate.deflate(inset);
+          if (rect.width <= 4 || rect.height <= 4) continue;
+          radius = math.max(1.5, baseRadius - inset);
+          inOffset += sw;
+        } else {
+          rect = plate;
+          radius = baseRadius;
+        }
         c.drawRRect(
           RRect.fromRectAndRadius(rect, Radius.circular(radius)),
-          Paint()
-            ..color = st.color
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = sw,
+          _strokePaint(rect, sw, st.colors),
         );
-        inset += sw;
       }
     }
 
@@ -574,7 +599,12 @@ bool _sameColors(List<Color> a, List<Color> b) {
 
 bool _sameStrokes(List<FillPreviewStroke> a, List<FillPreviewStroke> b) {
   for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
+    if (a[i].width != b[i].width ||
+        a[i].align != b[i].align ||
+        a[i].colors.length != b[i].colors.length ||
+        !_sameColors(a[i].colors, b[i].colors)) {
+      return false;
+    }
   }
   return true;
 }

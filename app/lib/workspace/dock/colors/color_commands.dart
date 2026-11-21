@@ -72,14 +72,19 @@ class ColorCommands {
     }
     if (c.ws.aim case final aim?) {
       // A stroke colored while width is 0 gets width 6 (one undo step).
+      final isStroke = aim == 'stroke' || aim.endsWith(':stroke');
+      final widthProp = aim == 'stroke'
+          ? 'stroke_width'
+          : '${aim.substring(0, aim.length - 6)}stroke_width';
       final edged =
-          aim == 'stroke' &&
+          isStroke &&
           t != null &&
+          word.isNotEmpty &&
           word != 'none' &&
-          (valueOf(c.ws, t, 'stroke_width', 0) ?? 0) <= 0;
+          (valueOf(c.ws, t, widthProp, 0) ?? 0) <= 0;
       if (edged) groupBegin(c.ws);
       final said = sayWord(c.ws, t ?? 0, aim, word);
-      if (edged) setNumber(c.ws, t, 'stroke_width', 6);
+      if (edged) setNumber(c.ws, t, widthProp, 6);
       c.ws.after(
         edged ? groupEnd(c.ws) : said,
         (done, why) => c.set(() {
@@ -147,6 +152,9 @@ class ColorCommands {
     takeColor(Color(0xFF000000 | int.parse(hex, radix: 16)));
   }
 
+  static bool _usesGradientBlend(String name) =>
+      name == 'fill' || name == 'stroke' || name.endsWith(':stroke');
+
   /// Puts a gradient on the target. One undo step.
   void putGradient(List<Color> cs, String blend, [List<double>? at]) {
     final t = colored;
@@ -154,7 +162,7 @@ class ColorCommands {
         ? wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])])
         : [for (final k in cs) hexOfColor(k).substring(1).toLowerCase()]
               .join(' ');
-    if (t == null || (c.ws.aim ?? 'fill') != 'fill') {
+    if (t == null || !_usesGradientBlend(c.ws.aim ?? 'fill')) {
       c.ws.inkBlend = blend;
       return fill(word);
     }
@@ -167,7 +175,7 @@ class ColorCommands {
   /// Current gradient_blend. Unset = 'rgb'.
   String get blendNow {
     final t = colored,
-        w = t != null && (c.ws.aim ?? 'fill') == 'fill'
+        w = t != null && _usesGradientBlend(c.ws.aim ?? 'fill')
             ? wordOf(c.ws, t, 'gradient_blend')
             : c.ws.inkBlend;
     return w.isEmpty ? 'rgb' : w;
@@ -209,7 +217,7 @@ class ColorCommands {
   /// Sets the gradient blend mode.
   void setBlend(String name, String blend) {
     final t = colored;
-    t != null && name == 'fill'
+    t != null && _usesGradientBlend(name)
         ? c.ws.after(sayWord(c.ws, t, 'gradient_blend', blend))
         : c.set(() => c.ws.inkBlend = blend);
   }
