@@ -7,8 +7,10 @@
 #include <filament/Texture.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <sstream>
 
@@ -28,10 +30,10 @@ bool ensure_worker(AePluginRun& r) {
     r.trouble = "motolii_ae_worker failed to start";
     return false;
   }
-  // Wait for the worker's 4-byte readiness banner ("AEW1").
+  // Wait for the worker's 4-byte readiness banner ("AEW2").
   uint8_t magic[4] = {};
   if (!r.proc.read_all(magic, 4, kRenderTimeoutMs) ||
-      std::memcmp(magic, "AEW1", 4) != 0) {
+      std::memcmp(magic, "AEW2", 4) != 0) {
     r.trouble = "worker failed to load plugin";
     r.proc.stop();
     return false;
@@ -134,9 +136,21 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
   if (!r.info.ok || !from || !w || !h)
     return screen_place(s, from, to, w, h, nullptr);
 
+  // During interactive editing (s.desk.w > 0), heavy CPU plugins (>16ms full
+  // frame) drop to Half resolution (downsample 1/2) and upscale back with AMD
+  // FSR 1.0 on the GPU. Export (s.desk.w == 0) always renders at full res.
+  bool half = s.desk.w > 0 && r.use_half_preview && w >= 640 && h >= 360;
+  if (const char* env = std::getenv("MOTOLII_AE_HALF")) {
+    if (env[0] == '1') half = w >= 640 && h >= 360;
+    else if (env[0] == '0') half = false;
+  }
+  const uint32_t ds_den = half ? 2u : 1u;
+  const uint32_t rw = half ? std::max(1u, w / 2) : w;
+  const uint32_t rh = half ? std::max(1u, h / 2) : h;
+
   const std::string key = r.numbers_key();
   std::ostringstream sig;
-  sig << w << "x" << h;
+  sig << rw << "x" << rh << "/" << ds_den;
 
   // Serialize parameters for the worker protocol.
   std::vector<uint8_t> param_bytes;
@@ -185,8 +199,8 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
       sig << "|" << p.index << "=" << x << "," << y;
       push_le<uint32_t>(param_bytes, p.index);
       push_le<uint8_t>(param_bytes, 6);
-      push_le<double>(param_bytes, x * w);
-      push_le<double>(param_bytes, y * h);
+      push_le<double>(param_bytes, x * rw);
+      push_le<double>(param_bytes, y * rh);
       ++sent_params;
     } else if (p.kind == "point3d") {
       const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
@@ -195,8 +209,8 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
       sig << "|" << p.index << "=" << x << "," << y << "," << z;
       push_le<uint32_t>(param_bytes, p.index);
       push_le<uint8_t>(param_bytes, 7);
-      push_le<double>(param_bytes, x * w);
-      push_le<double>(param_bytes, y * h);
+      push_le<double>(param_bytes, x * rw);
+      push_le<double>(param_bytes, y * rh);
       push_le<double>(param_bytes, z);
       ++sent_params;
     } else if (p.kind == "color") {
@@ -217,9 +231,9 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
       push_le<uint32_t>(param_bytes, p.index);
       push_le<uint8_t>(param_bytes, 9);
       std::vector<uint8_t> lp;
-      if (other && read_texture_straight(s, r, other, w, h, lp)) {
-        push_le<uint32_t>(param_bytes, w);
-        push_le<uint32_t>(param_bytes, h);
+      if (other && read_texture_straight(s, r, other, rw, rh, lp)) {
+        push_le<uint32_t>(param_bytes, rw);
+        push_le<uint32_t>(param_bytes, rh);
         param_bytes.insert(param_bytes.end(), lp.begin(), lp.end());
       } else {
         push_le<uint32_t>(param_bytes, 0);
@@ -233,8 +247,9 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
   if (r.stuck && *r.stuck == cur_sig)
     return screen_place(s, from, to, w, h, nullptr);
 
+  const auto t_start = std::chrono::steady_clock::now();
   std::vector<uint8_t> in_pixels;
-  if (!read_texture_straight(s, r, from, w, h, in_pixels))
+  if (!read_texture_straight(s, r, from, rw, rh, in_pixels))
     return screen_place(s, from, to, w, h, nullptr);
 
   if (!ensure_worker(r)) {
@@ -248,9 +263,10 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
   }
 
   std::vector<uint8_t> req;
-  req.reserve(28 + param_bytes.size() + in_pixels.size());
-  push_le<uint32_t>(req, w);
-  push_le<uint32_t>(req, h);
+  req.reserve(32 + param_bytes.size() + in_pixels.size());
+  push_le<uint32_t>(req, rw);
+  push_le<uint32_t>(req, rh);
+  push_le<uint32_t>(req, ds_den);
   push_le<double>(req, s.now);
   push_le<double>(req, screen_rate(s));
   push_le<uint32_t>(req, sent_params);
@@ -330,7 +346,17 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
             delete static_cast<std::vector<uint8_t>*>(user);
           },
           out_pixels));
-  screen_place(s, r.out_tex, to, w, h, nullptr);
+  if (ow < w || oh < h)
+    screen_upscale(s, r.out_tex, to, w, h);
+  else
+    screen_place(s, r.out_tex, to, w, h, nullptr);
+  if (!half && s.desk.w > 0 && !r.use_half_preview) {
+    const double elapsed_ms =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - t_start)
+            .count();
+    if (elapsed_ms > 16.0) r.use_half_preview = true;
+  }
   r.stuck.reset();
 }
 

@@ -38,6 +38,9 @@ struct AePluginRun {
   // Last parameter signature that timed out or crashed; skipped until changed.
   std::optional<std::string> stuck;
   bool reported = false;
+  // Adaptive Half-resolution preview: promoted once a full-res preview frame
+  // exceeds 16 ms; export (s.desk.w == 0) always renders at full resolution.
+  bool use_half_preview = false;
 
   std::string numbers_key() const {
     return instance_id.empty() ? file : instance_id + ":" + file;

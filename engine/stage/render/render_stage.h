@@ -198,6 +198,11 @@ struct Stage {
   interop::Screen* place_copy = nullptr;
   // screen_tone's shaders: index 0 = sRGB→linear, 1 = linear→sRGB.
   interop::Screen* place_tone[2] = {nullptr, nullptr};
+  // screen_upscale's AMD FSR 1.0 shaders (0 = EASU, 1 = RCAS) and mid target.
+  interop::Screen* place_fsr[2] = {nullptr, nullptr};
+  filament::Texture* fsr_mid_tex = nullptr;
+  filament::RenderTarget* fsr_mid_rt = nullptr;
+  uint32_t fsr_mid_w = 0, fsr_mid_h = 0;
   // canvas_edge's three processing screens: seeds, flood, length.
   std::array<interop::Screen*, 3> edge_screens = {nullptr, nullptr, nullptr};
   // glTF asset/texture loaders (gltf_model.h).

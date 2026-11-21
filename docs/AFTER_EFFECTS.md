@@ -55,6 +55,7 @@ Subfolders inside `ae_plugins/` automatically appear as **Packs** in the Effects
 ### Performance tips
 
 - Native AE plugins run through CPU RGBA8 transfer across the isolated worker boundary, so lightweight plugins (`BlockSwap`, `ZT_ASCIIArt`, etc.) run well above 60 fps while heavy CPU plugins (volumetric lighting, large-radius CPU blurs) take longer per frame — just as they do in After Effects.
+- **Automatic Half-res preview + FSR 1.0 upscaling:** During interactive editing, any AE plugin taking more than 16 ms at full resolution automatically drops to Half resolution (`downsample = 1/2`) and is upscaled back on the GPU using AMD FidelityFX FSR 1.0 (EASU + RCAS). Lightweight plugins stay at full resolution, and final video/still exports always render at 100% full resolution.
 - You can freely stack AE plugins with GPU-native Motolii shaders (such as the bundled **Halo Glow**, ISF, and WGSL effects) on the same layer.
 - Want a 60 fps, cross-platform GPU version of a look? Open the **Agent** tab and ask an ACP agent to recreate or adapt the look as a native `.wgsl` shader.
 

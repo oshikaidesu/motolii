@@ -55,6 +55,7 @@ ln -s "/Applications/Adobe After Effects 2025/Plug-ins/Plugin Everything" \
 ### パフォーマンスのコツ
 
 - ネイティブ AE プラグインは隔離ワーカー経由で RGBA8 画像を受け渡すため、軽量なプラグイン（`BlockSwap`・`ZT_ASCIIArt` 等）は 60 fps 余裕で動きますが、重い CPU 処理（ボリューム光や大半径 CPU ブラー等）は AE 本家と同じく 1 フレームあたり数十〜数百 ms かかります。
+- **自動 Half プレビュー＋AMD FSR 1.0 アップスケール：** 編集中にフル解像度で 16 ms を超えた重い AE プラグインは、ホスト側が自動的に 1/2 解像度（`downsample = 1/2`）へ落として実行し、GPU 側の AMD FidelityFX FSR 1.0（EASU + RCAS）で輪郭を保ったまま元の解像度へ復元します。軽量プラグインは常にフル解像度のまま維持され、書き出し時はすべてのプラグインが 100% フル解像度でレンダリングされます。
 - 同じレイヤー上に、GPU ネイティブの Motolii シェーダー（同梱の **Halo Glow**・ISF・WGSL など）と AE プラグインを自由な順番で重ね掛けできます。
 - よく使う表現を 60 fps・OS 非依存の GPU エフェクトにしたい場合は、**Agent** タブから ACP エージェントに `.wgsl` シェーダー化を依頼することもできます。
 

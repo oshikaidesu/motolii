@@ -158,6 +158,9 @@ void close_stage(Stage& s) {
   for (auto& [name, mat] : s.materials) e->destroy(mat);
   s.materials.clear();
   if (s.white) e->destroy(s.white), s.white = nullptr;
+  if (s.fsr_mid_rt) e->destroy(s.fsr_mid_rt), s.fsr_mid_rt = nullptr;
+  if (s.fsr_mid_tex) e->destroy(s.fsr_mid_tex), s.fsr_mid_tex = nullptr;
+  s.fsr_mid_w = s.fsr_mid_h = 0;
   // God camera.
   if (s.god) {
     auto ge = s.god->getEntity();

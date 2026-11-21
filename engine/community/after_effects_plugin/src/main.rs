@@ -219,7 +219,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
     let mut fx = Host::get().load(path)?;
     let mut out = BufWriter::new(out_file);
     let mut inp = BufReader::new(io::stdin());
-    out.write_all(b"AEW1")?;
+    out.write_all(b"AEW2")?;
     out.flush()?;
 
     let mut in_buf: Vec<u8> = Vec::new();
@@ -235,6 +235,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
         }
         let w = u32::from_le_bytes(head);
         let h = read_u32(&mut inp)?;
+        let ds_den = read_u32(&mut inp)?.clamp(1, 8) as u16;
         let time_sec = read_f64(&mut inp)?;
         let fps = read_f64(&mut inp)?;
         let param_count = read_u32(&mut inp)?;
@@ -321,6 +322,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
             60
         };
         let frame = (time_sec.max(0.0) * rate as f64).round().clamp(0.0, i32::MAX as f64) as i32;
+        fx.set_downsample(1, ds_den);
         fx.set_render_size(w, h);
         fx.set_time(Time::frame(frame, rate));
 

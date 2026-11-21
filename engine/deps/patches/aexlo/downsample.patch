@@ -1,0 +1,38 @@
+diff --git a/crates/aexlo/src/core/in_data.rs b/crates/aexlo/src/core/in_data.rs
+index 7fba457..83afda6 100644
+--- a/crates/aexlo/src/core/in_data.rs
++++ b/crates/aexlo/src/core/in_data.rs
+@@ -158,6 +158,16 @@ impl RenderContext {
+ 			bottom: height,
+ 		};
+ 	}
++
++	/// Set the rational downsample factor (e.g. `1, 2` for Half preview).
++	pub fn set_downsample(&mut self, num: i16, den: i16) {
++		let scale = PF_RationalScale {
++			num: num.max(1) as A_long,
++			den: den.max(1) as A_u_long,
++		};
++		self.downsample_x = scale;
++		self.downsample_y = scale;
++	}
+ }
+ 
+ /// Pointers into the calling instance, valid only for the duration of one call.
+diff --git a/crates/aexlo/src/instance/render.rs b/crates/aexlo/src/instance/render.rs
+index 5771cb6..446b4d3 100644
+--- a/crates/aexlo/src/instance/render.rs
++++ b/crates/aexlo/src/instance/render.rs
+@@ -558,6 +558,12 @@ impl PluginInstance {
+ 		self.smart_render_data.set_output_rect(width as i32, height as i32);
+ 	}
+ 
++	/// Set `PF_InData.downsample_x` and `downsample_y` (e.g. `1, 2` for Half preview)
++	/// so plugins scale pixel-unit parameters consistently with reduced render sizes.
++	pub fn set_downsample(&mut self, num: u16, den: u16) {
++		self.render_context.set_downsample(num as i16, den as i16);
++	}
++
+ 	/// Set the time the next commands operate on (e.g. `Time::frame(n, 30)` for
+ 	/// frame `n` of a 30 fps comp).
+ 	///

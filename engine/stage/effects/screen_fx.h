@@ -161,6 +161,11 @@ void screen_place(Stage& s, filament::Texture* from, filament::RenderTarget* to,
 // premultiplies.
 void screen_tone(Stage& s, filament::Texture* from, filament::RenderTarget* to,
                  uint32_t w, uint32_t h, bool toSrgb);
+// Upscales `from` into `to` (w x h) using AMD FidelityFX FSR 1.0 (EASU + RCAS,
+// MIT). Falls back to screen_place when `from` is already at target size.
+void screen_upscale(Stage& s, filament::Texture* from,
+                    filament::RenderTarget* to, uint32_t w, uint32_t h,
+                    float sharpness = 0.2f);
 // Draws one effect through its passes. w,h default to stage size. over: blend
 // the last pass over `to` instead of replacing it.
 void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx,
