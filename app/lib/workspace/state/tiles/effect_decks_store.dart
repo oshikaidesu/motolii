@@ -143,9 +143,10 @@ String effectSum(String id) {
   }
 }
 
-/// Pack name from the aviutl_scripts folder path, or null for standalone effects.
+/// Pack name from the aviutl_scripts or ae_plugins folder path, or null for standalone effects.
 String? effectPack(String id) =>
-    RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
+    RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1] ??
+    RegExp(r'/ae_plugins/([^/]+)/').firstMatch(id)?[1];
 
 /// Machine-independent effect id (relative to the bundled shelves folder).
 String _place(String id) => id.startsWith('$motoliiShelves/')

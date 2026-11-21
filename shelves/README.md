@@ -23,6 +23,7 @@ Take the first row that fits. The folder goes inside your own folder (above).
 | A 3D shape (a `.js` with `export function solid`) | `solids/` |
 | The look of the app | `skins/` (the whole folder) |
 | An AviUtl2 package | `aviutl_scripts/` (the whole folder) |
+| A native After Effects plugin (`.plugin` on macOS, `.aex` on Windows) | `ae_plugins/` (place or symlink a plugin or pack folder; never bundled by Motolii) |
 | A three.js page written in TSL (its material has `colorNode` or `positionNode`) | **Paste it.** Its colour becomes an effect and what moves its points a points file, on the selected layer, or on a rectangle over the canvas with none selected. The files are kept in the `programs/` folder of your own folder |
 | A Shadertoy, GLSL Sandbox, twigl or Bonzomatic shader; p5.js, Dwitter, tixy, Turtletoy, Two.js, Paper.js or Hydra code | **Paste it, do not place it.** Copy the code and press ⌘V in the app. It is kept under Code in the Create tab. (Hydra first needs `extensions/hydra/get.sh`.) |
 

@@ -22,18 +22,16 @@ const char* motolii_effect_names(Motolii* m) {
 const char* motolii_create_scripts(Motolii* m) {
   return by_look(m, [=] { return (said_word() = doc_recipe_names()).c_str(); });
 }
-// Returns the names of the effect files followed by the names of the AviUtl2
-// scripts, one per line.
+// Returns the names of the effect files followed by AviUtl2 scripts and native
+// After Effects plugins, one per line.
 const char* motolii_effects(Motolii* m) {
   return by_look(m, [=] {
     // The file types are .wgsl, .fs, .mjs, .js, .json and .am. A .json file
-    // holds Filament's own settings, see viewer_settings.h. A .am file is an
-    const std::string files = doc_folder_names("effects",
-                                               ".wgsl .fs .mjs .js .json .am"),
-                      aviutl = doc_aviutl_names();
-    return (said_word() =
-                files + (files.empty() || aviutl.empty() ? "" : "\n") + aviutl)
-        .c_str();
+    // holds Filament's own settings, see viewer_settings.h.
+    std::string out = doc_folder_names("effects", ".wgsl .fs .mjs .js .json .am");
+    for (const std::string& more : {doc_aviutl_names(), doc_ae_plugin_names()})
+      if (!more.empty()) out += (out.empty() ? "" : "\n") + more;
+    return (said_word() = out).c_str();
   });
 }
 // Records that files on the shelves changed on disk.

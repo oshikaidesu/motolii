@@ -99,6 +99,7 @@ Paste code (⌘V) or drop a file. The language is detected automatically.
 | **Turtletoy** | ⌘V | QuickJS-ng |
 | **Hydra** | ⌘V | QuickJS-ng → WGSL |
 | **After Effects expressions** | ⌘V or expression card | lottie-web in QuickJS-ng |
+| **After Effects plugins (.plugin, .aex)** | place or symlink in `ae_plugins/` | [aexlo](https://github.com/potistudio/aexlo) (isolated worker) |
 | **Cavalry scripts** | expression card | QuickJS-ng |
 | **CSS @keyframes** | ⌘V on a text layer | Stylo (Firefox's CSS engine) |
 | **Animated SVG** | ⌘V or D&D | ThorVG + Stylo |
@@ -113,13 +114,15 @@ See also [`shelves/README.md`](shelves/README.md) for where each kind of file go
 
 ### After Effects compatibility
 
-Motolii runs After Effects expressions **as they are**, without reimplementing them. The runtime is lottie-web's ExpressionManager compiled to bytecode and evaluated in QuickJS-ng — the same code that runs expressions on the web. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access and cross-layer references all work. Paste an expression from a tutorial or a forum; it runs.
+Bring your existing After Effects assets with you:
 
-Lottie files (`.json` exported by Bodymovin) play through ThorVG, which also evaluates Lottie-embedded expressions at runtime with JerryScript — they are not baked. Keyframes, easing, paths, parents, precompositions, time remapping, loops, mattes and blend modes are handled by ThorVG. Motolii adds 3D layer and camera support on top (`thorvg_z.patch`).
+- **Native plugins (`.plugin` / `.aex`)** — Drop or symlink your existing third-party After Effects plugins (e.g. Deep Glow, Quick Chromatic Aberration, Zink Tools, Satori, …) into your user `ae_plugins/` folder and they appear directly in the Effects shelf with their own parameters, `#ae` / `#cpu` (or `#gpu`) tags, and live preview tiles. Plugins run through [aexlo](https://github.com/potistudio/aexlo) inside an isolated worker process so a hanging or crashing plugin cannot take the editor down. Plugins that depend on host-only AEGP camera/comp APIs or Adobe's private built-in suites are not yet covered.
+- **Expressions** — Motolii runs After Effects expressions **as they are**, without reimplementing them. The runtime is lottie-web's ExpressionManager compiled to bytecode and evaluated in QuickJS-ng — the same code that runs expressions on the web. `thisComp`, `thisLayer`, `thisProperty`, `sampleImage`, `fromWorld`, `wiggle`, `linear`, `ease`, keyframe access and cross-layer references all work. Paste an expression from a tutorial or a forum; it runs.
+- **Lottie (`.json`)** — Lottie files exported by Bodymovin play through ThorVG, which also evaluates Lottie-embedded expressions at runtime with JerryScript — they are not baked. Keyframes, easing, paths, parents, precompositions, time remapping, loops, mattes and blend modes are handled by ThorVG. Motolii adds 3D layer and camera support on top (`thorvg_z.patch`).
 
 Cavalry scripts also run as they are: the `cavalry.Point`, `cavalry.PointCloud` and `cavalry.random` APIs are provided, and a bare `{ }` expression is wrapped into `each()` automatically. Twenty-six distribution scripts from the Cavalry community ship in `shelves/create/cavalry/`.
 
-What is **not** covered: most After Effects built-in effects (Glow, Turbulent Displace, etc.) and audio-reactive properties that depend on AE's internal audio graph. These are not part of the expression language or the Lottie format; Motolii covers them with its own shader effects and sound analysis instead.
+What is **not** covered: Adobe's private built-in effects, plugins requiring unimplemented AEGP host suites (such as comp cameras or text documents), and audio-reactive properties tied to AE's internal audio graph. Motolii covers those with its own GPU shader effects and sound analysis.
 
 ## Repository layout
 

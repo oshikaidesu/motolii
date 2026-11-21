@@ -40,7 +40,7 @@ bool doc_own_fx(Doc& d, int layer) {
 bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
   thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps_with_ids(d, layer)));
   if (e.st.readsBehind || e.st.wide || !e.st.aviutl.empty() ||
-      doc_holds_fx(d, layer))
+      !e.st.aePlugins.empty() || doc_holds_fx(d, layer))
     return false;
   for (const std::string& w : doc_fx_list(d, layer))
     if (solid_is(w) || points_is(w)) return false;
@@ -60,6 +60,7 @@ bool doc_layer_shows(Doc& d, int layer, ThingFx& e) {
   float deep = 0.f;
   return shown != d.on_stage.shown.end() && shown->second.space != 2 &&
          !e.st.readsBehind && !e.st.wide && e.st.aviutl.empty() &&
+         e.st.aePlugins.empty() &&
          (shown->second.solid ||
           (doc_half(d, layer, &half, &deep) && deep > 0.f));
 }

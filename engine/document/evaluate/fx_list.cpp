@@ -6,6 +6,7 @@
 #include <cmath>
 #include <filesystem>
 
+#include "community/after_effects_plugin/ae_plugin.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
@@ -125,11 +126,12 @@ bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
   for (const std::string& w : doc_fx_drawn(d, doc_fx_list(d, layer))) {
     // The file is resolved as a canvas layer's own file is, see doc_match. An
     // effect put on again uses its own file, see fx_source.
-    if (!std::filesystem::is_regular_file(aviutl_is(w) ? aviutl_path(w)
-                                                       : fx_source(w)))
+    if (ae_plugin_is(w) ? !std::filesystem::exists(w)
+                        : !std::filesystem::is_regular_file(
+                              aviutl_is(w) ? aviutl_path(w) : fx_source(w)))
       ok = false, why = "there is no such file: " + w;
     // The ISF effect is converted to WGSL once and cached; see isf.cpp.
-    else if (isf_file(w).empty())
+    else if (!ae_plugin_is(w) && isf_file(w).empty())
       ok = false, why = "the ISF effect could not be made WGSL: " + w;
   }
   // Carry the path operators at their largest. place_canvas bends the real path

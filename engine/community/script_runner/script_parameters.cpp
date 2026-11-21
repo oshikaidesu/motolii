@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "community/after_effects_plugin/ae_plugin.h"
 #include "community/aviutl/aviutl.h"
 #include "community/quickjs/script.h"
 #include "community/quickjs/script_leva.h"
@@ -113,6 +114,7 @@ void append_ae_expression_params(const std::string& js,
 std::vector<ScriptParameter> script_parameters(const std::string& file) {
   if (aviutl_is(file))
     return aviutl_parameters(file);  // (an AviUtl2 script's head: aviutl.cpp)
+  if (ae_plugin_is(file)) return ae_plugin_parameters(file);
   std::vector<ScriptParameter> parameters;
   std::ifstream in(file);
   std::stringstream told_head;

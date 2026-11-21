@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "community/after_effects_plugin/ae_plugin.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
@@ -155,6 +156,7 @@ std::string doc_fx_title(const std::string& name) {
   // Strip instance-ID prefix before any path operations.
   const std::string path = fx_entry_path(name);
   if (path != name) return doc_fx_title(path);
+  if (ae_plugin_is(path)) return ae_plugin_title(path);
   if (const std::string source = fx_source(name); source != name) {
     // An effect duplicated from another: the title of its source plus its
     // number, such as "Glow 2". It has its own card.

@@ -48,6 +48,10 @@ std::string doc_folder_names(const char* folder, const char* extension);
 // an @ file ("file#name") gives its own line. The label is the script's
 // --label: line. A file is reread only when it was written over.
 std::string doc_aviutl_names();
+// Returns one line per native After Effects plugin (.plugin / .aex) placed in
+// ae_plugins/ (user folder or library), probed via the isolated worker and
+// tagged with "ae" and "cpu" or "gpu".
+std::string doc_ae_plugin_names();
 // Counts how many times the files read differed from the previous read. The app
 // redraws its preview when this changes (entry/render_thread.h).
 std::atomic<int>& doc_own_easings_made();

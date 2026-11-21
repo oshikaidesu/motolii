@@ -13,6 +13,7 @@
 #include "base/file_read.h"
 #include "community/absent_motion/absent_motion.h"
 #include "community/after_effects/lottie_slots.h"
+#include "community/after_effects_plugin/ae_plugin.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
 #include "community/playcanvas/splatfx.h"
@@ -82,7 +83,8 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
   // PlayCanvas splat effect whose parameters are its attributes, see
   // engine/community/playcanvas/splatfx.h.
   const bool screen = ext == ".wgsl" || ext == ".fs" || ext == ".mjs" ||
-                      three_is(file) || solid_is(file) || aviutl_is(file);
+                      three_is(file) || solid_is(file) || aviutl_is(file) ||
+                      ae_plugin_is(file);
   // AbsentMotion's own motion. Its parameters are in the head of the file, and
   // AbsentMotion's C++ code moves the layer, see
   // engine/community/absent_motion/absent_motion.h.
@@ -107,10 +109,12 @@ DocScript* doc_script_of(Doc& d, const std::string& file, bool runs) {
     // the original file, see doc_fx_duplicate.
     s.stamp = stamp, s.seen = files_changed(),
     s.parameters =
-        ext == ".mjs" ? SplatEffect(file).parameters()
-        : s.viewer    ? viewer_parameters(file)
-        : lottie ? lottie_parameters(file)
-                 : script_parameters(screen ? isf_file(file) : fx_source(file));
+        ext == ".mjs"       ? SplatEffect(file).parameters()
+        : s.viewer          ? viewer_parameters(file)
+        : lottie            ? lottie_parameters(file)
+        : ae_plugin_is(file) ? ae_plugin_parameters(file)
+                             : script_parameters(screen ? isf_file(file)
+                                                        : fx_source(file));
     // Apply the values the effect comes with, where its own declarations show
     // none, see shelves/effects/sources/fx_first.sh.
     if (screen) script_first(file, s.parameters);

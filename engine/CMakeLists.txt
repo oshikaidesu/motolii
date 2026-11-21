@@ -341,6 +341,13 @@ else()
   target_link_libraries(motolii_community_aviutl PUBLIC ${LUAJIT_LIBRARY})
 endif()
 
+# Adapter: native After Effects plugins (.plugin / .aex) run in an isolated
+# motolii_ae_worker process via aexlo (potistudio, MIT; deps/aexlo.sh).
+add_library(motolii_community_after_effects_plugin STATIC
+  community/after_effects_plugin/ae_plugin.cpp
+  community/after_effects_plugin/ae_plugin_fx.cpp)
+target_link_libraries(motolii_community_after_effects_plugin PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_shelf motolii_stage_render motolii_stage_effects)
+
 # Adapter: hydra code run as it is.
 add_library(motolii_community_hydra STATIC
   community/hydra/hydra_isf.cpp)
@@ -402,7 +409,7 @@ add_library(motolii_community_script_runner STATIC
   community/script_runner/run_cavalry.cpp
   community/script_runner/run_p5.cpp
   community/script_runner/script_runner.cpp)
-target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5js motolii_community_subtitles motolii_media motolii_motion)
+target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_after_effects_plugin motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5js motolii_community_subtitles motolii_media motolii_motion)
 
 
 # ThorVG: 2D drawings placed in the scene.
@@ -428,7 +435,7 @@ add_library(motolii_stage_layer_effects STATIC
   stage/layer_effects/layer_fx.cpp
   stage/layer_effects/layer_fx_place.cpp
   stage/layer_effects/layer_points.cpp)
-target_link_libraries(motolii_stage_layer_effects PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_community_three motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_stage_canvas)
+target_link_libraries(motolii_stage_layer_effects PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_community_three motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_after_effects_plugin motolii_stage_canvas)
 
 # The project (SQLite): its values, edits, evaluation at a time.
 add_library(motolii_document STATIC
@@ -483,7 +490,7 @@ add_library(motolii_document STATIC
   document/scripts/recipes.cpp
   document/scripts/scripts.cpp
   document/undo.cpp)
-target_link_libraries(motolii_document PUBLIC motolii_flags motolii_base motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5js motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
+target_link_libraries(motolii_document PUBLIC motolii_flags motolii_base motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_community_after_effects_plugin motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5js motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
 target_link_libraries(motolii_document PUBLIC motolii_community_jolt)
 target_link_libraries(motolii_document PUBLIC ${SQLITE_LIBRARY}
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
@@ -647,7 +654,7 @@ if(BUILD_TESTING)
   foreach(folder base shelf motion media preview stage entry)
     motolii_module_tests(motolii_${folder} ${folder}/*_test.cpp)
   endforeach()
-  foreach(folder absent_motion after_effects aviutl hydra isf jolt p5js playcanvas quickjs script_runner sites three)
+  foreach(folder absent_motion after_effects after_effects_plugin aviutl hydra isf jolt p5js playcanvas quickjs script_runner sites three)
     motolii_module_tests(motolii_community_${folder} community/${folder}/*_test.cpp)
   endforeach()
   foreach(folder render canvas effects layer_effects)

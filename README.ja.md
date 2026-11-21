@@ -99,6 +99,7 @@ app/tool/live.sh
 | **Turtletoy** | ⌘V | QuickJS-ng |
 | **Hydra** | ⌘V | QuickJS-ng → WGSL |
 | **After Effects の式** | ⌘V or 式カード | lottie-web（QuickJS-ng） |
+| **After Effects プラグイン (.plugin, .aex)** | `ae_plugins/` に置く（シンボリックリンク可） | [aexlo](https://github.com/potistudio/aexlo)（隔離ワーカー） |
 | **Cavalry のスクリプト** | 式カード | QuickJS-ng |
 | **CSS @keyframes** | テキストレイヤーで ⌘V | Stylo（Firefox の CSS エンジン） |
 | **アニメーション SVG** | ⌘V or D&D | ThorVG + Stylo |
@@ -113,13 +114,15 @@ app/tool/live.sh
 
 ### After Effects 互換
 
-After Effects の式は**そのまま動きます**。再実装ではありません。lottie-web の ExpressionManager をバイトコードにコンパイルして QuickJS-ng で実行しています — Web で式を動かしているのと同じコードです。`thisComp`・`thisLayer`・`thisProperty`・`sampleImage`・`fromWorld`・`wiggle`・`linear`・`ease`・キーフレーム参照・他レイヤー参照が動きます。チュートリアルや掲示板の式をコピペすれば、そのまま動きます。
+After Effects で育てた既存資産を、そのまま Motolii に持ち込めます。
 
-Lottie ファイル（Bodymovin が書き出す `.json`）は ThorVG が再生します。ThorVG は Lottie に埋まっている式も JerryScript でランタイム評価します — 書き出し時に焼かれた値ではありません。キーフレーム・イージング・パス・親子・プリコンポジション・タイムリマップ・ループ・マット・ブレンドモードは ThorVG が処理します。3D レイヤーとカメラは Motolii 側でパッチ（`thorvg_z.patch`）を当てて対応しています。
+- **ネイティブプラグイン（`.plugin` / `.aex`）** — 手持ちのサードパーティ製 After Effects プラグイン（Deep Glow、Quick Chromatic Aberration、Zink Tools、Satori など）を自分の `ae_plugins/` フォルダに置くかシンボリックリンクするだけで、パラメータ・`#ae` / `#cpu`（または `#gpu`）タグ・ライブプレビュー付きで Effects タブに並びます。実行には [aexlo](https://github.com/potistudio/aexlo) を使い、隔離されたワーカープロセスで動かすため、プラグイン側がハング・クラッシュしてもエディタ本体は落ちません。
+- **エクスプレッション** — After Effects の式は**そのまま動きます**。再実装ではありません。lottie-web の ExpressionManager をバイトコードにコンパイルして QuickJS-ng で実行しています — Web で式を動かしているのと同じコードです。`thisComp`・`thisLayer`・`thisProperty`・`sampleImage`・`fromWorld`・`wiggle`・`linear`・`ease`・キーフレーム参照・他レイヤー参照が動きます。チュートリアルや掲示板の式をコピペすれば、そのまま動きます。
+- **Lottie（`.json`）** — Bodymovin が書き出す Lottie ファイルは ThorVG が再生します。ThorVG は Lottie に埋まっている式も JerryScript でランタイム評価します — 書き出し時に焼かれた値ではありません。キーフレーム・イージング・パス・親子・プリコンポジション・タイムリマップ・ループ・マット・ブレンドモードは ThorVG が処理します。3D レイヤーとカメラは Motolii 側でパッチ（`thorvg_z.patch`）を当てて対応しています。
 
 Cavalry のスクリプトもそのまま動きます。`cavalry.Point`・`cavalry.PointCloud`・`cavalry.random` を提供し、裸の `{ }` 式は自動で `each()` にラップされます。Cavalry コミュニティの配置スクリプト 26 本が `shelves/create/cavalry/` に入っています。
 
-**対応していないもの**：After Effects の内蔵エフェクトの大半（Glow、Turbulent Displace など）と、AE 内部の音声グラフに依存する音声連動プロパティ。これらは式言語や Lottie 形式の範囲外で、Motolii では独自のシェーダーエフェクトと音声解析で対応しています。
+**対応していないもの**：Adobe 独自の組み込みエフェクト、未実装の AEGP ホスト API（コンプカメラ参照やテキストドキュメント操作など）に依存する一部プラグイン、および AE 内部の音声グラフに依存する音声連動プロパティ。これらは Motolii 独自の GPU シェーダーエフェクトと音声解析で補っています。
 
 ## フォルダの並び
 

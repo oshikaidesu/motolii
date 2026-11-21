@@ -4,6 +4,8 @@
 #include <filament/Viewport.h>
 #include <utils/EntityManager.h>
 
+#include "community/after_effects_plugin/ae_plugin.h"
+#include "community/after_effects_plugin/ae_plugin_fx.h"
 #include "community/aviutl/aviutl_run.h"
 #include "community/three/solid_three.h"
 #include "gpu/gpu_interop.h"
@@ -34,12 +36,24 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   st.steps.clear();
   st.readsBehind = false, st.wide = false;
   std::vector<std::shared_ptr<AviutlRun>> scripts;
+  std::vector<std::shared_ptr<AePluginRun>> plugins;
   for (const std::string& entry : script_files(files)) {
     if (entry == "none") continue;
     // Each entry may carry a per-instance ID prefix ("a1b2c3:blur.wgsl"); the
     // bare path is what the file-type gates and filesystem look-ups need, while
     // screen_built keyes its cache on the whole entry to keep instances apart.
     const std::string path = fx_entry_path(entry);
+    // A native After Effects plugin (.plugin / .aex), run in an isolated worker.
+    if (ae_plugin_is(path)) {
+      const auto found = std::find_if(
+          st.aePlugins.begin(), st.aePlugins.end(),
+          [&](const auto& r) { return r->numbers_key() == entry; });
+      plugins.push_back(found != st.aePlugins.end()
+                            ? *found
+                            : ae_plugin_open(s, entry));
+      st.steps.push_back('p');
+      continue;
+    }
     // An AviUtl2 script. It runs each frame on the layer's image.
     if (aviutl_is(path)) {
       const auto found =
@@ -105,6 +119,7 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     r->at = (int)(std::find(names.begin(), names.end(), nameOf(r->file)) -
                   names.begin());
   st.aviutl = scripts;
+  st.aePlugins = plugins;
 }
 
 void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
@@ -203,8 +218,13 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
   screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);
   // Each step draws into one of the two alternating textures. The effects take
   // the whole texture as their input and fill what is clear.
-  for (size_t i = 0, f = 0, a = 0; i < st.steps.size(); ++i) {
+  for (size_t i = 0, f = 0, a = 0, p = 0; i < st.steps.size(); ++i) {
     Texture* from = i == 0 ? st.between[1] : st.between[(i - 1) % 2];
+    if (st.steps[i] == 'p') {
+      ae_plugin_draw_step(s, *st.aePlugins[p++], from, st.betweenTarget[i % 2],
+                          numbers, textures, w, h);
+      continue;
+    }
     // An AviUtl2 script, told where the layer is seen.
     if (st.steps[i] == 'a') {
       std::copy(st.box, st.box + 4, st.aviutl[a]->box),

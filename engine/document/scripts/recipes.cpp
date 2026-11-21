@@ -15,6 +15,7 @@
 #include "base/cache_folder.h"
 #include "base/file_read.h"
 #include "base/hash.h"
+#include "community/after_effects_plugin/ae_plugin.h"
 #include "community/aviutl/aviutl.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
@@ -342,6 +343,43 @@ std::string doc_aviutl_names() {
     }
   }
   if (!all.empty()) all.pop_back();
+  return all;
+}
+
+std::string doc_ae_plugin_names() {
+  static std::string all;
+  static int seen = -1;
+  if (!doc_folder_moved(seen)) return all;
+  all.clear();
+  std::error_code wrong;
+  for (const auto& dir : doc_folders("ae_plugins")) {
+    std::vector<std::filesystem::path> files;
+    for (auto e = std::filesystem::recursive_directory_iterator(
+             dir, std::filesystem::directory_options::follow_directory_symlink,
+             wrong);
+         !wrong && e != std::filesystem::recursive_directory_iterator();
+         e.increment(wrong)) {
+      const std::string p = e->path().generic_string();
+      if (ae_plugin_is(p)) {
+        files.push_back(e->path());
+        // On macOS a .plugin is a bundle directory; do not descend into it.
+        if (e->is_directory(wrong)) e.disable_recursion_pending();
+      }
+    }
+    wrong.clear();
+    std::sort(files.begin(), files.end());
+    for (const auto& f : files) {
+      const std::string p = f.generic_string();
+      const AePluginInfo info = ae_plugin_probe(p);
+      if (!info.ok) continue;
+      std::string about = info.about;
+      std::replace(about.begin(), about.end(), '\t', ' ');
+      all += (all.empty() ? "" : "\n") + ae_plugin_title(p) + "\t" + p +
+             "\tAfter Effects" +
+             doc_tile(p, std::filesystem::path(f).replace_extension(".png")) +
+             "\t" + about + "\t" + info.tags;
+    }
+  }
   return all;
 }
 

@@ -83,6 +83,7 @@ abstract final class EffectTiles {
     for (final f in const [
       'effects',
       'aviutl_scripts',
+      'ae_plugins',
       'create',
       'expressions',
       'relations',
@@ -102,6 +103,7 @@ abstract final class EffectTiles {
       makeFolder(
         '$own/effects',
       ); // There is somewhere to put files, as the README says.
+      makeFolder('$own/ae_plugins');
     } catch (_) {
       return null;
     }

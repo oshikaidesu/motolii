@@ -1,0 +1,13 @@
+[package]
+name = "motolii_ae_worker"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+aexlo = { path = "../../third_party/aexlo_src/crates/aexlo" }
+libc = "0.2"
+
+[profile.release]
+debug = false
+strip = false

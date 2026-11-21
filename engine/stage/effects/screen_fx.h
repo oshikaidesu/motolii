@@ -136,9 +136,11 @@ struct ScreenStack {
   filament::RenderTarget* betweenTarget[2] = {nullptr, nullptr};
   // Passthrough copy for effects whose last pass draws into their own target.
   interop::Screen* copy = nullptr;
-  // Steps in order: 0 = next GPU effect, 'a' = AviUtl2 script.
+  // Steps in order: 0 = next GPU effect, 'a' = AviUtl2 script,
+  // 'p' = After Effects plugin.
   std::vector<char> steps;
   std::vector<std::shared_ptr<struct AviutlRun>> aviutl;
+  std::vector<std::shared_ptr<struct AePluginRun>> aePlugins;
   void* device[3] = {nullptr, nullptr, nullptr};
   filament::Texture* seen = nullptr;
   // Audio input values at the current time. Empty/null = silent.
