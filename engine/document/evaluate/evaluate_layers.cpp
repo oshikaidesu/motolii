@@ -167,10 +167,6 @@ void drawing_shown(Doc& d, int layer, DocShownLayer& t, double now,
     canvas_at(
         s, t.drawn,
         std::fmod((float)doc_own_time(d, layer, now, since), t.drawn->seconds));
-  if (t.drawn && t.drawn->shape)
-    trim_at(s, t.drawn, (float)doc_number(d, layer, "trim", now, 0),
-            (float)doc_number(d, layer, "trim_begin", now, 0),
-            (float)doc_number(d, layer, "trim_offset", now, 0));
 }
 
 // Brings one layer to the evaluated time. `i` is its index in the evaluation's
@@ -206,13 +202,18 @@ void layer_evaluated(const Evaluation& evaluation, size_t i) {
   sketch_lines_set(d, layer, t, now);
   drawing_shown(d, layer, t, now, lies[i].since);
   evaluate_cut_shape(d, layer, t, now);
-  if (t.drawn && t.drawn->shape)
+  if (t.drawn && t.drawn->shape) {
+    filament::math::float3 trim{};
+    const std::vector<PathOpStep> opSteps =
+        doc_path_op_steps(d, layer, now, trim);
+    trim_at(s, t.drawn, trim.x, trim.y, trim.z);
     bend_at(s, t.drawn, (float)doc_number(d, layer, "round", now, 0),
             (float)doc_number(d, layer, "bloat", now, 0),
             (float)doc_number(d, layer, "zigzag", now, 0),
             (float)doc_number(d, layer, "zigzag_ridges", now, 5),
             (float)doc_number(d, layer, "zigzag_smooth", now, 0),
-            (float)doc_number(d, layer, "offset", now, 0));
+            (float)doc_number(d, layer, "offset", now, 0), opSteps);
+  }
   const CopyPlaces places = evaluate_copy_places(d, layer, now);
   evaluate_splat(d, layer, t, now);
   evaluate_copies_placed(d, layer, t, m, now, lies[i].solid, places);

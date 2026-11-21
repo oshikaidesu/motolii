@@ -1,12 +1,17 @@
-// The shape preview at the top of the Paths card: the engine's outline fitted into a small box,
-// with a fallback polygon when SVG path data is not available.
+// The shape preview on the Paths card: renders the engine's bent SVG outline
+// (with a fallback polygon when absent) and hosts the discrete Fill rule
+// (Nonzero / Even-odd) toggle directly inside the well.
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:path_parsing/path_parsing.dart';
 
+import 'package:motolii/inspector/controls/well_pill.dart'
+    show WellPill, maybeTip;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
 
 class PathsPreview extends StatelessWidget {
@@ -16,28 +21,138 @@ class PathsPreview extends StatelessWidget {
     required this.inner,
     required this.shape,
     required this.svgPath,
+    this.height,
+    this.compact = false,
+    this.evenOdd,
+    this.onToggleFillRule,
     super.key,
   });
+
   final double round;
   final int points;
   final double inner;
   final String shape;
   final String svgPath;
+  final double? height;
+  final bool compact;
+  final bool? evenOdd;
+  final VoidCallback? onToggleFillRule;
 
   @override
-  Widget build(BuildContext context) => ClipRect(
-    child: CustomPaint(
-      key: const ValueKey('paths-preview'),
-      size: Size.fromHeight(Shape.z(60)),
-      painter: _PreviewPaint(
-        round: round,
-        points: points,
-        inner: inner,
-        shape: shape,
-        svgPath: svgPath,
+  Widget build(BuildContext context) {
+    final h = height ?? Shape.z(52);
+    final isEvenOdd = evenOdd ?? false;
+    final tipText = isEvenOdd ? 'Fill rule: Even-odd' : 'Fill rule: Nonzero';
+    return SizedBox(
+      height: h,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRect(
+            child: CustomPaint(
+              key: const ValueKey('paths-preview'),
+              size: Size.fromHeight(h),
+              painter: _PreviewPaint(
+                round: round,
+                points: points,
+                inner: inner,
+                shape: shape,
+                svgPath: svgPath,
+                evenOdd: isEvenOdd,
+              ),
+            ),
+          ),
+          if (evenOdd != null && onToggleFillRule != null)
+            Positioned(
+              right: compact ? 5 : 10,
+              bottom: compact ? 5 : 8,
+              child: maybeTip(
+                context,
+                tipText,
+                compact
+                    ? _CompactFillRuleBadge(
+                        key: const ValueKey('paths-fill-rule'),
+                        evenOdd: isEvenOdd,
+                        onTap: onToggleFillRule!,
+                      )
+                    : WellPill(
+                        key: const ValueKey('paths-fill-rule'),
+                        label: isEvenOdd ? 'Even-odd' : 'Nonzero',
+                        active: isEvenOdd,
+                        icon: (c, s, col) =>
+                            _drawFillRuleGlyph(c, s, col, evenOdd: isEvenOdd),
+                        onTap: onToggleFillRule!,
+                      ),
+              ),
+            ),
+        ],
       ),
-    ),
+    );
+  }
+}
+
+class _CompactFillRuleBadge extends StatelessWidget {
+  const _CompactFillRuleBadge({
+    required this.evenOdd,
+    required this.onTap,
+    super.key,
+  });
+
+  final bool evenOdd;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Pressable(
+    onTap: onTap,
+    builder: (_, hot) {
+      final ink = evenOdd ? Accent.fill : (hot ? Grey.g95 : Grey.g76);
+      final border = evenOdd
+          ? Accent.fill.withValues(alpha: hot ? 0.75 : 0.55)
+          : (hot ? Grey.g95 : Grey.g91).withValues(alpha: hot ? 0.36 : 0.18);
+      return Container(
+        width: Shape.z(18),
+        height: Shape.z(18),
+        decoration: BoxDecoration(
+          color: Grey.g07.withValues(alpha: hot ? 0.90 : 0.74),
+          borderRadius: Shape.round(4),
+          border: Border.all(color: border),
+        ),
+        alignment: Alignment.center,
+        child: CustomPaint(
+          size: const Size(10, 10),
+          painter: Draw(
+            (c, s) => _drawFillRuleGlyph(c, s, ink, evenOdd: evenOdd),
+            (hot, evenOdd),
+          ),
+        ),
+      );
+    },
   );
+}
+
+void _drawFillRuleGlyph(Canvas c, Size s, Color col, {required bool evenOdd}) {
+  final a = Rect.fromLTWH(0.8, 1.8, 6.0, 6.0);
+  final b = Rect.fromLTWH(3.2, 2.8, 6.0, 6.0);
+  final path = Path()
+    ..fillType = evenOdd ? PathFillType.evenOdd : PathFillType.nonZero
+    ..addRect(a)
+    ..addRect(b);
+  c
+    ..drawPath(path, Paint()..color = col.withValues(alpha: 0.78))
+    ..drawRect(
+      a,
+      Paint()
+        ..color = col
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    )
+    ..drawRect(
+      b,
+      Paint()
+        ..color = col
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
 }
 
 class _PreviewPaint extends CustomPainter {
@@ -47,16 +162,15 @@ class _PreviewPaint extends CustomPainter {
     required this.inner,
     required this.shape,
     required this.svgPath,
+    required this.evenOdd,
   });
   final double round;
   final int points;
   final double inner;
   final String shape;
   final String svgPath;
+  final bool evenOdd;
 
-  // The engine's outline (motolii_shape_svg: SVG path data) as a Path fitted into a 2 [r] box about ([cx], [cy]).
-  // The outline is meant to be a unit high about the origin, but a strong deform (a large round, a rough edge) carries
-  // it well past that, so its real bounds are measured and scaled to fit rather than assumed. Null when it is not path data.
   Path? _parseSvg(double cx, double cy, double r) {
     final unit = Path();
     try {
@@ -129,10 +243,11 @@ class _PreviewPaint extends CustomPainter {
   void paint(Canvas c, Size s) {
     drawWell(c, s);
     final cx = s.width / 2, cy = s.height / 2;
-    final r = math.min(s.width, s.height) * 0.32;
+    final r = math.min(s.width, s.height) * 0.36;
     final path =
         (svgPath.isNotEmpty ? _parseSvg(cx, cy, r) : null) ??
         _fallbackPath(cx, cy, r);
+    path.fillType = evenOdd ? PathFillType.evenOdd : PathFillType.nonZero;
     c.drawPath(
       path,
       Paint()
@@ -142,9 +257,9 @@ class _PreviewPaint extends CustomPainter {
     c.drawPath(
       path,
       Paint()
-        ..color = Accent.fill.withValues(alpha: 0.6)
+        ..color = Accent.fill.withValues(alpha: 0.72)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..strokeWidth = 1.4,
     );
   }
 
@@ -154,10 +269,10 @@ class _PreviewPaint extends CustomPainter {
       o.points != points ||
       o.inner != inner ||
       o.shape != shape ||
-      o.svgPath != svgPath;
+      o.svgPath != svgPath ||
+      o.evenOdd != evenOdd;
 }
 
-/// What path_parsing reads of an SVG path, drawn into a Flutter [Path].
 class _IntoPath extends PathProxy {
   _IntoPath(this.path);
   final Path path;

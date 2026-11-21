@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
@@ -258,6 +259,10 @@ struct Canvas2D {
   // smooth, offset. The remaining four are for roughening: how far and how
   // fine, the number of points walked again, and the square size.
   std::array<float, 10> bent{};
+  // Ordered path-operator stack as last applied (supports reorder & repeats).
+  std::vector<PathOpStep> bentSteps;
+  // True when the last applied operator produced pure voxel squares.
+  bool bentVoxel = false;
   // Another shape's path: combined (how: skia_path_operations.cpp op, -1 none)
   // or morphed (much: 0–1; how>1: that many blend steps).
   struct Other {
@@ -335,9 +340,10 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin = 0.f,
 
 // Bends the shape of `d` with the given parameters, with the units of tvg_bend,
 // and draws it again for the next frame. Does nothing if the parameters are
-// unchanged.
+// unchanged. When `steps` is non-empty, applies those operators in order.
 void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
-             float ridges, float smooth, float offset);
+             float ridges, float smooth, float offset,
+             const std::vector<PathOpStep>& steps = {});
 
 // Applies Lottie slot overrides (lottie_slots_json) via ThorVG's slot API.
 // No-op if unchanged.

@@ -149,6 +149,7 @@ inline const DocShown doc_shown[] = {
     {"trail", "thing", "", "Trail", 0, 0, nullptr},
     {"trail_length", "", "s", "Trail length", 0.05, 4, nullptr},
     {"fill_rule", "", "", "Fill rule", 0, 0, nullptr},
+    {"path_ops", "words", "", "Operators", 0, 0, nullptr},
     {"morph", "share", "%", "Morph", 0, 1, nullptr},
     {"morph_to", "thing", "", "Into", 0, 0, nullptr},
     {"morph_steps", "", "", "Steps", 0, 32, nullptr},

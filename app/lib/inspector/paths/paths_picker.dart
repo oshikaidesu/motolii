@@ -1,31 +1,34 @@
-// The "+ operator" button and the grouped picker that appears below it on the Paths card.
+// The "+ Operator" button and grouped picker on the Paths card.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
-/// The "+ operator" button and the grouped picker that appears below it.
+/// The "+ Operator" button and the grouped picker that appears below it.
 class PathsPicker extends StatefulWidget {
   const PathsPicker({required this.isSub, required this.onAdd, super.key});
 
-  /// Whether [id] is a sub that rides under another operator.
   final bool Function(String id) isSub;
-
-  /// Called when the user picks an operator to add.
   final void Function(String id) onAdd;
 
-  // The order operators appear in the picker, grouped. Morph and Trail are left
-  // out (they need another layer). A sub — folded by the engine (Parameter.fold,
-  // e.g. Zig zag's Ridges/Smooth) or depending on its owner — is left out of
-  // the picker and shown under its parent.
+  // Grouped path operators; fill_rule lives inside PathsPreview, and
+  // Morph/Trail need another layer so they stay off the picker.
   static const _groups = [
-    (
-      'Deform',
-      ['round', 'bloat', 'offset', 'zigzag', 'zigzag_ridges', 'zigzag_smooth'],
-    ),
-    ('Texture', ['rough', 'rough_detail', 'resample', 'fill_rule']),
-    ('Animate', ['trim', 'trim_offset']),
+    ('Deform', ['round', 'bloat', 'offset', 'zigzag']),
+    ('Texture', ['rough', 'resample', 'voxel']),
+    ('Animate', ['trim']),
   ];
+
+  static const _labels = <String, String>{
+    'round': 'Round',
+    'bloat': 'Bloat',
+    'offset': 'Offset',
+    'zigzag': 'Zig zag',
+    'rough': 'Rough',
+    'resample': 'Points',
+    'voxel': 'Squares',
+    'trim': 'Trim',
+  };
 
   @override
   State<PathsPicker> createState() => _PathsPickerState();
@@ -46,11 +49,12 @@ class _PathsPickerState extends State<PathsPicker> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Pressable(
+          key: const ValueKey('paths-add-operator'),
           onTap: () => setState(() => _picking = !_picking),
           builder: (_, hot) => Container(
             height: Shape.z(28),
             decoration: BoxDecoration(
-              color: hot ? Grey.g15 : null,
+              color: hot ? Grey.g15 : Grey.g13,
               borderRadius: Shape.round(6),
               border: Border.all(
                 color: _picking ? Grey.g38 : Grey.g20,
@@ -59,8 +63,8 @@ class _PathsPickerState extends State<PathsPicker> {
             ),
             alignment: Alignment.center,
             child: Text(
-              '+ operator',
-              style: TextStyles.label(_picking ? Grey.g76 : Grey.g44),
+              '+ Operator',
+              style: TextStyles.label(_picking || hot ? Grey.g76 : Grey.g44),
             ),
           ),
         ),
@@ -105,17 +109,18 @@ class _PathsPickerState extends State<PathsPicker> {
       ),
       for (final id in available)
         Pressable(
+          key: ValueKey('paths-pick:$id'),
           onTap: () => _add(id),
           builder: (_, hot) => Container(
             height: Shape.z(26),
             padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
             decoration: BoxDecoration(
-              color: hot ? Grey.g20 : null,
+              color: hot ? Grey.g20 : Grey.g10,
               borderRadius: Shape.round(5),
             ),
             alignment: Alignment.centerLeft,
             child: Text(
-              id.replaceAll('_', ' '),
+              PathsPicker._labels[id] ?? id.replaceAll('_', ' '),
               style: TextStyles.name(hot ? Grey.g91 : Grey.g76),
             ),
           ),

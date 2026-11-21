@@ -79,7 +79,7 @@ std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo,
     m.pos.clear(), m.nrm.clear(), m.uv.clear(), m.idx.clear();
     // Voxelized path: it is made of squares, each already two triangles, so
     // nothing needs cutting.
-    if (!d->hollow && d->bent[9] > 0.f) {
+    if (!d->hollow && d->bentVoxel) {
       for (uint32_t c = 0, p = 0; c < cmdsCnt; ++c)
         if (cmds[c] == tvg::PathCommand::MoveTo && c + 3 < cmdsCnt) {
           const uint32_t k = (uint32_t)m.pos.size();

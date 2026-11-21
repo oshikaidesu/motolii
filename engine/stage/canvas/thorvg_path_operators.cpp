@@ -119,6 +119,68 @@ static bool numbers(const Point* p, uint32_t n) {
   return true;
 }
 
+bool tvg_bend_one(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+                  const tvg::Point* pts, uint32_t ptsCnt, int kind, float a,
+                  float b, float c, std::vector<tvg::PathCommand>& outCmds,
+                  std::vector<tvg::Point>& outPts) {
+  outCmds.clear(), outPts.clear();
+  if (!cmdsCnt || !numbers(pts, ptsCnt) || !std::isfinite(a + b + c))
+    return false;
+  LottieModifier* mod = nullptr;
+  bool sharp = false;
+  switch (kind) {
+    case 0:
+      if (a <= 0.f) return false;
+      mod = new LottieRoundnessModifier(a);
+      sharp = true;
+      break;
+    case 1:
+      if (a == 0.f) return false;
+      mod = new LottiePuckerBloatModifier(a);
+      sharp = true;
+      break;
+    case 2:
+      if (a == 0.f) return false;
+      mod = new LottieZigZagModifier(a, (int)std::clamp(b, 0.f, 100.f),
+                                     c > 0.5f ? LottieZigZagModifier::Smooth
+                                              : LottieZigZagModifier::Corner);
+      break;
+    case 3:
+      if (a == 0.f) return false;
+      mod = new LottieOffsetModifier(a);
+      break;
+    default:
+      return false;
+  }
+  RenderPath in, out;
+  curves(in, cmds, cmdsCnt, pts, sharp, 0.f);
+  mod->path(in, out, nullptr);
+  delete mod;
+  if (!out.cmds.count || !numbers(out.pts.data, out.pts.count)) return false;
+  outCmds.assign(out.cmds.data, out.cmds.data + out.cmds.count);
+  outPts.assign(out.pts.data, out.pts.data + out.pts.count);
+  return true;
+}
+
+void tvg_finalize_path(tvg::Shape* shape, const tvg::PathCommand* cmds,
+                       uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,
+                       float fine) {
+  shape->reset();
+  if (!cmdsCnt || !numbers(pts, ptsCnt) || !std::isfinite(fine)) return;
+  if (fine == 0.f) {
+    shape->appendPath(cmds, cmdsCnt, pts, ptsCnt);
+    return;
+  }
+  float along = 0.f;
+  for (uint32_t i = 1; i < ptsCnt; ++i) along += length(pts[i] - pts[i - 1]);
+  RenderPath cut;
+  curves(cut, cmds, cmdsCnt, pts, false,
+         std::copysign(std::max(std::fabs(fine), along / 20000.f), fine));
+  if (numbers(cut.pts.data, cut.pts.count))
+    shape->appendPath(cut.cmds.data, cut.cmds.count, cut.pts.data,
+                      cut.pts.count);
+}
+
 // Replaces the contents of `shape` with the given path after applying the
 // operators.
 // `round` is the corner radius, `bloat` the pucker & bloat amount, `zigzag` the

@@ -258,6 +258,8 @@ inline const DocValue doc_values[] = {
     {"drawing", "shape", 0, 0, false, ""},
     // SVG path data, in units of height from the center, y pointing down.
     {"path", "shape", 0, 0, false, ""},
+    // Ordered path-operator stack ("round a1b2c3:zigzag d4e5f6:round").
+    {"path_ops", "shape text image", 0, 0, false, ""},
     // Extra strokes outside the previous one. Each entry "<id>:" with values
     // keyed as "<id>:stroke" and "<id>:stroke_width" (stroke_put.h).
     {"strokes", doc_sheet_kinds, 0, 0, false, ""},

@@ -59,20 +59,29 @@ void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
 }
 
 void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
-             float ridges, float smooth, float offset) {
+             float ridges, float smooth, float offset,
+             const std::vector<PathOpStep>& steps) {
   const std::array<float, 10> is{round,  bloat, zigzag, ridges, smooth,
                                  offset, 0.f,   0.f,    0.f,    0.f};
-  if (!d->shape || d->plain.empty() || is == d->bent) return;
+  if (!d->shape || d->plain.empty() || (is == d->bent && steps == d->bentSteps))
+    return;
   d->bent = is;
+  d->bentSteps = steps;
   cache_drop(s, d);
-  interop::on_driver(s.engine, [&s, d, is] {
+  interop::on_driver(s.engine, [&s, d, is, steps] {
     const float high = d->plainHigh, side = d->plainSide;
-    tvg_bend(
-        d->shape, d->plain.data(), (uint32_t)d->plain.size(), d->plainAt.data(),
-        (uint32_t)d->plainAt.size(), std::clamp(is[0], 0.f, 0.5f) * side,
-        100.f * std::clamp(is[1], -1.f, 1.f),
-        std::clamp(is[2], -4.f, 4.f) * high, (int)std::clamp(is[3], 0.f, 100.f),
-        is[4] > 0.5f, std::clamp(is[5], -4.f, 4.f) * high, d->fine);
+    if (!steps.empty()) {
+      apply_path_steps(d->shape, d->plain, d->plainAt, steps, side, high,
+                       d->fine);
+    } else {
+      tvg_bend(d->shape, d->plain.data(), (uint32_t)d->plain.size(),
+               d->plainAt.data(), (uint32_t)d->plainAt.size(),
+               std::clamp(is[0], 0.f, 0.5f) * side,
+               100.f * std::clamp(is[1], -1.f, 1.f),
+               std::clamp(is[2], -4.f, 4.f) * high,
+               (int)std::clamp(is[3], 0.f, 100.f), is[4] > 0.5f,
+               std::clamp(is[5], -4.f, 4.f) * high, d->fine);
+    }
     // Measure the bent outline for the grabbed box before any guard resets it,
     // so the box follows the bend even past the texture's edge.
     canvas_measure_bent(s, d);

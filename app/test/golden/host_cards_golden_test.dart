@@ -113,6 +113,8 @@ struct Params {
   points: f32,
   /// @label(Inner) @ui(bar) @range(0, 1) @unit() @default(0.45)
   inner: f32,
+  /// @label(Operators) @unit(words)
+  path_ops: vec3<f32>,
   /// @label(Round) @ui(bar) @range(0, 1) @unit() @default(0.15)
   round: f32,
   /// @label(Bloat) @ui(bipolar) @range(-1, 1) @unit() @default(0)
@@ -121,6 +123,8 @@ struct Params {
   offset: f32,
   /// @label(Zig zag) @ui(bar) @range(0, 20) @unit(px) @default(2)
   zigzag: f32,
+  /// @label(Fill rule) @enum(nonzero, evenodd) @default(0)
+  fill_rule: u32,
   /// @label(Trim) @ui(bar) @range(0, 1) @unit() @default(0.8)
   trim: f32,
   /// @label(Trim offset) @ui(bar) @range(0, 1) @unit() @default(0)

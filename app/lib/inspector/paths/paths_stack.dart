@@ -1,5 +1,6 @@
-// The reorderable operator stack on the Paths card. Each parent carries its
-// subs as a set; dragging a parent moves its subs with it.
+// The reorderable operator stack on the Paths card. Supports both plain
+// operator ids ("round") and per-instance prefixed ids ("a1b2c3:round") so
+// duplicate operators carry independent sliders and keyframes.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
@@ -10,8 +11,17 @@ import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/media.dart' show Draw;
 
-/// The reorderable list of active operators.
+/// Splits an entry like `"a1b2c3:round"` into `("a1b2c3:", "round")`, or
+/// `"round"` into `("", "round")`.
+(String prefix, String base) splitPathOpId(String entry) {
+  final i = entry.indexOf(':');
+  if (i < 0) return ('', entry);
+  return (entry.substring(0, i + 1), entry.substring(i + 1));
+}
+
+/// The reorderable list of active path operators.
 class PathsStack extends StatelessWidget {
   const PathsStack({
     required this.order,
@@ -22,12 +32,19 @@ class PathsStack extends StatelessWidget {
     required this.onReorder,
     super.key,
   });
+
   final List<String> order;
   final Map<String, Parameter> params;
   final InspectorValues doc;
-  final List<String> Function(String) subsOf;
-  final void Function(int index, String id) onRemoveAt;
+  final List<String> Function(String entry) subsOf;
+  final void Function(int index, String entry) onRemoveAt;
   final void Function(int from, int to) onReorder;
+
+  Parameter? _paramFor(String id) {
+    if (params[id] case final exact?) return exact;
+    final (_, base) = splitPathOpId(id);
+    return params[base];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +59,9 @@ class PathsStack extends StatelessWidget {
           itemCount: order.length,
           onReorderItem: (from, to) => onReorder(from, to),
           itemBuilder: (ctx, i) {
-            final id = order[i];
-            // The parent carries the drag handle and the remove button; its subs
-            // ride beneath it in the same item, so they move and go as a set.
+            final entry = order[i];
             return InspectorScope(
-              key: ValueKey('$id:$i'),
+              key: ValueKey('op:$entry:$i'),
               doc: scope.doc,
               tick: scope.tick,
               child: Column(
@@ -54,16 +69,16 @@ class PathsStack extends StatelessWidget {
                 children: [
                   PathsStackItem(
                     index: i,
-                    id: id,
-                    param: params[id],
+                    id: entry,
+                    param: _paramFor(entry),
                     doc: doc,
-                    onRemove: () => onRemoveAt(i, id),
+                    onRemove: () => onRemoveAt(i, entry),
                   ),
-                  for (final sub in subsOf(id))
+                  for (final sub in subsOf(entry))
                     PathsStackItem(
                       index: i,
                       id: sub,
-                      param: params[sub],
+                      param: _paramFor(sub),
                       doc: doc,
                       onRemove: () {},
                       isSub: true,
@@ -79,7 +94,8 @@ class PathsStack extends StatelessWidget {
   }
 }
 
-/// One row on the operator stack: drag handle, label, number field, remove button.
+/// One slim 32px row on the operator stack: vector 6-dot grip, capitalized
+/// label, compact number field, and vector × matching Fill's stroke rows.
 class PathsStackItem extends StatelessWidget {
   const PathsStackItem({
     required this.index,
@@ -90,45 +106,61 @@ class PathsStackItem extends StatelessWidget {
     this.isSub = false,
     super.key,
   });
+
   final int index;
   final String id;
   final Parameter? param;
   final InspectorValues doc;
   final VoidCallback onRemove;
-  // A sub rides under its parent: no drag handle, no remove, indented and dim.
   final bool isSub;
+
+  String _labelOf(Parameter p) {
+    if (p.label.isNotEmpty) return p.label;
+    final (_, base) = splitPathOpId(id);
+    final raw = isSub
+        ? base.split('_').skip(1).join(' ')
+        : base.replaceAll('_', ' ');
+    return raw.isEmpty ? raw : '${raw[0].toUpperCase()}${raw.substring(1)}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = param;
     if (p == null) return const SizedBox.shrink();
-    // A sub reads as the part after its parent's name: 'zigzag_ridges' -> 'ridges'.
-    final label = isSub
-        ? id.split('_').skip(1).join(' ')
-        : id.replaceAll('_', ' ');
+    final label = _labelOf(p);
     return Container(
       height: Shape.z(32),
       margin: EdgeInsets.only(bottom: Shape.s(2)),
+      padding: EdgeInsets.only(right: Shape.s(2)),
       decoration: BoxDecoration(color: Grey.g10, borderRadius: Shape.round(6)),
       child: Row(
         children: [
-          // The parent drags the whole set; a sub has no handle of its own.
           if (isSub)
-            SizedBox(width: Shape.z(28))
+            SizedBox(width: Shape.z(24))
           else
             ReorderableDragStartListener(
               index: index,
-              child: SizedBox(
-                width: Shape.z(28),
-                child: Center(
-                  child: Text('⠿', style: TextStyles.label(Grey.g56)),
+              child: MouseRegion(
+                cursor: SystemMouseCursors.grab,
+                child: SizedBox(
+                  width: Shape.z(24),
+                  height: Shape.z(32),
+                  child: Center(
+                    child: CustomPaint(
+                      size: const Size(6, 10),
+                      painter: Draw(
+                        (c, s) => _drawGripDots(c, s, Grey.g44),
+                        index,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           SizedBox(
-            width: Shape.z(68),
+            width: Shape.z(72),
             child: Padding(
-              padding: EdgeInsets.only(left: isSub ? Shape.s(10) : 0),
+              padding: EdgeInsets.only(left: isSub ? Shape.s(8) : 0),
               child: Text(
                 label,
                 style: TextStyles.label(isSub ? Grey.g56 : Grey.g76),
@@ -148,18 +180,22 @@ class PathsStackItem extends StatelessWidget {
               ),
             ),
           ),
-          // Only the parent removes the set; a sub keeps the row aligned.
           if (isSub)
-            SizedBox(width: Shape.z(28))
+            SizedBox(width: Shape.z(24))
           else
             Pressable(
+              key: ValueKey('paths-remove:$id'),
               onTap: onRemove,
               builder: (_, hot) => SizedBox(
-                width: Shape.z(28),
+                width: Shape.z(24),
+                height: Shape.z(24),
                 child: Center(
-                  child: Text(
-                    '×',
-                    style: TextStyles.label(hot ? Grey.g76 : Grey.g44),
+                  child: CustomPaint(
+                    size: const Size(8, 8),
+                    painter: Draw(
+                      (c, s) => _drawThinCross(c, s, hot ? Grey.g91 : Grey.g44),
+                      hot,
+                    ),
                   ),
                 ),
               ),
@@ -168,4 +204,24 @@ class PathsStackItem extends StatelessWidget {
       ),
     );
   }
+}
+
+void _drawGripDots(Canvas c, Size s, Color color) {
+  final p = Paint()..color = color;
+  const r = 1.05;
+  for (final y in [1.5, s.height * 0.5, s.height - 1.5]) {
+    c
+      ..drawCircle(Offset(1.4, y), r, p)
+      ..drawCircle(Offset(s.width - 1.4, y), r, p);
+  }
+}
+
+void _drawThinCross(Canvas c, Size s, Color color) {
+  final p = Paint()
+    ..color = color
+    ..strokeWidth = 1.2
+    ..strokeCap = StrokeCap.round;
+  c
+    ..drawLine(Offset(1, 1), Offset(s.width - 1, s.height - 1), p)
+    ..drawLine(Offset(s.width - 1, 1), Offset(1, s.height - 1), p);
 }

@@ -47,11 +47,14 @@ std::atomic<size_t> cuts_held{0};
 constexpr size_t cuts_most = 256ull << 20;
 // Returns a hash of every input a cut depends on.
 uint64_t cut_key(float3 trim, const std::array<float, 10>& bend,
+                 const std::vector<PathOpStep>& steps,
                  const Canvas2D::Other& join, const Canvas2D::Other& morph,
                  const Canvas2D::Other& trace) {
   // FNV-1a over everything the cut depends on.
   uint64_t h = fnv1a64(&trim, sizeof trim);
   h = fnv1a64(bend.data(), sizeof bend, h);
+  if (!steps.empty())
+    h = fnv1a64(steps.data(), steps.size() * sizeof(PathOpStep), h);
   for (const Canvas2D::Other* o : {&join, &morph, &trace}) {
     h = fnv1a64(&o->how, sizeof o->how, h);
     h = fnv1a64(&o->much, sizeof o->much, h);
@@ -62,6 +65,79 @@ uint64_t cut_key(float3 trim, const std::array<float, 10>& bend,
 }
 
 }  // namespace
+
+bool apply_path_steps(tvg::Shape* outShape,
+                      std::vector<tvg::PathCommand> pathBy,
+                      std::vector<tvg::Point> pathAt,
+                      const std::vector<PathOpStep>& steps, float side,
+                      float high, float fine) {
+  bool lastVoxel = false;
+  for (const PathOpStep& st : steps) {
+    if (pathBy.empty()) break;
+    std::vector<tvg::PathCommand> nextBy;
+    std::vector<tvg::Point> nextAt;
+    bool ok = false;
+    switch (st.kind) {
+      case 0:  // round
+        if (st.a > 0.f)
+          ok = tvg_bend_one(pathBy.data(), (uint32_t)pathBy.size(),
+                            pathAt.data(), (uint32_t)pathAt.size(), 0,
+                            std::clamp(st.a, 0.f, 0.5f) * side, 0.f, 0.f,
+                            nextBy, nextAt);
+        break;
+      case 1:  // bloat
+        if (st.a != 0.f)
+          ok = tvg_bend_one(pathBy.data(), (uint32_t)pathBy.size(),
+                            pathAt.data(), (uint32_t)pathAt.size(), 1,
+                            100.f * std::clamp(st.a, -1.f, 1.f), 0.f, 0.f,
+                            nextBy, nextAt);
+        break;
+      case 2:  // zigzag
+        if (st.a != 0.f)
+          ok = tvg_bend_one(pathBy.data(), (uint32_t)pathBy.size(),
+                            pathAt.data(), (uint32_t)pathAt.size(), 2,
+                            std::clamp(st.a, -4.f, 4.f) * high, st.b, st.c,
+                            nextBy, nextAt);
+        break;
+      case 3:  // offset
+        if (st.a != 0.f)
+          ok = tvg_bend_one(pathBy.data(), (uint32_t)pathBy.size(),
+                            pathAt.data(), (uint32_t)pathAt.size(), 3,
+                            std::clamp(st.a, -4.f, 4.f) * high, 0.f, 0.f,
+                            nextBy, nextAt);
+        break;
+      case 4:  // rough
+        if (st.a > 0.f)
+          ok = sk_rough(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                        std::max(st.b, 0.005f) * high,
+                        std::min(st.a, 0.5f) * high, 0, nextBy, nextAt);
+        break;
+      case 5:  // resample
+        if (st.a >= 2.f)
+          ok =
+              sk_resample(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                          std::min((int)st.a, 2048), nextBy, nextAt);
+        break;
+      case 6:  // voxel
+        if (st.a > 0.f) {
+          sk_voxel(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                   st.a * high, nextBy, nextAt);
+          pathBy = std::move(nextBy), pathAt = std::move(nextAt);
+          lastVoxel = !pathBy.empty();
+          continue;
+        }
+        break;
+    }
+    if (ok) {
+      pathBy = std::move(nextBy), pathAt = std::move(nextAt);
+      lastVoxel = false;
+    }
+  }
+  tvg_finalize_path(outShape, pathBy.data(), (uint32_t)pathBy.size(),
+                    pathAt.data(), (uint32_t)pathAt.size(),
+                    lastVoxel ? 0.f : fine);
+  return lastVoxel;
+}
 
 Canvas2D::Cuts::~Cuts() { cuts_held -= bytes; }
 
@@ -106,21 +182,27 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place,
 
 void cut_at(Stage& s, Canvas2D* d, float3 trim,
             const std::array<float, 10>& bend, Canvas2D::Other join,
-            Canvas2D::Other morph, Canvas2D::Other trace) {
+            Canvas2D::Other morph, Canvas2D::Other trace,
+            const std::vector<PathOpStep>& steps) {
   if (join.how < 0 || join.by.empty()) join = {};
   if (morph.much <= 0.f || morph.by.empty()) morph = {};
   if (trace.by.empty()) trace = {};
   const bool joins =
       !(join == d->joined) || !(morph == d->morphed) || !(trace == d->traced);
   if (!d->cut || !d->outline ||
-      (trim == d->trimmed && bend == d->bent && !joins))
+      (trim == d->trimmed && bend == d->bent && steps == d->bentSteps &&
+       !joins))
     return;
-  const uint64_t key = cut_key(trim, bend, join, morph, trace);
+  const uint64_t key = cut_key(trim, bend, steps, join, morph, trace);
   if (const auto cached = d->cuts.all.find(key); cached != d->cuts.all.end()) {
     // This exact cut was made before; reuse it.
     const Canvas2D::Cut& c = cached->second;
-    d->trimmed = trim, d->bent = bend, d->joined = std::move(join),
-    d->morphed = std::move(morph), d->traced = std::move(trace);
+    d->trimmed = trim, d->bent = bend, d->bentSteps = steps,
+    d->bentVoxel = steps.empty() ? bend[9] > 0.f
+                                 : (!steps.empty() && steps.back().kind == 6 &&
+                                    steps.back().a > 0.f),
+    d->joined = std::move(join), d->morphed = std::move(morph),
+    d->traced = std::move(trace);
     d->outline->reset(),
         d->outline->appendPath(c.by.data(), (uint32_t)c.by.size(), c.at.data(),
                                (uint32_t)c.at.size());
@@ -133,39 +215,43 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
   }
   const bool refillTrim = !d->hollow && !(trim == d->trimmed);
   d->trimmed = trim;
-  const bool rebend = bend != d->bent || joins, refill = rebend || refillTrim;
+  const bool rebend = bend != d->bent || steps != d->bentSteps || joins,
+             refill = rebend || refillTrim;
   if (rebend) {
-    d->bent = bend, d->joined = join, d->morphed = morph, d->traced = trace;
+    d->bent = bend, d->bentSteps = steps, d->joined = join, d->morphed = morph,
+    d->traced = trace;
+    d->bentVoxel = false;
     const float high = d->plainHigh;
-    // When tracing, the traced path replaces the shape's own path, like
+    // When tracing, the traced path replaces the shape's own path.
     const bool traces = !trace.by.empty();
     std::vector<tvg::PathCommand> pathBy = traces ? trace.by : d->plain;
     std::vector<tvg::Point> pathAt = traces ? trace.at : d->plainAt;
-    if (bend[8] >= 2.f) {
-      // Resample the outline to bend[8] points joined by straight lines before
-      // the operators run
-      std::vector<tvg::PathCommand> c;
-      std::vector<tvg::Point> p;
-      if (sk_resample(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
-                      std::min((int)bend[8], 2048), c, p))
-        pathBy = std::move(c), pathAt = std::move(p);
-    }
-    tvg_bend(d->outline, pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
-             (uint32_t)pathAt.size(),
-             std::clamp(bend[0], 0.f, 0.5f) * d->plainSide,
-             100.f * std::clamp(bend[1], -1.f, 1.f), bend[2] * high,
-             (int)std::clamp(bend[3], 0.f, 100.f), bend[4] > 0.5f,
-             bend[5] * high, d->fine);
-    if (bend[6] > 0.f) {
-      // Roughen Roughen and After Effects' Roughen Edges,
-      // using Skia's own discrete path effect. bend[6] is how far points move
-      // out and bend[7] how far apart they are, both in shares of the height.
-      const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
-      std::vector<tvg::PathCommand> c;
-      std::vector<tvg::Point> p;
-      if (sk_rough(cmds, cmdsCnt, pts, std::max(bend[7], 0.005f) * high,
-                   std::min(bend[6], 0.5f) * high, 0, c, p))
-        outline_put(d->outline, c, p);
+    if (!steps.empty()) {
+      d->bentVoxel =
+          apply_path_steps(d->outline, std::move(pathBy), std::move(pathAt),
+                           steps, d->plainSide, high, d->fine);
+    } else {
+      if (bend[8] >= 2.f) {
+        std::vector<tvg::PathCommand> c;
+        std::vector<tvg::Point> p;
+        if (sk_resample(pathBy.data(), (uint32_t)pathBy.size(), pathAt.data(),
+                        std::min((int)bend[8], 2048), c, p))
+          pathBy = std::move(c), pathAt = std::move(p);
+      }
+      tvg_bend(d->outline, pathBy.data(), (uint32_t)pathBy.size(),
+               pathAt.data(), (uint32_t)pathAt.size(),
+               std::clamp(bend[0], 0.f, 0.5f) * d->plainSide,
+               100.f * std::clamp(bend[1], -1.f, 1.f), bend[2] * high,
+               (int)std::clamp(bend[3], 0.f, 100.f), bend[4] > 0.5f,
+               bend[5] * high, d->fine);
+      if (bend[6] > 0.f) {
+        const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
+        std::vector<tvg::PathCommand> c;
+        std::vector<tvg::Point> p;
+        if (sk_rough(cmds, cmdsCnt, pts, std::max(bend[7], 0.005f) * high,
+                     std::min(bend[6], 0.5f) * high, 0, c, p))
+          outline_put(d->outline, c, p);
+      }
     }
     if (morph.much > 0.f) {
       // Morph toward the other path by morph.much
@@ -189,6 +275,7 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
                           (uint32_t)morph.by.size(), morph.at.data(),
                           std::min(morph.much, 1.f), c, p))
         outline_put(d->outline, c, p);
+      d->bentVoxel = false;
     }
     if (join.how >= 0) {
       const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
@@ -200,9 +287,9 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
         d->outline->reset();
       else
         outline_put(d->outline, c, p);
+      d->bentVoxel = false;
     }
-    if (bend[9] > 0.f) {
-      // Voxelize into squares of side bend[9] times the height, last of all,
+    if (steps.empty() && bend[9] > 0.f) {
       const auto [cmds, pts, cmdsCnt, ptsCnt] = outline_path(d->outline);
       std::vector<tvg::PathCommand> c;
       std::vector<tvg::Point> p;
@@ -211,6 +298,7 @@ void cut_at(Stage& s, Canvas2D* d, float3 trim,
         d->outline->reset();
       else
         outline_put(d->outline, c, p);
+      d->bentVoxel = !c.empty();
     }
   }
   const float from = std::clamp(trim.y, 0.f, 1.f) + trim.z,

@@ -126,6 +126,39 @@ bool sk_svg_move_handle(const char* data, int nth, float dx, float dy,
 int sk_svg_edit(const char* data, float x, float y, float reach,
                 std::string& out);
 
+// One step in an ordered path-operator stack (may repeat any operator).
+// kind: 0 round, 1 bloat, 2 zigzag (a=size, b=ridges, c=smooth), 3 offset,
+//       4 rough (a=far, b=apart), 5 resample (a=count), 6 voxel (a=cell).
+struct PathOpStep {
+  int kind = 0;
+  float a = 0.f, b = 0.f, c = 0.f;
+  bool operator==(const PathOpStep& o) const {
+    return kind == o.kind && a == o.a && b == o.b && c == o.c;
+  }
+};
+
+// Applies a single ThorVG path operator (kind 0..3: round, bloat, zigzag,
+// offset) in raw canvas units to (cmds, pts) and writes the result to
+// (outCmds, outPts).
+bool tvg_bend_one(const tvg::PathCommand* cmds, uint32_t cmdsCnt,
+                  const tvg::Point* pts, uint32_t ptsCnt, int kind, float a,
+                  float b, float c, std::vector<tvg::PathCommand>& outCmds,
+                  std::vector<tvg::Point>& outPts);
+
+// Finalizes a path onto `shape`, optionally subdividing pieces to `fine`.
+void tvg_finalize_path(tvg::Shape* shape, const tvg::PathCommand* cmds,
+                       uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,
+                       float fine);
+
+// Applies an ordered list of PathOpSteps (both ThorVG and Skia operators) in
+// sequence to (pathBy, pathAt), writing the result into `outShape`. Returns
+// true when the final step was a voxelization (pure squares).
+bool apply_path_steps(tvg::Shape* outShape,
+                      std::vector<tvg::PathCommand> pathBy,
+                      std::vector<tvg::Point> pathAt,
+                      const std::vector<PathOpStep>& steps, float side,
+                      float high, float fine);
+
 // Applies After Effects' path operators with ThorVG and replaces the contents
 // of `shape` with the result. `round` rounds the corners, as a fraction of the
 // shorter side. `bloat` pinches in or bloats out, from -1 to 1. `zigzag` has a

@@ -322,6 +322,31 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
         names += (names.empty() ? "" : " ") + n;
       at += len + (at[len] ? 1 : 0);
     }
+    // Expand per-instance path operators listed in `path_ops` ("id:kind") so
+    // duplicate operators carry independent parameters and keyframes.
+    if (!strcmp(card.title, "Paths") && layer != 0) {
+      std::istringstream ops(doc_word(d, layer, "path_ops"));
+      for (std::string entry; ops >> entry;) {
+        const std::string id = fx_entry_id(entry);
+        const std::string op = fx_entry_path(entry);
+        if (id.empty() || op.empty()) continue;
+        const auto add_prop = [&](const std::string& p) {
+          if (has.find(" " + p + " ") != std::string::npos)
+            names += (names.empty() ? "" : " ") + id + ":" + p;
+        };
+        add_prop(op);
+        if (op == "zigzag")
+          add_prop("zigzag_ridges"), add_prop("zigzag_smooth");
+        else if (op == "rough")
+          add_prop("rough_detail");
+        else if (op == "trim")
+          add_prop("trim_begin"), add_prop("trim_offset");
+        else if (op == "morph")
+          add_prop("morph_to"), add_prop("morph_steps");
+        else if (op == "trail")
+          add_prop("trail_length");
+      }
+    }
     if (!names.empty() && !said && more)
       *more +=
           (more->empty() ? "" : "; ") + std::string(card.title) + ": " + names;

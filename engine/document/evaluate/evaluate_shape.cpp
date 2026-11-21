@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -22,6 +23,7 @@
 #include "community/absent_motion/absent_motion.h"
 #include "document/document.h"
 #include "document/evaluate/evaluate.h"
+#include "document/evaluate/fx_list.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
@@ -163,6 +165,65 @@ void drawing_traced(Doc& d, int layer, DocShownLayer& t, double now,
 
 }  // namespace
 
+std::vector<PathOpStep> doc_path_op_steps(Doc& d, int layer, double now,
+                                          float3& trimOut) {
+  const auto num = [&](const std::string& name, double otherwise) {
+    return (float)doc_number(d, layer, name.c_str(), now, otherwise);
+  };
+  trimOut = float3{num("trim", 0), num("trim_begin", 0), num("trim_offset", 0)};
+  const std::string ops = doc_word(d, layer, "path_ops");
+  if (ops.empty()) return {};
+  std::vector<PathOpStep> steps;
+  bool seenTrim = false;
+  std::istringstream in(ops);
+  for (std::string entry; in >> entry;) {
+    const std::string id = fx_entry_id(entry);
+    const std::string op = fx_entry_path(entry);
+    const std::string pfx = id.empty() ? std::string() : id + ":";
+    if (op == "round") {
+      const float v = num(pfx + "round", 0);
+      if (v > 0.f) steps.push_back({0, v, 0.f, 0.f});
+    } else if (op == "bloat") {
+      const float v = num(pfx + "bloat", 0);
+      if (v != 0.f) steps.push_back({1, v, 0.f, 0.f});
+    } else if (op == "zigzag") {
+      const float v = num(pfx + "zigzag", 0);
+      if (v != 0.f)
+        steps.push_back({2, v, num(pfx + "zigzag_ridges", 5),
+                         num(pfx + "zigzag_smooth", 0)});
+    } else if (op == "offset") {
+      const float v = num(pfx + "offset", 0);
+      if (v != 0.f) steps.push_back({3, v, 0.f, 0.f});
+    } else if (op == "rough") {
+      const float v = num(pfx + "rough", 0);
+      if (v > 0.f)
+        steps.push_back({4, v, num(pfx + "rough_detail", 0.03), 0.f});
+    } else if (op == "resample") {
+      const float v = std::round(num(pfx + "resample", 0));
+      if (v >= 2.f) steps.push_back({5, v, 0.f, 0.f});
+    } else if (op == "voxel") {
+      const float v = num(pfx + "voxel", 0);
+      if (v > 0.f) steps.push_back({6, v, 0.f, 0.f});
+    } else if (op == "trim") {
+      const float3 tr{num(pfx + "trim", 0), num(pfx + "trim_begin", 0),
+                      num(pfx + "trim_offset", 0)};
+      if (!seenTrim) {
+        trimOut = tr;
+        seenTrim = true;
+      } else {
+        // Compose stacked trims by narrowing the remaining interval.
+        const float from = std::clamp(trimOut.y, 0.f, 1.f);
+        const float to = 1.f - std::clamp(trimOut.x, 0.f, 1.f);
+        const float span = std::max(0.f, to - from);
+        const float nf = from + span * std::clamp(tr.y, 0.f, 1.f);
+        const float nt = from + span * (1.f - std::clamp(tr.x, 0.f, 1.f));
+        trimOut = float3{1.f - nt, nf, trimOut.z + tr.z};
+      }
+    }
+  }
+  return steps;
+}
+
 // A shape cut into triangles is cut again when its path changed.
 void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now) {
   if (!(t.drawn && t.drawn->cut)) return;
@@ -194,14 +255,16 @@ void evaluate_cut_shape(Doc& d, int layer, DocShownLayer& t, double now) {
     morph.much = 1.f, morph.how = std::min(steps, 64);
   Canvas2D::Other trace = trail_of(d, layer, t, now);
   drawing_traced(d, layer, t, now, trace);
+  float3 trim{};
+  const std::vector<PathOpStep> opSteps =
+      doc_path_op_steps(d, layer, now, trim);
   // Cut the path again if anything about it changed.
-  cut_at(s, t.drawn,
-         float3{num("trim", 0), num("trim_begin", 0), num("trim_offset", 0)},
+  cut_at(s, t.drawn, trim,
          {num("round", 0), num("bloat", 0), num("zigzag", 0),
           num("zigzag_ridges", 5), num("zigzag_smooth", 0), num("offset", 0),
           num("rough", 0), num("rough_detail", 0.03),
           std::round(num("resample", 0)), num("voxel", 0)},
-         join, morph, trace);
+         join, morph, trace, opSteps);
 }
 
 }  // namespace motolii

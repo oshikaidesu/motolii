@@ -62,7 +62,8 @@ Canvas2D* flat_mesh(Stage& s, const char* form, float wide,
 // shared by all shapes.
 void cut_at(Stage& s, Canvas2D* d, filament::math::float3 trim,
             const std::array<float, 10>& bend, Canvas2D::Other join = {},
-            Canvas2D::Other morph = {}, Canvas2D::Other trace = {});
+            Canvas2D::Other morph = {}, Canvas2D::Other trace = {},
+            const std::vector<PathOpStep>& steps = {});
 
 // Draws one layer of an After Effects file on its own sheet, in the layer's own
 // space. Its position and rotation are left out, because they belong to the
