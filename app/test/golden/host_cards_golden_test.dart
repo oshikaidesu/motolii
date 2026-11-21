@@ -59,7 +59,7 @@ const _fill = '''
 struct Params {
   /// @label(Fill) @unit(colours)
   fill: vec3<f32>,
-  /// @label(Gradient) @enum(none, linear, radial) @default(1)
+  /// @label(Gradient) @enum(linear, radial) @default(0)
   gradient: u32,
   /// @label(Stroke) @unit(colour)
   stroke: vec3<f32>,
@@ -275,7 +275,7 @@ void main() {
                     children: [
                       _host(
                         [decl('Fill', _fill), decl('Stroke', _extraStroke)],
-                        numbers: const {'v_gradient': 1},
+                        numbers: const {'v_gradient': 0},
                         words: const {
                           'v_fill': '#59C3E8 #D64B7A',
                           'v_stroke': '#FFFFFF',

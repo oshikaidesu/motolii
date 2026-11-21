@@ -103,32 +103,33 @@ void main() {
     await mount(tester);
     expect(find.text('Angle'), findsNothing);
     expect(find.text('Stretch'), findsNothing);
-    expect(find.text('Past end'), findsNothing);
+    expect(find.byKey(const ValueKey('fill-mode-pill')), findsNothing);
+    expect(find.byKey(const ValueKey('fill-spread-pill')), findsNothing);
   });
 
   testWidgets(
-    'with a gradient, its settings show inline, with no empty fold row',
+    'with a gradient, continuous settings show inline and discrete modes sit in the preview',
     (tester) async {
       await mount(tester, numbers: {'v_gradient': 1});
-      // The body draws Angle/Stretch/Past end itself, directly under the gradient.
       expect(find.text('Angle'), findsOneWidget);
       expect(find.text('Stretch'), findsOneWidget);
-      expect(find.text('Past end'), findsOneWidget);
-      // They ride inline, not behind a collapsed "Gradient" fold. The only disclosure on the card is its own frame
-      // (rows/section.dart); a stray empty "Gradient" fold row would add a second one.
+      expect(find.byKey(const ValueKey('fill-mode-pill')), findsOneWidget);
+      expect(find.byKey(const ValueKey('fill-spread-pill')), findsOneWidget);
+      // No stray "Gradient" fold row; only the section header disclosure.
       expect(find.byType(DisclosureTriangle), findsOneWidget);
     },
   );
 
-  testWidgets('turning the gradient on shows three more parameter tiles', (
-    tester,
-  ) async {
-    await mount(tester);
-    final off = tester.widgetList(find.byType(ParameterTile)).length;
-    await mount(tester, numbers: {'v_gradient': 1});
-    final on = tester.widgetList(find.byType(ParameterTile)).length;
-    expect(on, off + 3);
-  });
+  testWidgets(
+    'turning the gradient on shows two continuous parameter tiles (Angle, Stretch)',
+    (tester) async {
+      await mount(tester);
+      final off = tester.widgetList(find.byType(ParameterTile)).length;
+      await mount(tester, numbers: {'v_gradient': 1});
+      final on = tester.widgetList(find.byType(ParameterTile)).length;
+      expect(on, off + 2);
+    },
+  );
 
   testWidgets(
     'multi-color linear fill shows gradient settings even at index 0',
@@ -140,9 +141,29 @@ void main() {
       );
       expect(find.text('Angle'), findsOneWidget);
       expect(find.text('Stretch'), findsOneWidget);
-      expect(find.text('Past end'), findsOneWidget);
+      expect(find.byKey(const ValueKey('fill-mode-pill')), findsOneWidget);
+      expect(find.byKey(const ValueKey('fill-spread-pill')), findsOneWidget);
     },
   );
+
+  testWidgets('tapping the in-preview pills cycles gradient mode and spread', (
+    tester,
+  ) async {
+    final told = <Map<String, double>>[];
+    await mount(
+      tester,
+      numbers: {'v_gradient': 0, 'v_gradient_spread': 0},
+      words: {'v_fill': '#59C3E8 #D64B7A'},
+      onValues: (m) => told.add(Map.of(m)),
+    );
+    await tester.tap(find.byKey(const ValueKey('fill-mode-pill')));
+    await tester.pump();
+    expect(told.any((m) => m['v_gradient'] == 1.0), isTrue);
+
+    await tester.tap(find.byKey(const ValueKey('fill-spread-pill')));
+    await tester.pump();
+    expect(told.any((m) => m['v_gradient_spread'] == 1.0), isTrue);
+  });
 
   testWidgets('dragging the preview angle handle edits v_gradient_angle', (
     tester,
@@ -158,7 +179,7 @@ void main() {
     expect(preview, findsOneWidget);
     final center = tester.getCenter(preview);
     // At angle 0 deg the handle sits directly below center; drag right to turn it.
-    await tester.dragFrom(center + const Offset(0, 15), const Offset(25, -15));
+    await tester.dragFrom(center + const Offset(0, 17), const Offset(25, -17));
     await tester.pump();
     expect(told.any((m) => m.containsKey('v_gradient_angle')), isTrue);
   });

@@ -7,6 +7,7 @@ import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/link_line.dart' show LinkTo;
 import 'package:motolii/inspector/controls/parameter_grid.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/controls/parameter_tile.dart';
 import 'package:motolii/inspector/fill/fill_preview.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
@@ -47,14 +48,17 @@ class FillBody extends StatelessWidget {
     final strokeWidthP = byId['stroke_width'];
 
     // Engine's fold is the source of truth for gradient sub-parameters.
+    // Discrete choices (gradient type / spread) live inside FillPreview's
+    // pills; only continuous, keyframeable sliders stay below as tiles.
     final gradLabel = gradP?.label;
-    final rawGradSubs = [
+    final gradContinuous = [
       for (final p in card.params)
-        if (gradLabel != null && p.fold == gradLabel) p,
+        if (gradLabel != null &&
+            p.fold == gradLabel &&
+            p.look != ParameterLook.choice)
+          p,
     ];
-    // Order [choice, scalar, choice, scalar] so 2-col choices pair with 1-col
-    // scalars into full 3-col ParameterGrid rows with no trailing empty slot.
-    final gradSubParams = _packGradientOrder(rawGradSubs);
+    final spreadP = byId['gradient_spread'];
 
     final extraStrokes = [
       for (final c in doc.cards)
@@ -95,7 +99,7 @@ class FillBody extends StatelessWidget {
           for (final sc in extraStrokes) ?_extraStrokeOf(sc, doc),
         ];
 
-        final gradGrid = <Parameter>[?gradP, if (hasGradient) ...gradSubParams];
+        final spreadVal = (doc.get('v_gradient_spread') ?? 0).round();
 
         final hasExtraDetails = extraStrokes.any((sc) => sc.params.length > 2);
         final hasRemovable =
@@ -111,12 +115,16 @@ class FillBody extends StatelessWidget {
                 colors: colors,
                 media: mediaWord,
                 hasGradient: hasGradient,
+                gradIndex: gradVal,
+                gradOptions: gradP?.options ?? const [],
                 radial: isRadial,
                 angle: doc.get('v_gradient_angle') ?? 0,
                 scale: doc.get('v_gradient_scale') ?? 1,
-                spread: (doc.get('v_gradient_spread') ?? 0).round(),
+                spreadIndex: spreadVal,
+                spreadOptions: spreadP?.options ?? const [],
                 strokes: previewStrokes,
                 angleParam: byId['gradient_angle'],
+                scaleParam: byId['gradient_scale'],
               ),
               if (fillP != null || mediaP != null) ...[
                 SizedBox(height: Shape.s(6)),
@@ -128,7 +136,17 @@ class FillBody extends StatelessWidget {
                   mediaRaw: mediaWord,
                 ),
               ],
-              if (gradGrid.isNotEmpty) ParameterGrid(gradGrid),
+              if (hasGradient && gradContinuous.isNotEmpty) ...[
+                SizedBox(height: Shape.s(4)),
+                Row(
+                  children: [
+                    for (var i = 0; i < gradContinuous.length; i++) ...[
+                      if (i > 0) SizedBox(width: InspectorSkin.tileGap),
+                      Expanded(child: ParameterTile(gradContinuous[i])),
+                    ],
+                  ],
+                ),
+              ],
               if (strokeP != null ||
                   strokeWidthP != null ||
                   extraStrokes.isNotEmpty ||
@@ -161,27 +179,6 @@ class FillBody extends StatelessWidget {
         );
       },
     );
-  }
-
-  static List<Parameter> _packGradientOrder(List<Parameter> subs) {
-    final choices = [
-      for (final p in subs)
-        if (p.look == ParameterLook.choice) p,
-    ];
-    final scalars = [
-      for (final p in subs)
-        if (p.look != ParameterLook.choice) p,
-    ];
-    // First scalar fills row 1 beside `Gradient` (2+1=3 cols); remaining
-    // choices and scalars alternate so every row stays balanced.
-    final out = <Parameter>[];
-    var si = 0, ci = 0;
-    if (si < scalars.length) out.add(scalars[si++]);
-    while (ci < choices.length || si < scalars.length) {
-      if (ci < choices.length) out.add(choices[ci++]);
-      if (si < scalars.length) out.add(scalars[si++]);
-    }
-    return out;
   }
 
   static FillPreviewStroke? _extraStrokeOf(
