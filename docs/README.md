@@ -6,6 +6,7 @@ Start with the repository [README](../README.md) for an overview and build instr
 |---|---|---|
 | [`TABS.md`](TABS.md) ([日本語](TABS.ja.md)) | Users | Visual overview of every tab and panel |
 | [`AFTER_EFFECTS.md`](AFTER_EFFECTS.md) ([日本語](AFTER_EFFECTS.ja.md)) | After Effects users | Bringing native AE plugins, expressions, and Lottie files into Motolii |
+| [`CODING.md`](CODING.md) ([日本語](CODING.ja.md)) | Shader & script authors | Format bases, compatibility model, WESL WGSL attributes, and IDE workflow |
 | [`GUIDE.md`](GUIDE.md) | Users (Japanese) | Complete workflow guide from creating a project to exporting |
 | [`design/effect_licences.md`](design/effect_licences.md) | Effect authors & contributors | Attribution model, export credit files, and bundling boundaries |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Developers | End-to-end architecture across Flutter, C++ engine, WebGPU, and shelves |
