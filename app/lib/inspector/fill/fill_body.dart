@@ -8,6 +8,7 @@ import 'package:motolii/inspector/controls/link_line.dart' show LinkTo;
 import 'package:motolii/inspector/controls/parameter_grid.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/controls/parameter_tile.dart';
+import 'package:motolii/inspector/controls/well_pill.dart' show maybeTip;
 import 'package:motolii/inspector/fill/fill_preview.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
@@ -17,7 +18,6 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/media.dart' show Draw;
-import 'package:motolii/widgets/tip.dart' show Tip;
 
 /// The Fill card's inside (see host_cards.dart).
 /// Gradient sub-settings come from the engine's fold (`Parameter.fold ==
@@ -535,7 +535,7 @@ class _StrokeLineState extends State<_StrokeLine> {
                 ),
               ),
               if (alignP != null && alignOpts.length >= 2)
-                _maybeTip(
+                maybeTip(
                   context,
                   alignTip,
                   Pressable(
@@ -617,9 +617,6 @@ class _StrokeLineState extends State<_StrokeLine> {
     );
   }
 }
-
-Widget _maybeTip(BuildContext context, String text, Widget child) =>
-    Overlay.maybeOf(context) != null ? Tip(text, child: child) : child;
 
 void _drawStrokeAlignGlyph(Canvas c, Size s, Color color, int align) {
   // Reference shape body (subtle filled square) so inside / center / outside

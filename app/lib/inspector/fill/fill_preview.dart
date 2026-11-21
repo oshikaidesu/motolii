@@ -12,13 +12,12 @@ import 'package:motolii/inspector/controls/link_line.dart' show LinkTo;
 import 'package:motolii/inspector/controls/parameter_grid.dart'
     show hexControls;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/controls/well_pill.dart'
+    show WellPill, maybeTip;
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Pressable;
-import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/paint_helpers.dart' show drawWell;
-import 'package:motolii/widgets/tip.dart' show Tip;
 
 /// One rendered stroke layer in the preview.
 /// `align`: -1 inside, 0 center (both), 1 outside.
@@ -243,10 +242,10 @@ class _FillPreviewState extends State<FillPreview> {
                 Positioned(
                   left: 16,
                   bottom: 15,
-                  child: _maybeTip(
+                  child: maybeTip(
                     context,
                     'Gradient type ($modeLabel)',
-                    _WellPill(
+                    WellPill(
                       key: const ValueKey('fill-mode-pill'),
                       label: modeLabel,
                       icon: (c, s, col) =>
@@ -259,10 +258,10 @@ class _FillPreviewState extends State<FillPreview> {
                 Positioned(
                   right: 16,
                   bottom: 15,
-                  child: _maybeTip(
+                  child: maybeTip(
                     context,
                     'Past end ($spreadLabel)',
-                    _WellPill(
+                    WellPill(
                       key: const ValueKey('fill-spread-pill'),
                       label: spreadLabel,
                       icon: (c, s, col) => _drawSpreadGlyph(
@@ -281,56 +280,6 @@ class _FillPreviewState extends State<FillPreview> {
       ),
     );
   }
-}
-
-Widget _maybeTip(BuildContext context, String text, Widget child) =>
-    Overlay.maybeOf(context) != null ? Tip(text, child: child) : child;
-
-/// Compact frosted dark pill anchored inside the preview well for discrete
-/// non-keyframed modes.
-class _WellPill extends StatelessWidget {
-  const _WellPill({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final void Function(Canvas, Size, Color) icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Pressable(
-    onTap: onTap,
-    builder: (_, hot) => Container(
-      height: Shape.z(20),
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-      decoration: BoxDecoration(
-        color: Grey.g07.withValues(alpha: hot ? 0.90 : 0.72),
-        borderRadius: Shape.round(4),
-        border: Border.all(
-          color: (hot ? Grey.g95 : Grey.g91).withValues(
-            alpha: hot ? 0.36 : 0.16,
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CustomPaint(
-            size: const Size(10, 10),
-            painter: Draw((c, s) => icon(c, s, hot ? Grey.g95 : Grey.g76), (
-              hot,
-              label,
-            )),
-          ),
-          SizedBox(width: Shape.s(4)),
-          Text(label, style: TextStyles.micro(hot ? Grey.g95 : Grey.g91)),
-        ],
-      ),
-    ),
-  );
 }
 
 void _drawModeGlyph(Canvas c, Size s, Color col, {required bool radial}) {
