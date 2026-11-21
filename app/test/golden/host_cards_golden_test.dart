@@ -264,7 +264,7 @@ void main() {
   testWidgets('host cards contact sheet', (tester) async {
     const colW = 340.0;
     const totalW = colW * 3 + 48.0;
-    const totalH = 752.0;
+    const totalH = 776.0;
     tester.view.physicalSize = const Size(totalW, totalH);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -374,7 +374,7 @@ void main() {
                           'v_hanging': 1,
                         },
                         words: const {
-                          'v_text': 'Motolii 組版。',
+                          'v_text': 'Motolii 組版。\n日本語テキスト',
                           'v_text_styles': '0 7 color: #59C3E8',
                           'v_file': 'fonts/NotoSansJP-Regular.otf',
                           'v_font_features': 'tnum',
