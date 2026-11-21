@@ -1,5 +1,8 @@
-// Compact in-well typesetting pills (Align, Direction, Metrics, Kinsoku,
-// Hanging, Wrap) and slim OpenType feature chip strip for the Text card.
+// Typesetting controls grouped by scale for the Text card:
+// - TextAxisBar: top-level writing direction and alignment inside the text well.
+// - TextMetricsTile: 42px inline-spacing mode tile paired beside Tracking.
+// - TextBoxBar: line-wrap and line-end rules (Kinsoku, Hanging punctuation).
+// - TextFeaturesStrip: slim OpenType feature chip strip with custom tag input.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/controls/parameter_inference.dart';
@@ -9,17 +12,17 @@ import 'package:motolii/inspector/text/text_meta.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/widgets/number_field.dart' show blockValue;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 
-/// Compact frosted pills for discrete non-keyframed typesetting settings seated
-/// along the bottom of the Text input well.
-class TextTypesetBar extends StatelessWidget {
-  const TextTypesetBar({required this.doc, required this.layer, super.key});
+/// Top-level spatial axis pills seated along the bottom of the text well:
+/// writing direction (horizontal / vertical-rl) and block alignment.
+class TextAxisBar extends StatelessWidget {
+  const TextAxisBar({required this.doc, required this.layer, super.key});
 
   final InspectorValues doc;
   final Map<String, Parameter> layer;
-
-  static const _wrapCycle = [0, 2, 1, 3, 4];
 
   @override
   Widget build(BuildContext context) {
@@ -28,28 +31,7 @@ class TextTypesetBar extends StatelessWidget {
         (doc.get('v_writing') ?? 0).round() == 1;
     final align = doc.get('v_align') ?? 0.5;
     final alignIdx = align < 0.25 ? 0 : (align > 0.75 ? 2 : 1);
-    final metrics = (doc.get('v_metrics') ?? 0).round().clamp(0, 2);
-    final kinsoku = (doc.get('v_kinsoku') ?? 0).round().clamp(0, 3);
-    final hanging = (doc.get('v_hanging') ?? 0) > 0.5;
-    final wrap = (doc.get('v_wrap') ?? 0).round().clamp(0, 5);
-
     final pills = <Widget>[
-      if (layer.containsKey('align'))
-        maybeTip(
-          context,
-          vertical
-              ? const ['Align top', 'Align middle', 'Align bottom'][alignIdx]
-              : const ['Align left', 'Align center', 'Align right'][alignIdx],
-          WellPill(
-            key: const ValueKey('text:align'),
-            label: '',
-            icon: (c, s, col) => _alignIcon(c, s, col, alignIdx, vertical),
-            onTap: () {
-              final next = const [0.5, 1.0, 0.0][alignIdx];
-              doc.set('v_align', next);
-            },
-          ),
-        ),
       if (layer.containsKey('writing'))
         maybeTip(
           context,
@@ -64,77 +46,215 @@ class TextTypesetBar extends StatelessWidget {
             onTap: () => doc.set('v_writing', vertical ? 0 : 1),
           ),
         ),
-      if (layer.containsKey('metrics'))
+      if (layer.containsKey('align'))
         maybeTip(
           context,
-          const [
-            'Fixed width (Japanese monospace / 等幅)',
-            'Proportional metrics (palt + kern / 文字詰め)',
-            'Half-width punctuation (halt / 約物半角)',
-          ][metrics],
+          vertical
+              ? const ['Align top', 'Align middle', 'Align bottom'][alignIdx]
+              : const ['Align left', 'Align center', 'Align right'][alignIdx],
           WellPill(
-            key: const ValueKey('text:metrics'),
-            label: const ['Fixed', 'palt', 'halt'][metrics],
-            active: metrics != 0,
-            icon: (c, s, col) => _metricsIcon(c, s, col, metrics),
-            onTap: () => doc.set('v_metrics', ((metrics + 1) % 3).toDouble()),
-          ),
-        ),
-      if (layer.containsKey('kinsoku'))
-        maybeTip(
-          context,
-          const [
-            'Kinsoku: Normal (標準禁則)',
-            'Kinsoku: Strict (強い禁則)',
-            'Kinsoku: Loose (緩い禁則)',
-            'Kinsoku: None (禁則なし)',
-          ][kinsoku],
-          WellPill(
-            key: const ValueKey('text:kinsoku'),
-            label: const ['Auto', 'Strict', 'Loose', 'Off'][kinsoku],
-            active: kinsoku == 1 || kinsoku == 2,
-            icon: (c, s, col) => _kinsokuIcon(c, s, col, kinsoku),
-            onTap: () => doc.set('v_kinsoku', ((kinsoku + 1) % 4).toDouble()),
-          ),
-        ),
-      if (layer.containsKey('hanging'))
-        maybeTip(
-          context,
-          hanging
-              ? 'Hanging punctuation ON (ぶら下がり組版: 、。，．)'
-              : 'Hanging punctuation OFF — click to hang 、。，．',
-          WellPill(
-            key: const ValueKey('text:hanging'),
-            label: 'Hang',
-            active: hanging,
-            icon: _hangingIcon,
-            onTap: () => doc.set('v_hanging', hanging ? 0 : 1),
-          ),
-        ),
-      if (layer.containsKey('wrap'))
-        maybeTip(
-          context,
-          wrap == 0
-              ? 'No line wrap — click to wrap'
-              : 'Wrap mode: ${const ['None', 'Character', 'Word', 'Smart', 'Ellipsis', 'Vertical'][wrap]}',
-          WellPill(
-            key: const ValueKey('text:wrap'),
-            label: const ['Wrap', 'Char', 'Word', 'Smart', 'Clip', 'Col'][wrap],
-            active: wrap != 0,
-            icon: (c, s, col) => _wrapIcon(c, s, col, wrap != 0),
-            onTap: () {
-              final at = _wrapCycle.indexOf(wrap);
-              final next = _wrapCycle[(at + 1) % _wrapCycle.length];
-              doc.set('v_wrap', next.toDouble());
-            },
+            key: const ValueKey('text:align'),
+            label: vertical
+                ? const ['Top', 'Mid', 'Bot'][alignIdx]
+                : const ['Left', 'Center', 'Right'][alignIdx],
+            icon: (c, s, col) => _alignIcon(c, s, col, alignIdx, vertical),
+            onTap: () => doc.set('v_align', const [0.5, 1.0, 0.0][alignIdx]),
           ),
         ),
     ];
-
     if (pills.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.only(top: Shape.s(6)),
-      child: Wrap(spacing: Shape.s(4), runSpacing: Shape.s(4), children: pills),
+      child: Row(
+        children: [
+          for (var i = 0; i < pills.length; i++) ...[
+            if (i > 0) SizedBox(width: Shape.s(4)),
+            pills[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 42px tile for character-spacing metrics (`Fixed` / `palt` / `halt`), sized to
+/// sit directly beside the Tracking and Line Height tiles.
+class TextMetricsTile extends StatelessWidget {
+  const TextMetricsTile({required this.doc, super.key});
+
+  final InspectorValues doc;
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = (doc.get('v_metrics') ?? 0).round().clamp(0, 2);
+    final active = metrics != 0;
+    return maybeTip(
+      context,
+      const [
+        'Fixed width (Japanese monospace / 等幅)',
+        'Proportional metrics (palt + kern / 文字詰め)',
+        'Half-width punctuation (halt / 約物半角)',
+      ][metrics],
+      Pressable(
+        key: const ValueKey('text:metrics'),
+        onTap: () => doc.set('v_metrics', ((metrics + 1) % 3).toDouble()),
+        builder: (_, hot) {
+          final ink = active ? Accent.fill : (hot ? Grey.g95 : Grey.g91);
+          final glyph = active ? Accent.fill : (hot ? Grey.g95 : Grey.g63);
+          return Container(
+            height: InspectorSkin.tile,
+            padding: EdgeInsets.fromLTRB(
+              InspectorSkin.tilePad,
+              Shape.s(4),
+              InspectorSkin.tilePad,
+              Shape.s(4),
+            ),
+            decoration: BoxDecoration(
+              color: hot ? Grey.g20 : InspectorSkin.well,
+              borderRadius: Shape.round(6),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Metrics',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.micro(Grey.g63).copyWith(height: 1.1),
+                ),
+                Row(
+                  children: [
+                    CustomPaint(
+                      size: const Size(11, 11),
+                      painter: Draw(
+                        (c, s) => _metricsIcon(c, s, glyph, metrics),
+                        (hot, metrics),
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(5)),
+                    Expanded(
+                      child: Text(
+                        const ['Fixed', 'palt', 'halt'][metrics],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: blockValue(ink),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Slim 1-row bar grouping box-edge rules: line wrapping, kinsoku line-breaking,
+/// and hanging punctuation.
+class TextBoxBar extends StatelessWidget {
+  const TextBoxBar({required this.doc, required this.layer, super.key});
+
+  final InspectorValues doc;
+  final Map<String, Parameter> layer;
+
+  static const _wrapCycle = [0, 2, 1, 3, 4];
+
+  @override
+  Widget build(BuildContext context) {
+    final hasWrap = layer.containsKey('wrap');
+    final hasKinsoku = layer.containsKey('kinsoku');
+    final hasHanging = layer.containsKey('hanging');
+    if (!hasWrap && !hasKinsoku && !hasHanging) {
+      return const SizedBox.shrink();
+    }
+    final wrap = (doc.get('v_wrap') ?? 0).round().clamp(0, 5);
+    final kinsoku = (doc.get('v_kinsoku') ?? 0).round().clamp(0, 3);
+    final hanging = (doc.get('v_hanging') ?? 0) > 0.5;
+    final hasEdge = hasKinsoku || hasHanging;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Shape.s(6),
+        vertical: Shape.s(5),
+      ),
+      decoration: BoxDecoration(
+        color: InspectorSkin.well,
+        borderRadius: Shape.round(6),
+      ),
+      child: Wrap(
+        spacing: Shape.s(4),
+        runSpacing: Shape.s(4),
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (hasWrap)
+            maybeTip(
+              context,
+              wrap == 0
+                  ? 'No line wrap — click to wrap'
+                  : 'Wrap mode: ${const ['None', 'Character', 'Word', 'Smart', 'Ellipsis', 'Vertical'][wrap]}',
+              WellPill(
+                key: const ValueKey('text:wrap'),
+                label: const [
+                  'Wrap',
+                  'Char',
+                  'Word',
+                  'Smart',
+                  'Clip',
+                  'Col',
+                ][wrap],
+                active: wrap != 0,
+                icon: (c, s, col) => _wrapIcon(c, s, col, wrap != 0),
+                onTap: () {
+                  final at = _wrapCycle.indexOf(wrap);
+                  final next = _wrapCycle[(at + 1) % _wrapCycle.length];
+                  doc.set('v_wrap', next.toDouble());
+                },
+              ),
+            ),
+          if (hasWrap && hasEdge)
+            Container(
+              width: 1,
+              height: Shape.z(14),
+              margin: EdgeInsets.symmetric(horizontal: Shape.s(2)),
+              color: Grey.g26,
+            ),
+          if (hasKinsoku)
+            maybeTip(
+              context,
+              const [
+                'Kinsoku: Normal (標準禁則)',
+                'Kinsoku: Strict (強い禁則)',
+                'Kinsoku: Loose (緩い禁則)',
+                'Kinsoku: None (禁則なし)',
+              ][kinsoku],
+              WellPill(
+                key: const ValueKey('text:kinsoku'),
+                label: const ['Auto', 'Strict', 'Loose', 'Off'][kinsoku],
+                active: kinsoku == 1 || kinsoku == 2,
+                icon: (c, s, col) => _kinsokuIcon(c, s, col, kinsoku),
+                onTap: () =>
+                    doc.set('v_kinsoku', ((kinsoku + 1) % 4).toDouble()),
+              ),
+            ),
+          if (hasHanging)
+            maybeTip(
+              context,
+              hanging
+                  ? 'Hanging punctuation ON (ぶら下がり組版: 、。，．)'
+                  : 'Hanging punctuation OFF — click to hang 、。，．',
+              WellPill(
+                key: const ValueKey('text:hanging'),
+                label: 'Hang',
+                active: hanging,
+                icon: _hangingIcon,
+                onTap: () => doc.set('v_hanging', hanging ? 0 : 1),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -176,7 +296,7 @@ class _TextFeaturesStripState extends State<TextFeaturesStrip> {
       return const SizedBox.shrink();
     }
     return Padding(
-      padding: EdgeInsets.only(top: Shape.s(6)),
+      padding: EdgeInsets.only(top: InspectorSkin.tileGap),
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: Shape.s(7),
@@ -416,20 +536,17 @@ void _metricsIcon(Canvas c, Size s, Color col, int mode) {
     ..strokeWidth = 1.15
     ..style = PaintingStyle.stroke;
   if (mode == 0) {
-    // Fixed equal em-boxes.
     c
-      ..drawRect(Rect.fromLTWH(0.8, 2, 3.6, s.height - 4), p)
-      ..drawRect(Rect.fromLTWH(5.6, 2, 3.6, s.height - 4), p);
+      ..drawRect(Rect.fromLTWH(0.8, 2, 3.8, s.height - 4), p)
+      ..drawRect(Rect.fromLTWH(6.0, 2, 3.8, s.height - 4), p);
   } else if (mode == 1) {
-    // Tightened proportional boxes.
     c
-      ..drawRect(Rect.fromLTWH(1.5, 2, 3.4, s.height - 4), p)
-      ..drawRect(Rect.fromLTWH(5.3, 2, 2.2, s.height - 4), p);
+      ..drawRect(Rect.fromLTWH(1.5, 2, 3.6, s.height - 4), p)
+      ..drawRect(Rect.fromLTWH(5.6, 2, 2.3, s.height - 4), p);
   } else {
-    // Half-width trailing punctuation box.
     c
-      ..drawRect(Rect.fromLTWH(0.8, 2, 4.4, s.height - 4), p)
-      ..drawRect(Rect.fromLTWH(6.0, 2, 2.2, s.height - 4), p);
+      ..drawRect(Rect.fromLTWH(0.8, 2, 4.6, s.height - 4), p)
+      ..drawRect(Rect.fromLTWH(6.4, 2, 2.4, s.height - 4), p);
   }
 }
 
@@ -438,7 +555,6 @@ void _kinsokuIcon(Canvas c, Size s, Color col, int mode) {
     ..color = col
     ..strokeWidth = 1.15
     ..strokeCap = StrokeCap.round;
-  // Margin rail on the right + line stopping cleanly inside it (or crossing when none).
   c.drawLine(
     Offset(s.width - 1.5, 1),
     Offset(s.width - 1.5, s.height - 1),
@@ -461,7 +577,6 @@ void _hangingIcon(Canvas c, Size s, Color col) {
     ..color = col
     ..strokeWidth = 1.15
     ..strokeCap = StrokeCap.round;
-  // Right margin rail with a punctuation dot hanging just past it.
   c
     ..drawLine(
       Offset(s.width - 3.2, 1),

@@ -1,8 +1,9 @@
-// The Text card's inside: text well with in-well typesetting pills (Align,
-// Direction, Metrics, Kinsoku, Hanging, Wrap), slim Font link row, OpenType
-// feature toggles, and continuous typography parameters below. Selected letters
-// in the box scope Size, Fill, Font, Tracking, Baseline and variable axes to
-// that range; with none selected they edit the whole layer.
+// The Text card's inside, structured by typesetting scale from top to bottom:
+// 1. Content & spatial axis (horizontal preview well + writing direction & align)
+// 2. Character (per-glyph form: Font, Size, Slant, Baseline, variable axes, OT;
+//    selecting letters in the box scopes this zone to that range)
+// 3. Flow & Box (character spacing: Metrics + Tracking, Line Height, and
+//    box-edge rules: Wrap/Wrap at, Kinsoku, Hanging punctuation)
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -28,7 +29,7 @@ class TextBody extends StatefulWidget {
   const TextBody(this.card, {super.key});
   final CardDeclaration card;
 
-  /// Parameters drawn directly by TextBody; any remaining ones (such as Split)
+  /// Parameters drawn directly by TextBody; remaining ones (such as Split)
   /// stay as standard parameter blocks below.
   static const drawn = {
     'text',
@@ -92,7 +93,6 @@ class _TextBodyState extends State<TextBody> {
     final text = doc.strings['v_text'] ?? '',
         styles = doc.strings['v_text_styles'] ?? '',
         file = doc.strings['v_file'] ?? '';
-    final vertical = (doc.get('v_writing') ?? 0).round() == 1;
     final wrapping = (doc.get('v_wrap') ?? 0).round() != 0;
     final base = TextStyles.name(Grey.g95).copyWith(
       fontWeight: FontWeight.w400,
@@ -121,37 +121,52 @@ class _TextBodyState extends State<TextBody> {
         final meta = _metaOf(doc, shownFont ?? '');
         final axes = meta.axes;
         final range = _values(doc, styles, letters, picked != null, axes, font);
-        final layerTiles = [
-          ?layer['size'],
-          ?layer['letter_spacing'],
-          ?layer['line_spacing'],
-          ?layer['italic'],
-          if (wrapping) ?layer['wrap_at'],
+
+        // Zone B (Character): per-glyph form — Size, Slant, Baseline, variable axes.
+        final glyphItems = picked == null
+            ? [
+                if (layer['size'] case final s?) (doc, s),
+                if (layer['italic'] case final s?) (doc, s),
+                (range, _baseline),
+                for (final a in axes) (range, _axis(a)),
+              ]
+            : [
+                (range, _size),
+                (
+                  range,
+                  const Parameter(
+                    id: 'fill',
+                    label: 'Fill',
+                    look: ParameterLook.color,
+                  ),
+                ),
+                if (layer['letter_spacing'] case final t?)
+                  (range, _like(t, def: doc.get('v_letter_spacing') ?? 0)),
+                (range, _baseline),
+                for (final a in axes) (range, _axis(a)),
+              ];
+
+        // Zone C (Flow & Box): character spacing (Metrics + Tracking) and line/column rhythm.
+        final flowCells = <Widget>[
+          if (layer.containsKey('metrics')) TextMetricsTile(doc: doc),
+          if (layer['letter_spacing'] case final t?) ParameterTile(t),
+          if (layer['line_spacing'] case final l?) ParameterTile(l),
         ];
-        final own = [
-          if (picked != null) ...[
-            _size,
-            const Parameter(
-              id: 'fill',
-              label: 'Fill',
-              look: ParameterLook.color,
-            ),
-            if (layer['letter_spacing'] case final t?)
-              _like(t, def: doc.get('v_letter_spacing') ?? 0),
-          ],
-          _baseline,
-          for (final a in axes) _axis(a),
-        ];
+        final hasBoxBar =
+            layer.containsKey('wrap') ||
+            layer.containsKey('kinsoku') ||
+            layer.containsKey('hanging');
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 1. Content & spatial axis (always horizontal preview; clipped and size-clamped).
             _TextWell(
               doc: doc,
               layer: layer,
               text: text,
               styles: styles,
               base: base,
-              vertical: vertical,
               picked: picked,
               onDone: (said) => _typed(doc, text, said),
               onPick: (v) {
@@ -166,6 +181,8 @@ class _TextBodyState extends State<TextBody> {
                     : null;
               },
             ),
+
+            // 2. Character (individual glyph form; scoped to selected letters when picked).
             if (layer.containsKey('file')) ...[
               SizedBox(height: Shape.s(6)),
               InspectorScope(
@@ -179,23 +196,26 @@ class _TextBodyState extends State<TextBody> {
                 ),
               ),
             ],
+            if (glyphItems.isNotEmpty)
+              _ScopedGrid(tick: x.tick, items: glyphItems),
             if (picked == null && layer.containsKey('font_features'))
               TextFeaturesStrip(doc: doc, supported: meta.features),
-            SizedBox(height: Shape.s(2)),
-            if (picked == null)
-              _ScopedGrid(
-                tick: x.tick,
-                items: [
-                  for (final param in layerTiles) (doc, param),
-                  for (final param in own) (range, param),
-                ],
-              )
-            else if (own.isNotEmpty)
-              InspectorScope(
-                doc: range,
-                tick: x.tick,
-                child: ParameterGrid(own),
-              ),
+
+            // 3. Flow & Box (inline spacing -> line/column rhythm -> box-edge rules).
+            if (picked == null &&
+                (flowCells.isNotEmpty || hasBoxBar || wrapping)) ...[
+              SizedBox(height: Shape.s(6)),
+              Container(height: 1, color: Grey.g20),
+              SizedBox(height: Shape.s(6)),
+              if (flowCells.isNotEmpty) _CellRow(flowCells),
+              if (hasBoxBar) ...[
+                if (flowCells.isNotEmpty)
+                  SizedBox(height: InspectorSkin.tileGap),
+                TextBoxBar(doc: doc, layer: layer),
+              ],
+              if (wrapping && layer['wrap_at'] != null)
+                ParameterGrid([layer['wrap_at']!]),
+            ],
           ],
         );
       },
@@ -375,8 +395,9 @@ class _TextBodyState extends State<TextBody> {
   }
 }
 
-/// Recessed text well combining the editable styled text box, selection scope
-/// indicator, vertical-writing guide, and in-well typesetting pills.
+/// Recessed horizontal preview well: clips and bounds its text editor so large
+/// range sizes or long multiline text can never bleed into surrounding UI, and
+/// hosts only the top-level spatial axis pills (Direction & Align) below.
 class _TextWell extends StatelessWidget {
   const _TextWell({
     required this.doc,
@@ -384,7 +405,6 @@ class _TextWell extends StatelessWidget {
     required this.text,
     required this.styles,
     required this.base,
-    required this.vertical,
     required this.picked,
     required this.onDone,
     required this.onPick,
@@ -395,98 +415,85 @@ class _TextWell extends StatelessWidget {
   final String text;
   final String styles;
   final TextStyle base;
-  final bool vertical;
   final _Letters? picked;
   final void Function(String?) onDone;
   final void Function(TextEditingValue) onPick;
 
   @override
   Widget build(BuildContext context) {
-    final hasBar =
-        layer.containsKey('align') ||
-        layer.containsKey('writing') ||
-        layer.containsKey('metrics') ||
-        layer.containsKey('kinsoku') ||
-        layer.containsKey('hanging') ||
-        layer.containsKey('wrap');
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        Shape.s(8),
-        Shape.s(7),
-        Shape.s(8),
-        hasBar ? Shape.s(6) : Shape.s(8),
-      ),
-      decoration: BoxDecoration(
-        color: InspectorSkin.well,
-        borderRadius: Shape.round(6),
-        border: Border.all(
-          color: picked != null
-              ? Accent.fill.withValues(alpha: 0.45)
-              : Grey.g20,
+    final hasAxis = layer.containsKey('writing') || layer.containsKey('align');
+    return ClipRRect(
+      borderRadius: Shape.round(6),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          Shape.s(8),
+          Shape.s(7),
+          Shape.s(8),
+          hasAxis ? Shape.s(6) : Shape.s(8),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TypedField(
-                  key: const ValueKey('text:box'),
-                  text: text,
-                  standing: true,
-                  escapes: true,
-                  style: base,
-                  cursor: Grey.g95,
-                  backgroundCursor: Grey.g20,
-                  selection: Role.selected.withValues(alpha: .4),
-                  styled: (t, style) => _spans(t, styles, style),
-                  onDone: onDone,
-                  onPick: onPick,
-                ),
-              ),
-              if (picked != null)
-                Padding(
-                  padding: EdgeInsets.only(left: Shape.s(6)),
-                  child: Container(
-                    key: const ValueKey('text:scope'),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: Shape.s(5),
-                      vertical: Shape.s(2),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Accent.fill.withValues(alpha: 0.16),
-                      borderRadius: Shape.round(4),
-                      border: Border.all(
-                        color: Accent.fill.withValues(alpha: 0.55),
+        decoration: BoxDecoration(
+          color: InspectorSkin.well,
+          borderRadius: Shape.round(6),
+          border: Border.all(
+            color: picked != null
+                ? Accent.fill.withValues(alpha: 0.45)
+                : Grey.g20,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  // Bound and clip preview text height so large fonts or many lines scroll instead of overflowing.
+                  child: ClipRect(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: Shape.z(96)),
+                      child: TypedField(
+                        key: const ValueKey('text:box'),
+                        text: text,
+                        standing: true,
+                        escapes: true,
+                        style: base,
+                        cursor: Grey.g95,
+                        backgroundCursor: Grey.g20,
+                        selection: Role.selected.withValues(alpha: .4),
+                        styled: (t, style) => _spans(t, styles, style),
+                        onDone: onDone,
+                        onPick: onPick,
                       ),
                     ),
-                    child: Text(
-                      '${picked!.count} ch',
-                      style: TextStyles.micro(Accent.fill),
-                    ),
-                  ),
-                )
-              else if (vertical)
-                Padding(
-                  padding: EdgeInsets.only(left: Shape.s(6)),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: Shape.s(4),
-                      vertical: Shape.s(2),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Grey.g10,
-                      borderRadius: Shape.round(4),
-                    ),
-                    child: Text('縦', style: TextStyles.micro(Grey.g63)),
                   ),
                 ),
-            ],
-          ),
-          if (hasBar) TextTypesetBar(doc: doc, layer: layer),
-        ],
+                if (picked != null)
+                  Padding(
+                    padding: EdgeInsets.only(left: Shape.s(6)),
+                    child: Container(
+                      key: const ValueKey('text:scope'),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(5),
+                        vertical: Shape.s(2),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Accent.fill.withValues(alpha: 0.16),
+                        borderRadius: Shape.round(4),
+                        border: Border.all(
+                          color: Accent.fill.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Text(
+                        '${picked!.count} ch',
+                        style: TextStyles.micro(Accent.fill),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (hasAxis) TextAxisBar(doc: doc, layer: layer),
+          ],
+        ),
       ),
     );
   }
@@ -522,8 +529,27 @@ class _FontRow extends StatelessWidget {
   );
 }
 
+/// Equal-width horizontal row of 42px tiles with standard tileGap spacing.
+class _CellRow extends StatelessWidget {
+  const _CellRow(this.cells);
+  final List<Widget> cells;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = InspectorSkin.tileGap;
+    return Row(
+      children: [
+        for (var i = 0; i < cells.length; i++) ...[
+          if (i > 0) SizedBox(width: g),
+          Expanded(child: cells[i]),
+        ],
+      ],
+    );
+  }
+}
+
 /// Lays out layer-scoped and range-scoped tiles in one continuous grid so
-/// Slant, Baseline and variable-font axes share rows cleanly without orphan gaps.
+/// character-form parameters share rows cleanly without orphan gaps.
 class _ScopedGrid extends StatelessWidget {
   const _ScopedGrid({required this.items, required this.tick});
 
@@ -545,7 +571,7 @@ class _ScopedGrid extends StatelessWidget {
           rows.add(items.sublist(i, math.min(i + cols, items.length)));
         }
         return Padding(
-          padding: EdgeInsets.only(top: Shape.s(4)),
+          padding: EdgeInsets.only(top: InspectorSkin.tileGap),
           child: Column(
             children: [
               for (var r = 0; r < rows.length; r++) ...[
@@ -624,9 +650,15 @@ double? _number(String? css) => css == null
 bool _same<V>(Map<String, V> a, Map<String, V> b) =>
     a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
 
+/// Preview-safe bounds so extreme per-range font sizes or tracking never
+/// overflow the inspector's text box into surrounding cards.
+const double _previewMinSize = 9.0;
+const double _previewMaxSize = 26.0;
+
 TextStyle _style(TextStyle base, Map<String, String> sets) {
-  final size =
+  final rawSize =
       (base.fontSize ?? 15) * ((_number(sets['font-size']) ?? 100) / 100);
+  final size = rawSize.clamp(_previewMinSize, _previewMaxSize);
   final font = fontFileOf(sets['font-family']);
   return base.copyWith(
     fontFamily: font == null ? null : fontFileFamily(font),
@@ -635,7 +667,8 @@ TextStyle _style(TextStyle base, Map<String, String> sets) {
         : [base.fontFamily!],
     fontSize: size,
     color: colorOfHex(sets['color'] ?? ''),
-    letterSpacing: _number(sets['letter-spacing']).let((em) => em * size),
+    letterSpacing: _number(sets['letter-spacing'])
+        .let((em) => (em * size).clamp(-4.0, 12.0)),
     fontVariations: [
       for (final e in _variations(
         sets['font-variation-settings'] ?? '',

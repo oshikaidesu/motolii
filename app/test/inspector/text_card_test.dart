@@ -288,4 +288,32 @@ void main() {
       expect(words.last['v_font_features'], 'jp04');
     },
   );
+
+  testWidgets(
+    'extreme range font-size is clamped inside the preview box so it never bleeds out',
+    (tester) async {
+      await mount(tester, styles: '0 5 font-size: 1200%');
+      final box = find.descendant(
+        of: find.byKey(const ValueKey('text:box')),
+        matching: find.byWidgetPredicate(
+          (w) => w.runtimeType.toString() == '_Editable',
+        ),
+      );
+      final render = tester.renderObject<RenderEditable>(box);
+      var maxFontSize = 0.0;
+      render.text!.visitChildren((span) {
+        if (span is TextSpan && span.style?.fontSize != null) {
+          if (span.style!.fontSize! > maxFontSize) {
+            maxFontSize = span.style!.fontSize!;
+          }
+        }
+        return true;
+      });
+      expect(maxFontSize, lessThanOrEqualTo(26.0));
+      expect(
+        tester.getSize(find.byKey(const ValueKey('text:box'))).height,
+        lessThanOrEqualTo(96.0),
+      );
+    },
+  );
 }
