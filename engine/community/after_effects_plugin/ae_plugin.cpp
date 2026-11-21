@@ -279,19 +279,20 @@ AePluginInfo ae_plugin_probe(const std::string& path) {
   const std::filesystem::path cache_file = cache_folder("ae_plugins") / name;
 
   std::string raw;
-  bool cached = false;
   if (std::ifstream in(cache_file); in) {
     std::ostringstream ss;
     ss << in.rdbuf();
     raw = ss.str();
-    cached = true;
-  } else {
-    raw = run_probe_worker(clean, 4000);
-    std::error_code ec;
-    std::filesystem::create_directories(cache_file.parent_path(), ec);
-    if (std::ofstream out(cache_file); out) out << raw;
   }
-  (void)cached;
+  if (raw.empty()) {
+    raw = run_probe_worker(clean, 4000);
+    // Do not cache empty probe results from transient timeouts or missing workers.
+    if (!raw.empty()) {
+      std::error_code ec;
+      std::filesystem::create_directories(cache_file.parent_path(), ec);
+      if (std::ofstream out(cache_file); out) out << raw;
+    }
+  }
 
   AePluginInfo info = parse_probe(raw);
   {

@@ -1,7 +1,7 @@
 #ifndef MOTOLII_COMMUNITY_AFTER_EFFECTS_PLUGIN_AE_PLUGIN_FX_H_
 #define MOTOLII_COMMUNITY_AFTER_EFFECTS_PLUGIN_AE_PLUGIN_FX_H_
-// Runs a native After Effects plugin as one step of a layer's or stage's effect
-// stack through an isolated persistent motolii_ae_worker process.
+// Runs a native After Effects plugin as one step of a layer's effect stack
+// through an isolated persistent motolii_ae_worker process.
 
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>

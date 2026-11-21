@@ -340,7 +340,9 @@ class _CellState extends State<_Cell> {
     }
     return switch (widget.code.word.split('.').last) {
       'wgsl' => 'WGSL',
-      'fs' => 'GLSL',
+      'fs' || 'glsl' => 'GLSL',
+      'css' => 'CSS',
+      'lua' || 'anm2' || 'obj2' => 'Lua',
       _ => 'JavaScript',
     };
   }

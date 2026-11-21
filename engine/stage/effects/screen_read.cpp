@@ -17,6 +17,7 @@
 #include "base/file_read.h"
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
+#include "community/quickjs/wgsl_attributes.h"
 #include "shelf/shelf_folders.h"
 #include "stage/effects/screen_fx.h"
 
@@ -208,8 +209,8 @@ bool screen_read(ScreenFx& fx, std::string& code) {
   fx.others.clear();
   fx.sounds.clear();
   // `file` is WGSL here (isf_file gave it), so its parameters are its header
-  // lines.
-  std::ifstream header(file);
+  // lines plus any WESL-style struct attributes.
+  std::istringstream header(raw_code);
   std::vector<ScriptParameter> declared = script_header_parameters(header);
   if (std::filesystem::path(file).extension() == ".wgsl") {
     auto attrParams = wgsl_attribute_parameters(raw_code);

@@ -201,7 +201,8 @@ endif()
 # Adapter: quickjs code run as it is.
 add_library(motolii_community_quickjs STATIC
   community/quickjs/script.cpp
-  community/quickjs/script_leva.cpp)
+  community/quickjs/script_leva.cpp
+  community/quickjs/wgsl_attributes.cpp)
 target_link_libraries(motolii_community_quickjs PUBLIC motolii_flags motolii_base motolii_shelf)
 if(APPLE)
   target_link_directories(motolii_community_quickjs PUBLIC ${HOMEBREW}/opt/quickjs-ng/lib)

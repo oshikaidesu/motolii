@@ -27,6 +27,7 @@
 
 #include "community/quickjs/script.h"
 #include "community/quickjs/script_leva.h"
+#include "community/quickjs/wgsl_attributes.h"
 
 namespace motolii {
 namespace {

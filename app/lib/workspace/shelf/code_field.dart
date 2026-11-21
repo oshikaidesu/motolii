@@ -19,55 +19,12 @@ import 'package:re_highlight/re_highlight.dart' show Mode;
 
 import 'package:motolii/skin/code_colors.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/wgsl_language.dart' show langWgsl;
 import 'package:motolii/storage/text_file.dart' show readTextNow;
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/workspace/code/expression_prompts.dart';
-
-// WGSL + WESL UI attributes (@range, @color, @toggle, @group, @label, @auto)
-// highlighter for re_highlight.
-final Mode _langWgsl = Mode(
-  name: 'WGSL',
-  keywords: {
-    'keyword':
-        'alias break case const const_assert continue continuing default '
-        'diagnostic discard else enable false fn for if let loop override '
-        'requires return struct switch true var while',
-    'type':
-        'bool f16 f32 i32 u32 atomic ptr array sampler sampler_comparison '
-        'vec2 vec3 vec4 vec2f vec3f vec4f vec2i vec3i vec4i vec2u vec3u vec4u '
-        'vec2h vec3h vec4h mat2x2 mat2x3 mat2x4 mat3x2 mat3x3 mat3x4 mat4x2 '
-        'mat4x3 mat4x4 mat2x2f mat3x3f mat4x4f texture_1d texture_2d '
-        'texture_2d_array texture_3d texture_cube texture_cube_array '
-        'texture_multisampled_2d texture_storage_1d texture_storage_2d '
-        'texture_storage_2d_array texture_storage_3d texture_depth_2d '
-        'uniform storage private workgroup function read write read_write',
-    'built_in':
-        'abs acos acosh all any asin asinh atan atan2 atanh bitcast ceil clamp '
-        'cos cosh countLeadingZeros countOneBits countTrailingZeros cross '
-        'degrees determinant distance dot exp exp2 extractBits faceForward '
-        'firstLeadingBit firstTrailingBit floor fma fract frexp insertBits '
-        'inverseSqrt ldexp length log log2 max min mix modf normalize pow '
-        'quantizeToF16 radians reflect refract reverseBits round saturate '
-        'select sign sin sinh smoothstep sqrt step tan tanh textureDimensions '
-        'textureGather textureLoad textureNumLayers textureNumLevels '
-        'textureSample textureSampleBias textureSampleCompare '
-        'textureSampleGrad textureSampleLevel textureStore transpose trunc '
-        'workgroupBarrier storageBarrier',
-  },
-  contains: [
-    Mode(className: 'comment', begin: r'//', end: r'$'),
-    Mode(className: 'comment', begin: r'/\*', end: r'\*/'),
-    Mode(className: 'string', begin: '"', end: '"'),
-    // WGSL / WESL attributes such as @range(...), @color(...), @fragment, @binding(0).
-    Mode(className: 'meta', begin: r'@[A-Za-z_][A-Za-z0-9_]*'),
-    Mode(
-      className: 'number',
-      begin: r'\b(?:0[xX][0-9a-fA-F]+[iu]?|(?:\d+\.\d*|\.\d+)(?:[eE][+-]?\d+)?[fh]?|\d+(?:[eE][+-]?\d+[fh]?|[iufh]))\b|\b\d+\b',
-    ),
-  ],
-);
 
 /// A stretch of code that is wrong: its line, counted from 1, and its columns.
 typedef CodeMark = ({int line, int from, int to});
@@ -126,7 +83,7 @@ class _CodeFieldState extends State<CodeField> {
   bool _ready = false;
 
   static Mode _languageFor(String file) {
-    if (file.endsWith('.wgsl')) return _langWgsl;
+    if (file.endsWith('.wgsl')) return langWgsl;
     if (file.endsWith('.fs') || file.endsWith('.glsl')) return langGlsl;
     if (file.endsWith('.css')) return langCss;
     if (file.endsWith('.lua') ||
@@ -140,9 +97,8 @@ class _CodeFieldState extends State<CodeField> {
   /// Splits leading `//` directive comments (when ≥ 3 lines and containing `--`)
   /// so the Code tab can fold boilerplate headers by default while keeping the
   /// underlying file intact on save.
-  static (String header, String body, int directiveCount) _splitHeader(
-    String text,
-  ) {
+  static (String header, String body, int directiveCount, int headerLines)
+  _splitHeader(String text) {
     final lines = text.split('\n');
     var end = 0, directives = 0;
     while (end < lines.length) {
@@ -156,39 +112,56 @@ class _CodeFieldState extends State<CodeField> {
         break;
       }
     }
-    if (directives < 3 || end >= lines.length) return ('', text, 0);
+    if (directives < 3 || end >= lines.length) return ('', text, 0, 0);
     return (
       '${lines.sublist(0, end).join('\n')}\n',
       lines.sublist(end).join('\n'),
       directives,
+      end,
     );
   }
 
   String _foldedHeader = '';
+  int _foldedLines = 0;
   int _headerDirectives = 0;
+  bool _hasHeader = false;
   bool _headerExpanded = false;
 
   String _visibleText(String full) {
-    if (!widget.fit || _headerExpanded) {
+    if (!widget.fit) {
       _foldedHeader = '';
+      _foldedLines = 0;
       _headerDirectives = 0;
+      _hasHeader = false;
       return full;
     }
-    final (head, body, count) = _splitHeader(full);
-    _foldedHeader = head;
+    final (head, body, count, lineCount) = _splitHeader(full);
+    _hasHeader = head.isNotEmpty;
     _headerDirectives = count;
-    return head.isEmpty ? full : body;
+    if (_headerExpanded || head.isEmpty) {
+      _foldedHeader = '';
+      _foldedLines = 0;
+      return full;
+    }
+    _foldedHeader = head;
+    _foldedLines = lineCount;
+    return body;
+  }
+
+  void _setControllerTextSilently(String shown) {
+    final wasReady = _ready;
+    _ready = false;
+    _controller.text = shown;
+    _lines = '\n'.allMatches(shown).length + 1;
+    _ready = wasReady;
+    _remark();
   }
 
   void _toggleHeader() {
     final full = _foldedHeader + _controller.text;
     setState(() {
       _headerExpanded = !_headerExpanded;
-      final shown = _visibleText(full);
-      _ready = false;
-      _controller.text = shown;
-      _lines = '\n'.allMatches(shown).length + 1;
-      _ready = true;
+      _setControllerTextSilently(_visibleText(full));
     });
   }
 
@@ -226,13 +199,14 @@ class _CodeFieldState extends State<CodeField> {
   // same way (lines and columns from 0, as the Language Server Protocol counts them).
   void _remark() {
     final m = widget.mark?.value;
+    final shownLine = m == null ? -1 : m.line - 1 - _foldedLines;
     _controller.diagnosticsNotifier.value = [
-      if (m != null)
+      if (m != null && shownLine >= 0)
         LspErrors(
           severity: 1,
           range: {
-            'start': {'line': m.line - 1, 'character': m.from},
-            'end': {'line': m.line - 1, 'character': m.to},
+            'start': {'line': shownLine, 'character': m.from},
+            'end': {'line': shownLine, 'character': m.to},
           },
           message: '',
         ),
@@ -281,9 +255,7 @@ class _CodeFieldState extends State<CodeField> {
     final now = readTextNow(widget.file);
     if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {
       _written = now;
-      final shown = _visibleText(now);
-      _controller.text = shown;
-      _lines = '\n'.allMatches(shown).length + 1;
+      _setControllerTextSilently(_visibleText(now));
     }
   }
 
@@ -345,17 +317,11 @@ class _CodeFieldState extends State<CodeField> {
     // One more line than the code, to type on, as a notebook's cell has (Jupyter).
     final line = fontSize * _lineHeight,
         tall = widget.height ?? (_lines + 1) * line + _pad.vertical;
-    final hasHeader =
-        _foldedHeader.isNotEmpty ||
-        (_headerExpanded && _splitHeader(_written).$1.isNotEmpty);
-    final headerCount = _headerDirectives > 0
-        ? _headerDirectives
-        : _splitHeader(_written).$3;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (hasHeader)
+        if (_hasHeader)
           Pressable(
             key: const ValueKey('code-cell-header-toggle'),
             onTap: _toggleHeader,
@@ -377,7 +343,7 @@ class _CodeFieldState extends State<CodeField> {
                   Text(
                     _headerExpanded
                         ? 'Hide header directives'
-                        : 'Header ($headerCount directives)',
+                        : 'Header ($_headerDirectives directives)',
                     style: TextStyles.micro(hot ? Grey.g91 : Grey.g56),
                   ),
                 ],

@@ -4,6 +4,7 @@
 #include <map>
 
 #include "base/file_read.h"
+#include "community/quickjs/wgsl_attributes.h"
 #include "gpu/compute_interop.h"
 #include "shelf/shelf_folders.h"
 #include "stage/layer_effects/layer_fx.h"

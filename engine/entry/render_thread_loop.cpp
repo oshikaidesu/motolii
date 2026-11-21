@@ -457,8 +457,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
     for (interop::Screen* sc : m->s->edge_screens)
       if (sc) interop::drop(m->s->engine, sc);
     if (m->s->place_copy) interop::drop(m->s->engine, m->s->place_copy);
-    for (int k = 0; k < 2; ++k)
+    for (int k = 0; k < 2; ++k) {
       if (m->s->place_tone[k]) interop::drop(m->s->engine, m->s->place_tone[k]);
+      if (m->s->place_fsr[k]) interop::drop(m->s->engine, m->s->place_fsr[k]);
+    }
     m->s->engine->setFeatureFlag(
         "engine.debug.assert_destroy_material_before_material_instance", false);
     close_stage(*m->s);

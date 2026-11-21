@@ -26,6 +26,20 @@ namespace {
 
 constexpr int kRenderTimeoutMs = 5000;
 
+// Must match TAG_* in engine/community/after_effects_plugin/src/main.rs.
+enum class ParamTag : uint8_t {
+  Float = 0,
+  Fixed = 1,
+  Slider = 2,
+  Angle = 3,
+  Check = 4,
+  Popup = 5,
+  Point = 6,
+  Point3D = 7,
+  Color = 8,
+  Layer = 9,
+};
+
 bool ensure_worker(AePluginRun& r) {
   if (r.proc.alive()) return true;
   if (!r.proc.start(ae_plugin_worker(), "--serve", r.file)) {
@@ -48,6 +62,10 @@ void push_le(std::vector<uint8_t>& buf, T val) {
   const size_t at = buf.size();
   buf.resize(at + sizeof(T));
   std::memcpy(buf.data() + at, &val, sizeof(T));
+}
+
+void push_tag(std::vector<uint8_t>& buf, ParamTag tag) {
+  push_le<uint8_t>(buf, static_cast<uint8_t>(tag));
 }
 
 void unpremultiply_rgba8(std::vector<uint8_t>& p) {
@@ -108,6 +126,207 @@ bool read_texture_straight(Stage& s, AePluginRun& r, Texture* src, uint32_t w,
   return true;
 }
 
+// Hot-reloads the isolated worker when a plugin developer rebuilds the binary.
+void maybe_hot_reload(AePluginRun& r) {
+  if (r.seen == files_changed()) return;
+  r.seen = files_changed();
+  const long long now_stamp = ae_plugin_stamp(r.file);
+  if (now_stamp >= 0 && now_stamp != r.stamp) {
+    r.stamp = now_stamp;
+    r.proc.stop();
+    r.info = ae_plugin_probe(r.file);
+    r.stuck.reset();
+    r.use_half_preview = false;
+    r.reported = false;
+  }
+}
+
+// Exports (s.desk.w == 0) always render at 100% full resolution.
+bool should_use_half_preview(const Stage& s, const AePluginRun& r, uint32_t w,
+                             uint32_t h) {
+  const bool can_half = w >= 640 && h >= 360;
+  bool half = false;
+  if (s.desk.w > 0 && can_half) {
+    if (s.aePreviewMode == 2)
+      half = true;
+    else if (s.aePreviewMode == 0)
+      half = r.use_half_preview;
+  }
+  if (const char* env = std::getenv("MOTOLII_AE_HALF")) {
+    if (env[0] == '1')
+      half = can_half;
+    else if (env[0] == '0')
+      half = false;
+  }
+  return half;
+}
+
+// Cheap signature computed before any GPU readback so stuck plugins skip fast.
+std::string build_param_signature(const AePluginRun& r,
+                                  const ScreenNumbers& numbers,
+                                  const ScreenTextures& textures, uint32_t rw,
+                                  uint32_t rh, uint32_t ds_den) {
+  const std::string key = r.numbers_key();
+  std::ostringstream sig;
+  sig << rw << "x" << rh << "/" << ds_den;
+  for (const AePluginParam& p : r.info.params) {
+    if (p.kind == "float" || p.kind == "fixed" || p.kind == "slider" ||
+        p.kind == "angle") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      sig << "|" << p.index << "=" << v;
+    } else if (p.kind == "check") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      sig << "|" << p.index << "=" << (v != 0.0 ? 1 : 0);
+    } else if (p.kind == "popup") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      const long long iv = std::clamp(std::llround(v), (long long)1,
+                                      (long long)std::max(1.0, p.high));
+      sig << "|" << p.index << "=" << iv;
+    } else if (p.kind == "point") {
+      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
+      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
+      sig << "|" << p.index << "=" << x << "," << y;
+    } else if (p.kind == "point3d") {
+      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
+      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
+      const double z = numbers ? numbers(key, p.name + "_z", p.z) : p.z;
+      sig << "|" << p.index << "=" << x << "," << y << "," << z;
+    } else if (p.kind == "color") {
+      int c[3];
+      for (int i = 0; i < 3; ++i) {
+        const double v = numbers ? numbers(key, p.name + "_" + "rgb"[i],
+                                           (double)p.rgba[i])
+                                 : (double)p.rgba[i];
+        c[i] = std::clamp((int)std::lround(v), 0, 255);
+      }
+      sig << "|" << p.index << "=" << c[0] << "," << c[1] << "," << c[2];
+    } else if (p.kind == "layer") {
+      Texture* other = textures ? textures(r.file, p.name) : nullptr;
+      sig << "|" << p.index << "=" << (const void*)other;
+    }
+  }
+  return sig.str();
+}
+
+uint32_t serialize_params(Stage& s, AePluginRun& r,
+                          const ScreenNumbers& numbers,
+                          const ScreenTextures& textures, uint32_t rw,
+                          uint32_t rh, std::vector<uint8_t>& out) {
+  const std::string key = r.numbers_key();
+  uint32_t sent = 0;
+  for (const AePluginParam& p : r.info.params) {
+    if (p.kind == "float" || p.kind == "fixed" || p.kind == "slider" ||
+        p.kind == "angle") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      push_le<uint32_t>(out, p.index);
+      if (p.kind == "float") {
+        push_tag(out, ParamTag::Float);
+        push_le<double>(out, v);
+      } else if (p.kind == "fixed") {
+        push_tag(out, ParamTag::Fixed);
+        push_le<double>(out, v);
+      } else if (p.kind == "slider") {
+        push_tag(out, ParamTag::Slider);
+        push_le<int32_t>(out, (int32_t)std::llround(v));
+      } else {
+        push_tag(out, ParamTag::Angle);
+        push_le<double>(out, v);
+      }
+      ++sent;
+    } else if (p.kind == "check") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Check);
+      push_le<uint8_t>(out, v != 0.0 ? 1 : 0);
+      ++sent;
+    } else if (p.kind == "popup") {
+      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
+      const int32_t iv =
+          (int32_t)std::clamp(std::llround(v), (long long)1,
+                              (long long)std::max(1.0, p.high));
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Popup);
+      push_le<int32_t>(out, iv);
+      ++sent;
+    } else if (p.kind == "point") {
+      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
+      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Point);
+      push_le<double>(out, x * rw);
+      push_le<double>(out, y * rh);
+      ++sent;
+    } else if (p.kind == "point3d") {
+      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
+      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
+      const double z = numbers ? numbers(key, p.name + "_z", p.z) : p.z;
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Point3D);
+      push_le<double>(out, x * rw);
+      push_le<double>(out, y * rh);
+      push_le<double>(out, z);
+      ++sent;
+    } else if (p.kind == "color") {
+      uint8_t c[4] = {p.rgba[0], p.rgba[1], p.rgba[2], p.rgba[3]};
+      for (int i = 0; i < 3; ++i) {
+        const double v = numbers ? numbers(key, p.name + "_" + "rgb"[i], c[i])
+                                 : (double)c[i];
+        c[i] = (uint8_t)std::clamp((int)std::lround(v), 0, 255);
+      }
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Color);
+      for (int i = 0; i < 4; ++i) push_le<uint8_t>(out, c[i]);
+      ++sent;
+    } else if (p.kind == "layer") {
+      Texture* other = textures ? textures(r.file, p.name) : nullptr;
+      push_le<uint32_t>(out, p.index);
+      push_tag(out, ParamTag::Layer);
+      std::vector<uint8_t> lp;
+      if (other && read_texture_straight(s, r, other, rw, rh, lp)) {
+        push_le<uint32_t>(out, rw);
+        push_le<uint32_t>(out, rh);
+        out.insert(out.end(), lp.begin(), lp.end());
+      } else {
+        push_le<uint32_t>(out, 0);
+        push_le<uint32_t>(out, 0);
+      }
+      ++sent;
+    }
+  }
+  return sent;
+}
+
+void upload_and_draw(Stage& s, AePluginRun& r, RenderTarget* to, uint32_t w,
+                     uint32_t h, uint32_t ow, uint32_t oh,
+                     std::vector<uint8_t>* out_pixels) {
+  premultiply_rgba8(*out_pixels);
+  if (!r.out_tex || r.out_w != ow || r.out_h != oh) {
+    if (r.out_tex) s.engine->destroy(r.out_tex), r.out_tex = nullptr;
+    r.out_tex =
+        Texture::Builder()
+            .width(ow)
+            .height(oh)
+            .levels(1)
+            .format(Texture::InternalFormat::RGBA8)
+            .usage(Texture::Usage::SAMPLEABLE | Texture::Usage::UPLOADABLE)
+            .build(*s.engine);
+    r.out_w = ow, r.out_h = oh;
+  }
+  r.out_tex->setImage(
+      *s.engine, 0,
+      backend::PixelBufferDescriptor(
+          out_pixels->data(), out_pixels->size(), backend::PixelDataFormat::RGBA,
+          backend::PixelDataType::UBYTE,
+          [](void*, size_t, void* user) {
+            delete static_cast<std::vector<uint8_t>*>(user);
+          },
+          out_pixels));
+  if (ow < w || oh < h)
+    screen_upscale(s, r.out_tex, to, w, h);
+  else
+    screen_place(s, r.out_tex, to, w, h, nullptr);
+}
+
 }  // namespace
 
 AePluginRun::~AePluginRun() {
@@ -137,169 +356,19 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
                          const ScreenTextures& textures, uint32_t w,
                          uint32_t h) {
   if (!w) w = (uint32_t)s.w, h = (uint32_t)s.h;
-  // Hot-reload the isolated worker when a plugin developer rebuilds the binary.
-  if (r.seen != files_changed()) {
-    r.seen = files_changed();
-    const long long now_stamp = ae_plugin_stamp(r.file);
-    if (now_stamp >= 0 && now_stamp != r.stamp) {
-      r.stamp = now_stamp;
-      r.proc.stop();
-      r.info = ae_plugin_probe(r.file);
-      r.stuck.reset();
-      r.use_half_preview = false;
-      r.reported = false;
-    }
-  }
+  maybe_hot_reload(r);
   if (!r.info.ok || !from || !w || !h)
     return screen_place(s, from, to, w, h, nullptr);
 
-  // During interactive editing (s.desk.w > 0), honor s.aePreviewMode:
-  //   0 = Auto (Half + FSR 1.0 once a full-res frame exceeds 16 ms)
-  //   1 = Full (always 100%)
-  //   2 = Half (always Half + FSR 1.0)
-  // Exports (s.desk.w == 0) always render at 100% full resolution.
-  const bool can_half = w >= 640 && h >= 360;
-  bool half = false;
-  if (s.desk.w > 0 && can_half) {
-    if (s.aePreviewMode == 2)
-      half = true;
-    else if (s.aePreviewMode == 0)
-      half = r.use_half_preview;
-  }
-  if (const char* env = std::getenv("MOTOLII_AE_HALF")) {
-    if (env[0] == '1')
-      half = can_half;
-    else if (env[0] == '0')
-      half = false;
-  }
+  const bool half = should_use_half_preview(s, r, w, h);
   const uint32_t ds_den = half ? 2u : 1u;
   const uint32_t rw = half ? std::max(1u, w / 2) : w;
   const uint32_t rh = half ? std::max(1u, h / 2) : h;
 
-  const std::string key = r.numbers_key();
-  std::ostringstream sig;
-  sig << rw << "x" << rh << "/" << ds_den;
-
-  // Serialize parameters for the worker protocol.
-  std::vector<uint8_t> param_bytes;
-  uint32_t sent_params = 0;
-  for (const AePluginParam& p : r.info.params) {
-    if (p.kind == "float" || p.kind == "fixed" || p.kind == "slider" ||
-        p.kind == "angle") {
-      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
-      sig << "|" << p.index << "=" << v;
-      push_le<uint32_t>(param_bytes, p.index);
-      if (p.kind == "float") {
-        push_le<uint8_t>(param_bytes, 0);
-        push_le<double>(param_bytes, v);
-      } else if (p.kind == "fixed") {
-        push_le<uint8_t>(param_bytes, 1);
-        push_le<double>(param_bytes, v);
-      } else if (p.kind == "slider") {
-        push_le<uint8_t>(param_bytes, 2);
-        push_le<int32_t>(param_bytes, (int32_t)std::llround(v));
-      } else {
-        push_le<uint8_t>(param_bytes, 3);
-        push_le<double>(param_bytes, v);
-      }
-      ++sent_params;
-    } else if (p.kind == "check") {
-      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
-      const uint8_t b = v != 0.0 ? 1 : 0;
-      sig << "|" << p.index << "=" << (int)b;
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 4);
-      push_le<uint8_t>(param_bytes, b);
-      ++sent_params;
-    } else if (p.kind == "popup") {
-      const double v = numbers ? numbers(key, p.name, p.usual) : p.usual;
-      const int32_t iv =
-          (int32_t)std::clamp(std::llround(v), (long long)1,
-                              (long long)std::max(1.0, p.high));
-      sig << "|" << p.index << "=" << iv;
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 5);
-      push_le<int32_t>(param_bytes, iv);
-      ++sent_params;
-    } else if (p.kind == "point") {
-      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
-      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
-      sig << "|" << p.index << "=" << x << "," << y;
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 6);
-      push_le<double>(param_bytes, x * rw);
-      push_le<double>(param_bytes, y * rh);
-      ++sent_params;
-    } else if (p.kind == "point3d") {
-      const double x = numbers ? numbers(key, p.name + "_x", p.x) : p.x;
-      const double y = numbers ? numbers(key, p.name + "_y", p.y) : p.y;
-      const double z = numbers ? numbers(key, p.name + "_z", p.z) : p.z;
-      sig << "|" << p.index << "=" << x << "," << y << "," << z;
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 7);
-      push_le<double>(param_bytes, x * rw);
-      push_le<double>(param_bytes, y * rh);
-      push_le<double>(param_bytes, z);
-      ++sent_params;
-    } else if (p.kind == "color") {
-      uint8_t c[4] = {p.rgba[0], p.rgba[1], p.rgba[2], p.rgba[3]};
-      for (int i = 0; i < 3; ++i) {
-        const double v = numbers ? numbers(key, p.name + "_" + "rgb"[i], c[i])
-                                 : (double)c[i];
-        c[i] = (uint8_t)std::clamp((int)std::lround(v), 0, 255);
-      }
-      sig << "|" << p.index << "=" << (int)c[0] << "," << (int)c[1] << ","
-          << (int)c[2];
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 8);
-      for (int i = 0; i < 4; ++i) push_le<uint8_t>(param_bytes, c[i]);
-      ++sent_params;
-    } else if (p.kind == "layer") {
-      Texture* other = textures ? textures(r.file, p.name) : nullptr;
-      push_le<uint32_t>(param_bytes, p.index);
-      push_le<uint8_t>(param_bytes, 9);
-      std::vector<uint8_t> lp;
-      if (other && read_texture_straight(s, r, other, rw, rh, lp)) {
-        push_le<uint32_t>(param_bytes, rw);
-        push_le<uint32_t>(param_bytes, rh);
-        param_bytes.insert(param_bytes.end(), lp.begin(), lp.end());
-      } else {
-        push_le<uint32_t>(param_bytes, 0);
-        push_le<uint32_t>(param_bytes, 0);
-      }
-      ++sent_params;
-    }
-  }
-
-  const std::string cur_sig = sig.str();
+  const std::string cur_sig =
+      build_param_signature(r, numbers, textures, rw, rh, ds_den);
   if (r.stuck && *r.stuck == cur_sig)
     return screen_place(s, from, to, w, h, nullptr);
-
-  const auto t_start = std::chrono::steady_clock::now();
-  std::vector<uint8_t> in_pixels;
-  if (!read_texture_straight(s, r, from, rw, rh, in_pixels))
-    return screen_place(s, from, to, w, h, nullptr);
-
-  if (!ensure_worker(r)) {
-    r.stuck = cur_sig;
-    if (!r.reported) {
-      std::fprintf(stderr, "AE plugin %s: %s\n", r.file.c_str(),
-                   r.trouble.c_str());
-      r.reported = true;
-    }
-    return screen_place(s, from, to, w, h, nullptr);
-  }
-
-  std::vector<uint8_t> req;
-  req.reserve(32 + param_bytes.size() + in_pixels.size());
-  push_le<uint32_t>(req, rw);
-  push_le<uint32_t>(req, rh);
-  push_le<uint32_t>(req, ds_den);
-  push_le<double>(req, s.now);
-  push_le<double>(req, screen_rate(s));
-  push_le<uint32_t>(req, sent_params);
-  req.insert(req.end(), param_bytes.begin(), param_bytes.end());
-  req.insert(req.end(), in_pixels.begin(), in_pixels.end());
 
   const auto fail = [&](const std::string& why) {
     r.trouble = why;
@@ -311,6 +380,28 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     }
     screen_place(s, from, to, w, h, nullptr);
   };
+
+  if (!ensure_worker(r)) return fail(r.trouble);
+
+  const auto t_start = std::chrono::steady_clock::now();
+  std::vector<uint8_t> param_bytes;
+  const uint32_t sent_params =
+      serialize_params(s, r, numbers, textures, rw, rh, param_bytes);
+
+  std::vector<uint8_t> in_pixels;
+  if (!read_texture_straight(s, r, from, rw, rh, in_pixels))
+    return screen_place(s, from, to, w, h, nullptr);
+
+  std::vector<uint8_t> req;
+  req.reserve(32 + param_bytes.size() + in_pixels.size());
+  push_le<uint32_t>(req, rw);
+  push_le<uint32_t>(req, rh);
+  push_le<uint32_t>(req, ds_den);
+  push_le<double>(req, s.now);
+  push_le<double>(req, screen_rate(s));
+  push_le<uint32_t>(req, sent_params);
+  req.insert(req.end(), param_bytes.begin(), param_bytes.end());
+  req.insert(req.end(), in_pixels.begin(), in_pixels.end());
 
   if (!r.proc.write_all(req.data(), req.size(), kRenderTimeoutMs))
     return fail("write to worker timed out");
@@ -351,33 +442,8 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     delete out_pixels;
     return fail("reading output pixels failed");
   }
-  premultiply_rgba8(*out_pixels);
+  upload_and_draw(s, r, to, w, h, ow, oh, out_pixels);
 
-  if (!r.out_tex || r.out_w != ow || r.out_h != oh) {
-    if (r.out_tex) s.engine->destroy(r.out_tex), r.out_tex = nullptr;
-    r.out_tex =
-        Texture::Builder()
-            .width(ow)
-            .height(oh)
-            .levels(1)
-            .format(Texture::InternalFormat::RGBA8)
-            .usage(Texture::Usage::SAMPLEABLE | Texture::Usage::UPLOADABLE)
-            .build(*s.engine);
-    r.out_w = ow, r.out_h = oh;
-  }
-  r.out_tex->setImage(
-      *s.engine, 0,
-      backend::PixelBufferDescriptor(
-          out_pixels->data(), out_pixels->size(), backend::PixelDataFormat::RGBA,
-          backend::PixelDataType::UBYTE,
-          [](void*, size_t, void* user) {
-            delete static_cast<std::vector<uint8_t>*>(user);
-          },
-          out_pixels));
-  if (ow < w || oh < h)
-    screen_upscale(s, r.out_tex, to, w, h);
-  else
-    screen_place(s, r.out_tex, to, w, h, nullptr);
   if (!half && s.desk.w > 0 && s.aePreviewMode == 0 && !r.use_half_preview) {
     const double elapsed_ms =
         std::chrono::duration<double, std::milli>(

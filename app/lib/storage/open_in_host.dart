@@ -11,7 +11,10 @@ Future<ProcessResult> openInHost(String path) => hostIsWindows
     ? Process.run('explorer', [path.replaceAll('/', r'\')])
     : Process.run('open', [path]);
 
-({String name, List<String> command})? _detectedEditor() {
+bool _editorChecked = false;
+({String name, List<String> command})? _cachedEditor;
+
+({String name, List<String> command})? _detectEditorOnce() {
   final env =
       (Platform.environment['VISUAL'] ?? Platform.environment['EDITOR'] ?? '')
           .trim();
@@ -52,6 +55,14 @@ Future<ProcessResult> openInHost(String path) => hostIsWindows
     if (hostHasProgram(bin)) return (name: name, command: [bin]);
   }
   return null;
+}
+
+({String name, List<String> command})? _detectedEditor() {
+  if (!_editorChecked) {
+    _editorChecked = true;
+    _cachedEditor = _detectEditorOnce();
+  }
+  return _cachedEditor;
 }
 
 /// Display name of the external IDE detected on this machine (e.g. `Cursor`, `VS Code`, `Zed`).

@@ -17,6 +17,7 @@
 #include "community/aviutl/aviutl.h"
 #include "community/quickjs/script.h"
 #include "community/quickjs/script_leva.h"
+#include "community/quickjs/wgsl_attributes.h"
 #include "community/sites/site_adapter.h"
 #include "community/three/solid_three.h"
 
@@ -119,7 +120,19 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
   std::ifstream in(file);
   std::stringstream told_head;
   std::istream* from = &in;
-  if (std::filesystem::path(file).extension() == ".js") {
+  const std::string ext = std::filesystem::path(file).extension().generic_string();
+  if (ext == ".wgsl") {
+    std::stringstream wgsl_all;
+    wgsl_all << in.rdbuf();
+    const std::string wgsl_src = wgsl_all.str();
+    std::istringstream wgsl_head(wgsl_src);
+    auto headerParams = script_header_parameters(wgsl_head);
+    parameters.insert(parameters.end(), headerParams.begin(), headerParams.end());
+    auto attrParams = wgsl_attribute_parameters(wgsl_src);
+    parameters.insert(parameters.end(), attrParams.begin(), attrParams.end());
+    return parameters;
+  }
+  if (ext == ".js") {
     std::stringstream all;
     all << in.rdbuf();
     const std::string told = adapter_js(
@@ -170,13 +183,6 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
   }
   auto headerParams = script_header_parameters(*from);
   parameters.insert(parameters.end(), headerParams.begin(), headerParams.end());
-  if (std::filesystem::path(file).extension() == ".wgsl") {
-    std::ifstream wgsl_in(file);
-    std::stringstream wgsl_all;
-    wgsl_all << wgsl_in.rdbuf();
-    auto attrParams = wgsl_attribute_parameters(wgsl_all.str());
-    parameters.insert(parameters.end(), attrParams.begin(), attrParams.end());
-  }
   return parameters;
 }
 

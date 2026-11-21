@@ -215,6 +215,18 @@ fn read_f64(r: &mut impl Read) -> io::Result<f64> {
     Ok(f64::from_le_bytes(b))
 }
 
+// Must match ParamTag in engine/community/after_effects_plugin/ae_plugin_fx.cpp.
+const TAG_FLOAT: u8 = 0;
+const TAG_FIXED: u8 = 1;
+const TAG_SLIDER: u8 = 2;
+const TAG_ANGLE: u8 = 3;
+const TAG_CHECK: u8 = 4;
+const TAG_POPUP: u8 = 5;
+const TAG_POINT: u8 = 6;
+const TAG_POINT3D: u8 = 7;
+const TAG_COLOR: u8 = 8;
+const TAG_LAYER: u8 = 9;
+
 fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::Error>> {
     let mut fx = Host::get().load(path)?;
     let mut out = BufWriter::new(out_file);
@@ -222,9 +234,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
     out.write_all(b"AEW2")?;
     out.flush()?;
 
-    let mut in_buf: Vec<u8> = Vec::new();
     let mut out_buf: Vec<u8> = Vec::new();
-    let mut layer_buf: Vec<u8> = Vec::new();
 
     loop {
         let mut head = [0u8; 4];
@@ -244,42 +254,42 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
             let idx = read_u32(&mut inp)? as usize;
             let tag = read_u8(&mut inp)?;
             match tag {
-                0 => {
+                TAG_FLOAT => {
                     let v = read_f64(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Float(v));
                 }
-                1 => {
+                TAG_FIXED => {
                     let v = read_f64(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Fixed(v as f32));
                 }
-                2 => {
+                TAG_SLIDER => {
                     let v = read_i32(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Slider(v));
                 }
-                3 => {
+                TAG_ANGLE => {
                     let v = read_f64(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Angle(v as f32));
                 }
-                4 => {
+                TAG_CHECK => {
                     let v = read_u8(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Checkbox(v != 0));
                 }
-                5 => {
+                TAG_POPUP => {
                     let v = read_i32(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Popup(v));
                 }
-                6 => {
+                TAG_POINT => {
                     let x = read_f64(&mut inp)?;
                     let y = read_f64(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Point { x: x as f32, y: y as f32 });
                 }
-                7 => {
+                TAG_POINT3D => {
                     let x = read_f64(&mut inp)?;
                     let y = read_f64(&mut inp)?;
                     let z = read_f64(&mut inp)?;
                     let _ = fx.set_param(idx, ParamValue::Point3D { x, y, z });
                 }
-                8 => {
+                TAG_COLOR => {
                     let r = read_u8(&mut inp)?;
                     let g = read_u8(&mut inp)?;
                     let b = read_u8(&mut inp)?;
@@ -294,16 +304,16 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
                         },
                     );
                 }
-                9 => {
+                TAG_LAYER => {
                     let lw = read_u32(&mut inp)?;
                     let lh = read_u32(&mut inp)?;
                     if lw == 0 || lh == 0 {
                         let _ = fx.clear_layer_param(idx);
                     } else {
                         let n = (lw as usize) * (lh as usize) * 4;
-                        layer_buf.resize(n, 0);
+                        let mut layer_buf = vec![0u8; n];
                         inp.read_exact(&mut layer_buf)?;
-                        if let Ok(layer) = Layer::<Depth8>::from_rgba8(layer_buf.clone(), lw, lh) {
+                        if let Ok(layer) = Layer::<Depth8>::from_rgba8(layer_buf, lw, lh) {
                             let _ = fx.set_layer_param(idx, Some(layer));
                         }
                     }
@@ -313,7 +323,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
         }
 
         let in_bytes = (w as usize) * (h as usize) * 4;
-        in_buf.resize(in_bytes, 0);
+        let mut in_buf = vec![0u8; in_bytes];
         inp.read_exact(&mut in_buf)?;
 
         let rate = if fps.is_finite() && fps > 0.0 {
@@ -326,7 +336,7 @@ fn run_serve(path: &PathBuf, out_file: File) -> Result<(), Box<dyn std::error::E
         fx.set_render_size(w, h);
         fx.set_time(Time::frame(frame, rate));
 
-        let render_res = Layer::<Depth8>::from_rgba8(in_buf.clone(), w, h)
+        let render_res = Layer::<Depth8>::from_rgba8(in_buf, w, h)
             .map_err(|e| e.to_string())
             .and_then(|layer| {
                 fx.set_input_layer(layer);
