@@ -32,10 +32,16 @@ MotoliiText* motolii_text_new(const char* words, const char* styles,
                               const char* kinsoku, int32_t hanging,
                               const char* features);
 
-// Reads variable-font axes (fvar) and OpenType feature tags (GSUB/GPOS) from
-// `fontFile` via skrifa. Writes a UTF-8 text report into `out` (up to `cap`
-// bytes including NUL) and returns its byte length (excluding NUL).
+// Reads variable-font axes (fvar) and OpenType feature tags + UI names
+// (GSUB/GPOS) from `fontFile` via skrifa. Writes a UTF-8 text report into `out`
+// (up to `cap` bytes including NUL) and returns its byte length (excluding
+// NUL).
 int32_t motolii_font_meta_read(const char* fontFile, char* out, int32_t cap);
+
+// Detects Unicode character classes present in `words` via ICU4X
+// (`icu_properties`), writing one tab-separated line per class
+// (`id\tlabel\tname`) into `out`.
+int32_t motolii_text_classes_read(const char* words, char* out, int32_t cap);
 
 // The outlines of all the letters, in pixels, y down, the first line's top at
 // 0: `verbs` are 0 move (1 point), 1 line (1), 2 cubic (3), 3 close (0).

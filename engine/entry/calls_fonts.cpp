@@ -27,6 +27,17 @@ const char* motolii_font_meta(const char* path) {
   return out.c_str();
 }
 
+const char* motolii_text_classes(const char* words) {
+  static thread_local std::string out;
+  out.clear();
+  if (!words || !*words) return "";
+  const int32_t need = motolii_text_classes_read(words, nullptr, 0);
+  if (need <= 0) return "";
+  out.resize((size_t)need);
+  motolii_text_classes_read(words, out.data(), need + 1);
+  return out.c_str();
+}
+
 #ifdef __APPLE__
 #include <CoreText/CoreText.h>
 

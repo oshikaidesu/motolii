@@ -1,14 +1,14 @@
 //! Typography engine for text layers (text.h):
 //! - Horizontal typesetting via Blitz + Stylo + Parley (HarfRust + ICU4X) with
-//!   OpenType features (`font-feature-settings`), Japanese kinsoku (`line-break`
-//!   with `lang="ja"`), and hanging punctuation (`、。，．`).
+//!   OpenType features (`font-feature-settings`), auto-detected script locale,
+//!   Unicode line-breaking (`line-break`), and hanging punctuation.
 //! - Vertical-rl typesetting via HarfRust (`Direction::TopToBottom` with OpenType
-//!   `vert`/`vrt2`, `vpal`/`vhal`, and `vmtx`/`vorg`) with kinsoku and hanging
-//!   punctuation.
-//! - Font metadata (variable axes `fvar` and OpenType features `GSUB`/`GPOS`)
-//!   read directly via `skrifa`.
+//!   `vert`/`vrt2`, `vpal`/`vhal`, and `vmtx`/`vorg`), UAX #50 `VerticalOrientation`,
+//!   and ICU4X `LineSegmenter` kinsoku & hanging punctuation.
+//! - Font metadata (variable axes `fvar`, OpenType `GSUB`/`GPOS` tags + UI names)
+//!   read directly via `skrifa`, and Unicode script/class detection via `icu_properties`.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ffi::{CStr, c_char};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -17,10 +17,15 @@ use blitz_dom::DocumentConfig;
 use blitz_html::HtmlDocument;
 use blitz_traits::shell::{ColorScheme, Viewport};
 use harfrust::{Direction, Feature, Language, ShapeOptions, ShaperData, ShaperInstance, Tag as HbTag, UnicodeBuffer, Variation};
+use icu_properties::props::{ExtendedPictographic, GeneralCategory, GeneralCategoryGroup, Script, VerticalOrientation};
+use icu_properties::{CodePointMapData, CodePointSetData, PropertyNamesLong, PropertyParser};
+use icu_segmenter::options::{LineBreakOptions, LineBreakStrictness, LineBreakWordOption};
+use icu_segmenter::LineSegmenter;
 use parley::fontique::{Blob, FontInfoOverride};
 use parley::{FontContext, PositionedLayoutItem};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::outline::{DrawSettings, OutlinePen};
+use skrifa::raw::tables::layout::FeatureParams;
 use skrifa::raw::TableProvider;
 use skrifa::raw::types::F2Dot14;
 use skrifa::{FontRef, MetadataProvider, Tag};
@@ -42,38 +47,75 @@ fn escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
-/// Characters allowed to hang past the line/column end when hanging punctuation is enabled.
+/// Stops and commas allowed to hang past the line/column end (CSS Text 4 `allow-end`).
 fn is_hanging_punct(c: char) -> bool {
-    matches!(c, '、' | '。' | '，' | '．' | '｡' | '､')
-}
-
-/// Line-start forbidden characters (行頭禁則) for vertical & hanging checks.
-fn is_kinsoku_start(c: char, strict: bool) -> bool {
-    let basic = matches!(
-        c,
-        '、' | '。' | '，' | '．' | '｡' | '､' | '）' | '」' | '』' | '】' | '〕' | '〉' | '》' | '］'
-            | '｝' | ')' | ']' | '}' | '!' | '?' | '！' | '？' | '：' | '；' | ':' | ';' | '・' | 'ヽ'
-            | 'ヾ' | 'ゝ' | 'ゞ' | '々' | 'ー' | '〜' | '～' | '…' | '‥'
-    );
-    if basic || !strict {
-        return basic;
-    }
     matches!(
         c,
-        'ぁ' | 'ぃ' | 'ぅ' | 'ぇ' | 'ぉ' | 'っ' | 'ゃ' | 'ゅ' | 'ょ' | 'ゎ' | 'ァ' | 'ィ' | 'ゥ' | 'ェ'
-            | 'ォ' | 'ッ' | 'ャ' | 'ュ' | 'ョ' | 'ヮ' | 'ヵ' | 'ヶ' | '‐' | '―'
+        '、' | '。' | '，' | '．' | '｡' | '､' | ',' | '.' | '\u{FE50}' | '\u{FE52}' | '\u{FE10}' | '\u{FE11}'
     )
 }
 
-/// Line-end forbidden characters (行末禁則: opening brackets).
-fn is_kinsoku_end(c: char) -> bool {
-    matches!(c, '（' | '「' | '『' | '【' | '〔' | '〈' | '《' | '［' | '｛' | '(' | '[' | '{')
+/// Detects the primary BCP-47 language tag and HarfRust script from Unicode script properties.
+fn detect_locale(words: &str) -> (&'static str, harfrust::Script) {
+    let scripts = CodePointMapData::<Script>::new();
+    let (mut has_kana, mut has_hangul, mut has_han) = (false, false, false);
+    let mut first_non_latin: Option<Script> = None;
+    for c in words.chars() {
+        match scripts.get(c) {
+            Script::Hiragana | Script::Katakana => has_kana = true,
+            Script::Hangul => has_hangul = true,
+            Script::Han => has_han = true,
+            Script::Common | Script::Inherited | Script::Unknown | Script::Latin => {}
+            other => {
+                if first_non_latin.is_none() {
+                    first_non_latin = Some(other);
+                }
+            }
+        }
+    }
+    if has_kana {
+        return ("ja", harfrust::script::HAN);
+    }
+    if has_hangul {
+        return ("ko", harfrust::script::HANGUL);
+    }
+    if has_han {
+        return ("zh", harfrust::script::HAN);
+    }
+    match first_non_latin {
+        Some(Script::Arabic) => ("ar", harfrust::script::ARABIC),
+        Some(Script::Hebrew) => ("he", harfrust::script::HEBREW),
+        Some(Script::Cyrillic) => ("ru", harfrust::script::CYRILLIC),
+        Some(Script::Greek) => ("el", harfrust::script::GREEK),
+        Some(Script::Thai) => ("th", harfrust::script::THAI),
+        Some(Script::Devanagari) => ("hi", harfrust::script::DEVANAGARI),
+        _ => ("en", harfrust::script::LATIN),
+    }
+}
+
+/// Maps an ICU4X Unicode Script to the matching HarfRust Script for shaping.
+fn harfrust_script_of(s: Script, fallback: harfrust::Script) -> harfrust::Script {
+    match s {
+        Script::Han => harfrust::script::HAN,
+        Script::Hiragana => harfrust::script::HIRAGANA,
+        Script::Katakana => harfrust::script::KATAKANA,
+        Script::Hangul => harfrust::script::HANGUL,
+        Script::Latin => harfrust::script::LATIN,
+        Script::Cyrillic => harfrust::script::CYRILLIC,
+        Script::Greek => harfrust::script::GREEK,
+        Script::Arabic => harfrust::script::ARABIC,
+        Script::Hebrew => harfrust::script::HEBREW,
+        Script::Thai => harfrust::script::THAI,
+        Script::Devanagari => harfrust::script::DEVANAGARI,
+        _ => fallback,
+    }
 }
 
 /// Parses OpenType feature strings from either CSS syntax (`"palt" 1, "kern" 0`)
-/// or shorthand tag tokens (`palt -kern tnum`), returning normalized `(tag, value)` pairs.
+/// or shorthand tag tokens (`palt -kern tnum`), deduplicating so later tags
+/// cleanly override earlier ones (e.g. user `-kern` overrides `metrics` `kern`).
 fn parse_features(raw: &str) -> Vec<([u8; 4], u32)> {
-    let mut out = Vec::new();
+    let mut out: Vec<([u8; 4], u32)> = Vec::new();
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return out;
@@ -92,12 +134,16 @@ fn parse_features(raw: &str) -> Vec<([u8; 4], u32)> {
             } else {
                 (false, tok)
             };
+            let (clean, eq_val) = match clean.split_once('=') {
+                Some((t, v)) => (t, v.parse::<u32>().ok()),
+                None => (clean, None),
+            };
             let clean = clean.trim_matches(['"', '\'']);
             if clean.len() == 4 && clean.is_ascii() {
                 let mut tag = [0u8; 4];
                 tag.copy_from_slice(clean.as_bytes());
-                let mut val = if neg { 0u32 } else { 1u32 };
-                if !neg && i + 1 < tokens.len() {
+                let mut val = eq_val.unwrap_or(if neg { 0u32 } else { 1u32 });
+                if !neg && eq_val.is_none() && i + 1 < tokens.len() {
                     match tokens[i + 1] {
                         "on" => {
                             val = 1;
@@ -114,7 +160,11 @@ fn parse_features(raw: &str) -> Vec<([u8; 4], u32)> {
                         _ => {}
                     }
                 }
-                out.push((tag, val));
+                if let Some(existing) = out.iter_mut().find(|(t, _)| *t == tag) {
+                    existing.1 = val;
+                } else {
+                    out.push((tag, val));
+                }
             }
             i += 1;
         }
@@ -157,33 +207,95 @@ fn range_fonts(styles: &str) -> Vec<String> {
     files
 }
 
-/// Matches Unicode character classes used by `@class` composite-font rules in `text_styles`.
+/// Matches Unicode character classes used by `@class` composite-font rules in `text_styles`
+/// using ICU4X `Script`, `GeneralCategory`, and `ExtendedPictographic` (accepts any Unicode script name).
 fn char_matches_class(c: char, cls: &str) -> bool {
-    let u = c as u32;
-    let is_latin = matches!(u, 0x0041..=0x024F | 0x1E00..=0x1EFF | 0xFF21..=0xFF3A | 0xFF41..=0xFF5A);
+    let script = CodePointMapData::<Script>::new().get(c);
+    let gc = CodePointMapData::<GeneralCategory>::new().get(c);
     match cls {
-        "kanji" => {
-            matches!(u, 0x4E00..=0x9FFF | 0x3400..=0x4DBF | 0xF900..=0xFAFF | 0x3005 | 0x20000..=0x2A6DF)
-        }
-        "hiragana" => matches!(u, 0x3040..=0x309F),
-        "katakana" => matches!(u, 0x30A0..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F),
-        "hangul" => matches!(u, 0xAC00..=0xD7AF | 0x1100..=0x11FF | 0x3130..=0x318F | 0xA960..=0xA97F | 0xD7B0..=0xD7FF),
-        "upper" => is_latin && c.is_uppercase(),
-        "lower" => is_latin && c.is_lowercase(),
-        "latin" => is_latin && c.is_alphabetic(),
-        "cyrillic" => matches!(u, 0x0400..=0x052F),
-        "greek" => matches!(u, 0x0370..=0x03FF | 0x1F00..=0x1FFF),
-        "arabic" => matches!(u, 0x0600..=0x06FF | 0x0750..=0x077F),
-        "thai" => matches!(u, 0x0E00..=0x0E7F),
-        "digit" => c.is_ascii_digit() || ('０'..='９').contains(&c),
-        "punct" => matches!(
-            c,
-            '、' | '。' | '，' | '．' | '！' | '？' | '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】'
-                | '・' | '…' | 'ー' | '〜' | '～' | '：' | '；' | '!' | '?' | ',' | '.' | ':' | ';' | '(' | ')'
-                | '[' | ']' | '{' | '}' | '-' | '—' | '"' | '\''
-        ),
-        _ => false,
+        "kanji" | "han" => script == Script::Han || c == '々',
+        "hiragana" => script == Script::Hiragana,
+        "katakana" => script == Script::Katakana,
+        "hangul" => script == Script::Hangul,
+        "upper" => script == Script::Latin && GeneralCategoryGroup::UppercaseLetter.contains(gc),
+        "lower" => script == Script::Latin && GeneralCategoryGroup::LowercaseLetter.contains(gc),
+        "latin" => script == Script::Latin,
+        "digit" => gc == GeneralCategory::DecimalNumber,
+        "punct" => GeneralCategoryGroup::Punctuation.contains(gc) || matches!(c, 'ー' | '〜' | '～'),
+        "emoji" => CodePointSetData::new::<ExtendedPictographic>().contains(c),
+        other => PropertyParser::<Script>::new()
+            .get_loose(other)
+            .is_some_and(|want| want != Script::Common && want != Script::Inherited && want == script),
     }
+}
+
+/// Canonical class key for one character, or None for whitespace/control characters.
+fn primary_class_of(c: char) -> Option<(String, String, String)> {
+    if c.is_whitespace() || c.is_control() {
+        return None;
+    }
+    let script = CodePointMapData::<Script>::new().get(c);
+    let gc = CodePointMapData::<GeneralCategory>::new().get(c);
+    if CodePointSetData::new::<ExtendedPictographic>().contains(c) {
+        return Some(("emoji".into(), c.to_string(), "Emoji".into()));
+    }
+    if gc == GeneralCategory::DecimalNumber {
+        return Some(("digit".into(), "123".into(), "Digits".into()));
+    }
+    if GeneralCategoryGroup::Punctuation.contains(gc) || matches!(c, 'ー' | '〜' | '～') {
+        return Some(("punct".into(), "、。".into(), "Punctuation".into()));
+    }
+    if script == Script::Han || c == '々' {
+        return Some(("kanji".into(), "漢字".into(), "Kanji (Han)".into()));
+    }
+    if script == Script::Hiragana {
+        return Some(("hiragana".into(), "かな".into(), "Hiragana".into()));
+    }
+    if script == Script::Katakana {
+        return Some(("katakana".into(), "カナ".into(), "Katakana".into()));
+    }
+    if script == Script::Hangul {
+        return Some(("hangul".into(), "한글".into(), "Hangul".into()));
+    }
+    if script == Script::Latin {
+        if GeneralCategoryGroup::UppercaseLetter.contains(gc) {
+            return Some(("upper".into(), "ABC".into(), "Uppercase Latin".into()));
+        }
+        if GeneralCategoryGroup::LowercaseLetter.contains(gc) {
+            return Some(("lower".into(), "abc".into(), "Lowercase Latin".into()));
+        }
+        return Some(("latin".into(), "Aa".into(), "Latin".into()));
+    }
+    if !matches!(script, Script::Common | Script::Inherited | Script::Unknown) {
+        if let Some(long_name) = PropertyNamesLong::<Script>::new().get(script) {
+            let id = long_name.to_ascii_lowercase();
+            let label = match script {
+                Script::Cyrillic => "АБВ".into(),
+                Script::Greek => "ΑΒΓ".into(),
+                Script::Arabic => "عربي".into(),
+                Script::Thai => "ไทย".into(),
+                _ => c.to_string(),
+            };
+            return Some((id, label, long_name.replace('_', " ")));
+        }
+    }
+    None
+}
+
+/// Detects Unicode character classes present in `words` (one `id\tlabel\tname` line per class).
+pub fn detect_text_classes(words: &str) -> String {
+    let mut found: Vec<(String, String, String)> = Vec::new();
+    for c in words.chars() {
+        let Some((id, label, name)) = primary_class_of(c) else { continue };
+        if !found.iter().any(|(existing, _, _)| existing == &id) {
+            found.push((id, label, name));
+        }
+    }
+    found
+        .into_iter()
+        .map(|(id, label, name)| format!("{id}\t{label}\t{name}"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Parsed per-range declarations from `styles`, with `@class` composite rules expanded first
@@ -373,24 +485,8 @@ fn parse_variations(css: &str) -> Vec<Variation> {
     out
 }
 
-/// True for characters that remain upright in vertical-rl Japanese typesetting.
-fn is_upright_vertical(c: char) -> bool {
-    let u = c as u32;
-    matches!(
-        u,
-        0x3000..=0x30FF // CJK symbols, Hiragana, Katakana
-            | 0x31F0..=0x31FF
-            | 0x3200..=0x9FFF // CJK Unified Ideographs
-            | 0xF900..=0xFAFF
-            | 0xFE10..=0xFE1F
-            | 0xFE30..=0xFE6F
-            | 0xFF00..=0xFFEF // Fullwidth forms
-            | 0x20000..=0x2FA1F
-    ) || matches!(c, '…' | '‥' | '―' | '—' | '–' | '〜' | '～' | '・')
-}
-
 /// True when `font` has a `vert` or `vrt2` substitution for `c` (so HarfRust handles it upright).
-fn has_vertical_glyph(face: &FontRef<'_>, c: char) -> bool {
+fn has_vertical_glyph(face: &FontRef<'_>, c: char, script: harfrust::Script) -> bool {
     let Some(gid) = face.charmap().map(c) else { return false };
     let data = ShaperData::new(face);
     let shaper = data.shaper(face).build();
@@ -398,7 +494,7 @@ fn has_vertical_glyph(face: &FontRef<'_>, c: char) -> bool {
     let mut s = [0u8; 4];
     buf.push_str(c.encode_utf8(&mut s));
     buf.set_direction(Direction::TopToBottom);
-    buf.set_script(harfrust::script::HAN);
+    buf.set_script(script);
     let feats = [
         Feature::new(HbTag::new(b"vert"), 1, ..),
         Feature::new(HbTag::new(b"vrt2"), 1, ..),
@@ -407,9 +503,42 @@ fn has_vertical_glyph(face: &FontRef<'_>, c: char) -> bool {
     shaped.glyph_infos().first().is_some_and(|g| g.glyph_id != gid.to_u32())
 }
 
-/// True for ASCII/Latin letters & digits rotated 90° clockwise in vertical-rl text.
-fn rotates_in_vertical(c: char) -> bool {
-    c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '_' | '/' | '.' | ',' | ':' | ';')
+/// UAX #50 vertical orientation: Rotated/TransformedRotated characters rotate 90° CW
+/// unless the font supplies an explicit `vert`/`vrt2` vertical glyph form.
+fn rotates_in_vertical(face: &FontRef<'_>, c: char, script: harfrust::Script) -> bool {
+    match CodePointMapData::<VerticalOrientation>::new().get(c) {
+        VerticalOrientation::Upright | VerticalOrientation::TransformedUpright => false,
+        VerticalOrientation::Rotated | VerticalOrientation::TransformedRotated => !has_vertical_glyph(face, c, script),
+        _ => false,
+    }
+}
+
+/// Computes UAX #14 / CSS `line-break` break opportunities as a per-character boolean mask
+/// (`breaks[i] == true` means a line/column break is permitted immediately before `chars[i]`).
+fn line_break_mask(words: &str, kinsoku: &str) -> Vec<bool> {
+    let n = words.chars().count();
+    let mut mask = vec![false; n + 1];
+    let strictness = match kinsoku.trim() {
+        "strict" => LineBreakStrictness::Strict,
+        "loose" => LineBreakStrictness::Loose,
+        "none" | "anywhere" => LineBreakStrictness::Anywhere,
+        _ => LineBreakStrictness::Normal,
+    };
+    let mut opts = LineBreakOptions::default();
+    opts.strictness = Some(strictness);
+    opts.word_option = Some(LineBreakWordOption::Normal);
+    let mut char_at = vec![usize::MAX; words.len() + 1];
+    for (ci, (bi, _)) in words.char_indices().enumerate() {
+        char_at[bi] = ci;
+    }
+    char_at[words.len()] = n;
+    let segmenter = LineSegmenter::new_auto(opts);
+    for byte_idx in segmenter.segment_str(words) {
+        if let Some(&ci) = char_at.get(byte_idx) && ci != usize::MAX {
+            mask[ci] = true;
+        }
+    }
+    mask
 }
 
 /// Vertical-rl Japanese typesetting using HarfRust (`Direction::TopToBottom` + OpenType
@@ -435,8 +564,9 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
     }
 
     let base_feats = parse_features(features);
-    let strict_kinsoku = kinsoku.trim() == "strict";
-    let no_kinsoku = matches!(kinsoku.trim(), "none" | "anywhere");
+    let (doc_lang, doc_script) = detect_locale(words);
+    let script_map = CodePointMapData::<Script>::new();
+    let break_ok = line_break_mask(words, kinsoku);
     let tracking_em = tracking / 1000.0;
     let slant_tan = slant.to_radians().tan();
 
@@ -542,7 +672,9 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
         let shaper_data = ShaperData::new(&face);
         let shaper = shaper_data.shaper(&face).instance(Some(&inst)).build();
 
-        let rotate_cw = rotates_in_vertical(ch) && !is_upright_vertical(ch) && !has_vertical_glyph(&face, ch);
+        let gm = face.metrics(Size::new(cs.size), LocationRef::new(&coords));
+        let char_script = harfrust_script_of(script_map.get(ch), doc_script);
+        let rotate_cw = rotates_in_vertical(&face, ch, char_script);
         let mut buf = UnicodeBuffer::new();
         let mut s_buf = [0u8; 4];
         buf.push_str(ch.encode_utf8(&mut s_buf));
@@ -551,8 +683,8 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
             buf.guess_segment_properties();
         } else {
             buf.set_direction(Direction::TopToBottom);
-            buf.set_script(harfrust::script::HAN);
-            if let Ok(lang) = Language::from_str("ja") {
+            buf.set_script(char_script);
+            if let Ok(lang) = Language::from_str(doc_lang) {
                 buf.set_language(lang);
             }
         }
@@ -583,7 +715,9 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
         };
         let pos = out_buf.glyph_positions()[0];
         let (adv_y, xo, yo) = if rotate_cw {
-            (pos.x_advance as f32 * scale, -0.35 * cs.size, pos.y_offset as f32 * scale)
+            // Center rotated glyph optically on column axis using the font's real cap height.
+            let visual_h = gm.cap_height.unwrap_or_else(|| (gm.ascent + gm.descent).max(gm.ascent * 0.7));
+            (pos.x_advance as f32 * scale, -0.5 * visual_h, pos.y_offset as f32 * scale)
         } else {
             // In HarfRust TopToBottom, y_advance is negative (downward).
             let raw_adv = (-pos.y_advance as f32 * scale).max(0.0);
@@ -630,14 +764,14 @@ fn set_vertical(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f
                 i += 1;
                 continue;
             }
-            // Kinsoku: pull previous character into next column if this char is line-start forbidden
-            // or the previous char is line-end forbidden (opening bracket).
-            if !no_kinsoku && (is_kinsoku_start(chars[i], strict_kinsoku) || col.last().is_some_and(|&p| is_kinsoku_end(chars[p]))) {
-                if col.len() > 1 {
-                    let moved = col.pop().unwrap();
+            // ICU4X LineSegmenter kinsoku: when breaking before `chars[i]` is forbidden,
+            // backtrack to the nearest legal UAX #14 break opportunity in the current column.
+            if !break_ok[i] {
+                if let Some(split_pos) = (1..col.len()).rev().find(|&k| break_ok[col[k]]) {
+                    let carry = col.split_off(split_pos);
                     columns.push(std::mem::take(&mut col));
-                    col.push(moved);
-                    col_h = shaped_chars[moved].as_ref().map_or(0.0, |s| s.advance_y);
+                    col = carry;
+                    col_h = col.iter().map(|&idx| shaped_chars[idx].as_ref().map_or(0.0, |s| s.advance_y)).sum();
                     continue;
                 }
             }
@@ -754,9 +888,10 @@ pub fn set(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, t
     let feat_css = format_css_features(&parse_features(features));
     // Tracking in thousandths of an em, as After Effects' Character panel gives it.
     let tracking = tracking / 1000.0;
-    // `lang="ja"` enables ICU4X Japanese kinsoku line-breaking and OpenType `locl` forms.
+    // Auto-detected BCP-47 locale enables script-appropriate ICU4X line-breaking and OpenType `locl` forms.
+    let (lang, _) = detect_locale(words);
     let page = format!(
-        r#"<html lang="ja"><body style="margin: 0"><div id="motolii-text" lang="ja" style="font-family: {}; font-size: {size}px; line-height: {line}; letter-spacing: {tracking}em; font-style: oblique {slant}deg; line-break: {lb}; color: {UNSET}; {width} {breaks} {feat_css}">{}</div></body></html>"#,
+        r#"<html lang="{lang}"><body style="margin: 0"><div id="motolii-text" lang="{lang}" style="font-family: {}; font-size: {size}px; line-height: {line}; letter-spacing: {tracking}em; font-style: oblique {slant}deg; line-break: {lb}; color: {UNSET}; {width} {breaks} {feat_css}">{}</div></body></html>"#,
         families.join(", "),
         spans(words, styles, &families.join(", "))
     );
@@ -879,24 +1014,51 @@ pub fn set(words: &str, styles: &str, fonts: &[Vec<u8>], size: f32, line: f32, t
     Some(out)
 }
 
-/// Reads variable-font axes (`fvar`) and OpenType feature tags (`GSUB`/`GPOS`) from font bytes.
+/// Reads variable-font axes (`fvar`) and OpenType feature tags + UI labels (`GSUB`/`GPOS`) from font bytes.
 pub fn font_meta(bytes: &[u8]) -> Option<String> {
     let face = FontRef::from_index(bytes, 0).ok()?;
     let mut tags = BTreeSet::<Tag>::new();
-    if let Ok(gsub) = face.gsub() && let Ok(list) = gsub.feature_list() {
+    let mut ui_names = BTreeMap::<Tag, String>::new();
+    let mut collect_list = |list: skrifa::raw::tables::layout::FeatureList<'_>| {
         for rec in list.feature_records() {
-            tags.insert(rec.feature_tag());
+            let tag = rec.feature_tag();
+            tags.insert(tag);
+            if ui_names.contains_key(&tag) {
+                continue;
+            }
+            if let Ok(feat) = rec.feature(list.offset_data())
+                && let Some(Ok(params)) = feat.feature_params()
+            {
+                let name_id = match params {
+                    FeatureParams::StylisticSet(ss) => Some(ss.ui_name_id()),
+                    FeatureParams::CharacterVariant(cv) => Some(cv.feat_ui_label_name_id()),
+                    FeatureParams::Size(_) => None,
+                };
+                if let Some(nid) = name_id
+                    && let Some(label) = face.localized_strings(nid).english_or_first()
+                {
+                    let clean: String = label.chars().map(|c| if c == '\t' || c == '\n' || c == '\r' { ' ' } else { c }).collect();
+                    let clean = clean.trim();
+                    if !clean.is_empty() {
+                        ui_names.insert(tag, clean.to_string());
+                    }
+                }
+            }
         }
+    };
+    if let Ok(gsub) = face.gsub() && let Ok(list) = gsub.feature_list() {
+        collect_list(list);
     }
     if let Ok(gpos) = face.gpos() && let Ok(list) = gpos.feature_list() {
-        for rec in list.feature_records() {
-            tags.insert(rec.feature_tag());
-        }
+        collect_list(list);
     }
     let mut out = String::from("features:");
     for t in &tags {
         out.push(' ');
         out.push_str(&t.to_string());
+    }
+    for (tag, label) in &ui_names {
+        out.push_str(&format!("\nfeature: {tag}\t{label}"));
     }
     for axis in face.axes().iter() {
         if axis.is_hidden() {
@@ -907,13 +1069,15 @@ pub fn font_meta(bytes: &[u8]) -> Option<String> {
             .english_or_first()
             .map(|s| s.to_string())
             .unwrap_or_else(|| axis.tag().to_string());
+        let name = name.replace(['\t', '\n', '\r'], " ");
+        // Order matches app/lib/inspector/text/text_meta.dart: tag, name, min, def, max.
         out.push_str(&format!(
             "\naxis: {}\t{}\t{}\t{}\t{}",
             axis.tag(),
+            name.trim(),
             axis.min_value(),
             axis.default_value(),
-            axis.max_value(),
-            name
+            axis.max_value()
         ));
     }
     Some(out)
@@ -961,6 +1125,21 @@ pub unsafe extern "C" fn motolii_font_meta_read(font_file: *const c_char, out: *
     let Ok(bytes) = std::fs::read(path) else { return 0 };
     let Some(meta) = std::panic::catch_unwind(|| font_meta(&bytes)).ok().flatten() else { return 0 };
     let b = meta.as_bytes();
+    if !out.is_null() && cap > 0 {
+        let take = b.len().min((cap - 1) as usize);
+        unsafe {
+            std::ptr::copy_nonoverlapping(b.as_ptr(), out as *mut u8, take);
+            *out.add(take) = 0;
+        }
+    }
+    b.len() as i32
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn motolii_text_classes_read(words: *const c_char, out: *mut c_char, cap: i32) -> i32 {
+    let words = unsafe { text(words) };
+    let Ok(report) = std::panic::catch_unwind(|| detect_text_classes(words)) else { return 0 };
+    let b = report.as_bytes();
     if !out.is_null() && cap > 0 {
         let take = b.len().min((cap - 1) as usize);
         unsafe {
@@ -1152,5 +1331,54 @@ mod tests {
         assert!(super::char_matches_class('A', "upper"));
         assert!(super::char_matches_class('Ω', "greek"));
         assert!(super::char_matches_class('ก', "thai"));
+        // Arbitrary Unicode scripts via ICU4X PropertyParser without hardcoding:
+        assert!(super::char_matches_class('न', "devanagari"));
+        assert!(super::char_matches_class('א', "hebrew"));
+        assert!(super::char_matches_class('🔥', "emoji"));
+        assert!(super::char_matches_class('«', "punct"));
+        assert!(super::char_matches_class('٣', "digit"));
+    }
+
+    #[test]
+    fn detect_locale_adapts_to_japanese_korean_chinese_and_latin() {
+        assert_eq!(super::detect_locale("あいうえお").0, "ja");
+        assert_eq!(super::detect_locale("안녕하세요").0, "ko");
+        assert_eq!(super::detect_locale("漢字世界").0, "zh");
+        assert_eq!(super::detect_locale("Hello world").0, "en");
+        assert_eq!(super::detect_locale("Привет").0, "ru");
+        assert_eq!(super::detect_locale("नमस्ते").0, "hi");
+    }
+
+    #[test]
+    fn parse_features_lets_later_user_tag_override_metrics_preset() {
+        let feats = super::parse_features("palt kern, -kern ss05=2");
+        assert_eq!(feats, vec![(*b"palt", 1), (*b"kern", 0), (*b"ss05", 2)]);
+    }
+
+    #[test]
+    fn vertical_kinsoku_uses_icu_segmenter_and_uax50_rotation() {
+        let jp = noto_jp();
+        // 3 chars tall (300px): "あいう。" with strict kinsoku must keep 'う' and '。' together.
+        let strict = set("あいう。", "", std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 300.0, false, 0.0, true,
+                         "strict", false, "")
+            .unwrap();
+        assert_eq!(strict.letters[2][4], strict.letters[3][4], "{:?}", strict.letters);
+        // Mixed vertical text with Latin rotates 'A' optically centered without crashing.
+        let mixed = set("あAい", "", std::slice::from_ref(&jp), 100.0, 1.2, 0.0, 0.0, 0.0, false, 0.0, true,
+                        "normal", false, "")
+            .unwrap();
+        assert_eq!(mixed.letters.len(), 3);
+        assert!(mixed.letters[1][3] > mixed.letters[1][2], "{:?}", mixed.letters);
+    }
+
+    #[test]
+    fn detect_text_classes_reports_multilingual_classes() {
+        let report = super::detect_text_classes("Motolii 안녕 नमस्ते 2026!");
+        assert!(report.contains("upper\t"), "{report}");
+        assert!(report.contains("lower\t"), "{report}");
+        assert!(report.contains("hangul\t"), "{report}");
+        assert!(report.contains("devanagari\t"), "{report}");
+        assert!(report.contains("digit\t"), "{report}");
+        assert!(report.contains("punct\t"), "{report}");
     }
 }

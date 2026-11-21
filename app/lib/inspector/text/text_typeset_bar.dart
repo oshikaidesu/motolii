@@ -14,17 +14,19 @@ import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 
 /// Collapsible `OpenType` section showing live before/after glyph comparisons
-/// for every supported feature in the active font, plus arbitrary tag entry.
+/// for every user-facing feature in the active font, plus arbitrary tag entry.
 class TextFeaturesFold extends StatefulWidget {
   const TextFeaturesFold({
     required this.doc,
     required this.supported,
+    required this.featureNames,
     required this.fontFamily,
     super.key,
   });
 
   final InspectorValues doc;
   final Set<String> supported;
+  final Map<String, String> featureNames;
   final String? fontFamily;
 
   @override
@@ -40,15 +42,12 @@ class _TextFeaturesFoldState extends State<TextFeaturesFold> {
     final raw = doc.strings['v_font_features'] ?? '';
     final activeTokens = parseFeatureTokens(raw);
     final activeByTag = {for (final t in activeTokens) featureTagOf(t): t};
-    final quick = [
-      for (final tag in otFeatureSpecs.keys)
-        if (widget.supported.contains(tag)) tag,
-    ];
+    final exposed = exposedOpenTypeTags(widget.supported);
     final custom = [
       for (final t in activeTokens)
-        if (!quick.contains(featureTagOf(t))) t,
+        if (!exposed.contains(featureTagOf(t))) t,
     ];
-    if (quick.isEmpty && custom.isEmpty && !_adding) {
+    if (exposed.isEmpty && custom.isEmpty && !_adding) {
       return const SizedBox.shrink();
     }
     final open = doc.flags['text.ot'] ?? false;
@@ -93,28 +92,43 @@ class _TextFeaturesFoldState extends State<TextFeaturesFold> {
             ),
           ),
           if (open) ...[
-            for (final tag in quick)
-              _FeatureCompareRow(
-                key: ValueKey('text:ot:$tag'),
-                tag: tag,
-                token: activeByTag[tag],
-                spec: otFeatureSpecs[tag]!,
-                fontFamily: widget.fontFamily,
-                onTap: () =>
-                    doc.str('v_font_features', toggleFeatureToken(raw, tag)),
-              ),
-            for (final tok in custom)
-              _FeatureCompareRow(
-                key: ValueKey('text:ot:${featureTagOf(tok)}'),
-                tag: featureTagOf(tok),
-                token: tok,
-                spec: (name: tok, sample: 'Aa1', contrastOff: null),
-                fontFamily: widget.fontFamily,
-                onTap: () => doc.str(
-                  'v_font_features',
-                  toggleFeatureToken(raw, featureTagOf(tok)),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: Shape.z(240)),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final tag in exposed)
+                      _FeatureCompareRow(
+                        key: ValueKey('text:ot:$tag'),
+                        tag: tag,
+                        token: activeByTag[tag],
+                        spec: resolveOtFeatureSpec(tag, widget.featureNames),
+                        fontFamily: widget.fontFamily,
+                        onTap: () => doc.str(
+                          'v_font_features',
+                          toggleFeatureToken(raw, tag),
+                        ),
+                      ),
+                    for (final tok in custom)
+                      _FeatureCompareRow(
+                        key: ValueKey('text:ot:${featureTagOf(tok)}'),
+                        tag: featureTagOf(tok),
+                        token: tok,
+                        spec: resolveOtFeatureSpec(
+                          featureTagOf(tok),
+                          widget.featureNames,
+                        ),
+                        fontFamily: widget.fontFamily,
+                        onTap: () => doc.str(
+                          'v_font_features',
+                          toggleFeatureToken(raw, featureTagOf(tok)),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+            ),
             SizedBox(height: Shape.s(3)),
             if (_adding)
               Container(

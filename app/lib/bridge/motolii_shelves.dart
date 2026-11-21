@@ -164,6 +164,13 @@ extension MotoliiShelves on Motolii {
     path,
   ], (s) => bindings.motolii_font_meta(s[0]).toDartString());
 
+  /// Unicode character classes present in [words], detected by the engine via ICU4X.
+  String textClasses(String words) => words.isEmpty
+      ? ''
+      : withStrings([
+          words,
+        ], (s) => bindings.motolii_text_classes(s[0]).toDartString());
+
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(
     [path],

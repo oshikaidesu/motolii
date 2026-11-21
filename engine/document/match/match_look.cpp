@@ -241,11 +241,22 @@ void look_text(LayerBuild& build) {
   fx.kinsoku = build.word("kinsoku");
   fx.hanging = build.number("hanging", 0) > 0.5;
   const std::string metrics = build.word("metrics");
+  // OpenType CJK metrics presets; user `font_features` appends after so any
+  // explicit tag (e.g. `-kern`) overrides the preset cleanly.
+  static constexpr struct {
+    const char* name;
+    const char* tags;
+  } kMetricsFeatures[] = {
+      {"proportional", "palt kern"},
+      {"half_width", "halt"},
+  };
   std::string feats;
-  if (metrics == "proportional")
-    feats = "palt kern";
-  else if (metrics == "half_width")
-    feats = "halt";
+  for (const auto& m : kMetricsFeatures) {
+    if (metrics == m.name) {
+      feats = m.tags;
+      break;
+    }
+  }
   const std::string userFeats = build.word("font_features");
   if (!userFeats.empty()) {
     if (!feats.empty()) feats += ", ";

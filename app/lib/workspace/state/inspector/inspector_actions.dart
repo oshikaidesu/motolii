@@ -39,6 +39,10 @@ String shapeSvgOf(WorkspaceController ws, int t) => ws.inside!.shapeSvg(t);
 String fontMetaOf(WorkspaceController ws, String path) =>
     path.isEmpty ? '' : (ws.inside?.fontMeta(path) ?? '');
 
+/// Unicode character classes present in [words] (see Motolii.textClasses).
+String textClassesOf(WorkspaceController ws, String words) =>
+    words.isEmpty ? '' : (ws.inside?.textClasses(words) ?? '');
+
 /// Moves the effect card [title] of layer [t] by [by] places in its stack, as one undo step.
 void moveEffect(WorkspaceController ws, int t, String title, int by) =>
     ws.after(

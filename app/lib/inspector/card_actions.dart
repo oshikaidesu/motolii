@@ -20,6 +20,7 @@ class CardActions {
     this.onCardPaste,
     this.shapeSvg,
     this.fontMeta,
+    this.textClasses,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -74,4 +75,7 @@ class CardActions {
 
   /// OpenType features (GSUB/GPOS) and variable-font axes (fvar) reported by the engine for a font file path.
   final String Function(String path)? fontMeta;
+
+  /// Unicode character classes present in a text string, detected by the engine via ICU4X (`id\tlabel\tname` lines).
+  final String Function(String words)? textClasses;
 }

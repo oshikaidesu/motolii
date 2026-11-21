@@ -12,7 +12,7 @@ import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/controls/well_pill.dart' show maybeTip;
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/text/text_ranges.dart'
-    show detectedCharClasses, styledClasses;
+    show TextCharClass, detectedCharClasses, styledClasses;
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
@@ -66,19 +66,31 @@ class _TextNotebookState extends State<TextNotebook> {
   double _dragStartX = 0;
   double _dragStartWrap = 12.0;
 
+  ({double min, double max, double def}) _wrapBounds() {
+    final p = widget.layer['wrap_at'];
+    final rawMin = p?.min;
+    final rawMax = p?.max;
+    final min = (rawMin != null && rawMin > 0) ? rawMin : 1.0;
+    final max = (rawMax != null && rawMax > min) ? rawMax : 40.0;
+    final def = (p?.def ?? 12.0).clamp(min, max);
+    return (min: min, max: max, def: def);
+  }
+
   double _marginX(double width, bool wrapOn, double wrapAt) {
     final maxX = width - 22.0;
     if (!wrapOn) return maxX;
+    final b = _wrapBounds();
     final minX = math.max(96.0, width * 0.44);
-    final t = ((wrapAt - 4.0) / 36.0).clamp(0.0, 1.0);
+    final t = ((wrapAt - b.min) / math.max(1.0, b.max - b.min)).clamp(0.0, 1.0);
     return minX + t * math.max(0.0, maxX - minX);
   }
 
   void _startMarginDrag(DragStartDetails d) {
     if (!widget.layer.containsKey('wrap_at')) return;
+    final b = _wrapBounds();
     _draggingMargin = true;
     _dragStartX = d.localPosition.dx;
-    _dragStartWrap = widget.doc.get('v_wrap_at') ?? 12.0;
+    _dragStartWrap = (widget.doc.get('v_wrap_at') ?? b.def).clamp(b.min, b.max);
     widget.doc.beginGesture();
     if ((widget.doc.get('v_wrap') ?? 0).round() == 0 &&
         widget.layer.containsKey('wrap')) {
@@ -89,11 +101,15 @@ class _TextNotebookState extends State<TextNotebook> {
 
   void _updateMarginDrag(DragUpdateDetails d, double width) {
     if (!_draggingMargin) return;
+    final b = _wrapBounds();
     final minX = math.max(96.0, width * 0.44);
     final maxX = width - 22.0;
     final span = math.max(1.0, maxX - minX);
     final dx = d.localPosition.dx - _dragStartX;
-    final next = (_dragStartWrap + (dx / span) * 36.0).clamp(4.0, 40.0);
+    final next = (_dragStartWrap + (dx / span) * (b.max - b.min)).clamp(
+      b.min,
+      b.max,
+    );
     widget.doc.setMany({'v_wrap_at': next});
   }
 
@@ -124,7 +140,8 @@ class _TextNotebookState extends State<TextNotebook> {
     final hanging = (doc.get('v_hanging') ?? 0) > 0.5;
     final wrap = (doc.get('v_wrap') ?? 0).round().clamp(0, 5);
     final wrapOn = wrap != 0;
-    final wrapAt = (doc.get('v_wrap_at') ?? 12.0).clamp(4.0, 40.0);
+    final wb = _wrapBounds();
+    final wrapAt = (doc.get('v_wrap_at') ?? wb.def).clamp(wb.min, wb.max);
 
     final hasRuler =
         layer.containsKey('writing') ||
@@ -290,7 +307,11 @@ class _TextNotebookState extends State<TextNotebook> {
             // the scripts actually present in the text (only shown when 2+
             // classes mix or a class rule is already configured).
             if (widget.pickedCount == null)
-              if (detectedCharClasses(widget.text, widget.styles)
+              if (detectedCharClasses(
+                    widget.text,
+                    widget.styles,
+                    detect: doc.actions.textClasses,
+                  )
                   case final classes when classes.isNotEmpty)
                 _ClassScopeFooter(
                   classes: classes,
@@ -315,7 +336,7 @@ class _ClassScopeFooter extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<({String id, String label, String tip})> classes;
+  final List<TextCharClass> classes;
   final String? activeClass;
   final Set<String> customized;
   final ValueChanged<String?> onSelect;
@@ -430,7 +451,7 @@ class _NotebookRuler extends StatelessWidget {
                   ? 'Vertical-rl writing — click for horizontal'
                   : 'Horizontal writing — click for vertical-rl',
               active: vertical,
-              label: vertical ? '縦' : '横',
+              label: vertical ? 'Vert' : 'Horiz',
               icon: (c, s, col) => _writingArrow(c, s, col, vertical),
               onTap: () => doc.set('v_writing', vertical ? 0 : 1),
             ),
@@ -464,12 +485,12 @@ class _NotebookRuler extends StatelessWidget {
               _RulerMark(
                 key: const ValueKey('text:metrics'),
                 tip: const [
-                  'Fixed width (genkouyoushi / 等幅)',
-                  'Proportional metrics (palt + kern / 文字詰め)',
-                  'Half-width punctuation (halt / 約物半角)',
+                  'Fixed width (full-width monospace grid)',
+                  'Proportional metrics (palt + kern)',
+                  'Half-width punctuation (halt)',
                 ][metrics],
                 active: metrics != 0,
-                label: const ['等幅', 'palt', 'halt'][metrics],
+                label: const ['Fixed', 'palt', 'halt'][metrics],
                 icon: (c, s, col) => _paperIcon(c, s, col, metrics),
                 onTap: () =>
                     doc.set('v_metrics', ((metrics + 1) % 3).toDouble()),
@@ -503,13 +524,13 @@ class _NotebookRuler extends StatelessWidget {
               _RulerMark(
                 key: const ValueKey('text:kinsoku'),
                 tip: const [
-                  'Kinsoku: Normal (標準禁則)',
-                  'Kinsoku: Strict (強い禁則)',
-                  'Kinsoku: Loose (緩い禁則)',
-                  'Kinsoku: None (禁則なし)',
+                  'Line break (kinsoku): Normal',
+                  'Line break (kinsoku): Strict',
+                  'Line break (kinsoku): Loose',
+                  'Line break (kinsoku): None',
                 ][kinsoku],
                 active: kinsoku == 1 || kinsoku == 2,
-                label: const ['禁', 'Strict', 'Loose', 'Off'][kinsoku],
+                label: const ['Auto', 'Strict', 'Loose', 'Off'][kinsoku],
                 onTap: () =>
                     doc.set('v_kinsoku', ((kinsoku + 1) % 4).toDouble()),
               ),

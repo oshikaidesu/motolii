@@ -68,6 +68,7 @@ void main() {
     String styles = '',
     String file = '',
     String fontMeta = '',
+    String Function(String)? textClasses,
   }) async {
     numbers = [];
     words = [];
@@ -110,6 +111,7 @@ void main() {
             ),
             actions: CardActions(
               fontMeta: fontMeta.isEmpty ? null : (_) => fontMeta,
+              textClasses: textClasses,
             ),
             edits: InspectorEdits(
               onValues: (changed, {required live}) =>
@@ -363,6 +365,57 @@ void main() {
       // Single-script text hides the footer completely.
       await mount(tester, text: 'あいうえお');
       expect(find.byKey(const ValueKey('text:class:all')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'OpenType fold exposes arbitrary font features (ss09, cv12, frac) with font-supplied UI labels',
+    (tester) async {
+      await mount(
+        tester,
+        file: '/fonts/Custom-VF.ttf',
+        fontMeta:
+            'features: kern palt frac ss09 cv12\n'
+            'feature: ss09\tOpen four\n'
+            'feature: cv12\tSingle-story a\n'
+            'axis: wght\tWeight\t100\t400\t900',
+      );
+      await tester.tap(find.byKey(const ValueKey('text:ot:toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('text:ot:frac')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:ot:ss09')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:ot:cv12')), findsOneWidget);
+      expect(find.text('Open four'), findsOneWidget);
+      expect(find.text('Single-story a'), findsOneWidget);
+      // Internal / notebook-managed tags are not duplicated in the fold.
+      expect(find.byKey(const ValueKey('text:ot:palt')), findsNothing);
+      expect(find.byKey(const ValueKey('text:ot:kern')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('text:ot:ss09')));
+      await tester.pump();
+      expect(words.last['v_font_features'], 'ss09');
+    },
+  );
+
+  testWidgets(
+    'composite footer uses engine-detected ICU4X classes for arbitrary Unicode scripts',
+    (tester) async {
+      await mount(
+        tester,
+        text: 'Hello नमस्ते',
+        textClasses: (_) =>
+            'upper\tABC\tUppercase Latin\n'
+            'lower\tabc\tLowercase Latin\n'
+            'devanagari\tन\tDevanagari',
+      );
+      expect(
+        find.byKey(const ValueKey('text:class:devanagari')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('text:class:devanagari')));
+      await tester.pump();
+      expect(find.text('न font'), findsOneWidget);
     },
   );
 }

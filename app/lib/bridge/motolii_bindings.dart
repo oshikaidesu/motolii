@@ -718,6 +718,23 @@ class MotoliiBindings {
         ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
       >();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_text_classes(
+    ffi.Pointer<pkg_ffi.Utf8> words,
+  ) {
+    return _motolii_text_classes(words);
+  }
+
+  late final _motolii_text_classesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+        >
+      >('motolii_text_classes');
+  late final _motolii_text_classes = _motolii_text_classesPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_font_tags(ffi.Pointer<pkg_ffi.Utf8> path) {
     return _motolii_font_tags(path);
   }

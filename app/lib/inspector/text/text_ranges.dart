@@ -5,26 +5,62 @@
 //   expanded by the engine (engine/community/css/text.rs) for both horizontal and vertical text.
 // Class rules apply first; explicit positional ranges override them when they overlap.
 
-/// Supported composite-font character classes (matching engine/community/css/text.rs).
-const textCharClasses = <({String id, String label, String tip})>[
-  (id: 'kanji', label: '漢字', tip: 'Kanji (漢字)'),
-  (id: 'hiragana', label: 'かな', tip: 'Hiragana (ひらがな)'),
-  (id: 'katakana', label: 'カナ', tip: 'Katakana (カタカナ)'),
-  (id: 'hangul', label: '한글', tip: 'Hangul (한국어)'),
+/// Descriptor for a composite character class shown in the Text notebook footer.
+typedef TextCharClass = ({String id, String label, String tip});
+
+/// Built-in fallback character classes used only when the engine's ICU4X
+/// classifier (`CardActions.textClasses`) is unavailable (e.g. engine-free widget tests).
+const textCharClasses = <TextCharClass>[
+  (id: 'kanji', label: '漢字', tip: 'Kanji (Han)'),
+  (id: 'hiragana', label: 'かな', tip: 'Hiragana'),
+  (id: 'katakana', label: 'カナ', tip: 'Katakana'),
+  (id: 'hangul', label: '한글', tip: 'Hangul'),
   (id: 'upper', label: 'ABC', tip: 'Uppercase Latin'),
   (id: 'lower', label: 'abc', tip: 'Lowercase Latin'),
   (id: 'cyrillic', label: 'АБВ', tip: 'Cyrillic'),
   (id: 'greek', label: 'ΑΒΓ', tip: 'Greek'),
   (id: 'arabic', label: 'عربي', tip: 'Arabic'),
   (id: 'thai', label: 'ไทย', tip: 'Thai'),
+  (id: 'devanagari', label: 'देव', tip: 'Devanagari'),
+  (id: 'hebrew', label: 'אבג', tip: 'Hebrew'),
   (id: 'digit', label: '123', tip: 'Digits'),
   (id: 'punct', label: '、。', tip: 'Punctuation'),
 ];
 
-/// Whether Unicode scalar value [u] belongs to character class [cls].
+/// Parses the tab-separated `id\tlabel\tname` lines emitted by `motolii_text_classes`.
+List<TextCharClass> parseEngineTextClasses(String raw) {
+  if (raw.isEmpty) return const [];
+  final out = <TextCharClass>[];
+  final seen = <String>{};
+  for (final line in raw.split('\n')) {
+    final parts = line.split('\t');
+    if (parts.length >= 3 && parts[0].isNotEmpty && seen.add(parts[0])) {
+      out.add((
+        id: parts[0],
+        label: parts[1].isEmpty ? parts[0] : parts[1],
+        tip: parts[2].isEmpty ? parts[0] : parts[2],
+      ));
+    }
+  }
+  return out;
+}
+
+/// Human label for composite class [id], consulting detected engine classes first.
+String labelForClass(String id, [List<TextCharClass> detected = const []]) {
+  for (final c in detected) {
+    if (c.id == id) return c.label;
+  }
+  for (final c in textCharClasses) {
+    if (c.id == id) return c.label;
+  }
+  return id;
+}
+
+/// Lightweight client-side matcher for preview highlighting and engine-free tests;
+/// the engine itself classifies every Unicode script & category via ICU4X (`text.rs`).
 bool charMatchesClass(int u, String cls) {
   switch (cls) {
-    case 'kanji':
+    case 'kanji' || 'han':
       return (u >= 0x4E00 && u <= 0x9FFF) ||
           (u >= 0x3400 && u <= 0x4DBF) ||
           (u >= 0xF900 && u <= 0xFAFF) ||
@@ -60,6 +96,10 @@ bool charMatchesClass(int u, String cls) {
       return (u >= 0x0600 && u <= 0x06FF) || (u >= 0x0750 && u <= 0x077F);
     case 'thai':
       return u >= 0x0E00 && u <= 0x0E7F;
+    case 'devanagari':
+      return u >= 0x0900 && u <= 0x097F;
+    case 'hebrew':
+      return u >= 0x0590 && u <= 0x05FF;
     case 'digit':
       return (u >= 0x30 && u <= 0x39) || (u >= 0xFF10 && u <= 0xFF19);
     case 'punct':
@@ -71,13 +111,27 @@ bool charMatchesClass(int u, String cls) {
 }
 
 /// Character classes actually present in [text] (plus any already styled in
-/// [styles]), in canonical display order. Returns empty when the text consists
-/// of at most one class and no class rules exist, keeping single-script notes quiet.
-List<({String id, String label, String tip})> detectedCharClasses(
+/// [styles]). Prefers the engine's ICU4X classifier when [detect] is provided
+/// so arbitrary Unicode scripts work without hardcoding in Dart.
+List<TextCharClass> detectedCharClasses(
   String text,
-  String styles,
-) {
+  String styles, {
+  String Function(String)? detect,
+}) {
   final custom = styledClasses(styles);
+  final engineRaw = detect?.call(text) ?? '';
+  if (engineRaw.isNotEmpty) {
+    final fromEngine = parseEngineTextClasses(engineRaw);
+    final out = [...fromEngine];
+    final seen = {for (final c in out) c.id};
+    for (final id in custom) {
+      if (seen.add(id)) {
+        out.add((id: id, label: labelForClass(id), tip: id));
+      }
+    }
+    if (out.length <= 1 && custom.isEmpty) return const [];
+    return out;
+  }
   final present = <String>{...custom};
   for (final u in text.runes) {
     for (final c in textCharClasses) {
@@ -88,10 +142,17 @@ List<({String id, String label, String tip})> detectedCharClasses(
     }
   }
   if (present.length <= 1 && custom.isEmpty) return const [];
-  return [
+  final out = <TextCharClass>[
     for (final c in textCharClasses)
       if (present.contains(c.id)) c,
   ];
+  final seen = {for (final c in out) c.id};
+  for (final id in custom) {
+    if (seen.add(id)) {
+      out.add((id: id, label: id, tip: id));
+    }
+  }
+  return out;
 }
 
 /// The letters selected in [text], as the start and count text_styles takes, or null when nothing is selected or

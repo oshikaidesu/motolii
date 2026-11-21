@@ -76,7 +76,7 @@ class _TextBodyState extends State<TextBody> {
       return _metaBy[file] = parseFontMeta(raw);
     }
     if (_axesBy[file] case final a?) {
-      return (features: const {}, axes: a);
+      return (features: const {}, featureNames: const {}, axes: a);
     }
     _axesBy[file] = const [];
     fontFileAxes(file).then((a) {
@@ -228,10 +228,15 @@ class _TextBodyState extends State<TextBody> {
             ),
         ];
 
+        final detected = detectedCharClasses(
+          text,
+          styles,
+          detect: doc.actions.textClasses,
+        );
         final fontLabel = picked != null
             ? 'Range font'
             : (activeClass != null
-                  ? '${textCharClasses.firstWhere((c) => c.id == activeClass, orElse: () => (id: activeClass, label: activeClass, tip: activeClass)).label} font'
+                  ? '${labelForClass(activeClass, detected)} font'
                   : 'Font');
 
         return Column(
@@ -300,6 +305,7 @@ class _TextBodyState extends State<TextBody> {
               TextFeaturesFold(
                 doc: doc,
                 supported: meta.features,
+                featureNames: meta.featureNames,
                 fontFamily: loadedFamily,
               ),
           ],
