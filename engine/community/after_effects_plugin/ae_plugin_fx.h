@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "community/after_effects_plugin/ae_plugin.h"
+#include "community/after_effects_plugin/ae_worker_proc.h"
 #include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
@@ -22,10 +23,8 @@ struct AePluginRun {
   std::string file, instance_id, trouble;
   AePluginInfo info;
 
-  // Persistent worker process pipes and PID (POSIX).
-  int to_worker = -1;
-  int from_worker = -1;
-  int pid = -1;
+  // Persistent isolated worker process (POSIX + Windows).
+  AeWorkerProc proc;
 
   // Reusable staging buffers on the Filament side to avoid per-frame allocs.
   Stage* stage = nullptr;

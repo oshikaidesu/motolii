@@ -13,16 +13,9 @@
 #include <sstream>
 #include <system_error>
 
-#ifndef _WIN32
-#include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
-
 #include "base/cache_folder.h"
 #include "base/hash.h"
+#include "community/after_effects_plugin/ae_worker_proc.h"
 #include "shelf/shelf_folders.h"
 
 namespace motolii {
@@ -206,77 +199,13 @@ AePluginInfo parse_probe(const std::string& text) {
 
 // Runs the worker with `--probe` and returns stdout, or empty on failure/timeout.
 std::string run_probe_worker(const std::string& plugin_path, int timeout_ms) {
-#ifdef _WIN32
-  (void)plugin_path;
-  (void)timeout_ms;
-  return "";
-#else
-  const std::string worker = ae_plugin_worker();
-  std::error_code ec;
-  if (!std::filesystem::exists(worker, ec)) return "";
-  int pipefd[2];
-  if (pipe(pipefd) != 0) return "";
-  pid_t pid = fork();
-  if (pid < 0) {
-    close(pipefd[0]), close(pipefd[1]);
-    return "";
-  }
-  if (pid == 0) {
-    dup2(pipefd[1], STDOUT_FILENO);
-    int devnull = open("/dev/null", O_RDWR);
-    if (devnull >= 0) {
-      dup2(devnull, STDIN_FILENO);
-      dup2(devnull, STDERR_FILENO);
-      close(devnull);
-    }
-    close(pipefd[0]), close(pipefd[1]);
-    execl(worker.c_str(), worker.c_str(), "--probe", plugin_path.c_str(),
-          (char*)nullptr);
-    _exit(127);
-  }
-  close(pipefd[1]);
-  fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+  AeWorkerProc proc;
+  if (!proc.start(ae_plugin_worker(), "--probe", plugin_path)) return "";
   std::string out;
-  char buf[4096];
-  const auto deadline = std::chrono::steady_clock::now() +
-                        std::chrono::milliseconds(timeout_ms);
-  bool timed_out = false;
-  while (true) {
-    const auto now = std::chrono::steady_clock::now();
-    if (now >= deadline) {
-      timed_out = true;
-      break;
-    }
-    const int rem = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
-                        deadline - now)
-                        .count();
-    struct pollfd pfd{pipefd[0], POLLIN, 0};
-    const int r = poll(&pfd, 1, std::max(1, rem));
-    if (r > 0) {
-      ssize_t n = read(pipefd[0], buf, sizeof buf);
-      if (n > 0) {
-        out.append(buf, (size_t)n);
-      } else if (n == 0) {
-        break;
-      }
-    } else if (r == 0) {
-      timed_out = true;
-      break;
-    } else {
-      break;
-    }
-  }
-  close(pipefd[0]);
-  if (timed_out) {
-    kill(pid, SIGKILL);
-    waitpid(pid, nullptr, 0);
+  int exit_code = -1;
+  if (!proc.read_until_eof(out, timeout_ms, exit_code) || exit_code != 0)
     return "";
-  }
-  int status = 0;
-  waitpid(pid, &status, 0);
-  if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) return "";
   return out;
-#endif
 }
 
 long long plugin_stamp(const std::string& path) {

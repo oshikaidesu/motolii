@@ -19,16 +19,35 @@ fn detach_protocol_stdout() -> File {
 fn detach_protocol_stdout() -> File {
     use std::os::windows::io::{FromRawHandle, RawHandle};
     unsafe extern "system" {
+        fn GetCurrentProcess() -> RawHandle;
         fn GetStdHandle(n: u32) -> RawHandle;
         fn SetStdHandle(n: u32, h: RawHandle) -> i32;
+        fn DuplicateHandle(
+            src_proc: RawHandle,
+            src: RawHandle,
+            dst_proc: RawHandle,
+            dst: *mut RawHandle,
+            access: u32,
+            inherit: i32,
+            options: u32,
+        ) -> i32;
+    }
+    unsafe extern "C" {
+        fn _dup2(fd1: i32, fd2: i32) -> i32;
     }
     const STD_OUTPUT_HANDLE: u32 = (-11i32) as u32;
     const STD_ERROR_HANDLE: u32 = (-12i32) as u32;
+    const DUPLICATE_SAME_ACCESS: u32 = 2;
     unsafe {
-        let out = GetStdHandle(STD_OUTPUT_HANDLE);
+        let cur = GetCurrentProcess();
+        let orig_out = GetStdHandle(STD_OUTPUT_HANDLE);
+        let mut proto: RawHandle = std::ptr::null_mut();
+        DuplicateHandle(cur, orig_out, cur, &mut proto, 0, 0, DUPLICATE_SAME_ACCESS);
         let err = GetStdHandle(STD_ERROR_HANDLE);
         SetStdHandle(STD_OUTPUT_HANDLE, err);
-        File::from_raw_handle(out)
+        // Also redirect CRT fd 1 so C/C++ plugin printf() cannot corrupt IPC.
+        _dup2(2, 1);
+        File::from_raw_handle(if proto.is_null() { orig_out } else { proto })
     }
 }
 

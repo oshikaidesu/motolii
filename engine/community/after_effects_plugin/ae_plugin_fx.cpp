@@ -7,22 +7,10 @@
 #include <filament/Texture.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <filesystem>
 #include <sstream>
-#include <system_error>
-
-#ifndef _WIN32
-#include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
 
 namespace motolii {
 
@@ -34,137 +22,21 @@ namespace {
 
 constexpr int kRenderTimeoutMs = 5000;
 
-void stop_worker(AePluginRun& r) {
-#ifndef _WIN32
-  if (r.to_worker >= 0) close(r.to_worker), r.to_worker = -1;
-  if (r.from_worker >= 0) close(r.from_worker), r.from_worker = -1;
-  if (r.pid > 0) {
-    kill(r.pid, SIGKILL);
-    waitpid(r.pid, nullptr, 0);
-    r.pid = -1;
-  }
-#else
-  (void)r;
-#endif
-}
-
-bool write_all_timed(int fd, const uint8_t* data, size_t len, int timeout_ms) {
-#ifdef _WIN32
-  (void)fd, (void)data, (void)len, (void)timeout_ms;
-  return false;
-#else
-  const auto deadline = std::chrono::steady_clock::now() +
-                        std::chrono::milliseconds(timeout_ms);
-  size_t off = 0;
-  while (off < len) {
-    const auto now = std::chrono::steady_clock::now();
-    if (now >= deadline) return false;
-    const int rem = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
-                        deadline - now)
-                        .count();
-    struct pollfd pfd{fd, POLLOUT, 0};
-    const int pr = poll(&pfd, 1, std::max(1, rem));
-    if (pr <= 0) return false;
-    const ssize_t n = write(fd, data + off, len - off);
-    if (n > 0)
-      off += (size_t)n;
-    else if (n < 0 && (errno == EINTR || errno == EAGAIN))
-      continue;
-    else
-      return false;
-  }
-  return true;
-#endif
-}
-
-bool read_all_timed(int fd, uint8_t* data, size_t len, int timeout_ms) {
-#ifdef _WIN32
-  (void)fd, (void)data, (void)len, (void)timeout_ms;
-  return false;
-#else
-  const auto deadline = std::chrono::steady_clock::now() +
-                        std::chrono::milliseconds(timeout_ms);
-  size_t off = 0;
-  while (off < len) {
-    const auto now = std::chrono::steady_clock::now();
-    if (now >= deadline) return false;
-    const int rem = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
-                        deadline - now)
-                        .count();
-    struct pollfd pfd{fd, POLLIN, 0};
-    const int pr = poll(&pfd, 1, std::max(1, rem));
-    if (pr <= 0) return false;
-    const ssize_t n = read(fd, data + off, len - off);
-    if (n > 0)
-      off += (size_t)n;
-    else if (n < 0 && (errno == EINTR || errno == EAGAIN))
-      continue;
-    else
-      return false;
-  }
-  return true;
-#endif
-}
-
 bool ensure_worker(AePluginRun& r) {
-#ifdef _WIN32
-  (void)r;
-  return false;
-#else
-  if (r.pid > 0 && r.to_worker >= 0 && r.from_worker >= 0) return true;
-  stop_worker(r);
-  const std::string worker = ae_plugin_worker();
-  std::error_code ec;
-  if (!std::filesystem::exists(worker, ec)) {
-    r.trouble = "motolii_ae_worker not found";
+  if (r.proc.alive()) return true;
+  if (!r.proc.start(ae_plugin_worker(), "--serve", r.file)) {
+    r.trouble = "motolii_ae_worker failed to start";
     return false;
   }
-  int in_pipe[2], out_pipe[2];
-  if (pipe(in_pipe) != 0) return false;
-  if (pipe(out_pipe) != 0) {
-    close(in_pipe[0]), close(in_pipe[1]);
-    return false;
-  }
-  pid_t pid = fork();
-  if (pid < 0) {
-    close(in_pipe[0]), close(in_pipe[1]), close(out_pipe[0]),
-        close(out_pipe[1]);
-    return false;
-  }
-  if (pid == 0) {
-    dup2(in_pipe[0], STDIN_FILENO);
-    dup2(out_pipe[1], STDOUT_FILENO);
-    int devnull = open("/dev/null", O_WRONLY);
-    if (devnull >= 0) {
-      dup2(devnull, STDERR_FILENO);
-      close(devnull);
-    }
-    close(in_pipe[0]), close(in_pipe[1]), close(out_pipe[0]),
-        close(out_pipe[1]);
-    execl(worker.c_str(), worker.c_str(), "--serve", r.file.c_str(),
-          (char*)nullptr);
-    _exit(127);
-  }
-  close(in_pipe[0]), close(out_pipe[1]);
-  fcntl(in_pipe[1], F_SETFL, O_NONBLOCK);
-#ifdef F_SETNOSIGPIPE
-  fcntl(in_pipe[1], F_SETNOSIGPIPE, 1);
-#endif
-  fcntl(out_pipe[0], F_SETFL, O_NONBLOCK);
-  r.pid = (int)pid;
-  r.to_worker = in_pipe[1];
-  r.from_worker = out_pipe[0];
-
   // Wait for the worker's 4-byte readiness banner ("AEW1").
   uint8_t magic[4] = {};
-  if (!read_all_timed(r.from_worker, magic, 4, kRenderTimeoutMs) ||
+  if (!r.proc.read_all(magic, 4, kRenderTimeoutMs) ||
       std::memcmp(magic, "AEW1", 4) != 0) {
     r.trouble = "worker failed to load plugin";
-    stop_worker(r);
+    r.proc.stop();
     return false;
   }
   return true;
-#endif
 }
 
 template <typename T>
@@ -235,7 +107,7 @@ bool read_texture_straight(Stage& s, AePluginRun& r, Texture* src, uint32_t w,
 }  // namespace
 
 AePluginRun::~AePluginRun() {
-  stop_worker(*this);
+  proc.stop();
   if (stage && stage->engine) {
     if (read_rt) stage->engine->destroy(read_rt);
     if (read_tex) stage->engine->destroy(read_tex);
@@ -388,7 +260,7 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
   const auto fail = [&](const std::string& why) {
     r.trouble = why;
     r.stuck = cur_sig;
-    stop_worker(r);
+    r.proc.stop();
     if (!r.reported) {
       std::fprintf(stderr, "AE plugin %s: %s\n", r.file.c_str(), why.c_str());
       r.reported = true;
@@ -396,11 +268,11 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     screen_place(s, from, to, w, h, nullptr);
   };
 
-  if (!write_all_timed(r.to_worker, req.data(), req.size(), kRenderTimeoutMs))
+  if (!r.proc.write_all(req.data(), req.size(), kRenderTimeoutMs))
     return fail("write to worker timed out");
 
   uint8_t status_b[4] = {};
-  if (!read_all_timed(r.from_worker, status_b, 4, kRenderTimeoutMs))
+  if (!r.proc.read_all(status_b, 4, kRenderTimeoutMs))
     return fail("render timed out or worker crashed");
 
   uint32_t status = 0;
@@ -409,11 +281,11 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     uint8_t len_b[4] = {};
     uint32_t err_len = 0;
     std::string msg = "render failed";
-    if (read_all_timed(r.from_worker, len_b, 4, 500)) {
+    if (r.proc.read_all(len_b, 4, 500)) {
       std::memcpy(&err_len, len_b, 4);
       if (err_len > 0 && err_len < 4096) {
         msg.resize(err_len);
-        if (!read_all_timed(r.from_worker, (uint8_t*)msg.data(), err_len, 500))
+        if (!r.proc.read_all((uint8_t*)msg.data(), err_len, 500))
           msg = "render failed";
       }
     }
@@ -421,7 +293,7 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
   }
 
   uint8_t dim_b[8] = {};
-  if (!read_all_timed(r.from_worker, dim_b, 8, kRenderTimeoutMs))
+  if (!r.proc.read_all(dim_b, 8, kRenderTimeoutMs))
     return fail("reading output dimensions failed");
   uint32_t ow = 0, oh = 0;
   std::memcpy(&ow, dim_b, 4);
@@ -430,8 +302,8 @@ void ae_plugin_draw_step(Stage& s, AePluginRun& r, Texture* from,
     return fail("invalid output dimensions");
 
   auto* out_pixels = new std::vector<uint8_t>((size_t)ow * oh * 4, 0);
-  if (!read_all_timed(r.from_worker, out_pixels->data(), out_pixels->size(),
-                      kRenderTimeoutMs)) {
+  if (!r.proc.read_all(out_pixels->data(), out_pixels->size(),
+                       kRenderTimeoutMs)) {
     delete out_pixels;
     return fail("reading output pixels failed");
   }

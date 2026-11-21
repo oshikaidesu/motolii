@@ -345,7 +345,8 @@ endif()
 # motolii_ae_worker process via aexlo (potistudio, MIT; deps/aexlo.sh).
 add_library(motolii_community_after_effects_plugin STATIC
   community/after_effects_plugin/ae_plugin.cpp
-  community/after_effects_plugin/ae_plugin_fx.cpp)
+  community/after_effects_plugin/ae_plugin_fx.cpp
+  community/after_effects_plugin/ae_worker_proc.cpp)
 target_link_libraries(motolii_community_after_effects_plugin PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_shelf motolii_stage_render motolii_stage_effects)
 
 # Adapter: hydra code run as it is.
