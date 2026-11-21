@@ -6,7 +6,6 @@ import 'package:motolii/inspector/camera/camera_view.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/fill/fill_body.dart';
 import 'package:motolii/inspector/paths/paths_body.dart';
-import 'package:motolii/inspector/play/play_graph.dart';
 import 'package:motolii/inspector/source/film_strip.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
@@ -50,12 +49,6 @@ final hostCards =
         },
         absorbs: const {},
         body: (card) => BlendPreview(card),
-        fold: null,
-      ),
-      'Play': (
-        drawn: const {},
-        absorbs: const {},
-        body: (card) => PlayGraph(card),
         fold: null,
       ),
       'Paths': (

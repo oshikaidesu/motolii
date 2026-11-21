@@ -14,7 +14,9 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable, Segmented;
 import 'package:motolii/widgets/disclosure_triangle.dart';
@@ -257,11 +259,14 @@ class _BlendPreviewState extends State<BlendPreview> {
             ),
           ),
           if (featherP != null)
-            InspectorNumberField(
-              featherP,
-              key: const ValueKey('feather:clip_feather'),
-              id: 'v_clip_feather',
-              caption: 'Feather',
+            RowInfo(
+              keys: doc.keys['v_clip_feather'] ?? KeyframeState.off,
+              child: InspectorNumberField(
+                featherP,
+                key: const ValueKey('feather:clip_feather'),
+                id: 'v_clip_feather',
+                caption: 'Feather',
+              ),
             ),
         ],
       ),

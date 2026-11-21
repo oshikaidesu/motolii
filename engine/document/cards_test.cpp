@@ -168,5 +168,18 @@ TEST(Cards, AGradientShowsWhenItsValuesAreSet) {
   EXPECT_TRUE(Has(shape.Cards(), "Gradient"));
 }
 
+TEST(Cards, VideoMergesPlayIntoMediaCard) {
+  Layer video("video");
+  const std::string cards = video.Cards();
+  EXPECT_TRUE(Has(cards, "Media")) << cards;
+  EXPECT_FALSE(Has(cards, "Play")) << cards;
+  const size_t at = cards.find("Media:");
+  ASSERT_NE(at, std::string::npos) << cards;
+  const std::string line = cards.substr(at, cards.find(';', at) - at);
+  for (const char* name : {" begin", " speed", " speed_hold", " frame_rate",
+                           " volume"})
+    EXPECT_NE(line.find(name), std::string::npos) << line;
+}
+
 }  // namespace
 }  // namespace motolii

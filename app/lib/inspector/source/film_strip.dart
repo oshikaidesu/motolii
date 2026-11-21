@@ -20,7 +20,8 @@ class FilmStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
     final begin = {for (final p in card.params) p.id: p}['begin'];
-    final lo = begin?.min ?? 0, hi = begin?.max ?? 60;
+    if (begin == null) return const SizedBox.shrink();
+    final lo = begin.min ?? 0, hi = begin.max ?? 60;
     final span = hi - lo <= 0 ? 60.0 : hi - lo;
     return ListenableBuilder(
       listenable: doc.watch('v_begin'),

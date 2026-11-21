@@ -308,7 +308,7 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
     // shown together by Stage settings.
     const std::string kindNow = doc_word(d, layer, "kind");
     bool said = !card.added || layer == 0 ||
-                (!strcmp(card.title, "Play") && kindNow == "video");
+                (!strcmp(card.title, "Media") && kindNow == "video");
     for (const char* at = card.names; *at;) {
       const size_t len = strcspn(at, " ");
       const std::string n(at, len);

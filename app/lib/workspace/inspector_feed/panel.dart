@@ -249,7 +249,7 @@ class _InspectorPanelState extends State<InspectorPane> {
             ? const []
             : [
                 for (final c in moreCardTitles(ws, l.id))
-                  if (l.kind != LayerKind.audio || c == 'Play') c,
+                  if (l.kind != LayerKind.audio || c == 'Media') c,
               ], // (a sound's speed, Alight Motion's; nothing else)
         cardsOff: l == null ? const [] : effectsOff(ws, l.id),
       ),

@@ -84,10 +84,12 @@ inline const DocCard doc_cards[] = {
     // around it and keeps no
     // halo, because ThorVG's glow does that.
     {"Shine", "emissive", "kind", "!solid", true, true},
-    // Playback of the layer. The frame rate of the canvas itself is set in the
-    // size box.
-    {"Play", "marker animation speed speed_hold frame_rate", "kind", "!stage",
-     true},
+    // Playback and media of the layer: clip in-point, markers/animations,
+    // playback speed, frame rate, volume and beats (shown by default for video;
+    // offered via More for other layers).
+    {"Media",
+     "begin marker animation speed speed_hold frame_rate volume beats",
+     "kind", "!stage", true},
     // A program's own time, for a program that paints a flat image and for one
     // that has a body, see
     // doc_own_time.
@@ -102,9 +104,6 @@ inline const DocCard doc_cards[] = {
      "trim trim_offset morph morph_to morph_steps "
      "resample rough rough_detail fill_rule trail trail_length",
      "kind", "text shape image"},
-    // Where in its file a video starts, how loud it is
-    // heard and exported, and the beats the timeline's ruler marks.
-    {"Media", "begin volume beats", "kind", "video"},
     // Alight Motion's Parenting Helper: how much of its parent's rotation and
     // size the layer takes,
     // and rolling like a wheel. Shown while the layer has a parent.
