@@ -159,6 +159,11 @@ extension MotoliiShelves on Motolii {
     return null;
   });
 
+  /// A font file's OpenType features (GSUB/GPOS) and visible variable-font axes (fvar), read via skrifa.
+  String fontMeta(String path) => fontMetaCache[path] ??= withStrings([
+    path,
+  ], (s) => bindings.motolii_font_meta(s[0]).toDartString());
+
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(
     [path],

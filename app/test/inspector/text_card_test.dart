@@ -34,6 +34,24 @@ struct Params {
   letter_spacing: f32,
   /// @label(Line Height) @ui(bar) @range(0.5, 3) @unit(×) @default(1.2)
   line_spacing: f32,
+  /// @label(Align) @ui(percent) @range(0, 1) @unit(%) @default(0.5)
+  align: f32,
+  /// @label(Slant) @ui(bar) @range(0, 20) @unit(°) @default(0)
+  italic: f32,
+  /// @label(Direction) @enum(horizontal, vertical) @default(0)
+  writing: u32,
+  /// @label(Metrics) @enum(fixed, proportional, half_width) @default(0)
+  metrics: u32,
+  /// @label(Kinsoku) @enum(normal, strict, loose, none) @default(0)
+  kinsoku: u32,
+  /// @label(Hanging) @toggle @range(0, 1) @default(0)
+  hanging: u32,
+  /// @label(Features) @unit(words)
+  font_features: vec3<f32>,
+  /// @label(Wrap) @enum(none, character, word, smart, ellipsis, vertical) @default(0)
+  wrap: u32,
+  /// @label(Wrap at) @ui(bar) @range(0, 40) @unit(×) @default(12)
+  wrap_at: f32,
 }
 ''';
 
@@ -44,7 +62,12 @@ void main() {
   late List<bool> textLive;
   late int drops;
 
-  Future<void> mount(WidgetTester tester, {String styles = ''}) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    String styles = '',
+    String file = '',
+    String fontMeta = '',
+  }) async {
     numbers = [];
     words = [];
     stylesLive = [];
@@ -78,9 +101,15 @@ void main() {
               ],
             ),
             snapshot: InspectorSnapshot(
-              words: {'v_text': 'Hello', 'v_text_styles': styles},
+              words: {
+                'v_text': 'Hello',
+                'v_text_styles': styles,
+                if (file.isNotEmpty) 'v_file': file,
+              },
             ),
-            actions: const CardActions(),
+            actions: CardActions(
+              fontMeta: fontMeta.isEmpty ? null : (_) => fontMeta,
+            ),
             edits: InspectorEdits(
               onValues: (changed, {required live}) =>
                   numbers.add(Map.of(changed)),
@@ -193,9 +222,70 @@ void main() {
     (tester) async {
       await mount(tester, styles: "1 2 font-family: '/fonts/Range.ttf'");
       expect(find.textContaining('/fonts/Range.ttf'), findsNothing);
+      expect(find.text('#FFFFFF'), findsNothing);
+      expect(find.text('Default'), findsOneWidget);
       wordsPicked.value = (text: 'Hello', start: 1, end: 3);
       await tester.pump();
       expect(find.textContaining('/fonts/Range.ttf'), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:scope')), findsOneWidget);
+      expect(find.text('2 ch'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'typesetting pills toggle direction, metrics, kinsoku, hanging and wrap',
+    (tester) async {
+      await mount(tester);
+      expect(find.text('Wrap at'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('text:writing')));
+      await tester.pump();
+      expect(numbers.last['v_writing'], 1);
+
+      await tester.tap(find.byKey(const ValueKey('text:metrics')));
+      await tester.pump();
+      expect(numbers.last['v_metrics'], 1);
+      expect(find.text('palt'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('text:kinsoku')));
+      await tester.pump();
+      expect(numbers.last['v_kinsoku'], 1);
+      expect(find.text('Strict'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('text:hanging')));
+      await tester.pump();
+      expect(numbers.last['v_hanging'], 1);
+
+      await tester.tap(find.byKey(const ValueKey('text:wrap')));
+      await tester.pump();
+      expect(numbers.last['v_wrap'], 2);
+      expect(find.text('Wrap at'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'OpenType metadata exposes supported feature chips and variable axes',
+    (tester) async {
+      await mount(
+        tester,
+        file: '/fonts/NotoSansJP-VF.ttf',
+        fontMeta: 'features: kern liga palt tnum jp04 vert\naxis: wght\tWeight\t100\t400\t900',
+      );
+      expect(find.byKey(const ValueKey('text:ot:tnum')), findsOneWidget);
+      expect(find.byKey(const ValueKey('text:ot:jp04')), findsOneWidget);
+      expect(find.text('Weight'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('text:ot:tnum')));
+      await tester.pump();
+      expect(words.last['v_font_features'], 'tnum');
+
+      await tester.tap(find.byKey(const ValueKey('text:ot:jp04')));
+      await tester.pump();
+      expect(words.last['v_font_features'], 'tnum jp04');
+
+      await tester.tap(find.byKey(const ValueKey('text:ot:tnum')));
+      await tester.pump();
+      expect(words.last['v_font_features'], 'jp04');
     },
   );
 }

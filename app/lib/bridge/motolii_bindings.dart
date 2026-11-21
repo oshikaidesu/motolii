@@ -703,6 +703,21 @@ class MotoliiBindings {
         )
       >();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_font_meta(ffi.Pointer<pkg_ffi.Utf8> path) {
+    return _motolii_font_meta(path);
+  }
+
+  late final _motolii_font_metaPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+        >
+      >('motolii_font_meta');
+  late final _motolii_font_meta = _motolii_font_metaPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_font_tags(ffi.Pointer<pkg_ffi.Utf8> path) {
     return _motolii_font_tags(path);
   }

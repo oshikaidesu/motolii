@@ -64,6 +64,30 @@ void main() {
     expect(doc.inGesture, isFalse);
   });
 
+  test(
+    'file, words and numbers vec3 params do not receive a color default',
+    () {
+      const decl = '''
+struct Media {
+  /// @label(Font) @unit(file)
+  file: vec3<f32>,
+  /// @label(Text) @unit(words)
+  text: vec3<f32>,
+  /// @label(Heights) @unit(numbers)
+  copy_tall: vec3<f32>,
+  /// @label(Fill) @unit(colours)
+  fill: vec3<f32>,
+}
+''';
+      final doc = InspectorValues(
+        Kind.text,
+        cards: [CardDeclaration('Media', decl, toneOf: _tone)],
+      );
+      addTearDown(doc.dispose);
+      expect(doc.strings, {'v_fill': '#FFFFFF'});
+    },
+  );
+
   test('set and delta each notify once, leave the defaults and the field counters alone', () {
     final doc = _doc(), amount = doc.watch('v_amount');
     var told = 0;

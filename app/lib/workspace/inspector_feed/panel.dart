@@ -315,6 +315,7 @@ class _InspectorPanelState extends State<InspectorPane> {
             ? null
             : () => pasteCardValues(ws, l.id, WorkspaceState.clipboard('card')),
         shapeSvg: l == null ? null : () => shapeSvgOf(ws, l.id),
+        fontMeta: (path) => fontMetaOf(ws, path),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(

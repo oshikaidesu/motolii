@@ -151,6 +151,24 @@ struct Params {
   letter_spacing: f32,
   /// @label(Line Height) @ui(bar) @range(0.5, 3) @unit(×) @default(1.2)
   line_spacing: f32,
+  /// @label(Align) @ui(percent) @range(0, 1) @unit(%) @default(0.5)
+  align: f32,
+  /// @label(Slant) @ui(bar) @range(0, 20) @unit(°) @default(0)
+  italic: f32,
+  /// @label(Direction) @enum(horizontal, vertical) @default(0)
+  writing: u32,
+  /// @label(Metrics) @enum(fixed, proportional, half_width) @default(1)
+  metrics: u32,
+  /// @label(Kinsoku) @enum(normal, strict, loose, none) @default(1)
+  kinsoku: u32,
+  /// @label(Hanging) @toggle @range(0, 1) @default(1)
+  hanging: u32,
+  /// @label(Features) @unit(words)
+  font_features: vec3<f32>,
+  /// @label(Wrap) @enum(none, character, word, smart, ellipsis, vertical) @default(0)
+  wrap: u32,
+  /// @label(Wrap at) @ui(bar) @range(0, 40) @unit(×) @default(12)
+  wrap_at: f32,
 }
 ''';
 
@@ -245,7 +263,7 @@ void main() {
   testWidgets('host cards contact sheet', (tester) async {
     const colW = 340.0;
     const totalW = colW * 3 + 48.0;
-    const totalH = 824.0;
+    const totalH = 852.0;
     tester.view.physicalSize = const Size(totalW, totalH);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -344,10 +362,22 @@ void main() {
                       _host(
                         [decl('Text', _text)],
                         kind: Kind.text,
+                        numbers: const {
+                          'v_align': 0.5,
+                          'v_metrics': 1,
+                          'v_kinsoku': 1,
+                          'v_hanging': 1,
+                        },
                         words: const {
                           'v_text': 'Motolii Motion',
                           'v_text_styles': '0 7 color: #59C3E8',
+                          'v_file': 'NotoSansJP-Medium.otf',
+                          'v_font_features': 'tnum',
                         },
+                        actions: CardActions(
+                          fontMeta: (_) =>
+                              'features: kern liga palt tnum jp04 ss01 vert',
+                        ),
                       ),
                       _host(
                         [decl('Camera', _camera)],

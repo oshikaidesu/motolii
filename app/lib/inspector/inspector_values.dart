@@ -20,7 +20,10 @@ class InspectorValues extends ChangeNotifier {
         // Start from the declaration's @default until the caller supplies the value.
         paramDefaults(p)
             .forEach((id, x) => numbers[id] = numberDefaults[id] = x);
-        if (p.look == ParameterLook.color) {
+        if (p.look == ParameterLook.color &&
+            p.unit != 'words' &&
+            p.unit != 'file' &&
+            p.unit != 'numbers') {
           strings.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
         }
       }

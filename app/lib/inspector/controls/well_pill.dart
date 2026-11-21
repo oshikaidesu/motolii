@@ -45,7 +45,9 @@ class WellPill extends StatelessWidget {
           : (hot ? Grey.g95 : Grey.g91).withValues(alpha: hot ? 0.36 : 0.16);
       return Container(
         height: Shape.z(20),
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(label.isEmpty ? 5 : 6),
+        ),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: Shape.round(4),
@@ -58,8 +60,10 @@ class WellPill extends StatelessWidget {
               size: const Size(10, 10),
               painter: Draw((c, s) => icon(c, s, glyph), (hot, active, label)),
             ),
-            SizedBox(width: Shape.s(4)),
-            Text(label, style: TextStyles.micro(ink)),
+            if (label.isNotEmpty) ...[
+              SizedBox(width: Shape.s(4)),
+              Text(label, style: TextStyles.micro(ink)),
+            ],
           ],
         ),
       );

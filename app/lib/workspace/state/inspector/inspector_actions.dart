@@ -35,6 +35,10 @@ double? workOutSum(WorkspaceController ws, String sum) =>
 /// The SVG path of layer [t]'s outline, for the Paths preview (see Motolii.shapeSvg).
 String shapeSvgOf(WorkspaceController ws, int t) => ws.inside!.shapeSvg(t);
 
+/// OpenType features and variable-font axes of [path] (see Motolii.fontMeta).
+String fontMetaOf(WorkspaceController ws, String path) =>
+    path.isEmpty ? '' : (ws.inside?.fontMeta(path) ?? '');
+
 /// Moves the effect card [title] of layer [t] by [by] places in its stack, as one undo step.
 void moveEffect(WorkspaceController ws, int t, String title, int by) =>
     ws.after(

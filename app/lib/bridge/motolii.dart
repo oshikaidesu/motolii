@@ -275,6 +275,7 @@ class Motolii {
   }
 
   final fontKinds = <String, Set<String>>{};
+  final fontMetaCache = <String, String>{};
 
   late final _answer = bindings.motolii_answer;
   late final _answerWhy = bindings.motolii_answer_why;

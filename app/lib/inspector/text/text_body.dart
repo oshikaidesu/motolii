@@ -1,14 +1,22 @@
-// The Text card's inside: the layer's text in a box, set in its font with its ranges' sizes and colors, and the
-// character values under it. Letters selected in the box are what the values under it show and change, as in the
-// Character panel of After Effects, Figma, Keynote and Word; with none selected they are the whole layer's.
+// The Text card's inside: text well with in-well typesetting pills (Align,
+// Direction, Metrics, Kinsoku, Hanging, Wrap), slim Font link row, OpenType
+// feature toggles, and continuous typography parameters below. Selected letters
+// in the box scope Size, Fill, Font, Tracking, Baseline and variable axes to
+// that range; with none selected they edit the whole layer.
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/link_line.dart';
 import 'package:motolii/inspector/controls/parameter_grid.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/controls/parameter_tile.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/text/text_meta.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
+import 'package:motolii/inspector/text/text_typeset_bar.dart';
 import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -20,13 +28,24 @@ class TextBody extends StatefulWidget {
   const TextBody(this.card, {super.key});
   final CardDeclaration card;
 
-  /// The values the inside shows: the text and its ranges in the box, the font, size and tracking under it.
+  /// Parameters drawn directly by TextBody; any remaining ones (such as Split)
+  /// stay as standard parameter blocks below.
   static const drawn = {
     'text',
     'text_styles',
     'file',
     'size',
     'letter_spacing',
+    'line_spacing',
+    'italic',
+    'align',
+    'writing',
+    'metrics',
+    'kinsoku',
+    'hanging',
+    'font_features',
+    'wrap',
+    'wrap_at',
   };
 
   @override
@@ -37,21 +56,28 @@ class TextBody extends StatefulWidget {
 typedef _Letters = ({int start, int count});
 
 class _TextBodyState extends State<TextBody> {
-  // The values of the letters selected, or of all the letters for the values only a range has. Made again whenever
-  // what it shows changes, which [_made] names.
   InspectorValues? _range;
   String? _made;
   final _axesBy = <String, List<FontAxis>>{};
+  final _metaBy = <String, FontMeta>{};
 
-  /// The variable-font axes of the font file [file], read once; none until they are read.
-  List<FontAxis> _axesOf(String file) {
-    if (file.isEmpty) return const [];
-    if (_axesBy[file] case final a?) return a;
+  /// Reads OpenType metadata via engine `skrifa` when available, falling back
+  /// to async Dart fvar parsing for variable-font axes when running engine-free.
+  FontMeta _metaOf(InspectorValues doc, String file) {
+    if (file.isEmpty) return emptyFontMeta;
+    if (_metaBy[file] case final m?) return m;
+    final raw = doc.actions.fontMeta?.call(file) ?? '';
+    if (raw.isNotEmpty) {
+      return _metaBy[file] = parseFontMeta(raw);
+    }
+    if (_axesBy[file] case final a?) {
+      return (features: const {}, axes: a);
+    }
     _axesBy[file] = const [];
     fontFileAxes(file).then((a) {
       if (mounted) setState(() => _axesBy[file] = a);
     });
-    return const [];
+    return emptyFontMeta;
   }
 
   @override
@@ -66,6 +92,8 @@ class _TextBodyState extends State<TextBody> {
     final text = doc.strings['v_text'] ?? '',
         styles = doc.strings['v_text_styles'] ?? '',
         file = doc.strings['v_file'] ?? '';
+    final vertical = (doc.get('v_writing') ?? 0).round() == 1;
+    final wrapping = (doc.get('v_wrap') ?? 0).round() != 0;
     final base = TextStyles.name(Grey.g95).copyWith(
       fontWeight: FontWeight.w400,
       fontFamily: file.isEmpty ? null : fontFileFamily(file),
@@ -73,98 +101,104 @@ class _TextBodyState extends State<TextBody> {
       height: 1.3,
     );
     final layer = {for (final p in widget.card.params) p.id: p};
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: EdgeInsets.all(Shape.s(8)),
-          decoration: BoxDecoration(
-            color: InspectorSkin.well,
-            borderRadius: Shape.round(6),
+    return ValueListenableBuilder(
+      valueListenable: wordsPicked,
+      builder: (context, p, _) {
+        final picked = pickedLetters(text, p);
+        final all = (start: 0, count: text.runes.length);
+        final letters = picked ?? all;
+        // The letters' font: the file their ranges name, else the layer's; null where they differ.
+        final font = fontFileOf(
+          rangeValue(
+            styles,
+            letters.start,
+            letters.count,
+            'font-family',
+            otherwise: "'$file'",
           ),
-          child: TypedField(
-            key: const ValueKey('text:box'),
-            text: text,
-            standing: true,
-            escapes: true,
-            style: base,
-            cursor: Grey.g95,
-            backgroundCursor: Grey.g20,
-            selection: Role.selected.withValues(alpha: .4),
-            styled: (t, style) => _spans(t, styles, style),
-            onDone: (said) => _typed(doc, text, said),
-            onPick: (v) {
-              _typing(doc, text, v.text);
-              wordsPicked.value =
-                  v.selection.isValid && !v.selection.isCollapsed
-                  ? (
-                      text: v.text,
-                      start: v.selection.start,
-                      end: v.selection.end,
-                    )
-                  : null;
-            },
-          ),
-        ),
-        SizedBox(height: Shape.s(6)),
-        ValueListenableBuilder(
-          valueListenable: wordsPicked,
-          builder: (context, p, _) {
-            final picked = pickedLetters(text, p);
-            final all = (start: 0, count: text.runes.length);
-            final letters = picked ?? all;
-            // The letters' font: the file their ranges name, else the layer's; null where they differ.
-            final font = fontFileOf(
-              rangeValue(
-                styles,
-                letters.start,
-                letters.count,
-                'font-family',
-                otherwise: "'$file'",
+        );
+        final shownFont = picked != null ? font : file;
+        final meta = _metaOf(doc, shownFont ?? '');
+        final axes = meta.axes;
+        final range = _values(doc, styles, letters, picked != null, axes, font);
+        final layerTiles = [
+          ?layer['size'],
+          ?layer['letter_spacing'],
+          ?layer['line_spacing'],
+          ?layer['italic'],
+          if (wrapping) ?layer['wrap_at'],
+        ];
+        final own = [
+          if (picked != null) ...[
+            _size,
+            const Parameter(
+              id: 'fill',
+              label: 'Fill',
+              look: ParameterLook.color,
+            ),
+            if (layer['letter_spacing'] case final t?)
+              _like(t, def: doc.get('v_letter_spacing') ?? 0),
+          ],
+          _baseline,
+          for (final a in axes) _axis(a),
+        ];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _TextWell(
+              doc: doc,
+              layer: layer,
+              text: text,
+              styles: styles,
+              base: base,
+              vertical: vertical,
+              picked: picked,
+              onDone: (said) => _typed(doc, text, said),
+              onPick: (v) {
+                _typing(doc, text, v.text);
+                wordsPicked.value =
+                    v.selection.isValid && !v.selection.isCollapsed
+                    ? (
+                        text: v.text,
+                        start: v.selection.start,
+                        end: v.selection.end,
+                      )
+                    : null;
+              },
+            ),
+            if (layer.containsKey('file')) ...[
+              SizedBox(height: Shape.s(6)),
+              InspectorScope(
+                doc: picked != null ? range : doc,
+                tick: x.tick,
+                child: _FontRow(
+                  value: shownFont == null
+                      ? 'Mixed'
+                      : (shownFont.isEmpty ? 'Default' : shownFont),
+                  scoped: picked != null,
+                ),
               ),
-            );
-            final axes = _axesOf(font ?? '');
-            final range = _values(
-              doc,
-              styles,
-              letters,
-              picked != null,
-              axes,
-              font,
-            );
-            final own = [
-              if (picked != null) ...[
-                ?layer['file'],
-                _size,
-                const Parameter(
-                  id: 'fill',
-                  label: 'Fill',
-                  look: ParameterLook.color,
-                ),
-                if (layer['letter_spacing'] case final t?)
-                  _like(t, def: doc.get('v_letter_spacing') ?? 0),
-              ],
-              _baseline,
-              for (final a in axes) _axis(a),
-            ];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (picked == null)
-                  ParameterGrid([
-                    for (final id in ['file', 'size', 'letter_spacing'])
-                      ?layer[id],
-                  ]),
-                InspectorScope(
-                  doc: range,
-                  tick: x.tick,
-                  child: ParameterGrid(own),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
+            ],
+            if (picked == null && layer.containsKey('font_features'))
+              TextFeaturesStrip(doc: doc, supported: meta.features),
+            SizedBox(height: Shape.s(2)),
+            if (picked == null)
+              _ScopedGrid(
+                tick: x.tick,
+                items: [
+                  for (final param in layerTiles) (doc, param),
+                  for (final param in own) (range, param),
+                ],
+              )
+            else if (own.isNotEmpty)
+              InspectorScope(
+                doc: range,
+                tick: x.tick,
+                child: ParameterGrid(own),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -193,7 +227,6 @@ class _TextBodyState extends State<TextBody> {
     );
     double? number(String? css, double Function(double) scale) =>
         _number(css).let(scale);
-    // Each letter's axes as its ranges set them; an axis is Mixed only where the letters differ on that axis.
     final axesOf = [
       for (var i = letters.start; i < letters.start + letters.count; i++)
         _variations(
@@ -217,7 +250,6 @@ class _TextBodyState extends State<TextBody> {
     }
     range.numbers.removeWhere((_, v) => v.isNaN); // Mixed.
     if (font != null) range.strings['v_file'] = font;
-    // Letters no range colors take the layer's fill.
     switch (at('color', 'fill')) {
       case 'fill':
         if (doc.strings['v_fill'] case final f?) {
@@ -257,7 +289,6 @@ class _TextBodyState extends State<TextBody> {
           _ => next,
         };
       }
-      // A changed axis is set on each letter, its other axes kept: the letters are written again as runs of equal axes.
       final changed = {
         for (final a in axes)
           if (range.numbers['v_axis_${a.tag}'] case final v?
@@ -293,12 +324,9 @@ class _TextBodyState extends State<TextBody> {
     return _range = range;
   }
 
-  // The text when typing began, and the text last written, while the stage follows the keys.
   String? _before;
   String _sent = '';
 
-  /// Each key typed is written as a step of a drag stage shows text while it is typed; leaving the
-  /// box ends the drag, so the typing is one undo step.
   void _typing(InspectorValues doc, String text, String now) {
     final was = _before == null ? text : _sent;
     if (now == was) return;
@@ -310,7 +338,6 @@ class _TextBodyState extends State<TextBody> {
     _sent = now;
   }
 
-  /// The box was left with [said], or with null when Escape took the typing back.
   void _typed(InspectorValues doc, String text, String? said) {
     final before = _before;
     if (before == null) {
@@ -323,7 +350,6 @@ class _TextBodyState extends State<TextBody> {
     doc.endGesture();
   }
 
-  /// Writes the typed text, moving the ranges so each keeps its letters.
   void _retype(InspectorValues doc, String was, String said) {
     final a = was.runes.toList(), b = said.runes.toList();
     var head = 0;
@@ -349,7 +375,208 @@ class _TextBodyState extends State<TextBody> {
   }
 }
 
-/// The values of some letters, made from [whole]'s ranges. A drag of one is a drag of [whole]'s too.
+/// Recessed text well combining the editable styled text box, selection scope
+/// indicator, vertical-writing guide, and in-well typesetting pills.
+class _TextWell extends StatelessWidget {
+  const _TextWell({
+    required this.doc,
+    required this.layer,
+    required this.text,
+    required this.styles,
+    required this.base,
+    required this.vertical,
+    required this.picked,
+    required this.onDone,
+    required this.onPick,
+  });
+
+  final InspectorValues doc;
+  final Map<String, Parameter> layer;
+  final String text;
+  final String styles;
+  final TextStyle base;
+  final bool vertical;
+  final _Letters? picked;
+  final void Function(String?) onDone;
+  final void Function(TextEditingValue) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasBar =
+        layer.containsKey('align') ||
+        layer.containsKey('writing') ||
+        layer.containsKey('metrics') ||
+        layer.containsKey('kinsoku') ||
+        layer.containsKey('hanging') ||
+        layer.containsKey('wrap');
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        Shape.s(8),
+        Shape.s(7),
+        Shape.s(8),
+        hasBar ? Shape.s(6) : Shape.s(8),
+      ),
+      decoration: BoxDecoration(
+        color: InspectorSkin.well,
+        borderRadius: Shape.round(6),
+        border: Border.all(
+          color: picked != null
+              ? Accent.fill.withValues(alpha: 0.45)
+              : Grey.g20,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TypedField(
+                  key: const ValueKey('text:box'),
+                  text: text,
+                  standing: true,
+                  escapes: true,
+                  style: base,
+                  cursor: Grey.g95,
+                  backgroundCursor: Grey.g20,
+                  selection: Role.selected.withValues(alpha: .4),
+                  styled: (t, style) => _spans(t, styles, style),
+                  onDone: onDone,
+                  onPick: onPick,
+                ),
+              ),
+              if (picked != null)
+                Padding(
+                  padding: EdgeInsets.only(left: Shape.s(6)),
+                  child: Container(
+                    key: const ValueKey('text:scope'),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Shape.s(5),
+                      vertical: Shape.s(2),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Accent.fill.withValues(alpha: 0.16),
+                      borderRadius: Shape.round(4),
+                      border: Border.all(
+                        color: Accent.fill.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Text(
+                      '${picked!.count} ch',
+                      style: TextStyles.micro(Accent.fill),
+                    ),
+                  ),
+                )
+              else if (vertical)
+                Padding(
+                  padding: EdgeInsets.only(left: Shape.s(6)),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: Shape.s(4),
+                      vertical: Shape.s(2),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Grey.g10,
+                      borderRadius: Shape.round(4),
+                    ),
+                    child: Text('縦', style: TextStyles.micro(Grey.g63)),
+                  ),
+                ),
+            ],
+          ),
+          if (hasBar) TextTypesetBar(doc: doc, layer: layer),
+        ],
+      ),
+    );
+  }
+}
+
+/// Slim 30px Font link row replacing the tall 42px tile while preserving LinkLine routing.
+class _FontRow extends StatelessWidget {
+  const _FontRow({required this.value, required this.scoped});
+
+  final String value;
+  final bool scoped;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: Shape.z(30),
+    padding: EdgeInsets.symmetric(horizontal: InspectorSkin.tilePad),
+    decoration: BoxDecoration(
+      color: InspectorSkin.well,
+      borderRadius: Shape.round(6),
+    ),
+    child: Row(
+      children: [
+        Text(
+          scoped ? 'Range font' : 'Font',
+          style: TextStyles.micro(scoped ? Accent.fill : Grey.g63),
+        ),
+        SizedBox(width: Shape.s(8)),
+        Expanded(
+          child: LinkLine(to: LinkTo.fonts, value: value, id: 'v_file'),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Lays out layer-scoped and range-scoped tiles in one continuous grid so
+/// Slant, Baseline and variable-font axes share rows cleanly without orphan gaps.
+class _ScopedGrid extends StatelessWidget {
+  const _ScopedGrid({required this.items, required this.tick});
+
+  final List<(InspectorValues, Parameter)> items;
+  final int tick;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    return LayoutBuilder(
+      builder: (_, box) {
+        final g = InspectorSkin.tileGap;
+        final cols = math.max(
+          1,
+          ((box.maxWidth + g) / (InspectorSkin.tileMin + g)).floor(),
+        );
+        final rows = <List<(InspectorValues, Parameter)>>[];
+        for (var i = 0; i < items.length; i += cols) {
+          rows.add(items.sublist(i, math.min(i + cols, items.length)));
+        }
+        return Padding(
+          padding: EdgeInsets.only(top: Shape.s(4)),
+          child: Column(
+            children: [
+              for (var r = 0; r < rows.length; r++) ...[
+                if (r > 0) SizedBox(height: g),
+                Row(
+                  children: [
+                    for (var c = 0; c < rows[r].length; c++) ...[
+                      if (c > 0) SizedBox(width: g),
+                      Expanded(
+                        child: InspectorScope(
+                          doc: rows[r][c].$1,
+                          tick: tick,
+                          child: ParameterTile(rows[r][c].$2),
+                        ),
+                      ),
+                    ],
+                    if (rows[r].length < cols) ...[
+                      SizedBox(width: g),
+                      Spacer(flex: cols - rows[r].length),
+                    ],
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _RangeValues extends InspectorValues {
   _RangeValues(this.whole) : super(whole.kind);
   final InspectorValues whole;
@@ -360,8 +587,6 @@ class _RangeValues extends InspectorValues {
     super.beginGesture();
   }
 
-  // The letters' last step is written while the layer's drag still goes on; the layer's drag then ends and tells it
-  // as settled, which closes the undo step.
   @override
   void endGesture() {
     super.endGesture();
@@ -369,7 +594,6 @@ class _RangeValues extends InspectorValues {
   }
 }
 
-/// The text set in runs of its ranges' sizes, colors, tracking and axes, as the stage sets them.
 InlineSpan _spans(String text, String styles, TextStyle base) {
   final ranges = readRanges(styles);
   if (ranges.isEmpty) return TextSpan(text: text, style: base);
@@ -393,7 +617,6 @@ InlineSpan _spans(String text, String styles, TextStyle base) {
   return TextSpan(style: base, children: runs);
 }
 
-/// The number in a CSS value, its unit dropped: `150%` is 150, `0.2em` is 0.2.
 double? _number(String? css) => css == null
     ? null
     : double.tryParse(css.replaceAll(RegExp(r'[^-0-9.]'), ''));
@@ -406,7 +629,6 @@ TextStyle _style(TextStyle base, Map<String, String> sets) {
       (base.fontSize ?? 15) * ((_number(sets['font-size']) ?? 100) / 100);
   final font = fontFileOf(sets['font-family']);
   return base.copyWith(
-    // A range's own font file, the layer's font after it for letters it lacks, as CSS falls back.
     fontFamily: font == null ? null : fontFileFamily(font),
     fontFamilyFallback: font == null || base.fontFamily == null
         ? null
@@ -423,19 +645,15 @@ TextStyle _style(TextStyle base, Map<String, String> sets) {
   );
 }
 
-/// CSS font-variation-settings, `'wght' 700, 'wdth' 100`, as numbers by axis tag.
 Map<String, double> _variations(String css) => {
   for (final m in RegExp(r"""['"](\w{4})['"]\s+(-?[0-9.]+)""").allMatches(css))
     m[1]!: double.parse(m[2]!),
 };
 
-/// A number as CSS writes it: no trailing zeros.
 String _css(double v) => v == v.roundToDouble()
     ? '${v.round()}'
     : v.toStringAsFixed(3).replaceFirst(RegExp(r'0+$'), '');
 
-/// Size of the letters as a share of the layer's Size: CSS font-size in percent. The slider shows 25–400 %; a typed
-/// value goes past it.
 const _size = Parameter(
   id: 'size',
   label: 'Size',
@@ -447,7 +665,6 @@ const _size = Parameter(
   open: true,
 );
 
-/// After Effects' Baseline Shift, in ems: CSS baseline-shift. Up is positive, as in CSS.
 const _baseline = Parameter(
   id: 'baseline',
   label: 'Baseline',
@@ -459,7 +676,6 @@ const _baseline = Parameter(
   open: true,
 );
 
-/// [p] as a range value whose default is the layer's.
 Parameter _like(Parameter p, {required double def}) => Parameter(
   id: p.id,
   label: p.label,
@@ -472,7 +688,6 @@ Parameter _like(Parameter p, {required double def}) => Parameter(
   open: true,
 );
 
-/// One axis of a variable font, its name and range the font's own (its fvar and name tables).
 Parameter _axis(FontAxis a) => Parameter(
   id: 'axis_${a.tag}',
   label: a.name,

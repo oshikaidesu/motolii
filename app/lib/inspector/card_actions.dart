@@ -19,6 +19,7 @@ class CardActions {
     this.onCardCopy,
     this.onCardPaste,
     this.shapeSvg,
+    this.fontMeta,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -70,4 +71,7 @@ class CardActions {
   /// The SVG path of the selected shape layer's outline at the current time, with all path
   /// operators applied. Empty when the layer is not a drawable shape.
   final String Function()? shapeSvg;
+
+  /// OpenType features (GSUB/GPOS) and variable-font axes (fvar) reported by the engine for a font file path.
+  final String Function(String path)? fontMeta;
 }
