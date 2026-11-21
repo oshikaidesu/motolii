@@ -18,6 +18,7 @@ import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/inspector/text/text_meta.dart';
+import 'package:motolii/inspector/text/text_notebook.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/inspector/text/text_typeset_bar.dart';
 import 'package:motolii/skin/hex_color.dart';
@@ -109,8 +110,8 @@ class _TextBodyState extends State<TextBody> {
     final base = TextStyles.name(Grey.g95).copyWith(
       fontWeight: FontWeight.w400,
       fontFamily: loadedFamily,
-      fontSize: 15,
-      height: 1.3,
+      fontSize: notebookFontSize,
+      height: notebookLineHeight,
     );
     final layer = {for (final p in widget.card.params) p.id: p};
 
@@ -181,14 +182,15 @@ class _TextBodyState extends State<TextBody> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Horizontal preview editor + in-well icon-led discrete typesetting pills.
-            _TextWell(
+            // 1. Ruled notebook editor with borderless ruler & margin rail affordances.
+            TextNotebook(
               doc: doc,
               layer: layer,
               text: text,
               styles: styles,
               base: base,
-              picked: picked,
+              pickedCount: picked?.count,
+              styled: (t, style) => _spans(t, styles, style),
               onDone: (said) => _typed(doc, text, said),
               onPick: (v) {
                 _typing(doc, text, v.text);
@@ -407,115 +409,6 @@ class _TextBodyState extends State<TextBody> {
       );
     }
     doc.str('v_text', said);
-  }
-}
-
-/// Recessed horizontal text editor with in-well discrete typesetting pills.
-/// Clipped and height-bounded so large range sizes or multiline text never bleed out.
-class _TextWell extends StatelessWidget {
-  const _TextWell({
-    required this.doc,
-    required this.layer,
-    required this.text,
-    required this.styles,
-    required this.base,
-    required this.picked,
-    required this.onDone,
-    required this.onPick,
-  });
-
-  final InspectorValues doc;
-  final Map<String, Parameter> layer;
-  final String text;
-  final String styles;
-  final TextStyle base;
-  final _Letters? picked;
-  final void Function(String?) onDone;
-  final void Function(TextEditingValue) onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasBar =
-        picked == null &&
-        (layer.containsKey('writing') ||
-            layer.containsKey('align') ||
-            layer.containsKey('metrics') ||
-            layer.containsKey('wrap') ||
-            layer.containsKey('kinsoku') ||
-            layer.containsKey('hanging'));
-    return ClipRRect(
-      borderRadius: Shape.round(6),
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          Shape.s(6),
-          Shape.s(6),
-          Shape.s(6),
-          hasBar ? Shape.s(6) : Shape.s(7),
-        ),
-        decoration: BoxDecoration(
-          color: InspectorSkin.well,
-          borderRadius: Shape.round(6),
-          border: Border.all(
-            color: picked != null
-                ? Accent.fill.withValues(alpha: 0.45)
-                : Grey.g20,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ClipRect(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: Shape.z(76)),
-                      child: TypedField(
-                        key: const ValueKey('text:box'),
-                        text: text,
-                        standing: true,
-                        escapes: true,
-                        style: base,
-                        cursor: Grey.g95,
-                        backgroundCursor: Grey.g20,
-                        selection: Role.selected.withValues(alpha: .4),
-                        styled: (t, style) => _spans(t, styles, style),
-                        onDone: onDone,
-                        onPick: onPick,
-                      ),
-                    ),
-                  ),
-                ),
-                if (picked != null)
-                  Padding(
-                    padding: EdgeInsets.only(left: Shape.s(6)),
-                    child: Container(
-                      key: const ValueKey('text:scope'),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: Shape.s(5),
-                        vertical: Shape.s(2),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Accent.fill.withValues(alpha: 0.16),
-                        borderRadius: Shape.round(4),
-                        border: Border.all(
-                          color: Accent.fill.withValues(alpha: 0.55),
-                        ),
-                      ),
-                      child: Text(
-                        '${picked!.count} ch',
-                        style: TextStyles.micro(Accent.fill),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            if (hasBar) TextTypesetBar(doc: doc, layer: layer),
-          ],
-        ),
-      ),
-    );
   }
 }
 

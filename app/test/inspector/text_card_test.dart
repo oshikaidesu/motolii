@@ -312,7 +312,7 @@ void main() {
       expect(maxFontSize, lessThanOrEqualTo(26.0));
       expect(
         tester.getSize(find.byKey(const ValueKey('text:box'))).height,
-        lessThanOrEqualTo(76.0),
+        lessThanOrEqualTo(84.0),
       );
     },
   );
