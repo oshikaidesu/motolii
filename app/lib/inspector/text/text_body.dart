@@ -1,23 +1,23 @@
-// The Text card's inside, structured by typesetting scale from top to bottom:
-// 1. Content & spatial axis (horizontal preview well + writing direction & align)
-// 2. Character (per-glyph form: Font, Size, Slant, Baseline, variable axes, OT;
-//    selecting letters in the box scopes this zone to that range)
-// 3. Flow & Box (character spacing: Metrics + Tracking, Line Height, and
-//    box-edge rules: Wrap/Wrap at, Kinsoku, Hanging punctuation)
+// Dedicated Text host card: horizontal preview editor, live visual typesetting
+// instrument (direct drag + in-well discrete mode pills), and Transform-style
+// compact 24px numeric rows for continuous keyframeable typography parameters.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/link_line.dart';
-import 'package:motolii/inspector/controls/parameter_grid.dart';
+import 'package:motolii/inspector/controls/parameter_grid.dart' show Swatch;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
-import 'package:motolii/inspector/controls/parameter_tile.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/inspector/text/text_meta.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/inspector/text/text_typeset_bar.dart';
+import 'package:motolii/inspector/text/text_typeset_stage.dart';
 import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -62,8 +62,6 @@ class _TextBodyState extends State<TextBody> {
   final _axesBy = <String, List<FontAxis>>{};
   final _metaBy = <String, FontMeta>{};
 
-  /// Reads OpenType metadata via engine `skrifa` when available, falling back
-  /// to async Dart fvar parsing for variable-font axes when running engine-free.
   FontMeta _metaOf(InspectorValues doc, String file) {
     if (file.isEmpty) return emptyFontMeta;
     if (_metaBy[file] case final m?) return m;
@@ -101,13 +99,20 @@ class _TextBodyState extends State<TextBody> {
       height: 1.3,
     );
     final layer = {for (final p in widget.card.params) p.id: p};
+    final hasStage =
+        layer.containsKey('writing') ||
+        layer.containsKey('align') ||
+        layer.containsKey('metrics') ||
+        layer.containsKey('wrap') ||
+        layer.containsKey('kinsoku') ||
+        layer.containsKey('hanging');
+
     return ValueListenableBuilder(
       valueListenable: wordsPicked,
       builder: (context, p, _) {
         final picked = pickedLetters(text, p);
         final all = (start: 0, count: text.runes.length);
         final letters = picked ?? all;
-        // The letters' font: the file their ranges name, else the layer's; null where they differ.
         final font = fontFileOf(
           rangeValue(
             styles,
@@ -122,48 +127,61 @@ class _TextBodyState extends State<TextBody> {
         final axes = meta.axes;
         final range = _values(doc, styles, letters, picked != null, axes, font);
 
-        // Zone B (Character): per-glyph form — Size, Slant, Baseline, variable axes.
-        final glyphItems = picked == null
-            ? [
-                if (layer['size'] case final s?) (doc, s),
-                if (layer['italic'] case final s?) (doc, s),
-                (range, _baseline),
-                for (final a in axes) (range, _axis(a)),
+        Widget numCell(
+          InspectorValues target,
+          Parameter param, {
+          String? label,
+          String? hotZone,
+        }) => _CompactNumberCell(
+          doc: target,
+          tick: x.tick,
+          param: param,
+          label: label ?? param.label,
+          hotZone: hotZone,
+        );
+
+        // Compact 24px rows for continuous keyframeable values.
+        final glyphRow = picked == null
+            ? <Widget>[
+                if (layer['size'] case final s?) numCell(doc, s),
+                if (layer['italic'] case final s?)
+                  numCell(doc, s, hotZone: 'slant'),
+                numCell(range, _baseline, label: 'Base', hotZone: 'baseline'),
               ]
-            : [
-                (range, _size),
-                (
-                  range,
-                  const Parameter(
-                    id: 'fill',
-                    label: 'Fill',
-                    look: ParameterLook.color,
-                  ),
-                ),
+            : <Widget>[
+                numCell(range, _size),
+                _CompactColorCell(doc: range, tick: x.tick),
                 if (layer['letter_spacing'] case final t?)
-                  (range, _like(t, def: doc.get('v_letter_spacing') ?? 0)),
-                (range, _baseline),
-                for (final a in axes) (range, _axis(a)),
+                  numCell(
+                    range,
+                    _like(t, def: doc.get('v_letter_spacing') ?? 0),
+                    label: 'Track',
+                    hotZone: 'tracking',
+                  ),
               ];
 
-        // Zone C (Flow & Box): character spacing (Metrics + Tracking) and line/column rhythm.
-        final flowCells = <Widget>[
-          if (layer.containsKey('metrics')) TextMetricsTile(doc: doc),
-          if (layer['letter_spacing'] case final t?) ParameterTile(t),
-          if (layer['line_spacing'] case final l?) ParameterTile(l),
+        final flowRow = picked == null
+            ? <Widget>[
+                if (layer['letter_spacing'] case final t?)
+                  numCell(doc, t, label: 'Track', hotZone: 'tracking'),
+                if (layer['line_spacing'] case final l?)
+                  numCell(doc, l, label: 'Line', hotZone: 'line'),
+                if (wrapping && layer['wrap_at'] != null)
+                  numCell(doc, layer['wrap_at']!, hotZone: 'wrap'),
+              ]
+            : <Widget>[
+                numCell(range, _baseline, label: 'Base', hotZone: 'baseline'),
+              ];
+
+        final axisCells = <Widget>[
+          for (final a in axes) numCell(range, _axis(a)),
         ];
-        final hasBoxBar =
-            layer.containsKey('wrap') ||
-            layer.containsKey('kinsoku') ||
-            layer.containsKey('hanging');
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Content & spatial axis (always horizontal preview; clipped and size-clamped).
-            _TextWell(
-              doc: doc,
-              layer: layer,
+            // 1. Horizontal preview text input (clipped and preview-size clamped).
+            _TextInputBox(
               text: text,
               styles: styles,
               base: base,
@@ -182,9 +200,15 @@ class _TextBodyState extends State<TextBody> {
               },
             ),
 
-            // 2. Character (individual glyph form; scoped to selected letters when picked).
+            // 2. Live visual typesetting instrument (discrete modes + direct drag).
+            if (picked == null && hasStage) ...[
+              SizedBox(height: Shape.s(5)),
+              TextTypesetStage(doc: doc, layer: layer),
+            ],
+
+            // 3. Dedicated compact rows for Font, continuous values, variable axes, and OT.
             if (layer.containsKey('file')) ...[
-              SizedBox(height: Shape.s(6)),
+              SizedBox(height: Shape.s(5)),
               InspectorScope(
                 doc: picked != null ? range : doc,
                 tick: x.tick,
@@ -196,35 +220,29 @@ class _TextBodyState extends State<TextBody> {
                 ),
               ),
             ],
-            if (glyphItems.isNotEmpty)
-              _ScopedGrid(tick: x.tick, items: glyphItems),
+            if (glyphRow.isNotEmpty) ...[
+              SizedBox(height: InspectorSkin.tileGap),
+              _CompactRow(glyphRow),
+            ],
+            if (flowRow.isNotEmpty) ...[
+              SizedBox(height: InspectorSkin.tileGap),
+              _CompactRow(flowRow),
+            ],
+            if (axisCells.isNotEmpty)
+              for (var i = 0; i < axisCells.length; i += 3) ...[
+                SizedBox(height: InspectorSkin.tileGap),
+                _CompactRow(
+                  axisCells.sublist(i, math.min(i + 3, axisCells.length)),
+                ),
+              ],
             if (picked == null && layer.containsKey('font_features'))
               TextFeaturesStrip(doc: doc, supported: meta.features),
-
-            // 3. Flow & Box (inline spacing -> line/column rhythm -> box-edge rules).
-            if (picked == null &&
-                (flowCells.isNotEmpty || hasBoxBar || wrapping)) ...[
-              SizedBox(height: Shape.s(6)),
-              Container(height: 1, color: Grey.g20),
-              SizedBox(height: Shape.s(6)),
-              if (flowCells.isNotEmpty) _CellRow(flowCells),
-              if (hasBoxBar) ...[
-                if (flowCells.isNotEmpty)
-                  SizedBox(height: InspectorSkin.tileGap),
-                TextBoxBar(doc: doc, layer: layer),
-              ],
-              if (wrapping && layer['wrap_at'] != null)
-                ParameterGrid([layer['wrap_at']!]),
-            ],
           ],
         );
       },
     );
   }
 
-  /// The values of [letters] as text_styles sets them: Size as a share of the layer's, Fill, Tracking, Baseline and
-  /// the font's axes. A change to one writes it to text_styles for those letters; a drag writes each step, and the layer's
-  /// values are in the drag with it, so the stage follows and the drag is one undo step.
   InspectorValues _values(
     InspectorValues doc,
     String styles,
@@ -268,7 +286,7 @@ class _TextBodyState extends State<TextBody> {
           ? each.first
           : double.nan;
     }
-    range.numbers.removeWhere((_, v) => v.isNaN); // Mixed.
+    range.numbers.removeWhere((_, v) => v.isNaN);
     if (font != null) range.strings['v_file'] = font;
     switch (at('color', 'fill')) {
       case 'fill':
@@ -395,13 +413,9 @@ class _TextBodyState extends State<TextBody> {
   }
 }
 
-/// Recessed horizontal preview well: clips and bounds its text editor so large
-/// range sizes or long multiline text can never bleed into surrounding UI, and
-/// hosts only the top-level spatial axis pills (Direction & Align) below.
-class _TextWell extends StatelessWidget {
-  const _TextWell({
-    required this.doc,
-    required this.layer,
+/// Clipped, bounded horizontal text editor for fast typing and range selection.
+class _TextInputBox extends StatelessWidget {
+  const _TextInputBox({
     required this.text,
     required this.styles,
     required this.base,
@@ -410,8 +424,6 @@ class _TextWell extends StatelessWidget {
     required this.onPick,
   });
 
-  final InspectorValues doc;
-  final Map<String, Parameter> layer;
   final String text;
   final String styles;
   final TextStyle base;
@@ -420,78 +432,166 @@ class _TextWell extends StatelessWidget {
   final void Function(TextEditingValue) onPick;
 
   @override
-  Widget build(BuildContext context) {
-    final hasAxis = layer.containsKey('writing') || layer.containsKey('align');
-    return ClipRRect(
-      borderRadius: Shape.round(6),
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          Shape.s(8),
-          Shape.s(7),
-          Shape.s(8),
-          hasAxis ? Shape.s(6) : Shape.s(8),
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: Shape.round(6),
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: Shape.s(8),
+        vertical: Shape.s(6),
+      ),
+      decoration: BoxDecoration(
+        color: InspectorSkin.well,
+        borderRadius: Shape.round(6),
+        border: Border.all(
+          color: picked != null
+              ? Accent.fill.withValues(alpha: 0.45)
+              : Grey.g20,
         ),
-        decoration: BoxDecoration(
-          color: InspectorSkin.well,
-          borderRadius: Shape.round(6),
-          border: Border.all(
-            color: picked != null
-                ? Accent.fill.withValues(alpha: 0.45)
-                : Grey.g20,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            // Bound and clip height so large preview ranges or multiline strings never bleed into other cards.
+            child: ClipRect(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: Shape.z(76)),
+                child: TypedField(
+                  key: const ValueKey('text:box'),
+                  text: text,
+                  standing: true,
+                  escapes: true,
+                  style: base,
+                  cursor: Grey.g95,
+                  backgroundCursor: Grey.g20,
+                  selection: Role.selected.withValues(alpha: .4),
+                  styled: (t, style) => _spans(t, styles, style),
+                  onDone: onDone,
+                  onPick: onPick,
+                ),
+              ),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          if (picked != null)
+            Padding(
+              padding: EdgeInsets.only(left: Shape.s(6)),
+              child: Container(
+                key: const ValueKey('text:scope'),
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(5),
+                  vertical: Shape.s(2),
+                ),
+                decoration: BoxDecoration(
+                  color: Accent.fill.withValues(alpha: 0.16),
+                  borderRadius: Shape.round(4),
+                  border: Border.all(
+                    color: Accent.fill.withValues(alpha: 0.55),
+                  ),
+                ),
+                child: Text(
+                  '${picked!.count} ch',
+                  style: TextStyles.micro(Accent.fill),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// 24px compact scrubbable number cell matching Transform's compact rows, with
+/// left-aligned micro label layered cleanly over the right-aligned number field
+/// so dragging anywhere on the cell (including its label) scrubs the value.
+class _CompactNumberCell extends StatelessWidget {
+  const _CompactNumberCell({
+    required this.doc,
+    required this.tick,
+    required this.param,
+    required this.label,
+    this.hotZone,
+  });
+
+  final InspectorValues doc;
+  final int tick;
+  final Parameter param;
+  final String label;
+  final String? hotZone;
+
+  @override
+  Widget build(BuildContext context) {
+    final id = 'v_${param.id}';
+    return MouseRegion(
+      onEnter: (_) => hotZone == null ? null : textHot.value = hotZone,
+      onExit: (_) {
+        if (hotZone != null && textHot.value == hotZone) textHot.value = null;
+      },
+      child: ValueListenableBuilder(
+        valueListenable: textHot,
+        builder: (_, lit, _) {
+          final isLit = hotZone != null && lit == hotZone;
+          return InspectorScope(
+            doc: doc,
+            tick: tick,
+            child: Stack(
+              alignment: Alignment.centerLeft,
               children: [
-                Expanded(
-                  // Bound and clip preview text height so large fonts or many lines scroll instead of overflowing.
-                  child: ClipRect(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: Shape.z(96)),
-                      child: TypedField(
-                        key: const ValueKey('text:box'),
-                        text: text,
-                        standing: true,
-                        escapes: true,
-                        style: base,
-                        cursor: Grey.g95,
-                        backgroundCursor: Grey.g20,
-                        selection: Role.selected.withValues(alpha: .4),
-                        styled: (t, style) => _spans(t, styles, style),
-                        onDone: onDone,
-                        onPick: onPick,
-                      ),
+                RowInfo(
+                  keys: doc.keys[id] ?? KeyframeState.off,
+                  child: InspectorNumberField(
+                    param,
+                    id: id,
+                    caption: '',
+                    compact: true,
+                  ),
+                ),
+                IgnorePointer(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: Shape.s(7)),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.micro(isLit ? Accent.fill : Grey.g56),
                     ),
                   ),
                 ),
-                if (picked != null)
-                  Padding(
-                    padding: EdgeInsets.only(left: Shape.s(6)),
-                    child: Container(
-                      key: const ValueKey('text:scope'),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: Shape.s(5),
-                        vertical: Shape.s(2),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Accent.fill.withValues(alpha: 0.16),
-                        borderRadius: Shape.round(4),
-                        border: Border.all(
-                          color: Accent.fill.withValues(alpha: 0.55),
-                        ),
-                      ),
-                      child: Text(
-                        '${picked!.count} ch',
-                        style: TextStyles.micro(Accent.fill),
-                      ),
-                    ),
-                  ),
               ],
             ),
-            if (hasAxis) TextAxisBar(doc: doc, layer: layer),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Compact 24px range color cell shown when letters are selected in the text box.
+class _CompactColorCell extends StatelessWidget {
+  const _CompactColorCell({required this.doc, required this.tick});
+
+  final InspectorValues doc;
+  final int tick;
+
+  @override
+  Widget build(BuildContext context) {
+    final hex = doc.strings['v_fill'] ?? '—';
+    return InspectorScope(
+      doc: doc,
+      tick: tick,
+      child: Container(
+        height: InspectorSkin.cell,
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+        decoration: BoxDecoration(
+          color: InspectorSkin.well,
+          borderRadius: Shape.round(6),
+        ),
+        child: Row(
+          children: [
+            Swatch(hex),
+            SizedBox(width: Shape.s(5)),
+            Expanded(
+              child: LinkLine(to: LinkTo.colors, value: hex, id: 'v_fill'),
+            ),
           ],
         ),
       ),
@@ -499,7 +599,30 @@ class _TextWell extends StatelessWidget {
   }
 }
 
-/// Slim 30px Font link row replacing the tall 42px tile while preserving LinkLine routing.
+/// 3-column aligned row of 24px compact cells (keeps column grid even when < 3).
+class _CompactRow extends StatelessWidget {
+  const _CompactRow(this.cells);
+  final List<Widget> cells;
+
+  @override
+  Widget build(BuildContext context) {
+    final g = InspectorSkin.tileGap;
+    return Row(
+      children: [
+        for (var i = 0; i < cells.length; i++) ...[
+          if (i > 0) SizedBox(width: g),
+          Expanded(child: cells[i]),
+        ],
+        if (cells.length < 3) ...[
+          SizedBox(width: g),
+          Spacer(flex: 3 - cells.length),
+        ],
+      ],
+    );
+  }
+}
+
+/// Slim 28px Font link row.
 class _FontRow extends StatelessWidget {
   const _FontRow({required this.value, required this.scoped});
 
@@ -508,7 +631,7 @@ class _FontRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: Shape.z(30),
+    height: Shape.z(28),
     padding: EdgeInsets.symmetric(horizontal: InspectorSkin.tilePad),
     decoration: BoxDecoration(
       color: InspectorSkin.well,
@@ -527,80 +650,6 @@ class _FontRow extends StatelessWidget {
       ],
     ),
   );
-}
-
-/// Equal-width horizontal row of 42px tiles with standard tileGap spacing.
-class _CellRow extends StatelessWidget {
-  const _CellRow(this.cells);
-  final List<Widget> cells;
-
-  @override
-  Widget build(BuildContext context) {
-    final g = InspectorSkin.tileGap;
-    return Row(
-      children: [
-        for (var i = 0; i < cells.length; i++) ...[
-          if (i > 0) SizedBox(width: g),
-          Expanded(child: cells[i]),
-        ],
-      ],
-    );
-  }
-}
-
-/// Lays out layer-scoped and range-scoped tiles in one continuous grid so
-/// character-form parameters share rows cleanly without orphan gaps.
-class _ScopedGrid extends StatelessWidget {
-  const _ScopedGrid({required this.items, required this.tick});
-
-  final List<(InspectorValues, Parameter)> items;
-  final int tick;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) return const SizedBox.shrink();
-    return LayoutBuilder(
-      builder: (_, box) {
-        final g = InspectorSkin.tileGap;
-        final cols = math.max(
-          1,
-          ((box.maxWidth + g) / (InspectorSkin.tileMin + g)).floor(),
-        );
-        final rows = <List<(InspectorValues, Parameter)>>[];
-        for (var i = 0; i < items.length; i += cols) {
-          rows.add(items.sublist(i, math.min(i + cols, items.length)));
-        }
-        return Padding(
-          padding: EdgeInsets.only(top: InspectorSkin.tileGap),
-          child: Column(
-            children: [
-              for (var r = 0; r < rows.length; r++) ...[
-                if (r > 0) SizedBox(height: g),
-                Row(
-                  children: [
-                    for (var c = 0; c < rows[r].length; c++) ...[
-                      if (c > 0) SizedBox(width: g),
-                      Expanded(
-                        child: InspectorScope(
-                          doc: rows[r][c].$1,
-                          tick: tick,
-                          child: ParameterTile(rows[r][c].$2),
-                        ),
-                      ),
-                    ],
-                    if (rows[r].length < cols) ...[
-                      SizedBox(width: g),
-                      Spacer(flex: cols - rows[r].length),
-                    ],
-                  ],
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _RangeValues extends InspectorValues {
