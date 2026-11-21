@@ -60,7 +60,7 @@ Builtin and self effects list only names. Community effects list author, licence
 
 Everything on the shelf is commercially safe. Code the user pastes is theirs to judge — Motolii records where it came from so the receipt can show it, but does not block or warn.
 
-This is the same boundary as Hydra (AGPL-3.0): not bundled, fetched by the user with `extensions/hydra/get.sh`, deleted and Motolii is as it was. Works whose author publishes no licence text follow the same rule (already in [CONTRIBUTING](../../.github/CONTRIBUTING.md): not bundled; fetched at build time instead).
+This is the same boundary as Hydra (AGPL-3.0): not bundled, fetched by the user with `extensions/hydra/get.sh`, deleted and Motolii is as it was. Native After Effects plugins (`.plugin` / `.aex`) placed or symlinked by the user under `ae_plugins/` follow the same rule: Motolii never bundles third-party plugin binaries, and each plugin remains governed by its own licence. Works whose author publishes no licence text follow the same rule (already in [CONTRIBUTING](../../.github/CONTRIBUTING.md): not bundled; fetched at build time instead).
 
 ## For the future
 

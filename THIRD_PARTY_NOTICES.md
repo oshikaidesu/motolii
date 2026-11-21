@@ -75,6 +75,7 @@ Each is fetched from the author's own distribution at a fixed version, and Motol
 | [Skia](https://skia.org/) (the path part only) | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | none |
 | [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | none |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | 5.6.1 (a4b24c3) | MIT | `engine/deps/jolt.sh` | none |
+| [aexlo](https://github.com/potistudio/aexlo) (After Effects plugin runtime, built into the isolated `motolii_ae_worker` binary) | 4733ffd | MIT | `engine/deps/aexlo.sh` | none |
 | [FFmpeg](https://ffmpeg.org/): the programs `ffmpeg` and `ffprobe` (the exported video, the datamosh, the tiles' films) and the libraries libavformat, libavcodec, libavutil (linked dynamically by `libmotolii`, through IRIS's video reading) | 9.0.2 | LGPL-2.1 or later; built without GPL parts (no libx264, libx265), configured as `third_party/ffmpeg_lgpl/CONFIGURE.txt` says | `engine/deps/ffmpeg.sh` | none |
 | [ONNX Runtime](https://github.com/microsoft/onnxruntime) (runs the CLIP and FontCLIP image encoders for the shelf maps; the release carries its own dependencies, whose notices are in the release's own third-party notices file) | 1.31.1 | MIT | `engine/deps/onnxruntime.sh` | none |
 | [libass](https://github.com/libass/libass) (draws pasted ASS and SSA subtitles, karaoke included; linked dynamically by `libmotolii`, `engine/community/subtitles/`) | 0.17.5 | ISC | `Brewfile` (Homebrew) | none |

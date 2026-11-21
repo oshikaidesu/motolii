@@ -68,6 +68,7 @@ flowchart TB
 | ISF (`.fs`, GLSL) | glslang to SPIR-V to Tint to WGSL, using the tools built with Filament | `engine/community/isf/isf.cpp` |
 | WGSL (`.wgsl`) | Used as is. A head line declares parameters in AviUtl2 style. An image placed beside the file is loaded once by ThorVG through `--image@name:file`. | `engine/stage/effects/screen_fx.h`, `engine/stage/layer_effects/layer_fx.h` |
 | AviUtl2 (`.anm2`, `.obj2`) | Lua runs in LuaJIT, as in AviUtl2, and the calls on `obj` are answered by engine functions. HLSL inside goes through glslang's HLSL reader, SPIR-V and Tint to WGSL. | `engine/community/aviutl/` (`aviutl_run.h`, `aviutl_fx.h`) |
+| After Effects plugins (`.plugin`, `.aex`) | Probed and rendered in an isolated persistent worker process (`motolii_ae_worker`, built on [aexlo](https://github.com/potistudio/aexlo)) over timed binary pipe IPC; straight RGBA8 frames cross the process boundary and plugins are never bundled. | `engine/community/after_effects_plugin/` (`ae_plugin.h`, `ae_plugin_fx.h`, `ae_worker_proc.h`) |
 | three.js shapes (`shelves/solids/*.js`) | QuickJS-ng runs three.js and the engine takes the resulting BufferGeometry | `engine/community/three/solid_three.cpp` |
 | Recipes (`shelves/create/*/*.js`) | QuickJS-ng. A recipe creates layers and values once. | `engine/community/quickjs/script.cpp` |
 | TSL | three.js's own WGSLNodeBuilder runs in QuickJS. This is a tool: only the resulting `.wgsl` files are on the shelf. | `engine/community/three_shading_language_to_shelf/`, and the `sl_*.wgsl`, `tt_*.wgsl`, `nf_*.wgsl` and `tf_*.wgsl` files in `shelves/effects/` |
@@ -93,6 +94,7 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 |---|---|---|
 | `effects/` | `document/scripts/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
 | `aviutl_scripts/` | `document/scripts/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `ae_plugins/` | `document/scripts/recipes.h` `doc_ae_plugin_names` | `workspace/state/tiles/effect_tiles.dart`, `effect_decks_store.dart` `effectPack` |
 | `create/` | `document/scripts/recipes.h` `doc_recipes_read` | `workspace/dock/create/create_shelf.dart`, `workspace/dock/create/expressions.dart` |
 | `expressions/` | `entry/calls_shelf.cpp` `motolii_animators` | `workspace/dock/create/expressions.dart`, `workspace/shelf/shelf_add.dart` (where "Add to shelf" writes) |
 | `relations/` (expressions に統合) | `entry/calls_shelf.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |

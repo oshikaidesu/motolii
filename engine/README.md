@@ -59,7 +59,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `stage/render/` | Drawing with Filament: engine, camera, lights, layers, glTF models and point clouds (`render.h`, `gltf_model.h`, `point_cloud.h`). |
 | `stage/canvas/` | 2D art drawn with ThorVG and placed in the preview as a plane, plus path operations (`canvas.h`, `thorvg_path_operators.cpp`, `skia_path_operations.cpp`). |
 | `stage/effects/` | Effects over the whole screen, as one WGSL or ISF file each, and Filament viewer settings (`screen_fx.h`, `viewer_settings.h`). |
-| `stage/layer_effects/` | A layer's own effect stack: the layer is drawn alone, then its effects run in order, AviUtl2 scripts among them (`layer_fx.h`); a compute shader file moves the points of the layer's solid (`layer_points.cpp`). It sits above `community/aviutl/`, which itself uses `stage/effects/`. |
+| `stage/layer_effects/` | A layer's own effect stack: the layer is drawn alone, then its effects run in order, AviUtl2 scripts and native After Effects plugins among them (`layer_fx.h`); a compute shader file moves the points of the layer's solid (`layer_points.cpp`). It sits above `community/aviutl/` and `community/after_effects_plugin/`, which use `stage/effects/`. |
 | `preview/` | Putting a project on the stage: the playback cache (`playback_cache.h`). |
 | `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.h`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
 | `motion/` | Motion: easing (`easing_curves.h`, `easing_names.h`, `easing_godot.h`) and Lottie motion solved by ThorVG (`lottie_motion.h`). |
@@ -78,6 +78,7 @@ Each folder under `community/` runs code from one outside tool or site, as it is
 | `quickjs/` | The groundwork the adapters below build on: a script's parameters and copies as types, its header of AviUtl2-style or leva-style parameters, shelf files, and anime.js's easings on QuickJS-ng (`script.h`). It includes no other adapter. |
 | `script_runner/` | The JavaScript of the shelves (recipes, expressions, relations, sketches) on QuickJS-ng, in whichever dialect it is written (`script_runner.h`), the functions it reads the rest of the project with (`project_reads.h`), and the parameters of a script of any dialect (`script_parameters.h`). It sits above the adapters it hands the code to. |
 | `after_effects/` | After Effects expressions and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
+| `after_effects_plugin/` | Native After Effects plugins (`.plugin` / `.aex`) placed by the user in `ae_plugins/`, probed and rendered through an isolated `motolii_ae_worker` process backed by `aexlo` (`ae_plugin.h`, `ae_plugin_fx.h`, `ae_worker_proc.h`). |
 | `jolt/` | Rigid bodies moved by Jolt Physics as it is: boxes in one plane, told a mass and a force before each step of 1/60 s, with Jolt's own saved state to go on from any frame (`rigid_bodies.h`). |
 | `p5js/` | p5.js sketches in p5.js itself (`p5_stand.h`), the Web Audio that p5.sound and a page that listens run on (`web_audio_stand.h`), and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
 | `three/` | three.js: solid shapes (`solid_three.h`), screen effects turned into ISF (`three_isf.h`), and pasted three.js Shading Language written as shelf files (`tsl_shelf.h`). |
@@ -101,7 +102,7 @@ A module may include only the modules it links to, and theirs (see Conventions).
 | 1 | `community/after_effects`, `community/playcanvas`, `community/sites`, `community/three`, `motion` | Adapters and motion built on one layer-0 module. |
 | 2 | `community/isf`, `community/p5`, `stage/render` | The ISF and p5.js adapters; drawing with Filament. |
 | 3 | `media`, `stage/effects` | Video, sound and MIDI; effects over the whole screen. |
-| 4 | `community/aviutl`, `stage` | The AviUtl2 adapter; the frame handed to the app. |
+| 4 | `community/aviutl`, `community/after_effects_plugin`, `stage` | The AviUtl2 and After Effects plugin adapters; the frame handed to the app. |
 | 5 | `community/script_runner` | The shelves' JavaScript, above every adapter it hands code to. |
 | 6 | `stage/canvas` | 2D art, which runs its sketches through the script runner. |
 | 7 | `stage/layer_effects` | A layer's own effect stack. |

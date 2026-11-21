@@ -37,12 +37,12 @@ A file browser for the project folder and the whole disk.
 
 <img src="pictures/tabs/effects.jpg" width="240" align="right">
 
-Every effect the engine can apply: over 1,300 ship with Motolii, and an `.fs` or `.wgsl` file dropped in your effects folder appears here without a restart.
+Every effect the engine can apply: over 1,300 ship with Motolii, and an `.fs` or `.wgsl` file dropped in your `effects/` folder — or a native After Effects plugin (`.plugin` / `.aex`) placed or symlinked in `ae_plugins/` — appears here without a restart.
 
 - Hovering a whole-picture effect tries it on the Stage before you apply it.
 - **Places:** All, Recent, Favorites, In This Video, Mine, your decks, and packs.
 - **Decks:** drag tiles onto a deck to group them; a deck shows a 2×2 cover, and can be shared as a deck code you paste.
-- Tags such as `#time`, `#generator`, `#multipass`, `#feedback` and `#sound` filter the shelf.
+- Tags such as `#time`, `#generator`, `#multipass`, `#feedback`, `#sound`, `#ae`, `#cpu` and `#gpu` filter the shelf.
 - A badge says when an effect needs a sound, a video, two layers or something not supported yet.
 - Double-click or drag a tile onto the Stage to apply it.
 
