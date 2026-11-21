@@ -269,6 +269,11 @@ inline const DocValue doc_values[] = {
     {"wrap", "text", 0, 0, false,
      "none character word smart ellipsis vertical"},
     {"wrap_at", "text", 0, 1000, false, nullptr},
+    {"writing", "text", 0, 0, false, "horizontal vertical"},
+    {"metrics", "text", 0, 0, false, "fixed proportional half_width"},
+    {"kinsoku", "text", 0, 0, false, "normal strict loose none"},
+    {"hanging", "text", 0, 1, false, nullptr},
+    {"font_features", "text", 0, 0, false, ""},
     {"split", "text", 0, 0, false, "none letters words lines"},
     // Thousandths of an em (css-inline-3 range).
     {"letter_spacing", "text", -1000, 10000, false, nullptr},

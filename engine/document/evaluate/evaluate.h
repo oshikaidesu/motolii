@@ -158,7 +158,8 @@ inline const char* const doc_making =
     "reflectance','clear_coat','clear_coat_roughness','falloff','shadows','"
     "shadow_softness','contact_shadows','sheen','anisotropy','shading','"
     "thickness','light_group','script','copy_fill','gradient','gradient_angle',"
-    "'gradient_scale','gradient_spread','wrap','wrap_at','split','ior','"
+    "'gradient_scale','gradient_spread','wrap','wrap_at','writing','metrics',"
+    "'kinsoku','hanging','font_features','split','ior','"
     "dispersion','swim','dark','vivid','marker','mosh','mosh_with','mosh_at'";
 
 // -- evaluation: what one call of doc_evaluate works out early and its later

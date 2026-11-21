@@ -48,6 +48,11 @@ inline const DocShown doc_shown[] = {
     {"italic", "", "°", "Slant", 0, 20, nullptr},
     {"wrap", "", "", "Wrap", 0, 0, nullptr},
     {"wrap_at", "", "×", "Wrap at", 0, 40, nullptr},
+    {"writing", "", "", "Direction", 0, 0, nullptr},
+    {"metrics", "", "", "Metrics", 0, 0, nullptr},
+    {"kinsoku", "", "", "Kinsoku", 0, 0, nullptr},
+    {"hanging", "onoff", "", "Hanging", 0, 1, nullptr},
+    {"font_features", "words", "", "Features", 0, 0, nullptr},
     {"gradient", "", "", "Gradient", 0, 0, nullptr},
     // The gradient's own settings fold under it (Gradient), so the Fill card
     // groups them from this, not from a list named in the UI (match_look.cpp

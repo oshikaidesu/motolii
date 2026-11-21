@@ -171,7 +171,7 @@ bool type_sets(const char* fontFile, const char* words) {
       !type_lacks(fontFile, words).empty())
     return false;
   const Set set(motolii_text_new(words, nullptr, fontFile, 100.f, 1.2f, 0.f,
-                                 0.f, 0.f, 0, 0.f));
+                                 0.f, 0.f, 0, 0.f, 0, "normal", 0, ""));
   if (!set.t) return false;
   const uint8_t* verbs = nullptr;
   const float* points = nullptr;
@@ -194,14 +194,17 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
   const float fine = 0.12f * (float)std::max(s.w, s.h);
   const std::string ranges = styles ? styles : "";
   // ThorVG's wrap modes (tvg::TextWrap): 1 breaks between any two letters.
-  const auto set = [fonts, ranges, fine, align, lines = fx.lines,
-                    tracking = fx.letters, slant = fx.italic,
-                    wrap = fx.wrapWidth,
-                    breakAll = fx.wrap == 1](const char* some, float sized) {
-    return motolii_text_new(some, ranges.c_str(), fonts.c_str(),
-                            sized * kPixelsPerPoint, lines, tracking, slant,
-                            wrap > 0.f ? wrap * fine : 0.f, breakAll, align);
-  };
+  const auto set =
+      [fonts, ranges, fine, align, lines = fx.lines, tracking = fx.letters,
+       slant = fx.italic, wrap = fx.wrapWidth, breakAll = fx.wrap == 1,
+       vertical = fx.column, kinsoku = fx.kinsoku, hanging = fx.hanging,
+       features = fx.fontFeatures](const char* some, float sized) {
+        return motolii_text_new(
+            some, ranges.c_str(), fonts.c_str(), sized * kPixelsPerPoint, lines,
+            tracking, slant, wrap > 0.f ? wrap * fine : 0.f, breakAll, align,
+            vertical ? 1 : 0, kinsoku.empty() ? "normal" : kinsoku.c_str(),
+            hanging ? 1 : 0, features.c_str());
+      };
   return place_canvas(
       s,
       [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {

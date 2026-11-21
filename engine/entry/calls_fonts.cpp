@@ -11,7 +11,21 @@
 // shape of the output ("tag1 tag2 … script1 script2") is a cross-platform
 // contract: a swap only re-writes the body of motolii_font_tags().
 
+#include <string>
+
+#include "community/css/text.h"
 #include "entry/motolii.h"
+
+const char* motolii_font_meta(const char* path) {
+  static thread_local std::string out;
+  out.clear();
+  if (!path || !*path) return "";
+  const int32_t need = motolii_font_meta_read(path, nullptr, 0);
+  if (need <= 0) return "";
+  out.resize((size_t)need);
+  motolii_font_meta_read(path, out.data(), need + 1);
+  return out.c_str();
+}
 
 #ifdef __APPLE__
 #include <CoreText/CoreText.h>

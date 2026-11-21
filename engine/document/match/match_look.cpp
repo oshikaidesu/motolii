@@ -234,8 +234,23 @@ void look_text(LayerBuild& build) {
               : w == "ellipsis"                   ? 4
               : fx.wrapWidth > 0.f                ? 2
                                                   : 0;
-    if (w == "vertical") fx.wrapWidth = 1.f, fx.column = true;
+    if (w == "vertical") fx.column = true;
   }
+  if (build.word("writing") == "vertical") fx.column = true;
+  fx.kinsoku = build.word("kinsoku");
+  fx.hanging = build.number("hanging", 0) > 0.5;
+  const std::string metrics = build.word("metrics");
+  std::string feats;
+  if (metrics == "proportional")
+    feats = "palt kern";
+  else if (metrics == "half_width")
+    feats = "halt";
+  const std::string userFeats = build.word("font_features");
+  if (!userFeats.empty()) {
+    if (!feats.empty()) feats += ", ";
+    feats += userFeats;
+  }
+  fx.fontFeatures = feats;
   fx.letters = (float)build.number("letter_spacing", 0),
   fx.lines = (float)build.number("line_spacing", 1.2),
   fx.italic = (float)build.number("italic", 0);

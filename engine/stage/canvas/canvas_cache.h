@@ -73,8 +73,14 @@ struct Canvas2DFx {
   int edgeAlign = 0;
   std::vector<filament::math::float4> edgeRamp;
   std::vector<float> edgeRampAt;
-  // Stacks the letters vertically, one letter height apart.
+  // Vertical-rl OpenType typesetting (vert/vrt2/vmtx) when true.
   bool column = false;
+  // CSS line-break kinsoku mode ("normal", "strict", "loose", "none").
+  std::string kinsoku;
+  // Hang trailing punctuation (、。，．) outside the line/column measure.
+  bool hanging = false;
+  // OpenType font-feature-settings combined from metrics + user features.
+  std::string fontFeatures;
   // letters: thousandths of an em (css-inline-3). lines: CSS line-height.
   // italic: CSS oblique angle in degrees. wrapWidth: letter heights (0 = no
   // wrap).

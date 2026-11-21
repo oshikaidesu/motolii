@@ -24,32 +24,6 @@ using filament::math::float3;
 using filament::math::float4;
 using filament::math::mat4f;
 
-namespace {
-
-// Converts text for a column of vertical writing
-// Type. Punctuation that lies along a line is replaced by its Unicode
-// <vertical> presentation form. The long vowel mark has no such form there, so
-// it becomes a stroke as heavy as the letters. There is no outside source for
-// that choice: a font's vert feature would draw its own glyph, and ThorVG reads
-// no such feature.
-std::string doc_column(std::string words) {
-  static const char* const forms[][2] = {
-      {"，", "︐"}, {"、", "︑"}, {"。", "︒"}, {"：", "︓"}, {"；", "︔"},
-      {"！", "︕"}, {"？", "︖"}, {"〖", "︗"}, {"〗", "︘"}, {"…", "︙"},
-      {"‥", "︰"},  {"—", "︱"},  {"ー", "丨"}, {"–", "︲"},  {"（", "︵"},
-      {"）", "︶"}, {"｛", "︷"}, {"｝", "︸"}, {"〔", "︹"}, {"〕", "︺"},
-      {"【", "︻"}, {"】", "︼"}, {"《", "︽"}, {"》", "︾"}, {"〈", "︿"},
-      {"〉", "﹀"}, {"「", "﹁"}, {"」", "﹂"}, {"『", "﹃"}, {"』", "﹄"},
-      {"［", "﹇"}, {"］", "﹈"}};
-  for (const auto& form : forms)
-    for (size_t at = 0; (at = words.find(form[0], at)) != std::string::npos;
-         at += strlen(form[1]))
-      words.replace(at, strlen(form[0]), form[1]);
-  return words;
-}
-
-}  // namespace
-
 void match_text(LayerBuild& build) {
   Doc& d = build.d;
   Stage& s = build.s;
@@ -80,10 +54,10 @@ void match_text(LayerBuild& build) {
         type(s,
              words.empty()
                  ? std::filesystem::path(file).stem().generic_string().c_str()
-                 : (fx.column ? doc_column(words) : words).c_str(),
+                 : words.c_str(),
              file.c_str(), build.word("text_styles").c_str(), mat4f{}, 1.f,
              fill.empty() ? float3{0x11 / 255.f} : colour, lay, edge,
-             fx.column ? .5f : (float)build.number("align", 0), fx);
+             (float)build.number("align", 0), fx);
 }
 
 }  // namespace motolii

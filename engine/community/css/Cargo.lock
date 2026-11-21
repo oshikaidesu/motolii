@@ -825,6 +825,7 @@ dependencies = [
  "blitz-html",
  "blitz-traits",
  "euclid",
+ "harfrust",
  "parley",
  "roxmltree",
  "skrifa",

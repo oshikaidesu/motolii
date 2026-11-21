@@ -144,6 +144,9 @@ const char* motolii_flashes(const char* video, const char* folder);
    bold light italic symbols ornaments, and the languages beyond Latin that it
    supports (japanese korean chinese russian greek arabic hebrew thai hindi). */
 const char* motolii_font_tags(const char* path);
+// Variable-font axes (fvar) and OpenType feature tags (GSUB/GPOS) read via
+// skrifa.
+const char* motolii_font_meta(const char* path);
 /* Adds a layer of the given kind (kind "" means whatever the file makes),
    starting at the preview's current time. Returns its number, or 0 if no layer
    was made. */

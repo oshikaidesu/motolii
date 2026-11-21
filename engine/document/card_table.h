@@ -62,7 +62,7 @@ inline const DocCard doc_cards[] = {
     // Paragraph panels do.
     {"Text",
      "text text_styles file size letter_spacing line_spacing align split "
-     "italic wrap wrap_at",
+     "italic writing metrics kinsoku hanging font_features wrap wrap_at",
      "kind", "text"},
     // After Effects' Fill and Stroke and Cavalry's Fill and Stroke: a color,
     // colors along a
