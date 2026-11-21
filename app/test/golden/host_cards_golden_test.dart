@@ -205,6 +205,7 @@ Widget _host(
   Map<String, double> numbers = const {},
   Map<String, String> words = const {},
   Map<String, bool> flags = const {},
+  Map<String, KeyframeState> keyMarks = const {},
   CardActions actions = const CardActions(),
   bool openAnchor = false,
 }) {
@@ -213,7 +214,12 @@ Widget _host(
   );
   return InspectorHost(
     layer: InspectedLayer(kind: kind, title: 'Sample', cards: cards),
-    snapshot: InspectorSnapshot(numbers: numbers, words: words, flags: flags),
+    snapshot: InspectorSnapshot(
+      numbers: numbers,
+      words: words,
+      flags: flags,
+      keyMarks: keyMarks,
+    ),
     actions: actions,
     edits: InspectorEdits(
       onValues: (_, {required live}) {},
@@ -382,6 +388,12 @@ void main() {
                           'v_font_features': 'tnum',
                         },
                         flags: const {'text.ot': true},
+                        keyMarks: const {
+                          'v_size': KeyframeState.at,
+                          'v_italic': KeyframeState.off,
+                          'v_letter_spacing': KeyframeState.off,
+                          'v_line_spacing': KeyframeState.off,
+                        },
                         actions: CardActions(
                           fontMeta: (_) =>
                               'features: kern liga palt tnum jp04 jp90 vert',

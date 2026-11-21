@@ -17,6 +17,7 @@ import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
+import 'package:motolii/inspector/text/text_marks.dart';
 import 'package:motolii/inspector/text/text_meta.dart';
 import 'package:motolii/inspector/text/text_notebook.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
@@ -25,6 +26,7 @@ import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/font_files.dart';
+import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/text_gestures.dart';
 
 /// The Text card's inside (see host_cards.dart).
@@ -159,44 +161,71 @@ class _TextBodyState extends State<TextBody> {
           InspectorValues target,
           Parameter param, {
           String? label,
+          void Function(Canvas, Size, Color, double)? mark,
         }) => _CompactNumberCell(
           doc: target,
           tick: x.tick,
           param: param,
           label: label ?? param.label,
+          mark: mark,
         );
 
         // Compact 24px rows for continuous keyframeable values.
         final glyphRow = !scoped
             ? <Widget>[
-                if (layer['size'] case final s?) numCell(doc, s),
-                if (layer['italic'] case final s?) numCell(doc, s),
-                numCell(range, _baseline, label: 'Base'),
+                if (layer['size'] case final s?)
+                  numCell(doc, s, mark: drawTextSize),
+                if (layer['italic'] case final s?)
+                  numCell(doc, s, mark: drawTextSlant),
+                numCell(
+                  range,
+                  _baseline,
+                  label: 'Base',
+                  mark: drawTextBaseline,
+                ),
               ]
             : <Widget>[
-                numCell(range, _size),
+                numCell(
+                  range,
+                  _size,
+                  mark: (c, s, col, v) => drawTextSize(c, s, col, v / 1000),
+                ),
                 _CompactColorCell(doc: range, tick: x.tick),
                 if (layer['letter_spacing'] case final t?)
                   numCell(
                     range,
                     _like(t, def: doc.get('v_letter_spacing') ?? 0),
                     label: 'Track',
+                    mark: drawTextTracking,
                   ),
               ];
 
         final flowRow = !scoped
             ? <Widget>[
                 if (layer['letter_spacing'] case final t?)
-                  numCell(doc, t, label: 'Track'),
+                  numCell(doc, t, label: 'Track', mark: drawTextTracking),
                 if (layer['line_spacing'] case final l?)
-                  numCell(doc, l, label: 'Line'),
+                  numCell(doc, l, label: 'Line', mark: drawTextLineHeight),
                 if (wrapping && layer['wrap_at'] != null)
-                  numCell(doc, layer['wrap_at']!),
+                  numCell(doc, layer['wrap_at']!, mark: drawTextWrapWidth),
               ]
-            : <Widget>[numCell(range, _baseline, label: 'Base')];
+            : <Widget>[
+                numCell(
+                  range,
+                  _baseline,
+                  label: 'Base',
+                  mark: drawTextBaseline,
+                ),
+              ];
 
         final axisCells = <Widget>[
-          for (final a in axes) numCell(range, _axis(a)),
+          for (final a in axes)
+            numCell(
+              range,
+              _axis(a),
+              mark: (c, s, col, v) =>
+                  drawTextAxis(c, s, col, a.tag, v, a.min, a.max),
+            ),
         ];
 
         final fontLabel = picked != null
@@ -494,12 +523,14 @@ class _CompactNumberCell extends StatelessWidget {
     required this.tick,
     required this.param,
     required this.label,
+    this.mark,
   });
 
   final InspectorValues doc;
   final int tick;
   final Parameter param;
   final String label;
+  final void Function(Canvas, Size, Color, double)? mark;
 
   @override
   Widget build(BuildContext context) {
@@ -521,12 +552,33 @@ class _CompactNumberCell extends StatelessWidget {
           ),
           IgnorePointer(
             child: Padding(
-              padding: EdgeInsets.only(left: Shape.s(7)),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyles.micro(Grey.g56),
+              padding: EdgeInsets.only(left: Shape.s(5)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (mark != null) ...[
+                    ListenableBuilder(
+                      listenable: doc.watch(id),
+                      builder: (_, _) {
+                        final v = doc.get(id) ?? param.def;
+                        return CustomPaint(
+                          size: const Size(10, 10),
+                          painter: Draw((c, s) => mark!(c, s, Grey.g63, v), (
+                            v,
+                            label,
+                          )),
+                        );
+                      },
+                    ),
+                    SizedBox(width: Shape.s(3)),
+                  ],
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.micro(Grey.g56),
+                  ),
+                ],
               ),
             ),
           ),
