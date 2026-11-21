@@ -81,7 +81,8 @@ bool doc_stroke_out(Doc& d, int layer, const char* id) {
   list.erase(at);
   doc_act(d);
   if (!doc_stroke_say(d, layer, list)) d.act.ok = false;
-  for (const char* name : {"stroke", "stroke_width"}) {
+  for (const char* name : {"stroke", "stroke_width", "cap", "join", "dash",
+                           "dash_gap", "dash_offset", "stroke_align"}) {
     const std::string key = std::string(id) + ":" + name;
     if (!doc_change(
             d, sqlite3_mprintf(

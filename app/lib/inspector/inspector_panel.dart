@@ -77,9 +77,10 @@ class AddEffectRow extends StatelessWidget {
               ),
             ),
           ),
-          // + Stroke adds another stroke slot to the layer, so a text can wear
-          // several outlines.
-          if (doc.actions.onAddStroke case final stroke?)
+          // + Stroke lives inside the Fill card when present; fall back here only
+          // for layers that accept strokes without a Fill card.
+          if (doc.actions.onAddStroke case final stroke?
+              when !doc.cards.any((c) => c.name == 'Fill'))
             word('add-stroke', '+ Stroke', stroke),
           // Copy and paste the whole effect stack with its parameters
           if (doc.layer.movable.isNotEmpty)

@@ -10,7 +10,8 @@ import 'package:motolii/widgets/number_field.dart' show blockValue;
 /// The Inspector shows the current choice and links to the panel. It never holds the list itself.
 enum LinkTo {
   fonts('Browser', 'Fonts'),
-  colors('Browser', 'Colors');
+  colors('Browser', 'Colors'),
+  media('Browser', 'Media');
 
   const LinkTo(this.panel, this.shelf);
   final String panel, shelf;

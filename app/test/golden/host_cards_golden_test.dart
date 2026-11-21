@@ -81,6 +81,12 @@ struct Params {
   a1b2c3:stroke: vec3<f32>,
   /// @label(Width) @ui(bar) @range(0, 16) @unit(px) @default(4)
   a1b2c3:stroke_width: f32,
+  /// @label(Cap) @enum(butt, round, square) @default(1)
+  a1b2c3:cap: u32,
+  /// @label(Join) @enum(miter, round, bevel) @default(1)
+  a1b2c3:join: u32,
+  /// @label(Align) @enum(center, inside, outside) @default(2)
+  a1b2c3:stroke_align: u32,
 }
 ''';
 

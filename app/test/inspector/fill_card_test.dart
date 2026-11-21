@@ -47,6 +47,8 @@ void main() {
   Future<void> mount(
     WidgetTester tester, {
     Map<String, double> numbers = const {},
+    Map<String, String> words = const {},
+    void Function(Map<String, double>)? onValues,
   }) async {
     tester.view.physicalSize = const Size(372, 900);
     tester.view.devicePixelRatio = 1;
@@ -74,10 +76,10 @@ void main() {
                 ),
               ],
             ),
-            snapshot: InspectorSnapshot(numbers: numbers),
+            snapshot: InspectorSnapshot(numbers: numbers, words: words),
             actions: const CardActions(),
             edits: InspectorEdits(
-              onValues: (_, {required live}) {},
+              onValues: (changed, {required live}) => onValues?.call(changed),
               onDrop: () {},
               onKey: (_, _) {},
               onWords: (_, {required live}) => true,
@@ -126,5 +128,38 @@ void main() {
     await mount(tester, numbers: {'v_gradient': 1});
     final on = tester.widgetList(find.byType(ParameterTile)).length;
     expect(on, off + 3);
+  });
+
+  testWidgets(
+    'multi-color linear fill shows gradient settings even at index 0',
+    (tester) async {
+      await mount(
+        tester,
+        numbers: {'v_gradient': 0},
+        words: {'v_fill': '#59C3E8 #D64B7A'},
+      );
+      expect(find.text('Angle'), findsOneWidget);
+      expect(find.text('Stretch'), findsOneWidget);
+      expect(find.text('Past end'), findsOneWidget);
+    },
+  );
+
+  testWidgets('dragging the preview angle handle edits v_gradient_angle', (
+    tester,
+  ) async {
+    final told = <Map<String, double>>[];
+    await mount(
+      tester,
+      numbers: {'v_gradient': 0, 'v_gradient_angle': 0},
+      words: {'v_fill': '#59C3E8 #D64B7A'},
+      onValues: (m) => told.add(Map.of(m)),
+    );
+    final preview = find.byKey(const ValueKey('fill-preview'));
+    expect(preview, findsOneWidget);
+    final center = tester.getCenter(preview);
+    // At angle 0 deg the handle sits directly below center; drag right to turn it.
+    await tester.dragFrom(center + const Offset(0, 15), const Offset(25, -15));
+    await tester.pump();
+    expect(told.any((m) => m.containsKey('v_gradient_angle')), isTrue);
   });
 }
