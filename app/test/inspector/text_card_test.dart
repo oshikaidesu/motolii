@@ -316,21 +316,4 @@ void main() {
       );
     },
   );
-
-  testWidgets(
-    'dragging the typesetting stage edits Tracking and Line Height directly',
-    (tester) async {
-      await mount(tester);
-      final stage = find.byKey(const ValueKey('text:stage'));
-      expect(stage, findsOneWidget);
-      final center = tester.getCenter(stage);
-      await tester.dragFrom(center, const Offset(40, 0));
-      await tester.pump();
-      expect(numbers.any((n) => (n['v_letter_spacing'] ?? 0) > 0), isTrue);
-
-      await tester.dragFrom(center, const Offset(0, 30));
-      await tester.pump();
-      expect(numbers.any((n) => (n['v_line_spacing'] ?? 0) > 1.2), isTrue);
-    },
-  );
 }

@@ -1,6 +1,9 @@
-// Dedicated Text host card: horizontal preview editor, live visual typesetting
-// instrument (direct drag + in-well discrete mode pills), and Transform-style
-// compact 24px numeric rows for continuous keyframeable typography parameters.
+// Dedicated Text host card without duplicating Stage rendering:
+// 1. Clipped horizontal text editor with in-well discrete typesetting pills
+//    (Direction, Align, Metrics | Wrap, Kinsoku, Hanging)
+// 2. Slim Font row + Transform-style 24px compact numeric rows for continuous
+//    keyframeable typography parameters (Size, Slant, Baseline / Track, Line, Wrap at)
+// 3. OpenType feature chip strip + variable-font axes
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -17,7 +20,6 @@ import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/inspector/text/text_meta.dart';
 import 'package:motolii/inspector/text/text_ranges.dart';
 import 'package:motolii/inspector/text/text_typeset_bar.dart';
-import 'package:motolii/inspector/text/text_typeset_stage.dart';
 import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -99,13 +101,6 @@ class _TextBodyState extends State<TextBody> {
       height: 1.3,
     );
     final layer = {for (final p in widget.card.params) p.id: p};
-    final hasStage =
-        layer.containsKey('writing') ||
-        layer.containsKey('align') ||
-        layer.containsKey('metrics') ||
-        layer.containsKey('wrap') ||
-        layer.containsKey('kinsoku') ||
-        layer.containsKey('hanging');
 
     return ValueListenableBuilder(
       valueListenable: wordsPicked,
@@ -131,22 +126,19 @@ class _TextBodyState extends State<TextBody> {
           InspectorValues target,
           Parameter param, {
           String? label,
-          String? hotZone,
         }) => _CompactNumberCell(
           doc: target,
           tick: x.tick,
           param: param,
           label: label ?? param.label,
-          hotZone: hotZone,
         );
 
         // Compact 24px rows for continuous keyframeable values.
         final glyphRow = picked == null
             ? <Widget>[
                 if (layer['size'] case final s?) numCell(doc, s),
-                if (layer['italic'] case final s?)
-                  numCell(doc, s, hotZone: 'slant'),
-                numCell(range, _baseline, label: 'Base', hotZone: 'baseline'),
+                if (layer['italic'] case final s?) numCell(doc, s),
+                numCell(range, _baseline, label: 'Base'),
               ]
             : <Widget>[
                 numCell(range, _size),
@@ -156,22 +148,19 @@ class _TextBodyState extends State<TextBody> {
                     range,
                     _like(t, def: doc.get('v_letter_spacing') ?? 0),
                     label: 'Track',
-                    hotZone: 'tracking',
                   ),
               ];
 
         final flowRow = picked == null
             ? <Widget>[
                 if (layer['letter_spacing'] case final t?)
-                  numCell(doc, t, label: 'Track', hotZone: 'tracking'),
+                  numCell(doc, t, label: 'Track'),
                 if (layer['line_spacing'] case final l?)
-                  numCell(doc, l, label: 'Line', hotZone: 'line'),
+                  numCell(doc, l, label: 'Line'),
                 if (wrapping && layer['wrap_at'] != null)
-                  numCell(doc, layer['wrap_at']!, hotZone: 'wrap'),
+                  numCell(doc, layer['wrap_at']!),
               ]
-            : <Widget>[
-                numCell(range, _baseline, label: 'Base', hotZone: 'baseline'),
-              ];
+            : <Widget>[numCell(range, _baseline, label: 'Base')];
 
         final axisCells = <Widget>[
           for (final a in axes) numCell(range, _axis(a)),
@@ -180,8 +169,10 @@ class _TextBodyState extends State<TextBody> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Horizontal preview text input (clipped and preview-size clamped).
-            _TextInputBox(
+            // 1. Horizontal preview editor + in-well icon-led discrete typesetting pills.
+            _TextWell(
+              doc: doc,
+              layer: layer,
               text: text,
               styles: styles,
               base: base,
@@ -200,13 +191,7 @@ class _TextBodyState extends State<TextBody> {
               },
             ),
 
-            // 2. Live visual typesetting instrument (discrete modes + direct drag).
-            if (picked == null && hasStage) ...[
-              SizedBox(height: Shape.s(5)),
-              TextTypesetStage(doc: doc, layer: layer),
-            ],
-
-            // 3. Dedicated compact rows for Font, continuous values, variable axes, and OT.
+            // 2. Slim Font row + 24px compact rows for continuous motion parameters.
             if (layer.containsKey('file')) ...[
               SizedBox(height: Shape.s(5)),
               InspectorScope(
@@ -413,9 +398,12 @@ class _TextBodyState extends State<TextBody> {
   }
 }
 
-/// Clipped, bounded horizontal text editor for fast typing and range selection.
-class _TextInputBox extends StatelessWidget {
-  const _TextInputBox({
+/// Recessed horizontal text editor with in-well discrete typesetting pills.
+/// Clipped and height-bounded so large range sizes or multiline text never bleed out.
+class _TextWell extends StatelessWidget {
+  const _TextWell({
+    required this.doc,
+    required this.layer,
     required this.text,
     required this.styles,
     required this.base,
@@ -424,6 +412,8 @@ class _TextInputBox extends StatelessWidget {
     required this.onPick,
   });
 
+  final InspectorValues doc;
+  final Map<String, Parameter> layer;
   final String text;
   final String styles;
   final TextStyle base;
@@ -432,134 +422,137 @@ class _TextInputBox extends StatelessWidget {
   final void Function(TextEditingValue) onPick;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: Shape.round(6),
-    child: Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: Shape.s(8),
-        vertical: Shape.s(6),
-      ),
-      decoration: BoxDecoration(
-        color: InspectorSkin.well,
-        borderRadius: Shape.round(6),
-        border: Border.all(
-          color: picked != null
-              ? Accent.fill.withValues(alpha: 0.45)
-              : Grey.g20,
+  Widget build(BuildContext context) {
+    final hasBar =
+        picked == null &&
+        (layer.containsKey('writing') ||
+            layer.containsKey('align') ||
+            layer.containsKey('metrics') ||
+            layer.containsKey('wrap') ||
+            layer.containsKey('kinsoku') ||
+            layer.containsKey('hanging'));
+    return ClipRRect(
+      borderRadius: Shape.round(6),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          Shape.s(6),
+          Shape.s(6),
+          Shape.s(6),
+          hasBar ? Shape.s(6) : Shape.s(7),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            // Bound and clip height so large preview ranges or multiline strings never bleed into other cards.
-            child: ClipRect(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: Shape.z(76)),
-                child: TypedField(
-                  key: const ValueKey('text:box'),
-                  text: text,
-                  standing: true,
-                  escapes: true,
-                  style: base,
-                  cursor: Grey.g95,
-                  backgroundCursor: Grey.g20,
-                  selection: Role.selected.withValues(alpha: .4),
-                  styled: (t, style) => _spans(t, styles, style),
-                  onDone: onDone,
-                  onPick: onPick,
-                ),
-              ),
-            ),
+        decoration: BoxDecoration(
+          color: InspectorSkin.well,
+          borderRadius: Shape.round(6),
+          border: Border.all(
+            color: picked != null
+                ? Accent.fill.withValues(alpha: 0.45)
+                : Grey.g20,
           ),
-          if (picked != null)
-            Padding(
-              padding: EdgeInsets.only(left: Shape.s(6)),
-              child: Container(
-                key: const ValueKey('text:scope'),
-                padding: EdgeInsets.symmetric(
-                  horizontal: Shape.s(5),
-                  vertical: Shape.s(2),
-                ),
-                decoration: BoxDecoration(
-                  color: Accent.fill.withValues(alpha: 0.16),
-                  borderRadius: Shape.round(4),
-                  border: Border.all(
-                    color: Accent.fill.withValues(alpha: 0.55),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ClipRect(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: Shape.z(76)),
+                      child: TypedField(
+                        key: const ValueKey('text:box'),
+                        text: text,
+                        standing: true,
+                        escapes: true,
+                        style: base,
+                        cursor: Grey.g95,
+                        backgroundCursor: Grey.g20,
+                        selection: Role.selected.withValues(alpha: .4),
+                        styled: (t, style) => _spans(t, styles, style),
+                        onDone: onDone,
+                        onPick: onPick,
+                      ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  '${picked!.count} ch',
-                  style: TextStyles.micro(Accent.fill),
-                ),
-              ),
+                if (picked != null)
+                  Padding(
+                    padding: EdgeInsets.only(left: Shape.s(6)),
+                    child: Container(
+                      key: const ValueKey('text:scope'),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: Shape.s(5),
+                        vertical: Shape.s(2),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Accent.fill.withValues(alpha: 0.16),
+                        borderRadius: Shape.round(4),
+                        border: Border.all(
+                          color: Accent.fill.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Text(
+                        '${picked!.count} ch',
+                        style: TextStyles.micro(Accent.fill),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
+            if (hasBar) TextTypesetBar(doc: doc, layer: layer),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// 24px compact scrubbable number cell matching Transform's compact rows, with
-/// left-aligned micro label layered cleanly over the right-aligned number field
-/// so dragging anywhere on the cell (including its label) scrubs the value.
+/// left-aligned micro label over the right-aligned number field so dragging
+/// anywhere on the cell (including its label) scrubs the value.
 class _CompactNumberCell extends StatelessWidget {
   const _CompactNumberCell({
     required this.doc,
     required this.tick,
     required this.param,
     required this.label,
-    this.hotZone,
   });
 
   final InspectorValues doc;
   final int tick;
   final Parameter param;
   final String label;
-  final String? hotZone;
 
   @override
   Widget build(BuildContext context) {
     final id = 'v_${param.id}';
-    return MouseRegion(
-      onEnter: (_) => hotZone == null ? null : textHot.value = hotZone,
-      onExit: (_) {
-        if (hotZone != null && textHot.value == hotZone) textHot.value = null;
-      },
-      child: ValueListenableBuilder(
-        valueListenable: textHot,
-        builder: (_, lit, _) {
-          final isLit = hotZone != null && lit == hotZone;
-          return InspectorScope(
-            doc: doc,
-            tick: tick,
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                RowInfo(
-                  keys: doc.keys[id] ?? KeyframeState.off,
-                  child: InspectorNumberField(
-                    param,
-                    id: id,
-                    caption: '',
-                    compact: true,
-                  ),
-                ),
-                IgnorePointer(
-                  child: Padding(
-                    padding: EdgeInsets.only(left: Shape.s(7)),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyles.micro(isLit ? Accent.fill : Grey.g56),
-                    ),
-                  ),
-                ),
-              ],
+    return InspectorScope(
+      doc: doc,
+      tick: tick,
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          RowInfo(
+            keys: doc.keys[id] ?? KeyframeState.off,
+            child: InspectorNumberField(
+              param,
+              id: id,
+              caption: '',
+              compact: true,
             ),
-          );
-        },
+          ),
+          IgnorePointer(
+            child: Padding(
+              padding: EdgeInsets.only(left: Shape.s(7)),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.micro(Grey.g56),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -599,7 +592,7 @@ class _CompactColorCell extends StatelessWidget {
   }
 }
 
-/// 3-column aligned row of 24px compact cells (keeps column grid even when < 3).
+/// 3-column aligned row of 24px compact cells.
 class _CompactRow extends StatelessWidget {
   const _CompactRow(this.cells);
   final List<Widget> cells;

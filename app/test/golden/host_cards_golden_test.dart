@@ -263,7 +263,7 @@ void main() {
   testWidgets('host cards contact sheet', (tester) async {
     const colW = 340.0;
     const totalW = colW * 3 + 48.0;
-    const totalH = 880.0;
+    const totalH = 752.0;
     tester.view.physicalSize = const Size(totalW, totalH);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
