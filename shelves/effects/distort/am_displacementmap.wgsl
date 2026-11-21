@@ -3,12 +3,6 @@
 // --picture@backdrop:Behind
 // --picture@below:Map layer
 // --about:Uses the layer's colors to push the layers behind it around, then hides itself; or, with Map set to Layer Below, pushes this layer by the layer beneath.
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@xchannel:X,0,1,0.0,0.01
-// --track@ychannel:Y,0,1,1.0,0.01
-// --track@edges:Edges,0,1,1.0,0.01
-// --track@map:Map,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -18,16 +12,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  screen: vec4<f32>,
-  offset: vec2<f32>,
-  xchannel: f32,
-  ychannel: f32,
-  edges: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @auto screen: vec4<f32>,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @label("X")
+  @range(0, 1, 0.01, 0)        xchannel: f32,
+  @label("Y")
+  @range(0, 1, 0.01, 1)        ychannel: f32,
+  @range(0, 1, 0.01, 1)        edges: f32,
   fromCenter: f32,
   invert: f32,
-  map: f32,
+  @range(0, 1, 0.01, 0)        map: f32,
   layerRect: vec4<f32>,
   backdropBox: vec4<f32>,
 };

@@ -475,7 +475,7 @@ struct Params {
   EXPECT_EQ(p[4].group, "Tone");
 
   EXPECT_EQ(p[5].name, "center_x");
-  EXPECT_EQ(p[5].group, "Center");
+  EXPECT_EQ(p[5].group, "");
   EXPECT_DOUBLE_EQ(p[5].usual, 0.25);
   EXPECT_EQ(p[6].name, "center_y");
   EXPECT_DOUBLE_EQ(p[6].usual, 0.75);

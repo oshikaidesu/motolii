@@ -6,9 +6,6 @@
 // --pass@luma:1,1,s0.5,s0.5
 // --pass@src:1,0,s1,s1
 // --pass@:0,0,s1,s1
-// --track@keyframe:Afresh every (frames),0,600,120,1
-// --track@residual:Residual,0,1,0.1,0.01
-// --track@range:Search,1,8,3,1
 
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
@@ -20,7 +17,15 @@
 @group(0) @binding(7) var lumaNear: sampler;
 @group(0) @binding(8) var src: texture_2d<f32>;
 @group(0) @binding(9) var srcNear: sampler;
-struct Knobs { passindex: f32, frame: f32, keyframe: f32, residual: f32, range: f32 }
+struct Knobs {
+  @auto passindex: f32,
+  @auto frame: f32,
+  @label("Afresh every (frames)")
+  @range(0, 600, 1, 120)       keyframe: f32,
+  @range(0, 1, 0.01, 0.1)      residual: f32,
+  @label("Search")
+  @range(1, 8, 1, 3)           range: f32,
+}
 @group(0) @binding(10) var<uniform> knobs: Knobs;
 
 const BLOCK = 8;   // half-res pixels: a full-res macroblock of 16

@@ -1,31 +1,31 @@
 // Halftone: three.js's HalftoneShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)
 // --label:Stylize
-// --track@radius:radius,0.0,16.0,4.0,0.001
-// --track@rotateR:rotateR,0.0,1.0,0.0,0.001
-// --track@rotateG:rotateG,0.0,1.0,0.0,0.001
-// --track@rotateB:rotateB,0.0,1.0,0.0,0.001
-// --track@scatter:scatter,0.0,1.0,0.0,0.001
-// --track@width:width,0.0,4.0,1.0,0.001
-// --track@height:height,0.0,4.0,1.0,0.001
-// --track@shape:shape,0,4,1,1
-// --check@disable_on:disable,0
-// --track@blending:blending,0.0,4.0,1.0,0.001
-// --track@blendingMode:blendingMode,0,4,1,1
-// --check@greyscale_on:greyscale,0
 
 struct Knobs {
-    radius: f32,
-    rotateR: f32,
-    rotateG: f32,
-    rotateB: f32,
-    scatter: f32,
-    width: f32,
-    height: f32,
-    shape: i32,
-    disable_on: i32,
-    blending: f32,
-    blendingMode: i32,
-    greyscale_on: i32,
+  @label("radius")
+  @range(0, 16, 0.001, 4)      radius: f32,
+  @label("rotateR")
+  @range(0, 1, 0.001, 0)       rotateR: f32,
+  @label("rotateG")
+  @range(0, 1, 0.001, 0)       rotateG: f32,
+  @label("rotateB")
+  @range(0, 1, 0.001, 0)       rotateB: f32,
+  @label("scatter")
+  @range(0, 1, 0.001, 0)       scatter: f32,
+  @label("width")
+  @range(0, 4, 0.001, 1)       width: f32,
+  @label("height")
+  @range(0, 4, 0.001, 1)       height: f32,
+  @label("shape")
+  @range(0, 4, 1, 1)           shape: i32,
+  @label("disable")
+  @toggle(0)                   disable_on: i32,
+  @label("blending")
+  @range(0, 4, 0.001, 1)       blending: f32,
+  @label("blendingMode")
+  @range(0, 4, 1, 1)           blendingMode: i32,
+  @label("greyscale")
+  @toggle(0)                   greyscale_on: i32,
 }
 
 struct Cell {

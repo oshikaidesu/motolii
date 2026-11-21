@@ -1,27 +1,20 @@
 // Slice: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Shifts horizontal slices of the image sideways into glitchy bands.
-// --track@amount:Amount,0,480,180,1
-// --track@sliceHeight:Slice Height,2,240,28,1
-// --track@blockWidth:Block Width,8,640,120,1
-// --track@density:Density,0,1,0.58,0.01
-// --track@dispersion:Dispersion,0,0.5,0.18,0.01
-// --track@speed:Speed,0,2,0.2,0.01
-// --track@direction:Direction,0,2,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  amount: f32,
-  sliceHeight: f32,
-  blockWidth: f32,
-  density: f32,
-  dispersion: f32,
-  speed: f32,
-  direction: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 480, 1, 180)       amount: f32,
+  @range(2, 240, 1, 28)        sliceHeight: f32,
+  @range(8, 640, 1, 120)       blockWidth: f32,
+  @range(0, 1, 0.01, 0.58)     density: f32,
+  @range(0, 0.5, 0.01, 0.18)   dispersion: f32,
+  @range(0, 2, 0.01, 0.2)      speed: f32,
+  @range(0, 2, 1, 0)           direction: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

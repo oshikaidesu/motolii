@@ -1,12 +1,12 @@
 // Film: three.js's FilmShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)
 // --label:Film
-// --track@intensity:intensity,0.0,2.0,0.5,0.001
-// --check@grayscale_on:grayscale,0
 
 struct Knobs {
-    intensity: f32,
-    grayscale_on: i32,
-    time: f32,
+  @label("intensity")
+  @range(0, 2, 0.001, 0.5)     intensity: f32,
+  @label("grayscale")
+  @toggle(0)                   grayscale_on: i32,
+  @auto time: f32,
 }
 
 struct IncidentLight {

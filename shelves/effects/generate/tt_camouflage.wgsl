@@ -1,31 +1,22 @@
 // Camouflage: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture imitates the design of camouflage patters in
-// --track@scale:Scale,0,4,2,0.04
-// --track@colorA_x:Color A r,0,1,0.5394794890033748,0.001
-// --track@colorA_y:Color A g,0,1,0.514917665367466,0.001
-// --track@colorA_z:Color A b,0,1,0.3915724777393922,0.001
-// --track@colorB_x:Color B r,0,1,0.33245153633549385,0.001
-// --track@colorB_y:Color B g,0,1,0.2501582847191642,0.001
-// --track@colorB_z:Color B b,0,1,0.11193242782769693,0.001
-// --track@colorC_x:Color C r,0,1,0.2874408377161099,0.001
-// --track@colorC_y:Color C g,0,1,0.36625259558833256,0.001
-// --track@colorC_z:Color C b,0,1,0.17788841597328695,0.001
-// --track@colorD_x:Color D r,0,1,0.16513219449147767,0.001
-// --track@colorD_y:Color D g,0,1,0.17788841597328695,0.001
-// --track@colorD_z:Color D b,0,1,0.11953842797895521,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  colorA: vec3<f32>,
-  colorB: vec3<f32>,
-  colorC: vec3<f32>,
-  colorD: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @label("Color A r")
+  @range(0, 1, 0.001, 0.539479, 0.514918, 0.391572) colorA: vec3<f32>,
+  @label("Color B r")
+  @range(0, 1, 0.001, 0.332452, 0.250158, 0.111932) colorB: vec3<f32>,
+  @label("Color C r")
+  @range(0, 1, 0.001, 0.287441, 0.366253, 0.177888) colorC: vec3<f32>,
+  @label("Color D r")
+  @range(0, 1, 0.001, 0.165132, 0.177888, 0.119538) colorD: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

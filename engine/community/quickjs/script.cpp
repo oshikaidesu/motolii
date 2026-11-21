@@ -502,17 +502,41 @@ std::vector<ScriptParameter> wgsl_attribute_parameters(
           pending_label.empty() ? wgsl_human_label(fname) : pending_label;
       const auto nums = parse_nums(pending_args);
       if (pending_kind == "range" && nums.size() >= 2) {
-        ScriptParameter k;
-        k.name = fname;
-        k.label = label;
-        k.kind = "track";
-        k.low = nums[0];
-        k.high = nums[1];
+        const int vec_n = ftype.rfind("vec2", 0) == 0   ? 2
+                          : ftype.rfind("vec3", 0) == 0 ? 3
+                          : ftype.rfind("vec4", 0) == 0 ? 4
+                                                        : 1;
         const bool is_int = ftype == "i32" || ftype == "u32";
-        k.step = nums.size() >= 3 ? nums[2] : (is_int ? 1.0 : 0.01);
-        k.usual = nums.size() >= 4 ? nums[3] : k.low;
-        k.group = group;
-        out.push_back(std::move(k));
+        const double step = nums.size() >= 3 ? nums[2] : (is_int ? 1.0 : 0.01);
+        if (vec_n == 1) {
+          ScriptParameter k;
+          k.name = fname;
+          k.label = label;
+          k.kind = "track";
+          k.low = nums[0];
+          k.high = nums[1];
+          k.step = step;
+          k.usual = nums.size() >= 4 ? nums[3] : k.low;
+          k.group = group;
+          out.push_back(std::move(k));
+        } else {
+          const char* comp_name[4] = {"_x", "_y", "_z", "_w"};
+          const char* comp_lbl[4] = {" X", " Y", " Z", " W"};
+          for (int c = 0; c < vec_n; ++c) {
+            ScriptParameter k;
+            k.name = fname + comp_name[c];
+            k.label = label + comp_lbl[c];
+            k.kind = "track";
+            k.low = nums[0];
+            k.high = nums[1];
+            k.step = step;
+            k.usual = (size_t)(3 + c) < nums.size() ? nums[(size_t)(3 + c)]
+                      : nums.size() >= 4            ? nums[3]
+                                                    : k.low;
+            k.group = group;
+            out.push_back(std::move(k));
+          }
+        }
       } else if (pending_kind == "toggle") {
         ScriptParameter k;
         k.name = fname;
@@ -525,10 +549,10 @@ std::vector<ScriptParameter> wgsl_attribute_parameters(
         k.group = group;
         out.push_back(std::move(k));
       } else if (pending_kind == "color") {
-        const std::string grp = group.empty() ? label : group;
-        const char* comp_name[3] = {"_x", "_y", "_z"};
-        const char* comp_lbl[3] = {" R", " G", " B"};
-        for (int c = 0; c < 3; ++c) {
+        const int vec_n = ftype.rfind("vec4", 0) == 0 ? 4 : 3;
+        const char* comp_name[4] = {"_x", "_y", "_z", "_w"};
+        const char* comp_lbl[4] = {" R", " G", " B", " A"};
+        for (int c = 0; c < vec_n; ++c) {
           ScriptParameter k;
           k.name = fname + comp_name[c];
           k.label = label + comp_lbl[c];
@@ -537,11 +561,10 @@ std::vector<ScriptParameter> wgsl_attribute_parameters(
           k.high = 1;
           k.step = 0.01;
           k.usual = (size_t)c < nums.size() ? nums[(size_t)c] : 1.0;
-          k.group = grp;
+          k.group = group;
           out.push_back(std::move(k));
         }
       } else if (pending_kind == "point") {
-        const std::string grp = group.empty() ? label : group;
         const char* comp_name[2] = {"_x", "_y"};
         const char* comp_lbl[2] = {" X", " Y"};
         for (int c = 0; c < 2; ++c) {
@@ -553,7 +576,7 @@ std::vector<ScriptParameter> wgsl_attribute_parameters(
           k.high = 1;
           k.step = 0.01;
           k.usual = (size_t)c < nums.size() ? nums[(size_t)c] : 0.5;
-          k.group = grp;
+          k.group = group;
           out.push_back(std::move(k));
         }
       }

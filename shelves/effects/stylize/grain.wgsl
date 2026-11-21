@@ -1,12 +1,11 @@
 // Grain: a thing's see-through turned to grains, as a riso print's grainy gradient: each point wholly there or wholly not, as likely as it was there (a colour to clear down a ramp becomes grains thinning out)
 // --label:Film
 // --alpha (on a thing: its own see-through is what it lays, the grains)
-// --track@size:Grain size,1,12,2,0.1
-// --track@seed:Seed,0,100,0,1
 
 struct Knobs {
-    size: f32,
-    seed: f32,
+  @label("Grain size")
+  @range(1, 12, 0.1, 2)        size: f32,
+  @range(0, 100, 1, 0)         seed: f32,
 }
 
 @group(0) @binding(0) var picture: texture_2d<f32>;

@@ -1,26 +1,6 @@
 // Dots: AbsentMotion's dots (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a random but even pattern of soft dots over the layer, or uses the layer only as a mask for the dots.
-// --track@scale:Scale,0.01,100,1.0,0.01
-// --track@phase:Phase,-99,99,0.0,0.001
-// --track@radius:Radius,0,2,0.2,0.001
-// --track@feather:Feather,0,1,0.1,0.001
-// --track@color1_x:Color 1 R,0,1,1,0.01
-// --track@color1_y:Color 1 G,0,1,1,0.01
-// --track@color1_z:Color 1 B,0,1,1,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,0,0.01
-// --track@color2_y:Color 2 G,0,1,0,0.01
-// --track@color2_z:Color 2 B,0,1,0,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@density:Density,1,13,12.0,1
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@fill:Fill,0,1,1.0,0.001
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@blend:Blending Mode,0,1,0.0,0.01
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@slack:Slack,0,1,1.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -30,21 +10,24 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  phase: f32,
-  radius: f32,
-  feather: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  density: f32,
-  offset: vec2<f32>,
-  fill: f32,
-  alpha: f32,
-  blend: f32,
-  seed: f32,
-  slack: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.01, 100, 0.01, 1)   scale: f32,
+  @range(-99, 99, 0.001, 0)    phase: f32,
+  @range(0, 2, 0.001, 0.2)     radius: f32,
+  @range(0, 1, 0.001, 0.1)     feather: f32,
+  @label("Color 1")
+  @color(1, 1, 1, 1)           color1: vec4<f32>,
+  @label("Color 2")
+  @color(0, 0, 0, 1)           color2: vec4<f32>,
+  @range(1, 13, 1, 12)         density: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(0, 1, 0.001, 1)       fill: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 0)        blend: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @range(0, 1, 0.001, 1)       slack: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

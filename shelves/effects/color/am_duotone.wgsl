@@ -1,16 +1,6 @@
 // Duotone: AbsentMotion's duotone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Applies a two-color gradient map based on luminance with contrast and amount controls.
-// --track@contrast:Contrast,0.0,2.0,1.0,0.05
-// --track@amount:Amount,0.0,1.0,1.0,0.05
-// --track@color1_x:Shadow Color R,0,1,0,0.01
-// --track@color1_y:Shadow Color G,0,1,0,0.01
-// --track@color1_z:Shadow Color B,0,1,0,0.01
-// --track@color1_w:Shadow Color A,0,1,1,0.01
-// --track@color2_x:Highlight Color R,0,1,1,0.01
-// --track@color2_y:Highlight Color G,0,1,1,0.01
-// --track@color2_z:Highlight Color B,0,1,1,0.01
-// --track@color2_w:Highlight Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -20,12 +10,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  contrast: f32,
-  amount: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 2, 0.05, 1)        contrast: f32,
+  @range(0, 1, 0.05, 1)        amount: f32,
+  @label("Shadow Color")
+  @color(0, 0, 0, 1)           color1: vec4<f32>,
+  @label("Highlight Color")
+  @color(1, 1, 1, 1)           color2: vec4<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

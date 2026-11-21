@@ -1,22 +1,6 @@
 // Ribbon: AbsentMotion's ribbon (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a twisting ribbon of changing width across the opaque parts of the layer; animate Phase to make it flow, or punch it out of the layer.
-// --track@magnitude:Magnitude,0,1,0.2,0.001
-// --track@frequency:Frequency,0.1,20,3.0,0.01
-// --track@width:Width,0,5,0.2,0.001
-// --track@phase:Phase,0,1000,0.0,0.01
-// --track@offset:Offset,-1,1,0.0,0.001
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@smoothing:Smoothing,0,1,0.01,0.001
-// --track@tint_x:Tint R,0,1,0.5333,0.01
-// --track@tint_y:Tint G,0,1,0.8,0.01
-// --track@tint_z:Tint B,0,1,1,0.01
-// --track@tint_w:Tint A,0,1,1,0.01
-// --track@tintAmount:Tint Amount,0,1,0.0,0.001
-// --track@angle:Angle,-3600,3600,0.0,0.5
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -26,19 +10,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  magnitude: f32,
-  frequency: f32,
-  width: f32,
-  phase: f32,
-  offset: f32,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.001, 0.2)     magnitude: f32,
+  @range(0.1, 20, 0.01, 3)     frequency: f32,
+  @range(0, 5, 0.001, 0.2)     width: f32,
+  @range(0, 1000, 0.01, 0)     phase: f32,
+  @range(-1, 1, 0.001, 0)      offset: f32,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
   punch: f32,
-  smoothing: f32,
-  tint: vec4<f32>,
-  tintAmount: f32,
-  angle: f32,
+  @range(0, 1, 0.001, 0.01)    smoothing: f32,
+  @color(0.5333, 0.8, 1, 1)    tint: vec4<f32>,
+  @range(0, 1, 0.001, 0)       tintAmount: f32,
+  @range(-3600, 3600, 0.5, 0)  angle: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

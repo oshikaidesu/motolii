@@ -4,31 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Fills the frame behind the layer with a blurred, zoomed copy of itself, the usual fix for a portrait video in a landscape project.
-// --track@blur:Strength,0,600,60.0,0.1
-// --track@feather:Feather,0,1,0.05,0.001
-// --track@saturation:Saturation,-1,1,0.0,0.001
-// --track@brightness:Brightness,-1,1,0.0,0.001
-// --track@gamma:Gamma,0.01,9.99,1.0,0.01
-// --track@fgAlpha:Foreground Alpha,0,1,1.0,0.001
-// --track@bgAlpha:Background Alpha,0,1,1.0,0.001
-// --track@tintColor_x:Tint Color R,0,1,0.2392,0.01
-// --track@tintColor_y:Tint Color G,0,1,0.4941,0.01
-// --track@tintColor_z:Tint Color B,0,1,1,0.01
-// --track@tintColor_w:Tint Color A,0,1,1,0.01
-// --track@tint:Tint,0,1,0.0,0.001
-// --track@edgeColor_x:Edge Color R,0,1,0,0.01
-// --track@edgeColor_y:Edge Color G,0,1,0,0.01
-// --track@edgeColor_z:Edge Color B,0,1,0,0.01
-// --track@edgeColor_w:Edge Color A,0,1,1,0.01
-// --track@edgeStrength:Edge Strength,0,1,0.0,0.001
-// --track@scanStrength:Scan Line Strength,0,1,0.0,0.001
-// --track@scanCount:Scan Line Count,100,2160,720.0,1
-// --track@fgOffset_x:FG Offset x,-5000,5000,0,1
-// --track@fgOffset_y:FG Offset y,-5000,5000,0,1
-// --track@fgScale:FG Scale,0.01,100,1.0,0.01
-// --track@bgOffset_x:BG Offset x,-5000,5000,0,1
-// --track@bgOffset_y:BG Offset y,-5000,5000,0,1
-// --track@bgScale:BG Scale,0.01,100,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -38,28 +13,37 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  screen: vec4<f32>,
-  blur: f32,
-  feather: f32,
-  saturation: f32,
-  brightness: f32,
-  gamma: f32,
-  fgAlpha: f32,
-  bgAlpha: f32,
-  tintColor: vec4<f32>,
-  tint: f32,
-  edgeColor: vec4<f32>,
-  edgeStrength: f32,
-  scanStrength: f32,
-  scanCount: f32,
-  fgOffset: vec2<f32>,
-  fgScale: f32,
-  bgOffset: vec2<f32>,
-  bgScale: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @auto screen: vec4<f32>,
+  @label("Strength")
+  @range(0, 600, 0.1, 60)      blur: f32,
+  @range(0, 1, 0.001, 0.05)    feather: f32,
+  @range(-1, 1, 0.001, 0)      saturation: f32,
+  @range(-1, 1, 0.001, 0)      brightness: f32,
+  @range(0.01, 9.99, 0.01, 1)  gamma: f32,
+  @label("Foreground Alpha")
+  @range(0, 1, 0.001, 1)       fgAlpha: f32,
+  @label("Background Alpha")
+  @range(0, 1, 0.001, 1)       bgAlpha: f32,
+  @color(0.2392, 0.4941, 1, 1) tintColor: vec4<f32>,
+  @range(0, 1, 0.001, 0)       tint: f32,
+  @color(0, 0, 0, 1)           edgeColor: vec4<f32>,
+  @range(0, 1, 0.001, 0)       edgeStrength: f32,
+  @label("Scan Line Strength")
+  @range(0, 1, 0.001, 0)       scanStrength: f32,
+  @label("Scan Line Count")
+  @range(100, 2160, 1, 720)    scanCount: f32,
+  @label("FG Offset")
+  @range(-5000, 5000, 1, 0, 0) fgOffset: vec2<f32>,
+  @label("FG Scale")
+  @range(0.01, 100, 0.01, 1)   fgScale: f32,
+  @label("BG Offset")
+  @range(-5000, 5000, 1, 0, 0) bgOffset: vec2<f32>,
+  @label("BG Scale")
+  @range(0.01, 100, 0.01, 1)   bgScale: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

@@ -1,10 +1,6 @@
 // Noise: AbsentMotion's noise (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Covers the layer with fine grain, one grain per pixel, that changes every frame. Monochrome makes the grain grey, Extremes makes every grain fully light or dark, and Freeze holds the pattern still.
-// --track@amount:Strength,0,1,0.25,0.001
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@overshoot:Overshoot,0.5,2,2.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,14 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(0, 1, 0.001, 0.25)    amount: f32,
   mono: f32,
   freeze: f32,
   extremes: f32,
-  offset: vec2<f32>,
-  overshoot: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(0.5, 2, 0.001, 2)     overshoot: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

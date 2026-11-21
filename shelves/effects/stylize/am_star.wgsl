@@ -1,18 +1,6 @@
 // Star: AbsentMotion's star (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws one glowing star on the layer.
-// --track@R_position_x:Position x,-1,2,0.5,0.01
-// --track@R_position_y:Position y,-1,2,0.5,0.01
-// --track@radius:Radius,0,2.5,0.3,0.001
-// --track@brightness:Brightness,0,5,3.0,0.001
-// --track@shine:Shine,-1,1,-0.1,0.001
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@points:Points,2,16,5.0,1
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@blend:Blending Mode,0,1,2.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -22,16 +10,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_position: vec2<f32>,
-  radius: f32,
-  brightness: f32,
-  shine: f32,
-  color: vec4<f32>,
-  points: f32,
-  alpha: f32,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Position")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_position: vec2<f32>,
+  @range(0, 2.5, 0.001, 0.3)   radius: f32,
+  @range(0, 5, 0.001, 3)       brightness: f32,
+  @range(-1, 1, 0.001, -0.1)   shine: f32,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
+  @range(2, 16, 1, 5)          points: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 2)        blend: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

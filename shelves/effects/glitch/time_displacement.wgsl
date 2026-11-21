@@ -1,15 +1,20 @@
 // Time Displacement: keijiro/SlitScanCam's shader (Unlicense, public domain, github.com/keijiro/SlitScanCam) in WGSL: each point of the picture as it was so many frames ago, further back across the picture; or eight past frames, each its own hue
 // --label:Time
 // --history@60:0.5
-// --track@axis:Across or down,0,1,0,0.01
-// --track@reach:How far back,0,1,1,0.01
-// --check@rainbow:Rainbow,0
 
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var past: texture_2d_array<f32>;
 @group(0) @binding(3) var pastNear: sampler;
-struct Knobs { history_head: f32, history_count: f32, axis: f32, reach: f32, rainbow: f32 }
+struct Knobs {
+  @auto history_head: f32,
+  @auto history_count: f32,
+  @label("Across or down")
+  @range(0, 1, 0.01, 0)        axis: f32,
+  @label("How far back")
+  @range(0, 1, 0.01, 1)        reach: f32,
+  @toggle(0)                   rainbow: f32,
+}
 @group(0) @binding(4) var<uniform> knobs: Knobs;
 
 fn history(uv: vec2f, offset: i32) -> vec3f {

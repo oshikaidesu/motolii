@@ -1,29 +1,6 @@
 // Contour Strips: AbsentMotion's contourstrips (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws stacked paper strips whose height follows the layer's brightness or opacity, like a ridge-line landscape.
-// --track@count:Count,0.5,200,10.0,0.1
-// --track@height:Height,0,15,1.0,0.01
-// --track@angle:Angle,-3600,3600,0.0,0.5
-// --track@thickness:Thickness,0,1,0.005,0.001
-// --track@phase:Phase,-1000,1000,0.0,0.01
-// --track@edgeColor_x:Edge Color R,0,1,0.1333,0.01
-// --track@edgeColor_y:Edge Color G,0,1,0.2,0.01
-// --track@edgeColor_z:Edge Color B,0,1,0.3333,0.01
-// --track@edgeColor_w:Edge Color A,0,1,1,0.01
-// --track@color1_x:Color 1 R,0,1,1,0.01
-// --track@color1_y:Color 1 G,0,1,0.6,0.01
-// --track@color1_z:Color 1 B,0,1,0.2,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,0.6667,0.01
-// --track@color2_y:Color 2 G,0,1,0.2,0.01
-// --track@color2_z:Color 2 B,0,1,0.6,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@light_x:Light Color R,0,1,1,0.01
-// --track@light_y:Light Color G,0,1,1,0.01
-// --track@light_z:Light Color B,0,1,1,0.01
-// --track@light_w:Light Color A,0,1,1,0.01
-// --track@lightAngle:Light Angle,0,3600,0.0,0.5
-// --track@map:Height Map,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -33,20 +10,24 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  count: f32,
-  height: f32,
-  angle: f32,
-  thickness: f32,
-  phase: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.5, 200, 0.1, 10)    count: f32,
+  @range(0, 15, 0.01, 1)       height: f32,
+  @range(-3600, 3600, 0.5, 0)  angle: f32,
+  @range(0, 1, 0.001, 0.005)   thickness: f32,
+  @range(-1000, 1000, 0.01, 0) phase: f32,
   invert: f32,
-  edgeColor: vec4<f32>,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  light: vec4<f32>,
-  lightAngle: f32,
-  map: f32,
+  @color(0.1333, 0.2, 0.3333, 1) edgeColor: vec4<f32>,
+  @label("Color 1")
+  @color(1, 0.6, 0.2, 1)       color1: vec4<f32>,
+  @label("Color 2")
+  @color(0.6667, 0.2, 0.6, 1)  color2: vec4<f32>,
+  @label("Light Color")
+  @color(1, 1, 1, 1)           light: vec4<f32>,
+  @range(0, 3600, 0.5, 0)      lightAngle: f32,
+  @label("Height Map")
+  @range(0, 1, 0.01, 1)        map: f32,
   mask: f32,
   layerRect: vec4<f32>,
 };

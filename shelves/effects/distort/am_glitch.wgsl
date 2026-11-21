@@ -1,9 +1,6 @@
 // Glitch: AbsentMotion's glitch (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Random horizontal block displacement and color channel offsets, changing a few times per second.
-// --track@intensity:Intensity,0.0,1.0,0.5,0.01
-// --track@blockHeight:Block Height,4.0,80.0,20.0,1.0
-// --track@seed:Seed,0.0,1000.0,0.0,1.0
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  intensity: f32,
-  blockHeight: f32,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 0.5)      intensity: f32,
+  @range(4, 80, 1, 20)         blockHeight: f32,
+  @range(0, 1000, 1, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

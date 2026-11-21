@@ -1,18 +1,6 @@
 // Halftone Lines: AbsentMotion's halftonelines (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Redraws the layer as printed lines that get thicker in dark areas and thinner in light ones.
-// --track@amount:Amount,0,500,100.0,0.1
-// --track@strength:Strength,0,1,0.5,0.001
-// --track@angle:Angle,0,3600,45.0,0.5
-// --track@phase:Phase,-1000,1000,0.0,0.001
-// --track@color1_x:Color 1 R,0,1,0.06667,0.01
-// --track@color1_y:Color 1 G,0,1,0.2,0.01
-// --track@color1_z:Color 1 B,0,1,0.3333,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,1,0.01
-// --track@color2_y:Color 2 G,0,1,0.9333,0.01
-// --track@color2_z:Color 2 B,0,1,0.8667,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -22,14 +10,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  strength: f32,
-  angle: f32,
-  phase: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 500, 0.1, 100)     amount: f32,
+  @range(0, 1, 0.001, 0.5)     strength: f32,
+  @range(0, 3600, 0.5, 45)     angle: f32,
+  @range(-1000, 1000, 0.001, 0) phase: f32,
+  @label("Color 1")
+  @color(0.06667, 0.2, 0.3333, 1) color1: vec4<f32>,
+  @label("Color 2")
+  @color(1, 0.9333, 0.8667, 1) color2: vec4<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

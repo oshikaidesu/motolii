@@ -4,18 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Gives the opaque parts of the layer a smooth, rounded bevel lit from one side.
-// --track@blur:Size,0,300,20.0,0.1
-// --track@angle:Light Angle,-3600,3600,135.0,0.5
-// --track@depth:Depth,0,5,1.0,0.01
-// --track@intensity:Intensity,0,1,0.6,0.001
-// --track@highlight_x:Highlight R,0,1,1,0.01
-// --track@highlight_y:Highlight G,0,1,1,0.01
-// --track@highlight_z:Highlight B,0,1,1,0.01
-// --track@highlight_w:Highlight A,0,1,1,0.01
-// --track@shadow_x:Shadow R,0,1,0,0.01
-// --track@shadow_y:Shadow G,0,1,0,0.01
-// --track@shadow_z:Shadow B,0,1,0,0.01
-// --track@shadow_w:Shadow A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -25,16 +13,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  angle: f32,
-  depth: f32,
-  intensity: f32,
-  highlight: vec4<f32>,
-  shadow: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0, 300, 0.1, 20)      blur: f32,
+  @label("Light Angle")
+  @range(-3600, 3600, 0.5, 135) angle: f32,
+  @range(0, 5, 0.01, 1)        depth: f32,
+  @range(0, 1, 0.001, 0.6)     intensity: f32,
+  @color(1, 1, 1, 1)           highlight: vec4<f32>,
+  @color(0, 0, 0, 1)           shadow: vec4<f32>,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

@@ -4,8 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Softens the alpha edges of the layer. Inward fades into the existing outline; Blur Alpha also spreads the softened edge outside it.
-// --track@blur:Strength,0,300,20.0,0.1
-// --track@mode:Edges,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,12 +13,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  mode: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(0, 300, 0.1, 20)      blur: f32,
+  @label("Edges")
+  @range(0, 1, 0.01, 1)        mode: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

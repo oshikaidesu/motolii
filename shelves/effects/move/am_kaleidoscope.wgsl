@@ -1,10 +1,6 @@
 // Kaleidoscope: AbsentMotion's kaleidoscope (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Mirrored slices around a point.
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@segments:Segments,1,64,6.0,1
-// --track@angle:Angle,-360,360,0.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,11 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  segments: f32,
-  angle: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @range(1, 64, 1, 6)          segments: f32,
+  @range(-360, 360, 1, 0)      angle: f32,
   mirror: f32,
   layerRect: vec4<f32>,
 };

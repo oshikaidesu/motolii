@@ -1,47 +1,37 @@
 // Photographic Cells: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Reveals the photo through a grid of cells joined into regions, with stepped edges and outlines.
-// --track@mode:Layout,0,2,0,1
-// --track@regionSize:Region Size,0.05,2,0.35,0.01
-// --track@selection:Selection Source,0,2,2,1
-// --track@threshold:Threshold,0,1,0.5,0.01
-// --check@invert:Invert Selection,0
-// --track@size:Cell Size,0.015,0.5,0.04,0.005
-// --track@cellAspect:Cell Aspect,0.25,4,1,0.05
-// --track@irregularity:Irregularity,0,1,0,0.01
-// --track@edgeScatter:Edge Scatter,0,1,0,0.01
-// --track@seed:Seed,0,1000,1,1
-// --check@output:Output,0
-// --track@gap:Gap,0,1,0,0.01
-// --track@softness:Edge Softness,0,0.025,0,0.001
-// --track@outlineMode:Outline,0,2,1,1
-// --track@outline:Outline Width,0,0.5,0.025,0.005
-// --track@outlineColor_x:Outline Color r,0,1,0.46207699964472876,0.001
-// --track@outlineColor_y:Outline Color g,0,1,0.033104766565152086,0.001
-// --track@outlineColor_z:Outline Color b,0,1,0.24228112245478564,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  mode: f32,
-  regionSize: f32,
-  selection: f32,
-  threshold: f32,
-  invert: f32,
-  size: f32,
-  cellAspect: f32,
-  irregularity: f32,
-  edgeScatter: f32,
-  seed: f32,
-  output: f32,
-  gap: f32,
-  softness: f32,
-  outlineMode: f32,
-  outline: f32,
-  outlineColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Layout")
+  @range(0, 2, 1, 0)           mode: f32,
+  @range(0.05, 2, 0.01, 0.35)  regionSize: f32,
+  @label("Selection Source")
+  @range(0, 2, 1, 2)           selection: f32,
+  @range(0, 1, 0.01, 0.5)      threshold: f32,
+  @label("Invert Selection")
+  @toggle(0)                   invert: f32,
+  @label("Cell Size")
+  @range(0.015, 0.5, 0.005, 0.04) size: f32,
+  @range(0.25, 4, 0.05, 1)     cellAspect: f32,
+  @range(0, 1, 0.01, 0)        irregularity: f32,
+  @range(0, 1, 0.01, 0)        edgeScatter: f32,
+  @range(0, 1000, 1, 1)        seed: f32,
+  @toggle(0)                   output: f32,
+  @range(0, 1, 0.01, 0)        gap: f32,
+  @label("Edge Softness")
+  @range(0, 0.025, 0.001, 0)   softness: f32,
+  @label("Outline")
+  @range(0, 2, 1, 1)           outlineMode: f32,
+  @label("Outline Width")
+  @range(0, 0.5, 0.005, 0.025) outline: f32,
+  @label("Outline Color r")
+  @range(0, 1, 0.001, 0.462077, 0.0331048, 0.242281) outlineColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

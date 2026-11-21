@@ -1,29 +1,21 @@
 // Crumpled fabric: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture recreates the wrinkles of a crumpled fabric.
-// --track@scale:Scale,0,4,2,0.04
-// --track@pinch:Pinch,0,1,0.5,0.01
-// --track@color_x:Color r,0,1,0.43415363616478553,0.001
-// --track@color_y:Color g,0,1,0.8713671191959567,0.001
-// --track@color_z:Color b,0,1,1,0.001
-// --track@subcolor_x:Subcolor r,0,1,0.05126945836711539,0.001
-// --track@subcolor_y:Subcolor g,0,1,0.05126945836711539,0.001
-// --track@subcolor_z:Subcolor b,0,1,0.8713671191959567,0.001
-// --track@background_x:Background r,0,1,0,0.001
-// --track@background_y:Background g,0,1,0.02955683443236377,0.001
-// --track@background_z:Background b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  pinch: f32,
-  color: vec3<f32>,
-  subcolor: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 1, 0.01, 0.5)      pinch: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 0.434154, 0.871367, 1) color: vec3<f32>,
+  @label("Subcolor r")
+  @range(0, 1, 0.001, 0.0512695, 0.0512695, 0.871367) subcolor: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0, 0.0295568, 0) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

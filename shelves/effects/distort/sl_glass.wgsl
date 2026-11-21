@@ -12,47 +12,30 @@
 // --pass@t8:0,1,s0.001953125,s0.001953125
 // --pass@t9:0,1,s0.0009765625,s0.0009765625
 // --pass@:0,0,s1,s1
-// --track@pattern:Pattern,0,4,0,1
-// --check@profile:Profile,0
-// --track@irregularity:Irregularity,0,1,0.7,0.01
-// --track@cellSize:Cell Size,3,240,22,1
-// --track@angle:Angle,-180,180,0,1
-// --track@refraction:Refraction,0,3,0.3,0.01
-// --check@distanceFrom:Distance From,0
-// --track@distance:Distance,0,240,10,1
-// --track@frost:Frost,0,1,0.1,0.01
-// --track@frostSize:Frost Size,0.5,8,1.5,0.05
-// --track@highlights:Highlights,0,3,0.8,0.01
-// --track@lightAngle:Light Angle,0,360,135,1
-// --track@edges:Edges,0,1,0.35,0.01
-// --track@dispersion:Dispersion,0,1,0.15,0.01
-// --track@tint_x:Tint r,0,1,1,0.001
-// --track@tint_y:Tint g,0,1,1,0.001
-// --track@tint_z:Tint b,0,1,1,0.001
-// --track@tintAmount:Tint Amount,0,1,0,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  pattern: f32,
-  profile: f32,
-  irregularity: f32,
-  cellSize: f32,
-  angle: f32,
-  refraction: f32,
-  distanceFrom: f32,
-  distance: f32,
-  frost: f32,
-  frostSize: f32,
-  highlights: f32,
-  lightAngle: f32,
-  edges: f32,
-  dispersion: f32,
-  tint: vec3<f32>,
-  tintAmount: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 1, 0)           pattern: f32,
+  @toggle(0)                   profile: f32,
+  @range(0, 1, 0.01, 0.7)      irregularity: f32,
+  @range(3, 240, 1, 22)        cellSize: f32,
+  @range(-180, 180, 1, 0)      angle: f32,
+  @range(0, 3, 0.01, 0.3)      refraction: f32,
+  @toggle(0)                   distanceFrom: f32,
+  @range(0, 240, 1, 10)        distance: f32,
+  @range(0, 1, 0.01, 0.1)      frost: f32,
+  @range(0.5, 8, 0.05, 1.5)    frostSize: f32,
+  @range(0, 3, 0.01, 0.8)      highlights: f32,
+  @range(0, 360, 1, 135)       lightAngle: f32,
+  @range(0, 1, 0.01, 0.35)     edges: f32,
+  @range(0, 1, 0.01, 0.15)     dispersion: f32,
+  @label("Tint r")
+  @range(0, 1, 0.001, 1, 1, 1) tint: vec3<f32>,
+  @range(0, 1, 0.01, 0)        tintAmount: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

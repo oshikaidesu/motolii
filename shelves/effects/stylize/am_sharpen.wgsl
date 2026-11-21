@@ -1,8 +1,6 @@
 // Sharpen: AbsentMotion's sharpen (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Applies an unsharp mask using a 3x3 neighborhood to enhance fine details.
-// --track@amount:Strength,0.0,20,1.0,0.1
-// --track@radius:Radius,0.5,10,1.0,0.5
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  radius: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(0, 20, 0.1, 1)        amount: f32,
+  @range(0.5, 10, 0.5, 1)      radius: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

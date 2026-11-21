@@ -21,61 +21,45 @@
 // --pass@t6:0,1,s0.25,s0.25
 // --pass@t7:0,1,s0.5,s0.5
 // --pass@:0,0,s1,s1
-// --track@crispBlend:Detail Blend,0,1,0.81,0.01
-// --track@blurStrength:Bleed Strength,0.001,0.08,0.044,0.001
-// --track@blurDirection:Flow Direction,-180,180,90,1
-// --track@dripLength:Drip Length,1,10,1,0.1
-// --track@fluidNoise:Fluid Noise,0,2,0.02,0.01
-// --track@noiseScale:Noise Scale,0.5,8,1.2,0.1
-// --track@smokeSpeed:Smoke Speed,0,2,0.36,0.01
-// --track@smokeTurbulence:Smoke Turbulence,0,1.5,0,0.01
-// --track@blurSpread:Spread,0.5,4,1.6,0.1
-// --check@colorMode:Color Mode,0
-// --track@coreColor_x:Core Color r,0,1,1,0.001
-// --track@coreColor_y:Core Color g,0,1,0.982250550332711,0.001
-// --track@coreColor_z:Core Color b,0,1,0.8069522576650873,0.001
-// --track@midColor_x:Mid Color r,0,1,1,0.001
-// --track@midColor_y:Mid Color g,0,1,0.38642943377667954,0.001
-// --track@midColor_z:Mid Color b,0,1,0,0.001
-// --track@edgeColor_x:Edge Color r,0,1,0.16513219449147767,0.001
-// --track@edgeColor_y:Edge Color g,0,1,0.2874408377161099,0.001
-// --track@edgeColor_z:Edge Color b,0,1,0.8796223968851662,0.001
-// --track@backgroundColor_x:Background r,0,1,0,0.001
-// --track@backgroundColor_y:Background g,0,1,0,0.001
-// --track@backgroundColor_z:Background b,0,1,0,0.001
-// --check@grainEnabled:Enable Grain,0
-// --track@grainIntensity:Grain Intensity,0,0.3,0.3,0.005
-// --track@grainScale:Grain Scale,0.5,5,1.5,0.1
-// --track@bloomIntensity:Intensity,0,2,2,0.01
-// --track@bloomThreshold:Threshold,0,1,0.97,0.01
-// --track@bloomSoftness:Softness,0,1,0.96,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  crispBlend: f32,
-  blurStrength: f32,
-  blurDirection: f32,
-  dripLength: f32,
-  fluidNoise: f32,
-  noiseScale: f32,
-  smokeSpeed: f32,
-  smokeTurbulence: f32,
-  blurSpread: f32,
-  colorMode: f32,
-  coreColor: vec3<f32>,
-  midColor: vec3<f32>,
-  edgeColor: vec3<f32>,
-  backgroundColor: vec3<f32>,
-  grainEnabled: f32,
-  grainIntensity: f32,
-  grainScale: f32,
-  bloomIntensity: f32,
-  bloomThreshold: f32,
-  bloomSoftness: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Detail Blend")
+  @range(0, 1, 0.01, 0.81)     crispBlend: f32,
+  @label("Bleed Strength")
+  @range(0.001, 0.08, 0.001, 0.044) blurStrength: f32,
+  @label("Flow Direction")
+  @range(-180, 180, 1, 90)     blurDirection: f32,
+  @range(1, 10, 0.1, 1)        dripLength: f32,
+  @range(0, 2, 0.01, 0.02)     fluidNoise: f32,
+  @range(0.5, 8, 0.1, 1.2)     noiseScale: f32,
+  @range(0, 2, 0.01, 0.36)     smokeSpeed: f32,
+  @range(0, 1.5, 0.01, 0)      smokeTurbulence: f32,
+  @label("Spread")
+  @range(0.5, 4, 0.1, 1.6)     blurSpread: f32,
+  @toggle(0)                   colorMode: f32,
+  @label("Core Color r")
+  @range(0, 1, 0.001, 1, 0.982251, 0.806952) coreColor: vec3<f32>,
+  @label("Mid Color r")
+  @range(0, 1, 0.001, 1, 0.386429, 0) midColor: vec3<f32>,
+  @label("Edge Color r")
+  @range(0, 1, 0.001, 0.165132, 0.287441, 0.879622) edgeColor: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0, 0, 0) backgroundColor: vec3<f32>,
+  @label("Enable Grain")
+  @toggle(0)                   grainEnabled: f32,
+  @range(0, 0.3, 0.005, 0.3)   grainIntensity: f32,
+  @range(0.5, 5, 0.1, 1.5)     grainScale: f32,
+  @label("Intensity")
+  @range(0, 2, 0.01, 2)        bloomIntensity: f32,
+  @label("Threshold")
+  @range(0, 1, 0.01, 0.97)     bloomThreshold: f32,
+  @label("Softness")
+  @range(0, 1, 0.01, 0.96)     bloomSoftness: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

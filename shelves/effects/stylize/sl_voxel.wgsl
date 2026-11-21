@@ -1,35 +1,27 @@
 // Voxel: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Rebuilds the image from isometric cubes, with brighter areas rising higher.
-// --track@cellSize:Cell Size,4,96,24,1
-// --track@depth:Depth,0,1,0,0.01
-// --track@maxHeight:Max Height,1,8,6,1
-// --track@topShade:Top Shade,0,1.5,1,0.01
-// --track@lightShade:Light Side,0,1.5,0.78,0.01
-// --track@darkShade:Dark Side,0,1.5,0.55,0.01
-// --check@flipLight:Flip Light,0
-// --check@lego:Lego,0
-// --track@outlineWidth:Outline,0,4,1,0.1
-// --track@outlineColor_x:Outline Color r,0,1,0.0030352698352941175,0.001
-// --track@outlineColor_y:Outline Color g,0,1,0.0030352698352941175,0.001
-// --track@outlineColor_z:Outline Color b,0,1,0.0030352698352941175,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  cellSize: f32,
-  depth: f32,
-  maxHeight: f32,
-  topShade: f32,
-  lightShade: f32,
-  darkShade: f32,
-  flipLight: f32,
-  lego: f32,
-  outlineWidth: f32,
-  outlineColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(4, 96, 1, 24)         cellSize: f32,
+  @range(0, 1, 0.01, 0)        depth: f32,
+  @range(1, 8, 1, 6)           maxHeight: f32,
+  @range(0, 1.5, 0.01, 1)      topShade: f32,
+  @label("Light Side")
+  @range(0, 1.5, 0.01, 0.78)   lightShade: f32,
+  @label("Dark Side")
+  @range(0, 1.5, 0.01, 0.55)   darkShade: f32,
+  @toggle(0)                   flipLight: f32,
+  @toggle(0)                   lego: f32,
+  @label("Outline")
+  @range(0, 4, 0.1, 1)         outlineWidth: f32,
+  @label("Outline Color r")
+  @range(0, 1, 0.001, 0.00303527, 0.00303527, 0.00303527) outlineColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

@@ -10,47 +10,35 @@
 // --pass@t6:0,1,s0.25,s0.25
 // --pass@t7:1,1,s1,s1
 // --pass@:0,0,s1,s1
-// --track@cellSize:Mask Scale,3,32,3,1
-// --track@scanlineIntensity:Scanline Intensity,0,1,0.17,0.01
-// --track@maskIntensity:Mask Intensity,0,1,1,0.01
-// --track@barrelDistortion:Barrel Distortion,0,0.3,0.15,0.001
-// --track@chromaticAberration:Convergence,0,2,2,0.01
-// --track@beamFocus:Beam Focus,0,1,0.58,0.01
-// --track@brightness:Brightness,0.5,100,1.2,0.01
-// --track@highlightDrive:Highlight Drive,1,100,1,0.01
-// --track@highlightThreshold:Highlight Threshold,0,1,0.62,0.01
-// --track@shoulder:Shoulder,0,4,0.25,0.01
-// --track@chromaRetention:Chroma Retention,0,2,1.15,0.01
-// --track@shadowLift:Shadow Lift,0,1,0.16,0.01
-// --track@persistence:Persistence,0,1,0.18,0.01
-// --track@vignetteIntensity:Vignette,0,1,0.45,0.01
-// --track@flickerIntensity:Flicker,0,0.2,0.2,0.01
-// --track@glitchIntensity:Glitch,0,1,0.13,0.01
-// --track@glitchSpeed:Glitch Speed,0.1,5,5,0.1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  cellSize: f32,
-  scanlineIntensity: f32,
-  maskIntensity: f32,
-  barrelDistortion: f32,
-  chromaticAberration: f32,
-  beamFocus: f32,
-  brightness: f32,
-  highlightDrive: f32,
-  highlightThreshold: f32,
-  shoulder: f32,
-  chromaRetention: f32,
-  shadowLift: f32,
-  persistence: f32,
-  vignetteIntensity: f32,
-  flickerIntensity: f32,
-  glitchIntensity: f32,
-  glitchSpeed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Mask Scale")
+  @range(3, 32, 1, 3)          cellSize: f32,
+  @range(0, 1, 0.01, 0.17)     scanlineIntensity: f32,
+  @range(0, 1, 0.01, 1)        maskIntensity: f32,
+  @range(0, 0.3, 0.001, 0.15)  barrelDistortion: f32,
+  @label("Convergence")
+  @range(0, 2, 0.01, 2)        chromaticAberration: f32,
+  @range(0, 1, 0.01, 0.58)     beamFocus: f32,
+  @range(0.5, 100, 0.01, 1.2)  brightness: f32,
+  @range(1, 100, 0.01, 1)      highlightDrive: f32,
+  @range(0, 1, 0.01, 0.62)     highlightThreshold: f32,
+  @range(0, 4, 0.01, 0.25)     shoulder: f32,
+  @range(0, 2, 0.01, 1.15)     chromaRetention: f32,
+  @range(0, 1, 0.01, 0.16)     shadowLift: f32,
+  @range(0, 1, 0.01, 0.18)     persistence: f32,
+  @label("Vignette")
+  @range(0, 1, 0.01, 0.45)     vignetteIntensity: f32,
+  @label("Flicker")
+  @range(0, 0.2, 0.01, 0.2)    flickerIntensity: f32,
+  @label("Glitch")
+  @range(0, 1, 0.01, 0.13)     glitchIntensity: f32,
+  @range(0.1, 5, 0.1, 5)       glitchSpeed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

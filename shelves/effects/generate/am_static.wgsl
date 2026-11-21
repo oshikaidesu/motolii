@@ -1,8 +1,6 @@
 // Static: AbsentMotion's static (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Flickering gray noise, like a television with no signal.
-// --track@amount:Amount,0,1,0.4,0.01
-// --track@grain:Size,0.5,50,2.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  grain: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 0.4)      amount: f32,
+  @label("Size")
+  @range(0.5, 50, 0.1, 2)      grain: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

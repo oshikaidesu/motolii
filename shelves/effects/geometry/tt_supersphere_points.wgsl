@@ -1,9 +1,8 @@
 // Supersphere: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:3d
-// --track@exponent:Exponent,-1,7,3,0.1
 struct Knobs {
-  time: f32,
-  exponent: f32,
+  @auto time: f32,
+  @range(-1, 7, 0.1, 3)        exponent: f32,
 };
 @group(0) @binding(0) var<uniform> knobs: Knobs;
 @group(0) @binding(2) var<storage, read_write> shape_points: array<f32>;

@@ -1,29 +1,21 @@
 // Isolayers: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renders looped concentric lines like
-// --track@scale:Scale,0,4,2,0.04
-// --track@layers:Layers,3,30,10,0.27
-// --track@edge:Edge,0,1,0.5,0.01
-// --track@darkness:Darkness,0,1,0,0.01
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,1,0.001
-// --track@color_z:Color b,0,1,0.8713671191959567,0.001
-// --track@background_x:Background r,0,1,1,0.001
-// --track@background_y:Background g,0,1,0.05126945836711539,0.001
-// --track@background_z:Background b,0,1,0.05126945836711539,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  layers: f32,
-  edge: f32,
-  darkness: f32,
-  color: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(3, 30, 0.27, 10)      layers: f32,
+  @range(0, 1, 0.01, 0.5)      edge: f32,
+  @range(0, 1, 0.01, 0)        darkness: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 1, 0.871367) color: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 1, 0.0512695, 0.0512695) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

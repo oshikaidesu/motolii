@@ -1,13 +1,6 @@
 // Pixelate: AbsentMotion's pixelate (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Turns the layer into blocks of one color each, taken from the middle of the block, on a grid centered on the layer (or on the frame with Screen Space). Stretch, Offset and Angle shape the grid and Vignette darkens each block toward its edges.
-// --track@blockSize:Size,1,500,20.0,1
-// --track@stretch_x:Stretch x,0.01,100,1,0.01
-// --track@stretch_y:Stretch y,0.01,100,1,0.01
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@angle:Angle,-3600,3600,0.0,1
-// --track@vignette:Vignette,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,14 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  screen: vec4<f32>,
-  time: f32,
-  blockSize: f32,
-  stretch: vec2<f32>,
-  offset: vec2<f32>,
-  angle: f32,
-  vignette: f32,
+  @auto resolution: vec2<f32>,
+  @auto screen: vec4<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(1, 500, 1, 20)        blockSize: f32,
+  @range(0.01, 100, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(-3600, 3600, 1, 0)    angle: f32,
+  @range(0, 1, 0.01, 0)        vignette: f32,
   screenSpace: f32,
   layerRect: vec4<f32>,
 };

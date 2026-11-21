@@ -1,8 +1,6 @@
 // Stretch Axis: AbsentMotion's stretchaxis (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Move
 // --about:Stretches the layer in any direction.
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@angle:Angle,-3600,3600,0.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,10 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  angle: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(-3600, 3600, 0.1, 0)  angle: f32,
   mask: f32,
   layerRect: vec4<f32>,
 };

@@ -1,11 +1,6 @@
 // Mosaic: AbsentMotion's mosaic (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Divides the layer into squares and fills each one with its average color.
-// --track@count:Count,1,500,20.0,1
-// --track@stretch_x:Stretch x,0.01,10,1,0.01
-// --track@stretch_y:Stretch y,0.01,10,1,0.01
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,11 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  count: f32,
-  stretch: vec2<f32>,
-  offset: vec2<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(1, 500, 1, 20)        count: f32,
+  @range(0.01, 10, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

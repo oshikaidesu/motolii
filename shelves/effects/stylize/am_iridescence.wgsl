@@ -1,13 +1,6 @@
 // Iridescence: AbsentMotion's iridescence (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Covers the opaque parts of the layer with a flowing rainbow sheen, like oil on water or a soap bubble.
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@shift:Hue Shift,-10,10,0.0,0.001
-// --track@saturation:Saturation,0,1,0.6,0.001
-// --track@alpha:Alpha,0,1,0.8,0.001
-// --track@blend:Blending Mode,0,1,0.0,0.01
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,15 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  evolution: f32,
-  shift: f32,
-  saturation: f32,
-  alpha: f32,
-  blend: f32,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @label("Hue Shift")
+  @range(-10, 10, 0.001, 0)    shift: f32,
+  @range(0, 1, 0.001, 0.6)     saturation: f32,
+  @range(0, 1, 0.001, 0.8)     alpha: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 0)        blend: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

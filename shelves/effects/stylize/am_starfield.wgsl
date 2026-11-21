@@ -1,11 +1,6 @@
 // Starfield: AbsentMotion's starfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Fills the opaque parts of the layer with a deep field of stars. Offset moves through the field, with nearby stars moving farther than distant stars.
-// --track@offset_x:Offset x,-100000,100000,0,1
-// --track@offset_y:Offset y,-100000,100000,0,1
-// --track@scale:Scale,0.01,9,0.3,0.001
-// --track@brightness:Brightness,0.001,3,0.015,0.001
-// --track@darkMatter:Dark Matter,0.001,2,0.3,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,12 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  offset: vec2<f32>,
-  scale: f32,
-  brightness: f32,
-  darkMatter: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-100000, 100000, 1, 0, 0) offset: vec2<f32>,
+  @range(0.01, 9, 0.001, 0.3)  scale: f32,
+  @range(0.001, 3, 0.001, 0.015) brightness: f32,
+  @range(0.001, 2, 0.001, 0.3) darkMatter: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

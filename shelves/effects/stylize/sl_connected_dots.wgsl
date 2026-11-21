@@ -3,59 +3,39 @@
 // --about:Turns the image into points linked to their neighbors: tone graphs, ink blobs or fading plexus lines. Points can drift so links form and break.
 // --pass@t0:0,1,s0.36953125000000003,s0.37812500000000004
 // --pass@:0,0,s1,s1
-// --track@mode:Mode,0,3,0,1
-// --track@spacing:Spacing,3,120,10,1
-// --track@jitter:Jitter,0,1,0.9,0.01
-// --track@cutoff:Cutoff,0,1,0.05,0.01
-// --check@invert:Invert,0
-// --track@dotShape:Dot Shape,0,3,0,1
-// --track@minSize:Min Size,0,1,0.46,0.01
-// --track@maxSize:Max Size,0,1,0.74,0.01
-// --track@links:Links,0,1,0.85,0.01
-// --track@linkThreshold:Link Threshold,0,1,0.5,0.01
-// --track@linkMin:Thin Links,0,1,0.3,0.01
-// --track@linkMax:Thick Links,0,1.5,0.46,0.01
-// --track@blobiness:Blobiness,0,1,0.5,0.01
-// --track@range:Range,1,2.9,1.6,0.01
-// --track@lineWidth:Line Width,0.25,6,0.8,0.05
-// --track@colorMode:Color,0,2,0,1
-// --track@ink_x:Ink r,0,1,0.005605391621829108,0.001
-// --track@ink_y:Ink g,0,1,0.005605391621829108,0.001
-// --track@ink_z:Ink b,0,1,0.005605391621829108,0.001
-// --track@background:Background,0,2,0,1
-// --track@backgroundColor_x:Background Color r,0,1,0.55201140150344,0.001
-// --track@backgroundColor_y:Background Color g,0,1,0.55201140150344,0.001
-// --track@backgroundColor_z:Background Color b,0,1,0.55201140150344,0.001
-// --track@drift:Drift,0,1,0,0.01
-// --track@seed:Seed,0,999,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  mode: f32,
-  spacing: f32,
-  jitter: f32,
-  cutoff: f32,
-  invert: f32,
-  dotShape: f32,
-  minSize: f32,
-  maxSize: f32,
-  links: f32,
-  linkThreshold: f32,
-  linkMin: f32,
-  linkMax: f32,
-  blobiness: f32,
-  range: f32,
-  lineWidth: f32,
-  colorMode: f32,
-  ink: vec3<f32>,
-  background: f32,
-  backgroundColor: vec3<f32>,
-  drift: f32,
-  seed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 3, 1, 0)           mode: f32,
+  @range(3, 120, 1, 10)        spacing: f32,
+  @range(0, 1, 0.01, 0.9)      jitter: f32,
+  @range(0, 1, 0.01, 0.05)     cutoff: f32,
+  @toggle(0)                   invert: f32,
+  @range(0, 3, 1, 0)           dotShape: f32,
+  @range(0, 1, 0.01, 0.46)     minSize: f32,
+  @range(0, 1, 0.01, 0.74)     maxSize: f32,
+  @range(0, 1, 0.01, 0.85)     links: f32,
+  @range(0, 1, 0.01, 0.5)      linkThreshold: f32,
+  @label("Thin Links")
+  @range(0, 1, 0.01, 0.3)      linkMin: f32,
+  @label("Thick Links")
+  @range(0, 1.5, 0.01, 0.46)   linkMax: f32,
+  @range(0, 1, 0.01, 0.5)      blobiness: f32,
+  @range(1, 2.9, 0.01, 1.6)    range: f32,
+  @range(0.25, 6, 0.05, 0.8)   lineWidth: f32,
+  @label("Color")
+  @range(0, 2, 1, 0)           colorMode: f32,
+  @label("Ink r")
+  @range(0, 1, 0.001, 0.00560539, 0.00560539, 0.00560539) ink: vec3<f32>,
+  @range(0, 2, 1, 0)           background: f32,
+  @label("Background Color r")
+  @range(0, 1, 0.001, 0.552011, 0.552011, 0.552011) backgroundColor: vec3<f32>,
+  @range(0, 1, 0.01, 0)        drift: f32,
+  @range(0, 999, 1, 0)         seed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

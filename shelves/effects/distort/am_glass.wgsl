@@ -5,15 +5,6 @@
 // --pass@:0,0,s1,s1
 // --picture@backdrop:Behind
 // --about:Turns the layer's shape into beveled glass that bends the layers behind it, with a highlight along the rim.
-// --track@blur:Bevel,0,300,24.0,0.1
-// --track@refraction:Refraction,-300,300,30.0,0.1
-// --track@angle:Light Angle,-3600,3600,135.0,0.5
-// --track@highlight:Highlight,0,1,0.6,0.001
-// --track@color_x:Color R,0,1,0.749,0.01
-// --track@color_y:Color G,0,1,0.902,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@tint:Tint,0,1,0.15,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,17 +14,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  refraction: f32,
-  angle: f32,
-  highlight: f32,
-  color: vec4<f32>,
-  tint: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Bevel")
+  @range(0, 300, 0.1, 24)      blur: f32,
+  @range(-300, 300, 0.1, 30)   refraction: f32,
+  @label("Light Angle")
+  @range(-3600, 3600, 0.5, 135) angle: f32,
+  @range(0, 1, 0.001, 0.6)     highlight: f32,
+  @color(0.749, 0.902, 1, 1)   color: vec4<f32>,
+  @range(0, 1, 0.001, 0.15)    tint: f32,
   layerRect: vec4<f32>,
   backdropBox: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(8) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

@@ -1,30 +1,21 @@
 // Tiger fur: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
-// --track@scale:Scale,0,4,2,0.04
-// --track@lengths:Lengths,0,20,4,0.1
-// --track@blur:Blur,0,1,0.3,0.01
-// --track@strength:Strength,0,1,0.3,0.01
-// --track@hairs:Hairs,0,1,0.5,0.01
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,0.4019777798219466,0.001
-// --track@color_z:Color b,0,1,0,0.001
-// --track@bottomColor_x:Bottom Color r,0,1,1,0.001
-// --track@bottomColor_y:Bottom Color g,0,1,1,0.001
-// --track@bottomColor_z:Bottom Color b,0,1,0.85499260812105,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  lengths: f32,
-  blur: f32,
-  strength: f32,
-  hairs: f32,
-  color: vec3<f32>,
-  bottomColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 20, 0.1, 4)        lengths: f32,
+  @range(0, 1, 0.01, 0.3)      blur: f32,
+  @range(0, 1, 0.01, 0.3)      strength: f32,
+  @range(0, 1, 0.01, 0.5)      hairs: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 0.401978, 0) color: vec3<f32>,
+  @label("Bottom Color r")
+  @range(0, 1, 0.001, 1, 1, 0.854993) bottomColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

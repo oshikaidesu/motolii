@@ -1,43 +1,29 @@
 // Dot Grid: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:A precise grid of dots locked to the artboard, each sized by the tone beneath it.
-// --check@shape:Shape,0
-// --track@spacing:Spacing,3,120,12,1
-// --track@minDot:Min Dot,0,1,0.16,0.01
-// --track@maxDot:Max Dot,0,1.5,1.08,0.01
-// --track@level:Level,0,1,0.62,0.01
-// --track@contrast:Contrast,0.2,4,2.4,0.01
-// --track@softness:Softness,0,4,0.9,0.01
-// --check@invert:Invert,0
-// --check@inkMode:Ink,0
-// --track@inkColor_x:Ink Color r,0,1,0.0069954101845983935,0.001
-// --track@inkColor_y:Ink Color g,0,1,0.0069954101845983935,0.001
-// --track@inkColor_z:Ink Color b,0,1,0.0069954101845983935,0.001
-// --track@backgroundColor_x:Background r,0,1,0.6938717612856897,0.001
-// --track@backgroundColor_y:Background g,0,1,0.8069522576650873,0.001
-// --track@backgroundColor_z:Background b,0,1,0.8631572134510892,0.001
-// --track@underlay:Underlay,0,1,0.45,0.01
-// --track@underlayBlur:Underlay Blur,0,120,28,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  shape: f32,
-  spacing: f32,
-  minDot: f32,
-  maxDot: f32,
-  level: f32,
-  contrast: f32,
-  softness: f32,
-  invert: f32,
-  inkMode: f32,
-  inkColor: vec3<f32>,
-  backgroundColor: vec3<f32>,
-  underlay: f32,
-  underlayBlur: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @toggle(0)                   shape: f32,
+  @range(3, 120, 1, 12)        spacing: f32,
+  @range(0, 1, 0.01, 0.16)     minDot: f32,
+  @range(0, 1.5, 0.01, 1.08)   maxDot: f32,
+  @range(0, 1, 0.01, 0.62)     level: f32,
+  @range(0.2, 4, 0.01, 2.4)    contrast: f32,
+  @range(0, 4, 0.01, 0.9)      softness: f32,
+  @toggle(0)                   invert: f32,
+  @label("Ink")
+  @toggle(0)                   inkMode: f32,
+  @label("Ink Color r")
+  @range(0, 1, 0.001, 0.00699541, 0.00699541, 0.00699541) inkColor: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0.693872, 0.806952, 0.863157) backgroundColor: vec3<f32>,
+  @range(0, 1, 0.01, 0.45)     underlay: f32,
+  @range(0, 120, 1, 28)        underlayBlur: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

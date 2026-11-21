@@ -1,9 +1,6 @@
 // Tile: AbsentMotion's tile (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Repeats the picture in a grid.
-// --track@scale:Scale,0.02,1,0.5,0.01
-// --track@offset_x:Offset x,-1,2,0,0.01
-// --track@offset_y:Offset y,-1,2,0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,10 +10,10 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  offset: vec2<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.02, 1, 0.01, 0.5)   scale: f32,
+  @range(-1, 2, 0.01, 0, 0)    offset: vec2<f32>,
   mirror: f32,
   layerRect: vec4<f32>,
 };

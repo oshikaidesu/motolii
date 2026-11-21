@@ -1,9 +1,6 @@
 // Scanlines: AbsentMotion's scanlines (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Adds horizontal scanlines for a CRT monitor effect with optional vertical rolling.
-// --track@spacing:Line Spacing,2.0,20.0,6.0,1.0
-// --track@darkness:Darkness,0.0,1.0,0.4,0.01
-// --track@roll_speed:Roll Speed,0.0,2.0,0.3,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  spacing: f32,
-  darkness: f32,
-  roll_speed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Line Spacing")
+  @range(2, 20, 1, 6)          spacing: f32,
+  @range(0, 1, 0.01, 0.4)      darkness: f32,
+  @range(0, 2, 0.01, 0.3)      roll_speed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

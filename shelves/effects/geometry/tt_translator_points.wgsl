@@ -1,13 +1,13 @@
 // Translator: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:3d
-// --track@distance_x:Distance x,-4,4,-0.5,0.01
-// --track@distance_y:Distance y,-4,4,0,0.01
-// --track@distance_z:Distance z,-4,4,0.2,0.01
 struct Knobs {
-  time: f32,
-  distance_x: f32,
-  distance_y: f32,
-  distance_z: f32,
+  @auto time: f32,
+  @label("Distance x")
+  @range(-4, 4, 0.01, -0.5)    distance_x: f32,
+  @label("Distance y")
+  @range(-4, 4, 0.01, 0)       distance_y: f32,
+  @label("Distance z")
+  @range(-4, 4, 0.01, 0.2)     distance_z: f32,
 };
 @group(0) @binding(0) var<uniform> knobs: Knobs;
 @group(0) @binding(2) var<storage, read_write> shape_points: array<f32>;

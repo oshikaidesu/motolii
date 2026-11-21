@@ -1,12 +1,6 @@
 // Chroma Key: AbsentMotion's chromakey (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Key
 // --about:Removes one color, such as a green screen.
-// --track@key_x:Key Color R,0,1,0,0.01
-// --track@key_y:Key Color G,0,1,1,0.01
-// --track@key_z:Key Color B,0,1,0,0.01
-// --track@key_w:Key Color A,0,1,1,0.01
-// --track@tolerance:Tolerance,0,1,0.25,0.01
-// --track@softness:Softness,0,1,0.1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -16,11 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  key: vec4<f32>,
-  tolerance: f32,
-  softness: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Key Color")
+  @color(0, 1, 0, 1)           key: vec4<f32>,
+  @range(0, 1, 0.01, 0.25)     tolerance: f32,
+  @range(0, 1, 0.01, 0.1)      softness: f32,
   invert: f32,
   layerRect: vec4<f32>,
 };

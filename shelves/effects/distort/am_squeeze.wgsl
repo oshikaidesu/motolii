@@ -1,8 +1,6 @@
 // Squeeze: AbsentMotion's squeeze (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Pinches the middle of the layer inward with positive Strength and bulges it outward with negative Strength. Legacy preserves the shape of older projects.
-// --track@amount:Strength,-2,2,0.0,0.01
-// --track@shape:Shape,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  shape: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(-2, 2, 0.01, 0)       amount: f32,
+  @range(0, 1, 0.01, 0)        shape: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

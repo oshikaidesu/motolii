@@ -1,22 +1,18 @@
 // Scatter: TSLFX by Verekia (MIT, github.com/verekia/tslfx), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_noise_and_tslfx.ts)
 // --label:Generate
-// --track@duration:Duration,0.1,3,0.5,0.1
-// --track@vesicaCount:Vesica Count,0,15,6,1
-// --track@vesicaColor_x:Vesica Color r,0,1,1,0.001
-// --track@vesicaColor_y:Vesica Color g,0,1,0.6,0.001
-// --track@vesicaColor_z:Vesica Color b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  duration: f32,
-  vesicaCount: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0.1, 3, 0.1, 0.5)     duration: f32,
+  @range(0, 15, 1, 6)          vesicaCount: f32,
   radiusStart: f32,
   radiusEnd: f32,
-  vesicaColor: vec3<f32>,
+  @label("Vesica Color r")
+  @range(0, 1, 0.001, 1, 0.6, 0) vesicaColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

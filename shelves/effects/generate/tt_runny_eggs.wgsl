@@ -1,25 +1,19 @@
 // Runny eggs: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture imitates runny eggs. The calculation of this texture is heavy,
-// --track@colorYolk_x:Color Yolk r,0,1,1,0.001
-// --track@colorYolk_y:Color Yolk g,0,1,0.37626212298046485,0.001
-// --track@colorYolk_z:Color Yolk b,0,1,0,0.001
-// --track@colorWhite_x:Color White r,0,1,1,0.001
-// --track@colorWhite_y:Color White g,0,1,1,0.001
-// --track@colorWhite_z:Color White b,0,1,1,0.001
-// --track@colorBackground_x:Color Background r,0,1,0.6514056374127929,0.001
-// --track@colorBackground_y:Color Background g,0,1,0.6514056374127929,0.001
-// --track@colorBackground_z:Color Background b,0,1,0.6514056374127929,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  colorYolk: vec3<f32>,
-  colorWhite: vec3<f32>,
-  colorBackground: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Color Yolk r")
+  @range(0, 1, 0.001, 1, 0.376262, 0) colorYolk: vec3<f32>,
+  @label("Color White r")
+  @range(0, 1, 0.001, 1, 1, 1) colorWhite: vec3<f32>,
+  @label("Color Background r")
+  @range(0, 1, 0.001, 0.651406, 0.651406, 0.651406) colorBackground: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

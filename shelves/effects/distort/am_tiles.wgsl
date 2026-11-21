@@ -1,10 +1,6 @@
 // Tiles: AbsentMotion's tiles (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Repeats the layer to fill the screen. Raise Crop to make smaller tiles, with optional mirroring, row offset and rotation. Legacy Scale preserves older projects.
-// --track@zoom:Crop,0.005,20,1.0,0.005
-// --track@offset:Offset,-100,100,0.0,0.01
-// --track@angle:Angle,-1800,1800,0.0,0.5
-// --track@sizing:Sizing,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,14 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  zoom: f32,
-  sizing: f32,
-  offset: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Crop")
+  @range(0.005, 20, 0.005, 1)  zoom: f32,
+  @range(0, 1, 0.01, 0)        sizing: f32,
+  @range(-100, 100, 0.01, 0)   offset: f32,
   mirror: f32,
   vertical: f32,
-  angle: f32,
+  @range(-1800, 1800, 0.5, 0)  angle: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

@@ -4,16 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Draws outline rings around the opaque parts of the layer, for stacked sticker or neon outlines.
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,1,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@blur:Outset,1,300,20.0,0.1
-// --track@width:Width,0,100,3.0,0.1
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@fill:Fill,0,1,1.0,0.001
-// --track@count:Count,1,10,1.0,1
-// --track@phase:Phase,-999,999,0.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,17 +13,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color: vec4<f32>,
-  blur: f32,
-  width: f32,
-  alpha: f32,
-  fill: f32,
-  count: f32,
-  phase: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @color(1, 1, 1, 1)           color: vec4<f32>,
+  @label("Outset")
+  @range(1, 300, 0.1, 20)      blur: f32,
+  @range(0, 100, 0.1, 3)       width: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(0, 1, 0.001, 1)       fill: f32,
+  @range(1, 10, 1, 1)          count: f32,
+  @range(-999, 999, 0.001, 0)  phase: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

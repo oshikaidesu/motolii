@@ -1,14 +1,6 @@
 // VHS: AbsentMotion's vhs (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Looks like an old video tape: color bleed, smeared lines, scanlines, tape noise and rolling tracking bands.
-// --track@chroma:Color Bleed,0,40,4.0,0.1
-// --track@smear:Smear,0,20,2.0,0.1
-// --track@scanlines:Scanlines,0,1,0.3,0.01
-// --track@noise:Noise,0,1,0.3,0.01
-// --track@tracking:Tracking,0,1,0.5,0.01
-// --track@wobble:Wobble,0,20,1.5,0.1
-// --track@saturation:Saturation,0,2,0.7,0.01
-// --track@seed:Seed,0,1000,1.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -18,17 +10,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  chroma: f32,
-  smear: f32,
-  scanlines: f32,
-  noise: f32,
-  tracking: f32,
-  wobble: f32,
-  saturation: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Color Bleed")
+  @range(0, 40, 0.1, 4)        chroma: f32,
+  @range(0, 20, 0.1, 2)        smear: f32,
+  @range(0, 1, 0.01, 0.3)      scanlines: f32,
+  @range(0, 1, 0.01, 0.3)      noise: f32,
+  @range(0, 1, 0.01, 0.5)      tracking: f32,
+  @range(0, 20, 0.1, 1.5)      wobble: f32,
+  @range(0, 2, 0.01, 0.7)      saturation: f32,
   headSwitch: f32,
-  seed: f32,
+  @range(0, 1000, 1, 1)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

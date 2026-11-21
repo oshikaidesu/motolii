@@ -4,14 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Finds the edges in the layer and makes them glow like neon over a darkened picture.
-// --track@threshold:Threshold,0,1,0.1,0.001
-// --track@blur:Blur,0,300,12.0,0.1
-// --track@spread:Spread,0,3,1.5,0.01
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,0.2353,0.01
-// --track@color_z:Color B,0,1,0.9412,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@blend:Blend,0,2,0.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -21,16 +13,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  threshold: f32,
-  blur: f32,
-  spread: f32,
-  color: vec4<f32>,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.001, 0.1)     threshold: f32,
+  @range(0, 300, 0.1, 12)      blur: f32,
+  @range(0, 3, 0.01, 1.5)      spread: f32,
+  @color(1, 0.2353, 0.9412, 1) color: vec4<f32>,
+  @range(0, 2, 0.001, 0)       blend: f32,
   invert: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

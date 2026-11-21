@@ -4,16 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Screens a soft, blurred copy of the picture over it for a dreamy glow, mostly from the highlights.
-// --track@blur:Size,0,300,20.0,0.1
-// --track@brightness:Brightness,0,3,1.0,0.01
-// --track@contrast:Contrast,-1,1,0.2,0.01
-// --track@highlights:Highlights,0,1,0.5,0.01
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,0.3333,0.01
-// --track@color_z:Color B,0,1,0.4,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@blend:Blend,0,1,0.25,0.01
-// --track@opacity:Opacity,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,17 +13,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  brightness: f32,
-  contrast: f32,
-  highlights: f32,
-  color: vec4<f32>,
-  blend: f32,
-  opacity: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0, 300, 0.1, 20)      blur: f32,
+  @range(0, 3, 0.01, 1)        brightness: f32,
+  @range(-1, 1, 0.01, 0.2)     contrast: f32,
+  @range(0, 1, 0.01, 0.5)      highlights: f32,
+  @color(1, 0.3333, 0.4, 1)    color: vec4<f32>,
+  @range(0, 1, 0.01, 0.25)     blend: f32,
+  @range(0, 1, 0.01, 1)        opacity: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

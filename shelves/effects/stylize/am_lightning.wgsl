@@ -1,19 +1,6 @@
 // Lightning: AbsentMotion's lightning (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a forked bolt of lightning between two points on the layer.
-// --track@R_from_x:Start x,-1,2,0.5,0.01
-// --track@R_from_y:Start y,-1,2,0.05,0.01
-// --track@to_x:End x,-1,2,0.5,0.01
-// --track@to_y:End y,-1,2,0.95,0.01
-// --track@width:Width,0.5,50,4.0,0.1
-// --track@jag:Detail,0,1,0.15,0.001
-// --track@evolution:Evolution,-1000,1000,0.0,0.01
-// --track@glow:Glow,0,4,1.0,0.01
-// --track@color_x:Color R,0,1,0.502,0.01
-// --track@color_y:Color G,0,1,0.6275,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,16 +10,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_from: vec2<f32>,
-  to: vec2<f32>,
-  width: f32,
-  jag: f32,
-  evolution: f32,
-  glow: f32,
-  color: vec4<f32>,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Start")
+  @range(-1, 2, 0.01, 0.5, 0.05) R_from: vec2<f32>,
+  @label("End")
+  @range(-1, 2, 0.01, 0.5, 0.95) to: vec2<f32>,
+  @range(0.5, 50, 0.1, 4)      width: f32,
+  @label("Detail")
+  @range(0, 1, 0.001, 0.15)    jag: f32,
+  @range(-1000, 1000, 0.01, 0) evolution: f32,
+  @range(0, 4, 0.01, 1)        glow: f32,
+  @color(0.502, 0.6275, 1, 1)  color: vec4<f32>,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

@@ -1,7 +1,6 @@
 // Invert: AbsentMotion's invert (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Inverts the color channels of the image with a blend amount and optional alpha inversion.
-// --track@amount:Amount,0.0,1.0,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -11,9 +10,9 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 1)        amount: f32,
   invert_alpha: f32,
   layerRect: vec4<f32>,
 };

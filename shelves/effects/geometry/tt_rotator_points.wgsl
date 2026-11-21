@@ -1,19 +1,19 @@
 // Rotator: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:3d
-// --track@angles_x:Angles x,-3.14,3.14,-0.2,0.01
-// --track@angles_y:Angles y,-3.14,3.14,0.7,0.01
-// --track@angles_z:Angles z,-3.14,3.14,0,0.01
-// --track@center_x:Center x,-4,4,0,0.01
-// --track@center_y:Center y,-4,4,0,0.01
-// --track@center_z:Center z,-4,4,0,0.01
 struct Knobs {
-  time: f32,
-  angles_x: f32,
-  angles_y: f32,
-  angles_z: f32,
-  center_x: f32,
-  center_y: f32,
-  center_z: f32,
+  @auto time: f32,
+  @label("Angles x")
+  @range(-3.14, 3.14, 0.01, -0.2) angles_x: f32,
+  @label("Angles y")
+  @range(-3.14, 3.14, 0.01, 0.7) angles_y: f32,
+  @label("Angles z")
+  @range(-3.14, 3.14, 0.01, 0) angles_z: f32,
+  @label("Center x")
+  @range(-4, 4, 0.01, 0)       center_x: f32,
+  @label("Center y")
+  @range(-4, 4, 0.01, 0)       center_y: f32,
+  @label("Center z")
+  @range(-4, 4, 0.01, 0)       center_z: f32,
 };
 @group(0) @binding(0) var<uniform> knobs: Knobs;
 @group(0) @binding(2) var<storage, read_write> shape_points: array<f32>;

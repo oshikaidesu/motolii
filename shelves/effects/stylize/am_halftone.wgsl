@@ -1,8 +1,6 @@
 // Halftone: AbsentMotion's halftone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Printed dots that grow where the picture is dark.
-// --track@cell:Size,2,200,10.0,1
-// --track@angle:Angle,-360,360,45.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  cell: f32,
-  angle: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(2, 200, 1, 10)        cell: f32,
+  @range(-360, 360, 1, 45)     angle: f32,
   colored: f32,
   layerRect: vec4<f32>,
 };

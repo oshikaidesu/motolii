@@ -1,15 +1,6 @@
 // Vignette: AbsentMotion's vignette (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Darkens the layer toward its edges outside a rounded shape: Size sets the shape, Roundness how round it is, Feather how soft its edge is, Strength how dark it gets and Tint how much it takes on Color. Punch Out makes the edges transparent instead.
-// --track@extent_:Size,0.001,2,0.95,0.001
-// --track@rounding:Roundness,0,9.9,1.5,0.01
-// --track@feather:Feather,0.001,1,0.5,0.001
-// --track@strength:Strength,0,1,0.8,0.001
-// --track@tint:Tint,0,1,0.2,0.01
-// --track@color_x:Color R,0,1,0,0.01
-// --track@color_y:Color G,0,1,0,0.01
-// --track@color_z:Color B,0,1,0,0.01
-// --track@color_w:Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,14 +10,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  extent_: f32,
-  strength: f32,
-  rounding: f32,
-  feather: f32,
-  tint: f32,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0.001, 2, 0.001, 0.95) extent_: f32,
+  @range(0, 1, 0.001, 0.8)     strength: f32,
+  @label("Roundness")
+  @range(0, 9.9, 0.01, 1.5)    rounding: f32,
+  @range(0.001, 1, 0.001, 0.5) feather: f32,
+  @range(0, 1, 0.01, 0.2)      tint: f32,
+  @color(0, 0, 0, 1)           color: vec4<f32>,
   punch: f32,
   layerRect: vec4<f32>,
 };

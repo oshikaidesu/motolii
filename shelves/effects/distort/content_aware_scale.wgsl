@@ -16,11 +16,6 @@
 // --pass@flag:0,1,s0.25,s0.25
 // --pass@source2:0,1,s0.25,s0.25
 // --pass@:0,0,s1,s1
-// --track@keep:Keep width,0.1,1,0.5,0.01
-// --track@keep_y:Keep height,0.1,1,0.6,0.01
-// --track@melt:Melt,0,1,0,0.01
-// --track@steady:Steady,0,0.95,0.7,0.01
-// --track@stretch:Stretch,0,1,0,0.01
 
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var pictureNear: sampler;
@@ -46,7 +41,17 @@
 @group(0) @binding(21) var rank2Near: sampler;
 @group(0) @binding(22) var source2: texture_2d<f32>;
 @group(0) @binding(23) var source2Near: sampler;
-struct Knobs { passindex: f32, frame: f32, keep: f32, keep_y: f32, melt: f32, steady: f32, stretch: f32 }
+struct Knobs {
+  @auto passindex: f32,
+  @auto frame: f32,
+  @label("Keep width")
+  @range(0.1, 1, 0.01, 0.5)    keep: f32,
+  @label("Keep height")
+  @range(0.1, 1, 0.01, 0.6)    keep_y: f32,
+  @range(0, 1, 0.01, 0)        melt: f32,
+  @range(0, 0.95, 0.01, 0.7)   steady: f32,
+  @range(0, 1, 0.01, 0)        stretch: f32,
+}
 @group(0) @binding(24) var<uniform> knobs: Knobs;
 
 const PIECE = 16;

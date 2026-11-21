@@ -1,21 +1,6 @@
 // Rays: AbsentMotion's rays (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Shines rays of light out from the bright parts of the layer, away from a center point.
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@reach:Length,0,4,0.15,0.001
-// --track@threshold:Threshold,0,1,0.6,0.001
-// --track@thresholdAdd_x:Threshold Add R,0,1,0,0.01
-// --track@thresholdAdd_y:Threshold Add G,0,1,0,0.01
-// --track@thresholdAdd_z:Threshold Add B,0,1,0,0.01
-// --track@thresholdAdd_w:Threshold Add A,0,1,1,0.01
-// --track@intensity:Intensity,0,5,1.0,0.01
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@blend:Blend,0,1,0.0,0.01
-// --track@style:Style,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -25,16 +10,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  reach: f32,
-  threshold: f32,
-  intensity: f32,
-  blend: f32,
-  style: f32,
-  thresholdAdd: vec4<f32>,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @label("Length")
+  @range(0, 4, 0.001, 0.15)    reach: f32,
+  @range(0, 1, 0.001, 0.6)     threshold: f32,
+  @range(0, 5, 0.01, 1)        intensity: f32,
+  @range(0, 1, 0.01, 0)        blend: f32,
+  @range(0, 1, 0.01, 1)        style: f32,
+  @color(0, 0, 0, 1)           thresholdAdd: vec4<f32>,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

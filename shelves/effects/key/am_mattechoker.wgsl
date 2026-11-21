@@ -4,9 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Shrinks the opaque parts of the layer by eating into their edges.
-// --track@blur:Size,0,300,10.0,0.1
-// --track@amount:Choke,0.5,1,0.75,0.001
-// --track@softness:Softness,0.001,0.5,0.1,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -16,13 +13,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  amount: f32,
-  softness: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0, 300, 0.1, 10)      blur: f32,
+  @label("Choke")
+  @range(0.5, 1, 0.001, 0.75)  amount: f32,
+  @range(0.001, 0.5, 0.001, 0.1) softness: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

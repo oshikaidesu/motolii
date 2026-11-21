@@ -1,19 +1,6 @@
 // Color Balance: AbsentMotion's colorbalance (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Pushes the shadows, midtones and highlights towards their own colors (gray leaves a range unchanged).
-// --track@shadows_x:Shadows R,0,1,0.1882,0.01
-// --track@shadows_y:Shadows G,0,1,0.3765,0.01
-// --track@shadows_z:Shadows B,0,1,0.6275,0.01
-// --track@shadows_w:Shadows A,0,1,1,0.01
-// --track@midtones_x:Midtones R,0,1,0.502,0.01
-// --track@midtones_y:Midtones G,0,1,0.502,0.01
-// --track@midtones_z:Midtones B,0,1,0.502,0.01
-// --track@midtones_w:Midtones A,0,1,1,0.01
-// --track@highlights_x:Highlights R,0,1,1,0.01
-// --track@highlights_y:Highlights G,0,1,0.6902,0.01
-// --track@highlights_z:Highlights B,0,1,0.4392,0.01
-// --track@highlights_w:Highlights A,0,1,1,0.01
-// --track@amount:Amount,0.0,1.0,0.5,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,12 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  shadows: vec4<f32>,
-  midtones: vec4<f32>,
-  highlights: vec4<f32>,
-  amount: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @color(0.1882, 0.3765, 0.6275, 1) shadows: vec4<f32>,
+  @color(0.502, 0.502, 0.502, 1) midtones: vec4<f32>,
+  @color(1, 0.6902, 0.4392, 1) highlights: vec4<f32>,
+  @range(0, 1, 0.01, 0.5)      amount: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

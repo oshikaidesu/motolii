@@ -1,33 +1,6 @@
 // Four-Color Gradient: AbsentMotion's fourcolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Blends four colors placed at four points (in pixels from the layer's center) over the layer.
-// --track@color1_x:Color 1 R,0,1,1,0.01
-// --track@color1_y:Color 1 G,0,1,0.2353,0.01
-// --track@color1_z:Color 1 B,0,1,0.4314,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@point1_x:Point 1 x,-5000,5000,-400,1
-// --track@point1_y:Point 1 y,-5000,5000,-400,1
-// --track@color2_x:Color 2 R,0,1,1,0.01
-// --track@color2_y:Color 2 G,0,1,0.7843,0.01
-// --track@color2_z:Color 2 B,0,1,0.2353,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@point2_x:Point 2 x,-5000,5000,400,1
-// --track@point2_y:Point 2 y,-5000,5000,-400,1
-// --track@color3_x:Color 3 R,0,1,0.2353,0.01
-// --track@color3_y:Color 3 G,0,1,0.7843,0.01
-// --track@color3_z:Color 3 B,0,1,1,0.01
-// --track@color3_w:Color 3 A,0,1,1,0.01
-// --track@point3_x:Point 3 x,-5000,5000,400,1
-// --track@point3_y:Point 3 y,-5000,5000,400,1
-// --track@color4_x:Color 4 R,0,1,0.4314,0.01
-// --track@color4_y:Color 4 G,0,1,0.2353,0.01
-// --track@color4_z:Color 4 B,0,1,1,0.01
-// --track@color4_w:Color 4 A,0,1,1,0.01
-// --track@point4_x:Point 4 x,-5000,5000,-400,1
-// --track@point4_y:Point 4 y,-5000,5000,400,1
-// --track@softness:Softness,0,1,1.0,0.01
-// --track@opacity:Opacity,0,1,0.7,0.01
-// --track@blend:Blend,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -37,19 +10,27 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color1: vec4<f32>,
-  point1: vec2<f32>,
-  color2: vec4<f32>,
-  point2: vec2<f32>,
-  color3: vec4<f32>,
-  point3: vec2<f32>,
-  color4: vec4<f32>,
-  point4: vec2<f32>,
-  softness: f32,
-  opacity: f32,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Color 1")
+  @color(1, 0.2353, 0.4314, 1) color1: vec4<f32>,
+  @label("Point 1")
+  @range(-5000, 5000, 1, -400, -400) point1: vec2<f32>,
+  @label("Color 2")
+  @color(1, 0.7843, 0.2353, 1) color2: vec4<f32>,
+  @label("Point 2")
+  @range(-5000, 5000, 1, 400, -400) point2: vec2<f32>,
+  @label("Color 3")
+  @color(0.2353, 0.7843, 1, 1) color3: vec4<f32>,
+  @label("Point 3")
+  @range(-5000, 5000, 1, 400, 400) point3: vec2<f32>,
+  @label("Color 4")
+  @color(0.4314, 0.2353, 1, 1) color4: vec4<f32>,
+  @label("Point 4")
+  @range(-5000, 5000, 1, -400, 400) point4: vec2<f32>,
+  @range(0, 1, 0.01, 1)        softness: f32,
+  @range(0, 1, 0.01, 0.7)      opacity: f32,
+  @range(0, 1, 0.01, 0)        blend: f32,
   corner: f32,
   layerRect: vec4<f32>,
 };

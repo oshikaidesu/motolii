@@ -1,15 +1,15 @@
 // CRT finish: vgpu's particle-orbit post.wgsl (MIT, Copyright (c) 2025 Vercel, Inc., github.com/vercel-labs/vgpu), its two other pictures (bloom, radiance) taken out
 // --label:Film
-// --track@pointer:Parallax,-1,1,0,0.01
 
 // CRT finish over the composite.
 @group(0) @binding(0) var src: texture_2d<f32>;
 @group(0) @binding(3) var samp: sampler;
 
 struct Params {
-  time: f32,
-  aspect: f32,
-  pointer: vec2f,
+  @auto time: f32,
+  @auto aspect: f32,
+  @label("Parallax")
+  @range(-1, 1, 0.01, 0)       pointer: vec2f,
 }
 @group(0) @binding(4) var<uniform> params: Params;
 

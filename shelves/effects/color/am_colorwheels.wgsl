@@ -1,15 +1,6 @@
 // Lift Gamma Gain: AbsentMotion's colorwheels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Color wheels for the shadows (lift), midtones (gamma) and highlights (gain): a hue, how far to push it, and a level.
-// --track@liftHue:Lift Hue,0,360,210.0,1
-// --track@liftAmount:Lift Amount,0,1,0.3,0.01
-// --track@liftLevel:Lift Level,-1,1,0.0,0.01
-// --track@gammaHue:Gamma Hue,0,360,0.0,1
-// --track@gammaAmount:Gamma Amount,0,1,0.0,0.01
-// --track@gammaLevel:Gamma Level,-1,1,0.0,0.01
-// --track@gainHue:Gain Hue,0,360,35.0,1
-// --track@gainAmount:Gain Amount,0,1,0.3,0.01
-// --track@gainLevel:Gain Level,-1,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,17 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  liftHue: f32,
-  liftAmount: f32,
-  liftLevel: f32,
-  gammaHue: f32,
-  gammaAmount: f32,
-  gammaLevel: f32,
-  gainHue: f32,
-  gainAmount: f32,
-  gainLevel: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 360, 1, 210)       liftHue: f32,
+  @range(0, 1, 0.01, 0.3)      liftAmount: f32,
+  @range(-1, 1, 0.01, 0)       liftLevel: f32,
+  @range(0, 360, 1, 0)         gammaHue: f32,
+  @range(0, 1, 0.01, 0)        gammaAmount: f32,
+  @range(-1, 1, 0.01, 0)       gammaLevel: f32,
+  @range(0, 360, 1, 35)        gainHue: f32,
+  @range(0, 1, 0.01, 0.3)      gainAmount: f32,
+  @range(-1, 1, 0.01, 0)       gainLevel: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

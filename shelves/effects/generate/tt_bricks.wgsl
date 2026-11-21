@@ -1,47 +1,29 @@
 // Bricks: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture recreates various bricks wall &ndash; mossy bricks, Manchester red
-// --track@scale:Scale,0,4,2,0.04
-// --track@brickSize_x:Brick Size x,0.1,10,2,0.01
-// --track@brickSize_y:Brick Size y,0.1,10,1,0.01
-// --track@brickSize_z:Brick Size z,0.1,10,2,0.01
-// --track@brickShift:Brick Shift,1,4,2,0.03
-// --track@jointSize:Joint Size,0,0.2,0.05,0.002
-// --track@jointSpan:Joint Span,0,1,0.5,0.01
-// --track@jointJitter:Joint Jitter,0,1,0.5,0.01
-// --track@jointBlur:Joint Blur,0,1,0.03,0.01
-// --track@noiseSize:Noise Size,0,1,0.5,0.01
-// --track@noiseStrength:Noise Strength,0,1,0.2,0.01
-// --track@colorShade:Color Shade,0,1,0.5,0.01
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,0.05126945836711539,0.001
-// --track@color_z:Color b,0,1,0,0.001
-// --track@additional_x:Additional r,0,1,0.6307571363387763,0.001
-// --track@additional_y:Additional g,0,1,0.3515325994898463,0.001
-// --track@additional_z:Additional b,0,1,0.02955683443236377,0.001
-// --track@background_x:Background r,0,1,0.4019777798219466,0.001
-// --track@background_y:Background g,0,1,0.4019777798219466,0.001
-// --track@background_z:Background b,0,1,0.4019777798219466,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  brickSize: vec3<f32>,
-  brickShift: f32,
-  jointSize: f32,
-  jointSpan: f32,
-  jointJitter: f32,
-  jointBlur: f32,
-  noiseSize: f32,
-  noiseStrength: f32,
-  colorShade: f32,
-  color: vec3<f32>,
-  additional: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0.1, 10, 0.01, 2, 1, 2) brickSize: vec3<f32>,
+  @range(1, 4, 0.03, 2)        brickShift: f32,
+  @range(0, 0.2, 0.002, 0.05)  jointSize: f32,
+  @range(0, 1, 0.01, 0.5)      jointSpan: f32,
+  @range(0, 1, 0.01, 0.5)      jointJitter: f32,
+  @range(0, 1, 0.01, 0.03)     jointBlur: f32,
+  @range(0, 1, 0.01, 0.5)      noiseSize: f32,
+  @range(0, 1, 0.01, 0.2)      noiseStrength: f32,
+  @range(0, 1, 0.01, 0.5)      colorShade: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 0.0512695, 0) color: vec3<f32>,
+  @label("Additional r")
+  @range(0, 1, 0.001, 0.630757, 0.351533, 0.0295568) additional: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0.401978, 0.401978, 0.401978) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

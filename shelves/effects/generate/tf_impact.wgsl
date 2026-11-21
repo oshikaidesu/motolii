@@ -1,30 +1,21 @@
 // Impact: TSLFX by Verekia (MIT, github.com/verekia/tslfx), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_noise_and_tslfx.ts)
 // --label:Generate
-// --track@duration:Duration,0.1,3,0.5,0.1
-// --track@vesicaCount:Vesica Count,0,15,6,1
-// --track@circleSizeStart:Circle Size Start,0,1,0,0.01
-// --track@circleSizeEnd:Circle Size End,0,1,0.6,0.01
-// --track@circleThickness:Circle Thickness,0,1,0.13,0.01
-// --track@circleColor_x:Circle Color r,0,1,1,0.001
-// --track@circleColor_y:Circle Color g,0,1,0.1,0.001
-// --track@circleColor_z:Circle Color b,0,1,0,0.001
-// --track@vesicaColor_x:Vesica Color r,0,1,1,0.001
-// --track@vesicaColor_y:Vesica Color g,0,1,0.6,0.001
-// --track@vesicaColor_z:Vesica Color b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  duration: f32,
-  vesicaCount: f32,
-  circleSizeStart: f32,
-  circleSizeEnd: f32,
-  circleThickness: f32,
-  circleColor: vec3<f32>,
-  vesicaColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0.1, 3, 0.1, 0.5)     duration: f32,
+  @range(0, 15, 1, 6)          vesicaCount: f32,
+  @range(0, 1, 0.01, 0)        circleSizeStart: f32,
+  @range(0, 1, 0.01, 0.6)      circleSizeEnd: f32,
+  @range(0, 1, 0.01, 0.13)     circleThickness: f32,
+  @label("Circle Color r")
+  @range(0, 1, 0.001, 1, 0.1, 0) circleColor: vec3<f32>,
+  @label("Vesica Color r")
+  @range(0, 1, 0.001, 1, 0.6, 0) vesicaColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

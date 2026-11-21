@@ -1,15 +1,6 @@
 // Tint: AbsentMotion's tint (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Maps the picture's luminance between a shadow color and a highlight color with a blend amount.
-// --track@amount:Amount,0.0,1.0,1.0,0.01
-// --track@shadowColor_x:Shadow Color R,0,1,0,0.01
-// --track@shadowColor_y:Shadow Color G,0,1,0,0.01
-// --track@shadowColor_z:Shadow Color B,0,1,0,0.01
-// --track@shadowColor_w:Shadow Color A,0,1,1,0.01
-// --track@highlightColor_x:Highlight Color R,0,1,1,0.01
-// --track@highlightColor_y:Highlight Color G,0,1,1,0.01
-// --track@highlightColor_z:Highlight Color B,0,1,1,0.01
-// --track@highlightColor_w:Highlight Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,11 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  shadowColor: vec4<f32>,
-  highlightColor: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 1)        amount: f32,
+  @color(0, 0, 0, 1)           shadowColor: vec4<f32>,
+  @color(1, 1, 1, 1)           highlightColor: vec4<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

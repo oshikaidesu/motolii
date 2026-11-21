@@ -1,9 +1,6 @@
 // Mirror: AbsentMotion's mirror (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Reflects one half of the image across a mirror line defined by an angle and a center point.
-// --track@angle:Angle,0,360,90.0,1
-// --track@R_center_x:Center x,0,1,0.5,0.01
-// --track@R_center_y:Center y,0,1,0.5,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  angle: f32,
-  R_center: vec2<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 360, 1, 90)        angle: f32,
+  @label("Center")
+  @range(0, 1, 0.01, 0.5, 0.5) R_center: vec2<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

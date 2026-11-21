@@ -1,21 +1,17 @@
 // Circles: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture geenrates concentric horizonta circles. Click on a snapshot to open it online.
-// --track@scale:Scale,0,4,2,0.04
-// --track@variety:Variety,0,1,1,0.01
-// --track@color_x:Color r,0,1,0.8713671191959567,0.001
-// --track@color_y:Color g,0,1,0.7454042095350284,0.001
-// --track@color_z:Color b,0,1,0.6307571363387763,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  variety: f32,
-  color: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 1, 0.01, 1)        variety: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 0.871367, 0.745404, 0.630757) color: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

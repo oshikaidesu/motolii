@@ -1,23 +1,18 @@
 // Progressive Blur: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Blur that ramps from sharp to soft across the frame.
-// --track@angle:Angle,0,360,0,1
-// --track@start:Start,0,1,0.25,0.01
-// --track@end:End,0,1,0.75,0.01
-// --track@strength:Strength,0,64,24,1
-// --track@samples:Samples,4,32,12,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  angle: f32,
-  start: f32,
-  end: f32,
-  strength: f32,
-  samples: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 360, 1, 0)         angle: f32,
+  @range(0, 1, 0.01, 0.25)     start: f32,
+  @range(0, 1, 0.01, 0.75)     end: f32,
+  @range(0, 64, 1, 24)         strength: f32,
+  @range(4, 32, 1, 12)         samples: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

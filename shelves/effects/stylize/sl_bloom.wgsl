@@ -9,23 +9,22 @@
 // --pass@t5:0,1,s0.125,s0.125
 // --pass@t6:0,1,s0.25,s0.25
 // --pass@:0,0,s1,s1
-// --track@bloomIntensity:Intensity,0,2,1.25,0.01
-// --track@bloomThreshold:Threshold,0,1,0.6,0.01
-// --track@bloomSoftness:Softness,0,1,0.35,0.01
-// --track@bloomKnee:Knee,0,0.5,0.2,0.01
-// --track@highlightDrive:Highlight Drive,1,4,1.5,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  bloomIntensity: f32,
-  bloomThreshold: f32,
-  bloomSoftness: f32,
-  bloomKnee: f32,
-  highlightDrive: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Intensity")
+  @range(0, 2, 0.01, 1.25)     bloomIntensity: f32,
+  @label("Threshold")
+  @range(0, 1, 0.01, 0.6)      bloomThreshold: f32,
+  @label("Softness")
+  @range(0, 1, 0.01, 0.35)     bloomSoftness: f32,
+  @label("Knee")
+  @range(0, 0.5, 0.01, 0.2)    bloomKnee: f32,
+  @range(1, 4, 0.01, 1.5)      highlightDrive: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

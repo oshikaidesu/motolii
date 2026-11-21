@@ -1,33 +1,23 @@
 // Wood: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture attempts imitate the pattern of wood. Click on
-// --track@scale:Scale,1,4,2.5,0.03
-// --track@rings:Rings,1,10,4.5,0.09
-// --track@lengths:Lengths,1,10,1,0.09
-// --track@angle:Angle,-90,90,0,1.8
-// --track@fibers:Fibers,0,1,0.3,0.01
-// --track@fibersDensity:Fibers Density,2,15,10,0.13
-// --track@color_x:Color r,0,1,0.8,0.001
-// --track@color_y:Color g,0,1,0.4,0.001
-// --track@color_z:Color b,0,1,0,0.001
-// --track@background_x:Background r,0,1,0.4,0.001
-// --track@background_y:Background g,0,1,0.1,0.001
-// --track@background_z:Background b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  rings: f32,
-  lengths: f32,
-  angle: f32,
-  fibers: f32,
-  fibersDensity: f32,
-  color: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(1, 4, 0.03, 2.5)      scale: f32,
+  @range(1, 10, 0.09, 4.5)     rings: f32,
+  @range(1, 10, 0.09, 1)       lengths: f32,
+  @range(-90, 90, 1.8, 0)      angle: f32,
+  @range(0, 1, 0.01, 0.3)      fibers: f32,
+  @range(2, 15, 0.13, 10)      fibersDensity: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 0.8, 0.4, 0) color: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0.4, 0.1, 0) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

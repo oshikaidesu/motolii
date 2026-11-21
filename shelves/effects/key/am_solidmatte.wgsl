@@ -1,11 +1,6 @@
 // Solid Matte: AbsentMotion's solidmatte (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Key
 // --about:Puts a solid color behind the layer, filling its transparent parts. Punch Out shows only the color with the layer's shape cut out of it, and Screen Space fills the whole screen instead of the layer's box.
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@alpha:Alpha,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,10 +10,10 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color: vec4<f32>,
-  alpha: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
+  @range(0, 1, 0.01, 1)        alpha: f32,
   punch: f32,
   screenSpace: f32,
   layerRect: vec4<f32>,

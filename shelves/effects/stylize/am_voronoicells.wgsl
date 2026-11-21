@@ -1,22 +1,6 @@
 // Voronoi Cells: AbsentMotion's voronoicells (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Fills the opaque parts of the layer with a pattern of cells around randomly placed points.
-// --track@scale:Scale,0.01,100,1.0,0.01
-// --track@phase:Phase,-99,99,0.0,0.001
-// --track@lineWidth:Line Width,0,1,0.0,0.001
-// --track@color1_x:Color 1 R,0,1,1,0.01
-// --track@color1_y:Color 1 G,0,1,1,0.01
-// --track@color1_z:Color 1 B,0,1,1,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,0,0.01
-// --track@color2_y:Color 2 G,0,1,0,0.01
-// --track@color2_z:Color 2 B,0,1,0,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@lineColor_x:Line Color R,0,1,0,0.01
-// --track@lineColor_y:Line Color G,0,1,0,0.01
-// --track@lineColor_z:Line Color B,0,1,1,0.01
-// --track@lineColor_w:Line Color A,0,1,1,0.01
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -26,15 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  phase: f32,
-  lineWidth: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  lineColor: vec4<f32>,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.01, 100, 0.01, 1)   scale: f32,
+  @range(-99, 99, 0.001, 0)    phase: f32,
+  @range(0, 1, 0.001, 0)       lineWidth: f32,
+  @label("Color 1")
+  @color(1, 1, 1, 1)           color1: vec4<f32>,
+  @label("Color 2")
+  @color(0, 0, 0, 1)           color2: vec4<f32>,
+  @color(0, 0, 1, 1)           lineColor: vec4<f32>,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

@@ -12,45 +12,31 @@
 // --pass@t8:0,1,s0.001953125,s0.001953125
 // --pass@t9:0,1,s0.0009765625,s0.0009765625
 // --pass@:0,0,s1,s1
-// --track@threshold:Threshold,0,1,0.5,0.01
-// --track@contrast:Contrast,0,1,0.7,0.01
-// --track@generations:Generations,1,8,2,0.1
-// --track@amount:Amount,0,1,1,0.01
-// --track@tonerColor_x:Toner Color r,0,1,0.0069954101845983935,0.001
-// --track@tonerColor_y:Toner Color g,0,1,0.0069954101845983935,0.001
-// --track@tonerColor_z:Toner Color b,0,1,0.0069954101845983935,0.001
-// --track@fill:Uneven Fill,0,1,0.4,0.01
-// --track@speckle:Speckle,0,1,0.3,0.01
-// --track@streaks:Streaks,0,1,0.2,0.01
-// --track@shift:Misregistration,0,20,1,0.1
-// --check@paper:Paper,0
-// --track@paperColor_x:Paper Color r,0,1,0.8631572134510892,0.001
-// --track@paperColor_y:Paper Color g,0,1,0.8387990117372213,0.001
-// --track@paperColor_z:Paper Color b,0,1,0.775822218312646,0.001
-// --track@grain:Grain,0,1,0.4,0.01
-// --track@creases:Creases,0,1,0,0.01
-// --track@seed:Seed,0,999,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  threshold: f32,
-  contrast: f32,
-  generations: f32,
-  amount: f32,
-  tonerColor: vec3<f32>,
-  fill: f32,
-  speckle: f32,
-  streaks: f32,
-  shift: f32,
-  paper: f32,
-  paperColor: vec3<f32>,
-  grain: f32,
-  creases: f32,
-  seed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 1, 0.01, 0.5)      threshold: f32,
+  @range(0, 1, 0.01, 0.7)      contrast: f32,
+  @range(1, 8, 0.1, 2)         generations: f32,
+  @range(0, 1, 0.01, 1)        amount: f32,
+  @label("Toner Color r")
+  @range(0, 1, 0.001, 0.00699541, 0.00699541, 0.00699541) tonerColor: vec3<f32>,
+  @label("Uneven Fill")
+  @range(0, 1, 0.01, 0.4)      fill: f32,
+  @range(0, 1, 0.01, 0.3)      speckle: f32,
+  @range(0, 1, 0.01, 0.2)      streaks: f32,
+  @label("Misregistration")
+  @range(0, 20, 0.1, 1)        shift: f32,
+  @toggle(0)                   paper: f32,
+  @label("Paper Color r")
+  @range(0, 1, 0.001, 0.863157, 0.838799, 0.775822) paperColor: vec3<f32>,
+  @range(0, 1, 0.01, 0.4)      grain: f32,
+  @range(0, 1, 0.01, 0)        creases: f32,
+  @range(0, 999, 1, 0)         seed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

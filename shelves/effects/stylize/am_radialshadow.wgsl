@@ -1,15 +1,6 @@
 // Radial Shadow: AbsentMotion's radialshadow (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Casts long shadows from the opaque parts of the layer, spreading out away from a light point.
-// --track@light_x:Light x,-2,3,0.3,0.01
-// --track@light_y:Light y,-2,3,0.2,0.01
-// --track@reach:Length,0,5,0.25,0.001
-// --track@color_x:Color R,0,1,0,0.01
-// --track@color_y:Color G,0,1,0,0.01
-// --track@color_z:Color B,0,1,0,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@alpha:Alpha,0,1,0.1,0.001
-// --track@fade:Fade,0,1,0.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,13 +10,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  light: vec2<f32>,
-  reach: f32,
-  color: vec4<f32>,
-  alpha: f32,
-  fade: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-2, 3, 0.01, 0.3, 0.2) light: vec2<f32>,
+  @label("Length")
+  @range(0, 5, 0.001, 0.25)    reach: f32,
+  @color(0, 0, 0, 1)           color: vec4<f32>,
+  @range(0, 1, 0.001, 0.1)     alpha: f32,
+  @range(0, 1, 0.001, 0)       fade: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

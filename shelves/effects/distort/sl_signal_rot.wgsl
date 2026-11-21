@@ -1,43 +1,30 @@
 // Signal Rot: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:A failing scan: dragged streaks, wobble, torn bands, color drift and line noise.
-// --check@direction:Streaks,0
-// --track@drag:Drag,0,1,0.55,0.01
-// --track@dragLength:Drag Length,0.01,1,0.35,0.01
-// --track@stretch:Stretch,0,1,0.35,0.01
-// --track@wobble:Wobble,0,1,0.45,0.01
-// --track@wobbleScale:Wobble Scale,0.02,2,0.35,0.01
-// --track@tear:Tear,0,1,0.25,0.01
-// --track@bandSize:Band Size,0.01,0.5,0.14,0.01
-// --track@dropout:Dropout,0,1,0.3,0.01
-// --track@dropoutColor_x:Dropout Color r,0,1,1,0.001
-// --track@dropoutColor_y:Dropout Color g,0,1,1,0.001
-// --track@dropoutColor_z:Dropout Color b,0,1,1,0.001
-// --track@chroma:Chroma Shift,0,1,0,0.01
-// --track@crush:Crush,0,1,0,0.01
-// --track@lineNoise:Line Noise,0,1,0,0.01
-// --track@seed:Seed,0,999,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  direction: f32,
-  drag: f32,
-  dragLength: f32,
-  stretch: f32,
-  wobble: f32,
-  wobbleScale: f32,
-  tear: f32,
-  bandSize: f32,
-  dropout: f32,
-  dropoutColor: vec3<f32>,
-  chroma: f32,
-  crush: f32,
-  lineNoise: f32,
-  seed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Streaks")
+  @toggle(0)                   direction: f32,
+  @range(0, 1, 0.01, 0.55)     drag: f32,
+  @range(0.01, 1, 0.01, 0.35)  dragLength: f32,
+  @range(0, 1, 0.01, 0.35)     stretch: f32,
+  @range(0, 1, 0.01, 0.45)     wobble: f32,
+  @range(0.02, 2, 0.01, 0.35)  wobbleScale: f32,
+  @range(0, 1, 0.01, 0.25)     tear: f32,
+  @range(0.01, 0.5, 0.01, 0.14) bandSize: f32,
+  @range(0, 1, 0.01, 0.3)      dropout: f32,
+  @label("Dropout Color r")
+  @range(0, 1, 0.001, 1, 1, 1) dropoutColor: vec3<f32>,
+  @label("Chroma Shift")
+  @range(0, 1, 0.01, 0)        chroma: f32,
+  @range(0, 1, 0.01, 0)        crush: f32,
+  @range(0, 1, 0.01, 0)        lineNoise: f32,
+  @range(0, 999, 1, 0)         seed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

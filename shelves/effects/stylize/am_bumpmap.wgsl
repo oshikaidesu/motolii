@@ -1,14 +1,6 @@
 // Bump Map: AbsentMotion's bumpmap (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Lights the layer as if its brightness were a raised surface, for an embossed, textured look that keeps the colors.
-// --track@angle:Light Angle,-3600,3600,135.0,0.5
-// --track@height:Height,0,30,4.0,0.01
-// --track@ambient:Ambient,0,1,0.4,0.001
-// --track@shine:Shine,0,1,0.3,0.001
-// --track@light_x:Light Color R,0,1,1,0.01
-// --track@light_y:Light Color G,0,1,1,0.01
-// --track@light_z:Light Color B,0,1,1,0.01
-// --track@light_w:Light Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -18,13 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  angle: f32,
-  height: f32,
-  ambient: f32,
-  shine: f32,
-  light: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Light Angle")
+  @range(-3600, 3600, 0.5, 135) angle: f32,
+  @range(0, 30, 0.01, 4)       height: f32,
+  @range(0, 1, 0.001, 0.4)     ambient: f32,
+  @range(0, 1, 0.001, 0.3)     shine: f32,
+  @label("Light Color")
+  @color(1, 1, 1, 1)           light: vec4<f32>,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

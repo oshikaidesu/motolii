@@ -5,32 +5,6 @@
 // --pass@:0,0,s1,s1
 // --picture@backdrop:Behind
 // --about:Glass made from the layer's brightness: refracts what is behind it with rainbow fringes and lights the surface like a lens.
-// --track@blur:Bevel,0,300,10.0,0.1
-// --track@refraction:Refraction,-100,100,5.0,0.1
-// --track@aberration:Chromatic Aberration,-100,100,5.0,0.1
-// --track@feature:Feature Size,5,500,100.0,0.1
-// --track@samples:Smoothing Samples,1,20,2.0,1
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,0.3333,0.01
-// --track@color_z:Color B,0,1,0.4,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@blend:Blend,0,1,0.0,0.001
-// --track@shading:Shading,0,1,1.0,0.01
-// --track@intensity:Intensity,0,2,1.0,0.001
-// --track@shine:Shine,0,1,0.8,0.001
-// --track@specularity:Specularity,1,250,30.0,0.1
-// --track@ambient:Ambient,0,1,0.1,0.001
-// --track@light_x:Light Color R,0,1,1,0.01
-// --track@light_y:Light Color G,0,1,1,0.01
-// --track@light_z:Light Color B,0,1,1,0.01
-// --track@light_w:Light Color A,0,1,1,0.01
-// --track@direction_x:Direction x,-5000,5000,75,1
-// --track@direction_y:Direction y,-5000,5000,-75,1
-// --track@elevation:Elevation,-100,800,100.0,0.1
-// --track@amount:Roughness,-1,1,0.0,0.001
-// --track@scale:Roughness Scale,0.01,50,1.0,0.01
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -40,31 +14,38 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  refraction: f32,
-  aberration: f32,
-  feature: f32,
-  samples: f32,
-  color: vec4<f32>,
-  blend: f32,
-  shading: f32,
-  intensity: f32,
-  shine: f32,
-  specularity: f32,
-  ambient: f32,
-  light: vec4<f32>,
-  direction: vec2<f32>,
-  elevation: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Bevel")
+  @range(0, 300, 0.1, 10)      blur: f32,
+  @range(-100, 100, 0.1, 5)    refraction: f32,
+  @label("Chromatic Aberration")
+  @range(-100, 100, 0.1, 5)    aberration: f32,
+  @label("Feature Size")
+  @range(5, 500, 0.1, 100)     feature: f32,
+  @label("Smoothing Samples")
+  @range(1, 20, 1, 2)          samples: f32,
+  @color(1, 0.3333, 0.4, 1)    color: vec4<f32>,
+  @range(0, 1, 0.001, 0)       blend: f32,
+  @range(0, 1, 0.01, 1)        shading: f32,
+  @range(0, 2, 0.001, 1)       intensity: f32,
+  @range(0, 1, 0.001, 0.8)     shine: f32,
+  @range(1, 250, 0.1, 30)      specularity: f32,
+  @range(0, 1, 0.001, 0.1)     ambient: f32,
+  @label("Light Color")
+  @color(1, 1, 1, 1)           light: vec4<f32>,
+  @range(-5000, 5000, 1, 75, -75) direction: vec2<f32>,
+  @range(-100, 800, 0.1, 100)  elevation: f32,
   useLuma: f32,
-  amount: f32,
-  scale: f32,
-  evolution: f32,
-  seed: f32,
+  @label("Roughness")
+  @range(-1, 1, 0.001, 0)      amount: f32,
+  @label("Roughness Scale")
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
   backdropBox: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(8) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

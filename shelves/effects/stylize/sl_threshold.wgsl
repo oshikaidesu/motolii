@@ -1,29 +1,21 @@
 // Threshold: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Turns the image into stark black and white at a cutoff you set.
-// --track@threshold:Threshold,0,1,0.5,0.01
-// --track@softness:Softness,0,0.2,0.02,0.001
-// --track@noise:Noise,0,0.3,0.08,0.001
-// --check@invert:Invert,0
-// --track@darkColor_x:Dark Color r,0,1,0,0.001
-// --track@darkColor_y:Dark Color g,0,1,0,0.001
-// --track@darkColor_z:Dark Color b,0,1,0,0.001
-// --track@lightColor_x:Light Color r,0,1,1,0.001
-// --track@lightColor_y:Light Color g,0,1,1,0.001
-// --track@lightColor_z:Light Color b,0,1,1,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  threshold: f32,
-  softness: f32,
-  noise: f32,
-  invert: f32,
-  darkColor: vec3<f32>,
-  lightColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 1, 0.01, 0.5)      threshold: f32,
+  @range(0, 0.2, 0.001, 0.02)  softness: f32,
+  @range(0, 0.3, 0.001, 0.08)  noise: f32,
+  @toggle(0)                   invert: f32,
+  @label("Dark Color r")
+  @range(0, 1, 0.001, 0, 0, 0) darkColor: vec3<f32>,
+  @label("Light Color r")
+  @range(0, 1, 0.001, 1, 1, 1) lightColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

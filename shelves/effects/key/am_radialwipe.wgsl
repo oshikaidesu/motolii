@@ -1,13 +1,6 @@
 // Radial Wipe: AbsentMotion's radialwipe (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Key
 // --about:Hides a wedge of the layer swept round Center from Start Angle, like a clock hand. Progress is the angle swept, Count repeats the wedge round the circle and Both sweeps both ways. Animate Progress for a transition.
-// --track@progress:Progress,0,360,45.0,1
-// --track@start:Start Angle,-3600,3600,0.0,0.5
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@feather:Feather,0,180,0.0,0.1
-// --track@direction:Direction,0,1,0.0,0.01
-// --track@count:Count,1,16,1.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,14 +10,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  progress: f32,
-  start: f32,
-  R_center: vec2<f32>,
-  feather: f32,
-  direction: f32,
-  count: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 360, 1, 45)        progress: f32,
+  @label("Start Angle")
+  @range(-3600, 3600, 0.5, 0)  start: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @range(0, 180, 0.1, 0)       feather: f32,
+  @range(0, 1, 0.01, 0)        direction: f32,
+  @range(1, 16, 1, 1)          count: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

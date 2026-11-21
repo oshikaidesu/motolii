@@ -1,68 +1,49 @@
 // Mesh Gradient: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
-// --track@activePoints:Active Points,2,5,5,1
-// --track@point1Color_x:Point 1 Color r,0,1,1,0.001
-// --track@point1Color_y:Point 1 Color g,0,1,0.19461783043107173,0.001
-// --track@point1Color_z:Point 1 Color b,0,1,0.09989872823822872,0.001
-// --track@point1Weight:Point 1 Weight,0,3,1.2,0.01
-// --track@point2Color_x:Point 2 Color r,0,1,1,0.001
-// --track@point2Color_y:Point 2 Color g,0,1,0.6938717612856897,0.001
-// --track@point2Color_z:Point 2 Color b,0,1,0.4793201830913402,0.001
-// --track@point2Weight:Point 2 Weight,0,3,1,0.01
-// --track@point3Color_x:Point 3 Color r,0,1,1,0.001
-// --track@point3Color_y:Point 3 Color g,0,1,0.450785782828426,0.001
-// --track@point3Color_z:Point 3 Color b,0,1,0.5711248294565854,0.001
-// --track@point3Weight:Point 3 Weight,0,3,0.9,0.01
-// --track@point4Color_x:Point 4 Color r,0,1,1,0.001
-// --track@point4Color_y:Point 4 Color g,0,1,0.5775804404214573,0.001
-// --track@point4Color_z:Point 4 Color b,0,1,0.09530746662221588,0.001
-// --track@point4Weight:Point 4 Weight,0,3,1,0.01
-// --track@point5Color_x:Point 5 Color r,0,1,1,0.001
-// --track@point5Color_y:Point 5 Color g,0,1,0.8796223968851662,0.001
-// --track@point5Color_z:Point 5 Color b,0,1,0.7681511472425809,0.001
-// --track@point5Weight:Point 5 Weight,0,3,1.1,0.01
-// --check@distortionMode:Mode,0
-// --track@softness:Softness,0,1,0.7,0.01
-// --track@warp:Warp,0,1,0.3,0.01
-// --track@detail:Detail,0,1,0.1,0.01
-// --track@motionStyle:Motion,0,5,2,1
-// --track@motionAmount:Amount,0,1,0.4,0.01
-// --track@glowStrength:Glow Strength,0,1,0,0.01
-// --track@glowThreshold:Glow Threshold,0,1,0,0.01
-// --track@grainAmount:Grain,0,1,0.04,0.01
-// --track@vignetteStrength:Vignette Strength,0,1,0,0.01
-// --track@vignetteRadius:Vignette Radius,0,1.5,1.5,0.01
-// --track@vignetteSoftness:Vignette Softness,0.01,1,1,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  activePoints: f32,
-  point1Color: vec3<f32>,
-  point1Weight: f32,
-  point2Color: vec3<f32>,
-  point2Weight: f32,
-  point3Color: vec3<f32>,
-  point3Weight: f32,
-  point4Color: vec3<f32>,
-  point4Weight: f32,
-  point5Color: vec3<f32>,
-  point5Weight: f32,
-  distortionMode: f32,
-  softness: f32,
-  warp: f32,
-  detail: f32,
-  motionStyle: f32,
-  motionAmount: f32,
-  glowStrength: f32,
-  glowThreshold: f32,
-  grainAmount: f32,
-  vignetteStrength: f32,
-  vignetteRadius: f32,
-  vignetteSoftness: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(2, 5, 1, 5)           activePoints: f32,
+  @label("Point 1 Color r")
+  @range(0, 1, 0.001, 1, 0.194618, 0.0998987) point1Color: vec3<f32>,
+  @label("Point 1 Weight")
+  @range(0, 3, 0.01, 1.2)      point1Weight: f32,
+  @label("Point 2 Color r")
+  @range(0, 1, 0.001, 1, 0.693872, 0.47932) point2Color: vec3<f32>,
+  @label("Point 2 Weight")
+  @range(0, 3, 0.01, 1)        point2Weight: f32,
+  @label("Point 3 Color r")
+  @range(0, 1, 0.001, 1, 0.450786, 0.571125) point3Color: vec3<f32>,
+  @label("Point 3 Weight")
+  @range(0, 3, 0.01, 0.9)      point3Weight: f32,
+  @label("Point 4 Color r")
+  @range(0, 1, 0.001, 1, 0.57758, 0.0953075) point4Color: vec3<f32>,
+  @label("Point 4 Weight")
+  @range(0, 3, 0.01, 1)        point4Weight: f32,
+  @label("Point 5 Color r")
+  @range(0, 1, 0.001, 1, 0.879622, 0.768151) point5Color: vec3<f32>,
+  @label("Point 5 Weight")
+  @range(0, 3, 0.01, 1.1)      point5Weight: f32,
+  @label("Mode")
+  @toggle(0)                   distortionMode: f32,
+  @range(0, 1, 0.01, 0.7)      softness: f32,
+  @range(0, 1, 0.01, 0.3)      warp: f32,
+  @range(0, 1, 0.01, 0.1)      detail: f32,
+  @label("Motion")
+  @range(0, 5, 1, 2)           motionStyle: f32,
+  @label("Amount")
+  @range(0, 1, 0.01, 0.4)      motionAmount: f32,
+  @range(0, 1, 0.01, 0)        glowStrength: f32,
+  @range(0, 1, 0.01, 0)        glowThreshold: f32,
+  @label("Grain")
+  @range(0, 1, 0.01, 0.04)     grainAmount: f32,
+  @range(0, 1, 0.01, 0)        vignetteStrength: f32,
+  @range(0, 1.5, 0.01, 1.5)    vignetteRadius: f32,
+  @range(0.01, 1, 0.01, 1)     vignetteSoftness: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

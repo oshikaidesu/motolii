@@ -2,13 +2,6 @@
 // --label:Distort
 // --picture@backdrop:Behind
 // --about:Turns and pulls the layers behind this one around a center point by the layer's colors, then hides the layer.
-// --track@angle:Angle,-3600,3600,0.0,0.5
-// --track@reach:Inset/Outset,-1000,1000,0.0,0.1
-// --track@angleChannel:Angle From,0,1,3.0,0.01
-// --track@distanceChannel:Distance From,0,1,3.0,0.01
-// --track@edges:Edges,0,1,1.0,0.01
-// --track@R_center_x:Center x,-5000,5000,0,1
-// --track@R_center_y:Center y,-5000,5000,0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -18,15 +11,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  screen: vec4<f32>,
-  R_center: vec2<f32>,
-  angle: f32,
-  reach: f32,
-  angleChannel: f32,
-  distanceChannel: f32,
-  edges: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @auto screen: vec4<f32>,
+  @label("Center")
+  @range(-5000, 5000, 1, 0, 0) R_center: vec2<f32>,
+  @range(-3600, 3600, 0.5, 0)  angle: f32,
+  @label("Inset/Outset")
+  @range(-1000, 1000, 0.1, 0)  reach: f32,
+  @label("Angle From")
+  @range(0, 1, 0.01, 3)        angleChannel: f32,
+  @label("Distance From")
+  @range(0, 1, 0.01, 3)        distanceChannel: f32,
+  @range(0, 1, 0.01, 1)        edges: f32,
   fromCenter: f32,
   invert: f32,
   layerRect: vec4<f32>,

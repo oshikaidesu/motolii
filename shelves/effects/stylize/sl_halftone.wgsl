@@ -1,65 +1,41 @@
 // Halftone: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Turns the image into printed dot screens.
-// --track@shape:Shape,0,3,0,1
-// --track@spacing:Spacing,2,48,5,1
-// --track@dotSize:Dot Size,0.1,3,1,0.01
-// --track@dotMin:Dot Min,0,0.5,0,0.01
-// --track@contrast:Contrast,0,2,1,0.01
-// --track@softness:Softness,0,1,0.25,0.01
-// --track@dotGain:Dot Gain,0,1,0,0.01
-// --track@dotMorph:Dot Morph,0,1,0,0.01
-// --check@invertLuma:Invert,0
-// --track@gcr:Black Generation,0,1,0.5,0.01
-// --track@cyanAngle:Cyan Angle,0,90,15,1
-// --track@magentaAngle:Magenta Angle,0,90,75,1
-// --track@yellowAngle:Yellow Angle,0,90,0,1
-// --track@keyAngle:Key Angle,0,90,45,1
-// --track@paperColor_x:Paper Color r,0,1,0.913098651791473,0.001
-// --track@paperColor_y:Paper Color g,0,1,0.913098651791473,0.001
-// --track@paperColor_z:Paper Color b,0,1,0.8713671191959567,0.001
-// --track@paperGrain:Paper Grain,0,0.5,0.15,0.01
-// --track@registration:Registration,0,5,0,0.1
-// --track@inkCyan_x:Cyan Ink r,0,1,0,0.001
-// --track@inkCyan_y:Cyan Ink g,0,1,0.4232676699760063,0.001
-// --track@inkCyan_z:Cyan Ink b,0,1,0.8631572134510892,0.001
-// --track@inkMagenta_x:Magenta Ink r,0,1,0.8387990117372213,0.001
-// --track@inkMagenta_y:Magenta Ink g,0,1,0,0.001
-// --track@inkMagenta_z:Magenta Ink b,0,1,0.26225065751888765,0.001
-// --track@inkYellow_x:Yellow Ink r,0,1,1,0.001
-// --track@inkYellow_y:Yellow Ink g,0,1,0.8879231178794776,0.001
-// --track@inkYellow_z:Yellow Ink b,0,1,0,0.001
-// --track@inkKey_x:Key Ink r,0,1,0.010329823026364548,0.001
-// --track@inkKey_y:Key Ink g,0,1,0.010329823026364548,0.001
-// --track@inkKey_z:Key Ink b,0,1,0.010329823026364548,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  shape: f32,
-  spacing: f32,
-  dotSize: f32,
-  dotMin: f32,
-  contrast: f32,
-  softness: f32,
-  dotGain: f32,
-  dotMorph: f32,
-  invertLuma: f32,
-  gcr: f32,
-  cyanAngle: f32,
-  magentaAngle: f32,
-  yellowAngle: f32,
-  keyAngle: f32,
-  paperColor: vec3<f32>,
-  paperGrain: f32,
-  registration: f32,
-  inkCyan: vec3<f32>,
-  inkMagenta: vec3<f32>,
-  inkYellow: vec3<f32>,
-  inkKey: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 3, 1, 0)           shape: f32,
+  @range(2, 48, 1, 5)          spacing: f32,
+  @range(0.1, 3, 0.01, 1)      dotSize: f32,
+  @range(0, 0.5, 0.01, 0)      dotMin: f32,
+  @range(0, 2, 0.01, 1)        contrast: f32,
+  @range(0, 1, 0.01, 0.25)     softness: f32,
+  @range(0, 1, 0.01, 0)        dotGain: f32,
+  @range(0, 1, 0.01, 0)        dotMorph: f32,
+  @label("Invert")
+  @toggle(0)                   invertLuma: f32,
+  @label("Black Generation")
+  @range(0, 1, 0.01, 0.5)      gcr: f32,
+  @range(0, 90, 1, 15)         cyanAngle: f32,
+  @range(0, 90, 1, 75)         magentaAngle: f32,
+  @range(0, 90, 1, 0)          yellowAngle: f32,
+  @range(0, 90, 1, 45)         keyAngle: f32,
+  @label("Paper Color r")
+  @range(0, 1, 0.001, 0.913099, 0.913099, 0.871367) paperColor: vec3<f32>,
+  @range(0, 0.5, 0.01, 0.15)   paperGrain: f32,
+  @range(0, 5, 0.1, 0)         registration: f32,
+  @label("Cyan Ink r")
+  @range(0, 1, 0.001, 0, 0.423268, 0.863157) inkCyan: vec3<f32>,
+  @label("Magenta Ink r")
+  @range(0, 1, 0.001, 0.838799, 0, 0.262251) inkMagenta: vec3<f32>,
+  @label("Yellow Ink r")
+  @range(0, 1, 0.001, 1, 0.887923, 0) inkYellow: vec3<f32>,
+  @label("Key Ink r")
+  @range(0, 1, 0.001, 0.0103298, 0.0103298, 0.0103298) inkKey: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

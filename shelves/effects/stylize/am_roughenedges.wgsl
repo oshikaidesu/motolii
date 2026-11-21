@@ -4,12 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Eats into the edges of the opaque parts with noise, for a torn, worn or burnt outline.
-// --track@blur:Border,0,300,12.0,0.1
-// --track@roughness:Roughness,0,1,0.6,0.001
-// --track@scale:Scale,0.05,20,1.0,0.01
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@octaves:Octaves,1,9,6.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,16 +13,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  roughness: f32,
-  scale: f32,
-  evolution: f32,
-  seed: f32,
-  octaves: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Border")
+  @range(0, 300, 0.1, 12)      blur: f32,
+  @range(0, 1, 0.001, 0.6)     roughness: f32,
+  @range(0.05, 20, 0.01, 1)    scale: f32,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @range(1, 9, 1, 6)           octaves: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

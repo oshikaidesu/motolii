@@ -1,12 +1,6 @@
 // Solid Color: AbsentMotion's solid (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Lays one color over the layer, keeping its shape, with a choice of blend modes.
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@amount:Alpha,0,1,1.0,0.01
-// --track@blend:Blending Mode,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -16,11 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color: vec4<f32>,
-  amount: f32,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
+  @label("Alpha")
+  @range(0, 1, 0.01, 1)        amount: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 0)        blend: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

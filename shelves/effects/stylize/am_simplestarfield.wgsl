@@ -1,20 +1,6 @@
 // Simple Starfield: AbsentMotion's simplestarfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Scatters small stars in layers of depth over the opaque parts of the layer. Position moves the field with parallax, Depth flies through it, Scale zooms it, Size and Feather shape each star and Amount sets how many there are.
-// --track@R_position_x:Position x,-100000,100000,0,1
-// --track@R_position_y:Position y,-100000,100000,0,1
-// --track@depth:Depth,-100000,100000,0.0,1
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@starSize:Size,0,5,0.5,0.001
-// --track@feather:Feather,0,20,0.0,0.1
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,1,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@alpha:Alpha,0,1,1.0,0.01
-// --track@amount:Amount,0,100,25.0,0.1
-// --track@brightness:Brightness,0,5,1.0,0.001
-// --track@blend:Blending Mode,0,1,2.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -24,18 +10,21 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_position: vec2<f32>,
-  depth: f32,
-  scale: f32,
-  starSize: f32,
-  feather: f32,
-  color: vec4<f32>,
-  alpha: f32,
-  amount: f32,
-  brightness: f32,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Position")
+  @range(-100000, 100000, 1, 0, 0) R_position: vec2<f32>,
+  @range(-100000, 100000, 1, 0) depth: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @label("Size")
+  @range(0, 5, 0.001, 0.5)     starSize: f32,
+  @range(0, 20, 0.1, 0)        feather: f32,
+  @color(1, 1, 1, 1)           color: vec4<f32>,
+  @range(0, 1, 0.01, 1)        alpha: f32,
+  @range(0, 100, 0.1, 25)      amount: f32,
+  @range(0, 5, 0.001, 1)       brightness: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 2)        blend: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

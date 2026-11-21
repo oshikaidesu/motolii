@@ -4,34 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Draws a crackling, glowing outline around the layer that jitters like electricity when Seed or Evolution is animated, with optional contour lines inside.
-// --track@blur:Distance,0,300,30.0,0.1
-// --track@thickness:Thickness,0,1,0.8,0.001
-// --track@detail:Detail,0,20,2.0,0.01
-// --track@distortion:Distortion,-1,1,0.5,0.001
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,1,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@glowColor_x:Glow Color R,0,1,0.2353,0.01
-// --track@glowColor_y:Glow Color G,0,1,0.549,0.01
-// --track@glowColor_z:Glow Color B,0,1,1,0.01
-// --track@glowColor_w:Glow Color A,0,1,1,0.01
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@glow:Glow,0,1,0.5,0.001
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@evolution:Evolution,-999,999,0.0,0.01
-// --track@fill:Fill,0,1,1.0,0.001
-// --track@maskStrength:Mask Strength,0,1,0.0,0.001
-// --track@maskEvolution:Mask Evolution,-50,50,0.0,0.01
-// --track@maskScale:Mask Scale,0.01,50,1.0,0.01
-// --track@maskSeed:Mask Seed,0,5,0.0,0.01
-// --track@maskColor_x:Mask Color R,0,1,1,0.01
-// --track@maskColor_y:Mask Color G,0,1,0.2353,0.01
-// --track@maskColor_z:Mask Color B,0,1,0.8627,0.01
-// --track@maskColor_w:Mask Color A,0,1,1,0.01
-// --track@count:Contour Count,0,200,20.0,0.1
-// --track@phase:Contour Phase,-999,999,0.0,0.01
-// --track@contourAngle:Contour Angle,-3600,3600,0.0,0.5
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -41,30 +13,33 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  thickness: f32,
-  detail: f32,
-  distortion: f32,
-  color: vec4<f32>,
-  glowColor: vec4<f32>,
-  alpha: f32,
-  glow: f32,
-  seed: f32,
-  evolution: f32,
-  fill: f32,
-  maskStrength: f32,
-  maskEvolution: f32,
-  maskScale: f32,
-  maskSeed: f32,
-  maskColor: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Distance")
+  @range(0, 300, 0.1, 30)      blur: f32,
+  @range(0, 1, 0.001, 0.8)     thickness: f32,
+  @range(0, 20, 0.01, 2)       detail: f32,
+  @range(-1, 1, 0.001, 0.5)    distortion: f32,
+  @color(1, 1, 1, 1)           color: vec4<f32>,
+  @color(0.2353, 0.549, 1, 1)  glowColor: vec4<f32>,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(0, 1, 0.001, 0.5)     glow: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @range(-999, 999, 0.01, 0)   evolution: f32,
+  @range(0, 1, 0.001, 1)       fill: f32,
+  @range(0, 1, 0.001, 0)       maskStrength: f32,
+  @range(-50, 50, 0.01, 0)     maskEvolution: f32,
+  @range(0.01, 50, 0.01, 1)    maskScale: f32,
+  @range(0, 5, 0.01, 0)        maskSeed: f32,
+  @color(1, 0.2353, 0.8627, 1) maskColor: vec4<f32>,
   contours: f32,
-  count: f32,
-  phase: f32,
-  contourAngle: f32,
+  @label("Contour Count")
+  @range(0, 200, 0.1, 20)      count: f32,
+  @label("Contour Phase")
+  @range(-999, 999, 0.01, 0)   phase: f32,
+  @range(-3600, 3600, 0.5, 0)  contourAngle: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

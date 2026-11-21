@@ -1,19 +1,6 @@
 // Gradient Overlay: AbsentMotion's gradientoverlay (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Lays a two-color gradient over the layer with a choice of shapes and blend modes.
-// --track@color1_x:Color 1 R,0,1,0.2275,0.01
-// --track@color1_y:Color 1 G,0,1,0.1098,0.01
-// --track@color1_z:Color 1 B,0,1,0.4431,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,1,0.01
-// --track@color2_y:Color 2 G,0,1,0.6863,0.01
-// --track@color2_z:Color 2 B,0,1,0.4824,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@shape:Shape,0,1,0.0,0.01
-// --track@angle:Angle,-360,360,90.0,1
-// --track@scale:Scale,0.05,10,1.0,0.01
-// --track@opacity:Opacity,0,1,0.6,0.01
-// --track@blend:Blend,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,15 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  shape: f32,
-  angle: f32,
-  scale: f32,
-  opacity: f32,
-  blend: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Color 1")
+  @color(0.2275, 0.1098, 0.4431, 1) color1: vec4<f32>,
+  @label("Color 2")
+  @color(1, 0.6863, 0.4824, 1) color2: vec4<f32>,
+  @range(0, 1, 0.01, 0)        shape: f32,
+  @range(-360, 360, 1, 90)     angle: f32,
+  @range(0.05, 10, 0.01, 1)    scale: f32,
+  @range(0, 1, 0.01, 0.6)      opacity: f32,
+  @range(0, 1, 0.01, 0)        blend: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

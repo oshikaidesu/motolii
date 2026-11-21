@@ -1,8 +1,6 @@
 // Directional Blur: AbsentMotion's directionalblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Motion blur by averaging samples along a directional angle.
-// --track@blurLength:Length,0,2000,20.0,1
-// --track@angle:Angle,0,360,0.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blurLength: f32,
-  angle: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Length")
+  @range(0, 2000, 1, 20)       blurLength: f32,
+  @range(0, 360, 1, 0)         angle: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

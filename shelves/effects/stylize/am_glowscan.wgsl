@@ -4,15 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Blurs and lights up only the parts of the layer whose brightness falls in a band; animate Position to sweep the glow from shadows to highlights.
-// --track@blur:Blur,0,300,20.0,0.1
-// --track@R_position:Position,0,1,0.5,0.001
-// --track@width:Width,0,1,0.2,0.001
-// --track@softness:Softness,0,1,0.1,0.001
-// --track@intensity:Intensity,0,5,1.0,0.001
-// --track@color_x:Glow Color R,0,1,0.498,0.01
-// --track@color_y:Glow Color G,0,1,0.8314,0.01
-// --track@color_z:Glow Color B,0,1,1,0.01
-// --track@color_w:Glow Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -22,17 +13,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  R_position: f32,
-  width: f32,
-  softness: f32,
-  intensity: f32,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 300, 0.1, 20)      blur: f32,
+  @label("Position")
+  @range(0, 1, 0.001, 0.5)     R_position: f32,
+  @range(0, 1, 0.001, 0.2)     width: f32,
+  @range(0, 1, 0.001, 0.1)     softness: f32,
+  @range(0, 5, 0.001, 1)       intensity: f32,
+  @label("Glow Color")
+  @color(0.498, 0.8314, 1, 1)  color: vec4<f32>,
   show: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

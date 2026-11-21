@@ -1,29 +1,21 @@
 // Watermelon: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renderes the surface of a watermelon with two colors - one for the
-// --track@scale:Scale,0,4,2,0.04
-// --track@stripes:Stripes,4,30,12,1
-// --track@variation:Variation,0,1,0.5,0.01
-// --track@noise:Noise,0,1,0.25,0.01
-// --track@color_x:Color r,0,1,0.3231432091022285,0.001
-// --track@color_y:Color g,0,1,0.6104955708001716,0.001
-// --track@color_z:Color b,0,1,0.031896033067374104,0.001
-// --track@background_x:Background r,0,1,0,0.001
-// --track@background_y:Background g,0,1,0.12743768042608497,0.001
-// --track@background_z:Background b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  stripes: f32,
-  variation: f32,
-  noise: f32,
-  color: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(4, 30, 1, 12)         stripes: f32,
+  @range(0, 1, 0.01, 0.5)      variation: f32,
+  @range(0, 1, 0.01, 0.25)     noise: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 0.323143, 0.610496, 0.031896) color: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0, 0.127438, 0) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

@@ -1,19 +1,16 @@
 // Halftone: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture enforces halftone pattern by keeping some part of the object surface
-// --track@scale:Scale,0,4,2,0.04
-// --track@radius:Radius,0,2,0.5,0.02
-// --track@pattern:Pattern,0,10,1,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  radius: f32,
-  pattern: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 2, 0.02, 0.5)      radius: f32,
+  @range(0, 10, 1, 1)          pattern: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

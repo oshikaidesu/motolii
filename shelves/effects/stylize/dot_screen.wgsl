@@ -1,17 +1,15 @@
 // DotScreen: three.js's DotScreenShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)
 // --label:Stylize
-// --track@center_x:center_x,0.0,2.0,0.5,0.001
-// --track@center_y:center_y,0.0,2.0,0.5,0.001
-// --track@angle:angle,0.0,6.28,1.57,0.001
-// --track@scale:scale,0.0,4.0,1.0,0.001
-// --track@tSize_x:tSize_x,0.0,1024.0,256.0,0.001
-// --track@tSize_y:tSize_y,0.0,1024.0,256.0,0.001
 
 struct Knobs {
-    center: vec2<f32>,
-    angle: f32,
-    scale: f32,
-    tSize: vec2<f32>,
+  @label("center_x")
+  @range(0, 2, 0.001, 0.5, 0.5) center: vec2<f32>,
+  @label("angle")
+  @range(0, 6.28, 0.001, 1.57) angle: f32,
+  @label("scale")
+  @range(0, 4, 0.001, 1)       scale: f32,
+  @label("tSize_x")
+  @range(0, 1024, 0.001, 256, 256) tSize: vec2<f32>,
 }
 
 struct FragmentOutput {

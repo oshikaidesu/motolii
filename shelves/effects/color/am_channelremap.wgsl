@@ -1,10 +1,6 @@
 // Channel Remap (RGB): AbsentMotion's channelremap (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Rebuilds each color channel from another channel of the layer, for false color or for moving luminance into alpha.
-// --track@r:R,0,1,0.0,0.01
-// --track@g:G,0,1,1.0,0.01
-// --track@b:B,0,1,2.0,0.01
-// --track@a:A,0,1,3.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,12 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  r: f32,
-  g: f32,
-  b: f32,
-  a: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 0)        r: f32,
+  @range(0, 1, 0.01, 1)        g: f32,
+  @range(0, 1, 0.01, 2)        b: f32,
+  @range(0, 1, 0.01, 3)        a: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

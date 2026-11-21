@@ -2,8 +2,6 @@
 // --label:Distort
 // --picture@backdrop:Behind
 // --about:Makes the layer a magnifying glass: its shape shows the layers behind it enlarged around its center.
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@sampling:Sampling,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,12 +11,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  screen: vec4<f32>,
-  scale: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @auto screen: vec4<f32>,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
   magnify: f32,
-  sampling: f32,
+  @range(0, 1, 0.01, 1)        sampling: f32,
   layerRect: vec4<f32>,
   backdropBox: vec4<f32>,
 };

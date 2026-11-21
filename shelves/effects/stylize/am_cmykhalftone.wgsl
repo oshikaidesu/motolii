@@ -1,11 +1,6 @@
 // CMYK Halftone Dots: AbsentMotion's cmykhalftone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Redraws the layer like a magazine print: cyan, magenta, yellow and black dots on four rotated screens.
-// --track@amount:Amount,0,500,100.0,0.1
-// --track@strength:Strength,0,1,0.5,0.001
-// --track@black:Black,0,1,0.0,0.001
-// --track@angle:Angle,0,3600,45.0,0.5
-// --track@phase:Phase,-1000,1000,0.5,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,13 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  strength: f32,
-  black: f32,
-  angle: f32,
-  phase: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 500, 0.1, 100)     amount: f32,
+  @range(0, 1, 0.001, 0.5)     strength: f32,
+  @range(0, 1, 0.001, 0)       black: f32,
+  @range(0, 3600, 0.5, 45)     angle: f32,
+  @range(-1000, 1000, 0.001, 0.5) phase: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

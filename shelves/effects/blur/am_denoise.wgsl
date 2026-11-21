@@ -1,9 +1,6 @@
 // Denoise: AbsentMotion's denoise (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Removes image noise with an edge-preserving bilateral filter that averages nearby pixels only when their colors are similar.
-// --track@strength:Strength,0.0,1.0,0.5,0.01
-// --track@radius:Radius,1.0,6.0,2.0,0.5
-// --track@detail:Detail,0.0,1.0,0.5,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  strength: f32,
-  radius: f32,
-  detail: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 0.5)      strength: f32,
+  @range(1, 6, 0.5, 2)         radius: f32,
+  @range(0, 1, 0.01, 0.5)      detail: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

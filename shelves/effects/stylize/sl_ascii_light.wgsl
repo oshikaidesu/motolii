@@ -3,32 +3,26 @@
 // --about:Redraws the image as text characters, like an old terminal.
 // --pass@t0:0,1,s1,s1
 // --pass@:0,0,s1,s1
-// --track@columns:Columns,4,400,80,1
-// --track@boldness:Boldness,-1,1,0,0.01
-// --check@colorMode:Color Mode,1
-// --track@monoColor_x:Tint r,0,1,0.913098651791473,0.001
-// --track@monoColor_y:Tint g,0,1,0.913098651791473,0.001
-// --track@monoColor_z:Tint b,0,1,0.8713671191959567,0.001
-// --track@bgOpacity:Background,0,1,0,0.01
-// --track@signalBlackPoint:Black Point,0,1,0,0.01
-// --track@signalWhitePoint:White Point,0,1,1,0.01
-// --check@invert:Invert,0
 // --image@image0:sl_ascii_light.0.png
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  columns: f32,
-  boldness: f32,
-  colorMode: f32,
-  monoColor: vec3<f32>,
-  bgOpacity: f32,
-  signalBlackPoint: f32,
-  signalWhitePoint: f32,
-  invert: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(4, 400, 1, 80)        columns: f32,
+  @range(-1, 1, 0.01, 0)       boldness: f32,
+  @toggle(1)                   colorMode: f32,
+  @label("Tint r")
+  @range(0, 1, 0.001, 0.913099, 0.913099, 0.871367) monoColor: vec3<f32>,
+  @label("Background")
+  @range(0, 1, 0.01, 0)        bgOpacity: f32,
+  @label("Black Point")
+  @range(0, 1, 0.01, 0)        signalBlackPoint: f32,
+  @label("White Point")
+  @range(0, 1, 0.01, 1)        signalWhitePoint: f32,
+  @toggle(0)                   invert: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

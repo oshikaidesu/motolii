@@ -1,10 +1,6 @@
 // Split Tone: AbsentMotion's splittone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Tints the shadows towards one hue and the highlights towards another, keeping black, white and brightness.
-// --track@shadowHue:Shadow Hue,-360,360,200.0,1
-// --track@shadowAmount:Shadow Amount,0,1,0.6,0.01
-// --track@highlightHue:Highlight Hue,-360,360,35.0,1
-// --track@highlightAmount:Highlight Amount,0,1,0.6,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,12 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  shadowHue: f32,
-  shadowAmount: f32,
-  highlightHue: f32,
-  highlightAmount: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-360, 360, 1, 200)    shadowHue: f32,
+  @range(0, 1, 0.01, 0.6)      shadowAmount: f32,
+  @range(-360, 360, 1, 35)     highlightHue: f32,
+  @range(0, 1, 0.01, 0.6)      highlightAmount: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

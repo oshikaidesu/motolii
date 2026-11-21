@@ -2,32 +2,28 @@
 // --label:Distort
 // --tag:basic
 // --about:Moves the four corners of the layer anywhere, with perspective. The corners start at the layer's own.
-// --group:Top left
-// --track@tl_x:x,-2,3,0,0.001
-// --track@tl_y:y,-2,3,0,0.001
-// --group
-// --group:Top right
-// --track@tr_x:x,-2,3,1,0.001
-// --track@tr_y:y,-2,3,0,0.001
-// --group
-// --group:Bottom right
-// --track@br_x:x,-2,3,1,0.001
-// --track@br_y:y,-2,3,1,0.001
-// --group
-// --group:Bottom left
-// --track@bl_x:x,-2,3,0,0.001
-// --track@bl_y:y,-2,3,1,0.001
-// --group
 
 struct Knobs {
-  tl_x: f32,
-  tl_y: f32,
-  tr_x: f32,
-  tr_y: f32,
-  br_x: f32,
-  br_y: f32,
-  bl_x: f32,
-  bl_y: f32,
+  @group("Top left")
+  @label("x")
+  @range(-2, 3, 0.001, 0)      tl_x: f32,
+  @label("y")
+  @range(-2, 3, 0.001, 0)      tl_y: f32,
+  @group("Top right")
+  @label("x")
+  @range(-2, 3, 0.001, 1)      tr_x: f32,
+  @label("y")
+  @range(-2, 3, 0.001, 0)      tr_y: f32,
+  @group("Bottom right")
+  @label("x")
+  @range(-2, 3, 0.001, 1)      br_x: f32,
+  @label("y")
+  @range(-2, 3, 0.001, 1)      br_y: f32,
+  @group("Bottom left")
+  @label("x")
+  @range(-2, 3, 0.001, 0)      bl_x: f32,
+  @label("y")
+  @range(-2, 3, 0.001, 1)      bl_y: f32,
 }
 
 @group(0) @binding(0) var picture: texture_2d<f32>;

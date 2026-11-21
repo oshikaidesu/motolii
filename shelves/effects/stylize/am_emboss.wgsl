@@ -1,8 +1,6 @@
 // Emboss: AbsentMotion's emboss (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Applies an emboss effect using luminance gradients along a specified light angle.
-// --track@angle:Light Angle,0.0,360.0,45.0,1.0
-// --track@strength:Strength,0.0,4.0,1.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  angle: f32,
-  strength: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Light Angle")
+  @range(0, 360, 1, 45)        angle: f32,
+  @range(0, 4, 0.1, 1)         strength: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

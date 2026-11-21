@@ -1,13 +1,6 @@
 // Raster Transform: AbsentMotion's rastertransform (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Move
 // --about:Scales, turns and moves the finished picture of the layer, after the effects above it, so their result can be transformed too. Fill keeps some of the original underneath and Mask To Layer keeps the result inside the original shape.
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@angle:Angle,-3600,3600,0.0,0.1
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@alpha:Alpha,0,1,1.0,0.01
-// --track@fill:Fill,0,1,0.0,0.01
-// --track@sampling:Sampling,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,15 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  scale: f32,
-  angle: f32,
-  offset: vec2<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(-3600, 3600, 0.1, 0)  angle: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
   mask: f32,
-  alpha: f32,
-  fill: f32,
-  sampling: f32,
+  @range(0, 1, 0.01, 1)        alpha: f32,
+  @range(0, 1, 0.01, 0)        fill: f32,
+  @range(0, 1, 0.01, 1)        sampling: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

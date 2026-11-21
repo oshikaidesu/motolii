@@ -1,49 +1,34 @@
 // Pattern Bars: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Rebuilds the image from repeating graphic patterns, light to dark.
-// --track@cellSize:Cell Size,4,48,12,1
-// --track@colorMode:Color Mode,0,4,0,1
-// --track@monoColor_x:Tint r,0,1,0.913098651791473,0.001
-// --track@monoColor_y:Tint g,0,1,0.913098651791473,0.001
-// --track@monoColor_z:Tint b,0,1,0.8713671191959567,0.001
-// --track@bgOpacity:Background,0,1,0,0.01
-// --check@invert:Invert,0
-// --track@customColorCount:Color Count,2,4,4,1
-// --track@customLuminanceBias:Luminance Bias,-1,1,0,0.01
-// --track@customBgColor_x:Background r,0,1,0.913098651791473,0.001
-// --track@customBgColor_y:Background g,0,1,0.913098651791473,0.001
-// --track@customBgColor_z:Background b,0,1,0.8713671191959567,0.001
-// --track@customColor1_x:Shadows r,0,1,0.004024717016506897,0.001
-// --track@customColor1_y:Shadows g,0,1,0.005181516700061659,0.001
-// --track@customColor1_z:Shadows b,0,1,0.0069954101845983935,0.001
-// --track@customColor2_x:Midtones / Highlights r,0,1,0.07421356837213867,0.001
-// --track@customColor2_y:Midtones / Highlights g,0,1,0.08021982030622662,0.001
-// --track@customColor2_z:Midtones / Highlights b,0,1,0.09530746662221588,0.001
-// --track@customColor3_x:High Mids r,0,1,0.3049873140591091,0.001
-// --track@customColor3_y:High Mids g,0,1,0.3231432091022285,0.001
-// --track@customColor3_z:High Mids b,0,1,0.36130677977297226,0.001
-// --track@customColor4_x:Highlights r,0,1,0.7529422167708612,0.001
-// --track@customColor4_y:Highlights g,0,1,0.76052450467022,0.001
-// --track@customColor4_z:Highlights b,0,1,0.7304607400847158,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  cellSize: f32,
-  colorMode: f32,
-  monoColor: vec3<f32>,
-  bgOpacity: f32,
-  invert: f32,
-  customColorCount: f32,
-  customLuminanceBias: f32,
-  customBgColor: vec3<f32>,
-  customColor1: vec3<f32>,
-  customColor2: vec3<f32>,
-  customColor3: vec3<f32>,
-  customColor4: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(4, 48, 1, 12)         cellSize: f32,
+  @range(0, 4, 1, 0)           colorMode: f32,
+  @label("Tint r")
+  @range(0, 1, 0.001, 0.913099, 0.913099, 0.871367) monoColor: vec3<f32>,
+  @label("Background")
+  @range(0, 1, 0.01, 0)        bgOpacity: f32,
+  @toggle(0)                   invert: f32,
+  @label("Color Count")
+  @range(2, 4, 1, 4)           customColorCount: f32,
+  @label("Luminance Bias")
+  @range(-1, 1, 0.01, 0)       customLuminanceBias: f32,
+  @label("Background r")
+  @range(0, 1, 0.001, 0.913099, 0.913099, 0.871367) customBgColor: vec3<f32>,
+  @label("Shadows r")
+  @range(0, 1, 0.001, 0.00402472, 0.00518152, 0.00699541) customColor1: vec3<f32>,
+  @label("Midtones / Highlights r")
+  @range(0, 1, 0.001, 0.0742136, 0.0802198, 0.0953075) customColor2: vec3<f32>,
+  @label("High Mids r")
+  @range(0, 1, 0.001, 0.304987, 0.323143, 0.361307) customColor3: vec3<f32>,
+  @label("Highlights r")
+  @range(0, 1, 0.001, 0.752942, 0.760525, 0.730461) customColor4: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

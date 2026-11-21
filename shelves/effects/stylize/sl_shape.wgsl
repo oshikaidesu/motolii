@@ -1,45 +1,30 @@
 // Shape: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:A flat color silhouette: ellipse, rectangle, triangle, polygon, star, ring or blades. Blend it over photography or mask it.
-// --track@shape:Shape,0,7,0,1
-// --check@svgColorMode:SVG Colors,0
-// --track@cornerRadius:Corner Radius,0,1,0.1,0.01
-// --track@sides:Sides,3,12,6,1
-// --track@points:Points,3,12,5,1
-// --track@innerRadius:Inner Radius,0.1,0.9,0.45,0.01
-// --track@thickness:Thickness,0.05,1,0.3,0.01
-// --track@blades:Blades,2,8,4,1
-// --track@twist:Twist,-2,2,0.6,0.01
-// --track@bladeWidth:Blade Width,0.1,1,0.7,0.01
-// --track@hub:Hub,0,0.6,0.12,0.01
-// --track@rotation:Rotation,-180,180,0,1
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,0.06847816983662762,0.001
-// --track@color_z:Color b,0,1,0.023153366173251363,0.001
-// --track@outline:Outline,0,0.3,0,0.005
-// --track@softness:Softness,0,0.2,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  shape: f32,
-  svgColorMode: f32,
-  cornerRadius: f32,
-  sides: f32,
-  points: f32,
-  innerRadius: f32,
-  thickness: f32,
-  blades: f32,
-  twist: f32,
-  bladeWidth: f32,
-  hub: f32,
-  rotation: f32,
-  color: vec3<f32>,
-  outline: f32,
-  softness: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 7, 1, 0)           shape: f32,
+  @label("SVG Colors")
+  @toggle(0)                   svgColorMode: f32,
+  @range(0, 1, 0.01, 0.1)      cornerRadius: f32,
+  @range(3, 12, 1, 6)          sides: f32,
+  @range(3, 12, 1, 5)          points: f32,
+  @range(0.1, 0.9, 0.01, 0.45) innerRadius: f32,
+  @range(0.05, 1, 0.01, 0.3)   thickness: f32,
+  @range(2, 8, 1, 4)           blades: f32,
+  @range(-2, 2, 0.01, 0.6)     twist: f32,
+  @range(0.1, 1, 0.01, 0.7)    bladeWidth: f32,
+  @range(0, 0.6, 0.01, 0.12)   hub: f32,
+  @range(-180, 180, 1, 0)      rotation: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 0.0684782, 0.0231534) color: vec3<f32>,
+  @range(0, 0.3, 0.005, 0)     outline: f32,
+  @range(0, 0.2, 0.001, 0)     softness: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

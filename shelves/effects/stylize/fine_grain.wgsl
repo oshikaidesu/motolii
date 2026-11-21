@@ -1,24 +1,18 @@
 // Fine Grain: a fine grain of light over everything, as film or a print's paper gives it (the grainy blur's grain): as
 // --label:Film
 // large on every picture size, weighed by how light each place is, and still, boiling every frame, or every few
-// --track@amount:Amount,0,1,0.16,0.001
-// --track@size:Size,0.5,4,1,0.01
-// --track@every:Boil every (frames; 0 still),0,12,2,1
-// --track@shadows:Shadows,0,2,1,0.01
-// --track@mids:Mids,0,2,1,0.01
-// --track@highlights:Highlights,0,2,0.45,0.01
-// --track@colour:Colour,0,1,0,0.01
 
 struct Knobs {
-    amount: f32,
-    size: f32,
-    every: f32,
-    shadows: f32,
-    mids: f32,
-    highlights: f32,
-    colour: f32,
-    frame: f32,
-    resolution: vec2f,
+  @range(0, 1, 0.001, 0.16)    amount: f32,
+  @range(0.5, 4, 0.01, 1)      size: f32,
+  @label("Boil every (frames; 0 still)")
+  @range(0, 12, 1, 2)          every: f32,
+  @range(0, 2, 0.01, 1)        shadows: f32,
+  @range(0, 2, 0.01, 1)        mids: f32,
+  @range(0, 2, 0.01, 0.45)     highlights: f32,
+  @range(0, 1, 0.01, 0)        colour: f32,
+  @auto frame: f32,
+  @auto resolution: vec2f,
 }
 
 @group(0) @binding(0) var picture: texture_2d<f32>;

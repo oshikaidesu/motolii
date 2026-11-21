@@ -1,11 +1,6 @@
 // Levels: AbsentMotion's levels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Adjusts the levels of the image with input black/white points, gamma, and output black/white points.
-// --track@inBlack:Input Black,0.0,1.0,0.1,0.01
-// --track@inWhite:Input White,0.0,1.0,0.85,0.01
-// --track@gamma:Gamma,0.2,5.0,1.0,0.1
-// --track@outBlack:Output Black,0.0,1.0,0.0,0.01
-// --track@outWhite:Output White,0.0,1.0,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,13 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  inBlack: f32,
-  inWhite: f32,
-  gamma: f32,
-  outBlack: f32,
-  outWhite: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Input Black")
+  @range(0, 1, 0.01, 0.1)      inBlack: f32,
+  @label("Input White")
+  @range(0, 1, 0.01, 0.85)     inWhite: f32,
+  @range(0.2, 5, 0.1, 1)       gamma: f32,
+  @label("Output Black")
+  @range(0, 1, 0.01, 0)        outBlack: f32,
+  @label("Output White")
+  @range(0, 1, 0.01, 1)        outWhite: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

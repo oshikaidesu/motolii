@@ -4,14 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Adds a colored glow around the parts of the picture brighter than a threshold. Light Glow in AbsentMotion.
-// --track@blur:Size,0,300,90.0,0.1
-// --track@threshold:Threshold,0,1,0.6,0.01
-// --track@intensity:Intensity,0,10,1.0,0.01
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,0.8784,0.01
-// --track@color_z:Color B,0,1,0.6275,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@opacity:Opacity,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -21,15 +13,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  threshold: f32,
-  intensity: f32,
-  color: vec4<f32>,
-  opacity: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0, 300, 0.1, 90)      blur: f32,
+  @range(0, 1, 0.01, 0.6)      threshold: f32,
+  @range(0, 10, 0.01, 1)       intensity: f32,
+  @color(1, 0.8784, 0.6275, 1) color: vec4<f32>,
+  @range(0, 1, 0.01, 1)        opacity: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

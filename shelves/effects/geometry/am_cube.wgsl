@@ -1,18 +1,6 @@
 // Cube: AbsentMotion's cube (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:3d
 // --about:Wraps the layer onto every face of a turning cube with rounded edges and lighting.
-// --track@rotX:Rotation X,-3600,3600,-20.0,0.1
-// --track@rotY:Rotation Y,-3600,3600,-35.0,0.1
-// --track@rotZ:Rotation Z,-3600,3600,0.0,0.1
-// --track@edge:Size,0.05,5,0.7,0.01
-// --track@smoothing:Smoothing,0,1,0.15,0.01
-// --track@R_position_x:Position x,-5000,5000,0,1
-// --track@R_position_y:Position y,-5000,5000,0,1
-// --track@scale:Scale,0.05,10,1.0,0.01
-// --track@R_perspective:Perspective,0,1,0.5,0.01
-// --track@shading:Shading,0,1,0.6,0.01
-// --track@light:Light Angle,-3600,3600,135.0,0.1
-// --track@shine:Shine,0,1,0.3,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -22,19 +10,26 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  rotX: f32,
-  rotY: f32,
-  rotZ: f32,
-  edge: f32,
-  smoothing: f32,
-  R_position: vec2<f32>,
-  scale: f32,
-  R_perspective: f32,
-  shading: f32,
-  light: f32,
-  shine: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Rotation X")
+  @range(-3600, 3600, 0.1, -20) rotX: f32,
+  @label("Rotation Y")
+  @range(-3600, 3600, 0.1, -35) rotY: f32,
+  @label("Rotation Z")
+  @range(-3600, 3600, 0.1, 0)  rotZ: f32,
+  @label("Size")
+  @range(0.05, 5, 0.01, 0.7)   edge: f32,
+  @range(0, 1, 0.01, 0.15)     smoothing: f32,
+  @label("Position")
+  @range(-5000, 5000, 1, 0, 0) R_position: vec2<f32>,
+  @range(0.05, 10, 0.01, 1)    scale: f32,
+  @label("Perspective")
+  @range(0, 1, 0.01, 0.5)      R_perspective: f32,
+  @range(0, 1, 0.01, 0.6)      shading: f32,
+  @label("Light Angle")
+  @range(-3600, 3600, 0.1, 135) light: f32,
+  @range(0, 1, 0.01, 0.3)      shine: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

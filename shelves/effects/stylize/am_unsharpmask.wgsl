@@ -1,9 +1,6 @@
 // Unsharp Mask: AbsentMotion's unsharpmask (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Sharpens by adding back the difference between the layer and a blurred copy of it. Strength sets how wide the blur is, Amount how much is added back, and Threshold above 50% leaves small differences alone.
-// --track@radius:Strength,0.0,2.0,0.02,0.01
-// --track@amount:Amount,0.0,2,0.5,0.1
-// --track@threshold:Threshold,-0.5,1,0.5,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,12 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  screen: vec4<f32>,
-  time: f32,
-  radius: f32,
-  amount: f32,
-  threshold: f32,
+  @auto resolution: vec2<f32>,
+  @auto screen: vec4<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(0, 2, 0.01, 0.02)     radius: f32,
+  @range(0, 2, 0.1, 0.5)       amount: f32,
+  @range(-0.5, 1, 0.01, 0.5)   threshold: f32,
   showMask: f32,
   layerRect: vec4<f32>,
 };

@@ -13,63 +13,42 @@
 // --pass@t9:0,1,s0.0009765625,s0.0009765625
 // --pass@t10:0,0,s1.1042968750000002,s1.10859375
 // --pass@:0,0,s1,s1
-// --track@mode:Mode,0,5,0,1
-// --track@angle:Angle,0,180,90,1
-// --track@gap:Spacing,2,120,12,1
-// --track@weight:Pen Width,0.25,12,1.5,0.05
-// --track@pressure:Pressure,0,1,0.5,0.01
-// --track@threshold:Threshold,0,1,0.5,0.01
-// --track@smoothing:Smoothing,0,80,4,0.5
-// --check@crosshatch:Crosshatch,1
-// --track@crossAngle:Cross Angle,0,180,135,1
-// --track@levels:Levels,1,60,8,1
-// --track@amplitude:Amplitude,0,1,0.45,0.01
-// --track@frequency:Frequency,0.05,2,0.5,0.01
-// --track@wobble:Wobble,0,1,0.3,0.01
-// --track@bleed:Ink Bleed,0,1,0.3,0.01
-// --track@colorMode:Color,0,2,0,1
-// --track@inkColor_x:Ink Color r,0,1,0.010329823026364548,0.001
-// --track@inkColor_y:Ink Color g,0,1,0.010329823026364548,0.001
-// --track@inkColor_z:Ink Color b,0,1,0.010329823026364548,0.001
-// --track@pen2Color_x:Pen 2 r,0,1,0.6866853124288864,0.001
-// --track@pen2Color_y:Pen 2 g,0,1,0.059511238155621766,0.001
-// --track@pen2Color_z:Pen 2 b,0,1,0.028426039499072558,0.001
-// --track@pen3Color_x:Pen 3 r,0,1,0.028426039499072558,0.001
-// --track@pen3Color_y:Pen 3 g,0,1,0.11443537381770343,0.001
-// --track@pen3Color_z:Pen 3 b,0,1,0.6866853124288864,0.001
-// --check@paper:Paper,0
-// --track@paperColor_x:Paper Color r,0,1,0.913098651791473,0.001
-// --track@paperColor_y:Paper Color g,0,1,0.8713671191959567,0.001
-// --track@paperColor_z:Paper Color b,0,1,0.8069522576650873,0.001
-// --track@paperGrain:Paper Grain,0,1,0.2,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  mode: f32,
-  angle: f32,
-  gap: f32,
-  weight: f32,
-  pressure: f32,
-  threshold: f32,
-  smoothing: f32,
-  crosshatch: f32,
-  crossAngle: f32,
-  levels: f32,
-  amplitude: f32,
-  frequency: f32,
-  wobble: f32,
-  bleed: f32,
-  colorMode: f32,
-  inkColor: vec3<f32>,
-  pen2Color: vec3<f32>,
-  pen3Color: vec3<f32>,
-  paper: f32,
-  paperColor: vec3<f32>,
-  paperGrain: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 5, 1, 0)           mode: f32,
+  @range(0, 180, 1, 90)        angle: f32,
+  @label("Spacing")
+  @range(2, 120, 1, 12)        gap: f32,
+  @label("Pen Width")
+  @range(0.25, 12, 0.05, 1.5)  weight: f32,
+  @range(0, 1, 0.01, 0.5)      pressure: f32,
+  @range(0, 1, 0.01, 0.5)      threshold: f32,
+  @range(0, 80, 0.5, 4)        smoothing: f32,
+  @toggle(1)                   crosshatch: f32,
+  @range(0, 180, 1, 135)       crossAngle: f32,
+  @range(1, 60, 1, 8)          levels: f32,
+  @range(0, 1, 0.01, 0.45)     amplitude: f32,
+  @range(0.05, 2, 0.01, 0.5)   frequency: f32,
+  @range(0, 1, 0.01, 0.3)      wobble: f32,
+  @label("Ink Bleed")
+  @range(0, 1, 0.01, 0.3)      bleed: f32,
+  @label("Color")
+  @range(0, 2, 1, 0)           colorMode: f32,
+  @label("Ink Color r")
+  @range(0, 1, 0.001, 0.0103298, 0.0103298, 0.0103298) inkColor: vec3<f32>,
+  @label("Pen 2 r")
+  @range(0, 1, 0.001, 0.686685, 0.0595112, 0.028426) pen2Color: vec3<f32>,
+  @label("Pen 3 r")
+  @range(0, 1, 0.001, 0.028426, 0.114435, 0.686685) pen3Color: vec3<f32>,
+  @toggle(0)                   paper: f32,
+  @label("Paper Color r")
+  @range(0, 1, 0.001, 0.913099, 0.871367, 0.806952) paperColor: vec3<f32>,
+  @range(0, 1, 0.01, 0.2)      paperGrain: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

@@ -1,10 +1,6 @@
 // Swirl: AbsentMotion's twirl (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Twists the layer around Center like a whirlpool, strongest in the middle and fading out at Radius (a share of the layer size). Negative Strength twists the other way.
-// --track@R_center_x:Center x,0,1,0.5,0.01
-// --track@R_center_y:Center y,0,1,0.5,0.01
-// --track@strength:Strength,-0.5,0.5,0.1,0.001
-// --track@radius:Radius,0,3,0.3,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,11 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  strength: f32,
-  radius: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(0, 1, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @range(-0.5, 0.5, 0.001, 0.1) strength: f32,
+  @range(0, 3, 0.01, 0.3)      radius: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

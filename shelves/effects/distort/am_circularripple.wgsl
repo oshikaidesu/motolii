@@ -1,13 +1,6 @@
 // Circular Ripple: AbsentMotion's circularripple (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Makes circular ripples spread out from a point, like a drop falling into water.
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@frequency:Frequency,0,100,20.0,0.1
-// --track@strength:Strength,-1,1,0.03,0.001
-// --track@phase:Phase,-1000,1000,0.0,0.001
-// --track@radius:Radius,0,0.8,0.3,0.001
-// --track@feather:Feather,0,1,0.1,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,14 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  frequency: f32,
-  strength: f32,
-  phase: f32,
-  radius: f32,
-  feather: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @range(0, 100, 0.1, 20)      frequency: f32,
+  @range(-1, 1, 0.001, 0.03)   strength: f32,
+  @range(-1000, 1000, 0.001, 0) phase: f32,
+  @range(0, 0.8, 0.001, 0.3)   radius: f32,
+  @range(0, 1, 0.001, 0.1)     feather: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

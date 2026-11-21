@@ -1,31 +1,22 @@
 // Gas giant: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture recreates the turbulent surface of [gas giants](https://en.wikipedia.org/wiki/Gas_giant)
-// --track@scale:Scale,0,4,2,0.04
-// --track@turbulence:Turbulence,0,1,0.3,0.01
-// --track@blur:Blur,0,1,0.6,0.01
-// --track@colorA_x:Color A r,0,1,1,0.001
-// --track@colorA_y:Color A g,0,1,0.9386857284565036,0.001
-// --track@colorA_z:Color A b,0,1,0.8713671191959567,0.001
-// --track@colorB_x:Color B r,0,1,0.8713671191959567,0.001
-// --track@colorB_y:Color B g,0,1,0.8069522576650873,0.001
-// --track@colorB_z:Color B b,0,1,0.43415363616478553,0.001
-// --track@colorC_x:Color C r,0,1,0.4286904966038916,0.001
-// --track@colorC_y:Color C g,0,1,0.3515325994898463,0.001
-// --track@colorC_z:Color C b,0,1,0.6307571363387763,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  turbulence: f32,
-  blur: f32,
-  colorA: vec3<f32>,
-  colorB: vec3<f32>,
-  colorC: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 1, 0.01, 0.3)      turbulence: f32,
+  @range(0, 1, 0.01, 0.6)      blur: f32,
+  @label("Color A r")
+  @range(0, 1, 0.001, 1, 0.938686, 0.871367) colorA: vec3<f32>,
+  @label("Color B r")
+  @range(0, 1, 0.001, 0.871367, 0.806952, 0.434154) colorB: vec3<f32>,
+  @label("Color C r")
+  @range(0, 1, 0.001, 0.42869, 0.351533, 0.630757) colorC: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

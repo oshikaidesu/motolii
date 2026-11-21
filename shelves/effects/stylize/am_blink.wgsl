@@ -1,7 +1,6 @@
 // Blink: AbsentMotion's blink (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Switches the layer on and off a number of times per second.
-// --track@frequency:Frequency,0,30,2.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -11,9 +10,9 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  frequency: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 30, 0.01, 2)       frequency: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

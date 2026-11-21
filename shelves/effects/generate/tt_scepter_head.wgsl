@@ -1,25 +1,19 @@
 // Scepter head: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture designs the stone and the metal rim of a scepter
-// --track@colorRim_x:Color Rim r,0,1,1,0.001
-// --track@colorRim_y:Color Rim g,0,1,1,0.001
-// --track@colorRim_z:Color Rim b,0,1,1,0.001
-// --track@colorA_x:Color A r,0,1,0.16202937562896222,0.001
-// --track@colorA_y:Color A g,0,1,0.7454042095350284,0.001
-// --track@colorA_z:Color A b,0,1,1,0.001
-// --track@colorB_x:Color B r,0,1,0.02955683443236377,0.001
-// --track@colorB_y:Color B g,0,1,0,0.001
-// --track@colorB_z:Color B b,0,1,1,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  colorRim: vec3<f32>,
-  colorA: vec3<f32>,
-  colorB: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Color Rim r")
+  @range(0, 1, 0.001, 1, 1, 1) colorRim: vec3<f32>,
+  @label("Color A r")
+  @range(0, 1, 0.001, 0.162029, 0.745404, 1) colorA: vec3<f32>,
+  @label("Color B r")
+  @range(0, 1, 0.001, 0.0295568, 0, 1) colorB: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

@@ -1,9 +1,6 @@
 // Dissolve: AbsentMotion's dissolve (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Removes random pixels or blocks from the layer. Animate Strength for a dissolve transition; Seed chooses the pattern and Size sets the size of each speck.
-// --track@progress:Strength,0,1,0.75,0.01
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@grain:Size,1,200,1.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  progress: f32,
-  grain: f32,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Strength")
+  @range(0, 1, 0.01, 0.75)     progress: f32,
+  @label("Size")
+  @range(1, 200, 1, 1)         grain: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

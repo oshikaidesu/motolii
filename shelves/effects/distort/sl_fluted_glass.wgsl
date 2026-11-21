@@ -1,25 +1,19 @@
 // Fluted Glass: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Ribbed glass that slices the image into vertical strips with a slight color split.
-// --check@preset:Preset,0
-// --track@frequency:Frequency,2,100,20,1
-// --track@amplitude:Amplitude,0,0.1,0.02,0.001
-// --track@warp:Warp,0,1,0.28,0.01
-// --track@irregularity:Irregularity,0,1,0.35,0.01
-// --track@angle:Angle,0,360,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  preset: f32,
-  frequency: f32,
-  amplitude: f32,
-  warp: f32,
-  irregularity: f32,
-  angle: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @toggle(0)                   preset: f32,
+  @range(2, 100, 1, 20)        frequency: f32,
+  @range(0, 0.1, 0.001, 0.02)  amplitude: f32,
+  @range(0, 1, 0.01, 0.28)     warp: f32,
+  @range(0, 1, 0.01, 0.35)     irregularity: f32,
+  @range(0, 360, 1, 0)         angle: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

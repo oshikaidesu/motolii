@@ -1,10 +1,6 @@
 // RGB Split: AbsentMotion's rgbsplit (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Splits the red, green and blue channels: the Center channel stays put and the other two shift in opposite directions along Angle. Light adds the shifted colors, Dark keeps them solid, Mask keeps only where all three overlap and Luma makes the fringes as opaque as they are bright.
-// --track@strength:Strength,-8,8,0.15,0.01
-// --track@angle:Angle,-3600,3600,0.0,1
-// --track@R_center:Center,0,1,1.0,0.01
-// --track@mode:Mode,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,12 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  strength: f32,
-  angle: f32,
-  R_center: f32,
-  mode: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-8, 8, 0.01, 0.15)    strength: f32,
+  @range(-3600, 3600, 1, 0)    angle: f32,
+  @label("Center")
+  @range(0, 1, 0.01, 1)        R_center: f32,
+  @range(0, 1, 0.01, 0)        mode: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

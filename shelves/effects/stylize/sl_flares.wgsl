@@ -4,47 +4,31 @@
 // --pass@t0:0,1,s0.25,s0.25
 // --pass@t1:0,1,s0.25,s0.25
 // --pass@:0,0,s1,s1
-// --track@threshold:Threshold,0,1,0.85,0.01
-// --track@isolation:Isolation,0,120,10,1
-// --track@intensity:Intensity,0,12,4,0.01
-// --track@rays:Rays,1,16,4,1
-// --track@rotation:Rotation,-180,180,0,1
-// --track@length:Length,4,1200,120,1
-// --track@secondaryLength:Secondary Rays,0,2,1,0.01
-// --track@lengthJitter:Length Jitter,0,1,0,0.01
-// --track@thickness:Thickness,0,16,1,0.1
-// --track@falloff:Falloff,0.2,6,1.5,0.01
-// --track@seed:Seed,0,999,0,1
-// --track@color_x:Ray Color r,0,1,1,0.001
-// --track@color_y:Ray Color g,0,1,0.19461783043107173,0.001
-// --track@color_z:Ray Color b,0,1,0.04666508633021928,0.001
-// --track@coreGlow:Core Glow,0,4,1,0.01
-// --track@coreSize:Core Size,0,80,6,0.5
-// --track@coreColor_x:Core Color r,0,1,1,0.001
-// --track@coreColor_y:Core Color g,0,1,0.8962693533719567,0.001
-// --track@coreColor_z:Core Color b,0,1,0.7454042095350284,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  threshold: f32,
-  isolation: f32,
-  intensity: f32,
-  rays: f32,
-  rotation: f32,
-  length: f32,
-  secondaryLength: f32,
-  lengthJitter: f32,
-  thickness: f32,
-  falloff: f32,
-  seed: f32,
-  color: vec3<f32>,
-  coreGlow: f32,
-  coreSize: f32,
-  coreColor: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 1, 0.01, 0.85)     threshold: f32,
+  @range(0, 120, 1, 10)        isolation: f32,
+  @range(0, 12, 0.01, 4)       intensity: f32,
+  @range(1, 16, 1, 4)          rays: f32,
+  @range(-180, 180, 1, 0)      rotation: f32,
+  @range(4, 1200, 1, 120)      length: f32,
+  @label("Secondary Rays")
+  @range(0, 2, 0.01, 1)        secondaryLength: f32,
+  @range(0, 1, 0.01, 0)        lengthJitter: f32,
+  @range(0, 16, 0.1, 1)        thickness: f32,
+  @range(0.2, 6, 0.01, 1.5)    falloff: f32,
+  @range(0, 999, 1, 0)         seed: f32,
+  @label("Ray Color r")
+  @range(0, 1, 0.001, 1, 0.194618, 0.0466651) color: vec3<f32>,
+  @range(0, 4, 0.01, 1)        coreGlow: f32,
+  @range(0, 80, 0.5, 6)        coreSize: f32,
+  @label("Core Color r")
+  @range(0, 1, 0.001, 1, 0.896269, 0.745404) coreColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

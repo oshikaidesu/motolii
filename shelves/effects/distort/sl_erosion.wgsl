@@ -1,33 +1,25 @@
 // Erosion: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Crumbles the image into speckle along edges, tones or a cutout's border, throwing fragments outward.
-// --track@mode:Erode From,0,3,0,1
-// --track@erode:Erode,0,1,0.6,0.01
-// --track@edgeWidth:Edge Width,0.5,64,6,0.5
-// --track@speckleSize:Speckle Size,1,32,3,0.5
-// --track@clumping:Clumping,0,1,0.35,0.01
-// --track@scatter:Scatter,0,1,0.5,0.01
-// --check@output:Reveal,0
-// --track@paperColor_x:Paper Color r,0,1,0.8879231178794776,0.001
-// --track@paperColor_y:Paper Color g,0,1,0.8631572134510892,0.001
-// --track@paperColor_z:Paper Color b,0,1,0.8069522576650873,0.001
-// --track@seed:Seed,0,999,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  mode: f32,
-  erode: f32,
-  edgeWidth: f32,
-  speckleSize: f32,
-  clumping: f32,
-  scatter: f32,
-  output: f32,
-  paperColor: vec3<f32>,
-  seed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Erode From")
+  @range(0, 3, 1, 0)           mode: f32,
+  @range(0, 1, 0.01, 0.6)      erode: f32,
+  @range(0.5, 64, 0.5, 6)      edgeWidth: f32,
+  @range(1, 32, 0.5, 3)        speckleSize: f32,
+  @range(0, 1, 0.01, 0.35)     clumping: f32,
+  @range(0, 1, 0.01, 0.5)      scatter: f32,
+  @label("Reveal")
+  @toggle(0)                   output: f32,
+  @label("Paper Color r")
+  @range(0, 1, 0.001, 0.887923, 0.863157, 0.806952) paperColor: vec3<f32>,
+  @range(0, 999, 1, 0)         seed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

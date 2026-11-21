@@ -1,22 +1,17 @@
 // Stuck Dots: a thing's own shade as dots stuck to it, as Spider-Verse's halftone moves with its character: lit places a
 // --label:Stylize
 // flat colour, shaded ones dots of a darker ink growing with the shade, the grid at the thing's place and turned with it
-// --track@cell:Cell,2,40,9,0.1
-// --track@angle:Angle,-90,90,22,0.1
-// --track@ink:Ink,0,1,0.45,0.01
-// --track@lift:Lift,0,1,0.35,0.01
-// --track@contrast:Contrast,0.2,3,1.4,0.01
 
 struct Knobs {
-    cell: f32,
-    angle: f32,
-    ink: f32,
-    lift: f32,
-    contrast: f32,
-    origin_x: f32,
-    origin_y: f32,
-    turn: f32,
-    resolution: vec2f,
+  @range(2, 40, 0.1, 9)        cell: f32,
+  @range(-90, 90, 0.1, 22)     angle: f32,
+  @range(0, 1, 0.01, 0.45)     ink: f32,
+  @range(0, 1, 0.01, 0.35)     lift: f32,
+  @range(0.2, 3, 0.01, 1.4)    contrast: f32,
+  origin_x: f32,
+  origin_y: f32,
+  turn: f32,
+  @auto resolution: vec2f,
 }
 
 @group(0) @binding(0) var picture: texture_2d<f32>;

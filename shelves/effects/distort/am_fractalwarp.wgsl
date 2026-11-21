@@ -1,11 +1,6 @@
 // Fractal Warp: AbsentMotion's fractalwarp (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Warps the layer with folded fractal noise, for fire, water and heat shimmer.
-// --track@strength:Strength,0,2,0.15,0.001
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@complexity:Complexity,1,9,4.0,1
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,13 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  strength: f32,
-  scale: f32,
-  evolution: f32,
-  complexity: f32,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 2, 0.001, 0.15)    strength: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @range(1, 9, 1, 4)           complexity: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

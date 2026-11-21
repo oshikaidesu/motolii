@@ -1,19 +1,19 @@
 // Scaler: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:3d
-// --track@scales_x:Scales x,0.01,4,0.01,0.01
-// --track@scales_y:Scales y,0.01,4,0.9,0.01
-// --track@scales_z:Scales z,0.01,4,1.7,0.01
-// --track@center_x:Center x,-4,4,0,0.01
-// --track@center_y:Center y,-4,4,0,0.01
-// --track@center_z:Center z,-4,4,0,0.01
 struct Knobs {
-  time: f32,
-  scales_x: f32,
-  scales_y: f32,
-  scales_z: f32,
-  center_x: f32,
-  center_y: f32,
-  center_z: f32,
+  @auto time: f32,
+  @label("Scales x")
+  @range(0.01, 4, 0.01, 0.01)  scales_x: f32,
+  @label("Scales y")
+  @range(0.01, 4, 0.01, 0.9)   scales_y: f32,
+  @label("Scales z")
+  @range(0.01, 4, 0.01, 1.7)   scales_z: f32,
+  @label("Center x")
+  @range(-4, 4, 0.01, 0)       center_x: f32,
+  @label("Center y")
+  @range(-4, 4, 0.01, 0)       center_y: f32,
+  @label("Center z")
+  @range(-4, 4, 0.01, 0)       center_z: f32,
 };
 @group(0) @binding(0) var<uniform> knobs: Knobs;
 @group(0) @binding(2) var<storage, read_write> shape_points: array<f32>;

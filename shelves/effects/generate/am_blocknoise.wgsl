@@ -1,15 +1,6 @@
 // Block Noise: AbsentMotion's blocknoise (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Flickers random blocks of noise over the layer. Multiply modulates the existing colors; Add adds noise to them. Freeze holds the pattern still.
-// --track@blockSize:Size,1,999,20.0,0.1
-// --track@stretch_x:Stretch x,0.01,10,1,0.01
-// --track@stretch_y:Stretch y,0.01,10,1,0.01
-// --track@strength:Strength,0,1,0.25,0.001
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@overshoot:Overshoot,0.5,2,2.0,0.001
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@blending:Blending Mode,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,19 +10,21 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  layer: vec2<f32>,
-  time: f32,
-  blockSize: f32,
-  stretch: vec2<f32>,
-  strength: f32,
+  @auto resolution: vec2<f32>,
+  @auto layer: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(1, 999, 0.1, 20)      blockSize: f32,
+  @range(0.01, 10, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(0, 1, 0.001, 0.25)    strength: f32,
   mono: f32,
   freeze: f32,
   extremes: f32,
-  offset: vec2<f32>,
-  overshoot: f32,
-  seed: f32,
-  blending: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(0.5, 2, 0.001, 2)     overshoot: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 1)        blending: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

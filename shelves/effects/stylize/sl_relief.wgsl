@@ -1,51 +1,33 @@
 // Relief: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Embosses or debosses the image into a lit surface: silver plate, letterpress, blind emboss or gold foil.
-// --check@relief:Relief,0
-// --track@heightFrom:Height From,0,2,0,1
-// --track@depth:Depth,0,4,1.4,0.01
-// --track@bevel:Bevel,1,32,2,0.5
-// --track@amount:Amount,0,1,1,0.01
-// --track@lightAngle:Light Angle,0,360,135,1
-// --track@elevation:Elevation,5,90,38,1
-// --track@ambient:Ambient,0,1,0.35,0.01
-// --check@surface:Surface,0
-// --track@color_x:Color r,0,1,0.33245153633549385,0.001
-// --track@color_y:Color g,0,1,0.34191442489801843,0.001
-// --track@color_z:Color b,0,1,0.35640014413537763,0.001
-// --track@specular:Specular,0,2,0.8,0.01
-// --track@shininess:Shininess,1,128,28,1
-// --track@grain:Grain,0,1,0.35,0.01
-// --track@grainSize:Grain Size,0.5,8,1.2,0.05
-// --track@engrave:Engrave,0,2,2,1
-// --track@engraveDepth:Engrave Depth,0,2,0.5,0.01
-// --track@lineSpacing:Line Spacing,2,40,5,0.5
-// --track@engraveAngle:Line Angle,-180,180,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  relief: f32,
-  heightFrom: f32,
-  depth: f32,
-  bevel: f32,
-  amount: f32,
-  lightAngle: f32,
-  elevation: f32,
-  ambient: f32,
-  surface: f32,
-  color: vec3<f32>,
-  specular: f32,
-  shininess: f32,
-  grain: f32,
-  grainSize: f32,
-  engrave: f32,
-  engraveDepth: f32,
-  lineSpacing: f32,
-  engraveAngle: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @toggle(0)                   relief: f32,
+  @range(0, 2, 1, 0)           heightFrom: f32,
+  @range(0, 4, 0.01, 1.4)      depth: f32,
+  @range(1, 32, 0.5, 2)        bevel: f32,
+  @range(0, 1, 0.01, 1)        amount: f32,
+  @range(0, 360, 1, 135)       lightAngle: f32,
+  @range(5, 90, 1, 38)         elevation: f32,
+  @range(0, 1, 0.01, 0.35)     ambient: f32,
+  @toggle(0)                   surface: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 0.332452, 0.341914, 0.3564) color: vec3<f32>,
+  @range(0, 2, 0.01, 0.8)      specular: f32,
+  @range(1, 128, 1, 28)        shininess: f32,
+  @range(0, 1, 0.01, 0.35)     grain: f32,
+  @range(0.5, 8, 0.05, 1.2)    grainSize: f32,
+  @range(0, 2, 1, 2)           engrave: f32,
+  @range(0, 2, 0.01, 0.5)      engraveDepth: f32,
+  @range(2, 40, 0.5, 5)        lineSpacing: f32,
+  @label("Line Angle")
+  @range(-180, 180, 1, 0)      engraveAngle: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

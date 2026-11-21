@@ -10,33 +10,24 @@
 // --pass@t0:0,1,s1,s1
 // --pass@t1:0,1,s1,s1
 // --pass@:0,0,s1,s1
-// --track@source:Outline,0,2,0,1
-// --track@threshold:Threshold,0.01,1,0.5,0.01
-// --track@style:Style,0,3,0,1
-// --track@ringGap:Ring Gap,1,120,8,0.5
-// --track@lineColor_x:Line Color r,0,1,0.005605391621829108,0.001
-// --track@lineColor_y:Line Color g,0,1,0.005605391621829108,0.001
-// --track@lineColor_z:Line Color b,0,1,0.005605391621829108,0.001
-// --track@fill:Fill,0,1,0,0.01
-// --track@fillColor_x:Fill Color r,0,1,1,0.001
-// --track@fillColor_y:Fill Color g,0,1,1,0.001
-// --track@fillColor_z:Fill Color b,0,1,1,0.001
-// --check@showImage:Show Image,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  source: f32,
-  threshold: f32,
-  style: f32,
-  ringGap: f32,
-  lineColor: vec3<f32>,
-  fill: f32,
-  fillColor: vec3<f32>,
-  showImage: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Outline")
+  @range(0, 2, 1, 0)           source: f32,
+  @range(0.01, 1, 0.01, 0.5)   threshold: f32,
+  @range(0, 3, 1, 0)           style: f32,
+  @range(1, 120, 0.5, 8)       ringGap: f32,
+  @label("Line Color r")
+  @range(0, 1, 0.001, 0.00560539, 0.00560539, 0.00560539) lineColor: vec3<f32>,
+  @range(0, 1, 0.01, 0)        fill: f32,
+  @label("Fill Color r")
+  @range(0, 1, 0.001, 1, 1, 1) fillColor: vec3<f32>,
+  @toggle(1)                   showImage: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

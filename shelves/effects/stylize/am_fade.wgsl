@@ -1,8 +1,6 @@
 // Fade In/Out: AbsentMotion's fade (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Fades the layer in at its start and out again at its end, over the times you set.
-// --track@fadeIn:In,0,10,0.5,0.01
-// --track@fadeOut:Out,0,10,0.5,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,11 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  fadeIn: f32,
-  fadeOut: f32,
-  duration: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("In")
+  @range(0, 10, 0.01, 0.5)     fadeIn: f32,
+  @label("Out")
+  @range(0, 10, 0.01, 0.5)     fadeOut: f32,
+  @auto duration: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

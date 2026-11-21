@@ -1,11 +1,6 @@
 // Lens Blur: AbsentMotion's lensblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:A spinning blur that leaves a sharp area around the center and grows towards the edges.
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@sweep:Angle,0,360,10.0,0.1
-// --track@radius:Radius,0,2,0.25,0.001
-// --track@feather:Feather,0,2,0.25,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,12 +10,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  sweep: f32,
-  radius: f32,
-  feather: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @label("Angle")
+  @range(0, 360, 0.1, 10)      sweep: f32,
+  @range(0, 2, 0.001, 0.25)    radius: f32,
+  @range(0, 2, 0.001, 0.25)    feather: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

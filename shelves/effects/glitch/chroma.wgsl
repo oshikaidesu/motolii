@@ -2,20 +2,17 @@
 // --label:Glitch
 // thing's middle, on a thing; the picture's, on the stage), spilling past the edges as light
 // --spill (on a thing: what it makes where the thing is not is light on what is under)
-// --track@amount:Amount,0,160,48,0.1
-// --track@falloff:Falloff,0.3,4,1.1,0.01
-// --track@twist:Twist,-1,1,0,0.01
-// --track@origin_x:Middle x,0,4000,0,1
-// --track@origin_y:Middle y,0,4000,0,1
 
 struct Knobs {
-    amount: f32,
-    falloff: f32,
-    twist: f32,
-    origin_x: f32,
-    origin_y: f32,
-    pad: f32,
-    resolution: vec2f,
+  @range(0, 160, 0.1, 48)      amount: f32,
+  @range(0.3, 4, 0.01, 1.1)    falloff: f32,
+  @range(-1, 1, 0.01, 0)       twist: f32,
+  @label("Middle x")
+  @range(0, 4000, 1, 0)        origin_x: f32,
+  @label("Middle y")
+  @range(0, 4000, 1, 0)        origin_y: f32,
+  pad: f32,
+  @auto resolution: vec2f,
 }
 
 @group(0) @binding(0) var picture: texture_2d<f32>;

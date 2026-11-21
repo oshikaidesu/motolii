@@ -1,11 +1,6 @@
 // Linear Streaks: AbsentMotion's linearstreaks (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Makes straight streaks by sliding copies of the layer along an angle and blending where they overlap.
-// --track@angle:Angle,-3600,3600,0.0,0.5
-// --track@reach:Length,0,4000,100.0,1
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@bias:Bias,-1,1,0.0,0.01
-// --track@mode:Blending,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -15,13 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  angle: f32,
-  reach: f32,
-  alpha: f32,
-  bias: f32,
-  mode: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-3600, 3600, 0.5, 0)  angle: f32,
+  @label("Length")
+  @range(0, 4000, 1, 100)      reach: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(-1, 1, 0.01, 0)       bias: f32,
+  @label("Blending")
+  @range(0, 1, 0.01, 0)        mode: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

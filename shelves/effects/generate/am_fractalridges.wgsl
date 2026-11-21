@@ -1,24 +1,6 @@
 // Fractal Ridges: AbsentMotion's fractalridges (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Fills the opaque parts of the layer with sharp, turbulent ridges of fractal noise.
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@stretch_x:Stretch x,0.01,10,1,0.01
-// --track@stretch_y:Stretch y,0.01,10,1,0.01
-// --track@intensity:Intensity,0.1,3,1.0,0.01
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@color1_x:Color 1 R,0,1,0,0.01
-// --track@color1_y:Color 1 G,0,1,0,0.01
-// --track@color1_z:Color 1 B,0,1,0,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,1,0.01
-// --track@color2_y:Color 2 G,0,1,1,0.01
-// --track@color2_z:Color 2 B,0,1,1,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@octaves:Octaves,1,9,6.0,1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -28,18 +10,20 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  offset: vec2<f32>,
-  evolution: f32,
-  scale: f32,
-  stretch: vec2<f32>,
-  intensity: f32,
-  seed: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  alpha: f32,
-  octaves: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(0.01, 10, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(0.1, 3, 0.01, 1)      intensity: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @label("Color 1")
+  @color(0, 0, 0, 1)           color1: vec4<f32>,
+  @label("Color 2")
+  @color(1, 1, 1, 1)           color2: vec4<f32>,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(1, 9, 1, 6)           octaves: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

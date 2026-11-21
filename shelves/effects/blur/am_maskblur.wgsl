@@ -2,7 +2,6 @@
 // --label:Blur
 // --picture@backdrop:Behind
 // --about:Blurs the layers behind this one inside its shape; brighter parts of the layer blur more, so a gradient makes a tilt-shift.
-// --track@strength:Strength,0,300,30.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,9 +11,9 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  strength: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 300, 0.1, 30)      strength: f32,
   invert: f32,
   layerRect: vec4<f32>,
   backdropBox: vec4<f32>,

@@ -1,53 +1,41 @@
 // Displaced Rings: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Cuts the image into concentric rings or half-discs and shifts each one.
-// --track@ringShape:Shape,0,3,0,1
-// --check@shape:Cut,1
-// --track@count:Rings,1,128,22,1
-// --track@radius:Radius,0.01,2,2,0.01
-// --track@distribution:Band Distribution,0.25,3,1,0.01
-// --track@widthJitter:Width Jitter,0,1,0,0.01
-// --track@pattern:Offset Pattern,0,2,0,1
-// --track@rotation:Rotation,-180,180,0,1
-// --track@rotationStep:Rotation per Ring,-180,180,45,1
-// --track@rotationJitter:Rotation Jitter,0,180,0,1
-// --track@scaleStep:Scale Progression,-0.9,3,0,0.01
-// --track@seed:Seed,0,1000,1,1
-// --check@output:Output,0
-// --track@gap:Gap,0,1,0,0.01
-// --track@softness:Edge Softness,0,0.1,0,0.001
-// --track@lines:Lines,0,2,0,1
-// --track@lineWidth:Line Width,0.25,12,1.5,0.25
-// --track@lineColor_x:Line Color r,0,1,0.028426039499072558,0.001
-// --track@lineColor_y:Line Color g,0,1,0.19806931954941637,0.001
-// --track@lineColor_z:Line Color b,0,1,1,0.001
-// --track@lineOpacity:Line Opacity,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  ringShape: f32,
-  shape: f32,
-  count: f32,
-  radius: f32,
-  distribution: f32,
-  widthJitter: f32,
-  pattern: f32,
-  rotation: f32,
-  rotationStep: f32,
-  rotationJitter: f32,
-  scaleStep: f32,
-  seed: f32,
-  output: f32,
-  gap: f32,
-  softness: f32,
-  lines: f32,
-  lineWidth: f32,
-  lineColor: vec3<f32>,
-  lineOpacity: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @label("Shape")
+  @range(0, 3, 1, 0)           ringShape: f32,
+  @label("Cut")
+  @toggle(1)                   shape: f32,
+  @label("Rings")
+  @range(1, 128, 1, 22)        count: f32,
+  @range(0.01, 2, 0.01, 2)     radius: f32,
+  @label("Band Distribution")
+  @range(0.25, 3, 0.01, 1)     distribution: f32,
+  @range(0, 1, 0.01, 0)        widthJitter: f32,
+  @label("Offset Pattern")
+  @range(0, 2, 1, 0)           pattern: f32,
+  @range(-180, 180, 1, 0)      rotation: f32,
+  @label("Rotation per Ring")
+  @range(-180, 180, 1, 45)     rotationStep: f32,
+  @range(0, 180, 1, 0)         rotationJitter: f32,
+  @label("Scale Progression")
+  @range(-0.9, 3, 0.01, 0)     scaleStep: f32,
+  @range(0, 1000, 1, 1)        seed: f32,
+  @toggle(0)                   output: f32,
+  @range(0, 1, 0.01, 0)        gap: f32,
+  @label("Edge Softness")
+  @range(0, 0.1, 0.001, 0)     softness: f32,
+  @range(0, 2, 1, 0)           lines: f32,
+  @range(0.25, 12, 0.25, 1.5)  lineWidth: f32,
+  @label("Line Color r")
+  @range(0, 1, 0.001, 0.028426, 0.198069, 1) lineColor: vec3<f32>,
+  @range(0, 1, 0.01, 1)        lineOpacity: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

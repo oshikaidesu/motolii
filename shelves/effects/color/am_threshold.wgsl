@@ -1,9 +1,6 @@
 // Threshold: AbsentMotion's threshold (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Pure black and white, split at a brightness.
-// --track@level:Threshold,0,1,0.4,0.01
-// --track@softness:Feather,0,1,0.0,0.01
-// --track@blend:Blending Mode,0,1,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,12 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  level: f32,
-  softness: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Threshold")
+  @range(0, 1, 0.01, 0.4)      level: f32,
+  @label("Feather")
+  @range(0, 1, 0.01, 0)        softness: f32,
   invert: f32,
-  blend: f32,
+  @label("Blending Mode")
+  @range(0, 1, 0.01, 0)        blend: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

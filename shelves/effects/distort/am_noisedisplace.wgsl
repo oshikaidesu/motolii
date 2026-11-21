@@ -1,9 +1,6 @@
 // Noise Displace: AbsentMotion's noisedisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Displaces pixels using smooth value noise that animates over time.
-// --track@amount:Amount,0,100,30.0,1
-// --track@scale:Noise Scale,5,400,100.0,1
-// --track@speed:Animation Speed,0,5,1.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,13 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  amount: f32,
-  scale: f32,
-  speed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 100, 1, 30)        amount: f32,
+  @label("Noise Scale")
+  @range(5, 400, 1, 100)       scale: f32,
+  @label("Animation Speed")
+  @range(0, 5, 0.1, 1)         speed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

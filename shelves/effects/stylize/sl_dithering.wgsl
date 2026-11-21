@@ -1,29 +1,22 @@
 // Dithering: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Reduces the image to a few colors with ordered or textured dithering patterns.
-// --track@algorithm:Algorithm,0,3,1,1
-// --track@pixelSize:Pixel Size,1,24,1,1
-// --track@spread:Strength,0,1,0.5,0.01
-// --track@levels:Levels,2,16,4,1
-// --track@dotScale:Dot Scale,0.1,1,1,0.1
-// --check@animateDither:Animate Dither,0
-// --track@ditherSpeed:Dither Speed,0,3,1,0.5
-// --check@chromaticSplit:Chromatic Split,0
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  algorithm: f32,
-  pixelSize: f32,
-  spread: f32,
-  levels: f32,
-  dotScale: f32,
-  animateDither: f32,
-  ditherSpeed: f32,
-  chromaticSplit: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 3, 1, 1)           algorithm: f32,
+  @range(1, 24, 1, 1)          pixelSize: f32,
+  @label("Strength")
+  @range(0, 1, 0.01, 0.5)      spread: f32,
+  @range(2, 16, 1, 4)          levels: f32,
+  @range(0.1, 1, 0.1, 1)       dotScale: f32,
+  @toggle(0)                   animateDither: f32,
+  @range(0, 3, 0.5, 1)         ditherSpeed: f32,
+  @toggle(0)                   chromaticSplit: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

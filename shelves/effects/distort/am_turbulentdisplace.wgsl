@@ -1,19 +1,6 @@
 // Turbulent Displace: AbsentMotion's turbulentdisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Pushes the layer around with smooth fractal noise, for fire, water, heat haze or rough natural edges.
-// --track@parallax_x:Parallax x,-5000,5000,0,1
-// --track@parallax_y:Parallax y,-5000,5000,0,1
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@strength:Strength,0,2.5,0.25,0.001
-// --track@evolution:Evolution,-50,50,0.0,0.01
-// --track@direction:Direction,0,1,0.0,0.01
-// --track@scale:Scale,0.01,50,1.0,0.01
-// --track@stretch_x:Stretch x,0.01,10,1,0.01
-// --track@stretch_y:Stretch y,0.01,10,1,0.01
-// --track@seed:Seed,0,5,0.0,0.01
-// --track@octaves:Octaves,1,9,6.0,1
-// --track@bias:Bias,-1,1,0.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -23,18 +10,18 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  parallax: vec2<f32>,
-  offset: vec2<f32>,
-  strength: f32,
-  evolution: f32,
-  direction: f32,
-  scale: f32,
-  stretch: vec2<f32>,
-  seed: f32,
-  octaves: f32,
-  bias: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-5000, 5000, 1, 0, 0) parallax: vec2<f32>,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(0, 2.5, 0.001, 0.25)  strength: f32,
+  @range(-50, 50, 0.01, 0)     evolution: f32,
+  @range(0, 1, 0.01, 0)        direction: f32,
+  @range(0.01, 50, 0.01, 1)    scale: f32,
+  @range(0.01, 10, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(0, 5, 0.01, 0)        seed: f32,
+  @range(1, 9, 1, 6)           octaves: f32,
+  @range(-1, 1, 0.001, 0)      bias: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

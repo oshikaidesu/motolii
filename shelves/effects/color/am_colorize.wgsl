@@ -1,8 +1,6 @@
 // Colorize: AbsentMotion's colorize (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Tints the whole layer with one hue while keeping its light and shade.
-// --track@hue:Hue,0,360,0.0,0.5
-// --track@amount:Amount,0,1,0.5,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,10 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  hue: f32,
-  amount: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 360, 0.5, 0)       hue: f32,
+  @range(0, 1, 0.001, 0.5)     amount: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

@@ -1,8 +1,6 @@
 // Posterize: AbsentMotion's posterize (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Cuts each color channel into a number of flat Steps, so smooth gradients turn into bands. Offset moves where the band edges fall.
-// --track@levels:Steps,2,255,10.0,1
-// --track@offset:Offset,-1,1,0.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -12,10 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  levels: f32,
-  offset: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Steps")
+  @range(2, 255, 1, 10)        levels: f32,
+  @range(-1, 1, 0.001, 0)      offset: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

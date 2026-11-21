@@ -1,9 +1,6 @@
 // Exposure: AbsentMotion's exposure (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Simulates photographic exposure with stops, offset, and gamma correction.
-// --track@stops:Stops,-4.0,4.0,0.7,0.1
-// --track@offset:Offset,-0.5,0.5,0.0,0.01
-// --track@gamma:Gamma,0.1,10.0,1.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -13,11 +10,11 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  stops: f32,
-  offset: f32,
-  gamma: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(-4, 4, 0.1, 0.7)      stops: f32,
+  @range(-0.5, 0.5, 0.01, 0)   offset: f32,
+  @range(0.1, 10, 0.1, 1)      gamma: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

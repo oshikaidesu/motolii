@@ -1,21 +1,6 @@
 // Tunnel: AbsentMotion's tunnel (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:3d
 // --about:Lines an endless tunnel with the layer and flies through it. Phase shifts the texture along its length.
-// --track@rotX:Rotation X,-3600,3600,0.0,0.1
-// --track@rotY:Rotation Y,-3600,3600,0.0,0.1
-// --track@rotZ:Rotation Z,-3600,3600,0.0,0.1
-// --track@phase:Phase,-1000,1000,0.0,0.01
-// --track@speed:Speed,-20,20,1.0,0.01
-// --track@twist:Twist,-360,360,0.0,0.1
-// --track@repeat:Repeat,1,16,3.0,1
-// --track@fog:Fog,0,1,0.4,0.01
-// --track@fogColor_x:Fog Color R,0,1,0,0.01
-// --track@fogColor_y:Fog Color G,0,1,0,0.01
-// --track@fogColor_z:Fog Color B,0,1,0,0.01
-// --track@fogColor_w:Fog Color A,0,1,1,0.01
-// --track@R_position_x:Position x,-5000,5000,0,1
-// --track@R_position_y:Position y,-5000,5000,0,1
-// --track@scale:Scale,0.05,10,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -25,19 +10,23 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  rotX: f32,
-  rotY: f32,
-  rotZ: f32,
-  phase: f32,
-  speed: f32,
-  twist: f32,
-  repeat: f32,
-  fog: f32,
-  fogColor: vec4<f32>,
-  R_position: vec2<f32>,
-  scale: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Rotation X")
+  @range(-3600, 3600, 0.1, 0)  rotX: f32,
+  @label("Rotation Y")
+  @range(-3600, 3600, 0.1, 0)  rotY: f32,
+  @label("Rotation Z")
+  @range(-3600, 3600, 0.1, 0)  rotZ: f32,
+  @range(-1000, 1000, 0.01, 0) phase: f32,
+  @range(-20, 20, 0.01, 1)     speed: f32,
+  @range(-360, 360, 0.1, 0)    twist: f32,
+  @range(1, 16, 1, 3)          repeat: f32,
+  @range(0, 1, 0.01, 0.4)      fog: f32,
+  @color(0, 0, 0, 1)           fogColor: vec4<f32>,
+  @label("Position")
+  @range(-5000, 5000, 1, 0, 0) R_position: vec2<f32>,
+  @range(0.05, 10, 0.01, 1)    scale: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

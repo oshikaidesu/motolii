@@ -1,43 +1,37 @@
 // Circuit Bent: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Turns the image into scanlines and bends them around a point that pulls or pushes.
-// --check@colorMode:Color Mode,0
-// --track@monoColor_x:Tint r,0,1,0.9215686274509803,0.001
-// --track@monoColor_y:Tint g,0,1,0.9607843137254902,0.001
-// --track@monoColor_z:Tint b,0,1,1,0.001
-// --check@invert:Invert,0
-// --track@signalBlackPoint:Black Point,0,1,0,0.01
-// --track@signalWhitePoint:White Point,0,1,0.22,0.01
-// --track@signalGamma:Gamma,0.1,5,3.07,0.01
-// --track@presenceThreshold:Presence,0,1,0.37,0.01
-// --track@presenceSoftness:Presence Softness,0,1,0.64,0.01
-// --track@linePitch:Pitch,2,48,6.4,0.1
-// --track@lineThickness:Thickness,0.5,8,0.5,0.1
-// --track@lineAngle:Angle,0,180,0,1
-// --track@noiseMode:Noise Type,0,2,2,1
-// --track@noiseAmount:Amount,0,1,1,0.01
-// --track@scrollSpeed:Scroll Speed,0,4,4,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  colorMode: f32,
-  monoColor: vec3<f32>,
-  invert: f32,
-  signalBlackPoint: f32,
-  signalWhitePoint: f32,
-  signalGamma: f32,
-  presenceThreshold: f32,
-  presenceSoftness: f32,
-  linePitch: f32,
-  lineThickness: f32,
-  lineAngle: f32,
-  noiseMode: f32,
-  noiseAmount: f32,
-  scrollSpeed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @toggle(0)                   colorMode: f32,
+  @label("Tint r")
+  @range(0, 1, 0.001, 0.921569, 0.960784, 1) monoColor: vec3<f32>,
+  @toggle(0)                   invert: f32,
+  @label("Black Point")
+  @range(0, 1, 0.01, 0)        signalBlackPoint: f32,
+  @label("White Point")
+  @range(0, 1, 0.01, 0.22)     signalWhitePoint: f32,
+  @label("Gamma")
+  @range(0.1, 5, 0.01, 3.07)   signalGamma: f32,
+  @label("Presence")
+  @range(0, 1, 0.01, 0.37)     presenceThreshold: f32,
+  @range(0, 1, 0.01, 0.64)     presenceSoftness: f32,
+  @label("Pitch")
+  @range(2, 48, 0.1, 6.4)      linePitch: f32,
+  @label("Thickness")
+  @range(0.5, 8, 0.1, 0.5)     lineThickness: f32,
+  @label("Angle")
+  @range(0, 180, 1, 0)         lineAngle: f32,
+  @label("Noise Type")
+  @range(0, 2, 1, 2)           noiseMode: f32,
+  @label("Amount")
+  @range(0, 1, 0.01, 1)        noiseAmount: f32,
+  @range(0, 4, 0.01, 4)        scrollSpeed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

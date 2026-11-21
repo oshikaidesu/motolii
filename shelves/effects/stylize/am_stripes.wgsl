@@ -1,15 +1,6 @@
 // Stripes: AbsentMotion's stripes (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a pattern of stripes over the opaque parts of the layer, or punches the stripes out of it.
-// --track@count:Count,0.5,200,10.0,0.1
-// --track@width:Width,0,1,0.5,0.01
-// --track@angle:Angle,-3600,3600,45.0,0.5
-// --track@phase:Phase,-1000,1000,0.0,0.01
-// --track@color_x:Color R,0,1,0.1765,0.01
-// --track@color_y:Color G,0,1,0.1176,0.01
-// --track@color_z:Color B,0,1,0.9647,0.01
-// --track@color_w:Color A,0,1,1,0.01
-// --track@smoothing:Smoothing,0,0.5,0.01,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,16 +10,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  screen: vec4<f32>,
-  time: f32,
-  count: f32,
-  width: f32,
-  angle: f32,
-  phase: f32,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto screen: vec4<f32>,
+  @auto time: f32,
+  @range(0.5, 200, 0.1, 10)    count: f32,
+  @range(0, 1, 0.01, 0.5)      width: f32,
+  @range(-3600, 3600, 0.5, 45) angle: f32,
+  @range(-1000, 1000, 0.01, 0) phase: f32,
+  @color(0.1765, 0.1176, 0.9647, 1) color: vec4<f32>,
   punch: f32,
-  smoothing: f32,
+  @range(0, 0.5, 0.001, 0.01)  smoothing: f32,
   screenSpace: f32,
   layerRect: vec4<f32>,
 };

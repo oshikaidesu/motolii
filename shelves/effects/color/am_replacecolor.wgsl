@@ -1,18 +1,6 @@
 // Replace Color: AbsentMotion's replacecolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Replaces one color with another. Alpha controls the replacement strength; Lock Luminance keeps the light and shade of the original.
-// --track@source_x:Replace Color R,0,1,1,0.01
-// --track@source_y:Replace Color G,0,1,0,0.01
-// --track@source_z:Replace Color B,0,1,0,0.01
-// --track@source_w:Replace Color A,0,1,1,0.01
-// --track@R_target_x:New Color R,0,1,0,0.01
-// --track@R_target_y:New Color G,0,1,0,0.01
-// --track@R_target_z:New Color B,0,1,1,0.01
-// --track@R_target_w:New Color A,0,1,1,0.01
-// --track@threshold:Threshold,0,4,0.25,0.001
-// --track@feather:Feather,0,2,0.25,0.001
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@choke:Choke,0.5,20,2.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -22,14 +10,16 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  source: vec4<f32>,
-  R_target: vec4<f32>,
-  threshold: f32,
-  feather: f32,
-  choke: f32,
-  alpha: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Replace Color")
+  @color(1, 0, 0, 1)           source: vec4<f32>,
+  @label("New Color")
+  @color(0, 0, 1, 1)           R_target: vec4<f32>,
+  @range(0, 4, 0.001, 0.25)    threshold: f32,
+  @range(0, 2, 0.001, 0.25)    feather: f32,
+  @range(0.5, 20, 0.01, 2)     choke: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
   lockLuminance: f32,
   layerRect: vec4<f32>,
 };

@@ -4,12 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Adds a glow along the inside edges of the opaque parts of the layer.
-// --track@blur:Size,0,300,30.0,0.1
-// --track@intensity:Intensity,0,4,1.0,0.01
-// --track@color_x:Color R,0,1,1,0.01
-// --track@color_y:Color G,0,1,1,0.01
-// --track@color_z:Color B,0,1,1,0.01
-// --track@color_w:Color A,0,1,1,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,13 +13,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  blur: f32,
-  intensity: f32,
-  color: vec4<f32>,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Size")
+  @range(0, 300, 0.1, 30)      blur: f32,
+  @range(0, 4, 0.01, 1)        intensity: f32,
+  @color(1, 1, 1, 1)           color: vec4<f32>,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

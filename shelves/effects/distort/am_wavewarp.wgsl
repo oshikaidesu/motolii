@@ -1,12 +1,6 @@
 // Wave Warp: AbsentMotion's wavewarp (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Bends the layer with a sine wave: Spacing sets how many waves cross it, Magnitude how far they push, Angle the direction the waves run and Warp Angle the direction they push.
-// --track@phase:Phase,0,500,0.0,0.01
-// --track@angle:Angle,-3600,3600,0.0,1
-// --track@spacing:Spacing,0,500,20.0,0.1
-// --track@magnitude:Magnitude,0,30,4.0,0.1
-// --track@warpAngle:Warp Angle,-3600,3600,90.0,1
-// --track@speed:Speed,0,10,0.0,0.1
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -16,15 +10,15 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  screen: vec4<f32>,
-  time: f32,
-  phase: f32,
-  angle: f32,
-  spacing: f32,
-  magnitude: f32,
-  warpAngle: f32,
-  speed: f32,
+  @auto resolution: vec2<f32>,
+  @auto screen: vec4<f32>,
+  @auto time: f32,
+  @range(0, 500, 0.01, 0)      phase: f32,
+  @range(-3600, 3600, 1, 0)    angle: f32,
+  @range(0, 500, 0.1, 20)      spacing: f32,
+  @range(0, 30, 0.1, 4)        magnitude: f32,
+  @range(-3600, 3600, 1, 90)   warpAngle: f32,
+  @range(0, 10, 0.1, 0)        speed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

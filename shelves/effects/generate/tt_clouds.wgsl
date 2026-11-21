@@ -1,26 +1,20 @@
 // Clouds: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renders clouds. The texture has alpha channel
-// --track@scale:Scale,0,4,2,0.04
-// --track@density:Density,0,1,0.5,0.01
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,1,0.001
-// --track@color_z:Color b,0,1,1,0.001
-// --track@subcolor_x:Subcolor r,0,1,0.3515325994898463,0.001
-// --track@subcolor_y:Subcolor g,0,1,0.3515325994898463,0.001
-// --track@subcolor_z:Subcolor b,0,1,0.43415363616478553,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  density: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(0, 1, 0.01, 0.5)      density: f32,
   opacity: f32,
-  color: vec3<f32>,
-  subcolor: vec3<f32>,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 1, 1) color: vec3<f32>,
+  @label("Subcolor r")
+  @range(0, 1, 0.001, 0.351533, 0.351533, 0.434154) subcolor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

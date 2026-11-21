@@ -1,10 +1,6 @@
 // Channel Remap (HSV): AbsentMotion's channelremaphsv (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Rebuilds hue, saturation, value and alpha from other channels of the layer.
-// --track@h:H,0,1,0.0,0.01
-// --track@s:S,0,1,1.0,0.01
-// --track@v:V,0,1,2.0,0.01
-// --track@a:A,0,1,3.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -14,12 +10,12 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  h: f32,
-  s: f32,
-  v: f32,
-  a: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.01, 0)        h: f32,
+  @range(0, 1, 0.01, 1)        s: f32,
+  @range(0, 1, 0.01, 2)        v: f32,
+  @range(0, 1, 0.01, 3)        a: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

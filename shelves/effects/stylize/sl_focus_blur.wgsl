@@ -12,39 +12,29 @@
 // --pass@t8:0,1,s0.001953125,s0.001953125
 // --pass@t9:0,1,s0.0009765625,s0.0009765625
 // --pass@:0,0,s1,s1
-// --track@blurFrom:Blur From,0,4,1,1
-// --track@kind:Kind,0,2,1,1
-// --track@radius:Radius,0,400,70,1
-// --track@motionAngle:Motion Angle,-180,180,0,1
-// --track@highlights:Highlights,0,3,0.4,0.01
-// --track@angle:Band Angle,-180,180,0,1
-// --track@focus:Focus,0,1,0.85,0.01
-// --track@range:Focus Range,0,2,0.12,0.01
-// --track@transition:Transition,0.01,2,0.45,0.01
-// --check@invertFocus:Invert Focus,0
-// --track@grain:Grain,0,1,0.35,0.01
-// --track@grainSize:Grain Size,0.5,6,1.2,0.05
-// --track@grainFollow:Grain in Blur,0,1,0.6,0.01
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  blurFrom: f32,
-  kind: f32,
-  radius: f32,
-  motionAngle: f32,
-  highlights: f32,
-  angle: f32,
-  focus: f32,
-  range: f32,
-  transition: f32,
-  invertFocus: f32,
-  grain: f32,
-  grainSize: f32,
-  grainFollow: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 1, 1)           blurFrom: f32,
+  @range(0, 2, 1, 1)           kind: f32,
+  @range(0, 400, 1, 70)        radius: f32,
+  @range(-180, 180, 1, 0)      motionAngle: f32,
+  @range(0, 3, 0.01, 0.4)      highlights: f32,
+  @label("Band Angle")
+  @range(-180, 180, 1, 0)      angle: f32,
+  @range(0, 1, 0.01, 0.85)     focus: f32,
+  @label("Focus Range")
+  @range(0, 2, 0.01, 0.12)     range: f32,
+  @range(0.01, 2, 0.01, 0.45)  transition: f32,
+  @toggle(0)                   invertFocus: f32,
+  @range(0, 1, 0.01, 0.35)     grain: f32,
+  @range(0.5, 6, 0.05, 1.2)    grainSize: f32,
+  @label("Grain in Blur")
+  @range(0, 1, 0.01, 0.6)      grainFollow: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

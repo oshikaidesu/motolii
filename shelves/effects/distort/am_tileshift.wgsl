@@ -1,14 +1,6 @@
 // Tile Shift: AbsentMotion's tileshift (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Divides the layer into a grid of tiles and slides the picture inside every tile in a random direction.
-// --track@strength:Strength,0,1,0.1,0.001
-// --track@offset_x:Offset x,-5000,5000,0,1
-// --track@offset_y:Offset y,-5000,5000,0,1
-// --track@count:Count,0.5,200,10.0,0.1
-// --track@stretch_x:Stretch x,0.01,10,1,0.01
-// --track@stretch_y:Stretch y,0.01,10,1,0.01
-// --track@angle:Angle,-3600,3600,0.0,0.5
-// --track@seed:Seed,0,5,0.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -18,14 +10,14 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  strength: f32,
-  offset: vec2<f32>,
-  count: f32,
-  stretch: vec2<f32>,
-  angle: f32,
-  seed: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 1, 0.001, 0.1)     strength: f32,
+  @range(-5000, 5000, 1, 0, 0) offset: vec2<f32>,
+  @range(0.5, 200, 0.1, 10)    count: f32,
+  @range(0.01, 10, 0.01, 1, 1) stretch: vec2<f32>,
+  @range(-3600, 3600, 0.5, 0)  angle: f32,
+  @range(0, 5, 0.01, 0)        seed: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

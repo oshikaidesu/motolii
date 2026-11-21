@@ -4,17 +4,6 @@
 // --pass@blurPicture:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --about:Paints a two-color gradient outwards from the edges of the opaque parts of the layer, like a soft colored halo.
-// --track@color1_x:Color 1 R,0,1,1,0.01
-// --track@color1_y:Color 1 G,0,1,0.2353,0.01
-// --track@color1_z:Color 1 B,0,1,0.4314,0.01
-// --track@color1_w:Color 1 A,0,1,1,0.01
-// --track@color2_x:Color 2 R,0,1,0.2353,0.01
-// --track@color2_y:Color 2 G,0,1,0.7843,0.01
-// --track@color2_z:Color 2 B,0,1,1,0.01
-// --track@color2_w:Color 2 A,0,1,1,0.01
-// --track@blur:Width,1,300,25.0,0.1
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@fill:Fill,0,1,1.0,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -24,16 +13,19 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  color1: vec4<f32>,
-  color2: vec4<f32>,
-  blur: f32,
-  alpha: f32,
-  fill: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Color 1")
+  @color(1, 0.2353, 0.4314, 1) color1: vec4<f32>,
+  @label("Color 2")
+  @color(0.2353, 0.7843, 1, 1) color2: vec4<f32>,
+  @label("Width")
+  @range(1, 300, 0.1, 25)      blur: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(0, 1, 0.001, 1)       fill: f32,
   fade: f32,
   layerRect: vec4<f32>,
-  passindex: f32,
+  @auto passindex: f32,
 };
 @group(0) @binding(6) var<uniform> _uniform0 : Knobs;
 @group(0) @binding(1) var image_Sampler: sampler;

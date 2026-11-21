@@ -1,15 +1,6 @@
 // Spin Streaks: AbsentMotion's spinstreaks (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Makes arc-shaped streaks by turning copies of the layer around a point and blending where they overlap. R, G, B and A choose per channel whether the copies keep the lowest, highest or average value, or leave that channel alone.
-// --track@R_center_x:Center x,-1,2,0.5,0.01
-// --track@R_center_y:Center y,-1,2,0.5,0.01
-// --track@sweep:Sweep,0,360,5.0,0.1
-// --track@alpha:Alpha,0,1,1.0,0.001
-// --track@bias:Bias,-1,1,0.0,0.01
-// --track@r:R,0,1,1.0,0.01
-// --track@g:G,0,1,1.0,0.01
-// --track@b:B,0,1,1.0,0.01
-// --track@a:A,0,1,1.0,0.01
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -19,16 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  R_center: vec2<f32>,
-  sweep: f32,
-  alpha: f32,
-  bias: f32,
-  r: f32,
-  g: f32,
-  b: f32,
-  a: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @label("Center")
+  @range(-1, 2, 0.01, 0.5, 0.5) R_center: vec2<f32>,
+  @range(0, 360, 0.1, 5)       sweep: f32,
+  @range(0, 1, 0.001, 1)       alpha: f32,
+  @range(-1, 1, 0.01, 0)       bias: f32,
+  @range(0, 1, 0.01, 1)        r: f32,
+  @range(0, 1, 0.01, 1)        g: f32,
+  @range(0, 1, 0.01, 1)        b: f32,
+  @range(0, 1, 0.01, 1)        a: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;

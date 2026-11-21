@@ -92,23 +92,18 @@
 // --pass@t0:0,1,s1,s1
 // --pass@t1:0,1,s1,s1
 // --pass@:0,0,s1,s1
-// --track@threshold:Threshold,0,1,0.25,0.01
-// --track@upperThreshold:Upper Threshold,0,1,1,0.01
-// --check@direction:Direction,0
-// --track@mode:Mode,0,2,0,1
-// --check@reverse:Reverse,0
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  threshold: f32,
-  upperThreshold: f32,
-  direction: f32,
-  mode: f32,
-  reverse: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 1, 0.01, 0.25)     threshold: f32,
+  @range(0, 1, 0.01, 1)        upperThreshold: f32,
+  @toggle(0)                   direction: f32,
+  @range(0, 2, 1, 0)           mode: f32,
+  @toggle(0)                   reverse: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

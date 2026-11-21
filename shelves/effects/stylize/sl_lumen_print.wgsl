@@ -1,43 +1,30 @@
 // Lumen Print: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:An analog sun print: toned shadows, solarized highlights, halation, burned edges and grain.
-// --track@amount:Amount,0,1,1,0.01
-// --track@exposure:Exposure,-1,1,0,0.01
-// --track@contrast:Contrast,0,3,1.15,0.01
-// --track@solarize:Solarize,0,1,0.25,0.01
-// --track@pivot:Pivot,0,1,0.8,0.01
-// --track@edgeLines:Edge Lines,0,2,0,0.01
-// --track@diffusion:Diffusion,0,1,0.15,0.01
-// --track@halation:Halation,0,2,0.3,0.01
-// --track@radius:Spread,1,96,14,1
-// --track@washout:Washout,0,1,0.1,0.01
-// --track@ragged:Ragged Edge,0,1,0.5,0.01
-// --track@edgeBurn:Edge Burn,0,1,0.35,0.01
-// --track@grain:Grain,0,1,0.2,0.01
-// --track@grainSize:Grain Size,0.5,8,1.5,0.05
-// --track@seed:Seed,0,999,0,1
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  amount: f32,
-  exposure: f32,
-  contrast: f32,
-  solarize: f32,
-  pivot: f32,
-  edgeLines: f32,
-  diffusion: f32,
-  halation: f32,
-  radius: f32,
-  washout: f32,
-  ragged: f32,
-  edgeBurn: f32,
-  grain: f32,
-  grainSize: f32,
-  seed: f32,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 1, 0.01, 1)        amount: f32,
+  @range(-1, 1, 0.01, 0)       exposure: f32,
+  @range(0, 3, 0.01, 1.15)     contrast: f32,
+  @range(0, 1, 0.01, 0.25)     solarize: f32,
+  @range(0, 1, 0.01, 0.8)      pivot: f32,
+  @range(0, 2, 0.01, 0)        edgeLines: f32,
+  @range(0, 1, 0.01, 0.15)     diffusion: f32,
+  @range(0, 2, 0.01, 0.3)      halation: f32,
+  @label("Spread")
+  @range(1, 96, 1, 14)         radius: f32,
+  @range(0, 1, 0.01, 0.1)      washout: f32,
+  @label("Ragged Edge")
+  @range(0, 1, 0.01, 0.5)      ragged: f32,
+  @range(0, 1, 0.01, 0.35)     edgeBurn: f32,
+  @range(0, 1, 0.01, 0.2)      grain: f32,
+  @range(0.5, 8, 0.05, 1.5)    grainSize: f32,
+  @range(0, 999, 1, 0)         seed: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

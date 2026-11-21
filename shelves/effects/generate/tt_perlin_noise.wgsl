@@ -1,27 +1,20 @@
 // Perlin noise: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renders [Perlin noise](https://en.wikipedia.org/wiki/Perlin_noise)
-// --track@scale:Scale,0,4,2,0.04
-// --track@balance:Balance,-3,3,0,0.06
-// --track@contrast:Contrast,-2,2,0,0.04
-// --track@color_x:Color r,0,1,1,0.001
-// --track@color_y:Color g,0,1,1,0.001
-// --track@color_z:Color b,0,1,1,0.001
-// --track@background_x:Background r,0,1,0,0.001
-// --track@background_y:Background g,0,1,0,0.001
-// --track@background_z:Background b,0,1,0,0.001
 diagnostic(off, derivative_uniformity);
 struct Knobs {
-  time: f32,
-  passindex: f32,
-  resolution: vec2<f32>,
-  frameRect: vec4<f32>,
-  passRect: vec4<f32>,
-  scale: f32,
-  balance: f32,
-  contrast: f32,
-  color: vec3<f32>,
-  background: vec3<f32>,
+  @auto time: f32,
+  @auto passindex: f32,
+  @auto resolution: vec2<f32>,
+  @auto frameRect: vec4<f32>,
+  @auto passRect: vec4<f32>,
+  @range(0, 4, 0.04, 2)        scale: f32,
+  @range(-3, 3, 0.06, 0)       balance: f32,
+  @range(-2, 2, 0.04, 0)       contrast: f32,
+  @label("Color r")
+  @range(0, 1, 0.001, 1, 1, 1) color: vec3<f32>,
+  @label("Background r")
+  @range(0, 1, 0.001, 0, 0, 0) background: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;

@@ -29,7 +29,9 @@ struct PointsFx {
 };
 
 namespace {
-std::string points_text(const std::string& file) { return read_text(file); }
+std::string points_text(const std::string& file) {
+  return wgsl_strip_ui_attributes(read_text(file));
+}
 }  // namespace
 
 bool points_is(const std::string& file) {

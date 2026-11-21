@@ -1,11 +1,11 @@
 // Vignette: three.js's VignetteShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)
 // --label:Light
-// --track@offset:offset,0.0,4.0,1.0,0.001
-// --track@darkness:darkness,0.0,4.0,1.0,0.001
 
 struct Knobs {
-    offset: f32,
-    darkness: f32,
+  @label("offset")
+  @range(0, 4, 0.001, 1)       offset: f32,
+  @label("darkness")
+  @range(0, 4, 0.001, 1)       darkness: f32,
 }
 
 struct FragmentOutput {

@@ -1,13 +1,6 @@
 // Datamosh: AbsentMotion's datamosh (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Between the start and end times, in seconds from the beginning of the layer, the picture stops refreshing and is dragged around by the motion that follows, as if a key frame were missing. Video layers are smeared by their real motion, other layers by moving blocks.
-// --track@start:Start,0,3600,0.0,0.01
-// --track@end:End,0,3600,2.0,0.01
-// --track@intensity:Intensity,0,4,1.0,0.01
-// --track@block:Block Size,1,128,16.0,1
-// --track@decay:Decay,0,1,0.05,0.001
-// --track@glitch:Glitch,0,1,0.1,0.001
-// --track@bloom:Bloom,0,0.95,0.3,0.001
 diagnostic(off, derivative_uniformity);
 diagnostic(off, chromium.unreachable_code);
 struct FSIn {
@@ -17,16 +10,17 @@ struct FSOut {
   @location(0) sk_FragColor: vec4<f32>,
 };
 struct Knobs {
-  resolution: vec2<f32>,
-  time: f32,
-  start: f32,
-  end: f32,
-  duration: f32,
-  intensity: f32,
-  block: f32,
-  decay: f32,
-  glitch: f32,
-  bloom: f32,
+  @auto resolution: vec2<f32>,
+  @auto time: f32,
+  @range(0, 3600, 0.01, 0)     start: f32,
+  @range(0, 3600, 0.01, 2)     end: f32,
+  @auto duration: f32,
+  @range(0, 4, 0.01, 1)        intensity: f32,
+  @label("Block Size")
+  @range(1, 128, 1, 16)        block: f32,
+  @range(0, 1, 0.001, 0.05)    decay: f32,
+  @range(0, 1, 0.001, 0.1)     glitch: f32,
+  @range(0, 0.95, 0.001, 0.3)  bloom: f32,
   layerRect: vec4<f32>,
 };
 @group(0) @binding(2) var<uniform> _uniform0 : Knobs;
