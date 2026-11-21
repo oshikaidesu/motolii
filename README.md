@@ -134,6 +134,7 @@ Cavalry scripts also run natively (`cavalry.Point`, `cavalry.PointCloud`, `caval
 ## Documentation
 
 - [Tabs & Panels](docs/TABS.md) — Visual overview of every tab and feature
+- [After Effects Migration Guide](docs/AFTER_EFFECTS.md) — Using your existing AE plugins, expressions, and Lottie assets
 - [User Guide](docs/GUIDE.md) — End-to-end guide from creating a project to exporting (Japanese)
 - [Architecture](docs/ARCHITECTURE.md) — System design: Flutter app, C++ engine, WebGPU rendering, and shelves
 - [Effect Licenses](docs/design/effect_licences.md) — Attribution, export credit files, and bundling boundaries

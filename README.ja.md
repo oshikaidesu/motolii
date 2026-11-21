@@ -134,6 +134,7 @@ Cavalry スクリプトもそのまま動作します（`cavalry.Point`・`caval
 ## ドキュメント
 
 - [タブ・パネル一覧](docs/TABS.ja.md) — 全タブの機能紹介（スクリーンショット付き）
+- [After Effects 資産の持ち込みガイド](docs/AFTER_EFFECTS.ja.md) — 手持ちの AE プラグイン・エクスプレッション・Lottie の使い方
 - [使い方ガイド](docs/GUIDE.md) — プロジェクト作成から書き出しまでの操作リファレンス
 - [アーキテクチャ](docs/ARCHITECTURE.md) — アプリ・エンジン・描画・棚の全体設計（英語）
 - [エフェクトのライセンス管理](docs/design/effect_licences.md) — クレジット出力とライセンス境界（英語）
