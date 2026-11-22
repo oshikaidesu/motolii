@@ -7,9 +7,12 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/inspector/card_actions.dart' show CardCustomUi;
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
+import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
+    show codeOfCard, codeSource;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// One document mutation produced by a custom panel's `onAction`.
@@ -86,6 +89,28 @@ String customPanelAction(
 ) =>
     ws.inside?.panelAction(path, actionJson, ctxJson) ??
     '{"ok":false,"error":"No open project"}';
+
+/// Resolves a custom Inspector card UI (`<effect>.ui.js` sidecar or co-located `renderCard`)
+/// for card [title] on layer [thing], or returns null when the card uses the default grid.
+CardCustomUi? cardCustomUiOf(
+  WorkspaceController ws,
+  int thing,
+  String title,
+  List<String> names,
+) {
+  final m = ws.inside;
+  if (m == null) return null;
+  final code = codeOfCard(ws, thing, title, names);
+  if (code == null) return null;
+  final uiFile = m.cardUiFile(codeSource(code.word));
+  if (uiFile.isEmpty) return null;
+  return (
+    uiFile: uiFile,
+    render: (ctxJson) => m.cardUiRender(uiFile, ctxJson),
+    action: (actionJson, ctxJson) =>
+        m.cardUiAction(uiFile, actionJson, ctxJson),
+  );
+}
 
 /// Executes [ops] returned by `onAction` in a single undo step.
 void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {

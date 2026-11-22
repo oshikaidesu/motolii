@@ -1,41 +1,22 @@
-# Custom Panels — WebView なしの JS カスタムパネル（CEP 相当）
+# Custom UI — 1 つのネイティブ描画コアと 2 つの出口
 
-## 目的
+## 役割の分離（ごっちゃにしない）
 
-After Effects の CEP パネル（Motion 4 / Overlord / Rift 等）が担ってきた「よく使う操作を自分好みの専用パネルにまとめる」体験を、**WebView を一切埋め込まず**（`AGENTS.md §3`）に実現する。
+Motolii の JS カスタム UI は、**1 つの共通コア（QuickJS サンドボックス + ネイティブ Flutter 描画 `PanelTreeView`）** の上に、役割の異なる **2 つの出口** をはっきり分けて持つ。
 
-JavaScript スクリプトが宣言的 UI ツリー（JSON）とドキュメント操作（`ops`）を返し、Motolii 側がネイティブの Flutter ウィジェットと現行スキントークンで直接描画する。
+| 軸 | ① カスタムタブ（CEP 相当） | ② エフェクトカスタムカード（AE にない解決） |
+|---|---|---|
+| **対象** | コンポ全体・複数レイヤー・作業フロー（Stagger / Quick Rig / パレット等） | 1 レイヤー上の 1 エフェクト（`.wgsl` / `.fs` / `.js` / TSL）の固有 UI |
+| **置き場** | `shelves/panels/*.js`（およびユーザー `panels/*.js`） | `<effect>.ui.js`（シェーダーの隣）または `.js`/TSL 内の `renderCard(ctx)` |
+| **UI の居場所** | **Tool Panel カタログ** ＋ **`Tab` ボタンで独立ドッキングタブ化**（ドラッグ・分割・常駐・閉じる対応） | **Inspector の `ValuesCard` 先頭**（`hide` 指定したパラメータだけ標準スライダーから畳み、残りは自動表示） |
+| **書き戻し** | `onAction(action, ctx)` が返す `ops` を 1 Undo で適用 | `onCardAction` が返す `{ set, say }`（未定義でも `id` がパラメータ名と一致すれば直接 `v_<prop>` へ双方向バインド） |
 
-## 配置と単一正本
+## 設計原則
 
-- 標準パネル: `shelves/panels/*.js`
-- ユーザー独自パネル: `~/Library/Application Support/Motolii/panels/*.js`（同名ファイルはユーザー側が優先、`shelf_folders.h` の既存解決をそのまま利用）
-- Tool Panel のカタログに標準ツール（`Blend`, `Align`）と並んで自動登録され、クリックで展開・ピン留めできる。
-- スクリプトファイルそのものが正本であり、ディスク上の `.js` を書き換えて `Reload` すれば即反映される。
-
-## スクリプト契約（純粋関数 + 宣言的データ）
-
-```js
-// --title: Panel Name
-// --about: Short description
-// --acts: Selection
-// --tone: layout
-
-function render(ctx) {
-  // ui.* ビルダー（または同等のプレーン JSON）でネイティブ UI ツリーを返す
-  return ui.column([...]);
-}
-
-function onAction(action, ctx) {
-  // { state?, ops?, notice? } を返す
-  // ops はすべて 1 回の Undo ステップ（groupBegin/groupEnd）として適用される
-  return { state: {...}, ops: [{ op: "set", layer: 1, name: "start", value: 0.5 }], notice: "Done" };
-}
-```
-
-### なぜ純粋関数 + `ops` 配列なのか
-
-1. **安全・高速・決定的**: QuickJS ランタイムに C++ の生ポインタを渡さず、メモリ上限（16 MiB）とタイムアウト（500ms）のサンドボックス内で完結する。無限ループでもアプリ本体が固まらない。
-2. **自動的に 1 Undo**: 複数レイヤーへの一括変更やマクロ自動リグでも、返却された `ops` をまとめて 1 回の Undo ステップとして積む。
-3. **見た目の一貫性**: HTML/CSS を書かなくても、Motolii の Light / Dark / カスタムスキン、`NumberField` のスクラブ・数式入力・キーボード操作がそのまま手に入る。
-4. **Macros との連携**: `say` オペレーションで `macro_sources` / `macro_map` / `macro_names` を書けるため、1 クリックで「Audio Bounce」「Wave Spin」等のモジュレーションリグを組むパネルを数行の JS で書ける。
+1. **WebView を埋め込まない**（`AGENTS.md §3`）
+   - JS が返すのは宣言的 JSON（`ui.*` ビルダー）のみ。描画はすべて Motolii 本体の `NumberField` / `TypedField` / `Pressable` / 現行スキントークンで行う。
+2. **情報を二重に持たない**
+   - エフェクトカスタムカードでは、シェーダー／スクリプト自身のパラメータ（`v_<prop>`）が唯一の正本。カスタム UI から変更してもキーフレーム・Macro 接続・Undo がそのまま機能する。
+   - 単一 `.wgsl` / `.fs` ファイルは一切書き換えず、隣に同名 `.ui.js` を置くだけで専用 UI（例：[Diagonal Blur.ui.js](../../shelves/effects/blur/Diagonal%20Blur.ui.js) の 2D 方向ベクトルパッド）を後付けできる。
+3. **安全サンドボックス**
+   - QuickJS 実行は 16 MiB メモリ上限 + 500ms タイムアウト割り込み付きで、ユーザースクリプトのバグや無限ループでアプリが固まらない。

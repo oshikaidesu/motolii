@@ -3,6 +3,13 @@ import 'package:flutter/widgets.dart';
 /// One layer entry offered as an Audio or Layer signal source in the Macros card.
 typedef MacroLayerChoice = ({int id, String name, bool hasAudio});
 
+/// Evaluator hooks for an effect card's custom JS UI (`<effect>.ui.js` or co-located `renderCard`).
+typedef CardCustomUi = ({
+  String uiFile,
+  String Function(String ctxJson) render,
+  String Function(String actionJson, String ctxJson) action,
+});
+
 /// What the buttons and menus on the Inspector's cards do. An action that is null is not offered.
 class CardActions {
   /// Creates the actions offered on an Inspector's cards.
@@ -26,6 +33,7 @@ class CardActions {
     this.textClasses,
     this.propScale,
     this.layerChoices,
+    this.cardCustomUi,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -89,4 +97,7 @@ class CardActions {
 
   /// Layers available in the current composition for Audio / Layer signal sources.
   final List<MacroLayerChoice> Function()? layerChoices;
+
+  /// Custom QuickJS Inspector card UI for an effect (sidecar `.ui.js` or co-located `renderCard`), or null.
+  final CardCustomUi? Function(String title, List<String> names)? cardCustomUi;
 }

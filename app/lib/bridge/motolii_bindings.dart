@@ -797,6 +797,74 @@ class MotoliiBindings {
         )
       >();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_card_ui_file(
+    ffi.Pointer<pkg_ffi.Utf8> effectPath,
+  ) {
+    return _motolii_card_ui_file(effectPath);
+  }
+
+  late final _motolii_card_ui_filePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+        >
+      >('motolii_card_ui_file');
+  late final _motolii_card_ui_file = _motolii_card_ui_filePtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+      >();
+
+  ffi.Pointer<pkg_ffi.Utf8> motolii_card_ui_render(
+    ffi.Pointer<pkg_ffi.Utf8> uiFile,
+    ffi.Pointer<pkg_ffi.Utf8> ctxJson,
+  ) {
+    return _motolii_card_ui_render(uiFile, ctxJson);
+  }
+
+  late final _motolii_card_ui_renderPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+          )
+        >
+      >('motolii_card_ui_render');
+  late final _motolii_card_ui_render = _motolii_card_ui_renderPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+        )
+      >();
+
+  ffi.Pointer<pkg_ffi.Utf8> motolii_card_ui_action(
+    ffi.Pointer<pkg_ffi.Utf8> uiFile,
+    ffi.Pointer<pkg_ffi.Utf8> actionJson,
+    ffi.Pointer<pkg_ffi.Utf8> ctxJson,
+  ) {
+    return _motolii_card_ui_action(uiFile, actionJson, ctxJson);
+  }
+
+  late final _motolii_card_ui_actionPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+          )
+        >
+      >('motolii_card_ui_action');
+  late final _motolii_card_ui_action = _motolii_card_ui_actionPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+        )
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_font_tags(ffi.Pointer<pkg_ffi.Utf8> path) {
     return _motolii_font_tags(path);
   }

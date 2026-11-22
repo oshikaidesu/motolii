@@ -64,6 +64,17 @@ class _ToolHeader extends StatelessWidget {
           name,
           leading: ToolSticker(name),
           trailing: [
+            if (name != 'Tools')
+              if (panelTool(ws, name) case final tool?
+                  when tool.glyph == null) ...[
+                Chip(
+                  key: ValueKey('tool:dock:$name'),
+                  label: 'Tab',
+                  dot: tool.tone ?? WindowTokens.accent,
+                  onTap: () => ws.openDockTab(tool),
+                ),
+                SizedBox(width: WindowTokens.gap),
+              ],
             if (pinned)
               Chip(
                 label: wide ? 'Pinned · Follow' : 'Pinned',

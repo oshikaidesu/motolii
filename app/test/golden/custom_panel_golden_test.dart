@@ -1,22 +1,44 @@
-// Golden contact sheet showing the two bundled JS Custom Panels (`Stagger` and
-// `Quick Rig`) rendered natively with PanelTreeView in Motolii's skin.
+// Golden contact sheet showing BOTH tracks built on the shared PanelTreeView core:
+// Track A (Custom Docking Tabs): `Stagger` and `Quick Rig`
+// Track B (Inspector Effect Custom Card): `Diagonal Blur` with its `.ui.js` sidecar
+import 'dart:convert';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
+import 'package:motolii/inspector/inspected_layer.dart';
+import 'package:motolii/inspector/inspector_edits.dart';
+import 'package:motolii/inspector/inspector_host.dart';
+import 'package:motolii/inspector/inspector_snapshot.dart';
+import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/values_card.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/custom_ui/panel_node.dart';
+import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 import 'package:motolii/widgets/panel_header.dart';
-import 'package:motolii/workspace/tool_panel/custom_panel/panel_node.dart';
-import 'package:motolii/workspace/tool_panel/custom_panel/panel_renderer.dart';
 
 import '../main_tests_only.dart';
+
+const _diagBlur = '''
+struct Params {
+  /// @label(Width) @ui(bar) @range(0, 1) @default(0.35)
+  js_diagonal_blur_width: f32,
+  /// @label(Angle) @ui(bar) @range(-1, 1) @default(0.25)
+  js_diagonal_blur_angle: f32,
+  /// @label(Quality) @enum(Low, Mid, High, Best) @default(2)
+  js_diagonal_blur_quality: u32,
+}
+''';
 
 void main() {
   if (skipUnlessEveryTest()) return;
 
   testWidgets('custom panels contact sheet', (tester) async {
-    const w = 640.0;
+    const w = 960.0;
     const h = 360.0;
     tester.view.physicalSize = const Size(w, h);
     tester.view.devicePixelRatio = 1;
@@ -136,7 +158,7 @@ void main() {
       ],
     })!;
 
-    Widget card(String title, Color tone, PanelNode root) => Expanded(
+    Widget tabCard(String title, Color tone, PanelNode root) => Expanded(
       child: Container(
         decoration: BoxDecoration(
           color: Grey.g10,
@@ -161,6 +183,7 @@ void main() {
                   style: TextStyles.micro(WindowTokens.onAccent),
                 ),
               ),
+              trailing: [Text('Tab', style: TextStyles.micro(Grey.g56))],
             ),
             Expanded(
               child: Padding(
@@ -168,6 +191,123 @@ void main() {
                 child: PanelTreeView(
                   node: root,
                   onAction: (_, _, {live = false}) {},
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final live =
+        ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((
+          const {},
+          const {},
+        ));
+    addTearDown(live.dispose);
+    final blurDecl = CardDeclaration(
+      'Diagonal Blur',
+      _diagBlur,
+      toneOf: () => InspectorSkin.toneBlend,
+    );
+
+    final effectCard = Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Grey.g10,
+          borderRadius: Shape.round(8),
+          border: Border.all(color: Grey.g20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PanelHeader(
+              'Inspector · .ui.js Card',
+              trailing: [Text('Effect', style: TextStyles.micro(Grey.g56))],
+            ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(WindowTokens.gap),
+                child: InspectorHost(
+                  layer: InspectedLayer(
+                    kind: Kind.shape,
+                    title: 'Sample',
+                    cards: [blurDecl],
+                    movable: const ['Diagonal Blur'],
+                  ),
+                  snapshot: const InspectorSnapshot(
+                    numbers: {
+                      'v_js_diagonal_blur_width': 0.55,
+                      'v_js_diagonal_blur_angle': -0.25,
+                      'v_js_diagonal_blur_quality': 2,
+                    },
+                  ),
+                  actions: CardActions(
+                    cardCustomUi: (title, names) => title == 'Diagonal Blur'
+                        ? (
+                            uiFile: 'Diagonal Blur.ui.js',
+                            render: (_) => jsonEncode({
+                              'ok': true,
+                              'ui': {
+                                'hide': ['width', 'angle'],
+                                'ui': {
+                                  'type': 'column',
+                                  'children': [
+                                    {
+                                      'type': 'xy',
+                                      'id': 'vector',
+                                      'label': 'Blur Vector',
+                                      'x': 0.42,
+                                      'y': -0.42,
+                                      'min': -1,
+                                      'max': 1,
+                                    },
+                                    {
+                                      'type': 'row',
+                                      'children': [
+                                        {
+                                          'type': 'button',
+                                          'id': 'h',
+                                          'label': 'Horiz',
+                                        },
+                                        {
+                                          'type': 'button',
+                                          'id': 'v',
+                                          'label': 'Vert',
+                                        },
+                                        {
+                                          'type': 'button',
+                                          'id': 'd',
+                                          'label': '45°',
+                                          'accent': true,
+                                        },
+                                        {
+                                          'type': 'button',
+                                          'id': 'o',
+                                          'label': 'Off',
+                                        },
+                                      ],
+                                    },
+                                  ],
+                                },
+                              },
+                            }),
+                            action: (_, _) => '{"ok":true,"result":{}}',
+                          )
+                        : null,
+                  ),
+                  edits: InspectorEdits(
+                    onValues: (_, {required live}) {},
+                    onDrop: () {},
+                    onKey: (_, _) {},
+                    onWords: (_, {required live}) => true,
+                    onAnimateAll: (_) {},
+                    together: (tells) => tells(),
+                    onRoute: (_) {},
+                    onAim: (_) {},
+                  ),
+                  live: live,
+                  child: ValuesCard(blurDecl),
                 ),
               ),
             ),
@@ -190,9 +330,11 @@ void main() {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                card('Stagger', InspectorSkin.toneLayout, stagger),
+                tabCard('Stagger', InspectorSkin.toneLayout, stagger),
                 const SizedBox(width: 12),
-                card('Quick Rig', InspectorSkin.tonePlace, quickRig),
+                tabCard('Quick Rig', InspectorSkin.tonePlace, quickRig),
+                const SizedBox(width: 12),
+                effectCard,
               ],
             ),
           ),

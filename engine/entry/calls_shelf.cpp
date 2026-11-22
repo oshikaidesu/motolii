@@ -165,3 +165,32 @@ const char* motolii_panel_action(const char* file, const char* action_json,
              : ("{\"ok\":false,\"error\":\"" + json_escape(err) + "\"}");
   return said.c_str();
 }
+
+const char* motolii_card_ui_file(const char* effect_path) {
+  thread_local std::string said;
+  said = panel_card_ui_file(effect_path ? effect_path : "");
+  return said.c_str();
+}
+
+const char* motolii_card_ui_render(const char* ui_file, const char* ctx_json) {
+  thread_local std::string said;
+  std::string err;
+  const std::string out = panel_eval_card_render(
+      ui_file ? ui_file : "", ctx_json ? ctx_json : "{}", &err);
+  said = err.empty() ? ("{\"ok\":true,\"ui\":" + out + "}")
+                     : ("{\"ok\":false,\"error\":\"" + json_escape(err) + "\"}");
+  return said.c_str();
+}
+
+const char* motolii_card_ui_action(const char* ui_file, const char* action_json,
+                                   const char* ctx_json) {
+  thread_local std::string said;
+  std::string err;
+  const std::string out = panel_eval_card_action(
+      ui_file ? ui_file : "", action_json ? action_json : "{}",
+      ctx_json ? ctx_json : "{}", &err);
+  said = err.empty()
+             ? ("{\"ok\":true,\"result\":" + out + "}")
+             : ("{\"ok\":false,\"error\":\"" + json_escape(err) + "\"}");
+  return said.c_str();
+}

@@ -83,11 +83,41 @@ class _PanesState extends State<Panes> {
   }
 
   (String, int)? _fronted;
+  (Pane, int)? _dockOpened;
+  final _dynamicPanes = <String, Pane>{};
+
   void _follow() {
     if (_ws!.fronted case final f? when f != _fronted) {
       // A pane has asked to be brought to the front.
       _fronted = f;
       _toFront(f.$1);
+    }
+    if (_ws!.dockOpened case final d? when d != _dockOpened) {
+      _dockOpened = d;
+      _openDynamicTab(d.$1);
+    }
+  }
+
+  void _openDynamicTab(Pane pane) {
+    _dynamicPanes[pane.name] = pane;
+    if (_layout.findDockingItem(pane.name) != null) {
+      _toFront(pane.name);
+      return;
+    }
+    final targetTabs =
+        _layout.findDockingTabsWithItem('Tool Panel') ??
+        _layout.findDockingTabsWithItem('Inspector');
+    final item = _item(pane, closable: true);
+    if (targetTabs != null) {
+      _layout.addItemOn(
+        newItem: item,
+        targetArea: targetTabs,
+        dropIndex: targetTabs.childrenCount,
+      );
+      _toFront(pane.name);
+    } else if (_layout.findDockingItem('Tool Panel') case final anchor?) {
+      _layout.addItemOn(newItem: item, targetArea: anchor, dropIndex: 1);
+      _toFront(pane.name);
     }
   }
 
@@ -112,7 +142,12 @@ class _PanesState extends State<Panes> {
         : DockingTabs([for (final p in here) _item(p)], size: size);
   }
 
-  DockingItem _item(Pane p, {double? size, double? weight}) {
+  DockingItem _item(
+    Pane p, {
+    double? size,
+    double? weight,
+    bool closable = false,
+  }) {
     final name = p.name;
     return DockingItem(
       id: name,
@@ -145,8 +180,8 @@ class _PanesState extends State<Panes> {
       weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
-      // Nothing can reopen a closed pane yet, so panes cannot be closed.
-      closable: false,
+      // Built-in panes cannot be closed; user custom tabs can be closed and reopened from Tool Panel.
+      closable: closable,
       maximizable: false,
     );
   }
@@ -244,8 +279,14 @@ class _Areas with AreaBuilderMixin {
     required dynamic id,
     required double? weight,
     required bool maximized,
-  }) => _panes._item(
-    _panes.widget.panes.firstWhere((p) => p.name == id),
-    weight: weight,
-  );
+  }) {
+    final dynamic = _panes._dynamicPanes[id];
+    if (dynamic != null) {
+      return _panes._item(dynamic, weight: weight, closable: true);
+    }
+    return _panes._item(
+      _panes.widget.panes.firstWhere((p) => p.name == id),
+      weight: weight,
+    );
+  }
 }

@@ -79,6 +79,7 @@ std::string js_exception_string(JSContext* cx, bool timed_out) {
 
 std::string eval_panel_call(const std::string& source,
                             const std::string& filename, const char* fn_name,
+                            const char* fallback_fn,
                             const std::string* action_json,
                             const std::string& ctx_json, std::string* error) {
   JSRuntime* rt = JS_NewRuntime();
@@ -114,6 +115,10 @@ std::string eval_panel_call(const std::string& source,
 
   JSValue global = JS_GetGlobalObject(cx);
   JSValue fn = JS_GetPropertyStr(cx, global, fn_name);
+  if (!JS_IsFunction(cx, fn) && fallback_fn != nullptr) {
+    JS_FreeValue(cx, fn);
+    fn = JS_GetPropertyStr(cx, global, fallback_fn);
+  }
   if (!JS_IsFunction(cx, fn)) {
     JS_FreeValue(cx, fn);
     JS_FreeValue(cx, global);
@@ -240,7 +245,8 @@ std::string panel_eval_render_source(const std::string& source,
                                      const std::string& filename,
                                      const std::string& ctx_json,
                                      std::string* error) {
-  return eval_panel_call(source, filename, "render", nullptr, ctx_json, error);
+  return eval_panel_call(source, filename, "render", nullptr, nullptr, ctx_json,
+                         error);
 }
 
 std::string panel_eval_action_source(const std::string& source,
@@ -248,8 +254,8 @@ std::string panel_eval_action_source(const std::string& source,
                                      const std::string& action_json,
                                      const std::string& ctx_json,
                                      std::string* error) {
-  return eval_panel_call(source, filename, "onAction", &action_json, ctx_json,
-                         error);
+  return eval_panel_call(source, filename, "onAction", nullptr, &action_json,
+                         ctx_json, error);
 }
 
 std::string panel_eval_render(const std::string& file_path,
@@ -271,6 +277,53 @@ std::string panel_eval_action(const std::string& file_path,
     return "";
   }
   return panel_eval_action_source(src, file_path, action_json, ctx_json, error);
+}
+
+std::string panel_card_ui_file(const std::string& effect_path) {
+  if (effect_path.empty()) return "";
+  std::error_code ec;
+  const std::filesystem::path p(effect_path);
+  const std::filesystem::path sidecar =
+      p.parent_path() / (p.stem().string() + ".ui.js");
+  if (std::filesystem::is_regular_file(sidecar, ec)) {
+    return sidecar.generic_string();
+  }
+  const std::string ext = p.extension().string();
+  if ((ext == ".js" || ext == ".mjs") &&
+      std::filesystem::is_regular_file(p, ec)) {
+    const std::string src = read_text(p);
+    if (src.find("function renderCard") != std::string::npos ||
+        src.find("renderCard =") != std::string::npos ||
+        src.find("renderCard=") != std::string::npos) {
+      return p.generic_string();
+    }
+  }
+  return "";
+}
+
+std::string panel_eval_card_render(const std::string& ui_file,
+                                   const std::string& ctx_json,
+                                   std::string* error) {
+  const std::string src = read_text(ui_file);
+  if (src.empty()) {
+    if (error) *error = "Card UI file is empty or unreadable: " + ui_file;
+    return "";
+  }
+  return eval_panel_call(src, ui_file, "renderCard", "render", nullptr,
+                         ctx_json, error);
+}
+
+std::string panel_eval_card_action(const std::string& ui_file,
+                                   const std::string& action_json,
+                                   const std::string& ctx_json,
+                                   std::string* error) {
+  const std::string src = read_text(ui_file);
+  if (src.empty()) {
+    if (error) *error = "Card UI file is empty or unreadable: " + ui_file;
+    return "";
+  }
+  return eval_panel_call(src, ui_file, "onCardAction", "onAction", &action_json,
+                         ctx_json, error);
 }
 
 }  // namespace motolii

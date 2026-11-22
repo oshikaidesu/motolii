@@ -155,6 +155,12 @@ const char* motolii_panels(void);
 const char* motolii_panel_render(const char* file, const char* ctx_json);
 const char* motolii_panel_action(const char* file, const char* action_json,
                                  const char* ctx_json);
+// Custom Inspector card UI for an effect (<effect>.ui.js sidecar or co-located
+// renderCard(ctx) in a .js/TSL effect).
+const char* motolii_card_ui_file(const char* effect_path);
+const char* motolii_card_ui_render(const char* ui_file, const char* ctx_json);
+const char* motolii_card_ui_action(const char* ui_file, const char* action_json,
+                                   const char* ctx_json);
 /* Adds a layer of the given kind (kind "" means whatever the file makes),
    starting at the preview's current time. Returns its number, or 0 if no layer
    was made. */

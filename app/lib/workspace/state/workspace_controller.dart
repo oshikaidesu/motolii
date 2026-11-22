@@ -240,8 +240,10 @@ class WorkspaceController extends ChangeNotifier {
   set panes(List<Pane> all) => layout.panes = all;
   List<Pane> get tools => layout.tools;
   void openToolPanel(String? name) => layout.openToolPanel(name);
+  void openDockTab(Pane pane) => layout.openDockTab(pane);
   void front(String pane) => layout.front(pane);
   (String, int)? get fronted => layout.fronted;
+  (Pane, int)? get dockOpened => layout.dockOpened;
   String get toolPanel => layout.toolPanel;
   void route(String to) => layout.route(to);
 

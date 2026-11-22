@@ -6,6 +6,7 @@ import 'package:motolii/inspector/card_meta_row.dart';
 import 'package:motolii/inspector/card_words.dart';
 import 'package:motolii/inspector/controls/inspector_number_field.dart';
 import 'package:motolii/inspector/controls/parameter_grid.dart';
+import 'package:motolii/inspector/custom_card_body.dart';
 import 'package:motolii/inspector/effect_drag_ghost.dart';
 import 'package:motolii/inspector/host_cards.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
@@ -33,9 +34,18 @@ class ValuesCard extends StatelessWidget {
         past = doc.flags['$k.past'] ?? false;
     // A card the window draws itself shows its picture first; its values the picture does not hold stay blocks.
     final host = hostCards[card.name];
+    final customUi = host != null
+        ? null
+        : doc.actions.cardCustomUi?.call(card.name, [
+            for (final p in card.params) p.id,
+          ]);
+    final customEval = customUi == null
+        ? null
+        : evaluateCardCustomUi(doc, card, customUi);
+    final hidden = {...?host?.drawn, ...?customEval?.hiddenFullIds};
     final heroes = [
           for (final p in card.params)
-            if (!p.advanced && !(host?.drawn.contains(p.id) ?? false)) p,
+            if (!p.advanced && !hidden.contains(p.id)) p,
         ],
         rest = [
           for (final p in card.params)
@@ -43,7 +53,7 @@ class ValuesCard extends StatelessWidget {
         ],
         folded = [
           for (final p in rest)
-            if (!(host?.drawn.contains(p.id) ?? false)) p,
+            if (!hidden.contains(p.id)) p,
         ];
     // The main params show first. The advanced ones are folded under a row named for what they are.
     // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack
@@ -181,6 +191,15 @@ class ValuesCard extends StatelessWidget {
           fieldKey: ValueKey('card-meta-tag:${card.name}'),
         ),
         ?host?.body(card),
+        if (customUi != null && customEval != null)
+          CustomCardBody(
+            doc: doc,
+            card: card,
+            ui: customUi,
+            result: customEval.result,
+            ctxJson: customEval.ctxJson,
+            names: customEval.names,
+          ),
         if (heroes.isNotEmpty) ParameterGrid(heroes),
         // The fold row shows only when something sits under it: the card's own
         // fold widget, or folded values the body does not draw itself. A card

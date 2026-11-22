@@ -66,6 +66,15 @@ class PanelLayout {
   /// The panel last brought to the front, with a count that goes up every time, so that fronting the same panel again is heard.
   (String, int)? fronted;
 
+  /// A custom tool pane requested to open as an independent closable docking tab.
+  (Pane, int)? dockOpened;
+
+  /// Opens [pane] as an independent closable tab in the workspace docking layout (or fronts it if already open).
+  void openDockTab(Pane pane) {
+    dockOpened = (pane, (dockOpened?.$2 ?? 0) + 1);
+    _onFronted();
+  }
+
   /// The tool the tool panel shows: the one opened by hand, else 'Tools'.
   String get toolPanel => toolPanelManual ?? 'Tools';
 

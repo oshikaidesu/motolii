@@ -38,6 +38,25 @@ std::string panel_eval_action(const std::string& file_path,
                               const std::string& ctx_json,
                               std::string* error);
 
+// Resolves the custom Inspector card UI script for `effect_path`:
+// 1. Sidecar `<stem>.ui.js` beside `effect_path` (works for .wgsl/.fs/.js).
+// 2. Co-located `effect_path` itself when it is `.js`/`.mjs` defining
+//    `renderCard(`.
+// Returns empty string when the effect uses the default auto-generated card.
+std::string panel_card_ui_file(const std::string& effect_path);
+
+// Evaluates `renderCard(ctx)` (falling back to `render(ctx)`) for an effect's
+// custom Inspector card body.
+std::string panel_eval_card_render(const std::string& ui_file,
+                                   const std::string& ctx_json,
+                                   std::string* error);
+
+// Evaluates `onCardAction(action, ctx)` (falling back to `onAction`).
+std::string panel_eval_card_action(const std::string& ui_file,
+                                   const std::string& action_json,
+                                   const std::string& ctx_json,
+                                   std::string* error);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_QUICKJS_PANEL_SCRIPT_H_

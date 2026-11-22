@@ -20,6 +20,8 @@ import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
 import 'package:motolii/workspace/inspector_feed/relation_stack.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show cardCustomUiOf;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/inspector/inspector_actions.dart';
 import 'package:motolii/workspace/state/inspector/inspector_reads.dart';
@@ -334,6 +336,9 @@ class _InspectorPanelState extends State<InspectorPane> {
                           layerWord(ws, other.id, 'kind') == 'video',
                     ),
               ],
+        cardCustomUi: l == null
+            ? null
+            : (title, names) => cardCustomUiOf(ws, l.id, title, names),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(

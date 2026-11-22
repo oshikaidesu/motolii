@@ -4,9 +4,17 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
+import 'package:motolii/inspector/inspected_layer.dart';
+import 'package:motolii/inspector/inspector_edits.dart';
+import 'package:motolii/inspector/inspector_host.dart';
+import 'package:motolii/inspector/inspector_panel.dart';
+import 'package:motolii/inspector/inspector_snapshot.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/custom_panel/panel_node.dart';
-import 'package:motolii/workspace/tool_panel/custom_panel/panel_renderer.dart';
+import 'package:motolii/widgets/custom_ui/panel_node.dart';
+import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 
 void main() {
   test('parses panel list, render tree, and action ops cleanly', () {
@@ -163,6 +171,131 @@ void main() {
       expect(fired[3], ('fill:#FF5A79', '#FF5A79', false));
       expect(fired[4].$1, 'anchor');
       expect(fired[4].$2, {'x': -1.0, 'y': -1.0});
+    },
+  );
+
+  testWidgets(
+    'Inspector ValuesCard mounts sidecar CustomCardBody, hides declared params, and writes back to prefixed doc ids',
+    (tester) async {
+      final writes = <Map<String, double>>[];
+      const diagBlur = '''
+struct Params {
+  /// @label(Width) @ui(bar) @range(0, 1) @default(0.25)
+  js_diagonal_blur_width: f32,
+  /// @label(Angle) @ui(bar) @range(-1, 1) @default(0)
+  js_diagonal_blur_angle: f32,
+  /// @label(Quality) @enum(Low, Mid, High, Best) @default(2)
+  js_diagonal_blur_quality: u32,
+}
+''';
+      final live =
+          ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((
+            const {},
+            const {},
+          ));
+      addTearDown(live.dispose);
+      tester.view.physicalSize = const Size(360, 500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        WidgetsApp(
+          color: Grey.g07,
+          debugShowCheckedModeBanner: false,
+          pageRouteBuilder: <T>(settings, builder) =>
+              PageRouteBuilder<T>(pageBuilder: (c, _, _) => builder(c)),
+          home: InspectorHost(
+            layer: InspectedLayer(
+              kind: Kind.shape,
+              title: 'Shape',
+              cards: [
+                CardDeclaration(
+                  'Diagonal Blur',
+                  diagBlur,
+                  toneOf: () => Grey.g76,
+                ),
+              ],
+            ),
+            snapshot: const InspectorSnapshot(
+              numbers: {
+                'v_js_diagonal_blur_width': 0.25,
+                'v_js_diagonal_blur_angle': 0.0,
+                'v_js_diagonal_blur_quality': 2,
+              },
+            ),
+            actions: CardActions(
+              cardCustomUi: (title, names) => title == 'Diagonal Blur'
+                  ? (
+                      uiFile: 'Diagonal Blur.ui.js',
+                      render: (_) => jsonEncode({
+                        'ok': true,
+                        'ui': {
+                          'hide': ['width', 'angle'],
+                          'ui': {
+                            'type': 'column',
+                            'children': [
+                              {
+                                'type': 'xy',
+                                'id': 'vector',
+                                'label': 'Blur Vector',
+                                'x': 0.25,
+                                'y': 0.0,
+                                'min': -1,
+                                'max': 1,
+                              },
+                              {
+                                'type': 'button',
+                                'id': 'preset:v',
+                                'label': 'Vert',
+                              },
+                            ],
+                          },
+                        },
+                      }),
+                      action: (actJson, _) {
+                        final act = jsonDecode(actJson) as Map;
+                        if (act['id'] == 'preset:v') {
+                          return jsonEncode({
+                            'ok': true,
+                            'result': {
+                              'set': {'width': 0.4, 'angle': 0.5},
+                            },
+                          });
+                        }
+                        return '{"ok":true,"result":{}}';
+                      },
+                    )
+                  : null,
+            ),
+            edits: InspectorEdits(
+              onValues: (changed, {required live}) =>
+                  writes.add(Map.of(changed)),
+              onDrop: () {},
+              onKey: (_, _) {},
+              onWords: (_, {required live}) => true,
+              onAnimateAll: (_) {},
+              together: (tells) => tells(),
+              onRoute: (_) {},
+              onAim: (_) {},
+            ),
+            live: live,
+            child: const InspectorPanel(width: 360, height: 500),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Custom UI renders Blur Vector pad + Vert preset, hides raw Width/Angle, keeps Quality.
+      expect(find.text('Blur Vector'), findsOneWidget);
+      expect(find.text('Quality'), findsOneWidget);
+      expect(find.text('Width'), findsNothing);
+      expect(find.text('Angle'), findsNothing);
+
+      // Clicking Vert preset writes back to real prefixed doc params.
+      await tester.tap(find.byKey(const ValueKey('panel:btn:preset:v')));
+      await tester.pumpAndSettle();
+      expect(writes.last['v_js_diagonal_blur_width'], 0.4);
+      expect(writes.last['v_js_diagonal_blur_angle'], 0.5);
     },
   );
 }

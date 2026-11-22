@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include "shelf/shelf_folders.h"
+
 namespace motolii {
 namespace {
 
@@ -70,6 +72,28 @@ TEST(PanelScript, ListsBundledShelfPanels) {
   const std::string listed = panel_list();
   EXPECT_NE(listed.find("Stagger\t"), std::string::npos) << listed;
   EXPECT_NE(listed.find("Quick Rig\t"), std::string::npos) << listed;
+}
+
+TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
+  const auto fx =
+      doc_folders("effects").front() / "blur" / "Diagonal Blur.fs";
+  const std::string ui = panel_card_ui_file(fx.generic_string());
+  ASSERT_FALSE(ui.empty());
+  EXPECT_NE(ui.find("Diagonal Blur.ui.js"), std::string::npos) << ui;
+
+  std::string err;
+  const std::string rendered = panel_eval_card_render(
+      ui, R"JSON({"params":{"width":0.5,"angle":0}})JSON", &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(rendered.find("\"hide\":[\"width\",\"angle\"]"), std::string::npos)
+      << rendered;
+  EXPECT_NE(rendered.find("\"type\":\"xy\""), std::string::npos) << rendered;
+
+  const std::string act = panel_eval_card_action(
+      ui, R"JSON({"id":"vector","value":{"x":0,"y":0.5}})JSON", "{}", &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(act.find("\"width\":0.5"), std::string::npos) << act;
+  EXPECT_NE(act.find("\"angle\":0.5"), std::string::npos) << act;
 }
 
 }  // namespace

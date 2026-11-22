@@ -188,6 +188,24 @@ extension MotoliiShelves on Motolii {
         ctxJson,
       ], (s) => bindings.motolii_panel_action(s[0], s[1], s[2]).toDartString());
 
+  /// Resolves the custom Inspector card UI script (`.ui.js` sidecar or co-located `.js`) for [effectPath], or ''.
+  String cardUiFile(String effectPath) => withStrings([
+    effectPath,
+  ], (s) => bindings.motolii_card_ui_file(s[0]).toDartString());
+
+  /// Evaluates `renderCard(ctx)` in [uiFile], returning a JSON envelope.
+  String cardUiRender(String uiFile, String ctxJson) => withStrings([
+    uiFile,
+    ctxJson,
+  ], (s) => bindings.motolii_card_ui_render(s[0], s[1]).toDartString());
+
+  /// Evaluates `onCardAction(action, ctx)` in [uiFile], returning a JSON envelope.
+  String cardUiAction(String uiFile, String actionJson, String ctxJson) =>
+      withStrings(
+        [uiFile, actionJson, ctxJson],
+        (s) => bindings.motolii_card_ui_action(s[0], s[1], s[2]).toDartString(),
+      );
+
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(
     [path],
