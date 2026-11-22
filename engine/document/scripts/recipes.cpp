@@ -217,6 +217,8 @@ bool doc_files_moved(Doc& d) {
 }
 
 std::string doc_folder_names(const char* folder, const char* extension) {
+  static std::mutex lock;
+  std::lock_guard<std::mutex> hold(lock);
   struct Seen {
     std::string all;
     int seen = -1;
@@ -270,6 +272,8 @@ std::string doc_folder_names(const char* folder, const char* extension) {
 }
 
 std::string doc_aviutl_names() {
+  static std::mutex lock;
+  std::lock_guard<std::mutex> hold(lock);
   static std::string all;
   static int seen = -1;
   // Cache of each file's output lines, with the modification time they were
@@ -347,6 +351,8 @@ std::string doc_aviutl_names() {
 }
 
 std::string doc_ae_plugin_names() {
+  static std::mutex lock;
+  std::lock_guard<std::mutex> hold(lock);
   static std::string all;
   static int seen = -1;
   if (!doc_folder_moved(seen)) return all;

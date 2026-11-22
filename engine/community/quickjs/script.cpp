@@ -37,7 +37,7 @@ static std::vector<std::string> split(const std::string& s, char by) {
 }
 
 std::string fx_entry_id(const std::string& entry) {
-  if (entry.size() <= 7 || entry[6] != ':') return "";
+  if (entry.size() < 7 || entry[6] != ':') return "";
   for (int i = 0; i < 6; ++i) {
     const char c = entry[i];
     if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return "";

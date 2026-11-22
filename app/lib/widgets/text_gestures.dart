@@ -59,6 +59,7 @@ class TypedField extends StatefulWidget {
     this.hold,
     this.onPick,
     this.styled,
+    this.focusNode,
   });
   final String text;
   final TextStyle style;
@@ -85,6 +86,9 @@ class TypedField extends StatefulWidget {
   /// Sets the text in spans of their own styles, as a rich text box does; the text typed stays plain.
   /// With it, Return starts a new line and only leaving the field reports the text.
   final InlineSpan Function(String text, TextStyle style)? styled;
+
+  /// Optional external focus node so enclosing paper/container regions can focus the field.
+  final FocusNode? focusNode;
   @override
   State<TypedField> createState() => TypedFieldState();
 }
@@ -92,7 +96,8 @@ class TypedField extends StatefulWidget {
 class TypedFieldState extends State<TypedField> {
   late final TextEditingController _c = _Styled(this, widget.text)
     ..addListener(() => _f.hasFocus ? widget.onPick?.call(_c.value) : null);
-  late final FocusNode _f = FocusNode()..addListener(_moved);
+  late final FocusNode _f = (widget.focusNode ?? FocusNode())
+    ..addListener(_moved);
   // The text when the user entered the field. Null while the field is not focused.
   String? _was;
   bool _took = false;
@@ -101,6 +106,11 @@ class TypedFieldState extends State<TypedField> {
 
   /// Replaces the text. For the caller to use while the field stays shown.
   void put(String text) => _c.text = text;
+
+  /// Moves keyboard focus into this field.
+  void focus() {
+    if (!_f.hasFocus) _f.requestFocus();
+  }
 
   /// Whether the field has focus.
   bool get focused => _f.hasFocus;
@@ -137,7 +147,8 @@ class TypedFieldState extends State<TypedField> {
 
   @override
   void dispose() {
-    _f.dispose();
+    _f.removeListener(_moved);
+    if (widget.focusNode == null) _f.dispose();
     _c.dispose();
     super.dispose();
   }

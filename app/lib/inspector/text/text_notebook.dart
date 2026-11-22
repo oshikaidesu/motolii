@@ -62,9 +62,16 @@ class TextNotebook extends StatefulWidget {
 class _TextNotebookState extends State<TextNotebook> {
   static const _wrapCycle = [0, 2, 1, 3, 4];
 
+  final _fieldFocus = FocusNode();
   bool _draggingMargin = false;
   double _dragStartX = 0;
   double _dragStartWrap = 12.0;
+
+  @override
+  void dispose() {
+    _fieldFocus.dispose();
+    super.dispose();
+  }
 
   ({double min, double max, double def}) _wrapBounds() {
     final p = widget.layer['wrap_at'];
@@ -203,34 +210,42 @@ class _TextNotebookState extends State<TextNotebook> {
                       ),
                     ),
                     // Real editable horizontal text resting directly on the ruled lines.
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        Shape.s(10),
-                        Shape.s(6),
-                        hasMargin ? rightPad : Shape.s(10),
-                        Shape.s(7),
-                      ),
-                      child: ClipRect(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: notebookRowStep * 2,
-                            maxHeight: notebookRowStep * 4,
-                          ),
-                          child: TypedField(
-                            key: const ValueKey('text:box'),
-                            text: widget.text,
-                            standing: true,
-                            escapes: true,
-                            align: layer.containsKey('align')
-                                ? textAlign
-                                : TextAlign.start,
-                            style: widget.base,
-                            cursor: Grey.g95,
-                            backgroundCursor: Grey.g20,
-                            selection: Role.selected.withValues(alpha: .4),
-                            styled: widget.styled,
-                            onDone: widget.onDone,
-                            onPick: widget.onPick,
+                    // Tapping anywhere in the padded paper area focuses the field.
+                    GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        if (!_fieldFocus.hasFocus) _fieldFocus.requestFocus();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          Shape.s(10),
+                          Shape.s(6),
+                          hasMargin ? rightPad : Shape.s(10),
+                          Shape.s(7),
+                        ),
+                        child: ClipRect(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: notebookRowStep * 2,
+                              maxHeight: notebookRowStep * 4,
+                            ),
+                            child: TypedField(
+                              key: const ValueKey('text:box'),
+                              focusNode: _fieldFocus,
+                              text: widget.text,
+                              standing: true,
+                              escapes: true,
+                              align: layer.containsKey('align')
+                                  ? textAlign
+                                  : TextAlign.start,
+                              style: widget.base,
+                              cursor: Grey.g95,
+                              backgroundCursor: Grey.g20,
+                              selection: Role.selected.withValues(alpha: .4),
+                              styled: widget.styled,
+                              onDone: widget.onDone,
+                              onPick: widget.onPick,
+                            ),
                           ),
                         ),
                       ),

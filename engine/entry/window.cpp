@@ -126,18 +126,25 @@ void* front_of(Live* l) {
 }
 
 int live_is(Motolii* m) {
-  return m->live || (m->live = live_open(*m->s)) ? 1 : 0;
+  if (m->live) return 1;
+  Live* opened = live_open(*m->s);
+  if (!opened) return 0;
+  std::lock_guard<std::mutex> hold(m->live_lock);
+  m->live = opened;
+  return 1;
 }
 
 }  // namespace motolii
 
 // Returns the last finished frame of the stage, or nullptr.
 void* motolii_front(Motolii* m) {
+  std::lock_guard<std::mutex> hold(m->live_lock);
   return m->live ? front_of(m->live) : nullptr;
 }
 // Returns how many frames of the stage have been finished. Callable from any
 // thread.
 unsigned long long motolii_frames(Motolii* m) {
+  std::lock_guard<std::mutex> hold(m->live_lock);
   return m->live ? m->live->frames.load() : 0;
 }
 // Sets the listener called, with the argument with, whenever a frame is
@@ -170,10 +177,16 @@ int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
     return s.desk.w = 0, m->render_thread.changed = true, 0;
   // Make the output again at its new size.
   if (!m->live->desk || s.desk.w != (uint32_t)w || s.desk.h != (uint32_t)h) {
-    Live* was = m->live->desk;
-    m->live->desk = nullptr;
+    Live* was = nullptr;
+    {
+      std::lock_guard<std::mutex> hold(m->live_lock);
+      was = m->live->desk;
+      m->live->desk = nullptr;
+    }
     live_close(s, was);
-    m->live->desk = live_open(s, (uint32_t)w, (uint32_t)h);
+    Live* opened = live_open(s, (uint32_t)w, (uint32_t)h);
+    std::lock_guard<std::mutex> hold(m->live_lock);
+    m->live->desk = opened;
   }
   s.desk.w = (uint32_t)w, s.desk.h = (uint32_t)h, s.desk.x = x, s.desk.y = y,
   s.desk.scale = scale, s.desk.point = point;
@@ -196,10 +209,12 @@ int view_camera_is(Motolii* m, const char* word) {
 
 // Returns the last finished frame of the preview, or nullptr.
 void* motolii_desk_front(Motolii* m) {
+  std::lock_guard<std::mutex> hold(m->live_lock);
   return m->live && m->live->desk ? front_of(m->live->desk) : nullptr;
 }
 // Returns how many frames of the preview have been finished.
 unsigned long long motolii_desk_frames(Motolii* m) {
+  std::lock_guard<std::mutex> hold(m->live_lock);
   return m->live && m->live->desk ? m->live->desk->frames.load() : 0;
 }
 // Sets whether playback loops and returns the new state. A negative on only

@@ -48,23 +48,25 @@ class PathsBody extends StatefulWidget {
   };
 
   // Default value set when adding an operator so its effect is visible immediately.
+  // Kept inside engine/document/values.h ranges (normalized shape units for
+  // offset/zigzag; inspector display percentages for share params like round).
   static const _defaults = <String, double>{
-    'round': 0.15,
-    'bloat': 0.3,
-    'offset': 3.0,
-    'zigzag': 2.0,
+    'round': 15.0,
+    'bloat': 0.25,
+    'offset': 0.05,
+    'zigzag': 0.04,
     'zigzag_ridges': 8.0,
-    'zigzag_smooth': 0.5,
-    'rough': 0.1,
-    'rough_detail': 0.1,
-    'resample': 100.0,
-    'voxel': 0.05,
-    'morph': 0.5,
+    'zigzag_smooth': 0.0,
+    'rough': 5.0,
+    'rough_detail': 5.0,
+    'resample': 24.0,
+    'voxel': 5.0,
+    'morph': 50.0,
     'morph_to': 1.0,
     'morph_steps': 10.0,
     'trail': 1.0,
     'trail_length': 1.0,
-    'trim': 0.8,
+    'trim': 80.0,
     'trim_begin': 0.0,
     'trim_offset': 0.0,
   };
@@ -160,7 +162,12 @@ class _PathsBodyState extends State<PathsBody> {
     doc.beginGesture();
     for (final x in [entry, ..._subsOf(entry)]) {
       final (_, base) = splitPathOpId(x);
-      doc.set('v_$x', PathsBody._defaults[base] ?? 1.0);
+      final raw = PathsBody._defaults[base] ?? 1.0;
+      final p = _params[base];
+      final val = (p != null && p.min != null && p.max != null)
+          ? raw.clamp(p.min!, p.max!).toDouble()
+          : raw;
+      doc.set('v_$x', val);
     }
     doc.str('v_path_ops', next.join(' '));
     doc.endGesture();

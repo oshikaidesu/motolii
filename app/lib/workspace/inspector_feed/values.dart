@@ -16,13 +16,18 @@ Map<String, bool> layerFlags(WorkspaceController ws, int? id) => {
 };
 
 bool writeFlags(WorkspaceController ws, int? id, Map<String, bool> changed) {
-  // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (effect_code.dart).
+  // View-only inspector flags (card folds, params drawer, range override,
+  // script code fold, transform link, OpenType fold, and macro panel modes).
   bool looked(String k) =>
       k.endsWith('.open') ||
       k.endsWith('.adv') ||
       k.endsWith('.code') ||
       k.endsWith('.past') ||
-      k.startsWith('fold.');
+      k.endsWith('.params') ||
+      k.startsWith('fold.') ||
+      k.startsWith('macros.') ||
+      k == 'transform.link' ||
+      k == 'text.ot';
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }

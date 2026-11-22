@@ -60,7 +60,7 @@ inline const DocShown doc_shown[] = {
     // chosen).
     {"gradient_angle", "angle", "°", "Angle", -180, 180, "Gradient"},
     {"points", "count", "", "Points", 3, 32, nullptr},
-    {"inner", "share", "%", "Inner radius", 0.05, 1, nullptr},
+    {"inner", "share", "%", "Inner radius", 0, 1, nullptr},
     {"round", "share", "%", "Round", 0, 0.5, nullptr},
     {"trim", "share", "%", "Trim end", 0, 1, nullptr},
     {"trim_begin", "share", "%", "Trim start", 0, 1, nullptr},

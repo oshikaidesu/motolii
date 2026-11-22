@@ -5,6 +5,7 @@
 // Each part of its state is a struct of its own, defined in the header of the
 // code that owns it.
 #include <atomic>
+#include <mutex>
 #include <string>
 
 #include "entry/calls_later.h"
@@ -34,6 +35,8 @@ struct Motolii {
   motolii::Stage* s = nullptr;
   motolii::Doc* d = nullptr;
   motolii::Live* live = nullptr;
+  // Serializes motolii_front/frames reads (raster thread) against live_close.
+  std::mutex live_lock;
   // Why the engine refused the last call, and the text the last listing call
   // answered with.
   std::string error, listed;

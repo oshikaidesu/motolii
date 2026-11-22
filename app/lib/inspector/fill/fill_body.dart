@@ -86,7 +86,8 @@ class FillBody extends StatelessWidget {
       listenable: Listenable.merge(listenables),
       builder: (context, _) {
         final fillWord = doc.strings['v_fill'] ?? '';
-        final mediaWord = doc.strings['v_fill_media'] ?? '';
+        final rawMedia = doc.strings['v_fill_media'] ?? '';
+        final mediaWord = rawMedia == '—' ? '' : rawMedia;
         final colors = parseFillColors(fillWord);
         final gradVal = (doc.get('v_gradient') ?? 0).round();
         final gradWord = gradP?.options.elementAtOrNull(gradVal)?.toLowerCase();

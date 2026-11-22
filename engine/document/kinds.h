@@ -75,7 +75,7 @@ inline const DocValue doc_values[] = {
     {"shape", "shape", 0, 0, false, "rect circle"},
     // Crop as a share of width/height. Implemented via Filament's scissor.
     {"points", "shape", 3, 360, false, nullptr},
-    {"inner", "shape", 0.01, 1, false, nullptr},
+    {"inner", "shape", 0, 1, false, nullptr},
     {"round", "shape text image", 0, 0.5, true, nullptr},
     {"crop_left", doc_visible_kinds, 0, 0.95, false, nullptr},
     {"crop_top", doc_visible_kinds, 0, 0.95, false, nullptr},

@@ -142,7 +142,7 @@ class HomeSidebar extends StatelessWidget {
                       ),
                       SizedBox(height: Shape.s(4)),
                       Text(
-                        '${docs.length} projects · ${homeBytes(bytes)}',
+                        '${docs.length} ${docs.length == 1 ? 'project' : 'projects'} · ${homeBytes(bytes)}',
                         style: TextStyles.micro(Grey.g63),
                       ),
                     ],

@@ -57,6 +57,13 @@ class ProjectReader {
 
   Motolii? get inside => _inside;
 
+  /// Clears the open engine reference before closing it so no widget reads freed native buffers.
+  void detach() {
+    _inside?.listener = null;
+    _inside = null;
+    stageTexture = null;
+  }
+
   void join(Motolii inside) {
     _inside = inside;
     inside.shaping; // Read once at opening: it decides how cards are built.

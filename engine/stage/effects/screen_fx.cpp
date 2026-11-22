@@ -355,4 +355,40 @@ void screen_effects(Stage& s, ScreenStack& st, const std::string& files,
   };
 }
 
+void screen_stack_off(Stage& s, ScreenStack& st) {
+  if (!s.engine) return;
+  for (auto& [key, fx] : st.built) {
+    if (!fx) continue;
+    if (fx->interop) interop::drop(s.engine, fx->interop), fx->interop = nullptr;
+    screen_targets(s, *fx, true);
+    if (fx->history) s.engine->destroy(fx->history), fx->history = nullptr;
+    for (RenderTarget* rt : fx->historyInto)
+      if (rt) s.engine->destroy(rt);
+    fx->historyInto.clear();
+    for (Texture* t : fx->imagesBuilt)
+      if (t) s.engine->destroy(t);
+    fx->imagesBuilt.clear();
+    for (ScreenFx::Sound& snd : fx->sounds)
+      if (snd.texture) s.engine->destroy(snd.texture), snd.texture = nullptr;
+    delete fx;
+  }
+  st.built.clear();
+  st.fx.clear();
+  st.steps.clear();
+  st.aviutl.clear();
+  st.aePlugins.clear();
+  if (st.copy) interop::drop(s.engine, st.copy), st.copy = nullptr;
+  if (st.target) s.engine->destroy(st.target), st.target = nullptr;
+  if (st.shot) s.engine->destroy(st.shot), st.shot = nullptr;
+  if (st.depth) s.engine->destroy(st.depth), st.depth = nullptr;
+  if (st.clear) s.engine->destroy(st.clear), st.clear = nullptr;
+  for (int k = 0; k < 2; ++k) {
+    if (st.betweenTarget[k])
+      s.engine->destroy(st.betweenTarget[k]), st.betweenTarget[k] = nullptr;
+    if (st.between[k]) s.engine->destroy(st.between[k]), st.between[k] = nullptr;
+  }
+  st.seen = nullptr;
+  st.files.clear();
+}
+
 }  // namespace motolii

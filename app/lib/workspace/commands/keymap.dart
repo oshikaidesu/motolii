@@ -263,9 +263,18 @@ class _Command extends Action<CommandIntent> {
         at?.findAncestorWidgetOfExactType<CodeField>() != null;
   }
 
+  static const _textEditingCommands = {
+    'edit.selectAll',
+    'edit.copy',
+    'edit.paste',
+    'edit.cut',
+  };
+
   @override
   bool isEnabled(CommandIntent intent) =>
-      commands.containsKey(intent.name) && !(intent.plain && _typing);
+      commands.containsKey(intent.name) &&
+      !(_typing &&
+          (intent.plain || _textEditingCommands.contains(intent.name)));
   @override
   Object? invoke(CommandIntent intent) {
     commands[intent.name]?.call();

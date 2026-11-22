@@ -191,6 +191,8 @@ void screen_parameters(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers,
 // Creates or destroys target textures. drop = destroy only. pw/ph = 0 → stage.
 void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t pw = 0,
                     uint32_t ph = 0);
+// Releases all GPU objects and compiled effects owned by `st`.
+void screen_stack_off(Stage& s, ScreenStack& st);
 
 }  // namespace motolii
 

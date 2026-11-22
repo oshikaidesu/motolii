@@ -162,6 +162,13 @@ void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision,
     s.engine->destroy(k.target), k.target = nullptr, s.engine->destroy(k.into),
                                  k.into = nullptr;
   if (k.shown) s.engine->destroy(k.shown), k.shown = nullptr;
+  // Empty projects render effortlessly; skip disk cache lookup so fresh
+  // timelines do not show stale cache dots from earlier empty sessions.
+  if (d.on_stage.shown.empty() && !s.over) {
+    k.state.clear();
+    stage_cache_tell(k);
+    return;
+  }
   // Frames already on disk for this key, from an earlier session or from before
   // an undo.
   for (int i = 0; i < (int)k.state.size(); ++i) {
@@ -174,8 +181,9 @@ void stage_cache_fresh(StageCache& k, Doc& d, Stage& s, long revision,
 bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate,
                      double budget_ms) {
   // The frames in view are the camera's, which are not drawn from the editing
-  // viewpoint.
-  if (d.working_camera.asked) return false;
+  // viewpoint. Empty projects need no disk cache.
+  if (d.working_camera.asked || (d.on_stage.shown.empty() && !s.over))
+    return false;
   double from = 0.0, to = 0.0;
   doc_work(d, &from, &to);
   int at = -1;

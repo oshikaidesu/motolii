@@ -4,6 +4,7 @@
 #include <cmath>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -17,7 +18,9 @@ namespace motolii {
 namespace {
 // Returns the text of the settings file. It is read again only after the window
 // reports that a file changed (see files_changed).
-const std::string& viewer_text(const std::string& file) {
+std::string viewer_text(const std::string& file) {
+  static std::mutex lock;
+  std::lock_guard<std::mutex> hold(lock);
   struct CachedSettings {
     int seen = -1;
     std::string text;

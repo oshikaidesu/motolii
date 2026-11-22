@@ -118,8 +118,12 @@ class WorkspaceState extends State<Workspace> {
 
   /// Opens another project in place of the current one.
   Future<void> open(String doc) {
-    ws.stageTexture = null;
+    _own?.cancel();
+    _own = null;
+    ws.detach();
     _session.close();
+    _overlayGen++;
+    _entry = _newEntry();
     return _join(doc);
   }
 
@@ -367,8 +371,12 @@ class WorkspaceState extends State<Workspace> {
     super.dispose();
   }
 
+  int _overlayGen = 0;
+
   /// The panes drag their tabs on an overlay. The window provides its own so this works under any host.
-  late final _entry = OverlayEntry(
+  late OverlayEntry _entry = _newEntry();
+
+  OverlayEntry _newEntry() => OverlayEntry(
     maintainState: true,
     builder: (context) => LayoutBuilder(
       builder: (context, box) {
@@ -400,7 +408,7 @@ class WorkspaceState extends State<Workspace> {
           color: WindowTokens.ground,
           child: Stack(
             children: [
-              Overlay(initialEntries: [_entry]),
+              Overlay(key: ValueKey(_overlayGen), initialEntries: [_entry]),
               if (home && documentPath != null && projectOpen(ws))
                 Positioned.fill(
                   child: Overlay(

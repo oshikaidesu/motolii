@@ -76,6 +76,8 @@ int matte(Stage& s, Mesh* m, std::vector<filament::math::mat4f> places,
 // may reuse its index. Does nothing when `slot` is -1 or already free. The slot
 // stays in s.mattes so other cuts' matte indices past it remain valid.
 void release_matte(Stage& s, int slot);
+// Rebinds the texture sampled by all shapes in a matte slot.
+void matte_picture(Stage& s, int slot, filament::Texture* frameTexture);
 
 // Cuts the layer with material instance `look` by matte number `matte`. The
 // layer is visible only inside the matte, or only outside it when `inside` is

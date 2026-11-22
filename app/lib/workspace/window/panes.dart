@@ -104,20 +104,70 @@ class _PanesState extends State<Panes> {
       _toFront(pane.name);
       return;
     }
-    final targetTabs =
+    final DropArea? target =
         _layout.findDockingTabsWithItem('Tool Panel') ??
+        _layout.findDockingItem('Tool Panel') ??
         _layout.findDockingTabsWithItem('Inspector');
-    final item = _item(pane, closable: true);
-    if (targetTabs != null) {
+    if (target == null) return;
+    _preservingWeights(() {
       _layout.addItemOn(
-        newItem: item,
-        targetArea: targetTabs,
-        dropIndex: targetTabs.childrenCount,
+        newItem: _item(pane, closable: true),
+        targetArea: target,
+        dropIndex: target is DockingTabs ? target.childrenCount : 1,
       );
-      _toFront(pane.name);
-    } else if (_layout.findDockingItem('Tool Panel') case final anchor?) {
-      _layout.addItemOn(newItem: item, targetArea: anchor, dropIndex: 1);
-      _toFront(pane.name);
+    });
+    _toFront(pane.name);
+  }
+
+  // docking 1.16.2's AddItem/RemoveItem drops weight on every rebuilt
+  // DockingRow/DockingColumn/DockingTabs, collapsing split ratios when adding
+  // or closing a dynamic tab. Snapshot weights by tree path and restore them.
+  bool _interceptClose(DockingItem item) {
+    _dynamicPanes.remove(item.id);
+    _preservingWeights(() => _layout.removeItem(item: item));
+    return false;
+  }
+
+  void _preservingWeights(void Function() mutate) {
+    final before = _layout.root;
+    final weights = <String, double>{};
+    if (before != null) _recordWeights(before, '', weights);
+    mutate();
+    final after = _layout.root;
+    if (after != null && weights.isNotEmpty) {
+      _restoreWeights(after, '', weights);
+      _layout.rebuild();
+    }
+  }
+
+  static void _recordWeights(
+    DockingArea area,
+    String path,
+    Map<String, double> out,
+  ) {
+    if (area.weight case final w?) out[path] = w;
+    if (area is DockingRow || area is DockingColumn) {
+      final parent = area as DockingParentArea;
+      for (var i = 0; i < parent.childrenCount; i++) {
+        _recordWeights(parent.childAt(i), '$path/$i', out);
+      }
+    }
+  }
+
+  static void _restoreWeights(
+    DockingArea area,
+    String path,
+    Map<String, double> weights,
+  ) {
+    if (weights[path] case final w?) {
+      // ignore: invalid_use_of_internal_member
+      area.updateWeight(w);
+    }
+    if (area is DockingRow || area is DockingColumn) {
+      final parent = area as DockingParentArea;
+      for (var i = 0; i < parent.childrenCount; i++) {
+        _restoreWeights(parent.childAt(i), '$path/$i', weights);
+      }
     }
   }
 
@@ -199,6 +249,7 @@ class _PanesState extends State<Panes> {
       ),
       child: Docking(
         layout: _layout,
+        itemCloseInterceptor: _interceptClose,
         maximizableItem: false,
         maximizableTab: false,
         maximizableTabsArea: false,

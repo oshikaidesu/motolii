@@ -155,10 +155,12 @@ void doc_settle(Doc& d) {
 }
 
 void doc_close_file(Doc& d) {
+  if (!d.file) return;
   if (d.act.write_ahead)
     sqlite3_exec(d.file, "pragma main.journal_mode = delete", nullptr, nullptr,
                  nullptr);
   sqlite3_close(d.file);
+  d.file = nullptr;
 }
 
 Doc* doc_open(Stage& s, const char* path) {

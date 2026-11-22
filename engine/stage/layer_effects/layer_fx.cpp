@@ -128,6 +128,7 @@ void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
                  h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
   // Recreate everything when the viewport size changes.
   if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {
+    st.seen = nullptr;
     for (Texture*& t : {std::ref(st.shot), std::ref(st.depth),
                         std::ref(st.between[0]), std::ref(st.between[1])})
       if (t) s.engine->destroy(t), t = nullptr;
@@ -313,6 +314,7 @@ ThingFx& thing_fx_built(Stage& s, ThingFx& e, const std::string& lay,
 
 void thing_fx_off(Stage& s, ThingFx& e) {
   thing_fx_into(s, e, s.scene);
+  screen_stack_off(s, e.st);
   if (e.sheet) take_off(s, e.sheet), delete e.sheet;
   if (e.solid) take_off(s, e.solid), delete e.solid;
   if (e.view) s.engine->destroy(e.view->getScene()), s.engine->destroy(e.view);

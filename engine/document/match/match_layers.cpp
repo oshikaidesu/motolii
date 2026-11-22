@@ -2,11 +2,14 @@
 
 #include <filament/Engine.h>
 #include <filament/LightManager.h>
+#include <filament/Material.h>
+#include <filament/MaterialInstance.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <utils/Entity.h>
 #include <utils/EntityManager.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <map>
 #include <string>
@@ -268,6 +271,74 @@ void match_build_layers(Rebuild& rebuild) {
     if (d.on_stage.shown.count(layer)) continue;
     build_layer(rebuild, layer, of);
   }
+}
+
+void doc_teardown(Doc& d) {
+  if (!d.stage || !d.stage->engine) return;
+  Stage& s = *d.stage;
+  s.aim.clear();
+  s.before.clear();
+  s.after.clear();
+  s.once.clear();
+  s.over = nullptr;
+  s.lastly = nullptr;
+  // Remove layers while their effect scenes (d.effects.layerFx) are still alive,
+  // since take_layer_off detaches entities from it->second.scene.
+  for (auto it = d.on_stage.shown.begin(); it != d.on_stage.shown.end();) {
+    for (Canvas2D* pic : it->second.sketchPics)
+      if (pic) canvas_off(s, pic);
+    it->second.sketchPics.clear();
+    for (SketchPaint& paint : it->second.sketchPaints) {
+      for (filament::MaterialInstance* mi : paint.looks)
+        if (mi) s.engine->destroy(mi);
+      paint.looks.clear();
+      if (paint.material) s.engine->destroy(paint.material), paint.material = nullptr;
+    }
+    it->second.sketchPaints.clear();
+    if (it->second.splatPlain) {
+      s.engine->destroy(it->second.splatPlain);
+      it->second.splatPlain = nullptr;
+    }
+    take_layer_off(d, s, it);
+    it = d.on_stage.shown.erase(it);
+  }
+  d.on_stage.cuts.clear();
+  for (auto& [id, e] : d.effects.layerFx) thing_fx_off(s, e);
+  d.effects.layerFx.clear();
+  d.effects.beforeOf.clear();
+  screen_stack_off(s, d.effects.screen);
+  for (auto& [id, r] : d.effects.reads) {
+    if (r.into) s.engine->destroy(r.into);
+    if (r.seen) s.engine->destroy(r.seen);
+    if (r.deep) s.engine->destroy(r.deep);
+  }
+  d.effects.reads.clear();
+  if (d.look.backdrop) {
+    canvas_off(s, d.look.backdrop);
+    d.look.backdrop = nullptr;
+  }
+  for (int i = 0; i < (int)s.mattes.size(); ++i) release_matte(s, i);
+  // Release any remaining non-default MaterialInstances before Engine::destroy,
+  // since FEngine::shutdown destroys mMaterials before leftover instances.
+  auto& rm = s.engine->getRenderableManager();
+  std::vector<filament::MaterialInstance*> extras;
+  for (const Stage::Renderable& r : s.renderables) {
+    if (const auto ri = rm.getInstance(r.thing)) {
+      const size_t n = rm.getPrimitiveCount(ri);
+      for (size_t k = 0; k < n; ++k) {
+        filament::MaterialInstance* mi = rm.getMaterialInstanceAt(ri, k);
+        if (!mi || mi == mi->getMaterial()->getDefaultInstance()) continue;
+        if (std::find(extras.begin(), extras.end(), mi) == extras.end())
+          extras.push_back(mi);
+      }
+    }
+    s.scene->remove(r.thing);
+    s.engine->destroy(r.thing);
+    if (r.many) s.engine->destroy(r.many);
+  }
+  s.renderables.clear();
+  s.cuts.clear();
+  for (filament::MaterialInstance* mi : extras) s.engine->destroy(mi);
 }
 
 }  // namespace motolii

@@ -30,7 +30,6 @@
 
 #include "document/document.h"
 #include "entry/crash_report.h"
-#include "gpu/screen_interop.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/marks.h"
@@ -447,13 +446,33 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   }
   for (auto& [who, h] : m->playback.heard) heard_off(h);
   if (m->display.beat) m->display.beat->stop();
-  if (m->d) doc_close_file(*m->d);
-  // Filament's own teardown, on the thread that built the engine (open_stage):
-  // Engine::destroy frees whatever the stage still holds, its job threads and
-  // GPU memory. Its shutdown destroys leftover materials before their leftover
-  // instances (FEngine::shutdown), which a debug build of Filament would stop
-  // at; that check is Filament's feature flag, turned off for the teardown.
+  if (m->playback.cache.next.valid()) delete m->playback.cache.next.get();
+  // Release every Live, StageCache, Doc layer/effect, and interop resource
+  // while the Engine is still alive so zero MaterialInstances remain when
+  // FEngine::shutdown runs (it frees mMaterials before leftover instances).
   if (m->s && m->s->engine) {
+    m->s->engine->flushAndWait();
+    m->window.shown = nullptr;
+    Live* live = nullptr;
+    Live* desk = nullptr;
+    {
+      std::lock_guard<std::mutex> hold(m->live_lock);
+      live = m->live;
+      m->live = nullptr;
+      if (live) desk = live->desk, live->desk = nullptr;
+    }
+    if (desk) live_close(*m->s, desk);
+    if (live) live_close(*m->s, live);
+    if (m->playback.cache.target)
+      m->s->engine->destroy(m->playback.cache.target),
+          m->playback.cache.target = nullptr;
+    if (m->playback.cache.into)
+      m->s->engine->destroy(m->playback.cache.into),
+          m->playback.cache.into = nullptr;
+    if (m->playback.cache.shown)
+      m->s->engine->destroy(m->playback.cache.shown),
+          m->playback.cache.shown = nullptr;
+    if (m->d) doc_teardown(*m->d);
     for (interop::Screen* sc : m->s->edge_screens)
       if (sc) interop::drop(m->s->engine, sc);
     if (m->s->place_copy) interop::drop(m->s->engine, m->s->place_copy);
@@ -461,10 +480,10 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       if (m->s->place_tone[k]) interop::drop(m->s->engine, m->s->place_tone[k]);
       if (m->s->place_fsr[k]) interop::drop(m->s->engine, m->s->place_fsr[k]);
     }
-    m->s->engine->setFeatureFlag(
-        "engine.debug.assert_destroy_material_before_material_instance", false);
-    close_stage(*m->s);
+    m->s->engine->flushAndWait();
   }
+  if (m->d) doc_close_file(*m->d);
+  if (m->s && m->s->engine) close_stage(*m->s);
 }
 
 }  // namespace motolii

@@ -26,6 +26,8 @@ long long doc_sketch_written(Doc& d, const std::string& file);
 // change at every time are applied separately by doc_evaluate. Returns false if
 // any layer could not be built; d.error then holds the reason.
 bool doc_match(Doc& d);
+// Releases all Filament/ThorVG stage objects owned by `d` before closing Stage.
+void doc_teardown(Doc& d);
 
 }  // namespace motolii
 

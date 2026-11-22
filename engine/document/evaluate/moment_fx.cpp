@@ -30,6 +30,21 @@ using filament::math::float2;
 using filament::math::float3;
 using filament::math::mat4f;
 
+namespace {
+// Rebinds any clipping matte sampling `layer`'s post-effect image after
+// thing_fx_textures recreates its textures in s.aim (before render).
+void refresh_matte_picture(Doc& d, int layer, Texture* pic) {
+  if (!pic) return;
+  std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
+  for (auto& [cutLayer, cut] : d.on_stage.cuts) {
+    if (cut.from == layer && cut.matte >= 0 && cut.tex != pic) {
+      matte_picture(*d.stage, cut.matte, pic);
+      cut.tex = pic;
+    }
+  }
+}
+}  // namespace
+
 bool doc_holds_fx(Doc& d, int layer) {
   if (doc_word(d, layer, "shape") != "null") return false;
   return doc_fx_files(doc_fx_steps(d, layer));
@@ -291,6 +306,7 @@ void doc_layers_fx(Doc& d) {
       else
         thing_fx_aim(s, e, box);
       thing_fx_textures(s, e.st, e.view);
+      refresh_matte_picture(d, layer, thing_fx_seen(e.st));
       if (e.look)
         e.look->setParameter(
             "image", thing_fx_seen(e.st),
@@ -429,6 +445,7 @@ void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {
   }
   thing_fx_face(s, e, place, half);
   thing_fx_textures(s, e.st, e.view);
+  refresh_matte_picture(d, layer, thing_fx_seen(e.st));
   // Hide the layer's own sheet.
   e.look->setParameter("place", mat4f::scaling(float3{0.f}));
   if (!e.solid || !e.solidLook) return;

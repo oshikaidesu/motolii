@@ -102,6 +102,9 @@ class WorkspaceController extends ChangeNotifier {
     void Function(int answer)? got,
   ]) => project.after(ticket, then, got);
 
+  /// Detaches the current engine before closing it so widgets stop reading it across async project switches.
+  void detach() => project.detach();
+
   /// Connects the window to the engine [inside].
   void join(Motolii inside) {
     project.join(inside);

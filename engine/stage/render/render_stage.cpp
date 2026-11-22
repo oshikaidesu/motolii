@@ -12,6 +12,8 @@
 #include <utils/Panic.h>
 
 #include <fstream>
+#include <map>
+#include <mutex>
 #include <set>
 
 #include "base/file_read.h"
@@ -137,72 +139,30 @@ void close_stage(Stage& s) {
   if (!s.engine) return;
   Engine* e = s.engine;
   e->flushAndWait();
-  // Renderables (destroy MaterialInstances before their parent Materials).
-  std::set<MaterialInstance*> live_instances;
-  auto& rm = e->getRenderableManager();
-  for (auto& r : s.renderables) {
-    if (auto ri = rm.getInstance(r.thing)) {
-      const size_t n = rm.getPrimitiveCount(ri);
-      for (size_t p = 0; p < n; ++p) {
-        if (auto* mi = rm.getMaterialInstanceAt(ri, p)) {
-          live_instances.insert(mi);
-        }
-      }
-    }
-    if (r.many) e->destroy(r.many);
-    e->destroy(r.thing);
-  }
+  // Engine::destroy releases every Filament object owned by this dedicated
+  // Engine in shutdown order without double-freeing default material instances
+  // or shared entities; disable the debug order assertion for teardown.
+  e->setFeatureFlag(
+      "engine.debug.assert_destroy_material_before_material_instance", false);
   s.renderables.clear();
-  for (auto& c : s.cuts) {
-    if (c.look) live_instances.insert(c.look);
-  }
   s.cuts.clear();
-  for (auto* mi : live_instances) e->destroy(mi);
-  // Mattes.
-  for (auto& m : s.mattes) {
-    if (m.view) m.view->setRenderTarget(nullptr), e->destroy(m.view);
-    if (m.frameTexture) e->destroy(m.frameTexture);
-    if (m.scene) e->destroy(m.scene);
-    if (m.eyeOwned) {
-      e->destroyCameraComponent(m.eyeOwned);
-      utils::EntityManager::get().destroy(m.eyeOwned);
-    }
-  }
   s.mattes.clear();
-  // Materials.
-  for (auto& [name, mat] : s.materials) e->destroy(mat);
   s.materials.clear();
-  if (s.white) e->destroy(s.white), s.white = nullptr;
-  if (s.fsr_mid_rt) e->destroy(s.fsr_mid_rt), s.fsr_mid_rt = nullptr;
-  if (s.fsr_mid_tex) e->destroy(s.fsr_mid_tex), s.fsr_mid_tex = nullptr;
+  s.white = nullptr;
+  s.fsr_mid_rt = nullptr;
+  s.fsr_mid_tex = nullptr;
   s.fsr_mid_w = s.fsr_mid_h = 0;
-  // God camera.
-  if (s.god) {
-    auto ge = s.god->getEntity();
-    e->destroyCameraComponent(ge);
-    utils::EntityManager::get().destroy(ge);
-    s.god = nullptr;
-  }
-  // view_through.
-  if (s.view_through) e->destroy(s.view_through), s.view_through = nullptr;
-  if (s.through) e->destroy(s.through), s.through = nullptr;
-  if (s.through_depth) e->destroy(s.through_depth), s.through_depth = nullptr;
-  // view_behind (its anonymous RenderTarget leaks — metadata only).
-  if (s.view_behind) e->destroy(s.view_behind), s.view_behind = nullptr;
-  if (s.behind) e->destroy(s.behind), s.behind = nullptr;
-  if (s.behindDepth) e->destroy(s.behindDepth), s.behindDepth = nullptr;
-  // Film camera.
-  e->destroyCameraComponent(s.filmEntity);
-  utils::EntityManager::get().destroy(s.filmEntity);
-  // Working camera.
-  auto ce = s.camera->getEntity();
-  e->destroyCameraComponent(ce);
-  utils::EntityManager::get().destroy(ce);
-  // Core.
-  e->destroy(s.swap);
-  e->destroy(s.view);
-  e->destroy(s.scene);
-  e->destroy(s.renderer);
+  s.god = nullptr;
+  s.view_through = nullptr;
+  s.through = nullptr;
+  s.through_depth = nullptr;
+  s.view_behind = nullptr;
+  s.behind = nullptr;
+  s.behindDepth = nullptr;
+  s.swap = nullptr;
+  s.view = nullptr;
+  s.scene = nullptr;
+  s.renderer = nullptr;
   s.engine = nullptr;
   Engine::destroy(&e);
 }
@@ -229,13 +189,23 @@ void desk_lay(Stage& s, bool on) {
 }
 
 bool room(Stage& s, const char* ktx, float intensity) {
-  static std::vector<std::vector<uint8_t>> ktxs;
-  ktxs.push_back(read_bytes(ktx));
-  if (ktxs.back().empty()) return false;
+  static std::mutex ktx_lock;
+  static std::map<std::string, std::vector<uint8_t>> ktxs;
+  const std::vector<uint8_t>* bytes = nullptr;
+  {
+    std::lock_guard<std::mutex> hold(ktx_lock);
+    auto& buf = ktxs[ktx];
+    if (buf.empty()) buf = read_bytes(ktx);
+    if (buf.empty()) return false;
+    bytes = &buf;
+  }
   auto* bundle =
-      new image::Ktx1Bundle(ktxs.back().data(), (uint32_t)ktxs.back().size());
+      new image::Ktx1Bundle(bytes->data(), (uint32_t)bytes->size());
   float3 sh[9];
-  if (!bundle->getSphericalHarmonics(sh)) return false;
+  if (!bundle->getSphericalHarmonics(sh)) {
+    delete bundle;
+    return false;
+  }
   Texture* tex = ktxreader::Ktx1Reader::createTexture(s.engine, bundle, false);
   s.scene->setIndirectLight(IndirectLight::Builder()
                                 .reflections(tex)

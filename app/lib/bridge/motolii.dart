@@ -312,7 +312,10 @@ class Motolii {
     takeSnapshots(7);
   }
 
+  bool _closed = false;
+
   void takeSnapshots(int which) {
+    if (_closed) return;
     // An answer arrived: read both snapshots.
     if (which & 8 != 0) which |= 3;
     // Opening reads the whole document once: that take is not one to keep short.
@@ -448,6 +451,9 @@ class Motolii {
       using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)]));
 
   void close() {
+    if (_closed) return;
+    _closed = true;
+    listener = null;
     _addListener(handle, nullptr, 0);
     _told.close();
     // The numbers are the engine's own memory: not read once it is closed.
@@ -456,7 +462,10 @@ class Motolii {
     _close(handle);
     malloc.free(_version);
     malloc.free(_count);
-    if (_timeBuf case final copy?) malloc.free(copy);
+    if (_timeBuf case final copy?) {
+      _timeBuf = null;
+      malloc.free(copy);
+    }
   }
 }
 

@@ -222,4 +222,70 @@ void main() {
     await tester.pump();
     expect(told.last['v_stroke_align'], 0.0);
   });
+
+  testWidgets(
+    'empty v_fill_media sentinel "—" does not hide solid fill preview or button',
+    (tester) async {
+      const fillWithMedia = '''
+struct Params {
+  /// @label(Fill) @unit(colours)
+  fill: vec3<f32>,
+  /// @label(Media) @unit(file)
+  fill_media: vec3<f32>,
+  /// @label(Gradient) @enum(linear, radial) @default(0)
+  gradient: u32,
+}
+''';
+      tester.view.physicalSize = const Size(372, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final live =
+          ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((
+            const {},
+            const {},
+          ));
+      addTearDown(live.dispose);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: MediaQuery(
+            data: const MediaQueryData(size: Size(372, 900)),
+            child: InspectorHost(
+              layer: InspectedLayer(
+                kind: Kind.shape,
+                title: 'Rect',
+                cards: [
+                  CardDeclaration(
+                    'Fill',
+                    fillWithMedia,
+                    toneOf: () => const Color(0xFF9AA4B2),
+                  ),
+                ],
+              ),
+              snapshot: const InspectorSnapshot(
+                words: {'v_fill': '#59AEA5', 'v_fill_media': '—'},
+              ),
+              actions: const CardActions(),
+              edits: InspectorEdits(
+                onValues: (_, {required live}) {},
+                onDrop: () {},
+                onKey: (_, _) {},
+                onWords: (_, {required live}) => true,
+                onAnimateAll: (_) {},
+                together: (tells) => tells(),
+                onRoute: (_) {},
+                onAim: (_) {},
+              ),
+              live: live,
+              child: const InspectorPanel(width: 372, height: 900),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Media'), findsOneWidget);
+      expect(find.text('#59AEA5'), findsOneWidget);
+      expect(find.text('—'), findsNothing);
+    },
+  );
 }

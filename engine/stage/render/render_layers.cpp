@@ -222,6 +222,24 @@ void release_matte(Stage& s, int slot) {
   m = Stage::Matte{};  // scene = nullptr marks the slot free for reuse.
 }
 
+void matte_picture(Stage& s, int slot, Texture* frameTexture) {
+  if (slot < 0 || slot >= (int)s.mattes.size()) return;
+  const Stage::Matte& m = s.mattes[(size_t)slot];
+  if (!m.scene) return;
+  auto& rm = s.engine->getRenderableManager();
+  Texture* const tex = frameTexture ? frameTexture : white_point(s);
+  const TextureSampler linear(TextureSampler::MinFilter::LINEAR,
+                              TextureSampler::MagFilter::LINEAR);
+  for (const Stage::Renderable& r : s.renderables) {
+    if (!r.matte || !m.scene->hasEntity(r.thing)) continue;
+    if (auto ri = rm.getInstance(r.thing)) {
+      if (auto* mi = rm.getMaterialInstanceAt(ri, 0)) {
+        mi->setParameter("picture", tex, linear);
+      }
+    }
+  }
+}
+
 int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture,
           bool byLight, float strength, int into, const Mesh* on) {
   auto& tm = s.engine->getTransformManager();
@@ -400,6 +418,7 @@ void textures_of(Stage& s) {
   // draws its offscreen views before all others, see layer_fx.h.
   for (const auto& one : s.before) one();
   for (Stage::Matte& m : s.mattes) {
+    if (!m.view) continue;
     s.renderer->render(m.view);
     if (m.soft) m.frameTexture->generateMipmaps(*s.engine);
   }

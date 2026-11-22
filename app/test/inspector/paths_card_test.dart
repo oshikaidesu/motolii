@@ -145,4 +145,21 @@ void main() {
       expect(RegExp(r'^[0-9a-f]{6}:round$').hasMatch(parts[1]), isTrue);
     },
   );
+
+  testWidgets(
+    'adding Zig zag sets a safe normalized amplitude within engine range',
+    (tester) async {
+      final told = <Map<String, double>>[];
+      await mount(tester, onValues: (m) => told.add(Map.of(m)));
+      await tester.tap(find.byKey(const ValueKey('paths-add-operator')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('paths-pick:zigzag')));
+      await tester.pumpAndSettle();
+
+      final zigzagVal = told.last['v_zigzag'];
+      expect(zigzagVal, isNotNull);
+      expect(zigzagVal!, greaterThan(0));
+      expect(zigzagVal, lessThanOrEqualTo(0.3));
+    },
+  );
 }

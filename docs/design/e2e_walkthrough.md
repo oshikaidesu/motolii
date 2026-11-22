@@ -31,30 +31,29 @@
 
 ### 重大（クラッシュ・機能不能）
 
-1. **[修正済み] 終了／タイル破棄時の Filament リーク＆クラッシュ**（`engine/stage/render/render_stage.cpp` / `app/lib/workspace/state/tiles/tile_queue.dart`）
-   - `close_stage` が `MaterialInstance` を破棄せず `Engine::destroy` も呼んでいなかった（`destroying material "flat" but 6 instances still alive.`）、かつ 4 つの `TileQueue` が並列で `Motolii.open` を起動していた。→ `close_stage` 修正＋`TileQueue` 直列化済み。
-2. **[未修正・重大] 5 秒アイドルキャッシュ／タイル描画時の Dawn WebGPU `updateDescriptorSetTexture` use-after-free クラッシュ**
-   - 症状: `breadcrumb: cache` またはタイル描画後に `Filament panic: Postcondition in handleCast:131 reason: use-after-free of Handle with id=87846`（`WebGPUDriver::updateDescriptorSetTexture`）で SIGABRT。
-   - 発生箇所: `render_thread_loop.cpp:258`（5 秒アイドル後の `stage_cache_one`）およびバックグラウンドタイル描画時。
-3. **[未修正・重大] `Paths` → `Zig zag` オペレータ追加でシェイプが画面全体に爆発**（ステージ 2）
-   - 症状: `Rect` に `Paths` → `+ Operator` → `Zig zag` を追加しただけで、シェイプのメッシュ／ポリゴンが画面いっぱいに崩壊する（`06_text_and_zigzag.png`）。
-4. **[未修正・重大] `doc.flag` の UI 専用フラグがエンジンに弾かれ、`> Parameters` 折りたたみが開かない**（ステージ 5・7）
-   - 症状: `Diagonal Blur` カスタムカードの `> Parameters` を押しても `Not taken: the document has no v.Diagonal Blur.params` が出て展開しない。同様に `Macros` の `Map` ボタンでも `Not taken: the document has no macros.map` がトップバーにエラー表示される（`11_diag_blur_and_stagger.png`, `12_custom_card_params_and_tab.png`）。
-5. **[未修正・中] ドッキングタブ（`S Stagger ×`）を閉じるとペイン比率が崩れて Stage が 18% に縮小＋レイヤー選択が外れる**（ステージ 9）
-   - 症状: Tool Panel から `Tab` で切り出した `Stagger` タブの `×` を閉じると、`Inspector` が画面半分まで広がり `Stage` が 18% まで縮み、選択中レイヤーが `Nothing selected` になる（`13_macro_map_and_expressions.png`）。
+1. **[修正済み] 終了／プロジェクト切替／タイル破棄時の Filament リーク＆ヒープ破損**（`engine/document/match/match_layers.cpp`, `engine/stage/effects/screen_fx.cpp`, `engine/entry/render_thread_loop.cpp`, `engine/entry/window.cpp`, `engine/document/undo.cpp`, `app/lib/bridge/motolii.dart`, `app/lib/workspace/workspace.dart`, `app/lib/workspace/state/tiles/tile_queue.dart`）
+   - `motolii_close` 前に `doc_teardown` / `screen_stack_off` / `live_close`（`live_lock` 排他）で Filament・ThorVG・Interop リソースを完全解放し、Dart 側も `ws.detach()`＋`Overlay` キー更新で閉じた旧エンジンの解放済みネイティブバッファを参照しないよう修正。複数スレッドで競合する静的キャッシュ（`room()` / `folders.cpp` / `recipes.cpp` / `viewer_settings.cpp`）にも mutex を追加。
+2. **[修正済み] 5 秒アイドルキャッシュ／タイル描画時の Dawn WebGPU `updateDescriptorSetTexture` use-after-free クラッシュ**（`engine/stage/render/render_layers.cpp`, `engine/document/evaluate/moment_fx.cpp`, `engine/stage/layer_effects/layer_fx.cpp`）
+   - エフェクト付きレイヤーをマットに使った際、`thing_fx_textures` がオフスクリーンテクスチャを再生成しても `s.mattes` の `picture` バインドが更新されず破棄済みハンドルを参照していた。`matte_picture` / `refresh_matte_picture` で再バインドし、連続 27 フレームキャッシュでもクラッシュしないことを確認。
+3. **[修正済み] `Paths` → `Zig zag` オペレータ追加でシェイプが画面全体に爆発**（`app/lib/inspector/paths/paths_body.dart`）
+   - 追加時の初期値 `_defaults` がエンジン単位（`zigzag: 0.04` 等）ではなく 100 倍近い値になっていたため、`values.h` に合わせた初期値＋`[min, max]` クランプへ修正。
+4. **[修正済み] `doc.flag` の UI 専用フラグがエンジンに弾かれ、`> Parameters` 折りたたみが開かない／`Macros Map` でエラーが出る**（`app/lib/workspace/inspector_feed/values.dart`）
+   - `writeFlags` のローカル状態許可リスト `looked` に `*.params`、`macros.*`、`transform.link`、`text.ot` を追加。
+5. **[修正済み] ドッキングタブ（`S Stagger ×`）を閉じるとペイン比率が崩れる**（`app/lib/workspace/window/panes.dart`）
+   - `docking` 1.16.2 の `AddItem` / `RemoveItem` が再構築コンテナの `weight` を落とす問題を、ツリーパス単位で `weight` を退避・復元する `_preservingWeights` で解消。
 
 ### 中・小（UI 操作性・見た目）
 
-6. **[未修正・中] `Fill` カードの `+ Stroke` ボタンが反応しない**（ステージ 2）
-   - `Rect` の `Fill` カードで `+ Stroke` を押してもストローク行が追加されない（`05_stroke_and_paths.png`）。
-7. **[未修正・中] `Paths` カードの `Inner radius` がダークテーマで真っ白背景になる**（ステージ 2）
-   - `Rect` 選択時、`Paths` の `Inner radius 0%` だけ白背景＋黒文字で浮いて見える（`04_shape_inspector.png`）。
-8. **[未修正・中] `Rect` 単色 Fill のメインプレビュー枠が暗灰色＋`—` のまま表示される**（ステージ 2）
-   - `Text` では `#7F7F7F` で塗られるが、`Rect`（`#59AEA5`）では大スウォッチ枠が `—`（未設定風）に見える（`03_shape_created.png` vs `07_text_jp_vertical.png`）。
-9. **[未修正・小] テキスト欄クリック後の `Cmd+A` / ペーストがグローバルショートカットに吸われやすい**（ステージ 3）
-   - Text カードのノート欄クリック後に `Cmd+A` を押すと `Animate all` が ON になり、文字列の差し替えが入らなかった（`08_jp_text_and_fx_shelf.png`）。
-10. **[未修正・小] ホーム画面の `1 projects · 28KB` の単複表記、空プロジェクト時のタイムライン上部キャッシュ点々表示**（ステージ 1）
-    - `01_launch.png`、`02_workspace.png`。
+6. **[修正済み] `Fill` カードの `+ Stroke` ボタンが反応しない**（`engine/community/quickjs/script.cpp`）
+   - `fx_entry_id` の長さ判定が `entry.size() <= 7` となっており、7 文字のストローク ID エントリ（例: `"7ea842:"`）を弾いていたため `< 7` に修正。
+7. **[修正済み] `Paths` カードの `Inner radius` がダークテーマで真っ白背景になる**（`engine/document/values.h`, `engine/document/kinds.h`）
+   - `inner` の下限が `0.05` / `0.01` になっており、`Rect` 既定値 `0.0` が範囲外（反転ハイライト）扱いになっていたため下限を `0` に修正。
+8. **[修正済み] `Rect` 単色 Fill のメインプレビュー枠が暗灰色＋`—` のまま表示される**（`app/lib/inspector/fill/fill_body.dart`）
+   - 空の `v_fill_media` が `'—'` として渡されメディア有り扱いになっていたため、`'—'` を空文字として正規化。
+9. **[修正済み] テキスト欄クリック後の `Cmd+A` / ペーストがグローバルショートカットに吸われやすい**（`app/lib/inspector/text/text_notebook.dart`, `app/lib/widgets/text_gestures.dart`, `app/lib/workspace/commands/keymap.dart`）
+   - `TextNotebook` の空白行／余白タップで確実に `TypedField` へフォーカスが入るよう `focusNode` を共有し、入力中（`_typing`）は `edit.selectAll` / `copy` / `paste` / `cut` をテキスト側へ譲るよう修正。
+10. **[修正済み] ホーム画面の `1 projects` の単複表記、空プロジェクト時のタイムライン上部キャッシュ点々表示**（`app/lib/workspace/window/home_sidebar.dart`, `engine/preview/playback_cache.cpp`）
+    - `1 project` / `N projects` の単複切替と、`d.on_stage.shown.empty() && !s.over` の空プロジェクト時はキャッシュ生成・参照をスキップするよう修正。
 
 ### 正常動作を確認できた主要機能
 - ホーム画面 → ワークスペース遷移・ステージ上シェイプ作成・直接ドラッグ移動
