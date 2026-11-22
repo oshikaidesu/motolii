@@ -69,6 +69,10 @@ class TileQueue<T> {
     if (!_drawing && _queue.isNotEmpty) unawaited(_work());
   }
 
+  // Serialize tile isolates across all TileQueue instances (Effects, Materials,
+  // Copies, Code) so Dawn WebGPU never spins up overlapping background engines.
+  static Future<void> _serial = Future<void>.value();
+
   Future<void> _work() async {
     _drawing = true;
     final dir = motoliiDir, draw = this.draw;
@@ -79,7 +83,16 @@ class TileQueue<T> {
         final some = _queue.take(batch).toList();
         _queue.removeRange(0, some.length);
         done += some.length;
-        final homes = await Isolate.run(() => draw(dir, some));
+        final prev = _serial;
+        final doneSlot = Completer<void>();
+        _serial = doneSlot.future;
+        await prev;
+        List<String> homes;
+        try {
+          homes = await Isolate.run(() => draw(dir, some));
+        } finally {
+          doneSlot.complete();
+        }
         for (final h in homes) {
           for (final p in [
             h,

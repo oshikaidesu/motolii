@@ -12,6 +12,7 @@
 #include <utils/Panic.h>
 
 #include <fstream>
+#include <set>
 
 #include "base/file_read.h"
 
@@ -136,12 +137,27 @@ void close_stage(Stage& s) {
   if (!s.engine) return;
   Engine* e = s.engine;
   e->flushAndWait();
-  // Renderables.
+  // Renderables (destroy MaterialInstances before their parent Materials).
+  std::set<MaterialInstance*> live_instances;
+  auto& rm = e->getRenderableManager();
   for (auto& r : s.renderables) {
+    if (auto ri = rm.getInstance(r.thing)) {
+      const size_t n = rm.getPrimitiveCount(ri);
+      for (size_t p = 0; p < n; ++p) {
+        if (auto* mi = rm.getMaterialInstanceAt(ri, p)) {
+          live_instances.insert(mi);
+        }
+      }
+    }
     if (r.many) e->destroy(r.many);
     e->destroy(r.thing);
   }
   s.renderables.clear();
+  for (auto& c : s.cuts) {
+    if (c.look) live_instances.insert(c.look);
+  }
+  s.cuts.clear();
+  for (auto* mi : live_instances) e->destroy(mi);
   // Mattes.
   for (auto& m : s.mattes) {
     if (m.view) m.view->setRenderTarget(nullptr), e->destroy(m.view);
@@ -153,7 +169,6 @@ void close_stage(Stage& s) {
     }
   }
   s.mattes.clear();
-  s.cuts.clear();
   // Materials.
   for (auto& [name, mat] : s.materials) e->destroy(mat);
   s.materials.clear();
@@ -189,6 +204,7 @@ void close_stage(Stage& s) {
   e->destroy(s.scene);
   e->destroy(s.renderer);
   s.engine = nullptr;
+  Engine::destroy(&e);
 }
 
 void desk_lay(Stage& s, bool on) {
