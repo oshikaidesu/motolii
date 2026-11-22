@@ -375,4 +375,61 @@ struct Params {
       expect(payload['phase'], 'down');
     },
   );
+
+  testWidgets(
+    'ui.svg resolves var(--token) skin colors and dispatches pointer events',
+    (tester) async {
+      final resolved = resolveSvgThemeVars(
+        '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="var(--accent)"/></svg>',
+      );
+      expect(resolved, isNot(contains('var(--accent)')));
+      expect(resolved, contains(panelThemeHexMap()['accent']!));
+
+      final events = <(String, Object?, bool)>[];
+      final node = PanelNode.fromJson({
+        'type': 'svg',
+        'id': 'vector_pad',
+        'label': 'SVG Surface',
+        'height': 84,
+        'svg':
+            '<svg viewBox="0 0 200 84" preserveAspectRatio="none">'
+            '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'
+            '<stop offset="0%" stop-color="var(--accent)" stop-opacity="0.5"/>'
+            '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>'
+            '</linearGradient></defs>'
+            '<path d="M10 70 Q 100 10 190 70 L 190 80 L 10 80 Z" fill="url(#g)"/>'
+            '<path d="M10 70 Q 100 10 190 70" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>'
+            '</svg>',
+      })!;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Container(
+            width: 240,
+            color: Grey.g10,
+            padding: const EdgeInsets.all(8),
+            child: PanelTreeView(
+              node: node,
+              onAction: (id, value, {live = false}) =>
+                  events.add((id, value, live)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final rect = tester.getRect(
+        find.byKey(const ValueKey('panel:svg:vector_pad')),
+      );
+      await tester.tapAt(rect.center);
+      await tester.pumpAndSettle();
+      expect(events, isNotEmpty);
+      expect(events.first.$1, 'vector_pad');
+      final payload = events.first.$2 as Map;
+      expect(payload['x'] as double, closeTo(0.5, 0.05));
+      expect(payload['y'] as double, closeTo(0.5, 0.05));
+      expect(payload['phase'], 'down');
+    },
+  );
 }

@@ -67,8 +67,40 @@ Color? resolveCanvasColor(String token) {
     'border' => Grey.g26,
     'text' => Grey.g91,
     'surface' => Grey.g15,
+    'well' => InspectorSkin.well,
     _ => parseHexColor(token),
   };
+}
+
+String _hexRgb(Color c) =>
+    '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+
+/// Current Motolii skin tokens as `#rrggbb` strings for `ctx.theme` and SVG `var(--token)`.
+Map<String, String> panelThemeHexMap() => {
+  'accent': _hexRgb(Accent.fill),
+  'layout': _hexRgb(InspectorSkin.toneLayout),
+  'blend': _hexRgb(InspectorSkin.toneBlend),
+  'place': _hexRgb(InspectorSkin.tonePlace),
+  'time': _hexRgb(InspectorSkin.toneTime),
+  'layer': _hexRgb(InspectorSkin.toneLayer),
+  'muted': _hexRgb(Grey.g56),
+  'border': _hexRgb(Grey.g26),
+  'text': _hexRgb(Grey.g91),
+  'surface': _hexRgb(Grey.g15),
+  'well': _hexRgb(InspectorSkin.well),
+};
+
+final _svgVarPattern = RegExp(r'var\(--([a-zA-Z0-9_-]+)\)');
+
+/// Replaces CSS custom properties like `var(--accent)` in inline SVG markup with the
+/// active Motolii skin hex color so standard SVG stays skin-adaptive.
+String resolveSvgThemeVars(String svg) {
+  if (!svg.contains('var(--')) return svg;
+  final map = panelThemeHexMap();
+  return svg.replaceAllMapped(_svgVarPattern, (m) {
+    final key = m.group(1) ?? '';
+    return map[key] ?? m.group(0)!;
+  });
 }
 
 /// One vector draw command inside a `ui.canvas(height, drawOps)` node.
@@ -182,6 +214,8 @@ class PanelNode {
     this.snap9 = false,
     this.options = const [],
     this.draw = const [],
+    this.svg = '',
+    this.fit = 'contain',
     this.children = const [],
   });
 
@@ -216,6 +250,8 @@ class PanelNode {
   final bool snap9;
   final List<String> options;
   final List<CanvasDrawOp> draw;
+  final String svg;
+  final String fit;
   final List<PanelNode> children;
 
   static PanelNode? fromJson(Object? raw) {
@@ -261,6 +297,8 @@ class PanelNode {
         if (raw['draw'] is List)
           for (final d in raw['draw'] as List) ?CanvasDrawOp.fromJson(d),
       ],
+      svg: raw['svg']?.toString() ?? '',
+      fit: raw['fit']?.toString() ?? 'contain',
       children: [
         if (raw['children'] is List)
           for (final c in raw['children'] as List) ?PanelNode.fromJson(c),

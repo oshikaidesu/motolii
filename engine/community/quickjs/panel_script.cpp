@@ -53,6 +53,7 @@ const ui = {
   color(label, value, opts) { return Object.assign({ type: "color", label: String(label ?? ""), value: String(value ?? "#ffffff") }, opts); },
   xy(label, x, y, opts) { return Object.assign({ type: "xy", label: String(label ?? ""), x: Number(x ?? 0), y: Number(y ?? 0) }, opts); },
   canvas(height, draw, opts) { return Object.assign({ type: "canvas", height: Number(height ?? 96), draw: draw || [] }, opts); },
+  svg(height, svg, opts) { return Object.assign({ type: "svg", height: Number(height ?? 96), svg: String(svg ?? "") }, opts); },
   divider() { return { type: "divider" }; },
   spacer(size) { return { type: "spacer", size: Number(size ?? 6) }; },
 };

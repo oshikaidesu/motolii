@@ -8,6 +8,8 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart' show CardCustomUi;
+import 'package:motolii/widgets/custom_ui/panel_node.dart'
+    show panelThemeHexMap;
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/layers/layer_edits.dart'
     show groupBegin, groupEnd;
@@ -72,6 +74,7 @@ String customPanelCtxJson(WorkspaceController ws, Map<String, Object?> state) {
     'selected': selected,
     'layers': layers,
     'state': state,
+    'theme': panelThemeHexMap(),
   });
 }
 

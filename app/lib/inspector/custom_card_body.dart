@@ -95,6 +95,7 @@ evaluateCardCustomUi(
     'card': card.name,
     'params': params,
     'ranges': ranges,
+    'theme': panelThemeHexMap(),
   });
   final res = parseCardUiRenderResponse(ui.render(ctxJson));
   final hiddenFull = <String>{for (final h in res.hide) ?names.resolve(h)};

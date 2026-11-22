@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -409,11 +410,10 @@ class PanelTreeView extends StatelessWidget {
         );
 
       case 'canvas':
-        return _PanelCanvas(
-          canvasKey: n.id.isEmpty ? null : ValueKey('panel:canvas:${n.id}'),
+        return _InteractiveSurface(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:canvas:${n.id}'),
           label: n.label,
           height: (n.height ?? 96.0).clamp(32.0, 360.0),
-          draw: n.draw,
           interactive: n.id.isNotEmpty,
           onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
             'x': x,
@@ -421,6 +421,38 @@ class PanelTreeView extends StatelessWidget {
             'phase': phase,
             'shift': HardwareKeyboard.instance.isShiftPressed,
           }, live: live),
+          builder: (size) => CustomPaint(
+            size: size,
+            painter: Draw((c, s) => _drawCanvasOps(c, s, n.draw), n.draw),
+          ),
+        );
+
+      case 'svg':
+        final resolved = resolveSvgThemeVars(n.svg);
+        final fit = switch (n.fit) {
+          'fill' => BoxFit.fill,
+          'cover' => BoxFit.cover,
+          _ => BoxFit.contain,
+        };
+        return _InteractiveSurface(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:svg:${n.id}'),
+          label: n.label,
+          height: (n.height ?? 96.0).clamp(32.0, 360.0),
+          interactive: n.id.isNotEmpty,
+          onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
+            'x': x,
+            'y': y,
+            'phase': phase,
+            'shift': HardwareKeyboard.instance.isShiftPressed,
+          }, live: live),
+          builder: (size) => resolved.contains('<svg')
+              ? SvgPicture.string(
+                  resolved,
+                  width: size.width,
+                  height: size.height,
+                  fit: fit,
+                )
+              : const SizedBox.shrink(),
         );
 
       default:
@@ -655,29 +687,29 @@ void _drawChevron(Canvas c, Size s, bool open, Color col) {
   c.drawPath(path, p);
 }
 
-/// Interactive vector drawing surface for `ui.canvas(height, drawOps, { id })`.
-class _PanelCanvas extends StatefulWidget {
-  const _PanelCanvas({
-    this.canvasKey,
+/// Shared interactive vector surface for both `ui.canvas` and `ui.svg`.
+class _InteractiveSurface extends StatefulWidget {
+  const _InteractiveSurface({
+    this.surfaceKey,
     required this.label,
     required this.height,
-    required this.draw,
     required this.interactive,
     required this.onPointer,
+    required this.builder,
   });
 
-  final Key? canvasKey;
+  final Key? surfaceKey;
   final String label;
   final double height;
-  final List<CanvasDrawOp> draw;
   final bool interactive;
   final void Function(double x, double y, String phase, {bool live}) onPointer;
+  final Widget Function(Size size) builder;
 
   @override
-  State<_PanelCanvas> createState() => _PanelCanvasState();
+  State<_InteractiveSurface> createState() => _InteractiveSurfaceState();
 }
 
-class _PanelCanvasState extends State<_PanelCanvas> {
+class _InteractiveSurfaceState extends State<_InteractiveSurface> {
   double _lastX = 0.5;
   double _lastY = 0.5;
 
@@ -712,18 +744,12 @@ class _PanelCanvasState extends State<_PanelCanvas> {
               ),
               child: ClipRRect(
                 borderRadius: Shape.round(5),
-                child: CustomPaint(
-                  size: size,
-                  painter: Draw(
-                    (c, s) => _drawCanvasOps(c, s, widget.draw),
-                    widget.draw,
-                  ),
-                ),
+                child: widget.builder(size),
               ),
             );
             if (!widget.interactive) return surface;
             return GestureDetector(
-              key: widget.canvasKey,
+              key: widget.surfaceKey,
               behavior: HitTestBehavior.opaque,
               onTapDown: (d) {
                 final (x, y) = _norm(d.localPosition, size);
