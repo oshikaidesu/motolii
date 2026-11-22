@@ -87,10 +87,11 @@ TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(rendered.find("\"hide\":[\"width\",\"angle\"]"), std::string::npos)
       << rendered;
-  EXPECT_NE(rendered.find("\"type\":\"xy\""), std::string::npos) << rendered;
+  EXPECT_NE(rendered.find("\"type\":\"canvas\""), std::string::npos)
+      << rendered;
 
   const std::string act = panel_eval_card_action(
-      ui, R"JSON({"id":"vector","value":{"x":0,"y":0.5}})JSON", "{}", &err);
+      ui, R"JSON({"id":"compass","value":{"x":0.5,"y":0.71}})JSON", "{}", &err);
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(act.find("\"width\":0.5"), std::string::npos) << act;
   EXPECT_NE(act.find("\"angle\":0.5"), std::string::npos) << act;

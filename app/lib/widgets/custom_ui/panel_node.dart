@@ -52,6 +52,102 @@ Color panelToneColor(String tone) => switch (tone) {
 /// Parses a `#RGB` or `#RRGGBB` user-supplied hex color string, or null when invalid.
 Color? parseHexColor(String hex) => colorOfHex(hex.trim());
 
+/// Maps a semantic tone keyword (`accent`, `layout`, `blend`, `place`, `time`, `layer`,
+/// `muted`, `border`, `text`, `surface`) or `#RRGGBB` hex string to a [Color].
+Color? resolveCanvasColor(String token) {
+  if (token.isEmpty) return null;
+  return switch (token) {
+    'accent' => Accent.fill,
+    'layout' => InspectorSkin.toneLayout,
+    'blend' => InspectorSkin.toneBlend,
+    'place' => InspectorSkin.tonePlace,
+    'time' => InspectorSkin.toneTime,
+    'layer' => InspectorSkin.toneLayer,
+    'muted' => Grey.g56,
+    'border' => Grey.g26,
+    'text' => Grey.g91,
+    'surface' => Grey.g15,
+    _ => parseHexColor(token),
+  };
+}
+
+/// One vector draw command inside a `ui.canvas(height, drawOps)` node.
+/// Coordinates are normalized `0..1` relative to the canvas box.
+class CanvasDrawOp {
+  const CanvasDrawOp({
+    required this.op,
+    this.x = 0,
+    this.y = 0,
+    this.x2 = 0,
+    this.y2 = 0,
+    this.w = 0,
+    this.h = 0,
+    this.r = 0,
+    this.cx1 = 0,
+    this.cy1 = 0,
+    this.cx2 = 0,
+    this.cy2 = 0,
+    this.start = 0,
+    this.sweep = 0,
+    this.strokeWidth = 1.2,
+    this.alpha = 1.0,
+    this.radius = 0,
+    this.fill = '',
+    this.stroke = '',
+    this.text = '',
+    this.align = 'left',
+    this.points = const [],
+  });
+
+  final String op;
+  final double x, y, x2, y2, w, h, r, cx1, cy1, cx2, cy2, start, sweep;
+  final double strokeWidth, alpha, radius;
+  final String fill, stroke, text, align;
+  final List<(double, double)> points;
+
+  static CanvasDrawOp? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final op = raw['op']?.toString() ?? '';
+    if (op.isEmpty) return null;
+    double numOr(String k, double fallback) =>
+        raw[k] is num ? (raw[k] as num).toDouble() : fallback;
+    final pts = <(double, double)>[];
+    if (raw['points'] is List) {
+      for (final p in raw['points'] as List) {
+        if (p is List && p.length >= 2 && p[0] is num && p[1] is num) {
+          pts.add(((p[0] as num).toDouble(), (p[1] as num).toDouble()));
+        } else if (p is Map && p['x'] is num && p['y'] is num) {
+          pts.add(((p['x'] as num).toDouble(), (p['y'] as num).toDouble()));
+        }
+      }
+    }
+    return CanvasDrawOp(
+      op: op,
+      x: numOr('x', 0),
+      y: numOr('y', 0),
+      x2: numOr('x2', 0),
+      y2: numOr('y2', 0),
+      w: numOr('w', 0),
+      h: numOr('h', 0),
+      r: numOr('r', 0),
+      cx1: numOr('cx1', 0),
+      cy1: numOr('cy1', 0),
+      cx2: numOr('cx2', 0),
+      cy2: numOr('cy2', 0),
+      start: numOr('start', 0),
+      sweep: numOr('sweep', 0),
+      strokeWidth: numOr('width', 1.2),
+      alpha: numOr('alpha', 1.0).clamp(0.0, 1.0),
+      radius: numOr('radius', 0),
+      fill: raw['fill']?.toString() ?? '',
+      stroke: raw['stroke']?.toString() ?? '',
+      text: raw['text']?.toString() ?? '',
+      align: raw['align']?.toString() ?? 'left',
+      points: pts,
+    );
+  }
+}
+
 /// One node in the declarative UI tree returned by `render(ctx)` or `renderCard(ctx)`.
 class PanelNode {
   const PanelNode({
@@ -75,6 +171,7 @@ class PanelNode {
     this.step,
     this.dec,
     this.size,
+    this.height,
     this.cols = 3,
     this.accent = false,
     this.disabled = false,
@@ -84,6 +181,7 @@ class PanelNode {
     this.open = true,
     this.snap9 = false,
     this.options = const [],
+    this.draw = const [],
     this.children = const [],
   });
 
@@ -107,6 +205,7 @@ class PanelNode {
   final double? step;
   final int? dec;
   final double? size;
+  final double? height;
   final int cols;
   final bool accent;
   final bool disabled;
@@ -116,6 +215,7 @@ class PanelNode {
   final bool open;
   final bool snap9;
   final List<String> options;
+  final List<CanvasDrawOp> draw;
   final List<PanelNode> children;
 
   static PanelNode? fromJson(Object? raw) {
@@ -144,6 +244,7 @@ class PanelNode {
       step: raw['step'] is num ? (raw['step'] as num).toDouble() : null,
       dec: raw['dec'] is num ? (raw['dec'] as num).toInt() : null,
       size: raw['size'] is num ? (raw['size'] as num).toDouble() : null,
+      height: raw['height'] is num ? (raw['height'] as num).toDouble() : null,
       cols: raw['cols'] is num ? (raw['cols'] as num).toInt().clamp(1, 12) : 3,
       accent: raw['accent'] == true,
       disabled: raw['disabled'] == true,
@@ -155,6 +256,10 @@ class PanelNode {
       options: [
         if (raw['options'] is List)
           for (final o in raw['options'] as List) o.toString(),
+      ],
+      draw: [
+        if (raw['draw'] is List)
+          for (final d in raw['draw'] as List) ?CanvasDrawOp.fromJson(d),
       ],
       children: [
         if (raw['children'] is List)

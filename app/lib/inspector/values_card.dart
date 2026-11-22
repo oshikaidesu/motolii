@@ -42,18 +42,29 @@ class ValuesCard extends StatelessWidget {
     final customEval = customUi == null
         ? null
         : evaluateCardCustomUi(doc, card, customUi);
-    final hidden = {...?host?.drawn, ...?customEval?.hiddenFullIds};
+    final hostDrawn = host?.drawn ?? const <String>{};
+    // Custom card `hide` tucks params into a collapsible `Parameters` fold instead of
+    // removing them completely, so keyframes and Macro plugs stay reachable.
+    final customHidden = customEval?.hiddenFullIds ?? const <String>{};
+    final hiddenParams = [
+      for (final p in card.params)
+        if (customHidden.contains(p.id) && !hostDrawn.contains(p.id)) p,
+    ];
+    final paramsOpen = doc.flags['$k.params'] ?? false;
     final heroes = [
           for (final p in card.params)
-            if (!p.advanced && !hidden.contains(p.id)) p,
+            if (!p.advanced &&
+                !hostDrawn.contains(p.id) &&
+                !customHidden.contains(p.id))
+              p,
         ],
         rest = [
           for (final p in card.params)
-            if (p.advanced) p,
+            if (p.advanced && !customHidden.contains(p.id)) p,
         ],
         folded = [
           for (final p in rest)
-            if (!hidden.contains(p.id)) p,
+            if (!hostDrawn.contains(p.id)) p,
         ];
     // The main params show first. The advanced ones are folded under a row named for what they are.
     // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack
@@ -201,6 +212,15 @@ class ValuesCard extends StatelessWidget {
             names: customEval.names,
           ),
         if (heroes.isNotEmpty) ParameterGrid(heroes),
+        if (hiddenParams.isNotEmpty) ...[
+          _FoldRow(
+            'Parameters',
+            paramsOpen,
+            () => doc.flag('$k.params', !paramsOpen),
+            key: ValueKey('card-params:${card.name}'),
+          ),
+          if (paramsOpen) ParameterGrid(hiddenParams),
+        ],
         // The fold row shows only when something sits under it: the card's own
         // fold widget, or folded values the body does not draw itself. A card
         // whose advanced values are all drawn by its body (the gradient's

@@ -65,8 +65,7 @@ class _ToolHeader extends StatelessWidget {
           leading: ToolSticker(name),
           trailing: [
             if (name != 'Tools')
-              if (panelTool(ws, name) case final tool?
-                  when tool.glyph == null) ...[
+              if (panelTool(ws, name) case final tool?) ...[
                 Chip(
                   key: ValueKey('tool:dock:$name'),
                   label: 'Tab',

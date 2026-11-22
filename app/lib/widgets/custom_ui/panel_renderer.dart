@@ -3,6 +3,7 @@
 // 詳細: docs/design/custom_panels.md
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
@@ -407,6 +408,21 @@ class PanelTreeView extends StatelessWidget {
               onAction(n.id, {'x': nx, 'y': ny}, live: live),
         );
 
+      case 'canvas':
+        return _PanelCanvas(
+          canvasKey: n.id.isEmpty ? null : ValueKey('panel:canvas:${n.id}'),
+          label: n.label,
+          height: (n.height ?? 96.0).clamp(32.0, 360.0),
+          draw: n.draw,
+          interactive: n.id.isNotEmpty,
+          onPointer: (x, y, phase, {bool live = false}) => onAction(n.id, {
+            'x': x,
+            'y': y,
+            'phase': phase,
+            'shift': HardwareKeyboard.instance.isShiftPressed,
+          }, live: live),
+        );
+
       default:
         return Text(
           'Unknown node: ${n.type}',
@@ -637,4 +653,220 @@ void _drawChevron(Canvas c, Size s, bool open, Color col) {
       ..lineTo(2.5, s.height - 1.5);
   }
   c.drawPath(path, p);
+}
+
+/// Interactive vector drawing surface for `ui.canvas(height, drawOps, { id })`.
+class _PanelCanvas extends StatefulWidget {
+  const _PanelCanvas({
+    this.canvasKey,
+    required this.label,
+    required this.height,
+    required this.draw,
+    required this.interactive,
+    required this.onPointer,
+  });
+
+  final Key? canvasKey;
+  final String label;
+  final double height;
+  final List<CanvasDrawOp> draw;
+  final bool interactive;
+  final void Function(double x, double y, String phase, {bool live}) onPointer;
+
+  @override
+  State<_PanelCanvas> createState() => _PanelCanvasState();
+}
+
+class _PanelCanvasState extends State<_PanelCanvas> {
+  double _lastX = 0.5;
+  double _lastY = 0.5;
+
+  (double, double) _norm(Offset local, Size size) {
+    final nx = (local.dx / math.max(1.0, size.width)).clamp(0.0, 1.0);
+    final ny = (local.dy / math.max(1.0, size.height)).clamp(0.0, 1.0);
+    _lastX = nx;
+    _lastY = ny;
+    return (nx, ny);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = Shape.z(widget.height);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.label.isNotEmpty) ...[
+          Text(widget.label, style: TextStyles.micro(Grey.g56)),
+          SizedBox(height: Shape.s(3)),
+        ],
+        LayoutBuilder(
+          builder: (context, box) {
+            final size = Size(box.maxWidth, h);
+            final surface = Container(
+              height: h,
+              decoration: BoxDecoration(
+                color: InspectorSkin.well,
+                borderRadius: Shape.round(6),
+                border: Border.all(color: Grey.g26),
+              ),
+              child: ClipRRect(
+                borderRadius: Shape.round(5),
+                child: CustomPaint(
+                  size: size,
+                  painter: Draw(
+                    (c, s) => _drawCanvasOps(c, s, widget.draw),
+                    widget.draw,
+                  ),
+                ),
+              ),
+            );
+            if (!widget.interactive) return surface;
+            return GestureDetector(
+              key: widget.canvasKey,
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (d) {
+                final (x, y) = _norm(d.localPosition, size);
+                widget.onPointer(x, y, 'down');
+              },
+              onPanStart: (d) {
+                final (x, y) = _norm(d.localPosition, size);
+                widget.onPointer(x, y, 'down', live: true);
+              },
+              onPanUpdate: (d) {
+                final (x, y) = _norm(d.localPosition, size);
+                widget.onPointer(x, y, 'drag', live: true);
+              },
+              onPanEnd: (_) => widget.onPointer(_lastX, _lastY, 'up'),
+              child: surface,
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+void _drawCanvasOps(Canvas c, Size s, List<CanvasDrawOp> ops) {
+  final w = s.width;
+  final h = s.height;
+  final minSide = math.min(w, h);
+
+  for (final o in ops) {
+    final fillCol = resolveCanvasColor(o.fill)?.withValues(alpha: o.alpha);
+    final strokeCol = resolveCanvasColor(o.stroke)?.withValues(alpha: o.alpha);
+
+    void paintPath(Path path) {
+      if (fillCol != null) c.drawPath(path, Paint()..color = fillCol);
+      if (strokeCol != null) {
+        c.drawPath(
+          path,
+          Paint()
+            ..color = strokeCol
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = o.strokeWidth
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round,
+        );
+      }
+    }
+
+    switch (o.op) {
+      case 'line':
+        if (strokeCol != null) {
+          c.drawLine(
+            Offset(o.x * w, o.y * h),
+            Offset(o.x2 * w, o.y2 * h),
+            Paint()
+              ..color = strokeCol
+              ..strokeWidth = o.strokeWidth
+              ..strokeCap = StrokeCap.round,
+          );
+        }
+      case 'rect':
+        final rect = Rect.fromLTWH(o.x * w, o.y * h, o.w * w, o.h * h);
+        final rrect = RRect.fromRectAndRadius(rect, Radius.circular(o.radius));
+        if (fillCol != null) c.drawRRect(rrect, Paint()..color = fillCol);
+        if (strokeCol != null) {
+          c.drawRRect(
+            rrect,
+            Paint()
+              ..color = strokeCol
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = o.strokeWidth,
+          );
+        }
+      case 'circle':
+        final center = Offset(o.x * w, o.y * h);
+        final rad = o.r * minSide;
+        if (fillCol != null) {
+          c.drawCircle(center, rad, Paint()..color = fillCol);
+        }
+        if (strokeCol != null) {
+          c.drawCircle(
+            center,
+            rad,
+            Paint()
+              ..color = strokeCol
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = o.strokeWidth,
+          );
+        }
+      case 'arc':
+        final rect = Rect.fromCircle(
+          center: Offset(o.x * w, o.y * h),
+          radius: o.r * minSide,
+        );
+        if (strokeCol != null) {
+          c.drawArc(
+            rect,
+            o.start,
+            o.sweep,
+            false,
+            Paint()
+              ..color = strokeCol
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = o.strokeWidth
+              ..strokeCap = StrokeCap.round,
+          );
+        }
+      case 'polyline':
+        if (o.points.length >= 2) {
+          final path = Path()
+            ..moveTo(o.points.first.$1 * w, o.points.first.$2 * h);
+          for (final pt in o.points.skip(1)) {
+            path.lineTo(pt.$1 * w, pt.$2 * h);
+          }
+          paintPath(path);
+        }
+      case 'bezier':
+        final path = Path()
+          ..moveTo(o.x * w, o.y * h)
+          ..cubicTo(
+            o.cx1 * w,
+            o.cy1 * h,
+            o.cx2 * w,
+            o.cy2 * h,
+            o.x2 * w,
+            o.y2 * h,
+          );
+        paintPath(path);
+      case 'text':
+        if (o.text.isNotEmpty) {
+          final tp = TextPainter(
+            text: TextSpan(
+              text: o.text,
+              style: TextStyles.micro(fillCol ?? Grey.g76),
+            ),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          final dx = switch (o.align) {
+            'center' => o.x * w - tp.width * 0.5,
+            'right' => o.x * w - tp.width,
+            _ => o.x * w,
+          };
+          tp.paint(c, Offset(dx, o.y * h - tp.height * 0.5));
+        }
+    }
+  }
 }

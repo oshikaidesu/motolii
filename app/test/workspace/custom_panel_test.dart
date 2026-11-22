@@ -285,17 +285,94 @@ struct Params {
       );
       await tester.pumpAndSettle();
 
-      // Custom UI renders Blur Vector pad + Vert preset, hides raw Width/Angle, keeps Quality.
+      // Custom UI renders Blur Vector pad + Vert preset, tucks raw Width/Angle
+      // inside the collapsible `Parameters` fold, and keeps Quality visible.
       expect(find.text('Blur Vector'), findsOneWidget);
       expect(find.text('Quality'), findsOneWidget);
       expect(find.text('Width'), findsNothing);
       expect(find.text('Angle'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('card-params:Diagonal Blur')),
+        findsOneWidget,
+      );
+
+      // Opening `Parameters` reveals Width & Angle for keyframes / Macro plugs.
+      await tester.tap(find.byKey(const ValueKey('card-params:Diagonal Blur')));
+      await tester.pumpAndSettle();
+      expect(find.text('Width'), findsOneWidget);
+      expect(find.text('Angle'), findsOneWidget);
 
       // Clicking Vert preset writes back to real prefixed doc params.
       await tester.tap(find.byKey(const ValueKey('panel:btn:preset:v')));
       await tester.pumpAndSettle();
       expect(writes.last['v_js_diagonal_blur_width'], 0.4);
       expect(writes.last['v_js_diagonal_blur_angle'], 0.5);
+    },
+  );
+
+  testWidgets(
+    'ui.canvas renders vector primitives and reports normalized pointer events',
+    (tester) async {
+      final events = <(String, Object?, bool)>[];
+      final node = PanelNode.fromJson({
+        'type': 'canvas',
+        'id': 'curve',
+        'label': 'Falloff',
+        'height': 80,
+        'draw': [
+          {
+            'op': 'rect',
+            'x': 0.1,
+            'y': 0.1,
+            'w': 0.8,
+            'h': 0.8,
+            'stroke': 'border',
+          },
+          {
+            'op': 'bezier',
+            'x': 0.1,
+            'y': 0.9,
+            'cx1': 0.35,
+            'cy1': 0.9,
+            'cx2': 0.65,
+            'cy2': 0.1,
+            'x2': 0.9,
+            'y2': 0.1,
+            'stroke': 'accent',
+            'width': 2,
+          },
+          {'op': 'circle', 'x': 0.35, 'y': 0.9, 'r': 0.05, 'fill': 'accent'},
+        ],
+      })!;
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Container(
+            width: 240,
+            color: Grey.g10,
+            padding: const EdgeInsets.all(8),
+            child: PanelTreeView(
+              node: node,
+              onAction: (id, value, {live = false}) =>
+                  events.add((id, value, live)),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final rect = tester.getRect(
+        find.byKey(const ValueKey('panel:canvas:curve')),
+      );
+      await tester.tapAt(rect.center);
+      await tester.pumpAndSettle();
+      expect(events, isNotEmpty);
+      expect(events.first.$1, 'curve');
+      final payload = events.first.$2 as Map;
+      expect(payload['x'] as double, closeTo(0.5, 0.05));
+      expect(payload['y'] as double, closeTo(0.5, 0.05));
+      expect(payload['phase'], 'down');
     },
   );
 }
