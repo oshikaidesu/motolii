@@ -200,6 +200,7 @@ endif()
 
 # Adapter: quickjs code run as it is.
 add_library(motolii_community_quickjs STATIC
+  community/quickjs/panel_script.cpp
   community/quickjs/script.cpp
   community/quickjs/script_leva.cpp
   community/quickjs/wgsl_attributes.cpp)

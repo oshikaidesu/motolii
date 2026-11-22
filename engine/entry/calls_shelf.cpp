@@ -1,6 +1,7 @@
 // The calls about what the shelves offer: effects, create scripts, presets,
 // animators, relations and cards, the layer kind a file makes, and whether a
 // font sets a text.
+#include "community/quickjs/panel_script.h"
 #include "document/cards.h"
 #include "document/edit/fx_put.h"
 #include "document/edit/layer_edit.h"
@@ -108,5 +109,59 @@ const char* motolii_font_lacks(const char* font, const char* words) {
   const std::string lacks = type_lacks(font, words);
   said =
       lacks.empty() ? std::string() : lacks + "\t" + type_fallback(font, words);
+  return said.c_str();
+}
+
+namespace {
+std::string json_escape(const std::string& s) {
+  std::string out;
+  out.reserve(s.size() + 8);
+  for (unsigned char c : s) {
+    switch (c) {
+      case '"': out += "\\\""; break;
+      case '\\': out += "\\\\"; break;
+      case '\n': out += "\\n"; break;
+      case '\r': out += "\\r"; break;
+      case '\t': out += "\\t"; break;
+      default:
+        if (c < 0x20) {
+          char buf[8];
+          std::snprintf(buf, sizeof buf, "\\u%04x", c);
+          out += buf;
+        } else {
+          out.push_back((char)c);
+        }
+    }
+  }
+  return out;
+}
+}  // namespace
+
+const char* motolii_panels(void) {
+  thread_local std::string said;
+  said = panel_list();
+  return said.c_str();
+}
+
+const char* motolii_panel_render(const char* file, const char* ctx_json) {
+  thread_local std::string said;
+  std::string err;
+  const std::string out =
+      panel_eval_render(file ? file : "", ctx_json ? ctx_json : "{}", &err);
+  said = err.empty() ? ("{\"ok\":true,\"ui\":" + out + "}")
+                     : ("{\"ok\":false,\"error\":\"" + json_escape(err) + "\"}");
+  return said.c_str();
+}
+
+const char* motolii_panel_action(const char* file, const char* action_json,
+                                 const char* ctx_json) {
+  thread_local std::string said;
+  std::string err;
+  const std::string out = panel_eval_action(
+      file ? file : "", action_json ? action_json : "{}",
+      ctx_json ? ctx_json : "{}", &err);
+  said = err.empty()
+             ? ("{\"ok\":true,\"result\":" + out + "}")
+             : ("{\"ok\":false,\"error\":\"" + json_escape(err) + "\"}");
   return said.c_str();
 }

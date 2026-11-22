@@ -106,8 +106,9 @@ class _Catalog extends StatelessWidget {
       builder: (context, box) {
         final w = box.maxWidth - WindowTokens.gap * 2,
             h = box.maxHeight - WindowTokens.gap * 2;
+        final tools = allPanelTools(ws);
         final cols = gridColumns(w, _cell, gap: WindowTokens.gap, min: 2),
-            rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
+            rows = (tools.length / cols).ceil().clamp(1, 999);
         final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(
               _minTile,
               _maxTile,
@@ -120,7 +121,7 @@ class _Catalog extends StatelessWidget {
               spacing: WindowTokens.gap,
               runSpacing: WindowTokens.gap,
               children: [
-                for (final t in WorkspaceScope.read(context).tools)
+                for (final t in tools)
                   SizedBox(
                     width: cw,
                     height: tile,

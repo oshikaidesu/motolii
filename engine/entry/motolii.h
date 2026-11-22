@@ -149,6 +149,12 @@ const char* motolii_font_tags(const char* path);
 const char* motolii_font_meta(const char* path);
 // Unicode character classes present in `words`, detected via ICU4X.
 const char* motolii_text_classes(const char* words);
+// Custom JS panels (shelves/panels/*.js): lists available panels, evaluates
+// render(ctx) into a declarative JSON UI tree, and runs onAction(action, ctx).
+const char* motolii_panels(void);
+const char* motolii_panel_render(const char* file, const char* ctx_json);
+const char* motolii_panel_action(const char* file, const char* action_json,
+                                 const char* ctx_json);
 /* Adds a layer of the given kind (kind "" means whatever the file makes),
    starting at the preview's current time. Returns its number, or 0 if no layer
    was made. */

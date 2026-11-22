@@ -8,10 +8,26 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/tool_panel/custom_panel/js_panel_tool.dart';
+import 'package:motolii/workspace/tool_panel/custom_panel/panel_node.dart';
+
+/// All tools in the Tool Panel catalog: built-in tools followed by `.js` custom panels.
+List<Pane> allPanelTools(WorkspaceController ws) => [
+  ...ws.tools,
+  for (final d in discoverJsPanels(ws))
+    Pane(
+      d.name,
+      null,
+      () => JsPanelTool(d),
+      at: PaneStrip.catalog,
+      tone: panelToneColor(d.tone),
+      acts: d.acts,
+    ),
+];
 
 /// The tool named [name], or null if there is none.
 Pane? panelTool(WorkspaceController ws, String name) =>
-    ws.tools.where((t) => t.name == name).firstOrNull;
+    allPanelTools(ws).where((t) => t.name == name).firstOrNull;
 
 /// A tool's sticker: a flat tile in its colour with the glyph knocked out in dark ink.
 class ToolSticker extends StatelessWidget {

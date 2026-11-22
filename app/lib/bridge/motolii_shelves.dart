@@ -171,6 +171,23 @@ extension MotoliiShelves on Motolii {
           words,
         ], (s) => bindings.motolii_text_classes(s[0]).toDartString());
 
+  /// Discovered JS custom panels (`name\tpath\tabout\tacts\ttone` lines).
+  String panelListRaw() => bindings.motolii_panels().toDartString();
+
+  /// Evaluates `render(ctx)` in a JS custom panel file, returning a JSON envelope.
+  String panelRender(String file, String ctxJson) => withStrings([
+    file,
+    ctxJson,
+  ], (s) => bindings.motolii_panel_render(s[0], s[1]).toDartString());
+
+  /// Evaluates `onAction(action, ctx)` in a JS custom panel file, returning a JSON envelope.
+  String panelAction(String file, String actionJson, String ctxJson) =>
+      withStrings([
+        file,
+        actionJson,
+        ctxJson,
+      ], (s) => bindings.motolii_panel_action(s[0], s[1], s[2]).toDartString());
+
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(
     [path],
