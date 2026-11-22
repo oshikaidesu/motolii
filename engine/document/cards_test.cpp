@@ -183,5 +183,23 @@ TEST(Cards, VideoShowsAudioCardWithoutTimelineControls) {
     EXPECT_EQ(line.find(moved), std::string::npos) << line;
 }
 
+TEST(Cards, MacrosCardAppearsWhenMappedAndDrivesTargets) {
+  Layer shape("shape");
+  EXPECT_FALSE(Has(shape.Cards(), "Macros"));
+  EXPECT_TRUE(Has(shape.more, "Macros")) << shape.more;
+  shape.Say("macro_map", "1 rotate -45 45\n1 scale_x 0.5 1.5");
+  EXPECT_TRUE(Has(shape.Cards(), "Macros"));
+  shape.Put("macro_1", 0.5);
+  EXPECT_NEAR(doc_number(shape.d, shape.id, "rotate", 0, 0), 0.0, 1e-6);
+  EXPECT_NEAR(doc_number(shape.d, shape.id, "scale_x", 0, 1), 1.0, 1e-6);
+  shape.Put("macro_1", 1.0);
+  EXPECT_NEAR(doc_number(shape.d, shape.id, "rotate", 0, 0), 45.0, 1e-6);
+  EXPECT_NEAR(doc_number(shape.d, shape.id, "scale_x", 0, 1), 1.5, 1e-6);
+  // Inverted range (lo > hi) works like Ableton's Invert Range.
+  shape.Say("macro_map", "2 opacity 1.0 0.0");
+  shape.Put("macro_2", 0.75);
+  EXPECT_NEAR(doc_number(shape.d, shape.id, "opacity", 0, 1), 0.25, 1e-6);
+}
+
 }  // namespace
 }  // namespace motolii

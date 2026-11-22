@@ -8,6 +8,7 @@ import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/macros/macro_model.dart';
 import 'package:motolii/inspector/rows/row_info.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -114,12 +115,36 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     }
   }
 
+  String? get _propName =>
+      widget.id.startsWith('v_') &&
+          !widget.id.startsWith('v_macro_') &&
+          !widget.id.contains('.')
+      ? widget.id.substring(2)
+      : null;
+
+  MacroBinding? _bindingOf(InspectorValues doc) {
+    final prop = _propName;
+    if (prop == null) return null;
+    return macroBindingOf(doc.strings['v_macro_map'] ?? '', prop);
+  }
+
   ValueListenable<int>? _keyWatch;
+  ValueListenable<int>? _macroWatch;
+
+  void _syncMacroWatch(InspectorValues doc) {
+    final b = _bindingOf(doc);
+    final next = b == null ? null : doc.watch('v_macro_${b.slot}');
+    if (next != _macroWatch) {
+      _macroWatch?.removeListener(_retold);
+      _macroWatch = next?..addListener(_retold);
+    }
+  }
 
   @override
   void dispose() {
     _watch?.removeListener(_retold);
     _keyWatch?.removeListener(_retold);
+    _macroWatch?.removeListener(_retold);
     super.dispose();
   }
 
@@ -188,6 +213,36 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
           'Remove animation',
           () => doc.setKey(id, KeyframeState.off),
         ),
+      if (_propName case final prop?) ...[
+        if (_bindingOf(doc) case final b?)
+          (
+            'macro-unmap',
+            'Unmap from Macro ${b.slot}',
+            () => doc.str(
+              'v_macro_map',
+              removeMacroBinding(doc.strings['v_macro_map'] ?? '', prop),
+            ),
+          )
+        else
+          (
+            'macro-map',
+            'Map to Macro ${nextFreeMacroSlot(doc.strings['v_macro_map'] ?? '')}',
+            () {
+              final raw = doc.strings['v_macro_map'] ?? '';
+              final slot = nextFreeMacroSlot(raw);
+              final (lo, hi) = defaultMacroRange(doc, prop);
+              doc.str(
+                'v_macro_map',
+                upsertMacroBinding(raw, (
+                  slot: slot,
+                  prop: prop,
+                  min: lo,
+                  max: hi,
+                )),
+              );
+            },
+          ),
+      ],
     ];
   }
 
@@ -218,6 +273,13 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
         for (final (k, l, f) in _menuItems())
           ContextMenuItem(l, f, id: 'num-$k:${widget.id}'),
       ]);
+      return true;
+    }
+    // Ableton Map mode: clicking any mappable field selects it as the next target.
+    if (e.buttons == kPrimaryButton &&
+        (_x.doc.flags['macros.map'] ?? false) &&
+        _propName != null) {
+      _x.doc.str('macros.pick', _propName!);
       return true;
     }
     if (_marked &&
@@ -284,15 +346,21 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   @override
   Widget build(BuildContext context) {
     final x = InspectorScope.of(context);
+    _syncMacroWatch(x.doc);
+    final binding = _bindingOf(x.doc);
+    final mapMode = (x.doc.flags['macros.map'] ?? false) && _propName != null;
+    final mapPicked = mapMode && x.doc.strings['macros.pick'] == _propName;
     // Dim dot = animated, lit dot = keyframe at playhead, hollow = can be keyed but has none.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
-    return ContextMenu(
+    final field = ContextMenu(
       key: _menu,
       child: NumberField(
         // Strip the `v_` prefix so the field shows the engine's name.
         name: widget.id.startsWith('v_') ? widget.id.substring(2) : widget.id,
-        value: () => _x.doc.get(widget.id),
+        value: () => binding != null
+            ? evaluateBoundShown(x.doc, binding)
+            : _x.doc.get(widget.id),
         text: (v, w) => formatNumber(v, _p.dec, tight: w < decimalsMinWidth),
         // A compact field's row names the unit once, before its cells.
         unit: (v, w) => w < unitMinWidth || widget.compact
@@ -337,6 +405,46 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
         height: _height,
         pad: _pad,
       ),
+    );
+    if (!mapMode && binding == null) return field;
+    final dotColor = binding != null ? macroSlotColor(binding.slot) : null;
+    return Stack(
+      children: [
+        field,
+        if (mapMode)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: (mapPicked ? Accent.fill : InspectorSkin.toneBlend)
+                      .withValues(alpha: mapPicked ? 0.14 : 0.08),
+                  borderRadius: Shape.round(6),
+                  border: Border.all(
+                    color: (mapPicked ? Accent.fill : InspectorSkin.toneBlend)
+                        .withValues(alpha: mapPicked ? 0.85 : 0.55),
+                    width: mapPicked ? 1.4 : 1.0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (dotColor != null)
+          Positioned(
+            left: 3,
+            top: 3,
+            child: IgnorePointer(
+              child: Container(
+                key: ValueKey('macro-dot:${widget.id}'),
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

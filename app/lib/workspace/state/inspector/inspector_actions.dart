@@ -43,6 +43,10 @@ String fontMetaOf(WorkspaceController ws, String path) =>
 String textClassesOf(WorkspaceController ws, String words) =>
     words.isEmpty ? '' : (ws.inside?.textClasses(words) ?? '');
 
+/// Document-to-display linear scale `(k, offset)` for property [prop] on layer [t].
+(double, double) propScaleOf(WorkspaceController ws, int t, String prop) =>
+    ws.inside?.reading(t, prop) ?? (1.0, 0.0);
+
 /// Moves the effect card [title] of layer [t] by [by] places in its stack, as one undo step.
 void moveEffect(WorkspaceController ws, int t, String title, int by) =>
     ws.after(

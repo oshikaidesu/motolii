@@ -182,6 +182,33 @@ struct Params {
 }
 ''';
 
+const _macros = '''
+struct Params {
+  /// @label(Macro 1) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_1: f32,
+  /// @label(Macro 2) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_2: f32,
+  /// @label(Macro 3) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_3: f32,
+  /// @label(Macro 4) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_4: f32,
+  /// @label(Macro 5) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_5: f32,
+  /// @label(Macro 6) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_6: f32,
+  /// @label(Macro 7) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_7: f32,
+  /// @label(Macro 8) @ui(percent) @range(0, 100) @unit(%) @default(0)
+  macro_8: f32,
+  /// @label(Mappings) @unit(words)
+  macro_map: vec3<f32>,
+  /// @label(Names) @unit(words)
+  macro_names: vec3<f32>,
+  /// @label(Variations) @unit(words)
+  macro_vars: vec3<f32>,
+}
+''';
+
 const _camera = '''
 struct Params {
   /// @label(Focal length) @ui(bar) @range(12, 200) @unit(mm) @default(50)
@@ -336,6 +363,23 @@ void main() {
                         [decl('Audio', _audio)],
                         kind: Kind.shape,
                         numbers: const {'v_volume': 100, 'v_beats': 6},
+                      ),
+                      _host(
+                        [decl('Macros', _macros)],
+                        kind: Kind.shape,
+                        numbers: const {
+                          'v_macro_1': 68,
+                          'v_macro_2': 35,
+                          'v_macro_3': 82,
+                          'v_macro_4': 0,
+                        },
+                        words: const {
+                          'v_macro_map': '1 rotate -45 45\n1 scale_x 0.5 1.5\n2 blur_size 0 40\n3 opacity 1 0',
+                          'v_macro_names': '1\tImpact\n2\tGlow\n3\tFade',
+                          'v_macro_vars': 'Subtle\t25,20,0,0,0,0,0,0\nPeak\t90,80,10,0,0,0,0,0',
+                        },
+                        flags: const {'macros.map': true},
+                        keyMarks: const {'v_macro_1': KeyframeState.at},
                       ),
                     ],
                   ),

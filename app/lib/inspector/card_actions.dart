@@ -21,6 +21,7 @@ class CardActions {
     this.shapeSvg,
     this.fontMeta,
     this.textClasses,
+    this.propScale,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -78,4 +79,7 @@ class CardActions {
 
   /// Unicode character classes present in a text string, detected by the engine via ICU4X (`id\tlabel\tname` lines).
   final String Function(String words)? textClasses;
+
+  /// Scale `(k, offset)` converting document units to inspector display units (`shown = doc * k + offset`).
+  final (double, double) Function(String prop)? propScale;
 }

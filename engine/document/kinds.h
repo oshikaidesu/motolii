@@ -105,6 +105,19 @@ inline const DocValue doc_values[] = {
     {"volume", "video", 0, 2, true, nullptr},
     // Beat detection threshold in dB. 0 shows none.
     {"beats", "video", 0, 60, false, nullptr},
+    // Ableton-style layer macros: 8 keyframeable 0..1 knobs plus mapping table
+    // ("slot prop lo hi" per line), custom knob names, and saved variations.
+    {"macro_1", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_2", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_3", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_4", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_5", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_6", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_7", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_8", doc_visible_kinds, 0, 1, true, nullptr},
+    {"macro_map", doc_visible_kinds, 0, 0, false, ""},
+    {"macro_names", doc_visible_kinds, 0, 0, false, ""},
+    {"macro_vars", doc_visible_kinds, 0, 0, false, ""},
     {"blend", doc_visible_kinds, 0, 0, false,
      "normal add multiply screen darken lighten overlay soft_light hard_light "
      "color_dodge color_burn difference exclusion hue saturation color "

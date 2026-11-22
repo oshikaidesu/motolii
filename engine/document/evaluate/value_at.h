@@ -72,6 +72,16 @@ struct DocValueCache {
   // Prepared SQLite statements for an easing by its name and by its expression.
   // Each is prepared once and then evaluated by SQLite.
   std::map<std::string, sqlite3_stmt*> named, expression_statements;
+  // Parsed user macro mappings (`macro_map` word property) per layer:
+  // prop_name -> {macro slot 1..8, doc-unit min, doc-unit max}.
+  struct MacroTarget {
+    int slot = 0;
+    double lo = 0.0;
+    double hi = 1.0;
+  };
+  std::unordered_map<int, std::unordered_map<std::string, MacroTarget, NameHash,
+                                             std::equal_to<>>>
+      macro_maps;
 };
 
 // SQL condition for whether a value is keyed. See doc_key.

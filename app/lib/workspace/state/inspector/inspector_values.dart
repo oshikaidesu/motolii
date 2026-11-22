@@ -265,6 +265,13 @@ Map<String, String> inspectorWords(WorkspaceController ws, int? id) {
     if (m.word(t, 'kind') == 'text') 'lacks': _lacks(ws, t),
     // The shape type (rect, polygon, star, …) so the Paths preview matches the engine's rendering.
     'shape': m.word(t, 'shape'),
+    // Macro mappings & labels are read even before the Macros card is open so
+    // any number field's right-click menu can map/unmap directly.
+    if (t > 0) ...{
+      'v_macro_map': m.word(t, 'macro_map'),
+      'v_macro_names': m.word(t, 'macro_names'),
+      'v_macro_vars': m.word(t, 'macro_vars'),
+    },
   };
 }
 

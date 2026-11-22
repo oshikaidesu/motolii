@@ -317,6 +317,7 @@ class _InspectorPanelState extends State<InspectorPane> {
         shapeSvg: l == null ? null : () => shapeSvgOf(ws, l.id),
         fontMeta: (path) => fontMetaOf(ws, path),
         textClasses: (words) => textClassesOf(ws, words),
+        propScale: l == null ? null : (prop) => propScaleOf(ws, l.id, prop),
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(

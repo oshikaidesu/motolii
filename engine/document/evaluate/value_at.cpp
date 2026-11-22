@@ -40,10 +40,12 @@ void doc_forget(Doc& d) {
       d.relations.drivers.clear(), d.relations.connects.clear(),
       d.relations.relationsOf.clear();
   d.value_cache.laid.clear();
+  d.value_cache.macro_maps.clear();
 }
 
 void doc_forget_keys(Doc& d, int layer) {
   d.value_cache.moving.erase(layer);
+  d.value_cache.macro_maps.erase(layer);
   // literals stores pointers into moving; erase them too or they dangle.
   for (auto it = d.value_cache.literals.begin();
        it != d.value_cache.literals.end();) {
@@ -218,11 +220,52 @@ double doc_stepped(Doc& d, int layer, const DocKeys& k, double at) {
   return at <= start ? at : start + std::floor((at - start) * r + 1e-9) / r;
 }
 
+namespace {
+// Returns the macro target driving `name` on `layer` from its `macro_map` word
+// ("<slot> <prop> <lo> <hi>" per line), or nullptr when unmapped.
+const DocValueCache::MacroTarget* doc_macro_target(Doc& d, int layer,
+                                                   const char* name) {
+  if (layer <= 0 || !name || std::strncmp(name, "macro_", 6) == 0)
+    return nullptr;
+  auto it = d.value_cache.macro_maps.find(layer);
+  if (it == d.value_cache.macro_maps.end()) {
+    std::unordered_map<std::string, DocValueCache::MacroTarget,
+                       DocValueCache::NameHash, std::equal_to<>>
+        parsed;
+    const std::string raw = doc_word(d, layer, "macro_map");
+    if (!raw.empty()) {
+      std::istringstream lines(raw);
+      for (std::string line; std::getline(lines, line);) {
+        std::istringstream in(line);
+        int slot = 0;
+        std::string prop;
+        double lo = 0.0, hi = 1.0;
+        if ((in >> slot >> prop >> lo >> hi) && slot >= 1 && slot <= 8 &&
+            !prop.empty() && prop.rfind("macro_", 0) != 0) {
+          parsed[std::move(prop)] = {slot, lo, hi};
+        }
+      }
+    }
+    it = d.value_cache.macro_maps.emplace(layer, std::move(parsed)).first;
+  }
+  const auto found = it->second.find(std::string_view(name));
+  return found == it->second.end() ? nullptr : &found->second;
+}
+}  // namespace
+
 double doc_number(Doc& d, int layer, const char* name, double at,
                   double otherwise) {
   if (d.held.layer == layer)
     if (const auto tried = d.held.tried.find(name); tried != d.held.tried.end())
       return tried->second;
+  if (const auto* target = doc_macro_target(d, layer, name)) {
+    static constexpr const char* kMacros[8] = {"macro_1", "macro_2", "macro_3",
+                                               "macro_4", "macro_5", "macro_6",
+                                               "macro_7", "macro_8"};
+    const double m = std::clamp(
+        doc_number(d, layer, kMacros[target->slot - 1], at, 0.0), 0.0, 1.0);
+    return target->lo + (target->hi - target->lo) * m;
+  }
   const DocKeys& k = doc_keys_of(d, layer, name);
   return doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
 }

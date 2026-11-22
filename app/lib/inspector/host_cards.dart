@@ -5,6 +5,7 @@ import 'package:motolii/inspector/blend/blend_preview.dart';
 import 'package:motolii/inspector/camera/camera_view.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/fill/fill_body.dart';
+import 'package:motolii/inspector/macros/macros_body.dart';
 import 'package:motolii/inspector/paths/paths_body.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
@@ -66,6 +67,12 @@ final hostCards =
         drawn: FillBody.drawn,
         absorbs: const {'Stroke'},
         body: (card) => FillBody(card),
+        fold: null,
+      ),
+      'Macros': (
+        drawn: MacrosBody.drawn,
+        absorbs: const {},
+        body: (card) => MacrosBody(card),
         fold: null,
       ),
     };
