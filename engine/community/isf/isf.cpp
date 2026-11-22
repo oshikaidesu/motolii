@@ -32,6 +32,7 @@
 #include "community/sites/site_adapter.h"
 #include "community/three/three_isf.h"
 #include "sca/builtinResource.h"
+#include "shelf/shelf_folders.h"
 
 namespace motolii {
 
@@ -40,7 +41,9 @@ std::string fx_source(const std::string& f) {
   if (std::filesystem::exists(f, wrong)) return f;
   static const std::regex copy(R"((.*)~[0-9]+(\.[^./]+)$)");
   std::smatch m;
-  return std::regex_match(f, m, copy) ? m[1].str() + m[2].str() : f;
+  const std::string base =
+      std::regex_match(f, m, copy) ? m[1].str() + m[2].str() : f;
+  return resolve_shelf_path(base);
 }
 
 // Returns the tags of an ISF file, read from its header and body. See isf.h.

@@ -1,5 +1,6 @@
-# Multi-OS Beta/Release packaging & Velopack binary delta update pipeline (macOS arm64 + Windows x64)
+# Multi-OS Beta/Release packaging & Velopack binary delta update pipeline
 # plus SHA-256 shelves-manifest.json for few-KB shelf delta sync.
+# Trigger with workflow_dispatch to dry-run without publishing; push a v* tag to create a Draft Release.
 name: release
 on:
   workflow_dispatch:
@@ -8,6 +9,11 @@ on:
         description: 'Release version (e.g. 0.1.0-beta.1)'
         required: true
         default: '0.1.0-beta.1'
+      build_windows:
+        description: 'Also run Windows x64 job (requires Windows engine SDK setup)'
+        required: false
+        type: boolean
+        default: false
   push:
     tags:
       - 'v*'
@@ -53,19 +59,21 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Restore prebuilt SDK cache
+      - name: Compute SDK cache key (matches sdk-prebuilt.yml)
         id: sdk
         run: |
           HASH=$(cat engine/deps/filament.sh engine/deps/thorvg.sh engine/deps/skia.sh engine/deps/libtess2.sh engine/deps/iris.sh | shasum -a 256 | awk '{print $1}' | cut -c1-16)
           echo "sdk_key=sdk-macos-arm64-${HASH}" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: sdk_cache
         with:
           path: |
-            engine/third_party/filament_src
-            engine/third_party/skia_src
-            engine/third_party/thorvg_src
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/skia_src/out/path
+            engine/third_party/thorvg_src/build_dawn
             engine/third_party/libtess2
-            engine/third_party/iris
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
             engine/third_party/ffmpeg_lgpl
             engine/third_party/onnxruntime
           key: ${{ steps.sdk.outputs.sdk_key }}
@@ -74,6 +82,9 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
       - name: Build engine library
         run: engine/build.sh lib
       - name: Build Flutter macOS Release
@@ -93,10 +104,11 @@ jobs:
           vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$GH_TOKEN" --channel osx-arm64 -o dist/velopack-osx
       - name: Pack macOS Velopack release + delta
         run: |
-          vpk [osx] pack \
+          vpk pack \
             --packId Motolii \
             --packVersion "${{ needs.version.outputs.ver }}" \
             --packDir dist/Motolii.app \
+            --runtime osx-arm64 \
             --channel osx-arm64 \
             --outputDir dist/velopack-osx
       - uses: actions/upload-artifact@v4
@@ -106,6 +118,7 @@ jobs:
 
   windows-x64:
     needs: version
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_windows }}
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
@@ -114,6 +127,9 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
       - name: Restore Windows prebuilt SDK cache
         uses: actions/cache@v4
         with:
@@ -155,19 +171,33 @@ jobs:
           path: dist/velopack-win/**
 
   publish:
-    needs: [version, shelves-manifest, macos-arm64, windows-x64]
+    needs: [version, shelves-manifest, macos-arm64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Publish GitHub Release with delta assets
+      - name: Create Draft GitHub Release (review before publishing)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
-          prerelease: ${{ contains(needs.version.outputs.ver, '-') }}
+          draft: true
+          prerelease: true
+          body: |
+            ## Motolii ${{ needs.version.outputs.tag }} (macOS Apple Silicon Beta)
+
+            ### 初回起動について（未公証ベータ版 / Unsigned Beta）
+            このベータビルドは Apple Developer ID による公証前のため、ダウンロード直後に macOS Gatekeeper の警告が出る場合があります。
+            `/Applications` へコピー後、ターミナルで以下を 1 回実行してから起動してください：
+
+            ```bash
+            xattr -cr /Applications/Motolii.app
+            ```
+
+            ### 同梱ファイル
+            - macOS Apple Silicon (`osx-arm64`) Velopack パッケージ＆差分更新ファイル
+            - `shelves-manifest.json`（棚アイテムの SHA-256 差分同期用マニフェスト）
           files: |
             artifacts/shelves-manifest/shelves-manifest.json
             artifacts/release-macos-arm64/*
-            artifacts/release-windows-x64/*

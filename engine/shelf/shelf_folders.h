@@ -46,6 +46,9 @@ std::vector<std::filesystem::path> doc_folder_files(const char* folder,
 // app has reported a file put in, removed or overwritten (files_changed). The
 // app calls this on every build.
 bool doc_folder_moved(int& seen);
+// Resolves portable `shelves/...` or relocated `<other>/shelves/...` paths
+// against this installation's bundled shelves folder when [raw] is not found.
+std::string resolve_shelf_path(const std::string& raw);
 
 }  // namespace motolii
 

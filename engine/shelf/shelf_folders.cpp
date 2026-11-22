@@ -34,13 +34,19 @@ static std::filesystem::path loaded_from() {
 }
 std::filesystem::path doc_engine(const char* part) {
   std::error_code wrong;
-  // The library is <engine>/out/libmotolii.dylib, but while the open app runs a
-  // rebuilt engine it is <engine>/out/live/libmotolii-<time>.dylib, a hot-swapped
-  // copy one folder deeper (motolii.dart _liveCopy). Anchor on the out/ folder so
-  // either depth resolves to the same <engine>; without it the extra live/ folder
-  // shifted the root and the shelves/ tree (effects, create) came back empty.
   std::filesystem::path dir =
       std::filesystem::weakly_canonical(loaded_from(), wrong).parent_path();
+  // macOS standalone Motolii.app/Contents/Frameworks/libmotolii.dylib -> Contents/Resources/engine
+  if (const auto bundled = dir.parent_path() / "Resources" / "engine";
+      std::filesystem::is_directory(bundled / "out", wrong)) {
+    return bundled / part;
+  }
+  // Windows standalone <app>/libmotolii.dll -> <app>/engine
+  if (const auto adjacent = dir / "engine";
+      std::filesystem::is_directory(adjacent / "out", wrong)) {
+    return adjacent / part;
+  }
+  // Dev checkout: <engine>/out/libmotolii.dylib (or <engine>/out/live/libmotolii-<time>.dylib).
   for (std::filesystem::path p = dir; !p.empty() && p != p.parent_path();
        p = p.parent_path())
     if (p.filename() == "out") {
@@ -48,6 +54,23 @@ std::filesystem::path doc_engine(const char* part) {
       break;
     }
   return dir.parent_path() / part;
+}
+
+std::string resolve_shelf_path(const std::string& raw) {
+  std::error_code wrong;
+  if (raw.empty() || std::filesystem::exists(raw, wrong)) return raw;
+  std::string rel;
+  if (raw.rfind("shelves/", 0) == 0) {
+    rel = raw.substr(8);
+  } else if (const size_t pos = raw.find("/shelves/");
+             pos != std::string::npos) {
+    rel = raw.substr(pos + 9);
+  }
+  if (!rel.empty()) {
+    const auto local = (doc_engine("..") / "shelves" / rel).lexically_normal();
+    if (std::filesystem::exists(local, wrong)) return local.generic_string();
+  }
+  return raw;
 }
 std::vector<std::filesystem::path> doc_folders(const char* folder) {
   static const std::map<std::string, const char*> before{

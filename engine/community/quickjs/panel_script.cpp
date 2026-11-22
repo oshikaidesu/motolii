@@ -284,7 +284,7 @@ std::string panel_eval_action(const std::string& file_path,
 std::string panel_card_ui_file(const std::string& effect_path) {
   if (effect_path.empty()) return "";
   std::error_code ec;
-  const std::filesystem::path p(effect_path);
+  const std::filesystem::path p(resolve_shelf_path(effect_path));
   const std::filesystem::path sidecar =
       p.parent_path() / (p.stem().string() + ".ui.js");
   if (std::filesystem::is_regular_file(sidecar, ec)) {
