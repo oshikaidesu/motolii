@@ -11,7 +11,10 @@ import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/parent_folder.dart' show parentFolderOf;
+import 'package:motolii/storage/motolii_pack.dart' show isMotoliiPackPath;
 import 'package:motolii/storage/pasteboard_files.dart' show onDroppedFiles;
+import 'package:motolii/workspace/state/pack_service.dart'
+    show importPacksIntoWorkspace;
 import 'package:motolii/storage/project_files.dart' show projectFilesIn;
 import 'package:motolii/storage/window_paths.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
@@ -79,9 +82,22 @@ class WorkspaceState extends State<Workspace> {
   }
 
   void _addDroppedPaths(List<String> paths) {
-    if (!projectOpen(ws) || paths.isEmpty) return;
+    if (paths.isEmpty) return;
+    final packs = [
+      for (final p in paths)
+        if (isMotoliiPackPath(p)) p,
+    ];
+    final media = [
+      for (final p in paths)
+        if (!isMotoliiPackPath(p)) p,
+    ];
+    if (packs.isNotEmpty) {
+      importPacksIntoWorkspace(ws, packs);
+      if (mounted) setState(() {});
+    }
+    if (!projectOpen(ws) || media.isEmpty) return;
     groupBegin(ws);
-    for (final p in paths) {
+    for (final p in media) {
       placeFileLayer(
         ws,
         file: p,

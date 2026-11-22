@@ -102,3 +102,56 @@ Future<String?> pickFolder({String prompt = 'Choose a folder'}) async {
   final path = slashed((r.stdout as String).trim());
   return path.isEmpty ? null : path.replaceFirst(RegExp(r'/$'), '');
 }
+
+/// Asks the user to pick an existing file with the system dialog. Returns the path, or null if cancelled.
+Future<String?> pickFile({
+  String prompt = 'Choose a file',
+  List<String> extensions = const [],
+}) async {
+  final cleanPrompt = prompt.replaceAll('"', r'\"');
+  final r = hostIsWindows
+      ? await Process.run('powershell', [
+          '-NoProfile',
+          '-STA',
+          '-Command',
+          '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Add-Type -AssemblyName System.Windows.Forms; '
+              r'$d=New-Object System.Windows.Forms.OpenFileDialog; '
+              "\$d.Title='${prompt.replaceAll("'", "''")}'; "
+              '${extensions.isEmpty ? '' : "\$d.Filter='Files (${extensions.map((e) => '*.$e').join(';')})|${extensions.map((e) => '*.$e').join(';')}'; "}'
+              r"if($d.ShowDialog() -eq 'OK'){$d.FileName}",
+        ], stdoutEncoding: utf8)
+      : await Process.run('osascript', [
+          '-e',
+          extensions.isEmpty
+              ? 'set f to choose file with prompt "$cleanPrompt"\nreturn POSIX path of f'
+              : 'set f to choose file with prompt "$cleanPrompt" of type {${extensions.map((e) => '"$e"').join(', ')}}\nreturn POSIX path of f',
+        ]);
+  final path = slashed((r.stdout as String).trim());
+  return path.isEmpty ? null : path;
+}
+
+/// Asks the user for a destination file path with the system save dialog. Returns the path, or null if cancelled.
+Future<String?> saveFile({
+  String prompt = 'Save file',
+  String defaultName = 'export',
+}) async {
+  final cleanPrompt = prompt.replaceAll('"', r'\"');
+  final cleanName = defaultName.replaceAll('"', r'\"');
+  final r = hostIsWindows
+      ? await Process.run('powershell', [
+          '-NoProfile',
+          '-STA',
+          '-Command',
+          '[Console]::OutputEncoding=[Text.Encoding]::UTF8; Add-Type -AssemblyName System.Windows.Forms; '
+              r'$d=New-Object System.Windows.Forms.SaveFileDialog; '
+              "\$d.Title='${prompt.replaceAll("'", "''")}'; "
+              "\$d.FileName='${defaultName.replaceAll("'", "''")}'; "
+              r"if($d.ShowDialog() -eq 'OK'){$d.FileName}",
+        ], stdoutEncoding: utf8)
+      : await Process.run('osascript', [
+          '-e',
+          'set f to choose file name with prompt "$cleanPrompt" default name "$cleanName"\nreturn POSIX path of f',
+        ]);
+  final path = slashed((r.stdout as String).trim());
+  return path.isEmpty ? null : path;
+}

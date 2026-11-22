@@ -3,6 +3,7 @@
 // what the shelf lists is effect_catalog.dart.
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/storage/disk.dart' show existsFile;
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/dock/effects/effect_catalog.dart';
 import 'package:motolii/workspace/dock/effects/effects_controller.dart';
@@ -10,6 +11,8 @@ import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/pack_service.dart'
+    show exportPackFromWorkspace;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 class EffectCommands {
@@ -96,6 +99,18 @@ class EffectCommands {
     if (shelfAdded(e.id)) ...[
       const ContextMenuItem.rule(),
       ContextMenuItem('Rename…', rename),
+    ],
+    if (existsFile(e.id)) ...[
+      const ContextMenuItem.rule(),
+      ContextMenuItem(
+        'Export Pack (.motoliipack)…',
+        () => exportPackFromWorkspace(
+          ws,
+          sourceFile: e.id,
+          kind: e.id.endsWith('.js') ? 'expression' : 'effect',
+          name: e.name,
+        ),
+      ),
     ],
     if (effectPack(e.id) case final p? when l.packs.containsKey(p)) ...[
       const ContextMenuItem.rule(),

@@ -10,6 +10,8 @@ import 'package:motolii/workspace/commands/command_layers.dart';
 import 'package:motolii/workspace/commands/command_actions.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/stage/stage.dart';
+import 'package:motolii/workspace/state/pack_service.dart'
+    show importPackFromDialog;
 import 'package:motolii/workspace/state/project_session.dart'
     show setProjectPoster;
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -44,6 +46,7 @@ extension WorkspaceMenus on WorkspaceState {
         }
       },
       'file.package': package,
+      'file.importPack': () => importPackFromDialog(ws),
       ...editCommands(),
       ...layerCommands(),
       ...arrangeCommands(),

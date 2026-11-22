@@ -7,6 +7,8 @@ import 'package:motolii/widgets/controls.dart' show Chip, Pressable, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/state/pack_service.dart'
+    show exportPackFromWorkspace;
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/tool_panel/tool_sticker.dart';
 import 'package:motolii/widgets/grid_columns.dart';
@@ -66,6 +68,20 @@ class _ToolHeader extends StatelessWidget {
           trailing: [
             if (name != 'Tools')
               if (panelTool(ws, name) case final tool?) ...[
+                if (jsPanelDescriptor(ws, name) case final jsPanel?) ...[
+                  Chip(
+                    key: ValueKey('tool:export:$name'),
+                    label: 'Pack',
+                    dot: Grey.g76,
+                    onTap: () => exportPackFromWorkspace(
+                      ws,
+                      sourceFile: jsPanel.path,
+                      kind: 'panel',
+                      name: jsPanel.name,
+                    ),
+                  ),
+                  SizedBox(width: WindowTokens.gap),
+                ],
                 Chip(
                   key: ValueKey('tool:dock:$name'),
                   label: 'Tab',

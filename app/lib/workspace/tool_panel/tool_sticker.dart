@@ -29,6 +29,10 @@ List<Pane> allPanelTools(WorkspaceController ws) => [
 Pane? panelTool(WorkspaceController ws, String name) =>
     allPanelTools(ws).where((t) => t.name == name).firstOrNull;
 
+/// The JS custom panel descriptor for [name], or null if [name] is a built-in tool.
+PanelDescriptor? jsPanelDescriptor(WorkspaceController ws, String name) =>
+    discoverJsPanels(ws).where((d) => d.name == name).firstOrNull;
+
 /// A tool's sticker: a flat tile in its colour with the glyph knocked out in dark ink.
 class ToolSticker extends StatelessWidget {
   const ToolSticker(this.name, {super.key, this.size = 16});

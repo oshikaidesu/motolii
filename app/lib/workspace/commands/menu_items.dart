@@ -74,6 +74,7 @@ extension WorkspaceMenuItems on WorkspaceState {
           ), // Live's File menu: Export Audio/Video.
           item('Export Frame', 'file.exportFrame'),
           item('Package Project', 'file.package'),
+          item('Import Pack (.motoliipack)…', 'file.importPack'),
           item('Use Frame as Project Picture', 'file.poster'),
         ],
       );

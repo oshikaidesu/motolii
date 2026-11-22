@@ -20,10 +20,10 @@
   - 会話開始前の `Agent` パネルに `TRY ASKING` 4 カード（波打つ日本語タイトル／カスタムカード付きエフェクト／音に反応して弾む動き／Tool Panel 用ツール）を追加し、1 クリック送信（起動待ち時は入力欄へ自動セット）を実装・実機画面確認済み
 
 ## Phase 3：コミュニティ循環（棚アイテムの共有パック）
-- [ ] **共有パック仕様の確定**（エフェクト本体＋`.ui.js`＋素材＋クレジットを 1 つの `.motoliipack`（ZIP）にまとめる最小仕様）
-- [ ] **エクスポート導線**（エフェクトカード／Tool Panel／棚メニューから 1 クリックで `.motoliipack` 書き出し）
-- [ ] **インポート導線**（`.motoliipack` のウィンドウ D&D またはメニュー選択 → ユーザー棚へ展開 → 自動ホットリロードで即利用可能）
-- [ ] **実機確認**：書き出したパックを別フォルダ／クリーン状態へ D&D して即動くことを確認
+- [x] **共有パック仕様の確定**（[docs/design/motoliipack.md](motoliipack.md) — `motoliipack.json`＋エフェクト／`.vs`／`.ui.js`／`.png`／Tool Panel `.js`＋クレジットを 1 つの `.motoliipack` ZIP にまとめる最小 v1 仕様、パストラバーサル防止付き）
+- [x] **エクスポート導線**（Effects 棚のコンテキストメニューに `Export Pack (.motoliipack)…`、Tool Panel のカスタム JS パネルヘッダーに `Pack` チップを追加）
+- [x] **インポート導線**（`.motoliipack` のウィンドウ D&D および `File → Import Pack (.motoliipack)…` → ユーザー棚へ展開＋`meta.yaml` クレジット追記＋`motolii_files_changed()` / `clearShelfMetaCache()` 自動ホットリロード）
+- [x] **実機確認**：`motolii_pack_test.dart`（`Diagonal Blur.fs`+`.ui.js`、Tool Panel `.js`、パストラバーサル拒否 4/4 合格）＋クリーン `MOTOLII_OWN` で実機 `Motolii.app` にパック展開した Tool Panel 表示・`Pack` チップ・`File → Import Pack (.motoliipack)…` メニュー確認済み
 
 ## Phase 4：マルチ OS 配布パッケージ＆差分更新パイプライン
 - [ ] **Release `.app`（macOS）の完全自己完結バンドル化**
@@ -46,3 +46,4 @@
 - 2026-11-22: ロードマップ作成（E2E ウォークスルー不具合 #1〜#10 修正・`origin/main` push 完了時点）
 - 2026-11-22: **Phase 1 完了**（MP4+音声書き出し・保存再オープン復元検証、IME 変換保護、`Shift+A`＋`REC · Animate all` 強調、Help ログ／バグ報告導線・エラー表示整理）
 - 2026-11-23: **Phase 2 完了**（`shelves/samples/` 3 本同梱＋Home サイドバー `SAMPLES` 1 クリック複製起動、`Agent` パネル 4 スタータープロンプト実装・実機 `Motolii.app` 画面確認済み）
+- 2026-11-23: **Phase 3 完了**（`.motoliipack` 仕様策定・`motolii_pack.dart`＋`pack_service.dart` 実装、Effects／Tool Panel エクスポート・D&D／File メニューインポート＆自動ホットリロード、実機確認済み）
