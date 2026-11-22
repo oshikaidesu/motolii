@@ -1,6 +1,5 @@
-// Universal Signal Macros card: 4–8 signal channels (Knob / Audio / MIDI / Layer / Wave),
-// modeless plug drag-and-drop onto any parameter below, inline source config tray,
-// Rand, Macro Variations snapshots, and optional Min/Max/Invert range table.
+// Universal Signal Macros card: 4–8 signal channels (Knob / Audio / MIDI / Layer / Wave).
+// 詳細: docs/design/macros.md
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';

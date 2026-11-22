@@ -406,6 +406,7 @@ int macro_slot_of(const char* name) {
 
 // Evaluates a macro slot's normalized 0..1 signal at time `at`.
 // Cycle-guarded so cross-layer bindings cannot recurse infinitely.
+// 詳細: docs/design/macros.md
 double doc_macro_signal(Doc& d, int layer, int slot, double at) {
   thread_local int macro_depth = 0;
   if (macro_depth >= 8 || slot < 1 || slot > 8) return 0.0;
