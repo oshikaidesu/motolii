@@ -115,6 +115,7 @@ inline const DocShown doc_shown[] = {
     {"macro_7", "share", "%", "Macro 7", 0, 1, nullptr},
     {"macro_8", "share", "%", "Macro 8", 0, 1, nullptr},
     {"macro_map", "words", "", "Mappings", 0, 0, nullptr},
+    {"macro_sources", "words", "", "Sources", 0, 0, nullptr},
     {"macro_names", "words", "", "Names", 0, 0, nullptr},
     {"macro_vars", "words", "", "Variations", 0, 0, nullptr},
     {"clip_matte", "", "", "Cut by", 0, 0, nullptr},

@@ -4,6 +4,7 @@
 // clocks of a nested element and of a script.
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <map>
@@ -82,6 +83,16 @@ struct DocValueCache {
   std::unordered_map<int, std::unordered_map<std::string, MacroTarget, NameHash,
                                              std::equal_to<>>>
       macro_maps;
+  // Parsed signal input sources (`macro_sources` word property) per layer.
+  struct MacroSource {
+    enum Kind { kKnob, kWave, kAudio, kMidi, kLayer } kind = kKnob;
+    std::string sub;   // wave shape, midi mode, or source layer prop
+    std::string path;  // midi file path (optional)
+    int ref = 0;       // source layer id (audio/layer) or midi channel
+    double a = 1.0;    // wave hz, audio gain, or layer input min
+    double b = 0.0;    // wave phase, audio smooth (s), or layer input max
+  };
+  std::unordered_map<int, std::array<MacroSource, 8>> macro_sources;
 };
 
 // SQL condition for whether a value is keyed. See doc_key.

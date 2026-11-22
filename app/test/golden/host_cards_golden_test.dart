@@ -202,6 +202,8 @@ struct Params {
   macro_8: f32,
   /// @label(Mappings) @unit(words)
   macro_map: vec3<f32>,
+  /// @label(Sources) @unit(words)
+  macro_sources: vec3<f32>,
   /// @label(Names) @unit(words)
   macro_names: vec3<f32>,
   /// @label(Variations) @unit(words)
@@ -320,9 +322,14 @@ void main() {
               children: [
                 SizedBox(
                   width: colW,
-                  child: _host([
-                    decl('Transform', _transform),
-                  ], openAnchor: true),
+                  child: _host(
+                    [decl('Transform', _transform)],
+                    numbers: const {'v_macro_1': 68, 'v_macro_2': 74},
+                    words: const {
+                      'v_macro_map': '1 rotate -45 45\n2 opacity 20 100',
+                    },
+                    openAnchor: true,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 SizedBox(
@@ -369,17 +376,24 @@ void main() {
                         kind: Kind.shape,
                         numbers: const {
                           'v_macro_1': 68,
-                          'v_macro_2': 35,
-                          'v_macro_3': 82,
-                          'v_macro_4': 0,
+                          'v_macro_2': 74,
+                          'v_macro_3': 55,
+                          'v_macro_4': 40,
                         },
                         words: const {
-                          'v_macro_map': '1 rotate -45 45\n1 scale_x 0.5 1.5\n2 blur_size 0 40\n3 opacity 1 0',
-                          'v_macro_names': '1\tImpact\n2\tGlow\n3\tFade',
+                          'v_macro_map': '1 rotate -45 45\n2 opacity 20 100\n3 blur_size 0 40\n4 scale_x 0.5 1.5',
+                          'v_macro_sources': '2 audio 0 1.8 0.05\n3 wave sine 2 0\n4 layer 2 rotate -180 180',
+                          'v_macro_names':
+                              '1\tImpact\n2\tBeat\n3\tPulse\n4\tFollow',
                           'v_macro_vars': 'Subtle\t25,20,0,0,0,0,0,0\nPeak\t90,80,10,0,0,0,0,0',
                         },
-                        flags: const {'macros.map': true},
+                        flags: const {'macros.ranges': true},
                         keyMarks: const {'v_macro_1': KeyframeState.at},
+                        actions: CardActions(
+                          layerChoices: () => const [
+                            (id: 2, name: 'Lead', hasAudio: false),
+                          ],
+                        ),
                       ),
                     ],
                   ),

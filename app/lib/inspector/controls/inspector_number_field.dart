@@ -14,6 +14,7 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart'
     show ContextMenu, ContextMenuItem, ContextMenuState;
+import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/number_format.dart';
 
@@ -113,6 +114,11 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       _keyWatch?.removeListener(_retold);
       _keyWatch = k..addListener(_retold);
     }
+    final drag = _x.doc.macroDrag;
+    if (drag != _dragWatch) {
+      _dragWatch?.removeListener(_retold);
+      _dragWatch = drag..addListener(_retold);
+    }
   }
 
   String? get _propName =>
@@ -130,6 +136,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
 
   ValueListenable<int>? _keyWatch;
   ValueListenable<int>? _macroWatch;
+  ValueListenable<int?>? _dragWatch;
 
   void _syncMacroWatch(InspectorValues doc) {
     final b = _bindingOf(doc);
@@ -140,11 +147,24 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     }
   }
 
+  void _connectToSlot(InspectorValues doc, int slot) {
+    final prop = _propName;
+    if (prop == null) return;
+    final raw = doc.strings['v_macro_map'] ?? '';
+    final (lo, hi) = defaultMacroRange(doc, prop);
+    doc.str(
+      'v_macro_map',
+      upsertMacroBinding(raw, (slot: slot, prop: prop, min: lo, max: hi)),
+    );
+    if (doc.macroDrag.value == slot) doc.macroDrag.value = null;
+  }
+
   @override
   void dispose() {
     _watch?.removeListener(_retold);
     _keyWatch?.removeListener(_retold);
     _macroWatch?.removeListener(_retold);
+    _dragWatch?.removeListener(_retold);
     super.dispose();
   }
 
@@ -275,11 +295,11 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       ]);
       return true;
     }
-    // Ableton Map mode: clicking any mappable field selects it as the next target.
+    // Click-armed plug connection: clicking any mappable field connects it immediately.
     if (e.buttons == kPrimaryButton &&
-        (_x.doc.flags['macros.map'] ?? false) &&
+        _x.doc.macroDrag.value != null &&
         _propName != null) {
-      _x.doc.str('macros.pick', _propName!);
+      _connectToSlot(_x.doc, _x.doc.macroDrag.value!);
       return true;
     }
     if (_marked &&
@@ -348,8 +368,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
     final x = InspectorScope.of(context);
     _syncMacroWatch(x.doc);
     final binding = _bindingOf(x.doc);
-    final mapMode = (x.doc.flags['macros.map'] ?? false) && _propName != null;
-    final mapPicked = mapMode && x.doc.strings['macros.pick'] == _propName;
+    final dragSlot = _propName != null ? x.doc.macroDrag.value : null;
     // Dim dot = animated, lit dot = keyframe at playhead, hollow = can be keyed but has none.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
     _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
@@ -406,45 +425,154 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
         pad: _pad,
       ),
     );
-    if (!mapMode && binding == null) return field;
+    if (_propName == null) return field;
     final dotColor = binding != null ? macroSlotColor(binding.slot) : null;
-    return Stack(
-      children: [
-        field,
-        if (mapMode)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: (mapPicked ? Accent.fill : InspectorSkin.toneBlend)
-                      .withValues(alpha: mapPicked ? 0.14 : 0.08),
-                  borderRadius: Shape.round(6),
-                  border: Border.all(
-                    color: (mapPicked ? Accent.fill : InspectorSkin.toneBlend)
-                        .withValues(alpha: mapPicked ? 0.85 : 0.55),
-                    width: mapPicked ? 1.4 : 1.0,
+    final dragTone = dragSlot != null ? macroSlotColor(dragSlot) : null;
+    final mNorm = binding != null
+        ? ((x.doc.get('v_macro_${binding.slot}') ?? 0.0) / 100.0).clamp(
+            0.0,
+            1.0,
+          )
+        : 0.0;
+    final shownLo = binding != null
+        ? macroToShown(x.doc, binding.prop, binding.min)
+        : 0.0;
+    final shownHi = binding != null
+        ? macroToShown(x.doc, binding.prop, binding.max)
+        : 0.0;
+    final shownNow = binding != null ? evaluateBoundShown(x.doc, binding) : 0.0;
+
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (d) => d.data >= 1 && d.data <= macroSlotCount,
+      onAcceptWithDetails: (d) => _connectToSlot(x.doc, d.data),
+      builder: (context, candidates, _) {
+        final hovered = candidates.isNotEmpty;
+        final hoverTone = hovered
+            ? macroSlotColor(candidates.first!)
+            : dragTone;
+        return Stack(
+          children: [
+            field,
+            if (hoverTone != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: hoverTone.withValues(alpha: hovered ? 0.18 : 0.07),
+                      borderRadius: Shape.round(6),
+                      border: Border.all(
+                        color: hoverTone.withValues(
+                          alpha: hovered ? 0.90 : 0.45,
+                        ),
+                        width: hovered ? 1.5 : 1.0,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        if (dotColor != null)
-          Positioned(
-            left: 3,
-            top: 3,
-            child: IgnorePointer(
-              child: Container(
-                key: ValueKey('macro-dot:${widget.id}'),
-                width: 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
+            if (dotColor != null) ...[
+              Positioned(
+                left: 3,
+                top: 3,
+                child: IgnorePointer(
+                  child: Container(
+                    key: ValueKey('macro-dot:${widget.id}'),
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-      ],
+              Positioned(
+                left: 4,
+                right: 4,
+                bottom: 2,
+                height: 4,
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    key: ValueKey('macro-range:${widget.id}'),
+                    painter: Draw(
+                      (c, s) => _drawMacroRangeBand(
+                        c,
+                        s,
+                        dotColor,
+                        pMin: _p.min,
+                        pMax: _p.max,
+                        lo: shownLo,
+                        hi: shownHi,
+                        now: shownNow,
+                        mNorm: mNorm,
+                      ),
+                      (
+                        dotColor,
+                        _p.min,
+                        _p.max,
+                        shownLo,
+                        shownHi,
+                        shownNow,
+                        mNorm,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
+}
+
+/// Paints an inline Bitwig/Serum-style modulation range band along the bottom of a field.
+void _drawMacroRangeBand(
+  Canvas c,
+  Size s,
+  Color col, {
+  required double? pMin,
+  required double? pMax,
+  required double lo,
+  required double hi,
+  required double now,
+  required double mNorm,
+}) {
+  final cy = s.height * 0.5;
+  final bounded = pMin != null && pMax != null && pMax > pMin;
+  if (!bounded) {
+    final fillW = s.width * mNorm.clamp(0.0, 1.0);
+    c.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, cy - 1, fillW, 2),
+        const Radius.circular(1),
+      ),
+      Paint()..color = col.withValues(alpha: 0.75),
+    );
+    return;
+  }
+  final span = pMax - pMin;
+  final uLo = ((lo - pMin) / span).clamp(0.0, 1.0);
+  final uHi = ((hi - pMin) / span).clamp(0.0, 1.0);
+  final uNow = ((now - pMin) / span).clamp(0.0, 1.0);
+  final x0 = (uLo < uHi ? uLo : uHi) * s.width;
+  final x1 = (uLo < uHi ? uHi : uLo) * s.width;
+
+  // Active modulation range band.
+  c.drawRRect(
+    RRect.fromRectAndRadius(
+      Rect.fromLTRB(x0, cy - 1, x1, cy + 1),
+      const Radius.circular(1),
+    ),
+    Paint()..color = col.withValues(alpha: 0.45),
+  );
+  // Min & Max endpoint ticks.
+  final tickPaint = Paint()
+    ..color = col.withValues(alpha: 0.85)
+    ..strokeWidth = 1.2;
+  c.drawLine(Offset(x0, 0), Offset(x0, s.height), tickPaint);
+  c.drawLine(Offset(x1, 0), Offset(x1, s.height), tickPaint);
+  // Live value pip.
+  c.drawCircle(Offset(uNow * s.width, cy), 1.9, Paint()..color = col);
 }

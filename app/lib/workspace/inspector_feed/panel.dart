@@ -54,7 +54,10 @@ class _InspectorPanelState extends State<InspectorPane> {
   (int, bool)? _stageKeyed;
   bool _keyed(WorkspaceController ws) {
     final l = _layerOf(ws);
-    if (l != null) return l.keys.isNotEmpty;
+    if (l != null) {
+      return l.keys.isNotEmpty ||
+          layerWord(ws, l.id, 'macro_sources').isNotEmpty;
+    }
     if (!projectOpen(ws)) return true;
     if (_stageKeyed?.$1 != ws.rev) {
       _stageKeyed = (
@@ -318,6 +321,19 @@ class _InspectorPanelState extends State<InspectorPane> {
         fontMeta: (path) => fontMetaOf(ws, path),
         textClasses: (words) => textClassesOf(ws, words),
         propScale: l == null ? null : (prop) => propScaleOf(ws, l.id, prop),
+        layerChoices: l == null
+            ? null
+            : () => [
+                for (final other in ws.layers)
+                  if (other.id != l.id)
+                    (
+                      id: other.id,
+                      name: other.name,
+                      hasAudio:
+                          other.kind == LayerKind.audio ||
+                          layerWord(ws, other.id, 'kind') == 'video',
+                    ),
+              ],
       ),
       snapshot: InspectorSnapshot(
         numbers: WorkspaceController.timed(

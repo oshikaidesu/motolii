@@ -116,6 +116,7 @@ inline const DocValue doc_values[] = {
     {"macro_7", doc_visible_kinds, 0, 1, true, nullptr},
     {"macro_8", doc_visible_kinds, 0, 1, true, nullptr},
     {"macro_map", doc_visible_kinds, 0, 0, false, ""},
+    {"macro_sources", doc_visible_kinds, 0, 0, false, ""},
     {"macro_names", doc_visible_kinds, 0, 0, false, ""},
     {"macro_vars", doc_visible_kinds, 0, 0, false, ""},
     {"blend", doc_visible_kinds, 0, 0, false,

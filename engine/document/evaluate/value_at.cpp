@@ -3,7 +3,9 @@
 #include <sqlite3.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <sstream>
@@ -13,6 +15,8 @@
 #include <vector>
 
 #include "document/document.h"
+#include "media/midi_notes.h"
+#include "media/sound_level.h"
 #include "motion/easing_curves.h"
 #include "motion/easing_names.h"
 #include "stage/effects/screen_fx.h"
@@ -41,11 +45,13 @@ void doc_forget(Doc& d) {
       d.relations.relationsOf.clear();
   d.value_cache.laid.clear();
   d.value_cache.macro_maps.clear();
+  d.value_cache.macro_sources.clear();
 }
 
 void doc_forget_keys(Doc& d, int layer) {
   d.value_cache.moving.erase(layer);
   d.value_cache.macro_maps.erase(layer);
+  d.value_cache.macro_sources.erase(layer);
   // literals stores pointers into moving; erase them too or they dangle.
   for (auto it = d.value_cache.literals.begin();
        it != d.value_cache.literals.end();) {
@@ -251,6 +257,196 @@ const DocValueCache::MacroTarget* doc_macro_target(Doc& d, int layer,
   const auto found = it->second.find(std::string_view(name));
   return found == it->second.end() ? nullptr : &found->second;
 }
+
+// Parses `macro_sources` word property once per layer into 8 slot descriptors.
+const DocValueCache::MacroSource& doc_macro_source(Doc& d, int layer,
+                                                   int slot) {
+  static const DocValueCache::MacroSource kDefault{};
+  if (layer <= 0 || slot < 1 || slot > 8) return kDefault;
+  auto it = d.value_cache.macro_sources.find(layer);
+  if (it == d.value_cache.macro_sources.end()) {
+    std::array<DocValueCache::MacroSource, 8> parsed{};
+    const std::string raw = doc_word(d, layer, "macro_sources");
+    if (!raw.empty()) {
+      std::istringstream lines(raw);
+      for (std::string line; std::getline(lines, line);) {
+        std::istringstream in(line);
+        int s = 0;
+        std::string kind;
+        if (!(in >> s >> kind) || s < 1 || s > 8) continue;
+        DocValueCache::MacroSource src;
+        if (kind == "wave") {
+          src.kind = DocValueCache::MacroSource::kWave;
+          src.sub = "sine";
+          src.a = 1.0;
+          src.b = 0.0;
+          in >> src.sub >> src.a >> src.b;
+        } else if (kind == "audio") {
+          src.kind = DocValueCache::MacroSource::kAudio;
+          src.ref = 0;
+          src.a = 1.5;
+          src.b = 0.05;
+          in >> src.ref >> src.a >> src.b;
+        } else if (kind == "midi") {
+          src.kind = DocValueCache::MacroSource::kMidi;
+          src.sub = "vel";
+          src.ref = -1;
+          in >> src.sub >> src.ref;
+          std::string rest;
+          std::getline(in, rest);
+          const size_t first = rest.find_first_not_of(" \t\r");
+          if (first != std::string::npos) src.path = rest.substr(first);
+        } else if (kind == "layer") {
+          src.kind = DocValueCache::MacroSource::kLayer;
+          src.ref = 0;
+          src.sub = "rotate";
+          src.a = 0.0;
+          src.b = 1.0;
+          in >> src.ref >> src.sub >> src.a >> src.b;
+        } else {
+          src.kind = DocValueCache::MacroSource::kKnob;
+        }
+        parsed[(size_t)(s - 1)] = std::move(src);
+      }
+    }
+    it = d.value_cache.macro_sources.emplace(layer, std::move(parsed)).first;
+  }
+  return it->second[(size_t)(slot - 1)];
+}
+
+double macro_hash01(int64_t n) {
+  uint64_t x = (uint64_t)n * 0x9e3779b97f4a7c15ULL;
+  x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+  x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+  x = x ^ (x >> 31);
+  return (double)(x >> 11) * (1.0 / (double)(1ULL << 53));
+}
+
+double eval_wave_signal(const std::string& shape, double hz, double phase,
+                        double at) {
+  const double t = at * hz + phase;
+  const double f = t - std::floor(t);
+  if (shape == "tri") return 1.0 - std::fabs(2.0 * f - 1.0);
+  if (shape == "saw") return f;
+  if (shape == "square") return f < 0.5 ? 1.0 : 0.0;
+  if (shape == "noise") {
+    const int64_t i = (int64_t)std::floor(t);
+    const double u = f * f * (3.0 - 2.0 * f);
+    return macro_hash01(i) * (1.0 - u) + macro_hash01(i + 1) * u;
+  }
+  constexpr double kTwoPi = 6.28318530717958647692;
+  return 0.5 + 0.5 * std::sin(kTwoPi * t);
+}
+
+double eval_audio_layer_rms(Doc& d, int src_layer, double at, double smooth) {
+  const std::string file = doc_word(d, src_layer, "file");
+  if (file.empty()) return 0.0;
+  const SoundRead* read = sound_of(file);
+  if (!read) return 0.0;
+  const double start = doc_number(d, src_layer, "start", 0, 0),
+               lasts = doc_number(d, src_layer, "duration", 0, -1);
+  if (at < start || (lasts >= 0 && at >= start + lasts)) return 0.0;
+  const double begin = doc_number(d, src_layer, "begin", 0, 0),
+               speed = doc_number(d, src_layer, "speed", 0, 1),
+               vol = std::max(0.0, doc_number(d, src_layer, "volume", at, 1));
+  if (vol <= 0.0) return 0.0;
+  const int n =
+      std::clamp((int)std::lround(std::max(0.02, smooth) * sound_rate), 512,
+                 16384);
+  std::vector<float> wave((size_t)n, 0.f);
+  sound_wave(read, begin + (at - start) * speed, wave.data(), n);
+  double sq = 0.0;
+  for (float s : wave) sq += (double)s * (double)s;
+  return std::sqrt(sq / (double)n) * 2.5 * vol;
+}
+
+double eval_audio_signal(Doc& d, int ref_layer, double gain, double smooth,
+                         double at) {
+  double level = 0.0;
+  if (ref_layer > 0) {
+    level = eval_audio_layer_rms(d, ref_layer, at, smooth);
+  } else {
+    for (const int t : doc_laid(d)) {
+      if (doc_word(d, t, "kind") != "video") continue;
+      level = std::max(level, eval_audio_layer_rms(d, t, at, smooth));
+    }
+  }
+  return std::clamp(level * std::max(0.0, gain), 0.0, 1.0);
+}
+
+double eval_midi_signal(Doc& d, int layer, const std::string& mode,
+                        const std::string& path, double at) {
+  std::string file = path;
+  if (file.empty()) {
+    file = doc_word(d, layer, "script");
+  } else if (file.rfind("layer:", 0) == 0) {
+    const int src = std::atoi(file.c_str() + 6);
+    file = src > 0 ? doc_word(d, src, "script") : "";
+  }
+  if (file.empty()) return 0.0;
+  const auto& notes = midi_of(file);
+  const MidiNote* active = nullptr;
+  for (const auto& note : notes) {
+    if (note.on > at) break;
+    if (at < note.off) active = &note;
+  }
+  if (!active) return 0.0;
+  if (mode == "gate") return 1.0;
+  if (mode == "pitch")
+    return std::clamp(((double)active->pitch - 24.0) / 84.0, 0.0, 1.0);
+  return std::clamp((double)active->velocity / 127.0, 0.0, 1.0);
+}
+
+int macro_slot_of(const char* name) {
+  if (!name || std::strncmp(name, "macro_", 6) != 0) return 0;
+  if (name[6] >= '1' && name[6] <= '8' && name[7] == '\0')
+    return name[6] - '0';
+  return 0;
+}
+
+// Evaluates a macro slot's normalized 0..1 signal at time `at`.
+// Cycle-guarded so cross-layer bindings cannot recurse infinitely.
+double doc_macro_signal(Doc& d, int layer, int slot, double at) {
+  thread_local int macro_depth = 0;
+  if (macro_depth >= 8 || slot < 1 || slot > 8) return 0.0;
+  struct Guard {
+    int& depth;
+    Guard(int& v) : depth(v) { ++depth; }
+    ~Guard() { --depth; }
+  } guard(macro_depth);
+
+  const auto& src = doc_macro_source(d, layer, slot);
+  switch (src.kind) {
+    case DocValueCache::MacroSource::kWave:
+      return std::clamp(eval_wave_signal(src.sub, src.a, src.b, at), 0.0, 1.0);
+    case DocValueCache::MacroSource::kAudio:
+      return eval_audio_signal(d, src.ref, src.a, src.b, at);
+    case DocValueCache::MacroSource::kMidi:
+      return eval_midi_signal(d, layer, src.sub, src.path, at);
+    case DocValueCache::MacroSource::kLayer: {
+      if (src.ref <= 0 || src.sub.empty()) return 0.0;
+      const double span = src.b - src.a;
+      if (std::fabs(span) < 1e-12) return 0.0;
+      const double v = doc_number(d, src.ref, src.sub.c_str(), at, src.a);
+      return std::clamp((v - src.a) / span, 0.0, 1.0);
+    }
+    case DocValueCache::MacroSource::kKnob:
+    default: {
+      static constexpr const char* kMacros[8] = {"macro_1", "macro_2",
+                                                 "macro_3", "macro_4",
+                                                 "macro_5", "macro_6",
+                                                 "macro_7", "macro_8"};
+      const char* name = kMacros[slot - 1];
+      if (d.held.layer == layer)
+        if (const auto tried = d.held.tried.find(name);
+            tried != d.held.tried.end())
+          return std::clamp(tried->second, 0.0, 1.0);
+      const DocKeys& k = doc_keys_of(d, layer, name);
+      return std::clamp(doc_keys_at(d, k, doc_stepped(d, layer, k, at), 0.0),
+                        0.0, 1.0);
+    }
+  }
+}
 }  // namespace
 
 double doc_number(Doc& d, int layer, const char* name, double at,
@@ -258,12 +454,13 @@ double doc_number(Doc& d, int layer, const char* name, double at,
   if (d.held.layer == layer)
     if (const auto tried = d.held.tried.find(name); tried != d.held.tried.end())
       return tried->second;
+  if (const int slot = macro_slot_of(name); slot > 0) {
+    if (doc_macro_source(d, layer, slot).kind !=
+        DocValueCache::MacroSource::kKnob)
+      return doc_macro_signal(d, layer, slot, at);
+  }
   if (const auto* target = doc_macro_target(d, layer, name)) {
-    static constexpr const char* kMacros[8] = {"macro_1", "macro_2", "macro_3",
-                                               "macro_4", "macro_5", "macro_6",
-                                               "macro_7", "macro_8"};
-    const double m = std::clamp(
-        doc_number(d, layer, kMacros[target->slot - 1], at, 0.0), 0.0, 1.0);
+    const double m = doc_macro_signal(d, layer, target->slot, at);
     return target->lo + (target->hi - target->lo) * m;
   }
   const DocKeys& k = doc_keys_of(d, layer, name);

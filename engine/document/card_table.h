@@ -47,11 +47,11 @@ inline const DocCard doc_cards[] = {
     {"Camera",
      "focal_length projection shift_x shift_y focus aperture blur_level",
      "kind", "camera"},
-    // Ableton Live-style macro rack: up to 8 keyframeable 0..1 knobs mapped to
-    // arbitrary parameters across the layer (shown when mapped or via More).
+    // Signal macro rack: up to 8 channels driven by knobs, audio, MIDI, other
+    // layers, or procedural waves, mapped to any numeric parameter.
     {"Macros",
      "macro_1 macro_2 macro_3 macro_4 macro_5 macro_6 macro_7 macro_8 "
-     "macro_map macro_names macro_vars",
+     "macro_map macro_sources macro_names macro_vars",
      "kind", "!stage", true},
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over

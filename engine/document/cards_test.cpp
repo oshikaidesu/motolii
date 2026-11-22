@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <sqlite3.h>
 
+#include <cmath>
 #include <string>
 
 #include "document/document.h"
@@ -35,19 +36,21 @@ class Layer {
                  nullptr, nullptr, nullptr);
     Say("kind", kind);
   }
-  void Say(const char* name, const char* word) {
+  void Say(const char* name, const char* word, int id = 1) {
     sqlite3_exec(d->file,
                  sqlite3_mprintf("insert or replace into keyframe(layer, name, "
-                                 "at, value) values(1, %Q, 0.0, %Q)",
-                                 name, word),
+                                 "at, value) values(%d, %Q, 0.0, %Q)",
+                                 id, name, word),
                  nullptr, nullptr, nullptr);
+    doc_forget(*d);
   }
-  void Put(const char* name, double is) {
+  void Put(const char* name, double is, int id = 1) {
     sqlite3_exec(d->file,
                  sqlite3_mprintf("insert or replace into keyframe(layer, name, "
-                                 "at, value) values(1, %Q, 0.0, %!.17g)",
-                                 name, is),
+                                 "at, value) values(%d, %Q, 0.0, %!.17g)",
+                                 id, name, is),
                  nullptr, nullptr, nullptr);
+    doc_forget(*d);
   }
   // The cards shown, and the cards that could be added.
   std::string Cards() {
@@ -190,15 +193,42 @@ TEST(Cards, MacrosCardAppearsWhenMappedAndDrivesTargets) {
   shape.Say("macro_map", "1 rotate -45 45\n1 scale_x 0.5 1.5");
   EXPECT_TRUE(Has(shape.Cards(), "Macros"));
   shape.Put("macro_1", 0.5);
-  EXPECT_NEAR(doc_number(shape.d, shape.id, "rotate", 0, 0), 0.0, 1e-6);
-  EXPECT_NEAR(doc_number(shape.d, shape.id, "scale_x", 0, 1), 1.0, 1e-6);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "rotate", 0, 0), 0.0, 1e-6);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "scale_x", 0, 1), 1.0, 1e-6);
   shape.Put("macro_1", 1.0);
-  EXPECT_NEAR(doc_number(shape.d, shape.id, "rotate", 0, 0), 45.0, 1e-6);
-  EXPECT_NEAR(doc_number(shape.d, shape.id, "scale_x", 0, 1), 1.5, 1e-6);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "rotate", 0, 0), 45.0, 1e-6);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "scale_x", 0, 1), 1.5, 1e-6);
   // Inverted range (lo > hi) works like Ableton's Invert Range.
   shape.Say("macro_map", "2 opacity 1.0 0.0");
   shape.Put("macro_2", 0.75);
-  EXPECT_NEAR(doc_number(shape.d, shape.id, "opacity", 0, 1), 0.25, 1e-6);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "opacity", 0, 1), 0.25, 1e-6);
+
+  // Wave signal source drives targets over time without keyframes.
+  shape.Say("macro_sources", "1 wave sine 1.0 0.0\n2 wave square 2.0 0.0");
+  shape.Say("macro_map", "1 rotate 0 100\n2 opacity 0.2 0.8");
+  EXPECT_NEAR(doc_number(*shape.d, 1, "rotate", 0.0, 0), 50.0, 1e-5);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "rotate", 0.25, 0), 100.0, 1e-5);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "rotate", 0.75, 0), 0.0, 1e-5);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "macro_1", 0.25, 0), 1.0, 1e-5);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "opacity", 0.1, 1), 0.8, 1e-5);
+  EXPECT_NEAR(doc_number(*shape.d, 1, "opacity", 0.35, 1), 0.2, 1e-5);
+}
+
+TEST(Cards, MacroLayerSourceLinksLayersAndGuardsCycles) {
+  Layer doc("shape");
+  doc.Say("kind", "shape", 2);
+  doc.Put("rotate", 90.0, 1);
+  // Layer 2 slot 1 reads layer 1's rotate in [0, 180] -> [0, 1] -> scale_x [1, 3].
+  doc.Say("macro_sources", "1 layer 1 rotate 0 180", 2);
+  doc.Say("macro_map", "1 scale_x 1.0 3.0", 2);
+  EXPECT_NEAR(doc_number(*doc.d, 2, "macro_1", 0, 0), 0.5, 1e-5);
+  EXPECT_NEAR(doc_number(*doc.d, 2, "scale_x", 0, 1), 2.0, 1e-5);
+
+  // Mutual cycle (layer 1 reads layer 2's scale_x) must terminate safely.
+  doc.Say("macro_sources", "1 layer 2 scale_x 1 3", 1);
+  doc.Say("macro_map", "1 rotate 0 180", 1);
+  const double v = doc_number(*doc.d, 2, "scale_x", 0, 1);
+  EXPECT_TRUE(std::isfinite(v));
 }
 
 }  // namespace

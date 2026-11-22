@@ -56,8 +56,12 @@ class InspectorValues extends ChangeNotifier {
   CardActions actions = const CardActions();
   bool animateAll = false;
 
+  /// Macro slot (1..8) currently being dragged from its plug or click-armed to connect to a field.
+  final ValueNotifier<int?> macroDrag = ValueNotifier<int?>(null);
+
   @override
   void dispose() {
+    macroDrag.dispose();
     for (final w in _watched.values) {
       w.dispose();
     }

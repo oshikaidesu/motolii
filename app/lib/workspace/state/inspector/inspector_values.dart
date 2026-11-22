@@ -269,6 +269,7 @@ Map<String, String> inspectorWords(WorkspaceController ws, int? id) {
     // any number field's right-click menu can map/unmap directly.
     if (t > 0) ...{
       'v_macro_map': m.word(t, 'macro_map'),
+      'v_macro_sources': m.word(t, 'macro_sources'),
       'v_macro_names': m.word(t, 'macro_names'),
       'v_macro_vars': m.word(t, 'macro_vars'),
     },

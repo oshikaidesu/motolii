@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 
+/// One layer entry offered as an Audio or Layer signal source in the Macros card.
+typedef MacroLayerChoice = ({int id, String name, bool hasAudio});
+
 /// What the buttons and menus on the Inspector's cards do. An action that is null is not offered.
 class CardActions {
   /// Creates the actions offered on an Inspector's cards.
@@ -22,6 +25,7 @@ class CardActions {
     this.fontMeta,
     this.textClasses,
     this.propScale,
+    this.layerChoices,
   });
 
   /// Moves a card that can move (see [InspectedLayer.movable]) by that many places in its stack.
@@ -82,4 +86,7 @@ class CardActions {
 
   /// Scale `(k, offset)` converting document units to inspector display units (`shown = doc * k + offset`).
   final (double, double) Function(String prop)? propScale;
+
+  /// Layers available in the current composition for Audio / Layer signal sources.
+  final List<MacroLayerChoice> Function()? layerChoices;
 }
