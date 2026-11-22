@@ -112,6 +112,7 @@ class _MacrosBodyState extends State<MacrosBody> {
     final vars = parseMacroVars(doc.strings['v_macro_vars'] ?? '');
     final layers =
         doc.actions.layerChoices?.call() ?? const <MacroLayerChoice>[];
+    final mapMode = doc.flags['macros.map'] ?? false;
     final showVars = doc.flags['macros.vars'] ?? vars.isNotEmpty;
     final showRanges = doc.flags['macros.ranges'] ?? false;
 
@@ -128,9 +129,25 @@ class _MacrosBodyState extends State<MacrosBody> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Compact modeless action strip: Rand | Vars | Ranges (N) | + 8.
+        // Top action strip: Map | Rand | Vars | Ranges (N) | + 8.
         Row(
           children: [
+            _ActionPill(
+              key: const ValueKey('macros:map'),
+              label: 'Map',
+              tip: mapMode ? 'Exit Map mode' : 'Enter Map mode — scroll through stacked effects and click parameters to bind',
+              active: mapMode,
+              onTap: () {
+                if (mapMode) {
+                  doc.macroDrag.value = null;
+                  doc.flag('macros.map', false);
+                } else {
+                  doc.macroDrag.value ??= nextFreeMacroSlot(rawMap);
+                  doc.flag('macros.map', true);
+                }
+              },
+            ),
+            SizedBox(width: Shape.s(4)),
             _ActionPill(
               key: const ValueKey('macros:rand'),
               label: 'Rand',
@@ -146,7 +163,7 @@ class _MacrosBodyState extends State<MacrosBody> {
               active: showVars && vars.isNotEmpty,
               onTap: () => doc.flag('macros.vars', !showVars),
             ),
-            if (bindings.isNotEmpty) ...[
+            if (bindings.isNotEmpty && !mapMode) ...[
               SizedBox(width: Shape.s(4)),
               _ActionPill(
                 key: const ValueKey('macros:ranges'),
@@ -177,6 +194,52 @@ class _MacrosBodyState extends State<MacrosBody> {
             ),
           ],
         ),
+
+        // Compact Map mode strip: switch active slot and scroll freely to bind hidden FX.
+        if (mapMode) ...[
+          SizedBox(height: Shape.s(5)),
+          ValueListenableBuilder<int?>(
+            valueListenable: doc.macroDrag,
+            builder: (context, active, _) {
+              final slot = active ?? 1;
+              final tone = macroSlotColor(slot);
+              final slotName = names[slot] ?? 'Macro $slot';
+              return Container(
+                key: const ValueKey('macros:map-banner'),
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(6),
+                  vertical: Shape.s(4),
+                ),
+                decoration: BoxDecoration(
+                  color: tone.withValues(alpha: 0.12),
+                  borderRadius: Shape.round(4),
+                  border: Border.all(color: tone.withValues(alpha: 0.40)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: tone,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: Shape.s(5)),
+                    Expanded(
+                      child: Text(
+                        'Mapping M$slot ($slotName) — click any param below',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyles.micro(tone),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
 
         // Signal channel grid (4 across, 1 or 2 rows).
         SizedBox(height: Shape.s(5)),
@@ -241,8 +304,8 @@ class _MacrosBodyState extends State<MacrosBody> {
           ),
         ],
 
-        // Optional exact Min / Max / Invert / Remove table.
-        if (bindings.isNotEmpty && showRanges) ...[
+        // Min / Max / Invert / Remove table (auto-shown in Map mode, or toggled via Ranges).
+        if (bindings.isNotEmpty && (mapMode || showRanges)) ...[
           SizedBox(height: Shape.s(5)),
           _MappingsTable(
             doc: doc,

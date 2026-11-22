@@ -258,6 +258,47 @@ void main() {
   );
 
   testWidgets(
+    'Map mode stays active across multiple clicks and slot switches for stacked FX',
+    (tester) async {
+      await mount(tester);
+
+      // Enter Map mode: auto-arms slot 1 and shows status strip.
+      await tester.tap(find.byKey(const ValueKey('macros:map')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('macros:map-banner')), findsOneWidget);
+
+      // Click Radius -> binds to M1, and Map mode stays active.
+      await tester.tap(find.text('Radius'));
+      await tester.pumpAndSettle();
+      expect(
+        words.lastWhere((w) => w.containsKey('v_macro_map'))['v_macro_map'],
+        '1 radius 0 100',
+      );
+      expect(find.byKey(const ValueKey('macros:map-banner')), findsOneWidget);
+      // Mappings table auto-opens in Map mode.
+      expect(
+        find.byKey(const ValueKey('macros:invert:radius')),
+        findsOneWidget,
+      );
+
+      // Switch active Map slot to M2 via its plug, then click Intensity.
+      await tester.tap(find.byKey(const ValueKey('macros:plug:2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Intensity'));
+      await tester.pumpAndSettle();
+      expect(
+        words.lastWhere((w) => w.containsKey('v_macro_map'))['v_macro_map'],
+        '1 radius 0 100\n2 intensity 0 4',
+      );
+
+      // Exit Map mode.
+      await tester.tap(find.byKey(const ValueKey('macros:map')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('macros:map-banner')), findsNothing);
+    },
+  );
+
+  testWidgets(
     'switching signal source between Wave, Audio, MIDI, and Layer updates macro_sources',
     (tester) async {
       await mount(tester);

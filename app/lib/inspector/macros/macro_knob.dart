@@ -400,15 +400,24 @@ class _PatchPlug extends StatelessWidget {
         dragAnchorStrategy: pointerDragAnchorStrategy,
         onDragStarted: () => doc.macroDrag.value = slot,
         onDragEnd: (_) {
-          if (doc.macroDrag.value == slot) doc.macroDrag.value = null;
+          if (!(doc.flags['macros.map'] ?? false) &&
+              doc.macroDrag.value == slot) {
+            doc.macroDrag.value = null;
+          }
         },
         onDraggableCanceled: (_, _) {
-          if (doc.macroDrag.value == slot) doc.macroDrag.value = null;
+          if (!(doc.flags['macros.map'] ?? false) &&
+              doc.macroDrag.value == slot) {
+            doc.macroDrag.value = null;
+          }
         },
         feedback: Directionality(textDirection: TextDirection.ltr, child: pill),
         childWhenDragging: _socket(hollow: true, hot: true),
         child: Pressable(
-          onTap: () => doc.macroDrag.value = armed ? null : slot,
+          onTap: () {
+            final inMapMode = doc.flags['macros.map'] ?? false;
+            doc.macroDrag.value = (!inMapMode && armed) ? null : slot;
+          },
           builder: (_, hot) => _socket(hollow: false, hot: hot),
         ),
       ),

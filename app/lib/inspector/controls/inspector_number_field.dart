@@ -156,7 +156,10 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
       'v_macro_map',
       upsertMacroBinding(raw, (slot: slot, prop: prop, min: lo, max: hi)),
     );
-    if (doc.macroDrag.value == slot) doc.macroDrag.value = null;
+    // Keep the slot armed while Map mode is on so multiple stacked FX can be bound in a row.
+    if (!(doc.flags['macros.map'] ?? false) && doc.macroDrag.value == slot) {
+      doc.macroDrag.value = null;
+    }
   }
 
   @override
@@ -453,7 +456,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
         return Stack(
           children: [
             field,
-            if (hoverTone != null)
+            if (hoverTone != null) ...[
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(
@@ -470,6 +473,20 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
                   ),
                 ),
               ),
+              if (dragSlot != null)
+                Positioned(
+                  right: 4,
+                  top: 2,
+                  child: IgnorePointer(
+                    child: Text(
+                      'M$dragSlot',
+                      style: TextStyles.micro(
+                        hoverTone.withValues(alpha: hovered ? 1.0 : 0.72),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
             if (dotColor != null) ...[
               Positioned(
                 left: 3,
