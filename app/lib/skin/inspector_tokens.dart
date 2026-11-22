@@ -13,6 +13,7 @@ class InspectorSkin {
 
   /// The accent as a line or text on a background, darkened enough to read on white. Fills use [accent].
   static Color get accentInk => Accent.ink;
+  static Color get alert => ColorTheme.of('Alert', const Color(0xFFE5484D));
   static Color get card => Grey.g13;
   static Color get well => Grey.g15;
 

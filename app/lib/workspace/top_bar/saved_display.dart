@@ -24,15 +24,31 @@ class SavedDisplay extends StatelessWidget {
   /// Called when the user taps the label (e.g. to cancel export); null = not tappable.
   final VoidCallback? onGo;
 
+  static bool _isWarning(String text) =>
+      text.startsWith('Not ') ||
+      text.startsWith('No ') ||
+      text.startsWith('Could not ');
+
+  static String _displayLabel(String text) =>
+      text.startsWith('Not taken: ') ? text.substring(11) : text;
+
   @override
   Widget build(BuildContext context) {
+    final warn = _isWarning(label);
     final active = progress != null || onGo != null;
+    final text = _displayLabel(label);
     final said = Text(
-      label,
+      text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: onGo == null
-          ? TextStyles.label(active ? Grey.g91 : Grey.g76)
+          ? TextStyles.label(
+              warn
+                  ? WindowTokens.alert
+                  : active
+                  ? Grey.g91
+                  : Grey.g76,
+            )
           : TextStyles.label(active ? Grey.g91 : Grey.g76)
                 .copyWith(decoration: TextDecoration.underline),
     );
@@ -73,7 +89,11 @@ class SavedDisplay extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Badge(
-          active ? WindowTokens.accent : Grey.g38,
+          warn
+              ? WindowTokens.alert
+              : active
+              ? WindowTokens.accent
+              : Grey.g38,
           size: Shape.z(6),
           radius: Radius.circular(Shape.z(3)),
         ),

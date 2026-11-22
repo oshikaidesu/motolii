@@ -153,6 +153,9 @@ class TypedFieldState extends State<TypedField> {
     super.dispose();
   }
 
+  bool get _composing =>
+      _c.value.composing.isValid && !_c.value.composing.isCollapsed;
+
   @override
   Widget build(BuildContext context) {
     final w = widget;
@@ -175,14 +178,23 @@ class TypedFieldState extends State<TypedField> {
         minLines: w.lines,
         maxLines: w.styled == null ? w.lines : null,
         keyboardType: w.styled == null ? null : TextInputType.multiline,
-        onSubmitted: w.styled == null ? (_) => _leave(true) : null,
+        onSubmitted: w.styled == null
+            ? (_) => _composing ? null : _leave(true)
+            : null,
       ),
     );
+    // Let IME handle Escape while composing instead of aborting the whole edit.
     return w.escapes
-        ? CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.escape): () =>
-                  _leave(false),
+        ? Focus(
+            skipTraversal: true,
+            onKeyEvent: (_, event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.escape &&
+                  !_composing) {
+                _leave(false);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
             },
             child: field,
           )

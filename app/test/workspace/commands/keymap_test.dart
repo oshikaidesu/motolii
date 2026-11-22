@@ -71,6 +71,16 @@ void main() {
     }
   });
 
+  test(
+    'mark.animate uses shift+a so stray plain "a" never toggles recording',
+    () {
+      expect(
+        defaultKeys.where((p) => p.$2 == 'mark.animate').map((p) => p.$1),
+        ['shift+a'],
+      );
+    },
+  );
+
   test('keyOf gives the first key bound to a command, or null', () {
     final back = activatorOf('backspace')!;
     final keys = Keymap([

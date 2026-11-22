@@ -286,6 +286,18 @@ extension WorkspaceMenuItems on WorkspaceState {
         label: 'Motolii (README)',
         onSelected: () => openInHost(helpReadmePath()),
       ),
+      PlatformMenuItemGroup(
+        members: [
+          PlatformMenuItem(
+            label: 'Open Logs Folder',
+            onSelected: () => openFolderInHost(crashLogsFolder()),
+          ),
+          PlatformMenuItem(
+            label: 'Report an Issue…',
+            onSelected: () => openInHost(issueReportUrl),
+          ),
+        ],
+      ),
     ],
   );
 }

@@ -4,12 +4,13 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/storage/disk.dart' show existsFile;
-import 'package:motolii/storage/host_platform.dart' show homeFolder;
+import 'package:motolii/storage/open_in_host.dart' show openInHost;
 import 'package:motolii/storage/shelf_disk.dart' show deleteFile;
 import 'package:motolii/storage/text_file.dart' show readTextNow;
+import 'package:motolii/workspace/state/help_readme.dart'
+    show crashLogsFolder, issueReportUrl;
 
-String get _crashReportPath =>
-    '$homeFolder/Library/Caches/Motolii/crash_report.txt';
+String get _crashReportPath => '${crashLogsFolder()}/crash_report.txt';
 
 /// Checks for a crash report and shows a dialog if one exists.
 Future<void> showCrashDialogIfNeeded(BuildContext context) async {
@@ -85,6 +86,11 @@ class _CrashDialog extends StatelessWidget {
               children: [
                 _button('コピー', () {
                   Clipboard.setData(ClipboardData(text: report));
+                }),
+                const SizedBox(width: 8),
+                _button('問題を報告', () {
+                  Clipboard.setData(ClipboardData(text: report));
+                  openInHost(issueReportUrl);
                 }),
                 const SizedBox(width: 8),
                 _button('閉じる', () {

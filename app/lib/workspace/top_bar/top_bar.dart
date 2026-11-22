@@ -72,6 +72,15 @@ class TopBar extends StatelessWidget {
             label: ws.timecode(WorkspaceController.duration),
             look: ChipLook.readout(ink: Grey.g76),
           ),
+          if (ws.animating) ...[
+            SizedBox(width: Shape.s(8)),
+            Chip(
+              label: 'REC · Animate all',
+              dot: WindowTokens.alert,
+              onTap: () => ws.animating = false,
+              look: ChipLook.readout(ink: WindowTokens.alert),
+            ),
+          ],
           const Spacer(),
           const WorkspaceSwitch(),
           SizedBox(width: Shape.s(10)),

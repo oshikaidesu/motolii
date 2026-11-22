@@ -52,7 +52,8 @@ const defaultKeys = <(String, String)>[
     'u',
     'thing.lanes',
   ), // After Effects' U: show the keyframed properties of the selected layers.
-  ('a', 'mark.animate'), // Apple Motion's A (Record Animation): every change is keyframed until it is pressed again.
+  // Shift+A prevents accidental keyframe recording when a stray 'a' is pressed.
+  ('shift+a', 'mark.animate'),
   ('backspace', 'thing.remove'),
   ('delete', 'thing.remove'),
   ('space', 'play.fromStart'), // Live 42.20.

@@ -72,7 +72,24 @@ class InspectorHeader extends StatelessWidget {
           SizedBox(width: Shape.s(6)),
           Text(word, maxLines: 1, style: TextStyles.label(Grey.g56)),
           const Spacer(),
-          Text('Animate all', style: TextStyles.label(Grey.g63)),
+          if (doc.animateAll) ...[
+            Container(
+              width: Shape.z(6),
+              height: Shape.z(6),
+              decoration: BoxDecoration(
+                color: InspectorSkin.alert,
+                shape: BoxShape.circle,
+              ),
+            ),
+            SizedBox(width: Shape.s(5)),
+          ],
+          Text(
+            'Animate all',
+            style: doc.animateAll
+                ? TextStyles.label(InspectorSkin.alert)
+                      .copyWith(fontWeight: FontWeight.w600)
+                : TextStyles.label(Grey.g63),
+          ),
           SizedBox(width: Shape.s(6)),
           Forms.worn.onOff(
             context,
