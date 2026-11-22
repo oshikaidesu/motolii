@@ -1,0 +1,173 @@
+# Multi-OS Beta/Release packaging & Velopack binary delta update pipeline (macOS arm64 + Windows x64)
+# plus SHA-256 shelves-manifest.json for few-KB shelf delta sync.
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.1.0-beta.1)'
+        required: true
+        default: '0.1.0-beta.1'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.50.0'
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      ver: ${{ steps.v.outputs.ver }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - id: v
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VER="${{ github.event.inputs.version }}"
+          else
+            VER="${GITHUB_REF_NAME#v}"
+          fi
+          echo "ver=${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VER}" >> "$GITHUB_OUTPUT"
+
+  shelves-manifest:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate shelves SHA-256 manifest
+        run: python3 packaging/shelves_manifest.py shelves -o dist/shelves-manifest.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shelves-manifest
+          path: dist/shelves-manifest.json
+
+  macos-arm64:
+    needs: version
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore prebuilt SDK cache
+        id: sdk
+        run: |
+          HASH=$(cat engine/deps/filament.sh engine/deps/thorvg.sh engine/deps/skia.sh engine/deps/libtess2.sh engine/deps/iris.sh | shasum -a 256 | awk '{print $1}' | cut -c1-16)
+          echo "sdk_key=sdk-macos-arm64-${HASH}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            engine/third_party/filament_src
+            engine/third_party/skia_src
+            engine/third_party/thorvg_src
+            engine/third_party/libtess2
+            engine/third_party/iris
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+          key: ${{ steps.sdk.outputs.sdk_key }}
+      - run: brew bundle
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - name: Build engine library
+        run: engine/build.sh lib
+      - name: Build Flutter macOS Release
+        run: cd app && flutter build macos --release
+      - name: Bundle self-contained Motolii.app
+        run: packaging/macos/bundle_app.sh app/build/macos/Build/Products/Release/Motolii.app dist/Motolii.app
+      - name: Install Velopack CLI (vpk)
+        run: |
+          dotnet tool install -g vpk || dotnet tool update -g vpk
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+      - name: Download previous macOS Velopack release (for binary delta)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p dist/velopack-osx
+          vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$GH_TOKEN" --channel osx-arm64 -o dist/velopack-osx
+      - name: Pack macOS Velopack release + delta
+        run: |
+          vpk [osx] pack \
+            --packId Motolii \
+            --packVersion "${{ needs.version.outputs.ver }}" \
+            --packDir dist/Motolii.app \
+            --channel osx-arm64 \
+            --outputDir dist/velopack-osx
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-arm64
+          path: dist/velopack-osx/**
+
+  windows-x64:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - name: Restore Windows prebuilt SDK cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            engine/third_party/filament_src
+            engine/third_party/skia_src
+            engine/third_party/thorvg_src
+            engine/third_party/libtess2
+            engine/third_party/iris
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+          key: sdk-win-x64-${{ hashFiles('engine/deps/**') }}
+      - name: Build Flutter Windows Release
+        shell: pwsh
+        run: |
+          cd app
+          flutter build windows --release
+      - name: Bundle self-contained Windows folder
+        shell: pwsh
+        run: pwsh packaging/windows/bundle_windows.ps1 -DstDir dist/windows-x64
+      - name: Pack Windows Velopack release + delta
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dotnet tool install -g vpk; $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          New-Item -ItemType Directory -Force -Path dist/velopack-win | Out-Null
+          try { vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$env:GH_TOKEN" --channel win-x64 -o dist/velopack-win } catch {}
+          vpk pack `
+            --packId Motolii `
+            --packVersion "${{ needs.version.outputs.ver }}" `
+            --packDir dist/windows-x64 `
+            --mainExe motolii.exe `
+            --channel win-x64 `
+            --outputDir dist/velopack-win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows-x64
+          path: dist/velopack-win/**
+
+  publish:
+    needs: [version, shelves-manifest, macos-arm64, windows-x64]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Publish GitHub Release with delta assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          prerelease: ${{ contains(needs.version.outputs.ver, '-') }}
+          files: |
+            artifacts/shelves-manifest/shelves-manifest.json
+            artifacts/release-macos-arm64/*
+            artifacts/release-windows-x64/*

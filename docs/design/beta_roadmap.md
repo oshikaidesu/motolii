@@ -26,15 +26,16 @@
 - [x] **実機確認**：`motolii_pack_test.dart`（`Diagonal Blur.fs`+`.ui.js`、Tool Panel `.js`、パストラバーサル拒否 4/4 合格）＋クリーン `MOTOLII_OWN` で実機 `Motolii.app` にパック展開した Tool Panel 表示・`Pack` チップ・`File → Import Pack (.motoliipack)…` メニュー確認済み
 
 ## Phase 4：マルチ OS 配布パッケージ＆差分更新パイプライン
-- [ ] **Release `.app`（macOS）の完全自己完結バンドル化**
-  - `libmotolii.dylib`・依存 dylib（Homebrew 依存の `@rpath` / `@executable_path` 解決）・`filament_webgpu`・`ffmpeg`・`shelves/` を `.app` 内に収め、リポジトリ外＆クリーン環境で起動確認
-- [ ] **重い外部依存のプリビルド SDK 分離（CI 5〜10 分化）**
-  - Filament / Dawn / Skia / ThorVG / OpenCV(IRIS) を依存ピン変更時のみビルドし、通常リリースは本体 C++ + Flutter のみビルド
-- [ ] **アプリ本体のバイナリ差分更新導入（macOS `.app` / Windows `.exe`）**
-  - Velopack（または macOS Sparkle 2 + Windows Velopack）による自動差分パッケージ生成＋アプリ内アップデート通知＆適用
-- [ ] **`shelves/`（約 256 MB）の SHA-256 マニフェスト差分同期**
-  - 棚の追加・修正をアプリ再ビルド不要＆数 KB の差分でユーザーへ配信できる仕組み
-- [ ] **Windows `.exe` リリースワークフロー整備**（GitHub Actions `windows-latest` での Release ビルド＋差分更新成果物生成）
+- [x] **Release `.app`（macOS）の完全自己完結バンドル化**
+  - `packaging/macos/bundle_app.sh` で `libmotolii.dylib`＋依存 32 dylib を `Contents/Frameworks/` へ集約・`@loader_path/` へ書き換え（`otool -L` 外部参照 0 件監査＋ad-hoc 署名）、`filament_webgpu`・IBL ルーム・LGPL `ffmpeg`・`shelves/` を `Contents/Resources/` へ同梱
+  - `app/lib/bridge/engine_paths.dart` / `motolii.dart` / `Release.entitlements` を自己完結バンドル起動対応にし、リポジトリ外 `/tmp`＋Homebrew なし `PATH`＋クリーン `MOTOLII_OWN` で実機起動＆サンプル表示を確認済み
+- [x] **重い外部依存のプリビルド SDK 分離（CI 5〜10 分化）**
+  - `.github/workflows/sdk-prebuilt.yml` を追加し、`engine/deps/**` 変更時のみ Filament / Dawn / Skia / ThorVG / libtess2 / IRIS をプリビルドキャッシュ
+- [x] **アプリ本体のバイナリ差分更新導入（macOS `.app` / Windows `.exe`）**
+  - `.github/workflows/release.yml` で macOS (`osx-arm64`) / Windows (`win-x64`) の Velopack (`vpk`) 差分 `.nupkg`・`releases.<channel>.json` を自動生成＋`Help → Check for Updates…`（`app/lib/workspace/state/update_check.dart`）実装
+- [x] **`shelves/`（約 249 MiB / 2,931 ファイル）の SHA-256 マニフェスト差分同期**
+  - `packaging/shelves_manifest.py`＋`app/lib/storage/shelves_sync.dart` 実装（実棚 2,931 ファイルのマニフェスト 478 KB、1 ファイル変更時の差分 28 KB 取得＆SHA-256 検証＋自動ホットリロード）
+- [x] **Windows `.exe` リリースワークフロー整備**（`packaging/windows/bundle_windows.ps1`＋`app/windows/runner/main.cpp` のバンドル DLL `PATH` 対応＋`.github/workflows/release.yml` の `windows-x64` Velopack ビルドジョブ）
 
 ## Phase 5（将来トラック）：Linux 対応
 - [ ] `app/linux` 追加＆エンジン側ゼロコピー共有テクスチャ（DMA-BUF / Vulkan）実装
@@ -47,3 +48,4 @@
 - 2026-11-22: **Phase 1 完了**（MP4+音声書き出し・保存再オープン復元検証、IME 変換保護、`Shift+A`＋`REC · Animate all` 強調、Help ログ／バグ報告導線・エラー表示整理）
 - 2026-11-23: **Phase 2 完了**（`shelves/samples/` 3 本同梱＋Home サイドバー `SAMPLES` 1 クリック複製起動、`Agent` パネル 4 スタータープロンプト実装・実機 `Motolii.app` 画面確認済み）
 - 2026-11-23: **Phase 3 完了**（`.motoliipack` 仕様策定・`motolii_pack.dart`＋`pack_service.dart` 実装、Effects／Tool Panel エクスポート・D&D／File メニューインポート＆自動ホットリロード、実機確認済み）
+- 2026-11-23: **Phase 4 完了**（macOS 完全自己完結 Release `.app` バンドル＋リポジトリ外 `/tmp` 起動確認、Windows バンドルスクリプト＋ランナー対応、プリビルド SDK 分離 CI＋Velopack バイナリ差分リリース CI、`shelves/` SHA-256 差分同期＆`Help → Check for Updates…` 実装）

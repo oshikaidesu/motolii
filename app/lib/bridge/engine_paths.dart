@@ -3,15 +3,23 @@ import 'dart:io';
 
 import 'package:motolii/storage/host_platform.dart' show homeFolder, slashed;
 
-/// The engine folder: --dart-define=MOTOLII_DIR=/path/to/motolii/engine, or else the nearest engine/ found by walking up
-/// from the working directory or from the executable (the app is built under app/build/).
+/// The engine folder: --dart-define=MOTOLII_DIR=/path/to/motolii/engine, then a bundled app's Resources/engine
+/// (macOS .app) or adjacent engine/ (Windows release), or else the nearest engine/ found by walking up from cwd/exe.
 final String motoliiDir = () {
   const given = String.fromEnvironment('MOTOLII_DIR');
   if (given.isNotEmpty) return given;
-  for (final from in [
-    Directory.current,
-    File(Platform.resolvedExecutable).parent,
+  final exeDir = File(Platform.resolvedExecutable).parent.absolute;
+  for (final bundled in [
+    // macOS standalone Motolii.app/Contents/Resources/engine
+    '${exeDir.parent.path}/Resources/engine',
+    // Windows standalone release folder <exeDir>/engine
+    '${exeDir.path}/engine',
   ]) {
+    if (Directory('$bundled/out/filament_webgpu').existsSync()) {
+      return slashed(bundled);
+    }
+  }
+  for (final from in [Directory.current, exeDir]) {
     for (var d = from.absolute; ; d = d.parent) {
       if (File('${d.path}/engine/edit.sh').existsSync()) {
         return slashed('${d.path}/engine');
@@ -24,6 +32,23 @@ final String motoliiDir = () {
 
 /// The extension of the engine library the build writes to `engine/out/libmotolii.<extension>`.
 final String libraryExtension = Platform.isWindows ? 'dll' : 'dylib';
+
+/// Path to the bundled engine library inside a standalone release package, or null in dev repo builds.
+final String? bundledEngineLibrary = () {
+  final exeDir = File(Platform.resolvedExecutable).parent.absolute;
+  final candidates = Platform.isMacOS
+      ? ['${exeDir.parent.path}/Frameworks/libmotolii.dylib']
+      : Platform.isWindows
+      ? [
+          '${exeDir.path}/libmotolii.dll',
+          '${exeDir.path}/engine/out/libmotolii.dll',
+        ]
+      : const <String>[];
+  for (final c in candidates) {
+    if (File(c).existsSync()) return slashed(c);
+  }
+  return null;
+}();
 
 /// The shelves that ship with Motolii (effects, create, skins…): shelves/, next to engine/.
 final String motoliiShelves =
@@ -38,15 +63,20 @@ String get motoliiOwn =>
         : '$homeFolder/Library/Application Support/Motolii');
 
 /// The project the app opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or the MOTOLII_DOC environment variable of
-/// the launch (so a built app opens any project without being built again), or else engine/out/skin.motolii.
+/// the launch (so a built app opens any project without being built again), or engine/out/skin.motolii in dev checkouts,
+/// or a writable Projects folder inside [motoliiOwn] when running from a standalone app bundle.
 String get motoliiDoc {
   const given = String.fromEnvironment('MOTOLII_DOC');
   final launched = Platform.environment['MOTOLII_DOC'] ?? '';
-  return given.isNotEmpty
-      ? given
-      : launched.isNotEmpty
-      ? launched
-      : '$motoliiDir/out/skin.motolii';
+  if (given.isNotEmpty) return given;
+  if (launched.isNotEmpty) return launched;
+  final devSkin = '$motoliiDir/out/skin.motolii';
+  if (bundledEngineLibrary == null && File(devSkin).existsSync()) {
+    return devSkin;
+  }
+  final projectsDir = Directory('$motoliiOwn/Projects')
+    ..createSync(recursive: true);
+  return slashed('${projectsDir.path}/Untitled.motolii');
 }
 
 /// The separator of a PATH value's folders.

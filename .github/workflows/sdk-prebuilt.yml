@@ -1,0 +1,57 @@
+# Prebuilds heavy C++ engine dependencies (Filament/Dawn, Skia, ThorVG, libtess2, IRIS/OpenCV)
+# only when engine/deps/** pins change (or manual dispatch), so release workflows finish in ~5-10 min.
+name: sdk-prebuilt
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'engine/deps/**'
+      - 'Brewfile'
+      - '.github/workflows/sdk-prebuilt.yml'
+
+concurrency:
+  group: sdk-prebuilt-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  macos-sdk:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute SDK key
+        id: key
+        run: |
+          HASH=$(cat engine/deps/filament.sh engine/deps/thorvg.sh engine/deps/skia.sh engine/deps/libtess2.sh engine/deps/iris.sh | shasum -a 256 | awk '{print $1}' | cut -c1-16)
+          echo "sdk_key=sdk-macos-arm64-${HASH}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: |
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/skia_src/out/path
+            engine/third_party/thorvg_src/build_dawn
+            engine/third_party/libtess2
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+          key: ${{ steps.key.outputs.sdk_key }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: brew bundle
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: engine/build.sh lib
+      - uses: actions/cache/save@v4
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            engine/third_party/filament_src/out/wgpu_install
+            engine/third_party/skia_src/out/path
+            engine/third_party/thorvg_src/build_dawn
+            engine/third_party/libtess2
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+            engine/third_party/ffmpeg_lgpl
+            engine/third_party/onnxruntime
+          key: ${{ steps.key.outputs.sdk_key }}

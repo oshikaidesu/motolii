@@ -31,11 +31,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     std::wstring path = _wgetenv(L"PATH") ? _wgetenv(L"PATH") : L"";
     wchar_t self[MAX_PATH];
     ::GetModuleFileNameW(nullptr, self, MAX_PATH);
-    for (std::filesystem::path d = std::filesystem::path(self).parent_path(); d.has_relative_path(); d = d.parent_path())
-      if (std::filesystem::exists(d / L"engine" / L"edit.sh")) {
-        path = (d / L"engine" / L"out").wstring() + L";" + path;
-        break;
-      }
+    std::filesystem::path exe_dir = std::filesystem::path(self).parent_path();
+    // Standalone release bundle keeps engine DLLs beside Motolii.exe or under engine\out.
+    if (std::filesystem::exists(exe_dir / L"engine" / L"out")) {
+      path = (exe_dir / L"engine" / L"out").wstring() + L";" + exe_dir.wstring() + L";" + path;
+    } else {
+      for (std::filesystem::path d = exe_dir; d.has_relative_path(); d = d.parent_path())
+        if (std::filesystem::exists(d / L"engine" / L"edit.sh")) {
+          path = (d / L"engine" / L"out").wstring() + L";" + path;
+          break;
+        }
+    }
     if (const wchar_t* gst = _wgetenv(L"GSTREAMER_1_0_ROOT_MSVC_X86_64"))
       path = (std::filesystem::path(gst) / L"bin").wstring() + L";" + path;
     _wputenv_s(L"PATH", path.c_str());

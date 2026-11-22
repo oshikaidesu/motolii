@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/storage/open_in_host.dart';
 import 'package:motolii/workspace/state/help_readme.dart';
+import 'package:motolii/workspace/state/update_check.dart' show checkForUpdates;
 import 'package:motolii/workspace/workspace.dart';
 import 'package:motolii/workspace/commands/command_arrange.dart'
     show workspaceAligns, workspaceTimes;
@@ -289,6 +290,10 @@ extension WorkspaceMenuItems on WorkspaceState {
       ),
       PlatformMenuItemGroup(
         members: [
+          PlatformMenuItem(
+            label: 'Check for Updates…',
+            onSelected: () => checkForUpdates(ws),
+          ),
           PlatformMenuItem(
             label: 'Open Logs Folder',
             onSelected: () => openFolderInHost(crashLogsFolder()),
