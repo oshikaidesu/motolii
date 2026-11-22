@@ -306,9 +306,7 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
     // AbsentMotion: Color & Fill, Blending, Transform, Edit, Effects, and Speed
     // for a video). The rest are shown by More. The canvas's own cards are
     // shown together by Stage settings.
-    const std::string kindNow = doc_word(d, layer, "kind");
-    bool said = !card.added || layer == 0 ||
-                (!strcmp(card.title, "Media") && kindNow == "video");
+    bool said = !card.added || layer == 0;
     for (const char* at = card.names; *at;) {
       const size_t len = strcspn(at, " ");
       const std::string n(at, len);

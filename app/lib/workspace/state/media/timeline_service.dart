@@ -9,6 +9,8 @@ import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
     show SlideEntry, cacheSlide;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/audio_fade.dart'
+    show buildAudioFadeKeys;
 
 /// Whether the window is connected to the engine's document.
 bool isConnected(WorkspaceController ws) => ws.inside != null;
@@ -154,3 +156,65 @@ Future<List<double>?> loudnessOver(
 /// Loudness of every frame of [layer].
 Future<List<double>> loudnessOf(WorkspaceController ws, int layer) =>
     ws.inside!.loudness(layer);
+
+/// Current playback speed of [layer] (1.0 when unset).
+double layerSpeed(WorkspaceController ws, int layer) =>
+    ws.inside!.value(layer, 'speed', 0) ?? 1.0;
+
+/// Current time-stretch hold anchor of [layer] (`start`, `now`, or `end`).
+String layerSpeedHold(WorkspaceController ws, int layer) {
+  final w = ws.inside!.word(layer, 'speed_hold');
+  return w.isEmpty ? 'start' : w;
+}
+
+/// Persists the time-stretch hold anchor (`start`, `now`, or `end`) of [layer].
+int setSpeedHold(WorkspaceController ws, int layer, String hold) =>
+    ws.inside!.later('say', layer: layer, name: 'speed_hold', word: hold);
+
+/// Stretches [layer] to [speed] about [hold] (`start`, `now`, or `end`) at [now] seconds.
+int stretchLayerSpeed(
+  WorkspaceController ws,
+  int layer,
+  double speed,
+  String hold,
+  double now,
+) => ws.inside!.later(
+  'time_stretch',
+  layer: layer,
+  number: speed,
+  word: '$hold $now',
+);
+
+/// Writes fade-in and fade-out durations onto [layer]'s `volume` keyframes in one undo step.
+int applyAudioFade(
+  WorkspaceController ws,
+  int layer, {
+  required int inF,
+  required int outF,
+  required int fadeInF,
+  required int fadeOutF,
+  required double peak,
+}) {
+  final m = ws.inside!;
+  final level = peak > 0.01 ? peak : 1.0;
+  final keys = buildAudioFadeKeys(
+    inF: inF,
+    outF: outF,
+    fadeInF: fadeInF,
+    fadeOutF: fadeOutF,
+    peak: level,
+    fps: WorkspaceController.fps,
+  );
+  m.later('together', number: 1);
+  m.later(
+    'stay',
+    layer: layer,
+    name: 'volume',
+    number: inF / WorkspaceController.fps,
+  );
+  m.later('set', layer: layer, name: 'volume', number: level);
+  for (final (sec, val) in keys) {
+    m.later('key', layer: layer, name: 'volume', word: '$sec', number: val);
+  }
+  return m.later('together');
+}

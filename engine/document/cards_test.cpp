@@ -168,17 +168,19 @@ TEST(Cards, AGradientShowsWhenItsValuesAreSet) {
   EXPECT_TRUE(Has(shape.Cards(), "Gradient"));
 }
 
-TEST(Cards, VideoMergesPlayIntoMediaCard) {
+TEST(Cards, VideoShowsAudioCardWithoutTimelineControls) {
   Layer video("video");
   const std::string cards = video.Cards();
-  EXPECT_TRUE(Has(cards, "Media")) << cards;
+  EXPECT_TRUE(Has(cards, "Audio")) << cards;
+  EXPECT_FALSE(Has(cards, "Media")) << cards;
   EXPECT_FALSE(Has(cards, "Play")) << cards;
-  const size_t at = cards.find("Media:");
+  const size_t at = cards.find("Audio:");
   ASSERT_NE(at, std::string::npos) << cards;
   const std::string line = cards.substr(at, cards.find(';', at) - at);
-  for (const char* name : {" begin", " speed", " speed_hold", " frame_rate",
-                           " volume"})
+  for (const char* name : {" volume", " beats"})
     EXPECT_NE(line.find(name), std::string::npos) << line;
+  for (const char* moved : {" begin", " speed", " speed_hold", " frame_rate"})
+    EXPECT_EQ(line.find(moved), std::string::npos) << line;
 }
 
 }  // namespace

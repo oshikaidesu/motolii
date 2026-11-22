@@ -22,6 +22,7 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_speed.dart';
 
 /// The timeline header. Narrow widths drop the total time, then the project name and layer summary, then the zoom slider.
 class TimelineHeader extends StatelessWidget {
@@ -198,6 +199,8 @@ class TimelineHeader extends StatelessWidget {
                           ),
                         ),
                       ),
+                      SizedBox(width: Shape.s(6)),
+                      TimelineSpeedControl(ws: ws, layer: layer),
                     ],
                   ),
                 ),

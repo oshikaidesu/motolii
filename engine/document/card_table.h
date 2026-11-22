@@ -84,11 +84,14 @@ inline const DocCard doc_cards[] = {
     // around it and keeps no
     // halo, because ThorVG's glow does that.
     {"Shine", "emissive", "kind", "!solid", true, true},
-    // Playback and media of the layer: clip in-point, markers/animations,
-    // playback speed, frame rate, volume and beats (shown by default for video;
-    // offered via More for other layers).
-    {"Media", "begin marker animation speed speed_hold frame_rate volume beats",
-     "kind", "!stage", true},
+    // Audio of a video/sound layer: volume (keyframeable; fade in/out also
+    // lives on the timeline bar) and beat-detection threshold. Clip in-point
+    // (slip) and speed live on the timeline; per-layer frame_rate is handled by
+    // effects.
+    {"Audio", "volume beats", "kind", "video"},
+    // Embedded source playback segments (Lottie marker, glTF animation); kept
+    // under More until needed.
+    {"Playback", "marker animation", "kind", "image solid", true},
     // A program's own time, for a program that paints a flat image and for one
     // that has a body, see
     // doc_own_time.

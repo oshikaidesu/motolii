@@ -6,7 +6,6 @@ import 'package:motolii/inspector/camera/camera_view.dart';
 import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/fill/fill_body.dart';
 import 'package:motolii/inspector/paths/paths_body.dart';
-import 'package:motolii/inspector/source/film_strip.dart';
 import 'package:motolii/inspector/text/text_body.dart';
 import 'package:motolii/inspector/transform/anchor_box.dart';
 import 'package:motolii/inspector/transform/transform_body.dart';
@@ -55,12 +54,6 @@ final hostCards =
         drawn: PathsBody.drawn,
         absorbs: const {},
         body: (card) => PathsBody(card),
-        fold: null,
-      ),
-      'Media': (
-        drawn: FilmStrip.drawn,
-        absorbs: const {},
-        body: (card) => FilmStrip(card),
         fold: null,
       ),
       'Camera': (

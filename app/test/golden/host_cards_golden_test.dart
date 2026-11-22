@@ -173,18 +173,12 @@ struct Params {
 }
 ''';
 
-const _media = '''
+const _audio = '''
 struct Params {
-  /// @label(In) @ui(bar) @range(0, 60) @unit(s) @default(12)
-  begin: f32,
-  /// @label(Speed) @ui(bipolar) @range(-4, 4) @unit(×) @default(1)
-  speed: f32,
-  /// @label(Hold at) @enum(start, playhead, end) @default(1)
-  speed_hold: u32,
-  /// @label(Frame rate) @ui(bar) @range(0, 60) @unit(fps) @default(24)
-  frame_rate: f32,
-  /// @label(Volume) @ui(percent) @range(0, 100) @unit(%) @default(100)
+  /// @label(Volume) @ui(percent) @range(0, 200) @unit(%) @default(100)
   volume: f32,
+  /// @label(Beats) @ui(bar) @range(0, 30) @unit(dB) @default(0)
+  beats: f32,
 }
 ''';
 
@@ -339,9 +333,9 @@ void main() {
                         },
                       ),
                       _host(
-                        [decl('Media', _media)],
+                        [decl('Audio', _audio)],
                         kind: Kind.shape,
-                        numbers: const {'v_begin': 18, 'v_speed': 1.5},
+                        numbers: const {'v_volume': 100, 'v_beats': 6},
                       ),
                     ],
                   ),

@@ -287,6 +287,26 @@ class TimelineTracksPainter extends CustomPainter {
       }
     }
     if (r.wave case final w?) _wave(c, bar, ink, fill, r.inF, w);
+    if (r.hasAudio && bar.width >= 22) {
+      final preview = drag.fadePreview;
+      final fi = preview != null && preview.id == r.id
+          ? preview.fadeInF
+          : r.fadeInF;
+      final fo = preview != null && preview.id == r.id
+          ? preview.fadeOutF
+          : r.fadeOutF;
+      _audioFades(
+        c,
+        bar,
+        view,
+        r.inF,
+        r.outF,
+        fi,
+        fo,
+        ink,
+        selected: r.selected,
+      );
+    }
     if (r.clipped) {
       // The arrow marks a layer clipped to the layer below.
       final at = Offset(math.max(x0 + 8, 6.0), cy - 4),
@@ -472,6 +492,70 @@ class TimelineTracksPainter extends CustomPainter {
   }
 
   /// Draws the layer's waveform from the engine's decibel values: -60 dB to full scale across the bar's height, using the loudest of each two points.
+  void _audioFades(
+    Canvas c,
+    Rect bar,
+    TimelineView view,
+    int inF,
+    int outF,
+    int fadeInF,
+    int fadeOutF,
+    Color ink, {
+    required bool selected,
+  }) {
+    final shade = Paint()..color = Grey.g00.withValues(alpha: .36);
+    final line = Paint()
+      ..color = ink.withValues(alpha: .8)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+    final handleCol = ink.withValues(alpha: selected || fadeInF > 0 ? .9 : .45);
+    final handleOutCol = ink.withValues(
+      alpha: selected || fadeOutF > 0 ? .9 : .45,
+    );
+
+    if (fadeInF > 0) {
+      final fx = view.x(inF + fadeInF).clamp(bar.left, bar.right);
+      final tri = Path()
+        ..moveTo(bar.left, bar.top)
+        ..lineTo(fx, bar.top)
+        ..lineTo(bar.left, bar.bottom)
+        ..close();
+      c.drawPath(tri, shade);
+      c.drawLine(Offset(bar.left, bar.bottom), Offset(fx, bar.top), line);
+      c.drawCircle(Offset(fx, bar.top + 3.5), 2.5, Paint()..color = handleCol);
+    } else if (selected) {
+      final tab = Path()
+        ..moveTo(bar.left + 5, bar.top)
+        ..lineTo(bar.left + 11, bar.top)
+        ..lineTo(bar.left + 5, bar.top + 6)
+        ..close();
+      c.drawPath(tab, Paint()..color = handleCol);
+    }
+
+    if (fadeOutF > 0) {
+      final fx = view.x(outF - fadeOutF).clamp(bar.left, bar.right);
+      final tri = Path()
+        ..moveTo(fx, bar.top)
+        ..lineTo(bar.right, bar.top)
+        ..lineTo(bar.right, bar.bottom)
+        ..close();
+      c.drawPath(tri, shade);
+      c.drawLine(Offset(fx, bar.top), Offset(bar.right, bar.bottom), line);
+      c.drawCircle(
+        Offset(fx, bar.top + 3.5),
+        2.5,
+        Paint()..color = handleOutCol,
+      );
+    } else if (selected) {
+      final tab = Path()
+        ..moveTo(bar.right - 5, bar.top)
+        ..lineTo(bar.right - 11, bar.top)
+        ..lineTo(bar.right - 5, bar.top + 6)
+        ..close();
+      c.drawPath(tab, Paint()..color = handleOutCol);
+    }
+  }
+
   void _wave(
     Canvas c,
     Rect bar,

@@ -13,6 +13,8 @@ import 'package:motolii/workspace/state/layers/keyframe_moves.dart'
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/audio_fade.dart'
+    show layerHasAudio, readAudioFade;
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/slip_edit.dart';
@@ -40,6 +42,22 @@ class TrackDrag extends ChangeNotifier {
 
   // Bar drag. The engine decides what a move does; the timeline only records grab point and delta.
   ({int id, String part, double grab, bool moved})? _bar;
+  // Audio fade-in / fade-out corner drag on a video/sound bar.
+  ({
+    int id,
+    bool isIn,
+    int inF,
+    int outF,
+    int fadeInF,
+    int fadeOutF,
+    double peak,
+  })?
+  _fade;
+
+  /// Live fade preview while dragging an audio fade corner, or null.
+  ({int id, int fadeInF, int fadeOutF})? get fadePreview => _fade == null
+      ? null
+      : (id: _fade!.id, fadeInF: _fade!.fadeInF, fadeOutF: _fade!.fadeOutF);
   // The typed snap targets, collected when the drag starts.
   List<SnapTarget> _targets = const [];
 
@@ -162,6 +180,29 @@ class TrackDrag extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (_fade case final fd?) {
+      final f = _viewport.view.frameAt(p.dx).round();
+      final span = math.max(1, fd.outF - fd.inF);
+      final nextIn = fd.isIn
+          ? (f - fd.inF).clamp(0, span - fd.fadeOutF)
+          : fd.fadeInF;
+      final nextOut = fd.isIn
+          ? fd.fadeOutF
+          : (fd.outF - f).clamp(0, span - fd.fadeInF);
+      if (nextIn != fd.fadeInF || nextOut != fd.fadeOutF) {
+        _fade = (
+          id: fd.id,
+          isIn: fd.isIn,
+          inF: fd.inF,
+          outF: fd.outF,
+          fadeInF: nextIn,
+          fadeOutF: nextOut,
+          peak: fd.peak,
+        );
+        notifyListeners();
+      }
+      return;
+    }
     if (_stretch case final st?) {
       final f = _viewport.view.frameAt(p.dx).round();
       final ws = workspace!;
@@ -243,6 +284,26 @@ class TrackDrag extends ChangeNotifier {
       if (keep) return _boxUp();
       _selectionBox = null;
       notifyListeners();
+      return;
+    }
+    if (_fade case final fd?) {
+      _fade = null;
+      notifyListeners();
+      final ws = workspace!;
+      if (keep && timeline_service.isConnected(ws)) {
+        ws.after(
+          timeline_service.applyAudioFade(
+            ws,
+            fd.id,
+            inF: fd.inF,
+            outF: fd.outF,
+            fadeInF: fd.fadeInF,
+            fadeOutF: fd.fadeOutF,
+            peak: fd.peak,
+          ),
+          (_, _) => ws.reread(),
+        );
+      }
       return;
     }
     if (_stretch != null) {
@@ -392,6 +453,27 @@ class TrackDrag extends ChangeNotifier {
     return w != null && p.dx >= v.x(w.$1) && p.dx <= v.x(w.$2);
   }
 
+  /// Returns `true` for fade-in corner, `false` for fade-out corner, or `null` if [p]
+  /// is not on an audio fade handle of row [i] / layer [l].
+  bool? _fadeHandleAt(WorkspaceController ws, int i, Layer l, Offset p) {
+    if (!layerHasAudio(l) || RowFlags(ws).isLocked(l.id)) return null;
+    final v = _viewport.view;
+    final a = v.x(l.inF), b = v.x(l.outF);
+    if (b - a < 22) return null;
+    final cy =
+        i * TimelineMetrics.row -
+        _viewport.verticalScroll +
+        TimelineMetrics.row / 2;
+    final barTop = cy - TimelineMetrics.bar / 2;
+    if (p.dy < barTop - 2 || p.dy > barTop + 10) return null;
+    final fade = readAudioFade(l, fps: WorkspaceController.fps);
+    final inX = fade.fadeInF > 0 ? v.x(l.inF + fade.fadeInF) : a + 6;
+    final outX = fade.fadeOutF > 0 ? v.x(l.outF - fade.fadeOutF) : b - 6;
+    if ((p.dx - inX).abs() <= 6) return true;
+    if ((p.dx - outX).abs() <= 6) return false;
+    return null;
+  }
+
   /// Cursor for the pointer at [p].
   MouseCursor cursorAt(Offset p) {
     final ws = workspace!, v = _viewport.view;
@@ -420,6 +502,9 @@ class TrackDrag extends ChangeNotifier {
       return _onPale(ws, l, p)
           ? SystemMouseCursors.grab
           : SystemMouseCursors.precise;
+    }
+    if (_fadeHandleAt(ws, r.i, l, p) != null) {
+      return SystemMouseCursors.resizeLeftRight;
     }
     if (l.keys.any(
       (k) => (v.x(k) - p.dx).abs() <= TimelineMetrics.keyPicked + 2,
@@ -499,6 +584,34 @@ class TrackDrag extends ChangeNotifier {
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (RowFlags(workspace!).isLocked(l.id) || (off && !_onPale(ws, l, p))) {
       return false;
+    }
+    if (_fadeHandleAt(ws, r.i, l, p) case final isIn?) {
+      final vol =
+          timeline_service.layerValue(
+            ws,
+            l.id,
+            'volume',
+            l.inF / WorkspaceController.fps,
+          ) ??
+          1.0;
+      final fade = readAudioFade(
+        l,
+        fps: WorkspaceController.fps,
+        fallbackPeak: vol,
+      );
+      ws.select(l.id);
+      if (ws.playing) ws.playing = false;
+      _fade = (
+        id: l.id,
+        isIn: isIn,
+        inF: l.inF,
+        outF: l.outF,
+        fadeInF: fade.fadeInF,
+        fadeOutF: fade.fadeOutF,
+        peak: fade.peak,
+      );
+      notifyListeners();
+      return true;
     }
     // Closest key within hit radius (not first-wins, which grabs wrong at dense zoom).
     int? pickK;

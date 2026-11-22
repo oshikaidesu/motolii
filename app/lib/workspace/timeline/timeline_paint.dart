@@ -25,10 +25,14 @@ class TimelineRow {
     required this.outF,
     required this.keys,
     required this.picked,
+    this.id = 0,
     this.selected = false,
     this.dim = false,
     this.locked = false,
     this.clipped = false,
+    this.hasAudio = false,
+    this.fadeInF = 0,
+    this.fadeOutF = 0,
     this.wave,
     this.frames,
     this.form,
@@ -42,6 +46,10 @@ class TimelineRow {
     this.laneOn,
     this.whole,
   });
+
+  final int id;
+  final bool hasAudio;
+  final int fadeInF, fadeOutF;
 
   final (int, int)? whole; // The whole length of a video as it lies, cut or not: the pale slip-edit bar of After Effects.
   final List<Stretch> stretches; // The easing of each stretch between keyframes, drawn between them.
@@ -72,12 +80,16 @@ class TimelineRow {
   @override
   bool operator ==(Object other) =>
       other is TimelineRow &&
+      other.id == id &&
       other.name == name &&
       other.kind == kind &&
       other.tone == tone &&
       listEquals(other.mix, mix) &&
       other.inF == inF &&
       other.outF == outF &&
+      other.hasAudio == hasAudio &&
+      other.fadeInF == fadeInF &&
+      other.fadeOutF == fadeOutF &&
       listEquals(other.keys, keys) &&
       setEquals(other.picked, picked) &&
       other.selected == selected &&

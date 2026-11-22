@@ -6,6 +6,8 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     as timeline_service;
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/audio_fade.dart'
+    show layerHasAudio, readAudioFade;
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/slip_edit.dart';
 import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
@@ -117,33 +119,46 @@ class TimelineRows {
         if (o.value case final n?)
           laneRow(ws.layers[o.layer], n)
         else if (ws.layers[o.layer] case final l)
-          TimelineRow(
-            name: l.name,
-            kind: l.kind,
-            inF: l.inF,
-            outF: l.outF,
-            keys: l.keys,
-            stretches: l.stretches,
-            picked: {
-              for (final k in picks)
-                if (k.layer == l.id) k.frame,
-            },
-            selected: l.id == sel || lit.contains(l.id),
-            dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
-            locked: flags.isLocked(l.id),
-            clipped: l.clipped,
-            wave: _media.waveOf(ws, l),
-            frames: _media.framesOf(ws, l),
-            form: l.form?.shape,
-            fill: l.form?.colour,
-            outline: l.form?.outline ?? false,
-            tone: l.tone,
-            mix: switch (l.members) {
-              final ms? => [for (final s in ms) layerLabelColor(s)],
-              null => null,
-            },
-            whole: _slip.wholeOf(ws, l),
-          ),
+          () {
+            final wave = _media.waveOf(ws, l);
+            final audio = layerHasAudio(l) || wave != null;
+            final fade = audio
+                ? readAudioFade(l, fps: WorkspaceController.fps)
+                : (fadeInF: 0, fadeOutF: 0, peak: 1.0);
+            return TimelineRow(
+              id: l.id,
+              name: l.name,
+              kind: l.kind,
+              inF: l.inF,
+              outF: l.outF,
+              keys: l.keys,
+              stretches: l.stretches,
+              picked: {
+                for (final k in picks)
+                  if (k.layer == l.id) k.frame,
+              },
+              selected: l.id == sel || lit.contains(l.id),
+              dim:
+                  flags.isHidden(l.id) ||
+                  (flags.anySolo && !flags.isSolo(l.id)),
+              locked: flags.isLocked(l.id),
+              clipped: l.clipped,
+              hasAudio: audio,
+              fadeInF: fade.fadeInF,
+              fadeOutF: fade.fadeOutF,
+              wave: wave,
+              frames: _media.framesOf(ws, l),
+              form: l.form?.shape,
+              fill: l.form?.colour,
+              outline: l.form?.outline ?? false,
+              tone: l.tone,
+              mix: switch (l.members) {
+                final ms? => [for (final s in ms) layerLabelColor(s)],
+                null => null,
+              },
+              whole: _slip.wholeOf(ws, l),
+            );
+          }(),
     ];
   }
 
