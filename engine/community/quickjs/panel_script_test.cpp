@@ -87,7 +87,7 @@ TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(rendered.find("\"hide\":[\"width\",\"angle\"]"), std::string::npos)
       << rendered;
-  EXPECT_NE(rendered.find("\"type\":\"canvas\""), std::string::npos)
+  EXPECT_NE(rendered.find("\"type\":\"svg\""), std::string::npos)
       << rendered;
 
   const std::string act = panel_eval_card_action(
@@ -110,7 +110,7 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
         << name;
   }
 
-  // Every bundled Expression `.ui.js` template resolves and renders a valid ui.canvas tree.
+  // Every bundled Expression `.ui.js` template resolves and renders a valid ui.svg tree.
   const auto exprDir = doc_folders("expressions").front();
   for (const char* expr : {"rigid_body.js", "wind.js", "Field.js", "wave.js",
                            "rise_to_sound.js", "Scale_Assist.js", "lyric.js"}) {
@@ -119,7 +119,7 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
     std::string err;
     const std::string tree = panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
     ASSERT_TRUE(err.empty()) << expr << ": " << err;
-    EXPECT_NE(tree.find("\"type\":\"canvas\""), std::string::npos) << expr << ": " << tree;
+    EXPECT_NE(tree.find("\"type\":\"svg\""), std::string::npos) << expr << ": " << tree;
   }
 
   // Jolt Rigid Body mode toggle switches Mass cleanly between 0 (Floor) and 1 (Dynamic).

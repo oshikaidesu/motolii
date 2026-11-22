@@ -1,45 +1,50 @@
 // Custom Inspector card template for Jolt Physics `wind.js`.
-// Turns `wind` (X) and `lift` (Y) newtons into an interactive 2D force compass.
+// Uses standard SVG (`ui.svg`) for a true-circle 2D force compass with bending streamlines.
 
 function renderCard(ctx) {
   const p = ctx.params || {};
   const wind = Math.max(-50, Math.min(50, Number(p.wind ?? 0)));
   const lift = Math.max(-50, Math.min(50, Number(p.lift ?? 0)));
-  const cx = 0.5, cy = 0.5;
-  const vx = cx + (wind / 50) * 0.40;
-  const vy = cy - (lift / 50) * 0.40;
+  const cx = 140, cy = 48, r = 36;
+  const vx = cx + (wind / 50) * r;
+  const vy = cy - (lift / 50) * r;
+  const mag = Math.min(1, Math.hypot(wind, lift) / 50);
 
-  const draw = [
-    { op: "circle", x: cx, y: cy, r: 0.40, stroke: "border", width: 0.9 },
-    { op: "line", x: 0.08, y: cy, x2: 0.92, y2: cy, stroke: "border", width: 0.7, alpha: 0.5 },
-    { op: "line", x: cx, y: 0.08, x2: cx, y2: 0.92, stroke: "border", width: 0.7, alpha: 0.5 },
-  ];
+  const sy = -(lift / 50) * 14;
+  const streams = [24, 48, 72].map((ry) => {
+    const y0 = (ry - sy * 0.45).toFixed(1);
+    const y1 = (ry + sy * 0.75).toFixed(1);
+    const ax = wind >= 0 ? 246 : 34;
+    const dir = wind >= 0 ? -5 : 5;
+    return `<path d="M 34 ${y0} C 106 ${(ry - sy * 0.1).toFixed(1)}, 174 ${(ry + sy * 0.25).toFixed(1)}, 246 ${y1}" fill="none" stroke="var(--layout)" stroke-width="1.1" opacity="${(0.2 + mag * 0.5).toFixed(2)}"/>`
+      + (Math.abs(wind) > 3 ? `<path d="M ${(ax + dir).toFixed(1)} ${(Number(y1) - 3).toFixed(1)} L ${ax} ${y1} L ${(ax + dir).toFixed(1)} ${(Number(y1) + 3).toFixed(1)}" fill="none" stroke="var(--layout)" stroke-width="1.1" opacity="${(0.25 + mag * 0.55).toFixed(2)}"/>` : "");
+  }).join("");
 
-  // Streamlines bending gently in the force direction.
-  const sx = (wind / 50) * 0.16;
-  const sy = -(lift / 50) * 0.14;
-  for (const rowY of [0.28, 0.50, 0.72]) {
-    draw.push({
-      op: "bezier",
-      x: 0.14, y: rowY - sy * 0.5,
-      cx1: 0.38, cy1: rowY - sy * 0.1,
-      cx2: 0.62, cy2: rowY + sy * 0.2,
-      x2: 0.86, y2: rowY + sy,
-      stroke: "layout", width: 1.0, alpha: Math.min(0.75, 0.18 + Math.hypot(sx, sy) * 3),
-    });
-  }
-
-  draw.push(
-    { op: "line", x: cx, y: cy, x2: vx, y2: vy, stroke: "accent", width: 2.2 },
-    { op: "circle", x: vx, y: vy, r: 0.06, fill: "accent" },
-    { op: "text", x: 0.04, y: 0.14, text: "Wind " + Math.round(wind) + "N", fill: "text" },
-    { op: "text", x: 0.96, y: 0.14, text: "Lift " + Math.round(lift) + "N", fill: "layout", align: "right" }
-  );
+  const svg = `<svg viewBox="0 0 280 96">
+    <defs>
+      <radialGradient id="windGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="var(--layout)" stop-opacity="${(0.08 + mag * 0.18).toFixed(2)}"/>
+        <stop offset="100%" stop-color="var(--layout)" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${r + 8}" fill="url(#windGlow)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="1"/>
+    <circle cx="${cx}" cy="${cy}" r="${r * 0.5}" fill="none" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.7"/>
+    <line x1="${cx - r - 6}" y1="${cy}" x2="${cx + r + 6}" y2="${cy}" stroke="var(--border)" stroke-width="0.8" opacity="0.55"/>
+    <line x1="${cx}" y1="${cy - r - 4}" x2="${cx}" y2="${cy + r + 4}" stroke="var(--border)" stroke-width="0.8" opacity="0.55"/>
+    ${streams}
+    <line x1="${cx}" y1="${cy}" x2="${vx.toFixed(1)}" y2="${vy.toFixed(1)}" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="2.5" fill="var(--muted)"/>
+    <circle cx="${vx.toFixed(1)}" cy="${vy.toFixed(1)}" r="8" fill="var(--accent)" fill-opacity="0.22"/>
+    <circle cx="${vx.toFixed(1)}" cy="${vy.toFixed(1)}" r="4.2" fill="var(--accent)" stroke="var(--well)" stroke-width="1.4"/>
+    <text x="10" y="15" fill="var(--text)" font-size="9.5" font-family="Inter">Wind ${Math.round(wind)}N</text>
+    <text x="270" y="15" fill="var(--layout)" font-size="9.5" font-family="Inter" text-anchor="end">Lift ${Math.round(lift)}N</text>
+  </svg>`;
 
   return {
     hide: ["wind", "lift"],
     ui: ui.column([
-      ui.canvas(96, draw, { id: "vector", label: "Jolt Force Vector (N)" }),
+      ui.svg(96, svg, { id: "vector", label: "Jolt Force Vector (N)" }),
       ui.row([
         ui.button("Gust →", "preset:gust", { accent: wind > 10 }),
         ui.button("Updraft ↑", "preset:up"),
@@ -51,8 +56,8 @@ function renderCard(ctx) {
 
 function onCardAction(action) {
   if (action.id === "vector" && action.value) {
-    const w = Math.round(((Number(action.value.x ?? 0.5) - 0.5) / 0.40) * 50 * 10) / 10;
-    const l = Math.round(((0.5 - Number(action.value.y ?? 0.5)) / 0.40) * 50 * 10) / 10;
+    const w = Math.round(((Number(action.value.x ?? 0.5) - 0.5) / 0.28) * 50 * 10) / 10;
+    const l = Math.round(((0.5 - Number(action.value.y ?? 0.5)) / 0.38) * 50 * 10) / 10;
     return {
       set: {
         wind: Math.max(-50, Math.min(50, w)),
