@@ -16,7 +16,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 const currentAppVersion = '0.1.0';
 
 /// Default GitHub Releases feed URL (can be overridden via MOTOLII_UPDATE_URL).
-const defaultReleasesUrl = 'https://github.com/motolii/motolii/releases/latest';
+const defaultReleasesUrl =
+    'https://github.com/oshikaidesu/motolii/releases/latest';
 
 /// Velopack channel name for this OS.
 String updateChannel() => hostIsMacOS
