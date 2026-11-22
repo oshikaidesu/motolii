@@ -12,6 +12,7 @@ import 'package:motolii/storage/project_files.dart';
 import 'package:motolii/storage/thumbnail_folder.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/picks.dart' show clickKeys, pickOnClick;
+import 'package:motolii/workspace/state/engine_access.dart' show shelvesFolder;
 import 'package:motolii/workspace/state/project_facts.dart';
 import 'package:motolii/workspace/window/home_card.dart';
 import 'package:motolii/workspace/window/home_collage.dart';
@@ -54,6 +55,7 @@ class HomeWindow extends StatefulWidget {
 class _HomeWindowState extends State<HomeWindow> {
   static var byName = false;
   List<HomeProject> _docs = const [];
+  List<HomeProject> _samples = const [];
   String? _menu;
   String? _asking;
   String _find = '';
@@ -92,11 +94,17 @@ class _HomeWindowState extends State<HomeWindow> {
 
   var _reads = 0;
   void _read() {
-    final docs = <HomeProject>[], read = _reads++;
+    final docs = <HomeProject>[], samples = <HomeProject>[], read = _reads++;
     for (final f in projectFilesIn(widget.folder)) {
       docs.add(HomeProject(f.path, f.modified, f.size));
     }
-    setState(() => _docs = docs);
+    for (final f in sampleProjectsIn('${shelvesFolder()}/samples')) {
+      samples.add(HomeProject(f.path, f.modified, f.size));
+    }
+    setState(() {
+      _docs = docs;
+      _samples = samples;
+    });
     for (final (i, d) in docs.indexed) {
       final png = '$_pictures/$read-$i.png';
       savedProjectFacts(widget.lib, d.path, png).then((facts) {
@@ -108,6 +116,22 @@ class _HomeWindowState extends State<HomeWindow> {
         );
       });
     }
+    for (final (i, s) in samples.indexed) {
+      final png = '$_pictures/$read-s$i.png';
+      savedProjectFacts(widget.lib, s.path, png).then((facts) {
+        if (!mounted) return;
+        setState(
+          () => s
+            ..facts = facts
+            ..picture = facts != null && existsFile(png) ? png : null,
+        );
+      });
+    }
+  }
+
+  void _openSample(HomeProject sample) {
+    final copy = copySampleProject(widget.folder, sample);
+    widget.onOpen(copy);
   }
 
   Future<void> _pickFolder() async {
@@ -225,10 +249,12 @@ class _HomeWindowState extends State<HomeWindow> {
                 width: side,
                 child: HomeSidebar(
                   docs: _docs,
+                  samples: _samples,
                   folder: widget.folder,
                   selected: hero?.path,
                   find: _findText,
                   onChoose: _choose,
+                  onSample: _openSample,
                   onClose: widget.onClose,
                   settings: _settings,
                   onSettings: () => setState(() => _settings = !_settings),

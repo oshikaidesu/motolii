@@ -383,7 +383,26 @@ class _AgentPaneState extends State<AgentPane> {
   );
 
   Widget _conversation(AcpChatSession talk) => talk.entries.isEmpty
-      ? Align(alignment: Alignment.topLeft, child: _intro())
+      ? SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _intro(),
+              AgentStarterPrompts(
+                onPick: (prompt) {
+                  if (talk.ready && !talk.sending) {
+                    _send(talk, prompt);
+                  } else {
+                    _say.text = prompt;
+                    _say.selection = TextSelection.collapsed(
+                      offset: prompt.length,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        )
       : ListView(
           reverse: true,
           padding: EdgeInsets.all(WindowTokens.inset),
@@ -555,4 +574,99 @@ class _AgentPaneState extends State<AgentPane> {
       blockSpacing: Shape.s(6),
     );
   }
+}
+
+/// Starter prompts shown before the first message so a new user can try Motolii's ACP workflow in one click.
+typedef AgentStarter = ({String id, String title, String prompt});
+
+const agentStarterPrompts = <AgentStarter>[
+  (
+    id: 'jp-wave',
+    title: '波打つ日本語タイトル',
+    prompt: '選択中レイヤーのテキストが1文字ずつ波打つエクスプレッションを作って',
+  ),
+  (
+    id: 'custom-card',
+    title: 'カスタムカード付きエフェクト',
+    prompt: '選択中レイヤーにグリッチ風シェーダー（.fs）とカスタム操作カード（.ui.js）を作って',
+  ),
+  (
+    id: 'audio-bounce',
+    title: '音に反応して弾む動き',
+    prompt: '音声の音量に合わせて選択中レイヤーが弾むエクスプレッションを作って',
+  ),
+  (
+    id: 'tool-panel',
+    title: 'Tool Panel 用ツール',
+    prompt: '選択中レイヤーを整列・複製する QuickJS ツールパネル（shelves/panels/）を作って',
+  ),
+];
+
+/// Clickable starter prompt cards under the empty-conversation intro.
+class AgentStarterPrompts extends StatelessWidget {
+  const AgentStarterPrompts({super.key, required this.onPick});
+
+  final void Function(String prompt) onPick;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      WindowTokens.inset,
+      0,
+      WindowTokens.inset,
+      WindowTokens.inset,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'TRY ASKING',
+          style: TextStyles.micro(Grey.g56)
+              .copyWith(fontWeight: FontWeight.w700, letterSpacing: .4),
+        ),
+        SizedBox(height: Shape.s(6)),
+        for (final s in agentStarterPrompts)
+          Padding(
+            padding: EdgeInsets.only(bottom: Shape.s(6)),
+            child: DockHover(
+              key: ValueKey('agent-starter-${s.id}'),
+              onTap: () => onPick(s.prompt),
+              builder: (context, h) => Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: Shape.s(8),
+                  vertical: Shape.s(6),
+                ),
+                decoration: BoxDecoration(
+                  color: h ? WindowTokens.well : WindowTokens.card,
+                  borderRadius: Shape.round(WindowTokens.radius),
+                  border: Border.all(
+                    color: h ? Accent.fill : WindowTokens.line,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.title,
+                      style: TextStyles.name(
+                        h ? Grey.g100 : Grey.g91,
+                        11,
+                        FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: Shape.s(2)),
+                    Text(
+                      s.prompt,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyles.micro(Grey.g63),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
 }

@@ -105,6 +105,22 @@ void duplicateProject(String folder, HomeProject d) {
   copyProjectFile(d.path, to);
 }
 
+/// Readable display title for a bundled starter sample (strips leading numeric order prefix and underscores).
+String sampleTitle(HomeProject sample) =>
+    sample.name.replaceFirst(RegExp(r'^\d+_'), '').replaceAll('_', ' ');
+
+/// Copies a bundled starter [sample] into [folder] under a free filename so the bundled template stays untouched.
+String copySampleProject(String folder, HomeProject sample) {
+  final title = sampleTitle(sample);
+  final to = firstFree(
+    '$folder/$title.motolii',
+    existsFile,
+    (n) => '$folder/$title $n.motolii',
+  );
+  copyProjectFile(sample.path, to);
+  return to;
+}
+
 /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there. False if it could not be moved.
 /// On Windows it goes to the Recycle Bin instead.
 bool trashProject(HomeProject d) {

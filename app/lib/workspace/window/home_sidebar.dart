@@ -15,19 +15,23 @@ class HomeSidebar extends StatelessWidget {
   const HomeSidebar({
     super.key,
     required this.docs,
+    this.samples = const [],
     required this.folder,
     required this.selected,
     required this.find,
     required this.onChoose,
+    this.onSample,
     required this.onClose,
     required this.settings,
     required this.onSettings,
   });
   final List<HomeProject> docs;
+  final List<HomeProject> samples;
   final String folder;
   final String? selected;
   final TextEditingController find;
   final void Function(String path) onChoose;
+  final void Function(HomeProject sample)? onSample;
   final VoidCallback onClose;
   final bool settings;
   final VoidCallback onSettings;
@@ -101,15 +105,32 @@ class HomeSidebar extends StatelessWidget {
             child: ShelfSearchField(controller: find, hint: 'Search'),
           ),
           SizedBox(height: Shape.s(28)),
-          Padding(
-            padding: EdgeInsets.only(left: Shape.s(8)),
-            child: Text('RECENT', style: homeCaps(Grey.g56)),
-          ),
-          SizedBox(height: Shape.s(8)),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
+                if (samples.isNotEmpty) ...[
+                  Padding(
+                    padding: EdgeInsets.only(left: Shape.s(8)),
+                    child: Text('SAMPLES', style: homeCaps(Grey.g56)),
+                  ),
+                  SizedBox(height: Shape.s(8)),
+                  for (final s in samples)
+                    HomeSidebarItem(
+                      key: ValueKey('home-sample-${s.name}'),
+                      d: s,
+                      title: sampleTitle(s),
+                      subtitle: 'Sample · click to copy',
+                      selected: false,
+                      onTap: () => onSample?.call(s),
+                    ),
+                  SizedBox(height: Shape.s(18)),
+                ],
+                Padding(
+                  padding: EdgeInsets.only(left: Shape.s(8)),
+                  child: Text('RECENT', style: homeCaps(Grey.g56)),
+                ),
+                SizedBox(height: Shape.s(8)),
                 for (final d in recent.take(6))
                   HomeSidebarItem(
                     d: d,
@@ -164,10 +185,14 @@ class HomeSidebarItem extends StatelessWidget {
     required this.d,
     required this.selected,
     required this.onTap,
+    this.title,
+    this.subtitle,
   });
   final HomeProject d;
   final bool selected;
   final VoidCallback onTap;
+  final String? title;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) => Pressable(
@@ -203,7 +228,7 @@ class HomeSidebarItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  d.name,
+                  title ?? d.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyles.name(
@@ -218,7 +243,7 @@ class HomeSidebarItem extends StatelessWidget {
                 ),
                 SizedBox(height: Shape.s(4)),
                 Text(
-                  homeAge(d.changed),
+                  subtitle ?? homeAge(d.changed),
                   style: TextStyles.micro(selected ? Grey.g63 : Grey.g56),
                 ),
               ],

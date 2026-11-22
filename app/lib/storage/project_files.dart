@@ -18,6 +18,15 @@ List<ProjectFile> projectFilesIn(String folder) {
   return found;
 }
 
+/// Bundled starter projects in [folder], sorted by filename. Empty if [folder] does not exist.
+List<ProjectFile> sampleProjectsIn(String folder) {
+  final dir = Directory(folder);
+  if (!dir.existsSync()) return const [];
+  final found = projectFilesIn(folder)
+    ..sort((a, b) => a.path.compareTo(b.path));
+  return found;
+}
+
 /// Copies the file at [from] to [to].
 void copyProjectFile(String from, String to) => File(from).copySync(to);
 
