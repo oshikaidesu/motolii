@@ -6,14 +6,15 @@ function renderCard(ctx) {
   const speed = Number(p.wave_speed ?? 1);
   const phase = Number(p.wave_phase ?? 0);
   const noise = Math.max(0, Math.min(1, Number(p.wave_noise ?? 0)));
+  const t = Number(ctx.time ?? 0);
 
   const pts = [];
   const dots = [];
   const cycles = Math.max(0.5, Math.abs(phase) > 0.1 ? Math.abs(phase) : 1.5);
   for (let i = 0; i <= 32; i++) {
     const u = i / 32;
-    const s = Math.sin(u * Math.PI * 2 * cycles);
-    const n = Math.sin(u * 13.7 + speed) * Math.cos(u * 5.3) * 0.85;
+    const s = Math.sin((u * cycles + t * speed) * Math.PI * 2);
+    const n = Math.sin(u * 13.7 + speed + t * 3.1) * Math.cos(u * 5.3 - t * 1.7) * 0.85;
     const x = 14 + u * 252;
     const y = 46 - (s * (1 - noise) + n * noise) * 28;
     pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);

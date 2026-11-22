@@ -476,10 +476,12 @@ CardUiRenderResult parseCardUiRenderResponse(String rawJson) {
   }
 }
 
-/// Parsed result of `motolii_card_ui_action`: `{ set?: { param: num }, say?: { param: word } }`.
+/// Parsed result of `motolii_card_ui_action`:
+/// `{ set?: { param: num }, say?: { param: word }, state?: { key: val } }`.
 typedef CardUiActionResult = ({
   Map<String, double> set,
   Map<String, String> say,
+  Map<String, Object?>? state,
   String? error,
 });
 
@@ -487,17 +489,25 @@ CardUiActionResult parseCardUiActionResponse(String rawJson) {
   try {
     final decoded = jsonDecode(rawJson);
     if (decoded is! Map) {
-      return (set: const {}, say: const {}, error: 'Invalid card action');
+      return (
+        set: const {},
+        say: const {},
+        state: null,
+        error: 'Invalid card action',
+      );
     }
     if (decoded['ok'] != true) {
       return (
         set: const {},
         say: const {},
+        state: null,
         error: decoded['error']?.toString() ?? 'Card action failed',
       );
     }
     final res = decoded['result'];
-    if (res is! Map) return (set: const {}, say: const {}, error: null);
+    if (res is! Map) {
+      return (set: const {}, say: const {}, state: null, error: null);
+    }
     final setMap = <String, double>{};
     if (res['set'] is Map) {
       for (final e in (res['set'] as Map).entries) {
@@ -512,8 +522,20 @@ CardUiActionResult parseCardUiActionResponse(String rawJson) {
         sayMap[e.key.toString()] = e.value?.toString() ?? '';
       }
     }
-    return (set: setMap, say: sayMap, error: null);
+    Map<String, Object?>? st;
+    if (res['state'] is Map) {
+      st = {
+        for (final e in (res['state'] as Map).entries)
+          e.key.toString(): e.value,
+      };
+    }
+    return (set: setMap, say: sayMap, state: st, error: null);
   } catch (e) {
-    return (set: const {}, say: const {}, error: 'Card action JSON error: $e');
+    return (
+      set: const {},
+      say: const {},
+      state: null,
+      error: 'Card action JSON error: $e',
+    );
   }
 }

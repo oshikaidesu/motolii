@@ -456,6 +456,7 @@ void main() {
                               },
                             }),
                             action: (_, _) => '{"ok":true,"result":{}}',
+                            liveSignal: null,
                           )
                         : null,
                   ),

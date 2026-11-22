@@ -58,7 +58,8 @@ class _InspectorPanelState extends State<InspectorPane> {
     final l = _layerOf(ws);
     if (l != null) {
       return l.keys.isNotEmpty ||
-          layerWord(ws, l.id, 'macro_sources').isNotEmpty;
+          layerWord(ws, l.id, 'macro_sources').isNotEmpty ||
+          layerWord(ws, l.id, 'script').isNotEmpty;
     }
     if (!projectOpen(ws)) return true;
     if (_stageKeyed?.$1 != ws.rev) {

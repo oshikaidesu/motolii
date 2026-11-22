@@ -3,11 +3,15 @@ import 'package:flutter/widgets.dart';
 /// One layer entry offered as an Audio or Layer signal source in the Macros card.
 typedef MacroLayerChoice = ({int id, String name, bool hasAudio});
 
+/// Live playback signals forwarded to custom Inspector card UIs (`ctx.time`, `ctx.fps`, `ctx.audio`).
+typedef CardLiveSignal = ({double time, double fps, List<double> audio});
+
 /// Evaluator hooks for an effect card's custom JS UI (`<effect>.ui.js` or co-located `renderCard`).
 typedef CardCustomUi = ({
   String uiFile,
   String Function(String ctxJson) render,
   String Function(String actionJson, String ctxJson) action,
+  CardLiveSignal Function()? liveSignal,
 });
 
 /// What the buttons and menus on the Inspector's cards do. An action that is null is not offered.

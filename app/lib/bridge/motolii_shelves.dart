@@ -1,5 +1,7 @@
 // What the shelves hold, read once (docs/app/BRIDGE.md S): create scripts, effects and motions with their labels and images,
 // font kinds, easing kinds, and how a property is displayed.
+import 'dart:ffi';
+
 import 'package:ffi/ffi.dart';
 
 import 'package:motolii/bridge/motolii.dart';
@@ -205,6 +207,26 @@ extension MotoliiShelves on Motolii {
         [uiFile, actionJson, ctxJson],
         (s) => bindings.motolii_card_ui_action(s[0], s[1], s[2]).toDartString(),
       );
+
+  /// Live log-spaced 20Hz..12kHz FFT spectrum (`bands` floats in 0..1) at project time [at].
+  /// Non-blocking: returns an empty list when no audio is active or still decoding.
+  List<double> soundSpectrum(double at, {int layer = 0, int bands = 24}) {
+    if (bands <= 0) return const [];
+    final buf = calloc<Float>(bands);
+    try {
+      final got = bindings.motolii_sound_spectrum(
+        handle,
+        layer,
+        at,
+        buf,
+        bands,
+      );
+      if (got <= 0) return const [];
+      return [for (var i = 0; i < got; i++) buf[i].toDouble()];
+    } finally {
+      calloc.free(buf);
+    }
+  }
 
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(

@@ -1263,6 +1263,39 @@ class MotoliiBindings {
         )
       >();
 
+  int motolii_sound_spectrum(
+    ffi.Pointer<Motolii> m,
+    int layer,
+    double at,
+    ffi.Pointer<ffi.Float> out,
+    int n,
+  ) {
+    return _motolii_sound_spectrum(m, layer, at, out, n);
+  }
+
+  late final _motolii_sound_spectrumPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<Motolii>,
+            ffi.Int,
+            ffi.Double,
+            ffi.Pointer<ffi.Float>,
+            ffi.Int,
+          )
+        >
+      >('motolii_sound_spectrum');
+  late final _motolii_sound_spectrum = _motolii_sound_spectrumPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<Motolii>,
+          int,
+          double,
+          ffi.Pointer<ffi.Float>,
+          int,
+        )
+      >();
+
   int motolii_map(
     ffi.Pointer<ffi.Float> points,
     int n,

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "checkJs": false,
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "motolii-ui.d.ts",
+    "**/*.ui.js",
+    "panels/**/*.js"
+  ]
+}

@@ -75,6 +75,7 @@ String customPanelCtxJson(WorkspaceController ws, Map<String, Object?> state) {
     'layers': layers,
     'state': state,
     'theme': panelThemeHexMap(),
+    'audio': m?.soundSpectrum(at) ?? const <double>[],
   });
 }
 
@@ -112,6 +113,13 @@ CardCustomUi? cardCustomUiOf(
     render: (ctxJson) => m.cardUiRender(uiFile, ctxJson),
     action: (actionJson, ctxJson) =>
         m.cardUiAction(uiFile, actionJson, ctxJson),
+    liveSignal: () {
+      final fps = WorkspaceController.fps > 0
+          ? WorkspaceController.fps.toDouble()
+          : 60.0;
+      final at = ws.frame / fps;
+      return (time: at, fps: fps, audio: m.soundSpectrum(at));
+    },
   );
 }
 

@@ -5,10 +5,10 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/custom_ui/script_watch.dart';
 import 'package:motolii/workspace/state/custom_panel_service.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -30,8 +30,40 @@ class JsPanelTool extends StatefulWidget {
 }
 
 class _JsPanelToolState extends State<JsPanelTool> {
+  final _watcher = ScriptFileWatcher();
   String? _actionError;
   int _reloadTick = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _watchScript();
+  }
+
+  @override
+  void didUpdateWidget(JsPanelTool oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.panel.path != widget.panel.path) {
+      _actionError = null;
+      _watchScript();
+    }
+  }
+
+  @override
+  void dispose() {
+    _watcher.dispose();
+    super.dispose();
+  }
+
+  void _watchScript() {
+    _watcher.watch(widget.panel.path, () {
+      if (!mounted) return;
+      setState(() {
+        _actionError = null;
+        _reloadTick++;
+      });
+    });
+  }
 
   String get _stateKey => 'panel.state:${widget.panel.path}';
 
@@ -112,14 +144,13 @@ class _JsPanelToolState extends State<JsPanelTool> {
       padding: EdgeInsets.all(WindowTokens.gap),
       children: [
         if (err != null) ...[
-          Container(
-            padding: EdgeInsets.all(Shape.s(7)),
-            decoration: BoxDecoration(
-              color: InspectorSkin.well,
-              borderRadius: Shape.round(5),
-              border: Border.all(color: InspectorSkin.tonePlace),
-            ),
-            child: Text(err, style: TextStyles.micro(InspectorSkin.tonePlace)),
+          CustomUiErrorBanner(
+            error: err,
+            fileLabel: widget.panel.name,
+            onReload: () => setState(() {
+              _actionError = null;
+              _reloadTick++;
+            }),
           ),
           SizedBox(height: Shape.s(6)),
         ],

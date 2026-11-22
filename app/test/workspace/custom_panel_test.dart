@@ -12,6 +12,7 @@ import 'package:motolii/inspector/inspector_host.dart';
 import 'package:motolii/inspector/inspector_panel.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
@@ -264,6 +265,7 @@ struct Params {
                         }
                         return '{"ok":true,"result":{}}';
                       },
+                      liveSignal: null,
                     )
                   : null,
             ),
@@ -430,6 +432,152 @@ struct Params {
       expect(payload['x'] as double, closeTo(0.5, 0.05));
       expect(payload['y'] as double, closeTo(0.5, 0.05));
       expect(payload['phase'], 'down');
+    },
+  );
+
+  testWidgets(
+    'CustomCardBody preserves ephemeral drag state, passes live signals, and shows error banner',
+    (tester) async {
+      final seenCtx = <Map<String, Object?>>[];
+      var failRender = false;
+      final writes = <Map<String, double>>[];
+      final live =
+          ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((
+            const {},
+            const {},
+          ));
+      final decl = CardDeclaration('Sound', '''
+struct Params {
+  /// @label(Start) @ui(bar) @range(20, 12000) @default(60)
+  js_rise_start: f32,
+  /// @label(End) @ui(bar) @range(20, 12000) @default(1800)
+  js_rise_end: f32,
+}
+''', toneOf: () => InspectorSkin.toneBlend);
+      addTearDown(live.dispose);
+      tester.view.physicalSize = const Size(360, 500);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        WidgetsApp(
+          color: Grey.g07,
+          debugShowCheckedModeBanner: false,
+          pageRouteBuilder: <T>(settings, builder) =>
+              PageRouteBuilder<T>(pageBuilder: (c, _, _) => builder(c)),
+          home: InspectorHost(
+            layer: InspectedLayer(
+              kind: Kind.text,
+              title: 'Title',
+              cards: [decl],
+              movable: const ['Sound'],
+            ),
+            snapshot: const InspectorSnapshot(
+              numbers: {'v_js_rise_start': 60, 'v_js_rise_end': 1800},
+            ),
+            actions: CardActions(
+              cardCustomUi: (title, _) => title == 'Sound'
+                  ? (
+                      uiFile: '/nonexistent/rise_to_sound.ui.js',
+                      render: (ctxJson) {
+                        final ctx = (jsonDecode(ctxJson) as Map)
+                            .cast<String, Object?>();
+                        seenCtx.add(ctx);
+                        if (failRender) {
+                          return jsonEncode({
+                            'ok': false,
+                            'error': 'ReferenceError: boom at line 42',
+                          });
+                        }
+                        final st = (ctx['state'] as Map?) ?? const {};
+                        final drag = st['drag']?.toString() ?? 'idle';
+                        final audio = (ctx['audio'] as List?) ?? const [];
+                        return jsonEncode({
+                          'ok': true,
+                          'ui': {
+                            'hide': ['start', 'end'],
+                            'ui': {
+                              'type': 'column',
+                              'children': [
+                                {
+                                  'type': 'text',
+                                  'text':
+                                      'drag=$drag audio=${audio.length} t=${ctx['time']}',
+                                },
+                                {
+                                  'type': 'button',
+                                  'id': 'grab-lo',
+                                  'label': 'Grab Lo',
+                                },
+                              ],
+                            },
+                          },
+                        });
+                      },
+                      action: (actJson, _) {
+                        final act = jsonDecode(actJson) as Map;
+                        if (act['id'] == 'grab-lo') {
+                          return jsonEncode({
+                            'ok': true,
+                            'result': {
+                              'set': {'start': 120},
+                              'state': {'drag': 'lo'},
+                            },
+                          });
+                        }
+                        return '{"ok":true,"result":{}}';
+                      },
+                      liveSignal: () => (
+                        time: 1.25,
+                        fps: 60.0,
+                        audio: const [0.1, 0.4, 0.8, 0.5],
+                      ),
+                    )
+                  : null,
+            ),
+            edits: InspectorEdits(
+              onValues: (changed, {required live}) =>
+                  writes.add(Map.of(changed)),
+              onDrop: () {},
+              onKey: (_, _) {},
+              onWords: (_, {required live}) => true,
+              onAnimateAll: (_) {},
+              together: (tells) => tells(),
+              onRoute: (_) {},
+              onAim: (_) {},
+            ),
+            live: live,
+            child: const InspectorPanel(width: 360, height: 500),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Live audio & time signals flow into ctx immediately.
+      expect(find.text('drag=idle audio=4 t=1.25'), findsOneWidget);
+      expect(seenCtx.last['theme'], isA<Map>());
+
+      // Action merges ephemeral state (`drag=lo`) and re-renders immediately
+      // while also writing document param `v_js_rise_start`.
+      await tester.tap(find.byKey(const ValueKey('panel:btn:grab-lo')));
+      await tester.pumpAndSettle();
+      expect(find.text('drag=lo audio=4 t=1.25'), findsOneWidget);
+      expect(writes.last['v_js_rise_start'], 120.0);
+
+      // Render error surfaces inside the non-crashing error banner with Retry.
+      failRender = true;
+      await tester.tap(find.byKey(const ValueKey('panel:btn:grab-lo')));
+      // Trigger re-evaluation by updating doc via live notifier.
+      live.value = (const {'v_js_rise_start': 120.0}, const {});
+      await tester.pumpAndSettle();
+      expect(find.text('ReferenceError: boom at line 42'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+
+      failRender = false;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('ReferenceError: boom at line 42'), findsNothing);
+      expect(find.text('Grab Lo'), findsOneWidget);
     },
   );
 }

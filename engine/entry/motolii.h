@@ -66,6 +66,10 @@ int motolii_strikes(Motolii* m, int layer, double rise, int own, double* at,
    yet, or 0 if there is no sound. */
 int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
                           float* db);
+/* Writes n log-spaced audio FFT bands (20 Hz to 12 kHz, each 0..1) at project
+   time `at` for `layer` (or the first sound/video layer when layer <= 0).
+   Non-blocking: triggers background decode if needed and returns 0 until ready. */
+int motolii_sound_spectrum(Motolii* m, int layer, double at, float* out, int n);
 const char* motolii_marks(Motolii* m);
 /* Returns one line per mark that has a label color, in time order: "time
    color", with the color from 1 to 16. */

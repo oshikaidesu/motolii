@@ -129,6 +129,24 @@ TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
       rbUi, R"JSON({"id":"mode","value":"Floor (Static)"})JSON", "{}", &err);
   ASSERT_TRUE(err.empty()) << err;
   EXPECT_NE(floorAct.find("\"mass\":0"), std::string::npos) << floorAct;
+
+  // Rise to Sound multi-handle drag (`ctx.state.drag`) and live `ctx.audio` rendering.
+  const std::string audioUi =
+      panel_card_ui_file((exprDir / "rise_to_sound.js").generic_string());
+  const std::string liveTree = panel_eval_card_render(
+      audioUi,
+      R"JSON({"params":{"start":60,"end":1800},"audio":[0.2,0.5,0.9,0.7,0.4,0.3,0.2,0.1]})JSON",
+      &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(liveTree.find("LIVE"), std::string::npos) << liveTree;
+
+  // Grabbing near the lower edge (~u=0.17 for 60Hz) sets ephemeral `state.drag="lo"`.
+  const std::string grabLo = panel_eval_card_action(
+      audioUi,
+      R"JSON({"id":"band","value":{"x":0.18,"y":0.5,"phase":"down"}})JSON",
+      R"JSON({"params":{"start":60,"end":1800},"state":{}})JSON", &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(grabLo.find("\"drag\":\"lo\""), std::string::npos) << grabLo;
 }
 
 }  // namespace

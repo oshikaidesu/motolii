@@ -113,6 +113,58 @@ int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n,
   });
 }
 
+// Writes `n` log-spaced 20Hz..12kHz FFT bands (0..1) at project time `at` into `out`.
+// When `layer <= 0`, picks the first video/audio layer in the composition.
+int motolii_sound_spectrum(Motolii* m, int layer, double at, float* out,
+                           int n) {
+  if (!m || !out || n <= 0) return 0;
+  std::string file;
+  VideoClock clk{0, 0, 1, -1};
+  const bool found = by_look(m, [&] {
+    Doc& d = *m->d;
+    int target = layer;
+    if (target <= 0) {
+      for (const int id : doc_layers(d)) {
+        const std::string kind = doc_word(d, id, "kind");
+        if ((kind == "video" || kind == "audio") &&
+            !doc_word(d, id, "file").empty()) {
+          target = id;
+          break;
+        }
+      }
+    }
+    if (target <= 0 || !doc_knows(d, target)) return false;
+    file = doc_word(d, target, "file");
+    if (file.empty()) return false;
+    clk = video_clock(d, target);
+    return true;
+  });
+  if (!found || file.empty()) return 0;
+  if (at < clk.start || (clk.lasts >= 0.0 && at >= clk.start + clk.lasts)) {
+    return 0;
+  }
+  const double own = clk.begin + (at - clk.start) * clk.speed;
+  if (own < 0.0) return 0;
+  const SoundRead* r = sound_of(file, false);
+  if (!r) return 0;
+  const std::vector<float> fft = sound_at(r, true, sound_bands, own);
+  if (fft.empty()) return 0;
+
+  // Map 20Hz..12kHz logarithmically across the 512 linear FFT bins (23.4375Hz/bin).
+  const double apart = 12000.0 / (double)fft.size();
+  const double ratio = 12000.0 / 20.0;
+  for (int i = 0; i < n; ++i) {
+    const double f0 = 20.0 * std::pow(ratio, (double)i / (double)n);
+    const double f1 = 20.0 * std::pow(ratio, (double)(i + 1) / (double)n);
+    const int b0 = std::clamp((int)std::floor(f0 / apart), 0, (int)fft.size() - 1);
+    const int b1 = std::clamp((int)std::ceil(f1 / apart), b0, (int)fft.size() - 1);
+    float sum = 0.0f;
+    for (int b = b0; b <= b1; ++b) sum += fft[(size_t)b];
+    out[i] = std::clamp(sum / (float)(b1 - b0 + 1), 0.0f, 1.0f);
+  }
+  return n;
+}
+
 namespace motolii {
 
 bool duck(Motolii* m, int layer) {
