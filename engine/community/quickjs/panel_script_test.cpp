@@ -97,5 +97,39 @@ TEST(PanelScript, ResolvesSidecarCardUiAndEvaluatesVectorMapping) {
   EXPECT_NE(act.find("\"angle\":0.5"), std::string::npos) << act;
 }
 
+TEST(PanelScript, ExpressionSidecarsExcludeFromShelfAndRenderCleanly) {
+  // Sidecar `.ui.js` files must never show up as standalone expressions or effects.
+  for (const auto& p : doc_folder_files("expressions", ".js .css")) {
+    const std::string name = p.filename().generic_string();
+    EXPECT_FALSE(name.size() > 6 && name.compare(name.size() - 6, 6, ".ui.js") == 0)
+        << name;
+  }
+  for (const auto& p : doc_folder_files("effects", ".wgsl .fs .mjs .js")) {
+    const std::string name = p.filename().generic_string();
+    EXPECT_FALSE(name.size() > 6 && name.compare(name.size() - 6, 6, ".ui.js") == 0)
+        << name;
+  }
+
+  // Every bundled Expression `.ui.js` template resolves and renders a valid ui.canvas tree.
+  const auto exprDir = doc_folders("expressions").front();
+  for (const char* expr : {"rigid_body.js", "wind.js", "Field.js", "wave.js",
+                           "rise_to_sound.js", "Scale_Assist.js", "lyric.js"}) {
+    const std::string uiFile = panel_card_ui_file((exprDir / expr).generic_string());
+    ASSERT_FALSE(uiFile.empty()) << expr;
+    std::string err;
+    const std::string tree = panel_eval_card_render(uiFile, R"JSON({"params":{}})JSON", &err);
+    ASSERT_TRUE(err.empty()) << expr << ": " << err;
+    EXPECT_NE(tree.find("\"type\":\"canvas\""), std::string::npos) << expr << ": " << tree;
+  }
+
+  // Jolt Rigid Body mode toggle switches Mass cleanly between 0 (Floor) and 1 (Dynamic).
+  const std::string rbUi = panel_card_ui_file((exprDir / "rigid_body.js").generic_string());
+  std::string err;
+  const std::string floorAct = panel_eval_card_action(
+      rbUi, R"JSON({"id":"mode","value":"Floor (Static)"})JSON", "{}", &err);
+  ASSERT_TRUE(err.empty()) << err;
+  EXPECT_NE(floorAct.find("\"mass\":0"), std::string::npos) << floorAct;
+}
+
 }  // namespace
 }  // namespace motolii

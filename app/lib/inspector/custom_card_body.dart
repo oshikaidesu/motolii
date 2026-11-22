@@ -19,17 +19,22 @@ class CardParamNames {
   CardParamNames(CardDeclaration card) {
     final ids = [for (final p in card.params) p.id];
     final prefix = _commonJsPrefix(ids);
+    final jsHead = RegExp(r'^([0-9a-f]{6}:)?js_');
     for (final id in ids) {
+      final rawName = id.replaceFirst(jsHead, '');
       final short = prefix.isNotEmpty && id.startsWith(prefix)
           ? id.substring(prefix.length)
-          : id;
+          : rawName;
+      shortToFull[rawName] = id;
       shortToFull[short] = id;
       fullToShort[id] = short;
+      fullToAliases[id] = {rawName, short};
     }
   }
 
   final Map<String, String> shortToFull = {};
   final Map<String, String> fullToShort = {};
+  final Map<String, Set<String>> fullToAliases = {};
 
   String? resolve(String key) =>
       shortToFull[key] ?? (fullToShort.containsKey(key) ? key : null);
@@ -71,21 +76,20 @@ evaluateCardCustomUi(
   final params = <String, Object?>{};
   final ranges = <String, Object?>{};
   for (final p in card.params) {
-    final short = names.fullToShort[p.id] ?? p.id;
     final vid = 'v_${p.id}';
-    if (doc.numbers.containsKey(vid)) {
-      params[short] = doc.numbers[vid];
-    } else if (doc.strings.containsKey(vid)) {
-      params[short] = doc.strings[vid];
-    } else {
-      params[short] = p.def;
-    }
-    ranges[short] = {
+    final Object? val = doc.numbers.containsKey(vid)
+        ? doc.numbers[vid]
+        : (doc.strings.containsKey(vid) ? doc.strings[vid] : p.def);
+    final range = {
       'min': p.min,
       'max': p.max,
       'unit': p.unit,
       'label': p.label,
     };
+    for (final alias in names.fullToAliases[p.id] ?? {p.id}) {
+      params[alias] = val;
+      ranges[alias] = range;
+    }
   }
   final ctxJson = jsonEncode({
     'card': card.name,

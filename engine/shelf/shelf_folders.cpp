@@ -84,11 +84,16 @@ std::vector<std::filesystem::path> doc_folder_files(const char* folder,
   std::map<std::string, std::filesystem::path> by;
   std::error_code wrong;
   const auto take = [&](const std::filesystem::path& p) {
+    const std::string name = p.filename().generic_string();
+    // Sidecar `.ui.js` files supply custom Inspector UI for their sibling
+    // effect/expression and must never appear as standalone shelf items.
+    if (name.size() > 6 && name.compare(name.size() - 6, 6, ".ui.js") == 0)
+      return;
     if ((" " + std::string(extension) + " ")
                 .find(" " + p.extension().generic_string() + " ") !=
             std::string::npos &&
         p.has_extension())
-      by[p.filename().generic_string()] = p;
+      by[name] = p;
   };
   // effects/ and create/ keep one subfolder per origin or purpose, such as
   // blur/ or shapes/, and are read recursively.
