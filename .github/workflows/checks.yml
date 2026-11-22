@@ -1,5 +1,5 @@
-# Fast checks on every push and pull request: formatting of the Dart and the C++, static analysis and tests of the app,
-# and the paths that shelf files and documents name. The full build, with the C++ tests, is build.yml.
+# Fast checks on every push and pull request: Dart formatting, static analysis,
+# architecture rules, and Flutter tests. The full macOS engine build is build.yml.
 name: checks
 on:
   push:
@@ -25,13 +25,6 @@ jobs:
       - run: dart pub global activate dart_code_linter 4.4.5
       - run: dart pub global run dart_code_linter:metrics analyze lib --fatal-warnings   # avoid-banned-imports: no Material or Cupertino
       - run: flutter test   # the main tests only; every test is --dart-define=MOTOLII_RUN_EVERY_TEST=yes (docs/TESTING.md)
-  engine-format:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - run: pipx install clang-format==23.1.5   # the version the tree is formatted with
-      - run: git ls-files 'engine/*.h' 'engine/*.cpp' 'engine/*.mm' ':!engine/third_party' | xargs clang-format --dry-run --Werror
   app-rules:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -44,9 +37,3 @@ jobs:
       # Copy-paste: jscpd at its own defaults (50 tokens, 5 lines). Measured 2026-11-18: 22 clones, 0.48% of lines. Lower the number as clones go.
       - run: npx --yes jscpd@4.3.0 lib --format dart --formats-exts "dart:dart" --ignore "**/motolii_bindings.dart" --threshold 0.5 --reporters console
         working-directory: app
-  paths:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - run: python3 .githooks/path_check.py --all

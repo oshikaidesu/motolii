@@ -176,6 +176,7 @@ target_include_directories(motolii_flags INTERFACE
 
 # Small parts every module may use (JSON).
 add_library(motolii_base INTERFACE)
+target_link_libraries(motolii_base INTERFACE motolii_flags)
 
 # Adapter: absent motion code run as it is.
 # Only part of AbsentMotion is compiled: what its scene.cpp would call to draw a whole scene is never reached, and

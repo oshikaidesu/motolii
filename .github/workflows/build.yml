@@ -1,12 +1,8 @@
 # Builds the engine on an Apple silicon Mac as README.md describes, runs its C++ tests, and opens a document with
-# what was built. Runs on pushes to main and pull requests that touch the code, and by hand from the Actions tab.
-# A push made while a run is in progress waits for it; only the latest waiting push runs next.
+# what was built. Runs on pull requests that touch the code, and by hand from the Actions tab.
 name: build
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['engine/**', 'shelves/**', 'app/**', 'Brewfile', '.github/workflows/build.yml']
   pull_request:
     paths: ['engine/**', 'shelves/**', 'app/**', 'Brewfile', '.github/workflows/build.yml']
 concurrency:

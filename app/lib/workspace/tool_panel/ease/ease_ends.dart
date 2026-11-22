@@ -26,8 +26,9 @@ mixin EaseEnds on State<EaseTool> {
     final t = span.layer.id;
     for (final name in layerMoving(ws, t)) {
       // When one property line is selected, only that property's ends are used.
-      if (ws.stretches.isNotEmpty && !ws.stretches.any((s) => s.name == name))
+      if (ws.stretches.isNotEmpty && !ws.stretches.any((s) => s.name == name)) {
         continue;
+      }
       final at = [
             for (final s in layerKeyTimes(ws, t, name))
               (s * WorkspaceController.fps).round(),
@@ -41,8 +42,9 @@ mixin EaseEnds on State<EaseTool> {
           k < 0 ||
           k >= vs.length ||
           i >= vs.length ||
-          j >= vs.length)
+          j >= vs.length) {
         continue;
+      }
       yield (name, at, vs, k);
     }
   }
