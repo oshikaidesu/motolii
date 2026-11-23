@@ -3,8 +3,10 @@
 import 'dart:async';
 import 'dart:developer' show log;
 
-import 'package:flutter/foundation.dart' show FlutterError, PlatformDispatcher;
+import 'package:flutter/foundation.dart'
+    show FlutterError, PlatformDispatcher, kDebugMode;
 import 'package:flutter/widgets.dart';
+import 'package:marionette_flutter/marionette_flutter.dart';
 
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/skin/theme.dart';
@@ -32,7 +34,11 @@ void main() {
   ColorTheme.setSkinRoots(shelves: motoliiShelves, own: motoliiOwn);
   runZonedGuarded(
     () {
-      WidgetsFlutterBinding.ensureInitialized();
+      if (kDebugMode) {
+        MarionetteBinding.ensureInitialized();
+      } else {
+        WidgetsFlutterBinding.ensureInitialized();
+      }
       void pushShade() => syncWindowShade(Grey.light);
       Grey.shade.addListener(pushShade);
       ColorTheme.shadeSaid.addListener(pushShade);

@@ -198,7 +198,7 @@ void main() {
         expect(_told(ws, () => ws.setView('stage.tool', 'pen')), isEmpty);
         expect(ws.viewOf('stage.tool', 'select'), 'pen');
         expect(_told(ws, () => ws.setView('never.set', null)), isEmpty);
-        expect(ws.eye, [18.0, -14.0, 1.65]);
+        expect(ws.eye, [28.0, -18.0, 2.2]);
       },
     );
 

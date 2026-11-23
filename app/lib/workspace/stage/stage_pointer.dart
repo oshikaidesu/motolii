@@ -43,7 +43,15 @@ class StagePointer {
   /// a camera gizmo, a guide, a layer, and otherwise a lasso.
   void start(StageViewport v, Offset local) {
     last = local;
-    if (tool().make == 'camera') return camera.orbitDragStart(local);
+    if (tool().make == 'camera') {
+      final w = ws();
+      if (w.freeEye &&
+          stageConnected(w) &&
+          camera.gizmoDragStart(v, local, wholeFrame: false)) {
+        return;
+      }
+      return camera.orbitDragStart(local);
+    }
     if (tool().make == 'brush') {
       draw.brushDragStart(local);
       return;

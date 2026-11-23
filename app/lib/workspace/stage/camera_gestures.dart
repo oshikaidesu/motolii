@@ -138,7 +138,7 @@ class CameraGestures extends ChangeNotifier {
       ]);
     }
     if (_dollyAt == null) {
-      stageStartDrag(ws, cam);
+      ws.live.hold(cam);
       _dollyAt =
           stageValue(ws, cam, 'distance', ws.frame / WorkspaceController.fps) ??
           1;
@@ -148,7 +148,7 @@ class CameraGestures extends ChangeNotifier {
     _dollyRest?.cancel();
     _dollyRest = Timer(Gestures.burstRest, () {
       _dollyAt = null;
-      ws.after(stageEndDrag(ws, keep: true));
+      ws.live.letGo(keep: true);
     });
   }
 
@@ -166,7 +166,7 @@ class CameraGestures extends ChangeNotifier {
       return;
     }
     final at = ws.frame / WorkspaceController.fps;
-    stageStartDrag(ws, cam);
+    ws.live.hold(cam);
     if (ws.playing) ws.playing = false;
     if (HardwareKeyboard.instance.isShiftPressed) {
       // Shift + drag pans the Boxcam frame directly in screen space.
@@ -205,7 +205,7 @@ class CameraGestures extends ChangeNotifier {
       bool on(Offset? p, double reach) =>
           p != null && (p - local).distance <= reach;
       final String by;
-      if (on(g[5], 11)) {
+      if (on(g[5], 14)) {
         by = 'gizmo orbit';
         _orbitRate = g[4] == null
             ? .25
@@ -214,7 +214,7 @@ class CameraGestures extends ChangeNotifier {
           x: stageValue(ws, cam, 'rotate_x', at) ?? 0,
           y: stageValue(ws, cam, 'rotate_y', at) ?? 0,
         );
-      } else if (_stage.selected == id && on(rollKnob, 9) && g[4] != null) {
+      } else if (_stage.selected == id && on(rollKnob, 14) && g[4] != null) {
         by = 'gizmo roll';
         final delta = local - g[4]!;
         _rollFrom = (
@@ -223,7 +223,7 @@ class CameraGestures extends ChangeNotifier {
           middle: g[4]!,
         );
       } else if (_stage.selected == id &&
-          frame.any((p) => on(p, 9)) &&
+          frame.any((p) => on(p, 14)) &&
           g[4] != null) {
         by = 'gizmo frame';
         _frameFrom = (
@@ -239,7 +239,7 @@ class CameraGestures extends ChangeNotifier {
       } else {
         continue;
       }
-      stageStartDrag(ws, cam);
+      ws.live.hold(cam);
       ws.select(id);
       if (ws.playing) ws.playing = false;
       _drag.held = (from: local, moved: false, by: by == 'place' ? null : by);

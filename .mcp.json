@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "cua-driver": {
+      "command": "cua-driver",
+      "args": ["mcp"]
+    },
+    "dart": {
+      "command": "dart",
+      "args": ["mcp-server"]
+    },
+    "marionette": {
+      "command": "dart",
+      "args": ["pub", "global", "run", "marionette_mcp"]
+    }
+  }
+}

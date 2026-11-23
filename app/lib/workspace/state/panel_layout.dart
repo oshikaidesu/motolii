@@ -43,8 +43,8 @@ class PanelLayout {
   void setOverview(bool on) => setView('stage.overview', on);
 
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
-  /// Defaults slightly angled and pulled back so the Boxcam frame and camera frustum read immediately in 3D View.
-  List<double> get eye => viewOf('stage.eye', const [18.0, -14.0, 1.65]);
+  /// Defaults slightly angled and pulled back so the Boxcam frame and camera body pin fit in 3D View.
+  List<double> get eye => viewOf('stage.eye', const [28.0, -18.0, 2.2]);
 
   /// The tool the user opened in the tool panel. Null lets the tool panel follow the selection.
   String? toolPanelManual;
