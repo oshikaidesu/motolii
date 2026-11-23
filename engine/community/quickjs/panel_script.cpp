@@ -23,7 +23,8 @@ struct TimeoutGuard {
   bool timed_out = false;
 };
 
-int panel_interrupt(JSRuntime*, void* opaque) {
+template <typename Target>
+int panel_interrupt(Target*, void* opaque) {
   auto* g = static_cast<TimeoutGuard*>(opaque);
   if (std::chrono::steady_clock::now() > g->deadline) {
     g->timed_out = true;
@@ -87,7 +88,8 @@ std::string eval_panel_call(const std::string& source,
   JSRuntime* rt = JS_NewRuntime();
   JS_SetMemoryLimit(rt, kPanelMemoryLimit);
   TimeoutGuard guard{std::chrono::steady_clock::now() + kPanelTimeout, false};
-  JS_SetInterruptHandler(rt, panel_interrupt, &guard);
+  JS_SetInterruptHandler(
+      rt, static_cast<JSInterruptHandler*>(&panel_interrupt), &guard);
   JSContext* cx = JS_NewContext(rt);
 
   auto fail = [&](const std::string& msg) -> std::string {

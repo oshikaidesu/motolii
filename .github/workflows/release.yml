@@ -102,7 +102,7 @@ jobs:
         run: |
           mkdir -p dist/velopack-osx
           vpk download github --repoUrl "https://github.com/${{ github.repository }}" --token "$GH_TOKEN" --channel osx-arm64 -o dist/velopack-osx
-      - name: Pack macOS Velopack release + delta
+      - name: Pack macOS Velopack release + delta + standalone zip
         run: |
           vpk pack \
             --packId Motolii \
@@ -111,6 +111,7 @@ jobs:
             --runtime osx-arm64 \
             --channel osx-arm64 \
             --outputDir dist/velopack-osx
+          ditto -c -k --sequesterRsrc --keepParent dist/Motolii.app "dist/velopack-osx/Motolii-${{ needs.version.outputs.ver }}-macos-arm64.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: release-macos-arm64

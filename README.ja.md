@@ -16,6 +16,19 @@ Motolii は After Effects のプラグインやエクスプレッション、Sha
 - **エフェクトはプレーンファイル。** `.wgsl`・`.fs`・`.js` はローカルファイルとしてそのまま開いて編集でき、[ACP](https://github.com/anthropics/agent-client-protocol)（Zed や JetBrains と同じプロトコル）経由で AI エージェントと一緒に書くこともできます。
 - **1 レイヤーに複数言語を混在。** CSS アニメーション、After Effects エクスプレッション、GPU シェーダー、ネイティブプラグインを同じレイヤー上に好きな順序で重ねられます。
 
+## ダウンロード（ベータ版）
+
+**macOS Apple Silicon（`.app`）** 向けのビルド済みベータ版は [GitHub Releases](https://github.com/oshikaidesu/motolii/releases) からダウンロードできます。
+
+1. [Releases](https://github.com/oshikaidesu/motolii/releases) から `Motolii-*-macos-arm64.zip` をダウンロードして展開し、`Motolii.app` を `/Applications` に移動します。
+2. 初期ベータ版は Apple Developer ID による公証前のため、初回起動前にターミナルで以下を 1 回だけ実行してください：
+   ```bash
+   xattr -cr /Applications/Motolii.app
+   ```
+3. Motolii を起動し、ホーム画面サイドバーの **SAMPLES** から同梱サンプルをクリックするとすぐ試せます。
+
+> Windows（`x64`）・Linux 版は準備中です。ソースからビルドする場合は「[ビルドと実行](#ビルドと実行)」を参照してください。
+
 ## 画面構成と主な機能
 
 すべてのタブの解説とスクリーンショットは [タブ・パネル一覧](docs/TABS.ja.md) を参照してください。
@@ -38,12 +51,12 @@ Motolii は After Effects のプラグインやエクスプレッション、Sha
 
 ## 現在の開発状況
 
-Motolii は現在開発中で、Apple Silicon Mac（M4、macOS 15.5）でのみ動作確認済みです。Windows / Linux 版は未検証で、配布用アプリバンドルも未公開のため、現時点ではソースコードからビルドして実行する必要があります。
+Motolii は Apple Silicon Mac（M4、macOS 15.5）向けに**初期ベータ版**を公開しています。自己完結型の macOS `.app` バンドルは [GitHub Releases](https://github.com/oshikaidesu/motolii/releases) から入手できます（Windows / Linux 版は未検証）。
 
-- **動作する機能：** 動画・画像・テキスト・ベクターシェイプ・3D モデル（`.glb`/`.gltf`）・点群・Lottie アニメーションの混在編集、キーフレームとスタック型イージング、自動保存と Undo/Redo、音声付き再生、MP4 / MOV / GIF / 連番画像書き出し。
+- **動作する機能：** 動画・画像・テキスト・ベクターシェイプ・3D モデル（`.glb`/`.gltf`）・点群・Lottie アニメーションの混在編集、キーフレームとスタック型イージング、自動保存と Undo/Redo、音声付き再生、MP4 / MOV / GIF / 連番画像書き出し、`.motoliipack` 共有パック。
 - **動作する外部形式：** `effects/` に置いた ISF（`.fs`）/ WGSL（`.wgsl`）や、`ae_plugins/` に置いた After Effects プラグインは再起動なしで一覧に反映されます。Shadertoy・p5.js・CSS・TSL などのコードは `⌘V` で貼り付けるだけでレイヤー／エフェクト化されます（※すべての外部コード・プラグインの動作を保証するものではありません）。
 - **一部対応：** AviUtl2 スクリプト、Alight Motion 互換機能。
-- **未対応・今後の課題：** Windows / Linux 実機検証、単体配布可能な `.app` バンドル（現在は Homebrew ライブラリへ動的リンク）、MIDI 音声再生。
+- **未対応・今後の課題：** Windows / Linux 実機検証、Apple Developer ID による公証、MIDI 音声再生。
 
 形式ごとの詳細な対応状況と既知の制限は [仕様書（アーカイブ）](docs/archive/using/specifications.ja.md) を参照してください。
 

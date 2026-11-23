@@ -16,6 +16,19 @@ Motolii is an open-source video editor supporting [20+ creative formats](#suppor
 - **Effects are plain files.** `.wgsl`, `.fs`, and `.js` effects live right on disk — inspect them, edit them directly, or co-edit them with an AI agent over [ACP](https://github.com/anthropics/agent-client-protocol) (the same protocol used by Zed and JetBrains).
 - **Mix languages on one layer.** Stack CSS animations, After Effects expressions, GPU shaders, and native plugins on the same layer in any order.
 
+## Download (Beta)
+
+Prebuilt **macOS Apple Silicon (`.app`)** beta builds are published on [GitHub Releases](https://github.com/oshikaidesu/motolii/releases).
+
+1. Download `Motolii-*-macos-arm64.zip` from [Releases](https://github.com/oshikaidesu/motolii/releases), unzip, and move `Motolii.app` to `/Applications`.
+2. Because early beta builds are not yet notarized with an Apple Developer ID, run this once in Terminal before launching:
+   ```bash
+   xattr -cr /Applications/Motolii.app
+   ```
+3. Launch Motolii and pick one of the bundled **SAMPLES** in the Home sidebar to try it right away.
+
+> Windows (`x64`) and Linux builds are in progress. To build from source, see [Build and run](#build-and-run).
+
 ## Interface overview
 
 See [Tabs & Panels](docs/TABS.md) for a visual tour of every tab.
@@ -38,12 +51,12 @@ See [Tabs & Panels](docs/TABS.md) for a visual tour of every tab.
 
 ## Current status
 
-Motolii is under active development and has been verified on Apple Silicon macOS (M4, macOS 15.5). Windows and Linux builds are not yet verified, and prebuilt app bundles are not yet published — trying Motolii currently requires building from source.
+Motolii is in **early beta** on Apple Silicon macOS (M4, macOS 15.5). Self-contained macOS `.app` beta builds are available on [GitHub Releases](https://github.com/oshikaidesu/motolii/releases); Windows and Linux builds are not yet verified.
 
-- **Working:** Video, images, text, vector shapes, 3D models (`.glb`/`.gltf`), point clouds, and Lottie animations in one scene; keyframes and stackable easings; autosave and undo/redo; audio/video playback; MP4/MOV/GIF/image-sequence export.
+- **Working:** Video, images, text, vector shapes, 3D models (`.glb`/`.gltf`), point clouds, and Lottie animations in one scene; keyframes and stackable easings; autosave and undo/redo; audio/video playback; MP4/MOV/GIF/image-sequence export; `.motoliipack` sharing bundles.
 - **Working:** External creative formats — drop `.fs`/`.wgsl` shaders in `effects/` or native After Effects plugins in `ae_plugins/` to load them without restarting, or paste Shadertoy/p5.js/CSS/TSL code directly with ⌘V. (Not every third-party file or script is guaranteed to run cleanly.)
 - **Partial:** AviUtl2 scripts; Alight Motion compatibility features.
-- **Not yet ready:** Verified Windows/Linux builds, redistributable `.app` bundle (the engine currently links Homebrew libraries dynamically), and MIDI audio playback.
+- **Not yet ready:** Verified Windows/Linux builds, Apple Developer ID notarization, and MIDI audio playback.
 
 For per-format details and known limitations, see [Specifications](docs/archive/using/specifications.md).
 
