@@ -161,6 +161,10 @@ return {
 - **`ui.knob(label, value, { look, color, min, max, def })`**: 上下ドラッグ（Shift で微調整）・ダブルクリック初期化対応の VST ロータリーノブ（`look`: `"arc"` / `"pop"` / `"hardware"` / `"minimal"`）。
 - **`ui.scene3d(height, opts)`**: Flutter 側で完結するネイティブ 3D ビューポート。プリミティブ（`cube`, `sphere`, `torus`, `icosahedron`, `crystal`, `wavetable`, `gizmo`）に加え、`.ui.js` と同じフォルダに置いた **`.glb` / `.obj` モデル**（`model: "mascot.glb"`）の読み込み、5 種のシェーディング（`studio`, `toon`, `wireframe`, `holo`, `clay`）、ドラッグ回転（`{ yaw, pitch, phase }`）に対応します。
 - **`ui.image(src, opts)`**: `.ui.js` からの相対パスの PNG/WebP または `data:image/...;base64,...` を表示できます。
+- **`ui.shader(height, preset, opts)`**: Flutter ネイティブ `FragmentShader`（`holo` / `metaball` / `vhs` / `scope` / `aurora` / `grid`）を 60fps で直接描画します。ドラッグ位置が `uMouse` に反映されます。
+- **`ui.waveform` / `ui.sequencer` / `ui.fader` / `ui.vu`**: `ctx.waveform`（波形ピーク）・`ctx.strikes`（ビート打点）・`ctx.bpm` と直結する音声波形（ドラッグしきい値ライン付き）、16 ステップシーケンサー、縦フェーダー、LED VU メーター。
+- **`ui.curve` / `ui.gradient` / `ui.picker`**: FabFilter 風の多点カーブエディタ、マルチストップ・グラデーションバー、Live2D／Rigify 風のキャラクターリグ・ボディピッカー。
+- **配布＆統一 UI トグル**: `effect.js` + `effect.ui.js` + `.glb` / `.png` を 1 フォルダ（または `.motoliipack` / `.motolii-card`）にしてウィンドウへドロップするだけで導入完了。Settings → Appearance の **Custom Card Faceplates** をオフにすると、機能を保ったまま Motolii 標準の統一スキンへ戻せます。
 
 ### `ui.svg(height, svgMarkup, { id?, label?, fit? })`
 標準の SVG 文字列をネイティブ描画（`flutter_svg`）します。`<path>`・`<linearGradient>`・`<radialGradient>`・`stroke-dasharray`・`transform` など SVG 標準の表現がそのまま使えます。

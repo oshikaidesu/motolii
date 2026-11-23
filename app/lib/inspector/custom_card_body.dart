@@ -99,6 +99,8 @@ String buildCardCustomUiContext(
     'time': sig?.time ?? 0.0,
     'fps': sig?.fps ?? 60.0,
     'audio': sig?.audio ?? const <double>[],
+    'waveform': sig?.waveform ?? const <double>[],
+    'strikes': sig?.strikes ?? const <double>[],
   });
 }
 

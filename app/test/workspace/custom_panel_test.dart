@@ -1,5 +1,6 @@
 // Unit & widget tests for WebView-less JS Custom Panels (panel_node + panel_renderer).
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
@@ -14,7 +15,10 @@ import 'package:motolii/inspector/inspector_panel.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/storage/motolii_pack.dart'
+    show importMotoliiPack, isMotoliiPackPath;
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
 import 'package:motolii/widgets/custom_ui/panel_renderer.dart';
 import 'package:motolii/widgets/custom_ui/scene3d_view.dart'
@@ -536,6 +540,8 @@ struct Params {
                         time: 1.25,
                         fps: 60.0,
                         audio: const [0.1, 0.4, 0.8, 0.5],
+                        waveform: const [0.2, 0.6, 0.9, 0.4],
+                        strikes: const [0.5, 1.0, 1.5],
                       ),
                       contextExtra: null,
                       applyOps: null,
@@ -779,4 +785,204 @@ f 2 4 3
     expect(glbMesh!.verts.length, 3);
     expect(glbMesh.faces.length, 1);
   });
+
+  testWidgets(
+    'Pro VST controls: waveform, sequencer, fader, vu, shader, curve, gradient, picker, and uniform skin toggle',
+    (tester) async {
+      final fired = <(String, Object?, bool)>[];
+      final tree = PanelNode.fromJson({
+        'type': 'column',
+        'children': [
+          {
+            'type': 'waveform',
+            'id': 'wf',
+            'label': 'Audio Wave',
+            'height': 54,
+            'samples': [0.2, 0.5, 0.9, 0.4, 0.8, 0.3],
+            'strikes': [0.33, 0.75],
+            'threshold': 0.55,
+          },
+          {
+            'type': 'sequencer',
+            'id': 'seq',
+            'cols': 8,
+            'activeStep': 2,
+            'steps': [1, 0, 1, 0, 1, 0, 0.5, 0],
+          },
+          {
+            'type': 'shader',
+            'id': 'fx',
+            'preset': 'holo',
+            'height': 56,
+            'time': 1.2,
+          },
+          {
+            'type': 'row',
+            'children': [
+              {
+                'type': 'fader',
+                'id': 'gain',
+                'label': 'GAIN',
+                'value': 0.5,
+                'min': 0.0,
+                'max': 1.0,
+                'def': 0.75,
+                'height': 64,
+              },
+              {
+                'type': 'vu',
+                'value': 0.72,
+                'right': 0.65,
+                'peak': 0.88,
+                'label': 'OUT',
+              },
+            ],
+          },
+          {
+            'type': 'curve',
+            'id': 'eq',
+            'height': 64,
+            'points': [
+              {'x': 0.0, 'y': 0.5},
+              {'x': 0.5, 'y': 0.8},
+              {'x': 1.0, 'y': 0.5},
+            ],
+          },
+          {
+            'type': 'gradient',
+            'id': 'grad',
+            'stops': [
+              {'pos': 0.0, 'color': '#FF3B7F'},
+              {'pos': 1.0, 'color': '#00D4FF'},
+            ],
+          },
+          {
+            'type': 'picker',
+            'id': 'rig',
+            'height': 80,
+            'pins': [
+              {
+                'id': 'head',
+                'label': 'Head',
+                'x': 0.5,
+                'y': 0.3,
+                'active': true,
+              },
+              {'id': 'hand', 'label': 'Hand', 'x': 0.25, 'y': 0.7},
+            ],
+          },
+        ],
+      })!;
+
+      tester.view.physicalSize = const Size(380, 920);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Container(
+            color: Grey.g10,
+            padding: const EdgeInsets.all(8),
+            child: PanelTreeView(
+              node: tree,
+              onAction: (id, value, {live = false}) =>
+                  fired.add((id, value, live)),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap sequencer pad 1 (currently 0 -> becomes 1.0)
+      final seqRect = tester.getRect(
+        find.byKey(const ValueKey('panel:seq:seq')),
+      );
+      await tester.tapAt(seqRect.topLeft + Offset(seqRect.width * 0.18, 10));
+      await tester.pumpAndSettle();
+      final seqEvt = fired.last.$2 as Map<String, Object?>;
+      expect(fired.last.$1, 'seq');
+      expect(seqEvt['index'], 1);
+      expect(seqEvt['value'], 1.0);
+
+      // Drag waveform vertically to adjust threshold
+      fired.clear();
+      await tester.drag(
+        find.byKey(const ValueKey('panel:wave:wf')),
+        const Offset(10, -24),
+      );
+      await tester.pumpAndSettle();
+      expect(fired.last.$1, 'wf');
+      expect((fired.last.$2 as Map)['phase'], 'up');
+
+      // Drag fader up
+      fired.clear();
+      await tester.drag(
+        find.byKey(const ValueKey('panel:fader:gain')),
+        const Offset(0, -20),
+      );
+      await tester.pumpAndSettle();
+      expect(fired.last.$1, 'gain');
+      expect((fired.last.$2 as double), greaterThan(0.5));
+
+      // Tap character rig picker pin `head`
+      fired.clear();
+      final rigRect = tester.getRect(
+        find.byKey(const ValueKey('panel:picker:rig')),
+      );
+      await tester.tapAt(
+        rigRect.topLeft + Offset(rigRect.width * 0.5, rigRect.height * 0.3),
+      );
+      await tester.pumpAndSettle();
+      expect(fired.last.$1, 'rig');
+      expect((fired.last.$2 as Map)['pin'], 'head');
+
+      // Safety valve: disabling customCardSkins strips styling without crashing controls.
+      ColorTheme.customCardSkins.value = false;
+      addTearDown(() => ColorTheme.customCardSkins.value = true);
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: SingleChildScrollView(
+            child: PanelTreeView(
+              node: tree,
+              onAction: (_, _, {live = false}) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('panel:seq:seq')), findsOneWidget);
+    },
+  );
+
+  test(
+    '1-folder VST bundle drop detects and installs code + 3D/image assets',
+    () {
+      final tmp = Directory.systemTemp.createTempSync(
+        'motolii_vst_bundle_test_',
+      );
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      final bundle = Directory('${tmp.path}/PopBounce')..createSync();
+      File('${bundle.path}/pop_bounce.js').writeAsStringSync('// effect');
+      File('${bundle.path}/pop_bounce.ui.js').writeAsStringSync('// ui');
+      File('${bundle.path}/mascot.glb').writeAsBytesSync(const [1, 2, 3, 4]);
+      File('${bundle.path}/faceplate.png').writeAsBytesSync(const [5, 6, 7, 8]);
+
+      expect(isMotoliiPackPath(bundle.path), isTrue);
+      final own = Directory('${tmp.path}/own')..createSync();
+      final res = importMotoliiPack(bundle.path, ownFolder: own.path);
+      expect(res.kind, 'expression');
+      expect(res.installedPaths.length, 4);
+      expect(
+        File('${own.path}/expressions/pop_bounce.ui.js').existsSync(),
+        isTrue,
+      );
+      expect(File('${own.path}/expressions/mascot.glb').existsSync(), isTrue);
+      expect(
+        File('${own.path}/expressions/faceplate.png').existsSync(),
+        isTrue,
+      );
+    },
+  );
 }

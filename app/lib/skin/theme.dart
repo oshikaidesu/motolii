@@ -74,6 +74,17 @@ abstract final class ColorTheme {
     _changed?.call();
   }
 
+  /// When false, `.ui.js` cards strip custom VST faceplates (`surface` / `style`)
+  /// and fall back to Motolii's uniform skin while keeping all controls functional.
+  static final ValueNotifier<bool> customCardSkins = ValueNotifier<bool>(
+    (WindowFile.get('CustomCardSkins') ?? 'true') != 'false',
+  );
+
+  static void setCustomCardSkins(bool enabled) {
+    customCardSkins.value = enabled;
+    WindowFile.set('CustomCardSkins', '$enabled');
+  }
+
   static void Function()? _changed;
 
   /// Reads the theme file at [path]. Missing or unreadable → built-in colours.

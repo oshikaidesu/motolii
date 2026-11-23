@@ -149,7 +149,19 @@ String customPanelCtxJson(
     'presets': presets,
     'theme': panelThemeHexMap(),
     'audio': m?.soundSpectrum(at) ?? const <double>[],
+    'waveform': _waveformFor(ws, at),
+    'strikes': [for (final f in ws.strikes) f / (fps > 0 ? fps : 60.0)],
   });
+}
+
+List<double> _waveformFor(WorkspaceController ws, double at) {
+  final m = ws.inside;
+  if (m == null) return const [];
+  for (final l in ws.layers) {
+    final samples = m.soundWaveform(at, layer: l.id);
+    if (samples.isNotEmpty) return samples;
+  }
+  return m.soundWaveform(at);
 }
 
 /// Evaluates `render(ctx)` in [path] via QuickJS.
@@ -226,7 +238,13 @@ CardCustomUi? cardCustomUiOf(
           ? WorkspaceController.fps.toDouble()
           : 60.0;
       final at = ws.frame / fps;
-      return (time: at, fps: fps, audio: m.soundSpectrum(at));
+      return (
+        time: at,
+        fps: fps,
+        audio: m.soundSpectrum(at),
+        waveform: _waveformFor(ws, at),
+        strikes: [for (final f in ws.strikes) f / fps],
+      );
     },
     contextExtra: () => {
       'layer': layerMap(thing),

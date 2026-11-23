@@ -228,6 +228,39 @@ extension MotoliiShelves on Motolii {
     }
   }
 
+  /// Windowed audio waveform amplitudes (`samples` floats in 0..1) centered around project time [at].
+  /// Uses the engine's cached `motolii_loudness_over` (non-blocking; empty when no audio is ready).
+  List<double> soundWaveform(
+    double at, {
+    int layer = 0,
+    double span = 2.0,
+    int samples = 64,
+  }) {
+    if (samples <= 0) return const [];
+    final half = span * 0.5;
+    final from = (at - half).clamp(0.0, double.infinity);
+    final to = from + span;
+    final buf = calloc<Float>(samples);
+    try {
+      final got = bindings.motolii_loudness_over(
+        handle,
+        layer,
+        from,
+        to,
+        samples,
+        buf,
+      );
+      if (got <= 0) return const [];
+      // Convert loudness dB (-60..0, -100 = silent) to normalized 0..1 amplitude.
+      return [
+        for (var i = 0; i < got; i++)
+          buf[i] <= -90.0 ? 0.0 : ((buf[i] + 60.0) / 60.0).clamp(0.0, 1.0),
+      ];
+    } finally {
+      calloc.free(buf);
+    }
+  }
+
   /// A font file's kinds as CoreText reports them (serif, sans, script, mono, bold, light…). They come from the system, not from guessing at the name.
   Set<String> fontTags(String path) => fontKinds[path] ??= withStrings(
     [path],

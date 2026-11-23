@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_badges.dart';
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/custom_ui/panel_style.dart';
@@ -52,7 +53,7 @@ class Section extends StatelessWidget {
       doc.flag('fold.$title', open);
     }
 
-    final surf = surface;
+    final surf = ColorTheme.customCardSkins.value ? surface : null;
     final customFg = surf != null ? resolvePanelColor(surf.fg) : null;
     final customAccent = surf != null ? resolvePanelColor(surf.accent) : null;
     final badgeTone = customAccent ?? tone;

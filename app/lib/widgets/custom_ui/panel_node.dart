@@ -8,9 +8,17 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/custom_ui/panel_interactive_widgets.dart'
+    show CurvePoint, GradientStop, PickerPin;
+import 'package:motolii/widgets/custom_ui/panel_shader.dart'
+    show PanelShaderSpec;
 import 'package:motolii/widgets/custom_ui/panel_style.dart';
 import 'package:motolii/widgets/custom_ui/scene3d_view.dart' show Scene3dSpec;
 
+export 'package:motolii/widgets/custom_ui/panel_interactive_widgets.dart'
+    show CurvePoint, GradientStop, PickerPin;
+export 'package:motolii/widgets/custom_ui/panel_shader.dart'
+    show PanelShaderSpec;
 export 'package:motolii/widgets/custom_ui/panel_style.dart';
 export 'package:motolii/widgets/custom_ui/scene3d_view.dart'
     show Scene3dObjectSpec, Scene3dSpec;
@@ -233,6 +241,22 @@ class PanelNode {
     this.framed,
     this.style,
     this.scene3d,
+    this.shader,
+    this.samples = const [],
+    this.strikes = const [],
+    this.playhead = 0.5,
+    this.threshold,
+    this.peakColor = '',
+    this.steps = const [],
+    this.activeStep = -1,
+    this.rightValue,
+    this.peak,
+    this.segments = 16,
+    this.horizontal = true,
+    this.grid = true,
+    this.curvePoints = const [],
+    this.gradientStops = const [],
+    this.pins = const [],
     this.children = const [],
   });
 
@@ -280,6 +304,22 @@ class PanelNode {
   final bool? framed;
   final PanelStyle? style;
   final Scene3dSpec? scene3d;
+  final PanelShaderSpec? shader;
+  final List<double> samples;
+  final List<double> strikes;
+  final double playhead;
+  final double? threshold;
+  final String peakColor;
+  final List<double> steps;
+  final int activeStep;
+  final double? rightValue;
+  final double? peak;
+  final int segments;
+  final bool horizontal;
+  final bool grid;
+  final List<CurvePoint> curvePoints;
+  final List<GradientStop> gradientStops;
+  final List<PickerPin> pins;
   final List<PanelNode> children;
 
   static PanelNode? fromJson(Object? raw) {
@@ -295,6 +335,52 @@ class PanelNode {
       if (raw['children'] is List)
         for (final c in raw['children'] as List) ?PanelNode.fromJson(c),
       if (raw['child'] is Map) ?PanelNode.fromJson(raw['child']),
+    ];
+    List<double> numList(Object? v) => [
+      if (v is List)
+        for (final item in v)
+          if (item is num)
+            item.toDouble()
+          else if (item is bool)
+            (item ? 1.0 : 0.0),
+    ];
+    final curvePts = <CurvePoint>[
+      if (raw['points'] is List)
+        for (final p in raw['points'] as List)
+          if (p is Map && p['x'] is num && p['y'] is num)
+            (
+              x: (p['x'] as num).toDouble(),
+              y: (p['y'] as num).toDouble(),
+              label: p['label']?.toString() ?? '',
+            )
+          else if (p is List && p.length >= 2 && p[0] is num && p[1] is num)
+            (
+              x: (p[0] as num).toDouble(),
+              y: (p[1] as num).toDouble(),
+              label: '',
+            ),
+    ];
+    final gradStops = <GradientStop>[
+      if (raw['stops'] is List)
+        for (final s in raw['stops'] as List)
+          if (s is Map && s['pos'] is num)
+            (
+              pos: (s['pos'] as num).toDouble(),
+              color: s['color']?.toString() ?? '#ffffff',
+            ),
+    ];
+    final pinList = <PickerPin>[
+      if (raw['pins'] is List)
+        for (final p in raw['pins'] as List)
+          if (p is Map && p['x'] is num && p['y'] is num)
+            (
+              id: p['id']?.toString() ?? p['label']?.toString() ?? '',
+              label: p['label']?.toString() ?? '',
+              x: (p['x'] as num).toDouble(),
+              y: (p['y'] as num).toDouble(),
+              color: p['color']?.toString() ?? '',
+              active: p['active'] == true,
+            ),
     ];
     return PanelNode(
       type: type,
@@ -319,7 +405,9 @@ class PanelNode {
       def: raw['def'] is num ? (raw['def'] as num).toDouble() : null,
       size: raw['size'] is num ? (raw['size'] as num).toDouble() : null,
       height: raw['height'] is num ? (raw['height'] as num).toDouble() : null,
-      cols: raw['cols'] is num ? (raw['cols'] as num).toInt().clamp(1, 12) : 3,
+      cols: raw['cols'] is num
+          ? (raw['cols'] as num).toInt().clamp(1, 16)
+          : (type == 'sequencer' ? 8 : 3),
       accent: raw['accent'] == true,
       disabled: raw['disabled'] == true,
       muted: raw['muted'] == true,
@@ -347,6 +435,30 @@ class PanelNode {
       framed: raw['framed'] is bool ? raw['framed'] as bool : null,
       style: style,
       scene3d: type == 'scene3d' ? Scene3dSpec.fromJson(raw) : null,
+      shader: type == 'shader' ? PanelShaderSpec.fromJson(raw) : null,
+      samples: numList(raw['samples']),
+      strikes: numList(raw['strikes']),
+      playhead: raw['playhead'] is num
+          ? (raw['playhead'] as num).toDouble()
+          : 0.5,
+      threshold: raw['threshold'] is num
+          ? (raw['threshold'] as num).toDouble()
+          : null,
+      peakColor: raw['peakColor']?.toString() ?? '',
+      steps: numList(raw['steps']),
+      activeStep: raw['activeStep'] is num
+          ? (raw['activeStep'] as num).toInt()
+          : -1,
+      rightValue: raw['right'] is num ? (raw['right'] as num).toDouble() : null,
+      peak: raw['peak'] is num ? (raw['peak'] as num).toDouble() : null,
+      segments: raw['segments'] is num
+          ? (raw['segments'] as num).toInt().clamp(6, 32)
+          : 16,
+      horizontal: raw['horizontal'] != false,
+      grid: raw['grid'] != false,
+      curvePoints: curvePts,
+      gradientStops: gradStops,
+      pins: pinList,
       children: childList,
     );
   }

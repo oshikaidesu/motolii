@@ -4,8 +4,15 @@ import 'package:motolii/widgets/custom_ui/panel_node.dart' show PanelOp;
 /// One layer entry offered as an Audio or Layer signal source in the Macros card.
 typedef MacroLayerChoice = ({int id, String name, bool hasAudio});
 
-/// Live playback signals forwarded to custom Inspector card UIs (`ctx.time`, `ctx.fps`, `ctx.audio`).
-typedef CardLiveSignal = ({double time, double fps, List<double> audio});
+/// Live playback signals forwarded to custom Inspector card UIs
+/// (`ctx.time`, `ctx.fps`, `ctx.audio`, `ctx.waveform`, `ctx.strikes`).
+typedef CardLiveSignal = ({
+  double time,
+  double fps,
+  List<double> audio,
+  List<double> waveform,
+  List<double> strikes,
+});
 
 /// Evaluator hooks for an effect card's custom JS UI (`<effect>.ui.js` or co-located `renderCard`).
 typedef CardCustomUi = ({

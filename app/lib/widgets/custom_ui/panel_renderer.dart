@@ -9,12 +9,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/script_files.dart' show readRelativeBytes;
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/custom_ui/panel_audio_widgets.dart';
+import 'package:motolii/widgets/custom_ui/panel_interactive_widgets.dart';
 import 'package:motolii/widgets/custom_ui/panel_knob.dart';
 import 'package:motolii/widgets/custom_ui/panel_node.dart';
+import 'package:motolii/widgets/custom_ui/panel_shader.dart';
 import 'package:motolii/widgets/custom_ui/scene3d_view.dart';
 import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/widgets/number_field.dart';
@@ -64,8 +68,11 @@ class PanelTreeView extends StatelessWidget {
   };
 
   Widget _buildNode(BuildContext context, PanelNode n) {
-    final theme = PanelThemeScope.of(context);
-    final st = n.style;
+    final allowSkins = ColorTheme.customCardSkins.value;
+    final theme = allowSkins
+        ? PanelThemeScope.of(context)
+        : const PanelThemeData();
+    final st = allowSkins ? n.style : null;
 
     switch (n.type) {
       case 'column':
@@ -834,6 +841,154 @@ class PanelTreeView extends StatelessWidget {
                       'phase': phase,
                       'shift': HardwareKeyboard.instance.isShiftPressed,
                     }, live: live),
+        );
+
+      case 'shader':
+        return PanelShaderView(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:shader:${n.id}'),
+          spec: n.shader ?? const PanelShaderSpec(),
+          height: (n.height ?? 100.0).clamp(32.0, 360.0),
+          interactive: n.id.isNotEmpty,
+          label: n.label,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
+          onPointer: n.id.isEmpty
+              ? null
+              : (x, y, phase, {bool live = false}) => onAction(n.id, {
+                  'x': x,
+                  'y': y,
+                  'phase': phase,
+                  'shift': HardwareKeyboard.instance.isShiftPressed,
+                }, live: live),
+        );
+
+      case 'waveform':
+        return PanelWaveform(
+          surfaceKey: n.id.isEmpty ? null : ValueKey('panel:wave:${n.id}'),
+          samples: n.samples,
+          height: (n.height ?? 72.0).clamp(28.0, 240.0),
+          label: n.label,
+          playhead: n.playhead,
+          threshold: n.threshold,
+          strikes: n.strikes,
+          look: n.look.isEmpty ? 'bars' : n.look,
+          color: n.color,
+          peakColor: n.peakColor,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
+          onInteract: n.id.isEmpty
+              ? null
+              : (x, y, threshold, phase, {bool live = false}) =>
+                    onAction(n.id, {
+                      'x': x,
+                      'y': y,
+                      'threshold': threshold,
+                      'phase': phase,
+                      'shift': HardwareKeyboard.instance.isShiftPressed,
+                    }, live: live),
+        );
+
+      case 'sequencer':
+        return PanelSequencer(
+          seqKey: n.id.isEmpty ? null : ValueKey('panel:seq:${n.id}'),
+          steps: n.steps,
+          label: n.label,
+          activeStep: n.activeStep,
+          cols: n.cols,
+          color: n.color,
+          style: st,
+          onChange: (index, value, nextSteps, {bool live = false}) => onAction(
+            n.id,
+            {'index': index, 'value': value, 'steps': nextSteps},
+            live: live,
+          ),
+        );
+
+      case 'fader':
+        return PanelFader(
+          faderKey: n.id.isEmpty ? null : ValueKey('panel:fader:${n.id}'),
+          label: n.label,
+          value: n.numValue ?? 0.0,
+          min: n.min ?? 0.0,
+          max: n.max ?? 1.0,
+          def: n.def,
+          step: n.step,
+          dec: n.dec,
+          unit: n.unit,
+          height: n.height ?? 96.0,
+          color: n.color,
+          look: n.look.isEmpty ? 'studio' : n.look,
+          style: st,
+          onChanged: (v, {bool live = false}) => onAction(n.id, v, live: live),
+        );
+
+      case 'vu':
+        return PanelVuMeter(
+          value: n.numValue ?? 0.0,
+          rightValue: n.rightValue,
+          peak: n.peak,
+          label: n.label,
+          segments: n.segments,
+          horizontal: n.horizontal,
+          height: n.height ?? 14.0,
+          style: st,
+        );
+
+      case 'curve':
+        return PanelCurveEditor(
+          curveKey: n.id.isEmpty ? null : ValueKey('panel:curve:${n.id}'),
+          points: n.curvePoints,
+          height: (n.height ?? 92.0).clamp(48.0, 260.0),
+          label: n.label,
+          color: n.color,
+          grid: n.grid,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
+          onChanged: (idx, x, y, nextPoints, phase, {bool live = false}) =>
+              onAction(n.id, {
+                'index': idx,
+                'x': x,
+                'y': y,
+                'points': nextPoints,
+                'phase': phase,
+              }, live: live),
+        );
+
+      case 'gradient':
+        return PanelGradientBar(
+          gradKey: n.id.isEmpty ? null : ValueKey('panel:grad:${n.id}'),
+          stops: n.gradientStops,
+          label: n.label,
+          height: n.height ?? 26.0,
+          style: st,
+          onChanged: (idx, pos, col, nextStops, phase, {bool live = false}) =>
+              onAction(n.id, {
+                'index': idx,
+                'pos': pos,
+                'color': col,
+                'stops': nextStops,
+                'phase': phase,
+              }, live: live),
+        );
+
+      case 'picker':
+        return PanelRigPicker(
+          pickerKey: n.id.isEmpty ? null : ValueKey('panel:picker:${n.id}'),
+          pins: n.pins,
+          height: (n.height ?? 140.0).clamp(64.0, 360.0),
+          label: n.label,
+          svg: resolveSvgThemeVars(n.svg),
+          src: n.src,
+          baseFile: baseFile,
+          framed: n.framed ?? st?.framed ?? true,
+          style: st,
+          onPin: (pinId, x, y, phase, {bool live = false}) => onAction(n.id, {
+            'pin': pinId,
+            'x': x,
+            'y': y,
+            'phase': phase,
+            'shift': HardwareKeyboard.instance.isShiftPressed,
+          }, live: live),
         );
 
       default:

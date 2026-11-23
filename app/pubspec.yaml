@@ -50,6 +50,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  shaders:
+    - shaders/panel_fx.frag
   fonts:
     # Inter static weights (OFL-1.1, rsms/inter v4.1) so Flutter selects real weights for every TextStyle/copyWith;
     # Noto Sans JP covers Japanese (and CJK) where Inter has no glyph. Skins still override via FontSansFile.

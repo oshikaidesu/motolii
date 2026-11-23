@@ -64,6 +64,19 @@ List<AbstractSettingsSection> settingsSections({
               WidgetsBinding.instance.reassembleApplication();
             },
           ),
+          SettingsTile.switchTile(
+            title: const Text('Custom Card Faceplates'),
+            description: const Text(
+              'Allow VST-style custom card skins (off = uniform Motolii UI)',
+            ),
+            initialValue: ColorTheme.customCardSkins.value,
+            activeSwitchColor: WindowTokens.accent,
+            onToggle: (value) {
+              ColorTheme.setCustomCardSkins(value);
+              onChanged();
+              WidgetsBinding.instance.reassembleApplication();
+            },
+          ),
         ],
       ),
     ],

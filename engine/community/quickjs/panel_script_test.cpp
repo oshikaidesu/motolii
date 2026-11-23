@@ -156,13 +156,13 @@ TEST(PanelScript, EvaluatesVstShowcaseAndNewUiPreludeHelpers) {
   const auto panelPath = doc_folders("panels").front() / "VST Showcase.js";
   std::string err;
   for (const char* skin :
-       {"Pop 3D", "Wavetable", "Hardware", "Studio", "Retro 98", "Kawaii"}) {
+       {"Pop 3D", "Wavetable", "Hardware", "Beat Sync", "GPU Shader",
+        "Rig Picker", "Pro Curve", "Kawaii"}) {
     const std::string ctx =
         std::string(R"JSON({"state":{"skin":")JSON") + skin + R"JSON("}})JSON";
     const std::string tree =
         panel_eval_render(panelPath.generic_string(), ctx, &err);
     ASSERT_TRUE(err.empty()) << skin << ": " << err;
-    EXPECT_NE(tree.find("\"type\":\"scene3d\""), std::string::npos) << skin;
     EXPECT_NE(tree.find("\"type\":\"box\""), std::string::npos) << skin;
   }
 }

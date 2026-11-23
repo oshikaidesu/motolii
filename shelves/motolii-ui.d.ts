@@ -241,6 +241,121 @@ declare namespace MotoliiUi {
      * interactive orbit drag emitting `{ yaw, pitch, x, y, phase, shift }`).
      */
     scene3d(height: number, opts?: Scene3dOptions): UiNode;
+    /** Flutter-native 60fps FragmentShader visualizer (`holo`, `metaball`, `vhs`, `scope`, `aurora`, `grid`). */
+    shader(
+      height: number,
+      preset: "holo" | "metaball" | "vhs" | "scope" | "aurora" | "grid",
+      opts?: {
+        id?: string;
+        label?: string;
+        time?: number;
+        paramA?: number;
+        paramB?: number;
+        mouseX?: number;
+        mouseY?: number;
+        color?: string;
+        color2?: string;
+        color3?: string;
+        framed?: boolean;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Audio waveform viewer with playhead, beat strikes, and optional draggable threshold gate. */
+    waveform(
+      height: number,
+      samples: number[],
+      opts?: {
+        id?: string;
+        label?: string;
+        playhead?: number;
+        threshold?: number;
+        strikes?: number[];
+        look?: "bars" | "line";
+        color?: string;
+        peakColor?: string;
+        framed?: boolean;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** 16-step beat sequencer grid (click or drag-paint steps). */
+    sequencer(
+      steps: Array<number | boolean>,
+      opts?: {
+        id?: string;
+        label?: string;
+        activeStep?: number;
+        cols?: number;
+        color?: string;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Studio vertical mixing fader with dB tick marks and machined cap. */
+    fader(
+      label: string,
+      value: number,
+      opts?: {
+        id?: string;
+        min?: number;
+        max?: number;
+        def?: number;
+        step?: number;
+        dec?: number;
+        unit?: string;
+        height?: number;
+        color?: string;
+        look?: "studio" | "pop";
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Segmented LED audio VU meter (mono or stereo L/R with peak hold). */
+    vu(
+      value: number,
+      opts?: {
+        label?: string;
+        right?: number;
+        peak?: number;
+        segments?: number;
+        horizontal?: boolean;
+        height?: number;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Multi-point smooth spline curve editor with draggable control nodes. */
+    curve(
+      height: number,
+      points: Array<{ x: number; y: number; label?: string }>,
+      opts?: {
+        id?: string;
+        label?: string;
+        color?: string;
+        grid?: boolean;
+        framed?: boolean;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Multi-stop color gradient bar with draggable color stops. */
+    gradient(
+      stops: Array<{ pos: number; color: string }>,
+      opts?: {
+        id?: string;
+        label?: string;
+        height?: number;
+        style?: PanelStyle;
+      }
+    ): UiNode;
+    /** Character rig / Live2D body picker (background svg/image + draggable control pins). */
+    picker(
+      height: number,
+      pins: Array<{ id: string; label?: string; x: number; y: number; color?: string; active?: boolean }>,
+      opts?: {
+        id?: string;
+        label?: string;
+        svg?: string;
+        src?: string;
+        framed?: boolean;
+        style?: PanelStyle;
+      }
+    ): UiNode;
     divider(opts?: { style?: PanelStyle }): UiNode;
     spacer(size?: number): UiNode;
   }
@@ -266,6 +381,10 @@ declare namespace MotoliiUi {
      * or empty array when no audio track is active.
      */
     audio: number[];
+    /** Windowed audio waveform amplitudes (64 samples in 0..1 centered on `time`). */
+    waveform: number[];
+    /** Detected audio onset / beat strike timestamps in seconds. */
+    strikes: number[];
     /** Current layer being inspected. */
     layer?: PanelLayer;
     /** All layers in the composition. */
@@ -355,6 +474,10 @@ declare namespace MotoliiUi {
     presets: Record<string, unknown>;
     theme: ThemeColors;
     audio: number[];
+    /** Windowed audio waveform amplitudes (64 samples in 0..1 centered on `time`). */
+    waveform: number[];
+    /** Detected audio onset / beat strike timestamps in seconds. */
+    strikes: number[];
   }
 
   type PanelOp =
