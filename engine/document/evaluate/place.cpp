@@ -177,6 +177,11 @@ std::vector<ScriptCopy> doc_copies_laid(Doc& d, int layer, int n, double said) {
 
 math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                      bool member) {
+  // While isolating a group (view-only, never during export), place that group
+  // at local identity so it sits upright and centered like entering a pre-comp.
+  if (d.isolated_group > 0 && !d.video_export.writing &&
+      layer == d.isolated_group)
+    return math::mat4{};
   // The time itself, before the copy's delay is subtracted. What places the
   // copies is evaluated at this time.
   const double said = now;

@@ -215,6 +215,18 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           if (said >> ax >> ay)
             ok = changes(m, (int)doc_pivot(doc(m), layer, ax, ay));
         }
+        // View-only pre-comp focus: isolates a group/parent subtree centered at
+        // identity under the neutral front camera (layer <= 0 exits).
+        else if (c == "isolate") {
+          Doc& d = doc(m);
+          d.isolated_group = (layer > 0 && doc_knows(d, layer)) ? layer : 0;
+          if (d.stage) doc_evaluate(d, d.stage->now);
+          m->render_thread.changed = true;
+          m->revision.fetch_add(1, std::memory_order_release);
+          snapshot_update(m);
+          snapshot_time(m);
+          ok = 1;
+        }
         // word: "tolerance x y x y ..."
         else if (c == "curve")
           ok = m->later.last_added = changes(m, doc_curve(doc(m), w.c_str()));

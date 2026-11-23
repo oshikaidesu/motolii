@@ -42,6 +42,17 @@ class PanelLayout {
   /// Switches the stage between the active camera and the 3D overview.
   void setOverview(bool on) => setView('stage.overview', on);
 
+  /// The group/parent layer currently isolated for pre-comp-style centered local editing, or null.
+  int? get isolatedGroup {
+    final id = viewOf<int?>('stage.isolate', null);
+    if (id == null || id <= 0) return null;
+    return _layers().any((l) => l.id == id) ? id : null;
+  }
+
+  /// Sets the isolated group/parent layer ID (null exits back to the full stage).
+  void setIsolatedGroup(int? id) =>
+      setView('stage.isolate', id != null && id > 0 ? id : null);
+
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
   /// Defaults slightly angled and pulled back so the Boxcam frame and camera body pin fit in 3D View.
   List<double> get eye => viewOf('stage.eye', const [28.0, -18.0, 2.2]);

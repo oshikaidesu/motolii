@@ -87,6 +87,9 @@ struct Doc {
   DocEffects effects;
   // The window's working camera (evaluate/camera.h).
   DocWorkingCamera working_camera;
+  // View-only pre-comp focus: when > 0 (and not exporting), shows only this
+  // group/parent subtree centered at identity under the neutral front camera.
+  int isolated_group = 0;
   // The camera of the current time (evaluate/camera.h).
   DocCamera camera;
   // The layer being dragged (edit/hold.h).

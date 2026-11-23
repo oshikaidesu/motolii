@@ -71,12 +71,25 @@ bool solo_of(Doc& d, int layer) {
   return false;
 }
 
+// Returns true if `layer` belongs to the currently isolated group subtree (or
+// if group isolation is inactive / video export is running).
+bool in_isolated(Doc& d, int layer) {
+  const int iso = d.isolated_group;
+  if (iso <= 0 || d.video_export.writing) return true;
+  for (int up = layer, n = 0; up > 0 && n < 64;
+       up = (int)doc_number(d, up, "parent", 0, 0), ++n)
+    if (up == iso) return true;
+  return false;
+}
+
 // Fills `lie` and `lies` of the evaluation: the layers in stacking order, and
 // the state at this time of each layer that is on the stage and is not a
 // camera.
 void evaluate_layer_states(Evaluation& evaluation) {
   Doc& d = evaluation.d;
   const double now = evaluation.now;
+  if (d.isolated_group > 0 && doc_word(d, d.isolated_group, "kind").empty())
+    d.isolated_group = 0;
   evaluation.lie = doc_laid(d);
   const std::vector<int>& lie = evaluation.lie;
   std::vector<EvaluatedLayer>& lies = evaluation.lies;
@@ -106,7 +119,8 @@ void evaluate_layer_states(Evaluation& evaluation) {
                        &found->second,
                        since >= 0.0 && (lasts < 0.0 || since < lasts) &&
                            doc_visible(d, layer) &&
-                           (!solo || solo_of(d, layer)),
+                           (!solo || solo_of(d, layer)) &&
+                           in_isolated(d, layer),
                        found->second.space != 2 || open || found->second.solid,
                        since,
                        open};

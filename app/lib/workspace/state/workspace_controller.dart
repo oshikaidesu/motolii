@@ -238,6 +238,17 @@ class WorkspaceController extends ChangeNotifier {
   bool get hasCamera => layout.hasCamera;
   bool get freeEye => layout.freeEye;
   void setOverview(bool on) => layout.setOverview(on);
+  int? get isolatedGroup => layout.isolatedGroup;
+  void isolateGroup(int? id) {
+    final next = (id != null && id > 0 && layers.any((l) => l.id == id))
+        ? id
+        : null;
+    layout.setIsolatedGroup(next);
+    if (next != null && !groupOpen(next)) turnGroup(next);
+    final m = inside;
+    if (m != null) after(m.later('isolate', layer: next ?? 0));
+  }
+
   List<double> get eye => layout.eye;
   String? get toolPanelManual => layout.toolPanelManual;
   set toolPanelManual(String? name) => layout.toolPanelManual = name;

@@ -135,8 +135,20 @@ class _StageState extends State<_Stage> {
           child: Column(
             children: [
               PanelHeader(
-                '',
+                ws.isolatedGroup == null
+                    ? ''
+                    : 'Stage  ›  ${ws.layers.where((l) => l.id == ws.isolatedGroup).firstOrNull?.name ?? 'Group'}',
                 trailing: [
+                  if (ws.isolatedGroup != null) ...[
+                    Toggle(
+                      key: const ValueKey('ws-stage-exit-isolate'),
+                      label: 'Exit Focus',
+                      icon: StageIcon.overview,
+                      on: true,
+                      onTap: () => ws.isolateGroup(null),
+                    ),
+                    SizedBox(width: Shape.s(6)),
+                  ],
                   Forms.worn.segment(
                     context,
                     ChoiceSpec(

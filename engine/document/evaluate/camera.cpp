@@ -480,7 +480,8 @@ void evaluate_camera(Evaluation& evaluation) {
   Doc& d = evaluation.d;
   Stage& s = evaluation.s;
   const double now = evaluation.now;
-  const int camera = camera_layer_now(d, evaluation.lie, now);
+  const bool isolating = d.isolated_group > 0 && !d.video_export.writing;
+  const int camera = isolating ? 0 : camera_layer_now(d, evaluation.lie, now);
   // The working view shows the user's view camera instead of the document
   // camera. It needs a camera layer in the document and no export in
   // progress.

@@ -32,7 +32,23 @@ List<ContextMenuItem> layerContextMenu(
       ? null
       : stageCameraLayer(ws, null);
   final lockedHere = cam != null && cameraTargetOf(ws, cam) == l.id;
+  final canFocus =
+      l.kind == LayerKind.group || ws.layers.any((c) => c.parent == l.id);
+  final focusedHere = ws.isolatedGroup == l.id;
   return [
+    if (canFocus || focusedHere) ...[
+      ContextMenuItem(
+        focusedHere ? 'Exit Group Focus' : 'Enter Group (Focus)',
+        () {
+          ws.isolateGroup(focusedHere ? null : l.id);
+          ws.notice = focusedHere
+              ? 'Exited group focus'
+              : 'Focused group: ${l.name}';
+        },
+        keys: keys('thing.isolate'),
+      ),
+      const ContextMenuItem.rule(),
+    ],
     if (cam != null) ...[
       ContextMenuItem(
         lockedHere ? 'Release Camera Target' : 'Focus Camera Here',

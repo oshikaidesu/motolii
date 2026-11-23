@@ -9,6 +9,7 @@ import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/stage/camera_gestures.dart'
     show cameraAlignToView;
 import 'package:motolii/workspace/state/engine_access.dart' show projectOpen;
+import 'package:motolii/workspace/state/layer.dart' show LayerKind;
 import 'package:motolii/workspace/state/media/timeline_service.dart'
     show dragBarPart, endBarDrag, grabLayer, setLayerSwitch;
 import 'package:motolii/workspace/state/stage/stage_service.dart'
@@ -94,6 +95,32 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
       final t = ws.selected;
       if (t == null || !projectOpen(ws)) return;
       ws.after(setLayerSwitch(ws, t, 'solo', ws.layer?.solo != true));
+    },
+    'thing.isolate': () {
+      if (!projectOpen(ws)) return;
+      final cur = ws.isolatedGroup;
+      final t = ws.selected;
+      if (cur != null && (t == null || t == cur)) {
+        ws.isolateGroup(null);
+        ws.notice = 'Exited group focus';
+        return;
+      }
+      if (t == null) return;
+      final hasChildren = ws.layers.any((l) => l.parent == t);
+      final target = ws.layer?.kind == LayerKind.group || hasChildren
+          ? t
+          : ws.layer?.parent;
+      if (target != null && target > 0) {
+        final entering = cur != target;
+        ws.isolateGroup(entering ? target : null);
+        final nm = ws.layers.where((l) => l.id == target).firstOrNull?.name;
+        ws.notice = entering
+            ? 'Focused group: ${nm ?? target}'
+            : 'Exited group focus';
+      } else if (cur != null) {
+        ws.isolateGroup(null);
+        ws.notice = 'Exited group focus';
+      }
     },
     'thing.lanes': () {
       // After Effects' U: shows the keyframed properties of the selected layers, and hides them when pressed again.

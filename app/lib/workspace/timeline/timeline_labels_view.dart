@@ -130,6 +130,11 @@ mixin TimelineLabelsView<T extends StatefulWidget>
                             // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
                               supportedDevices: pressingDevices,
+                              onDoubleTap: l.kind == LayerKind.group
+                                  ? () => ws.isolateGroup(
+                                      ws.isolatedGroup == l.id ? null : l.id,
+                                    )
+                                  : null,
                               onSecondaryTapDown: (d) =>
                                   labelRight(l, d.globalPosition),
                               // Count the whole drag from the pointer-down position.

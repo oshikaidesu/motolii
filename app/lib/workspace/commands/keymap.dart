@@ -49,6 +49,10 @@ const defaultKeys = <(String, String)>[
   ('0', 'thing.deactivate'), // Live 42.15, 42.16 and 42.19: 0 switches a clip off and on. Here it toggles the layer's visibility.
   ('s', 'thing.solo'), // Live 42.15 and 42.19.
   (
+    'shift+s',
+    'thing.isolate',
+  ), // Enter/exit pre-comp-style group focus centered at origin.
+  (
     'u',
     'thing.lanes',
   ), // After Effects' U: show the keyframed properties of the selected layers.

@@ -143,6 +143,7 @@ String customPanelCtxJson(
       'point': pt,
     },
     'selected': selected,
+    'isolated_group': ws.isolatedGroup ?? 0,
     'layers': layers,
     'state': state,
     'presets': presets,
