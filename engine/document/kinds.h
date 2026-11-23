@@ -52,6 +52,10 @@ inline const DocValue doc_values[] = {
     {"anchor_x", doc_visible_kinds, -100, 100, true, nullptr},
     {"anchor_y", doc_visible_kinds, -100, 100, true, nullptr},
     {"anchor_z", doc_visible_kinds, -100, 100, true, nullptr},
+    // target: layer ID the camera's frame locks onto (0 = free).
+    // distance: camera pullback from its frame as a multiple of kStageBack.
+    {"target", "camera", 0, 1e9, true, nullptr},
+    {"distance", "camera", 0.05, 100, true, nullptr},
     {"focal_length", "camera", 1, 400, true, nullptr},
     // focus: distance to sharp plane (0 = where it looks). aperture: f-number
     // (0 = everything sharp). blur_level: multiplier on the lens blur.

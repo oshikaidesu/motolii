@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/stage/camera_gestures.dart'
+    show cameraFrameRollKnob;
 import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
@@ -50,7 +52,11 @@ class ViewPainter extends CustomPainter {
     this.grip,
     this.form = ('', 0),
     this.crop = const [],
+    this.cameraTarget,
   });
+
+  /// The layer ID the active camera is currently Z-targeting, drawn with lock-on brackets.
+  final int? cameraTarget;
 
   /// The handle being dragged. Only it is drawn, highlighted, until the drag ends.
   final String? grip;
@@ -151,6 +157,9 @@ class ViewPainter extends CustomPainter {
     }
     for (final id in scene.gizmos.keys) {
       _gizmo(c, id);
+    }
+    if (ArtGeometry.boxOf(scene, cameraTarget) case final b?) {
+      _lockBrackets(c, b);
     }
     if (marked) {
       // The engine marks the frame, corners, sides, rotate knob and anchor. Only the layer's own handles are drawn here.
@@ -287,6 +296,19 @@ class ViewPainter extends CustomPainter {
             Paint()..color = ink,
           );
         }
+        if (cameraFrameRollKnob(frame) case final knob?) {
+          final topMid = (frame[0] + frame[1]) * .5;
+          _legible(
+            c,
+            Path()
+              ..moveTo(topMid.dx, topMid.dy)
+              ..lineTo(knob.dx, knob.dy),
+            ink,
+            1.2,
+          );
+          c.drawCircle(knob, 4.5, Paint()..color = Grey.g00);
+          c.drawCircle(knob, 3.5, Paint()..color = ink);
+        }
       }
     }
     if (g[4] case final look?) {
@@ -304,6 +326,28 @@ class ViewPainter extends CustomPainter {
           ..strokeWidth = 2,
       );
     }
+  }
+
+  /// Subtle Z-target lock-on corner brackets around the layer the camera currently tracks.
+  void _lockBrackets(Canvas c, ArtBox b) {
+    final pts = [for (final p in b.corners) v.toScreen(p)];
+    if (pts.length != 4) return;
+    final path = Path();
+    for (var i = 0; i < 4; i++) {
+      final p = pts[i];
+      final prev = pts[(i + 3) % 4] - p;
+      final next = pts[(i + 1) % 4] - p;
+      final lp = math.min(12.0, prev.distance * .25);
+      final ln = math.min(12.0, next.distance * .25);
+      if (prev.distance < 1 || next.distance < 1) continue;
+      final a = p + prev / prev.distance * lp;
+      final d = p + next / next.distance * ln;
+      path
+        ..moveTo(a.dx, a.dy)
+        ..lineTo(p.dx, p.dy)
+        ..lineTo(d.dx, d.dy);
+    }
+    _legible(c, path, WindowTokens.toneCamera, 1.8);
   }
 
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
@@ -479,6 +523,7 @@ class ViewPainter extends CustomPainter {
       !identical(o.trail, trail) ||
       o.parent != parent ||
       o.grip != grip ||
+      o.cameraTarget != cameraTarget ||
       o.form != form ||
       !listEquals(o.crop, crop);
 }

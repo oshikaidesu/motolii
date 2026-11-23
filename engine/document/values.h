@@ -138,6 +138,8 @@ inline const DocShown doc_shown[] = {
     {"blend", "", "", "Blend", 0, 0, nullptr},
     {"clip", "onoff", "", "Clip to below", 0, 1, nullptr},
     {"label", "", "", "Label colour", 0, 0, nullptr},
+    {"target", "thing", "", "Target", 0, 0, nullptr},
+    {"distance", "", "×", "Distance", 0.1, 4, nullptr},
     {"focal_length", "", "mm", "Focal Length", 1, 400, nullptr},
     // Focus distance and aperture follow After Effects' Focus Distance and
     // Blender's F-Stop. The sliders reach as far as the top view of the camera

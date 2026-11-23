@@ -157,6 +157,16 @@ class _StageState extends State<_Stage> {
                     on: _grid,
                     onTap: () => setState(() => _grid = !_grid),
                   ),
+                  if (ws.hasCamera) ...[
+                    SizedBox(width: WindowTokens.gap),
+                    Toggle(
+                      key: const ValueKey('ws-stage-overview'),
+                      label: '3D View',
+                      icon: StageIcon.overview,
+                      on: ws.freeEye,
+                      onTap: () => ws.setOverview(!ws.freeEye),
+                    ),
+                  ],
                   SizedBox(width: Shape.s(6)),
                   Toggle(
                     key: const ValueKey('ws-snapshot-take'),

@@ -116,5 +116,8 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     'frame.nextStop': () => hop(1),
     'frame.back10': () => step(-Gestures.nudgeShift),
     'frame.forward10': () => step(Gestures.nudgeShift),
+    'view.overview': () {
+      if (ws.hasCamera) ws.setOverview(!ws.freeEye);
+    },
   };
 }

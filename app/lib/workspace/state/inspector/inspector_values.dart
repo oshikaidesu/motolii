@@ -359,7 +359,7 @@ double _onCard(WorkspaceController ws, int t, String n, double at) {
       ? (otherLayers(
                   ws,
                   t,
-                ).values.toList().indexOf((m.value(t, n, 0) ?? 0).round()) +
+                ).values.toList().indexOf((m.value(t, n, at) ?? 0).round()) +
                 1)
             .toDouble()
       : m.words(t, n).isEmpty

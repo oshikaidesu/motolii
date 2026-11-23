@@ -65,10 +65,64 @@ using filament::math::float3;
 using filament::math::float4;
 using filament::math::mat4f;
 
+namespace {
+
+// World-space center of a target layer, guarded against recursive camera lookups.
+math::double3 target_layer_center(Doc& d, int camera, int target_id,
+                                  double now) {
+  thread_local int depth = 0;
+  if (depth >= 4 || target_id <= 0 || target_id == camera ||
+      doc_word(d, target_id, "kind").empty())
+    return math::double3{0.0};
+  struct Guard {
+    int& n;
+    explicit Guard(int& v) : n(v) { ++n; }
+    ~Guard() { --n; }
+  } guard(depth);
+  return (doc_place(d, target_id, now) * math::double4{0, 0, 0, 1}).xyz;
+}
+
+// Resolves a camera's Z-target look-at anchor at `now`, smoothly interpolating
+// world positions across target layer transitions using each segment's easing.
+math::double3 camera_target_anchor(Doc& d, int camera, double now) {
+  if (d.held.layer == camera) {
+    if (const auto tried = d.held.tried.find("target");
+        tried != d.held.tried.end())
+      return target_layer_center(d, camera, (int)std::llround(tried->second),
+                                 now);
+  }
+  const DocKeys& k = doc_keys_of(d, camera, "target");
+  if (k.at.empty()) return math::double3{0.0};
+  const double at = doc_stepped(d, camera, k, now);
+  if (k.at.size() == 1 || at <= k.at.front())
+    return target_layer_center(d, camera, (int)std::llround(k.value.front()),
+                               now);
+  if (at >= k.at.back())
+    return target_layer_center(d, camera, (int)std::llround(k.value.back()),
+                               now);
+  const size_t i =
+      (size_t)(std::upper_bound(k.at.begin(), k.at.end(), at) - k.at.begin()) -
+      1;
+  const int a_id = (int)std::llround(k.value[i]);
+  const int b_id = (int)std::llround(k.value[i + 1]);
+  const math::double3 pa = target_layer_center(d, camera, a_id, now);
+  if (a_id == b_id) return pa;
+  const math::double3 pb = target_layer_center(d, camera, b_id, now);
+  const double span = k.at[i + 1] - k.at[i];
+  const double u = span > 0.0 ? (at - k.at[i]) / span : 1.0;
+  const double eased =
+      k.own[i].empty()
+          ? interp_ease(k.interp[i], u)
+          : doc_went_by(d, k.own[i], u, at - k.at[i], span, 0.0, 1.0);
+  return pa + (pb - pa) * eased;
+}
+
+}  // namespace
+
 DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
-  // The camera's orientation: rotate_y (pan), rotate_x (tilt), rotate (roll).
-  // With no camera layer the stage's own camera looks straight along -Z, so
-  // the rotation matrices are all identity.
+  // Frame-centered camera (Boxcam + Z-target + Google Maps tilt):
+  // `look` is the frame center (target layer center + camera x/y/z offset).
+  // `eye` pulls back along +Z by kStageBack * distance, orbited by rotate_y/x.
   const auto turned = [&](const char* name, math::double3 about) {
     return camera ? math::mat4::rotation(doc_number(d, camera, name, now, 0) *
                                              (double)TAU / 360.0,
@@ -78,20 +132,20 @@ DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
   DocViewCamera e;
   e.round = turned("rotate_y", {0, 1, 0}) * turned("rotate_x", {1, 0, 0}) *
             turned("rotate", {0, 0, 1});
-  // The camera's position is the layer's own world position. With no camera
-  // layer the stage's own camera sits kStageBack units along +Z, looking at
-  // the origin.
-  e.eye = camera ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz
-                 : math::double3{0.0, 0.0, kStageBack};
-  // The camera looks in its local -Z. One unit ahead gives the look-at point.
-  e.look = e.eye + (e.round * math::double4{0, 0, -1, 0}).xyz;
+  if (camera) {
+    const math::double3 own =
+        (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz;
+    e.look = camera_target_anchor(d, camera, now) + own;
+    e.far = std::max(0.05, doc_number(d, camera, "distance", now, 1.0));
+  } else {
+    e.look = math::double3{0.0};
+    e.far = 1.0;
+  }
+  e.eye = e.look + (e.round * math::double4{0, 0, kStageBack * e.far, 0}).xyz;
   e.up = (e.round * math::double4{0, 1, 0, 0}).xyz;
-  // `far` is a scale on the default clip distance. Keep it at 1 when there is
-  // no camera layer so the near/far planes stay as they were.
-  e.far = 1.0;
   // Vertical field of view from focal length. The stage uses a 24 mm sensor
   // height (half = 12 mm), matching a 35 mm full-frame crop at 2:3 aspect.
-  // Default: 45 mm → ~30° vertical FOV, the same as the old default zoom = 1.
+  // Default: 45 mm → ~30° vertical FOV, matching kStageBack at distance = 1.
   const double focal =
       camera ? doc_number(d, camera, "focal_length", now, 45.0) : 45.0;
   e.fov = 2.0 * std::atan(12.0 / std::max(focal, 1.0));

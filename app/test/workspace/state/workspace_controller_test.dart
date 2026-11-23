@@ -198,15 +198,21 @@ void main() {
         expect(_told(ws, () => ws.setView('stage.tool', 'pen')), isEmpty);
         expect(ws.viewOf('stage.tool', 'select'), 'pen');
         expect(_told(ws, () => ws.setView('never.set', null)), isEmpty);
-        expect(ws.eye, [0, 0, 1]);
+        expect(ws.eye, [18.0, -14.0, 1.65]);
       },
     );
 
-    test('the working camera is the eye while a camera layer exists', () {
+    test('overview (freeEye) requires a camera and toggles on demand', () {
       final ws = _ws();
+      expect(ws.hasCamera, isFalse);
+      expect(ws.freeEye, isFalse);
+      ws.setOverview(true);
       expect(ws.freeEye, isFalse);
       ws.layers.add(_layer(1, LayerKind.camera));
+      expect(ws.hasCamera, isTrue);
       expect(ws.freeEye, isTrue);
+      ws.setOverview(false);
+      expect(ws.freeEye, isFalse);
     });
 
     test('front tells fronted every time and counts up, so fronting the same panel again is heard', () {

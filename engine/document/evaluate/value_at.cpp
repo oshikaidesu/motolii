@@ -465,6 +465,14 @@ double doc_number(Doc& d, int layer, const char* name, double at,
     return target->lo + (target->hi - target->lo) * m;
   }
   const DocKeys& k = doc_keys_of(d, layer, name);
+  if (!strcmp(name, "target")) {
+    const double stepped = doc_stepped(d, layer, k, at);
+    if (k.at.empty()) return otherwise;
+    double held = k.value.front();
+    for (size_t i = 0; i < k.at.size() && k.at[i] <= stepped + 1e-9; ++i)
+      held = k.value[i];
+    return (double)std::llround(held);
+  }
   return doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
 }
 

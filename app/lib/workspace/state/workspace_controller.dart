@@ -235,7 +235,9 @@ class WorkspaceController extends ChangeNotifier {
   Map<String, Object?> get view => layout.view;
   T viewOf<T>(String name, T otherwise) => layout.viewOf(name, otherwise);
   void setView(String name, Object? value) => layout.setView(name, value);
+  bool get hasCamera => layout.hasCamera;
   bool get freeEye => layout.freeEye;
+  void setOverview(bool on) => layout.setOverview(on);
   List<double> get eye => layout.eye;
   String? get toolPanelManual => layout.toolPanelManual;
   set toolPanelManual(String? name) => layout.toolPanelManual = name;

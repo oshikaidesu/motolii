@@ -5,11 +5,13 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook;
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart'
     show layerPlacement;
+import 'package:motolii/workspace/stage/camera_gestures.dart'
+    show cameraReleaseTarget, cameraResetTilt, cameraTargetOf;
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/toggle.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
@@ -150,6 +152,30 @@ class OptionsStrip extends StatelessWidget {
     );
   }
 
+  List<Widget> _cameraStrip(WorkspaceController ws) {
+    final cam = stageCameraLayer(ws, ws.selected);
+    if (cam == null) {
+      return const [_Field('Camera', value: 'None — add from Create › Layers')];
+    }
+    final targetId = cameraTargetOf(ws, cam);
+    final targetLayer = targetId == null
+        ? null
+        : ws.layers.where((l) => l.id == targetId).firstOrNull;
+    return [
+      if (targetLayer != null)
+        Chip(
+          label: 'Target: ${targetLayer.name} ×',
+          look: ChipLook.flat(WindowTokens.toneCamera),
+          onTap: () => cameraReleaseTarget(ws, cam),
+        )
+      else
+        const _Field('Target', value: 'Click layer'),
+      Chip(label: 'Flat 0°', onTap: () => cameraResetTilt(ws, cam)),
+      const _Field('Drag', value: 'Orbit / Shift Pan'),
+      const _Field('Wheel', value: 'Distance'),
+    ];
+  }
+
   List<Widget> _items(BuildContext c) => _joined(c, ws, paintOf(ws));
 
   /// The tool's own settings (how it draws or moves) and the selected layer's values as the document has them.
@@ -190,8 +216,8 @@ class OptionsStrip extends StatelessWidget {
     4 => [
       _seg(c, 'pen.mode', const ['Path', 'Mask']),
     ],
-    // What the user's drag and wheel do, named names its camera tools.
-    7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],
+    // Camera tool strip: active Z-target status/release, tilt reset to flat Boxcam, and gesture hint.
+    7 => _cameraStrip(ws),
     6 => [
       _Field('Fill', swatch: p.fill ?? WindowTokens.body),
       _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),

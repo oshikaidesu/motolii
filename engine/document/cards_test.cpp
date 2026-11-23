@@ -19,6 +19,7 @@
 #include <string>
 
 #include "document/document.h"
+#include "document/evaluate/camera.h"
 #include "document/evaluate/value_at.h"
 
 namespace motolii {
@@ -229,6 +230,67 @@ TEST(Cards, MacroLayerSourceLinksLayersAndGuardsCycles) {
   doc.Say("macro_map", "1 rotate 0 180", 1);
   const double v = doc_number(*doc.d, 2, "scale_x", 0, 1);
   EXPECT_TRUE(std::isfinite(v));
+}
+
+TEST(Cards, CameraFrameCenteredAndZTargetInterpolation) {
+  Layer doc("camera");
+  // Camera card exposes target and distance alongside lens controls.
+  const std::string cards = doc.Cards();
+  EXPECT_TRUE(Has(cards, "Camera")) << cards;
+  EXPECT_NE(cards.find("target"), std::string::npos) << cards;
+  EXPECT_NE(cards.find("distance"), std::string::npos) << cards;
+
+  // Default camera: frame at origin, eye at +kStageBack along Z.
+  const DocViewCamera def = doc_view_camera_of(*doc.d, 1, 0.0);
+  EXPECT_NEAR(def.look.x, 0.0, 1e-6);
+  EXPECT_NEAR(def.look.y, 0.0, 1e-6);
+  EXPECT_NEAR(def.look.z, 0.0, 1e-6);
+  EXPECT_NEAR(def.eye.x, 0.0, 1e-6);
+  EXPECT_NEAR(def.eye.y, 0.0, 1e-6);
+  EXPECT_NEAR(def.eye.z, kStageBack, 1e-6);
+
+  // Boxcam frame pan + distance zoom + 90 deg Y look-in tilt around pinned frame.
+  doc.Put("x", 1.5, 1);
+  doc.Put("distance", 0.5, 1);
+  doc.Put("rotate_y", 90.0, 1);
+  const DocViewCamera orb = doc_view_camera_of(*doc.d, 1, 0.0);
+  EXPECT_NEAR(orb.look.x, 1.5, 1e-6);
+  EXPECT_NEAR(orb.eye.x, 1.5 + kStageBack * 0.5, 1e-5);
+  EXPECT_NEAR(orb.eye.z, 0.0, 1e-5);
+
+  // Two target layers at different world positions.
+  doc.Say("kind", "shape", 2);
+  doc.Put("x", -2.0, 2);
+  doc.Put("y", 1.0, 2);
+  doc.Say("kind", "shape", 3);
+  doc.Put("x", 4.0, 3);
+  doc.Put("y", -1.0, 3);
+
+  // Lock camera onto layer 2 at t=0 and layer 3 at t=2, with zero offset.
+  doc.Put("x", 0.0, 1);
+  doc.Put("rotate_y", 0.0, 1);
+  sqlite3_exec(doc.d->file,
+               "insert or replace into keyframe(layer, name, at, value, easing) "
+               "values(1, 'target', 0.0, 2, 'Linear'), "
+               "(1, 'target', 2.0, 3, 'Linear')",
+               nullptr, nullptr, nullptr);
+  doc_forget(*doc.d);
+
+  // Discrete doc_number reports held target ID (never interpolates to bogus ID).
+  EXPECT_DOUBLE_EQ(doc_number(*doc.d, 1, "target", 0.0, 0.0), 2.0);
+  EXPECT_DOUBLE_EQ(doc_number(*doc.d, 1, "target", 1.0, 0.0), 2.0);
+  EXPECT_DOUBLE_EQ(doc_number(*doc.d, 1, "target", 2.0, 0.0), 3.0);
+
+  // World look-at point smoothly interpolates between layer 2 and layer 3.
+  const DocViewCamera at0 = doc_view_camera_of(*doc.d, 1, 0.0);
+  const DocViewCamera at1 = doc_view_camera_of(*doc.d, 1, 1.0);
+  const DocViewCamera at2 = doc_view_camera_of(*doc.d, 1, 2.0);
+  EXPECT_NEAR(at0.look.x, -2.0, 1e-6);
+  EXPECT_NEAR(at0.look.y, 1.0, 1e-6);
+  EXPECT_NEAR(at1.look.x, 1.0, 1e-6);
+  EXPECT_NEAR(at1.look.y, 0.0, 1e-6);
+  EXPECT_NEAR(at2.look.x, 4.0, 1e-6);
+  EXPECT_NEAR(at2.look.y, -1.0, 1e-6);
 }
 
 }  // namespace

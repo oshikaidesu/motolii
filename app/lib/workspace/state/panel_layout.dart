@@ -32,12 +32,19 @@ class PanelLayout {
     _onViewChanged();
   }
 
-  /// Whether the preview uses the working camera, not the document's camera layer.
-  /// Always true when a camera layer exists: the stage is a fixed world view, the Camera View shows what the camera sees.
-  bool get freeEye => _layers().any((l) => l.kind == LayerKind.camera);
+  /// Whether the project currently has any camera layer.
+  bool get hasCamera => _layers().any((l) => l.kind == LayerKind.camera);
+
+  /// Whether the stage shows the 3D overview (working camera) instead of the active camera layer.
+  /// Defaults to false so adding a camera immediately films the stage; toggle on when spatial context is needed.
+  bool get freeEye => hasCamera && viewOf('stage.overview', false);
+
+  /// Switches the stage between the active camera and the 3D overview.
+  void setOverview(bool on) => setView('stage.overview', on);
 
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
-  List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
+  /// Defaults slightly angled and pulled back so the Boxcam frame and camera frustum read immediately in 3D View.
+  List<double> get eye => viewOf('stage.eye', const [18.0, -14.0, 1.65]);
 
   /// The tool the user opened in the tool panel. Null lets the tool panel follow the selection.
   String? toolPanelManual;

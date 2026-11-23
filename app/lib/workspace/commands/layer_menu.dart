@@ -5,7 +5,11 @@ import 'package:motolii/workspace/commands/keymap.dart'
     show CommandIntent, keyLabel;
 import 'package:motolii/workspace/edits/keyframe_edits.dart'
     show copiedKeyframes, copyKeyframes, pasteKeyframes, removeKeyframes;
+import 'package:motolii/workspace/stage/camera_gestures.dart'
+    show cameraLockTarget, cameraReleaseTarget, cameraTargetOf;
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/stage/stage_service.dart'
+    show stageCameraLayer;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart' show WorkspaceState;
 
@@ -24,7 +28,26 @@ List<ContextMenuItem> layerContextMenu(
       : ws.selected == l.id;
   if (!kept) ws.select(l.id);
   final (say, keys) = _commands(context);
+  final cam = l.kind == LayerKind.camera || l.kind == LayerKind.audio
+      ? null
+      : stageCameraLayer(ws, null);
+  final lockedHere = cam != null && cameraTargetOf(ws, cam) == l.id;
   return [
+    if (cam != null) ...[
+      ContextMenuItem(
+        lockedHere ? 'Release Camera Target' : 'Focus Camera Here',
+        () {
+          if (lockedHere) {
+            cameraReleaseTarget(ws, cam);
+            ws.notice = 'Camera target released';
+          } else {
+            cameraLockTarget(ws, cam, l.id);
+            ws.notice = 'Camera locked on ${l.name}';
+          }
+        },
+      ),
+      const ContextMenuItem.rule(),
+    ],
     ContextMenuItem(
       'Rename…',
       () => say('thing.rename'),

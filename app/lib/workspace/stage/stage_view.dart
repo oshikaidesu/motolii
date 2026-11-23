@@ -175,6 +175,9 @@ class _StageViewState extends State<StageView>
         pointer.cancel();
         return true;
       }
+      if (widget.tool.make == 'camera' && _camera.releaseIfLocked()) {
+        return true;
+      }
       return false;
     }
     if (_cropping == null || e.logicalKey != LogicalKeyboardKey.enter) {
@@ -268,6 +271,11 @@ class _StageViewState extends State<StageView>
       final v = _shown = _view(box.biggest),
           scene = widget.scene,
           trail = trailOf.of(WorkspaceScope.read(context), widget.selected);
+      final wsNow = WorkspaceScope.read(context);
+      final activeCam = stageCameraLayer(wsNow, widget.selected);
+      final lockedTarget = activeCam == null
+          ? null
+          : cameraTargetOf(wsNow, activeCam);
       // What the stage paints around and over the preview: the one painter, once for all of it or once for each side of the engine's image.
       ViewPainter painter(ViewPart part, {bool marked = false}) => ViewPainter(
         scene,
@@ -285,6 +293,7 @@ class _StageViewState extends State<StageView>
         grip: _drag.heldGrip,
         form: _formOf(),
         crop: _cropOf(),
+        cameraTarget: lockedTarget,
       );
       desk.follow(
         WorkspaceScope.read(context),
@@ -339,7 +348,8 @@ class _StageViewState extends State<StageView>
                   return; // A stroke is drawn, not clicked.
                 }
                 if (widget.tool.make == 'camera') {
-                  return; // After Effects' Unified Camera tool makes nothing on a click; it only drags and wheels.
+                  _camera.tapLayer(_hitLocal(v, d.localPosition));
+                  return;
                 }
                 if (widget.tool.make != null) {
                   return _draw.drawAt(

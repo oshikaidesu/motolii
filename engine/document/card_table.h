@@ -45,7 +45,8 @@ inline const DocCard doc_cards[] = {
     // After Effects' camera lens. Where the camera is and how it is turned live
     // on the Transform card above, like every other placed layer.
     {"Camera",
-     "focal_length projection shift_x shift_y focus aperture blur_level",
+     "target distance focal_length projection shift_x shift_y focus aperture "
+     "blur_level",
      "kind", "camera"},
     // Signal macro rack: up to 8 channels driven by knobs, audio, MIDI, other
     // layers, or procedural waves, mapped to any numeric parameter.

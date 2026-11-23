@@ -191,7 +191,9 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
   if ((number || word || key) && strcmp(name, "lock") &&
       doc_number(d, layer, "lock", 0, 0) > 0.5)
     return d.error = "it is locked", false;
-  if (number && (!strcmp(name, "connect") || !strcmp(name, "connect_to")) &&
+  if (number &&
+      (!strcmp(name, "connect") || !strcmp(name, "connect_to") ||
+       !strcmp(name, "target")) &&
       *number != 0.0 &&
       (*number != std::floor(*number) || (int)*number == layer ||
        doc_word(d, (int)*number, "kind").empty()))
