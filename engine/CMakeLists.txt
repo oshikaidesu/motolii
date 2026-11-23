@@ -166,7 +166,7 @@ target_include_directories(motolii_flags INTERFACE
   ${FILAMENT}/third_party/libassimp/contrib/rapidjson/include ${FILAMENT}/third_party/zstd/lib
   ${FILAMENT}/third_party/stb ${FILAMENT}/third_party/cgltf
   ${FILAMENT_SDK}/include ${THORVG}/inc ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES}
-  ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
+  ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/psd_sdk/src ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
   ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include
   ${SQLITE_INCLUDE} ${LUAJIT_INCLUDE} ${QUICKJS_INCLUDE}
   ${THIRD_PARTY}/onnxruntime/include)
@@ -394,6 +394,12 @@ add_library(motolii_motion STATIC
   motion/lottie_motion.cpp)
 target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_absent_motion)
 
+# Adapter: Photoshop PSD/PSB layer reader (MolecularMatters/psd_sdk, BSD 2-Clause).
+add_library(motolii_community_psd STATIC
+  community/psd/psd_layers.cpp)
+target_link_libraries(motolii_community_psd PUBLIC motolii_flags)
+target_link_libraries(motolii_community_psd PUBLIC ${THIRD_PARTY}/psd_sdk/build_lib/libpsd_sdk.a)
+
 # Adapter: rigid bodies moved by Jolt Physics as it is (deps/jolt.sh builds it and installs its CMake package).
 if(NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/libJolt.a AND
    NOT EXISTS ${THIRD_PARTY}/physics/JoltPhysics/Build/install/lib/Jolt.lib)
@@ -496,7 +502,7 @@ add_library(motolii_document STATIC
   document/scripts/scripts.cpp
   document/undo.cpp)
 target_link_libraries(motolii_document PUBLIC motolii_flags motolii_base motolii_community_absent_motion motolii_community_css motolii_community_quickjs motolii_community_after_effects motolii_community_after_effects_plugin motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5js motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
-target_link_libraries(motolii_document PUBLIC motolii_community_jolt)
+target_link_libraries(motolii_document PUBLIC motolii_community_jolt motolii_community_psd)
 target_link_libraries(motolii_document PUBLIC ${SQLITE_LIBRARY}
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 

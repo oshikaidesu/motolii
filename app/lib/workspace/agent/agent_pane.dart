@@ -13,6 +13,9 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/storage/disk.dart' show modifiedOf;
 import 'package:motolii/storage/folder_files.dart';
+import 'package:motolii/storage/script_files.dart' show textOf;
+import 'package:motolii/widgets/custom_ui/panel_node.dart'
+    show parsePanelOpsJson;
 import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/agent/acp_chat_session.dart';
@@ -24,6 +27,8 @@ import 'package:motolii/workspace/agent/magpie.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart' show putEffectFile;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show applyCustomPanelOps, panelDocOpOf, writeAgentSceneSnapshot;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -69,38 +74,81 @@ class _AgentPaneState extends State<AgentPane> {
     setState(() => _choosing = false);
   }
 
-  /// Sends [text] with the selected layer (layer_code.dart), each code file first made the layer's own. Each time a
-  /// tool call ends, a file sent whose time changed is read again, and a file new in the request's folder is put on
-  /// the layer as a new card, whatever tool wrote it.
+  /// Sends [text] with the full scene snapshot (`scene.json` + `stage.png`) and
+  /// the selected layer's cards/code (`layer_code.dart`). Each time a tool call
+  /// ends, modified code files are reloaded, `ops.json` is executed in one undo
+  /// step, and any other new `.js`/`.fs` file in [fresh] is attached to the layer.
   Future<void> _send(AcpChatSession talk, String text) async {
     if (!talk.ready || talk.sending || text.trim().isEmpty) return;
     _say.clear();
     final ws = WorkspaceScope.read(context), code = layerCode(ws);
     final fresh = newFolder();
-    final more = code == null
-        ? const <ContentBlock>[]
-        : await ownedFor(ws, code, fresh);
+    final more = projectOpen(ws)
+        ? await ownedFor(ws, code, fresh)
+        : const <ContentBlock>[];
     DateTime? time(String f) => modifiedOf(f);
+    final opsFile = '$fresh/ops.json';
+    final sceneFile = '$fresh/scene.json';
+    final stageFile = '$fresh/stage.png';
+    DateTime? opsSeen = time(opsFile);
+    final opsOwnedFiles = <String>{};
     final seen = <String, DateTime?>{
       for (final b in more)
         if (b is ResourceLink)
           Uri.parse(b.uri).toFilePath(): time(Uri.parse(b.uri).toFilePath()),
     };
     talk.settled = () {
-      for (final f in filesIn(fresh)) {
-        if (!seen.containsKey(f)) {
-          seen[f] = time(f);
-          _put(ws, talk, f);
+      // Apply multi-layer scene ops first so any scripts referenced by ops.json
+      // are recorded before the single-layer auto-attach fallback runs.
+      if (time(opsFile) case final t? when t != opsSeen) {
+        opsSeen = t;
+        try {
+          final raw = textOf(opsFile);
+          final parsed = parsePanelOpsJson(raw);
+          if (parsed.error != null) {
+            talk.tell('ops.json error: ${parsed.error}');
+          } else if (parsed.ops.isNotEmpty) {
+            for (final o in parsed.ops) {
+              if (o.op == 'fx' && o.file.isNotEmpty) {
+                opsOwnedFiles.add(o.file);
+                seen[o.file] = time(o.file);
+              }
+            }
+            applyCustomPanelOps(ws, [
+              for (final o in parsed.ops) panelDocOpOf(o),
+            ]);
+            if (parsed.notice != null && parsed.notice!.isNotEmpty) {
+              ws.notice = parsed.notice;
+            }
+            // Refresh scene.json and stage.png after ops settle.
+            Future<void>.delayed(const Duration(milliseconds: 120), () {
+              if (!mounted) return;
+              writeAgentSceneSnapshot(ws, fresh);
+              seen[sceneFile] = time(sceneFile);
+              seen[stageFile] = time(stageFile);
+            });
+          }
+        } catch (e) {
+          talk.tell('ops.json could not be read: $e');
         }
       }
-      for (final f in seen.keys) {
+      for (final f in filesIn(fresh)) {
+        if (f == opsFile || f == sceneFile || f == stageFile) continue;
+        if (opsOwnedFiles.contains(f)) continue;
+        if (!seen.containsKey(f)) {
+          seen[f] = time(f);
+          if (code != null) _put(ws, talk, f);
+        }
+      }
+      for (final f in seen.keys.toList()) {
+        if (f == sceneFile || f == stageFile || f == opsFile) continue;
         if (time(f) case final t when t != seen[f]) {
           seen[f] = t;
           _read(ws, talk, f);
         }
       }
     };
-    talk.send(text, more: more, note: code?.line ?? '');
+    talk.send(text, more: more, note: code?.line ?? 'Scene');
   }
 
   /// Puts a new file the agent wrote on the selected layer, as the Effects shelf puts an empty one (empty_effect.dart).

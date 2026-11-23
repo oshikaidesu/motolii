@@ -117,22 +117,7 @@ class _JsPanelToolState extends State<JsPanelTool> {
       setState(() {});
     }
     if (res.ops.isNotEmpty) {
-      applyCustomPanelOps(ws, [
-        for (final o in res.ops)
-          (
-            op: o.op,
-            layer: o.layer,
-            name: o.name,
-            word: o.word,
-            kind: o.kind,
-            file: o.file,
-            ease: o.ease,
-            mode: o.mode,
-            value: o.value,
-            at: o.at,
-            layers: o.layers,
-          ),
-      ]);
+      applyCustomPanelOps(ws, [for (final o in res.ops) panelDocOpOf(o)]);
     }
   }
 

@@ -12,6 +12,8 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/state/agent_context.dart';
+import 'package:motolii/workspace/state/custom_panel_service.dart'
+    show writeAgentSceneSnapshot;
 import 'package:motolii/workspace/state/engine_access.dart';
 import 'package:motolii/workspace/state/document/expression_engine.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -62,23 +64,26 @@ LayerCode? layerCode(WorkspaceController ws) {
 String newFolder() =>
     '${ownFolder()}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
 
-/// Makes each of [code]'s files the layer's own and returns what is sent with a request: the layer's cards and values,
-/// its files as links, where new files go ([fresh]), and the expression reference with the names that run here.
+/// Builds ACP context blocks for the full scene (and the selected layer's cards
+/// and own code copies when [code] is non-null).
 Future<List<ContentBlock>> ownedFor(
   WorkspaceController ws,
-  LayerCode code,
+  LayerCode? code,
   String fresh,
 ) async {
-  final files = [
-    for (final (title, word, slot) in code.cards)
-      (
-        title,
-        EffectCode.alone(ws, code.thing, word, slot)
-            ? EffectCode.source(word)
-            : EffectCode.copyOwn(ws, code.thing, word, slot).$2,
-      ),
-  ];
-  ws.reread();
+  final snap = writeAgentSceneSnapshot(ws, fresh);
+  final files = code == null
+      ? const <(String, String)>[]
+      : [
+          for (final (title, word, slot) in code.cards)
+            (
+              title,
+              EffectCode.alone(ws, code.thing, word, slot)
+                  ? EffectCode.source(word)
+                  : EffectCode.copyOwn(ws, code.thing, word, slot).$2,
+            ),
+        ];
+  if (code != null) ws.reread();
   final runs = <String>{};
   for (final (_, f) in files) {
     if (f.endsWith('.js')) {
@@ -87,31 +92,60 @@ Future<List<ContentBlock>> ownedFor(
   }
   final reference =
       '${engineFolder()}/third_party/js/expression-globals-typescript/index.d.ts';
+  final opsPath = '$fresh/ops.json';
   return [
     TextContentBlock(
       text: [
-        'In Motolii the layer "${code.layer}" is selected. Its cards in the '
-            'Inspector, with their values now (a value set on a card wins over '
-            'the default in a code file\'s head):',
-        for (final v in code.values) '- $v',
-        if (code.picked.isNotEmpty)
-          'The property picked in the Timeline: ${code.picked}.',
-        if (files.isNotEmpty) ...[
-          'Its code, one file per card. Each is this layer\'s own copy: no '
-              'other layer runs it, and a saved file shows in the picture at '
-              'once. Change these only when asked to change that card:',
-          for (final (t, f) in files) '- $t: $f',
-        ],
-        'Something new (a new expression or effect) goes in a new file in '
-            '$fresh (make the folder), and Motolii puts it on the layer as a '
-            'new card. An After Effects expression is a .js holding the '
-            'expression as it is posted; a first line '
-            '`// --property:position` (or rotation, scale, opacity) says what '
-            'it is on (shelves/README.md). An effect is an ISF .fs.',
-        'What an expression may name is the After Effects reference $reference.'
-            '${runs.isEmpty ? '' : ' Of it these run here now: ${(runs.toList()..sort()).join(', ')}.'}',
+        if (code != null) ...[
+          'In Motolii the layer "${code.layer}" (id ${code.thing}) is selected. Its cards in the '
+              'Inspector, with their values now (a value set on a card wins over '
+              'the default in a code file\'s head):',
+          for (final v in code.values) '- $v',
+          if (code.picked.isNotEmpty)
+            'The property picked in the Timeline: ${code.picked}.',
+          if (files.isNotEmpty) ...[
+            'Its code, one file per card. Each is this layer\'s own copy: no '
+                'other layer runs it, and a saved file shows in the picture at '
+                'once. Change these only when asked to change that card:',
+            for (final (t, f) in files) '- $t: $f',
+          ],
+        ] else
+          'In Motolii no single layer is selected; you may inspect and edit the whole scene.',
+        if (snap.sceneJson != null)
+          'Full scene snapshot (all layers with id, name, kind, parent, order, transform, anchor, size, clip, fx, bpm, marks): ${snap.sceneJson}.',
+        if (snap.stagePng != null)
+          'Current stage preview image: ${snap.stagePng}.',
+        'To edit multiple layers, rig hierarchies, set joint pivots, add Null controllers, or attach scripts to specific layers in ONE undo step, write a JSON array (or {"ops":[...],"notice":"..."}) to $opsPath. Supported ops: '
+            '{"op":"add","kind":"shape","file":"null"} (or rect/ellipse/path/text/image; layer:-1 targets the last added layer), '
+            '{"op":"psd","file":"/abs/path.psd"}, '
+            '{"op":"pivot","layer":ID,"x":AX,"y":AY} (moves normalized anchor -1..1 without shifting visuals), '
+            '{"op":"set","layer":ID,"name":"parent|x|y|z|order|clip|rotate|scale_x|scale_y|opacity|...","value":N}, '
+            '{"op":"say","layer":ID,"name":"name|fill|text|split|space|...","word":"..."}, '
+            '{"op":"key","layer":ID,"name":"...","at":SEC,"value":N,"ease":"Bezier x1 y1 x2 y2"}, '
+            '{"op":"fx","layer":ID,"file":"/abs/path/to/expr.js"}, '
+            '{"op":"explode","layer":ID,"mode":"letters|strokes"}, '
+            '{"op":"remove","layer":ID}, {"op":"select","layers":[ID]}, {"op":"time","at":SEC}. '
+            'After ops.json runs, scene.json and stage.png are refreshed automatically.',
+        'For a single new expression or shader on the selected layer, write a .js or .fs file in $fresh (files referenced by ops.json are attached only where ops.json specifies). '
+            'An After Effects expression is a .js holding the expression as posted; a first line '
+            '`// --property:position` (or rotation, scale, opacity) says what it is on (shelves/README.md). '
+            'Multi-layer expressions can read other layers with `layerValue(id, name, t)` (including past time `t - delay` for secondary physics).',
+        'Expression reference: $reference.'
+            '${runs.isEmpty ? '' : ' Running on selected layer: ${(runs.toList()..sort()).join(', ')}.'}',
       ].join('\n'),
     ),
+    if (snap.sceneJson case final s?)
+      ResourceLink(
+        name: 'scene.json',
+        title: 'Scene JSON',
+        uri: Uri.file(s).toString(),
+      ),
+    if (snap.stagePng case final p?)
+      ResourceLink(
+        name: 'stage.png',
+        title: 'Stage Preview',
+        uri: Uri.file(p).toString(),
+      ),
     for (final (t, f) in files)
       ResourceLink(name: t, title: t, uri: Uri.file(f).toString()),
   ];

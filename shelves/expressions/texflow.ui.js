@@ -282,12 +282,21 @@ function onCardAction(action, ctx) {
     };
   }
 
-  // Auto-generate backplate matte behind this text layer
+  // Auto-generate backplate matte directly behind this text layer
   if (id === "backplate" && lay.id) {
     const chars = Array.from(String(lay.text || "")).length || 3;
     const sz = lay.size || 0.7;
     const w = lay.width > 0.05 ? lay.width + 0.36 : Math.max(1.2, chars * sz * 0.9 + 0.36);
     const h = lay.height > 0.05 ? lay.height + 0.24 : Math.max(0.4, sz * 1.35);
+    // Lower `order` draws behind (`doc_laid` sorts ascending by `coalesce(order, layer_id)`).
+    const effOrder = (l) => (l.order ? l.order : l.id);
+    const all = ctx.layers || [];
+    const idx = all.findIndex((l) => l.id === lay.id);
+    const layOrder = effOrder(lay);
+    const behind = idx >= 0 && idx + 1 < all.length ? all[idx + 1] : null;
+    const plateOrder = behind && effOrder(behind) < layOrder
+      ? (effOrder(behind) + layOrder) / 2
+      : layOrder - 0.5;
     return {
       notice: "Added backplate behind " + (lay.name || "text"),
       ops: [
@@ -295,6 +304,7 @@ function onCardAction(action, ctx) {
         { op: "say", layer: -1, name: "name", word: (lay.name || "Text") + " Plate" },
         { op: "say", layer: -1, name: "fill", word: "18181b" },
         { op: "set", layer: -1, name: "parent", value: lay.id },
+        { op: "set", layer: -1, name: "order", value: plateOrder },
         { op: "set", layer: -1, name: "x", value: 0 },
         { op: "set", layer: -1, name: "y", value: 0 },
         { op: "set", layer: -1, name: "z", value: -0.01 },

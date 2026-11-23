@@ -86,6 +86,9 @@ bool doc_carry(Doc& d, const char* by, double a, double b);
 // press does, see doc_fx_file, which also handles the keyframes of a
 // transition.
 bool doc_carry_effect(Doc& d, const char* file);
+// Sets a layer's normalized anchor (`anchor_x`, `anchor_y` in -1..1) while
+// compensating `x`/`y` so the layer stays at the exact same visual position.
+bool doc_pivot(Doc& d, int layer, double ax, double ay);
 
 }  // namespace motolii
 

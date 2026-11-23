@@ -125,6 +125,11 @@ int doc_text_explode(Doc& d, int layer, const char* mode);
 // instead.
 int doc_svg_paths(Doc& d, const char* file);
 
+// Imports a layered Photoshop (.psd/.psb) file as a parent null group with one
+// image layer per pixel layer at exact canvas coordinates, preserving UTF-8
+// layer names, opacity, visibility, clipping, and bottom-to-top stack order.
+int doc_psd_import(Doc& d, const char* file);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_PATHS_H_

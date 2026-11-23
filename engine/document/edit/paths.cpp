@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <sstream>
 #include <string>
@@ -25,6 +26,8 @@ extern "C" {
 
 #include "community/absent_motion/absent_motion.h"
 #include "community/css/text.h"
+#include "community/psd/psd_layers.h"
+#include "base/hash.h"
 #include "document/cards.h"
 #include "document/document.h"
 #include "document/edit/layer_edit.h"
@@ -1003,6 +1006,56 @@ int doc_svg_paths(Doc& d, const char* file) {
            doc_set(d, lay, "stroke_width",
                    part.strokeWidth * s * 0.5 * (double)d.stage->h);
     if (ok) ok = doc_parent(d, lay, (double)grp);
+  }
+  if (!ok) d.act.ok = false;
+  return doc_acted(d) && ok ? grp : 0;
+}
+
+int doc_psd_import(Doc& d, const char* file) {
+  if (!file || !*file) return d.error = "no PSD path given", 0;
+  const std::filesystem::path src(file);
+  const std::string stem = src.stem().generic_string();
+  const uint64_t h = fnv1a64(file, std::strlen(file));
+  char tag[32];
+  std::snprintf(tag, sizeof tag, "%016llx", (unsigned long long)h);
+  const std::filesystem::path outDir =
+      src.parent_path() / ".motolii_psd" /
+      ((stem.empty() ? "psd" : stem) + "_" + tag);
+
+  PsdDocOut psd;
+  std::string why;
+  if (!psd_extract_layers(file, outDir.generic_string(), psd, why)) {
+    d.error = why;
+    return 0;
+  }
+  const double ch = (double)std::max(1, psd.canvas_h);
+  const double cw = (double)std::max(1, psd.canvas_w);
+
+  doc_act(d);
+  const int grp = doc_add(d, "shape", "null");
+  bool ok = grp != 0;
+  if (ok) doc_say(d, grp, "name", (stem.empty() ? "PSD" : stem).c_str());
+
+  // psd.layers is bottom-to-top; doc_add appends newer layers in front, matching
+  // Photoshop's native stacking order. Keep grp at identity while parenting.
+  for (const PsdLayerOut& p : psd.layers) {
+    if (!ok) break;
+    const int lay = doc_add(d, "image", p.png_path.c_str());
+    if (!lay) {
+      ok = false;
+      break;
+    }
+    const double sz = (double)p.height / ch;
+    const double cx = ((double)p.left + 0.5 * (double)p.width - 0.5 * cw) / ch;
+    const double cy = (0.5 * ch - ((double)p.top + 0.5 * (double)p.height)) / ch;
+    ok = doc_say(d, lay, "name", p.name.c_str()) &&
+         doc_set(d, lay, "size", sz) &&
+         doc_set(d, lay, "x", cx) &&
+         doc_set(d, lay, "y", cy) &&
+         doc_set(d, lay, "opacity", p.opacity) &&
+         doc_parent(d, lay, (double)grp);
+    if (ok && !p.visible) ok = doc_set(d, lay, "visible", 0.0);
+    if (ok && p.clipping) ok = doc_set(d, lay, "clip", 1.0);
   }
   if (!ok) d.act.ok = false;
   return doc_acted(d) && ok ? grp : 0;

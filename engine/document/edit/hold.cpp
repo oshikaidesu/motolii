@@ -324,4 +324,34 @@ bool doc_carry_effect(Doc& d, const char* file) {
   return doc_match(d), doc_evaluate(d, d.stage->now), true;
 }
 
+bool doc_pivot(Doc& d, int layer, double ax, double ay) {
+  if (!doc_knows(d, layer)) return d.error = "no such layer", false;
+  doc_act(d);
+  const double now = d.stage ? d.stage->now : 0.0;
+  float2 half{0.5f};
+  doc_half(d, layer, &half);
+  const double ax0 = doc_literal(d, layer, "anchor_x", now, 0.0),
+               ay0 = doc_literal(d, layer, "anchor_y", now, 0.0),
+               sx = doc_literal(d, layer, "scale_x", now, 1.0),
+               sy = doc_literal(d, layer, "scale_y", now, 1.0),
+               sz = doc_literal(d, layer, "size", now, 1.0);
+  const auto rot = [&](const char* nm, math::double3 axis) {
+    return math::mat4::rotation(
+        doc_literal(d, layer, nm, now, 0.0) * (double)TAU / 360.0, axis);
+  };
+  const math::mat4 L = rot("rotate", {0, 0, 1}) * rot("rotate_y", {0, 1, 0}) *
+                       rot("rotate_x", {1, 0, 0}) *
+                       math::mat4::scaling(math::double3{sz * sx, sz * sy, sz});
+  const math::double3 da{(ax - ax0) * half.x, (ay - ay0) * half.y, 0.0},
+      dp = L.upperLeft() * da;
+  const double x0 = doc_literal(d, layer, "x", now, 0.0),
+               y0 = doc_literal(d, layer, "y", now, 0.0);
+  const bool ok = doc_set(d, layer, "anchor_x", ax) &&
+                  doc_set(d, layer, "anchor_y", ay) &&
+                  doc_set(d, layer, "x", x0 + dp.x) &&
+                  doc_set(d, layer, "y", y0 + dp.y);
+  if (!ok) d.act.ok = false;
+  return doc_acted(d) && ok;
+}
+
 }  // namespace motolii

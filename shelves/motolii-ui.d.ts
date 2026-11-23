@@ -156,6 +156,10 @@ declare namespace MotoliiUi {
     presets?: Record<string, unknown>;
     /** Composition size and scale. */
     comp?: { width: number; height: number; point: number };
+    /** Project tempo in BPM (0 when unset). */
+    bpm?: number;
+    /** Timeline markers in time order. */
+    marks?: Array<{ time: number; name: string }>;
   }
 
   interface CardRenderResult {
@@ -191,6 +195,10 @@ declare namespace MotoliiUi {
     kind: string;
     selected: boolean;
     parent: number;
+    order: number;
+    visible: boolean;
+    clip: boolean;
+    fx: string;
     start: number;
     duration: number;
     x: number;
@@ -218,6 +226,8 @@ declare namespace MotoliiUi {
     frame: number;
     fps: number;
     duration: number;
+    bpm: number;
+    marks: Array<{ time: number; name: string }>;
     comp: { width: number; height: number; point: number };
     selected: number[];
     layers: PanelLayer[];
@@ -232,6 +242,8 @@ declare namespace MotoliiUi {
     | { op: "say"; layer: number; name: string; word: string }
     | { op: "key"; layer: number; name: string; at: number; value: number; ease?: string }
     | { op: "add"; kind?: string; file?: string }
+    | { op: "psd"; file: string }
+    | { op: "pivot"; layer: number; x: number; y: number }
     | { op: "explode"; layer: number; mode?: "letters" | "strokes" }
     | { op: "outline"; layer: number }
     | { op: "remove"; layer: number }

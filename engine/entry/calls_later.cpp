@@ -112,10 +112,21 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
                               : (m->d->act.depth ? (int)doc_acted(*m->d) : 0);
           if (!m->d->act.depth) m->d->act.together = false;
         }
-        // Result is the new layer.
-        else if (c == "add")
+        // Result is the new layer. .psd/.psb files expand into layered image groups.
+        else if (c == "add") {
+          const std::string ext =
+              std::filesystem::path(w).extension().generic_string();
+          const bool isPsd = n.empty() &&
+                             (ext == ".psd" || ext == ".PSD" ||
+                              ext == ".psb" || ext == ".PSB");
+          ok = m->later.last_added = changes(
+              m, isPsd ? doc_psd_import(doc(m), w.c_str())
+                       : doc_add(doc(m), n.c_str(), w.c_str()));
+        }
+        // Imports a layered .psd/.psb into positioned image layers under a group.
+        else if (c == "psd")
           ok = m->later.last_added =
-              changes(m, doc_add(doc(m), n.c_str(), w.c_str()));
+              changes(m, doc_psd_import(doc(m), w.c_str()));
         // SVG as editable path shapes, falling back to a picture.
         else if (c == "vector") {
           int on = doc_svg_paths(doc(m), w.c_str());
@@ -196,6 +207,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "text_explode")
           ok = m->later.last_added =
               changes(m, doc_text_explode(doc(m), layer, w.c_str()));
+        // Moves a layer's normalized anchor while keeping its visual position.
+        // word: "ax ay" (in -1..1).
+        else if (c == "pivot") {
+          double ax = 0.0, ay = 0.0;
+          std::istringstream said(w);
+          if (said >> ax >> ay)
+            ok = changes(m, (int)doc_pivot(doc(m), layer, ax, ay));
+        }
         // word: "tolerance x y x y ..."
         else if (c == "curve")
           ok = m->later.last_added = changes(m, doc_curve(doc(m), w.c_str()));

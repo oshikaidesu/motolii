@@ -320,6 +320,8 @@ class PanelOp {
     this.mode = '',
     this.value,
     this.at,
+    this.x,
+    this.y,
     this.layers = const [],
   });
 
@@ -333,6 +335,8 @@ class PanelOp {
   final String mode;
   final double? value;
   final double? at;
+  final double? x;
+  final double? y;
   final List<int> layers;
 
   static PanelOp? fromJson(Object? raw) {
@@ -350,12 +354,42 @@ class PanelOp {
       mode: raw['mode']?.toString() ?? '',
       value: raw['value'] is num ? (raw['value'] as num).toDouble() : null,
       at: raw['at'] is num ? (raw['at'] as num).toDouble() : null,
+      x: raw['x'] is num ? (raw['x'] as num).toDouble() : null,
+      y: raw['y'] is num ? (raw['y'] as num).toDouble() : null,
       layers: [
         if (raw['layers'] is List)
           for (final l in raw['layers'] as List)
             if (l is num) l.toInt(),
       ],
     );
+  }
+}
+
+/// Parses a JSON array of [PanelOp]s or `{ "ops": [...] }` (used by ACP agents).
+({List<PanelOp> ops, String? notice, String? error}) parsePanelOpsJson(
+  String rawJson,
+) {
+  try {
+    final decoded = jsonDecode(rawJson);
+    final List<Object?>? list = decoded is List
+        ? decoded
+        : (decoded is Map && decoded['ops'] is List
+              ? decoded['ops'] as List
+              : null);
+    if (list == null) {
+      return (
+        ops: const [],
+        notice: null,
+        error: 'ops.json must be a JSON array or {"ops": [...]}',
+      );
+    }
+    return (
+      ops: [for (final item in list) ?PanelOp.fromJson(item)],
+      notice: decoded is Map ? decoded['notice']?.toString() : null,
+      error: null,
+    );
+  } catch (e) {
+    return (ops: const [], notice: null, error: 'ops.json parse error: $e');
   }
 }
 

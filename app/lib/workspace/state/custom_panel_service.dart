@@ -9,6 +9,7 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/card_actions.dart' show CardCustomUi;
 import 'package:motolii/storage/panel_presets_file.dart';
+import 'package:motolii/storage/shelf_disk.dart' show makeFolder, writeText;
 import 'package:motolii/widgets/custom_ui/panel_node.dart'
     show PanelOp, panelThemeHexMap;
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
@@ -18,7 +19,7 @@ import 'package:motolii/workspace/state/tiles/effect_code_cards.dart'
     show codeOfCard, codeSource;
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
-/// One document mutation produced by a custom panel's `onAction`.
+/// One document mutation produced by a custom panel's `onAction` or an ACP agent.
 typedef PanelDocOp = ({
   String op,
   int layer,
@@ -30,11 +31,49 @@ typedef PanelDocOp = ({
   String mode,
   double? value,
   double? at,
+  double? x,
+  double? y,
   List<int> layers,
 });
 
+PanelDocOp panelDocOpOf(PanelOp o) => (
+  op: o.op,
+  layer: o.layer,
+  name: o.name,
+  word: o.word,
+  kind: o.kind,
+  file: o.file,
+  ease: o.ease,
+  mode: o.mode,
+  value: o.value,
+  at: o.at,
+  x: o.x,
+  y: o.y,
+  layers: o.layers,
+);
+
 /// True when the engine handle is open and can evaluate QuickJS panels.
 bool customPanelsReady(WorkspaceController ws) => ws.inside != null;
+
+/// Writes the full scene JSON (`scene.json`) and current stage still (`stage.png`)
+/// into [folder] for ACP agents.
+({String? sceneJson, String? stagePng}) writeAgentSceneSnapshot(
+  WorkspaceController ws,
+  String folder,
+) {
+  final m = ws.inside;
+  if (m == null) return (sceneJson: null, stagePng: null);
+  try {
+    makeFolder(folder);
+    final scenePath = '$folder/scene.json';
+    writeText(scenePath, customPanelCtxJson(ws, const {}));
+    final stagePath = '$folder/stage.png';
+    final ok = m.still(stagePath);
+    return (sceneJson: scenePath, stagePng: ok ? stagePath : null);
+  } catch (_) {
+    return (sceneJson: null, stagePng: null);
+  }
+}
 
 /// Lists discovered custom panels from `shelves/panels/` and user `panels/`.
 String customPanelListRaw(WorkspaceController ws) =>
@@ -62,6 +101,10 @@ String customPanelCtxJson(
           'kind': l.kind.name,
           'selected': selSet.contains(l.id),
           'parent': m?.parentOf(l.id) ?? 0,
+          'order': m?.value(l.id, 'order', 0) ?? 0.0,
+          'visible': (m?.value(l.id, 'visible', at) ?? 1.0) > 0.5,
+          'clip': (m?.value(l.id, 'clip', at) ?? 0.0) > 0.5,
+          'fx': m?.word(l.id, 'fx') ?? '',
           'start': m?.value(l.id, 'start', 0) ?? 0.0,
           'duration': m?.value(l.id, 'duration', 0) ?? -1.0,
           'x': m?.value(l.id, 'x', at) ?? 0.0,
@@ -89,6 +132,11 @@ String customPanelCtxJson(
     'frame': ws.frame,
     'fps': fps,
     'duration': WorkspaceController.duration,
+    'bpm': m?.value(0, 'bpm', 0) ?? 0.0,
+    'marks': [
+      for (final (markAt, name) in m?.marks ?? const <(double, String)>[])
+        {'time': markAt, 'name': name},
+    ],
     'comp': {
       'width': ArtGeometry.comp.width,
       'height': ArtGeometry.comp.height,
@@ -144,6 +192,10 @@ CardCustomUi? cardCustomUiOf(
       'name': l?.name ?? m.word(id, 'name'),
       'kind': l?.kind.name ?? m.word(id, 'kind'),
       'parent': m.parentOf(id),
+      'order': m.value(id, 'order', 0) ?? 0.0,
+      'visible': (m.value(id, 'visible', at) ?? 1.0) > 0.5,
+      'clip': (m.value(id, 'clip', at) ?? 0.0) > 0.5,
+      'fx': m.word(id, 'fx'),
       'start': m.value(id, 'start', 0) ?? 0.0,
       'duration': m.value(id, 'duration', 0) ?? -1.0,
       'x': m.value(id, 'x', at) ?? 0.0,
@@ -179,6 +231,10 @@ CardCustomUi? cardCustomUiOf(
       'layer': layerMap(thing),
       'layers': [for (final l in ws.layers) layerMap(l.id)],
       'duration': WorkspaceController.duration,
+      'bpm': m.value(0, 'bpm', 0) ?? 0.0,
+      'marks': [
+        for (final (at, name) in m.marks) {'time': at, 'name': name},
+      ],
       'presets': readPanelPresets(presetBucket),
       'comp': {
         'width': ArtGeometry.comp.width,
@@ -205,22 +261,7 @@ CardCustomUi? cardCustomUiOf(
       }
       if (presetsChanged) writePanelPresets(presetBucket, presets);
       if (ops.isNotEmpty) {
-        applyCustomPanelOps(ws, [
-          for (final o in ops)
-            (
-              op: o.op,
-              layer: o.layer,
-              name: o.name,
-              word: o.word,
-              kind: o.kind,
-              file: o.file,
-              ease: o.ease,
-              mode: o.mode,
-              value: o.value,
-              at: o.at,
-              layers: o.layers,
-            ),
-        ]);
+        applyCustomPanelOps(ws, [for (final o in ops) panelDocOpOf(o)]);
       }
     },
   );
@@ -282,6 +323,16 @@ void applyCustomPanelOps(WorkspaceController ws, List<PanelDocOp> ops) {
         case 'add':
           if (o.kind.isNotEmpty || o.file.isNotEmpty) {
             m.later('add', name: o.kind, word: o.file);
+          }
+        case 'psd':
+          if (o.file.isNotEmpty) m.later('psd', word: o.file);
+        case 'pivot':
+          if (o.layer != 0) {
+            m.later(
+              'pivot',
+              layer: o.layer,
+              word: '${o.x ?? 0.0} ${o.y ?? 0.0}',
+            );
           }
         case 'explode':
           if (o.layer > 0) {
